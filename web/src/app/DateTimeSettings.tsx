@@ -53,7 +53,7 @@ export function DateTimeView({ prefs, resolved, onChange, today = logicalToday()
     const at3pm = new Date(`${today}T15:00:00`).getTime()
     return {
       compact: formatDate(addDaysISO(today, 20), 'compact', resolved, today),
-      numeric: formatDate(today, 'numeric', resolved, today),
+      full: formatDate(today, 'long', resolved, today),
       due: formatTime('15:00', resolved),
       stamp: formatInstant(at3pm, 'time', resolved, today),
       week: weekDays(today, resolved),
@@ -85,26 +85,47 @@ export function DateTimeView({ prefs, resolved, onChange, today = logicalToday()
           {DAY_STARTS.map((v) => <option key={v} value={v}>{v === '00:00' ? t('Midnight (default)') : formatTime(v, resolved)}</option>)}
         </Select>
       } />
-      <SettingRow {...rowCopy('date-time', 'preview')} control={
-        <div data-testid="date-time-preview" aria-live="polite" className="flex min-w-0 flex-col gap-2 sm:items-end">
-          <dl className="grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5 text-meta">
-            <dt className="text-muted">{t('Today')}</dt><dd className="text-default" data-testid="preview-today">{preview.today}</dd>
-            <dt className="text-muted">{t('Due date')}</dt><dd className="text-default" data-testid="preview-compact">{preview.compact}</dd>
-            <dt className="text-muted">{t('Date')}</dt><dd className="text-default" data-testid="preview-numeric">{preview.numeric}</dd>
-            <dt className="text-muted">{t('Due time')}</dt><dd className="text-default" data-testid="preview-time">{preview.due}</dd>
-            <dt className="text-muted">{t('Comment time')}</dt><dd className="text-default" data-testid="preview-stamp">{preview.stamp}</dd>
-          </dl>
-          <ol aria-label={t('This week')} data-testid="preview-week" className="flex gap-1">
-            {preview.week.map((iso) => (
-              <li key={iso} aria-current={iso === today ? 'date' : undefined}
-                className={`flex w-9 flex-col items-center rounded-control py-1 text-meta ${iso === today ? 'bg-accent text-on-accent' : 'bg-sunken text-default'}`}>
-                <span className="text-hint uppercase">{new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'narrow' }).format(new Date(`${iso}T12:00:00`))}</span>
-                <span className="font-medium">{Number(iso.slice(8))}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      } />
+      <SampleBox preview={preview} today={today} />
     </SettingsSection>
+  )
+}
+
+/** The values the Sample box shows, formatted as the app formats them. */
+interface SampleValues { today: string; compact: string; full: string; due: string; stamp: string; week: string[] }
+
+/**
+ * One "Sample" box under the four rows (settings-refresh D5): today's heading,
+ * four label and value lines aligned on one axis, then the week strip. Values
+ * never wrap; the box fits the card at 360 px.
+ */
+function SampleBox({ preview, today }: { preview: SampleValues; today: string }) {
+  const rows: [string, string, string][] = [
+    [t('Due date'), preview.compact, 'preview-compact'],
+    [t('Full date'), preview.full, 'preview-full'],
+    [t('Due time'), preview.due, 'preview-time'],
+    [t('Comment time'), preview.stamp, 'preview-stamp'],
+  ]
+  return (
+    <section data-testid="date-time-preview" aria-live="polite" aria-labelledby="date-time-sample" className="mt-3 rounded-control border border-default bg-sunken p-3 text-body">
+      <h3 id="date-time-sample" className="text-meta font-medium uppercase text-muted">{rowCopy('date-time', 'preview').label}</h3>
+      <p className="mt-1 font-medium text-default" data-testid="preview-today">{preview.today}</p>
+      <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1">
+        {rows.map(([label, value, id]) => (
+          <div key={id} className="contents">
+            <dt className="whitespace-nowrap text-muted">{label}</dt>
+            <dd className="whitespace-nowrap text-default" data-testid={id}>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <ol aria-label={t('This week')} data-testid="preview-week" className="mt-3 flex gap-1">
+        {preview.week.map((iso) => (
+          <li key={iso} aria-current={iso === today ? 'date' : undefined}
+            className={`flex w-9 flex-col items-center rounded-control py-1 text-meta ${iso === today ? 'bg-accent text-on-accent' : 'bg-surface text-default'}`}>
+            <span className="text-hint uppercase">{new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'narrow' }).format(new Date(`${iso}T12:00:00`))}</span>
+            <span className="font-medium">{Number(iso.slice(8))}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }

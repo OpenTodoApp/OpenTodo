@@ -1,17 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Skeleton } from '../ui'
-import { Tooltip } from '../ui'
-import { Badge } from '../ui'
-import { Icon, type IconName } from '../ui'
-import { EmptyState } from '../ui'
-import { ListRow } from '../ui'
-import { Notice } from '../ui'
-import { SettingsSection } from '../ui'
+import { Button, EmptyState, Icon, type IconName, Notice, SettingsSection, Skeleton, Tooltip } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
+import { todayISO } from '../lib/dates'
 import { useOnline } from '../lib/online'
 import type { AuditEvent, User } from '../lib/types'
 import { AuditPanel, type LogStatus, NeedsConnection } from './AuditPanel'
-import { AUDIT_LABELS, eventSummary, shortAgent } from './auditFormat'
+import { type ActivityDay, activityDayHeading, AUDIT_LABELS, eventSummary, firstLines, groupActivity, lineCount, shortAgent } from './auditFormat'
 import { relativeTime } from './SecurityPanel'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
@@ -66,9 +60,15 @@ export function activityIcon(ev: AuditEvent): IconName {
   return 'history'
 }
 
+/** Lines shown before "Show all" (settings-refresh D4). */
+export const ACTIVITY_LINES = 10
+
 /** Pure view of the activity list, so tests can render every state. */
 export function ActivityView({ status, events, error, now = Date.now() }: { status: LogStatus; events: AuditEvent[]; error?: string | null; now?: number }) {
-  const dt = useDateTimeFormat()
+  const [all, setAll] = useState(false)
+  const days = groupActivity(events)
+  const total = lineCount(days)
+  const shown = all ? days : firstLines(days, ACTIVITY_LINES)
   return (
     <SettingsSection {...cardCopy('activity')} testId="activity-panel">
       {status === 'offline' ? (
@@ -80,36 +80,48 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
           {status === 'ready' && events.length === 0 && (
             <EmptyState icon="history" title={t('No recent activity.')} body={t('Sign-ins and token changes on your account will show up here.')} />
           )}
-          {events.length > 0 && (
-            <div className="-mx-3 space-y-0.5" role="list" aria-label={t('Recent activity')}>
-              {events.map((ev) => {
-                const failed = ev.outcome === 'failure'
-                const summary = eventSummary(ev)
-                return (
-                  <div key={ev.id} role="listitem" data-event={ev.name}>
-                    <ListRow
-                      leading={<Icon name={activityIcon(ev)} className={failed ? 'text-danger' : undefined} />}
-                      label={<span className={failed ? 'text-danger' : undefined}>{AUDIT_LABELS[ev.name] ?? ev.name}{summary && <span className="text-muted"> · {summary}</span>}</span>}
-                      meta={
-                        <span>
-                          <Tooltip label={dt.formatInstant(ev.ts, 'datetime')}>
-                            <time dateTime={new Date(ev.ts).toISOString()} tabIndex={0} className="rounded-chip">{relativeTime(ev.ts, now)}</time>
-                          </Tooltip>
-                          {' · '}
-                          {ev.userAgent ? <Tooltip label={ev.userAgent}><span tabIndex={0} className="rounded-chip">{shortAgent(ev.userAgent)}</span></Tooltip> : shortAgent(ev.userAgent)}
-                          {ev.ip ? ` · ${ev.ip}` : ''}
-                        </span>
-                      }
-                      badges={failed ? <Badge hue="red">{t('Failed')}</Badge> : undefined}
-                    />
-                  </div>
-                )
-              })}
-            </div>
+          {shown.map((d) => <ActivityDayList key={d.day} day={d} now={now} />)}
+          {total > ACTIVITY_LINES && (
+            <Button variant="ghost" size="sm" className="mt-2" aria-expanded={all} onClick={() => setAll(!all)} data-activity-show-all>
+              {all ? t('Show less') : t('Show all ({n})', { n: total })}
+            </Button>
           )}
         </>
       )}
     </SettingsSection>
+  )
+}
+
+/** One day: its heading ("Today", "Yesterday", the date) and one line per event or folded sign-ins. */
+function ActivityDayList({ day, now }: { day: ActivityDay; now: number }) {
+  const dt = useDateTimeFormat()
+  const heading = activityDayHeading(day.day, todayISO(new Date(now)), (iso) => dt.formatDate(iso, 'compact'))
+  return (
+    <section className="pt-3 first:pt-0" data-activity-day={day.day}>
+      <h3 className="text-meta font-medium text-muted">{heading}</h3>
+      <ul className="mt-1" aria-label={heading}>
+        {day.lines.map(({ event: ev, count, warn }) => {
+          const summary = eventSummary(ev)
+          const what = AUDIT_LABELS[ev.name] ?? ev.name
+          return (
+            <li key={ev.id} data-event={ev.name} data-activity-warn={warn || undefined}
+              className="flex min-w-0 items-center gap-2 py-1 text-body">
+              <Icon name={activityIcon(ev)} size="sm" className={`${warn ? 'text-warning' : 'text-muted'}`} />
+              <span className={`min-w-0 truncate ${warn ? 'text-warning' : 'text-default'}`} data-activity-line>
+                {count > 1 ? t('{what} ×{n}', { what, n: count }) : what}
+                {summary && <span className="text-muted"> · {summary}</span>}
+                <span className="text-muted"> · {ev.userAgent ? <Tooltip label={ev.userAgent}><span tabIndex={0} className="rounded-chip">{shortAgent(ev.userAgent)}</span></Tooltip> : shortAgent(ev.userAgent)}</span>
+              </span>
+              <Tooltip label={[dt.formatInstant(ev.ts, 'datetime'), ev.ip].filter(Boolean).join(' · ')}>
+                <time dateTime={new Date(ev.ts).toISOString()} tabIndex={0} className="ml-auto shrink-0 rounded-chip text-meta tabular-nums text-muted">
+                  {now - ev.ts < 3_600_000 ? relativeTime(ev.ts, now) : dt.formatInstant(ev.ts, 'time')}
+                </time>
+              </Tooltip>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
 }
 

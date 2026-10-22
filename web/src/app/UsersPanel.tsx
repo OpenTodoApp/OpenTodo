@@ -7,7 +7,7 @@ import { useOutgoingEmail } from '../lib/outgoingEmail'
 import { hasAnyAction, isAdministrator, rowActions, type RowActions } from '../lib/roles'
 import { MembersPanel } from './MembersPanel'
 import type { AdminUser, User } from '../lib/types'
-import { Avatar } from '../ui'
+import { PersonAvatar } from './PersonAvatar'
 import { Badge } from '../ui'
 import { Button } from '../ui'
 import { Field, Input } from '../ui'
@@ -294,7 +294,7 @@ export function UsersView(p: UsersViewProps) {
           return (
             <li key={u.id} data-user={u.email}>
               <ListRow
-                leading={<Avatar id={u.id} name={label} size="md" />}
+                leading={<PersonAvatar id={u.id} name={label} size="md" />}
                 label={<>{label}{u.id === p.viewer.id && <span className="text-faint">{' '}{t('(you)')}</span>}</>}
                 ariaLabel={`${label}, ${ACCOUNT_ROLE_LABEL[u.role]}, ${u.status === 'active' ? t('active') : t('deactivated')}`}
                 meta={[u.name ? u.email : '', t('joined {date}', { date: dt.formatInstant(u.createdAt, 'date') }), u.lastLoginAt ? t('last sign-in {instant}', { instant: dt.formatInstant(u.lastLoginAt, 'datetime') }) : t('no sign-in since the upgrade')].filter(Boolean).join(' · ')}

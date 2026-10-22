@@ -43,6 +43,9 @@ type Member struct {
 	Name   string `json:"name"`
 	Email  string `json:"email"`
 	Role   string `json:"role"`
+	// AvatarVersion is the member's profile picture version, 0 without one
+	// (settings-refresh D10); it is part of the picture's address.
+	AvatarVersion int `json:"avatarVersion,omitempty"`
 }
 
 // Membership is the caller's view of one shared project: their role, the owner
@@ -98,8 +101,8 @@ func (s *Service) Memberships(ctx context.Context, userID string) ([]Membership,
 		return out, nil
 	}
 	// Every project's members in one query rather than one per project.
-	rows, err = s.db.QueryContext(ctx, `SELECT m.project_id, m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role FROM project_members m
-		LEFT JOIN users u ON u.id = m.user_id
+	rows, err = s.db.QueryContext(ctx, `SELECT m.project_id, m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, COALESCE(MAX(up.avatar_version,0),0) FROM project_members m
+		LEFT JOIN users u ON u.id = m.user_id LEFT JOIN user_profiles up ON up.user_id = m.user_id
 		WHERE m.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?) ORDER BY m.project_id, m.user_id`, userID)
 	if err != nil {
 		return nil, err
@@ -109,7 +112,7 @@ func (s *Service) Memberships(ctx context.Context, userID string) ([]Membership,
 	for rows.Next() {
 		var pid string
 		var m Member
-		if err := rows.Scan(&pid, &m.UserID, &m.Name, &m.Email, &m.Role); err != nil {
+		if err := rows.Scan(&pid, &m.UserID, &m.Name, &m.Email, &m.Role, &m.AvatarVersion); err != nil {
 			return nil, err
 		}
 		byProject[pid] = append(byProject[pid], m)
@@ -123,11 +126,20 @@ func (s *Service) Memberships(ctx context.Context, userID string) ([]Membership,
 	return out, nil
 }
 
+// SharesProject reports whether two accounts are members of a common shared
+// project: who may see the other's profile picture (settings-refresh D10).
+func (s *Service) SharesProject(ctx context.Context, a, b string) (bool, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM project_members x JOIN project_members y ON y.project_id = x.project_id
+		WHERE x.user_id = ? AND y.user_id = ?`, a, b).Scan(&n)
+	return n > 0, err
+}
+
 var roleOrder = map[string]int{RoleOwner: 0, RoleAdmin: 1, RoleEditor: 2, RoleViewer: 3}
 
 func members(ctx context.Context, q querier, projectID string) ([]Member, error) {
-	rows, err := q.QueryContext(ctx, `SELECT m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role FROM project_members m
-		LEFT JOIN users u ON u.id = m.user_id WHERE m.project_id = ?`, projectID)
+	rows, err := q.QueryContext(ctx, `SELECT m.user_id, COALESCE(u.name,''), COALESCE(u.email,''), m.role, COALESCE(MAX(up.avatar_version,0),0) FROM project_members m
+		LEFT JOIN users u ON u.id = m.user_id LEFT JOIN user_profiles up ON up.user_id = m.user_id WHERE m.project_id = ?`, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +147,7 @@ func members(ctx context.Context, q querier, projectID string) ([]Member, error)
 	out := []Member{}
 	for rows.Next() {
 		var m Member
-		if err := rows.Scan(&m.UserID, &m.Name, &m.Email, &m.Role); err != nil {
+		if err := rows.Scan(&m.UserID, &m.Name, &m.Email, &m.Role, &m.AvatarVersion); err != nil {
 			return nil, err
 		}
 		out = append(out, m)

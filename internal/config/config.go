@@ -76,6 +76,9 @@ type Config struct {
 	// Automations is the optional OPENTODO_AUTOMATIONS override of the owner's
 	// automations switch (OpenSpec `automation-rules`); nil when unset.
 	Automations *bool
+	// STT is the optional speech-to-text service override (OpenSpec change
+	// settings-refresh, see stt.go).
+	STT STTConfig
 	// Demo turns the server into a public demo instance (OPENTODO_DEMO=true;
 	// OpenSpec `demo-mode`): a private, short-lived sandbox per visitor
 	// (`demo-sandboxes`), a nightly reset, sign-up and every abusable feature
@@ -185,6 +188,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if err := c.loadAutomations(); err != nil {
+		return c, err
+	}
+	if err := c.loadSTT(); err != nil {
 		return c, err
 	}
 	if raw := strings.TrimSpace(os.Getenv("OPENTODO_TRUSTED_PROXIES")); raw != "" {

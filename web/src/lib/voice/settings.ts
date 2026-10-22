@@ -8,9 +8,17 @@ export interface VoiceSettings {
   enabled: boolean
   /** Recognition language override (a bundled quick-add language), or null to follow quick add. */
   lang: string | null
+  /**
+   * Who recognises speech (settings-refresh D7): this browser (default), or the
+   * server's speech service when the owner connected one. Each choice is
+   * confirmed after its own statement.
+   */
+  recognizer: Recognizer
 }
 
-export const DEFAULT_VOICE_SETTINGS: VoiceSettings = { enabled: false, lang: null }
+export type Recognizer = 'browser' | 'server'
+
+export const DEFAULT_VOICE_SETTINGS: VoiceSettings = { enabled: false, lang: null, recognizer: 'browser' }
 
 const KEY = 'opentodo.voice'
 const EVENT = 'opentodo:voice-settings'
@@ -23,6 +31,7 @@ export function loadVoiceSettings(): VoiceSettings {
     return {
       enabled: v.enabled === true,
       lang: typeof v.lang === 'string' && v.lang in VOCABULARIES ? v.lang : null,
+      recognizer: v.recognizer === 'server' ? 'server' : 'browser',
     }
   } catch {
     return { ...DEFAULT_VOICE_SETTINGS }
@@ -55,7 +64,7 @@ export function onVoiceSettingsChange(fn: () => void): () => void {
 const DEFAULT_REGION: Record<string, string> = { en: 'en-US', de: 'de-DE', fr: 'fr-FR', it: 'it-IT', es: 'es-ES', pt: 'pt-BR' }
 
 /** Primary subtag of the recognition language: the override, else the first quick-add language. */
-export function recognitionLanguage(s: VoiceSettings, quickAddLanguages: readonly string[]): string {
+export function recognitionLanguage(s: Pick<VoiceSettings, 'lang'> & Partial<VoiceSettings>, quickAddLanguages: readonly string[]): string {
   return s.lang ?? quickAddLanguages[0] ?? 'en'
 }
 

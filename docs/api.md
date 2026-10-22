@@ -790,6 +790,18 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 
 Creates a `member` account and starts a session even when `OPENTODO_ALLOW_SIGNUP` is false. The invitation is spent in the same transaction, so it can create at most one account; a second use returns 404 `invitation_invalid`. Errors: 403 `invitation_email_mismatch` when the invitation is bound to another address, 409 `email_taken`, 400 `invalid_input` for the password policy. In every error case the invitation stays pending.
 
+### Profile
+
+Every user changes their own name, email and picture. Profile data is server-side account data: never written to the op log, never synced. Members of shared projects see changes on their next sync. Changes are recorded as `account.name_changed`, `account.email_change_requested`, `account.email_changed` and `account.avatar_changed`, never with a name, an address or a picture.
+
+**Read** — `GET /api/v1/me/profile` → `{"user": {…}, "avatarVersion": 2, "pendingEmail": "new@example.com", "emailManagedBy": "https://id.example.com", "emailByLink": true}`. `avatarVersion` is 0 without a picture. `pendingEmail` is set while a change waits for its link. `emailManagedBy` names the provider of an account that signs in only through single sign-on, which can't change its email here. `emailByLink` says whether a change waits for a link. Every route below answers the same document.
+
+**Name** — `PATCH /api/v1/me/profile` with `{"name": "Raffaele"}`: 1 to 80 characters after trimming, no control characters (400 `invalid_input` otherwise). A session or a `full` token; refused on the demo.
+
+**Email** — `POST /api/v1/me/email` with `{"email": "new@example.com"}`, from a session confirmed in the last ten minutes (403 `reauth_required`). With outgoing email and `OPENTODO_BASE_URL`, the address becomes pending, a 24-hour link `/confirm-email/<token>` goes to it and a notice goes to the old address. A newer request replaces the pending one, and `DELETE /api/v1/me/email` cancels it. Without outgoing email the change applies at once. The link's page calls `POST /api/v1/me/email/confirm` with `{"token": "…"}` from the same account: another account gets 403 `forbidden`, and an unknown, used or expired token gets 400 `invalid_token`. Other errors: 409 `email_taken`, 400 `invalid_input`, 403 `forbidden` (single sign-on only), 429 `rate_limited` (5 an hour), 502 `email_failed` (nothing changed). Sessions stay signed in.
+
+**Picture** — `PUT /api/v1/me/avatar` with a 256×256 PNG or JPEG body of at most 512 KB (413 `too_large`; anything else is 400 `invalid_input`). The server re-encodes it as JPEG, so no metadata is kept, and stores it as `<data>/avatars/<user id>.jpg`. It is included in backups and in the ZIP export as `profile/picture.jpg`. `DELETE /api/v1/me/avatar` removes it. `GET /api/v1/users/{id}/avatar?v=<avatarVersion>` serves it to the account and to members of a project it shares (404 for anyone else and for no picture), cached for a year at the current version. Member lists carry each member's `avatarVersion`.
+
 ### User administration
 
 The owner, and admins within narrower limits, administer the accounts on the server. User administration is server-side account data: never written to the op log, never synced, and every action needs a connection. Roles:
@@ -987,6 +999,7 @@ The server records security-relevant events in its own database (never synced to
 | `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename); never content or entity ids |
 | `relay.enabled` | success | actor = user | `relay_device_id`, `relay_device_label`. A device of an encrypted account opted in to answer AI connectors ([device relay](#device-relay)) |
 | `relay.disabled` | success | actor = user | `relay_device_id`, `relay_device_label`, `reason` (`user`, `locked`, `signed_out`, `encryption_off`). Relayed calls themselves are never relay events; relayed writes are `agent.write` |
+| `account.name_changed`, `account.email_change_requested`, `account.email_changed`, `account.avatar_changed` | success | actor = user | none: never the old or new name, email or picture ([profile](#profile)) |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
 | `calendar_feed.created`, `calendar_feed.rotated`, `calendar_feed.revoked` | success | actor = user | none (the feed secret is never recorded) |
 | `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |

@@ -3,6 +3,7 @@
 // prefilled ("Replace token" when editing), the filter, the target project through the
 // project picker, label mapping and the interval. The server's validation error is shown
 // beside the field it names.
+import type { ReactNode } from 'react'
 import { Button, Dialog, Field, Input, Notice, Select, Switch } from '../ui'
 import type { IssueConnection, IssueConnectionInput, Project } from '../lib/types'
 import { t } from '../lib/i18n'
@@ -72,6 +73,17 @@ export function intervalLabel(m: number): string {
   return m < 60 ? t('Every {m} minutes', { m }) : m === 60 ? t('Every hour') : m < 1440 ? t('Every {h} hours', { h: m / 60 }) : t('Once a day')
 }
 
+/** Where a provider's user creates a token that can read issues. */
+export function tokenPage(d: Pick<IssueDraft, 'provider' | 'host'>): string {
+  const host = d.host.trim().replace(/\/+$/, '') || DEFAULT_HOSTS[d.provider]
+  return d.provider === 'github' ? `${host}/settings/tokens` : `${host}/-/user_settings/personal_access_tokens`
+}
+
+/** "More options" opens by itself when label mapping or the interval differs from its default. */
+export function moreOptionsOpen(d: IssueDraft): boolean {
+  return d.mapLabels || d.interval !== newDraft().interval || !!d.name.trim()
+}
+
 export interface IssueEditorProps {
   draft: IssueDraft
   projects: readonly Project[]
@@ -83,52 +95,73 @@ export interface IssueEditorProps {
   onChange: (d: IssueDraft) => void
   onSave: () => void
   onClose: () => void
+  /** Tests the stored connection's token (only for a saved connection). */
+  onTest?: () => void
 }
 
-export function IssueEditor({ draft: d, projects, busy, connected, error, general, onChange, onSave, onClose }: IssueEditorProps) {
-  const at = (field: string) => (error?.field === field ? error.message : undefined)
-  const set = (patch: Partial<IssueDraft>) => onChange({ ...d, ...patch })
+/** One numbered step of the editor. */
+function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
-    <Dialog title={d.id ? t('Edit issue connection') : t('Connect issues')} onClose={onClose} size="md" testId="issue-editor">
-      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); onSave() }} noValidate>
-        <Field label={t('Provider')}>
-          <Select aria-label={t('Provider')} value={d.provider} disabled={!!d.id}
-            onChange={(e) => {
-              const provider = e.target.value as IssueDraft['provider']
-              const host = d.host === DEFAULT_HOSTS[d.provider] ? DEFAULT_HOSTS[provider] : d.host
-              set({ provider, host })
-            }}>
-            <option value="github">GitHub</option>
-            <option value="gitlab">GitLab</option>
-          </Select>
+    <section className="space-y-3" aria-labelledby={`issue-step-${n}`} data-issue-step={n}>
+      <h3 id={`issue-step-${n}`} className="flex items-center gap-2 text-body font-semibold text-default">
+        <span aria-hidden className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-meta text-on-accent-soft">{n}</span>
+        {title}
+      </h3>
+      {children}
+    </section>
+  )
+}
+
+/** Step 1: the provider as two choices and the host, editable for GitLab or a host that is not the default. */
+function WhereStep({ d, set, at }: { d: IssueDraft; set: (p: Partial<IssueDraft>) => void; at: (f: string) => string | undefined }) {
+  const fixedHost = d.provider === 'github' && d.host === DEFAULT_HOSTS.github
+  return (
+    <Step n={1} title={t('Where')}>
+      <div role="radiogroup" aria-label={t('Provider')} className="flex gap-2">
+        {(['github', 'gitlab'] as const).map((p) => (
+          <button key={p} type="button" role="radio" aria-checked={d.provider === p} disabled={!!d.id} data-issue-provider={p}
+            className={`flex-1 rounded-control border px-3 py-2 text-body font-medium ${d.provider === p ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-default hover:bg-sunken'} disabled:opacity-60`}
+            onClick={() => set({ provider: p, host: d.host === DEFAULT_HOSTS[d.provider] ? DEFAULT_HOSTS[p] : d.host })}>
+            {p === 'github' ? 'GitHub' : 'GitLab'}
+          </button>
+        ))}
+      </div>
+      <Field label={t('Host')} description={fixedHost ? t('GitHub’s public service.') : t('gitlab.com or the address of your own instance.')} error={at('host')}>
+        <Input aria-label={t('Host')} type="url" value={d.host} readOnly={fixedHost} onChange={(e) => set({ host: e.target.value })} />
+      </Field>
+    </Step>
+  )
+}
+
+/** Step 3's filter and "More options" (name, label mapping, interval). */
+function FilterFields({ d, set, at }: { d: IssueDraft; set: (p: Partial<IssueDraft>) => void; at: (f: string) => string | undefined }) {
+  return (
+    <>
+      <Field label={t('Issues')} error={at('scope')}>
+        <Select aria-label={t('Which issues')} value={d.scope} onChange={(e) => set({ scope: e.target.value as IssueDraft['scope'] })}>
+          <option value="assigned">{t('Assigned to you')}</option>
+          <option value="repositories">{t('Assigned to you in these repositories')}</option>
+        </Select>
+      </Field>
+      {d.scope === 'repositories' && (
+        <Field label={t('Repositories or projects')} description={t('Comma-separated, up to {n}.', { n: MAX_REPOSITORIES })} error={at('repositories')}>
+          <Input aria-label={t('Repositories or projects')} placeholder="acme/web, acme/api" value={d.repositories} onChange={(e) => set({ repositories: e.target.value })} />
         </Field>
-        <Field label={t('Host')} description={t('github.com, gitlab.com or the address of your own instance.')} error={at('host')}>
-          <Input aria-label={t('Host')} type="url" value={d.host} onChange={(e) => set({ host: e.target.value })} data-autofocus />
-        </Field>
-        <Field label={d.id ? t('Replace token') : t('Token')} error={at('token')}
-          description={d.id ? t('Leave empty to keep the stored token. It is never shown again.') : t('A personal access token that can read issues. It is never shown again.')}>
-          <Input aria-label={d.id ? t('Replace token') : t('Token')} type="password" autoComplete="off" spellCheck={false} value={d.token}
-            onChange={(e) => set({ token: e.target.value })} />
-        </Field>
+      )}
+      <Field label={t('Only with these labels')} description={t('Comma-separated, up to {n}; an issue needs all of them.', { n: MAX_LABELS })} error={at('labels')}>
+        <Input aria-label={t('Only with these labels')} value={d.labels} onChange={(e) => set({ labels: e.target.value })} />
+      </Field>
+    </>
+  )
+}
+
+function MoreOptions({ d, set, at }: { d: IssueDraft; set: (p: Partial<IssueDraft>) => void; at: (f: string) => string | undefined }) {
+  return (
+    <details className="group rounded-control border border-default px-3 py-2" open={moreOptionsOpen(d) || !!at('name') || !!at('interval_minutes')} data-issue-more>
+      <summary className="cursor-pointer text-body font-medium text-default">{t('More options')}</summary>
+      <div className="mt-3 space-y-4">
         <Field label={t('Name')} description={t('Optional; the host is used otherwise.')} error={at('name')}>
           <Input aria-label={t('Connection name')} value={d.name} maxLength={100} onChange={(e) => set({ name: e.target.value })} />
-        </Field>
-        <Field label={t('Issues')} error={at('scope')}>
-          <Select aria-label={t('Which issues')} value={d.scope} onChange={(e) => set({ scope: e.target.value as IssueDraft['scope'] })}>
-            <option value="assigned">{t('Assigned to you')}</option>
-            <option value="repositories">{t('Assigned to you in these repositories')}</option>
-          </Select>
-        </Field>
-        {d.scope === 'repositories' && (
-          <Field label={t('Repositories or projects')} description={t('Comma-separated, up to {n}.', { n: MAX_REPOSITORIES })} error={at('repositories')}>
-            <Input aria-label={t('Repositories or projects')} placeholder="acme/web, acme/api" value={d.repositories} onChange={(e) => set({ repositories: e.target.value })} />
-          </Field>
-        )}
-        <Field label={t('Only with these labels')} description={t('Comma-separated, up to {n}; an issue needs all of them.', { n: MAX_LABELS })} error={at('labels')}>
-          <Input aria-label={t('Only with these labels')} value={d.labels} onChange={(e) => set({ labels: e.target.value })} />
-        </Field>
-        <Field label={t('Add tasks to')} error={at('project_id')}>
-          <ProjectPickerField label={t('Add tasks to')} projects={projects} value={d.projectId} rankContext="issues.target" onChange={(projectId) => set({ projectId })} />
         </Field>
         <Switch checked={d.mapLabels} onChange={(mapLabels) => set({ mapLabels })} label={t('Use issue labels as labels')} />
         <Field label={t('Check for changes')} error={at('interval_minutes')}>
@@ -136,9 +169,44 @@ export function IssueEditor({ draft: d, projects, busy, connected, error, genera
             {INTERVALS.map((m) => <option key={m} value={m}>{intervalLabel(m)}</option>)}
           </Select>
         </Field>
+      </div>
+    </details>
+  )
+}
+
+/**
+ * The editor in three numbered steps (settings-refresh D9; issue-connections
+ * "Connection editor"): Where, Access, Which issues and where they go, with
+ * "More options" for the name, label mapping and the interval, and Test and Save
+ * in a bar that stays visible while the steps scroll.
+ */
+export function IssueEditor({ draft: d, projects, busy, connected, error, general, onChange, onSave, onClose, onTest }: IssueEditorProps) {
+  const at = (field: string) => (error?.field === field ? error.message : undefined)
+  const set = (patch: Partial<IssueDraft>) => onChange({ ...d, ...patch })
+  return (
+    <Dialog title={d.id ? t('Edit issue connection') : t('Connect issues')} onClose={onClose} size="lg" testId="issue-editor">
+      <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onSave() }} noValidate>
+        <WhereStep d={d} set={set} at={at} />
+        <Step n={2} title={t('Access')}>
+          <Field label={d.id ? t('Replace token') : t('Token')} error={at('token')}
+            description={<>{d.id ? t('Leave empty to keep the stored token. It is never shown again.') : d.provider === 'github' ? t('A token with read access to issues (classic: the repo scope). It is never shown again.') : t('A token with the read_api scope. It is never shown again.')}{' '}
+              <a href={tokenPage(d)} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">{t('Create a token')}</a></>}>
+            <Input aria-label={d.id ? t('Replace token') : t('Token')} type="password" autoComplete="off" spellCheck={false} value={d.token}
+              onChange={(e) => set({ token: e.target.value })} />
+          </Field>
+        </Step>
+        <Step n={3} title={t('Which issues and where they go')}>
+          <Field label={t('Add tasks to')} error={at('project_id')}>
+            <ProjectPickerField label={t('Add tasks to')} projects={projects} value={d.projectId} rankContext="issues.target" onChange={(projectId) => set({ projectId })} />
+          </Field>
+          <FilterFields d={d} set={set} at={at} />
+        </Step>
+        <MoreOptions d={d} set={set} at={at} />
         {general && <Notice tone="danger">{general}</Notice>}
-        <div className="flex justify-end gap-2">
+        <div className="sticky -bottom-4 -mx-4 flex justify-end gap-2 border-t border-default bg-surface px-4 py-3" data-issue-actions>
           <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
+          <Button variant="secondary" disabled={!connected || !d.id || !onTest} onClick={onTest} data-issue-test
+            title={d.id ? undefined : t('Save the connection first, then test it.')}>{t('Test')}</Button>
           <Button variant="primary" type="submit" busy={busy} disabled={!connected}>{d.id ? t('Save') : t('Connect')}</Button>
         </div>
       </form>

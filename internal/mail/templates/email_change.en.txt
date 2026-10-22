@@ -1,0 +1,9 @@
+Confirm your new OpenTodo email
+
+This is an email confirmation message from OpenTodo.
+
+Someone asked to use {{.Email}} as the sign-in email of an account at {{.Origin}}. To confirm it, open this link while signed in to that account:
+
+{{.Link}}
+
+The link expires in {{.Expiry}}. If you did not ask for this, you can ignore this message: nothing changes.

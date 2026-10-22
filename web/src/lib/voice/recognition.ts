@@ -31,7 +31,7 @@ export interface SpeechRecognitionCtor {
 }
 
 /** Why a session ended early; `no-speech` and `aborted` are quiet. */
-export type VoiceErrorKind = 'denied' | 'no-speech' | 'aborted' | 'unavailable' | 'no-microphone' | 'language'
+export type VoiceErrorKind = 'denied' | 'no-speech' | 'aborted' | 'unavailable' | 'no-microphone' | 'language' | 'service'
 
 export interface RecognitionCallbacks {
   onStart?: () => void

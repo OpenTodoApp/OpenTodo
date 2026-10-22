@@ -3,6 +3,7 @@ import { type LabelRef, type ProjectRef, resolveLanguages, type QuickAddSettings
 import type { Dictation, DictationView } from '../lib/voice/dictation'
 import { loadVoiceSettings, onVoiceSettingsChange, recognitionLanguage, recognitionTag } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
+import { canRecord, useSpeechService } from '../lib/voice/speechService'
 import { useShortcutScope } from './shortcuts'
 import { preferredLanguages } from '../lib/i18n'
 
@@ -35,7 +36,11 @@ export function useDictation(opts: {
 }) {
   const [voice, setVoice] = useState(loadVoiceSettings)
   useEffect(() => onVoiceSettingsChange(() => setVoice(loadVoiceSettings())), [])
-  const enabled = voice.enabled && isSupported()
+  // Only a device that chose the server's service asks the server about it.
+  const service = useSpeechService(voice.enabled && voice.recognizer === 'server')
+  // The server's service needs a connected service and a recorder; the browser's needs recognition.
+  const server = voice.recognizer === 'server' && service.connected && canRecord()
+  const enabled = voice.enabled && (server || (voice.recognizer === 'browser' && isSupported()))
   const [view, setView] = useState<DictationView>(IDLE)
   const latest = useRef(opts)
   latest.current = opts
@@ -49,7 +54,7 @@ export function useDictation(opts: {
     let cancelled = false
     let d: Dictation | null = null
     // The engine is a separate chunk, loaded only when voice capture is on (D7).
-    void import('../lib/voice/engine').then(({ createDictation, normalizeSpoken }) => {
+    void import('../lib/voice/engine').then(({ createDictation, normalizeSpoken, startServerRecognition }) => {
       if (cancelled) return
       d = createDictation({
         getValue: () => latest.current.getText(),
@@ -73,7 +78,7 @@ export function useDictation(opts: {
         },
         languageName,
         update: setView,
-      })
+      }, server ? startServerRecognition : undefined)
       dictation.current = d
     })
     return () => {
@@ -82,7 +87,7 @@ export function useDictation(opts: {
       dictation.current = null
       setView(IDLE)
     }
-  }, [enabled])
+  }, [enabled, server])
 
   // Keep the caret where the dictation put it after React re-renders the input.
   useLayoutEffect(() => {

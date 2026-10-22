@@ -27,7 +27,7 @@ export interface SettingsEntry {
 const owner = (u: User) => u.role === 'owner'
 
 export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsEntry, 'label' | 'description'>([
-  // Account
+  { section: 'account', label: msg('Profile'), description: msg('Your picture, name and email'), anchor: 'profile-heading', keywords: 'avatar photo picture rename name email address' },
   { section: 'account', label: msg('Profile'), description: msg('Your name, email and role'), anchor: 'profile' },
   { section: 'account', label: msg('How you work'), description: msg('Lists only, Companion or Open Loops first: how much the app shows its method'), anchor: 'how-you-work-heading', keywords: 'open loops gtd method mode loop home' },
   { section: 'account', label: msg('Sign out of this device'), description: msg('Removes your tasks from this device after uploading pending changes'), anchor: 'session-heading', keywords: 'logout log out' },
@@ -91,6 +91,8 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'server', label: msg('Attachments'), description: msg('Turn attachments on or off and set their size limits'), anchor: 'attachments-settings-heading', keywords: 'files upload limit quota', hosted: 'managed' },
   { section: 'server', label: msg('Outgoing email'), description: msg('The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message'), anchor: 'outgoing-email-heading', keywords: 'smtp mail sender send test email forgot password', hosted: 'managed' },
   { section: 'server', label: msg('Download your data'), description: msg('The whole server as one backup archive, to move to your own OpenTodo server'), anchor: 'server-archive-heading', keywords: 'archive export backup leave move self-host', hosted: 'only' },
+  { section: 'server', label: msg('Speech to text'), description: msg('Connect a speech service for dictation'), anchor: 'speech-server-heading', keywords: 'voice dictation whisper speaches stt transcription microphone', hosted: 'managed' },
+  { section: 'server', label: msg('Audit settings'), description: msg('How long audit events are kept and whether addresses are recorded'), anchor: 'audit-settings-heading', keywords: 'retention ip address' },
   { section: 'server', label: msg('Audit log'), description: msg('What changed on the server and who did it'), anchor: 'audit-heading', keywords: 'audit' },
 ], 'label', 'description')
 

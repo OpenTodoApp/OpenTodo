@@ -159,9 +159,10 @@ These are presentation changes over routes that don't change:
 The `agent-planning-fields` proposal modifies `mcp-server` "Agent content routes" and `in-app-assistant` requirements other than the ones touched here. The Settings layouts compose with its new "Project assistant access" settings by adding a row to "For you".
 
 ### D10. Profile: server-side account data, pictures re-encoded on the server
-- **Data model** (migration `0042_profile.sql`):
-  - `users.avatar_version INTEGER NOT NULL DEFAULT 0`: 0 means no picture; it's bumped on each set or remove and becomes part of the picture URL for year-long caching.
-  - `users.pending_email TEXT` with `users.pending_email_sent_at`.
+- **Data model** (migration `0044_profile.sql`; 0042 and 0043 were taken by other changes):
+  - A side table `user_profiles(user_id, avatar_version, pending_email, pending_email_sent_at)` instead of columns on `users`: SQLite cannot run `ALTER TABLE ADD COLUMN` idempotently, and the store's migration tests run migrations again. A missing row means no picture and no pending change.
+  - `avatar_version`: 0 or less means no picture. It's bumped on each set and becomes part of the picture URL for year-long caching; a remove keeps the last version negated, so the next picture gets a new address.
+  - `pending_email` with `pending_email_sent_at`.
   - A table `email_changes(token_hash PRIMARY KEY, user_id, email, expires_at)`; tokens are hashed like reset links.
 
   No op schema change: names, emails and pictures are account data, like today's name set at sign-up.
@@ -169,7 +170,7 @@ The `agent-planning-fields` proposal modifies `mcp-server` "Agent content routes
 - **Validation:** the server decodes with `image/jpeg` and `image/png` from the standard library, checks 256×256, and re-encodes as JPEG at quality 85. That strips EXIF, including GPS, and refuses polyglot files. WebP is accepted only as input on the client, which converts it in a canvas before upload, so the server needs no WebP decoder.
 - **Serving:** `GET /api/v1/users/{id}/avatar?v=<version>` checks that the requester is the account or shares a project or workspace with it, using the same membership lookup as members lists. It sends `Cache-Control: private, max-age=31536000, immutable`.
 - **Showing it elsewhere:** clients learn versions from the existing member and assignee payloads, which gain `avatar_version`. The Avatar primitive draws the image in a circle with the initials underneath as the fallback.
-- **Crop library:** `react-easy-crop` 5.x: MIT, about 7 KB gzipped, built for React, with `cropShape="round"`, touch pinch, keyboard support and no CSS framework. Cropper.js 2 is larger (about 15 KB gzipped plus styles) and DOM-first. It's loaded only when the picture dialog opens, so the main bundle doesn't grow. The crop result is drawn into a 256×256 canvas in the browser.
+- **Crop library:** `react-easy-crop` (6.2.3 when applied; 6.x is the current major): MIT, about 7 KB gzipped, built for React, with `cropShape="round"`, touch pinch, keyboard support and no CSS framework. Cropper.js 2 is larger (about 15 KB gzipped plus styles) and DOM-first. It's loaded only when the picture dialog opens, so the main bundle doesn't grow. The crop result is drawn into a 256×256 canvas in the browser.
 - **Email change:**
   - It needs the `recent` route policy.
   - With outgoing email and a base URL: a pending address, a 24 h link to the new address, and a notice to the old one.

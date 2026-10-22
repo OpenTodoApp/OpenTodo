@@ -36,7 +36,7 @@ Character sets: UTF-8, US-ASCII, ISO-8859-1, ISO-8859-15 and windows-1252 are de
 
 ## Protection
 
-- **The secret is the key.** 128 random bits, lowercase so providers that lowercase addresses still work. Rotate it any time in Settings (**New address…**); the old one stops working at once.
+- **The secret is the key.** 128 random bits, lowercase so providers that lowercase addresses still work. Rotate it any time in Settings (**New address**); the old one stops working at once.
 - **Off switch** per account, and an optional **sender allowlist** (“Only accept mail from”). The sender address can be forged, so the allowlist filters mistakes and casual spam; the secret is the real protection.
 - **At most 60 tasks per account per hour** from email; more messages in the same hour are discarded.
 - **Messages over 10 MB** are discarded without being downloaded.

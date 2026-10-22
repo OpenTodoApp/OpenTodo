@@ -36,6 +36,8 @@ export type Route =
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
   | { view: 'reset'; token: string }
+  // The link that confirms a new sign-in email (settings-refresh D10).
+  | { view: 'confirm-email'; token: string }
   | { view: 'triage' }
   | { view: 'forgot' }
   | { view: 'verify'; token: string }
@@ -168,6 +170,8 @@ export function parseRoute(pathname: string): Route {
     case 'reset':
       // Password reset link from an administrator or `opentodo reset-owner-password`.
       return parts[1] ? { view: 'reset', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'confirm-email':
+      return parts[1] ? { view: 'confirm-email', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'triage':
       // Process the Inbox one task at a time (inbox-triage).
       return { view: 'triage' }
@@ -238,6 +242,7 @@ export function routePath(r: Route): string {
       return r.create ? '/rules#new' : '/rules'
     case 'invite':
     case 'reset':
+    case 'confirm-email':
       return `/${r.view}/${encodeURIComponent(r.token)}`
     case 'project-invite':
       return `/invite/p/${encodeURIComponent(r.token)}`

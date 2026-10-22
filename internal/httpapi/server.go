@@ -34,6 +34,7 @@ import (
 	"github.com/pixari/opentodo/internal/relay"
 	"github.com/pixari/opentodo/internal/rules"
 	"github.com/pixari/opentodo/internal/settings"
+	"github.com/pixari/opentodo/internal/stt"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
 )
@@ -84,6 +85,11 @@ type Server struct {
 	// account (10/hour) (OpenSpec `user-management` D9).
 	adminLimiter    *rateLimiter
 	passwordLimiter *rateLimiter
+	// emailChangeLimiter caps email change requests per account (5/hour) and
+	// avatarLimiter picture uploads per account (30/hour) (settings-refresh D10).
+	emailChangeLimiter, avatarLimiter *rateLimiter
+	// sttLimiter caps phrases sent to the speech service per account (30/minute).
+	sttLimiter *rateLimiter
 	// pushTestLimiter caps test pushes per account (5 per 10 minutes; OpenSpec
 	// `push-test-delivery` D3), see push.go.
 	pushTestLimiter *rateLimiter
@@ -124,8 +130,10 @@ type Server struct {
 	davLimiter      *rateLimiter
 	// Issue import (issue-import): the switch cache, the poller and the
 	// shared limit of hand-triggered checks and syncs.
-	issuesOn     caldavState
-	issueWorker  *issues.Worker
+	issuesOn    caldavState
+	issueWorker *issues.Worker
+	// stt is the speech-to-text service (settings-refresh D7), see stt.go.
+	stt          *stt.Service
 	issueLimiter *rateLimiter
 	// maps is the map proxy and mapsLimiter the per-user search limit (OpenSpec
 	// `task-locations`); see maps.go.
@@ -212,6 +220,7 @@ func newServer(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service
 		passkeyOptions: newRateLimiter(10, time.Minute),
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
+		emailChangeLimiter: newRateLimiter(5, time.Hour), avatarLimiter: newRateLimiter(30, time.Hour), sttLimiter: newRateLimiter(30, time.Minute),
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
 		emailLimiter: newRateLimiter(30, time.Hour),
 		importer:     importer.New(syncSvc.DB(), syncSvc, log)}

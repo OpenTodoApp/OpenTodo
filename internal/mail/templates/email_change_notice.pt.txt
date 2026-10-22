@@ -1,0 +1,7 @@
+Seu e-mail do OpenTodo está sendo alterado
+
+Este é um aviso de segurança do OpenTodo.
+
+Alguém com a sessão iniciada na conta {{.Email}} em {{.Origin}} pediu para alterar o e-mail de acesso dela. A alteração só acontece quando o link enviado ao novo endereço é aberto.
+
+Se foi você, não precisa fazer nada. Se não foi, entre, altere sua senha e saia de todos os lugares, ou peça ajuda a quem administra o servidor.

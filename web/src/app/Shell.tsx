@@ -293,7 +293,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <PlanView date={route.date} />
           ) : (
             // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
+            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
           )}
           </PanelBoundary>
         </div>

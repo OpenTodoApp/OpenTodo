@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api, ApiError } from '../lib/api'
 import { connectionSnippet, describeAssistantsError } from '../lib/assistants'
-import { AssistantsView, type AssistantsViewProps } from './AssistantsPanel'
+import { AssistantsView, type AssistantsViewProps, clientSnippet } from './AssistantsPanel'
 
 const noop = () => {}
 const endpoint = 'https://todo.example.com/mcp'
@@ -22,19 +22,36 @@ const buttons = (html: string) => [...html.matchAll(/<button([^>]*)>(.*?)<\/butt
 const button = (html: string, label: string) => buttons(html).find((b) => b.label === label)
 const switches = (html: string) => [...html.matchAll(/<button([^>]*role="switch"[^>]*)>/g)].map((m) => m[1])
 
+const on = { enabled: true, writes_enabled: true, endpoint }
+const steps = (html: string) => [...html.matchAll(/data-mcp-step="(\d)"[\s\S]*?<\/span>([^<]+)<\/h3>/g)].map((m) => `${m[1]} ${m[2]}`)
+const radios = (html: string) => [...html.matchAll(/<input([^>]*data-mcp-scope="(\w+)"[^>]*)>/g)].map((m) => ({ scope: m[2], attrs: m[1] }))
+
 describe('AssistantsView', () => {
-  it('gives the owner a toggle with its state, the endpoint and a read-only token shortcut', () => {
+  it('gives the owner a group of switches, and while off one sentence instead of the steps', () => {
     const off = render()
-    expect(off).toContain('AI assistants')
+    expect(off).toContain('data-mcp-owner')
     expect(off).toContain('role="switch"')
     expect(off).not.toContain('aria-checked="true"')
     expect(off).toContain('answers “not found”')
-    expect(off).toContain(endpoint)
-    expect(button(off, 'Copy URL')).toBeTruthy()
-    expect(button(off, 'Create read-only token')?.attrs).not.toContain('disabled')
-    const on = render({ status: { enabled: true, endpoint } })
-    expect(on).toContain('aria-checked="true"')
-    expect(on).toContain('connect an assistant with its own token')
+    expect(off).not.toContain('data-mcp-steps')
+    expect(off).toContain('Turn on the endpoint above to connect an assistant.')
+    const onHtml = render({ status: { enabled: true, endpoint } })
+    expect(onHtml).toContain('aria-checked="true"')
+    expect(onHtml).toContain('connect an assistant with its own token')
+  })
+
+  it('Three steps: Endpoint with Copy, Token with Read only preselected and Create token, then the client tabs', () => {
+    const html = render({ status: { enabled: true, endpoint } })
+    expect(steps(html)).toEqual(['1 Endpoint', '2 Token', '3 Add it to your assistant'])
+    expect(html).toContain(endpoint)
+    expect(button(html, 'Copy URL')).toBeTruthy()
+    expect(radios(html)).toEqual([{ scope: 'read', attrs: expect.stringContaining('checked=""') }])
+    expect(button(html, 'Create token')?.attrs).toContain('ui-btn--primary')
+    expect(html).toContain('>Claude Desktop<')
+    expect(html).toContain('>Claude Code<')
+    expect(html).toContain('>Other MCP clients<')
+    expect(html).toContain('time zone')
+    expect(button(html, 'Copy configuration')).toBeTruthy()
   })
 
   it('tells an encrypted account what remote assistants can do and how ot mcp --decrypt works (mcp-projects)', () => {
@@ -43,18 +60,18 @@ describe('AssistantsView', () => {
     expect(html).toContain('colours, icons, order and dates')
     expect(html).toContain('<code>ot encryption unlock</code>')
     expect(html).toContain('<code>ot mcp --decrypt</code>')
-    expect(html).toContain('Your AI provider then receives that text in plain form; the server still receives only ciphertext.')
     expect(render({ status: { enabled: true, endpoint } })).not.toContain('data-assistants-encrypted')
     expect(render({ encrypted: true })).not.toContain('data-assistants-encrypted')
   })
 
-  it('shows members the status without a toggle', () => {
+  it('shows members the status without a toggle, and the steps once the owner enabled it', () => {
     const html = render({ isOwner: false })
     expect(html).not.toContain('role="switch"')
     expect(html).toContain('The server owner has not enabled AI assistant access')
-    expect(render({ isOwner: false, status: { enabled: true, endpoint } })).toContain('has enabled AI assistant access')
-    // Members can still prepare a token.
-    expect(button(html, 'Create read-only token')).toBeTruthy()
+    expect(html).not.toContain('data-mcp-steps')
+    const member = render({ isOwner: false, status: { enabled: true, endpoint } })
+    expect(member).toContain('has enabled AI assistant access')
+    expect(button(member, 'Create token')).toBeTruthy()
   })
 
   it('shows the last fetched state offline with actions disabled', () => {
@@ -62,41 +79,29 @@ describe('AssistantsView', () => {
     expect(html).toContain('Offline: these settings live on the server')
     expect(html).toContain(endpoint)
     expect(switches(html).every((b) => b.includes('disabled=""'))).toBe(true)
-    expect(button(html, 'Create read-only token')?.attrs).toContain('disabled')
+    expect(button(html, 'Create token')?.attrs).toContain('disabled')
     expect(render({ connected: false, status: null })).toContain('Nothing fetched yet.')
     // A request in flight keeps the controls focusable (keyboard focus is not lost).
-    const busy = button(render({ busy: true }), 'Create read-only token')
+    const busy = button(render({ busy: true, status: { enabled: true, endpoint } }), 'Create token')
     expect(busy?.attrs).not.toContain('disabled')
     expect(busy?.attrs).toContain('aria-busy="true"')
   })
 
   it('shows a created token once with copy actions and puts it in the snippet', () => {
-    const html = render({ secret: 'ot_assistant123' })
+    const html = render({ secret: 'ot_assistant123', status: { enabled: true, endpoint } })
     expect(html).toContain('ot_assistant123')
     expect(html).toContain('will not be shown again')
     expect(button(html, 'Copy')).toBeTruthy()
     expect(button(html, 'Done')).toBeTruthy()
     expect(html).toContain('Bearer ot_assistant123')
-    const plain = render()
+    const plain = render({ status: { enabled: true, endpoint } })
     expect(plain).not.toContain('ot_')
     expect(plain).toContain('Bearer &lt;your token&gt;')
-    expect(render({ copied: 'endpoint' })).toContain('Copied')
-  })
-
-  it('includes connection instructions and the time-zone note', () => {
-    const html = render()
-    expect(html).toContain('Connection instructions')
-    expect(html).toContain('streamable HTTP')
-    expect(html).toContain('time zone')
-    expect(button(html, 'Copy configuration')).toBeTruthy()
+    expect(render({ copied: 'endpoint', status: { enabled: true, endpoint } })).toContain('Copied')
   })
 })
 
-const AGENT = 'Create a token for an assistant that can make changes'
-
 describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
-  const on = { enabled: true, writes_enabled: true, endpoint }
-
   it('gives the owner a second switch once the endpoint is on', () => {
     expect(render()).not.toContain('AI assistants may make changes')
     const html = render({ status: { enabled: true, writes_enabled: false, endpoint } })
@@ -105,7 +110,7 @@ describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
     expect(render({ status: on })).toContain('with a dedicated token change their tasks')
     // Members get no owner switches, only their own.
     const member = render({ isOwner: false, status: on })
-    expect(member).not.toContain('AI assistants may make changes</span>')
+    expect(member).not.toContain('data-mcp-owner')
     expect(member).toContain('allows assistants to make changes')
     expect(switches(member)).toHaveLength(1)
   })
@@ -119,14 +124,12 @@ describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
     expect(render({ status: on, access: { allow_writes: true, owner_allows_writes: true } })).not.toContain('has not allowed assistants')
   })
 
-  it('offers the agent token only when both switches are on; read-only stays the default', () => {
-    expect(button(render({ status: on }), AGENT)).toBeUndefined()
-    expect(button(render({ status: { enabled: true, endpoint }, access: { allow_writes: true, owner_allows_writes: false } }), AGENT)).toBeUndefined()
-    const both = render({ status: on, access: { allow_writes: true, owner_allows_writes: true } })
-    expect(button(both, AGENT)).toBeTruthy()
-    const labels = buttons(both).map((b) => b.label)
-    expect(labels.indexOf('Create read-only token')).toBeLessThan(labels.indexOf(AGENT))
-    expect(button(both, 'Create read-only token')?.attrs).toContain('ui-btn--primary')
+  it('offers "Can make changes" only when both switches are on; read-only stays the default', () => {
+    expect(radios(render({ status: on })).map((r) => r.scope)).toEqual(['read'])
+    expect(radios(render({ status: { enabled: true, endpoint }, access: { allow_writes: true, owner_allows_writes: false } })).map((r) => r.scope)).toEqual(['read'])
+    const both = radios(render({ status: on, access: { allow_writes: true, owner_allows_writes: true } }))
+    expect(both.map((r) => r.scope)).toEqual(['read', 'agent'])
+    expect(both[0].attrs).toContain('checked=""')
     expect(render({ status: on, secret: 'ot_a', secretScope: 'agent' })).toContain('assistant that can make changes now')
   })
 
@@ -136,8 +139,13 @@ describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
     expect(boxes).toHaveLength(3)
     for (const b of boxes) expect(b).toContain('disabled=""')
     expect(boxes.every((b) => b.includes('aria-checked="true"'))).toBe(true)
-    expect(button(html, AGENT)?.attrs).toContain('disabled')
+    expect(button(html, 'Create token')?.attrs).toContain('disabled')
     expect(html).toContain('this is the last state fetched')
+  })
+
+  it('gives Claude Code a command line with the endpoint and the token', () => {
+    expect(clientSnippet('code', endpoint, 'ot_x')).toBe(`claude mcp add --transport http opentodo ${endpoint} --header "Authorization: Bearer ot_x"`)
+    expect(clientSnippet('desktop', endpoint, null)).toBe(connectionSnippet(endpoint, null))
   })
 })
 

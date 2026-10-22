@@ -313,7 +313,7 @@ describe('demo instance', () => {
     expect(general).not.toContain('demo-restricted')
     expect(general).toContain('Vim keybindings')
     const data = render(member, 'data')
-    expect(data).toMatch(/<button[^>]*disabled=""[^>]*>Import data…<\/button>/)
+    expect(data).toMatch(/<button[^>]*disabled=""[^>]*>Import data<\/button>/)
     expect(data).toContain('Import: Disabled on this demo instance.')
     expect(data).not.toContain('demo-restricted')
   })

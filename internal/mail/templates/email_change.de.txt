@@ -1,0 +1,9 @@
+Bestätige deine neue OpenTodo-E-Mail-Adresse
+
+Dies ist eine Bestätigung der E-Mail-Adresse von OpenTodo.
+
+Jemand möchte {{.Email}} als Anmeldeadresse eines Kontos auf {{.Origin}} verwenden. Um das zu bestätigen, öffne diesen Link, während du in diesem Konto angemeldet bist:
+
+{{.Link}}
+
+Der Link läuft in {{.Expiry}} ab. Wenn du das nicht angefordert hast, kannst du diese Nachricht ignorieren: Es ändert sich nichts.

@@ -358,10 +358,25 @@ func (s *Service) extraFiles() []string {
 	return out
 }
 
-// attachmentFiles lists the attachment files under <data>/attachments, in a
-// stable order (OpenSpec attachments, design D11).
+// attachmentFiles lists the attachment files under <data>/attachments and the
+// profile pictures under <data>/avatars, in a stable order (OpenSpec
+// attachments, design D11; settings-refresh D10).
 func attachmentFiles(dataDir string) ([]archivedFile, error) {
-	root := filepath.Join(dataDir, "attachments")
+	var out []archivedFile
+	for _, dir := range dataDirs {
+		files, err := dataFiles(dataDir, dir)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, files...)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].name < out[j].name })
+	return out, nil
+}
+
+// dataFiles lists the well-formed entries under <data>/<dir>.
+func dataFiles(dataDir, dir string) ([]archivedFile, error) {
+	root := filepath.Join(dataDir, dir)
 	var out []archivedFile
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -378,11 +393,10 @@ func attachmentFiles(dataDir string) ([]archivedFile, error) {
 			return err
 		}
 		name := filepath.ToSlash(rel)
-		if validAttachmentEntry(name) {
+		if validDataEntry(name) {
 			out = append(out, archivedFile{name: name, path: path})
 		}
 		return nil
 	})
-	sort.Slice(out, func(i, j int) bool { return out[i].name < out[j].name })
 	return out, err
 }

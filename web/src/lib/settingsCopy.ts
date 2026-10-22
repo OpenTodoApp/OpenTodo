@@ -24,6 +24,8 @@ export interface RowCopyEntry {
 
 export interface CardCopyEntry {
   readonly title?: string
+  /** The card's icon, from the interface icon set, drawn before the title (settings-navigation "Card icons"). */
+  readonly icon?: string
   readonly description?: CopyText
   /** The Help screen id the card's Learn more opens. */
   readonly learnMore?: string
@@ -36,17 +38,43 @@ export interface CardCopyEntry {
 
 export const SETTINGS_COPY = {
   // Settings → Account
+  profile: {
+    title: msg('Profile'),
+    icon: 'user-round',
+    description: msg('How people who share a project with you see you.'),
+    rows: {
+      picture: { label: msg('Picture'), description: msg('Shown instead of your initials. Not end-to-end encrypted.') },
+      name: { label: msg('Name') },
+      email: {
+        label: msg('Email'),
+        description: {
+          link: msg('You sign in with it. A new address is confirmed by a link sent to it.'),
+          now: msg('You sign in with it. A new address applies at once.'),
+          managed: msg('Your sign-in provider manages it: {provider}.'),
+        },
+      },
+    },
+    notices: {
+      offline: msg('Changing your profile needs a connection.'),
+      pending: msg('Waiting for confirmation: {email}'),
+    },
+  },
   'how-you-work': {
     title: msg('How you work'),
+    icon: 'compass',
     description: msg('How much the app shows its method, Open Loops. Synced; never changes a task.'),
     options: {
       lists: { label: msg('Lists only'), description: msg('OpenTodo as a plain task app, with no method words.') },
       companion: { label: msg('Companion'), description: msg('Your sidebar as it is; screens name the move they serve.') },
       first: { label: msg('Open Loops first'), description: msg('The Loop home first, a sidebar by the Places, a daily check.') },
     },
+    rows: {
+      guide: { label: msg('Start guide'), description: msg('Add a first task, choose how you work, install the app.') },
+    },
   },
   session: {
     title: msg('Session'),
+    icon: 'monitor',
     description: msg('This device is signed in to your server.'),
     learnMore: 'settings/session',
     rows: {
@@ -56,6 +84,7 @@ export const SETTINGS_COPY = {
   },
   password: {
     title: msg('Password'),
+    icon: 'key-round',
     description: msg('Changing it signs out your other sessions; this one stays signed in.'),
     learnMore: 'settings/password',
     rows: { password: { label: msg('Password'), description: msg('Used to sign in on new devices.') } },
@@ -66,6 +95,7 @@ export const SETTINGS_COPY = {
   },
   mfa: {
     title: msg('Two-factor authentication'),
+    icon: 'shield-check',
     description: msg('A six-digit code from an authenticator app after your password.'),
     learnMore: 'settings/two-factor',
     rows: {
@@ -86,6 +116,7 @@ export const SETTINGS_COPY = {
   },
   security: {
     title: msg('Passkeys'),
+    icon: 'fingerprint',
     description: msg('Sign in with your fingerprint, face or PIN instead of your password.'),
     learnMore: 'settings/security',
     rows: { count: { label: msg('Passkeys'), description: msg('Tied to <span>{domain}</span>.') } },
@@ -97,6 +128,7 @@ export const SETTINGS_COPY = {
   },
   linked: {
     title: msg('Linked accounts'),
+    icon: 'link',
     description: {
       on: msg('Sign in with {name} instead of a password.'),
       off: msg('Single sign-on is off on this server; your links are kept.'),
@@ -106,6 +138,7 @@ export const SETTINGS_COPY = {
   },
   e2ee: {
     title: msg('End-to-end encryption'),
+    icon: 'lock',
     description: msg('Your task text is encrypted on your devices before it syncs.'),
     learnMore: 'settings/encryption',
     rows: {
@@ -120,6 +153,7 @@ export const SETTINGS_COPY = {
   },
   activity: {
     title: msg('Recent activity'),
+    icon: 'history',
     description: msg('Sign-ins and token changes from the last 90 days; revoke tokens if one is not yours.'),
     learnMore: 'settings/sessions',
   },
@@ -127,6 +161,7 @@ export const SETTINGS_COPY = {
   // Settings → Appearance
   appearance: {
     title: msg('Appearance'),
+    icon: 'palette',
     description: msg('Light or dark, colour and row density, on all your devices.'),
     learnMore: 'settings/appearance',
     rows: {
@@ -138,6 +173,7 @@ export const SETTINGS_COPY = {
   },
   sidebar: {
     title: msg('Sidebar'),
+    icon: 'panel-left-open',
     description: {
       standard: msg('Pick which More destinations sit next to Inbox, Today, Upcoming and Calendar.'),
       arranged: msg('Open Loops first arranges the sidebar; these choices apply in the other modes.'),
@@ -148,6 +184,7 @@ export const SETTINGS_COPY = {
   // Settings → General
   language: {
     title: msg('Language'),
+    icon: 'languages',
     description: msg('The language of the app on all your devices. Tasks are not translated.'),
     learnMore: 'settings/language',
     rows: { interface: { label: msg('Interface language') } },
@@ -155,12 +192,14 @@ export const SETTINGS_COPY = {
   },
   'start-view': {
     title: msg('Start view'),
+    icon: 'house',
     description: msg('The view this device opens on. Not synced.'),
     learnMore: 'settings/start-view',
     rows: { open: { label: msg('Open on launch') } },
   },
   'date-time': {
     title: msg('Date and time'),
+    icon: 'calendar-clock',
     description: msg('How dates and times look and where weeks start, on all your devices.'),
     learnMore: 'settings/date-time',
     rows: {
@@ -168,11 +207,12 @@ export const SETTINGS_COPY = {
       timeFormat: { label: msg('Time format') },
       weekStart: { label: msg('Week starts on') },
       dayStart: { label: msg('My day starts at'), description: msg('Work done before this time counts for the previous day.') },
-      preview: { label: msg('Preview') },
+      preview: { label: msg('Sample') },
     },
   },
   calendar: {
     title: msg('Calendar'),
+    icon: 'calendar-days',
     description: msg('Working hours and day length for Day and Week, on this device.'),
     learnMore: 'settings/calendar',
     rows: {
@@ -183,6 +223,7 @@ export const SETTINGS_COPY = {
   },
   keyboard: {
     title: msg('Keyboard'),
+    icon: 'keyboard',
     description: msg('Every action has a shortcut; press ? to list them.'),
     learnMore: 'settings/keyboard',
     rows: {
@@ -193,6 +234,7 @@ export const SETTINGS_COPY = {
   },
   focus: {
     title: msg('Focus'),
+    icon: 'timer',
     description: msg('The Focus timer: mode, lengths, breaks and sound. Synced to your devices.'),
     learnMore: 'settings/focus',
     rows: {
@@ -212,6 +254,7 @@ export const SETTINGS_COPY = {
   // Settings → Notifications
   notifications: {
     title: msg('Notifications'),
+    icon: 'bell',
     description: msg('Get reminders while the app is closed. Each device decides for itself.'),
     learnMore: 'settings/notifications',
     rows: {
@@ -230,6 +273,7 @@ export const SETTINGS_COPY = {
   },
   'email-digest': {
     title: msg('Weekly digest'),
+    icon: 'mail',
     description: msg("An email on your review day with last week's numbers and what is due."),
     learnMore: 'settings/digest',
     rows: { email: { label: msg('Email me the digest'), description: msg('It names your tasks and projects and goes to your account’s email address.') } },
@@ -244,15 +288,16 @@ export const SETTINGS_COPY = {
   // Settings → Capture
   'quick-add': {
     title: msg('Quick add'),
+    icon: 'zap',
     description: msg('How quick add reads what you type, on this device.'),
     learnMore: 'settings/quick-add',
     rows: {
       parse: { label: msg('Parse natural language'), description: msg('Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; "quotes" keep text as is.') },
-      order: { label: msg('Numeric dates like 12/11'), description: msg('Set on this device; it wins over your date format.') },
     },
   },
   'voice-settings': {
     title: msg('Voice capture'),
+    icon: 'mic',
     description: msg('Speak a task instead of typing it, on this device.'),
     learnMore: 'settings/voice',
     rows: {
@@ -263,11 +308,13 @@ export const SETTINGS_COPY = {
           unsupported: msg('This browser has no speech recognition, so voice capture is not available here.'),
         },
       },
+      recognizer: { label: msg('Recognition'), description: msg('Who turns your speech into text; each choice shows what it means first.') },
       lang: { label: msg('Recognition language') },
     },
   },
   capture: {
     title: msg('Capture'),
+    icon: 'send',
     description: msg('Save pages and selected text from your browser as tasks.'),
     learnMore: 'settings/capture',
     rows: {
@@ -279,6 +326,7 @@ export const SETTINGS_COPY = {
   },
   'email-inbox': {
     title: msg('Email to task'),
+    icon: 'mail',
     description: msg('Send any email to your personal address and it becomes an Inbox task.'),
     learnMore: 'settings/email',
     rows: {
@@ -295,6 +343,7 @@ export const SETTINGS_COPY = {
   // Settings → About
   about: {
     title: msg('About OpenTodo'),
+    icon: 'heart',
     description: {
       version: msg('OpenTodo {version} · free and open source · no tracking, no telemetry.'),
       plain: msg('Free and open source · no tracking, no telemetry.'),
@@ -311,12 +360,14 @@ export const SETTINGS_COPY = {
   },
   'about-support': {
     title: msg('Support OpenTodo'),
+    icon: 'messages-square',
     description: msg('No paid plan: if it saves you a subscription, a coffee helps.'),
   },
 
   // Settings → Integrations
   caldav: {
     title: msg('Calendar apps (CalDAV)'),
+    icon: 'calendar-sync',
     description: msg('Sync your tasks with calendar and reminder apps; each project is a list.'),
     learnMore: 'settings/caldav',
     rows: {
@@ -335,6 +386,7 @@ export const SETTINGS_COPY = {
   },
   'calendar-feeds': {
     title: msg('Calendar feeds'),
+    icon: 'rss',
     description: msg('Other calendars in Day and Week, and your tasks in a calendar app.'),
     learnMore: 'settings/calendar-feeds',
     rows: {
@@ -356,22 +408,35 @@ export const SETTINGS_COPY = {
   // Task locations (task-locations D6): the owner's switch and providers, and each user's own switch.
   'maps-server': {
     title: msg('Maps'),
+    icon: 'map',
     description: msg('Maps and address search from the provider below, always through this server.'),
     learnMore: 'locations',
   },
   // Automation rules (automation-rules D9): the owner's switch for every account.
+  'speech-server': {
+    title: msg('Speech to text'),
+    icon: 'audio-lines',
+    description: msg('Dictation through a speech service you run; members choose it in Capture.'),
+    learnMore: 'settings/server',
+    notices: {
+      private: msg('A service on your own network needs “Allow private network targets” in Webhooks.'),
+    },
+  },
   'automations-server': {
     title: msg('Automations'),
+    icon: 'repeat',
     description: msg('Off: no account’s rules run on this server. Rules stay and run again when turned back on.'),
     learnMore: 'rules',
   },
   'maps-user': {
     title: msg('Maps'),
+    icon: 'map',
     description: msg('Off: no maps or address search on your devices; locations still work.'),
     learnMore: 'locations',
   },
   issues: {
     title: msg('Issues'),
+    icon: 'git-pull-request',
     description: msg('Open GitHub and GitLab issues assigned to you become tasks that follow them.'),
     learnMore: 'settings/issues',
     rows: {
@@ -391,6 +456,7 @@ export const SETTINGS_COPY = {
   },
   webhooks: {
     title: msg('Webhooks'),
+    icon: 'webhook',
     description: msg('Notify any HTTP endpoint when tasks and projects change. Requests are signed.'),
     learnMore: 'settings/webhooks',
     rows: {
@@ -404,12 +470,14 @@ export const SETTINGS_COPY = {
   },
   tokens: {
     title: msg('API tokens'),
+    icon: 'key',
     description: msg('For scripts, the ot command and AI assistants. Sent as {header}.'),
     learnMore: 'settings/tokens',
     rows: { new: { label: msg('New token'), description: msg('A token is shown once, when you create it.') } },
   },
   'assistant-settings': {
     title: msg('Assistant'),
+    icon: 'sparkles',
     description: msg('Plan and change your tasks by talking. Every change is proposed for review.'),
     learnMore: 'settings/assistant',
     rows: {
@@ -431,6 +499,7 @@ export const SETTINGS_COPY = {
   },
   assistants: {
     title: msg('AI assistants'),
+    icon: 'bot',
     description: msg('Let an MCP assistant read your tasks with a token; read-only by default.'),
     learnMore: 'settings/assistants',
     rows: {
@@ -473,6 +542,7 @@ export const SETTINGS_COPY = {
   // Settings → Data
   data: {
     title: msg('Your data'),
+    icon: 'download',
     description: msg('Everything you see is stored on this device and on your server.'),
     learnMore: 'settings/data',
     rows: {
@@ -488,6 +558,7 @@ export const SETTINGS_COPY = {
   },
   projects: {
     title: msg('Projects'),
+    icon: 'folder',
     description: msg('Deleted items stay in the <a>Trash</a> until restored or purged.'),
     learnMore: 'settings/projects',
     rows: {
@@ -499,6 +570,7 @@ export const SETTINGS_COPY = {
   // Settings → People
   users: {
     title: msg('Users'),
+    icon: 'users',
     description: {
       owner: msg('Everyone with an account; you manage every account and choose admins.'),
       admin: msg('Everyone with an account; admins can deactivate, reset and delete members.'),
@@ -509,6 +581,7 @@ export const SETTINGS_COPY = {
   },
   members: {
     title: msg('Members'),
+    icon: 'users',
     description: msg('Invite someone with a single-use link; sign-up stays closed.'),
     learnMore: 'settings/members',
     rows: { invitations: { label: msg('Invitations'), description: msg("Optionally bind a link to someone's email so only they can use it.") } },
@@ -516,12 +589,14 @@ export const SETTINGS_COPY = {
   },
   'mfa-policy': {
     title: msg('Two-factor policy'),
+    icon: 'shield-check',
     description: msg('Who must use two-factor authentication. API tokens are never affected.'),
     learnMore: 'settings/access',
     rows: { policy: { label: msg('Policy for this server') } },
   },
   sso: {
     title: msg('Single sign-on'),
+    icon: 'globe',
     description: msg('Sign in with an OpenID Connect provider you run; only that issuer is contacted.'),
     learnMore: 'settings/sso',
     rows: { status: { label: msg('Status') } },
@@ -529,6 +604,7 @@ export const SETTINGS_COPY = {
   },
   'project-invite-policy': {
     title: msg('Project invite links'),
+    icon: 'user-check',
     description: msg('Whether project links can also create accounts for new people.'),
     learnMore: 'settings/project-invites',
     rows: { members: { label: msg('Invite new people'), description: msg("Off: members' links only work for people who already have an account.") } },
@@ -538,6 +614,7 @@ export const SETTINGS_COPY = {
   // Settings → Server
   backups: {
     title: msg('Backups'),
+    icon: 'archive',
     description: msg('Scheduled copies of the whole server to a folder, S3 or WebDAV, restored here.'),
     learnMore: 'settings/backups',
     rows: {
@@ -550,6 +627,7 @@ export const SETTINGS_COPY = {
   },
   'attachments-settings': {
     title: msg('Attachments'),
+    icon: 'paperclip',
     description: msg('Files on tasks and comments, stored under the data directory and backed up.'),
     learnMore: 'settings/attachments',
     rows: {
@@ -561,6 +639,7 @@ export const SETTINGS_COPY = {
   },
   'outgoing-email': {
     title: msg('Outgoing email'),
+    icon: 'send',
     description: msg('Lets this server mail password resets, confirmations and invitations.'),
     learnMore: 'settings/outgoing-email',
     rows: { server: { label: msg('Mail server'), description: msg('Not configured: nobody can reset a password or get an invitation by email.') } },
@@ -572,6 +651,7 @@ export const SETTINGS_COPY = {
   },
   'server-archive': {
     title: msg('Download your data'),
+    icon: 'upload',
     description: msg('The whole server as one archive, to restore into your own OpenTodo server.'),
     learnMore: 'settings/server',
     rows: { archive: { label: msg('Server archive'), description: msg('Keep it private: it holds every account’s sign-in data.') } },
@@ -579,6 +659,7 @@ export const SETTINGS_COPY = {
   },
   audit: {
     title: msg('Audit log'),
+    icon: 'scroll-text',
     description: msg('Sign-ins, tokens, invitations, exports and setting changes. Never task content.'),
     learnMore: 'settings/server',
     rows: {
@@ -586,6 +667,12 @@ export const SETTINGS_COPY = {
       addresses: { label: msg('Record client addresses (IP)'), description: msg('Off by default; turning it off erases every stored address.') },
     },
     notices: { offline: msg('You are offline. The {what} needs a connection and is not shown until you are back.') },
+  },
+  'audit-settings': {
+    title: msg('Audit settings'),
+    icon: 'settings',
+    description: msg('How long the audit log keeps events, and whether it records addresses.'),
+    learnMore: 'settings/server',
   },
 
   // The demo note at the top of a settings page (settings-navigation "Demo instance sections").
@@ -622,15 +709,23 @@ export function pickText(text: CopyText | undefined, variant: string | undefined
 const entry = (id: SettingsCopyId): CardCopyEntry => SETTINGS_COPY[id]
 
 /** A card's heading, line, Learn more and heading id, translated, to spread into SettingsSection. */
-export function cardCopy(id: SettingsCopyId, opts: CopyOptions = {}): { title: string; description?: string; learnMore?: string; headingId: string } {
-  const e = entry(id)
+export function cardCopy(id: SettingsCopyId, opts: CopyOptions = {}): { title: string; icon?: string; description?: string; learnMore?: string; headingId: string } {
+  const e: CardCopyEntry = entry(id)
   const description = pickText(e.description, opts.variant, id)
   return {
     title: t(e.title ?? id),
+    ...(e.icon ? { icon: e.icon } : {}),
     ...(description !== undefined ? { description: t(description, opts.values) } : {}),
     ...(e.learnMore ? { learnMore: e.learnMore } : {}),
     headingId: `${id}-heading`,
   }
+}
+
+/** The icon of the card whose heading id is `anchor` ("mfa-heading"), for settings search results; undefined for a row anchor. */
+export function cardIcon(anchor: string): string | undefined {
+  if (!anchor.endsWith('-heading')) return undefined
+  const e = (SETTINGS_COPY as Readonly<Record<string, CardCopyEntry>>)[anchor.slice(0, -'-heading'.length)]
+  return e?.icon
 }
 
 /** A row's label and line, translated, to spread into SettingRow. */

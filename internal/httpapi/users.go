@@ -175,6 +175,8 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 			s.log.Error("assistant keys of a deleted account not removed", "err", err)
 		}
 	}
+	// The profile picture goes with the account (settings-refresh D10).
+	s.removeAvatar(id)
 	// Members of projects the account owned or joined re-sync their membership.
 	s.sync.NotifyMembership(notify)
 	w.WriteHeader(http.StatusNoContent)

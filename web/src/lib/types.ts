@@ -729,6 +729,38 @@ export interface User {
 }
 
 /**
+ * The Profile card's data (OpenSpec change settings-refresh, design D10): server
+ * account data, never an op. `avatarVersion` is 0 without a picture.
+ */
+/** Whether the owner connected a speech service, and its host (settings-refresh D7). */
+export interface SpeechService { connected: boolean; host?: string }
+
+/** The owner's view of the speech service: never the key. */
+export interface SpeechSettings {
+  url: string
+  model: string
+  keySet: boolean
+  /** Fields fixed by OPENTODO_STT_URL, _MODEL or _KEY_FILE. */
+  locked: ('url' | 'model' | 'key')[]
+  connected: boolean
+  host?: string
+}
+
+/** A change from the owner's card: an absent field is kept, an empty key removes it. */
+export interface SpeechSettingsInput { url?: string; model?: string; key?: string }
+
+export interface Profile {
+  user: User
+  avatarVersion: number
+  /** An email change waiting for the link sent to it. */
+  pendingEmail?: string
+  /** The sign-in provider of an account that signs in only through single sign-on. */
+  emailManagedBy?: string
+  /** Whether an email change waits for a link (otherwise it applies at once). */
+  emailByLink: boolean
+}
+
+/**
  * An entry of the server's user list (owner and admins only). Fetched live and
  * kept in component state: never written to IndexedDB or any cache.
  */
@@ -1370,6 +1402,10 @@ export const AUDIT_EVENT_NAMES = [
   'email.failed',
   'relay.enabled',
   'relay.disabled',
+  'account.name_changed',
+  'account.email_change_requested',
+  'account.email_changed',
+  'account.avatar_changed',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 
@@ -1519,6 +1555,8 @@ export interface ProjectMember {
   name: string
   email: string
   role: ProjectRole
+  /** Profile picture version, absent or 0 without one (settings-refresh D10). */
+  avatarVersion?: number
 }
 
 /**

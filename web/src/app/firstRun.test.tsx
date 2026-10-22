@@ -23,7 +23,10 @@ import type { User } from '../lib/types'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { click, flush, key, render, type } from '../ui/test-utils'
 import { createSampleProject, FirstRunGuide, SAMPLE_PROJECT_NAME } from './FirstRun'
-import { navigate } from './router'
+import { navigate, parseRoute, useRoute } from './router'
+import { HowYouWorkSection } from './method/HowYouWorkSection'
+import { closeStartGuide } from '../lib/startGuide'
+import { setFirstRunDone } from '../lib/userPrefs'
 import { TaskListView } from './TaskListView'
 import { WelcomeDialog } from './WelcomeDialog'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
@@ -44,6 +47,7 @@ beforeEach(async () => {
   navigate({ view: 'inbox' })
 })
 afterEach(() => {
+  closeStartGuide()
   vi.useRealTimers()
   setDemo(null)
   document.body.innerHTML = ''
@@ -228,6 +232,54 @@ describe('three-step first run', () => {
     expect(guide()).toBeNull()
     await click(q('[data-welcome-close]')!)
     await waitFor(() => q('[data-testid="welcome"]') === null && guide() !== null)
+    expect(stepOf()).toBe('task')
+    await r.unmount()
+  })
+})
+
+/** Settings or the Inbox, whichever the route names, with the guide the Shell mounts. */
+function Routed({ user }: { user: User }) {
+  const route = useRoute()
+  return <>{route.view === 'inbox' ? <TaskListView route={route} /> : <HowYouWorkSection />}<FirstRunGuide user={user} /></>
+}
+const guideState = () => q('[data-start-guide-state]')?.textContent
+
+describe('the Start guide row in Settings (settings-refresh D3)', () => {
+  it('Shown again from Settings: it reads Finished, goes to the Inbox at step one, the task lands there, and closing writes nothing', async () => {
+    await setFirstRunDone()
+    await createTask({ title: 'Older task' })
+    navigate({ view: 'settings', section: 'account' })
+    const r = await render(<Routed user={member} />)
+    await waitFor(() => guideState() === 'Finished')
+    expect(guide()).toBeNull()
+    await db.outbox.clear()
+    await click(q('[data-start-guide-again]')!)
+    await waitFor(() => guide() !== null)
+    expect(parseRoute(location.pathname).view).toBe('inbox')
+    expect(stepOf()).toBe('task')
+    expect(await db.outbox.count()).toBe(0)
+    // A task added from the guide goes to the Inbox behind it.
+    const field = q<HTMLInputElement>('[data-overlay="dialog"] input')!
+    await type(field, 'Water the plants')
+    await act(async () => { field.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await waitFor(() => r.container.querySelector('[data-list-page]')?.textContent?.includes('Water the plants') ?? false)
+    const written = (await db.outbox.toArray()).map((o) => o.entity)
+    await click(q('[data-overlay="dialog"] [data-overlay-close]')!)
+    await waitFor(() => guide() === null)
+    // Closing it wrote nothing beyond the task.
+    expect((await db.outbox.toArray()).map((o) => o.entity)).toEqual(written)
+    expect(written).not.toContain('user_prefs')
+    expect(parseRoute(location.pathname).view).toBe('inbox')
+    await r.unmount()
+  })
+
+  it('Not finished yet: the row says so and its button opens the guide over the Inbox', async () => {
+    await createTask({ title: 'Older task' })
+    navigate({ view: 'settings', section: 'account' })
+    const r = await render(<Routed user={member} />)
+    await waitFor(() => guideState() === 'Not finished')
+    await click(q('[data-start-guide-again]')!)
+    await waitFor(() => guide() !== null && parseRoute(location.pathname).view === 'inbox')
     expect(stepOf()).toBe('task')
     await r.unmount()
   })

@@ -1,7 +1,6 @@
 // Quick add with the date and time preferences (OpenSpec date-time-preferences,
 // D5 and D6; spec deltas of natural-language-capture).
 import { describe, expect, it } from 'vitest'
-import { automaticOrderLabel } from '../../app/QuickAddSettings'
 import { nextNextWeekday, startOfNextWeek } from './dates'
 import { parse, type ParseContext } from './parse'
 import { dayMonthOrderSource, DEFAULT_QUICK_ADD_SETTINGS, resolveDayMonthOrder } from './settings'
@@ -29,13 +28,13 @@ describe('first day of the week (D5)', () => {
 })
 
 describe('numeric order from the date format (D6)', () => {
-  it('numeric date follows the date format while the quick-add order is automatic', () => {
+  it('Numeric date follows the date format', () => {
     const order = resolveDayMonthOrder(auto, ['en-US'], { date_format: 'day-month' })
     expect(order).toBe('DM')
     expect(parse('Pay rent 3/11', ctx({ dayMonthOrder: order })).due).toEqual({ date: '2026-11-03' })
   })
-  it('an explicit quick-add order wins', () => {
-    const order = resolveDayMonthOrder({ ...auto, dayMonthOrder: 'MD' }, ['en-US'], { date_format: 'day-month' })
+  it('month-day reads month first', () => {
+    const order = resolveDayMonthOrder(auto, ['en-GB'], { date_format: 'month-day' })
     expect(order).toBe('MD')
     expect(parse('Pay rent 3/11', ctx({ dayMonthOrder: order })).due).toEqual({ date: '2027-03-11' })
   })
@@ -43,7 +42,5 @@ describe('numeric order from the date format (D6)', () => {
     expect(dayMonthOrderSource(auto, ['en-GB'], { date_format: 'iso' })).toEqual({ order: 'DM', source: 'language' })
     expect(dayMonthOrderSource(auto, ['en-US'], { date_format: 'system' })).toEqual({ order: 'MD', source: 'language' })
     expect(dayMonthOrderSource(auto, ['en-US'], { date_format: 'month-day' })).toEqual({ order: 'MD', source: 'date-format' })
-    expect(dayMonthOrderSource({ ...auto, dayMonthOrder: 'DM' }, ['en-US'], null)).toEqual({ order: 'DM', source: 'device' })
-    expect(automaticOrderLabel('DM', 'date-format')).toBe('Automatic: day-month, from your date format')
   })
 })

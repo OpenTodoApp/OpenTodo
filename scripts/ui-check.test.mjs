@@ -1,7 +1,7 @@
 // Fixtures for the source checks of scripts/ui-check.mjs (run by `make ui-lint`).
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { rawDueTimeProblems } from './ui-check.mjs'
+import { learnMoreProblems, rawDueTimeProblems } from './ui-check.mjs'
 
 test('a raw due time joined into text is reported (ux-feedback-2 D3)', () => {
   const bad = [
@@ -45,4 +45,12 @@ test('an illustration on tokens passes the gate', async () => {
     '// a comment naming #fff is fine',
   ]
   for (const line of ok) assert.deepEqual(illustrationProblems('Good.tsx', line), [], line)
+})
+
+test('Learn more comes only from the LearnMore element', () => {
+  assert.equal(learnMoreProblems('web/src/app/X.tsx', "<button onClick={go}>{t('Learn more')}</button>").length, 1)
+  assert.equal(learnMoreProblems('web/src/app/X.tsx', '<a href="/help">Learn more</a>').length, 1)
+  assert.deepEqual(learnMoreProblems('web/src/ui/LearnMore.tsx', "{t('Learn more')}"), [])
+  assert.deepEqual(learnMoreProblems('web/src/app/X.tsx', "<LearnMore screen=\"demo\" />"), [])
+  assert.deepEqual(learnMoreProblems('web/src/app/X.tsx', "t('Learn more: {topic}', { topic })"), [])
 })

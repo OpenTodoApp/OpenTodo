@@ -1,0 +1,9 @@
+Confirme seu novo e-mail do OpenTodo
+
+Esta é uma mensagem de confirmação de e-mail do OpenTodo.
+
+Alguém pediu para usar {{.Email}} como e-mail de acesso de uma conta em {{.Origin}}. Para confirmar, abra este link com a sessão iniciada nessa conta:
+
+{{.Link}}
+
+O link expira em {{.Expiry}}. Se não foi você quem pediu, pode ignorar esta mensagem: nada muda.

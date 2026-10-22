@@ -1,5 +1,7 @@
 import { HowYouWorkSection } from './method/HowYouWorkSection'
-import { Avatar, Badge, Icon, Input, Notice, PageBody, PageHeader, useMediaQuery } from '../ui'
+import { ProfileSection } from './profile/ProfileSection'
+import { PersonAvatar } from './PersonAvatar'
+import { Badge, Icon, type IconName, Input, LearnMore, Notice, PageBody, PageHeader, useMediaQuery } from '../ui'
 import { DateTimeSection } from './DateTimeSettings'
 import { lazy, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -38,14 +40,14 @@ import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { MapsServerPanel, MapsUserSection } from './locations/MapsSettings'
 import { AutomationsServerPanel } from './rules/AutomationsSettings'
+import { SpeechServerPanel } from './SpeechServerPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { useDemo } from '../lib/demo'
 import { useHosted } from '../lib/hosted'
 import { ServerArchivePanel } from './ServerArchivePanel'
 import { t } from '../lib/i18n'
-import { openHelp } from '../lib/helpRequest'
-import { noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
+import { cardIcon, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
@@ -217,6 +219,7 @@ function SettingsSearch({ user }: { user: User }) {
                 <a key={en.anchor + en.label} href={routePath({ view: 'settings', section: h.section.id })} data-settings-result={`${h.section.id}:${en.anchor}`}
                   className="flex min-h-9 items-center gap-2 rounded-control px-2 py-1 pl-7 text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised"
                   onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); open(h.section.id, en.anchor) }}>
+                  {cardIcon(en.anchor) ? <Icon name={cardIcon(en.anchor) as IconName} size="xs" className="-ml-5 text-muted" /> : null}
                   <span className="min-w-0 flex-1 truncate">{en.label}</span>
                   <span className="truncate text-meta text-muted">{en.description}</span>
                 </a>
@@ -244,7 +247,7 @@ function ResultLink({ section, onOpen }: { section: SettingsSection; onOpen: () 
 export function ProfileCard({ user, compact = false }: { user: User; compact?: boolean }) {
   return (
     <div id="profile" className={`flex items-center gap-3 rounded-card border border-default bg-surface ${compact ? 'p-3' : 'gap-4 p-4'} shadow-1`} data-profile-card>
-      <Avatar id={user.id} name={user.name || user.email} size={compact ? 'md' : 'lg'} />
+      <PersonAvatar id={user.id} name={user.name || user.email} size={compact ? 'md' : 'lg'} />
       <div className="min-w-0 flex-1">
         <p className="user-text truncate text-body font-semibold text-default">{user.name || user.email}</p>
         <p className="user-text truncate text-meta text-muted">{user.email}</p>
@@ -268,7 +271,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
       return (
         <>
           {note}
-          <ProfileCard user={user} />
+          <Anchor id="profile"><ProfileSection user={user} /></Anchor>
           <Anchor id="how-you-work"><HowYouWorkSection /></Anchor>
           <SessionPanel onLogout={onLogout} />
           <Anchor id="security">
@@ -380,6 +383,8 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           {isOwner && <DemoDisabled on={demo}><MapsServerPanel /></DemoDisabled>}
           {/* Automation rules (automation-rules D9): the owner's switch; nothing runs on a demo. */}
           {isOwner && <DemoDisabled on={demo}><AutomationsServerPanel /></DemoDisabled>}
+          {/* Speech to text (settings-refresh D7): the owner's speech service; never on a demo. */}
+          {ownsServer && <DemoDisabled on={demo}><SpeechServerPanel /></DemoDisabled>}
           <Anchor id="audit-log"><AuditPanel /></Anchor>
         </>
       )
@@ -411,8 +416,7 @@ export const DEMO_RESTRICTED_FEATURES = [
  */
 function DemoRestrictedNote({ features }: { features: string[] }) {
   const learn = (
-    <button type="button" className="text-meta text-accent underline" data-help-screen="demo" data-learn-more aria-haspopup="dialog"
-      aria-label={t('Learn more: {topic}', { topic: t('Demo instance') })} onClick={(e) => openHelp(SETTINGS_COPY.demo.learnMore, e.currentTarget)}>{t('Learn more')}</button>
+    <LearnMore screen={SETTINGS_COPY.demo.learnMore} topic={t('Demo instance')} className="text-meta" />
   )
   return (
     <div data-testid="demo-restricted">

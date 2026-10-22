@@ -168,6 +168,11 @@ var demoRules = []demoRule{
 	{"Sign-up", false, prefix("/api/v1/auth/verify")},
 	{"Changing the password", true, exact("/api/v1/me/password")},
 	{"Signing out everywhere", true, exact("/api/v1/me/sign-out-everywhere")},
+	// Profile changes (settings-refresh D10): the sandbox account keeps its name,
+	// email and picture; reading the profile and pictures works.
+	{"Profile", true, exact("/api/v1/me/profile")},
+	{"Profile", true, prefix("/api/v1/me/email")},
+	{"Profile", true, exact("/api/v1/me/avatar")},
 	{"Linked accounts", true, prefix("/api/v1/me/identities")},
 	{"API tokens", true, prefix("/api/v1/tokens")},
 	{"Passkeys", true, prefix("/api/v1/passkeys")},
@@ -179,6 +184,9 @@ var demoRules = []demoRule{
 	{"Attachments", false, taskAttachments},
 	{"Attachments", false, exact("/api/v1/settings/attachments")},
 	{"Outgoing email", false, prefix("/api/v1/settings/smtp")},
+	// The speech service is the operator's outbound target (settings-refresh D7): every method.
+	{"Speech to text", false, prefix("/api/v1/settings/stt")},
+	{"Speech to text", false, prefix("/api/v1/voice")},
 	// The weekly digest sends mail (stats-and-review): changing it is refused.
 	{"Email digest", true, exact("/api/v1/me/email-digest")},
 	// Public links publish data to anyone (public-links D9): every method.

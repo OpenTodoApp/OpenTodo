@@ -1,0 +1,9 @@
+Confirmez votre nouvelle adresse e-mail OpenTodo
+
+Ceci est un message de confirmation d’adresse e-mail d’OpenTodo.
+
+Quelqu’un a demandé à utiliser {{.Email}} comme adresse de connexion d’un compte sur {{.Origin}}. Pour la confirmer, ouvrez ce lien en étant connecté à ce compte :
+
+{{.Link}}
+
+Le lien expire dans {{.Expiry}}. Si vous n’êtes pas à l’origine de cette demande, ignorez ce message : rien ne change.

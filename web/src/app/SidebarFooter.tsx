@@ -4,7 +4,8 @@
 // the sync dot and, from 1024 px, the collapse control. The icon rail stacks them.
 // While an entry runs, its pill takes the name's place in the same row (sidebar-v2 D6).
 import { useState } from 'react'
-import { Avatar, IconButton, Menu, MenuItem, MenuSeparator, SidebarItem } from '../ui'
+import { PersonAvatar } from './PersonAvatar'
+import { IconButton, Menu, MenuItem, MenuSeparator, SidebarItem } from '../ui'
 import { keysOf } from '../lib/shortcuts'
 import type { User } from '../lib/types'
 import { t } from '../lib/i18n'
@@ -48,7 +49,7 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
           triggerProps={{ 'aria-current': current ? 'page' : undefined, 'data-account-menu': true }}
           triggerClassName={`flex min-h-9 items-center gap-2 rounded-control py-1 text-left text-body pointer-fine:min-h-8 ${TOUCH} ${collapsed ? 'w-full justify-center px-0' : named ? 'min-w-0 flex-1 px-1.5' : 'shrink-0 px-1.5'} ${current ? ACTIVE : IDLE}`}
           trigger={<>
-            <Avatar id={user.id} name={name} />
+            <PersonAvatar id={user.id} name={name} />
             {named && <span className="min-w-0 flex-1 truncate">{name}</span>}
           </>}>
           <MenuItem label={t('Settings')} icon="settings" shortcut={keysOf('go.settings')} onSelect={() => navigate({ view: 'settings' })} data-settings-button />

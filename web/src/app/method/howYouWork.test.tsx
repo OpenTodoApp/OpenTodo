@@ -11,6 +11,7 @@ import { getStartView } from '../../lib/views'
 import { click, flush, render } from '../../ui/test-utils'
 import { HowYouWorkSection } from './HowYouWorkSection'
 import { FirstRunGuide } from '../FirstRun'
+import { parseRoute } from '../router'
 import { closeStartGuide } from '../../lib/startGuide'
 import type { User } from '../../lib/types'
 
@@ -90,7 +91,7 @@ describe('The mode is presentation only (open-loops "How you work preference")',
     expect((await db.tasks.toArray()).map((x) => x.title)).toEqual(['Measure wall'])
   })
 
-  it('Start guide again: it opens over Settings at step one, and closing it writes nothing (lean-chrome D6)', async () => {
+  it('Start guide again: it opens over the Inbox at step one, and closing it writes nothing (settings-refresh D3)', async () => {
     await setMethodMode('companion')
     const user: User = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'owner', createdAt: 1 }
     const r = await render(<><HowYouWorkSection /><FirstRunGuide user={user} /></>)
@@ -100,8 +101,8 @@ describe('The mode is presentation only (open-loops "How you work preference")',
     await click(document.querySelector('[data-start-guide-again]')!)
     await waitFor(() => !!document.querySelector('[data-overlay="dialog"] [data-first-run]'))
     expect(document.querySelector('[data-first-run]')!.getAttribute('data-first-run-step')).toBe('task')
-    // Settings stays mounted behind it.
-    expect(document.querySelector('[data-testid="how-you-work"]')).not.toBeNull()
+    // The guide's first step adds a task to the Inbox, so it opens there.
+    expect(parseRoute(location.pathname).view).toBe('inbox')
     await click(document.querySelector('[data-overlay="dialog"] [data-overlay-close]')!)
     await waitFor(() => !document.querySelector('[data-first-run]'))
     expect(await db.outbox.count()).toBe(before)

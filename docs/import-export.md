@@ -30,7 +30,7 @@ A [Markdown vault](vault.md) is not an export: it keeps your projects as files i
 
 ## Import from another app
 
-Open **Settings → Data**, select **Import data…** (or press <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>I</kbd>) and choose a file: an **OpenTodo export**, a **CSV file** with a `title` column, or a **JSON export from another task app**. Nothing is written straight away. You check the format OpenTodo detected, choose the options, read a preview that says what will happen to each row, and then import. The tasks reach all your devices on their next sync.
+Open **Settings → Data**, select **Import data** (or press <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>I</kbd>) and choose a file: an **OpenTodo export**, a **CSV file** with a `title` column, or a **JSON export from another task app**. Nothing is written straight away. You check the format OpenTodo detected, choose the options, read a preview that says what will happen to each row, and then import. The tasks reach all your devices on their next sync.
 
 [Import step by step](import-steps.md) walks through the preview and the options; the [import formats reference](import.md) has each format and how fields are mapped.
 

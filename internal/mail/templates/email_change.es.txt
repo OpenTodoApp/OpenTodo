@@ -1,0 +1,9 @@
+Confirma tu nuevo correo de OpenTodo
+
+Este es un mensaje de confirmación de correo de OpenTodo.
+
+Alguien ha pedido usar {{.Email}} como correo de inicio de sesión de una cuenta en {{.Origin}}. Para confirmarlo, abre este enlace con la sesión iniciada en esa cuenta:
+
+{{.Link}}
+
+El enlace caduca en {{.Expiry}}. Si no lo has pedido tú, puedes ignorar este mensaje: no cambia nada.

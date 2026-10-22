@@ -1,0 +1,7 @@
+Your OpenTodo email is being changed
+
+This is a security notice from OpenTodo.
+
+Someone signed in to the account {{.Email}} at {{.Origin}} asked to change its sign-in email. The change happens only when the link sent to the new address is opened.
+
+If this was you, there is nothing to do. If it was not, sign in, change your password and sign out everywhere, or ask the owner of the server for help.

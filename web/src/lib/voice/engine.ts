@@ -3,4 +3,5 @@
 // this with `import()` only once voice capture is switched on, so the main bundle
 // carries none of it.
 export { createDictation } from './dictation'
+export { startServerRecognition } from './serverRecognition'
 export { normalizeSpoken } from './spoken'

@@ -38,13 +38,14 @@ describe('AuditTable', () => {
       status: 'ready',
       events: [ev({}), ev({ id: 2, name: 'token.created', outcome: 'success', actorId: 'o', actorEmail: 'owner@example.com', targetId: null, targetEmail: null, ip: '192.0.2.1', details: { token_id: 't', token_name: 'laptop script' } })],
     }))
+    // One line each (settings-refresh D4): the event, the account, the client and the time; details open in place.
     expect(html).toContain('Sign-in failed')
-    expect(html).toContain('wrong password')
     expect(html).toContain('member@example.com')
     expect(html).toContain('API token created')
-    expect(html).toContain('laptop script')
-    expect(html).toContain('192.0.2.1')
-    expect(html).toContain('Firefox on Linux x86_64')
+    expect(html).toContain('owner@example.com')
+    expect(html).toContain('Firefox on Linux')
+    expect(html).toContain('aria-expanded="false"')
+    expect(html).not.toContain('laptop script')
     expect(html).toContain('tabindex="0"')
   })
 
@@ -52,7 +53,7 @@ describe('AuditTable', () => {
     const html = renderToStaticMarkup(createElement(AuditTable, { status: 'offline', events: [ev({})] }))
     expect(html).toContain('needs a connection')
     expect(html).not.toContain('Sign-in failed')
-    expect(html).not.toContain('<table')
+    expect(html).not.toContain('data-audit-list')
   })
 
   it('says when nothing matches', () => {
@@ -75,13 +76,13 @@ describe('ActivityView', () => {
 })
 
 describe('ActivityView states', () => {
-  it('marks failed sign-ins and shows relative times', () => {
+  it('marks failed sign-ins in the warning tone and shows relative times (settings-refresh D4)', () => {
     const html = renderToStaticMarkup(createElement(ActivityView, { status: 'ready', events: [ev({ ts: 1_000_000 - 120_000 })], now: 1_000_000 }))
     expect(html).toContain('data-testid="activity-panel"')
     expect(html).toContain('id="activity-heading"')
     expect(html).toContain('2 min ago')
-    expect(html).toContain('Failed')
-    expect(html).toContain('text-danger')
+    expect(html).toContain('Sign-in failed')
+    expect(html).toContain('data-activity-warn="true"')
   })
 
   it('shows an empty state and an error notice', () => {

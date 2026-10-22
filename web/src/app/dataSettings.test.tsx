@@ -37,7 +37,7 @@ describe('YourDataView', () => {
   })
   it('disables import on a demo instance with the exact note', () => {
     const html = render({ demo: true })
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Import data…<\/button>/)
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Import data<\/button>/)
     expect(html).toContain('Import: Disabled on this demo instance.')
     expect(html).not.toContain('href="/settings/import"')
   })

@@ -315,6 +315,9 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	// Whether maps are on for the server (task-locations D6); each user's own
 	// switch is the synced user_prefs.maps.
 	out["maps"] = s.mapsAvailable(r.Context())
+	// Whether the owner connected a speech-to-text service, and its host
+	// (settings-refresh D7), for the Voice capture card's recogniser choice.
+	out["speech"] = s.speechStatus(r)
 	// Projects kept away from AI assistants (agent-planning-fields D9), cached by
 	// the app like memberships.
 	out["agent_excluded_projects"] = s.agentExcludedProjects(r)

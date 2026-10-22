@@ -32,7 +32,7 @@ describe('EncryptionView', () => {
     expect(html).toContain('Your task text is encrypted on your devices')
     expect(html).toContain('due dates, priority')
     expect(html).toContain('Shared projects are not encrypted')
-    expect(labels(html)).toEqual(['Set up encryption…'])
+    expect(labels(html)).toEqual(['Set up encryption'])
   })
 
   it('passphrase step asks twice with the minimum length', () => {
@@ -57,13 +57,13 @@ describe('EncryptionView', () => {
     const html = render(on)
     expect(html).toContain('Unlocked on this device')
     expect(html).toContain('data-testid="e2ee-status"')
-    expect(labels(html)).toEqual(['Change passphrase…', 'Reset passphrase with recovery key…', 'Purge plaintext history…', 'Lock this device', 'Turn off encryption…'])
+    expect(labels(html)).toEqual(['Change passphrase', 'Reset passphrase with recovery key', 'Purge plaintext history', 'Lock this device', 'Turn off encryption'])
     expect(html).not.toContain('tabindex="-1"')
   })
 
   it('on but locked: no change or disable, offers the both-lost path', () => {
     const html = render({ ...on, unlocked: false })
-    expect(labels(html)).toEqual(['Reset passphrase with recovery key…', 'Purge plaintext history…', 'I lost my passphrase and recovery key…'])
+    expect(labels(html)).toEqual(['Reset passphrase with recovery key', 'Purge plaintext history', 'I lost my passphrase and recovery key'])
     expect(render({ ...on, unlocked: false }, { kind: 'confirmLost' })).toContain('cannot be recovered')
   })
 

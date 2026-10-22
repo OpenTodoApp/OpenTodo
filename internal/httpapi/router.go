@@ -73,6 +73,7 @@ func (s *Server) registerAdminRoutes(mux *routes) {
 	mux.handle("GET /api/v1/invitations/{token}", public("the invitee previews the invitation before having an account"), s.handlePreviewInvitation)
 	// User administration (OpenSpec `user-management`).
 	s.registerUserRoutes(mux)
+	s.registerProfileRoutes(mux)
 	// Audit log: owner-only reads, export and settings; personal activity for
 	// everyone.
 	mux.handle("GET /api/v1/audit", ownerOnly("access the audit log"), s.handleAuditList)
@@ -120,6 +121,7 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerCalendarFeedRoutes(mux)
 	// Issue import (OpenSpec `issue-connections`); before MCP, whose resource reads it.
 	s.registerIssueRoutes(mux)
+	s.registerSTTRoutes(mux)
 	// Map proxy and its switches (OpenSpec `task-locations`).
 	s.registerMapRoutes(mux)
 	s.registerQuickAddRoutes(mux)
