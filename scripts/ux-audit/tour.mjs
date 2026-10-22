@@ -154,8 +154,9 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
     out.violations = [{ rule: 'NAV', element: e.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens' }]
     await p.screenshot({ path: join(OUT, shot), type: 'jpeg', quality: 55 }).catch(() => {})
   }
-  if (host.layout) await chooseLayout(p, 'List').catch(() => {})
+  // Escape first: an open overlay would take the click that restores the layout.
   await p.keyboard.press('Escape').catch(() => {})
+  if (host.layout) await chooseLayout(p, 'List').catch(() => {})
   if (host.anon) await p.close()
   return out
 }
@@ -244,8 +245,8 @@ async function reducedMotion(ids) {
         } catch (err) {
           out.push({ rule: 'NAV', id: m.id, width, element: m.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens' })
         }
-        if (m.screen === 'board') await chooseLayout(p, 'List').catch(() => {})
         await p.keyboard.press('Escape').catch(() => {})
+        if (m.screen === 'board') await chooseLayout(p, 'List').catch(() => {})
       }
     } finally {
       await browser.close()
