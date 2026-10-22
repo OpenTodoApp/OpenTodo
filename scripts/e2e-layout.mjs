@@ -977,8 +977,12 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }))
       const load = async () => {
         await p.goto(base + s.path)
-        await s.ready(p)
-        if (s.layout) {
+        // In another language (phone-v2 D9) the screens are checked, not the overlays: the
+        // triggers and headings here are found by their English names. A screen is ready
+        // when its content column holds something; the seeded titles stay English.
+        if (LANG) await p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').first().waitFor({ timeout: 15000 })
+        else await s.ready(p)
+        if (s.layout && !LANG) {
           await chooseLayout(p, s.layout)
           await p.waitForTimeout(300)
         }
@@ -999,7 +1003,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       for (const m of await p.evaluate(addButtonCovers)) await fail(p, s.name, null, m)
       // Accessibility of the whole screen (axe-core, serious and critical issues).
       for (const m of await axeProblems(p)) await fail(p, s.name, null, m)
-      if (s.offline && engine === 'chromium') {
+      if (s.offline && engine === 'chromium' && !LANG) {
         // Help ships with the app: offline, another guide still opens from the precache.
         await ctx.setOffline(true)
         try {
@@ -1014,7 +1018,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
         }
       }
       await shot(p, s.name)
-      for (const o of s.overlays ?? []) {
+      for (const o of LANG ? [] : s.overlays ?? []) {
         run.step = `screen ${s.name} › ${o}`
         const checkOne = async () => {
           await visit()
