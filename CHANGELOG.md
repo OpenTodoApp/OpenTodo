@@ -4,11 +4,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-23
+
+OpenTodo 0.10.0 is a calmer app with room for more people. The interface was redrawn: one quiet task row, a new mark and sidebar, softer colours, motion that marks a completed task, and a phone layout with swipe actions and a task sheet. **Workspaces and groups** keep work and home apart and share a project with a team in one step. **Automation rules** let a task change itself, notes and comments share **one editor** with tables, images, mentions and **reactions**, and a **task page** hands one task to someone without an account. Tasks can have a **location** on a map, your account can live as a **Markdown vault** for Obsidian, the importer reads **six more apps**, and the owner can give the server its **own name and logo**. An early **Android app** is in the repository, not yet in the stores.
+
 ### Upgrade notes
 
+- **Six migrations, no mandatory environment variables.** Replace the image or the binary and restart; migrations 0040 to 0045 (relay devices, task pages, projects kept away from AI assistants, automation rules, profiles, workspaces) run on start. There are no down-migrations, so back up first. New optional settings: `OPENTODO_MAPS`, `OPENTODO_MAPS_TILES_URL` and `OPENTODO_MAPS_GEOCODER_URL` (maps), `OPENTODO_STT_URL` and `OPENTODO_STT_KEY_FILE` (dictation through your own speech service), and `OPENTODO_AUTOMATIONS` (automation rules). Upgrade the server before the devices, as for every release.
 - **Sample tasks and the start guide's checklist add two additive sync fields** (`sample` on tasks, `start_checklist` in the user's preferences); older servers refuse them as unknown fields and the devices keep their values, older apps show sample tasks as ordinary tasks. No migration.
 - **Workspaces add one migration** (`0045_workspaces`: `workspaces`, `workspace_members`, `workspace_invites`, `groups`, `group_members`, `project_grants`) and a column `project_members.via`, added at startup together with one default workspace per account; every existing member becomes a direct grant. No new variable. Back up first, as for every release. An older server ignores the new tables and column, but devices from this version write `workspace_id`, which an older server refuses, so downgrade the server only together with the web app.
-
 - **Reactions and mentions in notes are new sync fields** (`reactions.<account id>` on comments, `note_mentions` on tasks); both stay plaintext with end-to-end encryption. Upgrade the server before the devices: an older server refuses the new fields. No migration.
 - **Quick add reads numeric dates in your date format only (breaking).** The device-level choice "Numeric dates like 12/11" under **Settings → Capture** is gone: `12/11` is read day-month or month-day as your date format in **Settings → General → Date and time** says, and with System or ISO as your language says. A device that had fixed the other order reads such dates differently now; the stored choice is ignored and removed. ([Quick add](docs/quick-add.md))
 - **Profiles add one migration** (`user_profiles`, `email_changes`); pictures are stored under `<data>/avatars` and are part of backups.
@@ -713,7 +717,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/pixari/opentodo/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/pixari/opentodo/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.8.0
 [0.7.2]: https://github.com/pixari/opentodo/compare/v0.7.1...01b1fe0
