@@ -30,7 +30,7 @@ export function ChartFigure({ title, summary, table, children, note, wide, testI
   const id = useId()
   const [open, setOpen] = useState(false)
   return (
-    <figure className={`min-w-0 rounded-card border border-default bg-surface p-4 ${wide ? 'lg:col-span-2' : ''}`} data-panel={testId} aria-labelledby={`${id}-h`}>
+    <figure className={`ui-section-flat ui-panel-flat min-w-0 ${wide ? 'lg:col-span-2' : ''}`} data-panel={testId} aria-labelledby={`${id}-h`}>
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 id={`${id}-h`} className="text-body font-semibold text-default">{title}</h2>
         {note && <p className="text-meta text-muted">{note}</p>}
@@ -62,7 +62,7 @@ export function ChartFigure({ title, summary, table, children, note, wide, testI
 /** A panel with nothing to show for the period: one line saying what it needs. */
 export function EmptyPanel({ title, children, wide, testId }: { title: string; children: ReactNode; wide?: boolean; testId?: string }) {
   return (
-    <section className={`rounded-card border border-dashed border-input px-4 py-3 ${wide ? 'lg:col-span-2' : ''}`} aria-label={title} data-panel={testId} data-empty>
+    <section className={`ui-section-flat ui-panel-flat ${wide ? 'lg:col-span-2' : ''}`} aria-label={title} data-panel={testId} data-empty>
       <h2 className="inline text-body font-semibold text-default">{title}</h2>
       <span className="text-meta text-muted"> · {children}</span>
     </section>
@@ -186,9 +186,9 @@ export function StatTile({ label, value, change, note, testId }: {
   testId: string
 }) {
   return (
-    <div className="min-w-0 rounded-card border border-default bg-surface p-3" data-tile={testId}>
+    <div className="surface-card min-w-0 p-3" data-tile={testId}>
       <dt className="text-meta text-muted">{label}</dt>
-      <dd className="text-h2 font-semibold tabular-nums text-default" data-tile-value>{value}</dd>
+      <dd className="text-display tabular-nums text-strong" data-tile-value>{value}</dd>
       {change && (
         <dd className="flex items-center gap-1 text-meta text-muted" data-tile-change={change.direction}>
           <Icon name={ARROW[change.direction]} size="xs" />{change.text}

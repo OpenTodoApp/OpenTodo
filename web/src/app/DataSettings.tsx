@@ -48,7 +48,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
   const dt = useDateTimeFormat()
   const s = SYNC[sync.state] ?? { label: sync.state, hue: 'slate' as HueName }
   return (
-    <SettingsSection {...cardCopy('data')} testId="data-panel">
+    <SettingsSection {...cardCopy('data')} tier="primary" testId="data-panel">
       <SettingRow {...rowCopy('data', 'export')}
         control={(
           <>

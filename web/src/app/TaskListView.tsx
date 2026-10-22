@@ -20,7 +20,7 @@ import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Task } from '../lib/types'
-import { Button, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
+import { Button, hueFor, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
 import { act } from './actionError'
 import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
@@ -305,10 +305,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
           {board && currentProject ? (
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}
-              projects={m.projects} labels={m.labels} renderCard={(task) => renderRow(flatRow(task))} onCurrentColumn={setCurrentColumn} />
+              projects={m.projects} labels={m.labels} renderCard={(task) => renderRow(flatRow(task))} onCurrentColumn={setCurrentColumn} placeholder={drag.placeholder} />
           ) : timeline && currentProject ? (
             <TimelineView groups={groups} today={today} zone={m.zone} editable={m.projectEditable} selectedId={selectedId}
-              onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} />
+              onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} hue={hueFor(currentProject.color)} />
           ) : (
             <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs}
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}

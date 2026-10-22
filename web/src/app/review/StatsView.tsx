@@ -131,7 +131,7 @@ export function StatsContent({ tasks, projects, labels = [], memberships, me, to
   return (
     <div className="space-y-4" data-stats-content>
       <Tiles dash={dash} vs={vs} />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="stats-panels">
+      <div className="grid grid-cols-1 gap-x-8 lg:grid-cols-2" data-testid="stats-panels">
         <KeepingUp dash={dash} range={range} />
         <WhereTimeGoes dash={dash} />
         <YearOfDone dash={dash} weekStart={weekStart} streak={dash.tiles.streak.current} />
@@ -282,7 +282,7 @@ function KeepsSlipping({ slipping, projectOf }: { slipping: readonly Slip[]; pro
     return <EmptyPanel title={title} testId="slipping">{t('No open task was moved later three times or more in the last 90 days, on this device.')}</EmptyPanel>
   }
   return (
-    <section className="min-w-0 rounded-card border border-default bg-surface p-4" aria-label={title} data-panel="slipping">
+    <section className="ui-section-flat ui-panel-flat min-w-0" aria-label={title} data-panel="slipping">
       <div className="mb-2 flex flex-wrap items-baseline gap-x-3">
         <h2 className="text-body font-semibold text-default">{title}</h2>
         <p className="text-meta text-muted">{note}</p>

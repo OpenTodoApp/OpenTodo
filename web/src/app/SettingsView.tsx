@@ -152,7 +152,7 @@ export function SettingsList({ user, current, compact = false }: { user: User; c
         {groupedSections(user).map(({ group, sections }) => (
           <section key={group.id} aria-labelledby={`group-${group.id}`}>
             <h2 id={`group-${group.id}`} className={`${compact ? 'px-2.5 pb-1' : 'mb-2 px-1'} text-hint font-semibold uppercase tracking-wide text-faint`}>{group.label}</h2>
-            <ul className={compact ? 'space-y-0.5' : 'divide-y divide-(--ot-border) overflow-hidden rounded-card border border-default bg-surface shadow-1'}>
+            <ul className={compact ? 'space-y-0.5' : 'divide-y divide-(--ot-border) overflow-hidden rounded-card border border-default bg-surface shadow-1'}>{/* surface-lint-allow: the section list, not a section */}
               {sections.map((s) => {
                 const on = s.id === current
                 return (
@@ -210,7 +210,7 @@ function SettingsSearch({ user }: { user: User }) {
       <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey}
         placeholder={t('Search settings')} aria-label={t('Search settings')} autoComplete="off" />
       {query.trim() && (
-        <ul ref={listRef} className="rounded-card border border-default bg-surface p-1 shadow-1" aria-label={t('Matching settings')} data-settings-results>
+        <ul ref={listRef} className="rounded-card border border-default bg-surface p-1 shadow-1" aria-label={t('Matching settings')} data-settings-results>{/* surface-lint-allow: search results, not a section */}
           {hits.length === 0 && <li className="px-2 py-2 text-meta text-muted">{t('No setting matches “{trim}”.', { trim: query.trim() })}</li>}
           {hits.map((h: SettingsHit) => (
             <li key={h.section.id}>
@@ -246,7 +246,7 @@ function ResultLink({ section, onOpen }: { section: SettingsSection; onOpen: () 
 /** Who is signed in: avatar initials, name, email and role (the list and Account). */
 export function ProfileCard({ user, compact = false }: { user: User; compact?: boolean }) {
   return (
-    <div id="profile" className={`flex items-center gap-3 rounded-card border border-default bg-surface ${compact ? 'p-3' : 'gap-4 p-4'} shadow-1`} data-profile-card>
+    <div id="profile" className={`flex items-center gap-3 rounded-card border border-default bg-surface ${compact ? 'p-3' : 'gap-4 p-4'} shadow-1`} data-profile-card>{/* surface-lint-allow: the profile card above the list */}
       <PersonAvatar id={user.id} name={user.name || user.email} size={compact ? 'md' : 'lg'} />
       <div className="min-w-0 flex-1">
         <p className="user-text truncate text-body font-semibold text-default">{user.name || user.email}</p>

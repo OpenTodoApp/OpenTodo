@@ -83,6 +83,33 @@ describe('timeline', () => {
     await r.unmount()
   })
 
+  it('fills bars in the project hue, dims the part before today and gives a late bar the danger edge (surfaces-v2)', async () => {
+    const p = await createProject({ name: 'Garden', color: '#16a34a' })
+    await saveViewMode(p, 'timeline')
+    // Today is 1 November: the first bar crosses it, the second ended, the third missed its deadline.
+    const across = await createTask({ title: 'Across', project_id: p, start: '2026-10-29', due: { date: '2026-11-04' } })
+    const ended = await createTask({ title: 'Ended', project_id: p, start: '2026-10-25', due: { date: '2026-10-28' } })
+    const late = await createTask({ title: 'Late', project_id: p, start: '2026-10-20', deadline: '2026-10-30' })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => r.container.querySelectorAll('[data-bar]').length === 3)
+    const bar = (id: string) => r.container.querySelector<HTMLElement>(`[data-bar="${id}"]`)!
+    expect(bar(across).className).toContain('ui-block')
+    expect(bar(across).getAttribute('data-hue')).toBe(bar(ended).getAttribute('data-hue'))
+    expect(bar(across).getAttribute('data-hue')).toBeTruthy()
+    // Two segments: the dimmed part covers the 29th to the 31st.
+    const past = bar(across).querySelectorAll<HTMLElement>('[data-bar-past]')
+    expect(past).toHaveLength(1)
+    expect(past[0].className).toContain('ui-block--past')
+    expect(past[0].style.width).toBe(`${3 * 32}px`)
+    expect(bar(ended).className).toContain('ui-block--past')
+    expect(bar(ended).querySelector('[data-bar-past]')).toBeNull()
+    // Late wins over the hue and the dimming.
+    expect(bar(late).className).toContain('ui-block--late')
+    expect(bar(late).className).not.toContain('ui-block--past')
+    expect(bar(late).querySelector('[data-bar-past]')).toBeNull()
+    await r.unmount()
+  })
+
   it('moves the selected task with the arrows and its deadline with Shift', async () => {
     const p = await timeline()
     const id = await createTask({ title: 'Book flights', project_id: p, due: { date: '2026-11-10', time: '09:00' } })

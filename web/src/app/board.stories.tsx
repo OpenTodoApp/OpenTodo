@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect, useRef, type ReactNode } from 'react'
+import type { Task } from '../lib/types'
 import { BoardView, type BoardColumn } from './BoardView'
 import { HEX, label, project, seeded, seedProjectWithSections, storyUser, task, TODAY, TOMORROW, withClock, withSeed } from './stories/fixtures'
 import { TaskCard } from './TaskRow'
@@ -71,10 +73,56 @@ export const ReadOnlyColumns: StoryObj = {
 export const CalmColumn: StoryObj = {
   decorators: [withClock],
   render: () => (
-    <ul className="w-72 space-y-1.5 rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken">
+    <ul className="ui-column w-72 space-y-1.5">
       {columns[1].cards.concat(columns[0].cards).map((t) => (
         <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} progress={t.id === 'b4' ? { done: 1, total: 3 } : undefined} onToggle={noop} onOpen={noop} />
       ))}
     </ul>
+  ),
+}
+
+// Board surfaces (OpenSpec change surfaces-v2, task 4.4): the column surface, the
+// card lift and the drop placeholder.
+const styled: BoardColumn[] = [
+  { key: 's1', section: { ...section('s1', 'Backlog', 0), color: HEX.teal, icon: 'inbox' }, cards: columns[0].cards },
+  columns[1],
+  { key: 's4', section: section('s4', 'Done', 3), cards: [] },
+]
+
+const card = (t: Task, dragging = false) => (
+  <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} dragging={dragging} onToggle={noop} onOpen={noop} />
+)
+
+/** Columns with a styled section (icon and colour), a filled one and an empty one with "Add a task" inside its surface. */
+export const StyledFilledEmptyColumns: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={styled} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels} renderCard={(t) => card(t)} />
+  ),
+}
+
+/** Focus inside a card lifts it like a hover does (the shadow step 2). */
+function FocusFirstCard({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => { ref.current?.querySelector<HTMLElement>('[data-task-id] [data-row-open]')?.focus() }, [])
+  return <div ref={ref}>{children}</div>
+}
+
+/** A card hovered or focused: lifted to the second elevation step. */
+export const CardHovered: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <FocusFirstCard>
+      <BoardView project={website} columns={[columns[1]]} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels} renderCard={(t) => card(t)} />
+    </FocusFirstCard>
+  ),
+}
+
+/** A drag in progress: the origin card faded in "Backlog", the placeholder at the end of "In progress". */
+export const DragInProgress: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={columns} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels}
+      placeholder={{ key: 's2', height: 56 }} renderCard={(t) => card(t, t.id === 'b2')} />
   ),
 }

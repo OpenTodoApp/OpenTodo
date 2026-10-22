@@ -48,8 +48,22 @@ export const PAIRS: Pair[] = [
   ...HUE_NAMES.flatMap((h): Pair[] => [
     ...ui(`hue-${h}-solid`, ['surface']),
     { fg: `hue-${h}-text`, bg: `hue-${h}-soft`, min: 4.5, kind: 'chip' },
+    // Filled calendar blocks (surfaces-v2 D1, D3): strong text on the soft fill, faint
+    // text on the past block's dimmed fill (DERIVED_TOKENS), the edge on the canvas.
+    ...text('text-strong', [`hue-${h}-soft`]),
+    ...text('faint', [`hue-${h}-past`]),
+    ...ui(`hue-${h}-solid`, ['canvas']),
   ]),
 ]
+
+/**
+ * Colours the stylesheet computes in a component class rather than naming as a token,
+ * measured like tokens: the past calendar block's fill is `.ui-block--past` in
+ * index.css (surfaces-v2 D3), the soft fill mixed 55 % towards the surface.
+ */
+export const DERIVED_TOKENS: Record<string, string> = Object.fromEntries(
+  HUE_NAMES.map((h) => [`hue-${h}-past`, `color-mix(in oklab, var(--ot-hue-${h}-soft) 55%, var(--ot-surface))`]),
+)
 
 /**
  * Glyphs and borders on the habit month history's cells (OpenSpec habits, design

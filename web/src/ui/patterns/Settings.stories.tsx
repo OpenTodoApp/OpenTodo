@@ -12,6 +12,7 @@ import { SettingRow, SettingsSection } from './SettingsSection'
 import { SETTINGS_COPY } from '../../lib/settingsCopy'
 
 // Card and row text comes from the settings copy table, as in the app (settings-copy D2).
+// The two-factor card is the primary tier above a flat section (surfaces-v2 D9).
 const MFA = SETTINGS_COPY.mfa
 const TITLES = SETTINGS_COPY.notifications.rows.titles
 
@@ -19,7 +20,7 @@ function Section({ learnMore }: { learnMore?: string }) {
   const [on, setOn] = useState(true)
   return (
     <div className="space-y-4">
-      <SettingsSection title={MFA.title} description={MFA.description} learnMore={learnMore}>
+      <SettingsSection title={MFA.title} description={MFA.description} learnMore={learnMore} tier="primary">
         <SettingRow label={MFA.rows.status.label} status={<Badge hue="green">On · Authenticator app</Badge>} control={<Button size="sm">Manage</Button>} />
         <SettingRow label={MFA.rows.recovery.label} description={MFA.rows.recovery.description} status="7 of 10 left" control={<Button size="sm">View</Button>} />
         <SettingRow label={TITLES.label} description={TITLES.description} control={<Switch checked={on} onChange={setOn} label={TITLES.label} hideLabel />} />

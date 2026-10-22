@@ -118,3 +118,13 @@ Web-only, no data. Ships as one release with regenerated screenshots in `docs/`.
 
 - Whether the all-day cap should be two at 375 px instead of three; decided from the phone story's baseline, no spec change (the requirement says "at most three").
 - Whether `tokens-v2` lands a `text-display` step before this change is applied; until it does, tiles use `text-h1` and the swap is one class.
+
+## Implementation notes
+
+- **Hue values:** no hue was corrected. `text-strong` on every soft hue and `text-faint` on the dimmed past fill pass in both themes; the past fill is measured as the real `color-mix(in oklab, soft 55 %, surface)` through `DERIVED_TOKENS` in `web/src/ui/tokens/pairs.ts` (a plain `faint` on the undimmed soft fill failed for indigo, yellow and lime, which is why the dimmed fill is measured instead). Mixes use `oklab` like the rest of the stylesheet, not `srgb` as D3 first wrote.
+- **Lint (task 1.3):** the surface rule is scoped: in a file that renders `SettingsSection`, a className with `rounded-card` and `shadow-1/2/3` fails unless the line says `surface-lint-allow` (four legitimate stand-alone cards: the settings profile card and list, the two-factor enrolment gate). `rounded-card` and `shadow-*` stay legal tokens elsewhere. The raw `border-t` separator rule was not added; flat sections get their hairline from `ui-section-flat`.
+- **Drag placeholder (D7):** the project board's drag lives in `web/src/app/task-list/useListDrag.ts` (`useBoardDrop.ts` is the board of filters), so the card height is measured there and passed to `BoardView` as `placeholder`. The lift and the faded origin are applied by `ui-cards--lift` on the column's list (`> li`), so `TaskRow.tsx` (rows-v2) is untouched; the origin is a sunken card with a dashed `border-input` edge instead of `opacity-40` (faded text failed the workbench's axe colour-contrast gate); these rules sit outside the CSS layers so they win over the row's own `shadow-1` and drag `opacity-90` utilities; the shadow change is instant because the row's `transition-[opacity,transform]` does not include the shadow.
+- **Capacity line (D5):** `CapacityLine` is used in the Day/Week header, the Week agenda and Month; the Plan's `CapacityBar` already used muted tabular figures and keeps its three-segment bar.
+- **Statistics panels:** flat with a hairline above each (`ui-panel-flat`), also the empty ones (they were dashed boxes); tiles use `surface-card` and `text-display` (tokens-v2 landed it).
+- **Account page:** the session card is primary; How you work and two-factor are flat there, so the page keeps one primary card.
+- **CSS growth:** the main stylesheet grows from 141.12 kB (21.74 kB gzip) to 144.43 kB (22.18 kB gzip), +0.44 kB gzip. No dependency added, no chrome row added.

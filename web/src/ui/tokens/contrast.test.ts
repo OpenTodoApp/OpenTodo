@@ -3,10 +3,12 @@ import css from '../../index.css?raw'
 import { resolveToken, toHex, tokenContrast } from './resolve'
 import { ACCENT_TOKENS } from './accents'
 import { parseAccents, parseContrastOverride, parseThemes } from './css'
-import { GLYPH_PAIRS, OVERRIDE_PAIRS, PAIRS, type Pair } from './pairs'
+import { DERIVED_TOKENS, GLYPH_PAIRS, OVERRIDE_PAIRS, PAIRS, type Pair } from './pairs'
 
 // OpenSpec design-system "Accessible contrast in both themes".
-const { lightTokens: light, darkTokens: darkAttr } = parseThemes(css)
+const themes = parseThemes(css)
+const light = { ...themes.lightTokens, ...DERIVED_TOKENS }
+const darkAttr = { ...themes.darkTokens, ...DERIVED_TOKENS }
 
 describe('token contrast', () => {
   for (const [theme, tokens] of [['light', light], ['dark', darkAttr]] as const) {
@@ -56,7 +58,7 @@ describe('high-contrast override', () => {
 
   for (const [mode, tokens] of [['light', hc.light], ['dark', hc.dark]] as const) {
     it(`every pair meets the raised minimum in ${mode}`, () => {
-      expect(failures('contrast-high', mode, tokens, OVERRIDE_PAIRS['contrast-high'])).toEqual([])
+      expect(failures('contrast-high', mode, { ...tokens, ...DERIVED_TOKENS }, OVERRIDE_PAIRS['contrast-high'])).toEqual([])
     })
   }
 

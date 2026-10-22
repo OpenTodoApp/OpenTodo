@@ -213,3 +213,54 @@ describe('Week on a phone (ux-overhaul, time-blocking "Week on a phone")', () =>
     await r.unmount()
   })
 })
+
+describe('surfaces (surfaces-v2, time-blocking "Filled blocks")', () => {
+  it('dims blocks and lane rows of days before today, and a past block still moves with the arrows', async () => {
+    const past = await createTask({ title: 'Yesterday call', due: { date: '2026-10-13', time: '10:00' }, estimate_minutes: 30 })
+    const now = await createTask({ title: 'Today call', due: { date: '2026-10-14', time: '10:00' }, estimate_minutes: 30 })
+    const loose = await createTask({ title: 'Yesterday loose', due: { date: '2026-10-13' } })
+    const r = await render(<CalendarView mode="week" />)
+    await waitFor(() => r.container.querySelector(`[data-block="${past}"]`) !== null && r.container.querySelector(`[data-lane-task="${loose}"]`) !== null)
+    const block = r.container.querySelector<HTMLElement>(`[data-block="${past}"]`)!
+    expect(block.className).toContain('ui-block')
+    expect(block.className).toContain('ui-block--past')
+    expect(r.container.querySelector(`[data-block="${now}"]`)!.className).not.toContain('ui-block--past')
+    expect(r.container.querySelector(`[data-lane-task="${loose}"]`)!.className).toContain('ui-block--past')
+    // Dimmed is not disabled: the selected past block moves fifteen minutes with Down.
+    await click(block)
+    await key(document.body, 'ArrowDown')
+    for (let i = 0; i < 50 && (await db.tasks.get(past))!.due?.time !== '10:15'; i++) await flush(20)
+    expect((await db.tasks.get(past))!.due).toEqual({ date: '2026-10-13', time: '10:15' })
+    await r.unmount()
+  })
+
+  it('shows three all-day events then "+2"; expanding shows all five, survives a reload and leaves other days alone', async () => {
+    await db.calendarSubscriptions.put({ id: 'sub1', name: 'Work', color: '#2563eb', enabled: true, lastSuccessAt: Date.now() })
+    const allDay = (i: number, date: string) => ({ id: `ad${date}${i}`, subscriptionId: 'sub1', uid: `u${date}${i}`, summary: `Holiday ${i}`, location: '', start: { date }, end: { date: date === '2026-10-15' ? '2026-10-16' : '2026-10-17' }, allDay: true, free: false })
+    await db.calendarEvents.bulkPut([...[0, 1, 2, 3, 4].map((i) => allDay(i, '2026-10-15')), ...[0, 1, 2, 3].map((i) => allDay(i, '2026-10-16'))])
+    await setMeta('calendar.events.window', { from: '2026-09-01', to: '2026-11-30', fetchedAt: Date.now() })
+    const chips = (root: ParentNode, d: string) => root.querySelectorAll(`[data-all-day="${d}"] [data-event-chip]`).length
+    let r = await render(<CalendarView mode="week" />)
+    await waitFor(() => chips(r.container, '2026-10-15') === 3)
+    expect(r.container.querySelector('[data-all-day-more="2026-10-15"]')!.textContent).toBe('+2')
+    await click(r.container.querySelector('[data-all-day-more="2026-10-15"]')!)
+    await waitFor(() => chips(r.container, '2026-10-15') === 5)
+    expect(r.container.querySelector('[data-all-day-more="2026-10-15"]')!.getAttribute('aria-expanded')).toBe('true')
+    // The sixteenth keeps its own cap.
+    expect(chips(r.container, '2026-10-16')).toBe(3)
+    await r.unmount()
+    r = await render(<CalendarView mode="week" />)
+    await waitFor(() => chips(r.container, '2026-10-15') === 5)
+    expect(chips(r.container, '2026-10-16')).toBe(3)
+    await r.unmount()
+  })
+
+  it('the Week draws one now line, in today\'s column', async () => {
+    const r = await render(<CalendarView mode="week" />)
+    await waitFor(() => r.container.querySelector('[data-now-line]') !== null)
+    const lines = r.container.querySelectorAll('[data-now-line]')
+    expect(lines).toHaveLength(1)
+    expect(lines[0].closest('[data-drop-day]')!.getAttribute('data-drop-day')).toBe('2026-10-14')
+    await r.unmount()
+  })
+})

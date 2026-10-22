@@ -11,6 +11,8 @@ export interface ListGroupHeaderProps {
   title: ReactNode
   /** Open tasks beneath the header (omit to show none). */
   count?: number
+  /** The count's tone: faint in lists, muted on a board column's sunken surface (surfaces-v2 D6). */
+  countTone?: 'faint' | 'muted'
   /** Overdue keeps the danger tone. */
   tone?: 'default' | 'danger' | 'muted'
   /** Collapsible groups show a chevron; the header's button toggles them. */
@@ -27,14 +29,14 @@ export interface ListGroupHeaderProps {
   className?: string
 }
 
-export function ListGroupHeader({ title, count, tone = 'default', collapsed, onToggle, actions, note, level = 2, testId, className = '' }: ListGroupHeaderProps) {
+export function ListGroupHeader({ title, count, countTone = 'faint', tone = 'default', collapsed, onToggle, actions, note, level = 2, testId, className = '' }: ListGroupHeaderProps) {
   const H = level === 2 ? 'h2' : 'h3'
   const color = tone === 'danger' ? 'text-danger' : tone === 'muted' ? 'text-muted' : 'text-default'
   const collapsible = onToggle !== undefined
   const text = (
     <>
       <span className={`min-w-0 truncate text-body font-semibold ${color}`}>{title}</span>
-      {count !== undefined && <span className="text-meta tabular-nums text-faint" data-group-count><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>}
+      {count !== undefined && <span className={`text-meta tabular-nums ${countTone === 'muted' ? 'text-muted' : 'text-faint'}`} data-group-count><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>}
     </>
   )
   return (

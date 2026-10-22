@@ -68,7 +68,7 @@ export function StartViewView({ views, startView, onChange }: { views: View[]; s
   // A display pinned from the display itself (a project, a saved view, other options) is listed while it is the start view.
   const pinnedDisplay = startView.startsWith('display:') && !DISPLAY_START_VIEWS.some((d) => d.value === startView) ? startView : null
   return (
-    <SettingsSection {...cardCopy('start-view')}>
+    <SettingsSection {...cardCopy('start-view')} tier="primary">
       <SettingRow {...rowCopy('start-view', 'open')} htmlFor="start-view-select" control={
         <Select id="start-view-select" className="sm:w-56" aria-label={t('Start view on this device')} value={startIsKnown ? startView : 'inbox'}
           onChange={(e) => onChange(e.target.value as StartView)}>

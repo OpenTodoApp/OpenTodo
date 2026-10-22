@@ -292,7 +292,7 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, taskMap, pr
       <div className="flex">
         <HourGutter />
         {days.map((d) => (
-          <DayColumn key={d.date} day={d} prefs={prefs} isToday={d.date === today} nowMinutes={nowMinutes} taskMap={taskMap} projectMap={projectMap}
+          <DayColumn key={d.date} day={d} prefs={prefs} isToday={d.date === today} isPast={d.date < today} nowMinutes={nowMinutes} taskMap={taskMap} projectMap={projectMap}
             subMap={subMap} zone={zone} selectedId={selectedId} draggingId={drag?.taskId ?? null} expanded={expanded} setExpanded={setExpanded}
             preview={previewFor(d)} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
         ))}

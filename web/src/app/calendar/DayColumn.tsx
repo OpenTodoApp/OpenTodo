@@ -1,16 +1,18 @@
 // The Day and Week grid columns (OpenSpec `time-blocking`): the hour gutter, each
 // day's header with capacity and unscheduled lane, and the day column with its
 // task blocks, calendar events, "+N" overflow lists, ghosts and the now line.
-import { DAY_MINUTES, dayLoad, formatLoad, SLOT_MINUTES, type GridPrefs } from '../../lib/calendar'
+import { DAY_MINUTES, dayLoad, SLOT_MINUTES, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { dateLocaleOf, formatHour } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
 import type { CalendarSubscription, Project, Task } from '../../lib/types'
-import { hueFor, Tooltip } from '../../ui'
+import { Button, hueFor, Tooltip } from '../../ui'
 import { EventBlockView, EventChip } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
+import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
+import { CapacityLine } from './CapacityLine'
 import { formatTime, GRID_HEIGHT, PX_PER_MIN, RESIZE_ZONE_PX, type Preview } from './grid'
 
 type DragStart = ReturnType<typeof useCalendarDrag>['start']
@@ -54,23 +56,10 @@ export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subM
           </span>
         ) : <span />}
         <Tooltip label={[load.over ? t('Over capacity.') : '', t('Planned estimates against a {minutes} day', { minutes: formatMinutes(prefs.dayLength) }) + (load.unestimated ? t('; {n} unestimated (counted as 0)', { n: load.unestimated }) : '')].filter(Boolean).join(' ')}>
-          <span
-            data-capacity
-            data-over={load.over || undefined}
-            tabIndex={0}
-            className={`whitespace-nowrap rounded-control px-1 font-mono text-hint ${load.over ? 'bg-danger-soft font-semibold text-danger' : 'text-muted'}`}
-          >
-            {formatLoad(load, prefs.dayLength)}
-            {load.over && <span className="sr-only">{' '}{t('over capacity')}</span>}
-            {load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
-          </span>
+          <CapacityLine load={load} dayLength={prefs.dayLength} unestimated focusable />
         </Tooltip>
       </div>
-      {day.allDay.length > 0 && (
-        <ul className="mt-1 space-y-0.5" aria-label={t('All-day events on {date}', { date: day.date })} data-all-day={day.date}>
-          {day.allDay.map((ev) => <li key={ev.id}><EventChip ev={ev} sub={subMap.get(ev.subscriptionId)} zone={zone} /></li>)}
-        </ul>
-      )}
+      {day.allDay.length > 0 && <AllDayStrip day={day} subMap={subMap} zone={zone} />}
       <div
         data-drop-lane={day.date}
         role="group"
@@ -87,11 +76,11 @@ export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subM
             onPointerDown={(e) => onPointerDown(e, task.id)}
             onClick={() => onSelect(task.id)}
             onDoubleClick={() => onOpen(task.id)}
-            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded-control px-1.5 py-0.5 text-left text-meta ${selectedId === task.id ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+            className={`ui-block ui-block--row flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-left text-meta ${day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
             data-hue={hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)}
           >
             <span className="truncate">{task.title || t('Untitled')}</span>
-            {task.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-hint text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
+            {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
           </button>
         ))}
       </div>
@@ -99,10 +88,12 @@ export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subM
   )
 }
 
-export function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, onSelect, onOpen, onDragStart }: {
+export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, onSelect, onOpen, onDragStart }: {
   day: DayData
   prefs: GridPrefs
   isToday: boolean
+  /** The day is before the logical today: its blocks are dimmed (surfaces-v2 D3). */
+  isPast?: boolean
   nowMinutes: number
   taskMap: Map<string, Task>
   projectMap: Map<string, Project>
@@ -143,7 +134,7 @@ export function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap
         const task = taskMap.get(b.id)
         const block = day.blocks.get(b.id)
         if (!task || !block) return null
-        return <TaskBlock key={b.id} b={b} block={block} task={task} date={day.date} projectMap={projectMap} selected={selectedId === b.id}
+        return <TaskBlock key={b.id} b={b} block={block} task={task} date={day.date} past={isPast} projectMap={projectMap} selected={selectedId === b.id}
           dragging={draggingId === b.id} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
       })}
 
@@ -159,7 +150,7 @@ export function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap
           className="pointer-events-none absolute inset-x-0.5 z-30 rounded-control border-2 border-dashed border-accent bg-accent/15 px-1.5 py-0.5 text-meta text-strong"
           style={{ top: preview.start * PX_PER_MIN, height: Math.max(SLOT_MINUTES, Math.min(preview.length, DAY_MINUTES - preview.start)) * PX_PER_MIN }}
         >
-          <span className="font-mono text-hint">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || t('Untitled')}</span>
+          <span className="text-hint tabular-nums">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || t('Untitled')}</span>
         </div>
       )}
 
@@ -173,11 +164,12 @@ export function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap
 }
 
 /** One task block: drag to move, drag its lower edge to resize, double-click to open. */
-function TaskBlock({ b, block, task, date, projectMap, selected, dragging, onSelect, onOpen, onDragStart }: {
+function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging, onSelect, onOpen, onDragStart }: {
   b: PlacedBlock
   block: NonNullable<ReturnType<DayData['blocks']['get']>>
   task: Task
   date: string
+  past: boolean
   projectMap: Map<string, Project>
   selected: boolean
   dragging: boolean
@@ -207,12 +199,12 @@ function TaskBlock({ b, block, task, date, projectMap, selected, dragging, onSel
       }}
       onClick={() => onSelect(b.id)}
       onDoubleClick={() => onOpen(b.id)}
-      className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-control border px-1.5 shadow-1 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-accent' : ''} ${ghost} border-hue-solid bg-surface`}
+      // Filled, not outlined (surfaces-v2 D1): the project's soft fill, a hue edge, strong text; dashed edge without an estimate.
+      className={`ui-block absolute z-10 cursor-grab touch-manipulation overflow-hidden px-1.5 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? '' : 'ui-block--dashed'} ${past ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${ghost}`}
       style={{
         top, height,
         left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
         width: `calc(${100 / b.lanes}% - 4px)`,
-        borderLeftWidth: 3,
       }}
     >
       {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
@@ -222,9 +214,9 @@ function TaskBlock({ b, block, task, date, projectMap, selected, dragging, onSel
         {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
       </div>
       {height >= 30 && (
-        <div aria-hidden className="truncate text-hint text-muted">
+        <div aria-hidden className="truncate text-hint tabular-nums">
           {formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}
-          {block.estimated && <span className="ml-1 font-mono">{formatMinutes(task.estimate_minutes!)}</span>}
+          {block.estimated && <span className="ml-1">{formatMinutes(task.estimate_minutes!)}</span>}
         </div>
       )}
       <div
@@ -270,7 +262,7 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
             if (ev) {
               return (
                 <li key={id} data-overflow-event={ev.event.id} className="flex gap-1 truncate px-1 py-0.5 text-meta text-muted">
-                  <span className="font-mono text-hint">{formatTime(ev.start)}</span>
+                  <span className="text-hint tabular-nums">{formatTime(ev.start)}</span>
                   <span className="truncate">{ev.event.summary || t('Busy')}</span>
                 </li>
               )
@@ -287,13 +279,33 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                   onDoubleClick={() => onOpen(id)}
                   className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
                 >
-                  <span className="font-mono text-hint text-muted">{blk ? formatTime(blk.start) : ''}</span>
+                  <span className="text-hint tabular-nums text-muted">{blk ? formatTime(blk.start) : ''}</span>
                   <span className="truncate">{tk?.title || t('Untitled')}</span>
                 </button>
               </li>
             )
           })}
         </ul>
+      )}
+    </div>
+  )
+}
+
+/** The all-day strip: at most three items, then "+N" to show the rest on this device (surfaces-v2 D4). */
+function AllDayStrip({ day, subMap, zone }: { day: DayData; subMap: Map<string, CalendarSubscription>; zone?: string }) {
+  const expanded = useAllDayExpanded().has(day.date)
+  const capped = day.allDay.length > ALL_DAY_CAP
+  const shown = capped && !expanded ? day.allDay.slice(0, ALL_DAY_CAP) : day.allDay
+  return (
+    <div className="mt-1" data-all-day={day.date}>
+      <ul className="space-y-0.5" aria-label={t('All-day events on {date}', { date: day.date })}>
+        {shown.map((ev) => <li key={ev.id}><EventChip ev={ev} sub={subMap.get(ev.subscriptionId)} zone={zone} /></li>)}
+      </ul>
+      {capped && (
+        <Button variant="ghost" size="sm" className="mt-0.5 w-full justify-start" aria-expanded={expanded} data-all-day-more={day.date}
+          onClick={() => toggleAllDay(day.date)}>
+          {expanded ? t('Show less') : `+${day.allDay.length - ALL_DAY_CAP}`}
+        </Button>
       )}
     </div>
   )

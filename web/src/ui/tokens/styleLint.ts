@@ -76,4 +76,24 @@ export function nativeTitles(path: string, source: string): Finding[] {
   return out
 }
 
+/**
+ * Hand-made card surfaces in a settings panel (OpenSpec change surfaces-v2, settings
+ * "Card tiers"): a file that renders `SettingsSection` gets its card or flat section
+ * from that component's `tier`, so a className holding both `rounded-card` and a
+ * `shadow-<n>` there is a card the tiers cannot see. Lines marked
+ * `surface-lint-allow` are a deliberate standalone card (a gate shown instead of the page).
+ */
+export function handMadeSurfaces(path: string, source: string): Finding[] {
+  if (!/\bSettingsSection\b/.test(source)) return []
+  const out: Finding[] = []
+  source.split('\n').forEach((line, i) => {
+    if (line.includes('surface-lint-allow')) return
+    for (const value of classTokens(line)) {
+      const tokens = value.split(/\s+/)
+      if (tokens.includes('rounded-card') && tokens.some((tk) => /^(?:[\w-]+:)*shadow-[123]$/.test(tk))) out.push({ path, line: i + 1, text: value.trim() })
+    }
+  })
+  return out
+}
+
 export const format = (f: Finding) => `${f.path}:${f.line}: ${f.text}`
