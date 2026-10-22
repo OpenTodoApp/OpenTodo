@@ -42,6 +42,13 @@ class ReminderScheduleTest {
         assertEquals(list, ReminderSchedule.parse(ReminderSchedule.toJson(list), now))
     }
 
+    /** The alarm receiver reads the stored schedule without a window: a 2026 timestamp is not "beyond the horizon of 1970". */
+    @Test fun theStoredScheduleIsReadWithoutTheTimeWindow() {
+        val list = listOf(ShellReminder("r1", "t1", now + hour, "A"))
+        assertEquals(list, ReminderSchedule.parse(ReminderSchedule.toJson(list), null))
+        assertTrue(ReminderSchedule.parse(ReminderSchedule.toJson(list), 0).isEmpty())
+    }
+
     @Test fun atMost500() {
         val json = (0 until 600).joinToString(",", "[", "]") { """{"id":"r$it","taskId":"t","fireAt":${now + it * 1000L}}""" }
         assertEquals(ReminderSchedule.MAX, ReminderSchedule.parse(json, now).size)

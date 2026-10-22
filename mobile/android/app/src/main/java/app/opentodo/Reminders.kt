@@ -55,7 +55,7 @@ object Scheduler {
 
     private fun cancelAll(context: Context, prefs: Prefs) {
         val am = context.getSystemService(AlarmManager::class.java)
-        for (r in ReminderSchedule.parse(prefs.reminders, 0)) am.cancel(alarmIntent(context, r.id))
+        for (r in ReminderSchedule.parse(prefs.reminders, null)) am.cancel(alarmIntent(context, r.id))
     }
 
     /** [exact] is the permission's state; the instrumented tests pass false to take the inexact fallback. */
@@ -69,7 +69,7 @@ object Scheduler {
     }
 
     fun find(context: Context, id: String): ShellReminder? =
-        ReminderSchedule.parse(Prefs(context).reminders, 0).firstOrNull { it.id == id }
+        ReminderSchedule.parse(Prefs(context).reminders, null).firstOrNull { it.id == id }
 }
 
 /** Shows the notifications: the reminder itself and the settings test. */
