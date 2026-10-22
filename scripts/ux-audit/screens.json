@@ -186,7 +186,10 @@
   "core": true,
   "layoutCheck": "sidebar",
   "story": "Screens/Sidebar",
-  "on": "inbox"
+  "on": "inbox",
+  "widths": [
+   360
+  ]
  },
  {
   "id": "quick-add",

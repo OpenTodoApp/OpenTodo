@@ -151,6 +151,9 @@ export function truncation() {
     }
     let ok = false
     for (let a = el; a && a !== document.body && !ok; a = a.parentElement) ok = carries(a)
+    // A control named by its content (no aria-label) is announced with the whole text.
+    const control = el.closest('a[href], button, [role="button"], [role="link"], [role="option"], [role="menuitem"], [role="tab"], [role="gridcell"]')
+    if (!ok && control && !control.hasAttribute('aria-label') && !control.hasAttribute('aria-labelledby')) ok = norm(control.textContent).includes(text)
     if (!ok) ok = [...(el.parentElement?.children ?? [])].some((s) => s !== el && s.classList.contains('sr-only') && norm(s.textContent).includes(text))
     if (!ok) out.push({ rule: 'M10', element: window.__ux.d(el), value: text.slice(0, 60), limit: 'full text reachable' })
     if (out.length >= 10) break

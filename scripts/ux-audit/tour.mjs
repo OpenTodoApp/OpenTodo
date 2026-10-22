@@ -1,6 +1,7 @@
 // The interface audit tour (OpenSpec change ux-audit-three-widths, D6): opens every
 // entry of the screen inventory (scripts/ux-audit/screens.json) on the built app
-// with the layout check's seeded account, at 360, 768 and 1280 px, light and dark,
+// with the layout check's seeded account, at 360 and 768 px as a touch device (as the
+// layout check emulates them) and 1280 px with a mouse, light and dark,
 // English and German; saves a screenshot of each and measures the interface budget
 // and the audited rules (D3), then the first interaction from the local copy with
 // the server stopped (M13) and story coverage (M14). Writes report.json and an
@@ -74,7 +75,7 @@ function hostOf(e, ids) {
     if (!s) throw new Error(`layout-check screen "${name}" not found`)
     return s
   }
-  return { name: e.id, path: fill(e.path, ids), anon: !!e.anon, ready: (p) => p.locator(e.ready).first().waitFor() }
+  return { name: e.id, own: true, path: fill(e.path, ids), anon: !!e.anon, ready: (p) => p.locator(e.ready).first().waitFor() }
 }
 
 async function runSteps(p, steps = []) {
@@ -139,7 +140,7 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
   const load = async () => {
     await p.goto(base + host.path)
     // A later language: the screens' ready signals are English headings (as in the layout check).
-    await (combo.lang === LANGS[0] ? host.ready(p) : p.locator('h1, [data-task-id], [role="alert"]').first().waitFor())
+    await (combo.lang === LANGS[0] || host.own ? host.ready(p) : p.locator('h1, [data-task-id], [role="alert"]').first().waitFor())
     if (host.layout) { await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: host.layout }).click(); await p.waitForTimeout(300) }
     await p.waitForTimeout(300)
     return e.kind === 'overlay' ? openOverlay(p, e, combo.width) : null
@@ -166,7 +167,7 @@ async function runCombo(combo, ids) {
   const browser = await launch()
   const opts = {
     viewport: { width: combo.width, height: HEIGHTS[combo.width] ?? 900 }, colorScheme: combo.theme,
-    hasTouch: combo.width < 1280, isMobile: combo.width < 768, deviceScaleFactor: 1, locale: 'en-GB', timezoneId: 'UTC', bypassCSP: true,
+    hasTouch: combo.width < 1280, isMobile: combo.width < 1280, deviceScaleFactor: 1, locale: 'en-GB', timezoneId: 'UTC', bypassCSP: true,
   }
   const out = []
   try {
@@ -182,6 +183,7 @@ async function runCombo(combo, ids) {
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
     for (const e of tourable) {
       if (e.widths && !e.widths.includes(combo.width)) continue
+      if (hostOf(e, ids).widths && !hostOf(e, ids).widths.includes(combo.width)) continue
       // The overlay openers find controls by their English names (as the layout check
       // does): overlays are captured in the first language, every screen in each.
       if (e.kind === 'overlay' && combo.lang !== LANGS[0]) continue
@@ -217,7 +219,7 @@ async function reducedMotion(ids) {
     }
     await p.goto(base + '/today')
     await p.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
-    await at('today', async () => { await p.locator('[data-task-id]').filter({ hasText: 'Renew passport' }).first().getByRole('checkbox').first().click(); await p.waitForTimeout(60) })
+    await at('today', async () => { await p.locator('[data-task-id]').filter({ hasText: 'Renew passport' }).first().locator('.group\\/check').first().click(); await p.waitForTimeout(60) })
     await p.goto(base + '/inbox')
     await p.locator('[data-task-id]').first().waitFor()
     await at('task-panel', async () => { await OVERLAYS['task-detail'](p, { width: 1280 }); await p.waitForTimeout(60) })
@@ -280,7 +282,7 @@ for (const c of captures) {
   if (c.lang === LANGS[0]) continue
   for (const v of c.violations) if ((v.rule === 'M6' || v.rule === 'M10') && !firstLang.has(`${c.id}|${c.width}|${c.theme}|${v.rule}`)) v.languageOnly = true
 }
-const motion = ONLY ? [] : await reducedMotion(ids)
+const motion = ONLY && !['today', 'task-panel', 'share'].some((id) => ONLY.has(id)) ? [] : await reducedMotion(ids)
 const stories = coverage()
 const extra = [
   ...motion,

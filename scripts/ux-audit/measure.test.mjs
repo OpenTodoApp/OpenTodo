@@ -92,7 +92,11 @@ test('M10 truncation: the full text in aria-label or a tooltip passes, a bare cu
   assert.deepEqual(await page.evaluate(truncation), [])
   await fixture(cut('data-tip="Home renovation with a long name"'))
   assert.deepEqual(await page.evaluate(truncation), [])
+  // A link named by its content is announced with the whole name.
   await fixture(cut(''))
+  assert.deepEqual(await page.evaluate(truncation), [])
+  // A cut heading outside any control, with no name or tooltip, fails.
+  await fixture('<h2 style="width:80px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Home renovation with a long name</h2>')
   assert.deepEqual(rules(await page.evaluate(truncation)), ['M10'])
 })
 
