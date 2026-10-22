@@ -102,6 +102,8 @@
   "signup_closed",
   "smtp_disabled",
   "sso_required",
+  "stt_not_configured",
+  "stt_unavailable",
   "too_large",
   "turn_in_progress",
   "unauthorized",

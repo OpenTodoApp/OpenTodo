@@ -184,6 +184,9 @@ var demoRules = []demoRule{
 	{"Attachments", false, taskAttachments},
 	{"Attachments", false, exact("/api/v1/settings/attachments")},
 	{"Outgoing email", false, prefix("/api/v1/settings/smtp")},
+	// The speech service is the operator's outbound target (settings-refresh D7): every method.
+	{"Speech to text", false, prefix("/api/v1/settings/stt")},
+	{"Speech to text", false, prefix("/api/v1/voice")},
 	// The weekly digest sends mail (stats-and-review): changing it is refused.
 	{"Email digest", true, exact("/api/v1/me/email-digest")},
 	// Public links publish data to anyone (public-links D9): every method.

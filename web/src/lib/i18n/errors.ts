@@ -117,6 +117,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   setup_token_invalid: msg('The setup token is missing or wrong.'),
   signup_closed: msg('Sign-up is disabled on this server.'),
   smtp_disabled: msg('Outgoing email is not available on this server.'),
+  stt_not_configured: msg('This server has no speech service. Use this browser’s recognition instead.'),
+  stt_unavailable: msg('The speech service did not answer. Try again, or type the task.'),
   sso_required: msg('This server requires signing in with single sign-on.'),
   too_large: msg('This is too large for the server: {detail}'),
   turn_in_progress: msg('Another answer is still being written. Wait for it or stop it first.'),
