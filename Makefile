@@ -253,6 +253,7 @@ e2e: cli
 ui-lint:
 	node --test scripts/ui-check.test.mjs scripts/ux-audit/ux-audit.test.mjs
 	node scripts/ui-check.mjs
+	node scripts/ux-audit/stories.mjs
 
 ## React hooks lint (web-lint-and-test-hygiene): Rules of Hooks and effect
 ## dependencies as errors; every remaining suppression carries its reason.
