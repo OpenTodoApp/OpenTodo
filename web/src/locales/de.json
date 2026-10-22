@@ -4809,5 +4809,6 @@
   "Custom range": "Eigener Zeitraum",
   "How long audit events are kept and whether addresses are recorded": "Wie lange Audit-Ereignisse bleiben und ob Adressen erfasst werden",
   "How long the audit log keeps events, and whether it records addresses.": "Wie lange das Audit-Protokoll Ereignisse behält und ob es Adressen erfasst.",
-  "Remove filter: {name}": "Filter entfernen: {name}"
+  "Remove filter: {name}": "Filter entfernen: {name}",
+  "Configuration": "Konfiguration"
 }

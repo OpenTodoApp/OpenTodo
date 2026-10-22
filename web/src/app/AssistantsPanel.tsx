@@ -4,7 +4,7 @@ import { Button } from '../ui'
 import { Badge } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
-import { Switch, Tabs } from '../ui'
+import { Switch } from '../ui'
 import { SecretReveal } from './TokensSection'
 import { RelaySettings } from './RelaySettings'
 import { api, isNetworkError } from '../lib/api'
@@ -52,6 +52,10 @@ export function clientSnippet(client: McpClient, endpoint: string, token?: strin
   if (client === 'code') return `claude mcp add --transport http opentodo ${endpoint} --header "Authorization: Bearer ${token || '<your token>'}"`
   return connectionSnippet(endpoint, token)
 }
+
+const CLIENTS: { id: McpClient; label: () => string }[] = [
+  { id: 'desktop', label: () => 'Claude Desktop' }, { id: 'code', label: () => 'Claude Code' }, { id: 'other', label: () => t('Other MCP clients') },
+]
 
 /** One numbered step of connecting an assistant. */
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
@@ -136,15 +140,20 @@ function ConnectSteps({ p, disabled }: { p: AssistantsViewProps; disabled: boole
         )}
       </Step>
       <Step n={3} title={t('Add it to your assistant')}>
-        <Tabs label={t('Assistant')} value={client} onChange={(id) => setClient(id as McpClient)}
-          tabs={[{ id: 'desktop', label: 'Claude Desktop' }, { id: 'code', label: 'Claude Code' }, { id: 'other', label: t('Other MCP clients') }]}>
-          <p className="py-2 text-meta text-muted">{client === 'desktop'
-            ? t('Settings → Developer → Edit Config, then add this entry to claude_desktop_config.json and restart Claude Desktop.')
-            : client === 'code' ? t('Run this in a terminal.')
-            : t('Add a remote MCP server (streamable HTTP) with the endpoint and send the token as the Authorization header. Clients that take a JSON entry accept this.')}</p>
-          <pre className="overflow-x-auto rounded-control bg-sunken p-2 font-mono text-meta text-default" data-scroll-x data-mcp-snippet>{snippet}</pre>
-          <Button size="sm" variant="ghost" icon="copy" className="mt-1" onClick={() => p.onCopy('snippet', snippet)}>{copyLabel('snippet', t('Copy configuration'))}</Button>
-        </Tabs>
+        <div role="radiogroup" aria-label={t('Assistant')} className="flex flex-wrap gap-1" data-mcp-clients>
+          {CLIENTS.map((c) => (
+            <button key={c.id} type="button" role="radio" aria-checked={client === c.id} onClick={() => setClient(c.id)} data-mcp-client={c.id}
+              className={`rounded-control border px-3 py-1 text-meta font-medium ${client === c.id ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-default hover:bg-sunken'}`}>
+              {c.label()}
+            </button>
+          ))}
+        </div>
+        <p className="text-meta text-muted">{client === 'desktop'
+          ? t('Settings → Developer → Edit Config, then add this entry to claude_desktop_config.json and restart Claude Desktop.')
+          : client === 'code' ? t('Run this in a terminal.')
+          : t('Add a remote MCP server (streamable HTTP) with the endpoint and send the token as the Authorization header. Clients that take a JSON entry accept this.')}</p>
+        <pre tabIndex={0} aria-label={t('Configuration')} className="overflow-x-auto rounded-control bg-sunken p-2 font-mono text-meta text-default focus-visible:outline-2 focus-visible:outline-focus" data-scroll-x data-mcp-snippet>{snippet}</pre>
+        <Button size="sm" variant="ghost" icon="copy" className="mt-1" onClick={() => p.onCopy('snippet', snippet)}>{copyLabel('snippet', t('Copy configuration'))}</Button>
         <p className="text-meta text-faint">{t('Tell the assistant your time zone: due dates are evaluated in the time zone it passes (UTC otherwise). Changes made offline on a device appear once it syncs.')}</p>
       </Step>
     </ol>
