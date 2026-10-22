@@ -209,11 +209,23 @@ A state-changing request authenticated by a session cookie SHALL be refused when
 - **THEN** it is refused with 403 `bad_origin`
 
 ### Requirement: Agent content routes
-An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels`, `POST /api/v1/tasks/{id}/comments`, `PATCH /api/v1/tasks/{id}` (not `assignee_id`, `parent_id`, `position` or a restore), `PATCH /api/v1/projects/{id}` (`name`, `color`) and `DELETE /api/v1/tasks/{id}` (own creations), while both assistant switches are on, through the agent tool registry with MCP's limits, audit, E2EE refusal and mention suppression. Other write routes and fields SHALL answer 403 `insufficient_scope`.
+An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels`, `POST /api/v1/tasks/{id}/comments`, `PATCH /api/v1/tasks/{id}` (not `assignee_id`, `parent_id`, `position` or a restore), `PATCH /api/v1/projects/{id}` (`name`, `color`) and `DELETE /api/v1/tasks/{id}` (own creations), while both assistant switches are on, through the agent tool registry with MCP's limits, audit, E2EE refusal and mention suppression. On the task routes the accepted fields SHALL be `title`, `description`, `project_id`, `section_id`, `parent_id` (create only), `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`, `fields`, `origin`, `deadline`, `start`, `evening`, `blocked_by` and `location`, plus `completed_at` and `deleted_at` on PATCH, each validated by the registry exactly as the sync path validates it and answered with the registry's codes (400 `invalid_input` naming the field, 404 `not_found`, 403 `forbidden`, 409 `encryption_enabled`). Other write routes and fields SHALL answer 403 `insufficient_scope`. A task in a project kept away from AI assistants (OpenSpec `agent-project-exclusion`) SHALL be `not_found` on these routes, and a create into such a project SHALL be refused the same way.
 
 #### Scenario: Agent creates a task through REST
 - **WHEN** both switches are on and an `agent` token POSTs `{"title":"Water plants"}` to `/api/v1/tasks`
 - **THEN** the response is 201, an `agent.write` audit event is recorded, and devices show the task after sync
+
+#### Scenario: Agent defers a task through REST
+- **WHEN** both switches are on and an `agent` token PATCHes `/api/v1/tasks/{id}` with `{"start": "2026-10-31", "deadline": "2026-11-06", "evening": true}`
+- **THEN** the response is 200 with the task carrying those three values, one operation per field is written with device `agent:<token-id>`, and devices show the task deferred after sync
+
+#### Scenario: Agent sets blockers through REST
+- **WHEN** an `agent` token PATCHes a task with `{"blocked_by": ["<other-task-id>"]}` naming an open task of the same project
+- **THEN** the response is 200 and the task shows as waiting for that task on every device after sync
+
+#### Scenario: Invalid planning value through REST
+- **WHEN** an `agent` token PATCHes a task with `{"start": "later"}` or a `blocked_by` that names an Inbox task from a shared project
+- **THEN** the response is 400 `invalid_input` naming the field and nothing changes
 
 #### Scenario: Switch off
 - **WHEN** the user's switch is off and an `agent` token POSTs to `/api/v1/tasks`
@@ -236,8 +248,12 @@ An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels`, `POST
 - **THEN** the response is 401 `unauthorized`
 
 #### Scenario: Encrypted account
-- **WHEN** an `agent` token of an encrypted account POSTs a task with a title
+- **WHEN** an `agent` token of an encrypted account POSTs a task with a title, or PATCHes one with a plaintext `location`
 - **THEN** the response is 409 `encryption_enabled` and no op is written
+
+#### Scenario: Project kept away from assistants
+- **WHEN** an `agent` token PATCHes a task of a project whose owner switched on "Keep away from AI assistants"
+- **THEN** the response is 404 `not_found`, indistinguishable from a deleted task, and nothing changes
 
 ### Requirement: Credential introspection
 `GET /api/v1/me` SHALL include `auth: {method, scope}` where `method` is `session` or `token` and `scope` is `full`, `read` or `agent`, plus `token_id` and `token_name` for tokens and, for `agent` tokens, `writes_allowed` and (when false) `writes_denied` naming the switch that is off. The field is additive and SHALL never include the secret. It is server state and needs a connection.
@@ -427,3 +443,14 @@ The last-use time of an API token or an app password SHALL be updated when it is
 #### Scenario: First use
 - **WHEN** a new token is used for the first time
 - **THEN** its last-use time is set at once
+
+### Requirement: API tokens in Settings
+Settings → Integrations SHALL list the user's API tokens as rows: the name, a scope badge (Full access, Read only, Assistant, Admin), "Created" and "Last used" dates in the user's date format (coarse, as recorded), and a Revoke action that asks for confirmation. Creating a token SHALL use one dialog with the name, the scope as described choices (one line each saying what the scope allows) and the expiry, and SHALL show the new token once in a monospace box with Copy and a line saying it will not be shown again. The list SHALL have an empty state naming what a token is for. Revoking or creating SHALL need a connection; offline the list shows its last loaded state with actions disabled.
+
+#### Scenario: Token rows
+- **WHEN** a user has a read-only token "Claude" created on 3 October and last used today
+- **THEN** its row reads "Claude", the "Read only" badge, "Created 3 Oct · Last used today", and a Revoke action
+
+#### Scenario: Shown once
+- **WHEN** the user creates a token
+- **THEN** the token is shown in a monospace box with Copy, the dialog says it will not be shown again, and after closing it the list shows the new row without the secret

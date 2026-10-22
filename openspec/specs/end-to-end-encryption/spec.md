@@ -324,3 +324,33 @@ For an encrypted account the device SHALL encrypt a task's `location` as one who
 #### Scenario: Offline on an encrypted account
 - **WHEN** an unlocked device of an encrypted account sets a saved place as a task's location while offline
 - **THEN** the location is encrypted and queued, syncs when the device reconnects, and converges like any other location
+
+### Requirement: Rules for encrypted accounts
+For an encrypted account the device SHALL encrypt a rule's `name` and the text of its `comment` action; a rule's `trigger`, `condition` and the other `actions` SHALL stay plaintext (ids, dates and enumerations only), so the server evaluates and applies rules for an encrypted account exactly as for any other. The server SHALL NOT write a comment for an encrypted account (it cannot produce a ciphertext body): the editor and the API SHALL refuse the `comment` action for an encrypted account, and the engine SHALL record a rule carrying one as "skipped: encrypted" for that action while applying the rest. A rule's in-app notification and its run log SHALL name tasks by id, resolved on the device.
+
+#### Scenario: Rule works on ciphertext
+- **WHEN** an encrypted account's rule "label waiting added → move to Waiting, priority 3" fires on a task whose title the server cannot read
+- **THEN** the task is moved and re-prioritised like any other, the server having read only ids and numbers
+
+#### Scenario: Comment action refused
+- **WHEN** an encrypted account PATCHes a rule with `actions: {comment: {text: "noted"}}`
+- **THEN** the response is 409 `encryption_enabled` naming the action and nothing is written
+
+#### Scenario: Turning encryption on with such a rule
+- **WHEN** a user turns encryption on while a rule with a comment action exists
+- **THEN** the rule keeps running its other actions, the comment is skipped and logged, and the Rules page marks the action as unavailable
+
+### Requirement: Reactions, note mentions and embedded images under encryption
+For an encrypted account, a comment's reaction fields and a task's `note_mentions` id list SHALL stay plaintext (they name accounts and one of six reaction names, never text the user wrote), while mentions, tables, images and every other node inside `notes_doc` and a comment's body SHALL be inside the ciphertext as today. An embedded image SHALL be shown only after the device has decrypted the attachment's bytes; the server SHALL serve ciphertext only, and a locked device SHALL show "Encrypted image" in its place. The documented field split SHALL name reactions and note mentions among the plaintext fields.
+
+#### Scenario: Reaction on an encrypted account's comment
+- **WHEN** an encrypted account reacts to its own comment
+- **THEN** the `reactions.<id>` operation carries the plaintext list `["heart"]` and the comment's `body` stays ciphertext
+
+#### Scenario: Mention inside the ciphertext
+- **WHEN** an encrypted account writes `@Me` in a personal note
+- **THEN** `notes_doc` and `description` are ciphertext, `note_mentions` is the empty plaintext list (personal task), and the server learns nothing of the mention
+
+#### Scenario: Embedded image on a locked device
+- **WHEN** a locked device of an encrypted account opens a note that embeds a photo
+- **THEN** the note shows "Encrypted image" where the photo belongs and no plaintext is requested or shown

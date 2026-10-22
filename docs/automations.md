@@ -3,7 +3,7 @@ title: Automation rules
 summary: Rules change tasks for you when something happens, such as a label added, a task's date passing or every Sunday evening, and run on your server even when no device is open.
 audience: user
 section: Guides
-specs: [custom-views, webhooks]
+specs: [custom-views, webhooks, automation-rules]
 screens: [rules]
 order: 46
 ---

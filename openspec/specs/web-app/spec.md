@@ -331,11 +331,11 @@ The tabbed area SHALL offer Comments (with the comment count), Activity, History
 - **THEN** the Time tab shows the entries, Tab reaches Start tracking first, and Enter starts an entry whose row appears at the top with a ticking duration
 
 ### Requirement: Task panel comment composer
-The comment composer SHALL be pinned to the bottom of the panel while Comments is shown, resting as a single line that expands to the full composer (attach, submit, the submit key hint) when focused, when it holds a draft or a reply target, or when `Shift+C` is pressed; `Shift+C` SHALL switch to Comments and focus the composer.
+The comment composer SHALL be pinned to the bottom of the panel while Comments is shown, resting as a single line that expands to the full composer (the rich-text editor, attach, submit, the submit key hint) when focused, when it holds a draft or a reply target, or when `Shift+C` is pressed; `Shift+C` SHALL switch to Comments and focus the composer. The editor's own keys SHALL apply only while the composer has focus and SHALL never fire a page shortcut.
 
 #### Scenario: Shortcut to the composer
 - **WHEN** the History tab is open and the user presses `Shift+C` outside a text field
-- **THEN** the Comments tab is shown, the composer is expanded and has focus
+- **THEN** the Comments tab is shown, the composer is expanded with the editor and has focus
 
 #### Scenario: Composer without scrolling
 - **WHEN** a task with thirty comments is opened
@@ -344,6 +344,10 @@ The comment composer SHALL be pinned to the bottom of the panel while Comments i
 #### Scenario: At rest
 - **WHEN** a task without a draft is opened and nothing is focused
 - **THEN** the composer is one line reading "Write a comment…" with no buttons under it, and the Comments list has the space the full composer used
+
+#### Scenario: Editor keys stay in the editor
+- **WHEN** the composer has focus and the user presses `c` or `1`
+- **THEN** the character is typed into the comment and the task is neither completed nor reprioritised
 
 ### Requirement: Task panel in viewer mode
 For a viewer of a shared project every property row SHALL render as read-only text without an editor, the header SHALL omit Complete and Delete, and the Comments tab SHALL remain writable because viewers may comment.
@@ -631,3 +635,18 @@ Outside text fields, `g` then `Shift+F` SHALL open the Focus screen (OpenSpec ch
 #### Scenario: No list keys on the Focus screen
 - **WHEN** the Focus screen is shown and the user presses `c` or `j`
 - **THEN** nothing happens, because the screen hosts no task list
+
+### Requirement: App icons
+The installed app's icons SHALL be the colour variant of the brand mark: the SVG favicon, the 192 and 512 px manifest icons, a 512 px maskable icon and the Apple touch icon, all generated from the one brand source and served under the same paths as today so that installed apps and bookmarks update their icon on the next load without a manifest path change. The sign-in, setup, reset, invitation and email screens SHALL show the mono mark beside the wordmark instead of an image of the icon. The precached shell SHALL include the new icon files, so an installed app shows its icon offline.
+
+#### Scenario: Installed icon updates
+- **WHEN** a person who installed the app before this version opens it after the update
+- **THEN** the home screen or dock icon shows the brand mark on the slate square after the browser's next icon refresh, and the app's manifest lists the same icon paths as before
+
+#### Scenario: Sign-in shows the mark
+- **WHEN** a visitor opens the sign-in screen in light and in dark
+- **THEN** the card starts with the mono mark at 32 px and the wordmark, and no raster icon is requested for the screen
+
+#### Scenario: Offline icon
+- **WHEN** the installed app is opened without network
+- **THEN** the shell and its icons load from the precache and the browser shows the brand mark in the title bar

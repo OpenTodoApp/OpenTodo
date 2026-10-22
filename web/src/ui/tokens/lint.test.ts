@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import css from '../../index.css?raw'
 import { STYLE_NOT_YET_MIGRATED, STYLE_NOT_YET_MIGRATED_MAX, TITLE_NOT_YET_MIGRATED, TITLE_NOT_YET_MIGRATED_MAX } from './notYetMigrated'
-import { format, handMadeSurfaces, nativeTitles, rawStyles } from './styleLint'
+import { format, handMadeSurfaces, momentOnHover, nativeTitles, rawStyles } from './styleLint'
 
 // OpenSpec design-system "Semantic design tokens": shared UI, screens and the
 // component style classes colour through tokens, never raw Tailwind palette
@@ -237,6 +237,19 @@ describe('token lint', () => {
       ...appFiles.filter(([path]) => !skip.has(path)).flatMap(([path, src]) => nativeTitles(path, src)),
     ].map(format)
     expect(found).toEqual([])
+  })
+
+  it('the moment is never a hover, focus or menu transition (tokens-v2 "Moment used for a hover")', () => {
+    const screens = [
+      ...uiCode.filter(([path]) => !path.endsWith('.stories.tsx')).map(([path, src]) => [path.replace(/^\.\.\//, 'src/ui/'), src] as const),
+      ...appFiles,
+    ]
+    expect(screens.flatMap(([path, src]) => momentOnHover(path, src)).map(format)).toEqual([])
+    // The rule itself: names the file and line; the moment on an entrance is fine.
+    expect(momentOnHover('Row.tsx', '<a />\n<div className="transition duration-(--duration-moment) hover:bg-hover" />').map(format))
+      .toEqual(['Row.tsx:2: transition duration-(--duration-moment) hover:bg-hover'])
+    expect(momentOnHover('src/ui/overlay/Menu.tsx', '<div className="transition-opacity duration-(--duration-moment)" />')).toHaveLength(1)
+    expect(momentOnHover('Sheet.tsx', '<div className="animate-in duration-(--duration-moment)" />')).toEqual([])
   })
 
   it('the not-yet lists only shrink and name files that still need them', () => {

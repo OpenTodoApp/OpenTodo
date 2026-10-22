@@ -52,7 +52,7 @@ For a period the device SHALL count: completed (live tasks, including recurring 
 - **THEN** they show identical numbers, because the day start is part of the synced row and the completions are the same instants
 
 ### Requirement: Excluded rows
-Tasks in the Trash SHALL be excluded from every statistic, and a habit's skipped occurrence SHALL NOT count anywhere, because it is not a completion.
+Tasks in the Trash SHALL be excluded from every statistic, a habit's skipped occurrence SHALL NOT count anywhere, because it is not a completion, and tasks marked `sample` (the start guide's sample tasks), open or completed, SHALL be excluded from every statistic, so trying the app never changes a week's numbers. The same exclusions SHALL apply wherever the statistics' definitions are reused (the Loop pulse, the weekly digest), through one shared predicate pinned by the shared fixture, so every device and the server agree.
 
 #### Scenario: Trashed task excluded
 - **WHEN** a task completed on Monday is moved to the Trash on Tuesday
@@ -61,6 +61,10 @@ Tasks in the Trash SHALL be excluded from every statistic, and a habit's skipped
 #### Scenario: Skipped habit occurrence
 - **WHEN** a habit was done on four days of the week and skipped on a fifth
 - **THEN** completed counts four for that week and the skipped day is in no number
+
+#### Scenario: Sample task excluded
+- **WHEN** a new user completes two of the three sample tasks and one real task in their first week
+- **THEN** Done reads 1 for that week, the created count does not include the samples, and the shared fixture holds this case
 
 ### Requirement: Whose tasks count in shared projects
 In a shared project a completed task SHALL count for the account that completed it. When the task does not record who completed it (completed before that was recorded, or ticked on a public link), and for open tasks, it SHALL count for its assignee, or for the user when it is unassigned.

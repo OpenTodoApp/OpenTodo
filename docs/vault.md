@@ -3,7 +3,7 @@ title: Markdown vault
 summary: Keep a folder of Markdown files in two-way sync with your account, readable by Obsidian Tasks and Dataview, with ot vault.
 audience: developer
 section: Integrations
-specs: [cli-client]
+specs: [cli-client, markdown-vault]
 screens: []
 order: 25
 ---

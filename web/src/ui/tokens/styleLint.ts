@@ -96,4 +96,24 @@ export function handMadeSurfaces(path: string, source: string): Finding[] {
   return out
 }
 
+/**
+ * The moment duration on a hover, focus or menu transition (OpenSpec change tokens-v2,
+ * design-system "Reduced motion", "Moment used for a hover"): the 400 ms moment is
+ * kept for the completion sequence, list reflow and overlay entrances. A className
+ * holding `duration-(--duration-moment)` with a `hover:` or `focus` variant fails, and
+ * so does any use of the moment in a menu or tooltip file.
+ */
+export function momentOnHover(path: string, source: string): Finding[] {
+  const menuFile = /(?:^|\/)(?:Menu|Tooltip|ActionMenu)\.tsx$|\/menus\//.test(path)
+  const out: Finding[] = []
+  source.split('\n').forEach((line, i) => {
+    for (const value of classTokens(line)) {
+      const tokens = value.split(/\s+/)
+      if (!tokens.some((tk) => /^(?:[\w-]+:)*duration-\(--duration-moment\)$/.test(tk))) continue
+      if (menuFile || tokens.some((tk) => /^(?:[\w-]+:)*(?:hover|focus|focus-visible|focus-within|group-hover):/.test(tk))) out.push({ path, line: i + 1, text: value.trim() })
+    }
+  })
+  return out
+}
+
 export const format = (f: Finding) => `${f.path}:${f.line}: ${f.text}`
