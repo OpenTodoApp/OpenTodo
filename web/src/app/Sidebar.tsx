@@ -165,8 +165,11 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   // A device that never stored a state reads every parent as collapsed (roots only).
   const collapsedLive = useLiveQuery(async () => ({ of: projects, set: await readCollapsed(projects) }), [projects])
   const collapsed_ = useMemo(() => collapsedLive?.set ?? new Set<string>(), [collapsedLive])
-  // The groups wait for the rows and this device's collapse state, so the tree never opens and then folds (motion-polish D2).
-  const groupsReady = useSidebarRowsLoaded() && collapsedLive?.of === projects
+  // The groups wait for the rows and this device's collapse state, so the tree never opens and then folds (motion-polish D2);
+  // once shown they stay, so a later change to the projects does not remount them (and lose an open menu's trigger).
+  const rowsLoaded = useSidebarRowsLoaded()
+  const [groupsReady, setGroupsReady] = useState(false)
+  if (!groupsReady && rowsLoaded && collapsedLive?.of === projects) setGroupsReady(true)
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   // Find in the sidebar (app-shell "Find in the sidebar"): a query narrows the three
   // groups without touching the stored collapse or group state.
