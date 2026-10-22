@@ -6,11 +6,15 @@ Defines the CalDAV endpoint through which calendar clients read and write a user
 ## Requirements
 
 ### Requirement: Off by default, enabled by the owner
-The CalDAV endpoint SHALL be disabled until the owner enables it in Settings or through the optional `OPENTODO_CALDAV=true` preset, which applies on first start only. While disabled, every path under `/dav/` and `/.well-known/caldav` SHALL answer 404. Enabling or disabling SHALL take effect without a restart and SHALL be recorded as a server setting. Every signed-in user SHALL be able to read whether the endpoint is enabled and its address; only the owner SHALL change it.
+The CalDAV endpoint SHALL be disabled until the owner enables it in Settings or through the optional `OPENTODO_CALDAV=true` preset, which applies on first start only. While disabled, every path under `/dav/` and `/.well-known/caldav` SHALL answer 404, the host root SHALL answer WebDAV methods as the web app does (405 without DAV headers) and `/principals/` SHALL answer 404. Enabling or disabling SHALL take effect without a restart and SHALL be recorded as a server setting. Every signed-in user SHALL be able to read whether the endpoint is enabled and its address; only the owner SHALL change it.
 
 #### Scenario: Disabled endpoint
 - **WHEN** CalDAV is not enabled and a client requests `/dav/`
 - **THEN** the response is 404 and no authentication is attempted
+
+#### Scenario: Disabled root probe
+- **WHEN** CalDAV is not enabled and a client sends `PROPFIND /` or `PROPFIND /principals/x/`
+- **THEN** the root answers 405 without a `DAV` header and `/principals/x/` answers 404, so nothing reveals the endpoint
 
 #### Scenario: Member cannot enable
 - **WHEN** a member calls the route that changes the CalDAV setting
@@ -47,11 +51,19 @@ The CalDAV endpoint SHALL accept HTTP Basic authentication with the account emai
 - **THEN** the client's next request is answered 401
 
 ### Requirement: Discovery and calendar collections
-The endpoint SHALL support discovery (`/.well-known/caldav`, current-user-principal, calendar-home-set) and SHALL expose one calendar collection per non-archived, non-deleted project the user can see in every workspace (their own and the shared projects they are a member of) plus one `Inbox` calendar per workspace, each reporting its display name, colour, that it supports only VTODO, the user's privileges, a CTag and a sync token. Outside the account's default workspace a calendar's display name SHALL be prefixed with the workspace name ("Work · Website", "Work · Inbox"); in the default workspace names are unchanged, so existing clients keep their calendars. Calendars of shared projects SHALL be read-only for viewers. Another user's paths SHALL answer 404.
+The endpoint SHALL support discovery (`/.well-known/caldav`, current-user-principal, calendar-home-set) and SHALL expose one calendar collection per non-archived, non-deleted project the user can see in every workspace (their own and the shared projects they are a member of) plus one `Inbox` calendar per workspace, each reporting its display name, colour, that it supports only VTODO, the user's privileges, a CTag and a sync token. Outside the account's default workspace a calendar's display name SHALL be prefixed with the workspace name ("Work · Website", "Work · Inbox"); in the default workspace names are unchanged, so existing clients keep their calendars. The well-known redirect SHALL carry an absolute `Location`: `OPENTODO_BASE_URL` when configured, otherwise the origin the client asked for (the request's scheme and host, or a trusted proxy's `X-Forwarded-Proto` and `X-Forwarded-Host`). A `PROPFIND` on the host root SHALL redirect the same way to `/dav/`, an `OPTIONS` on the host root SHALL report the `DAV` capabilities, and `/principals/…` SHALL redirect to the same path under `/dav/`, so a client that probes the host root finds the principal. Calendars of shared projects SHALL be read-only for viewers. Another user's paths SHALL answer 404.
 
 #### Scenario: List calendars
 - **WHEN** an authenticated client performs discovery and lists the calendar home
 - **THEN** it receives the Inbox calendar and one calendar per active project it can see, with name and colour, and none of other users' unshared projects
+
+#### Scenario: Well-known redirect behind a proxy
+- **WHEN** a client on a server without `OPENTODO_BASE_URL` sends `PROPFIND /.well-known/caldav` through a trusted proxy that forwards `X-Forwarded-Host: tasks.example.com` and `X-Forwarded-Proto: https`
+- **THEN** the response is 301 with `Location: https://tasks.example.com/dav/`
+
+#### Scenario: Apple client probes the root
+- **WHEN** a client sends `OPTIONS /`, then `PROPFIND /` and `PROPFIND /principals/<user id>/`
+- **THEN** the `OPTIONS` answers 200 with `DAV: 1, 3, calendar-access`, and each `PROPFIND` answers 301 with an absolute `Location` of `/dav/` and `/dav/principals/<user id>/` respectively
 
 #### Scenario: Archived project hidden
 - **WHEN** a project is archived in the app
@@ -81,7 +93,15 @@ Each task SHALL be one VTODO resource, by default `<task-id>.ics` with UID equal
 - **THEN** the task has priority 2 in the app and is served back with PRIORITY 5
 
 ### Requirement: Due forms and recurrence
-A task without a deadline SHALL be served with DUE = its due date: DATE for a due without time, floating DATE-TIME for a floating due with time, and DATE-TIME with TZID (served with a VTIMEZONE) for a zoned due. Inbound, a VTODO with only DUE SHALL set the due date of a task without a deadline. RRULE SHALL map to the task's recurrence rule where the recurrence grammar expresses it, and completing a recurring task through CalDAV SHALL behave as completing it in the app.
+A task without a deadline SHALL be served with DUE = its due date: DATE for a due without time, floating DATE-TIME for a floating due with time, and DATE-TIME with TZID (served with a VTIMEZONE) for a zoned due. A due with a time SHALL also be served with DTSTART equal to DUE, so clients that schedule by DTSTART show it as scheduled; a due without time SHALL be served without DTSTART. Inbound, a VTODO with only DUE SHALL set the due date of a task without a deadline, and a VTODO with DTSTART and a duration (`ESTIMATED-DURATION` or `DURATION`) and no DUE SHALL set the due date from DTSTART (see "Inbound date shapes"). RRULE SHALL map to the task's recurrence rule where the recurrence grammar expresses it, and completing a recurring task through CalDAV SHALL behave as completing it in the app. A recurring task SHALL keep its due date when a client sends back the served DTSTART without the DUE.
+
+#### Scenario: Due date with time
+- **WHEN** a task due `2026-10-11` at `09:30` and without a deadline is fetched
+- **THEN** the VTODO carries `DUE:20261011T093000` and `DTSTART:20261011T093000` with no time zone, and a client in any time zone shows 09:30 on that date
+
+#### Scenario: Due date without time
+- **WHEN** a task due `2026-10-11` without a time and without a deadline is fetched
+- **THEN** the VTODO carries `DUE;VALUE=DATE:20261011` and no DTSTART
 
 #### Scenario: Zoned due
 - **WHEN** a client sends `DUE;TZID=Europe/Berlin:20261011T093000` and no DTSTART
@@ -91,8 +111,16 @@ A task without a deadline SHALL be served with DUE = its due date: DATE for a du
 - **WHEN** a client sends `RRULE:FREQ=WEEKLY` on a task and later marks it completed
 - **THEN** the task's rule is `every week`, and the completion records an occurrence and moves the task to its next due date as in the app
 
+#### Scenario: Recurring task moved by a client that writes no DUE
+- **WHEN** a recurring task due 2026-10-13 at 09:00 was served with `DTSTART` = `DUE` and a client sends it back with `DTSTART:20261014T090000`, `ESTIMATED-DURATION:PT1H` and no `DUE`
+- **THEN** the task is due 2026-10-14 at 09:00, keeps its rule, and every device shows the new date after sync; nothing is cleared
+
+#### Scenario: Scheduled from an undated task
+- **WHEN** a task with no dates is sent back by a client with `DTSTART:20261020T140000` and `ESTIMATED-DURATION:PT30M` and no `DUE`
+- **THEN** the task is due 2026-10-20 at 14:00 with a 30-minute estimate, written as operations, and is served back with `DUE:20261020T140000`, `DTSTART:20261020T140000` and `ESTIMATED-DURATION:PT30M`
+
 ### Requirement: Deadline mapping
-A task with a deadline SHALL be served with DUE = the deadline as a DATE and, when it has a due date, DTSTART = the due date in the forms above. Inbound, DTSTART and DUE that differ SHALL set the due date from DTSTART and the deadline from the date of DUE; equal ones SHALL set the due date only. A DUE without DTSTART on a task that has a deadline SHALL set the deadline and clear the due date.
+A task with a deadline SHALL be served with DUE = the deadline as a DATE and, when it has a due date, DTSTART = the due date in the forms above. Inbound, DTSTART and DUE that differ SHALL set the due date from DTSTART and the deadline from the date of DUE, except when the task has no deadline and the DUE is exactly its current due date, time and zone (the DUE this server served): then the client moved the task and the due date follows DTSTART with no deadline written. Equal DTSTART and DUE SHALL set the due date only. A DUE without DTSTART on a task that has a deadline SHALL set the deadline and clear the due date. A VTODO without DUE SHALL never clear the deadline: on a task that has one, DTSTART with a duration sets the due date and keeps the deadline, and a VTODO with neither DUE nor DTSTART keeps both dates as they are (see "Inbound date shapes").
 
 #### Scenario: Deadline served
 - **WHEN** a task due `2026-10-13` at `09:30` with the deadline `2026-10-17` is fetched
@@ -110,6 +138,22 @@ A task with a deadline SHALL be served with DUE = the deadline as a DATE and, wh
 - **WHEN** a client PUTs `DTSTART:20261013T090000` and `DUE:20261017T170000`
 - **THEN** the task is due 2026-10-13 at 09:00 with the deadline 2026-10-17, and the resource is served back with `DUE;VALUE=DATE:20261017`
 
+#### Scenario: Timed task moved by a client that echoes the served DUE
+- **WHEN** a task due 2026-10-22 at 14:00 without a deadline was served with `DTSTART` = `DUE` and a client sends it back with `DTSTART:20261023T100000`, `DUE:20261022T140000` and `ESTIMATED-DURATION:PT30M`
+- **THEN** the task is due 2026-10-23 at 10:00 with a 30-minute estimate and still has no deadline
+
+#### Scenario: Recurring task moved by a client that echoes the served DUE
+- **WHEN** a recurring task due 2026-10-13 at 09:00 was served with `DTSTART` = `DUE` and a client sends it back with `DTSTART:20261014T090000`, `DUE:20261013T090000` and its `RRULE`
+- **THEN** the task is due 2026-10-14 at 09:00, keeps its rule and has no deadline
+
+#### Scenario: Due-date task scheduled by a client that echoes the served DUE
+- **WHEN** a task due 2026-10-22 without a time and without a deadline is sent back with `DTSTART:20261021T150000` and `DUE;VALUE=DATE:20261022`
+- **THEN** the task is due 2026-10-21 at 15:00 and has no deadline
+
+#### Scenario: A changed DUE is a deadline
+- **WHEN** a task due 2026-10-21 at 15:00 without a deadline is sent back with `DTSTART:20261021T150000` and `DUE;VALUE=DATE:20261031`
+- **THEN** the task keeps its due date and gains the deadline 2026-10-31
+
 #### Scenario: Recurring anchor unchanged
 - **WHEN** a recurring task without a deadline is fetched
 - **THEN** its DTSTART equals its DUE as before, and a client sending that pair back leaves the task without a deadline
@@ -118,12 +162,20 @@ A task with a deadline SHALL be served with DUE = the deadline as a DATE and, wh
 - **WHEN** a task with the deadline `2026-11-20` and no due date is edited in a client that sends back only its `DUE;VALUE=DATE:20261120` with a new SUMMARY
 - **THEN** the task keeps the deadline `2026-11-20`, has no due date and has the new title
 
+#### Scenario: Deadline task moved by a client that writes no DUE
+- **WHEN** a task due 2026-10-13 with the deadline 2026-10-17 was served with `DTSTART` and `DUE` and a client sends it back with `DTSTART;VALUE=DATE:20261015`, `ESTIMATED-DURATION:PT2H` and no `DUE`
+- **THEN** the task is due 2026-10-15, keeps the deadline 2026-10-17, gains a 2-hour estimate, and is served back with `DTSTART;VALUE=DATE:20261015` and `DUE;VALUE=DATE:20261017`
+
 ### Requirement: Unmapped properties preserved
-Properties not in the mapping, including alarms, X- properties and RRULEs the recurrence grammar cannot express, SHALL be stored in the task's `ical_extra` field and returned unchanged.
+Properties not in the mapping, including X- properties, RRULEs the recurrence grammar cannot express, a DTSTART that sets nothing (see "Inbound date shapes") and alarms the alarm mapping cannot express, SHALL be stored in the task's `ical_extra` field and returned unchanged. A property the mapping consumes (ESTIMATED-DURATION, a mapped VALARM, a DTSTART equal to a DUE with a time, which this server serves itself) SHALL NOT also be stored there.
 
 #### Scenario: Alarm survives a round trip
-- **WHEN** a client adds a VALARM to a task and another device later edits the title
-- **THEN** the next fetch of the task still contains the VALARM and the new title
+- **WHEN** a client adds a VALARM with `ACTION:AUDIO` and `REPEAT:3` (one the alarm mapping cannot express) to a task and another device later edits the title
+- **THEN** the next fetch of the task still contains that VALARM unchanged and the new title, and the task has no reminder from it
+
+#### Scenario: Served start echoed back
+- **WHEN** a client sends back a timed task with the `DTSTART` equal to `DUE` it was served, and a device later moves the task to another time
+- **THEN** the next fetch carries one `DTSTART`, equal to the new `DUE`
 
 ### Requirement: Writes become operations
 A PUT that creates or changes a VTODO SHALL be applied as operations with server time and a device id `caldav:<app-password-id>`, one per property whose mapped value differs from the current value, and nothing SHALL be written outside the operation log. Devices receive the result on their next sync and are woken like after any REST write; offline devices apply it later under last-writer-wins.
