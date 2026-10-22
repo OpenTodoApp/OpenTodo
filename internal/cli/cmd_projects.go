@@ -29,12 +29,14 @@ func cmdProject(a *App, ctx context.Context, g *globalFlags, args []string) erro
 		return projectAdd(a, ctx, g, rest)
 	case "rename":
 		return projectRename(a, ctx, g, rest)
+	case "move":
+		return projectMove(a, ctx, g, rest)
 	case "archive":
 		return projectArchive(a, ctx, g, rest)
 	case "rm", "delete":
 		return projectRm(a, ctx, g, rest)
 	}
-	return usageErr("unknown project command %q (expected list, add, rename, archive or rm)", sub)
+	return usageErr("unknown project command %q (expected list, add, rename, move, archive or rm)", sub)
 }
 
 func projectList(a *App, ctx context.Context, g *globalFlags, args []string) error {
@@ -43,7 +45,7 @@ func projectList(a *App, ctx context.Context, g *globalFlags, args []string) err
 	if _, err := a.parse(g, fs, "project list", args); err != nil {
 		return a.helpOr("project", err)
 	}
-	c, _, err := a.connect(g)
+	c, t, err := a.connect(g)
 	if err != nil {
 		return err
 	}
@@ -51,9 +53,27 @@ func projectList(a *App, ctx context.Context, g *globalFlags, args []string) err
 	if err != nil {
 		return err
 	}
+	// Every workspace's projects with a WORKSPACE column; a chosen workspace narrows the list.
+	list, err := c.workspaces(ctx)
+	if err != nil {
+		return err
+	}
+	s, err := resolveWorkspace(list, a.workspaceChoice(g, t))
+	if err != nil {
+		return err
+	}
+	byID := make(map[string]project, len(projects))
+	for _, p := range projects {
+		byID[p.ID] = p
+	}
+	names := map[string]string{}
+	for _, w := range list {
+		names[w.ID] = w.Name
+	}
+	narrow := a.workspaceChoice(g, t) != ""
 	shown := make([]project, 0, len(projects))
 	for _, p := range projects {
-		if p.DeletedAt != nil || (p.Archived && !*all) {
+		if p.DeletedAt != nil || (p.Archived && !*all) || (narrow && s.project(byID, p.ID) != s.id) {
 			continue
 		}
 		shown = append(shown, p)
@@ -69,13 +89,13 @@ func projectList(a *App, ctx context.Context, g *globalFlags, args []string) err
 		fmt.Fprintln(a.Stdout, "No projects.")
 		return nil
 	}
-	tbl := newTable("ID", "NAME", "COLOR", "STATUS")
+	tbl := newTable("ID", "NAME", "WORKSPACE", "COLOR", "STATUS")
 	for _, p := range shown {
 		status := ""
 		if p.Archived {
 			status = "archived"
 		}
-		tbl.add(cell{text: shortID(p.ID), style: styleCyan}, plain(p.Name), plain(p.Color), cell{text: status, style: styleDim})
+		tbl.add(cell{text: shortID(p.ID), style: styleCyan}, plain(p.Name), plain(names[s.project(byID, p.ID)]), plain(p.Color), cell{text: status, style: styleDim})
 	}
 	tbl.render(a.Stdout, a.color())
 	return nil
@@ -100,11 +120,21 @@ func projectAdd(a *App, ctx context.Context, g *globalFlags, args []string) erro
 	if err != nil {
 		return err
 	}
-	c, _, err := a.connect(g)
+	c, t, err := a.connect(g)
 	if err != nil {
 		return err
 	}
-	raw, _, err := c.do(ctx, "POST", "/projects", map[string]any{"name": name, "color": *color, "archived": false}, headers)
+	body := map[string]any{"name": name, "color": *color, "archived": false}
+	if a.workspaceChoice(g, t) != "" {
+		s, err := a.scope(ctx, c, g, t)
+		if err != nil {
+			return err
+		}
+		if id, ok := s.writeValue(); ok {
+			body["workspace_id"] = id
+		}
+	}
+	raw, _, err := c.do(ctx, "POST", "/projects", body, headers)
 	if err != nil {
 		return err
 	}
@@ -158,6 +188,32 @@ func projectRename(a *App, ctx context.Context, g *globalFlags, args []string) e
 		return usageErr("the new name cannot be empty")
 	}
 	return projectPatch(a, ctx, g, pos[0], map[string]any{"name": name}, "renamed")
+}
+
+// projectMove moves a project to the workspace --workspace names (workspaces);
+// the server refuses it unless the caller owns the project.
+func projectMove(a *App, ctx context.Context, g *globalFlags, args []string) error {
+	fs := a.flagSet("project move", g)
+	pos, err := a.parse(g, fs, "project move", args)
+	if err != nil {
+		return a.helpOr("project", err)
+	}
+	if len(pos) != 1 || g.workspace == "" {
+		return usageErr("usage: ot project move <ref> --workspace <name>")
+	}
+	c, t, err := a.connect(g)
+	if err != nil {
+		return err
+	}
+	s, err := a.scope(ctx, c, g, t)
+	if err != nil {
+		return err
+	}
+	var value any
+	if id, ok := s.writeValue(); ok {
+		value = id
+	}
+	return projectPatch(a, ctx, g, pos[0], map[string]any{"workspace_id": value}, "moved")
 }
 
 func projectArchive(a *App, ctx context.Context, g *globalFlags, args []string) error {

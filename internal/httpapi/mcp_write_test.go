@@ -217,7 +217,7 @@ func TestAgentTokenDowngradeSafe(t *testing.T) {
 	if _, err := e.db.Exec(`DELETE FROM api_token_agent WHERE token_id = ?`, tokenID); err != nil {
 		t.Fatal(err)
 	}
-	if n := len(c.toolNames(secret)); n != 7 {
+	if n := len(c.toolNames(secret)); n != 8 {
 		t.Fatalf("tools without the marker = %d", n)
 	}
 	if sc, isErr := c.toolCall(secret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "x"}}}); !isErr || sc["error"] != "token_scope" {
@@ -307,11 +307,11 @@ func TestToolsListByToken(t *testing.T) {
 	e.mustStatus(resp, 201, out)
 	tid := out["id"].(string)
 	read, full := e.token("read"), e.token("full")
-	if n := len(c.toolNames(agentSecret)); n != 22 {
+	if n := len(c.toolNames(agentSecret)); n != 23 {
 		t.Fatalf("agent tools = %d", n)
 	}
 	for name, secret := range map[string]string{"read": read, "full": full} {
-		if n := len(c.toolNames(secret)); n != 7 {
+		if n := len(c.toolNames(secret)); n != 8 {
 			t.Fatalf("%s token sees %d tools", name, n)
 		}
 		for _, tool := range []string{"complete_tasks", "create_tasks", "trash_tasks"} {
@@ -326,7 +326,7 @@ func TestToolsListByToken(t *testing.T) {
 	}
 	// The user's switch off: writes_disabled_by_user, nothing created.
 	e.allowMyAssistants(false)
-	if n := len(c.toolNames(agentSecret)); n != 7 {
+	if n := len(c.toolNames(agentSecret)); n != 8 {
 		t.Fatalf("user off: %d tools", n)
 	}
 	if sc, isErr := c.toolCall(agentSecret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "x"}}}); !isErr || sc["error"] != "writes_disabled_by_user" {
@@ -336,7 +336,7 @@ func TestToolsListByToken(t *testing.T) {
 	e.allowMyAssistants(true)
 	c.mustTool(agentSecret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "while allowed"}}})
 	e.allowWrites(false)
-	if n := len(c.toolNames(agentSecret)); n != 7 {
+	if n := len(c.toolNames(agentSecret)); n != 8 {
 		t.Fatalf("owner off: %d tools", n)
 	}
 	if sc, isErr := c.toolCall(agentSecret, "complete_tasks", map[string]any{"ids": []string{tid}}); !isErr || sc["error"] != "writes_disabled_by_owner" {

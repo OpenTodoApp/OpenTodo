@@ -661,6 +661,25 @@
       }
     },
     {
+      "name": "project move",
+      "summary": "move a project to the workspace named by --workspace (only its owner)",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/project"
+      }
+    },
+    {
       "name": "project rename",
       "summary": "rename a project",
       "args": [
@@ -1271,6 +1290,22 @@
       "output_schema": {
         "$ref": "#/schemas/version"
       }
+    },
+    {
+      "name": "workspaces",
+      "summary": "list your workspaces (the current one marked)",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/workspace"
+        },
+        "type": "array"
+      }
     }
   ],
   "environment": {
@@ -1459,6 +1494,11 @@
       "name": "read-only",
       "type": "bool",
       "description": "refuse every write command before any request (also OPENTODO_READ_ONLY=1)"
+    },
+    {
+      "name": "workspace",
+      "type": "string",
+      "description": "workspace name or id the command acts on (also OPENTODO_WORKSPACE and the profile's workspace; default: the account's default workspace)"
     }
   ],
   "notes": [
@@ -2726,6 +2766,83 @@
         },
         "output_version": {
           "type": "integer"
+        }
+      }
+    },
+    "workspace": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "workspace",
+      "description": "A workspace exactly as GET /api/v1/workspaces returns it: the caller's role, and members by name only.",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "role",
+        "default"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "default": {
+          "type": "boolean"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "owner",
+            "admin",
+            "member"
+          ]
+        },
+        "ownerId": {
+          "type": "string"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       }
     }

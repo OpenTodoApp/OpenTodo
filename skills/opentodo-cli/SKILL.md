@@ -27,7 +27,7 @@ ot auth status
 ## Rules
 
 1. **Always pass `--json`.** Output then follows the documented schemas (`output_version` 1). Run `ot schema` once to learn every command, flag, exit code and output schema; it works offline.
-2. **Read before you write.** Look first with `ot list --json`, `ot today --json`, `ot inbox --json`, `ot upcoming --json` or `ot project list --json`. Use full ids from that output, not titles.
+2. **Read before you write.** Look first with `ot list --json`, `ot today --json`, `ot inbox --json`, `ot upcoming --json` or `ot project list --json`. Use full ids from that output, not titles. Commands act on the user's default workspace; `ot workspaces --json` lists the others, and `--workspace <name>` picks one for a command.
 3. **Preview first.** Before any write that touches more than one task, run it with `--dry-run` and check the `requests` and `targets` it prints. Nothing is changed by a dry run.
 4. **Prefer explicit flags.** Set rules and reminders with `--repeat` and `--remind` rather than `--natural`: the flags are validated exactly, while `--natural` guesses from free text and leaves anything it does not understand in the title.
 5. **Plan without forcing a due date.** A due date says "do it on that day"; not every task has one. Use `--start <date>` to defer a task until it matters, `--start someday` to park it, `--deadline <date>` for the day it must be finished by, `--evening` for This Evening and `--blocked-by <id>` when it waits for another task. `--location` takes a saved location's name or `lat,lon`. Parking keeps the due date; pass `--due none` too if you mean that.

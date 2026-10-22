@@ -67,6 +67,7 @@ func init() {
 			"fields":           fieldsProp,
 			"origin_url":       originURLProp,
 			"id":               chosenIDProp,
+			"workspace_id":     map[string]any{"type": []string{"string", "null"}, "description": "For a task without a project: its workspace (see list_workspaces); default the default workspace."},
 		}))
 		return writeDef("create_tasks", "Create tasks",
 			fmt.Sprintf("Create up to %d tasks in one call. Returns their ids in order. Plan with the fields: due is the day to do it, deadline the day it must be done by, start the day it shows up (or someday to park it), evening This Evening, blocked_by what it waits for, location where.", PerCall),
@@ -138,6 +139,7 @@ func init() {
 				"color":             map[string]any{"type": "string", "description": "Colour as #rrggbb, optional."},
 				"icon":              iconProp,
 				"parent_id":         map[string]any{"type": "string", "description": "Parent project id, optional."},
+				"workspace_id":      workspaceIDProp,
 				"client_request_id": requestIDProp,
 				"id":                chosenIDProp,
 			}), false, false, []string{"name"}, true)

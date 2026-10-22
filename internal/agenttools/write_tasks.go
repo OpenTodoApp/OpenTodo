@@ -40,7 +40,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
 		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin", "id",
-			"deadline", "start", "evening", "blocked_by", "location"); err != nil {
+			"deadline", "start", "evening", "blocked_by", "location", "workspace_id"); err != nil {
 			return Plan{}, err
 		}
 		title, _, err := it.contentText(c, "title", true, 500)
@@ -114,6 +114,12 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 			if it.present(f) {
 				patch[f] = it[f]
 			}
+		}
+		// A task without a project lives in a workspace (OpenSpec change workspaces).
+		if v, has, err := snap.workspaceValue(it); err != nil {
+			return Plan{}, argErr(p + err.Error())
+		} else if has && pid == "" {
+			patch["workspace_id"] = v
 		}
 		if it.present("labels") {
 			lids, err := snap.labelIDsFor(p, it["labels"])

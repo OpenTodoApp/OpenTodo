@@ -39,6 +39,7 @@ func resourceList() []resource {
 	tz := " Dates are evaluated in UTC; append ?tz=<IANA zone> to the URI for another time zone."
 	return []resource{
 		{URI: "opentodo://projects", Name: "projects", Title: "Projects", Description: "The user's active projects with open task counts.", MimeType: jsonMime},
+		{URI: "opentodo://workspaces", Name: "workspaces", Title: "Workspaces", Description: "The user's workspaces with their role, names as untrusted text.", MimeType: jsonMime},
 		{URI: "opentodo://views/inbox", Name: "inbox", Title: "Inbox", Description: "Open tasks without a project that are not scheduled (no do-on date, start date or Someday).", MimeType: jsonMime},
 		{URI: "opentodo://views/today", Name: "today", Title: "Today", Description: "Open tasks due today or overdue, overdue first." + tz, MimeType: jsonMime},
 		{URI: "opentodo://views/upcoming", Name: "upcoming", Title: "Upcoming", Description: "Open tasks due after today, soonest first." + tz, MimeType: jsonMime},
@@ -100,6 +101,8 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		payload, err = s.tools.RulesResource(ctx, userID)
 	case u.Host == "projects" && id == "":
 		payload, err = s.tools.ProjectsResource(ctx, userID)
+	case u.Host == "workspaces" && id == "":
+		payload, err = s.tools.WorkspacesResource(ctx, userID)
 	case u.Host == "projects" && !strings.Contains(id, "/"):
 		payload, found, err = s.tools.ProjectResource(ctx, userID, id, loc)
 	case u.Host == "tasks" && id != "" && !strings.Contains(id, "/"):

@@ -77,6 +77,8 @@ Every delivery is a `POST` with a JSON body:
 
 A task's `origin` (where it came from, `null` when unset; see [Where a task came from](capture.md#where-a-task-came-from)) travels like every field: a task created from a shared GitHub issue page arrives as `task.created` with `"origin": {"kind": "issue", "provider": "github", "id": "o/r#7", "url": "https://github.com/o/r/issues/7", "title": "…"}` in `data.task` and `"origin": {"from": null, "to": {…}}` in `changes`, so a receiver can link the task back to the issue without a second request.
 
+Projects and tasks carry `workspace_id`, the [workspace](workspaces.md) they belong to (`null` for the default workspace). A task with a project belongs to its project's workspace, so look the project up for those. Subscriptions keep their project filter; there is no workspace filter.
+
 A task's [custom field](custom-fields.md) values are in `data.task.fields`, an object keyed by field definition id like the REST API's; a changed value is listed in `changes` as `fields.<id>` (for example `"fields.f1": {"from": 120, "to": 150}`), with the `task.updated` event.
 
 ### Encrypted accounts

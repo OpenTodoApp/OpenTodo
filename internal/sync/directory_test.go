@@ -443,3 +443,23 @@ func TestWorkspacesInThreeQueries(t *testing.T) {
 		t.Fatalf("groups = %d", groups)
 	}
 }
+
+// TestAssigneeOutsideTheDirectory (task 4.5): a person outside a created
+// workspace never becomes a member of its projects, so assigning a task to
+// them (from the app, the assistant's plan or REST) is refused like any non-member.
+func TestAssigneeOutsideTheDirectory(t *testing.T) {
+	t.Parallel()
+	f := newDir(t)
+	f.join("bob")
+	f.moveP()
+	if _, err := f.s.AddMember(f.ctx, "alice", "p", "bob", RoleEditor); err != nil {
+		t.Fatal(err)
+	}
+	bad := f.op("task", "t1", "assignee_id", `"eve"`)
+	if res := f.apply("alice", "A", bad); !slices.Equal(rejectedIDs(res), []string{bad.ID + ":not_a_member"}) {
+		t.Fatalf("assign outsider = %v", rejectedIDs(res))
+	}
+	if res := f.apply("alice", "A", f.op("task", "t1", "assignee_id", `"bob"`)); res.Applied != 1 {
+		t.Fatalf("assign member = %+v", res)
+	}
+}

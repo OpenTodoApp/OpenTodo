@@ -6,6 +6,7 @@ package webhook
 
 import (
 	"encoding/json"
+	"maps"
 	"slices"
 	"strings"
 
@@ -107,6 +108,13 @@ func BuildPayload(deliveryID, webhookID, event string, timeMs int64, origin, ent
 				if _, has := e["origin"]; !has {
 					e["origin"] = json.RawMessage("null")
 				}
+			}
+			// workspace_id travels on projects and tasks, null for the default
+			// workspace (OpenSpec change workspaces); a task with a project
+			// belongs to its project's workspace.
+			if _, has := e["workspace_id"]; (entityKind == "task" || entityKind == "project") && !has {
+				e = maps.Clone(e) // never the caller's record
+				e["workspace_id"] = json.RawMessage("null")
 			}
 			data[entityKind] = e
 		}

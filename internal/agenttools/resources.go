@@ -24,7 +24,7 @@ func (r *Registry) ProjectsResource(ctx context.Context, userID string) (map[str
 	if err != nil {
 		return nil, err
 	}
-	return noticed(r.projectsPayload(snap, false)), nil
+	return noticed(r.projectsPayload(snap, false, "")), nil
 }
 
 // ProjectResource is opentodo://projects/{id}: the project, its sections and

@@ -11,13 +11,16 @@ import (
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
-// Workspace routes (OpenSpec change workspaces, design D9). Every route needs
-// a session or a full or admin token; writes are refused on a demo instance.
+// Workspace routes (OpenSpec change workspaces, design D9). Reads need any
+// session or token, writes a session or a full or admin token; writes are
+// refused on a demo instance.
 // A caller who is not a member of a workspace gets the same 404 as for one
 // that does not exist. The directory changes only here, never through ops;
 // every change wakes the devices of the accounts it affects.
 func (s *Server) registerWorkspaceRoutes(mux *routes) {
-	read, write := signedIn.fullTokens(), signedIn.fullTokens().demoDenied()
+	// Reading the directory is open to read and agent tokens too (the CLI and
+	// MCP place everything in a workspace); every change needs a full token.
+	read, write := signedIn, signedIn.fullTokens().demoDenied()
 	mux.handle("GET /api/v1/workspaces", read, s.handleListWorkspaces)
 	mux.handle("POST /api/v1/workspaces", write, s.handleCreateWorkspace)
 	mux.handle("GET /api/v1/workspaces/{id}", read, s.handleGetWorkspace)

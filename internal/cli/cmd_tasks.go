@@ -161,11 +161,15 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	if err != nil {
 		return err
 	}
-	c, _, err := a.connect(g)
+	c, t, err := a.connect(g)
 	if err != nil {
 		return err
 	}
 	projects, err := c.projects(ctx)
+	if err != nil {
+		return err
+	}
+	scope, err := a.scope(ctx, c, g, t)
 	if err != nil {
 		return err
 	}
@@ -195,6 +199,10 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	}
 	if planning != "" {
 		tasks = filterPlanning(tasks, all, planning)
+	}
+	// One workspace's tasks (workspaces); a named project is shown wherever it is.
+	if view != "project" {
+		tasks = scope.filterTasks(projects, all, tasks)
 	}
 	if o.limit > 0 && len(tasks) > o.limit {
 		tasks = tasks[:o.limit]
@@ -573,7 +581,7 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err := f.addOrigin(set, body); err != nil {
 		return err
 	}
-	c, _, err := a.connect(g)
+	c, t, err := a.connect(g)
 	if err != nil {
 		return err
 	}
@@ -600,6 +608,16 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 		body["labels"] = ids
+	}
+	// A task without a project goes to the chosen workspace's Inbox (workspaces).
+	if _, has := body["project_id"]; !has && a.workspaceChoice(g, t) != "" {
+		s, err := a.scope(ctx, c, g, t)
+		if err != nil {
+			return err
+		}
+		if id, ok := s.writeValue(); ok {
+			body["workspace_id"] = id
+		}
 	}
 	if err := f.plan.fill(ctx, a, c, set, body, func() ([]task, error) { return c.tasks(ctx) }); err != nil {
 		return err

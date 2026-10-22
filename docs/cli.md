@@ -71,6 +71,10 @@ Pick a profile with `--profile work` or `OPENTODO_PROFILE=work`; `ot login --pro
 
 `OPENTODO_CONFIG=/path/to/config.json` points at another config file. No command ever prints a stored token.
 
+### Workspaces
+
+Every command acts on one [workspace](workspaces.md): the account's default workspace, unless `--workspace <name or id>`, `OPENTODO_WORKSPACE` or the profile's `"workspace"` (written by `ot login --workspace Work`) names another. `ot list`, `ot inbox` and the other views show that workspace's tasks, and `ot add` without `--project` puts the task in its Inbox. `ot workspaces` lists them (`--json` for the full shape). An unknown name exits with code 2 and lists the workspaces you have.
+
 ## Tasks
 
 ```bash
@@ -157,11 +161,12 @@ A task that is already in the requested state (`ot done` on a completed task, `o
 ot project list [--all]                 # --all includes archived projects
 ot project add "Garden" [--color "#22c55e"] [--idempotency-key <key>]
 ot project rename Garden "Back garden"
+ot project move Garden --workspace Family  # only the project's owner
 ot project archive Garden [--undo]
 ot project rm Garden [--yes]
 ```
 
-Projects are referenced by name (case-insensitive), full id or unique id prefix.
+Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column; `--workspace` narrows it to one.
 
 ## Time
 

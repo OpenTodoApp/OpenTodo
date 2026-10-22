@@ -47,7 +47,7 @@ func TestWorkspaceRoutesAuthAndScopes(t *testing.T) {
 	for _, scope := range []string{"read", "agent"} {
 		tok := se.alice.token(scope)
 		c := se.alice.bearerClient()
-		for _, rt := range [][2]string{{"GET", "/api/v1/workspaces"}, {"POST", "/api/v1/workspaces"}, {"POST", "/api/v1/workspaces/" + ws + "/invites"}} {
+		for _, rt := range [][2]string{{"POST", "/api/v1/workspaces"}, {"POST", "/api/v1/workspaces/" + ws + "/invites"}} {
 			resp, out := c.do(rt[0], rt[1], map[string]any{"name": "x"}, bearer(tok)...)
 			if resp.StatusCode != 403 || errCode(out) != "insufficient_scope" {
 				t.Fatalf("%s token %s %s = %d %v", scope, rt[0], rt[1], resp.StatusCode, out)
