@@ -162,7 +162,8 @@ export function IssuesView(p: IssuesViewProps) {
       )}
       {p.draft && (
         <IssueEditor draft={p.draft} projects={p.projects} busy={p.busy} connected={p.connected} error={p.fieldError} general={p.fieldError ? null : p.error}
-          onChange={(d) => p.onDraftChange(d)} onSave={p.onSave} onClose={() => p.onDraftChange(null)} />
+          onChange={(d) => p.onDraftChange(d)} onSave={p.onSave} onClose={() => p.onDraftChange(null)}
+          onTest={() => { const c = p.connections?.find((x) => x.id === p.draft?.id); if (c) p.onTest(c) }} />
       )}
       {deleting && (
         <ConfirmDialog title={t('Delete {name}?', { name: deleting.name })} confirmLabel={t('Delete')}

@@ -181,6 +181,29 @@ describe('issues panel', () => {
     await r.unmount()
   })
 
+  it('Short form by default: three steps, GitHub on github.com, More options closed, Test and Save in the sticky bar (settings-refresh D9)', async () => {
+    serve({ 'GET /api/v1/settings/issues': { enabled: true }, 'GET /api/v1/issues/connections': { connections: [] } })
+    const r = await render(<IssuesPanel isOwner />)
+    await waitFor(() => byText('Connect issues', r.container) !== undefined)
+    await click(byText('Connect issues', r.container)!)
+    await waitFor(() => document.querySelector('[data-testid="issue-editor"]') !== null)
+    const editor = document.querySelector('[data-testid="issue-editor"]')!
+    expect([...editor.querySelectorAll('[data-issue-step] h3')].map((h) => h.textContent)).toEqual(['1Where', '2Access', '3Which issues and where they go'])
+    expect(editor.querySelector('[data-issue-provider="github"]')!.getAttribute('aria-checked')).toBe('true')
+    const host = editor.querySelector<HTMLInputElement>('input[aria-label="Host"]')!
+    expect(host.value).toBe('https://github.com')
+    expect(host.readOnly).toBe(true)
+    expect(editor.querySelector<HTMLDetailsElement>('[data-issue-more]')!.open).toBe(false)
+    const bar = editor.querySelector('[data-issue-actions]')!
+    expect(bar.className).toContain('sticky')
+    expect(buttons(bar).map((b) => b.textContent)).toEqual(['Cancel', 'Test', 'Connect'])
+    // GitLab makes the host editable.
+    await click(editor.querySelector('[data-issue-provider="gitlab"]')!)
+    expect(editor.querySelector<HTMLInputElement>('input[aria-label="Host"]')!.readOnly).toBe(false)
+    expect(editor.querySelector<HTMLInputElement>('input[aria-label="Host"]')!.value).toBe('https://gitlab.com')
+    await r.unmount()
+  })
+
   it('words states and filters, and sends a token only when typed', () => {
     expect(stateLine({ ...healthy, state: 'stopped', stopped_reason: 'token_missing' }, NOW)).toBe('No token is stored, for example after a restore. Enter it again.')
     expect(stateLine({ ...healthy, state: 'pending', last_success_at: null }, NOW)).toBe('Waiting for the first poll')
