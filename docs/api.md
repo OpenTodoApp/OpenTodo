@@ -181,7 +181,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/time-entries/stop` | yes (not `read`, not `agent`) | stop your running entry → the entry; 404 when none runs |
 | PATCH | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`), author only | `{startedAt?, endedAt?, note?}` → the entry |
 | DELETE | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`) | tombstone an entry (author, project admin or owner) → 204 |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `workspaces` (each with your role; for those you own, the members' ids and roles and the groups), `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -1012,6 +1012,14 @@ The server records security-relevant events in its own database (never synced to
 | `project_invite.created` | success | actor = creator | `project_invite_id`, `shared_project_id`, `project_role`, `invited_email` (bound email, if any) |
 | `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
 | `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
+| `workspace.created`, `workspace.renamed`, `workspace.deleted` | success | actor = owner or admin (the server owner when an account deletion removed it) | `workspace` (id; `renamed` also covers icon and colour, never a value) |
+| `workspace.transferred` | success | actor = previous owner (the deleting owner at account deletion), target = new owner | `workspace` |
+| `workspace.member_added`, `workspace.member_role_changed`, `workspace.member_removed` | success | actor = owner or admin (the member when leaving), target = member | `workspace`, `workspace_role` or `from`, `to` |
+| `workspace.group_created`, `workspace.group_deleted` | success | actor = owner or admin | `workspace`, `group` (ids, never names) |
+| `workspace.group_member_added`, `workspace.group_member_removed` | success | actor = owner or admin, target = member | `workspace`, `group` |
+| `project.grant_added`, `project.grant_changed`, `project.grant_removed` | success | actor = project owner or admin | `shared_project_id`, `group`, `project_role` or `from`, `to` |
+| `workspace_invite.created`, `workspace_invite.revoked` | success | actor = workspace owner or admin | `workspace_invite_id`, `workspace`, `workspace_role`, `invited_email` (bound email, if any) |
+| `workspace_invite.accepted` | success | actor = the account that joined, target = the link's creator | `workspace_invite_id`, `workspace`, `workspace_role` |
 | `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `integrations.issues`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
@@ -1152,6 +1160,39 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 ```
 
 The account, the membership and the spend commit in one transaction, so a link creates at most one account. A link may create an account when its creator is the server owner or an admin, when open sign-up is on, or when the owner turned on **Invite new people** (`PUT /api/v1/settings/project-invites` `{"membersCanInviteNewPeople": true}`; off by default; any signed-in account can read it with `GET`). Otherwise the answer is 403 `project_invite_not_allowed` and the person signs in with an existing account first. In SSO-only mode registration answers 403 `sso_required`; the person signs in through the provider and then joins. Other errors as for invitations (`invitation_email_mismatch`, `email_taken`, `invalid_input`); in every error case the link stays pending.
+
+### Workspaces
+
+A workspace is a separate room with its own projects, labels, views and people (OpenSpec `workspaces`, guide: [workspaces](workspaces.md)). Every account has one default workspace (`"default": true`, named "Personal" until renamed), which cannot be deleted, left, transferred or given members (409 `default_workspace`). Projects, labels, views and tasks without a project carry `workspace_id` (null or absent = the default workspace; a task with a project follows its project); on a shared project only the owner may change it. Workspaces, members and groups are server data, never ops; every sync response carries `workspaces` (below).
+
+Every route needs a session or a `full` or `admin` token (`read` and `agent` tokens: 403 `insufficient_scope`); writes answer 403 `demo_restricted` on a demo. A non-member gets 404 `not_found`. Roles: `owner` (one), `admin` (adds members, manages groups and links), `member` (reads, leaves).
+
+| Method | Path | Body → answer |
+| --- | --- | --- |
+| `GET` | `/api/v1/workspaces` | → `{workspaces: [workspace]}` |
+| `POST` | `/api/v1/workspaces` | `{name, icon?, color?}` → 201 workspace; 20 owned per account (409 `limit_reached`) |
+| `GET`, `PATCH`, `DELETE` | `/api/v1/workspaces/{id}` | `PATCH {name?, icon?, color?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members |
+| `POST` | `/api/v1/workspaces/{id}/leave`, `…/transfer` | leave → 204 (the owner: 409 `owner_must_transfer`); transfer `{userId}` (owner, to a member) → 200 |
+| `GET`, `POST` | `/api/v1/workspaces/{id}/members` | `POST {email, role: member\|admin}` (admins add members) → 201; 404 `user_not_found`; 200 members |
+| `PATCH`, `DELETE` | `/api/v1/workspaces/{id}/members/{userId}` | `{role}`; removing a member also removes every grant they hold on the workspace's projects |
+| `GET`, `POST` | `/api/v1/workspaces/{id}/groups` | `POST {name}` → 201 `{id, name, members}`; names unique ignoring case (409 `group_exists`), 50 groups |
+| `PATCH`, `DELETE` | `/api/v1/workspaces/{id}/groups/{groupId}` | rename `{name}`, delete |
+| `PUT`, `DELETE` | `/api/v1/workspaces/{id}/groups/{groupId}/members/{userId}` | 100 members per group; only workspace members (409 `not_in_workspace`) |
+
+A workspace:
+
+```json
+{"id": "…", "name": "Family", "icon": "house", "color": "#3b82f6", "default": false, "role": "owner", "ownerId": "…",
+ "members": [{"userId": "…", "name": "Alice", "role": "owner"}], "groups": [{"id": "…", "name": "Adults", "members": ["…"]}]}
+```
+
+Members carry names, never emails. Limits are 409 `limit_reached` naming the limit; a hosted server may lower them per tenant. An end-to-end encrypted account can create, rename and delete its workspaces and move things between them, but adding members, creating groups or links, and granting groups answer 409 `encryption_enabled`.
+
+**A created workspace is a closed directory**: a project in it can be shared only with its members (`POST /projects/{id}/members` with anyone else: 409 `not_in_workspace`; a project invite link accepted from outside: 404 `invitation_invalid`). In the default workspace projects share by email as before. A member of a shared project who is not in its workspace sees it in their default workspace.
+
+**Group grants** — `POST /api/v1/projects/{id}/grants` `{groupId, role}` → 201 member list; `PATCH …/grants/{groupId}` `{role}`; `DELETE …/grants/{groupId}` → 204. The project's member rules apply (an admin grants viewer and editor), and only groups of the project's workspace (404 otherwise). A member's role is the highest of their direct grant and their groups'; the member list adds `via` (the groups a role comes from, `[]` for a direct grant) and `grants`. Changing a group changes every project it is on in the same request, without writing an op.
+
+**Invite links** — `POST /api/v1/workspaces/{id}/invites` `{role: member|admin, email?, expiresInHours?, send?}` (owner or admin; `admin` links only by the owner) → 201 `{invite, link, newAccounts}` with a `/invite/w/otw_…` link, as [project invite links](#project-invite-links): 20 per hour, `GET` lists pending links, `DELETE …/invites/{inviteId}` revokes. `GET /api/v1/workspace-invites/{token}` (no authentication; 404 `invitation_invalid` on a demo) → `{inviterName, workspaceName, role, email, expiresAt, canCreateAccount, alreadyMember?}`; `POST …/accept` → `{workspaceId, role}` (409 `already_member`); `POST /api/v1/auth/register` with `workspaceInvite` creates the account under the project-link rule.
 
 ### Public links
 
@@ -1908,13 +1949,17 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
 | `user_not_found` | 404 | adding a project member by an email that has no account |
 | `already_member` | 409 | adding an account that is already a member of the project, or accepting a project invite link as one |
-| `owner_must_transfer` | 409 | the project owner leaving the project |
+| `owner_must_transfer` | 409 | the project owner leaving the project; the workspace owner leaving the workspace |
+| `not_in_workspace` | 409 | adding someone to a project or group of a created workspace they are not a member of |
+| `default_workspace` | 409 | deleting, leaving, transferring or adding members to a default workspace |
+| `workspace_not_empty` | 409 | deleting a workspace that still has projects or other members |
+| `group_exists` | 409 | a group name already used in the workspace (ignoring case) |
 | `project_id_conflict` | 409 | sharing a project for the first time while another account has a project with the same id |
 | `not_deleted` | 409 | purging a task or project that is not in the Trash |
 | `unsupported_format` | 400 | import file in no supported format |
 | `invalid_file` | 400 | import file recognised but unreadable |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
-| `limit_reached` | 409 | more than 20 webhooks, 5 issue connections or 50 automation rules on one account |
+| `limit_reached` | 409 | more than 20 webhooks, 5 issue connections or 50 automation rules on one account; a workspace limit (20 owned workspaces, 200 members, 50 groups, 100 per group) |
 | `destination_error` | 502 | `POST /backups/test`, the archive list or preparing a restore when the destination refuses or cannot be reached |
 | `passphrase_required` | 422 | preparing an encrypted archive without a passphrase when the stored one is missing |
 | `passphrase_invalid` | 422 | preparing an encrypted archive with a passphrase that does not open it |

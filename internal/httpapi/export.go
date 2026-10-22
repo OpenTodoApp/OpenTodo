@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -87,6 +88,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["project_prefs"] = projectPrefs
+	// Workspaces (OpenSpec change workspaces): the caller's role on each; for
+	// the ones they own, the members' ids and roles and the groups.
+	workspaces, err := s.exportWorkspaces(r.Context(), uid)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["workspaces"] = workspaces
 	// End-to-end encryption (OpenSpec `e2ee`): content fields above are ciphertext
 	// for an encrypted account; the wrapped key record makes the document
 	// restorable and decryptable elsewhere with the passphrase. null otherwise.
@@ -104,4 +113,26 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.json"`)
 	writeJSON(w, http.StatusOK, out)
 	s.audit.Record(r.Context(), audit.ExportRequested(uid, "json"))
+}
+
+// exportWorkspaces is the export's `workspaces` array: no names of people,
+// and members and groups only of the workspaces the caller owns.
+func (s *Server) exportWorkspaces(ctx context.Context, uid string) ([]map[string]any, error) {
+	list, err := s.sync.Workspaces(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]map[string]any, 0, len(list))
+	for _, ws := range list {
+		e := map[string]any{"id": ws.ID, "name": ws.Name, "icon": ws.Icon, "color": ws.Color, "default": ws.Default, "role": ws.Role}
+		if ws.Role == opsync.WorkspaceOwner && !ws.Default {
+			members := make([]map[string]string, 0, len(ws.Members))
+			for _, m := range ws.Members {
+				members = append(members, map[string]string{"userId": m.UserID, "role": m.Role})
+			}
+			e["members"], e["groups"] = members, ws.Groups
+		}
+		out = append(out, e)
+	}
+	return out, nil
 }

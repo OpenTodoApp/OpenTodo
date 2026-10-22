@@ -83,6 +83,9 @@ type credentials struct {
 	// ProjectInvite is an optional project invite link secret: the new account
 	// joins that project (OpenSpec `project-invite-links`).
 	ProjectInvite string `json:"projectInvite"`
+	// WorkspaceInvite is an optional workspace invite link secret: the new
+	// account joins that workspace (OpenSpec change workspaces).
+	WorkspaceInvite string `json:"workspaceInvite"`
 	// SetupToken must accompany the first registration when OPENTODO_SETUP_TOKEN
 	// is set (OpenSpec `owner-bootstrap`); ignored afterwards.
 	SetupToken string `json:"setupToken"`
@@ -106,6 +109,14 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	// form (the first account is the owner and can always be created).
 	if n, err := s.auth.UserCount(r.Context()); err == nil && n > 0 && s.auth.SSOOnly(r.Context()) {
 		writeError(w, http.StatusForbidden, "sso_required", auth.ErrSSORequired.Error())
+		return
+	}
+	if c.WorkspaceInvite != "" {
+		if c.Invitation != "" || c.ProjectInvite != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", "send one of invitation, projectInvite or workspaceInvite")
+			return
+		}
+		s.registerWithWorkspaceInvite(w, r, c)
 		return
 	}
 	if c.ProjectInvite != "" {

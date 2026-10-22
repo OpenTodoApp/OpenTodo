@@ -62,6 +62,23 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'account.email_change_requested': msg('Email change requested'),
   'account.email_changed': msg('Email changed'),
   'account.avatar_changed': msg('Profile picture changed'),
+  'workspace.created': msg('Workspace created'),
+  'workspace.renamed': msg('Workspace changed'),
+  'workspace.deleted': msg('Workspace deleted'),
+  'workspace.transferred': msg('Workspace transferred'),
+  'workspace.member_added': msg('Workspace member added'),
+  'workspace.member_role_changed': msg('Workspace role changed'),
+  'workspace.member_removed': msg('Workspace member removed'),
+  'workspace.group_created': msg('Group created'),
+  'workspace.group_deleted': msg('Group deleted'),
+  'workspace.group_member_added': msg('Added to a group'),
+  'workspace.group_member_removed': msg('Removed from a group'),
+  'project.grant_added': msg('Project shared with a group'),
+  'project.grant_changed': msg('Group role on a project changed'),
+  'project.grant_removed': msg('Group removed from a project'),
+  'workspace_invite.created': msg('Workspace invite link created'),
+  'workspace_invite.accepted': msg('Joined a workspace with a link'),
+  'workspace_invite.revoked': msg('Workspace invite link revoked'),
 })
 
 const REASONS = translatedMap<string>({
@@ -133,6 +150,7 @@ export function eventSummary(ev: AuditEvent): string {
   if (d.app_password_count && d.app_password_count !== '0') parts.push(t('{n, plural, one {# app password} other {# app passwords}}', { n: Number(d.app_password_count) }))
   if (d.passkey_name) parts.push(`“${d.passkey_name}”`)
   if (d.project_role) parts.push(t('as {role}', { role: roleName(d.project_role) }))
+  if (d.workspace_role) parts.push(t('as {role}', { role: roleName(d.workspace_role) }))
   if (d.link_rights) parts.push(d.link_rights === 'tick' ? t('can tick off tasks') : t('view only'))
   if (d.invited_email) parts.push(t('for {email}', { email: d.invited_email }))
   if (d.setting) parts.push(`${SETTINGS[d.setting] ?? d.setting}: ${d.from ?? '?'} → ${d.to ?? '?'}`)

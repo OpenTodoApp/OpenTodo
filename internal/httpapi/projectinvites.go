@@ -269,7 +269,7 @@ func (s *Server) projectJoiner(ctx context.Context, tx *sql.Tx, inviterID, proje
 func (s *Server) projectInviteError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, auth.ErrInvitationInvalid), errors.Is(err, opsync.ErrForbidden), errors.Is(err, opsync.ErrNotFound), errors.Is(err, opsync.ErrInvalidMember),
-		errors.Is(err, opsync.ErrProjectIDConflict):
+		errors.Is(err, opsync.ErrProjectIDConflict), errors.Is(err, opsync.ErrNotInWorkspace):
 		writeError(w, http.StatusNotFound, "invitation_invalid", auth.ErrInvitationInvalid.Error())
 	case errors.Is(err, auth.ErrInvitationEmailMismatch):
 		writeError(w, http.StatusForbidden, "invitation_email_mismatch", "this invite link was issued for a different email address")
@@ -373,7 +373,7 @@ func redactPath(p string) string {
 	}
 	parts := strings.Split(p, "/")
 	for i, part := range parts {
-		if strings.HasPrefix(part, auth.ProjectInviteSecretPrefix) || strings.HasPrefix(part, "oti_") || strings.HasPrefix(part, "otv_") || strings.HasPrefix(part, "otr_") || strings.HasPrefix(part, auth.PublicLinkSecretPrefix) {
+		if strings.HasPrefix(part, auth.ProjectInviteSecretPrefix) || strings.HasPrefix(part, auth.WorkspaceInviteSecretPrefix) || strings.HasPrefix(part, "oti_") || strings.HasPrefix(part, "otv_") || strings.HasPrefix(part, "otr_") || strings.HasPrefix(part, auth.PublicLinkSecretPrefix) {
 			parts[i] = "[redacted]"
 		}
 	}

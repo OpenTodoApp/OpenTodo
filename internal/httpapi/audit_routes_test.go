@@ -342,7 +342,9 @@ func TestUserExportExcludesAudit(t *testing.T) {
 			// saved locations (task-locations).
 			"places",
 			// automation rules (automation-rules).
-			"rules":
+			"rules",
+			// the caller's workspaces (workspaces).
+			"workspaces":
 		default:
 			t.Fatalf("user export has unexpected key %q", k)
 		}

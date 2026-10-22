@@ -224,6 +224,9 @@ type Parsed struct {
 	// Template is set for an own export that declares itself a template
 	// (OpenSpec change project-templates, design D7).
 	Template *TemplateInfo
+	// Workspaces are an own export's workspaces (OpenSpec change workspaces),
+	// mapped onto the importing account's by Service.mapWorkspaces.
+	Workspaces []ExportedWorkspace
 }
 
 // TemplateInfo is the optional `template` object of a template file.

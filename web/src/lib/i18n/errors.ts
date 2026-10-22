@@ -29,6 +29,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   confirmation_mismatch: msg('The email you typed does not match the account.'),
   conflict: msg('This conflicts with another change: {detail}'),
   consent_required: msg('Read which data is sent to the assistant and accept it first.'),
+  default_workspace: msg('Your default workspace cannot be deleted, left, transferred or shared.'),
   demo_busy: msg('The demo is busy. Try again in a moment.'),
   demo_expired: msg('Your demo sandbox has expired.'),
   demo_limit: msg('This demo sandbox has reached its limit. Try again later.'),
@@ -40,8 +41,10 @@ export const ERROR_MESSAGES: Record<string, string> = {
   email_taken: msg('An account with this email already exists.'),
   encryption_conflict: msg('The encryption key was created or changed on another device. Unlock with the existing passphrase.'),
   encryption_disabled: msg('End-to-end encryption is not enabled for this account.'),
+  group_exists: msg('A group with this name already exists in the workspace.'),
   not_encrypted: msg('Only an account with end-to-end encryption answers AI connectors from a device.'),
   mcp_disabled: msg('The server owner has turned AI assistants off.'),
+  not_in_workspace: msg('This person is not a member of the workspace. Ask the workspace owner to add them first.'),
   not_opted_in: msg('This device does not answer AI connectors from this session.'),
   encryption_enabled: msg('Not available with end-to-end encryption: {detail}'),
   feeds_disabled: msg('Calendar feeds are not enabled on this server.'),
@@ -130,6 +133,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   unsupported_protocol_version: msg('The server does not support this protocol version.'),
   user_not_found: msg('No account with this email exists on this server.'),
   verification_invalid: msg('This confirmation link is no longer valid.'),
+  workspace_not_empty: msg('Move or delete the workspace’s projects and remove its other members first.'),
 }
 
 /**

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/mail"
 	opsync "github.com/pixari/opentodo/internal/sync"
@@ -162,10 +163,21 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	// The deletion unassigns the account's tasks in other owners' projects;
 	// observers (webhooks) learn those changes once it committed.
 	ctx, deletion := opsync.WithAccountDeletion(r.Context())
+	// Workspaces the account owned pass to an admin or the server owner, or go
+	// (OpenSpec change workspaces, design D10); each is audited.
+	var handovers []opsync.WorkspaceHandover
+	ctx = opsync.WithWorkspaceHandovers(ctx, &handovers)
 	notify, err := s.auth.DeleteUser(ctx, actor.ID, id, in.ConfirmEmail)
 	if err != nil {
 		s.userError(w, err)
 		return
+	}
+	for _, h := range handovers {
+		if h.NewOwner == "" {
+			s.audit.Record(ctx, audit.WorkspaceDeleted(actor.ID, h.WorkspaceID))
+		} else {
+			s.audit.Record(ctx, audit.WorkspaceTransferred(actor.ID, h.NewOwner, h.WorkspaceID))
+		}
 	}
 	s.sync.ObserveAccountDeletion(ctx, deletion)
 	s.sync.Notifier().CloseUser(id)

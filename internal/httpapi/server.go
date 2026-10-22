@@ -76,6 +76,9 @@ type Server struct {
 	// projectInviteLimiter caps project invite link creation per account
 	// (20/hour; OpenSpec `project-invite-links`), see projectinvites.go.
 	projectInviteLimiter *rateLimiter
+	// workspaceInviteLimiter caps workspace invite link creation per account
+	// (20/hour; OpenSpec change workspaces), see workspaceinvites.go.
+	workspaceInviteLimiter *rateLimiter
 	// mfaLimiter guards the second sign-in step and reauthLimiter
 	// re-authentication, per client address (10/min each; OpenSpec `mfa-totp`).
 	mfaLimiter    *rateLimiter

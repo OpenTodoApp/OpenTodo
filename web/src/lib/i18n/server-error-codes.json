@@ -19,6 +19,7 @@
   "connection_disabled",
   "connection_stopped",
   "consent_required",
+  "default_workspace",
   "demo_busy",
   "demo_expired",
   "demo_limit",
@@ -33,6 +34,7 @@
   "encryption_enabled",
   "feeds_disabled",
   "forbidden",
+  "group_exists",
   "host_managed",
   "idempotency_conflict",
   "identity_taken",
@@ -71,6 +73,7 @@
   "not_deleted",
   "not_encrypted",
   "not_found",
+  "not_in_workspace",
   "not_opted_in",
   "oidc_disabled",
   "oidc_email_unverified",
@@ -113,5 +116,6 @@
   "unsupported_format",
   "unsupported_protocol_version",
   "user_not_found",
-  "verification_invalid"
+  "verification_invalid",
+  "workspace_not_empty"
 ]

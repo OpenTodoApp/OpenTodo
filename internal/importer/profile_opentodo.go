@@ -65,6 +65,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		ProjectPrefs []map[string]json.RawMessage `json:"project_prefs"`
 		// Template marks a template file (project-templates D1); import is unchanged.
 		Template *TemplateInfo `json:"template"`
+		// Workspaces of the exporting account (OpenSpec change workspaces);
+		// members and groups in it are never imported.
+		Workspaces []ExportedWorkspace `json:"workspaces"`
 	}
 	if err := json.NewDecoder(r).Decode(&doc); err != nil {
 		return nil, &FileError{fmt.Sprintf("not a readable OpenTodo export: %v", err)}
@@ -75,7 +78,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	if doc.Version < 1 {
 		return nil, &FileError{fmt.Sprintf("unsupported export version %d", doc.Version)}
 	}
-	out := &Parsed{Version: doc.Version, Template: doc.Template}
+	out := &Parsed{Version: doc.Version, Template: doc.Template, Workspaces: doc.Workspaces}
 	if doc.Template != nil {
 		out.Notes = append(out.Notes, "This file is a template. Importing it creates it once, with its own ids and dates; to start a fresh copy with dates moved to a start day, use From a template in the sidebar.")
 	}

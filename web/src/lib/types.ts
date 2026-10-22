@@ -1423,6 +1423,11 @@ export const AUDIT_EVENT_NAMES = [
   'account.email_change_requested',
   'account.email_changed',
   'account.avatar_changed',
+  'workspace.created', 'workspace.renamed', 'workspace.deleted', 'workspace.transferred',
+  'workspace.member_added', 'workspace.member_role_changed', 'workspace.member_removed',
+  'workspace.group_created', 'workspace.group_deleted', 'workspace.group_member_added', 'workspace.group_member_removed',
+  'project.grant_added', 'project.grant_changed', 'project.grant_removed',
+  'workspace_invite.created', 'workspace_invite.accepted', 'workspace_invite.revoked',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 

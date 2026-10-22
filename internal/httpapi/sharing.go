@@ -29,8 +29,10 @@ func (s *Server) memberError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, opsync.ErrNotFound):
 		msg := "project not found"
-		if strings.Contains(err.Error(), "member") {
-			msg = "member not found"
+		for _, k := range []string{"member", "group", "grant"} {
+			if strings.HasSuffix(err.Error(), ": "+k) {
+				msg = k + " not found"
+			}
 		}
 		writeError(w, http.StatusNotFound, "not_found", msg)
 	case errors.Is(err, opsync.ErrForbidden):
@@ -41,6 +43,9 @@ func (s *Server) memberError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "already_member", "this account is already a member of the project")
 	case errors.Is(err, opsync.ErrProjectIDConflict):
 		writeError(w, http.StatusConflict, "project_id_conflict", "this project cannot be shared because another account has a project with the same id; duplicate it and share the copy")
+	case errors.Is(err, opsync.ErrNotInWorkspace):
+		// A created workspace is a closed directory (OpenSpec change workspaces).
+		writeError(w, http.StatusConflict, "not_in_workspace", "this account is not a member of the project's workspace; ask the workspace owner to add them first")
 	case errors.Is(err, opsync.ErrInvalidMember):
 		writeError(w, http.StatusBadRequest, "invalid_input", strings.TrimPrefix(err.Error(), opsync.ErrInvalidMember.Error()+": "))
 	default:

@@ -160,7 +160,7 @@ func (s *Service) release(uid string) {
 }
 
 // prepare validates options and builds the plan for a file.
-func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Options) (*Plan, error) {
+func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Options, write bool) (*Plan, error) {
 	if err := opts.Normalize(); err != nil {
 		return nil, err
 	}
@@ -186,6 +186,10 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 	}
 	parsed, err := Parse(data, opts)
 	if err != nil {
+		return nil, err
+	}
+	// A real import creates the workspaces it needs; a preview only names them.
+	if err := s.mapWorkspaces(ctx, uid, parsed, write); err != nil {
 		return nil, err
 	}
 	st, err := s.loadState(ctx, uid, parsed.Format)
@@ -223,7 +227,7 @@ func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, e
 
 // Preview is the dry run: nothing is written.
 func (s *Service) Preview(ctx context.Context, uid string, data []byte, opts Options) (*Plan, error) {
-	return s.prepare(ctx, uid, data, opts)
+	return s.prepare(ctx, uid, data, opts, false)
 }
 
 // Start validates and plans the import, records the job and writes it in the
@@ -233,7 +237,7 @@ func (s *Service) Start(ctx context.Context, uid string, data []byte, opts Optio
 	if err := s.acquire(uid, jobID); err != nil {
 		return nil, err
 	}
-	plan, err := s.prepare(ctx, uid, data, opts)
+	plan, err := s.prepare(ctx, uid, data, opts, true)
 	if err != nil {
 		s.release(uid)
 		return nil, err
