@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { Skeleton } from '../ui'
 import { Button } from '../ui'
 import { Badge } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
-import { Switch } from '../ui'
+import { Switch, Tabs } from '../ui'
 import { SecretReveal } from './TokensSection'
 import { RelaySettings } from './RelaySettings'
 import { api, isNetworkError } from '../lib/api'
@@ -44,44 +44,126 @@ export interface AssistantsViewProps {
   onDismissSecret: () => void
 }
 
+/** The clients the third step has instructions for (mcp-server "Settings screen for assistants"). */
+export type McpClient = 'desktop' | 'code' | 'other'
+
+/** The configuration a client takes, with the endpoint and, right after creation, the token. */
+export function clientSnippet(client: McpClient, endpoint: string, token?: string | null): string {
+  if (client === 'code') return `claude mcp add --transport http opentodo ${endpoint} --header "Authorization: Bearer ${token || '<your token>'}"`
+  return connectionSnippet(endpoint, token)
+}
+
+/** One numbered step of connecting an assistant. */
+function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+  return (
+    <li className="space-y-2 py-3" data-mcp-step={n}>
+      <h3 className="flex items-center gap-2 text-body font-semibold text-default">
+        <span aria-hidden className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-meta text-on-accent-soft">{n}</span>
+        {title}
+      </h3>
+      {children}
+    </li>
+  )
+}
+
+/** The owner's switches, a group of their own above the steps. */
+function OwnerSwitches({ p, disabled, guard }: { p: AssistantsViewProps; disabled: boolean; guard: (fn: (v: boolean) => void) => (v: boolean) => void }) {
+  const status = p.status!
+  const ownerWrites = !!status.writes_enabled
+  return (
+    <div className="rounded-control border border-default px-3" role="group" aria-label={t('On this server')} data-mcp-owner>
+      <SettingRow {...rowCopy('assistants', 'endpoint', { variant: status.enabled ? 'on' : 'off' })}
+        control={<Switch checked={status.enabled} disabled={disabled} onChange={guard(p.onToggle)} label={t('Allow AI assistants (MCP endpoint)')} hideLabel />} />
+      {status.enabled && (
+        <SettingRow {...rowCopy('assistants', 'writes', { variant: ownerWrites ? 'on' : 'off' })}
+          control={<Switch checked={ownerWrites} disabled={disabled} onChange={guard(p.onToggleWrites)} label={t('AI assistants may make changes')} hideLabel />} />
+      )}
+    </div>
+  )
+}
+
+function MemberStatus({ status }: { status: McpStatus }) {
+  const ownerWrites = !!status.writes_enabled
+  return (
+    <SettingRow {...rowCopy('assistants', 'server')} status={
+      <span className="flex flex-wrap items-center gap-2">
+        <Badge hue={status.enabled ? 'green' : 'slate'}>{status.enabled ? (ownerWrites ? t('On, can make changes') : t('On, read-only')) : t('Off')}</Badge>
+        <span>{status.enabled
+          ? (ownerWrites ? t('The server owner has enabled AI assistant access and allows assistants to make changes. Your assistant sees only your own projects and the shared projects you are a member of.') : t('The server owner has enabled AI assistant access (read-only). Your assistant sees only your own projects and the shared projects you are a member of.'))
+          : t('The server owner has not enabled AI assistant access on this server, so assistants cannot connect yet.')}</span>
+      </span>
+    } />
+  )
+}
+
+/** The three steps: endpoint, token, the client's configuration. */
+function ConnectSteps({ p, disabled }: { p: AssistantsViewProps; disabled: boolean }) {
+  const [choice, setChoice] = useState<'read' | 'agent'>('read')
+  const [client, setClient] = useState<McpClient>('desktop')
+  const endpoint = p.status?.endpoint ?? ''
+  const canOfferAgent = writesAllowed(p.status, p.access)
+  const scope = canOfferAgent ? choice : 'read'
+  const snippet = clientSnippet(client, endpoint, p.secret)
+  const copyLabel = (item: CopyTarget, label: string) => (p.copied === item ? t('Copied') : label)
+  const options: { scope: 'read' | 'agent'; label: string; line: string }[] = [
+    { scope: 'read', label: t('Read only'), line: t('The assistant can read your tasks and projects but never change them.') },
+    ...(canOfferAgent ? [{ scope: 'agent' as const, label: t('Can make changes'), line: t('The assistant can also add and change tasks through its tools, while you allow it.') }] : []),
+  ]
+  return (
+    <ol className="divide-y divide-(--ot-border)" data-mcp-steps>
+      <Step n={1} title={t('Endpoint')}>
+        <div className="flex items-center gap-2">
+          <code className="min-w-0 flex-1 break-all rounded-control border border-default bg-sunken px-3 py-2 font-mono text-meta text-default" data-mcp-endpoint>{endpoint}</code>
+          <Button size="sm" icon="copy" onClick={() => p.onCopy('endpoint', endpoint)}>{copyLabel('endpoint', t('Copy URL'))}</Button>
+        </div>
+      </Step>
+      <Step n={2} title={t('Token')}>
+        <div role="radiogroup" aria-label={t('What the assistant may do')} className="space-y-1">
+          {options.map((o) => (
+            <label key={o.scope} className={`flex cursor-pointer items-start gap-3 rounded-control border px-3 py-2 ${scope === o.scope ? 'border-accent bg-accent-soft' : 'border-default'}`}>
+              <input type="radio" name="mcp-token-scope" value={o.scope} checked={scope === o.scope} onChange={() => setChoice(o.scope)} className="mt-1" data-mcp-scope={o.scope} />
+              <span className="min-w-0"><span className="block text-body font-medium text-default">{o.label}</span><span className="block text-meta text-muted">{o.line}</span></span>
+            </label>
+          ))}
+        </div>
+        {p.secret ? (
+          <div className="space-y-2">
+            <SecretReveal what={p.secretScope === 'agent' ? t('token for an assistant that can make changes') : t('read-only token')} secret={p.secret} />
+            <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={p.onDismissSecret}>{t('Done')}</Button></div>
+          </div>
+        ) : (
+          <Button variant="primary" disabled={disabled} busy={p.busy} onClick={() => p.onCreateToken(scope)} data-mcp-create>{t('Create token')}</Button>
+        )}
+      </Step>
+      <Step n={3} title={t('Add it to your assistant')}>
+        <Tabs label={t('Assistant')} value={client} onChange={(id) => setClient(id as McpClient)}
+          tabs={[{ id: 'desktop', label: 'Claude Desktop' }, { id: 'code', label: 'Claude Code' }, { id: 'other', label: t('Other MCP clients') }]}>
+          <p className="py-2 text-meta text-muted">{client === 'desktop'
+            ? t('Settings → Developer → Edit Config, then add this entry to claude_desktop_config.json and restart Claude Desktop.')
+            : client === 'code' ? t('Run this in a terminal.')
+            : t('Add a remote MCP server (streamable HTTP) with the endpoint and send the token as the Authorization header. Clients that take a JSON entry accept this.')}</p>
+          <pre className="overflow-x-auto rounded-control bg-sunken p-2 font-mono text-meta text-default" data-scroll-x data-mcp-snippet>{snippet}</pre>
+          <Button size="sm" variant="ghost" icon="copy" className="mt-1" onClick={() => p.onCopy('snippet', snippet)}>{copyLabel('snippet', t('Copy configuration'))}</Button>
+        </Tabs>
+        <p className="text-meta text-faint">{t('Tell the assistant your time zone: due dates are evaluated in the time zone it passes (UTC otherwise). Changes made offline on a device appear once it syncs.')}</p>
+      </Step>
+    </ol>
+  )
+}
+
 /** Pure rendering of Settings → Integrations → AI assistants; state lives in AssistantsPanel. */
 export function AssistantsView(p: AssistantsViewProps) {
   // Offline disables the controls; a request in flight only ignores input, so
   // keyboard focus stays on the control instead of falling back to the page.
   const disabled = !p.connected
-  const endpoint = p.status?.endpoint ?? ''
-  const snippet = endpoint ? connectionSnippet(endpoint, p.secret) : ''
-  const copyLabel = (item: CopyTarget, label: string) => (p.copied === item ? t('Copied') : label)
   const ownerWrites = !!p.status?.writes_enabled
-  const canOfferAgent = writesAllowed(p.status, p.access)
   const guard = (fn: (v: boolean) => void) => (v: boolean) => { if (!p.busy) fn(v) }
   return (
     <SettingsSection {...cardCopy('assistants')} testId="assistants-panel">
-      {!p.connected && (
-        <Notice>{noticeCopy('assistants', 'offline')}</Notice>
-      )}
-
+      {!p.connected && <Notice>{noticeCopy('assistants', 'offline')}</Notice>}
       {p.status === null ? (
         p.connected ? <Skeleton shape="line" count={3} label={t('Loading assistant access')} /> : <p className="py-2 text-meta text-faint">{t('Nothing fetched yet.')}</p>
-      ) : p.isOwner ? (
-        <>
-          <SettingRow {...rowCopy('assistants', 'endpoint', { variant: p.status.enabled ? 'on' : 'off' })}
-            control={<Switch checked={p.status.enabled} disabled={disabled} onChange={guard(p.onToggle)} label={t('Allow AI assistants (MCP endpoint)')} hideLabel />} />
-          {p.status.enabled && (
-            <SettingRow {...rowCopy('assistants', 'writes', { variant: ownerWrites ? 'on' : 'off' })}
-              control={<Switch checked={ownerWrites} disabled={disabled} onChange={guard(p.onToggleWrites)} label={t('AI assistants may make changes')} hideLabel />} />
-          )}
-        </>
-      ) : (
-        <SettingRow {...rowCopy('assistants', 'server')} status={
-          <span className="flex flex-wrap items-center gap-2">
-            <Badge hue={p.status.enabled ? 'green' : 'slate'}>{p.status.enabled ? (ownerWrites ? t('On, can make changes') : t('On, read-only')) : t('Off')}</Badge>
-            <span>{p.status.enabled
-              ? (ownerWrites ? t('The server owner has enabled AI assistant access and allows assistants to make changes. Your assistant sees only your own projects and the shared projects you are a member of.') : t('The server owner has enabled AI assistant access (read-only). Your assistant sees only your own projects and the shared projects you are a member of.'))
-              : t('The server owner has not enabled AI assistant access on this server, so assistants cannot connect yet.')}</span>
-          </span>
-        } />
-      )}
+      ) : p.isOwner ? <OwnerSwitches p={p} disabled={disabled} guard={guard} /> : <MemberStatus status={p.status} />}
 
       {p.status?.enabled && (
         <SettingRow label={rowCopy('assistants', 'mine', { variant: 'on' }).label}
@@ -92,28 +174,9 @@ export function AssistantsView(p: AssistantsViewProps) {
           )} />
       )}
 
-      {p.status && (
-        <>
-          <SettingRow {...rowCopy('assistants', 'url')} status={<code className="break-all rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-meta text-default">{endpoint}</code>}
-            control={<Button size="sm" icon="copy" onClick={() => p.onCopy('endpoint', endpoint)}>{copyLabel('endpoint', t('Copy URL'))}</Button>} />
-          <SettingRow {...rowCopy('assistants', 'token')}
-            control={(
-              <span className="flex flex-wrap justify-end gap-2">
-                <Button variant="primary" disabled={disabled} busy={p.busy} onClick={() => p.onCreateToken('read')}>{t('Create read-only token')}</Button>
-                {canOfferAgent && (
-                  <Button variant="secondary" disabled={disabled} busy={p.busy} onClick={() => p.onCreateToken('agent')}>{t('Create a token for an assistant that can make changes')}</Button>
-                )}
-              </span>
-            )} />
-        </>
-      )}
-
-      {p.secret && (
-        <div className="space-y-2 py-3">
-          <SecretReveal what={p.secretScope === 'agent' ? t('token for an assistant that can make changes') : t('read-only token')} secret={p.secret} />
-          <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={p.onDismissSecret}>{t('Done')}</Button></div>
-        </div>
-      )}
+      {p.status && (p.status.enabled
+        ? <ConnectSteps p={p} disabled={disabled} />
+        : p.isOwner && <p className="py-3 text-meta text-muted" data-mcp-why>{t('Turn on the endpoint above to connect an assistant.')}</p>)}
 
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
@@ -126,22 +189,6 @@ export function AssistantsView(p: AssistantsViewProps) {
       )}
 
       {p.encrypted && p.status?.enabled && <RelaySettings />}
-
-      {p.status && (
-        <details className="py-3 text-body">
-          <summary className="cursor-pointer font-medium text-default">{t('Connection instructions')}</summary>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">
-            <li>{t('Create a token above (or under Settings → Integrations → API tokens).')}</li>
-            <li>{t('In your assistant, add a remote MCP server (“streamable HTTP”) with the endpoint URL.')}</li>
-            <li>{t.rich('Send the token as the header {header}. Clients that take a JSON entry accept:', { header: <code>Authorization: Bearer &lt;token&gt;</code> })}</li>
-          </ol>
-          <pre className="mt-2 overflow-x-auto rounded-control bg-sunken p-2 font-mono text-meta text-default" data-scroll-x>{snippet}</pre>
-          <Button size="sm" variant="ghost" icon="copy" className="mt-1" onClick={() => p.onCopy('snippet', snippet)}>{copyLabel('snippet', t('Copy configuration'))}</Button>
-          <p className="mt-2 text-meta text-faint">
-            {t('Tell the assistant your time zone: due dates are evaluated in the time zone it passes (UTC otherwise). Changes made offline on a device appear once it syncs.')}
-          </p>
-        </details>
-      )}
     </SettingsSection>
   )
 }
