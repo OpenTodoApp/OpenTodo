@@ -4938,5 +4938,12 @@
   "A task’s date passes": "La data di un’attività è passata",
   "when a task’s date passes": "quando la data di un’attività è passata",
   "due earlier": "con data precedente",
-  "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": "Una regola modifica le attività per te quando succede qualcosa: viene aggiunta un’etichetta, la data di un’attività è passata o ogni domenica sera."
+  "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": "Una regola modifica le attività per te quando succede qualcosa: viene aggiunta un’etichetta, la data di un’attività è passata o ogni domenica sera.",
+  "Layout": "Layout",
+  "Pick a day…": "Scegli un giorno…",
+  "Schedule…": "Pianifica…",
+  "Select tasks": "Seleziona attività",
+  "Swipe right to complete, left to schedule. Also in a task's menu.": "Scorri a destra per completare, a sinistra per pianificare. Anche nel menu di un'attività.",
+  "Right completes, left schedules; the same two actions start the task's menu": "A destra completa, a sinistra pianifica; le stesse due azioni aprono il menu dell'attività",
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La spunta e mostra tutte le caselle; «Seleziona attività» nel menu della pagina fa lo stesso, «Fine» le nasconde"
 }

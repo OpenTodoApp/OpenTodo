@@ -89,7 +89,7 @@ async function context(theme, opts = {}) {
   const c = await browser.newContext({ viewport: DESKTOP, deviceScaleFactor: 1.25, colorScheme: theme, timezoneId: 'UTC', locale: 'en-GB', ...opts })
   await c.addInitScript((css) => { addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = css; document.head.append(s) }) }, HIDE)
   // A click on a title edits it in place (inline-task-editing); the scenes open the panel.
-  await c.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open') } catch { /* no storage */ } })
+  await c.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open'); localStorage.setItem('opentodo.swipe-cue', '1') } catch { /* no storage */ } })
   return c
 }
 const settle = (p, ms = 600) => p.waitForTimeout(ms)
