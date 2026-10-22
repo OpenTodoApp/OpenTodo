@@ -18,7 +18,7 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "app.opentodo"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "app.opentodo"
@@ -83,8 +83,8 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.test.espresso:espresso-intents:3.6.1")
     // A local OpenTodo stand-in (health check, pages, the share screen), plain and with a self-signed certificate.
-    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
-    androidTestImplementation("com.squareup.okhttp3:okhttp-tls:4.12.0")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:5.5.0")
+    androidTestImplementation("com.squareup.okhttp3:okhttp-tls:5.5.0")
 }
 
 /** Fails when the runtime classpath holds an artifact that is not AndroidX, Kotlin or Google's Android support. */

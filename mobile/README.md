@@ -6,7 +6,7 @@ Thin apps around the OpenTodo web app (OpenSpec change `native-shells`). A shell
 
 ## Building the Android app
 
-Needs JDK 17 or later and the Android SDK (platform 35, build tools 36.0.0) with `ANDROID_HOME` set; the Gradle wrapper downloads Gradle itself (checksum pinned).
+Needs JDK 17 or later and the Android SDK (platform 37.0, build tools 36.0.0) with `ANDROID_HOME` set; the Gradle wrapper downloads Gradle itself (checksum pinned).
 
 ```sh
 make android          # unit tests, lint, the checks below, debug APK and the instrumented-test APK
