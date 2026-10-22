@@ -313,7 +313,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   }
   if (!labels.some((l) => l.id !== omitLabel)) m.labels = null
   // The project (rows-v2 D6): the trailing group from 640 px, the end of the line below (and always on a card).
-  if (projectName) m.project = <span data-project="" className={`max-w-48 truncate text-meta text-muted ${card ? '' : 'sm:hidden'}`}>{projectName}</span>
+  if (projectName) m.project = <span data-project="" className={`inline-flex max-w-48 min-w-0 items-center gap-1 text-meta text-muted ${card ? '' : 'sm:hidden'}`}><span className="truncate">{projectName}</span></span>
   const items = metaItems(m)
   const meta = (items > 0 || m.project) && <RowMeta m={m} card={card} projectOnlyBelowSm={items === 0 && !card} />
   const revealed = !card && !readOnly && !inline && actions

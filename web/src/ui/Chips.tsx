@@ -133,8 +133,10 @@ export function LabelChips({ labels, omit, max = 2 }: LabelChipsProps) {
     <span role="group" data-label-chips="" tabIndex={more > 0 ? 0 : undefined}
       className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-chip outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <ReadAs label={t('Labels: {names}', { names })}>
-        {shown.slice(0, max).map((l) => <LabelChip key={l.id} name={l.name} color={l.color} className="max-w-32" />)}
-        {more > 0 && <span className="text-meta tabular-nums text-muted" data-label-more="">+{more}</span>}
+        <span className="inline-flex min-w-0 items-center gap-1">
+          {shown.slice(0, max).map((l) => <LabelChip key={l.id} name={l.name} color={l.color} className="max-w-32" />)}
+          {more > 0 && <span className="text-meta tabular-nums text-muted" data-label-more="">+{more}</span>}
+        </span>
       </ReadAs>
     </span>
   )
