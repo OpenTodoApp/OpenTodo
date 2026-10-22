@@ -10,30 +10,32 @@
 // sync, never opens on the demo, and yields to the owner's welcome note.
 // Settings → Account → How you work reopens it (lib/startGuide.ts) at step one; a
 // reopened guide writes nothing until a step writes, and closing it only closes it.
-// "Show me around" creates one sample project with six tasks as ordinary ops.
+// The first step offers "Start with three sample tasks" once per account
+// (moments-and-onboarding D2, lib/sampleTasks.ts), and after the third step the guide
+// ends on "Your first day", the first-day checklist (D5, FirstDay.tsx), which the
+// sidebar's "Start guide" entry reopens.
 import { Button, Dialog } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { readAppearance, setAppearance, THEME_MODES } from '../lib/appearance'
 import { logicalToday } from '../lib/dates'
 import { useDemo } from '../lib/demo'
 import { useHasTask, useLabels, useProjects, useTopLevelTaskCount, useUserPrefsRow } from '../lib/localData'
-import { createLabel, findLabelByName } from '../lib/labels'
-import { createProject, createSubtask, createTask } from '../lib/ops'
+import { createTask } from '../lib/ops'
+import { createSampleTasks, useSampleOfferTaken } from '../lib/sampleTasks'
 import { closeStartGuide, useStartGuideRequest } from '../lib/startGuide'
 import { useSyncStatus } from '../lib/sync'
 import type { ThemeModePref, User } from '../lib/types'
 import { firstRunDone, setFirstRunDone } from '../lib/userPrefs'
 import { setMethodMode, type MethodMode } from '../lib/method/mode'
+import { FirstDayView } from './FirstDay'
 import { MethodModeChooser } from './method/MethodModeChooser'
 import { installPrompt, useInstallPrompt } from './installPrompt'
 import { taskDefaults } from './listActions'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { navigate, useRoute } from './router'
 import { useWelcome } from './WelcomeDialog'
-import { t, msg } from '../lib/i18n'
+import { t } from '../lib/i18n'
 import { act } from './actionError'
-
-export const SAMPLE_PROJECT_NAME = msg('Show me around')
 
 /**
  * Whether the start guide belongs on screen on its own: a fresh account (no row, or
@@ -59,35 +61,24 @@ export function useFirstRun(user: Pick<User, 'role' | 'createdAt'>): boolean {
   return shown.current
 }
 
-/**
- * The sample project: six tasks demonstrating a date, a deadline, labels, a
- * subtask, a repeat and a note, created through the same ops as any other data,
- * so they sync and delete like any project. Returns the project id.
- */
-export async function createSampleProject(today = logicalToday()): Promise<string> {
-  const tomorrow = new Date(`${today}T12:00:00`)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const nextWeek = new Date(`${today}T12:00:00`)
-  nextWeek.setDate(nextWeek.getDate() + 7)
-  const iso = (d: Date) => d.toISOString().slice(0, 10)
-  const project = await createProject({ name: t(SAMPLE_PROJECT_NAME) })
-  await createTask({ title: t('A task due today: press c to complete it'), project_id: project, due: { date: today } })
-  await createTask({ title: t('A task with a deadline: it turns red when late'), project_id: project, due: { date: iso(tomorrow) }, deadline: iso(nextWeek) })
-  const label = (await findLabelByName('errand'))?.id ?? await createLabel({ name: 'errand' })
-  await createTask({ title: t('Labels group tasks across projects: press L to add one'), project_id: project, labels: [label] })
-  const parent = await createTask({ title: t('A task with a subtask: press a to add another'), project_id: project })
-  await createSubtask(parent, t('The subtask: complete it and the parent asks to follow'))
-  await createTask({ title: t('A repeating task: complete it and the next one appears'), project_id: project, due: { date: today }, recurrence: 'every week' })
-  await createTask({ title: t('A task with notes: open it and write below the title'), project_id: project, description: t('Notes take markdown: **bold**, lists, links. Press Esc to leave them.') })
-  return project
-}
-
-type StepId = 'task' | 'work' | 'install'
+type StepId = 'task' | 'work' | 'install' | 'first-day'
 const STEPS: { id: StepId; title: string }[] = [
   { id: 'task', get title() { return t('Add your first task') } },
   { id: 'work', get title() { return t('How do you want to work?') } },
   { id: 'install', get title() { return t('Install the app') } },
+  { id: 'first-day', get title() { return t('Your first day') } },
 ]
+/** The numbered steps; the last view, "Your first day", is not one of them. */
+const STEP_COUNT = 3
+/** The index of the first-day checklist, where the sidebar's "Start guide" entry opens the guide. */
+export const FIRST_DAY_STEP = 3
+
+/** Whether the first step offers the sample tasks: once per account, while the guide is unfinished. */
+function useSampleOffer(): boolean {
+  const row = useUserPrefsRow()
+  const taken = useSampleOfferTaken()
+  return row !== undefined && taken === false && !firstRunDone(row)
+}
 
 /**
  * The start guide's host, mounted by the Shell beside the welcome note. It opens on
@@ -102,13 +93,13 @@ export function FirstRunGuide({ user }: { user: User }) {
   const self = !requested && auto && route.view === 'inbox'
   // Never on a demo instance (first-run "Three-step first run"), not even when asked for.
   if (demo || (!requested && !self)) return null
-  return <StartGuide self={self} userId={user.id} onClose={self ? () => act(setFirstRunDone()) : closeStartGuide} />
+  return <StartGuide self={self} userId={user.id} initialStep={requested === 'first-day' ? FIRST_DAY_STEP : 0}
+    onClose={self ? () => act(setFirstRunDone()) : closeStartGuide} />
 }
 
 /** The guide itself; `self` when it opened on its own (the first task from any quick add moves it on). Exported for the stories. */
 export function StartGuide({ self, userId, onClose, initialStep = 0 }: { self: boolean; userId?: string; onClose: () => void; initialStep?: number }) {
   const [step, setStep] = useState(initialStep)
-  const [sampleOffered, setSampleOffered] = useState(true)
   // Companion is preselected but written only when the user continues (first-run "Three-step first run").
   const [method, setMethod] = useState<MethodMode>('companion')
   const taskCount = useTopLevelTaskCount()
@@ -122,30 +113,43 @@ export function StartGuide({ self, userId, onClose, initialStep = 0 }: { self: b
   return (
     <Dialog title={current.title} onClose={onClose} placement="sheet" size="md" testId="start-guide">
       <section aria-label={current.title} data-first-run data-first-run-step={current.id}>
-        <p className="text-meta text-muted">{t('Step {n} of {count}', { n: step + 1, count: STEPS.length })}</p>
-        {current.id === 'task' && <TaskStep userId={userId} onAdded={() => setStep(1)} />}
-        {current.id === 'work' && <WorkStep method={method} onMethod={setMethod} />}
-        {current.id === 'install' && (
-          <p className="mt-1 text-body text-muted">{t('Installed, OpenTodo opens in its own window and works offline on your phone, tablet or computer.')}</p>
-        )}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {current.id === 'install' && <InstallButton next={next} />}
-          {current.id === 'work' && (
-            <Button size="sm" variant="primary" data-first-run-continue onClick={() => act(setMethodMode(method).then(next))}>{t('Continue')}</Button>
-          )}
-          <Button size="sm" variant={current.id === 'install' ? 'ghost' : 'secondary'} data-first-run-next onClick={next}>
-            {step === STEPS.length - 1 ? t('Skip') : t('Skip this step')}
-          </Button>
-          {sampleOffered && (
-            <Button size="sm" variant="ghost" icon="rocket" data-first-run-sample onClick={() => {
-              setSampleOffered(false)
-              void createSampleProject().then((id) => navigate({ view: 'project', id }))
-            }}>{t('Show me around')}</Button>
-          )}
-          <Button size="sm" variant="ghost" className="ml-auto" data-first-run-skip-all onClick={onClose}>{t('Skip all')}</Button>
-        </div>
+        {current.id === 'first-day'
+          ? <FirstDayView onAddTask={() => setStep(0)} onClose={onClose} />
+          : <GuideStep step={step} id={current.id} userId={userId} method={method} onMethod={setMethod} next={next} onAdded={() => setStep(1)} onClose={onClose} />}
       </section>
     </Dialog>
+  )
+}
+
+/** One of the three numbered steps, with its actions. */
+function GuideStep({ step, id, userId, method, onMethod, next, onAdded, onClose }: {
+  step: number; id: StepId; userId?: string; method: MethodMode; onMethod: (m: MethodMode) => void; next: () => void; onAdded: () => void; onClose: () => void
+}) {
+  const offer = useSampleOffer()
+  return (
+    <>
+      <p className="text-meta text-muted">{t('Step {n} of {count}', { n: step + 1, count: STEP_COUNT })}</p>
+      {id === 'task' && <TaskStep userId={userId} onAdded={onAdded} />}
+      {id === 'work' && <WorkStep method={method} onMethod={onMethod} />}
+      {id === 'install' && (
+        <p className="mt-1 text-body text-muted">{t('Installed, OpenTodo opens in its own window and works offline on your phone, tablet or computer.')}</p>
+      )}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {id === 'install' && <InstallButton next={next} />}
+        {id === 'work' && (
+          <Button size="sm" variant="primary" data-first-run-continue onClick={() => act(setMethodMode(method).then(next))}>{t('Continue')}</Button>
+        )}
+        <Button size="sm" variant={id === 'install' ? 'ghost' : 'secondary'} data-first-run-next onClick={next}>
+          {id === 'install' ? t('Skip') : t('Skip this step')}
+        </Button>
+        {id === 'task' && offer && (
+          <Button size="sm" variant="ghost" icon="rocket" data-first-run-sample onClick={() => act(createSampleTasks().then(onAdded))}>
+            {t('Start with three sample tasks')}
+          </Button>
+        )}
+        <Button size="sm" variant="ghost" className="ml-auto" data-first-run-skip-all onClick={onClose}>{t('Skip all')}</Button>
+      </div>
+    </>
   )
 }
 

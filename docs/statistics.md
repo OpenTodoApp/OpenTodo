@@ -31,13 +31,13 @@ Each panel answers one question:
 - **How good are my estimates?** For tasks with an estimate and at least 5 minutes tracked: how many times their estimate they take, and the projects or labels furthest from it.
 - **What keeps slipping?** Open tasks whose due date was moved later or removed three times or more in 90 days. It reads this device's history, so another device may list different tasks.
 
-Every chart has **Show as table**, and with the keyboard the arrow keys move through its days or values. A panel with nothing to show collapses to one line.
+Every chart has **Show as table**, and the arrow keys move through its days or values. A panel with nothing to show collapses to one line.
 
 **Export time entries** in the menu next to the period chooser downloads a CSV of the period's entries, made on this device. The columns are those of the [server's CSV](time-tracking.md#export).
 
-In a shared project a completed task counts for whoever completed it; older tasks count for their assignee, or for you when unassigned. Tasks in the Trash are left out.
+In a shared project a completed task counts for whoever completed it; older tasks count for their assignee, or for you when unassigned. Tasks in the Trash and the start guide's sample tasks are left out.
 
-Statistics are computed on this device. Nothing is sent or stored, they work offline, and synced devices show the same numbers. The [Loop home](method/overview.md)'s Loop pulse uses the same definitions.
+Statistics are computed on this device: nothing is sent or stored, they work offline, and synced devices agree. The [Loop home](method/overview.md)'s Loop pulse uses the same definitions.
 
 ## Weekly digest by email
 

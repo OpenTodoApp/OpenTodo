@@ -126,3 +126,64 @@ describe('# and @ suggestions', () => {
     await r.unmount()
   })
 })
+
+describe('inline tints (moments-and-onboarding 6.1)', () => {
+  const tints = (root: ParentNode) => [...root.querySelectorAll('[data-quick-add-tints] [data-tint]')].map((m) => [m.getAttribute('data-tint'), m.textContent])
+  const setup = async () => {
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={async () => {}} />)
+    return { r, input: r.container.querySelector('input')! }
+  }
+
+  it('Chips appear as tokens are typed, and the field tints the same spans in their hue', async () => {
+    const { r, input } = await setup()
+    await type(input, 'Buy milk tomorrow p2')
+    await flush(20)
+    expect(tints(r.container)).toEqual([['due', 'tomorrow'], ['priority', 'p2']])
+    const layer = r.container.querySelector('[data-quick-add-tints]')!
+    expect(layer.textContent).toBe('Buy milk tomorrow p2')
+    expect(layer.querySelector('[data-tint="priority"]')!.getAttribute('data-hue')).toBe(r.container.querySelector('[data-chip="priority"]')!.getAttribute('data-hue'))
+    await type(input, 'Buy milk tomorrow')
+    await flush(20)
+    expect(tints(r.container)).toEqual([['due', 'tomorrow']])
+    await r.unmount()
+  })
+
+  it('Dismissing the recurrence chip removes its tint', async () => {
+    const { r, input } = await setup()
+    await type(input, 'Water plants every Monday')
+    await flush(20)
+    expect(tints(r.container).map((x) => x[0])).toContain('recurrence')
+    await act(async () => { r.container.querySelector<HTMLButtonElement>('[data-chip="recurrence"] button')!.click() })
+    await flush(20)
+    expect(tints(r.container).map((x) => x[0])).not.toContain('recurrence')
+    await r.unmount()
+  })
+
+  it('Quoted phrase: no reminder and no tint for the quoted span', async () => {
+    const { r, input } = await setup()
+    await type(input, 'Read "remind me at 9" essay')
+    await flush(20)
+    expect(tints(r.container)).toEqual([])
+    await r.unmount()
+  })
+
+  it('Screen reader: the layer is hidden; the field and the chips are what is read', async () => {
+    const { r, input } = await setup()
+    await type(input, 'Call Ana friday')
+    await flush(20)
+    expect(r.container.querySelector('[data-quick-add-tints]')!.getAttribute('aria-hidden')).toBe('true')
+    expect(input.value).toBe('Call Ana friday')
+    expect(r.container.querySelector('[data-chip="due"]')).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('High contrast: the tint becomes a 1 px underline in the attribute colour', async () => {
+    const css = (await import('../index.css?raw')).default
+    expect(css).toMatch(/\[data-contrast="high"\] \.quick-add-tint \{[^}]*underline 1px var\(--hue-solid\)/)
+    const { r, input } = await setup()
+    await type(input, 'Pay rent p1')
+    await flush(20)
+    expect(r.container.querySelector('[data-tint="priority"]')!.className).toBe('quick-add-tint')
+    await r.unmount()
+  })
+})

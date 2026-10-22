@@ -90,7 +90,7 @@ export function TrashView() {
       )}
       {items.length === 0 ? (
         <div data-empty-state="trash">
-          <EmptyState title={t('The Trash is empty.')} action={{ label: t('Open Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }} />
+          <EmptyState illustration="trash-empty" title={t('The Trash is empty.')} action={{ label: t('Open Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }} />
         </div>
       ) : (
         <ul className="divide-y divide-(--ot-border)" aria-label={t('Deleted items')}>

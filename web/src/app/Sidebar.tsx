@@ -42,6 +42,7 @@ import { sidebarFind } from './signals'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { countInbox } from '../lib/inbox'
+import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
 
 
 /**
@@ -396,7 +397,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
           {moreAsMenu && rest.length > 0 && (
             <MoreMenu entries={rest} collapsed={collapsed} hints={hints}
-              active={rest.some((m) => m.route.view === route.view)} />
+              active={rest.some((m) => m.route.view === route.view)} extra={<StartGuideMoreMenuItems />} />
           )}
         </nav>
       </div>
@@ -410,6 +411,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
       )}
       {!moreAsMenu && <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} collapsed={collapsed} tight testId="sidebar-more">
         {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
+        {/* The first-day checklist (moments-and-onboarding D5): after the destinations, until done or hidden. */}
+        <StartGuideMoreItem collapsed={collapsed} />
       </SidebarGroup>}
       {/* Favourites first (sidebar-favourites D5); while finding, the matches show in their own groups. */}
       {!found && favourites.length > 0 && (
@@ -624,11 +627,13 @@ function primaryDestinations(first: boolean, calendarMode: Route['view'], counts
     : [inbox, today, { route: { view: 'upcoming' }, label: t('Upcoming'), icon: 'calendar-days' }, { route: { view: calendarMode } as Route, label: t('Calendar'), icon: 'calendar-range' }]
 }
 
-function MoreMenu({ entries, active, collapsed, hints }: {
+function MoreMenu({ entries, active, collapsed, hints, extra }: {
   entries: { id: string; route: Route; label: string; icon: IconName; note?: string; badge?: ReactNode }[]
   active: boolean
   collapsed: boolean
   hints: boolean
+  /** Items after the destinations (the start guide's entry). */
+  extra?: ReactNode
 }) {
   return (
     <div data-sidebar-more-menu>
@@ -645,6 +650,7 @@ function MoreMenu({ entries, active, collapsed, hints }: {
           <MenuItem key={m.id} icon={m.icon} label={m.label} description={m.note} marker={m.badge}
             shortcut={hints ? GO_KEYS[m.route.view] : undefined} onSelect={() => navigate(m.route)} />
         ))}
+        {extra}
       </Menu>
     </div>
   )

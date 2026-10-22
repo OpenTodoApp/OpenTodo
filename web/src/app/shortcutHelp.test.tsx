@@ -42,4 +42,12 @@ describe('ShortcutHelp', () => {
     expect(SHORTCUTS.some((s) => s.keys.includes('g Shift+I'))).toBe(true)
     expect(SHORTCUTS.some((s) => s.scope === 'vim' && s.keys.includes('Shift+I'))).toBe(false)
   })
+
+  it('names the command bar prefixes and Ctrl+Enter, and q once (moments-and-onboarding)', async () => {
+    const { SHORTCUTS } = await import('../lib/shortcuts')
+    const html = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} />)
+    expect(html).toContain('first character in the command bar')
+    expect(html).toContain('add what you typed as a task')
+    expect(SHORTCUTS.filter((s) => s.keys.includes('q') && s.scope === 'global').map((s) => s.id)).toEqual(['list.quick-add'])
+  })
 })

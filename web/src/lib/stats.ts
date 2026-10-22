@@ -108,7 +108,7 @@ export function daysOf(p: Pick<Period, 'start' | 'end'>): string[] {
 }
 
 type StatTask = Pick<Task, 'id' | 'project_id' | 'created_at' | 'completed_at' | 'deleted_at' | 'due' | 'series_id' | 'assignee_id'>
-  & Partial<Pick<Task, 'skipped' | 'completed_by'>>
+  & Partial<Pick<Task, 'skipped' | 'completed_by' | 'sample'>>
 type StatProject = Pick<Project, 'id' | 'name' | 'archived' | 'deleted_at'>
 
 export interface StatsInput<T extends StatTask = Task> {
@@ -192,10 +192,13 @@ export function isMine(item: StatTask, shared: ReadonlySet<string>, me: string |
   return !item.assignee_id || item.assignee_id === me
 }
 
-/** The rows statistics see: live (not in the Trash, nor in a trashed project), not a skipped habit occurrence, and the user's. */
+/**
+ * The rows statistics see: live (not in the Trash, nor in a trashed project), not a skipped habit
+ * occurrence, not a start guide sample (moments-and-onboarding D3), and the user's.
+ */
 export function countedTasks<T extends StatTask>(input: Pick<StatsInput<T>, 'tasks' | 'projects' | 'shared' | 'me'>): T[] {
   const trashed = new Set(input.projects.filter((p) => p.deleted_at).map((p) => p.id))
-  return input.tasks.filter((item) => !item.deleted_at && !(item.project_id && trashed.has(item.project_id)) && !item.skipped && isMine(item, input.shared, input.me))
+  return input.tasks.filter((item) => !item.deleted_at && !(item.project_id && trashed.has(item.project_id)) && !item.skipped && !item.sample && isMine(item, input.shared, input.me))
 }
 
 /** Open tasks due before today, outside archived projects, oldest due first. */
@@ -266,7 +269,7 @@ export function compute<T extends StatTask>(input: StatsInput<T>, period: Pick<P
 function trackedOf<T extends StatTask>(input: StatsInput<T>, period: Pick<Period, 'start' | 'end'>, days: string[], dayOf: (ms: number) => string) {
   const now = input.now ?? Date.now()
   const trashed = new Set(input.projects.filter((p) => p.deleted_at).map((p) => p.id))
-  const tasks = new Map(input.tasks.filter((x) => !x.deleted_at && !(x.project_id && trashed.has(x.project_id))).map((x) => [x.id, x]))
+  const tasks = new Map(input.tasks.filter((x) => !x.deleted_at && !x.sample && !(x.project_id && trashed.has(x.project_id))).map((x) => [x.id, x]))
   const perDay = new Map(days.map((d) => [d, 0]))
   const perProject = new Map<string, number>()
   let minutes = 0

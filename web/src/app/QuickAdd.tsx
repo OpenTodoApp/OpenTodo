@@ -13,6 +13,7 @@ import {
 import { useDictation } from './useDictation'
 import { useTokenSuggest } from './TokenSuggest'
 import { ParseChips } from './ParseChips'
+import { QuickAddTint } from './QuickAddTint'
 import { t, preferredLanguages } from '../lib/i18n'
 
 export type { QuickAddInput }
@@ -23,13 +24,13 @@ function caretOutside(el: HTMLInputElement | null, span: Span): boolean {
   return c < span.start || c > span.end
 }
 
-function nowHHMM(d = new Date()): string {
+export function nowHHMM(d = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 
 /** The picker's helper; a label created meanwhile (another tab, a sync) is reused. */
-async function createLabelByName(name: string): Promise<string> {
+export async function createLabelByName(name: string): Promise<string> {
   try {
     return await createLabel({ name })
   } catch (err) {
@@ -67,6 +68,9 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const [value, setValue] = useState(initialValue ?? '')
   const valueRef = useRef(value)
   const inputRef = useRef<HTMLInputElement>(null)
+  const tints = useRef<HTMLDivElement>(null)
+  // The tint layer follows the field's horizontal scroll after every change of text or caret.
+  useEffect(() => { if (tints.current && inputRef.current) tints.current.scrollLeft = inputRef.current.scrollLeft })
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, [])
   const [dismissed, setDismissed] = useState<Span[]>([])
   const [highlight, setHighlight] = useState<number | null>(null)
@@ -135,12 +139,16 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     <form id={formId} onSubmit={(e) => void submit(e)}>
       <div className="relative flex items-center gap-2">
         <span className="text-h2 leading-none text-accent">+</span>
+        {/* The recognised spans tinted behind the text (moments-and-onboarding D8, QuickAddTint). */}
+        <span className="relative flex min-w-0 flex-1">
+        <QuickAddTint ref={tints} value={value} chips={chips} />
         <input
           ref={inputRef}
-          className="ui-input border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent"
+          className="ui-input relative border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent"
           placeholder={placeholder}
           value={value}
           onChange={(e) => change(e.target.value)}
+          onScroll={(e) => { if (tints.current) tints.current.scrollLeft = e.currentTarget.scrollLeft }}
           {...suggest.fieldProps}
           onKeyDown={(e) => {
             if (suggest.onKeyDown(e)) return
@@ -171,6 +179,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           autoFocus={autoFocus}
           aria-describedby={chips.length ? 'quick-add-preview' : undefined}
         />
+        </span>
         {voice.enabled && (
           <Tooltip label={voice.listening ? t('Stop dictation') : t('Dictate a task')} shortcut={voice.listening ? 'Esc' : voiceShortcut ? keysOf('list.dictate') : undefined}>
             <button

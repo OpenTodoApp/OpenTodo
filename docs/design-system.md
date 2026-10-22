@@ -168,6 +168,19 @@ Empty and finished states may show one calm line drawing above their sentence (t
 - decorative: hidden from assistive technology, since the sentence beside it says everything;
 - at most 4 KB per file.
 
+The set, each a brief for the next drawing as much as a list:
+
+| Name | Where | Motif | Accent shape |
+| --- | --- | --- | --- |
+| `inbox-zero` | Empty Inbox, end of Process the Inbox | An empty tray with a leaf beside it | the leaf |
+| `today-clear` | Empty Today | A mug from the side with two steam lines, a small sun upper right | the sun |
+| `week-clear` | Empty Upcoming | Seven small rounded squares on a baseline, the first raised | the raised square |
+| `project-new` | A project with no open task | An open box, lid tilted back, a pencil leaning on its edge | the pencil's cap |
+| `day-done` | Done for today (Close the day) | A closed notebook with a ribbon, a crescent moon above | the moon |
+| `trash-empty` | Empty Trash | A bin with its lid on top and one leaf beside it | the leaf |
+
+No faces, people or mascots: each motif names the state in one glance and needs no translation of tone. Settings and error pages have no illustration.
+
 Name it in `Illustration.tsx` and pass that name to the empty-state pattern (`<EmptyState illustration="inbox-zero" …/>`); add it to `Illustrations.stories.tsx` so the workbench checks it in light and dark. `make ui-lint` fails on a file that breaks the colour, image, text or size rules.
 
 ### Buttons

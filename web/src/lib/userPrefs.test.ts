@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { applyOps, resetDeviceId } from './ops'
-import { DAY_STARTS, readDayStart, readLanguage, readUserPrefs, setUserPref } from './userPrefs'
+import { DAY_STARTS, hideStartChecklist, readDayStart, readLanguage, readUserPrefs, setUserPref, startChecklistHidden } from './userPrefs'
 
 let n = 0
 beforeEach(() => {
@@ -81,5 +81,21 @@ describe('day start (day-boundary D1)', () => {
     const row = await db.userPrefs.get('me')
     expect(row?.day_start).toBe('09:00')
     expect(readDayStart(row)).toBe(0)
+  })
+})
+
+describe('start_checklist (moments-and-onboarding D5)', () => {
+  it('hiding writes one op to the outbox; an unknown value reads as shown; a remote hide arrives by sync', async () => {
+    expect(startChecklistHidden(undefined)).toBe(false)
+    await hideStartChecklist()
+    expect(startChecklistHidden(await db.userPrefs.get('me'))).toBe(true)
+    const queued = (await db.outbox.toArray()).map(({ entity, field, value }) => ({ entity, field, value }))
+    expect(queued).toEqual([{ entity: 'user_prefs', field: 'start_checklist', value: 'hidden' }])
+    useDatabase(`userprefs-second-${n++}`)
+    resetDeviceId()
+    await applyOps([{ id: 'h', entity: 'user_prefs', entityId: 'me', field: 'start_checklist', value: 'shown-later', ts: 5, device: 'newer' }])
+    expect(startChecklistHidden(await db.userPrefs.get('me'))).toBe(false)
+    await applyOps([{ id: 'h2', entity: 'user_prefs', entityId: 'me', field: 'start_checklist', value: 'hidden', ts: 6, device: 'laptop' }])
+    expect(startChecklistHidden(await db.userPrefs.get('me'))).toBe(true)
   })
 })

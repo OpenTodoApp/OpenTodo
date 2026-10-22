@@ -378,6 +378,10 @@ var Schema = map[string]map[string]kind{
 		// Where the task happens (OpenSpec change task-locations): one whole-value
 		// register like origin, so concurrent locations never mix; additive.
 		"location": kLocation,
+		// A start guide sample task (OpenSpec change moments-and-onboarding,
+		// design D3): excluded from Statistics, the Loop pulse and the digest,
+		// kept on completion. A whole boolean, not content; additive.
+		"sample": kBool,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;
@@ -595,6 +599,10 @@ var Schema = map[string]map[string]kind{
 		// "companion" or "first"; clients read an unknown or empty value as
 		// "lists", so new modes stay additive.
 		"method_mode": kString,
+		// The first-day checklist (OpenSpec change moments-and-onboarding, design
+		// D5): "hidden" once its sidebar entry was hidden on any device; clients
+		// read an empty or unknown value as shown.
+		"start_checklist": kString,
 		// Interface language (OpenSpec change app-localization, design D1):
 		// "system" or a shipped language code (en, de, fr, es, it, pt). Not
 		// restricted here; clients read an unknown code as "system" and keep the

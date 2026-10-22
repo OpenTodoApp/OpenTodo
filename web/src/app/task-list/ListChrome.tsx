@@ -9,7 +9,7 @@ import { useOpenTasks } from '../../lib/liveTasks'
 import type { ProjectViewMode } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import type { AccountRole, Label, Place, Project, Task } from '../../lib/types'
-import { Button, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, IconButton, MenuItem, MenuSeparator, Tooltip } from '../../ui'
+import { Button, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, type IllustrationName, IconButton, MenuItem, MenuSeparator, Tooltip } from '../../ui'
 import { TodayAskAction } from '../assistant/AskEntry'
 import { AssigneePicker } from '../AssigneePicker'
 import { DEFAULT_DISPLAY_OPTIONS } from '../display/displayOptions'
@@ -170,6 +170,11 @@ const EMPTY_COPY: Record<EmptyView, EmptyCopy> = {
   completed: { get title() { return t('Nothing completed yet.') }, action: 'today' },
 }
 
+// The illustration set (moments-and-onboarding D1): the views with a drawing of their own.
+const EMPTY_ILLUSTRATION: Partial<Record<EmptyView, IllustrationName>> = {
+  inbox: 'inbox-zero', today: 'today-clear', upcoming: 'week-clear', project: 'project-new',
+}
+
 /** The primary action of an empty view: add a task (the view's quick add), or open Inbox or Today. */
 function emptyAction(kind: EmptyCopy['action'], onAdd: () => void): EmptyStateAction {
   if (kind === 'today') return { label: t('Open Today'), onClick: () => navigate({ view: 'today' }), shortcut: keysOf('go.today') }
@@ -201,7 +206,7 @@ export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0,
   return (
     <div data-empty-state={view}>
       <EmptyStatePattern title={blocked ? t('Nothing is ready to start today.') : copy.title} action={action} secondary={secondary}
-        illustration={view === 'inbox' ? 'inbox-zero' : undefined} />
+        illustration={EMPTY_ILLUSTRATION[view]} />
     </div>
   )
 }

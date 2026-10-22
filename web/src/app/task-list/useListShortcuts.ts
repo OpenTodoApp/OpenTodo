@@ -130,7 +130,6 @@ export function useListShortcuts(c: ShortcutContext) {
   }
   useShortcutScope('view', { 'project.view-mode': () => { if (!c.projectId) return false; c.toggleViewMode() } }, { view: c.route.view })
   useShortcutScope('list', {
-    'list.quick-add': () => { if (c.projectReadOnly) return false; c.quickAddRef.current?.focus() },
     'list.escape': (e) => {
       const target = e.target as HTMLElement | null
       if (isTypingTarget(target)) target!.blur()

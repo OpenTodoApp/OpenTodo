@@ -17,7 +17,9 @@ You are signed in (see [Getting started](getting-started.md)). This page adds a 
 
 The first time an account opens the Inbox, a start guide opens over it, one step at a time: add your first task (the guide has its own box, and the task lands in the Inbox behind it), choose [how you work](method/set-up.md) (Lists only, Companion or Open Loops first) and light or dark, and install the app. On a phone it is a sheet at the bottom, with the Inbox visible above. Every step has a **Skip** button, and **Skip all**, the × button, <kbd>Esc</kbd> or a tap outside close it at once. It never comes back on its own on that account, on any of your devices; **Open the start guide** in the **Start guide** row of **Settings → Account → How you work** opens it again over the Inbox.
 
-The guide also offers **Show me around**. It creates one project, "Show me around", with six tasks that demonstrate a date, a deadline, a label, a subtask, a repeat and notes. They are ordinary tasks: edit them, complete them, or delete the project when you are done and it goes to the Trash like any other.
+The first step also offers **Start with three sample tasks**, marked "Sample" and never counted in Statistics. **Remove sample tasks**, in a sample's panel or the Inbox's menu, trashes them all at once, with Undo.
+
+The guide ends on **Your first day**: add a task, plan today, get OpenTodo on another device. Until all three are done, **Start guide** under **More** in the sidebar reopens it; **Hide** in its menu removes it.
 
 ## Add your first task
 
@@ -25,7 +27,7 @@ The guide also offers **Show me around**. It creates one project, "Show me aroun
 2. Type what you need to do, for example `Call the dentist`.
 3. Press <kbd>Enter</kbd>.
 
-The task appears straight away. The box stays open, so you can type the next one right after.
+The task appears straight away, and the box stays open for the next one.
 
 Where the task goes depends on where you are: in a project it goes into that project, in Today it's due today, and in the Inbox it waits there until you sort it.
 
@@ -45,7 +47,7 @@ To change the date later, open the task (click it, or select it and press <kbd>E
 
 ## Complete it
 
-When you're done, click the circle next to the task, or select it with <kbd>j</kbd> and <kbd>k</kbd> and press <kbd>c</kbd>. The task leaves the list and moves to **Completed** in the sidebar. Changed your mind? Open Completed and reopen it.
+When you're done, click the circle next to the task, or select it with <kbd>j</kbd> and <kbd>k</kbd> and press <kbd>c</kbd>. It moves to **Completed** in the sidebar, where you can reopen it.
 
 ## Get it on your phone
 

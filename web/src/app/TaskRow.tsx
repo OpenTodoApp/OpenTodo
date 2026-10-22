@@ -13,6 +13,7 @@
 // muted text separated by CSS middle dots; labels are the only chips (LabelChips);
 // the project, the counts and the origin form the trailing group, in whose place the
 // revealed actions (RowActionCluster) appear on a fine pointer.
+import { isSample } from '../lib/sampleTasks'
 import { Icon, LabelChips, ReadAs, ToneText, type IconName, type Tone } from '../ui'
 import { memo, type ReactNode, useEffect, useRef, useState } from 'react'
 import type { RowImplied } from '../lib/listGroups'
@@ -109,6 +110,8 @@ type FieldBadge = ReturnType<typeof fieldBadges>[number]
 
 /** The values of the metadata line, computed once by the row. */
 interface MetaValues {
+  /** A start guide sample (moments-and-onboarding D4): the muted word, a fact rather than a chip. */
+  sample?: boolean
   breadcrumb?: string | null
   date: string | null
   dateTone: Tone
@@ -134,7 +137,7 @@ interface MetaValues {
 
 /** Whether the line has anything to show (the project below 640 px counts; see `RowMeta`). */
 function metaItems(m: MetaValues): number {
-  return [m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts].filter(Boolean).length
+  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts].filter(Boolean).length
 }
 
 /** The metadata line (rows-v2 D4): one run of muted ToneText, dots drawn by CSS, then the label chips. */
@@ -142,6 +145,7 @@ function RowMeta({ m, card, projectOnlyBelowSm }: { m: MetaValues; card: boolean
   const more = m.badges.slice(MAX_FIELD_BADGES)
   return (
     <div className={`${card ? 'mt-1' : 'mt-0.5'} flex flex-wrap items-center gap-x-1 gap-y-0.5 ${projectOnlyBelowSm ? 'sm:hidden' : ''}`} data-row-meta>
+      {m.sample && <ToneText data-sample="">{t('Sample')}</ToneText>}
       {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="">{m.breadcrumb}</ToneText>}
       {m.date && <ToneText tone={m.dateTone} data-date="">{m.date}</ToneText>}
       {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
@@ -298,6 +302,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const projectName = showProject && project ? project.name : null
   const hint = zoneHint(task.due)
   const m: MetaValues = {
+    sample: isSample(task),
     breadcrumb,
     date: rowDateText(due, task.due ? localDueOf(task.due).date : null, !!task.evening && !done, implied, timeInColumn),
     dateTone: due ? dueTone(due.tone, !!due.time) : 'muted',

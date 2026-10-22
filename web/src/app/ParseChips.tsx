@@ -10,7 +10,7 @@ import { Icon, Tooltip, type HueName } from '../ui'
 import { msg, t, translatedMap } from '../lib/i18n'
 
 // Chip colours come from palette hues (design-system tokens), so both themes follow.
-const CHIP_HUE: Record<Chip['kind'], HueName> = {
+export const CHIP_HUE: Record<Chip['kind'], HueName> = {
   due: 'violet',
   deadline: 'red',
   someday: 'slate',

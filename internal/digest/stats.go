@@ -30,8 +30,11 @@ type Task struct {
 	AssigneeID  string
 	CompletedBy string
 	Skipped     bool
-	Position    float64
-	Priority    int
+	// Sample marks a start guide sample task (OpenSpec change
+	// moments-and-onboarding, design D3): never counted.
+	Sample   bool
+	Position float64
+	Priority int
 	// Start is "someday", a start date (YYYY-MM-DD) or "" (start-dates).
 	Start string
 	// BlockedBy lists the ids of the tasks this one waits for (task-dependencies).
@@ -172,7 +175,7 @@ func (in Input) mine(t Task) bool {
 }
 
 // Counted are the rows statistics see: live, not in a trashed project, not a
-// skipped habit occurrence, and the user's.
+// skipped habit occurrence, not a start guide sample, and the user's.
 func (in Input) Counted() []Task {
 	trashed := map[string]bool{}
 	for _, p := range in.Projects {
@@ -182,7 +185,7 @@ func (in Input) Counted() []Task {
 	}
 	var out []Task
 	for _, t := range in.Tasks {
-		if t.Deleted || (t.ProjectID != "" && trashed[t.ProjectID]) || t.Skipped || !in.mine(t) {
+		if t.Deleted || (t.ProjectID != "" && trashed[t.ProjectID]) || t.Skipped || t.Sample || !in.mine(t) {
 			continue
 		}
 		out = append(out, t)
@@ -347,6 +350,9 @@ func TaskOf(e opsync.Entity) Task {
 	t.CompletedBy = str(e, "completed_by")
 	if v, ok := e["skipped"]; ok {
 		_ = json.Unmarshal(v, &t.Skipped)
+	}
+	if v, ok := e["sample"]; ok {
+		_ = json.Unmarshal(v, &t.Sample)
 	}
 	t.Position = num(e, "position")
 	t.Start = str(e, "start")

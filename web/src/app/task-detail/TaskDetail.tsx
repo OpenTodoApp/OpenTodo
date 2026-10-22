@@ -25,6 +25,8 @@ import { FieldsGroup } from './FieldsGroup'
 import { requestAttach } from './attachRequest'
 import { Facets } from './Facets'
 import { TitleField } from '../TitleField'
+import { SampleNotice } from '../SampleNotice'
+import { isSample } from '../../lib/sampleTasks'
 import { commitTitleEdit } from '../titleEdit'
 import type { EditPlan } from '../../lib/nlp/edit'
 import { t } from '../../lib/i18n'
@@ -216,6 +218,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           {t('Read-only: you are a viewer of this shared project. You can still comment.')}
         </p>
       )}
+      {isSample(task) && !readOnly && <SampleNotice />}
       <div className={page ? 'min-w-0' : 'min-w-0 flex-1 overflow-y-auto'}>
         <div className="min-w-0 space-y-4 p-4">
           {parent && (

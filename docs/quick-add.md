@@ -21,7 +21,7 @@ Everything runs in your browser. The parser needs no network, sends nothing anyw
 
 ## Preview chips
 
-As you type, each thing OpenTodo recognises shows up as a chip under the input, and the title preview (`→ Meeting with Sarah`) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title.
+As you type, each thing OpenTodo recognises shows up as a chip under the input and is tinted in the line itself (underlined in high contrast), and the title preview (`→ Meeting with Sarah`) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title. The same line works in the list, the phone's add sheet and the [command bar](search.md#four-modes)'s Add mode.
 
 | To… | Do this |
 | --- | --- |

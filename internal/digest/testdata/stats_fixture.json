@@ -1,5 +1,5 @@
 {
- "about": "Shared definitions of the statistics (OpenSpec change stats-and-review, design D1 and D6). Evaluated by web/src/lib/stats.test.ts and internal/digest/stats_test.go; both must produce the expected numbers. Instants are Unix ms, days are local days in timeZone. A case with dayStart (\"HH:MM\", OpenSpec change day-boundary) counts instants before that local time for the previous day; cases without it start days at midnight.",
+ "about": "Shared definitions of the statistics (OpenSpec change stats-and-review, design D1 and D6). Evaluated by web/src/lib/stats.test.ts and internal/digest/stats_test.go; both must produce the expected numbers. Instants are Unix ms, days are local days in timeZone. A case with dayStart (\"HH:MM\", OpenSpec change day-boundary) counts instants before that local time for the previous day; cases without it start days at midnight. Tasks marked sample (OpenSpec change moments-and-onboarding) are never counted, like trashed rows and skipped habit occurrences.",
  "timeZone": "Europe/Zurich",
  "me": "u-me",
  "today": "2026-10-14",
@@ -358,6 +358,38 @@
    "series_id": null,
    "assignee_id": null,
    "completed_by": null
+  },
+  {
+   "id": "sm1",
+   "title": "sample task completed this week: never counted (moments-and-onboarding)",
+   "project_id": null,
+   "parent_id": null,
+   "created_at": 1791885600000,
+   "completed_at": 1791887400000,
+   "deleted_at": null,
+   "due": {
+    "date": "2026-10-13"
+   },
+   "series_id": null,
+   "assignee_id": null,
+   "completed_by": null,
+   "sample": true
+  },
+  {
+   "id": "sm2",
+   "title": "open sample task due last week: never slipped nor overdue",
+   "project_id": null,
+   "parent_id": null,
+   "created_at": 1791183600000,
+   "completed_at": null,
+   "deleted_at": null,
+   "due": {
+    "date": "2026-10-06"
+   },
+   "series_id": null,
+   "assignee_id": null,
+   "completed_by": null,
+   "sample": true
   }
  ],
  "cases": [

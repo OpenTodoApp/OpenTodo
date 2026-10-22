@@ -79,3 +79,13 @@ export function welcomeSeen(row: Partial<UserPrefs> | null | undefined): boolean
 export function setWelcomeSeen(): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { welcome: 'seen' })
 }
+
+/** The first-day checklist (OpenSpec change moments-and-onboarding, D5): its sidebar entry was hidden on any device. */
+export function startChecklistHidden(row: Partial<UserPrefs> | null | undefined): boolean {
+  return row?.start_checklist === 'hidden'
+}
+
+/** Hides the first-day checklist's sidebar entry; an ordinary op, so no device of the account shows it again. */
+export function hideStartChecklist(): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { start_checklist: 'hidden' })
+}
