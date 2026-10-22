@@ -208,7 +208,10 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		}
 		current = m.version
 	}
-	return migrateWorkspaces(ctx, db)
+	if err := migrateWorkspaces(ctx, db); err != nil {
+		return err
+	}
+	return migrateProfileColumns(ctx, db)
 }
 
 type migration struct {

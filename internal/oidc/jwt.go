@@ -180,6 +180,10 @@ type Claims struct {
 	EmailVerified     flexBool `json:"email_verified"`
 	Name              string   `json:"name"`
 	PreferredUsername string   `json:"preferred_username"`
+	// Picture is the profile picture URL of the `profile` scope (OpenID Connect
+	// Core 5.1), used only when the owner turned on "Use profile pictures from
+	// the provider" (issue #233).
+	Picture string `json:"picture"`
 }
 
 // audience accepts a single string or an array (RFC 7519 4.1.3).

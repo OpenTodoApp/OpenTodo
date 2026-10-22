@@ -31,6 +31,8 @@ type User struct {
 	Email         string
 	EmailVerified bool
 	Name          string
+	// Picture is the `picture` claim; empty leaves the claim out.
+	Picture string
 }
 
 // Provider is a running fake identity provider.
@@ -204,6 +206,9 @@ func (p *Provider) token(w http.ResponseWriter, r *http.Request) {
 	if g.user.Email != "" {
 		claims["email"] = g.user.Email
 		claims["email_verified"] = g.user.EmailVerified
+	}
+	if g.user.Picture != "" {
+		claims["picture"] = g.user.Picture
 	}
 	if p.MutateClaims != nil {
 		p.MutateClaims(claims)

@@ -1,13 +1,17 @@
 package httpapi
 
 import (
+	"bytes"
 	"encoding/json"
+	"image"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +34,12 @@ type oidcEnv struct {
 
 func newOIDCEnv(t *testing.T, allowSignup bool) *oidcEnv {
 	t.Helper()
+	return newOIDCEnvWith(t, allowSignup)
+}
+
+// newOIDCEnvWith is newOIDCEnv with extra server options.
+func newOIDCEnvWith(t *testing.T, allowSignup bool, opts ...Option) *oidcEnv {
+	t.Helper()
 	idp := oidctest.New(t)
 	dir := t.TempDir()
 	db, err := store.Open(dir)
@@ -44,7 +54,7 @@ func newOIDCEnv(t *testing.T, allowSignup bool) *oidcEnv {
 	clk := &mfaClock{t: time.Now().Truncate(30 * time.Second)}
 	authSvc.SetClock(clk.now)
 	svc := oidc.New(settings.New(db), dir, oidc.Options{Client: idp.HTTPClient()})
-	h := New(cfg, authSvc, syncSvc, nil, log, "test", WithOIDC(svc))
+	h := New(cfg, authSvc, syncSvc, nil, log, "test", append([]Option{WithOIDC(svc)}, opts...)...)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	t.Cleanup(syncSvc.Notifier().CloseAll)
@@ -533,4 +543,117 @@ func TestOIDCSignInSatisfiesMFA(t *testing.T) {
 	}
 	resp, out = c.do("PUT", "/api/v1/settings/oidc", map[string]any{"displayName": "Fresh"})
 	c.mustStatus(resp, 200, out)
+}
+
+// TestOIDCProviderPicture: the `picture` claim becomes the profile picture when
+// the owner's switch is on (oidc-profile-pictures, issue #233); an uploaded
+// picture is never replaced, a removed one is not fetched again, an unchanged
+// address is not fetched twice, and the sign-in never fails on the picture.
+func TestOIDCProviderPicture(t *testing.T) {
+	fetches := 0
+	var picture []byte
+	pictures := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fetches++
+		if r.URL.Path == "/broken.png" {
+			w.WriteHeader(500)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.Write(picture)
+	}))
+	t.Cleanup(pictures.Close)
+	o := newOIDCEnvWith(t, false, WithPictureClient(pictures.Client()))
+	// The switch is off by default: the claim is ignored.
+	cfg := o.configure(map[string]any{"allowProvision": true})
+	if cfg["syncPictures"] != false {
+		t.Fatalf("settings = %v", cfg)
+	}
+	picture = avatarPNG(t, 400, 300)
+	o.idp.SetUser(oidctest.User{Subject: "user-1", Email: "member@example.com", EmailVerified: true, Name: "Member", Picture: pictures.URL + "/me.png"})
+	member := o.client("203.0.113.3")
+	if resp := o.ssoLogin(member); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("callback = %d", resp.StatusCode)
+	}
+	resp, out := member.do("GET", "/api/v1/me/profile", nil)
+	member.mustStatus(resp, 200, out)
+	if fetches != 0 || out["avatarVersion"] != float64(0) {
+		t.Fatalf("switch off: fetches %d profile %v", fetches, out)
+	}
+	uid := out["user"].(map[string]any)["id"].(string)
+
+	// On: the next sign-in stores a 256×256 JPEG; the same address is not fetched again.
+	o.configure(map[string]any{"syncPictures": true})
+	for i := 0; i < 2; i++ {
+		if resp := o.ssoLogin(member); resp.StatusCode != http.StatusSeeOther {
+			t.Fatalf("callback = %d", resp.StatusCode)
+		}
+	}
+	resp, out = member.do("GET", "/api/v1/me/profile", nil)
+	member.mustStatus(resp, 200, out)
+	if fetches != 1 || out["avatarVersion"] != float64(1) {
+		t.Fatalf("synced: fetches %d profile %v", fetches, out)
+	}
+	stored, err := os.ReadFile(filepath.Join(o.dataDir(), "avatars", uid+".jpg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c, format, err := image.DecodeConfig(bytes.NewReader(stored)); err != nil || format != "jpeg" || c.Width != 256 || c.Height != 256 {
+		t.Fatalf("stored %s %dx%d %v", format, c.Width, c.Height, err)
+	}
+	// A new address is fetched; a broken one leaves the picture and the sign-in alone.
+	o.idp.SetUser(oidctest.User{Subject: "user-1", Email: "member@example.com", EmailVerified: true, Name: "Member", Picture: pictures.URL + "/broken.png"})
+	if resp := o.ssoLogin(member); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("callback = %d", resp.StatusCode)
+	}
+	resp, out = member.do("GET", "/api/v1/me/profile", nil)
+	member.mustStatus(resp, 200, out)
+	if fetches != 2 || out["avatarVersion"] != float64(1) {
+		t.Fatalf("broken: fetches %d profile %v", fetches, out)
+	}
+	o.idp.SetUser(oidctest.User{Subject: "user-1", Email: "member@example.com", EmailVerified: true, Name: "Member", Picture: pictures.URL + "/new.png"})
+	o.ssoLogin(member)
+	resp, out = member.do("GET", "/api/v1/me/profile", nil)
+	member.mustStatus(resp, 200, out)
+	if fetches != 3 || out["avatarVersion"] != float64(2) {
+		t.Fatalf("new address: fetches %d profile %v", fetches, out)
+	}
+	// Removed by the person: the same address is not fetched again.
+	resp, out = member.do("DELETE", "/api/v1/me/avatar", nil)
+	member.mustStatus(resp, 200, out)
+	o.ssoLogin(member)
+	resp, out = member.do("GET", "/api/v1/me/profile", nil)
+	member.mustStatus(resp, 200, out)
+	if fetches != 3 || out["avatarVersion"] != float64(0) {
+		t.Fatalf("removed: fetches %d profile %v", fetches, out)
+	}
+	// Uploaded by the person: never replaced, whatever the provider names.
+	if resp, raw := member.putBytes("PUT", "/api/v1/me/avatar", avatarPNG(t, 256, 256)); resp.StatusCode != 200 {
+		t.Fatalf("upload = %d %s", resp.StatusCode, raw)
+	}
+	o.idp.SetUser(oidctest.User{Subject: "user-1", Email: "member@example.com", EmailVerified: true, Name: "Member", Picture: pictures.URL + "/other.png"})
+	o.ssoLogin(member)
+	resp, out = member.do("GET", "/api/v1/me/profile", nil)
+	member.mustStatus(resp, 200, out)
+	if fetches != 3 || out["avatarVersion"] != float64(3) {
+		t.Fatalf("uploaded: fetches %d profile %v", fetches, out)
+	}
+	// Linking from Settings syncs too (the owner has no picture of their own).
+	o.idp.SetUser(oidctest.User{Subject: "owner-sub", Email: "owner@example.com", EmailVerified: true, Picture: pictures.URL + "/owner.png"})
+	resp = raw(o.env, o.srv.URL+"/api/v1/auth/oidc/start?link=1")
+	if resp.StatusCode != http.StatusFound {
+		t.Fatalf("link start = %d", resp.StatusCode)
+	}
+	idpResp, err := o.idp.HTTPClient().Get(resp.Header.Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	idpResp.Body.Close()
+	if resp = raw(o.env, idpResp.Header.Get("Location")); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("link callback = %d", resp.StatusCode)
+	}
+	resp, out = o.do("GET", "/api/v1/me/profile", nil)
+	o.mustStatus(resp, 200, out)
+	if fetches != 4 || out["avatarVersion"] != float64(1) {
+		t.Fatalf("linked: fetches %d profile %v", fetches, out)
+	}
 }

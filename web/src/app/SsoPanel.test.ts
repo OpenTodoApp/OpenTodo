@@ -8,7 +8,7 @@ import { formFrom, LinkedAccountsView, type LinkedAccountsViewProps, saveInput, 
 
 const settings: OidcSettings = {
   enabled: true, issuer: 'https://sso.example.com', clientId: 'opentodo', clientSecret: '••••1234', clientSecretSet: true,
-  displayName: 'Home SSO', scopes: 'openid email profile', allowProvision: false, ssoOnly: false, providerLogout: false,
+  displayName: 'Home SSO', scopes: 'openid email profile', allowProvision: false, ssoOnly: false, providerLogout: false, syncPictures: false,
   redirectUri: 'https://todo.example.com/api/v1/auth/oidc/callback', baseUrlConfigured: true,
   managedBy: { issuer: 'settings', clientId: 'settings', clientSecret: 'settings', displayName: 'settings', ssoOnly: 'settings' },
 }

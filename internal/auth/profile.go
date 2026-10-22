@@ -275,10 +275,52 @@ func (s *Service) applyEmailTx(ctx context.Context, tx *sql.Tx, userID, email st
 	return userByID(ctx, tx, userID)
 }
 
-// BumpAvatar records that the account's picture was set or removed: set says
-// which, and the new version is returned (0 when removed). Records
-// account.avatar_changed. The caller writes or deletes the file first.
+// Where an account's picture came from (oidc-profile-pictures): a person's
+// upload is never replaced by the provider's picture.
+const (
+	AvatarSourceUpload   = "upload"
+	AvatarSourceProvider = "provider"
+)
+
+// AvatarSource is the account's picture provenance: Source is "upload",
+// "provider" or "" (no picture, or one from before provenance was recorded);
+// ProviderURL is the last provider address synced, kept after a removal so the
+// same address is not fetched again.
+type AvatarSource struct {
+	Version     int
+	Source      string
+	ProviderURL string
+}
+
+// AvatarSource reads the account's picture provenance.
+func (s *Service) AvatarSource(ctx context.Context, userID string) (AvatarSource, error) {
+	var a AvatarSource
+	var src, u sql.NullString
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(p.avatar_version, 0), 0), p.avatar_source, p.avatar_provider_url FROM users u
+		LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = ?`, userID).Scan(&a.Version, &src, &u)
+	if errors.Is(err, sql.ErrNoRows) {
+		return a, ErrNotFound
+	}
+	a.Source, a.ProviderURL = src.String, u.String
+	return a, err
+}
+
+// BumpAvatar records that the account's picture was set or removed by the
+// person: set says which, and the new version is returned (0 when removed).
+// Records account.avatar_changed. The caller writes or deletes the file first.
 func (s *Service) BumpAvatar(ctx context.Context, userID string, set bool) (int, error) {
+	source := AvatarSourceUpload
+	if !set {
+		source = ""
+	}
+	return s.SetAvatar(ctx, userID, set, source, "")
+}
+
+// SetAvatar is BumpAvatar with the picture's provenance: source and, for a
+// provider's picture, the address it came from. A removal (set false) keeps
+// the stored provider address when providerURL is "", so a removed provider
+// picture is not fetched again.
+func (s *Service) SetAvatar(ctx context.Context, userID string, set bool, source, providerURL string) (int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -302,8 +344,10 @@ func (s *Service) BumpAvatar(ctx context.Context, userID string, set bool) (int,
 	if !set {
 		stored, next = -version, 0
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO user_profiles(user_id,avatar_version) VALUES(?,?)
-		ON CONFLICT(user_id) DO UPDATE SET avatar_version = excluded.avatar_version`, userID, stored); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO user_profiles(user_id,avatar_version,avatar_source,avatar_provider_url) VALUES(?,?,?,?)
+		ON CONFLICT(user_id) DO UPDATE SET avatar_version = excluded.avatar_version, avatar_source = excluded.avatar_source,
+		avatar_provider_url = COALESCE(excluded.avatar_provider_url, user_profiles.avatar_provider_url)`,
+		userID, stored, nullString(source), nullString(providerURL)); err != nil {
 		return 0, err
 	}
 	if err := s.audit.RecordTx(ctx, tx, audit.AvatarChanged(userID)); err != nil {
@@ -331,4 +375,12 @@ func userByID(ctx context.Context, q rowQuerier, id string) (*User, error) {
 		return nil, ErrNotFound
 	}
 	return &u, err
+}
+
+// nullString stores "" as NULL.
+func nullString(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
 }

@@ -1034,6 +1034,8 @@ export interface OidcSettings {
   allowProvision: boolean
   ssoOnly: boolean
   providerLogout: boolean
+  /** The provider's `picture` claim becomes the profile picture at sign-in (oidc-profile-pictures); absent on older servers. */
+  syncPictures?: boolean
   /** Paste this into the provider's client configuration. */
   redirectUri: string
   /** False when the redirect URI was derived from the request (set OPENTODO_BASE_URL). */
@@ -1044,7 +1046,7 @@ export interface OidcSettings {
 
 /** A settings change; omitted fields are kept. `clientSecret: ''` removes the secret. */
 export type OidcSettingsInput = Partial<Pick<OidcSettings,
-  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout'>>
+  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures'>>
 
 /** Result of POST /api/v1/settings/oidc/test. */
 export interface OidcTestResult {

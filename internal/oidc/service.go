@@ -31,6 +31,7 @@ const (
 	KeyAllowProvision = "oidc.allow_provision"
 	KeySSOOnly        = "oidc.sso_only"
 	KeyProviderLogout = "oidc.provider_logout"
+	KeySyncPictures   = "oidc.sync_pictures"
 	// KeyClientSecret names the secret in audit events and the secrets file.
 	KeyClientSecret = "oidc.client_secret"
 )
@@ -58,6 +59,10 @@ type Config struct {
 	AllowProvision bool
 	SSOOnly        bool
 	ProviderLogout bool
+	// SyncPictures: the `picture` claim becomes the account's profile picture at
+	// sign-in, unless the person uploaded one (issue #233). Off by default: it
+	// makes the server fetch an address named by the provider.
+	SyncPictures bool
 	// ManagedBy maps each field name (issuer, clientId, clientSecret,
 	// displayName, ssoOnly, ...) to "env" or "settings".
 	ManagedBy map[string]string
@@ -85,6 +90,7 @@ type Update struct {
 	AllowProvision *bool
 	SSOOnly        *bool
 	ProviderLogout *bool
+	SyncPictures   *bool
 }
 
 // Change is one setting that an Update changed, for the audit log. Secret
@@ -184,7 +190,10 @@ func (s *Service) Config(ctx context.Context) (Config, error) {
 	if c.ProviderLogout, err = s.getBool(ctx, KeyProviderLogout); err != nil {
 		return c, err
 	}
-	c.ManagedBy["allowProvision"], c.ManagedBy["providerLogout"] = "settings", "settings"
+	if c.SyncPictures, err = s.getBool(ctx, KeySyncPictures); err != nil {
+		return c, err
+	}
+	c.ManagedBy["allowProvision"], c.ManagedBy["providerLogout"], c.ManagedBy["syncPictures"] = "settings", "settings", "settings"
 	if s.env.SSOOnly != nil {
 		c.SSOOnly, c.ManagedBy["ssoOnly"] = *s.env.SSOOnly, "env"
 	} else {
@@ -308,6 +317,9 @@ func (s *Service) Save(ctx context.Context, u Update) ([]Change, error) {
 	if u.ProviderLogout != nil {
 		next.ProviderLogout = *u.ProviderLogout
 	}
+	if u.SyncPictures != nil {
+		next.SyncPictures = *u.SyncPictures
+	}
 	if next.Issuer != "" {
 		if next.ClientID == "" {
 			return nil, &ErrInvalidConfig{Msg: "clientId is required when an issuer is set"}
@@ -342,6 +354,7 @@ func (s *Service) Save(ctx context.Context, u Update) ([]Change, error) {
 		setBool(KeyAllowProvision, false, cur.AllowProvision, next.AllowProvision),
 		setBool(KeySSOOnly, s.env.SSOOnly != nil, cur.SSOOnly, next.SSOOnly),
 		setBool(KeyProviderLogout, false, cur.ProviderLogout, next.ProviderLogout),
+		setBool(KeySyncPictures, false, cur.SyncPictures, next.SyncPictures),
 	); err != nil {
 		return nil, err
 	}
