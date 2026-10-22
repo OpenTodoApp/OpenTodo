@@ -45,6 +45,8 @@ async function axeProblems(p, include) {
   if (!AXE) return ['axe-core is not installed (npm ci in web/)']
   if (!(await p.evaluate(() => typeof window.axe !== 'undefined'))) await p.addScriptTag({ content: AXE })
   return p.evaluate(async (sel) => {
+    // Entrances end first (motion-v2): a panel caught mid-fade reads as low contrast. Endless ones (spinners) are skipped.
+    await Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().endTime !== Infinity).map((a) => a.finished.catch(() => {})))
     // eslint-disable-next-line no-undef
     const r = await axe.run(sel ? { include: [sel] } : document, { resultTypes: ['violations'] })
     return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `axe ${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
