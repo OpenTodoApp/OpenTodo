@@ -179,6 +179,8 @@ describe('the swipes\' twins and touch selection', () => {
     await act(async () => { document.querySelector<HTMLElement>('[data-phone-item="select"]')!.click() })
     await waitFor(() => document.querySelectorAll('[data-tick]').length === 2)
     expect(document.querySelectorAll('[data-ticked]')).toHaveLength(0)
+    // 48 px on touch: the 20 px box with 14 px of reach on each side.
+    expect(document.querySelector('[data-tick]')!.closest('label')!.className).toContain('pointer-coarse:-inset-3.5')
     await act(async () => { document.querySelector<HTMLInputElement>('[data-tick]')!.click() })
     await waitFor(() => document.querySelectorAll('[data-ticked]').length === 1)
     await act(async () => { document.querySelector<HTMLButtonElement>('[data-select-done]')!.click() })

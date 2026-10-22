@@ -409,7 +409,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
           </span>
         </button>
         {onTick && !readOnly && (
-          <label className={`absolute inset-0 cursor-pointer items-center justify-center ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
+          <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
             <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
           </label>
