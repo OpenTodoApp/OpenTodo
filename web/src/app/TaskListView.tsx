@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
+import { useMembership } from '../lib/localData'
 import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
@@ -112,6 +113,16 @@ function useTickedRows(rows: { task: Task }[], taskMap: Map<string, Task>, isRea
 
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
 const NO_DONE: Map<string, Task[]> = new Map()
+
+/**
+ * Nothing until the tasks are read, and on a project its row and membership (undefined
+ * while read, null when not shared): a page that fills in stages moves what it already
+ * shows (ux-fixes-phone, audit M12).
+ */
+function useListReady(route: ListRoute, loaded: boolean, hasProject: boolean): boolean {
+  const membership = useMembership(route.view === 'project' ? route.id : '')
+  return loaded && (route.view !== 'project' || (hasProject && membership !== undefined))
+}
 
 export function TaskListView({ route, userId, userRole }: { route: ListRoute; userId?: string; userRole?: AccountRole }) {
   const m = useListModel(route, userId)
@@ -285,17 +296,15 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // On a phone the Inbox's planned count is the bar's subtitle (phone-v2 D1), not a row.
   const methodSubtitle = useWithMethod(methodMove, phone && planned > 0 ? <PlannedWithoutProject count={planned} /> : undefined)
   const title = {
-    inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'),
-    place: currentPlace?.name ?? t('Location'),
+    inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'), place: currentPlace?.name ?? t('Location'),
   }[route.view]
 
   const frame = useListFrame(route.view === 'project', board || timeline, m.fieldColumns)
-
+  const ready = useListReady(route, m.loaded, !!currentProject)
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
   if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
-  // Nothing until the tasks (and a project's own row) are read: a page that fills in stages moves what it already shows (ux-fixes-phone, audit M12).
-  if (!m.loaded || (route.view === 'project' && !currentProject)) return <div className="min-w-0 px-4 py-5 md:px-8" data-list-loading />
+  if (!ready) return <div className="min-w-0 px-4 py-5 md:px-8" data-list-loading />
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">

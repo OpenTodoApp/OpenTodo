@@ -247,9 +247,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
     <Tooltip label={t('Rename')}><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={() => setEditing(true)} data-project-name>{project.name}</button></Tooltip>
   ) : <span className="user-text min-w-0 truncate" data-project-name>{project.name}</span>
 
-  // One row of 24 px from the start, so the members arriving after the page do not move it (audit M12).
+  // The list page waits for the membership (audit M12), so this row has its final content at first paint.
   const meta = (
-    <span className="flex min-h-6 flex-wrap items-center gap-x-2">
+    <span className="flex flex-wrap items-center gap-x-2">
       {membership && (
         <button type="button" className="flex min-h-6 items-center gap-1 text-meta text-muted hover:text-default" onClick={() => setSharing(true)}>
           {/* Named by its content (WCAG 2.5.3 Label in Name): the member list is visually hidden, the initials and count are not read. */}
