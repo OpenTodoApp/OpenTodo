@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
+import { hasTimeColumn } from '../../lib/rowTime'
 import { useAllLabels, useReviewRow } from '../../lib/localData'
 import { setTaskCompleted } from '../../lib/ops'
 import {
@@ -192,6 +193,8 @@ function CarryStep({ rows, decisions, applied, selected, projectMap, labelMap, o
   onApply: () => Promise<void>
   onOpen: (id: string) => void
 }) {
+  // The time column (rows-v2 D2, D9): the same row as Today, with no revealed actions (the decisions are the controls).
+  const timeColumn = hasTimeColumn(rows.map((x) => x.task))
   if (rows.length === 0) return <p className="text-body text-muted" data-close-nothing>{t('Today is done: nothing to carry over.')}</p>
   return (
     <>
@@ -208,7 +211,7 @@ function CarryStep({ rows, decisions, applied, selected, projectMap, labelMap, o
           <li key={x.task.id} className="border-b border-default last:border-b-0 sm:flex sm:items-center sm:gap-2" data-carry-row={x.task.id}>
             <ul className="min-w-0 sm:flex-1">
               <TaskRow task={x.task} project={x.task.project_id ? projectMap.get(x.task.project_id) : undefined} labels={resolveLabels(x.task.labels, labelMap)}
-                showProject selected={x.task.id === selected} readOnly={!x.editable}
+                showProject selected={x.task.id === selected} readOnly={!x.editable} timeColumn={timeColumn} actions={false}
                 onToggle={() => act(setTaskCompleted(x.task.id, !x.task.completed_at))} onOpen={() => onOpen(x.task.id)} />
             </ul>
             <DecisionGroup row={x} decision={decisionOf(decisions, x)} onDecide={onDecide} onPick={onPick} />

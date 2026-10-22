@@ -7,6 +7,7 @@ import { useMemo, type MouseEvent, type ReactNode } from 'react'
 import { formatDate, formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
+import { hasTimeColumn } from '../../lib/rowTime'
 import { useAllLabels, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { move, PLACES, RHYTHMS, termDescription, termName, type MoveId, type RhythmId } from '../../lib/method'
 import { nextGroups } from '../../lib/method/groups'
@@ -224,6 +225,8 @@ function Rail({ moves, up }: { moves: Move[]; up: MoveId }) {
 /** Today's focus from the Daily check, with how many of the chosen tasks are done. */
 function Focus({ tasks, projectMap, labelMap }: { tasks: Task[]; projectMap: Map<string, Project>; labelMap: Map<string, Label> }) {
   const done = tasks.filter((x) => x.completed_at).length
+  // The time column (rows-v2 D2): one fact of the focus list.
+  const timeColumn = hasTimeColumn(tasks)
   const r = 7
   const c = 2 * Math.PI * r
   return (
@@ -250,7 +253,7 @@ function Focus({ tasks, projectMap, labelMap }: { tasks: Task[]; projectMap: Map
         <ul>
           {tasks.map((task) => (
             <TaskRow key={task.id} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
-              showProject selected={false} onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))} onOpen={() => setPanelTaskId(task.id)} />
+              showProject selected={false} timeColumn={timeColumn} onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))} onOpen={() => setPanelTaskId(task.id)} />
           ))}
         </ul>
       )}

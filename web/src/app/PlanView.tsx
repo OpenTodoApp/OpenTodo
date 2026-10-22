@@ -9,7 +9,6 @@ import { Button, hueFor, MenuItem, MenuSeparator, PageBody, PageHeader, useWide 
 import { allDayEvents, calendarTasks, eventBlocks, nudgeDue } from '../lib/calendar'
 import { setShowEvents } from '../lib/calendarFeeds'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { useRowDetail, type RowDetail } from '../lib/appearance'
 import { addDaysISO, dateLocaleOf, dueFromView, formatShort, viewedTask } from '../lib/dates'
 import { beginDrag } from '../lib/dnd'
 import { getTask, saveGridPrefs, useMembershipMap } from '../lib/localData'
@@ -62,14 +61,12 @@ function usePlanDays(dates: string[], today: string, dayLength: number) {
   return { zone, projects, rawTasks, viewed, feeds, days }
 }
 
-export function PlanView({ date, detail: detailProp }: { date?: string; detail?: RowDetail }) {
+export function PlanView({ date }: { date?: string }) {
   const today = useToday()
   const anchor = date ?? today
   const prefs = useGridPrefs()
   const span = prefs.planDays
   const dates = useMemo(() => spanDates(anchor, span), [anchor, span])
-  const preferred = useRowDetail()
-  const detail = detailProp ?? preferred
   const wide = useWide()
   const online = useOnline()
   useEffect(() => rememberCalendarMode('plan'), [])
@@ -179,7 +176,7 @@ export function PlanView({ date, detail: detailProp }: { date?: string; detail?:
   const from = dates[0], to = dates[dates.length - 1]
   const title = `${anchor === today ? t('Next {n} days', { n: span }) : t('{n} days', { n: span })} · ${formatShort(from)} – ${formatShort(to)}`
   const eventHue = hueFor(feeds.subs[0]?.color ?? null)
-  const rowProps = { today, detail, selectedId, editable, projectMap, subMap: feeds.subMap, zone, onPointerDown: startDrag, onOpen: (id: string) => { setSelectedId(id); setPanelTaskId(id) } }
+  const rowProps = { today, selectedId, editable, projectMap, subMap: feeds.subMap, zone, onPointerDown: startDrag, onOpen: (id: string) => { setSelectedId(id); setPanelTaskId(id) } }
 
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="plan">

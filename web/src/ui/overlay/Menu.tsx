@@ -13,7 +13,7 @@ import { Popover } from './Popover'
  * type-ahead, and an item closes the menu. kind="dialog" (default) stays for
  * panels with form controls (label colours, the project "Move to" select).
  */
-export function Menu({ label, title, trigger, triggerClassName = '', triggerProps, tip, tipSide, align = 'end', width, className = 'p-1', open: openProp, onOpenChange, kind = 'dialog', namedByContent = false, children }: {
+export function Menu({ label, title, trigger, triggerClassName = '', triggerProps, tip, tipSide, tipShortcut, align = 'end', width, className = 'p-1', open: openProp, onOpenChange, kind = 'dialog', namedByContent = false, children }: {
   /** Accessible name of the trigger. */
   label: string
   /** The trigger shows its whole name as text (with a badge, say): it is named by that text, not by `label`. */
@@ -27,6 +27,8 @@ export function Menu({ label, title, trigger, triggerClassName = '', triggerProp
   /** A tooltip on the trigger (a truncated name, the icon rail). */
   tip?: string
   tipSide?: 'top' | 'bottom' | 'right'
+  /** The keys shown in the trigger's tooltip (rows-v2 D7: "Priority · 1 / 2 / 3 / 4"). */
+  tipShortcut?: string
   align?: 'start' | 'end'
   width?: string
   className?: string
@@ -48,7 +50,7 @@ export function Menu({ label, title, trigger, triggerClassName = '', triggerProp
   )
   return (
     <>
-      {tip ? <Tooltip label={tip} side={tipSide}>{button}</Tooltip> : button}
+      {tip ? <Tooltip label={tip} side={tipSide} shortcut={tipShortcut}>{button}</Tooltip> : button}
       <Popover open={open} onClose={close} anchor={ref} label={title ?? label} align={align} width={width} className={className} role={kind}>
         {kind === 'menu'
           ? <MenuCloseContext.Provider value={close}><div role="none" onKeyDown={roving}>{content}</div></MenuCloseContext.Provider>

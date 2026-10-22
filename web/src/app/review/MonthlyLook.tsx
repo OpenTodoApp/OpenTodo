@@ -7,6 +7,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
+import { hasTimeColumn } from '../../lib/rowTime'
 import { useAllLabels, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { oldSomeday } from '../../lib/method/rules'
 import { setTaskCompleted } from '../../lib/ops'
@@ -41,6 +42,8 @@ export function MonthlyLook() {
     return { areas, someday, trend }
   }, [input, reviewedAt, now, weekStart])
   const rows = useMemo(() => (data?.someday ?? []).map((task) => ({ key: task.id, task })), [data])
+  // The time column (rows-v2 D2): one fact of the Old someday list.
+  const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
   useListKeys({ rows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor, onIdleEscape: () => setSelected(null) })
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const projectMap = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
@@ -95,7 +98,7 @@ export function MonthlyLook() {
               <ul>
                 {data.someday.map((task) => (
                   <TaskRow key={task.id} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
-                    showProject selected={task.id === selected} onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
+                    showProject selected={task.id === selected} timeColumn={timeColumn} onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
                     onOpen={() => { setSelected(task.id); setPanelTaskId(task.id) }} />
                 ))}
               </ul>

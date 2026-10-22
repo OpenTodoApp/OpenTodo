@@ -92,14 +92,11 @@ describe('row text for screen readers', () => {
     created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, _clock: {}, ...over,
   } as Task)
 
-  it('the open button reads the title and every chip; an undecryptable title is read as the warning', async () => {
-    const r = await render(<ul><TaskRow task={task({ title: 'Buy milk', description: 'two litres' })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} detail="detailed" /></ul>)
-    expect(spokenText(r.container.querySelector('[data-row-open]')!)).toMatch(/^Buy milk\s*Has notes$/)
-    expect(r.container.querySelector('[data-row-controls] button')!.getAttribute('aria-label')).toBe('Complete Buy milk')
-    await r.unmount()
-    // Calm rows (calm-rows D7): the counts follow the open button in the row and are read there.
+  it('the open button reads the title and its line; an undecryptable title is read as the warning', async () => {
+    // The counts follow the open button in the row and are read there (calm-rows D7, rows-v2).
     const c = await render(<ul><TaskRow task={task({ title: 'Buy milk', description: 'two litres' })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
     expect(spokenText(c.container.querySelector('[data-row-open]')!)).toBe('Buy milk')
+    expect(c.container.querySelector('[data-row-controls] button')!.getAttribute('aria-label')).toBe('Complete Buy milk')
     expect(spokenText(c.container.querySelector('[data-row-counts]')!)).toBe('Has notes')
     await c.unmount()
     const e = await render(<ul><TaskRow task={task({ title: 'b64:AAAA', _e2ee: { raw: { title: 'b64:AAAA' } } } as Partial<Task>)} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)

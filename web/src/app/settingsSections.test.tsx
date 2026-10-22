@@ -199,7 +199,7 @@ describe('opening a section', () => {
     const appearance = render(member, 'appearance')
     expect(appearance).toContain('data-appearance-themes')
     expect(appearance).toContain('data-testid="appearance-density"')
-    expect(appearance).toContain('data-testid="appearance-rows"')
+    expect(appearance).not.toContain('data-testid="appearance-rows"')
     expect(appearance).toContain('id="sidebar-heading"')
     expect(appearance).toContain('id="sidebar-someday"')
     const data = render(member, 'data')

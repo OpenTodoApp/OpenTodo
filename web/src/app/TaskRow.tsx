@@ -3,18 +3,18 @@
 // not shift rows", "Drag feedback"; design D7). One row in every list: a fixed
 // leading slot (the collapse chevron only on rows with children), one checkbox
 // slot (the task's checkbox, or the selection box in its place on hover, focus or
-// tick), the title, and a metadata line only when there is metadata, built from
-// three styles: ToneText for the date and the deadline, LabelChip, NeutralChip
-// for counts and the project. The board card is the same data as a card.
+// tick), the time column when the list has one, the title, a metadata line only when
+// there is metadata, and a quiet trailing group. The board card is the same data as a card.
 //
-// Calm and Detailed rows (OpenSpec change calm-rows, task-list-presentation "Metadata
-// language", "Row detail in lists"; design D2 to D7): Detailed is the language above,
-// unchanged. Calm, the default, leaves out what the view or the group heading already
-// says (`implied`, `omitLabel`), colours only what needs attention, shows labels as
-// dots (LabelDots) and moves the counts into a quiet trailing group (`rowCounts`).
-import { Icon, LabelChip, LabelDots, NeutralChip, ReadAs, ToneText, type IconName, type Tone } from '../ui'
+// One row language (OpenSpec change rows-v2, design D1 to D9): the row leaves out what
+// the view or the group heading already says (`implied`, `omitLabel`) and colours only
+// what needs attention. The time column holds the due time, else the deadline
+// countdown (`timeColumn`, a fact of the whole list); the metadata line is one run of
+// muted text separated by CSS middle dots; labels are the only chips (LabelChips);
+// the project, the counts and the origin form the trailing group, in whose place the
+// revealed actions (RowActionCluster) appear on a fine pointer.
+import { Icon, LabelChips, ReadAs, ToneText, type IconName, type Tone } from '../ui'
 import { memo, type ReactNode, useEffect, useRef, useState } from 'react'
-import { useRowDetail, type RowDetail } from '../lib/appearance'
 import type { RowImplied } from '../lib/listGroups'
 import { describeDeadline, describeDue, formatDate, localDueOf, logicalToday, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
@@ -33,59 +33,32 @@ import { t } from '../lib/i18n'
 import { originOf } from '../lib/taskOrigin'
 import { trackedLabel, trackedText } from '../lib/time'
 import { useTaskTracked } from '../lib/timeEntries'
-import { isInboxTask } from '../lib/inbox'
 import { OriginChip } from './OriginChip'
+import { DEADLINE_TONE, dueTone, PRIORITY_RING } from './rowTone'
+import { RowActionCluster } from './task-list/RowActionCluster'
 
-/** Field badges shown on a row before the rest collapse into "+n" (custom-fields). */
+/** Field values shown on a row before the rest collapse into "+n" (custom-fields). */
 export const MAX_FIELD_BADGES = 3
-
-// Priority tokens (design-system): ring in the priority colour, soft fill behind it.
-// The priority ring of an open task; a done one gets the filled check alone, since both
-// set the border and the background and the ring would win over the check.
-const PRIORITY_RING: Record<number, string> = {
-  1: 'border-p1 bg-p1-soft',
-  2: 'border-p2 bg-p2-soft',
-  3: 'border-p3 bg-p3-soft',
-  4: 'border-p4 bg-p4-soft',
-}
-
-// Calm rows (calm-rows D5): only P1 and P2 are coloured; P3 and P4 get the neutral ring.
-const PRIORITY_RING_CALM: Record<number, string> = {
-  1: 'border-p1 bg-p1-soft',
-  2: 'border-p2 bg-p2-soft',
-  3: 'border-input',
-  4: 'border-input',
-}
-
-const DUE_TONE: Record<'overdue' | 'today' | 'soon' | 'later', Tone> = { overdue: 'danger', today: 'success', soon: 'violet', later: 'muted' }
-/** Calm rows (calm-rows D4): muted, except overdue and a timed task due today. */
-function dueToneCalm(tone: 'overdue' | 'today' | 'soon' | 'later', timed: boolean): Tone {
-  return tone === 'overdue' ? 'danger' : tone === 'today' && timed ? 'accent' : 'muted'
-}
-// Deadline countdown tones (OpenSpec change deadlines, design D2).
-const DEADLINE_TONE: Record<'overdue' | 'soon' | 'later', Tone> = { overdue: 'danger', soon: 'warning', later: 'muted' }
 
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-/** The date phrase of a row: the due text with evening and repeat as suffixes ("Today · evening · repeats"). */
-export function dateText(dueLabel: string | null, evening: boolean, recurring: boolean, occurrence = false): string | null {
-  if (!dueLabel) return null
-  return [dueLabel, evening ? t('evening') : null, recurring ? t('repeats') : occurrence ? t('occurrence') : null].filter(Boolean).join(' · ')
-}
-
-/** The date phrase of a Calm row (calm-rows D4): the day's words left out under a heading that names it, evening left out under This Evening, no repeat suffix. */
-export function calmDateText(due: { label: string; time: string | null } | null, dueDate: string | null, evening: boolean, implied: RowImplied | undefined): string | null {
-  const sameDay = !!due && !!implied?.date && dueDate === implied.date
-  const words = due ? (sameDay ? due.time : due.label) : null
+/**
+ * The date words of a row (calm-rows D4, rows-v2 D3): the day's words left out under a
+ * heading that names it, the time left out when the time column holds it, evening left
+ * out under This Evening, no repeat suffix (the repeat is its own item).
+ */
+export function rowDateText(due: { label: string; day: string; time: string | null } | null, dueDate: string | null, evening: boolean, implied: RowImplied | undefined, inColumn = false): string | null {
   const eve = evening && !implied?.evening
   if (!due) return eve ? t('This evening') : null
+  const sameDay = !!implied?.date && dueDate === implied.date
+  const words = sameDay ? (inColumn ? null : due.time) : inColumn ? due.day : due.label
   return [words, eve ? t('evening') : null].filter(Boolean).join(' · ') || null
 }
 
 /** One count of a row: subtask progress, notes, comments, attachments (calm-rows D7). */
 export interface RowCount {
-  key: 'progress' | 'notes' | 'comments' | 'attachments' | 'tracked'
+  key: 'progress' | 'notes' | 'comments' | 'attachments'
   icon?: IconName
   /** The visible text; none for an icon-only marker (notes). */
   text?: string
@@ -93,14 +66,9 @@ export interface RowCount {
   label: string
 }
 
-/**
- * A row's counts in display order. Both details render this list: Detailed as chips
- * in the metadata line, Calm in the quiet trailing group. A new count is one more entry.
- */
-export function rowCounts(c: { progress?: Progress; notes: boolean; comments: number; attachments: number; tracked?: { tracked: number; estimate: number | null } }): RowCount[] {
+/** A row's counts in display order: the trailing group of a row, the end of a card's line. A new count is one more entry. */
+export function rowCounts(c: { progress?: Progress; notes: boolean; comments: number; attachments: number }): RowCount[] {
   const out: RowCount[] = []
-  // Tracked time (time-tracking, calm-rows' model): first in the quiet group of a Calm row.
-  if (c.tracked) out.push({ key: 'tracked', icon: 'timer', text: trackedText(c.tracked.tracked, c.tracked.estimate), label: trackedLabel(c.tracked.tracked, c.tracked.estimate) })
   if (c.progress && c.progress.total > 0) out.push({ key: 'progress', text: `${c.progress.done}/${c.progress.total}`, label: t('{done} of {total} subtasks completed', { done: c.progress.done, total: c.progress.total }) })
   if (c.notes) out.push({ key: 'notes', icon: 'list', label: t('Has notes') })
   if (c.comments > 0) out.push({ key: 'comments', icon: 'message-circle', text: String(c.comments), label: t('{n, plural, one {# comment} other {# comments}}', { n: c.comments }) })
@@ -108,19 +76,13 @@ export function rowCounts(c: { progress?: Progress; notes: boolean; comments: nu
   return out
 }
 
-/** A count as a chip in the metadata line (Detailed rows). */
-function CountChip({ c }: { c: RowCount }) {
-  return <NeutralChip icon={c.icon} label={c.label} {...{ [`data-${c.key}`]: '' }}>{c.text}</NeutralChip>
-}
-
 /**
- * The quiet trailing group of a Calm row (task-list-presentation "One row anatomy"):
- * faint until the row is hovered or holds focus, then muted; always in the page and
- * read in full, never a control.
+ * The counts (task-list-presentation "One row anatomy"): faint until the row is hovered
+ * or holds focus, then muted; always in the page and read in full, never a control.
  */
-export function RowCounts({ counts, card }: { counts: RowCount[]; card?: boolean }) {
+export function RowCounts({ counts }: { counts: RowCount[] }) {
   return (
-    <span data-row-counts="" className={`${card ? 'ml-auto' : 'ml-auto mt-0.5 h-5'} flex shrink-0 items-center gap-2 text-meta tabular-nums text-faint transition-colors duration-(--duration-ui) group-hover:text-muted group-focus-within:text-muted`}>
+    <span data-row-counts="" className="flex shrink-0 items-center gap-2 text-meta tabular-nums text-faint transition-colors duration-(--duration-ui) group-hover:text-muted group-focus-within:text-muted">
       {counts.map((c) => (
         <span key={c.key} className="inline-flex items-center gap-1" {...{ [`data-${c.key}`]: '' }}>
           {c.icon && <Icon name={c.icon} size="xs" />}
@@ -128,6 +90,76 @@ export function RowCounts({ counts, card }: { counts: RowCount[]; card?: boolean
         </span>
       ))}
     </span>
+  )
+}
+
+/** The time column's value (rows-v2 D3): the due time in the date tone, else the deadline countdown in its tone. */
+function TimeCell({ time, timeTone, deadline, deadlineLabel }: { time: string | null; timeTone: Tone; deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string }) {
+  return (
+    <span data-row-time="" className="mt-0.5 flex h-5 w-(--row-time-w) shrink-0 items-center">
+      {time ? <ToneText tone={timeTone} data-time="">{time}</ToneText>
+        : deadline ? <ToneText tone={DEADLINE_TONE[deadline.tone]} data-deadline="" label={deadlineLabel}>{deadline.label}</ToneText>
+        : null}
+    </span>
+  )
+}
+
+type FieldBadge = ReturnType<typeof fieldBadges>[number]
+
+/** The values of the metadata line, computed once by the row. */
+interface MetaValues {
+  breadcrumb?: string | null
+  date: string | null
+  dateTone: Tone
+  hint: string | null
+  zone: string
+  repeat: string | null
+  /** The task repeats (not an occurrence of a series). */
+  recurring: boolean
+  deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null
+  deadlineLabel: string
+  startText: string | null
+  someday: boolean
+  estimate: { text: string; label: string; tracked: boolean } | null
+  blockedBy: number
+  streak: HabitStats | null
+  badges: FieldBadge[]
+  assignee?: ReactNode
+  origin?: ReactNode
+  project?: ReactNode
+  labels?: ReactNode
+  counts?: ReactNode
+}
+
+/** Whether the line has anything to show (the project below 640 px counts; see `RowMeta`). */
+function metaItems(m: MetaValues): number {
+  return [m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts].filter(Boolean).length
+}
+
+/** The metadata line (rows-v2 D4): one run of muted ToneText, dots drawn by CSS, then the label chips. */
+function RowMeta({ m, card, projectOnlyBelowSm }: { m: MetaValues; card: boolean; projectOnlyBelowSm: boolean }) {
+  const more = m.badges.slice(MAX_FIELD_BADGES)
+  return (
+    <div className={`${card ? 'mt-1' : 'mt-0.5'} flex flex-wrap items-center gap-x-1 gap-y-0.5 ${projectOnlyBelowSm ? 'sm:hidden' : ''}`} data-row-meta>
+      {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="">{m.breadcrumb}</ToneText>}
+      {m.date && <ToneText tone={m.dateTone} data-date="">{m.date}</ToneText>}
+      {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
+      {m.repeat && <ToneText icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined}>{m.repeat}</ToneText>}
+      {m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>}
+      {m.startText && <ToneText icon={m.someday ? 'archive' : 'calendar-days'} data-start="">{m.startText}</ToneText>}
+      {m.estimate && <ToneText data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
+      {m.blockedBy > 0 && <ToneText icon="lock" data-blocked="" label={t('Blocked by {blockedBy}', { blockedBy: m.blockedBy })}>{m.blockedBy}</ToneText>}
+      {m.streak && <ToneText icon="flame" data-streak="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>}
+      {m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id}>{b.text}</ToneText>)}
+      {more.length > 0 && (
+        <ToneText data-field-more="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>
+      )}
+      {m.assignee}
+      {m.origin}
+      {m.project}
+      {m.labels && <span data-row-labels="" className="ml-1 inline-flex min-w-0">{m.labels}</span>}
+      {m.counts}
+    </div>
   )
 }
 
@@ -145,7 +177,7 @@ export interface TaskRowProps {
   progress?: Progress
   /** Open blockers (task-dependencies): above 0 the row is dimmed with a lock marker. */
   blockedBy?: number
-  /** The streak of a habit (OpenSpec habits), computed once by the list: a chip after the repeat indicator. */
+  /** The streak of a habit (OpenSpec habits), computed once by the list: an item after the repeat. */
   habit?: HabitStats | null
   /** Title of the parent when the task is shown outside its parent's subtree. */
   breadcrumb?: string | null
@@ -163,8 +195,16 @@ export interface TaskRowProps {
   /** Tick or untick; `range` for Shift (extend from the anchor). */
   onTick?: (range: boolean) => void
   onToggleCollapse?: () => void
-  /** Board card styling (board-view). */
-  card?: boolean
+  /** A list row, or a board card (rows-v2 D8: the card has no column; its line leads with the time). */
+  shape?: 'row' | 'card'
+  /** The list shows the time column (rows-v2 D2): one fact of the whole list, never per row. */
+  timeColumn?: boolean
+  /** The revealed actions (rows-v2 D7); off where the screen has its own controls (Close the day, D9). */
+  actions?: boolean
+  /** Opens the row menu, as `.` does: the revealed More action. */
+  onMore?: () => void
+  /** Stories: the revealed actions shown as if hovered. */
+  forceActions?: boolean
   /** Starts a drag (board-view: move between sections; manual-ordering: place in a list). */
   onPointerDown?: (e: React.PointerEvent<HTMLLIElement>) => void
   /** Drop target key for lib/dnd (manual-ordering): the row accepts drops before, after or inside it. */
@@ -173,7 +213,7 @@ export interface TaskRowProps {
   dropIndicator?: 'before' | 'after' | 'inside' | null
   /** This row is the one being dragged: it lifts (an opacity change under reduced motion). */
   dragging?: boolean
-  /** The columns layout shows field values in cells, so the row leaves out their badges (custom-fields). */
+  /** The columns layout shows field values in cells, so the row leaves out their values (custom-fields). */
   hideFieldBadges?: boolean
   /**
    * Position among the visible rows with the same parent (assistive-tech-semantics):
@@ -182,11 +222,9 @@ export interface TaskRowProps {
    */
   posInSet?: number
   setSize?: number
-  /** Calm or Detailed (calm-rows D2): the user's preference unless given (stories, tests). */
-  detail?: RowDetail
-  /** What the view or the group heading already says (calm-rows D3); Calm rows leave it out. */
+  /** What the view or the group heading already says (calm-rows D3); the row leaves it out. */
   implied?: RowImplied
-  /** The label whose view is open: Calm rows leave out its dot and name. */
+  /** The label whose view is open: the row leaves out its chip. */
   omitLabel?: string
   /** Every member's tracked minutes on the task, when it has entries (time-tracking D4); a running entry counts to the minute. */
   tracked?: number
@@ -194,65 +232,8 @@ export interface TaskRowProps {
   inline?: ReactNode
 }
 
-/**
- * Memoized (large-list-performance D1): a list re-renders a row only when one of its
- * props changes, so callers pass stable handlers and per-row values (`selected` is a
- * boolean, not the list's selected id).
- */
-export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, detail: detailProp, implied, omitLabel, tracked: trackedProp, inline }: TaskRowProps) {
-  // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
-  const trackedLive = useTaskTracked(task.id)
-  const tracked = trackedProp ?? trackedLive
-  const dt = useDateTimeFormat()
-  const preferred = useRowDetail()
-  const calm = (detailProp ?? preferred) === 'calm'
-  const due = describeDue(task.due, undefined, undefined, dt.resolved)
-  // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
-  const hint = zoneHint(task.due)
-  const done = !!task.completed_at
-  // Start dates, Someday and This Evening (someday-and-evening D2): chips say why a
-  // task is in Later, or in Today without a date.
-  const start = task.start ?? null
-  const startText = done || !start ? null
-    : start === 'someday' ? t('Someday')
-    : start > logicalToday() ? t('Starts {date}', { date: formatDate(start, 'compact', dt.resolved) }) : t('Started {date}', { date: formatDate(start, 'compact', dt.resolved) })
-  const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
-  const comments = useCommentCount(task.id)
-  const attachments = useAttachmentCount(task.id)
-  // End-to-end encryption (OpenSpec e2ee): content the server still holds in
-  // plaintext is marked until an unlocked device has re-written it.
-  const enc = useEncryption()
-  // One shared membership map for every row, not a live query per row (large-list-performance).
-  const shared = useSharedProject(task.project_id, enc.enabled)
-  const unencrypted = notYetEncrypted(task as unknown as Record<string, unknown>, 'task', !shared)
-  const undecryptable = !!task._e2ee?.raw?.title
-  // The name controls read for the task ("Complete Buy milk"); ciphertext is never read out.
-  const name = undecryptable || !task.title ? t('Untitled') : task.title
-  // Evening and repeat are suffixes of the date text, never separate glyphs; with no
-  // date they stand on their own in the date tone.
-  const date = calm
-    ? calmDateText(due, task.due ? localDueOf(task.due).date : null, !!task.evening && !done, implied)
-    : dateText(due?.label ?? (task.evening && !done ? t('This evening') : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
-  const dateTone: Tone = calm ? (due ? dueToneCalm(due.tone, !!due.time) : 'muted') : due ? DUE_TONE[due.tone] : 'indigo'
-  // Calm: the repeat mark is a muted icon with its word after the date, never a suffix (calm-rows D4).
-  const repeat = task.recurrence || task.series_id ? (task.recurrence ? t('repeats') : t('occurrence')) : null
-  const showStart = !!startText && !(calm && start === 'someday' && implied?.someday)
-  // Tracked time joins the estimate chip in Detailed and the quiet group in Calm: one figure, never a second chip.
-  const trackedCount = tracked !== undefined ? { tracked, estimate: task.estimate_minutes ?? null } : undefined
-  const counts = rowCounts({ progress, notes: !!task.description, comments, attachments, tracked: calm ? trackedCount : undefined })
-  const streak = habit && !done ? habit : null
-  // Custom field values of the task's project (custom-fields): three badges, then "+n".
-  const fieldDefs = useFieldDefs()
-  const badges = hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved)
-  const moreBadges = badges.slice(MAX_FIELD_BADGES)
-  const shownLabels = calm && omitLabel ? labels.filter((l) => l.id !== omitLabel) : labels
-  // In Calm the counts are not metadata: a row with only counts stays one line (calm-rows D7).
-  const hasMeta = !!(badges.length > 0 || breadcrumb || date || streak || deadline || showStart || (calm ? !!repeat : (!due && !task.evening && repeat)) || (task.estimate_minutes && !(calm && trackedCount)) || (!calm && trackedCount) || (blockedBy > 0 && !done)
-    || (assignee && task.assignee_id) || (!calm && counts.length > 0) || shownLabels.length > 0 || (showProject && (project || !task.project_id)))
-
-  // Completion feedback: the check mark animates and the row fades within the
-  // emphasis duration before the row leaves or re-sorts; under reduced motion only
-  // the opacity fades. Reopening is immediate.
+/** Completion feedback: the check mark animates and the row fades before it leaves; reopening is immediate. */
+function useCompletion(done: boolean, onToggle: () => void) {
   const [completing, setCompleting] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(timer.current), [])
@@ -264,58 +245,90 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
     setCompleting(true)
     timer.current = setTimeout(() => { setCompleting(false); onToggle() }, delay)
   }
+  return { completing, toggle }
+}
+
+/**
+ * Memoized (large-list-performance D1): a list re-renders a row only when one of its
+ * props changes, so callers pass stable handlers and per-row values (`selected` is a
+ * boolean, not the list's selected id).
+ */
+export const TaskRow = memo(function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline }: TaskRowProps) {
+  const card = shape === 'card'
+  // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
+  const trackedLive = useTaskTracked(task.id)
+  const tracked = trackedProp ?? trackedLive
+  const dt = useDateTimeFormat()
+  const due = describeDue(task.due, undefined, undefined, dt.resolved)
+  const done = !!task.completed_at
+  // Start dates, Someday and This Evening (someday-and-evening D2): they say why a
+  // task is in Later, or in Today without a date.
+  const start = task.start ?? null
+  const startText = done || !start || (start === 'someday' && implied?.someday) ? null
+    : start === 'someday' ? t('Someday')
+    : start > logicalToday() ? t('Starts {date}', { date: formatDate(start, 'compact', dt.resolved) }) : t('Started {date}', { date: formatDate(start, 'compact', dt.resolved) })
+  const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
+  const deadlineLabel = deadline ? t('Deadline {date}, {label}', { date: formatDate(task.deadline!, 'long', dt.resolved), label: deadline.label }) : ''
+  // The column (rows-v2 D2, D3): the due time, else the deadline countdown; the line never repeats it.
+  const column = timeColumn && !card
+  const timeInColumn = column && !!due?.time
+  const deadlineInColumn = column && !due?.time && !!deadline
+  const comments = useCommentCount(task.id)
+  const attachments = useAttachmentCount(task.id)
+  // End-to-end encryption (OpenSpec e2ee): content the server still holds in
+  // plaintext is marked until an unlocked device has re-written it.
+  const enc = useEncryption()
+  // One shared membership map for every row, not a live query per row (large-list-performance).
+  const shared = useSharedProject(task.project_id, enc.enabled)
+  const unencrypted = notYetEncrypted(task as unknown as Record<string, unknown>, 'task', !shared)
+  const undecryptable = !!task._e2ee?.raw?.title
+  // The name controls read for the task ("Complete Buy milk"); ciphertext is never read out.
+  const name = undecryptable || !task.title ? t('Untitled') : task.title
+  const counts = rowCounts({ progress, notes: !!task.description, comments, attachments })
+  // Custom field values of the task's project (custom-fields): three values, then "+n".
+  const fieldDefs = useFieldDefs()
+  // Tracked time joins the estimate: one item, `35m / 1h` (time-tracking).
+  const estimate = tracked !== undefined
+    ? { text: trackedText(tracked, task.estimate_minutes ?? null), label: trackedLabel(tracked, task.estimate_minutes ?? null), tracked: true }
+    : task.estimate_minutes ? { text: formatMinutes(task.estimate_minutes), label: t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) }), tracked: false } : null
+  // Where the task came from (task-origin D7): quiet text, in the trailing group of a row and the line of a card.
+  const origin = originOf(task)
+  const originChip = origin ? <OriginChip origin={origin} quiet /> : null
+  const projectName = showProject && project ? project.name : null
+  const hint = zoneHint(task.due)
+  const m: MetaValues = {
+    breadcrumb,
+    date: rowDateText(due, task.due ? localDueOf(task.due).date : null, !!task.evening && !done, implied, timeInColumn),
+    dateTone: due ? dueTone(due.tone, !!due.time) : 'muted',
+    hint, zone: task.due?.tz ?? '',
+    repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
+    deadline: deadlineInColumn ? null : deadline, deadlineLabel,
+    startText, someday: start === 'someday',
+    estimate, blockedBy: done ? 0 : blockedBy, streak: habit && !done ? habit : null,
+    badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved),
+    assignee: assignee && task.assignee_id ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
+    origin: card ? originChip : null,
+    labels: <LabelChips labels={labels} omit={omitLabel} />,
+    counts: card && counts.length > 0 ? <RowCounts counts={counts} /> : null,
+  }
+  if (!labels.some((l) => l.id !== omitLabel)) m.labels = null
+  // The project (rows-v2 D6): the trailing group from 640 px, the end of the line below (and always on a card).
+  if (projectName) m.project = <span data-project="" className={`max-w-48 truncate text-meta text-muted ${card ? '' : 'sm:hidden'}`}>{projectName}</span>
+  const items = metaItems(m)
+  const meta = (items > 0 || m.project) && <RowMeta m={m} card={card} projectOnlyBelowSm={items === 0 && !card} />
+  const revealed = !card && !readOnly && !inline && actions
+
+  const { completing, toggle } = useCompletion(done, onToggle)
   const checked = done || completing
   const feedback = dragFeedback(prefersReducedMotion())
   const lift = dragging ? feedback.lift : ''
   const fade = completing ? 'opacity-50' : '' // tone-lint-allow: a completing row fades out (motion), not quieter text
-
-  const progressCount = counts.find((c) => c.key === 'progress')
-  const quiet = calm && counts.length > 0 ? <RowCounts counts={counts} card={card} /> : null
-  // Where the task came from (task-origin D7): a trailing chip outside the open button,
-  // quiet in Calm (see OriginChip for the Calm rule).
-  const origin = originOf(task)
-  const originChip = origin ? <OriginChip origin={origin} quiet={calm} /> : null
-  const meta = (hasMeta || (card && quiet)) && (
-    <div className={`${card ? 'mt-1' : 'mt-0.5'} flex flex-wrap items-center gap-x-2 gap-y-0.5`} data-row-meta>
-      {breadcrumb && <NeutralChip icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb })} data-breadcrumb="">{breadcrumb}</NeutralChip>}
-      {date && (
-        <ToneText tone={dateTone} data-date="" data-evening={task.evening && !done ? '' : undefined} data-recurring={!calm && task.recurrence ? '' : undefined}
-          label={[date, hint ? t('fixed to {zone}', { zone: task.due?.tz ?? '' }) : null].filter(Boolean).join(', ')}>
-          {date}{hint && <span className="text-faint"> ({hint})</span>}
-        </ToneText>
-      )}
-      {repeat && (calm || !date) && (
-        <ToneText tone="muted" icon={calm ? 'repeat' : undefined} data-recurring={task.recurrence ? '' : undefined} data-repeat="">{repeat}</ToneText>
-      )}
-      {streak && (
-        <NeutralChip icon="flame" data-streak="" data-at-risk={streak.atRisk ? '' : undefined} label={streakLabel(streak)}>{streak.current}</NeutralChip>
-      )}
-      {blockedBy > 0 && !done && (
-        <NeutralChip icon="lock" data-blocked="" label={t('Blocked by {blockedBy}', { blockedBy })}>{blockedBy}</NeutralChip>
-      )}
-      {deadline && (
-        <ToneText tone={DEADLINE_TONE[deadline.tone]} icon="hourglass" data-deadline="" label={t('Deadline {date}, {label}', { date: formatDate(task.deadline!, 'long', dt.resolved), label: deadline.label })}>
-          {deadline.label}
-        </ToneText>
-      )}
-      {showStart && <ToneText tone="muted" icon={start === 'someday' ? 'archive' : 'calendar-days'} data-start="">{startText}</ToneText>}
-      {!calm && trackedCount
-        ? <NeutralChip data-estimate="" data-tracked="" label={trackedLabel(trackedCount.tracked, trackedCount.estimate)}>{trackedText(trackedCount.tracked, trackedCount.estimate)}</NeutralChip>
-        : task.estimate_minutes && !(calm && trackedCount) ? <NeutralChip data-estimate="" label={t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) })}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
-      {badges.slice(0, MAX_FIELD_BADGES).map((b) => <NeutralChip key={b.def.id} data-field-badge={b.def.id}>{b.text}</NeutralChip>)}
-      {moreBadges.length > 0 && (
-        <NeutralChip data-field-more="" label={t('{count} more fields: {join}', { count: moreBadges.length, join: moreBadges.map((b) => b.text).join(', ') })}>
-          +{moreBadges.length}
-        </NeutralChip>
-      )}
-      {!calm && progressCount && <CountChip c={progressCount} />}
-      {assignee && task.assignee_id && <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} />}
-      {!calm && counts.filter((c) => c !== progressCount).map((c) => <CountChip key={c.key} c={c} />)}
-      {calm ? <LabelDots labels={shownLabels} /> : labels.map((l) => <LabelChip key={l.id} name={l.name} color={l.color} />)}
-      {showProject && project && <NeutralChip dot={project.color} data-project="">{project.name}</NeutralChip>}
-      {showProject && !project && !task.project_id && isInboxTask(task) && <NeutralChip data-project="">{t('Inbox')}</NeutralChip>}
-      {card && quiet}
-    </div>
+  const trailing = !card && (projectName || counts.length > 0 || originChip) && (
+    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 shrink-0 items-center gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
+      {projectName && <span data-project="" className="hidden max-w-48 truncate text-meta text-muted sm:inline">{projectName}</span>}
+      {counts.length > 0 && <RowCounts counts={counts} />}
+      {originChip}
+    </span>
   )
 
   return (
@@ -370,7 +383,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
           disabled={readOnly}
           className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
         >
-          <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${checked ? 'bg-faint border-input text-on-accent' : `${(calm ? PRIORITY_RING_CALM : PRIORITY_RING)[task.priority]} group-hover/check:bg-success-soft`} ${completing ? 'row-check-pop' : ''}`}>
+          <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${checked ? 'bg-faint border-input text-on-accent' : `${PRIORITY_RING[task.priority]} group-hover/check:bg-success-soft`} ${completing ? 'row-check-pop' : ''}`}>
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>
@@ -381,6 +394,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
           </label>
         )}
       </span>
+      {column && <TimeCell time={due?.time ?? null} timeTone={due ? dueTone(due.tone, true) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left" data-row-open
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
@@ -398,14 +412,13 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
         </div>
         {meta}
       </button>}
-      {originChip
-        ? <span className="ml-auto flex shrink-0 items-start gap-2" data-row-trailing>{originChip}{!card && quiet}</span>
-        : !card && quiet}
+      {trailing}
+      {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} />}
     </li>
   )
 })
 
 /** The board card: the same row data as a card (sections-and-boards "Card content"). */
-export function TaskCard(props: Omit<TaskRowProps, 'card'>) {
-  return <TaskRow {...props} card />
+export function TaskCard(props: Omit<TaskRowProps, 'shape'>) {
+  return <TaskRow {...props} shape="card" />
 }

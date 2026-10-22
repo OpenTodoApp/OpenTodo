@@ -34,5 +34,5 @@ export const Week: StoryObj = {
  */
 export const Plan: StoryObj = {
   ...withSeed(seedCalendarPlan),
-  render: () => <Column><PlanView detail="calm" /></Column>,
+  render: () => <Column><PlanView /></Column>,
 }

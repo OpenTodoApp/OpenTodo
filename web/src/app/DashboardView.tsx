@@ -8,6 +8,7 @@ import { beginDrag } from '../lib/dnd'
 import { Badge, Button, Icon, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
 import { useId, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
+import { hasTimeColumn } from '../lib/rowTime'
 import { useLiveSections } from '../lib/localData'
 import { setTaskCompleted } from '../lib/ops'
 import { describeRule, type RuleNames } from '../lib/rules'
@@ -217,6 +218,8 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
   // A rule whose only parts name deleted labels changes nothing, so it makes no target either.
   const rule = describeRule(view.on_drop, names)
   const ruled = !!rule
+  // The time column (rows-v2 D2): one fact of the panel's list.
+  const timeColumn = hasTimeColumn(tasks)
   return (
     <section data-panel-index={index} tabIndex={0} onFocus={onFocus} onBlur={onBlur} aria-label={view.name} aria-describedby={ruled ? ruleId : undefined}
       data-drop-target={ruled ? `panel:${view.id}` : undefined} data-has-rule={ruled ? '' : undefined}
@@ -243,7 +246,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
           {tasks.map((tk) => {
             const row = (
               <TaskRow key={tk.id} task={tk} project={tk.project_id ? projectMap.get(tk.project_id) : undefined} labels={resolveLabels(tk.labels, labelMap)}
-                showProject selected={tk.id === selectedId} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)}
+                showProject selected={tk.id === selectedId} timeColumn={timeColumn} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)}
                 onPointerDown={(e) => onDragTask(tk, e)} />
             )
             // A held card (rule-boards D6): shown first, marked, until it matches or changes again.
