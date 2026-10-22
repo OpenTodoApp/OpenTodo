@@ -4840,7 +4840,6 @@
   "Added to a group": "Añadido a un grupo",
   "Added to {name}": "Añadida a {name}",
   "Bind the link to one address.": "Vincular el enlace a una dirección.",
-  "Choose": "Elegir",
   "Choose a member": "Elige un miembro",
   "Choose a person": "Elige una persona",
   "Create an account to join {name}": "Crea una cuenta para unirte a {name}",
@@ -4928,5 +4927,6 @@
   "{name} is no longer available": "{name} ya no está disponible",
   "{name}, {role}": "{name}, {role}",
   "A link adds whoever opens it. It works once and expires after seven days.": "Un enlace añade a quien lo abre. Funciona una vez y caduca a los siete días.",
-  "Yours alone. Share its projects by email, or create a workspace for a team.": "Solo tuyo. Comparte sus proyectos por correo o crea un espacio de trabajo para un equipo."
+  "Yours alone. Share its projects by email, or create a workspace for a team.": "Solo tuyo. Comparte sus proyectos por correo o crea un espacio de trabajo para un equipo.",
+  "Choose icon": "Elegir icono"
 }

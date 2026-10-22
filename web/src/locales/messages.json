@@ -2009,9 +2009,6 @@
   "Choice": [
     "web/src/lib/fields.ts"
   ],
-  "Choose": [
-    "web/src/app/WorkspacesSettings.tsx"
-  ],
   "Choose a PNG, JPEG or WebP image.": [
     "web/src/app/profile/PictureDialog.tsx"
   ],
@@ -2079,6 +2076,9 @@
   "Choose files…": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Choose icon": [
+    "web/src/app/WorkspacesSettings.tsx"
   ],
   "Choose light or dark": [
     "web/src/app/FirstRun.tsx"

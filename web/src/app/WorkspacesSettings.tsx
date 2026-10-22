@@ -98,8 +98,8 @@ function IdentityCard({ ws, online }: { ws: Workspace; online: boolean }) {
       </form>
       <SettingRow label={t('Colour')} control={<WorkspaceColours value={ws.color} onPick={(color) => { if (online) act(workspaceApi.update(ws.id, { color })) }} />} />
       <SettingRow label={t('Icon')} control={
-        <Menu kind="dialog" label={t('Icon')} align="end" triggerClassName="ui-btn ui-btn--secondary ui-btn--md" triggerProps={{ disabled: !online }}
-          trigger={<><WorkspaceMark workspace={ws} />{t('Choose')}</>}>
+        <Menu kind="dialog" label={t('Choose icon')} align="end" triggerClassName="ui-btn ui-btn--secondary ui-btn--md" triggerProps={{ disabled: !online }}
+          trigger={<><WorkspaceMark workspace={ws} />{t('Choose icon')}</>}>
           {(close) => (
             <IconPicker value={ws.icon || null} onClose={close}
               onPick={(icon) => { act(workspaceApi.update(ws.id, { icon: icon ?? '' })); close() }} />
