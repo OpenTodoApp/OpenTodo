@@ -42,7 +42,7 @@ async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
 }
 const day = (root: ParentNode, d: string) => root.querySelector<HTMLElement>(`[data-plan-day="${d}"]`)!
 const row = (root: ParentNode, id: string) => root.querySelector<HTMLElement>(`[data-plan-task="${id}"]`)!
-const plan = (detail: 'calm' | 'detailed' = 'calm', date?: string) => render(<PlanView date={date} detail={detail} />)
+const plan = (date?: string) => render(<PlanView date={date} />)
 
 async function drag(el: Element, target: Element) {
   document.elementFromPoint = () => target
@@ -70,7 +70,7 @@ describe('plan route and mode', () => {
   })
 
   it('Range switch keeps the date, and /calendar opens the Plan after it was used last', async () => {
-    const r = await plan('calm', '2026-11-05')
+    const r = await plan('2026-11-05')
     await flush(30)
     expect(localStorage.getItem('ot.calendar.mode')).toBe('plan')
     expect(parseRoute('/calendar')).toEqual({ view: 'plan' })
@@ -114,17 +114,13 @@ describe('plan columns', () => {
     await createTask({ title: 'Early', due: { date: d, time: '09:00' }, estimate_minutes: 30 })
     await createTask({ title: 'Urgent', due: { date: d }, priority: 1 })
     await createTask({ title: 'Someday-ish', due: { date: d }, priority: 3 })
-    let r = await plan('calm')
+    const r = await plan()
     await waitFor(() => day(r.container, d).querySelectorAll('[data-plan-task]').length === 4)
     const titles = () => [...day(r.container, d).querySelectorAll('[data-plan-task]')].map((b) => b.querySelector('.truncate')!.textContent)
     expect(titles()).toEqual(['Early', 'Late', 'Urgent', 'Someday-ish'])
     const p3 = () => day(r.container, d).querySelector('[data-priority="3"] [data-priority-dot]')!
     expect(p3().className).toContain('border-input')
     expect(day(r.container, d).querySelector('[data-estimate]')!.textContent).toBe('30m')
-    await r.unmount()
-    r = await plan('detailed')
-    await waitFor(() => day(r.container, d).querySelectorAll('[data-plan-task]').length === 4)
-    expect(p3().className).toContain('bg-p3')
     await r.unmount()
   })
 
@@ -278,7 +274,7 @@ describe('rescheduling in the plan', () => {
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-26' })
     await r.unmount()
     // The route renders the new span; the moved task is shown on the 26th.
-    const again = await plan('calm', '2026-10-19')
+    const again = await plan('2026-10-19')
     await waitFor(() => day(again.container, '2026-10-26')?.querySelector(`[data-plan-task="${id}"]`) !== null)
     await again.unmount()
   })

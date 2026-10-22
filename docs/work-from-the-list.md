@@ -22,7 +22,7 @@ You can fill in details as you type:
 Order new taps friday #Home @errand p2 +20m
 ```
 
-This creates "Order new taps", due Friday, in the project Home, with the label errand, priority 2 and an estimate of 20 minutes. Chips under the box show what was understood before you press Enter. The [quick add reference](quick-add.md) has every word and symbol it knows.
+This creates "Order new taps", due Friday, in Home, with the label errand, priority 2 and a 20-minute estimate. Chips under the box show what was understood. The [quick add reference](quick-add.md) has every word and symbol it knows.
 
 New tasks without a project land in the **Inbox**. Tasks added inside a project go into that project, and tasks added in **Today** are due today.
 
@@ -36,7 +36,9 @@ Completing, deleting, moving, rescheduling or parking a task shows a toast with 
 
 ## What a row shows
 
-With **Calm** rows (the default) a row leaves out what the view already says: no "Today" in Today (the time stays), no date under an Upcoming day, no project inside that project, no chip for the open label. Dates are grey unless overdue (red) or timed for today; only P1 and P2 colour the circle. Labels are dots with the first name and "+2"; hover or focus them to see all. Subtask progress, comments and attachments sit at the end of the row, faint until you hover it. **Detailed** rows in Settings → Appearance show every chip.
+A row leaves out what the view already says: no "Today" in Today, no date under an Upcoming day, no project inside that project. Times stand in a column before the titles (a deadline's countdown when there is no time). Dates are grey unless overdue (red) or timed for today; only P1 and P2 colour the circle. Labels are small chips, two at most and "+2". The project and the counts sit at the end of the row, faint until you hover it.
+
+With a mouse on a wide screen, hovering a row shows **Schedule**, **Priority** and **More** at its end; <kbd>Tab</kbd> reaches them. On a touch screen, long-press a row for its menu.
 
 ## Quick changes from the list
 

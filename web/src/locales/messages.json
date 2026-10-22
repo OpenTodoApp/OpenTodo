@@ -1748,15 +1748,6 @@
   "Calls to return": [
     "web/src/lib/review.ts"
   ],
-  "Calm": [
-    "web/src/app/AppearanceSection.tsx"
-  ],
-  "Calm leaves out what the view says and keeps counts quiet; Detailed shows every chip.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Calm or detailed task rows": [
-    "web/src/app/settingsIndex.ts"
-  ],
   "Can make changes": [
     "web/src/app/AssistantsPanel.tsx"
   ],
@@ -3162,9 +3153,6 @@
   "Destination works: a test file was written and deleted.": [
     "web/src/app/BackupsPanel.tsx"
   ],
-  "Detailed": [
-    "web/src/app/AppearanceSection.tsx"
-  ],
   "Details": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DemoBanner.tsx",
@@ -3273,7 +3261,8 @@
   ],
   "Do on": [
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/app/task-list/InlineEditor.tsx"
+    "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/app/task-list/RowSchedule.tsx"
   ],
   "Documentation": [
     "web/src/app/settingsIndex.ts",
@@ -4394,6 +4383,9 @@
   "From a subscribed calendar. Edit it in its own app.": [
     "web/src/app/CalendarEvents.tsx"
   ],
+  "From a task, reach its Schedule, Priority and More actions (wide screens with a mouse; in a tree list Tab indents)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "From a template": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -5088,7 +5080,6 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
-    "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/index.ts",
@@ -6117,6 +6108,7 @@
   ],
   "More actions": [
     "web/src/app/review/StatsView.tsx",
+    "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/ui/patterns/PageHeader.tsx"
   ],
   "More actions for this comment": [
@@ -8206,7 +8198,8 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-list/InlineEditor.tsx"
+    "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/app/task-list/RowActionCluster.tsx"
   ],
   "Priority 1 or 2": [
     "web/src/app/rules/RuleFields.tsx"
@@ -9206,11 +9199,6 @@
   "Row": [
     "web/src/app/ImportScreen.tsx"
   ],
-  "Rows": [
-    "web/src/app/AppearanceSection.tsx",
-    "web/src/app/settingsIndex.ts",
-    "web/src/lib/settingsCopy.ts"
-  ],
   "Rows with errors": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -9413,6 +9401,7 @@
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Schedule the selected task: Day view in placement mode": [

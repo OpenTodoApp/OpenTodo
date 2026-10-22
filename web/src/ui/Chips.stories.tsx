@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { LabelChip, LabelDots, NeutralChip, ToneText, type Tone } from './Chips'
+import { LabelChip, LabelChips, NeutralChip, ToneText, type Tone } from './Chips'
 
 // The metadata language (OpenSpec change ux-overhaul, task-list-presentation
 // "Metadata language"): three styles only, in the metadata size with tabular
@@ -40,13 +40,13 @@ const CALL = { id: 'l2', name: 'call', color: 'var(--ot-hue-violet-solid)' }
 const HOME = { id: 'l3', name: 'home', color: 'var(--ot-hue-blue-solid)' }
 const DEEP = { id: 'l4', name: 'deep work', color: 'var(--ot-hue-orange-solid)' }
 
-export const LabelDotsVariants: StoryObj = {
+export const LabelChipsVariants: StoryObj = {
   render: () => (
     <div className="flex flex-col items-start gap-2">
-      <LabelDots labels={[ERRAND]} />
-      <LabelDots labels={[ERRAND, CALL]} />
-      <LabelDots labels={[ERRAND, CALL, HOME, DEEP]} />
-      <LabelDots labels={[ERRAND, CALL, HOME]} omit="l1" />
+      <LabelChips labels={[ERRAND]} />
+      <LabelChips labels={[ERRAND, CALL]} />
+      <LabelChips labels={[ERRAND, CALL, HOME, DEEP]} />
+      <LabelChips labels={[ERRAND, CALL, HOME]} omit="l1" />
     </div>
   ),
 }

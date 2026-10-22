@@ -11,6 +11,7 @@ import { useAllLabels, useAllProjects, useReviewRow, useReviewedAt } from '../..
 import { formatInstant } from '../../lib/dates'
 import { createTask, setTaskCompleted } from '../../lib/ops'
 import { resolveLabels } from '../../lib/labels'
+import { hasTimeColumn } from '../../lib/rowTime'
 import { finishReview, firstUnfinished, PHASE_OF, PHASE_TITLES, reviewSteps, STEP_IDS, STEP_TITLES, SWEEP_PROMPTS, type ReviewSteps, type StepId, type WalkProject } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import type { Project, Task } from '../../lib/types'
@@ -71,6 +72,8 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
 
   const current = step ?? 'clear'
   const taskRows = useMemo(() => (steps ? stepTasks(steps, current) : []), [steps, current])
+  // The time column (rows-v2 D2): one fact of the step's list.
+  const timeColumn = useMemo(() => hasTimeColumn(taskRows), [taskRows])
   const keyRows = useMemo(() => taskRows.map((tk) => ({ key: tk.id, task: tk })), [taskRows])
   useListKeys({
     rows: keyRows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor,
@@ -136,7 +139,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
               <ul className="-mx-2" data-testid={`review-${step}`}>
                 {taskRows.map((item) => (
                   <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
-                    showProject={step !== 'clear'} selected={item.id === selected}
+                    showProject={step !== 'clear'} selected={item.id === selected} timeColumn={timeColumn}
                     onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
                     onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
                 ))}

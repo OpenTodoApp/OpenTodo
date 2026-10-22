@@ -17,6 +17,7 @@ import type { Task } from '../../lib/types'
 import { inLater } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { hasTimeColumn } from '../../lib/rowTime'
 import type { Route } from '../router'
 import { useFieldDefs } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
@@ -166,6 +167,8 @@ export function useListModel(route: ListRoute, userId?: string) {
   }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
+  // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
+  const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task)), [board, rows])
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups").
   const doneBySection = useMemo(() => completedBySection(allTasks, projectId, layout.sectionMap), [allTasks, projectId, layout.sectionMap])
@@ -188,7 +191,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
-    collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, siblingPos, doneBySection,
+    collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, siblingPos, timeColumn, doneBySection,
     showCompleted, completedTasks, completedOpen,
   }
 }

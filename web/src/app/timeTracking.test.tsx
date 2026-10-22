@@ -55,30 +55,23 @@ const task = (over: Partial<Task>): Task => ({
 const noop = () => {}
 
 describe('Chip with tracked and estimate (task-list-presentation)', () => {
-  it('Detailed: one chip reads 35m / 1h, spoken as minutes tracked of the estimate', async () => {
-    const r = await render(<ul><TaskRow task={task({ estimate_minutes: 60 })} tracked={35} selected={false} showProject={false} onToggle={noop} onOpen={noop} detail="detailed" /></ul>)
+  it('one item reads 35m / 1h in the line, spoken as minutes tracked of the estimate (rows-v2 D4)', async () => {
+    const r = await render(<ul><TaskRow task={task({ estimate_minutes: 60 })} tracked={35} selected={false} showProject={false} onToggle={noop} onOpen={noop} /></ul>)
     const chips = r.container.querySelectorAll('[data-estimate]')
     expect(chips).toHaveLength(1)
+    expect(chips[0].closest('[data-row-meta]')).toBeTruthy()
     expect(visibleText(chips[0])).toBe('35m / 1h')
     expect(spokenText(chips[0])).toContain('35 minutes tracked of 1 hour estimated')
     expect(r.container.querySelector('[data-row-counts]')).toBeNull()
   })
 
-  it('Detailed without an estimate: 35m tracked', async () => {
-    const r = await render(<ul><TaskRow task={task({})} tracked={35} selected={false} showProject={false} onToggle={noop} onOpen={noop} detail="detailed" /></ul>)
+  it('without an estimate: 35m tracked', async () => {
+    const r = await render(<ul><TaskRow task={task({})} tracked={35} selected={false} showProject={false} onToggle={noop} onOpen={noop} /></ul>)
     expect(visibleText(r.container.querySelector('[data-tracked]')!)).toBe('35m tracked')
   })
 
-  it('Calm: the figure moves into the quiet trailing group, and the estimate chip leaves the metadata line', async () => {
-    const r = await render(<ul><TaskRow task={task({ estimate_minutes: 60 })} tracked={35} selected={false} showProject={false} onToggle={noop} onOpen={noop} detail="calm" /></ul>)
-    expect(r.container.querySelector('[data-estimate]')).toBeNull()
-    const quiet = r.container.querySelector('[data-row-counts] [data-tracked]')!
-    expect(visibleText(quiet)).toBe('35m / 1h')
-    expect(spokenText(quiet)).toContain('35 minutes tracked of 1 hour estimated')
-  })
-
-  it('a row without entries keeps the plain estimate chip', async () => {
-    const r = await render(<ul><TaskRow task={task({ estimate_minutes: 60 })} selected={false} showProject={false} onToggle={noop} onOpen={noop} detail="detailed" /></ul>)
+  it('a row without entries keeps the plain estimate', async () => {
+    const r = await render(<ul><TaskRow task={task({ estimate_minutes: 60 })} selected={false} showProject={false} onToggle={noop} onOpen={noop} /></ul>)
     expect(visibleText(r.container.querySelector('[data-estimate]')!)).toBe('1h')
   })
 })

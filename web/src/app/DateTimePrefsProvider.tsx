@@ -5,13 +5,14 @@
 // device or by sync, without a reload. It also publishes the day start
 // (day-boundary D3): `dayStart` in the context for useToday(), and the module
 // snapshot (setDayStart) that logicalToday() and logicalDay() read by default.
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import { useUserPrefsRow } from '../lib/localData'
 import {
   currentDateTime, currentDayStart, formatDate, formatHour, formatInstant, formatTime, setDateTime, setDayStart, weekDays, weekStartOf,
   type DateStyle, type InstantStyle, type ResolvedDateTime,
 } from '../lib/dates'
 import { useLanguageVersion } from '../lib/i18n'
+import { rowTimeWidth } from '../lib/rowTime'
 import { readDayStart, readUserPrefs, type DateTimePrefs } from '../lib/userPrefs'
 
 interface DateTimeContextValue {
@@ -36,6 +37,10 @@ export function DateTimePrefsProvider({ children }: { children: ReactNode }) {
     return { prefs, resolved: setDateTime(prefs), dayStart }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- prefs is a new object every render; key holds every field it is made of
   }, [key])
+  // The time column's width (rows-v2 D2): one CSS variable for every list, so a format
+  // change widens every column at once without re-rendering a row.
+  const hour12 = value.resolved.hour12
+  useEffect(() => { document.documentElement.style.setProperty('--row-time-w', rowTimeWidth(hour12)) }, [hour12])
   return <DateTimeContext.Provider value={value}>{children}</DateTimeContext.Provider>
 }
 

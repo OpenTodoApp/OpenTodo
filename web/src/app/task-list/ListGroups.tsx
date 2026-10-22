@@ -40,6 +40,8 @@ export interface RowContext {
   fieldColumns: boolean
   projectFieldDefs: FieldDef[]
   siblingPos: Map<string, { pos: number; size: number }>
+  /** The list shows the time column (rows-v2 D2). */
+  timeColumn: boolean
   actions: RowActions
   addingUnder: string | null
   onCloseSubtask: () => void
@@ -75,7 +77,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           blockedBy={c.blocked.get(r.task.id)}
           habit={c.habits.get(r.task.id)}
           readOnly={c.isReadOnly(r.task)}
-          card={c.board}
+          shape={c.board ? 'card' : 'row'}
+          timeColumn={c.timeColumn}
           draggable={!editing && !c.isReadOnly(r.task)}
           reorderable={c.manual}
           collapsible={tree}
@@ -86,7 +89,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           hideFieldBadges={c.fieldColumns}
           posInSet={tree ? c.siblingPos.get(r.task.id)?.pos : undefined}
           setSize={tree ? c.siblingPos.get(r.task.id)?.size : undefined}
-          actions={c.actions}
+          handlers={c.actions}
           inline={editing ? c.renderInline?.(r.task) : undefined}
         />
         {c.addingUnder === r.task.id && !c.board && (

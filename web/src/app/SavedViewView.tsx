@@ -6,6 +6,7 @@ import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { parse } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
+import { hasTimeColumn } from '../lib/rowTime'
 import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type GroupBy, type SortBy, type SortDir, type View } from '../lib/types'
@@ -95,6 +96,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   // ---- results and keyboard navigation (a task can appear under several labels) ----
   const groups = useMemo(() => (result.ok ? result.groups : []), [result])
   const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [groups])
+  // The time column (rows-v2 D2): one fact of the whole view.
+  const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
   const [selected, setSelected] = useState<string | null>(null)
   const openId = usePanelTaskId()
   const setOpenId = setPanelTaskId
@@ -191,6 +194,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                           project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
                           labels={resolveLabels(tk.labels, labelMap)}
                           showProject={opts.groupBy !== 'project'}
+                          timeColumn={timeColumn}
+                          onMore={() => { setSelected(key); bulk.openActions() }}
                           selected={key === selected}
                           progress={progress.get(tk.id)}
                           blockedBy={blocked.get(tk.id)}

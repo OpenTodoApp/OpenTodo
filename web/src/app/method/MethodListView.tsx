@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { blockedMap } from '../../lib/dependencies'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
+import { hasTimeColumn } from '../../lib/rowTime'
 import { useAllLabels } from '../../lib/localData'
 import { nextGroups, waitingGroups, type MethodGroup } from '../../lib/method/groups'
 import { setTaskCompleted } from '../../lib/ops'
@@ -59,6 +60,8 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
   const projectMap = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
   const blocked = useMemo(() => blockedMap(input?.tasks ?? []), [input])
   const rows = useMemo(() => (groups ?? []).flatMap((g) => g.tasks.map((task) => ({ key: `${g.key}:${task.id}`, task }))), [groups])
+  // The time column (rows-v2 D2): one fact of the whole list.
+  const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
   const [selected, setSelected] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const openId = usePanelTaskId()
@@ -89,7 +92,8 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
                     const key = `${g.key}:${task.id}`
                     return (
                       <TaskRow key={key} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined}
-                        labels={resolveLabels(task.labels, labelMap)} showProject selected={key === selected}
+                        labels={resolveLabels(task.labels, labelMap)} showProject selected={key === selected} timeColumn={timeColumn}
+                        onMore={() => { setSelected(key); bulk.openActions() }}
                         blockedBy={blocked.get(task.id)} breadcrumb={g.notes?.get(task.id) ?? null}
                         onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
                         onOpen={() => { setSelected(key); setPanelTaskId(task.id) }}

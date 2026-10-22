@@ -38,7 +38,7 @@ An end before the start is refused. The **⋯** menu of each of your own entries
 
 ## Tracked against estimated
 
-Once a task has entries, its row shows the tracked time with the estimate, `35m / 1h`, or `35m tracked` without one. In Detailed rows it replaces the estimate chip; in Calm rows it sits in the quiet group at the end of the row. A running entry counts up to the current minute. Rows and the Time tab show the task's total, everyone's entries included.
+Once a task has entries, its row shows the tracked time with the estimate, `35m / 1h`, or `35m tracked` without one. It takes the estimate's place in the line under the title, as one item. A running entry counts up to the current minute. Rows and the Time tab show the task's total, everyone's entries included.
 
 Today's header adds `3h planned · 1h 20m tracked`: the estimates of the open tasks listed, and your own entries that started today, each counted whole on the day it started even across midnight, with your [day start](dates-and-times.md#when-a-day-ends) applied.
 

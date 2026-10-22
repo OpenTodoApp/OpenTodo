@@ -18,9 +18,9 @@ beforeEach(async () => {
 
 describe('readAppearance', () => {
   it('defaults to system and emerald, and reads an unknown value as the default without writing', async () => {
-    expect(readAppearance(null)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', detail: 'calm', sidebar: [] })
-    expect(readAppearance({ theme_mode: 'dark', theme_accent: 'orange' } as never)).toEqual({ mode: 'dark', accent: 'orange', density: 'comfortable', detail: 'calm', sidebar: [] })
-    expect(readAppearance({ theme_mode: 'sepia', theme_accent: 'ultraviolet', sidebar_destinations: 'someday,bogus', density: 'cosy' } as never)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', detail: 'calm', sidebar: ['someday'] })
+    expect(readAppearance(null)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', sidebar: [] })
+    expect(readAppearance({ theme_mode: 'dark', theme_accent: 'orange' } as never)).toEqual({ mode: 'dark', accent: 'orange', density: 'comfortable', sidebar: [] })
+    expect(readAppearance({ theme_mode: 'sepia', theme_accent: 'ultraviolet', sidebar_destinations: 'someday,bogus', density: 'cosy' } as never)).toEqual({ mode: 'system', accent: 'emerald', density: 'comfortable', sidebar: ['someday'] })
     expect(await db.outbox.count()).toBe(0)
   })
 
@@ -32,26 +32,23 @@ describe('readAppearance', () => {
       ['user_prefs', 'me', 'theme_accent', 'teal'],
       ['user_prefs', 'me', 'theme_mode', 'dark'],
     ])
-    expect(readAppearance(await db.userPrefs.get('me'))).toEqual({ mode: 'dark', accent: 'teal', density: 'comfortable', detail: 'calm', sidebar: [] })
+    expect(readAppearance(await db.userPrefs.get('me'))).toEqual({ mode: 'dark', accent: 'teal', density: 'comfortable', sidebar: [] })
   })
 })
 
-describe('row detail (calm-rows)', () => {
-  it('defaults to calm, reads an unknown value as calm and keeps it in the row', async () => {
-    expect(readAppearance(null).detail).toBe('calm')
-    expect(readAppearance({ row_detail: '' } as never).detail).toBe('calm')
-    expect(readAppearance({ row_detail: 'detailed' } as never).detail).toBe('detailed')
-    await applyOps([{ id: 'r1', entity: 'user_prefs', entityId: 'me', field: 'row_detail', value: 'verbose', ts: Date.now(), device: 'phone' }] as never)
+describe('retired row detail (rows-v2 D1)', () => {
+  it('an incoming row_detail op is stored, exported with the row and changes nothing', async () => {
+    await applyOps([{ id: 'r1', entity: 'user_prefs', entityId: 'me', field: 'row_detail', value: 'detailed', ts: Date.now(), device: 'old-phone' }] as never)
     const row = await db.userPrefs.get('me')
-    expect(row?.row_detail).toBe('verbose')
-    expect(readAppearance(row).detail).toBe('calm')
+    expect(row?.row_detail).toBe('detailed')
+    expect(readAppearance(row)).toEqual(readAppearance(null))
     expect(await db.outbox.count()).toBe(0)
   })
 
-  it('a change is one op', async () => {
-    await setAppearance('row_detail', 'detailed')
-    expect((await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)).toEqual(['row_detail=detailed'])
-    expect(readAppearance(await db.userPrefs.get('me')).detail).toBe('detailed')
+  it('an unknown value from a newer client is kept in the row', async () => {
+    await applyOps([{ id: 'r2', entity: 'user_prefs', entityId: 'me', field: 'row_detail', value: 'verbose', ts: Date.now(), device: 'phone' }] as never)
+    expect((await db.userPrefs.get('me'))?.row_detail).toBe('verbose')
+    expect(await db.outbox.count()).toBe(0)
   })
 })
 

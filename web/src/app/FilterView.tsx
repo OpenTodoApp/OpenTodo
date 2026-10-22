@@ -9,6 +9,7 @@ import { compareDueThenPriority } from '../lib/ordering'
 import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, originSuggestions, parse, type Node } from '../lib/filter'
 import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
+import { hasTimeColumn } from '../lib/rowTime'
 import { setTaskCompleted } from '../lib/ops'
 import { buildProjectTree } from '../lib/projects'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
@@ -129,6 +130,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     }))
   }, [result, projects, projectMap])
   const rows = useMemo(() => groups.flatMap((g) => g.tasks), [groups])
+  // The time column (rows-v2 D2): one fact of the whole result.
+  const timeColumn = useMemo(() => hasTimeColumn(rows), [rows])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const openId = usePanelTaskId()
@@ -273,17 +276,15 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
                       task={tk}
                       project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
                       labels={resolveLabels(tk.labels, labelMap)}
-                      showProject={false}
+                      showProject={false} timeColumn={timeColumn}
+                      onMore={() => { setSelectedId(tk.id); bulk.openActions() }}
                       selected={tk.id === selectedId}
                       progress={progress.get(tk.id)}
                       blockedBy={blocked.get(tk.id)}
                       habit={habits.get(tk.id)}
                       breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
                       onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
-                      onOpen={() => {
-                        setSelectedId(tk.id)
-                        setOpenId(tk.id)
-                      }}
+                      onOpen={() => { setSelectedId(tk.id); setOpenId(tk.id) }}
                       {...bulk.rowProps(tk.id)}
                     />
                   ))}

@@ -1,9 +1,9 @@
 // The metadata language of rows and cards (OpenSpec change ux-overhaul,
 // task-list-presentation "Metadata language", design D7): three styles only.
 // `ToneText` for a date or a deadline (a tone, an optional icon, the text),
-// `LabelChip` for a label (its colour dot and name; `LabelDots` for all of a
-// row's labels in Calm rows, calm-rows D6) and `NeutralChip` for a count
-// or a name (estimate, subtask progress, comments, attachments, project), in the
+// `LabelChip` for a label (its colour dot and name; `LabelChips` for a row's labels,
+// rows-v2 D5: the only pills of a row) and `NeutralChip` for a count or a name in
+// the task panel and settings (rows use muted text instead, rows-v2 D4), in the
 // metadata size with tabular figures, never a monospace face. Icons in chips are
 // 12 px ("Secondary text is one size").
 //
@@ -109,36 +109,36 @@ export function LabelChip({ name, color, onRemove, className }: LabelChipProps) 
   )
 }
 
-export interface LabelDotsProps {
+export interface LabelChipsProps {
   /** The task's labels in its order (already resolved). */
   labels: readonly { id: string; name: string; color: string }[]
-  /** A label left out because its own view is open (calm-rows D3). */
+  /** A label left out because its own view is open (the omission table). */
   omit?: string
+  /** Chips shown before "+n" (rows-v2 D5: two). */
+  max?: number
 }
 
 /**
- * A row's labels in Calm rows (OpenSpec change calm-rows, design D6; labels "Assign
- * and unassign labels"): one 6 px colour dot per label in the task's order, the first
- * name and "+n" for the rest. Every name is read by assistive technology; when some
- * are hidden, the group takes keyboard focus and a tooltip shows them all on hover
- * and focus. Nothing is rendered when no label is left.
+ * A row's labels (rows-v2 D5, task-list-presentation "Metadata language"): the only
+ * chips of a row, each with its colour dot and name, at most `max`, then "+n". The
+ * group is read as "Labels: a, b, c" with every name in order, and while it has
+ * hidden names it is a tab stop whose tooltip lists them all.
  */
-export function LabelDots({ labels, omit }: LabelDotsProps) {
+export function LabelChips({ labels, omit, max = 2 }: LabelChipsProps) {
   const shown = omit ? labels.filter((l) => l.id !== omit) : labels
   if (shown.length === 0) return null
   const names = shown.map((l) => l.name).join(', ')
-  const spoken = t('Labels: {names}', { names })
-  const more = shown.length - 1
+  const more = shown.length - max
   const group = (
-    <span role="group" data-label-dots="" tabIndex={more > 0 ? 0 : undefined}
-      className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-chip text-meta text-muted outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-      <span aria-hidden="true" className="inline-flex shrink-0 items-center gap-0.5">
-        {shown.map((l) => <span key={l.id} data-label-dot="" className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: l.color }} />)}
-      </span>
-      <ReadAs label={spoken}>
-        <span className="truncate">{shown[0].name}</span>
-        {more > 0 && <span className="tabular-nums" data-label-more="">{` +${more}`}</span>}
-      </ReadAs>
+    // The chips wrap in a narrow row (a dashboard panel); the full list is read once, as
+    // visually hidden text, while the chips themselves are hidden from assistive technology.
+    <span role="group" data-label-chips="" tabIndex={more > 0 ? 0 : undefined}
+      className="relative inline-flex max-w-full min-w-0 flex-wrap items-center gap-1 rounded-chip outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+      <span className="sr-only">{t('Labels: {names}', { names })}</span>
+      {shown.slice(0, max).map((l) => (
+        <span key={l.id} aria-hidden="true" className="inline-flex max-w-full min-w-0"><LabelChip name={l.name} color={l.color} className="max-w-32" /></span>
+      ))}
+      {more > 0 && <span aria-hidden="true" className="text-meta tabular-nums text-muted" data-label-more="">+{more}</span>}
     </span>
   )
   return more > 0 ? <Tooltip label={names} side="top">{group}</Tooltip> : group

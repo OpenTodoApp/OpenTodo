@@ -137,6 +137,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+N</kbd> | Defer the selected task: type its start date, Enter |
 | <kbd>Shift+E</kbd> | Toggle This Evening on the selected task |
 | <kbd>s</kbd> | Schedule the selected task: Day view in placement mode |
+| <kbd>Tab</kbd> | From a task, reach its Schedule, Priority and More actions (wide screens with a mouse; in a tree list Tab indents) |
 | <kbd>Shift+K</kbd> | Recurring task: skip the current occurrence of the selected recurring task |
 | <kbd>Shift+O</kbd> | Recurring task: this occurrence only (standalone copy, series moves on) |
 | <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Move the selected task (and its subtasks), or the ticked tasks, to the Trash |

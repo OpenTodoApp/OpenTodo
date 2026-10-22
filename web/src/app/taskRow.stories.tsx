@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { InlineEditor } from './task-list/InlineEditor'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+import { setDateTime } from '../lib/dates'
+import type { HabitStats } from '../lib/habits'
+import { rowTimeWidth } from '../lib/rowTime'
 import { HEX, label, project, seedCounts, task, TODAY, TOMORROW, withClock, withSeed } from './stories/fixtures'
 import { TaskCard, TaskRow } from './TaskRow'
 
@@ -8,9 +11,9 @@ import { TaskCard, TaskRow } from './TaskRow'
 // 8.7; task-list-presentation "One row anatomy", "Metadata language", "Bulk
 // selection does not shift rows", "Drag feedback"; sections-and-boards "Card
 // content"). Static props and a frozen clock, so "Today" and the deadline
-// countdowns never change; the count chips come from two fixture rows. Rows are
-// Calm by default (calm-rows); CalmToday, DetailedToday and CalmLabels set the
-// detail and the heading's implied facts explicitly.
+// countdowns never change; the counts come from two fixture rows. One row language
+// (rows-v2): TimeColumn, ActionsRevealed, LongTitle, EveryMetadata and Labels set
+// the list's column and the heading's implied facts explicitly.
 const meta: Meta = { title: 'Screens/Task row', decorators: [withClock] }
 export default meta
 
@@ -57,7 +60,7 @@ export const Completed: StoryObj = {
   ),
 }
 
-/** The date phrase in Calm rows: muted except overdue and a timed today; evening as a suffix, repeat as a muted icon with its word. */
+/** The date phrase: muted except overdue and a timed today; evening as a suffix, repeat as a muted icon with its word. */
 export const DateEveningRepeat: StoryObj = {
   render: () => (
     <List>
@@ -84,7 +87,7 @@ export const Deadlines: StoryObj = {
   ),
 }
 
-/** Labels as dots with the first name (Calm) and the project as a neutral chip with its colour (shown outside the project). */
+/** Label chips and the project as muted text at the row's end (outside the project; the end of the line below 640 px). */
 export const LabelsAndProject: StoryObj = {
   render: () => (
     <List>
@@ -95,7 +98,7 @@ export const LabelsAndProject: StoryObj = {
   ),
 }
 
-/** The estimate in the line; subtask progress, notes, comments and attachments in the quiet trailing group (Calm). */
+/** The estimate in the line; subtask progress, notes, comments and attachments in the quiet trailing group. */
 export const Chips: StoryObj = {
   ...withSeed(() => seedCounts('t-counts')),
   render: () => (
@@ -107,7 +110,7 @@ export const Chips: StoryObj = {
   ),
 }
 
-/** Blocked by open tasks: the title is muted and a lock chip counts the blockers. */
+/** Blocked by open tasks: the title is muted and a lock item counts the blockers. */
 export const Blocked: StoryObj = {
   render: () => (
     <List>
@@ -183,48 +186,81 @@ const call = label('l-call', 'call', HEX.blue)
 const homeLabel = label('l-home', 'home', HEX.green)
 const work = project({ id: 'p-work', name: 'Work', color: HEX.blue })
 
-/** The demo's Today rows: a timed task, an overdue one, an evening repeat, three labels with counts, a P3 (calm-rows D9). */
-function TodayRows({ detail }: { detail: 'calm' | 'detailed' }) {
+/** The demo's Today rows: timed tasks, an overdue one, a deadline, an evening repeat, three labels with counts, a P3 (rows-v2 D11). */
+function TodayRows({ forceActions = false }: { forceActions?: boolean }) {
   const today = { date: TODAY }
-  const row = { ...base, detail, showProject: true }
+  const row = { ...base, showProject: true, timeColumn: true, onMore: noop }
   return (
     <List>
-      <TaskRow {...row} project={work} task={task({ id: 't-late', title: 'Send the invoice to Northwind', project_id: work.id, due: { date: '2026-10-12' }, priority: 2 })} />
+      <TaskRow {...row} project={work} task={task({ id: 't-late', title: 'Send the invoice to Northwind', project_id: work.id, due: { date: '2026-10-12', time: '18:00' }, priority: 2 })} />
       <TaskRow {...row} implied={today} project={work} task={task({ id: 't-timed', title: 'Stand-up with the design team', project_id: work.id, due: { date: TODAY, time: '10:00' }, estimate_minutes: 15 })} />
-      <TaskRow {...row} implied={today} project={home} labels={[errand, call, homeLabel]} progress={{ done: 1, total: 3 }}
-        task={task({ id: 't-counts', title: 'Prepare the quarterly report', project_id: home.id, due: { date: TODAY }, estimate_minutes: 120, labels: [errand.id, call.id, homeLabel.id], description: 'Three charts.' })} />
-      <TaskRow {...row} implied={today} project={home} task={task({ id: 't-p3', title: 'Read the sync protocol draft', project_id: home.id, due: { date: TODAY }, priority: 3 })} />
+      <TaskRow {...row} implied={today} project={home} labels={[errand, call, homeLabel]} progress={{ done: 1, total: 3 }} selected forceActions={forceActions}
+        task={task({ id: 't-counts', title: 'Prepare the quarterly report', project_id: home.id, due: { date: TODAY, time: '14:30' }, estimate_minutes: 120, labels: [errand.id, call.id, homeLabel.id], description: 'Three charts.' })} />
+      <TaskRow {...row} implied={today} project={home} task={task({ id: 't-p3', title: 'Read the sync protocol draft', project_id: home.id, due: { date: TODAY }, priority: 3, deadline: '2026-10-17' })} />
       <TaskRow {...row} implied={{ date: TODAY, evening: true }} project={home} task={task({ id: 't-eve', title: 'Water the plants', project_id: home.id, due: { date: TODAY }, evening: true, recurrence: 'every day' })} />
       <TaskRow {...row} implied={today} task={task({ id: 't-inbox', title: 'Call mum', due: { date: TODAY }, priority: 1 })} />
     </List>
   )
 }
 
-/** Calm rows in Today: no "Today" under its heading, colour only for overdue, the timed task and P1/P2, labels as dots, counts quiet at the end. */
-export const CalmToday: StoryObj = {
+/** The time column (rows-v2 D2), 24-hour: due times stacked in one column, the deadline countdown where there is no time, empty otherwise. */
+export const TimeColumn: StoryObj = {
   ...withSeed(() => seedCounts('t-counts')),
-  render: () => <TodayRows detail="calm" />,
+  render: () => <TodayRows />,
 }
 
-/** The same rows in Detailed: every chip and colour, the counts in the line, as before calm-rows. */
-export const DetailedToday: StoryObj = {
+/** The same list in the 12-hour format: the column is as wide as "12:00 PM". */
+export const TimeColumn12Hour: StoryObj = {
   ...withSeed(() => seedCounts('t-counts')),
-  render: () => <TodayRows detail="detailed" />,
+  render: () => {
+    setDateTime({ date_format: 'day-month', time_format: '12h', week_start: 'mon' }, { order: 'DM', hour12: true, weekStart: 1 })
+    return <div style={{ '--row-time-w': rowTimeWidth(true) } as CSSProperties}><TodayRows /></div>
+  },
 }
 
-/** Label dots in Calm rows: one, two and four labels, and a row in the errand label's view, which leaves errand out. */
-export const CalmLabels: StoryObj = {
+/** The revealed actions (rows-v2 D7) on the selected row, as a hover shows them: Schedule, Priority and More over the trailing group. */
+export const ActionsRevealed: StoryObj = {
+  ...withSeed(() => seedCounts('t-counts')),
+  render: () => <TodayRows forceActions />,
+}
+
+/** Long titles truncate beside the column and the trailing group, at every width. */
+export const LongTitle: StoryObj = {
   render: () => (
     <List>
-      <TaskRow {...base} detail="calm" task={task({ id: 't1', title: 'Fix the bike light', labels: [errand.id] })} labels={[errand]} />
-      <TaskRow {...base} detail="calm" task={task({ id: 't2', title: 'Ring the garage', labels: [errand.id, call.id] })} labels={[errand, call]} />
-      <TaskRow {...base} detail="calm" task={task({ id: 't3', title: 'Plan the weekend', labels: [errand.id, call.id, homeLabel.id, deepWork.id] })} labels={[errand, call, homeLabel, deepWork]} />
-      <TaskRow {...base} detail="calm" omitLabel={errand.id} task={task({ id: 't4', title: 'Buy stamps on the way home', labels: [errand.id, homeLabel.id] })} labels={[errand, homeLabel]} />
+      <TaskRow {...base} timeColumn showProject project={work} labels={[errand, call]} progress={{ done: 2, total: 5 }}
+        task={task({ id: 't1', title: 'Collect testimonials from the first three customers, pick two quotes and send them to the designer before Friday', project_id: work.id, due: { date: TODAY, time: '09:30' }, estimate_minutes: 45, labels: [errand.id, call.id] })} />
+      <TaskRow {...base} timeColumn showProject project={home}
+        task={task({ id: 't2', title: 'Compare the three quotes for the kitchen renovation and call the one with the earliest start date', project_id: home.id, deadline: '2026-10-17' })} />
     </List>
   ),
 }
 
-/** Where tasks came from (task-origin): an issue, a captured page and a mail, in Calm (quiet, trailing) and Detailed (a neutral chip); a card with a page. */
+/** Every item of the line in its order (date words, repeat, deadline, start, tracked over estimate, blocked, streak, assignee), three labels, and the project, the counts and the origin trailing. */
+export const EveryMetadata: StoryObj = {
+  ...withSeed(() => seedCounts('t-counts')),
+  render: () => (
+    <List>
+      <TaskRow {...base} showProject project={work} labels={[errand, call, homeLabel]} progress={{ done: 1, total: 3 }} tracked={35} blockedBy={1}
+        habit={{ current: 6, best: 9, pending: true, atRisk: false } as HabitStats} assignee="Jo"
+        task={task({ id: 't-counts', title: 'Prepare the quarterly report', project_id: work.id, due: { date: TOMORROW }, recurrence: 'every week', deadline: '2026-10-30', start: '2026-10-01', estimate_minutes: 60, labels: [errand.id, call.id, homeLabel.id], description: 'Three charts.', assignee_id: 'u-jo', origin: { kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' } })} />
+    </List>
+  ),
+}
+
+/** Label chips (rows-v2 D5): one, two, four (two and "+2"), and a row in the errand label's view, which leaves errand out. */
+export const Labels: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Fix the bike light', labels: [errand.id] })} labels={[errand]} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Ring the garage', labels: [errand.id, call.id] })} labels={[errand, call]} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Plan the weekend', labels: [errand.id, call.id, homeLabel.id, deepWork.id] })} labels={[errand, call, homeLabel, deepWork]} />
+      <TaskRow {...base} omitLabel={errand.id} task={task({ id: 't4', title: 'Buy stamps on the way home', labels: [errand.id, homeLabel.id] })} labels={[errand, homeLabel]} />
+    </List>
+  ),
+}
+
+/** Where tasks came from (task-origin): an issue, a captured page and a mail, quiet at the row's end; a card with a page in its line. */
 export const WithOrigins: StoryObj = {
   render: () => {
     const issue = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7', title: 'Login times out after 30 seconds' }
@@ -232,15 +268,13 @@ export const WithOrigins: StoryObj = {
     const mail = { kind: 'email' as const, id: '<a1@mail.example>' }
     return (
       <div className="space-y-3">
-        {(['calm', 'detailed'] as const).map((detail) => (
-          <List key={detail}>
-            <TaskRow {...base} detail={detail} task={task({ id: `${detail}-i`, title: 'Fix the login timeout', priority: 2, due: { date: TODAY }, origin: issue })} />
-            <TaskRow {...base} detail={detail} progress={{ done: 1, total: 2 }} task={task({ id: `${detail}-p`, title: 'Read the article on offline sync', origin: page, description: 'https://example.org/post' })} />
-            <TaskRow {...base} detail={detail} task={task({ id: `${detail}-m`, title: 'Invoice 2026-10', origin: mail })} />
-          </List>
-        ))}
+        <List>
+          <TaskRow {...base} task={task({ id: 'o-i', title: 'Fix the login timeout', priority: 2, due: { date: TODAY }, origin: issue })} />
+          <TaskRow {...base} progress={{ done: 1, total: 2 }} task={task({ id: 'o-p', title: 'Read the article on offline sync', origin: page, description: 'https://example.org/post' })} />
+          <TaskRow {...base} task={task({ id: 'o-m', title: 'Invoice 2026-10', origin: mail })} />
+        </List>
         <ul className="w-72 rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken">
-          <TaskCard {...base} detail="detailed" task={task({ id: 'c-page', title: 'Summarise the offline sync article', origin: page })} labels={[deepWork]} />
+          <TaskCard {...base} task={task({ id: 'c-page', title: 'Summarise the offline sync article', origin: page })} labels={[deepWork]} />
         </ul>
       </div>
     )

@@ -14,9 +14,11 @@ export interface RowActions {
   open: (id: string, e?: React.MouseEvent) => void
   tick: (id: string, range: boolean) => void
   drag: (e: React.PointerEvent, task: Task) => void
+  /** Opens the row menu for the task, as `.` does (rows-v2: the revealed More action). */
+  more: (id: string) => void
 }
 
-type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey'> & {
+type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey' | 'actions' | 'onMore'> & {
   labelMap: Map<string, Label>
   /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
@@ -24,15 +26,15 @@ type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTic
   reorderable: boolean
   /** Tree list: rows with children get the collapse chevron. */
   collapsible: boolean
-  actions: RowActions
+  handlers: RowActions
 }
 
 /**
  * One list row, memoized: every prop is a primitive, a stable object from the
- * list's maps, or the stable `actions`, so moving the cursor re-renders only the
+ * list's maps, or the stable `handlers`, so moving the cursor re-renders only the
  * rows whose `selected` changed.
  */
-export const ListRow = memo(function ListRow({ task, labelMap, draggable, reorderable, collapsible, actions, ...rest }: ListRowProps) {
+export const ListRow = memo(function ListRow({ task, labelMap, draggable, reorderable, collapsible, handlers: actions, ...rest }: ListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
   return (
     <TaskRow
@@ -45,6 +47,7 @@ export const ListRow = memo(function ListRow({ task, labelMap, draggable, reorde
       onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}
       onOpen={(e) => actions.open(task.id, e)}
       onTick={(range) => actions.tick(task.id, range)}
+      onMore={() => actions.more(task.id)}
     />
   )
 })

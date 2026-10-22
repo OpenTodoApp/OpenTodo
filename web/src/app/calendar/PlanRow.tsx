@@ -1,10 +1,9 @@
 // The rows and the capacity bar of the Plan (OpenSpec change planner-view, design
 // D3 and D5), shared by the columns and the phone agenda. A task row shows its time,
-// title, estimate and priority in the Calm or Detailed language (calm-rows: the
-// column already says the day, so no date words; Calm colours only P1 and P2 and
-// the time only when overdue or timed today). Projected rows are dimmed, read-only
+// title, estimate and priority in the one row language (rows-v2: the column already
+// says the day, so no date words; only P1 and P2 are coloured and the time only when
+// overdue or timed today). Projected rows are dimmed, read-only
 // and never selected; event rows are read-only buttons that open their details.
-import type { RowDetail } from '../../lib/appearance'
 import type { EventBlock } from '../../lib/calendar'
 import { formatTime } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
@@ -13,6 +12,7 @@ import { formatPlanLoad, planLoadTooltip, type PlanEntry, type PlanLoad, type Pr
 import type { CalendarEvent, CalendarSubscription, Project, Task } from '../../lib/types'
 import { hueFor, Icon, Tooltip } from '../../ui'
 import { EventChip, EventRow } from '../CalendarEvents'
+import { dueTone, PRIORITY_RING } from '../rowTone'
 
 /** One day of the Plan: its rows, its events and its load. */
 export interface PlanDayData {
@@ -23,23 +23,17 @@ export interface PlanDayData {
   load: PlanLoad
 }
 
-// The priority's colour is a dot beside muted "P1" text (small coloured text fails contrast on the row's fill).
-const PRIORITY_DOT: Record<number, string> = { 1: 'bg-p1', 2: 'bg-p2', 3: 'bg-p3' }
-const PRIORITY_DOT_CALM: Record<number, string> = { 1: 'bg-p1', 2: 'bg-p2', 3: 'border border-input' }
-
-/** The time's colour: overdue is loud in both; Calm marks only a timed task due today, Detailed every today. */
-function timeTone(date: string, today: string, detail: RowDetail): string {
-  if (date < today) return 'text-danger'
-  if (date === today) return detail === 'calm' ? 'text-accent' : 'text-success'
-  return 'text-muted'
+/** The time's colour (rows-v2, rowTone's dueTone): overdue is loud; a timed task due today is in the accent, everything else muted. */
+function timeTone(date: string, today: string): string {
+  const tone = dueTone(date < today ? 'overdue' : date === today ? 'today' : 'later', true)
+  return tone === 'danger' ? 'text-danger' : tone === 'accent' ? 'text-accent' : 'text-muted'
 }
 
-export function PlanTaskRow({ task, date, time, today, detail, selected, canEdit, project, large, onPointerDown, onSelect, onOpen }: {
+export function PlanTaskRow({ task, date, time, today, selected, canEdit, project, large, onPointerDown, onSelect, onOpen }: {
   task: Task
   date: string
   time?: string
   today: string
-  detail: RowDetail
   selected: boolean
   canEdit: boolean
   project?: Project
@@ -49,7 +43,7 @@ export function PlanTaskRow({ task, date, time, today, detail, selected, canEdit
   onSelect: () => void
   onOpen: () => void
 }) {
-  const priority = task.priority < 4 ? (detail === 'calm' ? PRIORITY_DOT_CALM : PRIORITY_DOT)[task.priority] : null
+  const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
   return (
     <button type="button" tabIndex={large ? 0 : -1} data-plan-task={task.id} data-hue={hueFor(project?.color ?? null)} aria-pressed={selected}
       onPointerDown={canEdit ? onPointerDown : undefined}
@@ -58,13 +52,14 @@ export function PlanTaskRow({ task, date, time, today, detail, selected, canEdit
       onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
       className={`flex w-full min-w-0 touch-manipulation items-center gap-x-1 rounded-chip border-l-3 border-l-hue-solid px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${selected ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised'} ${canEdit ? 'cursor-grab' : ''}`}>
       {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
-      {time && <span data-plan-time className={`shrink-0 tabular-nums ${timeTone(date, today, detail)}`}>{formatTime(time)}</span>}
+      {time && <span data-plan-time className={`shrink-0 tabular-nums ${timeTone(date, today)}`}>{formatTime(time)}</span>}
       {/* In a column the title takes the first line and the time, estimate and priority the second (seven columns are narrow). */}
       <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{task.title || t('Untitled')}</span>
-      {task.estimate_minutes ? <span data-estimate className="shrink-0 rounded-chip bg-surface px-1 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
+      {task.estimate_minutes ? <span data-estimate className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
+      {/* The row's priority ring (rows-v2): coloured for P1 and P2, neutral for P3; read as "P1". */}
       {priority && (
-        <span data-priority={task.priority} className="inline-flex shrink-0 items-center gap-0.5 text-hint font-semibold text-muted">
-          <span aria-hidden data-priority-dot className={`h-1.5 w-1.5 rounded-full ${priority}`} />P{task.priority}
+        <span data-priority={task.priority} className="inline-flex shrink-0 items-center">
+          <span aria-hidden data-priority-dot className={`h-2.5 w-2.5 rounded-full border-2 ${priority}`} /><span className="sr-only">P{task.priority}</span>
         </span>
       )}
       {!canEdit && <span className="sr-only">{`, ${t('read-only')}`}</span>}
@@ -107,10 +102,9 @@ export function CapacityBar({ load, dayLength, eventHue }: { load: PlanLoad; day
 }
 
 /** The rows of one day: all-day chips, timed events, then tasks and projections in the column's order. */
-export function PlanDayRows({ day, today, detail, selectedId, large, editable, projectMap, subMap, zone, onPointerDown, onSelect, onOpen }: {
+export function PlanDayRows({ day, today, selectedId, large, editable, projectMap, subMap, zone, onPointerDown, onSelect, onOpen }: {
   day: PlanDayData
   today: string
-  detail: RowDetail
   selectedId: string | null
   large?: boolean
   editable: (task: Task) => boolean
@@ -128,7 +122,7 @@ export function PlanDayRows({ day, today, detail, selectedId, large, editable, p
       {day.entries.map((entry) => entry.kind === 'projected'
         ? <ProjectedRow key={entry.projection.id} projection={entry.projection} large={large} />
         : (
-          <PlanTaskRow key={entry.task.id} task={entry.task} date={day.date} time={entry.time} today={today} detail={detail} large={large}
+          <PlanTaskRow key={entry.task.id} task={entry.task} date={day.date} time={entry.time} today={today} large={large}
             selected={selectedId === entry.task.id} canEdit={editable(entry.task)} project={entry.task.project_id ? projectMap.get(entry.task.project_id) : undefined}
             onPointerDown={(e) => onPointerDown(entry.task, e)} onSelect={() => onSelect(entry.task.id, day.date)} onOpen={() => onOpen(entry.task.id)} />
         ))}
