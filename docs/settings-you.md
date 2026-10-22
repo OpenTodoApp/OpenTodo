@@ -1,6 +1,6 @@
 ---
 title: "Settings: You"
-summary: The Account and Appearance sections of Settings, your profile, session, password, two-factor authentication, passkeys, encryption, and the mode, theme, density, haptic feedback, row detail and sidebar.
+summary: The Account and Appearance sections of Settings, your profile, session, password, two-factor authentication, passkeys, encryption, and the mode, theme, density, row detail and sidebar.
 audience: user
 section: Guides
 specs: [appearance-preferences]

@@ -54,7 +54,7 @@ Tick tasks with <kbd>x</kbd> or their checkboxes, then **Actions** (or <kbd>.</k
 
 ## Complete, reopen and delete
 
-Click the circle next to a task, or press <kbd>c</kbd>: it is saved at once and the row folds away, with **Undo** in the toast. Reopen it from **Completed** in the sidebar. Deleting a task moves it and its subtasks to the Trash. See [Work from the list](work-from-the-list.md#complete-reopen-and-delete) and [Trash and history](trash-and-history.md).
+Click the circle next to a task, or press <kbd>c</kbd>; reopen it from **Completed** in the sidebar. Deleting a task moves it and its subtasks to the Trash. See [Work from the list](work-from-the-list.md#complete-reopen-and-delete) and [Trash and history](trash-and-history.md).
 
 ## Break a task into subtasks
 
