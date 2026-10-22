@@ -28,4 +28,5 @@
 
 ## 5. Integration
 
-- [ ] 5.1 CHANGELOG under Unreleased, `docs/design-system.md` (the rare screens are in the workbench); run `make check`; verify it passes
+- [x] 5.1 CHANGELOG under Unreleased, `docs/design-system.md` (the rare screens are in the workbench); run `make check`; verify it passes
+  - Done: the interface audit's CHANGELOG entry names the rare screens; `docs/design-system.md` says every inventory entry names its story and how token screens get their answer. `make check` passes (TZ=UTC; 427 web test files).
