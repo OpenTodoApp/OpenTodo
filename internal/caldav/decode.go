@@ -20,7 +20,7 @@ func Decode(body []byte) (*Inbound, error) {
 	if err != nil {
 		return nil, err
 	}
-	d := &decoder{in: &Inbound{UID: uid, Priority: 4}}
+	d := &decoder{in: &Inbound{UID: uid, Priority: 4, CompletedOccurrences: completedOccurrences(cal)}}
 	for i := range master.Props {
 		d.prop(master, i)
 	}
@@ -81,6 +81,29 @@ func masterVTODO(cal *Component) (*Component, string, error) {
 		return nil, "", fmt.Errorf("%w: only occurrence overrides, no master VTODO", ErrInvalidObject)
 	}
 	return master, uid, nil
+}
+
+// completedOccurrences lists the dates of the RECURRENCE-ID overrides that are
+// completed (STATUS:COMPLETED, or a COMPLETED time without another status).
+func completedOccurrences(cal *Component) []string {
+	var out []string
+	for _, c := range cal.Children {
+		rid := c.Prop("RECURRENCE-ID")
+		if c.Name != "VTODO" || rid == nil {
+			continue
+		}
+		status := ""
+		if p := c.Prop("STATUS"); p != nil {
+			status = strings.ToUpper(strings.TrimSpace(p.Value))
+		}
+		if status != "COMPLETED" && (status != "" || c.Prop("COMPLETED") == nil) {
+			continue
+		}
+		if due, err := parseDue(*rid); err == nil {
+			out = append(out, due.Date)
+		}
+	}
+	return out
 }
 
 // decoder is the state of one Decode call: the task fields read so far, the

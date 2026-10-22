@@ -128,6 +128,11 @@ type Inbound struct {
 	RRULE string
 	Rule  string
 	Extra string
+	// CompletedOccurrences are the RECURRENCE-ID dates of the overrides the
+	// client sent completed (Thunderbird completes one occurrence of a
+	// repeating task that way); the caller completes the current occurrence
+	// when its due date is among them. Other overrides are not modelled.
+	CompletedOccurrences []string
 }
 
 // AppToICalPriority is the outbound priority table (design D3): 1→1, 2→5, 3→9,
