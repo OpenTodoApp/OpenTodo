@@ -33,7 +33,7 @@ export function SettingsSection({ title, icon, description, level = 2, id, headi
     <section id={id} aria-labelledby={headingId} data-testid={testId} data-settings-card className="rounded-card border border-default bg-surface p-4 shadow-1 sm:p-6">
       <div className="min-w-0">
         <H id={headingId} className="flex items-center gap-2 text-h3 font-semibold text-default outline-none">
-          {icon && <Icon name={icon as IconName} size="sm" className="shrink-0 text-muted" />}
+          {icon && <Icon name={icon as IconName} size="sm" className="text-muted" />}
           <span className="min-w-0">{title}</span>
         </H>
         {(description || learnMore) && (

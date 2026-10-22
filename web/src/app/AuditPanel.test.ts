@@ -44,7 +44,7 @@ describe('AuditTable', () => {
     expect(html).toContain('API token created')
     expect(html).toContain('laptop script')
     expect(html).toContain('192.0.2.1')
-    expect(html).toContain('Firefox on Linux x86_64')
+    expect(html).toContain('Firefox on Linux')
     expect(html).toContain('tabindex="0"')
   })
 
@@ -75,13 +75,13 @@ describe('ActivityView', () => {
 })
 
 describe('ActivityView states', () => {
-  it('marks failed sign-ins and shows relative times', () => {
+  it('marks failed sign-ins in the warning tone and shows relative times (settings-refresh D4)', () => {
     const html = renderToStaticMarkup(createElement(ActivityView, { status: 'ready', events: [ev({ ts: 1_000_000 - 120_000 })], now: 1_000_000 }))
     expect(html).toContain('data-testid="activity-panel"')
     expect(html).toContain('id="activity-heading"')
     expect(html).toContain('2 min ago')
-    expect(html).toContain('Failed')
-    expect(html).toContain('text-danger')
+    expect(html).toContain('Sign-in failed')
+    expect(html).toContain('data-activity-warn="true"')
   })
 
   it('shows an empty state and an error notice', () => {

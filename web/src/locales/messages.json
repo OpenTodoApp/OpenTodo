@@ -3957,7 +3957,6 @@
     "web/src/app/task-detail/ReactionBar.tsx"
   ],
   "Failed": [
-    "web/src/app/ActivityPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/rules/RuleHistory.tsx"
@@ -8431,7 +8430,6 @@
     "web/src/ui/Combobox/useCombobox.ts"
   ],
   "Recent activity": [
-    "web/src/app/ActivityPanel.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -9659,6 +9657,9 @@
   "Show all": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
+  "Show all ({n})": [
+    "web/src/app/ActivityPanel.tsx"
+  ],
   "Show archived projects": [
     "web/src/app/ProjectsSettings.tsx"
   ],
@@ -9675,6 +9676,7 @@
     "web/src/app/AboutSection.tsx"
   ],
   "Show less": [
+    "web/src/app/ActivityPanel.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/ProjectNote.tsx"
   ],
@@ -11911,6 +11913,7 @@
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/auditFormat.ts",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/review/CloseDay.tsx",
@@ -12946,6 +12949,7 @@
   ],
   "Yesterday": [
     "web/src/app/FeedView.tsx",
+    "web/src/app/auditFormat.ts",
     "web/src/lib/logbook.ts"
   ],
   "Yesterday’s line": [
@@ -15449,6 +15453,9 @@
   ],
   "{what} is no longer on this device, so its change was left out.": [
     "web/src/lib/assistant.ts"
+  ],
+  "{what} ×{n}": [
+    "web/src/app/ActivityPanel.tsx"
   ],
   "· ignored: {columns}": [
     "web/src/app/ImportScreen.tsx"

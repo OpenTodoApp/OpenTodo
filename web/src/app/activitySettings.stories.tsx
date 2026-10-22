@@ -16,7 +16,14 @@ const events: AuditEvent[] = [
   ev(3, 'token.created', 180, { details: { token_id: 't1', token_name: 'laptop script' } }),
   ev(4, 'logout', 60 * 26),
 ]
-const many: AuditEvent[] = Array.from({ length: 30 }, (_, i) => ev(100 + i, i % 5 === 0 ? 'login.failed' : 'login.succeeded', i * 90, i % 5 === 0 ? { outcome: 'failure' } : {}))
+// 30 events over five days (settings-refresh D4): repeated sign-ins fold per client and day, failures warn, ten lines then Show all.
+const chrome = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
+const many: AuditEvent[] = Array.from({ length: 30 }, (_, i) => {
+  if (i % 7 === 3) return ev(100 + i, 'login.failed', i * 240, { outcome: 'failure', details: { reason: 'wrong_password' } })
+  if (i % 9 === 5) return ev(100 + i, 'token.created', i * 240, { details: { token_name: `script ${i}` } })
+  if (i === 20) return ev(100 + i, 'mfa.disabled', i * 240)
+  return ev(100 + i, 'login.succeeded', i * 240, i % 2 ? { userAgent: chrome } : {})
+})
 
 const meta: Meta = { title: 'Settings/Activity' }
 export default meta

@@ -4714,5 +4714,7 @@
   "Add a first task, choose how you work, install the app.": "Aggiungi una prima attività, scegli come lavori, installa l’app.",
   "Finished": "Completata",
   "Not finished": "Non completata",
-  "Open the start guide": "Apri la guida iniziale"
+  "Open the start guide": "Apri la guida iniziale",
+  "Show all ({n})": "Mostra tutto ({n})",
+  "{what} ×{n}": "{what} ×{n}"
 }

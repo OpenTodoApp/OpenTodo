@@ -216,7 +216,7 @@ function SettingsSearch({ user }: { user: User }) {
                 <a key={en.anchor + en.label} href={routePath({ view: 'settings', section: h.section.id })} data-settings-result={`${h.section.id}:${en.anchor}`}
                   className="flex min-h-9 items-center gap-2 rounded-control px-2 py-1 pl-7 text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised"
                   onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); open(h.section.id, en.anchor) }}>
-                  {cardIcon(en.anchor) ? <Icon name={cardIcon(en.anchor) as IconName} size="xs" className="-ml-5 shrink-0 text-muted" /> : null}
+                  {cardIcon(en.anchor) ? <Icon name={cardIcon(en.anchor) as IconName} size="xs" className="-ml-5 text-muted" /> : null}
                   <span className="min-w-0 flex-1 truncate">{en.label}</span>
                   <span className="truncate text-meta text-muted">{en.description}</span>
                 </a>
