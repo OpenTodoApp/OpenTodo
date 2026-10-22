@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
 import { api, ApiError } from '../../lib/api'
@@ -97,6 +97,50 @@ function TestResult({ test }: { test: AssistantTestResult | 'running' | undefine
 }
 
 /** The owner's configuration, shown in the Configure dialog: providers, keys, models, base URL, network, caps. */
+/** A titled group of the owner's form ("Provider", "Limits"). */
+function FormGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="space-y-4" data-assistant-group={title}>
+      <h3 className="text-body font-semibold text-default">{title}</h3>
+      {children}
+    </section>
+  )
+}
+
+/** A titled group of the card's rows ("For everyone on this server", "For you"). */
+function CardGroup({ title, id, children }: { title: string; id: string; children: ReactNode }) {
+  return (
+    <section className="pt-3" aria-labelledby={id} data-assistant-card-group={id}>
+      <h3 id={id} className="text-meta font-medium uppercase text-muted">{title}</h3>
+      {children}
+    </section>
+  )
+}
+
+/** The card's status line (in-app-assistant "Assistant card structure"). */
+export function assistantStatusLine(s: AssistantStatus | null): string | null {
+  if (!s) return null
+  if (!s.enabled) return t('Off: the owner has not turned it on')
+  if (s.reason === 'encryption_enabled') return t('Off for your account: end-to-end encryption is on')
+  return s.source === 'own' ? t('On, using your own key') : t('On for everyone')
+}
+
+/** The month's usage as a bar with the numbers. */
+function UsageMeter({ u }: { u: AssistantUsage }) {
+  const counted = u.counted_tokens ?? u.total_tokens
+  const pct = u.cap ? Math.min(100, Math.round((counted / u.cap) * 100)) : null
+  return (
+    <span className="block space-y-1" data-usage-meter>
+      {pct !== null && (
+        <span className="block h-2 w-full max-w-xs overflow-hidden rounded-full bg-sunken" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={t('Usage this month')}>
+          <span className={`block h-full rounded-full ${pct >= 90 ? 'bg-warning' : 'bg-accent'}`} style={{ width: `${pct}%` }} />
+        </span>
+      )}
+      <span className="block text-muted">{usageText(u)}</span>
+    </span>
+  )
+}
+
 export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => void }) {
   const d = p.draft
   const set = (patch: Partial<OwnerDraft>) => p.onChange({ ...d, ...patch })
@@ -107,6 +151,7 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
     <div className="space-y-4" data-assistant-owner-form>
       <Checkbox checked={d.enabled} disabled={off} onChange={(e) => set({ enabled: e.target.checked })} label={t('Turn on the assistant for this server')}
         description={t('Off by default. While off, no one sees it and the server contacts no model provider. Each person still has to accept what is sent before their first message.')} />
+      <FormGroup title={t('Provider')}>
       <Field label={t('Provider everyone uses')} description={t('Changing it asks every person to accept the disclosure again.')}>
         <Select className="min-w-0 max-w-full sm:max-w-sm" value={d.default_provider} disabled={off} onChange={(e) => set({ default_provider: e.target.value as ProviderName })}>
           {PROVIDERS.map((n) => <option key={n} value={n}>{SHORT[n]}</option>)}
@@ -153,6 +198,12 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
       })}
       <Checkbox checked={d.allow_private_endpoint} disabled={off} onChange={(e) => set({ allow_private_endpoint: e.target.checked })} label={t('Allow private endpoints')}
         description={t('Needed for a model server on your own network (Ollama, LM Studio). Off, the compatible endpoint may only be a public address.')} />
+      </FormGroup>
+      <FormGroup title={t('Limits')}>
+      <Field label={t('Monthly tokens per person')} description={t('0 means unlimited. Usage resets on the first day of each month (UTC).')}>
+        <Input className="max-w-[12rem]" type="number" min={0} step={10000} value={d.monthly_token_cap_per_user} disabled={off}
+          onChange={(e) => set({ monthly_token_cap_per_user: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
+      </Field>
       <Checkbox checked={d.allow_member_keys} disabled={off} onChange={(e) => set({ allow_member_keys: e.target.checked })} label={t('Let members bring their own key')}
         description={t('Each person may then choose Anthropic, OpenAI or Google Gemini with their own key and model for their turns, instead of yours. The compatible endpoint is never offered to members, so no one but you decides which other host the server connects to.')} />
       {d.allow_member_keys && (
@@ -164,10 +215,7 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
       {p.saved.allow_member_keys && typeof p.saved.own_key_members === 'number' && (
         <p className="text-meta text-muted" data-own-key-members>{t('{n, plural, one {# person uses their own provider and key.} other {# people use their own provider and key.}}', { n: p.saved.own_key_members })}</p>
       )}
-      <Field label={t('Monthly tokens per person')} description={t('0 means unlimited. Usage resets on the first day of each month (UTC).')}>
-        <Input className="max-w-[12rem]" type="number" min={0} step={10000} value={d.monthly_token_cap_per_user} disabled={off}
-          onChange={(e) => set({ monthly_token_cap_per_user: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
-      </Field>
+      </FormGroup>
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.message && <Notice tone="success">{p.message}</Notice>}
       <div className="flex justify-end gap-2">
@@ -424,7 +472,7 @@ export function UserAssistantSettings(p: UserViewProps) {
           </span>
         )}
         control={s.consented ? <Button size="sm" disabled={!p.connected} onClick={p.onWithdraw}>{t('Withdraw consent')}</Button> : undefined} />
-      {p.usage && <SettingRow {...rowCopy('assistant-settings', 'usage')} status={<span className="text-muted">{usageText(p.usage)}</span>} />}
+      {p.usage && <SettingRow {...rowCopy('assistant-settings', 'usage')} status={<UsageMeter u={p.usage} />} />}
       {s.allow_member_keys && (ownSupported ? <OwnProviderForm key={`${s.own_provider?.provider ?? ''}:${s.own_provider?.model ?? ''}`} {...p} status={s} /> : <LegacyOwnKey {...p} status={s} />)}
       {keptChoice && (
         <div className="py-3" data-own-provider-kept>
@@ -558,11 +606,18 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
       {!connected && <div className="pb-3"><Notice>{noticeCopy('assistant-settings', 'offline')}</Notice></div>}
       {error && !configuring && <div className="py-3"><Notice tone="danger">{error}</Notice></div>}
       {msg && !configuring && <div className="py-3"><Notice tone="success">{msg}</Notice></div>}
-      {isOwner && settings && isOwnerSettings(settings) && <OwnerAssistantSummary saved={settings} connected={connected} onConfigure={configure} />}
-      <UserAssistantSettings status={status} usage={usage} autoApply={autoApply} connected={connected} busy={ownBusy} error={userError} cleared={cleared}
-        onWithdraw={() => void updateMine({ consent: false })} onOwnKey={(k) => void updateMine({ own_key: k })}
-        onSaveOwn={saveOwn} onTestOwn={(v) => void testOwn(v)} ownTest={ownTest} ownMessage={ownMessage}
-        onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onClear={() => setClearing(true)} />
+      {assistantStatusLine(status) && <p className="pb-1 text-body font-medium text-default" data-assistant-status-line>{assistantStatusLine(status)}</p>}
+      {isOwner && settings && isOwnerSettings(settings) && (
+        <CardGroup title={t('For everyone on this server')} id="assistant-everyone">
+          <OwnerAssistantSummary saved={settings} connected={connected} onConfigure={configure} />
+        </CardGroup>
+      )}
+      <CardGroup title={t('For you')} id="assistant-you">
+        <UserAssistantSettings status={status} usage={usage} autoApply={autoApply} connected={connected} busy={ownBusy} error={userError} cleared={cleared}
+          onWithdraw={() => void updateMine({ consent: false })} onOwnKey={(k) => void updateMine({ own_key: k })}
+          onSaveOwn={saveOwn} onTestOwn={(v) => void testOwn(v)} ownTest={ownTest} ownMessage={ownMessage}
+          onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onClear={() => setClearing(true)} />
+      </CardGroup>
       {configuring && isOwner && settings && isOwnerSettings(settings) && draft && (
         <Dialog title={t('Configure the assistant')} onClose={() => setConfiguring(false)} size="lg" dismissable={false} testId="assistant-configure">
           <OwnerAssistantSettings saved={settings} draft={draft} connected={connected} busy={busy} error={error} message={null} tests={tests} testedWith={testedWith}

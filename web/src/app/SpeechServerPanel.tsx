@@ -57,7 +57,7 @@ export function SpeechServerView({ settings, onSave, onTest }: SpeechServerViewP
   return (
     <form className="mt-3 space-y-4" onSubmit={(e) => void save(e)} data-speech-server>
       <Field label={t('Service address')} description={note('url', t('For example http://stt.home.lan:8000 (Speaches or whisper.cpp).'))}>
-        <Input type="url" value={url} readOnly={locked('url')} placeholder="http://stt.home.lan:8000" onChange={(e) => setUrl(e.target.value)} data-speech-field="url" />
+        <Input type="url" value={url} readOnly={locked('url')} placeholder={t('http://stt.home.lan:8000')} onChange={(e) => setUrl(e.target.value)} data-speech-field="url" />
       </Field>
       <Field label={t('Model')} description={note('model', t('For example Systran/faster-whisper-small.'))}>
         <Input value={model} readOnly={locked('model')} onChange={(e) => setModel(e.target.value)} data-speech-field="model" />

@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { AssistantStatus } from '../lib/assistantStatus'
 import type { AssistantOwnerSettings } from '../lib/assistantTypes'
-import { draftFrom, inputFrom, ownDraftFrom, SAVE_TO_USE, testDraft, testIsUnsaved, ownInputFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
+import { assistantStatusLine, draftFrom, inputFrom, ownDraftFrom, SAVE_TO_USE, testDraft, testIsUnsaved, ownInputFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
 import { formatDate } from '../lib/dates'
 
 const noop = () => {}
@@ -217,5 +217,27 @@ describe('Which assistant you use', () => {
       counted_tokens: 1000, cap_member_keys: false, own_key: { input_tokens: 1200, output_tokens: 300, total_tokens: 1500, turns: 3 } } })
     expect(html).toContain('2,500 tokens in 4 answers · 10% of your 10,000-token limit')
     expect(html).toContain('1,500 on your own key, not counted toward the limit')
+  })
+})
+
+describe('Assistant card structure (settings-refresh D9; in-app-assistant "Assistant card structure")', () => {
+  it("Member's view: the status line, consent and own key under For you, and the usage meter", () => {
+    expect(assistantStatusLine(status)).toBe('On for everyone')
+    expect(assistantStatusLine({ ...status, source: 'own' })).toBe('On, using your own key')
+    const html = renderToStaticMarkup(
+      <UserAssistantSettings status={status} usage={{ month: '2026-10', input_tokens: 1, output_tokens: 1, total_tokens: 90000, turns: 12, cap: 500000, resets_at: '2026-11-01' }}
+        autoApply={false} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} />)
+    expect(html).toContain('Withdraw consent')
+    expect(html).toContain('data-usage-meter')
+    expect(html).toContain('aria-valuenow="18"')
+  })
+
+  it("Owner's view while off: the status line says off, and the owner form groups Provider and Limits", () => {
+    expect(assistantStatusLine({ ...status, enabled: false, reason: 'disabled' })).toBe('Off: the owner has not turned it on')
+    const form = renderToStaticMarkup(<OwnerAssistantSettings saved={{ ...saved, enabled: false }} draft={draftFrom({ ...saved, enabled: false })} connected busy={false} error={null} message={null}
+      tests={{}} onChange={noop} onSave={noop} onTest={noop} />)
+    const groups = [...form.matchAll(/data-assistant-group="([^"]+)"/g)].map((m) => m[1])
+    expect(groups).toEqual(['Provider', 'Limits'])
+    expect(form.indexOf('Monthly tokens per person')).toBeGreaterThan(form.indexOf('data-assistant-group="Limits"'))
   })
 })
