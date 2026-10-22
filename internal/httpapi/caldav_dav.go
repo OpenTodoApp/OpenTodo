@@ -80,7 +80,7 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if strings.HasPrefix(r.URL.Path, "/.well-known/") {
-		http.Redirect(w, r, "/dav/", http.StatusMovedPermanently)
+		s.davRedirect(w, r, "/dav/")
 		return
 	}
 	u, apID, ok := s.davAuth(w, r)
@@ -128,6 +128,42 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// davRedirect sends a client to a CalDAV path with an absolute Location:
+// Apple's clients lose the scheme and port of a relative one and then probe
+// the host root (issue #249). The origin is the configured base URL or, on a
+// LAN install without one, the origin the client asked for.
+func (s *Server) davRedirect(w http.ResponseWriter, r *http.Request, path string) {
+	http.Redirect(w, r, s.publicOrigin(r)+path, http.StatusMovedPermanently)
+}
+
+// handleDAVRoot answers the discovery probes a client makes outside /dav/: an
+// OPTIONS on the host root reports the DAV capabilities, a PROPFIND on the root
+// is redirected to /dav/, and /principals/… to the same path under /dav/. While
+// CalDAV is disabled the root behaves as the web app did (405) and /principals/
+// is unknown (404), so nothing reveals the endpoint.
+func (s *Server) handleDAVRoot(w http.ResponseWriter, r *http.Request) {
+	enabled := s.caldavEnabled(r.Context())
+	if strings.HasPrefix(r.URL.Path, "/principals") {
+		if !enabled {
+			http.NotFound(w, r)
+			return
+		}
+		s.davRedirect(w, r, "/dav"+r.URL.Path)
+		return
+	}
+	if !enabled {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if r.Method == http.MethodOptions {
+		w.Header().Set("DAV", "1, 3, calendar-access")
+		w.Header().Set("Allow", "OPTIONS, PROPFIND")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	s.davRedirect(w, r, "/dav/")
 }
 
 // davRequest carries one authenticated CalDAV request.

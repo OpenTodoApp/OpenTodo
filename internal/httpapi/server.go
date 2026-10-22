@@ -120,7 +120,12 @@ type Server struct {
 	inbox *notify.InApp
 	// oidc is single sign-on (OpenSpec `oidc-login`); oidcLimiter guards its
 	// anonymous start and callback routes per client address (20/min).
-	oidc        *oidc.Service
+	oidc *oidc.Service
+	// pictureClient fetches provider pictures (oidc-profile-pictures); nil
+	// means the outbound client.
+	pictureClient *http.Client
+	// brand caches the instance branding (instance-branding).
+	brand       brandingState
 	oidcLimiter *rateLimiter
 	// caldav caches the CalDAV toggle and davLimiter counts failed Basic
 	// authentications per client address (10/min; OpenSpec `caldav`).

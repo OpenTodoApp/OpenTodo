@@ -244,7 +244,9 @@ func TestSecurityRoutePolicies(t *testing.T) {
 var wildcard = regexp.MustCompile(`\{[^}]*\}`)
 
 // samplePath turns a pattern's path into a concrete one ("{id}" → "x").
-func samplePath(path string) string { return wildcard.ReplaceAllString(path, "x") }
+func samplePath(path string) string {
+	return wildcard.ReplaceAllString(strings.TrimSuffix(path, "{$}"), "x")
+}
 
 // TestDemoDenyListMatchesPolicy: the demo deny list (demoRules, applied before
 // routing) refuses exactly the routes whose policy says demoDenied, and every

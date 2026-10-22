@@ -220,12 +220,32 @@ func dateWrites(in *caldav.Inbound, current opsync.Entity) (dueVal, deadlineVal 
 	case caldav.ShapeStartDueEqual, caldav.ShapeStartDuration:
 		return value(), nil, true, false
 	case caldav.ShapeStartDue:
+		// Echoed DUE (issue #248): a client that moves the DTSTART and sends the
+		// DUE back as it was served did not set a deadline; the DUE is the old due
+		// date. On a task without a deadline that is a move, not a new deadline.
+		if !hasDeadline && dueEchoed(in.SentDue, current) {
+			return value(), nil, true, false
+		}
 		return value(), mustJSON(in.Deadline), true, true
 	case caldav.ShapeStartAlone:
 		return nil, nil, false, false
 	}
 	// Neither date nor duration: the due date was removed; the deadline stays.
 	return json.RawMessage("null"), nil, true, false
+}
+
+// dueEchoed reports whether sent is the task's current due date, time and zone:
+// the DUE this server served for a task without a deadline.
+func dueEchoed(sent *caldav.Due, current opsync.Entity) bool {
+	if sent == nil || current == nil || isNullish(current["due"]) {
+		return false
+	}
+	var cur due
+	if err := json.Unmarshal(current["due"], &cur); err != nil || cur.Date != sent.Date {
+		return false
+	}
+	eq := func(a, b *string) bool { return (a == nil && b == nil) || (a != nil && b != nil && *a == *b) }
+	return eq(cur.Time, sent.Time) && eq(cur.TZ, sent.TZ)
 }
 
 // fields maps an inbound VTODO onto task field values and the reminder ops of

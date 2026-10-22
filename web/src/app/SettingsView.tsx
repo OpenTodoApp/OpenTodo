@@ -41,6 +41,7 @@ import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { MapsServerPanel, MapsUserSection } from './locations/MapsSettings'
 import { AutomationsServerPanel } from './rules/AutomationsSettings'
 import { SpeechServerPanel } from './SpeechServerPanel'
+import { BrandingPanel } from './BrandingPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { useDemo } from '../lib/demo'
@@ -382,6 +383,8 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
               <DemoDisabled on={demo}><OutgoingEmailPanel /></DemoDisabled>
             </>
           )}
+          {/* Branding (instance-branding): the owner's name and logo; a demo keeps the app's own. */}
+          {isOwner && <DemoDisabled on={demo}><BrandingPanel /></DemoDisabled>}
           {/* Maps (task-locations D6): the owner's switch and providers; off on a demo unless OPENTODO_MAPS=on. */}
           {isOwner && <DemoDisabled on={demo}><MapsServerPanel /></DemoDisabled>}
           {/* Automation rules (automation-rules D9): the owner's switch; nothing runs on a demo. */}

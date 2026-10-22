@@ -15,3 +15,6 @@ web/src/app/IssueEditor.tsx: GitLab
 web/src/app/IssueEditor.tsx: acme/web, acme/api
 # The product name as the wordmark (sidebar-v2 D2): text, never translated.
 web/src/ui/icons/Brand.tsx: OpenTodo
+
+# The product name as the placeholder of the instance name field (instance-branding)
+web/src/app/BrandingPanel.tsx: OpenTodo

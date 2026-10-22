@@ -612,6 +612,18 @@ export const SETTINGS_COPY = {
   },
 
   // Settings → Server
+  // Instance branding (instance-branding): the owner's name and logo.
+  branding: {
+    title: msg('Branding'),
+    icon: 'palette',
+    description: msg('Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.'),
+    learnMore: 'settings/branding',
+    rows: {
+      name: { label: msg('Name'), description: msg('Shown in place of OpenTodo. Up to 40 characters; empty keeps OpenTodo.') },
+      logo: { label: msg('Logo'), description: msg('A square PNG or JPEG of at least 192 pixels; the server renders every size.') },
+    },
+    notices: { offline: msg('You are offline. These settings need a connection to the server.') },
+  },
   backups: {
     title: msg('Backups'),
     icon: 'archive',

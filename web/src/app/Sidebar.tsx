@@ -1,4 +1,4 @@
-import { BrandMark, Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -18,6 +18,7 @@ import { formatInstant } from '../lib/dates'
 import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { SidebarFooter } from './SidebarFooter'
 import { WorkspaceControl } from './WorkspaceControl'
+import { InstanceMark, useInstanceName } from './InstanceBrand'
 import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, projectPath, readCollapsed, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { Label, Project, Review, Task, User, View } from '../lib/types'
@@ -128,6 +129,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   collapsed?: boolean
   onToggleCollapse?: () => void
 }) {
+  const instanceLabel = useInstanceName()
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
   const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
@@ -395,7 +397,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     <div className="flex h-full flex-col" data-sidebar-collapsed={collapsed || undefined}>
       <div className={`shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
         {/* The header row is the workspace control (sidebar-v2 D1, workspaces D6); search beside it, in the rail's footer when collapsed. */}
-        <SidebarHeader left={<WorkspaceControl route={route} />} rail={<BrandMark size={24} />} railLabel="OpenTodo"
+        <SidebarHeader left={<WorkspaceControl route={route} />} rail={<InstanceMark size={24} />} railLabel={instanceLabel}
           collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />
         <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
           {primary.map((d) => item(d.route, d.label, d.icon, d.count, d.badge, d.tip))}

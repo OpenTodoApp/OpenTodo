@@ -97,6 +97,10 @@ type Inbound struct {
 	// table applies (a DUE alone is the deadline on a task that has one).
 	Deadline string
 	Shape    DateShape
+	// SentDue is the DUE as the client sent it, whatever the shape made of it
+	// (nil without DUE): the caller tells an echo of the served DUE from a
+	// deadline the client set (caldav-interop, "Echoed DUE").
+	SentDue *Due
 	// EstimateMinutes is ESTIMATED-DURATION in whole minutes (nil when the
 	// client did not send it); HasDuration reports ESTIMATED-DURATION or
 	// DURATION, which makes a DTSTART without DUE a scheduled time.
@@ -210,9 +214,16 @@ func Encode(t Task) []byte {
 		}
 	} else if t.Due != nil {
 		todo.Props = append(todo.Props, dueProp("DUE", t.Due))
-		// A recurring VTODO is anchored at DTSTART; restate the due date unless
-		// the client keeps its own DTSTART in the preserved remainder.
-		if t.Recurrence != "" && !hasTopLevel(extra, "DTSTART") {
+		switch {
+		case t.Due.Time != nil:
+			// A due time is a scheduled moment: clients that schedule by DTSTART
+			// (Mitra, issue #248) only see it as such with DTSTART = DUE. The
+			// server's own start replaces any copy a client echoed into the remainder.
+			todo.Props = append(todo.Props, dueProp("DTSTART", t.Due))
+			extra = dropTopLevel(extra, "DTSTART")
+		case t.Recurrence != "" && !hasTopLevel(extra, "DTSTART"):
+			// A recurring VTODO is anchored at DTSTART; restate the due date unless
+			// the client keeps its own DTSTART in the preserved remainder.
 			todo.Props = append(todo.Props, dueProp("DTSTART", t.Due))
 		}
 	}

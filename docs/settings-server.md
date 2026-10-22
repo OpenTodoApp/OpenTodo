@@ -4,7 +4,7 @@ summary: The People and Server sections of Settings, for the owner and admins. U
 audience: user
 section: Guides
 specs: [outgoing-email]
-screens: [settings/people#people, settings/server#server, settings/admin#people, settings/users#people, settings/access#people, settings/sso#people, settings/backups#server, settings/attachments#server, settings/outgoing-email#server]
+screens: [settings/people#people, settings/server#server, settings/admin#people, settings/users#people, settings/access#people, settings/sso#people, settings/backups#server, settings/attachments#server, settings/outgoing-email#server, settings/branding#server]
 order: 144
 ---
 
@@ -27,7 +27,8 @@ The **Server** group of [Settings](settings.md) is for the people who run the se
 - **Backups**: scheduled backups of the whole server (every account, task and the sync log) to a folder, S3 or WebDAV, the last run and its result, and the next one. **Restore from a backup** puts the whole server back to an archive from the destination or one you upload: you see a verified preview first, type `RESTORE` to confirm, and the server restarts into the restored data. **Undo last restore** puts the previous database back, and old safety copies can be deleted to free space. See [Backups](backups.md#restore-from-the-web-app).
 - **Attachments**: turn attachments on or off, and set the size per file (25 MB unless changed, up to 2048 MB) and the total per account (1 GB unless changed; 0 means no total). See [Attachments](attachments.md#limits).
 - **Outgoing email**: the SMTP server this server sends mail through, for password resets, sign-up confirmations and invitations; nothing is sent until it is configured. The card shows whether it's configured, the server and From address, and the last test. **Configure** opens the form, where fields set by `OPENTODO_SMTP_*` variables are read-only. **Send test email** sends a message to you and shows the mail server's answer when it fails. See [Outgoing email](self-hosting/outgoing-email.md).
-- **Speech to text**: the speech service people can choose for dictation. See [Speech to text](self-hosting/speech-to-text.md).
+- **Speech to text**: the speech service for dictation, see [Speech to text](self-hosting/speech-to-text.md).
+- **Branding**: name and logo, see [Branding](self-hosting/branding.md).
 - **Audit log**: sign-ins, tokens, invitations, exports and setting changes, and who made them; task content is never recorded. Recording client addresses is off by default, turning it off erases every stored address, and behind a reverse proxy the address comes from `X-Forwarded-For`.
 
 On a hosted service the provider runs backups, attachment limits, outgoing email and single sign-on, so those cards are hidden. **Download your data** gives the owner the whole server (every account, project, task, comment, file and setting) as one backup archive instead: restore it into a server of your own with `opentodo restore`, and devices then sync with the new address. Keep it private: it holds every account's sign-in data. See [Host mode](self-hosting/host-mode.md#owners-take-their-data-away).

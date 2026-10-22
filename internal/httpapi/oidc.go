@@ -178,7 +178,7 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		id.Name = claims.PreferredUsername
 	}
 	if f.Mode == oidc.ModeLink {
-		s.finishOIDCLink(w, r, c, f, id)
+		s.finishOIDCLink(w, r, c, f, id, claims.Picture)
 		return
 	}
 	u, _, linked, err := s.auth.MatchOrProvision(ctx, id, c.AllowProvision, c.Name())
@@ -234,12 +234,13 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		s.log.Warn("store identity-token hint", "err", err)
 	}
 	s.audit.Record(ctx, audit.LoginSucceeded(u.ID, u.Email, "oidc"))
+	s.syncProviderPicture(ctx, u, c, claims.Picture)
 	redirectTo(w, r, "/", nil)
 }
 
 // finishOIDCLink links the identity to the account that started the flow. The
 // same account must still be signed in on this browser.
-func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.Config, f *oidc.FlowState, id auth.ExternalIdentity) {
+func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.Config, f *oidc.FlowState, id auth.ExternalIdentity, picture string) {
 	ctx := r.Context()
 	_, sess, _, err := s.authenticateSession(r)
 	if err != nil || sess == nil || sess.User.ID != f.UserID {
@@ -261,6 +262,7 @@ func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.C
 		s.internal(w, err)
 		return
 	}
+	s.syncProviderPicture(ctx, sess.User, c, picture)
 	v := url.Values{"linked": {"1"}}
 	if already {
 		v = url.Values{"reauthenticated": {"1"}}
@@ -304,6 +306,7 @@ func (s *Server) oidcSettingsJSON(r *http.Request, c oidc.Config) map[string]any
 		"allowProvision":    c.AllowProvision,
 		"ssoOnly":           c.SSOOnly,
 		"providerLogout":    c.ProviderLogout,
+		"syncPictures":      c.SyncPictures,
 		"redirectUri":       s.oidcRedirectURI(r),
 		"baseUrlConfigured": s.cfg.BaseURL != nil,
 		"managedBy":         c.ManagedBy,
@@ -330,6 +333,7 @@ func (s *Server) handlePutOIDCSettings(w http.ResponseWriter, r *http.Request) {
 		AllowProvision *bool   `json:"allowProvision"`
 		SSOOnly        *bool   `json:"ssoOnly"`
 		ProviderLogout *bool   `json:"providerLogout"`
+		SyncPictures   *bool   `json:"syncPictures"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		badBody(w, err)
@@ -340,7 +344,8 @@ func (s *Server) handlePutOIDCSettings(w http.ResponseWriter, r *http.Request) {
 		in.ClientSecret = nil
 	}
 	changes, err := s.oidc.Save(r.Context(), oidc.Update{Issuer: in.Issuer, ClientID: in.ClientID, ClientSecret: in.ClientSecret,
-		DisplayName: in.DisplayName, Scopes: in.Scopes, AllowProvision: in.AllowProvision, SSOOnly: in.SSOOnly, ProviderLogout: in.ProviderLogout})
+		DisplayName: in.DisplayName, Scopes: in.Scopes, AllowProvision: in.AllowProvision, SSOOnly: in.SSOOnly, ProviderLogout: in.ProviderLogout,
+		SyncPictures: in.SyncPictures})
 	var cfgErr *oidc.ErrInvalidConfig
 	if errors.As(err, &cfgErr) {
 		writeError(w, http.StatusBadRequest, "invalid_input", cfgErr.Error())

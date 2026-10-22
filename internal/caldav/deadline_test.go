@@ -20,10 +20,16 @@ func TestDeadlineEncode(t *testing.T) {
 	if !strings.Contains(out, "\r\nDUE;VALUE=DATE:20261017\r\n") || strings.Contains(out, "DTSTART") {
 		t.Fatalf("deadline only: %s", out)
 	}
-	// Due date with time, no deadline: unchanged, no DTSTART.
-	out = enc(Task{Due: &Due{Date: "2026-10-11", Time: strp("09:30")}})
-	if !strings.Contains(out, "\r\nDUE:20261011T093000\r\n") || strings.Contains(out, "DTSTART") {
+	// Due date with time, no deadline: a scheduled moment, DTSTART = DUE (issue
+	// #248); a stale copy a client echoed into the remainder is not served twice.
+	out = enc(Task{Due: &Due{Date: "2026-10-11", Time: strp("09:30")}, Extra: "DTSTART:20261001T080000"})
+	if !strings.Contains(out, "\r\nDUE:20261011T093000\r\n") || !strings.Contains(out, "\r\nDTSTART:20261011T093000\r\n") || strings.Count(out, "DTSTART") != 1 {
 		t.Fatalf("due with time: %s", out)
+	}
+	// A due date without time is not scheduled: DUE only.
+	out = enc(Task{Due: &Due{Date: "2026-10-11"}})
+	if !strings.Contains(out, "\r\nDUE;VALUE=DATE:20261011\r\n") || strings.Contains(out, "DTSTART") {
+		t.Fatalf("due date only: %s", out)
 	}
 	// Recurring anchor unchanged: DTSTART equals DUE.
 	out = enc(Task{Due: &Due{Date: "2026-10-11"}, Recurrence: "every week"})

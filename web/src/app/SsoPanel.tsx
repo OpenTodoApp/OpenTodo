@@ -33,12 +33,13 @@ export interface SsoForm {
   allowProvision: boolean
   ssoOnly: boolean
   providerLogout: boolean
+  syncPictures: boolean
 }
 
 export function formFrom(s: OidcSettings): SsoForm {
   return {
     issuer: s.issuer, clientId: s.clientId, clientSecret: '', displayName: s.displayName, scopes: s.scopes,
-    allowProvision: s.allowProvision, ssoOnly: s.ssoOnly, providerLogout: s.providerLogout,
+    allowProvision: s.allowProvision, ssoOnly: s.ssoOnly, providerLogout: s.providerLogout, syncPictures: s.syncPictures ?? false,
   }
 }
 
@@ -46,7 +47,7 @@ export function formFrom(s: OidcSettings): SsoForm {
 export function saveInput(s: OidcSettings, f: SsoForm): OidcSettingsInput {
   const locked = (k: string) => s.managedBy[k] === 'env'
   const out: OidcSettingsInput = {
-    scopes: f.scopes, allowProvision: f.allowProvision, providerLogout: f.providerLogout,
+    scopes: f.scopes, allowProvision: f.allowProvision, providerLogout: f.providerLogout, syncPictures: f.syncPictures,
   }
   if (!locked('issuer')) out.issuer = f.issuer.trim()
   if (!locked('clientId')) out.clientId = f.clientId.trim()
@@ -166,7 +167,7 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
         onChange={(e) => p.onChange({ [key]: e.target.value } as Partial<SsoForm>)} autoComplete="off" spellCheck={false} />
     </Field>
   )
-  const toggle = (key: 'allowProvision' | 'ssoOnly' | 'providerLogout', label: string, hint: string) => (
+  const toggle = (key: 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures', label: string, hint: string) => (
     <Checkbox checked={f[key]} disabled={disabled || locked(key)} label={<>{label}{locked(key) && <Lock />}</>} description={hint}
       onChange={(e) => p.onChange({ [key]: e.target.checked } as Partial<SsoForm>)} />
   )
@@ -208,6 +209,8 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
               t('Members can sign in only with {name}; passwords and passkeys are refused for them. You keep your password as break-glass: open {path}. API tokens keep working.', { name, path: '/?owner=1' }))}
             {toggle('providerLogout', t('Sign out of {name} too', { name }),
               t('After signing out here, people who signed in with the provider are sent to its sign-out page.'))}
+            {toggle('syncPictures', t('Use profile pictures from {name}', { name }),
+              t('At sign-in the server fetches the picture the provider names and makes it the profile picture. A picture someone uploaded themselves is never replaced.'))}
           </div>
           {p.error && <Notice tone="danger">{p.error}</Notice>}
           {p.notice && <Notice tone="success">{p.notice}</Notice>}

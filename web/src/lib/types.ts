@@ -819,6 +819,8 @@ export interface AuthStatus {
   minClientVersion?: number
   /** Public demo instance (OpenSpec `demo-mode`, `demo-sandboxes`); absent on a normal server. */
   demo?: DemoInfo
+  /** The instance's name and logo (OpenSpec `instance-branding`); absent on older servers. */
+  branding?: { name: string; logoVersion: number }
   /** Outgoing email (OpenSpec `outgoing-email`): email actions are shown only when enabled; absent on older servers. */
   outgoingEmail?: { enabled: boolean }
   /** A tenant of a hosted service (OpenSpec `multi-tenant-host`): the operator owns server settings; absent when self-hosted. */
@@ -1034,6 +1036,8 @@ export interface OidcSettings {
   allowProvision: boolean
   ssoOnly: boolean
   providerLogout: boolean
+  /** The provider's `picture` claim becomes the profile picture at sign-in (oidc-profile-pictures); absent on older servers. */
+  syncPictures?: boolean
   /** Paste this into the provider's client configuration. */
   redirectUri: string
   /** False when the redirect URI was derived from the request (set OPENTODO_BASE_URL). */
@@ -1044,7 +1048,7 @@ export interface OidcSettings {
 
 /** A settings change; omitted fields are kept. `clientSecret: ''` removes the secret. */
 export type OidcSettingsInput = Partial<Pick<OidcSettings,
-  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout'>>
+  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures'>>
 
 /** Result of POST /api/v1/settings/oidc/test. */
 export interface OidcTestResult {

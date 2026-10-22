@@ -76,7 +76,17 @@ Infrastructure-as-code setups can set these optional variables instead. Each one
 | `OPENTODO_OIDC_DISPLAY_NAME` | Button label |
 | `OPENTODO_OIDC_SSO_ONLY` | `true` or `false`; overrides the SSO-only switch (also the emergency switch, see below) |
 
-The other switches (new accounts via SSO, provider sign-out, scopes) are set in the panel.
+The other switches (new accounts via SSO, provider sign-out, profile pictures, scopes) are set in the panel.
+
+### Profile pictures from the provider
+
+**Use profile pictures from …** (off by default) makes the server fetch, at each sign-in or link through the provider, the picture the identity token names in its `picture` claim (sent with the `profile` scope) and store it as the person's profile picture: cropped to a square, scaled to 256×256 and re-encoded as JPEG, so nothing but the pixels is kept. The rules:
+
+- A picture someone uploaded themselves in **Settings → Account** is never replaced.
+- An address that was already synced is not fetched again; a picture the person removed is not fetched again from the same address. A new address at the provider is picked up at the next sign-in.
+- The fetch follows the server's outbound rules (http or https, no private network addresses unless **Settings → Integrations → Webhooks** allows them, 5 seconds, 2 MB, PNG, JPEG or GIF). A picture that cannot be fetched changes nothing; the sign-in completes either way.
+
+Leave the switch off if the provider's picture addresses point to a host you do not want the server to contact.
 
 ## Accounts and linking
 

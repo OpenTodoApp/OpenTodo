@@ -34,6 +34,7 @@ import { Shell } from './Shell'
 import { clearVimPref } from './vim/prefs'
 import { DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
 import { setHosted } from '../lib/hosted'
+import { setBranding } from '../lib/branding'
 import { PanelBoundary } from './PanelBoundary'
 import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
@@ -69,6 +70,7 @@ export function App() {
       const status = await api.authStatus()
       setDemo(status.demo)
       setHosted(status.hosted)
+      setBranding(status.branding)
       setOutgoingEmail(status.outgoingEmail?.enabled)
       if (status.authenticated && status.user) {
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))

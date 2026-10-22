@@ -21,7 +21,7 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 - **Password**: **Change password** opens the form. See [Account security](account-security.md#change-your-password).
 - **Two-factor authentication**: a code from your phone on top of your password. The badge shows whether it's on, and the card warns when only a few recovery codes remain. See [Two-factor authentication](two-factor.md).
 - **Passkeys**: sign in with your fingerprint, face or device PIN. See [Account security](account-security.md#sign-in-with-a-passkey).
-- **Linked accounts**: connect a single sign-on login, if your server offers one. Linking also lets you confirm sensitive changes with that login; while single sign-on is off, the links are kept.
+- **Linked accounts**: connect a single sign-on login, if your server offers one. Linking also lets you confirm sensitive changes with that login; while single sign-on is off, the links are kept. If the owner turned it on, your picture at the provider becomes your profile picture when you sign in or link; a picture you upload yourself is never replaced, and one you remove is not fetched again. See [Single sign-on](self-hosting/sso.md#profile-pictures-from-the-provider).
 - **End-to-end encryption**: encrypt your task text on your devices, and keep its recovery key. See [End-to-end encryption](e2ee.md).
 - **Recent activity**: sign-ins and token changes from the last 90 days.
 

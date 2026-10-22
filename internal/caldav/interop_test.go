@@ -137,6 +137,27 @@ func TestMitraFixtures(t *testing.T) {
 	if in := read("estimate-only.ics"); in.Shape != ShapeNone || *in.EstimateMinutes != 45 {
 		t.Fatalf("estimate only: %+v", in)
 	}
+	// Mitra since its fix for issue #196 echoes the served DUE when it moves a
+	// task (issue #248): the decoder reports the pair as start and deadline and
+	// hands the DUE as sent to the caller, which recognises the echo.
+	in := read("timed-moved-echoed-due.ics")
+	if in.Shape != ShapeStartDue || in.Due.Date != "2026-10-23" || *in.Due.Time != "10:00" || in.Deadline != "2026-10-22" ||
+		in.SentDue == nil || in.SentDue.Date != "2026-10-22" || *in.SentDue.Time != "14:00" || *in.EstimateMinutes != 30 {
+		t.Fatalf("timed moved: %+v sent %+v", in, in.SentDue)
+	}
+	if in = read("recurring-moved-echoed-due.ics"); in.Shape != ShapeStartDue || in.Due.Date != "2026-10-14" || in.Rule != "every week" || in.SentDue.Date != "2026-10-13" {
+		t.Fatalf("recurring moved: %+v", in)
+	}
+	if in = read("dated-scheduled-echoed-due.ics"); in.Shape != ShapeStartDue || *in.Due.Time != "15:00" || in.SentDue.Time != nil || in.SentDue.Date != "2026-10-22" {
+		t.Fatalf("dated scheduled: %+v", in)
+	}
+	// The served DTSTART of a timed task echoed back is not client data.
+	if in, _ = Decode(vtodo("DTSTART:20261020T140000", "DUE:20261020T140000")); in.Shape != ShapeStartDueEqual || strings.Contains(in.Extra, "DTSTART") {
+		t.Fatalf("echoed start: %+v", in)
+	}
+	if in, _ = Decode(vtodo("DTSTART;VALUE=DATE:20261020", "DUE;VALUE=DATE:20261020")); in.Shape != ShapeStartDueEqual || !strings.Contains(in.Extra, "DTSTART") {
+		t.Fatalf("started date task: %+v", in)
+	}
 }
 
 func TestAlarmEncode(t *testing.T) {

@@ -368,14 +368,14 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 {
   "enabled": true, "issuer": "https://sso.example.com/application/o/opentodo", "clientId": "opentodo",
   "clientSecret": "••••a1b2", "clientSecretSet": true, "displayName": "Home SSO", "scopes": "openid email profile",
-  "allowProvision": false, "ssoOnly": false, "providerLogout": false,
+  "allowProvision": false, "ssoOnly": false, "providerLogout": false, "syncPictures": false,
   "redirectUri": "https://todo.example.com/api/v1/auth/oidc/callback", "baseUrlConfigured": true,
   "managedBy": { "issuer": "settings", "clientId": "settings", "clientSecret": "env", "displayName": "settings",
                  "scopes": "settings", "allowProvision": "settings", "ssoOnly": "settings", "providerLogout": "settings" }
 }
 ```
 
-`PUT` takes any subset of `issuer`, `clientId`, `clientSecret`, `displayName`, `scopes`, `allowProvision`, `ssoOnly`, `providerLogout` and returns the same shape. A new issuer must be an https URL whose discovery document is reachable and names the same issuer, or the answer is `400 invalid_input` and the previous configuration stays. `clientSecret` is write-only: omit it (or send the masked value back) to keep it, send `""` to remove it. A field set by an `OPENTODO_OIDC_*` variable is reported as `managedBy: "env"` and cannot be changed (`400 invalid_input`). An empty `issuer` turns single sign-on off (links are kept). `PUT` needs a fresh session. `POST /api/v1/settings/oidc/test` with optional `{"issuer":"…"}` runs discovery and answers `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` or `400 invalid_input`. Changes are recorded as `settings.changed` (the secret as `(changed)`).
+`PUT` takes any subset of `issuer`, `clientId`, `clientSecret`, `displayName`, `scopes`, `allowProvision`, `ssoOnly`, `providerLogout`, `syncPictures` and returns the same shape. With `syncPictures: true` (off by default) a provider sign-in or link whose identity token carries a `picture` claim makes the server fetch that address through the outbound policy (5 seconds, 2 MB, PNG/JPEG/GIF) and store it as the account's [profile picture](#profile), 256×256 JPEG; an uploaded picture is never replaced, a synced or removed address is not fetched again, and a failed fetch changes nothing. A new issuer must be an https URL whose discovery document is reachable and names the same issuer, or the answer is `400 invalid_input` and the previous configuration stays. `clientSecret` is write-only: omit it (or send the masked value back) to keep it, send `""` to remove it. A field set by an `OPENTODO_OIDC_*` variable is reported as `managedBy: "env"` and cannot be changed (`400 invalid_input`). An empty `issuer` turns single sign-on off (links are kept). `PUT` needs a fresh session. `POST /api/v1/settings/oidc/test` with optional `{"issuer":"…"}` runs discovery and answers `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` or `400 invalid_input`. Changes are recorded as `settings.changed` (the secret as `(changed)`).
 
 **SSO-only mode** (`ssoOnly: true`, effective only while a provider is configured): password and passkey sign-in, and registration through the password form, answer `403 sso_required` for every account except the owner (recorded as `login.failed` with reason `sso_required`). The owner keeps local sign-in as break-glass (the sign-in screen shows the password form at `/?owner=1`). Bearer tokens keep working.
 
@@ -1282,6 +1282,19 @@ Attachments (OpenSpec `attachments`) are files or links on a task or one of its 
 | `PATCH /api/v1/attachments/{id}` | `{"name": "…"}`: rename (author only) |
 | `DELETE /api/v1/attachments/{id}` | Remove (author, project admin or owner); `204` |
 | `GET` / `PUT /api/v1/settings/attachments` | `{enabled, max_file_mb, quota_mb}`; changing them is for the owner (`max_file_mb` 1–2048, `quota_mb` 0 = unlimited). Changes are audited as `settings.changed` |
+
+### Instance branding
+
+The owner gives the server a name and a logo (**Settings → Server → Branding**). `GET /api/v1/auth/status` carries `"branding": {"name": "Acme Tasks", "logoVersion": 2}` for everyone (`name` empty and `logoVersion` 0 without branding), and the page and the web app manifest are served with the name in the title and the logo as favicon, touch icon and app icons, so an installed app shows them.
+
+| Route | Does |
+| --- | --- |
+| `GET` / `PUT /api/v1/settings/branding` | Owner. `PUT {"name": "…"}`: up to 40 characters after trimming, no control characters, empty for OpenTodo's own name (400 `invalid_input` otherwise). Answers `{name, logoVersion}`; recorded as `settings.changed` (`branding.name`) |
+| `PUT /api/v1/settings/branding/logo` | Owner. The raw bytes of a PNG or JPEG, at most 2 MB (413 `too_large`), at least 192 and at most 4096 pixels a side (400 `invalid_input`). The server crops the centre square and renders 32, 180, 192 and 512 px PNGs plus a maskable 512 px icon under `<data>/branding/`, bumps `logoVersion` and answers `{name, logoVersion}`; recorded as `settings.changed` (`branding.logo`) |
+| `DELETE /api/v1/settings/branding/logo` | Owner. Removes the rendered files; `logoVersion` becomes 0 and the app's own icons return |
+| `GET /branding/logo-{32,180,192,512}.png`, `GET /branding/logo-maskable-512.png` | Public, like the app's own icons. With `?v=<logoVersion>` cached for a year (`immutable`); without the current version `no-cache`. 404 without a logo |
+
+Branding is refused on a demo instance like every server setting.
 
 `GET /api/v1/me` includes `attachments: {enabled, max_file_bytes, quota_bytes, used_bytes}`.
 

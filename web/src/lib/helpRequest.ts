@@ -43,5 +43,5 @@ export const LEGACY_HELP_SCREENS: Readonly<Record<string, string>> = {
   'settings/projects': 'settings/data',
   'settings/admin': 'settings/people', 'settings/users': 'settings/people', 'settings/members': 'settings/people',
   'settings/access': 'settings/people', 'settings/sso': 'settings/people', 'settings/project-invites': 'settings/people',
-  'settings/backups': 'settings/server', 'settings/attachments': 'settings/server', 'settings/outgoing-email': 'settings/server',
+  'settings/backups': 'settings/server', 'settings/branding': 'settings/server', 'settings/attachments': 'settings/server', 'settings/outgoing-email': 'settings/server',
 }

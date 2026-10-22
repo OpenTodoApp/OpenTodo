@@ -87,6 +87,11 @@ func TestICalRoundTripFixtures(t *testing.T) {
 				}
 			}
 			first.Alarms, second.Alarms, second.ServedAlarms = nil, nil, nil
+			// A timed DUE comes back with this server's DTSTART next to it (issue
+			// #248): the shape is how the dates were written, not what they mean.
+			if first.Shape == ShapeDueOnly && second.Shape == ShapeStartDueEqual && first.Due != nil && first.Due.Time != nil {
+				second.Shape = first.Shape
+			}
 			if !reflect.DeepEqual(first, second) {
 				t.Fatalf("round trip differs\nfirst:  %+v\nsecond: %+v\n%s", first, second, out)
 			}

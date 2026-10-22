@@ -44,7 +44,12 @@ func (e *env) raw(method, path string, body []byte, headers ...string) (*http.Re
 // queueRow creates an attachment row through sync like a device does.
 func queueRow(e *env, device, id, task, author, name, mime string, content []byte, encrypted ...bool) {
 	e.t.Helper()
-	ts := time.Now().UnixMilli()
+	queueRowAt(e, time.Now().UnixMilli(), device, id, task, author, name, mime, content, encrypted...)
+}
+
+// queueRowAt is queueRow with the device's own clock reading ts.
+func queueRowAt(e *env, ts int64, device, id, task, author, name, mime string, content []byte, encrypted ...bool) {
+	e.t.Helper()
 	fields := map[string]any{
 		"task_id": task, "author_id": author, "comment_id": nil, "name": name, "mime": mime,
 		"size": len(content), "sha256": digestOf(content), "url": nil, "encrypted": len(encrypted) > 0 && encrypted[0], "created_at": ts, "uploaded_at": nil, "deleted_at": nil,
@@ -123,6 +128,33 @@ func TestAttachmentUploadAndDownload(t *testing.T) {
 	e.mustStatus(resp, 200, out)
 	if used := out["attachments"].(map[string]any)["used_bytes"]; used != float64(len(png)) {
 		t.Fatalf("usage %v", used)
+	}
+}
+
+// TestAttachmentUploadWithDeviceClockAhead: a phone whose clock runs ahead
+// created the row; the server's uploaded_at still wins (issue #246).
+func TestAttachmentUploadWithDeviceClockAhead(t *testing.T) {
+	e, uid, task := attachmentSetup(t)
+	content := []byte("receipt bytes")
+	queueRowAt(e, time.Now().UnixMilli()+90_000, "phone", "a2", task, uid, "receipt.txt", "text/plain", content)
+	if resp, body := e.raw("PUT", "/api/v1/attachments/a2/content", content); resp.StatusCode != 204 {
+		t.Fatalf("upload: %d %s", resp.StatusCode, body)
+	}
+	resp, out := e.do("GET", "/api/v1/tasks/"+task+"/attachments", nil)
+	e.mustStatus(resp, 200, out)
+	if list := out["attachments"].([]any); len(list) != 1 || list[0].(map[string]any)["uploaded"] != true {
+		t.Fatalf("list %v", list)
+	}
+	// The phone itself receives the server's word on its next sync.
+	all, _, _ := syncAll(e, "phone", 0)
+	found := false
+	for _, raw := range all {
+		if op, _ := raw.(map[string]any); op["entityId"] == "a2" && op["field"] == "uploaded_at" && op["value"] != nil {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("phone did not receive uploaded_at: %v", all)
 	}
 }
 

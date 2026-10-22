@@ -13,7 +13,8 @@ import { captureFiles, type CapturedFile, isEmptyShare, parseShare, proposedDesc
 import { deleteInboxEntry, getInboxEntry, type SharedFile } from '../lib/shareInbox'
 import type { Task } from '../lib/types'
 import { IconButton } from '../ui'
-import { BrandMark, Icon } from '../ui'
+import { Icon } from '../ui'
+import { InstanceMark, useInstanceName } from './InstanceBrand'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { navigate, type Route } from './router'
 import { useShortcutDispatcher, useShortcutScope } from './shortcuts'
@@ -75,6 +76,7 @@ function leave(to: Route) {
 }
 
 export function ShareCapture() {
+  const app = useInstanceName()
   const [files] = useState(() => pendingFiles)
   const [payload, setPayload] = useState<SharePayload>(() => pending ?? { title: '', text: '', url: null })
   // A share with files waits for the hand-over store before the form shows its text.
@@ -165,8 +167,8 @@ export function ShareCapture() {
     <div className="flex min-h-full justify-center bg-canvas p-4 sm:items-center">
       <div className="w-full max-w-lg rounded-card border border-default bg-surface p-5 shadow-1">
         <div className="mb-4 flex items-center gap-2">
-          <BrandMark size={24} />
-          <h1 className="text-body font-semibold">{t('Add to OpenTodo')}</h1>
+          <InstanceMark size={24} />
+          <h1 className="text-body font-semibold">{t('Add to {app}', { app })}</h1>
         </div>
         {ready && isEmptyShare(payload) && shared.length === 0 && files.mode !== 'extension' && (
           <p className="mb-3 text-body text-muted">{t('Nothing was shared. Type a task to add it anyway.')}</p>

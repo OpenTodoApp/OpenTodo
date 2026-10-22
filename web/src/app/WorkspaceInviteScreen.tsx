@@ -11,7 +11,8 @@ import { roleName } from '../lib/roleNames'
 import type { AuthStatus, User } from '../lib/types'
 import { workspaceApi, type WorkspaceInvitePreview } from '../lib/workspaceApi'
 import { switchTo } from '../lib/workspaces'
-import { BrandMark, BrandWordmark, Field, Input } from '../ui'
+import { Field, Input } from '../ui'
+import { InstanceMark, InstanceWordmark } from './InstanceBrand'
 import { AuthScreen } from './AuthScreen'
 import { rememberPendingInvite } from './ProjectInviteScreen'
 import { navigate } from './router'
@@ -136,7 +137,7 @@ function Card({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <div className="flex min-h-full items-center justify-center bg-canvas p-4 sm:p-6">
       <main className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-5 shadow-1 sm:p-6">
-        <div className="flex items-center gap-3"><BrandMark size={32} /><p className="text-h3 font-semibold"><BrandWordmark /></p></div>
+        <div className="flex items-center gap-3"><InstanceMark size={32} /><p className="text-h3 font-semibold"><InstanceWordmark /></p></div>
         <h1 className="font-medium">{title}</h1>
         {children}
       </main>
