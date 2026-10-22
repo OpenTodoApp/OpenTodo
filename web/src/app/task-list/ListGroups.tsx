@@ -3,7 +3,7 @@
 // the timeline have their own bodies (BoardView, TimelineView).
 import { Fragment, type ReactNode, useLayoutEffect, useMemo, useRef } from 'react'
 import { t } from '../../lib/i18n'
-import { BLOCKED_OPEN_KEY, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
+import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
 import { memberName } from '../../lib/sharing'
 import type { Progress } from '../../lib/subtasks'
@@ -177,6 +177,8 @@ export interface GroupedListProps {
   labels: Label[]
   /** The project's Completed group at the end of the list (project-completed-section). */
   completed?: { tasks: Task[]; open: boolean; onToggle: () => void }
+  /** The always-visible actions of Today's Earlier group, for its task ids (page-rhythm D6). */
+  earlierActions?: (ids: readonly string[]) => ReactNode
 }
 
 /** The list's groups: section groups of a project (headings are drop targets), or headed groups. */
@@ -226,16 +228,24 @@ function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListPro
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   if (g.rows.length === 0 && g.folded === undefined) return null
-  const collapsed = collapsedGroups.has(groupKey(view, g.key))
+  // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses.
+  const earlier = view === 'today' && g.key === 'earlier'
+  const collapsed = earlier ? earlierCollapsed(collapsedGroups, g.rows.length) : collapsedGroups.has(groupKey(view, g.key))
+  const toggle = () => {
+    if (!earlier) return setGroupCollapsed(view, g.key, !collapsed)
+    setGroupCollapsed('today', 'earlier', !collapsed)
+    setGroupCollapsed('today', 'earlier:open', collapsed)
+  }
   return (
     <section className="mb-4" data-group={g.key}>
       {g.folded !== undefined ? (
-        <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(BLOCKED_OPEN_KEY)} tone="muted" />
+        <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(BLOCKED_OPEN_KEY)} />
       ) : g.heading && (
-        <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} tone={g.key === 'overdue' ? 'danger' : 'default'}
-          collapsed={collapsed} onToggle={() => setGroupCollapsed(view, g.key, !collapsed)} />
+        <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
+          collapsed={collapsed} onToggle={toggle}
+          actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       )}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
     </section>
@@ -249,7 +259,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
 function CompletedGroup({ c, rowList, renderRow, fieldColumns }: { c: NonNullable<GroupedListProps['completed']>; rowList: RowList; renderRow: (r: Row) => ReactNode; fieldColumns: boolean }) {
   return (
     <section role={fieldColumns ? 'rowgroup' : undefined} className="mb-4" data-completed-group>
-      <ListGroupHeader title={t('Completed')} count={c.tasks.length} collapsed={!c.open} onToggle={c.onToggle} tone="muted" />
+      <ListGroupHeader title={t('Completed')} count={c.tasks.length} collapsed={!c.open} onToggle={c.onToggle} />
       {c.open && rowList(c.tasks.map((task) => renderRow(flatRow(task))))}
     </section>
   )

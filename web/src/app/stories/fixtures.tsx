@@ -158,7 +158,7 @@ export async function seedTracking(): Promise<void> {
 }
 
 /** Projects and labels every list story shares. */
-async function seedBase() {
+export async function seedBase() {
   seeded.work = await createProject({ name: 'Work', color: HEX.blue })
   seeded.website = await createProject({ name: 'Website launch', color: HEX.violet, parent_id: seeded.work })
   seeded.home = await createProject({ name: 'Home', color: HEX.green })

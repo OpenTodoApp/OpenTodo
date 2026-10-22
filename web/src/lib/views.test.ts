@@ -205,9 +205,9 @@ describe('runView', () => {
     expect(r.ok && ids(r.tasks)).toEqual(['waiting'])
   })
 
-  it('groups by due date under Overdue, Today, Tomorrow, later dates, then No date', () => {
+  it('groups by due date under Earlier, Today, Tomorrow, later dates, then No date', () => {
     const r = runView(view({ id: 'v', query: '@work', group_by: 'due' }), CTX)
-    expect(r.ok && r.groups.map((g) => g.heading).slice(0, 3)).toEqual(['Overdue', 'Today', 'Tomorrow'])
+    expect(r.ok && r.groups.map((g) => g.heading).slice(0, 3)).toEqual(['Earlier', 'Today', 'Tomorrow'])
     expect(r.ok && r.groups.map((g) => g.key)).toEqual(['overdue', 'today', 'tomorrow', '2026-10-20', 'none'])
     expect(r.ok && r.groups.at(-1)!.heading).toBe('No date')
   })

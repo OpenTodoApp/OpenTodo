@@ -35,7 +35,7 @@ import { originOf } from '../lib/taskOrigin'
 import { trackedLabel, trackedText } from '../lib/time'
 import { useTaskTracked } from '../lib/timeEntries'
 import { OriginChip } from './OriginChip'
-import { DEADLINE_TONE, dueTone, PRIORITY_RING } from './rowTone'
+import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
 
 /** Field values shown on a row before the rest collapse into "+n" (custom-fields). */
@@ -259,6 +259,8 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const tracked = trackedProp ?? trackedLive
   const dt = useDateTimeFormat()
   const due = describeDue(task.due, undefined, undefined, dt.resolved)
+  // The local day of the due, for the due ladder (page-rhythm D7).
+  const dueDay = task.due ? localDueOf(task.due).date : null
   const done = !!task.completed_at
   // Start dates, Someday and This Evening (someday-and-evening D2): they say why a
   // task is in Later, or in Today without a date.
@@ -298,8 +300,8 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
   const m: MetaValues = {
     sample: isSample(task),
     breadcrumb,
-    date: rowDateText(due, task.due ? localDueOf(task.due).date : null, !!task.evening && !done, implied, timeInColumn),
-    dateTone: due ? dueTone(due.tone, !!due.time) : 'muted',
+    date: rowDateText(due, dueDay, !!task.evening && !done, implied, timeInColumn),
+    dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : 'muted',
     hint, zone: task.due?.tz ?? '',
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,
@@ -405,7 +407,7 @@ export const TaskRow = memo(function TaskRow({ task, project, labels = [], assig
           </label>
         )}
       </span>
-      {column && <TimeCell time={due?.time ?? null} timeTone={due ? dueTone(due.tone, true) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
+      {column && <TimeCell time={due?.time ?? null} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left" data-row-open
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).

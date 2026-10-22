@@ -20,7 +20,7 @@ import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Task } from '../lib/types'
-import { Button, hueFor, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
+import { Button, frameKind, hueFor, PAGE_FRAME, PageHeader, useFinePointer, useFrameSlide } from '../ui'
 import { act } from './actionError'
 import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
@@ -29,6 +29,7 @@ import { offerMoveToWorkspace, useWorkspaceName } from './workspaceNav'
 import { BoardView } from './BoardView'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
+import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
 import { withListTransition } from './motion'
 import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
@@ -85,6 +86,29 @@ function useListUi() {
   return { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo }
 }
 
+/**
+ * The list's frame (page-rhythm D3): a project is a layout page (one 80 rem frame for
+ * list, board and timeline; its list spans 72 rem); every other list is standalone,
+ * centred, and slides when the panel docks.
+ */
+function useListFrame(layoutPage: boolean, full: boolean, fieldColumns: boolean) {
+  const ref = useFrameSlide<HTMLDivElement>(!layoutPage)
+  const width = full ? 'full' as const : fieldColumns || layoutPage ? 'wide' as const : 'list' as const
+  return { ref, width, kind: frameKind(width, layoutPage ? 'layout' : 'standalone') }
+}
+
+/** Today's Earlier group header actions (page-rhythm D6). */
+const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} />
+
+/** Bulk selection over the list's rows (bulk-edit D1); read-only tasks cannot be ticked. */
+function useTickedRows(rows: { task: Task }[], taskMap: Map<string, Task>, isReadOnly: (task?: Task) => boolean) {
+  const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
+  const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
+  const selection = useSelection(tickRows, readOnlyId)
+  const ticked = useMemo(() => tickRows.filter((id) => selection.ticked.has(id)), [tickRows, selection.ticked])
+  return { tickRows, selection, ticked }
+}
+
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
 const NO_DONE: Map<string, Task[]> = new Map()
 
@@ -99,10 +123,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
   const collapsedGroups = useCollapsedGroups()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
-  const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
-  const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
-  const selection = useSelection(tickRows, readOnlyId)
-  const ticked = useMemo(() => tickRows.filter((id) => selection.ticked.has(id)), [tickRows, selection.ticked])
+  const { tickRows, selection, ticked } = useTickedRows(rows, taskMap, isReadOnly)
   const { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo } = useListUi()
   // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens.
   const openId = usePanelTaskId()
@@ -262,13 +283,15 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     place: currentPlace?.name ?? t('Location'),
   }[route.view]
 
+  const frame = useListFrame(route.view === 'project', board || timeline, m.fieldColumns)
+
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
   if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
-        <div className={PAGE_FRAME} data-page-body={board || timeline ? 'full' : m.fieldColumns ? 'wide' : 'list'} data-list-page>
+        <div ref={frame.ref} className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
@@ -326,6 +349,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
               doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
               completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)) } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
+              earlierActions={route.view === 'today' ? earlierActions : undefined}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />
           )}
           {route.view === 'today' && <CloseDayRow />}

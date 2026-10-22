@@ -6,7 +6,7 @@
 // `tomorrow_note` on the synced `review` row). The screen then shows Done for today
 // (moments-and-onboarding D6, DoneForToday.tsx) until the user goes back to Today.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { formatInstant } from '../../lib/dates'
+import { formatInstant, localDueOf, logicalToday } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
@@ -208,12 +208,16 @@ function CarryStep({ rows, decisions, applied, selected, projectMap, labelMap, o
 }) {
   // The time column (rows-v2 D2, D9): the same row as Today, with no revealed actions (the decisions are the controls).
   const timeColumn = hasTimeColumn(rows.map((x) => x.task))
+  // Tasks planned for an earlier day (page-rhythm D8: "still open from earlier", never "overdue").
+  const today = logicalToday()
+  const earlier = rows.filter((x) => x.task.due && localDueOf(x.task.due).date < today).length
   if (rows.length === 0) return <p className="text-body text-muted" data-close-nothing>{t('Today is done: nothing to carry over.')}</p>
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-body text-muted" data-close-count>
           {t('{n, plural, one {# task is still in Today.} other {# tasks are still in Today.}}', { n: rows.length })}{' '}
+          {earlier > 0 && <>{t('{n, plural, one {# is still open from earlier.} other {# are still open from earlier.}}', { n: earlier })}{' '}</>}
           {applied ? t('Applied.') : t('Not applied yet: choose for each, then Apply.')}
         </p>
         <Button size="sm" variant="secondary" icon="check" onClick={onApply} data-close-apply>{t('Apply')}</Button>

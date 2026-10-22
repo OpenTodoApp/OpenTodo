@@ -60,7 +60,7 @@ export const Completed: StoryObj = {
   ),
 }
 
-/** The date phrase: muted except overdue and a timed today; evening as a suffix, repeat as a muted icon with its word. */
+/** The date phrase on the due ladder (page-rhythm D7); evening as a suffix, repeat as a muted icon with its word. */
 export const DateEveningRepeat: StoryObj = {
   render: () => (
     <List>
@@ -72,6 +72,24 @@ export const DateEveningRepeat: StoryObj = {
       <TaskRow {...base} task={task({ id: 't6', title: 'Renew the domain', due: { date: '2026-10-20' } })} />
       <TaskRow {...base} task={task({ id: 't7', title: 'Weekly review', recurrence: 'every week' })} />
       <TaskRow {...base} task={task({ id: 't8', title: 'Read a chapter', evening: true })} />
+    </List>
+  ),
+}
+
+/**
+ * The due ladder (page-rhythm D7): a later date muted, tomorrow in the default
+ * text, today in the accent whether timed or not, an earlier day in danger. The
+ * deadline countdown keeps its own steps beside it.
+ */
+export const DueLadder: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Renew the domain', due: { date: '2026-10-20' } })} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Prepare the demo', due: { date: TOMORROW } })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Water the plants', due: { date: TODAY } })} />
+      <TaskRow {...base} task={task({ id: 't4', title: 'Write the release notes', due: { date: TODAY, time: '09:30' } })} />
+      <TaskRow {...base} task={task({ id: 't5', title: 'Send the invoice to Northwind', due: { date: '2026-10-12' } })} />
+      <TaskRow {...base} task={task({ id: 't6', title: 'Book the venue', due: { date: TOMORROW }, deadline: '2026-10-17' })} />
     </List>
   ),
 }

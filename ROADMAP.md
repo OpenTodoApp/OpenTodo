@@ -125,6 +125,7 @@ One visual language, built in a workbench: friendly and roomy like TickTick, Tod
 | 5 | One menu language everywhere and a redesigned labels page | `labels-and-menus` | |
 | 6 | **Shipped.** Moments and onboarding: an illustration set for empty and finished states, three sample tasks and a first-day checklist, Done for today at the end of Close the day, one command bar with Search, Add, Commands and Ask, inline tints in quick add, and one toast primitive | `moments-and-onboarding` | Additive `task.sample` and `user_prefs.start_checklist`; no migration, no dependency |
 | 7 | Motion: a completion moment that never delays the write, rows that make room when tasks move, overlays that enter and leave the same way, and a haptics switch | `motion-v2` | View transitions with no dependency (about 2 KB of CSS and helpers); one additive `user_prefs.haptics` field; reduced motion checked by `make ui-check` |
+| 8 | Page rhythm: a lead line under larger titles, small group labels, centred standalone pages, Earlier instead of Overdue with its two actions, a due ladder for dates | `page-rhythm` | CSS and strings only; no op-log change |
 
 Related usability fixes, independent of the refresh: your own date and time format (`date-time-preferences`), a test notification that proves delivery (`push-test-delivery`) and restoring a backup from the web app (`backup-restore-web`).
 

@@ -17,7 +17,7 @@ const rows = (n: number) => (
   </ul>
 )
 
-/** A list page: 48 rem, title, meta, one action, the overflow and Help. */
+/** A list page: 48 rem, the title at the display step with its lead line under it, one action, the overflow and Help. */
 export const ListPage: StoryObj = {
   render: () => (
     <div className="h-[32rem] overflow-y-auto bg-canvas">
@@ -73,6 +73,29 @@ export const FullWidthPage: StoryObj = {
           ))}
         </div>
       </PageBody>
+    </div>
+  ),
+}
+
+/**
+ * Two frames (page-rhythm D3): a standalone page centred in a wide column, its
+ * title and first row on one left edge; a layout page keeps the 80 rem frame.
+ */
+export const TwoFrames: StoryObj = {
+  render: () => (
+    <div className="space-y-6 bg-canvas">
+      <div className="w-full border border-dashed border-default" data-frame-demo="standalone">
+        <PageBody width="list">
+          <PageHeader title="Inbox" meta="4 planned tasks without a project" help="inbox" actions={<Button variant="ghost" size="sm" icon="filter">Filter</Button>} />
+          {rows(3)}
+        </PageBody>
+      </div>
+      <div className="w-full border border-dashed border-default" data-frame-demo="layout">
+        <PageBody width="wide" frame="layout">
+          <PageHeader title="Website launch" meta="3 members · you are an editor" help="project" actions={<Button variant="ghost" size="sm" icon="users">Share</Button>} />
+          {rows(3)}
+        </PageBody>
+      </div>
     </div>
   ),
 }

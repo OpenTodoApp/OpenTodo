@@ -55,7 +55,7 @@ export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }
     else out = inboxTasks(open, tasks)
     return out.sort(compareDueThenPriority).slice(0, 200)
   }, [tasks, archived, source, today])
-  const sourceLabel = source === 'nodate' ? t('No date') : source === 'overdue' ? t('Overdue') : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? t('Project') : t('Inbox')
+  const sourceLabel = source === 'nodate' ? t('No date') : source === 'overdue' ? t('Earlier') : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? t('Project') : t('Inbox')
   return (
     <PanelFrame title={t('Plan')} testId="calendar-plan"
       actions={(
@@ -64,7 +64,7 @@ export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }
           triggerClassName="inline-flex min-h-8 items-center rounded-control border border-default px-2.5 py-1 text-muted hover:bg-sunken dark:hover:bg-raised">
           <MenuItem label={t('Inbox')} icon="inbox" checked={source === 'inbox'} onSelect={() => choose('inbox')} />
           <MenuItem label={t('No date')} icon="calendar-days" checked={source === 'nodate'} onSelect={() => choose('nodate')} />
-          <MenuItem label={t('Overdue')} icon="hourglass" checked={source === 'overdue'} onSelect={() => choose('overdue')} />
+          <MenuItem label={t('Earlier')} icon="hourglass" checked={source === 'overdue'} onSelect={() => choose('overdue')} />
           {live.length > 0 && <MenuSeparator />}
           {live.length > 0 && (
             <MenuGroup label={t('Projects')}>

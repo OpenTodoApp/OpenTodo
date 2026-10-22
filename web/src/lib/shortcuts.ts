@@ -161,7 +161,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.loop', keys: ['g Shift+L'], label: 'Loop home', description: 'Go to the Loop home: the five moves of Open Loops at a glance', section: 'go', scope: 'global' },
   { id: 'go.next', keys: ['g Shift+N'], label: 'Next|method', description: 'Go to Next: the next action of every project, by context', section: 'go', scope: 'global' },
   { id: 'go.waiting', keys: ['g Shift+W'], label: 'Waiting|method', description: 'Go to Waiting: what is assigned to someone else or blocked', section: 'go', scope: 'global' },
-  { id: 'go.daily', keys: ['g Shift+R'], label: 'Daily check|method', description: 'Go to the Daily check: the Inbox, what is overdue, today\'s focus', section: 'go', scope: 'global' },
+  { id: 'go.daily', keys: ['g Shift+R'], label: 'Daily check|method', description: 'Go to the Daily check: the Inbox, what is open from earlier, today\'s focus', section: 'go', scope: 'global' },
   // Close the day (close-the-day D6): `g d` is the Day calendar and `Shift+D` alone duplicates in a list; a `g` sequence meets neither.
   { id: 'go.close', keys: ['g Shift+D'], label: 'Close the day', description: 'Close the day: how it went, carry over what is left, a line for tomorrow', section: 'go', scope: 'global' },
   { id: 'go.focus', keys: ['g Shift+F'], label: 'Focus', description: 'Go to Focus: one task, a timer, a break when you need one', section: 'go', scope: 'global' },

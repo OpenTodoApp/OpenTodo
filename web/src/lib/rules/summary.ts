@@ -26,7 +26,7 @@ export function triggerText(tr: RuleTrigger | null | undefined, names: RuleNames
       ? t('when a task is moved to {section} of {project}', { section: nameOf(names.sections, tr.section_id), project: nameOf(names.projects, tr.project_id) })
       : t('when a task is moved to {project}', { project: nameOf(names.projects, tr.project_id) })
     case 'due.reached': return t('when a task is due')
-    case 'overdue': return t('when a task becomes overdue')
+    case 'overdue': return t('when a task’s date passes')
     case 'schedule': {
       const days = (tr.weekdays ?? []).slice().sort()
       const every = days.length === 7 ? t('every day') : days.map(dayName).join(', ')
@@ -40,7 +40,7 @@ function dateText(p: RuleCondition['due']): string {
   if (p === 'none') return t('no date')
   if (p === 'set') return t('has a date')
   if (p === 'today') return t('today')
-  if (p === 'overdue') return t('overdue')
+  if (p === 'overdue') return t('due earlier')
   if (p && typeof p === 'object') return t('{n, plural, one {within # day} other {within # days}}', { n: p.within_days })
   return ''
 }

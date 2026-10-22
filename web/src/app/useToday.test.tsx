@@ -48,7 +48,7 @@ describe('useToday with a day start', () => {
     document.body.innerHTML = ''
   })
 
-  const overdue = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-group-header] h2')].some((h) => h.textContent!.startsWith('Overdue'))
+  const overdue = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-group-header] h2')].some((h) => h.textContent!.startsWith('Earlier'))
   const listed = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-task-id]')].map((r) => r.dataset.taskId)
 
   it('moves Today to the previous date when the day start is written, without a reload, and rolls over at the day start', async () => {

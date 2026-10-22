@@ -407,7 +407,7 @@ export function LabelsView({ route }: { route: Route }) {
   const pair = useMemo(() => duplicatePair(labels), [labels])
   const [source, target] = pair ? (swapped ? [pair[1], pair[0]] : pair) : [null, null]
   return (
-    <PageBody width="form">
+    <PageBody width="list">
       <PageHeader title={t('Labels')} meta={labels.length} help="labels"
         actions={<Button variant="primary" size="sm" icon="plus" onClick={() => setAdding(true)}>{t('New label')}</Button>} />
       {adding && <NewLabelForm onDone={() => setAdding(false)} className="mb-3 max-w-xs" />}

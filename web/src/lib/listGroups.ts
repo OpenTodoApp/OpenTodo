@@ -67,6 +67,8 @@ export interface ListGroup {
   folded?: boolean
   /** Always-visible trailing text of the header (the logbook's "3 done"). */
   note?: string
+  /** Named by the user's own content (a project): the label keeps its case (page-rhythm D2). */
+  named?: true
 }
 
 /** A board column: a section ('' = "No section") and its top-level cards. */
@@ -86,6 +88,20 @@ export interface SectionBucket {
 
 /** Set in the per-device collapse set when Today's Blocked group is open (it starts folded). */
 export const BLOCKED_OPEN_KEY = 'today:blocked:open'
+
+/** In the per-device group store (collapsedGroups) when Today's Earlier group was closed on this device. */
+export const EARLIER_KEY = 'today:earlier'
+/** In the same store when it was opened on this device. */
+export const EARLIER_OPEN_KEY = 'today:earlier:open'
+/** Above this many tasks Earlier starts collapsed on a device that never touched it (page-rhythm D5). */
+export const EARLIER_FOLD_ABOVE = 5
+
+/** Whether Today's Earlier group is collapsed: what this device chose, else folded above five tasks. */
+export function earlierCollapsed(stored: ReadonlySet<string>, count: number): boolean {
+  if (stored.has(EARLIER_KEY)) return true
+  if (stored.has(EARLIER_OPEN_KEY)) return false
+  return count > EARLIER_FOLD_ABOVE
+}
 
 /** A row outside the tree (flat views, cards, Later): depth 0, no children. */
 export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
@@ -204,11 +220,11 @@ function flatGroups(p: GroupInput): ListGroup[] {
   if (p.view === 'today') {
     // Blocked tasks wait in their own group at the end (task-dependencies D7);
     // This Evening below the day's tasks (someday-and-evening).
-    const { overdue, day, evening, blocked: waiting } = groupToday(p.tasks, p.today, p.blocked)
+    const { overdue: earlier, day, evening, blocked: waiting } = groupToday(p.tasks, p.today, p.blocked)
     const g: ListGroup[] = []
-    // Overdue and Blocked imply nothing: how late a task is stays visible (calm-rows D3).
-    if (overdue.length) g.push({ key: 'overdue', heading: t('Overdue'), rows: overdue.map(row) })
-    g.push({ key: 'today', heading: overdue.length || evening.length ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }) })
+    // Earlier and Blocked imply nothing: how late a task is stays visible on its row (calm-rows D3, page-rhythm D5).
+    if (earlier.length) g.push({ key: 'earlier', heading: t('Earlier'), rows: earlier.map(row) })
+    g.push({ key: 'today', heading: earlier.length || evening.length ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }) })
     if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }) })
     if (waiting.length) {
       const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
@@ -231,7 +247,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
     const order = ['', ...p.projects.slice().sort(compareByPosition).map((pr) => pr.id)]
     const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined
     return order.filter((id) => byProject.has(id)).map((id) => ({
-      key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: withImplied(byProject.get(id)!.map(row), implied),
+      key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: withImplied(byProject.get(id)!.map(row), implied), named: true as const,
     }))
   }
   return [{ key: 'all', heading: null, rows: p.tasks.map(row) }]

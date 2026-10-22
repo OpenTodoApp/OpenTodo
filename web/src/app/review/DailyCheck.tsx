@@ -1,5 +1,5 @@
 // The Daily check (OpenSpec change open-loops-method, design D5; weekly-review
-// "Daily check"): on one page the Inbox count, what is overdue and today's tasks,
+// "Daily check"): on one page the Inbox count, what is open from earlier and today's tasks,
 // where `f` puts up to three of them in today's focus. "Done for today" records
 // the check on the synced personal `review` row. Yesterday's line for tomorrow
 // (close-the-day D7) is shown first, read-only, until the day is closed again.
@@ -48,7 +48,7 @@ export function DailyCheck() {
   }, [input, review])
   const sections: { key: string; heading: string; tasks: Task[] }[] = groups ? [
     { key: 'focus', heading: t('Today’s focus'), tasks: groups.focus },
-    { key: 'overdue', heading: t('Overdue'), tasks: groups.overdue },
+    { key: 'earlier', heading: t('Earlier'), tasks: groups.overdue },
     { key: 'today', heading: t('Today'), tasks: groups.today },
   ] : []
   const rows = sections.flatMap((s) => s.tasks.map((task) => ({ key: `${s.key}:${task.id}`, task })))

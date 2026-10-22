@@ -143,3 +143,23 @@ describe('dates in the interface language (D4)', () => {
     expect(formatTime('15:00')).toMatch(/^3:00\sp\.\s?m\.$/)
   })
 })
+
+// Words for tasks that are late (OpenSpec change page-rhythm, task-list-presentation
+// "Words for tasks that are late"): the interface says Earlier, never "overdue". The
+// filter query keyword `overdue` is a language keyword, not a message.
+describe('words for tasks that are late (page-rhythm D8)', () => {
+  const OLD: Record<string, RegExp> = { de: /überfällig/i, fr: /en retard/i, es: /vencid/i, it: /scadut/i, pt: /atrasad/i }
+
+  it('no message of the web app uses "overdue"', () => {
+    expect(Object.keys(messages).filter((m) => /overdue/i.test(m))).toEqual([])
+  })
+
+  it('no translation of the Earlier words uses the old word for overdue', async () => {
+    for (const lang of SHIPPED.map((l) => l.code).filter((c) => c !== 'en')) {
+      const catalog = (await import(`../../locales/${lang}.json`)).default as Record<string, string>
+      const late = Object.entries(catalog).filter(([k]) => /\bearlier\b/i.test(k)).filter(([, v]) => OLD[lang]?.test(v))
+      expect(late, lang).toEqual([])
+      expect(catalog.Earlier, `${lang} translates Earlier`).toBeTruthy()
+    }
+  })
+})

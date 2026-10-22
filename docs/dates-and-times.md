@@ -27,7 +27,7 @@ Click the date on a task's **When** line. **Today**, **Tomorrow**, **This weeken
 
 For the app, a new day begins at midnight. If you often work past midnight, set **Settings → General → Date and time → My day starts at** to a time up to 06:00. With 04:00, at 01:30 on Thursday it is still Wednesday:
 
-- **Today** still lists Wednesday's tasks, nothing moves to **Overdue**, and Thursday's tasks are **Tomorrow** in **Upcoming**.
+- **Today** still lists Wednesday's tasks, nothing moves to **Earlier**, and Thursday's tasks are **Tomorrow** in **Upcoming**.
 - A task you complete now counts for Wednesday in **Completed**, [Statistics](statistics.md) and the Loop pulse, and a habit keeps its streak.
 - `today`, `tomorrow` and `overdue` in quick add and [filters](filters.md) mean the day you are living in.
 

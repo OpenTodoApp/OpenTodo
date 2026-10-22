@@ -316,7 +316,7 @@
   "A reset email was sent to {email}.": [
     "web/src/app/UsersPanel.tsx"
   ],
-  "A rule changes tasks for you when something happens: a label is added, a task becomes overdue, or every Sunday evening.": [
+  "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": [
     "web/src/app/rules/RulesView.tsx"
   ],
   "A rule needs a name": [
@@ -367,9 +367,6 @@
   "A table can have at most {count} rows.": [
     "web/src/lib/editorTables.ts"
   ],
-  "A task becomes overdue": [
-    "web/src/app/rules/RuleFields.tsx"
-  ],
   "A task can wait for at most {max} tasks": [
     "web/src/lib/dependencies.ts"
   ],
@@ -402,6 +399,9 @@
   ],
   "A task of a minute or two is done on the spot, not filed.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "A task’s date passes": [
+    "web/src/app/rules/RuleFields.tsx"
   ],
   "A token is shown once, when you create it.": [
     "web/src/lib/settingsCopy.ts"
@@ -2896,6 +2896,7 @@
     "web/src/app/editorCommands.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/lib/fields.ts"
   ],
@@ -2906,7 +2907,8 @@
     "web/src/lib/undoActions.ts"
   ],
   "Date for {tasks}": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Date format": [
     "web/src/app/settingsIndex.ts",
@@ -3540,6 +3542,14 @@
   ],
   "Each workspace has its own projects, labels and filters, and its own people.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Earlier": [
+    "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/review/DailyCheck.tsx",
+    "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/listGroups.ts",
+    "web/src/lib/views.ts"
   ],
   "Earlier conversations": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -4339,7 +4349,7 @@
   "First task": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Five minutes: the Inbox to zero, what is overdue, and today's focus.": [
+  "Five minutes: the Inbox to zero, what is open from earlier, and today's focus.": [
     "web/src/lib/method/vocabulary.json"
   ],
   "Fix a timed due to your time zone, or release it to a floating time": [
@@ -4698,7 +4708,7 @@
   "Go to the Calendar as Week": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Go to the Daily check: the Inbox, what is overdue, today's focus": [
+  "Go to the Daily check: the Inbox, what is open from earlier, today's focus": [
     "web/src/lib/shortcuts.ts"
   ],
   "Go to the Inbox": [
@@ -6306,6 +6316,9 @@
   "Move": [
     "web/src/app/TriageView.tsx"
   ],
+  "Move all to today": [
+    "web/src/app/task-list/EarlierActions.tsx"
+  ],
   "Move down": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
@@ -6314,7 +6327,10 @@
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/rules/RulesView.tsx"
   ],
-  "Move everything overdue to Friday.": [
+  "Move earlier tasks to today": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Move everything from earlier days to Friday.": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Move it one place down": [
@@ -6709,7 +6725,9 @@
     "web/src/app/PlanView.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/palette/registry.ts",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-list/EarlierActions.tsx",
     "web/src/lib/dates.ts"
   ],
   "Next {n} days": [
@@ -7310,7 +7328,7 @@
   "Nothing is due today. Pick your focus from Next.": [
     "web/src/app/review/DailyCheck.tsx"
   ],
-  "Nothing is overdue.": [
+  "Nothing is open from earlier.": [
     "web/src/app/review/ReviewView.tsx"
   ],
   "Nothing is parked in Someday.": [
@@ -8037,14 +8055,6 @@
   "Over the limit": [
     "web/src/app/RelaySettings.tsx"
   ],
-  "Overdue": [
-    "web/src/app/calendar/PlanPanel.tsx",
-    "web/src/app/display/DisplayScreen.tsx",
-    "web/src/app/review/DailyCheck.tsx",
-    "web/src/app/rules/RuleFields.tsx",
-    "web/src/lib/listGroups.ts",
-    "web/src/lib/views.ts"
-  ],
   "Overwrite changed fields": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -8252,7 +8262,9 @@
     "web/src/app/RemindersField.tsx"
   ],
   "Pick a date…": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/palette/registry.ts",
+    "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Pick a day": [
     "web/src/app/review/CloseDay.tsx"
@@ -9216,6 +9228,9 @@
   "Required for the owner": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Reschedule earlier tasks…": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Reschedule {tasks} to next week": [
     "web/src/app/palette/registry.ts"
   ],
@@ -9228,6 +9243,9 @@
   "Rescheduled": [
     "web/src/lib/activity.ts",
     "web/src/lib/feed.ts"
+  ],
+  "Reschedule…": [
+    "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Reset link created for {name}.": [
     "web/src/app/UsersPanel.tsx"
@@ -10698,7 +10716,7 @@
   "Start work automatically": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Start your daily check: the Inbox, what is overdue and today’s focus.": [
+  "Start your daily check: the Inbox, what is open from earlier and today’s focus.": [
     "web/src/app/method/DailyCheckToast.tsx"
   ],
   "Started {date}": [
@@ -12498,9 +12516,11 @@
     "web/src/app/auditFormat.ts",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-list/EarlierActions.tsx",
     "web/src/lib/dates.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/logbook.ts",
@@ -12553,8 +12573,10 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-list/EarlierActions.tsx",
     "web/src/lib/dates.ts",
     "web/src/lib/views.ts"
   ],
@@ -14271,6 +14293,9 @@
   "due dates, priority, completion and deletion times, ordering, project and parent links, project colours, archived state, label assignments and counts": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "due earlier": [
+    "web/src/lib/rules/summary.ts"
+  ],
   "due next week": [
     "web/src/lib/rules/index.ts"
   ],
@@ -14788,9 +14813,6 @@
     "web/src/app/calendar/CapacityLine.tsx",
     "web/src/app/calendar/PlanRow.tsx"
   ],
-  "overdue": [
-    "web/src/lib/rules/summary.ts"
-  ],
   "overlaps another item": [
     "web/src/app/calendar/DayColumn.tsx"
   ],
@@ -15284,9 +15306,6 @@
   "weekday ordinal must be 1st to 4th or last": [
     "web/src/lib/recurrence.ts"
   ],
-  "when a task becomes overdue": [
-    "web/src/lib/rules/summary.ts"
-  ],
   "when a task is assigned to me": [
     "web/src/lib/rules/summary.ts"
   ],
@@ -15306,6 +15325,9 @@
     "web/src/lib/rules/summary.ts"
   ],
   "when a task is reopened": [
+    "web/src/lib/rules/summary.ts"
+  ],
+  "when a task’s date passes": [
     "web/src/lib/rules/summary.ts"
   ],
   "when it starts": [
@@ -15514,6 +15536,12 @@
   "{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "{moved} of {n, plural, one {# task moved to today} other {# tasks moved to today}}": [
+    "web/src/lib/bulk.ts"
+  ],
+  "{moved} of {n, plural, one {# task rescheduled} other {# tasks rescheduled}}": [
+    "web/src/lib/bulk.ts"
+  ],
   "{m} min ago": [
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/SecurityPanel.tsx",
@@ -15612,6 +15640,9 @@
   ],
   "{n, plural, one {# hour} other {# hours}}": [
     "web/src/lib/time.ts"
+  ],
+  "{n, plural, one {# is still open from earlier.} other {# are still open from earlier.}}": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
@@ -15755,6 +15786,9 @@
   "{n, plural, one {# task moved to the Trash} other {# tasks moved to the Trash}}": [
     "web/src/lib/bulk.ts"
   ],
+  "{n, plural, one {# task moved to today} other {# tasks moved to today}}": [
+    "web/src/lib/bulk.ts"
+  ],
   "{n, plural, one {# task reopened} other {# tasks reopened}}": [
     "web/src/lib/bulk.ts"
   ],
@@ -15772,6 +15806,7 @@
     "web/src/app/palette/filterEntries.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/rules/RuleHistory.tsx",
+    "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{n, plural, one {# task} other {# tasks}} without estimate": [
@@ -15980,6 +16015,9 @@
   "{n} failed ({error})": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "{n} from earlier: complete them with c, or open one to give it a new date.": [
+    "web/src/app/review/ReviewView.tsx"
+  ],
   "{n} kept": [
     "web/src/app/review/DoneForToday.tsx"
   ],
@@ -16033,9 +16071,6 @@
   ],
   "{n} older": [
     "web/src/app/task-list/ListGroups.tsx"
-  ],
-  "{n} overdue: complete them with c, or open one to give it a new date.": [
-    "web/src/app/review/ReviewView.tsx"
   ],
   "{n} pending": [
     "web/src/app/SyncStatus.tsx"

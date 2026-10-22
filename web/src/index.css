@@ -831,6 +831,10 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .page-frame[data-page-body="list"] > :not([data-page-header]) { max-width: 48rem; }
 .page-frame[data-page-body="form"] > :not([data-page-header]) { max-width: 42rem; }
 .page-frame[data-page-body="wide"] > :not([data-page-header]) { max-width: 72rem; }
+/* The content width of each page type, for the standalone frame below (page-rhythm D3). */
+.page-frame[data-page-body="list"] { --page-width: 48rem; }
+.page-frame[data-page-body="form"] { --page-width: 42rem; }
+.page-frame[data-page-body="wide"] { --page-width: 72rem; }
 /* The selected row (inline-task-editing D5, ux-feedback-2 D5): a 2 px leading accent
    bar and a 4% accent tint, no ring and no full background. Hovering another row
    gives it only a 3% neutral tint; hovering the selected row adds nothing. */
@@ -1013,7 +1017,10 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * var(--display-scale) * 1.5), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
 .display-date { @apply text-muted; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.25; }
 .display-title { @apply font-semibold text-strong; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.2; }
-.display-heading { @apply font-semibold text-strong; font-size: calc(var(--text-h3) * var(--display-scale)); line-height: 1.3; }
+/* Group labels follow the list's group header (page-rhythm D2): semibold, muted, the
+   metadata size scaled; uppercase with wide tracking for groups the view generated. */
+.display-heading { @apply font-semibold text-muted; font-size: calc(var(--text-meta) * var(--display-scale)); line-height: 1.3; }
+.display-heading[data-generated] { text-transform: uppercase; letter-spacing: 0.04em; }
 .display-meta { @apply text-muted; font-size: calc(var(--text-meta) * var(--display-scale)); line-height: 1.3; }
 .display-task { font-size: calc(var(--text-body) * var(--display-scale)); line-height: 1.3; }
 /* A row is at least 56 px tall at size l; its checkbox is a 44 px touch target or larger. */
@@ -1027,7 +1034,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
   .display-columns { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11em), 1fr)); }
   /* Side by side, the day columns use a step smaller type than the day's own list. */
   .display-columns .display-task { font-size: calc(var(--text-body) * var(--display-scale) * 0.85); }
-  .display-columns .display-heading { font-size: calc(var(--text-body) * var(--display-scale)); }
+  .display-columns .display-heading { font-size: calc(var(--text-meta) * var(--display-scale) * 0.9); }
 }
 @media (min-width: 1024px) {
   .display-board[data-split] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 2rem; align-items: start; }
@@ -1082,3 +1089,12 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 
 
 
+/* A standalone page frame (page-rhythm D3, app-shell "Page template"): the page's
+   content width plus the side padding, centred in the content column, so a page
+   without a layout switch is never left-aligned in a wider column. Unlayered so it
+   overrides the frame's 80 rem utility; a layout page keeps that frame. The slide
+   when the panel docks is frameSlide.ts. */
+.page-frame[data-page-frame="standalone"] { --page-gutter: 1rem; max-width: calc(var(--page-width, 80rem) + 2 * var(--page-gutter)); }
+@media (min-width: 48rem) { .page-frame[data-page-frame="standalone"] { --page-gutter: 2rem; } }
+/* A frame whose padding sits on its parent (the task lists): the width alone. */
+.page-frame[data-page-frame="standalone"][data-page-gutter="outside"] { --page-gutter: 0px; }

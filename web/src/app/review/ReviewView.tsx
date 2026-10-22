@@ -225,7 +225,7 @@ function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
       return (
         <p className="mb-3 text-body text-muted">
           {t('{n, plural, one {You completed # task this week.} other {You completed # tasks this week.}}', { n: steps.completedThisWeek })}{' '}
-          {steps.overdue.length ? t('{n} overdue: complete them with c, or open one to give it a new date.', { n: steps.overdue.length }) : t('Nothing is overdue.')}{' '}
+          {steps.overdue.length ? t('{n} from earlier: complete them with c, or open one to give it a new date.', { n: steps.overdue.length }) : t('Nothing is open from earlier.')}{' '}
           <button type="button" className="text-accent underline" onClick={() => navigate({ view: 'stats' })}>{t('See statistics')}</button>
         </p>
       )

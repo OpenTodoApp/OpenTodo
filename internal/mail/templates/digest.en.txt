@@ -8,7 +8,7 @@ Last week ({{.Week}})
   Completed late: {{.Late}}
   Slipped: {{.Slipped}}
 
-Overdue
+Still open from earlier
 {{.Overdue}}
 
 Due in the next seven days

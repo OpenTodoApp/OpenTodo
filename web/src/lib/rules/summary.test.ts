@@ -23,7 +23,7 @@ describe('rule summary', () => {
       trigger: { kind: 'schedule', at: '18:00', weekdays: [7] },
       condition: { due: 'overdue' },
       actions: { due: { in_days: 1 }, assignee: 'me', notify: true },
-    }, names)).toBe('Sunday at 18:00 · due: overdue → due in 1 day, assigns to me, notifies me')
+    }, names)).toBe('Sunday at 18:00 · due: due earlier → due in 1 day, assigns to me, notifies me')
   })
 
   it('says when a part is unknown', () => {

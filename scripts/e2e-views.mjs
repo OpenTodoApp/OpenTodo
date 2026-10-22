@@ -117,11 +117,11 @@ await pageA.getByRole('alert').filter({ hasText: 'Expected "&" or "|" before "p1
 await vq.press('Escape')
 assert((await vq.inputValue()) === '@work & due <= tomorrow & p1 & !@waiting', 'Esc restores the query')
 
-step('Group by due date: Overdue, Today, Tomorrow headings in order; sort by priority descending')
+step('Group by due date: Earlier, Today, Tomorrow headings in order; sort by priority descending')
 await pageA.getByLabel('Group by').selectOption('due')
-await pageA.getByRole('heading', { name: 'Overdue', level: 2 }).waitFor()
+await pageA.getByRole('heading', { name: 'Earlier', level: 2 }).waitFor()
 const headings = await pageA.locator('[aria-label="View results"] h2').allTextContents()
-assert(JSON.stringify(headings) === JSON.stringify(['Overdue', 'Today', 'Tomorrow']), 'headings ' + headings)
+assert(JSON.stringify(headings) === JSON.stringify(['Earlier', 'Today', 'Tomorrow']), 'headings ' + headings)
 await pageA.getByLabel('Sort by').selectOption('priority')
 await pageA.getByLabel('Sort direction').selectOption('desc')
 // keyboard reachability: options are selects in tab order after the query input
@@ -315,7 +315,7 @@ const ca = await sideCounts(pageA), cb = await sideCounts(pageB)
 assert(JSON.stringify(ca) === JSON.stringify(cb), `identical sidebars ${ca} / ${cb}`)
 const ha = await pageA.locator('[aria-label="View results"] h2').allTextContents()
 const hb = await pageB.locator('[aria-label="View results"] h2').allTextContents()
-assert(JSON.stringify(ha) === JSON.stringify(hb) && ha[0] === 'Overdue', `identical groups ${ha} / ${hb}`)
+assert(JSON.stringify(ha) === JSON.stringify(hb) && ha[0] === 'Earlier', `identical groups ${ha} / ${hb}`)
 const sv = (await get('views')).views.find((v) => v.id === wp1)
 assert(sv.group_by === 'due' && sv.sort_by === 'title', 'server converged ' + JSON.stringify(sv))
 console.log('  A sidebar:', ca.join(' | '))
@@ -323,38 +323,62 @@ console.log('  B sidebar:', cb.join(' | '))
 await shot(pageA, 'views-converged-A.png')
 await shot(pageB, 'views-converged-B.png')
 
-step('one page frame: the header and the content start, and the actions end, at the same place on every page (ux-feedback-2)')
-// app-shell "Page template": Inbox, a project as list, board and timeline, Labels, Trash and Filter.
+step('two page frames: standalone pages centred on one left edge; a project keeps its header still (page-rhythm)')
+// app-shell "Page template": Inbox, Today, Labels, Trash and Filter are standalone
+// pages; a project's list, board and timeline share one layout frame.
 const frameEdges = () => pageA.evaluate(() => {
   const row = document.querySelector('[data-page-header-row]')
   const body = row?.closest('[data-page-body]')
+  const column = document.getElementById('content')
   const content = body ? [...body.children].find((c) => !c.matches('[data-page-header]')) : null
-  if (!row || !content) return null
-  const h = row.getBoundingClientRect()
-  return { left: Math.round(h.left), right: Math.round(h.right), content: Math.round(content.getBoundingClientRect().left) }
+  if (!row || !content || !column) return null
+  const h = row.getBoundingClientRect(), b = body.getBoundingClientRect(), c = column.getBoundingClientRect()
+  const actions = row.querySelector('[data-page-actions]')?.getBoundingClientRect()
+  return {
+    left: Math.round(h.left), actionsRight: Math.round(actions?.right ?? h.right), content: Math.round(content.getBoundingClientRect().left),
+    spaceLeft: b.left - c.left, spaceRight: c.left + column.clientWidth - b.right, frame: body.getAttribute('data-page-frame'),
+  }
 })
 const layout = (name) => pageA.getByRole('group', { name: 'Project layout' }).getByRole('button', { name })
+const settle = async () => { await pageA.locator('[data-page-header-row]').first().waitFor(); await pageA.waitForTimeout(400) }
+await pageA.setViewportSize({ width: 1536, height: 900 })
+const standalone = []
+for (const path of ['/inbox', '/today', '/labels', '/trash', '/filter']) {
+  await pageA.goto(base + path); await settle()
+  const e = await frameEdges()
+  assert(e && e.frame === 'standalone', `${path}: a standalone frame at 1536 px (${e?.frame})`)
+  assert(Math.abs(e.content - e.left) <= 1, `${path}: content starts at ${e.content}, title at ${e.left}`)
+  assert(Math.abs(e.spaceLeft - e.spaceRight) <= 1, `${path}: centred (${e.spaceLeft.toFixed(1)} left, ${e.spaceRight.toFixed(1)} right)`)
+  standalone.push([path, e])
+}
+for (const [path, e] of standalone) assert(Math.abs(e.left - standalone[0][1].left) <= 1, `${path} title at ${e.left}, ${standalone[0][0]} at ${standalone[0][1].left}`)
+console.log(`  1536 px: ${standalone.length} standalone pages centred, title at ${standalone[0][1].left}`)
 for (const width of [1280, 1440]) {
   await pageA.setViewportSize({ width, height: 900 })
-  const seen = []
-  const measure = async (label) => {
-    await pageA.locator('[data-page-header-row]').first().waitFor()
-    await pageA.waitForTimeout(150)
-    const e = await frameEdges()
-    assert(e, `${label}: no page header or content at ${width} px`)
-    seen.push([label, e])
-  }
-  for (const path of ['/inbox', '/labels', '/trash', '/filter']) { await pageA.goto(base + path); await measure(path) }
   await pageA.goto(`${base}/project/${pWork}`)
-  for (const mode of ['List', 'Board', 'Timeline']) { await layout(mode).click(); await measure(`project ${mode}`) }
+  const seen = []
+  for (const mode of ['List', 'Board', 'Timeline']) { await layout(mode).click(); await settle(); seen.push([mode, await frameEdges()]) }
   await layout('List').click()
   const [first] = seen
-  for (const [label, e] of seen) {
-    assert(Math.abs(e.left - first[1].left) <= 1 && Math.abs(e.right - first[1].right) <= 1, `${label} header ${e.left}–${e.right} differs from ${first[0]} ${first[1].left}–${first[1].right} at ${width} px`)
-    assert(Math.abs(e.content - e.left) <= 1, `${label} content starts at ${e.content}, header at ${e.left} (${width} px)`)
+  for (const [mode, e] of seen) {
+    assert(e.frame === 'layout', `project ${mode}: a layout frame (${e.frame})`)
+    assert(Math.abs(e.left - first[1].left) <= 1 && Math.abs(e.actionsRight - first[1].actionsRight) <= 1, `project ${mode} header ${e.left}–${e.actionsRight} differs from List ${first[1].left}–${first[1].actionsRight} at ${width} px`)
+    assert(Math.abs(e.content - e.left) <= 1, `project ${mode} content starts at ${e.content}, header at ${e.left} (${width} px)`)
   }
-  console.log(`  ${width} px: header ${first[1].left}–${first[1].right} on ${seen.length} pages`)
+  console.log(`  ${width} px: project header ${first[1].left}–${first[1].actionsRight} in list, board and timeline`)
 }
+// Where the column is no wider than the frame, opening a task moves nothing (page-rhythm D4).
+await pageA.setViewportSize({ width: 1024, height: 860 })
+await pageA.goto(`${base}/today`); await settle()
+const closed = await frameEdges()
+// Open the first task from the keyboard (j selects it, Enter opens it in the panel).
+await pageA.keyboard.press('j')
+await pageA.keyboard.press('Enter')
+await pageA.locator('aside[data-detail-for]').waitFor()
+await pageA.waitForTimeout(400)
+const docked = await frameEdges()
+assert(Math.abs(docked.left - closed.left) <= 1, `opening a task at 1024 px moved the title from ${closed.left} to ${docked.left}`)
+await pageA.keyboard.press('Escape')
 await pageA.setViewportSize({ width: 1280, height: 860 })
 
 step('Help lists the new shortcuts')

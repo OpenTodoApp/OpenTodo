@@ -28,7 +28,7 @@
     { "id": "projects", "name": "Projects", "description": "Outcomes that take more than one step." }
   ],
   "rhythms": [
-    { "id": "daily", "name": "Daily check", "description": "Five minutes: the Inbox to zero, what is overdue, and today's focus.", "route": "/review/daily" },
+    { "id": "daily", "name": "Daily check", "description": "Five minutes: the Inbox to zero, what is open from earlier, and today's focus.", "route": "/review/daily" },
     { "id": "weekly", "name": "Weekly review", "description": "Thirty minutes: get clear, get current, get creative.", "route": "/review" },
     { "id": "monthly", "name": "Monthly look", "description": "Twenty minutes: your areas, old someday items and the four-week trend.", "route": "/review/monthly" }
   ],

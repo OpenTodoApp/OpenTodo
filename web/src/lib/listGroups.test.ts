@@ -2,7 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import type { Project, Section, Task } from './types'
 
@@ -51,14 +51,15 @@ describe('tasksForView', () => {
 })
 
 describe('listGroups', () => {
-  it('Today: overdue, the day, This Evening, then a Blocked group that is folded until opened', () => {
+  it('Today: Earlier, the day, This Evening, then a Blocked group that is folded until opened', () => {
     const late = task({ title: 'Late', due: { date: '2026-10-12' } })
     const day = task({ title: 'Day', due: { date: TODAY } })
     const eve = task({ title: 'Eve', due: { date: TODAY }, evening: true })
     const wait = task({ title: 'Wait', due: { date: TODAY } })
     const base = input({ view: 'today', tasks: [late, day, eve, wait], blocked: new Set([wait.id]) })
     const folded = listGroups(base)
-    expect(folded.map((g) => g.key)).toEqual(['overdue', 'today', 'evening', 'blocked'])
+    expect(folded.map((g) => g.key)).toEqual(['earlier', 'today', 'evening', 'blocked'])
+    expect(folded[0].heading).toBe('Earlier')
     expect(folded.map(titles)).toEqual([['Late'], ['Day'], ['Eve'], []])
     expect(folded[3]).toMatchObject({ folded: true, count: 1 })
     const open = listGroups({ ...base, collapsed: new Set([BLOCKED_OPEN_KEY]) })
@@ -143,14 +144,14 @@ describe('implied metadata', () => {
   const implied = (g: { rows: { implied?: unknown }[] }) => g.rows.map((r) => r.implied ?? null)
   const tomorrow = '2026-10-15'
 
-  it('Today: the day and This Evening imply the date (and evening); Overdue and Blocked imply nothing', () => {
+  it('Today: the day and This Evening imply the date (and evening); Earlier and Blocked imply nothing', () => {
     const late = task({ due: { date: '2026-10-12' } })
     const day = task({ due: { date: TODAY, time: '10:00' } })
     const eve = task({ due: { date: TODAY }, evening: true })
     const wait = task({ due: { date: TODAY } })
     const g = listGroups(input({ view: 'today', tasks: [late, day, eve, wait], blocked: new Set([wait.id]), collapsed: new Set([BLOCKED_OPEN_KEY]) }))
     expect(g.map((x) => [x.key, implied(x)])).toEqual([
-      ['overdue', [null]],
+      ['earlier', [null]],
       ['today', [{ date: TODAY }]],
       ['evening', [{ date: TODAY, evening: true }]],
       ['blocked', [null]],
@@ -212,5 +213,23 @@ describe('row positions and section counts', () => {
     expect([...m.keys()]).toEqual(['s1'])
     expect(m.get('s1')).toEqual([done])
     expect(completedBySection([done], null, new Map()).size).toBe(0)
+  })
+})
+
+// Today's Earlier group starts folded above five tasks on a device that never
+// touched it (page-rhythm D5, task-list-presentation "Group headers").
+describe('Earlier default collapse', () => {
+  it('six tasks fold, five stay open, with no stored state', () => {
+    expect(earlierCollapsed(new Set(), 6)).toBe(true)
+    expect(earlierCollapsed(new Set(), 5)).toBe(false)
+    expect(earlierCollapsed(new Set(), 2)).toBe(false)
+  })
+  it('what this device chose wins over the default', () => {
+    expect(earlierCollapsed(new Set([EARLIER_OPEN_KEY]), 8)).toBe(false)
+    expect(earlierCollapsed(new Set([EARLIER_KEY]), 2)).toBe(true)
+  })
+  it('keeps its own key, so the old Overdue collapse state does not carry over', () => {
+    expect(EARLIER_KEY).toBe('today:earlier')
+    expect(earlierCollapsed(new Set(['today:overdue']), 2)).toBe(false)
   })
 })

@@ -11,6 +11,7 @@ import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
 import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState } from '../../lib/localData'
 import { isFavourite } from '../../lib/favourites'
+import { earlierIds } from '../../lib/dayLists'
 import { pickScores } from '../../lib/pickRank'
 import { canEditProject, membershipMap, roleOf } from '../../lib/sharing'
 import { loadViewMode } from '../../lib/sections'
@@ -103,6 +104,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       view: view ? { row: view, peers: sorted, isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
+      earlier: earlierIds(tasks, projects, today),
     }
   }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, workspaceState])
 

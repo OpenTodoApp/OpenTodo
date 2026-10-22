@@ -15,7 +15,7 @@ import { Icon, type IconName } from './Icon'
 import { Tooltip } from './Tooltip'
 import { t } from '../lib/i18n'
 
-export type Tone = 'danger' | 'success' | 'warning' | 'accent' | 'violet' | 'indigo' | 'muted' | 'faint'
+export type Tone = 'danger' | 'success' | 'warning' | 'accent' | 'violet' | 'indigo' | 'default' | 'muted' | 'faint'
 
 /**
  * Text read differently than it is shown: the visible text is hidden from assistive
@@ -41,6 +41,7 @@ const TONE: Record<Tone, string> = {
   accent: 'text-accent',
   violet: 'text-(--ot-hue-violet-text)',
   indigo: 'text-(--ot-hue-indigo-text)',
+  default: 'text-default',
   muted: 'text-muted',
   faint: 'text-faint',
 }

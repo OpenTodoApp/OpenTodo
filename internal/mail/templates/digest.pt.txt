@@ -8,7 +8,7 @@ Semana passada ({{.Week}})
   Concluídas com atraso: {{.Late}}
   Adiadas: {{.Slipped}}
 
-Atrasadas
+Ainda abertas de antes
 {{.Overdue}}
 
 Para os próximos sete dias

@@ -12,7 +12,7 @@ import { formatPlanLoad, planLoadTooltip, type PlanEntry, type PlanLoad, type Pr
 import type { CalendarEvent, CalendarSubscription, Project, Task } from '../../lib/types'
 import { hueFor, Icon, Tooltip } from '../../ui'
 import { EventChip, EventRow } from '../CalendarEvents'
-import { dueTone, PRIORITY_RING } from '../rowTone'
+import { ladderTone, PRIORITY_RING } from '../rowTone'
 
 /** One day of the Plan: its rows, its events and its load. */
 export interface PlanDayData {
@@ -23,10 +23,10 @@ export interface PlanDayData {
   load: PlanLoad
 }
 
-/** The time's colour (rows-v2, rowTone's dueTone): overdue is loud; a timed task due today is in the accent, everything else muted. */
+/** The time's colour: the due ladder of the rows (page-rhythm D7, rowTone's ladderTone). */
 function timeTone(date: string, today: string): string {
-  const tone = dueTone(date < today ? 'overdue' : date === today ? 'today' : 'later', true)
-  return tone === 'danger' ? 'text-danger' : tone === 'accent' ? 'text-accent' : 'text-muted'
+  const tone = ladderTone(date, today)
+  return tone === 'danger' ? 'text-danger' : tone === 'accent' ? 'text-accent' : tone === 'default' ? 'text-default' : 'text-muted'
 }
 
 export function PlanTaskRow({ task, date, time, today, selected, canEdit, project, large, onPointerDown, onSelect, onOpen }: {
