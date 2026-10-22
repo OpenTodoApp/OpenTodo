@@ -9,6 +9,8 @@
   "<input.ui-input.aria-invalid:border-danger>",
   "<input.ui-input.pl-9> \"Have none of the labels\"",
   "<input.ui-input.pl-9> \"Remove labels\"",
-  "<select.ui-input.w-44> \"AnyPriority 1Priority 2Priority 3Priorit\""
+  "<select.ui-input.w-44> \"AnyPriority 1Priority 2Priority 3Priorit\"",
+  "<select.ui-input.w-44> \"KeepAssign to meUnassign",
+  "<select.ui-input.w-44> \"KeepNo deadlineIn 1 dayIn 3 daysIn 7 day"
  ]
 }

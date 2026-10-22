@@ -18,18 +18,18 @@
 
 - [x] 3.1 Add `contrast` and `motion` as additive string fields to `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts` and the defaults in `web/src/lib/ops.ts`, with unknown values read as the defaults; verify `go test ./...` and `npm test` (a sync test with an unknown value keeps the stored value and applies the default).
 - [x] 3.2 Extend the pre-paint appearance script and the appearance hook to set `data-contrast` (from the preference, or from `prefers-contrast: more` when `auto`, listening for changes) and `data-motion`, with the display route options still winning on display routes; verify `web/src/app/appearance.test.tsx` covers first paint, a system change and a display route leaving, and `npm run build`.
-- [ ] 3.3 Add the Contrast and Motion rows to `AppearanceSection.tsx` after Mode and Theme as segmented controls with their stories and strings in every language; verify `npm test`, `make i18n-check` and `make ui-check` (the settings story baseline updated once).
+- [x] 3.3 Add the Contrast and Motion rows to `AppearanceSection.tsx` after Mode and Theme as segmented controls with their stories and strings in every language; verify `npm test`, `make i18n-check` and `make ui-check` (the settings story baseline updated once).
 - [x] 3.4 Document both rows in `docs/settings-app.md`, add the upgrade note to `CHANGELOG.md` under Unreleased ("Contrast and motion preferences are two additive sync fields; upgrade the server first"), and verify `npm run docs:check`.
 
 ## 4. Pointer targets
 
 - [x] 4.1 Add the `.ui-hit` component class (`::after` inset to 44 px) and apply it in the Button primitive for `sm`, `md` and icon buttons, the row check box, row controls and action chips; verify a unit test that the computed `::after` box is at least 44 × 44 for a 32 px button and that every story baseline is unchanged (`make ui-check`).
-- [ ] 4.2 Add the target-size pass to `scripts/ui-check/a11y.mjs` (comfortable density, four points at 22 px from the centre through `elementFromPoint`) with `scripts/ux-audit/target-exempt.json` holding only the first run's elements with a dated reason, and a test in `scripts/ui-check.test.mjs` for the pass and for a shrinking-only list; verify `make ui-check` passes and a story with a bare 28 px chip fails naming it.
-- [ ] 4.3 Fix the elements the first run listed where a fix keeps the look (apply `.ui-hit`, pad a chip's hit area) and remove them from the list; verify `make ui-check` with the shorter list.
+- [x] 4.2 Add the target-size pass to `scripts/ui-check/a11y.mjs` (comfortable density, four points at 22 px from the centre through `elementFromPoint`) with `scripts/ux-audit/target-exempt.json` holding only the first run's elements with a dated reason, and a test in `scripts/ui-check.test.mjs` for the pass and for a shrinking-only list; verify `make ui-check` passes and a story with a bare 28 px chip fails naming it.
+- [x] 4.3 Fix the elements the first run listed where a fix keeps the look (apply `.ui-hit`, pad a chip's hit area) and remove them from the list; verify `make ui-check` with the shorter list.
 
 ## 5. Focus never obscured
 
-- [ ] 5.1 Extend the focus pass in `a11y.mjs` with viewport containment and the `elementsFromPoint` check at the corners and centre (allowing descendants and `data-opened-by` overlays), with `scripts/ux-audit/focus-obscured-exempt.json` and its test; verify `make ui-check` and a story that focuses a row under the phone tab bar fails naming it.
+- [x] 5.1 Extend the focus pass in `a11y.mjs` with viewport containment and the `elementsFromPoint` check at the corners and centre (allowing descendants and `data-opened-by` overlays), with `scripts/ux-audit/focus-obscured-exempt.json` and its test; verify `make ui-check` and a story that focuses a row under the phone tab bar fails naming it.
 - [ ] 5.2 Set `scroll-padding` on the phone list for the tab bar and the add button, on the content column for the sticky header, and lift the toast column by `--toast-lift` when a focused control is under it; verify the shell story at 375 px passes the pass and `npm test` covers the scroll padding values.
 - [x] 5.3 Document the pass in `docs/interface-guide.md` (focus is never under chrome) and verify the guide's checks (`make docs-check`).
 
@@ -56,5 +56,5 @@
 
 ## 9. Integration
 
-- [ ] 9.1 Add row 9 "Accessibility to AAA where it keeps the look" (`accessibility-aaa`) to the Design refresh table in `ROADMAP.md`, the CHANGELOG entry under Unreleased, and the statement's review date; verify `make check` passes end to end.
+- [x] 9.1 Add row 9 "Accessibility to AAA where it keeps the look" (`accessibility-aaa`) to the Design refresh table in `ROADMAP.md`, the CHANGELOG entry under Unreleased, and the statement's review date; verify `make check` passes end to end.
 - [ ] 9.2 Run the manual AAA walk-through on the core screens with a screen reader, keyboard only, 200 % zoom, high contrast and no motion, record the result and date in `docs/accessibility.md`, and verify every finding is either fixed in this change or a register entry.
