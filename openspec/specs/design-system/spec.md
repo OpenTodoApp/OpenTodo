@@ -502,11 +502,15 @@ The workbench SHALL have stories with fixture data for every core screen of the 
 - **THEN** the Week story's visual check fails with a diff image and the review names the "Filled blocks and bars" requirement
 
 ### Requirement: Interface budget
-Every change that touches a screen SHALL state in its design how it stays within the interface budget: at most two rows of chrome above the first item of a list, at most seven properties visible by default on a task, at most six primary sidebar destinations, at most three vertical scroll regions per screen, and every new shortcut registered without conflict. The measurable limits SHALL be enforced by tests.
+Every change that touches a screen SHALL state in its design how it stays within the interface budget: at most two rows of chrome above the first item of a list, at most seven properties with a value shown by default on an empty task, the task page's facts in at most four named groups of at most six rows (unset facts read as quiet actions, never as empty fields), at most six primary sidebar destinations, at most three vertical scroll regions per screen, and every new shortcut registered without conflict. The measurable limits SHALL be enforced by tests.
 
 #### Scenario: A feature adds a banner
 - **WHEN** a change renders a banner between the page header and the first task
 - **THEN** the budget test fails naming the view
+
+#### Scenario: The facts column grows
+- **WHEN** a change adds a seventh row to one of the task page's fact groups
+- **THEN** the budget test fails naming the group
 
 ### Requirement: Secondary text is one size
 Secondary text in screens SHALL be the metadata size only. Every time, count, duration and other number shown in the interface SHALL use tabular figures in the interface face, never a monospace face, so that digits line up and do not shift as they change; prose in notes and comments keeps proportional figures. Two icon sizes SHALL be used in content (16 px in rows, 20 px in headers) and one in chips (12 px).

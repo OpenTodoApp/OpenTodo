@@ -13,5 +13,5 @@
 ## 3. Docs, tests and baselines
 
 - [x] 3.1 Update `docs/interface-guide.md` (board and timeline) and add the CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
-- [ ] 3.2 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
-- [ ] 3.3 Run `make check` with TZ=UTC, open the pull request and get CI green
+- [x] 3.2 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
+- [x] 3.3 Run `make check` with TZ=UTC, open the pull request and get CI green

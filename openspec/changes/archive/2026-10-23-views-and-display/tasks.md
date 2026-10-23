@@ -18,5 +18,5 @@
 - [x] 3.1 `docs/saved-views.md`, `docs/filters.md`, `docs/api.md`, `docs/sync.md`, `docs/interface-guide.md` and the wording in the other guides; CHANGELOG under Unreleased → Changed; ROADMAP; verify `make docs-check`
 - [x] 3.2 `scripts/e2e-views.mjs`, the layout screens and the screenshot scripts follow the new words and addresses
 - [x] 3.3 Render a view, its display panel, the board and New view with the save card from the real app at 1440×900 in dark and compare with the round-2 mock-ups
-- [ ] 3.4 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
-- [ ] 3.5 Run `npm test`, `npm run build` and `go test ./...`, open the pull request and get CI green
+- [x] 3.4 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
+- [x] 3.5 Run `npm test`, `npm run build` and `go test ./...`, open the pull request and get CI green

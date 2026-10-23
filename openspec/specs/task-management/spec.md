@@ -78,7 +78,7 @@ The client SHALL offer a single-line quick-add input in every task view that cre
 - **THEN** the input is cleared, all chips are gone and focus remains in the input
 
 ### Requirement: Edit task fields
-The user SHALL be able to change a task's title, description, project, priority, due date and due time from a detail panel. Each change SHALL be applied locally at once and recorded as an operation for sync.
+The user SHALL be able to change a task's title, description, project, priority, due date and due time from the task page (see `web-app` "Task page"). Each change SHALL be applied locally at once and recorded as an operation for sync.
 
 #### Scenario: Change priority with the keyboard
 - **WHEN** a task is selected in a list and the user presses `1`, `2`, `3` or `4`

@@ -77,7 +77,7 @@ Shortcut hints SHALL be shown in the tooltip of the control that runs the action
 - **THEN** quick add shows its `q` badge again and section headers show their keys, on this device only
 
 ### Requirement: Registry drives the guide and the palette
-The keyboard guide in the documentation and the shortcut column of the command palette SHALL be generated from the registry, grouped by section, so the three never disagree. The guide SHALL render keys with the same keycap rules as the cheat sheet (one keycap per chord, "then" and "or" between them, no wrapping inside a keycap).
+The keyboard guide in the documentation and the shortcut column of the command palette SHALL be generated from the registry, grouped by section, so the three never disagree. The guide SHALL render keys with the same keycap rules as the cheat sheet (one keycap per chord, "then" and "or" between them, no wrapping inside a keycap), and the palette SHALL render a command's keys as keycaps at the right of its row with the same "then" between the steps of a sequence. The keys that work only inside the palette's Add mode (Shift+Enter to add and open, `↓` and `↑` to move over the field rows, Tab to edit the highlighted row) SHALL be registry entries local to the palette, listed in the cheat sheet and the guide.
 
 #### Scenario: New shortcut
 - **WHEN** a change adds a registry entry for "Toggle density" with `Shift+D`
@@ -86,6 +86,14 @@ The keyboard guide in the documentation and the shortcut column of the command p
 #### Scenario: Guide keycaps
 - **WHEN** the user opens Help → Keyboard shortcuts on a phone
 - **THEN** `g then t` reads as two keycaps and no keycap is split across lines
+
+#### Scenario: Palette keycaps
+- **WHEN** the user types "today" in the command palette
+- **THEN** "Go to Today" shows the keycaps `G` then `T` at the right of its row
+
+#### Scenario: Add mode keys are listed
+- **WHEN** the user opens the cheat sheet and searches for "add and open"
+- **THEN** a row lists `Shift+Enter` for adding the task from the command bar's Add mode and opening it
 
 ### Requirement: Sequence spotlight
 When the user presses the first key of a registered sequence outside a text field and no second key follows within 250 ms, the client SHALL open a small dialog in the centre of the screen. The dialog SHALL show the pressed key as a keycap followed by "+", the instruction "Press a key", and the sequences that can complete in the scopes active right now, each as its second key and its short label, grouped. While the dialog is open, the pending sequence SHALL NOT expire. Pressing a listed key, or clicking a listed entry, SHALL run that shortcut and close the dialog. Esc, the dialog's close button, a click outside it, or a key that completes no sequence SHALL close it without running anything and return focus to where it was. A second key pressed within 250 ms SHALL run its shortcut without the dialog ever showing.

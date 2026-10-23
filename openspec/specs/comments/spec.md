@@ -149,10 +149,10 @@ Each comment SHALL show the author's avatar initials and name, a relative time w
 - **THEN** the new comment is visible above the composer without scrolling
 
 ### Requirement: Composer behaviour
-The composer SHALL rest as a single line and expand when focused, when it holds a draft or a reply target, or when its shortcut is pressed. Expanded, it SHALL be the rich-text editor of this app (the one used for notes) with the editing features of `rich-text-editing` except Make subtask, SHALL grow with its content up to a limit, keep @-mention completion, show the submit key combination, keep an unsent draft per task on the device while the panel is closed, and show the reply target with a way to cancel it when replying. While the editor is still loading on a device that has never opened it, typed text SHALL be kept in a plain field and submitted as plain Markdown if the user submits first. The composer SHALL serialise to Markdown on submit within the documented subset, and editing an existing comment SHALL open its Markdown in the editor so that a comment opened and submitted unchanged keeps the same body.
+The composer SHALL rest as a single line and expand when focused, when it holds a draft or a reply target, or when its shortcut is pressed. Expanded, it SHALL be the rich-text editor of this app (the one used for notes) with the editing features of `rich-text-editing` except Make subtask, SHALL grow with its content up to a limit, keep @-mention completion, show the submit key combination, sit in the shared composer frame (a bordered box with the field, the tools on the left and a round Send control on the right, the same frame the assistant composer is built to use), keep an unsent draft per task on the device while the task is not open, and show the reply target with a way to cancel it when replying. While the editor is still loading on a device that has never opened it, typed text SHALL be kept in a plain field and submitted as plain Markdown if the user submits first. The composer SHALL serialise to Markdown on submit within the documented subset, and editing an existing comment SHALL open its Markdown in the editor so that a comment opened and submitted unchanged keeps the same body.
 
 #### Scenario: Draft survives closing the panel
-- **WHEN** the user types a comment, closes the panel without sending and reopens the task on the same device
+- **WHEN** the user types a comment, returns to the list without sending and reopens the task on the same device
 - **THEN** the draft is still in the expanded composer, and it is not visible on other devices
 
 #### Scenario: Cancel a reply
@@ -174,6 +174,10 @@ The composer SHALL rest as a single line and expand when focused, when it holds 
 #### Scenario: Text outside the subset survives an edit
 - **WHEN** the author edits a comment whose body contains `<details>` HTML and a footnote reference, changes one word elsewhere and submits
 - **THEN** the HTML and the footnote text are still in the body verbatim, shown as text, and only the word changed
+
+#### Scenario: Send control
+- **WHEN** the composer is expanded and empty
+- **THEN** its round Send control is disabled and named after the action ("Comment", "Reply", "Save"), and typing text enables it
 
 ### Requirement: Reactions
 A member who can read a task SHALL be able to add and remove reactions on any non-deleted comment of it, from a closed set of six named reactions: thumbs up, heart, check, eyes, party popper and question. Reactions SHALL be stored on the comment as one additive field per reacting account, `reactions.<account id>`, holding that account's list of reaction names (distinct, at most six), written only by that account; the server SHALL reject a reaction field whose account id is not the submitting account with reason `forbidden`, and an unknown reaction name as invalid. Reactions SHALL work offline and converge: each account's list converges by last-writer-wins across that account's own devices, and different accounts' reactions never overwrite each other. Reactions SHALL be plaintext for encrypted accounts and SHALL be included in the export and the own-format import. Each comment SHALL show its reactions as a row of icons with counts, each toggling the viewer's own reaction, with the names of who reacted in the tooltip and announced to assistive technology; a comment with no reactions SHALL show an Add reaction control only on hover, focus or, on touch, from the comment's More actions.

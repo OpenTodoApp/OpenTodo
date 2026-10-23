@@ -151,7 +151,8 @@ The Someday step SHALL list the user's Someday tasks, oldest first. For each, `n
 
 ### Requirement: Daily check
 The app SHALL offer a Daily check at `/review/daily`, reachable from the Review screen's menu, the Loop home, the command palette and `g` then `Shift+R`. It SHALL show on one page:
-- yesterday's line for tomorrow, when the last Close the day closed an earlier logical day than today and left a note, shown first and read-only
+- Today's briefing (web-app "Day page briefing"), shown first
+- yesterday's line for tomorrow, when the last Close the day closed an earlier logical day than today and left a note, shown next and read-only
 - the open Inbox count with "Process the Inbox"
 - the overdue tasks
 - today's tasks, where `f` toggles a task in or out of today's focus, up to three tasks
@@ -172,7 +173,7 @@ The app SHALL offer a Daily check at `/review/daily`, reachable from the Review 
 
 #### Scenario: Yesterday's note in the morning
 - **WHEN** the day was closed yesterday with "Start with the invoice" and the user opens the Daily check today
-- **THEN** the note is shown above the Inbox count as yesterday's line, and it is gone once today is closed
+- **THEN** the note is shown under Today's briefing and above the Inbox count as yesterday's line, and it is gone once today is closed
 
 #### Scenario: No note
 - **WHEN** the day was closed yesterday without a note, or never
@@ -185,6 +186,10 @@ The app SHALL offer a Daily check at `/review/daily`, reachable from the Review 
 #### Scenario: Closed just after midnight
 - **WHEN** the day start is `00:00`, the user opened Close the day at 23:59 on Wednesday, wrote "Start with the invoice" and closed at 00:02 on Thursday
 - **THEN** Thursday's Daily check shows "Start with the invoice" as yesterday's line
+
+#### Scenario: The check opens with Today's briefing
+- **WHEN** one task is two days late and the user opens the Daily check
+- **THEN** the page starts with the same sentence as Today, "One thing matters today." followed by the late task, and it changes as Today's does
 
 ### Requirement: Monthly look
 The app SHALL offer a Monthly look at `/review/monthly`, reachable from the Review screen's menu, the Loop home and the command palette, with three steps:
