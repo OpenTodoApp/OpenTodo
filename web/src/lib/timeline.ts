@@ -9,8 +9,10 @@ export interface Span {
   /** The due day as seen in the viewer's zone, when the task has a due. */
   dueAt?: string
   deadlineAt?: string
-  /** The deadline lies before today (the overdue tone). */
+  /** The deadline or the due day lies before today (the overdue tone, precision-boards-timeline D7). */
   late: boolean
+  /** Days the task is late: since the deadline when it has passed, else since the due day; 0 when not late. */
+  lateBy: number
 }
 
 type Dated = Pick<Task, 'due'> & { start?: string | null; deadline?: string | null }
@@ -23,13 +25,14 @@ export function spanOf(task: Dated, today: string, zone?: string): Span | null {
   const deadline = task.deadline ?? undefined
   const dates = [start, due, deadline].filter((d): d is string => !!d && /^\d{4}-\d{2}-\d{2}$/.test(d)).sort()
   if (!dates.length) return null
-  return { from: dates[0], to: dates[dates.length - 1], dueAt: due, deadlineAt: deadline, late: !!deadline && deadline < today }
+  const missed = deadline && deadline < today ? deadline : due && due < today ? due : null
+  return { from: dates[0], to: dates[dates.length - 1], dueAt: due, deadlineAt: deadline, late: !!missed, lateBy: missed ? daysBetweenISO(missed, today) : 0 }
 }
 
 export type Zoom = 'day' | 'week'
 
 /** Pixels per day at each zoom. */
-export const PX_PER_DAY: Record<Zoom, number> = { day: 32, week: 8 }
+export const PX_PER_DAY: Record<Zoom, number> = { day: 32, week: 14 }
 
 /** The visible window (design D6): anchor − 4 weeks … anchor + 12 weeks. */
 export const WINDOW_BEFORE_DAYS = 28

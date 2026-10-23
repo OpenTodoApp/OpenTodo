@@ -143,37 +143,44 @@ interface MetaValues {
   project?: ReactNode
   labels?: ReactNode
   counts?: ReactNode
+  /** A card's subtask progress, which leads its property row (precision-boards-timeline D3). */
+  progress?: RowCount
 }
 
 /** How many items the line has to show (the project and the repeat mark are placed apart). */
 function metaItems(m: MetaValues): number {
-  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts].filter(Boolean).length
+  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts, m.progress].filter(Boolean).length
 }
 
-/** A card's line (rows-v2 D4): one run of muted ToneText, dots drawn by CSS, then the label chips. */
+/**
+ * A card's property row (precision-boards-timeline D3): the date, the estimate and the
+ * subtask progress lead with their icons, the other facts and the label chips follow,
+ * and the assignee ends the row.
+ */
 function CardMeta({ m }: { m: MetaValues }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-0.5" data-row-meta="card">
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1" data-row-meta="card">
+      {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+      {m.estimate && <ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
+      {m.progress && <ToneText icon="circle-check-big" data-progress="" label={m.progress.label}>{m.progress.text}</ToneText>}
       {m.sample && <ToneText data-sample="">{t('Sample')}</ToneText>}
       {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="">{m.breadcrumb}</ToneText>}
-      {m.date && <ToneText tone={m.dateTone} data-date="">{m.date}</ToneText>}
       {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
       {m.repeat && <ToneText icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined}>{m.repeat}</ToneText>}
       {m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>}
       {m.startText && <ToneText icon={m.someday ? 'archive' : 'calendar-days'} data-start="">{m.startText}</ToneText>}
-      {m.estimate && <ToneText data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
       {m.blockedBy > 0 && <ToneText icon="lock" data-blocked="" label={t('Blocked by {blockedBy}', { blockedBy: m.blockedBy })}>{m.blockedBy}</ToneText>}
       {m.streak && <ToneText icon="flame" data-streak="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>}
       {m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id}>{b.text}</ToneText>)}
       {more.length > 0 && (
         <ToneText data-field-more="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>
       )}
-      {m.assignee && <span data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
       {m.origin}
       {m.project}
-      {m.labels && <span data-row-labels="" className="ml-1 inline-flex max-w-full min-w-0 first:ml-0">{m.labels}</span>}
+      {m.labels && <span data-row-labels="" className="inline-flex max-w-full min-w-0">{m.labels}</span>}
       {m.counts}
+      {m.assignee && <span data-row-assignee="" className="ml-auto inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
     </div>
   )
 }
@@ -436,7 +443,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     assignee: assignee && task.assignee_id ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
     origin: null,
     labels: <LabelChips labels={labels} omit={omitLabel} />,
-    counts: card && counts.length > 0 ? <RowCounts counts={counts} /> : null,
+    counts: null,
   }
   if (!labels.some((l) => l.id !== omitLabel)) m.labels = null
   // The project: a cell of a list row's column (precision-rows D1), the end of a card's line.
@@ -445,6 +452,12 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const progressCount = counts.find((c) => c.key === 'progress')
   const extra = rowExtra(!!m.labels, !!m.deadline, !!progressCount)
   const headCounts = extra === 'progress' ? counts.filter((c) => c.key !== 'progress') : counts
+  if (card) {
+    // The card's progress leads its property row; the other counts close it (precision-boards-timeline D3).
+    const rest = counts.filter((c) => c.key !== 'progress')
+    m.progress = progressCount
+    m.counts = rest.length > 0 ? <RowCounts counts={rest} /> : null
+  }
   const meta = card ? (metaItems(m) > 0 || m.project) && <CardMeta m={m} />
     : (metaItems({ ...m, repeat: null }) > 0 || m.project || extra === 'progress') && <RowLine m={m} extra={extra} progress={progressCount} projectColor={projectName ? project?.color : undefined} projectColumn={showProject} />
   const revealed = !card && !readOnly && !inline && actions
@@ -498,7 +511,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         onOpen()
       }}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-control px-2 ${card ? '' : '@container/row'} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 ${card ? '' : '@container/row'} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
@@ -554,7 +567,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           onOpen(e)
         }}>
         <div className={card ? '' : 'flex min-w-0 items-center gap-2'} data-row-head>
-        <div className={`user-text text-body ${card ? '' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
+        <div className={`user-text text-body ${card ? 'line-clamp-2' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
           {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{task.title}</ReadAs></span>
             : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
           {unencrypted && (

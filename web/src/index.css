@@ -836,6 +836,9 @@ select.ui-input { @apply truncate; contain: layout paint; }
 }
 .ui-block-dot { @apply inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-hue-solid; }
 .ui-column { @apply rounded-card bg-sunken p-1.5 dark:border dark:border-default; }
+/* The board's "Add a section" column (precision-boards-timeline D4): a dashed outline the height of a column. */
+.ui-column-add { @apply flex h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col items-stretch gap-2 rounded-card border border-dashed border-input p-1.5 text-meta text-muted sm:w-72; }
+button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hover:bg-sunken hover:text-default focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus; }
 .ui-drop-placeholder {
   border: 2px dashed var(--ot-border-input);
   border-radius: var(--radius-control);
@@ -878,12 +881,11 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .row-selected { background-color: var(--ot-selected-row); }
 .row-selected::before { content: ''; position: absolute; inset-block: 0.375rem; inset-inline-start: 0; width: 2px; border-radius: 9999px; background-color: var(--text-color-accent); }
 .row-hover:hover { background-color: var(--ot-hover); }
-/* A card's line and a narrow row's line are one run of muted text (rows-v2 D4): a faint
-   middle dot between adjacent items, as generated content so it is never read out. The
-   label chips and a card's counts follow the run without a dot. A row's line holds two
+/* A narrow row's line is one run of muted text (rows-v2 D4): a faint middle dot between
+   adjacent items, as generated content so it is never read out. A row's line holds two
    wrappers (the column's cells, then the rest), so its dots also cross from the first
-   to the second. */
-[data-row-meta="card"] > :not([data-row-labels], [data-row-counts]) ~ :not([data-row-labels], [data-row-counts])::before,
+   to the second. A card's property row has no dots: its items are spaced and lead with
+   icons (precision-boards-timeline D3). */
 [data-row-meta="row"] > * > [data-row-item] ~ [data-row-item]::before,
 [data-row-meta="row"] > [data-row-props]:has(> [data-row-item]) + [data-row-rest] > :first-child [data-row-item]:first-child::before,
 [data-row-meta="row"] > [data-row-props]:has(> [data-row-item]) + [data-row-rest] > [data-row-item]:first-child::before {

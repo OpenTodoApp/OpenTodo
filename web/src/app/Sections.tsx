@@ -1,7 +1,7 @@
 // Section headings, per-section quick add and "Add section" (OpenSpec `board-view`).
 // Shared by the grouped list and the board columns. Every write goes through
 // lib/sections, so all of it works offline and converges like any other edit.
-import { CatalogueIcon, HUES, hueFor, IconButton, IconPicker, isCatalogueIcon, ListGroupHeader } from '../ui'
+import { CatalogueIcon, HUES, hueFor, Icon, IconButton, IconPicker, isCatalogueIcon, ListGroupHeader } from '../ui'
 import { hueName } from '../lib/colourNames'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 import { colourPickerSpec, iconPickerSpec } from './menus/stylePickers'
@@ -206,14 +206,20 @@ export function AddSection({ projectId, layout }: { projectId: string; layout: '
     await createSection(projectId, name)
   }
   if (!open) {
+    // On the board, a dashed column the height of the board (precision-boards-timeline D4).
+    if (layout === 'board') return (
+      <button type="button" className="ui-column-add" data-add-section onClick={() => setOpen(true)}>
+        <Icon name="plus" size="sm" />{t('Add a section')}
+      </button>
+    )
     return (
-      <button type="button" className={`ui-btn ui-btn--ghost ui-btn--sm text-meta text-muted ${layout === 'board' ? 'w-72 shrink-0 justify-start self-start' : ''}`} onClick={() => setOpen(true)}>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta text-muted" onClick={() => setOpen(true)}>
         {t('+ Add section')}
       </button>
     )
   }
   return (
-    <form onSubmit={(e) => void submit(e)} className={layout === 'board' ? 'w-72 shrink-0 self-start' : 'max-w-xs'}>
+    <form onSubmit={(e) => void submit(e)} className={layout === 'board' ? 'ui-column-add' : 'max-w-xs'}>
       <input className="ui-input py-1 text-body" autoFocus placeholder={t('Section name, Enter to add')} aria-label={t('New section name')} value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); setName('') } }}

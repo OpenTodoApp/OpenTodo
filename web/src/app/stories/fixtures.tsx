@@ -239,7 +239,7 @@ export async function seedProjectWithSections(board = true): Promise<void> {
   if (board) await saveViewMode(p, 'board')
 }
 
-/** The website project as a timeline: a bar across today, one that ended, one past its deadline (surfaces-v2). */
+/** The website project as a timeline: a bar across today, an overdue one, one past its deadline, a short one and one that only started (surfaces-v2, precision-boards-timeline). */
 export async function seedProjectTimeline(): Promise<void> {
   await seedBase()
   const p = seeded.website
@@ -247,6 +247,8 @@ export async function seedProjectTimeline(): Promise<void> {
   await createTask({ title: 'Redesign the homepage', project_id: p, start: '2026-10-08', due: { date: '2026-10-20' }, deadline: '2026-10-22' })
   await createTask({ title: 'Collect testimonials', project_id: p, start: '2026-10-06', deadline: '2026-10-12' })
   await createTask({ title: 'Publish the pricing page', project_id: p, start: '2026-10-16', due: { date: '2026-10-23' } })
+  await createTask({ title: 'Book the photographer', project_id: p, due: { date: '2026-10-16' } })
+  await createTask({ title: 'Sort the image library', project_id: p, start: '2026-10-07' })
   await createTask({ title: 'Write the press release', project_id: p })
   await saveViewMode(p, 'timeline')
 }

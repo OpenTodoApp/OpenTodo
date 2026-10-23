@@ -70,7 +70,8 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
         ))}
       </div>
     )}
-    <div ref={scroller} onScroll={wide ? undefined : onScroll} className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-scroll-x>
+    {/* Columns stretch to the board's height, so every band runs to the bottom (precision-boards-timeline D1). */}
+    <div ref={scroller} onScroll={wide ? undefined : onScroll} className="-mx-4 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-scroll-x>
       {columns.map((col) => {
         const idx = sections.findIndex((c) => c.key === col.key)
         const name = col.section ? col.section.name || t('Untitled section') : t('No section')
@@ -82,7 +83,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
             data-drop-target={sectionTarget(col.key)}
             data-column={col.key}
             aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}', { name, n: open })}
-            className="ui-column flex max-h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72"
+            className="ui-column flex h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72"
           >
             <SectionHeader
               section={col.section}
@@ -94,11 +95,12 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
               onAdd={() => setAddingTo(col.key)}
             />
             {/* Cards lift on hover and focus; the dragged one fades while its placeholder shows where it lands. */}
-            <ul className="ui-cards--lift min-h-8 space-y-1.5 overflow-y-auto px-0.5 pb-1">
+            <ul className="ui-cards--lift min-h-0 space-y-1.5 overflow-y-auto px-0.5 pb-1">
               {col.cards.map((tk) => renderCard(tk))}
               {placeholder?.key === col.key && <li aria-hidden data-drop-placeholder className="ui-drop-placeholder" style={{ height: placeholder.height }} />}
             </ul>
-            {editable && open === 0 && addingTo !== col.key && (
+            {/* "Add a task" ends every column's cards (D2); the header's plus opens the same field. */}
+            {editable && addingTo !== col.key && (
               <Button variant="ghost" size="sm" icon="plus" className="w-full justify-start text-muted" data-column-add={col.key} onClick={() => setAddingTo(col.key)}>
                 {t('Add a task')}
               </Button>

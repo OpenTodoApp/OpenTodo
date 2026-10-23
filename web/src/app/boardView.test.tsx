@@ -28,7 +28,8 @@ describe('BoardView', () => {
     expect(html).toContain('aria-label="No section, 1 open task"')
     expect(html).toContain('aria-label="Doing, 1 open task"')
     expect([...html.matchAll(/data-card="([^"]+)"/g)].map((m) => m[1])).toEqual(['b', 'c', 'a'])
-    expect(html).toContain('+ Add section')
+    expect(html).toContain('data-add-section')
+    expect(html).toContain('Add a section')
   })
 
   it('offers no section menu, quick add or new section to viewers', () => {
