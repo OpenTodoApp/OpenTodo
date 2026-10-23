@@ -35,9 +35,13 @@ export const BuilderEmpty: StoryObj = {
   render: () => <Column><FilterView /></Column>,
 }
 
-/** Groups, Not on a condition and on a group, and the count. */
+/**
+ * Groups, Not on a group and on a condition, and the count. The query fits the
+ * input at 375 px, so the focused input never scrolls (a scrolled caret position
+ * differs by a few pixels between machines).
+ */
 export const BuilderNested: StoryObj = {
-  render: () => <Column><FilterView initialQuery="#Work & (@errand | due <= tomorrow) & !@waiting & !(p3 | p4)" /></Column>,
+  render: () => <Column><FilterView initialQuery="!(p3|p4) & (p1 | !p2)" /></Column>,
 }
 
 /** A query the builder cannot show stays editable as text, with a notice. */
