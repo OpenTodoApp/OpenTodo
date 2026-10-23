@@ -162,8 +162,10 @@ The `Foundations/Brand` story shows the mono mark at every size beside a row's c
 
 Empty and finished states may show one calm line drawing above their sentence (the first is Inbox zero). Each lives in its own file in `web/src/ui/illustrations/` as inline SVG and follows one style, so later ones match:
 
-- strokes in `currentColor` (the wrapper sets the muted text colour), `strokeWidth="1.5"` at 160 × 120 px, round caps and joins;
-- the sunken surface (`var(--color-sunken)`) as the only shape fill, plus at most one accent shape at 15 % opacity (`var(--color-accent)`);
+- one stage for all: 160 × 120 px, the brand mark's open loop in the fine line (centre 80, 54, radius 40, its opening at the upper right), drawn first so the object hides it, and one ground line `M40 100h80` with short dashes at its ends;
+- two stroke weights in `currentColor` (the wrapper sets the muted text colour): the main line `1.75` for the object and the fine line `1` for the loop, details, steam, rays and trails; round caps and joins;
+- the object filled with the surface (`var(--color-surface)`), so it stands above the canvas in both themes; the sunken surface (`var(--color-sunken)`) only for ground shapes;
+- one accent shape, in or leaving through the loop's opening, filled `var(--color-accent)` at 20 % and outlined in `var(--text-color-accent)` (the bright accent in the dark theme), the mark's tick escaping its loop;
 - no hex or `rgb()` colours, gradients, filters, shadows, text, raster or external images, and no animation;
 - decorative: hidden from assistive technology, since the sentence beside it says everything;
 - at most 4 KB per file.
@@ -172,14 +174,14 @@ The set, each a brief for the next drawing as much as a list:
 
 | Name | Where | Motif | Accent shape |
 | --- | --- | --- | --- |
-| `inbox-zero` | Empty Inbox, end of Process the Inbox | An empty tray with a leaf beside it | the leaf |
-| `today-clear` | Empty Today | A mug from the side with two steam lines, a small sun upper right | the sun |
-| `week-clear` | Empty Upcoming | Seven small rounded squares on a baseline, the first raised | the raised square |
-| `project-new` | A project with no open task | An open box, lid tilted back, a pencil leaning on its edge | the pencil's cap |
-| `day-done` | Done for today (Close the day) | A closed notebook with a ribbon, a crescent moon above | the moon |
-| `trash-empty` | Empty Trash | A bin with its lid on top and one leaf beside it | the leaf |
+| `inbox-zero` | Empty Inbox, end of Process the Inbox | An empty tray, a dashed trail rising from it | a paper plane leaving |
+| `today-clear` | Empty Today | A mug from the side with three steam lines | the sun, with fine rays |
+| `week-clear` | Empty Upcoming | A desk calendar with two rings and seven open days | a kite on a dashed string |
+| `project-new` | A project with no open task | An open box, flaps out, a sprout growing from it | the sprout's leaf |
+| `day-done` | Done for today (Close the day) | A closed notebook lying flat, page edges and its ribbon, two small stars | a crescent moon |
+| `trash-empty` | Empty Trash | A bin with its lid on and its handle | a leaf drifting out |
 
-No faces, people or mascots: each motif names the state in one glance and needs no translation of tone. Settings and error pages have no illustration.
+No faces, people or mascots: each motif names the state in one glance and needs no translation of tone; a little character comes from objects (a paper plane, a kite, a sprout). Settings and error pages have no illustration. `make ui-lint` also refuses a third stroke width, a fill other than the surface, the sunken surface and the accent, and a second accent shape (illustrations-v2).
 
 Name it in `Illustration.tsx` and pass that name to the empty-state pattern (`<EmptyState illustration="inbox-zero" …/>`); add it to `Illustrations.stories.tsx` so the workbench checks it in light and dark. `make ui-lint` fails on a file that breaks the colour, image, text or size rules.
 

@@ -1,17 +1,17 @@
-// Inbox zero (OpenSpec change inbox-means-unplaced, design D9; design-system
-// "Illustrations"): an empty tray drawn in line, with one leaf resting beside it.
-// Tokens only: strokes in currentColor (the muted text colour from the wrapper),
-// the sunken surface as the only shape fill, one accent fill at low opacity.
+// Inbox zero (illustrations-v2; design-system "Illustrations"): an empty tray inside
+// the open loop of the brand mark, a paper plane leaving through the loop's opening.
 export function InboxZero() {
   return (
-    <svg viewBox="0 0 160 120" width="160" height="120" fill="none" stroke="currentColor" strokeWidth="1.5"
+    <svg viewBox="0 0 160 120" width="160" height="120" fill="none" stroke="currentColor" strokeWidth="1.75"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false" data-illustration="inbox-zero">
-      <path d="M22 104h116" />
-      <path d="M34 74 47 52h66l13 22v20a6 6 0 0 1-6 6H40a6 6 0 0 1-6-6Z" fill="var(--color-sunken)" />
-      <path d="M34 74h22a24 14 0 0 0 48 0h22" />
-      <path d="M56 40v-8M80 36V24M104 40v-8" />
-      <path d="M134 103c0-12 9-19 18-20 0 12-8 19-18 20Z" fill="var(--color-accent)" fillOpacity="0.15" />
-      <path d="M134 103l12-14" />
+      <path d="M118.6 43.6A40 40 0 1 1 83.5 14.2" strokeWidth="1" />
+      <path d="M40 100h80M26 100h6M128 100h6" />
+      <path d="M54 82 62 66h36l8 16v13a5 5 0 0 1-5 5H59a5 5 0 0 1-5-5Z" fill="var(--color-surface)" />
+      <path d="M54 82h14a12 7 0 0 0 24 0h14" />
+      <path d="M65 71h30" strokeWidth="1" />
+      <path d="M86 60c3-9 7-16 12-22" strokeWidth="1" strokeDasharray="2 3" />
+      <path d="M98 31 119 15l-8 19-5-6Z" fill="var(--color-accent)" fillOpacity="0.2" stroke="var(--text-color-accent)" />
+      <path d="m106 28 13-13" strokeWidth="1" stroke="var(--text-color-accent)" />
     </svg>
   )
 }

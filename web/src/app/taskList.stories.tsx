@@ -57,6 +57,29 @@ export const ProjectBySection: StoryObj = {
   render: () => <Column><TaskListView route={{ view: 'project', id: seeded.website }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 
+/** An Inbox with two undecided tasks and three planned ones without a project (inbox-planned-group). */
+async function seedInboxPlanned(open: boolean): Promise<void> {
+  await seedBase()
+  try { localStorage.setItem('opentodo.collapsed', JSON.stringify(open ? ['inbox:planned:open'] : [])) } catch { /* stories only */ }
+  await createTask({ title: 'Look into a new phone plan' })
+  await createTask({ title: 'Idea: a shared shopping list' })
+  await createTask({ title: 'Renew the passport', due: { date: '2026-10-16' } })
+  await createTask({ title: 'Pick up the parcel', due: { date: '2026-10-15' } })
+  await createTask({ title: 'Learn to make bread', start: 'someday' })
+}
+
+/** The Inbox's planned tasks folded at the end: the group's label and "3", no rows (inbox-planned-group D1). */
+export const InboxPlannedFolded: StoryObj = {
+  ...withSeed(() => seedInboxPlanned(false)),
+  render: () => <Column><TaskListView route={{ view: 'inbox' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+/** Opened: the three planned tasks in place, by date, Someday last, with Open as filter in the header. */
+export const InboxPlannedOpen: StoryObj = {
+  ...withSeed(() => seedInboxPlanned(true)),
+  render: () => <Column><TaskListView route={{ view: 'inbox' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
 /** Nothing due today: one sentence, Add a task and the Open Upcoming link. */
 export const Empty: StoryObj = {
   ...withSeed(async () => {}),

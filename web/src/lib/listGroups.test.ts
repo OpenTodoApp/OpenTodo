@@ -2,7 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, PLANNED_OPEN_KEY, plannedOrder, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import type { Project, Section, Task } from './types'
 
@@ -231,5 +231,44 @@ describe('Earlier default collapse', () => {
   it('keeps its own key, so the old Overdue collapse state does not carry over', () => {
     expect(EARLIER_KEY).toBe('today:earlier')
     expect(earlierCollapsed(new Set(['today:overdue']), 2)).toBe(false)
+  })
+})
+
+describe('the Inbox planned group (inbox-planned-group D1)', () => {
+  const own = task({ title: 'Undated' })
+  const someday = task({ title: 'Someday', start: 'someday' })
+  const later = task({ title: 'Starts Friday', start: '2026-10-16' })
+  const soon = task({ title: 'Due Thursday', due: { date: '2026-10-15' } })
+  const planned = [someday, later, soon]
+  const tree = buildTaskTree([own])
+
+  it('is a folded group at the end with its count, and no rows while folded', () => {
+    const groups = listGroups(input({ view: 'inbox', tasks: [own], tree, planned }))
+    expect(groups.map((g) => g.key)).toEqual(['all', 'planned'])
+    expect(groups[1]).toMatchObject({ heading: 'Planned, no project', count: 3, folded: true, openKey: PLANNED_OPEN_KEY })
+    expect(groups[1].rows).toEqual([])
+  })
+
+  it('opened on this device, lists its tasks by do-on date, then start date, Someday last', () => {
+    const g = listGroups(input({ view: 'inbox', tasks: [own], tree, planned, collapsed: new Set([PLANNED_OPEN_KEY]) }))[1]
+    expect(g.folded).toBe(false)
+    expect(titles(g)).toEqual(['Due Thursday', 'Starts Friday', 'Someday'])
+  })
+
+  it('is absent with no planned tasks, and outside the Inbox', () => {
+    expect(listGroups(input({ view: 'inbox', tasks: [own], tree, planned: [] })).map((g) => g.key)).toEqual(['all'])
+    expect(listGroups(input({ view: 'project', tasks: [own], tree, planned })).map((g) => g.key)).toEqual(['all'])
+  })
+
+  it('plannedOrder breaks ties by creation', () => {
+    const a = task({ title: 'A', due: { date: '2026-10-15' }, created_at: 5 })
+    const b = task({ title: 'B', due: { date: '2026-10-15' }, created_at: 2 })
+    expect(plannedOrder([a, b]).map((x) => x.title)).toEqual(['B', 'A'])
+  })
+
+  it('Today\'s Blocked group keeps its own open key', () => {
+    const waiting = task({ title: 'Waiting', due: { date: TODAY } })
+    const g = listGroups(input({ view: 'today', tasks: [waiting], blocked: new Set([waiting.id]) })).find((x) => x.key === 'blocked')!
+    expect(g.openKey).toBe(BLOCKED_OPEN_KEY)
   })
 })

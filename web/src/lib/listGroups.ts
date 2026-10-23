@@ -63,8 +63,10 @@ export interface ListGroup {
   /** Open tasks under the heading, also while it is collapsed. */
   count?: number
   sectionCollapsed?: boolean
-  /** Today's Blocked group (task-dependencies): folded unless opened on this device. */
+  /** A group that starts folded (Today's Blocked, the Inbox's planned tasks): folded unless opened on this device. */
   folded?: boolean
+  /** The key in the per-device collapse set that marks a folded group as open. */
+  openKey?: string
   /** Always-visible trailing text of the header (the logbook's "3 done"). */
   note?: string
   /** Named by the user's own content (a project): the label keeps its case (page-rhythm D2). */
@@ -88,6 +90,8 @@ export interface SectionBucket {
 
 /** Set in the per-device collapse set when Today's Blocked group is open (it starts folded). */
 export const BLOCKED_OPEN_KEY = 'today:blocked:open'
+/** Set in the same store when the Inbox's "Planned, no project" group is open (inbox-planned-group D1). */
+export const PLANNED_OPEN_KEY = 'inbox:planned:open'
 
 /** In the per-device group store (collapsedGroups) when Today's Earlier group was closed on this device. */
 export const EARLIER_KEY = 'today:earlier'
@@ -177,6 +181,8 @@ export interface GroupInput {
   sectionCount: number
   collapsedSections: readonly string[]
   logbook: { groups: LogbookGroup[] } | null
+  /** The Inbox only: open, scheduled tasks without a project, shown in a folded group at the end. */
+  planned?: readonly Task[]
 }
 
 /** The list's groups, in render order: one pass, linear in the number of tasks. */
@@ -210,8 +216,22 @@ export function listGroups(p: GroupInput): ListGroup[] {
     return [...bySection, ...later]
   }
   // Project and Inbox: one depth-first pass over the built tree (linear in task count).
-  if (p.tree) return [{ key: 'all', heading: null, rows: flattenTree(p.tree.roots, isCollapsed).map(toRow) }, ...later]
+  if (p.tree) return [{ key: 'all', heading: null, rows: flattenTree(p.tree.roots, isCollapsed).map(toRow) }, ...later, ...plannedGroup(p)]
   return flatGroups(p)
+}
+
+/** The Inbox's planned tasks without a project (inbox-planned-group D1): folded unless opened here. */
+function plannedGroup(p: GroupInput): ListGroup[] {
+  if (p.view !== 'inbox' || !p.planned?.length) return []
+  const folded = !p.collapsed.has(PLANNED_OPEN_KEY)
+  const rows = folded ? [] : plannedOrder(p.planned).map((task) => flatRow(task, task.parent_id ? breadcrumbOf(task, p.taskMap) : null))
+  return [{ key: 'planned', heading: t('Planned, no project'), count: p.planned.length, folded, openKey: PLANNED_OPEN_KEY, rows }]
+}
+
+/** When a planned task is planned: its do-on date, else its start date, Someday last; then oldest first. */
+export function plannedOrder<T extends Pick<Task, 'due' | 'created_at'> & { start?: string | null }>(tasks: readonly T[]): T[] {
+  const when = (task: T) => task.due?.date ?? (task.start && task.start !== 'someday' ? task.start : '￿')
+  return [...tasks].sort((a, b) => when(a).localeCompare(when(b)) || a.created_at - b.created_at)
 }
 
 /** Cross-project and date views: flat, each matching task once, with its parent named. */
@@ -228,7 +248,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
     if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }) })
     if (waiting.length) {
       const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
-      g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, rows: folded ? [] : waiting.map(row) })
+      g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, openKey: BLOCKED_OPEN_KEY, rows: folded ? [] : waiting.map(row) })
     }
     return g
   }

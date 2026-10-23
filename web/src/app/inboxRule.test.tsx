@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // OpenSpec change inbox-means-unplaced: the Inbox lists only unscheduled tasks
 // without a project (tasks 2.1, 3.2-3.4): the sidebar count follows scheduling,
-// the "planned tasks" line says where the others went, quick add in the Inbox
+// the others wait in a folded "Planned, no project" group at the end (inbox-planned-group), quick add in the Inbox
 // announces where a dated task went, and pickers name the choice "No project".
 import 'fake-indexeddb/auto'
 import { act } from 'react'
@@ -49,25 +49,57 @@ async function waitFor(ok: () => boolean, ms = 3000) {
 const rowTitles = (root: ParentNode) => [...root.querySelectorAll('[data-task-id]')].map((r) => r.querySelector('[data-row-open]')?.textContent?.trim() ?? r.textContent?.trim())
 
 describe('the Inbox view', () => {
-  it('Where planned tasks went: three planned tasks leave the Inbox and the line opens Filter with `no project`', async () => {
+  it('Where planned tasks went: three planned tasks are a folded group at the end, listed in place when opened, with Open as filter', async () => {
     await createTask({ title: 'Undated' })
-    for (const [title, date] of [['Thu task', '2026-10-15'], ['Fri task', '2026-10-16'], ['Sat task', '2026-10-17']]) await createTask({ title, due: { date } })
+    for (const [title, date] of [['Sat task', '2026-10-17'], ['Thu task', '2026-10-15'], ['Fri task', '2026-10-16']]) await createTask({ title, due: { date } })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 1)
-    expect(rowTitles(r.container).join(' ')).toContain('Undated')
-    await waitFor(() => !!r.container.querySelector('[data-planned-line]'))
-    expect(r.container.querySelector('[data-planned-line]')!.textContent).toBe('3 planned tasks without a project')
-    await click(r.container.querySelector('[data-planned-line]')!)
+    const group = () => r.container.querySelector('[data-group="planned"]')
+    await waitFor(() => !!group())
+    // Folded by default: the Inbox lists only its own task, the group header carries the count.
+    expect(rowTitles(r.container)).toEqual(['Undated'])
+    expect(group()!.querySelector('[data-group-label]')!.textContent).toBe('Planned, no project')
+    expect(group()!.querySelector('[data-group-count]')!.textContent).toContain('3')
+    expect(group()!.querySelector('[data-group-toggle]')!.getAttribute('aria-expanded')).toBe('false')
+    // Opened: the three tasks in place, in date order, after the Inbox's own task.
+    await click(group()!.querySelector('[data-group-toggle]')!)
+    await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 4)
+    expect([...r.container.querySelectorAll('[data-task-id] [data-row-title]')].map((x) => x.textContent?.trim())).toEqual(['Undated', 'Thu task', 'Fri task', 'Sat task'])
+    expect(r.container.querySelector('[data-planned-line]')).toBeNull()
+    await click(group()!.querySelector('[data-planned-filter]')!)
     expect(location.pathname + location.search).toBe('/filter?q=no%20project')
     await r.unmount()
   })
 
-  it('the planned line is hidden at zero', async () => {
+  it('The group remembers being opened on this device', async () => {
+    await createTask({ title: 'Fri task', due: { date: '2026-10-16' } })
+    const first = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => !!first.container.querySelector('[data-group="planned"] [data-group-toggle]'))
+    await click(first.container.querySelector('[data-group="planned"] [data-group-toggle]')!)
+    await waitFor(() => first.container.querySelectorAll('[data-task-id]').length === 1)
+    await first.unmount()
+    const again = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => again.container.querySelectorAll('[data-task-id]').length === 1)
+    expect(again.container.querySelector('[data-group="planned"] [data-group-toggle]')!.getAttribute('aria-expanded')).toBe('true')
+    await again.unmount()
+  })
+
+  it('Inbox zero with planned tasks: the empty state shows, Process is not offered, and the folded group sits below', async () => {
+    await createTask({ title: 'Fri task', due: { date: '2026-10-16' } })
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => !!r.container.querySelector('[data-empty-state="inbox"]') && !!r.container.querySelector('[data-group="planned"]'))
+    expect(r.container.querySelector('[data-triage-start]')).toBeNull()
+    const empty = r.container.querySelector('[data-empty-state="inbox"]')!
+    const group = r.container.querySelector('[data-group="planned"]')!
+    expect(empty.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await r.unmount()
+  })
+
+  it('there is no planned group at zero', async () => {
     await createTask({ title: 'Undated' })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 1)
     await flush(40)
-    expect(r.container.querySelector('[data-planned-line]')).toBeNull()
+    expect(r.container.querySelector('[data-group="planned"]')).toBeNull()
     await r.unmount()
   })
 
@@ -124,7 +156,8 @@ describe('Inbox zero (design-system "Illustrations")', () => {
     await waitFor(() => !!r.container.querySelector('[data-illustration="inbox-zero"]'))
     const svg = r.container.querySelector('[data-illustration="inbox-zero"]')!
     const colours = [svg, ...svg.querySelectorAll('*')].flatMap((el) => ['stroke', 'fill'].map((a) => el.getAttribute(a)).filter((v): v is string => !!v))
-    for (const c of colours) expect(c).toMatch(/^(none|currentColor|var\(--color-[a-z-]+\))$/)
+    // The accent shape's outline is the accent text token (illustrations-v2 D3).
+    for (const c of colours) expect(c).toMatch(/^(none|currentColor|var\(--color-[a-z-]+\)|var\(--text-color-accent\))$/)
     await r.unmount()
   })
 })

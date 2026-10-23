@@ -294,8 +294,8 @@ describe('sample tasks (moments-and-onboarding D2)', () => {
     const before = await db.outbox.count()
     await click(q('[data-first-run-sample]')!)
     await waitFor(() => stepOf() === 'work')
-    // The dated one leaves the Inbox for Today (inbox-means-unplaced): the planned line names it.
-    await waitFor(() => r.container.querySelector('[data-planned-line]')?.textContent === '1 planned task without a project')
+    // The dated one leaves the Inbox for Today (inbox-means-unplaced): the folded planned group counts it (inbox-planned-group).
+    await waitFor(() => r.container.querySelector('[data-group="planned"] [data-group-count]')?.textContent?.includes('1') === true)
     await waitFor(() => r.container.querySelectorAll('[data-task-id] [data-sample]').length >= 2)
     const tasks = await db.tasks.toArray()
     const top = tasks.filter((t) => !t.parent_id)

@@ -1,15 +1,17 @@
-// New project (OpenSpec change moments-and-onboarding, design D1; design-system
-// "Illustration set"): an open box with its lid tilted back and a pencil leaning on its
-// edge; the pencil's cap is the one accent shape.
+// Project new (illustrations-v2): an open box inside the open loop of the brand mark,
+// a sprout growing out of it, its leaf reaching through the loop's opening.
 export function ProjectNew() {
   return (
-    <svg viewBox="0 0 160 120" width="160" height="120" fill="none" stroke="currentColor" strokeWidth="1.5"
+    <svg viewBox="0 0 160 120" width="160" height="120" fill="none" stroke="currentColor" strokeWidth="1.75"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false" data-illustration="project-new">
-      <path d="M22 104h116" />
-      <path d="M38 60h64v38a6 6 0 0 1-6 6H44a6 6 0 0 1-6-6Z" fill="var(--color-sunken)" />
-      <path d="M38 60 26 36l58-6 18 30" />
-      <path d="M92 64 118 28l8 6-26 36-9 3Z" />
-      <path d="M118 28l3-4a4 4 0 0 1 7 5l-2 5Z" fill="var(--color-accent)" fillOpacity="0.15" />
+      <path d="M118.6 43.6A40 40 0 1 1 83.5 14.2" strokeWidth="1" />
+      <path d="M40 100h80M26 100h6M128 100h6" />
+      <path d="M80 77c0-14 6-26 18-36" />
+      <path d="M84 60c-7-1-11-5-12-11 7 0 11 4 12 11Z" strokeWidth="1" />
+      <path d="M58 76h44v20a4 4 0 0 1-4 4H62a4 4 0 0 1-4-4Z" fill="var(--color-surface)" />
+      <path d="M58 76 47 67l11-5M102 76l11-9-11-5" />
+      <path d="M80 76v8" strokeWidth="1" />
+      <path d="M98 41c2-10 8-16 18-18-1 10-8 16-18 18Z" fill="var(--color-accent)" fillOpacity="0.2" stroke="var(--text-color-accent)" />
     </svg>
   )
 }

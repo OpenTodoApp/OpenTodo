@@ -27,7 +27,7 @@ test('Style gate: an illustration with a hex colour, a raster image or text is r
   const { illustrationProblems, ILLUSTRATION_MAX_BYTES } = await import('./ui-check.mjs')
   const bad = [
     '<path d="M0 0h10" stroke="#10b981" />',
-    '<path fill="rgb(16, 185, 129)" />',
+    '<path stroke="rgb(16, 185, 129)" />',
     '<image href="tray.png" />',
     '<text x="4" y="10">Done</text>',
     '<linearGradient id="g" />',
@@ -39,12 +39,21 @@ test('Style gate: an illustration with a hex colour, a raster image or text is r
 test('an illustration on tokens passes the gate', async () => {
   const { illustrationProblems } = await import('./ui-check.mjs')
   const ok = [
-    '<svg viewBox="0 0 160 120" fill="none" stroke="currentColor" strokeWidth="1.5">',
+    '<svg viewBox="0 0 160 120" fill="none" stroke="currentColor" strokeWidth="1.75">',
     '<path d="M34 74h22" fill="var(--color-sunken)" />',
-    '<path fill="var(--color-accent)" fillOpacity="0.15" />',
+    '<path d="M34 74h22" fill="var(--color-surface)" strokeWidth="1" />',
+    '<path fill="var(--color-accent)" fillOpacity="0.2" stroke="var(--text-color-accent)" />',
     '// a comment naming #fff is fine',
   ]
   for (const line of ok) assert.deepEqual(illustrationProblems('Good.tsx', line), [], line)
+})
+
+test('an illustration keeps two stroke weights, token fills and one accent shape (illustrations-v2)', async () => {
+  const { illustrationProblems } = await import('./ui-check.mjs')
+  assert.match(illustrationProblems('W.tsx', '<path strokeWidth="3" />')[0], /stroke width 3/)
+  assert.match(illustrationProblems('F.tsx', '<path fill="var(--color-canvas)" />')[0], /fill var\(--color-canvas\)/)
+  const two = '<path fill="var(--color-accent)" />\n<circle fill="var(--color-accent)" />'
+  assert.match(illustrationProblems('A.tsx', two).at(-1), /2 accent shapes/)
 })
 
 test('Learn more comes only from the LearnMore element', () => {
