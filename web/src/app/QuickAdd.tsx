@@ -1,4 +1,4 @@
-import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { type FormEvent, forwardRef, type KeyboardEvent, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { keysOf } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 import { Tooltip } from '../ui'
@@ -15,6 +15,9 @@ import { useTokenSuggest } from './TokenSuggest'
 import { ParseChips } from './ParseChips'
 import { QuickAddTint } from './QuickAddTint'
 import { t, preferredLanguages } from '../lib/i18n'
+import { chipRange, type FieldKind, fieldRows, type FieldRow, startToken } from './quickadd/fields'
+import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
+import { SheetBar } from './quickadd/SheetBar'
 
 export type { QuickAddInput }
 
@@ -44,6 +47,10 @@ export async function createLabelByName(name: string): Promise<string> {
  * line is parsed on every keystroke and each recognised attribute is shown as a
  * dismissible chip; `onAdd` receives the title plus only the attributes the line
  * set, so the view's defaults fill the rest.
+ *
+ * Three presentations of the same field and parse (palette-quick-add D1): `line`
+ * (chips under the field), `palette` (the command bar's field rows and footer) and
+ * `sheet` (the phone's neutral chips and tool row).
  */
 export const QuickAdd = forwardRef<HTMLInputElement, {
   placeholder: string
@@ -62,7 +69,12 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   label?: string
   /** Shift+V outside text fields dictates into this quick add (the view's main one only). */
   voiceShortcut?: boolean
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut }, ref) {
+  layout?: 'line' | 'palette' | 'sheet'
+  /** Shift+Enter in the palette: add, then open the new task. */
+  onAddAndOpen?: (input: QuickAddInput) => Promise<void> | void
+  /** The palette footer's Escape: its label (Close or Back) and action. */
+  escape?: { label: string; run: () => void }
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
@@ -93,8 +105,11 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
       dismissed,
     })
   }, [value, dismissed, projects, settings, dtPrefs, resolved])
-  const chips = parsed?.chips ?? []
+  const chips = useMemo(() => parsed?.chips ?? [], [parsed])
   const emptyTitle = parsed !== null && parsed.title === ''
+  // The palette's field rows and the one ↑/↓ highlighted (palette-quick-add D3).
+  const rows = useMemo(() => fieldRows(chips), [chips])
+  const [row, setRow] = useState<number | null>(null)
 
   function change(next: string) {
     // The previous text comes from a ref: dictation calls this from engine events.
@@ -103,6 +118,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     setDismissed((d) => rebaseDismissed(prev, next, d))
     setValue(next)
     setHighlight(null)
+    setRow(null)
   }
 
   // `#` and `@` suggestions (smart-title-tokens D1): a listbox under the field for the token at the caret.
@@ -119,8 +135,37 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     setHighlight(null)
   }
 
-  async function submit(e: FormEvent) {
+  /** Puts the caret at `at` (or selects `at`–`end`) once the field shows the current text. */
+  function caretTo(at: number, end = at) {
+    requestAnimationFrame(() => {
+      const el = inputRef.current
+      if (!el) return
+      el.focus()
+      el.setSelectionRange(at, end)
+    })
+  }
+
+  /** Edits a field through the line (D2): a set field's words are selected, an unset one's token is started. */
+  function edit(target: FieldRow | FieldKind) {
+    const r = typeof target === 'string' ? { kind: target } : target
+    setRow(null)
+    if (r.chip) {
+      const { start, end } = chipRange(r.chip)
+      caretTo(start, end)
+      return
+    }
+    const next = startToken(valueRef.current, r.kind)
+    change(next.value)
+    if (r.kind === 'project' || r.kind === 'label') suggest.openAt(next.caret)
+    else caretTo(next.caret)
+  }
+
+  function submit(e: FormEvent) {
     e.preventDefault()
+    void add(false)
+  }
+
+  async function add(open: boolean) {
     const line = value.trim()
     if (!line) return
     if (parsed && !parsed.title) return // only attributes typed so far; wait for a title
@@ -132,19 +177,49 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     setHighlight(null)
     // Unknown @names become labels first (one op each), then the task references their ids.
     const input: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
-    await onAdd(input)
+    await (open && onAddAndOpen ? onAddAndOpen(input) : onAdd(input))
   }
 
+  const lineInfo = parsed ? { due: parsed.due, datedByPhrase: chips.some((x) => x.kind === 'due') } : undefined
+  const palette = layout === 'palette'
+
+  /** The palette's own keys (D3): ↑/↓ over the rows, Tab edits the highlighted one, Shift+Enter adds and opens, Escape clears the highlight. */
+  function fieldKeys(e: KeyboardEvent<HTMLInputElement>): boolean {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      setRow((r) => (e.key === 'ArrowDown' ? (r === null ? 0 : Math.min(r + 1, rows.length - 1)) : r === null || r === 0 ? null : r - 1))
+      return true
+    }
+    if (e.key === 'Tab' && !e.shiftKey && row !== null && rows[row]) {
+      e.preventDefault()
+      edit(rows[row])
+      return true
+    }
+    if (e.key === 'Enter' && e.shiftKey && onAddAndOpen) {
+      e.preventDefault()
+      void add(true)
+      return true
+    }
+    if (e.key === 'Escape' && row !== null) {
+      e.stopPropagation()
+      setRow(null)
+      return true
+    }
+    return false
+  }
+
+  // The field's text size: 15 px in the palette, 16 px on the phone's sheet (no zoom on focus).
+  const size = palette ? 'text-prose' : layout === 'sheet' ? 'text-[1rem]' : ''
   return (
-    <form id={formId} onSubmit={(e) => void submit(e)}>
-      <div className="relative flex items-center gap-2">
-        <span className="text-h2 leading-none text-accent">+</span>
+    <form id={formId} onSubmit={submit} data-quick-add-layout={layout}>
+      <div className={`relative flex items-center ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'gap-2'}`}>
+        {palette ? <Icon name="plus" className="shrink-0 text-faint" /> : layout === 'line' && <span className="text-h2 leading-none text-accent">+</span>}
         {/* The recognised spans tinted behind the text (moments-and-onboarding D8, QuickAddTint). */}
         <span className="relative flex min-w-0 flex-1">
-        <QuickAddTint ref={tints} value={value} chips={chips} />
+        <QuickAddTint ref={tints} value={value} chips={chips} className={size} />
         <input
           ref={inputRef}
-          className="ui-input relative border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent"
+          className={`ui-input relative border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent ${size}`}
           placeholder={placeholder}
           value={value}
           onChange={(e) => change(e.target.value)}
@@ -152,6 +227,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           {...suggest.fieldProps}
           onKeyDown={(e) => {
             if (suggest.onKeyDown(e)) return
+            if (palette && fieldKeys(e)) return
             if (e.key === 'Escape') {
               if (highlight !== null) {
                 e.stopPropagation()
@@ -211,11 +287,24 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           )}
         </>
       )}
-      <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
+      {palette && <>
+        <div id="quick-add-preview" role="status" aria-live="polite">
+          <FieldRows rows={rows} highlight={row} chipHighlight={highlight} projects={projects} labels={labels} line={lineInfo} onEdit={edit} onDismiss={(r) => r.chip && dismiss(r.chip)} />
+          {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-4 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
+        </div>
+        <QuickAddFooter title={parsed ? parsed.title : null} empty={emptyTitle} escape={escape} />
+      </>}
+      {layout === 'sheet' && (
+        <div id="quick-add-preview" role="status" aria-live="polite">
+          {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-3 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
+          <SheetBar chips={chips} projects={projects} labels={labels} line={lineInfo} onDismiss={dismiss} onStart={edit} canSend={!!value.trim() && !emptyTitle} />
+        </div>
+      )}
+      {layout === 'line' && <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
         {(chips.length > 0 || misses.length > 0) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6 text-meta">
             <ParseChips chips={chips} misses={misses} projects={projects} labels={labels} highlight={highlight}
-              line={parsed ? { due: parsed.due, datedByPhrase: chips.some((x) => x.kind === 'due') } : undefined}
+              line={lineInfo}
               onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} />
             <span className="text-muted" data-testid="quick-add-title">
               <span className="sr-only">{t('Title:')}{' '}</span>
@@ -223,7 +312,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             </span>
           </div>
         )}
-      </div>
+      </div>}
     </form>
   )
 })

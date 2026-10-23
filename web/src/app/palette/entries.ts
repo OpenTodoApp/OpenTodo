@@ -33,9 +33,12 @@ export interface Entry {
   run: () => unknown | Promise<unknown>
 }
 
-/** Display text of the secondary line: the explicit secondary, the marker and the shortcut. */
-export function secondaryOf(e: Entry): string | undefined {
-  const parts = [e.marker, e.secondary, e.shortcut].filter(Boolean)
+/**
+ * Display text of the secondary line: the explicit secondary, the marker and the
+ * shortcut; without the shortcut where the palette shows it as keycaps (palette-quick-add D5).
+ */
+export function secondaryOf(e: Entry, withShortcut = true): string | undefined {
+  const parts = [e.marker, e.secondary, withShortcut ? e.shortcut : undefined].filter(Boolean)
   return parts.length ? parts.join(' · ') : undefined
 }
 

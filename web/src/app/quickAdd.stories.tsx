@@ -78,3 +78,22 @@ export const UnmatchedToken: StoryObj = {
     </Frame>
   ),
 }
+
+/** The quick-add palette (palette-quick-add D2): field rows with values, hints and the token that sets each. */
+export const Palette: StoryObj = {
+  render: () => (
+    <div className="max-w-[40rem] overflow-hidden rounded-popover border border-strong bg-pop shadow-3">
+      <QuickAdd layout="palette" placeholder="Add a task…" projects={projects} labels={labels} onAdd={noop} onAddAndOpen={noop} hideHint
+        initialValue="Call the bank tomorrow 3pm #Website @errand p2" escape={{ label: 'Close', run: () => {} }} />
+    </div>
+  ),
+}
+
+/** The phone's sheet (palette-quick-add D7): neutral chips, a dashed placeholder for the label, the tool row and send. */
+export const PhoneSheet: StoryObj = {
+  render: () => (
+    <div className="max-w-sm rounded-t-popover border-t border-strong bg-pop pt-3 shadow-3">
+      <QuickAdd layout="sheet" placeholder="Add a task…" projects={projects} labels={labels} onAdd={noop} hideHint initialValue="Call the bank tomorrow 3pm #Home" />
+    </div>
+  ),
+}

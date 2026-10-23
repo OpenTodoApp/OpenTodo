@@ -2,9 +2,12 @@
 // Ctrl/⌘+K that finds any task, project, label, saved view or Settings section from
 // local data and runs any command by name. Lazy chunk, mounted by Shell on first open.
 // One bar, four modes (moments-and-onboarding D7, modes.ts): Search (default; its last
-// entry adds the text as a task, Ctrl/⌘+Enter too), Add (the quick add), Commands (the
-// registry only) and Ask (handed to the assistant panel), switched by the segmented
-// control or the `+`, `>` and `?` prefixes; Escape in another mode returns to Search.
+// entry adds the text as a task, Ctrl/⌘+Enter too), Add (the quick-add palette),
+// Commands (the registry only) and Ask (handed to the assistant panel), switched by the
+// segmented control or the `+`, `>` and `?` prefixes; Escape in another mode returns to
+// Search, except in Add when the bar was opened in Add. One shell for every mode
+// (palette-quick-add D4-D6): a card near the top, the field, the results with their
+// keycaps, and a footer that names the keys.
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useFieldDefs } from '../useFields'
@@ -36,7 +39,7 @@ import { commandEntries, contextEntries, trailingEntries, type PaletteContext } 
 import { t } from '../../lib/i18n'
 import { useAssistantStatus } from '../../lib/assistantStatus'
 import { addFromBar, lineToInput } from './addFromBar'
-import { AddPanel, AskPanel, BarHint, ModeSwitch } from './BarParts'
+import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarParts'
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 
 /** At most this many entries are listed; the rest are counted. */
@@ -159,7 +162,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const state = useCombobox<Entry>({
     source: commandsMode ? commandsOnly : source, emptySource: commandsMode ? commandsOnly : emptySource, prefix: commandsMode ? [] : prefix,
     suffix: commandsMode ? [] : addEntry ? [...trailing, addEntry] : trailing, limit: PALETTE_LIMIT, rankContext: 'palette',
-    getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: secondaryOf, getKeywords: (e) => e.keywords, getGroup: groupOf,
+    getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: (e) => secondaryOf(e, false), getKeywords: (e) => e.keywords, getGroup: groupOf,
     onPick: (e) => runEntry(e),
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })
@@ -204,22 +207,32 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       </Dialog>
     )
   }
+  // Escape from Add closes when the bar was opened in Add (`q`, New task), else returns to Search.
+  const closesFromAdd = initialMode === 'add'
+  const escape = () => (bar === 'search' || (bar === 'add' && closesFromAdd) ? onClose() : toMode('search'))
+  // The selected task, named at the field's end: what the task commands act on.
+  const context = task ? (
+    <span className="inline-flex max-w-[14rem] shrink-0 items-center gap-1 truncate rounded-full border border-default px-2 py-0.5 text-meta text-muted" data-palette-context>
+      <Icon name="check" size="xs" className="shrink-0" /><span className="truncate">{task.title || t('Untitled')}</span>
+    </span>
+  ) : undefined
   return (
-    <Dialog title={t('Search and commands')} label={t('Search and commands')} onClose={onClose} size="md" testId="command-palette" motion="fade"
-      onEscape={() => (bar === 'search' ? onClose() : toMode('search'))}>
-      <div className="space-y-2" data-combobox data-palette data-bar-mode-current={bar} onKeyDownCapture={onKeyDownCapture}>
-        {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)} />}
-        {bar === 'ask' && <AskPanel onSent={onClose} />}
-        {(bar === 'search' || bar === 'commands') && (
-          <ComboboxField state={field} label={bar === 'commands' ? t('Run a command') : t('Search tasks, projects and commands')}
-            placeholder={bar === 'commands' ? t('Type a command…') : t('Search or type a command…')} expanded autoFocus />
-        )}
+    <Dialog title={t('Search and commands')} label={t('Search and commands')} onClose={onClose} testId="command-palette" motion="fade" placement="palette"
+      onEscape={escape}>
+      <div data-combobox data-palette data-bar-mode-current={bar} onKeyDownCapture={onKeyDownCapture}>
         <ModeSwitch modes={modes} mode={bar} onMode={toMode} />
-        {bar === 'search' && !state.query.trim() && <BarHint ask={askAvailable} />}
-        {(bar === 'search' || bar === 'commands') && (
-          <ComboboxList state={state} label={t('Results')} emptyText={t('Nothing matches. Try fewer letters, or a filter query.')}
-            renderLeading={(e) => <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />} />
-        )}
+        {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)}
+          onAddAndOpen={async (input) => { await addFromBar(input, route, user?.id, true); onClose() }}
+          escape={{ label: closesFromAdd ? t('Close') : t('Back'), run: escape }} />}
+        {bar === 'ask' && <AskPanel onSent={onClose} />}
+        {(bar === 'search' || bar === 'commands') && <>
+          <ComboboxField state={field} look="palette" trailing={context} label={bar === 'commands' ? t('Run a command') : t('Search tasks, projects and commands')}
+            placeholder={bar === 'commands' ? t('Type a command…') : t('Search or type a command…')} expanded autoFocus />
+          <ComboboxList state={state} look="palette" label={t('Results')} emptyText={t('Nothing matches. Try fewer letters, or a filter query.')}
+            renderLeading={(e) => <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />}
+            renderTrailing={(e) => (e.shortcut ? <ShortcutKeys keys={e.shortcut} /> : null)} />
+          <BarFooter ask={askAvailable} />
+        </>}
       </div>
     </Dialog>
   )

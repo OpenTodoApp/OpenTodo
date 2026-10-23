@@ -1,15 +1,26 @@
-// The command bar's own parts (OpenSpec change moments-and-onboarding, design D7):
-// the segmented control under the field, the hint naming the prefixes, Add mode (the
-// quick add with the opening screen's defaults) and Ask mode (one line handed to the
+// The command bar's own parts (OpenSpec change moments-and-onboarding, design D7;
+// palette-quick-add D3, D6): the segmented control (phones and touch screens), the
+// footer that names the keys and the prefixes (a fine pointer), Add mode (the quick-add
+// palette with the opening screen's defaults) and Ask mode (one line handed to the
 // assistant panel on Enter; nothing is sent before).
 import { useRef, useState, type FormEvent } from 'react'
 import { useLabels, useProjects } from '../../lib/localData'
 import { t } from '../../lib/i18n'
-import { Icon } from '../../ui'
+import { Icon, KeySequence } from '../../ui'
 import { HelpLink } from '../help/HelpLink'
 import { QuickAdd, type QuickAddInput } from '../QuickAdd'
 import { ask } from '../assistant/AskEntry'
 import { MODE_LABEL, PREFIX_OF, type BarMode } from './modes'
+
+/** A command's keys at the right of its row (palette-quick-add D5): each alternative as keycaps, a sequence with "then". */
+export function ShortcutKeys({ keys }: { keys: string }) {
+  const alternatives = keys.split(' / ')
+  return (
+    <span className="inline-flex items-center gap-1.5" data-shortcut-keys>
+      {alternatives.map((a, i) => <span key={a} className="inline-flex items-center gap-1.5">{i > 0 && <span className="text-faint">{t('or')}</span>}<KeySequence keys={a} /></span>)}
+    </span>
+  )
+}
 
 /** Search, Add, Commands and (when available) Ask, as one radio group under the field. */
 export function ModeSwitch({ modes, mode, onMode }: { modes: BarMode[]; mode: BarMode; onMode: (m: BarMode) => void }) {
@@ -23,7 +34,8 @@ export function ModeSwitch({ modes, mode, onMode }: { modes: BarMode[]; mode: Ba
     refs.current[next]?.focus()
   }
   return (
-    <div role="radiogroup" aria-label={t('Mode')} onKeyDown={move} className="flex gap-1 rounded-control bg-sunken p-0.5" data-bar-modes>
+    // On a desktop with a mouse the footer names the prefixes instead (palette-quick-add D6).
+    <div role="radiogroup" aria-label={t('Mode')} onKeyDown={move} className="mx-3 mt-2 flex gap-1 rounded-control bg-sunken p-0.5 sm:pointer-fine:hidden" data-bar-modes>
       {modes.map((m) => {
         const checked = m === mode
         return (
@@ -38,28 +50,44 @@ export function ModeSwitch({ modes, mode, onMode }: { modes: BarMode[]; mode: Ba
   )
 }
 
-/** The hint while the field is empty: what Search finds and the three prefixes. */
-export function BarHint({ ask: withAsk }: { ask: boolean }) {
+/** Search and Commands' footer: the keys that choose and run, the prefixes and Help (palette-quick-add D6). */
+export function BarFooter({ ask: withAsk }: { ask: boolean }) {
+  const key = (k: string) => <kbd className="ui-kbd">{k}</kbd>
   return (
-    <p className="flex items-center gap-2 px-1 text-meta text-muted" data-bar-hint>
-      <span className="min-w-0 flex-1">
-        {withAsk
-          ? t.rich('Search, or start with {add} to add a task, {commands} for commands, {ask} to ask.', { add: <kbd className="ui-kbd">{PREFIX_OF.add}</kbd>, commands: <kbd className="ui-kbd">{PREFIX_OF.commands}</kbd>, ask: <kbd className="ui-kbd">{PREFIX_OF.ask}</kbd> })
-          : t.rich('Search, or start with {add} to add a task, {commands} for commands.', { add: <kbd className="ui-kbd">{PREFIX_OF.add}</kbd>, commands: <kbd className="ui-kbd">{PREFIX_OF.commands}</kbd> })}
+    <div className="flex items-center gap-3.5 border-t border-default bg-raised px-3.5 py-2 text-meta text-muted" data-bar-hint>
+      <span className="hidden items-center gap-3.5 sm:pointer-fine:flex">
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          <kbd className="ui-kbd"><Icon name="arrow-up" size="xs" /><span className="sr-only">{t('Up')}</span></kbd><kbd className="ui-kbd"><Icon name="arrow-down" size="xs" /><span className="sr-only">{t('Down')}</span></kbd>{t('Choose')}
+        </span>
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">{key('Enter')}{t('Run')}</span>
       </span>
+      <span className="hidden min-w-0 flex-1 truncate text-right sm:pointer-fine:block">
+        {withAsk
+          ? t.rich('Type {add} to add, {commands} for commands, {ask} to ask', { add: key(PREFIX_OF.add), commands: key(PREFIX_OF.commands), ask: key(PREFIX_OF.ask) })
+          : t.rich('Type {add} to add, {commands} for commands', { add: key(PREFIX_OF.add), commands: key(PREFIX_OF.commands) })}
+      </span>
+      <span className="flex-1 sm:pointer-fine:hidden" />
       <HelpLink screen="palette" topic={t('Search and commands')} />
-    </p>
+    </div>
   )
 }
 
-/** Add mode: the quick add, chips and preview; Enter adds and keeps the field, empty and focused. */
-export function AddPanel({ onAdd, initial }: { onAdd: (input: QuickAddInput) => Promise<unknown>; initial?: string }) {
+/**
+ * Add mode: the quick-add palette (field rows, the title and the keys). Enter adds and
+ * keeps the field, empty and focused; Shift+Enter adds and opens the task.
+ */
+export function AddPanel({ onAdd, onAddAndOpen, initial, escape }: {
+  onAdd: (input: QuickAddInput) => Promise<unknown>
+  onAddAndOpen: (input: QuickAddInput) => Promise<unknown>
+  initial?: string
+  escape: { label: string; run: () => void }
+}) {
   const projects = useProjects()
   const labels = useLabels()
   return (
-    <div className="rounded-control border border-default px-2 py-1" data-bar-add>
-      <QuickAdd autoFocus hideHint initialValue={initial} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels}
-        onAdd={async (input) => { await onAdd(input) }} />
+    <div data-bar-add>
+      <QuickAdd layout="palette" autoFocus hideHint initialValue={initial} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels}
+        onAdd={async (input) => { await onAdd(input) }} onAddAndOpen={async (input) => { await onAddAndOpen(input) }} escape={escape} />
     </div>
   )
 }
@@ -75,9 +103,9 @@ export function AskPanel({ onSent }: { onSent: () => void }) {
     onSent()
   }
   return (
-    <form onSubmit={submit} className="flex items-center gap-2 rounded-control border border-default px-2 py-1" data-bar-ask>
-      <Icon name="message-circle" className="text-accent" />
-      <input className="ui-input border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent" autoFocus
+    <form onSubmit={submit} className="flex items-center gap-2.5 border-b border-default px-4 py-2.5" data-bar-ask>
+      <Icon name="message-circle" className="shrink-0 text-accent" />
+      <input className="ui-input border-transparent bg-transparent px-1 text-prose shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent" autoFocus
         value={text} onChange={(e) => setText(e.target.value)} aria-label={t('Ask the assistant')} placeholder={t('Ask about your tasks…')} enterKeyHint="send" data-bar-ask-input />
     </form>
   )

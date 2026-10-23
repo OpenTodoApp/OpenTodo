@@ -274,15 +274,34 @@ describe('commands on ticked tasks (bulk-edit 6.3)', () => {
 describe('sections and shortcuts from the registry (ux-overhaul 6.4, 6.5)', () => {
   const headings = () => [...document.querySelectorAll('[data-palette] [role="presentation"]')].map((h) => h.textContent ?? '')
 
-  it('shows q beside "Quick add a task", from the registry', async () => {
+  it('shows q beside "Quick add a task" as a keycap at the row\'s end, from the registry (palette-quick-add D5)', async () => {
     const { keysOf } = await import('../../lib/shortcuts')
     const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
     await flush(50)
     await type(field(), 'quick add')
     await waitFor(() => options().some((o) => o.includes('Quick add a task')))
-    const row = options().find((o) => o.includes('Quick add a task'))!
-    expect(row).toContain(keysOf('list.quick-add'))
+    const row = [...document.querySelectorAll('[data-palette] [role="option"]')].find((o) => o.textContent?.includes('Quick add a task'))!
     expect(keysOf('list.quick-add')).toBe('q')
+    expect(row.querySelector('[data-shortcut-keys]')!.textContent).toBe('Q')
+    // Not repeated in the secondary line.
+    expect(row.textContent).toBe('Quick add a taskQ')
+    await r.unmount()
+  })
+
+  it('a sequence reads as keycaps with "then"; the selected task is named in the field (palette-quick-add D5)', async () => {
+    const t = task({ id: 'sel', title: 'Call the plumber about the boiler' })
+    await db.tasks.put(t)
+    const off = registerListState(listFor(t))
+    const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
+    await flush(50)
+    expect(document.querySelector('[data-palette-context]')!.textContent).toBe('Call the plumber about the boiler')
+    await type(field(), 'go to upco')
+    await waitFor(() => options().some((o) => o.includes('Go to Upcoming')))
+    const row = [...document.querySelectorAll('[data-palette] [role="option"]')].find((o) => o.textContent?.includes('Go to Upcoming'))!
+    expect([...row.querySelectorAll('[data-shortcut-keys] kbd')].map((k) => k.textContent)).toEqual(['G', 'U'])
+    expect(row.querySelector('[data-shortcut-keys]')!.textContent).toBe('GthenU')
+    expect(document.querySelector('[data-overlay="dialog"]')!.getAttribute('data-placement')).toBe('palette')
+    off()
     await r.unmount()
   })
 

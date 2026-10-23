@@ -84,3 +84,47 @@ describe('the add button', () => {
     await r.unmount()
   })
 })
+
+describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick add tools on a phone")', () => {
+  async function openSheet() {
+    navigate({ view: 'today' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await flush(50)
+    await click(document.querySelector<HTMLButtonElement>('[data-add-button]')!)
+    await waitFor(() => !!field())
+    return r
+  }
+
+  it('the project tool starts `#` at the end, keeps the field focused and opens the suggestions', async () => {
+    const { createProject } = await import('../lib/ops')
+    await createProject({ name: 'Home renovation' })
+    const r = await openSheet()
+    await type(field()!, 'Buy primer')
+    // The tools keep focus in the field: they cancel the mouse down.
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    document.querySelector('[data-sheet-tool="project"]')!.dispatchEvent(down)
+    expect(down.defaultPrevented).toBe(true)
+    await click(document.querySelector('[data-sheet-tool="project"]')!)
+    await flush(40)
+    expect(field()!.value).toBe('Buy primer #')
+    expect(document.activeElement).toBe(field())
+    await waitFor(() => !!document.querySelector('[data-token-suggestions="project"]'))
+    await r.unmount()
+  })
+
+  it('chips for what is understood, a dashed placeholder for the label, and send adds like Enter', async () => {
+    const { createProject } = await import('../lib/ops')
+    const pid = await createProject({ name: 'Home renovation' })
+    const r = await openSheet()
+    await type(field()!, 'Call Mia about the tiles tomorrow 5pm #HomeRenovation')
+    await waitFor(() => !!document.querySelector('[data-sheet-chip="project"]'))
+    expect(document.querySelector('[data-sheet-chip="due"]')!.textContent).toContain('17:00')
+    expect(document.querySelector('[data-sheet-chip="project"]')!.textContent).toContain('Home renovation')
+    expect(document.querySelector('[data-sheet-placeholder="label"]')).toBeTruthy()
+    expect(document.querySelector('[data-sheet-placeholder="project"]')).toBeNull()
+    await click(document.querySelector('[data-sheet-send]')!)
+    await waitFor(() => !sheet())
+    expect((await db.tasks.toArray()).map((t) => [t.title, t.project_id, t.due?.time])).toEqual([['Call Mia about the tiles', pid, '17:00']])
+    await r.unmount()
+  })
+})

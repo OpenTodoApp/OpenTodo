@@ -626,6 +626,7 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/palette/modes.ts",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
@@ -759,6 +760,9 @@
   "Add a webhook": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Add and open": [
+    "web/src/app/quickadd/FieldRows.tsx"
+  ],
   "Add by email": [
     "web/src/app/WorkspaceMembers.tsx"
   ],
@@ -780,6 +784,9 @@
   ],
   "Add delivery channel": [
     "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "Add details": [
+    "web/src/app/quickadd/SheetBar.tsx"
   ],
   "Add details, or send as it is…": [
     "web/src/app/assistant/AssistantComposer.tsx"
@@ -836,6 +843,9 @@
   ],
   "Add subtask…": [
     "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Add task": [
+    "web/src/app/quickadd/SheetBar.tsx"
   ],
   "Add tasks to": [
     "web/src/app/IssueEditor.tsx"
@@ -1566,6 +1576,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/menus/ActionMenu.tsx",
+    "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/review/StepCard.tsx"
   ],
   "Back to Today": [
@@ -2107,6 +2118,9 @@
   "Choice": [
     "web/src/lib/fields.ts"
   ],
+  "Choose": [
+    "web/src/app/palette/BarParts.tsx"
+  ],
   "Choose a PNG or JPEG image.": [
     "web/src/app/BrandingPanel.tsx"
   ],
@@ -2289,6 +2303,7 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/assistant/AssistantSheet.tsx",
     "web/src/app/help/HelpPanel.tsx",
+    "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/ui/overlay/Dialog.tsx",
     "web/src/ui/overlay/Popover.tsx"
@@ -3123,6 +3138,7 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
@@ -3579,6 +3595,9 @@
   ],
   "Done today, {instant}": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Down": [
+    "web/src/app/palette/BarParts.tsx"
   ],
   "Download": [
     "web/src/app/TemplateDialogs.tsx"
@@ -4076,6 +4095,7 @@
   "Estimate": [
     "web/src/app/EstimateField.tsx",
     "web/src/app/ParseChips.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/lib/facets.ts"
   ],
@@ -5453,6 +5473,12 @@
   "In the Trash: select the previous item": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the command bar's Add mode: add the task and open it": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the command bar's Add mode: move over the fields; Tab edits the highlighted one": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In the command bar: add what you typed as a task": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5795,7 +5821,9 @@
     "web/src/app/palette/registry.ts"
   ],
   "Keep “{source}” as text": [
-    "web/src/app/ParseChips.tsx"
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/quickadd/SheetBar.tsx"
   ],
   "Kept away": [
     "web/src/app/AgentAccessRow.tsx"
@@ -5852,6 +5880,7 @@
     "web/src/app/SavedViewView.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Label (optional)": [
@@ -6932,7 +6961,9 @@
     "web/src/app/LabelsView.tsx"
   ],
   "New label “{name}”": [
-    "web/src/app/ParseChips.tsx"
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/quickadd/SheetBar.tsx"
   ],
   "New label: {name}": [
     "web/src/lib/assistant.ts"
@@ -8871,6 +8902,7 @@
     "web/src/app/SavedViewView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
@@ -8890,6 +8922,9 @@
   ],
   "Priority must be p1, p2, p3 or p4 at position {pos}": [
     "web/src/lib/filter/parse.ts"
+  ],
+  "Priority {n}": [
+    "web/src/app/quickadd/FieldRows.tsx"
   ],
   "Priority {priority}": [
     "web/src/app/PublicListScreen.tsx"
@@ -8955,6 +8990,7 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/index.ts",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -9394,6 +9430,7 @@
     "web/public/push-sw.js",
     "web/src/app/ParseChips.tsx",
     "web/src/app/ReminderToasts.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/lib/facets.ts"
   ],
@@ -9624,7 +9661,8 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "Repeats": [
-    "web/src/app/ParseChips.tsx"
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/quickadd/FieldRows.tsx"
   ],
   "Repeats {rule}": [
     "web/src/app/task-detail/WhenControl.tsx",
@@ -9972,6 +10010,9 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/rules/RulesView.tsx"
   ],
+  "Run": [
+    "web/src/app/palette/BarParts.tsx"
+  ],
   "Run a command": [
     "web/src/app/palette/CommandPalette.tsx"
   ],
@@ -10268,12 +10309,6 @@
   ],
   "Search templates…": [
     "web/src/app/templates/TemplateLibrary.tsx"
-  ],
-  "Search, or start with {add} to add a task, {commands} for commands, {ask} to ask.": [
-    "web/src/app/palette/BarParts.tsx"
-  ],
-  "Search, or start with {add} to add a task, {commands} for commands.": [
-    "web/src/app/palette/BarParts.tsx"
   ],
   "Second factor disabled": [
     "web/src/app/auditFormat.ts"
@@ -12976,6 +13011,7 @@
   ],
   "Time spent": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Time zone": [
@@ -13046,7 +13082,8 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "Title:": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/QuickAdd.tsx",
+    "web/src/app/quickadd/FieldRows.tsx"
   ],
   "Titles": [
     "web/src/app/NotificationChannels.tsx"
@@ -13434,7 +13471,8 @@
     "web/src/app/FilterView.tsx"
   ],
   "Type a title": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/QuickAdd.tsx",
+    "web/src/app/quickadd/FieldRows.tsx"
   ],
   "Type an address, a saved location or coordinates such as 45.4642, 9.19.": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -13453,6 +13491,12 @@
   ],
   "Type to find or create a label…": [
     "web/src/app/LabelPicker.tsx"
+  ],
+  "Type {add} to add, {commands} for commands": [
+    "web/src/app/palette/BarParts.tsx"
+  ],
+  "Type {add} to add, {commands} for commands, {ask} to ask": [
+    "web/src/app/palette/BarParts.tsx"
   ],
   "Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {max} fields.": [
     "web/src/app/FieldsDialog.tsx"
@@ -13475,6 +13519,12 @@
   ],
   "Under 30 min": [
     "web/src/lib/filters.ts"
+  ],
+  "Understood": [
+    "web/src/app/quickadd/SheetBar.tsx"
+  ],
+  "Understood as you type": [
+    "web/src/app/quickadd/FieldRows.tsx"
   ],
   "Undo": [
     "web/src/app/ArchivePrompt.tsx",
@@ -13648,6 +13698,7 @@
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/useFocusTimer.ts",
+    "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CarryOver.tsx",
@@ -13682,6 +13733,9 @@
     "web/src/app/Sections.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Up": [
+    "web/src/app/palette/BarParts.tsx"
   ],
   "Up to 5. Each one chooses the events it receives.": [
     "web/src/lib/settingsCopy.ts"
@@ -14087,6 +14141,7 @@
   "When": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
@@ -15357,6 +15412,12 @@
   "none": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "none · type a day or a date": [
+    "web/src/app/quickadd/FieldRows.tsx"
+  ],
+  "none · type “{token}”": [
+    "web/src/app/quickadd/FieldRows.tsx"
+  ],
   "not a date": [
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
@@ -15480,6 +15541,7 @@
   ],
   "or": [
     "web/src/app/AuthScreen.tsx",
+    "web/src/app/palette/BarParts.tsx",
     "web/src/app/shortcuts/Kbd.tsx"
   ],
   "orange": [
