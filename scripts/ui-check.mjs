@@ -89,13 +89,27 @@ const ILLUSTRATION_RULES = [
   [/Gradient\b|<filter\b|<feDropShadow\b/, 'a gradient, filter or shadow'],
 ]
 
+// illustrations-v2: two stroke weights (the main line and the fine detail line), shape
+// fills from three surface tokens only, and at most one accent shape per drawing.
+export const ILLUSTRATION_STROKES = ['1.75', '1']
+const ILLUSTRATION_FILLS = ['none', 'var(--color-surface)', 'var(--color-sunken)', 'var(--color-accent)']
+
 export function illustrationProblems(file, text) {
   const out = []
   if (Buffer.byteLength(text, 'utf8') > ILLUSTRATION_MAX_BYTES) out.push(`${file}: over ${ILLUSTRATION_MAX_BYTES} bytes`)
+  let accents = 0
   text.split('\n').forEach((line, i) => {
     const code = line.replace(/\/\/.*$/, '')
     for (const [re, what] of ILLUSTRATION_RULES) if (re.test(code)) out.push(`${file}:${i + 1}: ${what}`)
+    for (const [, w] of code.matchAll(/strokeWidth="([^"]*)"/g)) {
+      if (!ILLUSTRATION_STROKES.includes(w)) out.push(`${file}:${i + 1}: stroke width ${w} (use ${ILLUSTRATION_STROKES.join(' or ')})`)
+    }
+    for (const [, f] of code.matchAll(/\bfill="([^"]*)"/g)) {
+      if (!ILLUSTRATION_FILLS.includes(f)) out.push(`${file}:${i + 1}: fill ${f} (use the surface, the sunken surface or the accent)`)
+      if (f === 'var(--color-accent)') accents++
+    }
   })
+  if (accents > 1) out.push(`${file}: ${accents} accent shapes (at most one)`)
   return out
 }
 

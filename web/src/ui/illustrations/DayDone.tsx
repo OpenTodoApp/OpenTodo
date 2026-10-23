@@ -1,15 +1,16 @@
-// Done for today (OpenSpec change moments-and-onboarding, design D1; design-system
-// "Illustration set"): a closed notebook with a ribbon and a crescent moon above it;
-// the moon is the one accent shape.
+// Day done (illustrations-v2): a closed notebook lying on the desk, its ribbon out,
+// inside the open loop of the brand mark, a crescent moon in the loop's opening.
 export function DayDone() {
   return (
-    <svg viewBox="0 0 160 120" width="160" height="120" fill="none" stroke="currentColor" strokeWidth="1.5"
+    <svg viewBox="0 0 160 120" width="160" height="120" fill="none" stroke="currentColor" strokeWidth="1.75"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false" data-illustration="day-done">
-      <path d="M22 104h116" />
-      <rect x="48" y="58" width="64" height="44" rx="4" fill="var(--color-sunken)" />
-      <path d="M56 58v44M70 58V46l5 4 5-4v12" />
-      <path d="M110 14a16 16 0 1 0 18 22 13 13 0 0 1-18-22Z" fill="var(--color-accent)" fillOpacity="0.15" />
-      <path d="M136 18v4M134 20h4M62 30v3M60.5 31.5h3" />
+      <path d="M118.6 43.6A40 40 0 1 1 83.5 14.2" strokeWidth="1" />
+      <path d="M40 100h80M26 100h6M128 100h6" />
+      <path d="M54 80h52a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H54a3 3 0 0 1-3-3V83a3 3 0 0 1 3-3Z" fill="var(--color-surface)" />
+      <path d="M51 86h58" />
+      <path d="M58 91h46M58 95h46M54 32v4M52 34h4M128 58v3M126.5 59.5h3" strokeWidth="1" />
+      <path d="M92 86v14l3-2.5 3 2.5V86" fill="var(--color-surface)" />
+      <path d="M111 13a10 10 0 1 0 6 17 8 8 0 0 1-6-17Z" fill="var(--color-accent)" fillOpacity="0.2" stroke="var(--text-color-accent)" />
     </svg>
   )
 }

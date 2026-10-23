@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { EmptyState } from '../patterns/EmptyState'
 import { Illustration } from './Illustration'
@@ -35,6 +36,26 @@ export const Set: StoryObj = {
           <Drawing />
           <figcaption>{name}</figcaption>
         </figure>
+      ))}
+    </div>
+  ),
+}
+
+const ACCENTS = ['emerald', 'blue', 'indigo', 'violet', 'rose', 'orange', 'teal', 'graphite']
+// The colour tokens resolve at the root, so a row with its own accent declares them again.
+const ROW_TOKENS = { '--color-accent': 'var(--ot-accent)', '--text-color-accent': 'var(--ot-accent-text)' } as CSSProperties
+
+// illustrations-v2: every drawing in every accent theme, so a change to a drawing or a
+// token is seen in all of them at once (the theme toolbar switches light and dark).
+export const EveryAccent: StoryObj = {
+  name: 'Illustration set in every accent',
+  render: () => (
+    <div className="flex flex-col gap-2 p-4">
+      {ACCENTS.map((accent) => (
+        <div key={accent} data-accent={accent} style={ROW_TOKENS} className="flex items-center gap-2 text-meta text-muted">
+          <span className="w-16">{accent}</span>
+          {Object.entries(DRAWINGS).map(([name, Drawing]) => <Drawing key={name} />)}
+        </div>
       ))}
     </div>
   ),
