@@ -561,6 +561,7 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Actions": [
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/bulk/useBulkList.tsx"
@@ -601,6 +602,7 @@
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Active": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/lib/webhooks.ts"
   ],
@@ -1303,9 +1305,11 @@
   "Archive “{name}”?": [
     "web/src/app/ProjectHeader.tsx"
   ],
+  "Archived": [
+    "web/src/app/ProjectsView.tsx"
+  ],
   "Archived projects": [
     "web/src/app/ArchivedProjects.tsx",
-    "web/src/app/ProjectsView.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Archived {join}: no open tasks for 30 days.": [
@@ -2384,7 +2388,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Collapse {name}": [
-    "web/src/app/ProjectsView.tsx",
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "Collection URL": [
@@ -4310,7 +4314,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Expand {name}": [
-    "web/src/app/ProjectsView.tsx",
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/Sidebar.tsx"
   ],
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": [
@@ -4832,7 +4836,7 @@
   "Give every item one home: a project, a date, Waiting or Someday.": [
     "web/src/lib/method/vocabulary.json"
   ],
-  "Go to All projects: the whole tree, find a project, archived projects": [
+  "Go to All projects: every project with its health, find a project, archived projects": [
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Anytime": [
@@ -5105,8 +5109,14 @@
   "Heading 3": [
     "web/src/app/editorCommands.ts"
   ],
+  "Health": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
   "Health and appointments": [
     "web/src/lib/review.ts"
+  ],
+  "Health is worked out on your device from late tasks, deadlines and recent activity.": [
+    "web/src/app/ProjectsView.tsx"
   ],
   "Health|icon category": [
     "web/src/ui/icons/catalogue.ts"
@@ -6037,6 +6047,9 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/stats.ts"
   ],
+  "Late": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
   "Later": [
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/lib/listGroups.ts"
@@ -6866,6 +6879,7 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/NewWorkspaceDialog.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/TokensSection.tsx",
@@ -7067,6 +7081,9 @@
   ],
   "Next day or week": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Next due": [
+    "web/src/app/ProjectsTable.tsx"
   ],
   "Next month": [
     "web/src/app/HabitHistory.tsx",
@@ -7778,6 +7795,9 @@
   "Nothing on a board: cards are not nested": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Nothing open": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
   "Nothing parked for later.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -8059,6 +8079,9 @@
   ],
   "On time": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "On track": [
+    "web/src/app/ProjectsTable.tsx"
   ],
   "On, can make changes": [
     "web/src/app/AssistantsPanel.tsx"
@@ -8375,6 +8398,9 @@
   "Opens the source {text}": [
     "web/src/app/OriginChip.tsx"
   ],
+  "Open|count": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
   "Optional": [
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/app/locations/PlacesView.tsx",
@@ -8669,6 +8695,7 @@
     "web/src/app/InviteLinksSection.tsx"
   ],
   "People": [
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/settingsSections.ts"
   ],
   "People can connect GitHub or GitLab; the server polls their issues.": [
@@ -9001,6 +9028,9 @@
   "Profile, sessions, password, two-factor, passkeys, linked accounts and encryption": [
     "web/src/app/settingsSections.ts"
   ],
+  "Progress": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
   "Project": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ImportScreen.tsx",
@@ -9115,6 +9145,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Projects": [
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TokenSuggest.tsx",
@@ -9275,6 +9306,9 @@
   ],
   "Quick wins": [
     "web/src/lib/filters.ts"
+  ],
+  "Quiet": [
+    "web/src/app/ProjectsTable.tsx"
   ],
   "Quote": [
     "web/src/app/editorCommands.ts"
@@ -11065,6 +11099,9 @@
   ],
   "Slipped": [
     "web/src/app/review/MonthlyLook.tsx"
+  ],
+  "Slipping": [
+    "web/src/app/ProjectsTable.tsx"
   ],
   "Slowed down": [
     "web/src/app/DataSettings.tsx"
@@ -13783,6 +13820,9 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/lib/shortcuts.ts"
   ],
+  "Updated": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
   "Updated {time}": [
     "web/src/app/PublicListScreen.tsx",
     "web/src/page/TaskPageScreen.tsx"
@@ -15282,6 +15322,7 @@
   ],
   "just now": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/task-detail/RelativeTime.tsx"
   ],
@@ -16164,6 +16205,7 @@
     "web/src/lib/history.ts"
   ],
   "yesterday": [
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/lib/review.ts"
@@ -16318,6 +16360,7 @@
   ],
   "{h} h ago": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/task-detail/RelativeTime.tsx"
   ],
@@ -16362,6 +16405,7 @@
   ],
   "{m} min ago": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/task-detail/RelativeTime.tsx"
   ],
@@ -16452,6 +16496,7 @@
     "web/src/lib/facets.ts"
   ],
   "{n, plural, one {# day} other {# days}}": [
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -16534,7 +16579,7 @@
   "{n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/ArchivedProjects.tsx",
     "web/src/app/LabelsView.tsx",
-    "web/src/app/ProjectsView.tsx",
+    "web/src/app/ProjectsTable.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/locations/PlacesView.tsx",
@@ -16542,6 +16587,9 @@
   ],
   "{n, plural, one {# panel} other {# panels}}": [
     "web/src/app/ViewsView.tsx"
+  ],
+  "{n, plural, one {# past its deadline} other {# past their deadline}}": [
+    "web/src/app/ProjectsTable.tsx"
   ],
   "{n, plural, one {# person uses their own provider and key.} other {# people use their own provider and key.}}": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -16906,6 +16954,7 @@
     "web/src/app/PlanView.tsx"
   ],
   "{n} days ago": [
+    "web/src/app/ProjectsTable.tsx",
     "web/src/lib/review.ts"
   ],
   "{n} deactivated": [
@@ -16922,6 +16971,9 @@
   ],
   "{n} kept": [
     "web/src/app/review/DoneForToday.tsx"
+  ],
+  "{n} late": [
+    "web/src/app/ProjectsTable.tsx"
   ],
   "{n} left": [
     "web/src/app/review/ReviewProgress.tsx",
@@ -17005,6 +17057,9 @@
   ],
   "{n} with errors": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "{n}% done": [
+    "web/src/app/ProjectsTable.tsx"
   ],
   "{n}-day streak": [
     "web/src/lib/habits.ts"

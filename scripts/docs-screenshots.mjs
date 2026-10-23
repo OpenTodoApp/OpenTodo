@@ -464,14 +464,21 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 330 }
   } },
-  // Archived projects live at the bottom of the Projects page.
+  // All projects as a table with health (projects-table): the header, the tabs and the table.
+  { name: 'all-projects', server: P, async run(p) {
+    await go(p, plainBase, '/projects', () => p.locator('[data-projects-table] [data-health]').first().waitFor())
+    await settle(p, 400)
+    const main = await p.locator('main').boundingBox(); const table = await p.locator('[data-projects-table]').boundingBox()
+    return { x: main.x, y: main.y, width: main.width, height: Math.min(table.y + table.height - main.y + 56, 640) }
+  } },
+  // Archived projects are the Projects page's second tab (projects-table D7).
   { name: 'archived-projects', server: P, async run(p) {
-    await go(p, plainBase, '/projects', () => p.locator('[data-archived-disclosure] summary').waitFor())
-    const summary = p.locator('[data-archived-disclosure] summary'); await summary.click(); await p.getByTestId('archived-projects').waitFor()
-    await summary.evaluate((el) => el.scrollIntoView({ block: 'center' })); await settle(p, 400)
-    const main = await p.locator('main').boundingBox(); const top = await summary.boundingBox()
+    await go(p, plainBase, '/projects', () => p.getByRole('tab', { name: /^Archived/ }).waitFor())
+    const tab = p.getByRole('tab', { name: /^Archived/ }); await tab.click(); await p.getByTestId('archived-projects').waitFor()
+    await settle(p, 400)
+    const main = await p.locator('main').boundingBox()
     const list = await p.getByTestId('archived-projects').boundingBox()
-    return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: list.y + list.height - top.y + 44 }
+    return { x: main.x, y: main.y, width: main.width, height: list.y + list.height - main.y + 32 }
   } },
   { name: 'members', server: P, async run(p) {
     await go(p, plainBase, '/settings/people', () => p.getByRole('heading', { name: 'People', level: 1 }).waitFor())

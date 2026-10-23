@@ -75,41 +75,48 @@ describe('All projects page', () => {
   })
 })
 
+
+const archivedTab = (root: ParentNode) => [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find((b) => b.textContent!.startsWith('Archived'))!
+
 describe('Archived projects list', () => {
-  it('Listed with context: a closed disclosure reading 2, sorted by name, with parent and open tasks', async () => {
+  it('Listed with context: an Archived tab reading 2, sorted by name, with parent and open tasks', async () => {
     const home = await createProject({ name: 'Home' })
     const garden = await createProject({ name: 'Garden', parent_id: home })
     await createTask({ title: 'Prune the roses', project_id: garden })
     const trip = await createProject({ name: 'Trip 2026' })
     await archiveProject(trip)
     await archiveProject(garden)
+    history.replaceState(null, '', '/projects')
     const r = await render(<ProjectsView />)
-    await waitFor(() => r.container.querySelector('[data-archived-count]')?.textContent === '2')
-    const details = r.container.querySelector<HTMLDetailsElement>('[data-archived-disclosure]')!
-    expect(details.open).toBe(false)
-    await click(details.querySelector('summary')!)
+    await waitFor(() => archivedTab(r.container)?.textContent === 'Archived2')
+    expect(archivedTab(r.container).getAttribute('aria-selected')).toBe('false')
+    await click(archivedTab(r.container))
     await waitFor(() => r.container.querySelectorAll('[data-restore]').length === 2)
     await waitFor(() => r.container.querySelector('[data-testid="archived-projects"]')!.textContent!.includes('1 open task'))
     const text = r.container.querySelector('[data-testid="archived-projects"]')!.textContent!
     expect(text.indexOf('Garden')).toBeLessThan(text.indexOf('Trip 2026'))
     expect(text).toContain('In Home · 1 open task')
     expect(text).toContain('0 open tasks')
-    // Restore works offline: one op, the project is back in the tree.
+    expect(location.hash).toBe('#archived')
+    // Restore works offline: one op, the project is back in the table.
     await click(r.container.querySelector('button[aria-label="Restore Trip 2026"]')!)
-    await waitFor(() => names(r.container).includes('Trip 2026'))
+    await waitFor(() => archivedTab(r.container).textContent === 'Archived1')
     expect((await db.projects.get(trip))!.archived).toBe(false)
+    await click(r.container.querySelector('[role="tab"]')!)
+    await waitFor(() => names(r.container).includes('Trip 2026'))
+    expect(location.hash).toBe('')
     await r.unmount()
   })
 
-  it('Nothing archived: the disclosure says so', async () => {
+  it('Nothing archived: the tab says so', async () => {
     await createProject({ name: 'Home' })
     const r = await render(<ProjectsView archived />)
     await waitFor(() => r.container.textContent!.includes('No archived projects'))
-    expect(r.container.querySelector('[data-archived-count]')?.textContent).toBe('0')
+    expect(archivedTab(r.container).textContent).toBe('Archived0')
     await r.unmount()
   })
 
-  it('Reached from Settings: the link opens the page at the archived projects, expanded', async () => {
+  it('Reached from Settings: the link opens the page on the Archived tab', async () => {
     const s = await render(<AutoArchiveView on onChange={() => {}} />)
     const link = s.container.querySelector<HTMLAnchorElement>('[data-archived-link]')!
     expect(link.getAttribute('href')).toBe('/projects#archived')
@@ -118,19 +125,107 @@ describe('Archived projects list', () => {
     await s.unmount()
     const r = await render(<ProjectsView archived />)
     await flush(40)
-    expect(r.container.querySelector<HTMLDetailsElement>('[data-archived-disclosure]')!.open).toBe(true)
+    expect(archivedTab(r.container).getAttribute('aria-selected')).toBe('true')
     await r.unmount()
   })
 
-  it('a link to #archived while the page is open expands the disclosure', async () => {
+  it('a link to #archived while the page is open selects the Archived tab', async () => {
     history.replaceState(null, '', '/projects')
     const r = await render(<ProjectsView />)
     await flush(40)
-    const details = r.container.querySelector<HTMLDetailsElement>('[data-archived-disclosure]')!
-    expect(details.open).toBe(false)
+    expect(archivedTab(r.container).getAttribute('aria-selected')).toBe('false')
     history.replaceState(null, '', '/projects#archived')
     window.dispatchEvent(new HashChangeEvent('hashchange'))
-    await waitFor(() => details.open)
+    await waitFor(() => archivedTab(r.container).getAttribute('aria-selected') === 'true')
+    await r.unmount()
+  })
+})
+
+const DAY = 86_400_000
+const cell = (root: ParentNode, id: string, sel: string) => root.querySelector(`[data-projects-row="${id}"] ${sel}`)
+
+describe('All projects table', () => {
+  beforeEach(() => { history.replaceState(null, '', '/projects') })
+
+  it('health, progress, next due and the note, from local data (offline)', async () => {
+    const reno = await createProject({ name: 'Home renovation' })
+    const admin = await createProject({ name: 'Personal admin' })
+    const work = await createProject({ name: 'Work' })
+    await createTask({ title: 'Tiles', project_id: reno, due: { date: '2020-01-02' } })
+    await createTask({ title: 'Paint', project_id: reno })
+    await createTask({ title: 'passport', project_id: admin, deadline: '2020-01-01' })
+    await createTask({ title: 'Plan', project_id: work, due: { date: '2999-01-01' } })
+    const doneId = await createTask({ title: 'Done one', project_id: work })
+    await db.tasks.update(doneId, { completed_at: Date.now() })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 3)
+    await waitFor(() => cell(r.container, reno, '[data-health]')?.getAttribute('data-health') === 'slipping')
+    expect(cell(r.container, reno, '[data-health]')!.textContent).toContain('1 late')
+    expect(cell(r.container, admin, '[data-health]')!.getAttribute('data-health')).toBe('late')
+    expect(cell(r.container, admin, '[data-health]')!.textContent).toContain('passport')
+    expect(cell(r.container, work, '[data-health]')!.getAttribute('data-health')).toBe('on-track')
+    await waitFor(() => r.container.querySelector(`[data-projects-row="${work}"]`)!.textContent!.includes('50% done'))
+    expect(cell(r.container, reno, '[data-next-due]')!.getAttribute('data-next-due')).toBe('late')
+    expect(cell(r.container, work, '[data-next-due]')!.getAttribute('data-next-due')).toBe('')
+    expect(r.container.querySelector('[data-health-note]')!.textContent).toMatch(/worked out on your device/)
+    await r.unmount()
+  })
+
+  it('a quiet project says for how long', async () => {
+    const reading = await createProject({ name: 'Reading' })
+    const id = await createTask({ title: 'Finish the novel', project_id: reading })
+    const old = Date.now() - 9 * DAY - 60_000
+    await db.tasks.update(id, { _clock: { title: { ts: old, device: 'x' } } })
+    await db.projects.update(reading, { _clock: { name: { ts: old, device: 'x' } } })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => cell(r.container, reading, '[data-health]')?.getAttribute('data-health') === 'quiet')
+    expect(cell(r.container, reading, '[data-health]')!.textContent).toContain('9 days')
+    await r.unmount()
+  })
+
+  it('sorting by a header orders the rows and marks the column; the third click restores your order', async () => {
+    const a = await createProject({ name: 'Alpha' })
+    const b = await createProject({ name: 'Bravo' })
+    await createProject({ name: 'Charlie' })
+    await createTask({ title: 'late', project_id: b, due: { date: '2020-01-01' } })
+    await createTask({ title: 'fine', project_id: a })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 3)
+    const header = () => r.container.querySelector<HTMLButtonElement>('[data-sort="health"]')!
+    await click(header())
+    await waitFor(() => names(r.container)[0] === 'Bravo')
+    expect(names(r.container)).toEqual(['Bravo', 'Alpha', 'Charlie'])
+    expect(header().closest('th')!.getAttribute('aria-sort')).toBe('ascending')
+    await click(header())
+    await waitFor(() => names(r.container)[0] === 'Alpha')
+    expect(header().closest('th')!.getAttribute('aria-sort')).toBe('descending')
+    await click(header())
+    await waitFor(() => header().closest('th')!.getAttribute('aria-sort') === null)
+    expect(names(r.container)).toEqual(['Alpha', 'Bravo', 'Charlie'])
+    await r.unmount()
+  })
+
+  it('keyboard: arrows and j/k move between rows, Left folds and Right unfolds, Enter opens', async () => {
+    const home = await createProject({ name: 'Home' })
+    await createProject({ name: 'Garden', parent_id: home })
+    const work = await createProject({ name: 'Work' })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 3)
+    const open = (id: string) => r.container.querySelector<HTMLButtonElement>(`[data-project-open="${id}"]`)!
+    open(home).focus()
+    await key(open(home), 'j')
+    expect(document.activeElement?.textContent).toContain('Garden')
+    await key(document.activeElement!, 'ArrowDown')
+    expect(document.activeElement).toBe(open(work))
+    await key(open(work), 'k')
+    await key(document.activeElement!, 'ArrowLeft')
+    expect(document.activeElement).toBe(open(home))
+    await key(open(home), 'ArrowLeft')
+    await waitFor(() => names(r.container).length === 2)
+    await key(open(home), 'ArrowRight')
+    await waitFor(() => names(r.container).length === 3)
+    await click(open(work))
+    expect(location.pathname).toBe(`/project/${work}`)
     await r.unmount()
   })
 })

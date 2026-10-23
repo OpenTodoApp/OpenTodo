@@ -29,6 +29,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Work from the list](work-from-the-list.md) | Add, complete and delete tasks, change them with one key, undo, and put them in the order you want, all without opening a task. |
 | &nbsp;&nbsp;↳ [Change several tasks at once](bulk-actions.md) | Tick tasks with the keyboard, mouse or touch, act on all of them from one menu, preview moves and assignments, and undo the lot in one step. |
 | &nbsp;&nbsp;↳ [Projects and sub-projects](projects.md) | Create projects and nest them, use the Project menu to colour, move, rename, archive or delete, duplicate a project or a task, and what happens when a project is done. |
+| &nbsp;&nbsp;↳ [All projects](all-projects.md) | Every project in a table with its health, progress, open tasks, next due date, people and last change; how health is worked out, sorting, the keyboard and the Archived tab. |
 | &nbsp;&nbsp;↳ [Project notes](project-notes.md) | The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it. |
 | &nbsp;&nbsp;↳ [Completed tasks in a project](completed-in-projects.md) | Keep a project's completed tasks at the end of its list in a Completed group, for lists you tick off and reuse such as groceries. |
 | [Views](views.md) | Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on. |

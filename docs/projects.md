@@ -4,7 +4,7 @@ summary: Create projects and nest them, use the Project menu to colour, pick an 
 audience: user
 section: Guides
 specs: [project-organization]
-screens: [project#organise-with-projects, projects#all-projects-and-favourites]
+screens: [project#organise-with-projects]
 order: 17
 ---
 # Projects and sub-projects
@@ -37,7 +37,7 @@ Inside a project you can also group tasks into sections and show them as a board
 
 ## All projects and favourites
 
-**All** next to **Projects** in the sidebar (or <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>P</kbd>) opens the **Projects** page: the whole tree with counts, a field to find a project (<kbd>Enter</kbd> opens the first match), **New project**, **From a template…**, and your [archived projects](archived-projects.md) at the bottom.
+**All** next to **Projects** in the sidebar (or <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>P</kbd>) opens the **Projects** page: every project in a table with its health and progress, and an **Archived** tab. See [All projects](all-projects.md).
 
 **Pin to sidebar** in the menu of a project, a label or a saved view puts it in **Favourites** at the top of the sidebar. **Move up** and **Move down** in its menu there, or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, reorder them. A pin is yours alone, even on a shared project, and syncs to your devices.
 
@@ -53,4 +53,4 @@ To duplicate one task with its open subtasks, select it and press <kbd>Shift</kb
 
 ## When a project is done
 
-When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Data** (each device has its own setting). To bring one back, select **Restore** next to it under **Archived projects** on the Projects page; see [Archived projects](archived-projects.md).
+When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Data** (each device has its own setting). To bring one back, select **Restore** next to it in the **Archived** tab of the Projects page; see [Archived projects](archived-projects.md).
