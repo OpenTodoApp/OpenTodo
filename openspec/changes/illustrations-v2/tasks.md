@@ -12,4 +12,4 @@
 ## 3. Docs and release
 
 - [x] 3.1 Update `docs/design-system.md` "Illustrations" (the style list and the brief table) and add the CHANGELOG entry under Unreleased; verify `make docs-check`
-- [ ] 3.2 Run `make check` with TZ=UTC, open the pull request with a before/after and get CI green
+- [x] 3.2 Run `make check` with TZ=UTC, open the pull request with a before/after and get CI green
