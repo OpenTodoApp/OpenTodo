@@ -25,6 +25,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   bad_origin: msg('The request was rejected because it came from another site.'),
   bad_request: msg('The server could not read the request: {detail}'),
   busy: msg('The server is busy. Try again in a moment.'),
+  channels_disabled: msg('The server owner has turned notification channels off.'),
   base_url_required: msg('This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL).'),
   confirmation_mismatch: msg('The email you typed does not match the account.'),
   conflict: msg('This conflicts with another change: {detail}'),

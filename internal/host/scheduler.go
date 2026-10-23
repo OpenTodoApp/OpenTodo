@@ -75,6 +75,17 @@ func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]tim
 	if ok {
 		due[KindWebhooks] = at
 	}
+	// Notification channels ride on the webhooks entry: both are queued
+	// outbound deliveries (notification-channels).
+	if t.Channels != nil {
+		at, ok, err := t.Channels.NextDue(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if cur, has := due[KindWebhooks]; ok && (!has || at.Before(cur)) {
+			due[KindWebhooks] = at
+		}
+	}
 	if t.Calendar.Enabled == nil || t.Calendar.Enabled(ctx) {
 		at, ok, err := t.Calendar.Store.NextFetch(ctx)
 		if err != nil {
@@ -119,7 +130,7 @@ func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]tim
 		func(ctx context.Context) (time.Time, bool, error) {
 			return t.Sync.NextRetention(ctx, t.Cfg.TrashRetentionDays)
 		},
-		t.Auth.Audit().NextPrune, t.Auth.NextSignupExpiry, t.Hooks.NextPrune,
+		t.Auth.Audit().NextPrune, t.Auth.NextSignupExpiry, t.Hooks.NextPrune, channelsNextPrune(t),
 	} {
 		at, ok, err := f(ctx)
 		if err != nil {
@@ -174,6 +185,10 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 		case KindWebhooks:
 			for i := 0; i < 64 && t.Hooks.ProcessDue(ctx) > 0; i++ {
 			}
+			if t.Channels != nil && t.Channels.On(ctx) {
+				for i := 0; i < 64 && t.Channels.ProcessDue(ctx) > 0; i++ {
+				}
+			}
 		case KindCalendars:
 			t.Calendar.RunOnce(ctx)
 		case KindIssues:
@@ -210,6 +225,14 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 			}
 			if err := t.Hooks.Prune(ctx); err != nil {
 				log.Error("webhooks: prune failed", "err", err)
+			}
+			if t.Channels != nil {
+				if err := t.Channels.Prune(ctx); err != nil {
+					log.Error("notification channels: prune failed", "err", err)
+				}
+				if _, err := t.Channels.SweepSecrets(ctx); err != nil {
+					log.Error("notification channels: sweep secrets", "err", err)
+				}
 			}
 			if t.Issues != nil {
 				if _, err := t.Issues.Tokens.Sweep(ctx, t.Issues.Store); err != nil {
@@ -314,5 +337,15 @@ func (h *Host) RunScheduler(ctx context.Context) {
 			wait = min(max(next.Sub(h.now()), schedulerMin), schedulerMax)
 		}
 		reset(wait)
+	}
+}
+
+// channelsNextPrune is the channels' prune deadline, none without channels.
+func channelsNextPrune(t *tenant.Tenant) func(context.Context) (time.Time, bool, error) {
+	return func(ctx context.Context) (time.Time, bool, error) {
+		if t.Channels == nil {
+			return time.Time{}, false, nil
+		}
+		return t.Channels.NextPrune(ctx)
 	}
 }

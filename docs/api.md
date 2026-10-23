@@ -1006,6 +1006,8 @@ The server records security-relevant events in its own database (never synced to
 | `email_inbox.updated` | success | actor = user | `setting` (`enabled` or `allowlist`), `from`, `to` (true/false, or the number of allowlist entries; never the addresses) |
 | `issue_connection.created`, `issue_connection.deleted` | success | actor = user | `connection_id`, `provider` (`github` or `gitlab`); never the host, token, filter or issue content |
 | `issue_connection.updated` | success | actor = user | `connection_id`, `provider`, `setting`: the changed settings by name, comma-separated (`host`, `filter`, `project`, `labels`, `interval`, `name`, `enabled`, `token`), never a value. Polls and the tasks they write are not recorded |
+| `notification_channel.created`, `notification_channel.deleted` | success | actor = user | `notification_channel_id`, `channel_kind` (`ntfy`, `pushover`, `gotify`, `webhook`); never the address, topic, token, user key or signing secret |
+| `notification_channel.updated` | success | actor = user | `notification_channel_id`, `channel_kind`, `setting`: the changed settings by name, comma-separated (`name`, `url`, `topic`, `events`, `include_titles`, `enabled`, `token`, `user_key`, `secret`), never a value. Messages sent are not recorded |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
@@ -1483,6 +1485,48 @@ GitHub and GitLab issues assigned to the account become tasks that follow the is
 Validation answers `400 invalid_input` with the field in `error.field` (`provider`, `host`, `token`, `name`, `project_id`, `scope`, `repositories`, `labels`, `interval_minutes`): the host is an `https` URL of at most 2,048 characters (`http` only while the owner allows private network targets), the name at most 100 characters (the host by default), the project an active one you can add tasks to, at most 20 repositories and 10 labels, the interval 15 to 1,440 minutes (30 by default). A host on a private network is refused with `400 private_target` unless the owner allows private targets for webhooks. A sixth connection answers `409 limit_reached`; an encrypted account `409 encryption_enabled` on create and on `enabled: true`. Tests and syncs share a limit of 12 per account per hour (`429 rate_limited`).
 
 Polls run on the jobs leader, at most two at a time: conditional requests (`If-None-Match`) with an updated-since cursor, at most 10 pages of 100 issues per poll, a 20-second timeout and a 2 MB limit per answer, no redirects followed. Tasks and labels are written through the op log with device `issues:<connection-id>`. Reasons on a connection: `unauthorized_provider`, `token_missing`, `private_target` and `encrypted_account` stop it; `redirect_refused`, `too_large`, `timeout`, `connection_failed`, `invalid_response`, `provider_not_found` and a hosted tenant's `limit_*` double the wait up to 6 hours; `provider_rate_limited` waits for the provider's reset. Enabling end-to-end encryption stops the account's connections and `PUT /api/v1/encryption/keys` lists their names in `issueConnectionsStopped`.
+
+### Notification channels
+
+A person's delivery channels: ntfy, Pushover, Gotify, or a signed webhook (OpenSpec `notification-channels`; guide: [notification-channels.md](notification-channels.md)). Every `/api/v1/notification-channels` route answers `404 channels_disabled` while the owner's switch is off; these routes and the setting answer `403 demo_restricted` on the public demo. Channels are server data: never operations, never synced or exported, and their tokens, user keys and signing secrets live in `<data>/secrets/notification-channels.json` only.
+
+| Method | Route | Auth | Purpose |
+| --- | --- | --- | --- |
+| `GET` / `PUT` | `/api/v1/settings/notification-channels` | signed in / owner | `{enabled}`, the setting `notifications.channels`; on by default; a change is recorded as `settings.changed` |
+| `GET` | `/api/v1/notification-channels` | session or token | `{channels: [...], kinds, events}`: `id`, `kind`, `name`, `url`, `topic`, `events`, `includeTitles`, `enabled`, `disabledReason` (`too_many_failures`), `lang`, `tokenSet`, `userKeySet` (Pushover), `secretSet` (webhook), `lastOkAt`, `lastError`, `failures`, `createdAt`, `updatedAt`. Never a secret |
+| `POST` | `/api/v1/notification-channels` | session or full token | `{kind, name?, url?, topic?, token?, userKey?, events?, includeTitles?, enabled?, lang?, origin?}` → `201 {channel, secret?}`; `secret` is a webhook channel's signing secret, shown only here |
+| `PATCH` | `/api/v1/notification-channels/{id}` | session or full token | any field above except `kind`; `token` and `userKey` replace the stored ones; `rotateSecret: true` gives a webhook channel a new signing secret, returned once as `secret`; `enabled: true` clears a stop and the failure count |
+| `DELETE` | `/api/v1/notification-channels/{id}` | session or full token | `204`; its secrets and queued messages are removed |
+| `POST` | `/api/v1/notification-channels/{id}/test` | session or full token | send "Test from OpenTodo" now: `{delivered, statusCode?, error?}`; at most 12 per account per hour (`429 rate_limited`) |
+| `GET` | `/api/v1/notification-channels/{id}/deliveries` | session or token | `{deliveries: [{id, event, status, attempts, nextAttemptAt, lastStatusCode, lastError, createdAt, deliveredAt}]}`, newest first, at most 50; `status` is `pending`, `retry`, `delivered`, `failed` or `skipped` (`rate_limited`) |
+
+Validation answers `400 invalid_input` with the field in `error.field`:
+
+| Field | Rule |
+|---|---|
+| `kind` | `ntfy`, `pushover`, `gotify` or `webhook`; it can't be changed later |
+| `name` | at most 60 characters; the kind's name by default |
+| `url` | an http(s) address of at most 2,048 characters; ntfy defaults to `https://ntfy.sh`, Pushover has none |
+| `topic` | ntfy only: 1 to 64 letters, digits, `-` or `_` |
+| `token` | required for Gotify and Pushover (the application token) |
+| `userKey` | Pushover only, required |
+| `events` | a non-empty subset of `reminder`, `assigned`, `mentioned`, `unblocked`, `page` |
+
+Other errors:
+- An address on a private network answers `400 private_target`, unless the owner allows private network targets for webhooks.
+- A sixth channel answers `409 limit_reached`.
+
+`lang` (`en`, `de`, `fr`, `es`, `it`, `pt`) picks the language of the messages, and `origin` the address of the links in them. `OPENTODO_BASE_URL` wins over `origin` when set.
+
+A webhook channel POSTs `{"version":1, "id", "event", "createdAt", "title", "message", "body", "url", "task":{"id","title"?}, "actor":{"name"}?, "page":{"id"}?}`:
+- `body` equals `message`, so Apprise's API server reads it as is.
+- `task.title` and `actor` appear only when the channel includes titles and the account is not encrypted.
+- The headers are `X-OpenTodo-Event: notification.<event>`, `X-OpenTodo-Delivery`, `X-OpenTodo-Timestamp` and `X-OpenTodo-Signature`, with the webhooks' `v1=` signature.
+
+Delivery and limits:
+- Messages are sent by one worker on the jobs leader, with a 10-second timeout each and no redirects followed.
+- Failures are retried on the webhooks' schedule (about 27 hours), and 20 failed messages in a row turn a channel off.
+- An account queues at most 60 messages per hour across its channels; more are logged as `skipped` and not sent.
 
 ### CalDAV and app passwords
 

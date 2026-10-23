@@ -18,6 +18,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/calfeed"
+	"github.com/pixari/opentodo/internal/channels"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/digest"
@@ -93,11 +94,12 @@ type Tenant struct {
 	Push     *push.Service // nil when web push is off
 	Email    *email.Service
 	Calendar *calfeed.Worker
-	Issues   *issues.Worker  // issue connections (issue-import)
-	Mail     *mail.Service   // nil on a demo instance
-	Digest   *digest.Service // weekly digests (stats-and-review); nil with Mail
-	Demo     *demo.Service   // nil unless OPENTODO_DEMO
-	Rules    *rules.Engine   // automation rules (automation-rules); nil on a demo instance
+	Issues   *issues.Worker    // issue connections (issue-import)
+	Mail     *mail.Service     // nil on a demo instance
+	Digest   *digest.Service   // weekly digests (stats-and-review); nil with Mail
+	Demo     *demo.Service     // nil unless OPENTODO_DEMO
+	Rules    *rules.Engine     // automation rules (automation-rules); nil on a demo instance
+	Channels *channels.Service // notification channels (notification-channels); nil on a demo instance
 	Handler  http.Handler
 
 	log       *slog.Logger
@@ -187,6 +189,10 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	if pushSvc != nil {
 		opts = append(opts, httpapi.WithPush(pushSvc))
 	}
+	chanSvc := openChannels(ctx, cfg, o, db, syncSvc, pushSvc, hooks, log)
+	if chanSvc != nil {
+		opts = append(opts, httpapi.WithChannels(chanSvc))
+	}
 	// Email to task (docs/email.md): off unless OPENTODO_EMAIL_* configure a
 	// mailbox; then one goroutine polls it over IMAP. A host has no per-tenant
 	// mailbox, so the feature stays off there.
@@ -226,7 +232,7 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	t.Handler = httpapi.New(cfg, authSvc, syncSvc, webHandler, log, o.Version, opts...)
 	t.Cfg, t.Auth, t.Sync, t.Hooks, t.Inbox, t.Backups, t.MCP = cfg, authSvc, syncSvc, hooks, inbox, backups, mcpSettings
 	t.Push, t.Email, t.Calendar, t.Issues, t.Demo = pushSvc, emailSvc, calWorker, issueWorker, demoSvc
-	t.Mail, t.Digest, t.Rules = mailSvc, digestSvc, ruleEngine
+	t.Mail, t.Digest, t.Rules, t.Channels = mailSvc, digestSvc, ruleEngine, chanSvc
 	return nil
 }
 
@@ -307,6 +313,35 @@ func openInbox(ctx context.Context, db *sql.DB, syncSvc *opsync.Service, log *sl
 		log.Info("old notifications removed", "count", n)
 	}
 	return inbox
+}
+
+// openChannels builds notification channels (notification-channels): a sink
+// for in-app events and a consumer of the reminder scheduler, sending through
+// the webhooks' private-network policy. Nil on a demo instance: nothing is ever
+// sent there, and the routes are refused.
+func openChannels(ctx context.Context, cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service, pushSvc *push.Service, hooks *webhook.Service, log *slog.Logger) *channels.Service {
+	if cfg.Demo {
+		return nil
+	}
+	origin := ""
+	if cfg.BaseURL != nil {
+		origin = cfg.BaseURL.Scheme + "://" + cfg.BaseURL.Host
+	}
+	keys := e2ee.NewStore(db)
+	svc := channels.New(db, cfg.DataDir, channels.Options{Version: o.Version, Log: log, Now: o.Now, AllowPrivate: hooks.AllowPrivate,
+		Encrypted: keys.Enabled, BaseOrigin: origin})
+	syncSvc.AddSink(svc)
+	if pushSvc != nil {
+		pushSvc.SetReminderHook(func(ctx context.Context, r push.DueReminder) {
+			svc.Reminder(ctx, channels.Reminder{UserID: r.UserID, ID: r.ID, TaskID: r.TaskID, FireAt: r.FireAt, Title: r.Title})
+		})
+	}
+	if n, err := svc.SweepSecrets(ctx); err != nil {
+		log.Warn("notification channels: sweep secrets", "err", err)
+	} else if n > 0 {
+		log.Info("notification channels: secrets of deleted channels removed", "count", n)
+	}
+	return svc
 }
 
 // openBackups builds scheduled backups (docs/backups.md): off until the owner
@@ -467,6 +502,10 @@ func (t *Tenant) StartJobs(ctx context.Context, demoSignal func(context.Context,
 		spawn(t.Issues.Run)
 		// No outbound webhook deliveries on a demo instance.
 		spawn(t.Hooks.Run)
+	}
+	if t.Channels != nil {
+		// Notification channels: one worker; nil (and silent) on a demo instance.
+		spawn(t.Channels.Run)
 	}
 	if t.Rules != nil {
 		// Automation rules: the queue, the minute scheduler and the run log

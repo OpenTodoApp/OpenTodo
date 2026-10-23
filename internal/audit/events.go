@@ -50,9 +50,14 @@ const (
 	IssueConnectionCreatedName Name = "issue_connection.created"
 	IssueConnectionUpdatedName Name = "issue_connection.updated"
 	IssueConnectionDeletedName Name = "issue_connection.deleted"
-	InvitationCreatedName      Name = "invitation.created"
-	InvitationAcceptedName     Name = "invitation.accepted"
-	InvitationRevokedName      Name = "invitation.revoked"
+	// Notification delivery channels (OpenSpec change notification-channels):
+	// created, deleted, and changed settings or secrets by name.
+	NotificationChannelCreatedName Name = "notification_channel.created"
+	NotificationChannelUpdatedName Name = "notification_channel.updated"
+	NotificationChannelDeletedName Name = "notification_channel.deleted"
+	InvitationCreatedName          Name = "invitation.created"
+	InvitationAcceptedName         Name = "invitation.accepted"
+	InvitationRevokedName          Name = "invitation.revoked"
 	// Project invite links (OpenSpec `project-invite-links`).
 	ProjectInviteCreatedName  Name = "project_invite.created"
 	ProjectInviteRevokedName  Name = "project_invite.revoked"
@@ -137,6 +142,7 @@ var Names = []Name{
 	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
+	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
 	PublicLinkCreatedName, PublicLinkRevokedName,
@@ -173,6 +179,7 @@ var PersonalNames = []Name{
 	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
+	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
 	SignedOutEverywhereName,
@@ -238,15 +245,19 @@ var allowedDetailKeys = map[string]bool{
 	"to":                true, // new value of a setting or role
 	"provider":          true, // identity provider name, or github | gitlab for an issue connection
 	"connection_id":     true, // id of an issue connection (never its host or token)
-	"format":            true, // export format
-	"count":             true, // number of exported events, or entities an assistant changed
-	"backup_id":         true,
-	"source":            true, // restore source: archive, upload or safety-copy
-	"reset_id":          true, // id of a password reset link (never its secret)
-	"email_kind":        true, // kind of an outgoing message: verify_signup, password_reset, invitation, project_invite, test
-	"public_link_id":    true, // id of a public link (never its secret)
-	"link_rights":       true, // view | tick; view | reply | tick for a task page
-	"task_page_id":      true, // id of a task page (never its secret, label or share key)
+	// A notification channel's id and kind (ntfy, pushover, gotify, webhook),
+	// never its address, topic, token or user key.
+	"notification_channel_id": true,
+	"channel_kind":            true,
+	"format":                  true, // export format
+	"count":                   true, // number of exported events, or entities an assistant changed
+	"backup_id":               true,
+	"source":                  true, // restore source: archive, upload or safety-copy
+	"reset_id":                true, // id of a password reset link (never its secret)
+	"email_kind":              true, // kind of an outgoing message: verify_signup, password_reset, invitation, project_invite, test
+	"public_link_id":          true, // id of a public link (never its secret)
+	"link_rights":             true, // view | tick; view | reply | tick for a task page
+	"task_page_id":            true, // id of a task page (never its secret, label or share key)
 	// The project whose "Keep away from AI assistants" switch changed (never its name).
 	"access_project_id": true,
 	// Sign out everywhere (route-authorization-policy): how much it ended.
@@ -458,6 +469,25 @@ func IssueConnectionUpdated(userID, connID, provider, setting string) Event {
 // IssueConnectionDeleted records a deleted connection (its token removed).
 func IssueConnectionDeleted(userID, connID, provider string) Event {
 	return ev(IssueConnectionDeletedName, Success, userID, "", "connection_id", connID, "provider", provider)
+}
+
+// ---- notification channels ----
+
+// NotificationChannelCreated records a new delivery channel: its id and kind.
+func NotificationChannelCreated(userID, channelID, kind string) Event {
+	return ev(NotificationChannelCreatedName, Success, userID, "", "notification_channel_id", channelID, "channel_kind", kind)
+}
+
+// NotificationChannelUpdated records a change of a channel: setting names what
+// changed (name, url, topic, events, include_titles, enabled, token, user_key,
+// secret; comma-separated when several did), never a value.
+func NotificationChannelUpdated(userID, channelID, kind, setting string) Event {
+	return ev(NotificationChannelUpdatedName, Success, userID, "", "notification_channel_id", channelID, "channel_kind", kind, "setting", setting)
+}
+
+// NotificationChannelDeleted records a deleted channel (its secrets removed).
+func NotificationChannelDeleted(userID, channelID, kind string) Event {
+	return ev(NotificationChannelDeletedName, Success, userID, "", "notification_channel_id", channelID, "channel_kind", kind)
 }
 
 // ---- invitations ----
