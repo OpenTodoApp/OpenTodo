@@ -8,7 +8,7 @@
 
 ## 2. Docs, tests and baselines
 
-- [ ] 2.1 Update `docs/interface-guide.md` (the row and group bar) and add the CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
-- [ ] 2.2 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
-- [ ] 2.3 Render Today, a project and Settings from the real app at 1440×900 in dark next to the round-2 mock-ups and attach the side-by-side to the pull request
+- [x] 2.1 Update `docs/interface-guide.md` (the row and group bar) and add the CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
+- [x] 2.2 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
+- [x] 2.3 Render Today, a project and Settings from the real app at 1440×900 in dark next to the round-2 mock-ups and attach the side-by-side to the pull request
 - [ ] 2.4 Run `make check` with TZ=UTC, open the pull request and get CI green
