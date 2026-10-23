@@ -66,7 +66,7 @@ describe('StatusDot', () => {
   })
 })
 
-// sidebar-v2 D4: quiet at rest, default on hover and focus, strong with an accent icon when active.
+// sidebar-v2 D4, precision-shell D5: quiet at rest, default on hover and focus, strong on the neutral selected surface when active.
 describe('SidebarItem tones', () => {
   it('rest, hover and focus, active', async () => {
     const r = await render(<><SidebarItem label="Inbox" icon="inbox" /><SidebarItem label="Today" icon="calendar-check" active /></>)
@@ -78,8 +78,9 @@ describe('SidebarItem tones', () => {
     expect(rest.querySelector('[data-icon]')!.parentElement!.className).not.toMatch(/text-/)
     expect(active.getAttribute('data-tone')).toBe('active')
     expect(active.className).toContain('text-strong')
-    expect(active.className).toContain('bg-accent-soft')
-    expect(active.querySelector('[data-icon]')!.parentElement!.className).toContain('text-accent')
+    expect(active.className).toContain('bg-selected')
+    expect(active.className).not.toContain('accent')
+    expect(active.querySelector('[data-icon]')!.parentElement!.className).not.toMatch(/text-/)
     await r.unmount()
   })
 })

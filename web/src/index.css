@@ -867,18 +867,11 @@ select.ui-input { @apply truncate; contain: layout paint; }
    preference", precision-tokens D5): comfortable rows are 36 px, compact 32 px. Touch
    targets keep 44 px on coarse pointers through the rules further down. */
 .row-pad { padding-block: 0.5rem; }
-/* The page frame (page-frame-v3 D1, app-shell "Page template"): everything, the header
-   included, takes the page type's width from the frame's left edge, so the title and
-   the header's actions line up with the content's left and right edges. A sticky
-   header bleeds into the side padding (-mx-4, -mx-8 from 768 px) and pads it back, so
-   its box is the content width plus that bleed. Boards, timelines and calendars
-   (`full`) keep the whole frame. */
-.page-frame[data-page-body="list"] { --page-width: 60rem; }
-.page-frame[data-page-body="form"] { --page-width: 42rem; }
-.page-frame[data-page-body="wide"] { --page-width: 72rem; }
-.page-frame[data-page-body]:not([data-page-body="full"]) > * { max-width: var(--page-width); }
-.page-frame[data-page-body]:not([data-page-body="full"]) > [data-page-header].sticky { max-width: calc(var(--page-width) + 2rem); }
-@media (min-width: 48rem) { .page-frame[data-page-body]:not([data-page-body="full"]) > [data-page-header].sticky { max-width: calc(var(--page-width) + 4rem); } }
+/* The page (precision-shell D3, app-shell "Page template"): content uses the whole
+   content surface, the header included, so every title, first row and last action
+   share the surface's padding. Only a form page keeps its fields at 42 rem from the
+   left edge; its header still spans the surface. */
+.page-frame[data-page-body="form"] > :not([data-page-header]) { max-width: 42rem; }
 /* The selected row (inline-task-editing D5, ux-feedback-2 D5): a 2 px leading accent
    bar and a 4% accent tint, no ring and no full background. Hovering another row
    gives it only a 3% neutral tint; hovering the selected row adds nothing. */
@@ -1135,23 +1128,11 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 
 
 
-/* A standalone page frame (page-rhythm D3, app-shell "Page template"): the page's
-   content width plus the side padding. Unlayered so it overrides the frame's 80 rem
-   utility; a layout page keeps that frame. */
-.page-frame[data-page-frame="standalone"] { --page-gutter: 1rem; max-width: calc(var(--page-width, 80rem) + 2 * var(--page-gutter)); }
-@media (min-width: 48rem) { .page-frame[data-page-frame="standalone"] { --page-gutter: 2rem; } }
-/* A frame whose padding sits on its parent (the task lists): the width alone. */
-.page-frame[data-page-frame="standalone"][data-page-gutter="outside"] { --page-gutter: 0px; }
 /* The docked panel's width (web-app "Task panel layout"): 26 rem, 30 rem from 1440 px,
    read by both panels (`lg:w-(--panel-w)`). A `min-[1440px]` utility lost to `lg` in
    Tailwind's order (px and rem do not sort), so the panel stayed 26 rem. */
 :root { --panel-w: 26rem; }
 @media (min-width: 1440px) { :root { --panel-w: 30rem; } }
-/* Where a frame sits (list-stays-still D1, app-shell "Page template"): at the content
-   column's left edge, both frames, so a project and the Inbox share one left edge and
-   the docked panel opens into the empty space on the right: nothing moves. */
-.page-frame { margin-left: 0; margin-right: auto; }
-/* A project's frame (page-frame-v3 D2): 72 rem in every layout, so the header, with its
-   List / Board / Timeline switch, has one width and nothing in it moves when the layout
-   changes; a board or timeline scrolls sideways inside it. Calendars keep 80 rem. */
-.page-frame[data-page-project] { max-width: 72rem; }
+/* The frame (precision-shell D3): the whole content surface, from its left edge, so the
+   docked panel narrows it from the right and nothing moves. */
+.page-frame { margin-left: 0; margin-right: 0; }

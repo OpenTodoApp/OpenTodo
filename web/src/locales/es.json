@@ -5143,5 +5143,9 @@
   "{name} is less than {value}": "{name} es menor que {value}",
   "{name} is more than {value}": "{name} es mayor que {value}",
   "{name} is {value}": "{name} es {value}",
-  "Due earlier": "Con fecha anterior"
+  "Due earlier": "Con fecha anterior",
+  "Go to {page}": "Ir a {page}",
+  "Hide sidebar": "Ocultar la barra lateral",
+  "Show sidebar": "Mostrar la barra lateral",
+  "then": "luego"
 }

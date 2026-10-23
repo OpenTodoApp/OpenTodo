@@ -227,7 +227,9 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     expect(r.container.querySelector('[data-sidebar-footer]')!.contains(search)).toBe(false)
     const row = r.container.querySelector('[data-sidebar-footer] [data-footer-icons]')!
     const names = [...row.querySelectorAll('button')].map((b) => b.getAttribute('aria-label'))
-    expect(names).toEqual(expect.arrayContaining(['Notifications', 'Collapse sidebar']))
+    expect(names).toEqual(expect.arrayContaining(['Notifications']))
+    // The toggle moved to the page header (precision-shell D2); the footer keeps it only on the collapsed rail.
+    expect(names).not.toContain('Collapse sidebar')
     // Help and Keyboard shortcuts are in the account menu now; the account control is current on Help.
     expect(row.querySelector('[data-help-button]')).toBeNull()
     expect(row.querySelector('[data-account-menu]')?.getAttribute('aria-current')).toBe('page')

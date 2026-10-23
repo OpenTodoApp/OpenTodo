@@ -46,7 +46,8 @@ describe('one footer row', () => {
     expect(names[0]).toBe('Assistant')
     expect(names[1]).toBe('Notifications')
     expect(names[2]).toMatch(/^(Synced|Offline|Syncing)/)
-    expect(names[3]).toBe('Collapse sidebar')
+    // The toggle is in the page header now (precision-shell D2).
+    expect(names).toHaveLength(3)
     await click(account(row))
     await waitFor(() => items().length > 0)
     expect(items().map((b) => b.getAttribute('data-menu-label'))).toEqual(['Settings', 'Help', 'Keyboard shortcuts', 'Sign out'])
