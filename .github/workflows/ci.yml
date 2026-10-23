@@ -514,11 +514,28 @@ jobs:
           disable-animations: true
           working-directory: mobile/android
           script: ./gradlew --no-daemon :app:connectedDebugAndroidTest
+      - name: Failed instrumented tests
+        if: failure()
+        run: |
+          python3 - <<'EOF'
+          import glob, xml.etree.ElementTree as ET
+          found = False
+          for f in glob.glob('mobile/android/app/build/outputs/androidTest-results/connected/**/*.xml', recursive=True):
+              for case in ET.parse(f).getroot().iter('testcase'):
+                  for bad in list(case.findall('failure')) + list(case.findall('error')):
+                      found = True
+                      msg = bad.get('message') or ((bad.text or '').strip().splitlines() or [''])[0]
+                      print(f"::error title=Instrumented test failed::{case.get('classname')}.{case.get('name')}: {msg[:300]}")
+          if not found:
+              print('No failing test case in the JUnit results (the failure is outside the tests).')
+          EOF
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: opentodo-android-test-report
-          path: mobile/android/app/build/reports/androidTests/connected/
+          path: |
+            mobile/android/app/build/reports/androidTests/connected/
+            mobile/android/app/build/outputs/androidTest-results/connected/
           if-no-files-found: ignore
       - name: Signed release APK and AAB (tags)
         if: startsWith(github.ref, 'refs/tags/v')
