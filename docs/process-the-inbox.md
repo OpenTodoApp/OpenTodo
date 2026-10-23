@@ -1,9 +1,9 @@
 ---
 title: Process the Inbox
-summary: Walk the Inbox one task at a time and decide each with a single key, today, schedule, move, delegate, label, Someday, complete or trash, with Undo and offline.
+summary: The Inbox with the selected task beside it, then Process to decide each task with one key, today, schedule, move, delegate, label, Someday, complete or trash, with Undo and offline.
 audience: user
 section: Guides
-specs: [inbox-triage, web-app]
+specs: [inbox-triage, web-app, task-list-presentation]
 screens: [inbox/triage]
 order: 22
 ---
@@ -11,7 +11,11 @@ order: 22
 
 <picture><source srcset="images/triage-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/triage-light.webp" alt="Process the Inbox: one task card, Renew passport, with buttons for Today, Schedule, Move, Delegate, Labels, Someday, Complete, Trash, Skip and Back, each with its key."></picture>
 
-Capture first, decide later. When the Inbox has piled up, select **Process** in its header (or press <kbd>g</kbd> <kbd>p</kbd>) and decide each task in turn, keyboard only if you like. One task is shown at a time with its notes, date and labels, and "4 of 17" tells you how far you are.
+Capture first, decide later. When the Inbox has piled up, select **Process** in its header (or press <kbd>P</kbd> there, <kbd>g</kbd> <kbd>p</kbd> anywhere) and decide each task in turn, keyboard only if you like. One task is shown at a time with its notes, date and labels, and "4 of 17" tells you how far you are.
+
+## The Inbox beside its tasks
+
+On a screen at least 1024 px wide the Inbox keeps the selected task beside the list: move with <kbd>j</kbd> and <kbd>k</kbd> or click a row and its details follow, ready to edit. <kbd>Enter</kbd> opens the task as its page; <kbd>Esc</kbd> clears the selection. Each row says where its task came from and when, such as "From email · 3 d ago" or "From a calendar app · 2 h ago". **Process** is the header's main button, also <kbd>P</kbd>, and the header says how many tasks are left to sort.
 
 ## Decide each task
 

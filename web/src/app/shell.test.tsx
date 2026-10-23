@@ -95,8 +95,10 @@ describe('every view opens a task as its page', () => {
   })
 
   it('a task deleted while its page is open says so', async () => {
-    const id = await createTask({ title: 'Old chore' })
-    navigate({ view: 'inbox' })
+    // A project: the Inbox keeps its task beside the list from 1024 px instead (inbox-split).
+    const pid = await createProject({ name: 'Home' })
+    const id = await createTask({ title: 'Old chore', project_id: pid })
+    navigate({ view: 'project', id: pid })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => r.container.textContent!.includes('Old chore'))
     await openByClick('Old chore')

@@ -111,8 +111,10 @@ describe('selection', () => {
   const press = (el: Element) => el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
 
   it('a press on empty space clears the selection; rows, controls and overlays keep it', async () => {
-    await createTask({ title: 'Renew passport' })
-    const r = await render(<main><TaskListView route={{ view: 'inbox' }} /></main>)
+    // A project list: the Inbox keeps its split from 1024 px and shows the task beside it instead (inbox-split).
+    const pid = await createProject({ name: 'Home' })
+    await createTask({ title: 'Renew passport', project_id: pid })
+    const r = await render(<main><TaskListView route={{ view: 'project', id: pid }} /></main>)
     await waitFor(() => r.container.textContent!.includes('Renew passport'))
     const title = () => r.container.querySelector<HTMLButtonElement>('[data-task-id] [data-row-open]')!
     await click(title())

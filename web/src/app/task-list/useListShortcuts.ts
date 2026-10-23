@@ -144,9 +144,10 @@ export function useListShortcuts(c: ShortcutContext) {
       else if (ui.assignFor) ui.setAssignFor(null)
       else if (ui.prompt) ui.setPrompt(null)
       else if (ui.addingUnder) ui.setAddingUnder(null)
-      else if (openId && taskSplitDocks()) { setOpenId(null); setSelectedId(null) }
-      else if (openId) setOpenId(null)
+      else if (openId && !taskSplitDocks()) setOpenId(null)
       else if (selection.ticked.size) selection.clear()
+      // On the Inbox's split the pane follows the cursor: Escape clears both (inbox-split D1).
+      else if (openId) { setOpenId(null); setSelectedId(null) }
       else setSelectedId(null)
     },
     'list.move-up': moveBy(-1), 'list.move-down': moveBy(1), 'list.move-top': moveBy('top'), 'list.move-bottom': moveBy('bottom'),

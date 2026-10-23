@@ -140,7 +140,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens. The
   // Inbox keeps its task there, beside the list, from 1024 px (inbox-split D1), set up before the bindings' route reset.
   const openId = usePanelTaskId()
-  const inbox = useInboxSplit({ on: route.view === 'inbox', rows: m.ownRows, selectedId, setSelectedId, openId })
+  const inbox = useInboxSplit({ on: route.view === 'inbox', rows: m.ownRows, selectedId, setSelectedId, openId, ticking: selection.ticked.size > 0 })
   const quickAddRef = useRef<HTMLInputElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])

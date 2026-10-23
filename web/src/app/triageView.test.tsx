@@ -169,14 +169,16 @@ describe('the triage mode', () => {
 })
 
 describe('entering', () => {
-  it('the Inbox header shows Process with the open count and opens the mode', async () => {
+  it('the Inbox header shows Process as its primary action, the open count in its meta, and opens the mode', async () => {
     const { TaskListView } = await import('./TaskListView')
     await inbox('One', 'Two')
     history.pushState(null, '', '/')
     window.dispatchEvent(new PopStateEvent('popstate'))
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => !!document.querySelector('[data-triage-start]'))
-    expect(document.querySelector('[data-triage-start]')!.textContent).toContain('2')
+    // inbox-split D3: the count moved to the header's meta ("2 to sort").
+    expect(document.querySelector('[data-triage-start]')!.textContent).toContain('Process')
+    expect(document.querySelector('header')!.textContent).toContain('2 to sort')
     await click(document.querySelector('[data-triage-start]')!)
     expect(location.pathname).toBe('/triage')
     await r.unmount()

@@ -2,6 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { createTask } from '../lib/ops'
 import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, withSeed } from './stories/fixtures'
+import { db } from '../lib/db'
+import { PanelHost } from './PanelHost'
+import { selectTask } from './signals'
 import { TaskListView } from './TaskListView'
 
 // Core screen: the grouped list (OpenSpec change ux-overhaul, task 8.7;
@@ -84,4 +87,48 @@ export const InboxPlannedOpen: StoryObj = {
 export const Empty: StoryObj = {
   ...withSeed(async () => {}),
   render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+/** The shell's content column with the panel slot beside it, for the Inbox's split (inbox-split). */
+function Split({ children }: { children: ReactNode }) {
+  return (
+    <div className="-m-4 flex h-[44rem] bg-canvas">
+      <div className="min-w-0 flex-1 overflow-y-auto">{children}</div>
+      <PanelHost user={storyUser} />
+    </div>
+  )
+}
+
+const HOUR = 3_600_000
+
+/** Four Inbox tasks from four sources (inbox-split D4): a page, this app, a calendar app and the API. */
+async function seedInboxSources(select: boolean): Promise<void> {
+  await seedBase()
+  const now = Date.now()
+  const desk = await createTask({ title: 'Look into a standing desk for the study', origin: { kind: 'url', url: 'https://www.example.org/desks', title: 'Standing desks' } })
+  const dentist = await createTask({ title: 'Book the dentist for a check-up' })
+  const birthday = await createTask({ title: "Ideas for Mia's birthday" })
+  const attic = await createTask({ title: 'Re: offer for the attic insulation', origin: { kind: 'email', id: '<offer@example.org>' } })
+  // Stories only: the creation times and creating devices other writers would have left.
+  const stamp = async (id: string, ago: number, device?: string) => {
+    const row = (await db.tasks.get(id))!
+    await db.tasks.update(id, { created_at: now - ago, _clock: device ? { ...row._clock, created_at: { ts: now - ago, device } } : row._clock })
+  }
+  await stamp(desk, 2 * HOUR)
+  await stamp(dentist, 5 * HOUR)
+  await stamp(birthday, 26 * HOUR, 'caldav:ada-phone')
+  await stamp(attic, 30 * HOUR, 'server')
+  if (select) selectTask.set(dentist)
+}
+
+/** The Inbox from 1024 px with nothing selected: the source lines, Process as the primary action, "No task selected" (inbox-split D1 to D4). */
+export const InboxSplitEmpty: StoryObj = {
+  ...withSeed(() => seedInboxSources(false)),
+  render: () => <Split><TaskListView route={{ view: 'inbox' }} userId={storyUser.id} userRole={storyUser.role} /></Split>,
+}
+
+/** The Inbox with a task selected: it shows beside the list, as the docked task (inbox-split D1). */
+export const InboxSplitSelected: StoryObj = {
+  ...withSeed(() => seedInboxSources(true)),
+  render: () => <Split><TaskListView route={{ view: 'inbox' }} userId={storyUser.id} userRole={storyUser.role} /></Split>,
 }

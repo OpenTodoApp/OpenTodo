@@ -83,6 +83,18 @@ describe('Inbox split', () => {
     await r.unmount()
   })
 
+  it('ticking rows opens nothing: the pane stays empty until the ticks clear', async () => {
+    const { r } = await inbox()
+    await key(document.body, 'j')
+    await waitFor(() => docked() !== null, 'a docked task')
+    const cursor = docked()
+    await key(document.activeElement ?? document.body, 'x')
+    await waitFor(() => !!pane(), 'the empty pane while ticking')
+    await key(document.activeElement ?? document.body, 'Escape')
+    await waitFor(() => docked() === cursor, 'the cursor task back beside the list')
+    await r.unmount()
+  })
+
   it('a click shows the task beside the list, and Enter opens its page', async () => {
     const { b, r } = await inbox()
     await click(row('Re: offer for the attic').querySelector('[data-row-open]')!)

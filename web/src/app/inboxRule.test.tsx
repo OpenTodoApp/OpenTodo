@@ -46,7 +46,8 @@ async function waitFor(ok: () => boolean, ms = 3000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
   expect(ok()).toBe(true)
 }
-const rowTitles = (root: ParentNode) => [...root.querySelectorAll('[data-task-id]')].map((r) => r.querySelector('[data-row-open]')?.textContent?.trim() ?? r.textContent?.trim())
+// The title alone: an Inbox row also carries its source line (inbox-split D4).
+const rowTitles = (root: ParentNode) => [...root.querySelectorAll('[data-task-id]')].map((r) => r.querySelector('[data-row-title]')?.textContent?.trim() ?? r.textContent?.trim())
 
 describe('the Inbox view', () => {
   it('Where planned tasks went: three planned tasks are a folded group at the end, listed in place when opened, with Open as filter', async () => {

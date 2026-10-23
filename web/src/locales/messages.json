@@ -899,8 +899,17 @@
   "Add “{text}” as a task": [
     "web/src/app/palette/CommandPalette.tsx"
   ],
+  "Added": [
+    "web/src/lib/taskSource.ts"
+  ],
   "Added a next action to {name}.": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Added by an AI assistant": [
+    "web/src/lib/taskSource.ts"
+  ],
+  "Added through the API": [
+    "web/src/lib/taskSource.ts"
   ],
   "Added to Inbox": [
     "web/src/app/palette/addFromBar.ts"
@@ -4798,6 +4807,12 @@
   "From": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "From a Markdown vault": [
+    "web/src/lib/taskSource.ts"
+  ],
+  "From a calendar app": [
+    "web/src/lib/taskSource.ts"
+  ],
   "From a subscribed calendar. Edit it in its own app.": [
     "web/src/app/CalendarEvents.tsx"
   ],
@@ -4812,11 +4827,23 @@
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx"
   ],
+  "From a web page": [
+    "web/src/lib/taskSource.ts"
+  ],
   "From address": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "From email": [
+    "web/src/lib/taskSource.ts"
+  ],
+  "From email ({via})": [
+    "web/src/lib/taskSource.ts"
+  ],
   "From the backup destination": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "From {issue}": [
+    "web/src/lib/taskSource.ts"
   ],
   "From {min} to {max} minutes": [
     "web/src/app/focus/FocusParts.tsx",
@@ -4824,6 +4851,9 @@
   ],
   "From {min} to {max} sessions": [
     "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "From {site}": [
+    "web/src/lib/taskSource.ts"
   ],
   "From {text}": [
     "web/src/app/OriginChip.tsx"
@@ -5394,6 +5424,12 @@
   "Important, not urgent": [
     "web/src/lib/boardTemplates.ts"
   ],
+  "Imported": [
+    "web/src/lib/taskSource.ts"
+  ],
+  "Imported from {app}": [
+    "web/src/lib/taskSource.ts"
+  ],
   "Importing…": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -5509,6 +5545,9 @@
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
   "In the Comments tab: reach Reply, Edit and Delete; in the Activity tab: expand a group or load older activity": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the Inbox: process its tasks one at a time": [
     "web/src/lib/shortcuts.ts"
   ],
   "In the Trash: delete the selected item permanently (Enter confirms, Esc cancels)": [
@@ -7534,6 +7573,9 @@
   "No task matches this view.": [
     "web/src/app/SavedViewView.tsx"
   ],
+  "No task selected": [
+    "web/src/app/InboxEmptyPane.tsx"
+  ],
   "No tasks match this panel.": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -9055,6 +9097,10 @@
   "Problem": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Process": [
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/lib/shortcuts.ts"
+  ],
   "Process Inbox": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -9063,10 +9109,10 @@
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/ReviewView.tsx",
-    "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Process the Inbox one task at a time": [
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/vim/commands.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -10490,6 +10536,9 @@
   "Select a task and press f to put it in today’s focus, up to three. c completes, Enter opens.": [
     "web/src/app/review/DailyCheck.tsx"
   ],
+  "Select a task to decide where it goes, or press {key} to process {count, plural, one {it} other {all #, one at a time}}.": [
+    "web/src/app/InboxEmptyPane.tsx"
+  ],
   "Select tasks": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -11671,6 +11720,9 @@
   ],
   "Task deleted": [
     "web/src/lib/webhooks.ts"
+  ],
+  "Task details": [
+    "web/src/app/PanelHost.tsx"
   ],
   "Task name": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
@@ -17130,6 +17182,9 @@
   ],
   "{n} to create": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "{n} to sort": [
+    "web/src/app/task-list/useInboxSplit.tsx"
   ],
   "{n} to update": [
     "web/src/app/ImportScreen.tsx"
