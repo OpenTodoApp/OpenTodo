@@ -104,12 +104,12 @@ describe('the Inbox view', () => {
 })
 
 describe('Inbox zero (design-system "Illustrations")', () => {
-  it('Not read by a screen reader: the empty Inbox and the end of Process the Inbox read only the sentence and the action', async () => {
+  it('Not read by a screen reader: the empty Inbox and the end of Process the Inbox read only the sentence (and the way back from triage)', async () => {
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => !!r.container.querySelector('[data-empty-state="inbox"] [data-illustration="inbox-zero"]'))
     const empty = r.container.querySelector('[data-empty-state="inbox"]')!
     expect(empty.querySelector('svg')!.closest('[aria-hidden="true"]')).not.toBeNull()
-    expect(spokenText(empty)).toMatch(/^Inbox zero: every task has a place\.\s*Add a task$/)
+    expect(spokenText(empty)).toMatch(/^Inbox zero: every task has a place\.$/)
     await r.unmount()
 
     const { TriageView } = await import('./TriageView')

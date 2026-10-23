@@ -240,7 +240,7 @@ Every entry of the screen inventory, rare ones included, names the story that sh
 
 | Check | Runs in | Fails on |
 |---|---|---|
-| Token contrast, token lint, workbench exclusion | `npm test`, `make check` | a pair under its minimum; a raw colour in `web/src/ui`; a focus ring cancelled by `outline-none` (Tailwind 4 reads the outline style from it, so `focus-visible:outline-2` beside it needs `focus-visible:outline-solid`); Storybook code in the production build |
+| Token contrast, token lint, workbench exclusion | `npm test`, `make check` | a pair under its minimum; a raw colour in `web/src/ui`; a focus ring cancelled by `outline-none` (Tailwind 4 reads the outline style from it, so `focus-visible:outline-2` beside it needs `focus-visible:outline-solid`); `cursor-default` or `cursor-auto` without `cursor-lint-allow` and a reason on that line or the one above (one base rule in `index.css` gives every enabled button, menu item, tab, option, summary, `label[for]`, link and task row the pointing hand; a utility such as `cursor-grab` still wins); Storybook code in the production build |
 | Accessibility | `make ui-check`, CI job "UI check" | any serious or critical axe-core (WCAG 2.2 AA) violation in a story, light or dark; on a `Screens/*` story, an element that shows no focus ring when tabbed to (an element is skipped only when `scripts/ux-audit/focus-exempt.json` lists it with a written reason; the list is empty) |
 | Story coverage | `make ui-lint` (`scripts/ux-audit/stories.mjs`) | a core screen of the inventory without its story; rare screens are listed, not failed |
 | Visual regression | `make ui-check`, CI job "UI check" | a story × theme × width screenshot that differs from its baseline by more than 0.2% |

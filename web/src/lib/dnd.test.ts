@@ -59,3 +59,19 @@ describe('touch: hold, swipe and drag', () => {
     expect(click.defaultPrevented).toBe(true)
   })
 })
+
+describe('the click after a drag (row-and-cursor D1)', () => {
+  it('a mouse drag that drops swallows the next click, so the row under it does not open', () => {
+    const s = spies()
+    const li = document.createElement('li')
+    const opened = vi.fn()
+    li.addEventListener('click', opened)
+    document.body.appendChild(li)
+    beginDrag({ pointerId: 9, pointerType: 'mouse', button: 0, clientX: 50, clientY: 50 }, { label: 'Task', onStart: s.onStart, onDrop: s.onDrop, onEnd: s.onEnd })
+    window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, pointerType: 'mouse', clientX: 50, clientY: 140 }))
+    window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, pointerType: 'mouse', clientX: 50, clientY: 140 }))
+    expect(s.onStart).toHaveBeenCalledTimes(1)
+    li.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    expect(opened).not.toHaveBeenCalled()
+  })
+})

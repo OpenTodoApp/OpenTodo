@@ -278,7 +278,10 @@ export interface CompactRowProps {
   attrs?: Record<`data-${string}`, string>
 }
 
-const TONE_TEXT: Partial<Record<Tone, string>> = { danger: 'text-danger', accent: 'text-accent', default: 'text-default' }
+/** The row's own controls: a click on one of them is theirs, not the row's (row-and-cursor D1). */
+const ROW_CONTROL = 'button, a, input, label, select, textarea, [role="button"], [role="menuitem"], [contenteditable="true"]'
+
+const TONE_TEXT: Partial<Record<Tone, string>> ={ danger: 'text-danger', accent: 'text-accent', default: 'text-default' }
 
 function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs }: CompactRowProps) {
   const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
@@ -424,6 +427,15 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       aria-posinset={card ? undefined : posInSet}
       aria-setsize={card ? undefined : setSize}
       onPointerDown={swipe ? (e) => { swiping.onPointerDown(e); onPointerDown?.(e) } : onPointerDown}
+      // The row's empty area opens the task under either "Click a task to" choice (row-and-cursor
+      // D1): a pointer shortcut; the open button stays the keyboard path. Drags and swipes
+      // swallow their click (lib/dnd.ts, rowSwipe.ts), so they never get here.
+      onClick={inline || departing ? undefined : (e) => {
+        const hit = (e.target as Element).closest(ROW_CONTROL)
+        if (hit && e.currentTarget.contains(hit)) return
+        if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { onTick(e.shiftKey); return }
+        onOpen()
+      }}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       className={`group relative flex items-start gap-2 rounded-control px-2 ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >

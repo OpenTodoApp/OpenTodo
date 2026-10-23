@@ -107,7 +107,7 @@ function OptionRow<T>({ state, o, i, renderLeading, windowed, rh }: { state: Com
       onMouseDown={(e) => e.preventDefault()}
       onMouseEnter={() => state.setActive(i)}
       onClick={() => void state.pick(o)}
-      className={`flex cursor-pointer items-center gap-2.5 rounded-control px-2.5 text-body ${active ? 'bg-sunken dark:bg-raised' : ''} ${o.kind === 'create' ? 'text-accent' : 'text-default'}`}
+      className={`flex items-center gap-2.5 rounded-control px-2.5 text-body ${active ? 'bg-sunken dark:bg-raised' : ''} ${o.kind === 'create' ? 'text-accent' : 'text-default'}`}
       style={windowed ? { position: 'absolute', top: i * rh + 4, left: 4, right: 4, height: rh } : { minHeight: rh, paddingTop: 6, paddingBottom: 6, paddingLeft: o.kind === 'item' ? 10 + o.depth * 16 : undefined }}
     >
       {o.kind === 'create' ? (

@@ -39,7 +39,7 @@ export function RunList({ runs }: { runs: RuleRun[] }) {
       {runs.map((r) => (
         <li key={r.id} data-rule-run={r.outcome}>
           <details>
-            <summary className="cursor-pointer text-body">
+            <summary className="text-body">
               {formatInstant(r.at, 'datetime')} · {OUTCOME_LABEL[r.outcome]}
               {r.reason ? ` · ${r.reason}` : ''}
               {r.changes.length > 0 ? ` · ${t('{n, plural, one {# task} other {# tasks}}', { n: r.changes.length })}` : ''}

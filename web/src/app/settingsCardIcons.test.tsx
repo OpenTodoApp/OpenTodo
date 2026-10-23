@@ -42,7 +42,9 @@ describe('Learn more', () => {
   it('points like a link and opens the Help screen with Enter', async () => {
     const r = await render(<LearnMore screen="settings/security" topic="Passkeys" />)
     const b = r.container.querySelector<HTMLButtonElement>('[data-learn-more]')!
-    expect(b.className).toContain('cursor-pointer')
+    // An enabled button: the base cursor rule gives it the hand (row-and-cursor D2).
+    expect(b.tagName).toBe('BUTTON')
+    expect(b.disabled).toBe(false)
     expect(b.className).toContain('underline')
     expect(b.getAttribute('aria-label')).toBe('Learn more: Passkeys')
     await act(async () => {

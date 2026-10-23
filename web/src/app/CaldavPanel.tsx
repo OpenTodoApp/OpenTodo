@@ -86,7 +86,7 @@ export function CaldavView(p: CaldavViewProps) {
             </Notice>
           )}
           <details className="py-3 text-body">
-            <summary className="cursor-pointer font-medium text-default">{t('How to connect a calendar app')}</summary>
+            <summary className="font-medium text-default">{t('How to connect a calendar app')}</summary>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
               <li>{t.rich('<strong>Apple Reminders</strong> (iPhone, iPad, Mac): Settings → Calendar → Accounts → Add Account → Other → Add CalDAV Account. Server: the address above, then your email and an app password.', { strong: (chunks) => <strong className="text-default">{chunks}</strong> })}</li>
               <li>{t.rich('<strong>Thunderbird</strong>: New Calendar → On the Network → your email and the address above; pick the lists to show and enter an app password when asked.', { strong: (chunks) => <strong className="text-default">{chunks}</strong> })}</li>

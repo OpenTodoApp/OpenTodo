@@ -161,7 +161,8 @@ describe('three-step first run', () => {
     // How you work was never written, so it reads as Lists only.
     expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('')
     expect(q('[data-empty-state]')!.textContent).toContain('Inbox zero: every task has a place.')
-    expect(q('[data-empty-action]')!.textContent).toBe('Add a task')
+    // No "Add a task" button: the Inbox's own quick add is the way to add (row-and-cursor D3).
+    expect(q('[data-empty-action]')).toBeNull()
     await r.unmount()
     // It never returns on this account.
     const r2 = await inbox()

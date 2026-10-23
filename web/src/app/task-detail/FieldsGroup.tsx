@@ -146,7 +146,7 @@ function ChoiceEditor({ id, def, value, readOnly, onPick }: { id: string; def: F
   return (
     <>
       <button ref={anchor} id={id} type="button" disabled={readOnly} aria-haspopup="dialog" aria-expanded={open}
-        className="ui-input flex min-w-0 py-1.5 items-center justify-between gap-2 text-left disabled:cursor-default"
+        className="ui-input flex min-w-0 py-1.5 items-center justify-between gap-2 text-left"
         onClick={() => setOpen(true)} onKeyDown={onKeyDown}>
         <span className={`truncate ${value ? 'text-default' : 'text-faint'}`}>{value ?? (readOnly ? '' : t('Empty'))}</span>
         {!readOnly && <Icon name="chevron-down" size="xs" className="shrink-0 text-faint" />}

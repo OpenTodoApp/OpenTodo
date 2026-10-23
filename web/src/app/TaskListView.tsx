@@ -42,7 +42,6 @@ import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
 import { holdSelect, useListSwipe } from './task-list/RowSwipe'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
-import { requestQuickAddSheet } from './QuickAddSheet'
 import { navigate, type Route } from './router'
 import { AddSection } from './Sections'
 import { selectTask } from './signals'
@@ -141,10 +140,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const quickAddRef = useRef<HTMLInputElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
-  const focusQuickAdd = useCallback(() => quickAddRef.current?.focus(), [])
-  // An empty view's "Add a task": the quick-add sheet on a touch device, the view's own field otherwise.
   const fine = useFinePointer()
-  const addFromEmpty = useCallback(() => { if (fine || !requestQuickAddSheet()) focusQuickAdd() }, [fine, focusQuickAdd])
   const listRoot = useRef<HTMLDivElement>(null)
   // The row being edited in place and where its caret starts (inline-task-editing D1, D2).
   const [inline, setInline] = useState<{ id: string; caret?: number } | null>(null)
@@ -346,7 +342,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
           {rows.length === 0 && !(board || m.liveSections.length > 0) && (m.duration
             ? <FilteredEmpty onClear={() => m.chooseDuration(null)} />
-            : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} onAdd={addFromEmpty}
+            : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly}
                 completed={!m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0}
                 onShowCompleted={projectId ? () => act(saveShowCompleted(projectId, true)) : undefined} />)}
 

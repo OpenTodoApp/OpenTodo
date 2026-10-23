@@ -259,7 +259,7 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
         <ul id={listId} role="listbox" aria-label={t('Mention a member')}>
           {options.map((m, i) => (
             <li key={m.userId} id={`${listId}-${i}`} role="option" aria-selected={i === active}
-              className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-x-1 px-3 py-1 ${i === active ? 'bg-sunken' : ''}`}
+              className={`flex min-h-11 flex-wrap items-center gap-x-1 px-3 py-1 ${i === active ? 'bg-sunken' : ''}`}
               onMouseDown={(e) => { e.preventDefault(); pick(m) }}>
               {m.name || m.email} <span className="user-text text-meta text-faint">{m.email}</span>
             </li>

@@ -138,7 +138,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                         )}
                         {d.responseExcerpt && (
                           <details className="w-full">
-                            <summary className="cursor-pointer text-faint">{t('Response')}</summary>
+                            <summary className="text-faint">{t('Response')}</summary>
                             <pre className="whitespace-pre-wrap break-all text-muted">{d.responseExcerpt}</pre>
                           </details>
                         )}
