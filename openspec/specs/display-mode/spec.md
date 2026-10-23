@@ -21,7 +21,7 @@ The web app SHALL serve `/display` (Today), `/display/today`, `/display/upcoming
 - **THEN** the display shows "This project no longer exists" with a link to the Inbox
 
 ### Requirement: Today display
-The Today display SHALL show a clock in the user's time format and the date in the user's date format, the tasks due before today first under "Earlier" and today's tasks under them, the tasks completed today ticked below, and the next days (`days` 1–7, default 3) each as its own column with the day's heading. Group labels SHALL follow the list group header style (uppercase, muted) scaled with the display's type. Columns SHALL stack on screens narrower than 768 px. Dates and the clock SHALL roll over by themselves at midnight without a reload.
+The Today display SHALL show a clock in the user's time format and the date in the user's date format, the tasks due before today first under "Earlier" and today's tasks under them, the tasks completed today ticked below, and the next days (`days` 1–7, default 3) each as its own column with the day's heading. Group labels SHALL be muted, uppercase for the groups the display generates, and scaled with the display's type. Columns SHALL stack on screens narrower than 768 px. Dates and the clock SHALL roll over by themselves at midnight without a reload.
 
 #### Scenario: Morning view
 - **WHEN** it is 07:30 on Wednesday and the display opens with the default days

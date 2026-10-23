@@ -6,7 +6,7 @@ Defines how a task reads in every list and board: one row anatomy, one metadata 
 ## Requirements
 
 ### Requirement: One row anatomy
-Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, projects, labels, filters, saved filters, dashboards, Trash, Next, Waiting, the review screens, Close the day) SHALL render tasks with the same row: a fixed 24 px leading slot (collapse chevron only when the task has children, otherwise empty), the checkbox, the time column (see "Time column"), the title, a metadata line shown only when there is metadata, and a trailing group at the end of the row holding, in this order, the project name when the view does not imply it, the counts (tracked time, subtask progress, the notes marker, comments, attachments) and the origin. The checkbox SHALL sit at the same horizontal position in every flat view and at the same position plus indentation in tree views; within one list every title SHALL start at the same horizontal position. The trailing group SHALL be in the page and read by assistive technology at all times, at the faint text colour (still meeting text contrast) until the pointer is over the row or focus is inside it, then at the muted colour; it is not a control and SHALL NOT add a touch or tab target. Below 640 px the project name SHALL end the metadata line instead of the trailing group, so the title keeps its width.
+Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, projects, labels, filters, saved filters, dashboards, Trash, Next, Waiting, the review screens, Close the day) SHALL render tasks with the same row: a fixed 24 px leading slot (collapse chevron only when the task has children, otherwise empty), the checkbox, the time column (see "Time column"), the title with its marks beside it (the repeat mark and the counts: subtask progress, the notes marker, comments, attachments), the properties (see "Metadata language"), and a trailing group at the end of the row holding the origin. The layout SHALL follow the width of the row itself, not of the screen. From 40 rem of row width a row SHALL be one line: the title on the left and the properties in a right-hand column of fixed cells, in this order: the date, the project when the list shows projects, one cell holding the labels, else the deadline, else the subtask progress, the estimate, and the assignee; every row of a list SHALL use the same cell widths, so each property lines up down the list, and an empty cell keeps its width. As the row narrows the column SHALL drop cells from its end: under 56 rem the estimate and the assignee, and under 48 rem the third cell when the list shows projects; the task panel shows every property. Facts the column does not hold (the start, the deadline when the labels take its cell, blocked, the habit streak, field values, a parent's name, the sample mark) SHALL take a second line only when there are any. Under 40 rem of row width the properties and those facts SHALL form one metadata line under the title. The checkbox SHALL sit at the same horizontal position in every flat view and at the same position plus indentation in tree views; within one list every title SHALL start at the same horizontal position. The counts SHALL be in the page and read by assistive technology at all times, at the faint text colour (still meeting text contrast) until the pointer is over the row or focus is inside it, then at the muted colour; they are not a control and SHALL NOT add a touch or tab target.
 
 #### Scenario: Same alignment across views
 - **WHEN** the user moves between Today, the Inbox and a project without sections
@@ -17,23 +17,23 @@ Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, 
 - **THEN** both titles start at the same horizontal position, the first row's time in the column and the second row's column empty
 
 #### Scenario: Single-line rows
-- **WHEN** a task has no date, labels, estimate, subtasks, comments or attachments
+- **WHEN** a task has no date, labels, estimate, subtasks, comments or attachments, or a list row is at least 40 rem wide and the task has only properties the column holds
 - **THEN** its row is one line tall
 
 #### Scenario: Counts on demand
 - **WHEN** a task has 2 of 3 subtasks done and 3 comments
-- **THEN** "2/3" and "3" are at the end of the row in the faint text colour, become the muted text colour while the pointer is over the row or its open control has focus, and a screen reader hears "2 of 3 subtasks completed" and "3 comments" either way
+- **THEN** "2/3" and "3" are beside the title in the faint text colour, become the muted text colour while the pointer is over the row or its open control has focus, and a screen reader hears "2 of 3 subtasks completed" and "3 comments" either way
 
 #### Scenario: Project at the row's end
 - **WHEN** Upcoming lists a task of the project "Home renovation" on a 1280 px screen
-- **THEN** "Home renovation" is right-aligned muted text at the end of the row before the counts, and on a 390 px screen the same name ends the metadata line under the title
+- **THEN** "Home renovation" is muted text with the project's dot in the project cell of the right-hand column, aligned with the project of every other row, and on a 390 px screen the same name is in the metadata line under the title
 
 #### Scenario: Counts on a touch screen
 - **WHEN** the same row is shown on a device without hover
 - **THEN** the counts are shown at low contrast, still readable, and no extra tap target exists
 
 ### Requirement: Metadata language
-Row metadata SHALL be one language in every list and on every card. The metadata line SHALL be one run of text at the metadata size in the muted text colour, its items separated by a middle dot, in this order: the date words with evening as a suffix, the repeat word with its repeat icon (an occurrence: "occurrence"), the deadline countdown with its hourglass icon when the time column does not already hold it, the start ("Starts 3 Nov", "Started 1 Nov", "Someday"), the estimate (`1h`, or `35m / 1h` once time was tracked, or `35m` alone without an estimate), blocked ("Blocked by 2" with its lock icon), the habit streak with its flame icon, up to three custom field values and "+n" for the rest, the assignee, and the origin (the icon for its kind and the external id, else the URL's host; a link opening in a new tab without passing the referrer when it has a URL, never opening the task). Labels SHALL follow as chips: each a small chip with the label's colour as a dot and its name, at most two shown, then "+n"; the full names in order SHALL be read by assistive technology, shown in a tooltip while the pointer is over the group or it has keyboard focus, and in the task panel. No other item of a row SHALL have a pill background. Counts SHALL use tabular figures, not a monospace face.
+Row metadata SHALL be one language in every list and on every card. A list row's properties SHALL be at the metadata size in the muted text colour: in the right-hand column of a one-line row, each in its cell (the date, the estimate and the subtask progress with their icons, the assignee as an avatar named in its tooltip and for assistive technology), and in a narrower row one run of text under the title, its items separated by a middle dot, in this order: the date words with evening as a suffix, the project, the labels or the deadline or the subtask progress, the estimate (`1h`, or `35m / 1h` once time was tracked, or `35m` alone without an estimate), the assignee, then the parent's name, the deadline countdown with its hourglass icon when the time column and the third cell do not already hold it, the start ("Starts 3 Nov", "Started 1 Nov", "Someday"), blocked ("Blocked by 2" with its lock icon), the habit streak with its flame icon, and up to three custom field values and "+n" for the rest. The repeat mark SHALL be the repeat icon beside the title, read as "repeats" (an occurrence: "occurrence"). A card's line SHALL keep one run in the order of the date words, the repeat word with its icon, the deadline, the start, the estimate, blocked, the streak, the field values, the assignee and the project. The origin (the icon for its kind and the external id, else the URL's host; a link opening in a new tab without passing the referrer when it has a URL, never opening the task) SHALL be in the row's trailing group and at the end of a card. Labels SHALL be chips: each a small chip with the label's colour as a dot and its name, at most two shown, then "+n"; the full names in order SHALL be read by assistive technology, shown in a tooltip while the pointer is over the group or it has keyboard focus, and in the task panel. No other item of a row SHALL have a pill background. Counts SHALL use tabular figures, not a monospace face.
 
 Colour SHALL carry meaning only: the priority ring on the checkbox is coloured for P1 and P2 and neutral for P3 and P4; the date text follows one due ladder by how close the task's day is to the user's logical today: a date after tomorrow in the muted tone; tomorrow, as "Tomorrow" or the time under the Tomorrow heading, in the default text tone; today, timed or not, in the accent tone; and a day before today in the danger tone. A heading that implies the day leaves the date text out, so the ladder shows on the parts that remain (a time, "evening", the repeat mark). The ladder is computed on the device from local data and changes with the logical day without a reload; the deadline keeps its neutral, warning and danger tones; the label dot is the label's colour; everything else in the row is the muted colour, and the counts the faint colour. Every colour is a token.
 
@@ -59,7 +59,7 @@ A row SHALL never omit a value because of what it is, only because the heading o
 
 #### Scenario: Recurring evening task
 - **WHEN** a task is due today, repeats every day and is marked for the evening, and Today shows it under This Evening
-- **THEN** its metadata line reads only the repeat icon and "repeats" in the muted colour, with no date text and no pill
+- **THEN** its row shows only the repeat icon beside the title, read as "repeats", with no date text and no pill
 
 #### Scenario: Timed task in Today
 - **WHEN** a task is due today at 10:00
@@ -71,11 +71,11 @@ A row SHALL never omit a value because of what it is, only because the heading o
 
 #### Scenario: One run of text
 - **WHEN** a task in Upcoming's Friday group is due at 14:00 with a 45-minute estimate, repeats weekly and has the label "work"
-- **THEN** the column shows "14:00", the line reads "repeats · 45m" in one muted run with the repeat icon, and "work" follows as a chip with its dot, with no grey pill around the estimate
+- **THEN** the time column shows "14:00", the repeat icon sits beside the title, "work" is a chip with its dot in the third cell and "45m" is muted text in the estimate cell, with no grey pill around the estimate
 
 #### Scenario: Tracked time stays one chip
 - **WHEN** a task estimated at one hour has 35 minutes tracked
-- **THEN** its line reads `35m / 1h` as one item, with no second item and no glyph, and the number of visible properties is unchanged
+- **THEN** its row reads `35m / 1h` as one item, with no second item and no glyph, and the number of visible properties is unchanged
 
 #### Scenario: Neutral ring for P3 and P4
 - **WHEN** a list holds a P1, a P2, a P3 and a P4 task
@@ -103,7 +103,7 @@ A row SHALL never omit a value because of what it is, only because the heading o
 
 #### Scenario: Custom field values as text
 - **WHEN** a task in a project with the fields Cost, Status, Paid, Client and Vendor holds five non-empty values
-- **THEN** the line shows "Cost 120 · Status Ordered · Paid" in the muted colour and "+2", whose accessible name lists the rest, with no pill around any of them
+- **THEN** the row's second line shows "Cost 120 · Status Ordered · Paid" in the muted colour and "+2", whose accessible name lists the rest, with no pill around any of them
 
 #### Scenario: Issue chip opens the issue
 - **WHEN** a task's origin is `{kind: "issue", provider: "github", id: "o/r#7", url: "https://github.com/o/r/issues/7"}` and the user clicks its item
@@ -134,7 +134,7 @@ A row SHALL never omit a value because of what it is, only because the heading o
 - **THEN** "Tomorrow" is in the default text tone and the countdown "2d" is in the warning tone
 
 ### Requirement: Group headers
-Date groups, section groups, project groups, the Earlier group, the "Later" group and the Completed group SHALL use one header: a label, a count, a collapse control, and trailing actions. The label SHALL be set at the metadata size in the semibold weight and the muted tone: in uppercase with wide tracking when the group is generated by the view (a date, Earlier, Today, This Evening, Blocked, Later, Completed, No section), in sentence case when it is named by the user's own content (a section, a project, a label). The count SHALL be in the faint tone with tabular figures. Trailing actions SHALL appear on hover, focus or touch, except the actions of the Earlier group, which SHALL be visible at all times. No group header SHALL use the danger tone. Collapse state SHALL be remembered per device; the Earlier group of Today SHALL be collapsed by default on a device that never opened or closed it while it holds more than five tasks, and open by default otherwise. This is presentation only and behaves the same offline.
+Date groups, section groups, project groups, the Earlier group, the "Later" group and the Completed group SHALL use one header: a label, a count, a collapse control, and trailing actions. In a list the header SHALL be a group bar: a 32 px strip filled with the raised surface, with the label at the metadata size in the medium weight and the default text tone, in sentence case whether the view generated the group (a date, Earlier, Today, This Evening, Blocked, Later, Completed, No section) or the user named it (a section, a project, a label); on a board column the header SHALL stay a plain heading on the column's surface. The count SHALL be in the faint tone with tabular figures. Trailing actions SHALL appear on hover, focus or touch, except the actions of the Earlier group, which SHALL be visible at all times. No group header SHALL use the danger tone. Collapse state SHALL be remembered per device; the Earlier group of Today SHALL be collapsed by default on a device that never opened or closed it while it holds more than five tasks, and open by default otherwise. This is presentation only and behaves the same offline.
 
 #### Scenario: Collapse a date group
 - **WHEN** the user collapses "Tomorrow" in Upcoming and reloads
@@ -142,11 +142,11 @@ Date groups, section groups, project groups, the Earlier group, the "Later" grou
 
 #### Scenario: A generated and a named group
 - **WHEN** Upcoming shows the "Tomorrow" group and a project shows its "Planning" section
-- **THEN** "TOMORROW" is uppercase with wide tracking and "Planning" is in sentence case, both at the metadata size, semibold and muted, with their counts in the faint tone
+- **THEN** "Tomorrow" and "Planning" are both group bars in sentence case at the metadata size, medium weight, in the default text tone, with their counts in the faint tone
 
 #### Scenario: Earlier is quiet
 - **WHEN** Today lists three tasks due before today
-- **THEN** the first group is labelled "EARLIER" in the muted tone with "3" in the faint tone, each task's date is in the danger tone, and no other part of the group is red
+- **THEN** the first group bar reads "Earlier" in the default text tone with "3" in the faint tone, each task's date is in the danger tone, and no other part of the group is red
 
 #### Scenario: Earlier collapsed by default
 - **WHEN** a user who never touched the group opens Today with eight tasks due before today
@@ -324,7 +324,7 @@ The keyboard cursor of a task list SHALL be real focus: when the cursor moves to
 - **THEN** its complete button is named "Complete Pack"
 
 ### Requirement: Completed group in a project
-A project's Project menu SHALL offer "Show completed tasks" in the list layout, a preference of the device per project that is off by default and never synced. While it is on, the project's list SHALL end with a "Completed" group holding every completed (not skipped) task of the project, most recently completed first. The group SHALL be closed by default with its count on the heading, and its open or closed state SHALL be remembered on the device. Completing a task SHALL move it into the group; unticking a task in the group SHALL reopen it and return it among the open tasks. The board and the timeline SHALL be unchanged. A completed task's circle SHALL show the filled check without the priority ring.
+A project's Project menu SHALL offer "Show completed tasks" in the list layout, a preference of the device per project that is off by default and never synced. While it is on, the project's list SHALL end with a "Completed" group holding every completed (not skipped) task of the project, most recently completed first. The group SHALL be closed by default with its count on the heading, and its open or closed state SHALL be remembered on the device. Completing a task SHALL move it into the group; unticking a task in the group SHALL reopen it and return it among the open tasks. While it is off and the project has completed tasks, a list with open tasks SHALL end with one line, "n completed tasks hidden by display options" and a Show link that turns the preference on. The board and the timeline SHALL be unchanged. A completed task's circle SHALL show the filled check without the priority ring.
 
 #### Scenario: Groceries reused
 - **WHEN** a user turns on "Show completed tasks" in a Groceries project where Milk and Eggs were ticked off, Eggs last, and opens the Completed group
@@ -332,7 +332,7 @@ A project's Project menu SHALL offer "Show completed tasks" in the list layout, 
 
 #### Scenario: Off by default
 - **WHEN** a user opens a project they never changed the setting for
-- **THEN** no Completed group is shown and completed tasks are only in the Completed view
+- **THEN** no Completed group is shown, completed tasks are only in the Completed view, and the list ends with "2 completed tasks hidden by display options · Show" when two were completed
 
 #### Scenario: Board layout
 - **WHEN** the project is shown as a board
@@ -420,11 +420,11 @@ A click on any empty part of the content column (between or below the rows, the 
 - **THEN** the new title is saved and no row is selected
 
 ### Requirement: Selected row indicator
-The selected row SHALL be marked by a 2 px accent bar at its leading edge and a faint accent tint, with no border or ring around the row and no full-strength background. Hovering a row SHALL give it a neutral tint lighter than the selected row's tint and, on a fine pointer from 768 px, reveal the row actions (see "Revealed row actions") in the place of the trailing group; nothing else: no border, ring, shadow or size change, and the row's metadata line SHALL keep its colours while hovered. Hovering the selected row SHALL add nothing to its selection marks beyond the revealed actions. The indicator SHALL meet 3:1 non-text contrast against the list background in the light and dark themes, SHALL differ from hover and from ticked rows, and SHALL not change the row's size or the position of its content. Keyboard focus SHALL keep its focus outline.
+The selected row SHALL be marked by a 2 px accent bar at its leading edge on the neutral selected-row surface, with no border or ring around the row. Hovering a row SHALL give it the neutral hover surface, lighter than the selected row's, and, on a fine pointer from 768 px, reveal the row actions (see "Revealed row actions") in the place of the trailing group; nothing else: no border, ring, shadow or size change, and the row's metadata line SHALL keep its colours while hovered. Hovering the selected row SHALL add nothing to its selection marks beyond the revealed actions. The indicator SHALL meet 3:1 non-text contrast against the list background in the light and dark themes, SHALL differ from hover and from ticked rows, and SHALL not change the row's size or the position of its content. Keyboard focus SHALL keep its focus outline.
 
 #### Scenario: Selected and hovered rows differ
 - **WHEN** one row is selected and the pointer hovers another
-- **THEN** the selected row shows the leading accent bar and tint, the hovered row only a neutral tint lighter than the selection's plus its revealed actions, and neither has a ring
+- **THEN** the selected row shows the leading accent bar on the selected-row surface, the hovered row only the lighter hover surface plus its revealed actions, and neither has a ring
 
 #### Scenario: Contrast in dark mode
 - **WHEN** the theme is dark and a row is selected
@@ -432,11 +432,11 @@ The selected row SHALL be marked by a 2 px accent bar at its leading edge and a 
 
 #### Scenario: Hover over a two-line row
 - **WHEN** the pointer moves over a row with a title and a metadata line on a 1280 px screen
-- **THEN** a light neutral tint appears behind it and the actions appear at its right edge in the place of the counts, nothing in the row moves or changes size, and the metadata keeps its colours
+- **THEN** the hover surface appears behind it and the actions appear at its right edge, nothing in the row moves or changes size, and the metadata keeps its colours
 
 #### Scenario: Hover over the selected row
 - **WHEN** the pointer moves over the selected row
-- **THEN** the row keeps its bar and tint and shows only the revealed actions in addition
+- **THEN** the row keeps its bar and surface and shows only the revealed actions in addition
 
 ### Requirement: Empty views
 A view with nothing to list SHALL show one empty view, centred in the content column: one sentence, at most one primary action, and at most one secondary text link; no icon, no second sentence, no second button, no printed key hint. The action's key, when it has one, SHALL be in its tooltip on fine-pointer devices only. A list that shows its own quick-add field above the empty view SHALL offer no "Add a task" button: the field is the way to add, and `q` still focuses it (or opens the quick-add sheet on a touch device). Each view's copy is a scenario below. The empty view SHALL be one region with the sentence as its heading, reads local data (so it is the same offline) and writes nothing.
@@ -545,11 +545,11 @@ Every task list SHALL reserve, between the checkbox and the title, a column for 
 - **THEN** the column shows "09:00" and the line shows "fixed to Europe/Rome" in the faint colour
 
 ### Requirement: Revealed row actions
-On a fine pointer from 768 px wide, a row SHALL hold three actions at its right edge, rendered in the place of the trailing group and shown while the pointer is over the row or focus is inside it: Schedule, which opens the same Do on popover as `s` anchored to the row; Priority, which opens the same priority choice as `1` to `4`; and More, which opens the row menu as `.` does. The actions SHALL be real buttons at all times, reachable by Tab from the row's open control and back with Shift+Tab, named with their key in their tooltips, with targets of at least 24 by 24 CSS pixels and 8 px apart (WCAG 2.2 2.5.8), and SHALL never be obscured by the sticky page header, the selection bar or a toast when focused (WCAG 2.2 2.4.11). `j` and `k` SHALL keep moving focus from open control to open control, skipping the actions. Revealing the actions SHALL NOT change the row's height, move the title or the metadata, or hide the counts from assistive technology. On coarse pointers and below 768 px the actions SHALL NOT be rendered; the row menu stays reachable by `.`, the Menu key and long press. Every action writes through the same path as its keyboard equivalent, so it works offline and converges per field.
+On a fine pointer from 768 px wide, a row SHALL hold three actions at its right edge, shown while the pointer is over the row or focus is inside it as one small floating cluster on the popover surface: over the end of the property column of a one-line row, and in the place of the trailing group of a narrower row, which keeps room for them: Schedule, which opens the same Do on popover as `s` anchored to the row; Priority, which opens the same priority choice as `1` to `4`; and More, which opens the row menu as `.` does. The actions SHALL be real buttons at all times, reachable by Tab from the row's open control and back with Shift+Tab, named with their key in their tooltips, with targets of at least 24 by 24 CSS pixels and 8 px apart (WCAG 2.2 2.5.8), and SHALL never be obscured by the sticky page header, the selection bar or a toast when focused (WCAG 2.2 2.4.11). `j` and `k` SHALL keep moving focus from open control to open control, skipping the actions. Revealing the actions SHALL NOT change the row's height, move the title or the properties, or hide the counts or the properties from assistive technology. On coarse pointers and below 768 px the actions SHALL NOT be rendered; the row menu stays reachable by `.`, the Menu key and long press. Every action writes through the same path as its keyboard equivalent, so it works offline and converges per field.
 
 #### Scenario: Reveal on hover
 - **WHEN** the pointer enters a row with two comments on a 1280 px screen
-- **THEN** the "2" count fades and Schedule, Priority and More appear at the row's right edge, and the title does not move
+- **THEN** Schedule, Priority and More appear in a floating cluster at the row's right edge, the "2" beside the title stays, and the title does not move
 
 #### Scenario: Reveal on focus
 - **WHEN** the user presses `j` to focus a row's open control and then Tab
