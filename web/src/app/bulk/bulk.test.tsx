@@ -29,6 +29,8 @@ afterEach(async () => {
   vi.useRealTimers()
   hideBulkToast()
   resetPanel()
+  // A case that opened a task page leaves its address; the next list starts from the Inbox's.
+  history.replaceState(null, '', '/')
   document.body.innerHTML = ''
 })
 
@@ -84,8 +86,8 @@ describe('ticking from the keyboard (2.1, 2.4)', () => {
     await key(document.body, 'Escape')
     await waitFor(() => bar() === null)
     await key(document.body, 'Enter')
+    // On the Inbox's split the task stood beside the list until Enter opened its page (inbox-split D1).
     await waitFor(() => ids.some((id) => location.pathname === `/task/${id}`))
-    expect(document.querySelector('aside[data-detail-for]')).toBeNull()
   })
 })
 
@@ -171,6 +173,8 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await waitFor(() => bar() === '3 selected')
     await key(document.body, 'L', { shiftKey: true })
     await waitFor(() => !!document.querySelector('[data-picker-step]'))
+    // The picker reads the ticked tasks' labels from the store; let that read land before picking.
+    await flush(50)
     await act(async () => { ([...document.querySelectorAll('[data-picker-step] [role="option"]')].find((o) => o.textContent?.includes('errand')) as HTMLElement).click() })
     await waitFor(() => !!document.querySelector('[data-bulk-toast]'))
     // The toast can show before the batch's last row is read back; poll the store.

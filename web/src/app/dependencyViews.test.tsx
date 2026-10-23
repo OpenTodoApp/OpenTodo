@@ -10,6 +10,7 @@ import { createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
 import { click, flush, key, render, spokenText, visibleText } from '../ui/test-utils'
 import { TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
+import { PanelHost } from './PanelHost'
 import { TaskListView } from './TaskListView'
 import { TaskDetail } from './task-detail/TaskDetail'
 
@@ -90,7 +91,8 @@ describe('task panel (3.3)', () => {
     const hotel = await createTask({ title: 'Book hotel' })
     await createTask({ title: 'Renew passport' })
     await setBlockedBy(flights, [trip])
-    const r = await render(<><TaskListView route={{ view: 'inbox' }} /><TaskPageHost /></>)
+    // The Inbox keeps its task beside the list from 1024 px (inbox-split): the slot draws it there.
+    const r = await render(<><TaskListView route={{ view: 'inbox' }} /><TaskPageHost /><PanelHost user={{ id: 'me' }} /></>)
     mounted.push(r)
     await waitFor(() => !!row('Plan trip'))
     // Select "Plan trip" and press b.

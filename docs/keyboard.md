@@ -122,6 +122,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | Today, Upcoming, Assigned, Completed, labels, filters | Sorted by date (or their own rule): no drag or Alt moves there |
 | <kbd>←</kbd> | Collapse the subtasks of the selected task (or go to its parent), or the sub-projects of the focused sidebar project |
 | <kbd>→</kbd> | Expand the subtasks of the selected task, or the sub-projects of the focused sidebar project |
+| <kbd>p</kbd> | In the Inbox: process its tasks one at a time |
 | <kbd>v</kbd> | Cycle the current project through list, board and timeline (remembered per project on this device) |
 | <kbd>Shift+S</kbd> | Share the current project: add members by email, change roles, remove, leave, transfer |
 | <kbd>Shift+F</kbd> | Manage the custom fields of the current project: add, rename, reorder, delete |

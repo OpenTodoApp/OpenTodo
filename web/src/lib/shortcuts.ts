@@ -189,6 +189,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'list.collapse', keys: ['←'], description: 'Collapse the subtasks of the selected task (or go to its parent), or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },
   { id: 'list.expand', keys: ['→'], description: 'Expand the subtasks of the selected task, or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },
   { id: 'project.move', keys: ['m'], description: 'Move the current project under another project or to the top level', section: 'trash', scope: 'view', views: ['project'] },
+  // The Inbox's primary action (inbox-split D3): Process, one task at a time; `g p` still goes there from anywhere.
+  { id: 'inbox.process', keys: ['p'], label: 'Process', description: 'In the Inbox: process its tasks one at a time', section: 'tasks', scope: 'view', views: ['inbox'] },
   { id: 'project.view-mode', keys: ['v'], description: 'Cycle the current project through list, board and timeline (remembered per project on this device)', section: 'tasks', scope: 'view', views: ['project'] },
   { id: 'project.share', keys: ['Shift+S'], description: 'Share the current project: add members by email, change roles, remove, leave, transfer', section: 'tasks', scope: 'view', views: ['project'] },
   // Custom fields (custom-fields): define the project's fields; editors and above.

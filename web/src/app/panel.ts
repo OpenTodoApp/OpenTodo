@@ -40,16 +40,39 @@ function syncQuery(id: string | null): void {
   history.replaceState(history.state, '', `${location.pathname}${q ? `?${q}` : ''}${location.hash}`)
 }
 
-/** The page on screen docks tasks beside its list instead of opening them as pages (set while it is mounted). */
+/**
+ * The page on screen docks tasks beside its list instead of opening them as pages (set
+ * while it is mounted). `empty` draws the slot while no task is docked: the Inbox's
+ * "No task selected" (inbox-split D2); without it the slot stays closed.
+ */
 let split = false
-export function setTaskSplit(on: boolean): () => void {
+let splitEmpty: (() => ReactNode) | null = null
+export function setTaskSplit(on: boolean, empty?: () => ReactNode): () => void {
   split = on
-  return () => { split = false }
+  splitEmpty = on ? empty ?? null : null
+  if (typeof document !== 'undefined') document.documentElement.toggleAttribute('data-task-split', on)
+  emit()
+  return () => {
+    split = false
+    splitEmpty = null
+    if (typeof document !== 'undefined') document.documentElement.removeAttribute('data-task-split')
+    emit()
+  }
 }
 
-const SPLIT_QUERY = '(min-width: 1024px)'
+export const SPLIT_QUERY = '(min-width: 1024px)'
 function docks(): boolean {
   return split && typeof matchMedia !== 'undefined' && matchMedia(SPLIT_QUERY).matches
+}
+
+/** Whether a task opened now docks beside the list (a split page on a wide enough screen). */
+export function taskSplitDocks(): boolean {
+  return docks()
+}
+
+/** What the slot shows while a split page has no task docked, or null. */
+export function splitEmptyPane(): (() => ReactNode) | null {
+  return split ? splitEmpty : null
 }
 
 /** Open a task: as a page, or docked in the slot on a page that keeps a split. */
@@ -128,6 +151,11 @@ export function usePanelTaskId(): string | null {
   return useSyncExternalStore(subscribe, panelTaskId, () => null)
 }
 
+/** The split page's empty pane, following `setTaskSplit`. */
+export function useSplitEmptyPane(): (() => ReactNode) | null {
+  return useSyncExternalStore(subscribe, splitEmptyPane, () => null)
+}
+
 export function usePanelHandlers(): PanelHandlers {
   return useSyncExternalStore(subscribe, panelHandlers, () => handlers)
 }
@@ -137,6 +165,7 @@ export function resetPanel(): void {
   occupant = null
   handlers = {}
   split = false
+  splitEmpty = null
   emit()
 }
 

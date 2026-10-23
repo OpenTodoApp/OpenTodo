@@ -42,6 +42,8 @@ import { fieldBadges } from '../lib/fields'
 import { useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
 import { originOf } from '../lib/taskOrigin'
+import { taskSource, type SourceKind } from '../lib/taskSource'
+import { relativeLabel } from './task-detail/RelativeTime'
 import { trackedLabel, trackedText } from '../lib/time'
 import { useTaskTracked } from '../lib/timeEntries'
 import { OriginChip } from './OriginChip'
@@ -311,9 +313,29 @@ export interface TaskRowProps {
   motion?: RowMotion
   /** The properties the view's display options hide (views-and-display D3); the task page still shows them. */
   hidden?: readonly RowProperty[]
+  /** The Inbox's source line under the title, "From email · yesterday" (inbox-split D4); it stands for the origin chip. */
+  source?: boolean
 }
 
 const NO_HIDDEN: readonly RowProperty[] = []
+
+/** Where the task came from and when, as one quiet line (inbox-split D4). */
+function SourceLine({ task }: { task: Task }) {
+  const dt = useDateTimeFormat()
+  const source = taskSource(task)
+  const when = task.created_at ? relativeLabel(task.created_at, Date.now(), (ms) => dt.formatInstant(ms, 'date')) : ''
+  return (
+    <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-meta text-muted" data-row-source={source.kind}>
+      <Icon name={SOURCE_ICON[source.kind]} size="xs" className="shrink-0 text-faint" />
+      <span className="min-w-0 truncate">{when ? `${source.text} · ${when}` : source.text}</span>
+    </span>
+  )
+}
+
+const SOURCE_ICON: Record<SourceKind, IconName> = {
+  email: 'mail', web: 'globe', issue: 'git-pull-request', import: 'download', calendar: 'calendar-sync',
+  assistant: 'sparkles', api: 'code', vault: 'file', app: 'plus',
+}
 
 /**
  * Where the row is in the completion sequence (task-list-presentation "Completion
@@ -388,7 +410,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false }: TaskRowProps) {
   const card = shape === 'card'
   const hides = (p: RowProperty) => hidden.includes(p)
   // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
@@ -430,7 +452,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     ? { text: trackedText(tracked, task.estimate_minutes ?? null), label: trackedLabel(tracked, task.estimate_minutes ?? null), tracked: true }
     : task.estimate_minutes ? { text: formatMinutes(task.estimate_minutes), label: t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) }), tracked: false } : null
   // Where the task came from (task-origin D7): quiet text, in the trailing group of a row and the line of a card.
-  const origin = hides('origin') ? null : originOf(task)
+  // The Inbox's source line names it instead (inbox-split D4).
+  const origin = hides('origin') || (source && !card) ? null : originOf(task)
   const originChip = origin ? <OriginChip origin={origin} quiet /> : null
   const projectName = showProject && project && !hides('project') ? project.name : null
   const hint = zoneHint(task.due)
@@ -585,6 +608,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         {!card && headCounts.length > 0 && <RowCounts counts={headCounts} />}
         </div>
         {meta}
+        {source && !card && <SourceLine task={task} />}
       </button>}
       {trailing}
       {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} />}

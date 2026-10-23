@@ -34,7 +34,7 @@ import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
 import { withListTransition } from './motion'
-import { usePanelTaskId, setPanelTaskId as setOpenId } from './panel'
+import { usePanelTaskId, setPanelTaskId as setOpenId, taskSplitDocks } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
 import { useRowClick } from './rowClick'
@@ -52,6 +52,7 @@ import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
+import { useInboxSplit } from './task-list/useInboxSplit'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useListModel, type ListRoute } from './task-list/useListModel'
@@ -136,8 +137,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked } = useTickedRows(rows, taskMap, isReadOnly)
   const { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo } = useListUi()
-  // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens.
+  // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens. The
+  // Inbox keeps its task there, beside the list, from 1024 px (inbox-split D1), set up before the bindings' route reset.
   const openId = usePanelTaskId()
+  const inbox = useInboxSplit({ on: route.view === 'inbox', rows: m.ownRows, selectedId, setSelectedId, openId, ticking: selection.ticked.size > 0 })
   const quickAddRef = useRef<HTMLInputElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
@@ -153,12 +156,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (openId) setOpenId(null)
   })
   // A click on a title edits it in place: a mouse click (not Enter) with a fine pointer from 768 px,
-  // the "Edit in place" preference, no panel open, a task the user may edit; otherwise the panel opens.
+  // the "Edit in place" preference, no panel open and no Inbox split (inbox-split D1), a task the user may edit; otherwise the task opens.
   const startInline = useCallback((id: string, e?: React.MouseEvent) => {
     const task = taskMap.get(id)
     const fine = typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches
     const wide = typeof window !== 'undefined' && window.innerWidth >= 768
-    if (!e || e.detail === 0 || !task || board || clickPref !== 'edit' || !fine || !wide || openId || isReadOnly(task)) return false
+    if (!e || e.detail === 0 || !task || board || clickPref !== 'edit' || !fine || !wide || openId || taskSplitDocks() || isReadOnly(task)) return false
     setSelectedId(id)
     setInline({ id, caret: caretFromClick(e) })
     return true
@@ -190,14 +193,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if ((effectiveSection(task, sectionMap) ?? '') === key) return
     act(withListTransition(1, () => moveTaskToSection(task.id, key || null)))
   }, [sectionMap])
-
   // Manual ordering (OpenSpec `manual-ordering`): project lists and boards (editors
   // and above) and the Inbox. Date and filter views keep their own sort.
   const manual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox'
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, dataGroups), [board, dataColumns, dataGroups])
   const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: fine ? undefined : (task) => holdSelect(task.id, selection, setSelectMode) }, moveToSection, onDropped: setSelectedId })
   const { latestSectionMap } = drag
-
   // The view supplies defaults; attributes typed in the quick-add line override them.
   const onAdd = useCallback(async ({ labels: typed, ...rest }: QuickAddInput) => {
     // In Assigned to me a new task is yours (Inbox unless a #project was typed).
@@ -277,7 +278,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const hiddenDone = !m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0
   const showCompleted = projectId ? () => act(saveShowCompleted(projectId, true)) : undefined
   const pageActions = (
-    <ListPageActions route={route} userRole={userRole} rowCount={own.length} topLevelCount={own.filter((r) => r.depth === 0).length}
+    <ListPageActions route={route} userRole={userRole} rowCount={own.length}
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} />
   )
   const { currentProject, currentLabel, currentPlace } = m
@@ -291,7 +292,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const listedTasks = useMemo(() => (route.view === 'today' ? rows.map((r) => r.task) : []), [route.view, rows])
   const totals = useDayTotals(listedTasks, today, route.view === 'today')
   const todayMeta = [m.dt.formatDate(today, 'heading'), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
-  const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : undefined)
+  const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : route.view === 'inbox' ? inbox.meta : undefined)
   const methodSubtitle = useWithMethod(methodMove, undefined)
   const title = {
     inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'), place: currentPlace?.name ?? t('Location'),

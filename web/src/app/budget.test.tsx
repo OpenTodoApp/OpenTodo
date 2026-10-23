@@ -211,8 +211,10 @@ describe('chrome above the first task', () => {
 
 describe('visible properties', () => {
   it('an empty task page shows at most seven facts with a value, in at most four groups of at most six rows', async () => {
-    await createTask({ title: 'Blank' })
-    navigate({ view: 'inbox' })
+    // A project's list: the Inbox keeps its task beside the list from 1024 px instead (inbox-split).
+    const pid = await createProject({ name: 'Home' })
+    await createTask({ title: 'Blank', project_id: pid })
+    navigate({ view: 'project', id: pid })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => r.container.textContent!.includes('Blank'))
     r.container.querySelector<HTMLElement>('[data-task-id] button.min-w-0')!.click()

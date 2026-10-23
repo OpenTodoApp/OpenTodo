@@ -14,7 +14,9 @@ import type { Priority, Task } from '../../lib/types'
 import type { Tree } from '../../lib/tree'
 import { act } from '../actionError'
 import { runBulk } from '../bulk/BulkActions'
-import { setPanelTaskId as setOpenId } from '../panel'
+import { setPanelTaskId as setOpenId, taskSplitDocks } from '../panel'
+import { navigate } from '../router'
+import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, placeInDay } from '../signals'
 import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcuts'
@@ -129,7 +131,11 @@ export function useListShortcuts(c: ShortcutContext) {
     const id = row?.task.id ?? openId
     return !id || isReadOnly(row?.task ?? c.taskMap.get(id)) ? null : id
   }
-  useShortcutScope('view', { 'project.view-mode': () => { if (!c.projectId) return false; c.toggleViewMode() } }, { view: c.route.view })
+  useShortcutScope('view', {
+    'project.view-mode': () => { if (!c.projectId) return false; c.toggleViewMode() },
+    // P processes the Inbox one task at a time (inbox-split D3), as its primary action does.
+    'inbox.process': () => { if (c.route.view !== 'inbox' || rows.length === 0) return false; navigate({ view: 'triage' }) },
+  }, { view: c.route.view })
   useShortcutScope('list', {
     'list.escape': (e) => {
       const target = e.target as HTMLElement | null
@@ -138,8 +144,10 @@ export function useListShortcuts(c: ShortcutContext) {
       else if (ui.assignFor) ui.setAssignFor(null)
       else if (ui.prompt) ui.setPrompt(null)
       else if (ui.addingUnder) ui.setAddingUnder(null)
-      else if (openId) setOpenId(null)
+      else if (openId && !taskSplitDocks()) setOpenId(null)
       else if (selection.ticked.size) selection.clear()
+      // On the Inbox's split the pane follows the cursor: Escape clears both (inbox-split D1).
+      else if (openId) { setOpenId(null); setSelectedId(null) }
       else setSelectedId(null)
     },
     'list.move-up': moveBy(-1), 'list.move-down': moveBy(1), 'list.move-top': moveBy('top'), 'list.move-bottom': moveBy('bottom'),
@@ -163,7 +171,9 @@ export function useListShortcuts(c: ShortcutContext) {
       if (ui.prompt) { c.acceptPrompt(); return }
       // Enter on a focused button or link is that control's own (the panel's tabs, a version's expander).
       if (!selectedId || isActivationTarget(e.target)) return false
-      setOpenId(selectedId)
+      // On the Inbox's split the task is already beside the list: Enter opens its page (inbox-split D1).
+      if (taskSplitDocks()) openTaskPage(selectedId)
+      else setOpenId(selectedId)
     },
     'list.add-subtask': () => {
       if (!row || !writable) return false
