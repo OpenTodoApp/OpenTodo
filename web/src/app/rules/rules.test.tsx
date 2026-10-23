@@ -61,8 +61,9 @@ describe('Rules page', () => {
     const id = await createRule({ name: 'Waiting', trigger: { kind: 'label.added', label_id: waiting }, actions: { priority: 3 } })
     status.rules[id] = { last_run: Date.UTC(2026, 9, 20, 9), runs_7d: 4 }
     const r = await render(<RulesView />)
-    await waitFor(() => rows().length === 1 && /4 runs in 7 days/.test(rows()[0].textContent ?? ''), 'the row with its counts')
-    expect(rows()[0].textContent).toMatch(/When label waiting is added → priority 3/)
+    // The summary names the label once the labels query answers, which can come after the counts.
+    await waitFor(() => rows().length === 1 && /4 runs in 7 days/.test(rows()[0].textContent ?? '')
+      && /When label waiting is added → priority 3/.test(rows()[0].textContent ?? ''), 'the row with its counts and its summary')
     await click(rows()[0].querySelector('[role="switch"]')!)
     await waitFor(() => rows()[0].querySelector('[role="switch"]')?.getAttribute('aria-checked') === 'false', 'the rule off')
     await r.unmount()

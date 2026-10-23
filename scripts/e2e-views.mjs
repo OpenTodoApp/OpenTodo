@@ -338,7 +338,7 @@ const frameEdges = () => pageA.evaluate(() => {
   const h = row.getBoundingClientRect(), b = body.getBoundingClientRect(), c = column.getBoundingClientRect()
   const actions = row.querySelector('[data-page-actions]')?.getBoundingClientRect()
   return {
-    left: Math.round(h.left), actionsRight: Math.round(actions?.right ?? h.right), content: Math.round(content.getBoundingClientRect().left),
+    left: Math.round(h.left), actionsRight: Math.round(actions?.right ?? h.right), content: Math.round(content.getBoundingClientRect().left), contentRight: Math.round(content.getBoundingClientRect().right),
     spaceLeft: b.left - c.left, spaceRight: c.left + column.clientWidth - b.right, frame: body.getAttribute('data-page-frame'),
   }
 })
@@ -410,6 +410,20 @@ const edges = []
 for (const path of ['/today', '/labels', `/project/${pWork}`]) { await pageA.goto(base + path); await settle(); edges.push([path, await frameEdges()]) }
 for (const [path, e] of edges) assert(Math.abs(e.left - edges[0][1].left) <= 1, `2560 px: ${path} title at ${e.left}, /today at ${edges[0][1].left}`)
 console.log(`  2560 px: Today, Labels and a project share the left edge ${edges[0][1].left}`)
+// The header is as wide as the content under it (page-frame-v3 D1, D2): its actions end
+// at the content's right edge on a list page, a project list and a project board.
+for (const width of [1920, 2560]) {
+  await pageA.setViewportSize({ width, height: 900 })
+  const pages = [['/inbox', null], ['/today', null], [`/project/${pWork}`, 'List'], [`/project/${pWork}`, 'Board']]
+  for (const [path, mode] of pages) {
+    await pageA.goto(base + path); await settle()
+    if (mode) { await layout(mode).click(); await settle() }
+    const e = await frameEdges()
+    assert(Math.abs(e.actionsRight - e.contentRight) <= 2, `${path}${mode ? ` (${mode})` : ''} at ${width} px: header actions end at ${e.actionsRight}, content at ${e.contentRight}`)
+  }
+  await pageA.goto(`${base}/project/${pWork}`); await settle(); await layout('List').click(); await settle()
+  console.log(`  ${width} px: header actions end at the content's right edge on Inbox, Today and a project's list and board`)
+}
 await pageA.setViewportSize({ width: 1280, height: 860 })
 
 step('Help lists the new shortcuts')
