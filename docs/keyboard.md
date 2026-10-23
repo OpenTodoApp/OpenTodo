@@ -148,6 +148,9 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+O</kbd> | Recurring task: this occurrence only (standalone copy, series moves on) |
 | <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Move the selected task (and its subtasks), or the ticked tasks, to the Trash |
 | <kbd>z</kbd> | Task panel open: fix a timed due to your time zone, or release it to a floating time |
+| <kbd>j</kbd> | On a task page: open the next task of the list it was opened from |
+| <kbd>k</kbd> | On a task page: open the previous task of that list |
+| <kbd>Esc</kbd> | On a task page: back to the list, with the task selected where it was |
 
 ### Board and timeline
 
