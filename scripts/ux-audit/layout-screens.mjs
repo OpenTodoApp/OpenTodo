@@ -420,8 +420,10 @@ export const OVERLAYS = {
   },
   async 'assignee-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().locator('[data-row-open]').press('Enter')
-    await p.locator('[data-detail-for]').waitFor()
+    // The task's page opens; Esc returns to the list with it selected (task-full-page).
+    await p.locator('[data-task-page]').waitFor()
     await p.keyboard.press('Escape')
+    await p.locator('[data-task-id][aria-current]').first().waitFor()
     await p.keyboard.press('A')
     return { overlay: p.getByRole('dialog', { name: 'Assign task' }), kind: 'dialog' }
   },
