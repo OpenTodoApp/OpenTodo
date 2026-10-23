@@ -32,6 +32,13 @@ export const PAIRS: Pair[] = [
   // accent icon of the active row on the sidebar surface.
   ...TEXT.flatMap((fg) => text(fg, ['sidebar'])),
   ...ui('accent-text', ['sidebar']),
+  // Precision surfaces (precision-tokens D1): every text tone on popovers, hover and the
+  // selected row; on the selected nav item only text and muted (t3 never sits there,
+  // 4.3:1). The strong hairline edges popovers and inputs, so it stays visible.
+  ...TEXT.flatMap((fg) => text(fg, ['pop', 'hover', 'selected-row'])),
+  ...['text-strong', 'text', 'muted'].flatMap((fg) => text(fg, ['selected'])),
+  ...['danger', 'warning', 'info', 'accent-text'].flatMap((fg) => text(fg, ['pop', 'selected-row'])),
+  ...['surface', 'pop', 'canvas'].map((bg): Pair => ({ fg: 'line-strong', bg, min: 1.2, kind: 'ui' })),
   ...text('warning-soft-text', ['surface']),
   ...text('success-soft-text', ['surface']),
   ...ui('warning', ['surface', 'accent-soft']),
