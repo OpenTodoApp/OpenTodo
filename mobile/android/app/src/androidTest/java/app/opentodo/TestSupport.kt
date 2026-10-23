@@ -98,9 +98,27 @@ fun shell(command: String): String {
     return android.os.ParcelFileDescriptor.AutoCloseInputStream(pfd).use { it.readBytes().toString(Charsets.UTF_8) }
 }
 
-/** Exact alarms on or off for the app; turning them off is avoided in-process (Android stops the app). */
+/**
+ * Exact alarms on for the app; turning them off is avoided in-process (Android stops the app).
+ * Waits until AlarmManager reports the grant: right after `appops set` it can still answer
+ * false, which made the bridge answer "exact-denied" on some CI runs.
+ */
 fun allowExactAlarms() {
-    if (Build.VERSION.SDK_INT >= 31) shell("appops set ${context.packageName} SCHEDULE_EXACT_ALARM allow")
+    if (Build.VERSION.SDK_INT < 31) return
+    val pkg = context.packageName
+    var out = shell("appops set $pkg SCHEDULE_EXACT_ALARM allow")
+    val deadline = System.currentTimeMillis() + 10_000
+    var retried = false
+    while (!Scheduler.canExact(context)) {
+        if (System.currentTimeMillis() > deadline) {
+            throw AssertionError("exact alarms still denied after appops set: $out / ${shell("appops get $pkg SCHEDULE_EXACT_ALARM")}")
+        }
+        if (!retried && System.currentTimeMillis() > deadline - 7_000) {
+            retried = true
+            out += shell("appops set --uid $pkg SCHEDULE_EXACT_ALARM allow") + shell("appops set $pkg SCHEDULE_EXACT_ALARM allow")
+        }
+        Thread.sleep(100)
+    }
 }
 
 /** Finishes every activity a test left (a notification or a widget can start one outside a scenario). */
