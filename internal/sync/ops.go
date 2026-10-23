@@ -439,19 +439,25 @@ var Schema = map[string]map[string]kind{
 	// a future option value stays additive: clients map unknown values to defaults at
 	// read time and only the REST API rejects them. panels holds view ids (dashboards).
 	"view": {
-		"name":       kString,
-		"query":      kString,
-		"kind":       kString,
-		"group_by":   kString,
-		"sort_by":    kString,
-		"sort_dir":   kString,
-		"pinned":     kBool,
-		"position":   kNumber,
-		"color":      kString,
-		"panels":     kStringList,
-		"on_drop":    kRule,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"name":     kString,
+		"query":    kString,
+		"kind":     kString,
+		"group_by": kString,
+		"sort_by":  kString,
+		"sort_dir": kString,
+		"pinned":   kBool,
+		"position": kNumber,
+		"color":    kString,
+		"panels":   kStringList,
+		"on_drop":  kRule,
+		// Display options of a list view (OpenSpec change views-and-display): the layout
+		// (an enumeration carried as a string), whether completed matches are listed, and
+		// the row properties the view hides.
+		"layout":         kString,
+		"show_completed": kBool,
+		"hidden_props":   kStringList,
+		"created_at":     kNumber,
+		"deleted_at":     kNullableNumber,
 		// Workspace of the view, null for the default (OpenSpec change workspaces).
 		"workspace_id": kNullableString,
 	},

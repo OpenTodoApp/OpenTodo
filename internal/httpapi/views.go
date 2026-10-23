@@ -26,7 +26,10 @@ var (
 	viewGroupBy  = []string{"project", "due", "priority", "label", "none"}
 	viewSortBy   = []string{"due", "priority", "position", "created", "title"}
 	viewSortDir  = []string{"asc", "desc"}
-	viewEnumSets = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_by": viewSortBy, "sort_dir": viewSortDir}
+	viewLayouts  = []string{"list", "board"}
+	viewEnumSets = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_by": viewSortBy, "sort_dir": viewSortDir, "layout": viewLayouts}
+	// viewRowProps are the row properties a view can hide (views-and-display D3).
+	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin"}
 	// viewDefaults are written on create for every field the caller leaves out.
 	viewDefaults = map[string]json.RawMessage{
 		"kind":     json.RawMessage(`"list"`),
@@ -36,6 +39,8 @@ var (
 		"pinned":   json.RawMessage(`false`),
 		"color":    json.RawMessage(`"#64748b"`),
 		"panels":   json.RawMessage(`[]`),
+		// layout, show_completed and hidden_props are left out: absent reads as the list
+		// layout, completed matches hidden and every row property shown (views-and-display).
 	}
 )
 
@@ -119,6 +124,16 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 	if raw, has := body["on_drop"]; has {
 		if err := s.checkOnDrop(ctx, uid, kind, raw); err != nil {
 			return err
+		}
+	}
+	if raw, has := body["hidden_props"]; has {
+		var props []string
+		if json.Unmarshal(raw, &props) == nil {
+			for _, p := range props {
+				if !slices.Contains(viewRowProps, p) {
+					return invalidView("view.hidden_props: %q is not one of %s", p, strings.Join(viewRowProps, ", "))
+				}
+			}
 		}
 	}
 	if raw, has := body["panels"]; has {

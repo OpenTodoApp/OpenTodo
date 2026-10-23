@@ -452,7 +452,7 @@
   "A view needs a name": [
     "web/src/lib/views.ts"
   ],
-  "A workspace has its own projects, labels and filters, and its own people. Projects stay private until you share them.": [
+  "A workspace has its own projects, labels and views, and its own people. Projects stay private until you share them.": [
     "web/src/app/NewWorkspaceDialog.tsx"
   ],
   "A year of done tasks": [
@@ -869,10 +869,10 @@
   "Add to {workspace}…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
-  "Add up to six saved filters as panels.": [
+  "Add up to six views as panels.": [
     "web/src/app/NewBoardDialog.tsx"
   ],
-  "Add up to six saved filters with “Add panel”.": [
+  "Add up to six views with “Add panel”.": [
     "web/src/app/DashboardView.tsx"
   ],
   "Add webhook": [
@@ -973,9 +973,6 @@
   "All events": [
     "web/src/app/AuditPanel.tsx"
   ],
-  "All filters": [
-    "web/src/app/Sidebar.tsx"
-  ],
   "All labels": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/task-list/ListChrome.tsx"
@@ -998,7 +995,11 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "All tasks": [
-    "web/src/app/review/StatsView.tsx"
+    "web/src/app/review/StatsView.tsx",
+    "web/src/app/views/ViewResults.tsx"
+  ],
+  "All views": [
+    "web/src/app/Sidebar.tsx"
   ],
   "All-day events on {date}": [
     "web/src/app/calendar/DayColumn.tsx"
@@ -1346,10 +1347,10 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Ascending": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Ascending (p4 first)": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Ask": [
     "web/src/app/Sidebar.tsx",
@@ -1447,7 +1448,8 @@
   "Assignee": [
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/rules/RuleFields.tsx",
-    "web/src/app/task-detail/Facets.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Assistant": [
     "web/src/app/AssistantsPanel.tsx",
@@ -1711,7 +1713,8 @@
     "web/src/lib/colourNames.ts"
   ],
   "Board": [
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Board and timeline": [
     "web/src/lib/shortcuts.ts"
@@ -1777,10 +1780,6 @@
   ],
   "Bucket": [
     "web/src/app/BackupsPanel.tsx"
-  ],
-  "Builder": [
-    "web/src/app/FilterView.tsx",
-    "web/src/app/SavedViewView.tsx"
   ],
   "Built-in": [
     "web/src/app/PreferencesPanels.tsx"
@@ -1935,6 +1934,7 @@
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
+    "web/src/app/views/SaveViewCard.tsx",
     "web/src/ui/patterns/ConfirmDialog.tsx"
   ],
   "Cancel change": [
@@ -2340,6 +2340,9 @@
   "Close the day: the task on the card was done already (completed with the carry-over)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Close the filter": [
+    "web/src/app/views/ViewToolbar.tsx"
+  ],
   "Close the panel": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -2577,6 +2580,9 @@
   "Completed per day, last {n} days": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "Completed tasks": [
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
   "Completed tasks per project: {values}.": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -2597,6 +2603,9 @@
   ],
   "Condition": [
     "web/src/app/filter/FilterBuilder.tsx"
+  ],
+  "Conditions": [
+    "web/src/app/views/FilterChips.tsx"
   ],
   "Configuration": [
     "web/src/app/AssistantsPanel.tsx"
@@ -2917,11 +2926,11 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Created": [
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/activity.ts",
     "web/src/lib/feed.ts",
     "web/src/lib/historyVersions.ts"
@@ -2993,6 +3002,9 @@
   "Custom fields": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Custom query": [
+    "web/src/app/views/FilterChips.tsx"
+  ],
   "Custom range": [
     "web/src/app/AuditPanel.tsx"
   ],
@@ -3057,6 +3069,7 @@
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/fields.ts"
   ],
   "Date and time": [
@@ -3142,6 +3155,7 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts"
   ],
   "Deadline reminders fire once the task has a deadline.": [
@@ -3409,10 +3423,10 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Descending": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Descending (p1 first)": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Describe the image": [
     "web/src/app/editorImage.tsx"
@@ -3484,7 +3498,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Direction": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Disable": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -3527,7 +3541,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Display options": [
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Display pinned on this device": [
     "web/src/app/PreferencesPanels.tsx"
@@ -3659,10 +3674,10 @@
   "Due date": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/DueField.tsx",
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Due date and time (6 languages)": [
     "web/src/lib/shortcuts.ts"
@@ -3753,7 +3768,7 @@
   "Each top-level project that holds sub-projects, and those of them without a next action or stalled.": [
     "web/src/app/review/MonthlyLook.tsx"
   ],
-  "Each workspace has its own projects, labels and filters, and its own people.": [
+  "Each workspace has its own projects, labels and views, and its own people.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Earlier": [
@@ -3778,6 +3793,9 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "Edit as text": [
+    "web/src/app/views/ViewToolbar.tsx"
   ],
   "Edit calendar": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -4097,6 +4115,7 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts"
   ],
   "Estimate presets": [
@@ -4471,12 +4490,9 @@
     "web/src/app/task-detail/Composer.tsx"
   ],
   "Filter": [
-    "web/src/app/AppearanceSection.tsx",
-    "web/src/app/FilterView.tsx",
-    "web/src/app/PreferencesPanels.tsx",
-    "web/src/app/Sidebar.tsx",
     "web/src/app/task-list/ListChrome.tsx",
-    "web/src/lib/shortcuts.ts"
+    "web/src/app/views/FilterChips.tsx",
+    "web/src/app/views/ViewToolbar.tsx"
   ],
   "Filter activity by kind": [
     "web/src/app/ProjectActivity.tsx"
@@ -4496,9 +4512,6 @@
   "Filter feed by project": [
     "web/src/app/FeedView.tsx"
   ],
-  "Filter name": [
-    "web/src/app/FilterView.tsx"
-  ],
   "Filter on": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -4508,15 +4521,8 @@
   "Filter results": [
     "web/src/app/FilterView.tsx"
   ],
-  "Filter, saved filters and boards": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Filters": [
-    "web/src/app/AuditPanel.tsx",
-    "web/src/app/Sidebar.tsx",
-    "web/src/app/ViewsView.tsx",
-    "web/src/app/palette/entries.ts",
-    "web/src/lib/shortcuts.ts"
+    "web/src/app/AuditPanel.tsx"
   ],
   "Find a colour…": [
     "web/src/app/menus/stylePickers.tsx"
@@ -4537,7 +4543,7 @@
   "Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Find a project, label or filter…": [
+  "Find a project, label or view…": [
     "web/src/app/Sidebar.tsx"
   ],
   "Find a project…": [
@@ -4734,7 +4740,7 @@
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/ListGroups.tsx"
   ],
-  "Four filters over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
+  "Four views over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
     "web/src/lib/boardTemplates.ts"
   ],
   "Free and open source · no tracking, no telemetry.": [
@@ -4857,16 +4863,6 @@
     "web/src/app/vim/commands.ts",
     "web/src/lib/shortcuts.ts"
   ],
-  "Go to Filter": [
-    "web/src/app/palette/registry.ts",
-    "web/src/lib/shortcuts.ts"
-  ],
-  "Go to Filters": [
-    "web/src/app/palette/registry.ts"
-  ],
-  "Go to Filters: saved views, boards and dashboards": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Go to Focus": [
     "web/src/app/palette/registry.ts"
   ],
@@ -4940,6 +4936,12 @@
   "Go to Updates: what changed in your shared projects": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Go to Views": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Go to Views: saved views and boards": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Go to Waiting": [
     "web/src/app/palette/registry.ts"
   ],
@@ -5010,12 +5012,11 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Group": [
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/filter/FilterBuilder.tsx",
     "web/src/app/review/StatsView.tsx"
   ],
   "Group by": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Group chat": [
     "web/src/app/PublicLinksSection.tsx"
@@ -5137,7 +5138,8 @@
   "Hide": [
     "web/src/app/FirstDay.tsx",
     "web/src/app/InviteLinksSection.tsx",
-    "web/src/app/Sections.tsx"
+    "web/src/app/Sections.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Hide delivery log": [
     "web/src/app/WebhooksPanel.tsx"
@@ -5154,6 +5156,9 @@
   ],
   "Hide text": [
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Hide the filter": [
+    "web/src/app/views/ViewToolbar.tsx"
   ],
   "Hide the planning list": [
     "web/src/app/CalendarView.tsx",
@@ -5359,9 +5364,6 @@
   "In 90 days": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
-  "In Filter: jump from the query to the first result / back to the query": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "In MB, from 1 to {MAX_FILE_MB}. Larger files are refused before they are sent.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -5396,6 +5398,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "In Month: select the previous task": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In New view: jump from the query to the first result / back to the query": [
     "web/src/lib/shortcuts.ts"
   ],
   "In Plan: add a task due on the focused day": [
@@ -5482,9 +5487,6 @@
   "In the command bar: add what you typed as a task": [
     "web/src/lib/shortcuts.ts"
   ],
-  "In the filter query: recall recent queries on this device": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "In the notes and comments: bold, italic, strikethrough, inline code, link (⌘ on a Mac)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5495,6 +5497,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "In the notes: bullet, numbered, check list; Ctrl+Enter ticks a check item; Tab / Shift+Tab indent": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the query of New view: recall recent queries on this device": [
     "web/src/lib/shortcuts.ts"
   ],
   "In the scheduling sheet of a task with a deadline: on the deadline, 1 day, 3 days, 1 week, 2 weeks or 1 month before": [
@@ -5511,7 +5516,6 @@
   ],
   "Inbox": [
     "web/src/app/FeedView.tsx",
-    "web/src/app/FilterView.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ProjectActivity.tsx",
@@ -5877,11 +5881,11 @@
   "Label": [
     "web/src/app/LabelPicker.tsx",
     "web/src/app/ParseChips.tsx",
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
-    "web/src/app/rules/RuleFields.tsx"
+    "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Label (optional)": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -5919,6 +5923,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -6040,7 +6045,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Layout": [
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Learn Open Loops": [
     "web/src/app/help/HelpView.tsx"
@@ -6170,7 +6176,8 @@
     "web/src/lib/attachments.ts"
   ],
   "List": [
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "List at least one repository or project.": [
     "web/src/app/IssueEditor.tsx"
@@ -6439,7 +6446,7 @@
     "web/src/app/WorkspaceControl.tsx"
   ],
   "Manual order": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Map of your locations": [
     "web/src/app/locations/PlacesView.tsx"
@@ -6648,7 +6655,8 @@
     "web/src/app/EditorChrome.tsx"
   ],
   "More options": [
-    "web/src/app/IssueEditor.tsx"
+    "web/src/app/IssueEditor.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Most tasks take {ratio} their estimate ({n} tasks).": [
     "web/src/app/review/StatsView.tsx"
@@ -6880,6 +6888,9 @@
   "Name of the saved location": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
+  "Name this view": [
+    "web/src/app/views/SaveViewCard.tsx"
+  ],
   "Natural-language parsing, its languages and the date order": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -6942,9 +6953,6 @@
   ],
   "New email": [
     "web/src/app/profile/ProfileSection.tsx"
-  ],
-  "New filter": [
-    "web/src/app/ViewsView.tsx"
   ],
   "New group": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -7019,6 +7027,15 @@
   "New token": [
     "web/src/app/TokensSection.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "New view": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/FilterView.tsx",
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/palette/registry.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "New webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -7220,9 +7237,6 @@
   ],
   "No fields yet.": [
     "web/src/app/FieldsDialog.tsx"
-  ],
-  "No filter to add": [
-    "web/src/app/DashboardView.tsx"
   ],
   "No focus chosen today.": [
     "web/src/app/method/LoopHome.tsx"
@@ -7487,6 +7501,9 @@
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx"
   ],
+  "No view to add": [
+    "web/src/app/DashboardView.tsx"
+  ],
   "No webhooks yet": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -7498,9 +7515,9 @@
   ],
   "None": [
     "web/src/app/ProjectPickerField.tsx",
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/review/ProjectWalk.tsx",
-    "web/src/app/rules/RuleFields.tsx"
+    "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "None (plain)": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -7510,7 +7527,7 @@
     "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "None yet. Save a query from the Filter view.": [
+  "None yet. Make one with New view.": [
     "web/src/app/ViewsView.tsx"
   ],
   "Normal text": [
@@ -7521,7 +7538,8 @@
   ],
   "Not": [
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/filter/FilterBuilder.tsx"
+    "web/src/app/filter/FilterBuilder.tsx",
+    "web/src/app/views/FilterChips.tsx"
   ],
   "Not a rule I understand: {error}. The previous rule is kept.": [
     "web/src/app/RecurrenceField.tsx"
@@ -8161,6 +8179,9 @@
   "Open Loops first arranges the sidebar; these choices apply in the other modes.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Open New view: build a query, then save it as a view": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Open Next": [
     "web/src/app/method/MethodListView.tsx"
   ],
@@ -8188,8 +8209,11 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Open as filter": [
+  "Open as a new view": [
     "web/src/app/task-list/ListGroups.tsx"
+  ],
+  "Open as a new view: {query}": [
+    "web/src/app/palette/filterEntries.ts"
   ],
   "Open calendar": [
     "web/src/app/datetime/DateField.tsx"
@@ -8197,9 +8221,6 @@
   "Open details": [
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/task-list/InlineEditor.tsx"
-  ],
-  "Open in Filter view: {query}": [
-    "web/src/app/palette/filterEntries.ts"
   ],
   "Open in Help": [
     "web/src/app/help/HelpPanel.tsx"
@@ -8397,11 +8418,15 @@
   "Orange": [
     "web/src/lib/colourNames.ts"
   ],
+  "Order by": [
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
   "Organize": [
     "web/src/app/LabelsView.tsx"
   ],
   "Origin": [
-    "web/src/app/filter/ConditionEditor.tsx"
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Origin is {value}": [
     "web/src/app/filter/conditionText.ts"
@@ -8796,7 +8821,8 @@
   ],
   "Please enter a name": [
     "web/src/app/NamePrompt.tsx",
-    "web/src/app/NewWorkspaceDialog.tsx"
+    "web/src/app/NewWorkspaceDialog.tsx",
+    "web/src/app/views/SaveViewCard.tsx"
   ],
   "Please wait…": [
     "web/src/app/App.tsx",
@@ -8899,14 +8925,14 @@
   "Priority": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
-    "web/src/app/task-list/RowActionCluster.tsx"
+    "web/src/app/task-list/RowActionCluster.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Priority 1 or 2": [
     "web/src/app/rules/RuleFields.tsx"
@@ -8977,11 +9003,9 @@
   ],
   "Project": [
     "web/src/app/FeedView.tsx",
-    "web/src/app/FilterView.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/ShareCapture.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/TrashView.tsx",
@@ -8996,6 +9020,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/dashboard.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/stats.ts"
@@ -10110,17 +10135,16 @@
   "Save as template…": [
     "web/src/app/ProjectHeader.tsx"
   ],
+  "Save as view": [
+    "web/src/app/FilterView.tsx",
+    "web/src/app/palette/registry.ts",
+    "web/src/app/views/SaveViewCard.tsx"
+  ],
   "Save assistant settings": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Save backup settings": [
     "web/src/app/BackupsPanel.tsx"
-  ],
-  "Save filter": [
-    "web/src/app/FilterView.tsx"
-  ],
-  "Save filter as view": [
-    "web/src/app/palette/registry.ts"
   ],
   "Save for reuse": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -10152,23 +10176,21 @@
   "Save senders": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
-  "Save the Filter query as a view, pinned to the sidebar": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Save the connection first, then test it.": [
     "web/src/app/IssueEditor.tsx"
   ],
   "Save the page you are reading as a task": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Save the query as a view, pinned to the sidebar": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Save these recovery codes now. They will not be shown again.": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Save view": [
-    "web/src/app/palette/registry.ts"
-  ],
-  "Saved filters": [
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/palette/registry.ts",
+    "web/src/app/views/SaveViewCard.tsx"
   ],
   "Saved locations": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -10177,7 +10199,11 @@
     "web/src/app/palette/index.ts"
   ],
   "Saved views": [
-    "web/src/app/PreferencesPanels.tsx"
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/app/ViewsView.tsx"
+  ],
+  "Saved with its conditions and display options, in the sidebar under Views.": [
+    "web/src/app/views/SaveViewCard.tsx"
   ],
   "Saved.": [
     "web/src/app/AttachmentSettingsPanel.tsx",
@@ -10682,7 +10708,8 @@
   ],
   "Show": [
     "web/src/app/Sections.tsx",
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
@@ -10723,6 +10750,9 @@
   "Show more {older}": [
     "web/src/app/task-list/ListGroups.tsx"
   ],
+  "Show on rows": [
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
   "Show or hide the project activity; Tab reaches the person and kind filters": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -10742,6 +10772,9 @@
   ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Show the filter": [
+    "web/src/app/views/ViewToolbar.tsx"
   ],
   "Show the keyboard shortcuts; with a topic, open Help on it (:help board)": [
     "web/src/app/vim/commands.ts"
@@ -11119,14 +11152,8 @@
   "Something you will recognise later, such as the device or script.": [
     "web/src/app/TokensSection.tsx"
   ],
-  "Sort": [
-    "web/src/app/SavedViewView.tsx"
-  ],
-  "Sort by": [
-    "web/src/app/SavedViewView.tsx"
-  ],
   "Sort direction": [
-    "web/src/app/SavedViewView.tsx"
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Sorted by date (or their own rule): no drag or Alt moves there": [
     "web/src/lib/shortcuts.ts"
@@ -11172,6 +11199,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts"
   ],
   "Start a new sandbox": [
@@ -11883,9 +11911,6 @@
   ],
   "The file matches no supported format.": [
     "web/src/lib/i18n/errors.ts"
-  ],
-  "The filter is pinned to the sidebar under Filters.": [
-    "web/src/app/FilterView.tsx"
   ],
   "The five moves": [
     "web/src/app/method/LoopHome.tsx"
@@ -13071,9 +13096,9 @@
   "Title": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RelayConfirm.tsx",
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
-    "web/src/app/task-list/InlineEditor.tsx"
+    "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Title or notes": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -13923,7 +13948,8 @@
   ],
   "View name": [
     "web/src/app/ViewsView.tsx",
-    "web/src/app/palette/registry.ts"
+    "web/src/app/palette/registry.ts",
+    "web/src/app/views/SaveViewCard.tsx"
   ],
   "View only": [
     "web/src/app/PublicLinksSection.tsx"
@@ -13944,7 +13970,15 @@
     "web/src/app/ShareDialog.tsx"
   ],
   "Views": [
-    "web/src/app/shortcuts/Spotlight.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/palette/entries.ts",
+    "web/src/app/shortcuts/Spotlight.tsx",
+    "web/src/app/views/ViewsCrumb.tsx",
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Views and boards": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Vim command line": [
     "web/src/app/vim/help.ts"
@@ -14181,7 +14215,7 @@
   "Which issues and where they go": [
     "web/src/app/IssueEditor.tsx"
   ],
-  "Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar": [
+  "Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and New view sit next to Inbox, Today, Upcoming and Calendar": [
     "web/src/app/settingsIndex.ts"
   ],
   "While this is on, text an assistant asks for passes through your server to reach the assistant; the server never gets your key and keeps nothing. This device decrypts at most {hour} values an hour and {day} a day, and stops when you lock it or sign out.": [
@@ -15207,7 +15241,7 @@
   "iPhone or iPad": [
     "web/src/app/SecurityPanel.tsx"
   ],
-  "in Filter results": [
+  "in New view results": [
     "web/src/lib/shortcuts.ts"
   ],
   "in a comment": [
@@ -15631,7 +15665,7 @@
   "project invite links": [
     "web/src/app/settingsSections.ts"
   ],
-  "project label filter": [
+  "project label view": [
     "web/src/app/palette/registry.ts"
   ],
   "project {project}": [
@@ -16597,7 +16631,8 @@
     "web/src/app/locations/PlacesView.tsx"
   ],
   "{n, plural, one {# task matches} other {# tasks match}}": [
-    "web/src/app/filter/FilterBuilder.tsx"
+    "web/src/app/filter/FilterBuilder.tsx",
+    "web/src/app/views/ViewToolbar.tsx"
   ],
   "{n, plural, one {# task moved to the Trash} other {# tasks moved to the Trash}}": [
     "web/src/lib/bulk.ts"
@@ -16661,6 +16696,12 @@
   ],
   "{n, plural, one {+# more reminder} other {+# more reminders}}": [
     "web/src/app/ReminderToasts.tsx"
+  ],
+  "{n, plural, one {All of # condition} other {All of # conditions}}": [
+    "web/src/app/views/FilterChips.tsx"
+  ],
+  "{n, plural, one {Any of # condition} other {Any of # conditions}}": [
+    "web/src/app/views/FilterChips.tsx"
   ],
   "{n, plural, one {Assistant: # change applied.} other {Assistant: # changes applied.}}": [
     "web/src/app/assistant/useAssistantConversation.ts"
@@ -16848,6 +16889,9 @@
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx"
+  ],
+  "{name}, {n, plural, one {# task} other {# tasks}}": [
+    "web/src/app/views/ViewResults.tsx"
   ],
   "{name}: uploading": [
     "web/src/app/Markdown.tsx"

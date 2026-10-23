@@ -79,7 +79,7 @@ func TestFilterParserAcceptsFormatted(t *testing.T) {
 
 func TestFilterParserMatchesDocsErrorTable(t *testing.T) {
 	doc := readDocs(t)
-	section := doc[strings.Index(doc, "## Errors"):strings.Index(doc, "## The Filter view")]
+	section := doc[strings.Index(doc, "## Errors"):strings.Index(doc, "## The New view page")]
 	rows := regexp.MustCompile("(?m)^\\| `(.+?)` \\| `(.+?)` \\|$").FindAllStringSubmatch(section, -1)
 	if len(rows) < 5 {
 		t.Fatalf("error table has %d rows", len(rows))

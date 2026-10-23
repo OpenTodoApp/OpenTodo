@@ -9,7 +9,7 @@ order: 25
 ---
 # Search and commands
 
-<picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The Filter view with the query (@call | @errand) & due <= 7 days and the matching tasks below; the search box understands the same queries."></picture>
+<picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The New view page with the query (@call | @errand) & due <= 7 days and the matching tasks below; the search box understands the same queries."></picture>
 
 Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on a Mac) anywhere in the app to find anything or do anything by name. It also works while you are typing in a field, except in a task's notes, where the same keys insert a link.
 
@@ -32,7 +32,7 @@ Matching ignores case and accents and finds words by their start or by letters i
 
 ## Filter queries inline
 
-If what you type is a [filter query](filters.md), such as `@errand & p1`, `due <= friday` or `#Work & overdue`, the box lists the matching tasks and offers **Open in Filter view**. Plain words are always a text search, so a half-typed query never shows an error.
+If what you type is a [filter query](filters.md), such as `@errand & p1`, `due <= friday` or `#Work & overdue`, the box lists the matching tasks and offers **Open as a new view**. Plain words are always a text search, so a half-typed query never shows an error.
 
 ## Commands
 

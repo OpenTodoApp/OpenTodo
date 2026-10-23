@@ -24,7 +24,7 @@ Check these places, in this order:
 5. **A folded parent or section.** Select the small arrow to unfold it.
 6. **A shared project you left** or were removed from. Ask its owner.
 
-The **Filter** view with `search: word` (add `& completed` to include finished tasks) searches titles and notes.
+The **New view** page with `search: word` (add `& completed` to include finished tasks) searches titles and notes.
 
 ## Changes don't show up on my other device
 

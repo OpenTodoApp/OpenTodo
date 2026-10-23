@@ -306,6 +306,11 @@ export const VIEW_KINDS: readonly ViewKind[] = ['list', 'dashboard']
 export const GROUP_BY_OPTIONS: readonly GroupBy[] = ['project', 'due', 'priority', 'label', 'none']
 export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'title']
 export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
+export type ViewLayout = 'list' | 'board'
+export const VIEW_LAYOUTS: readonly ViewLayout[] = ['list', 'board']
+/** What a row can show beside its title (views-and-display D3), in the display panel's order. */
+export type RowProperty = 'date' | 'project' | 'labels' | 'estimate' | 'assignee' | 'deadline' | 'start' | 'origin'
+export const ROW_PROPERTIES: readonly RowProperty[] = ['date', 'project', 'labels', 'estimate', 'assignee', 'deadline', 'start', 'origin']
 
 /**
  * A saved view (OpenSpec `custom-views`): a filter query plus presentation options.
@@ -327,6 +332,12 @@ export interface View {
   panels: string[]
   /** List views only: what a drop into a board column showing this view changes (OpenSpec change `rule-boards`). */
   on_drop: OnDropRule | null
+  /** List views only (views-and-display D2): `list` or `board`, columns by the grouping; unknown values read as `list`. */
+  layout?: string
+  /** List views only: completed matches are listed too, when the query does not name a state itself. */
+  show_completed?: boolean
+  /** List views only: the row properties the view hides (ROW_PROPERTIES); empty shows them all. */
+  hidden_props?: string[]
   created_at: number
   deleted_at: number | null
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */

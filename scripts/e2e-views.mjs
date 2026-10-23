@@ -1,5 +1,5 @@
 // End-to-end check of saved views (OpenSpec change `custom-views`) against a running
-// server with a FRESH data directory: saving from the Filter view, editing, grouping
+// server with a FRESH data directory: saving from New view, editing, grouping
 // and sort, sidebar order and counts, unpin and the g v overview, dashboards (Tab
 // between panels, live counts, removed-view placeholder, stacking), the per-device
 // start view with its fallback, and two devices converging on a view edited offline.
@@ -30,7 +30,7 @@ const LATER = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 9)
 
 async function device(name) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } })
-  // The Filters group starts folded on a new device (sidebar-favourites, quiet-sidebar): open it, as a device that stored it.
+  // The Views group starts folded on a new device (sidebar-favourites, quiet-sidebar): open it, as a device that stored it.
   await ctx.addInitScript(() => { try { if (localStorage.getItem('ot.sidebar.group.filters') === null) localStorage.setItem('ot.sidebar.group.filters', '1') } catch { /* no storage */ } })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`${name} pageerror: ${e.message}`))
@@ -65,10 +65,16 @@ const seed = [
 for (const t of seed) await post('tasks', t)
 
 const pageA = A.page
+// The display panel (views-and-display): opened from the toolbar, kept open while options change.
+const display = async (p) => {
+  if (!(await p.locator('[data-display-panel]').count())) await p.getByRole('button', { name: 'Display options' }).click()
+  return p.locator('[data-display-panel]')
+}
+const closeDisplay = async (p) => { if (await p.locator('[data-display-panel]').count()) await p.keyboard.press('Escape') }
 await pageA.goto(base)
 await pageA.getByText('Hear back from landlord').waitFor()
 
-step('Filter view: run a query, press s, save "Work tomorrow"')
+step('New view: run a query, press s, save "Work tomorrow" from the header card')
 // The Inbox opens with quick add focused: leave the field so g f is a shortcut, not text.
 await pageA.getByRole('combobox', { name: 'Add a task' }).blur()
 await pageA.keyboard.press('g'); await pageA.keyboard.press('f')
@@ -80,24 +86,25 @@ const filterCount = await pageA.locator('[data-page-meta]').first().textContent(
 assert(filterCount === '4', 'filter count ' + filterCount)
 await pageA.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'Filter results')
 await pageA.keyboard.press('s')
-await pageA.getByLabel('Filter name').fill('Work tomorrow')
-await pageA.getByLabel('Filter name').press('Enter')
+await pageA.getByLabel('View name').fill('Work tomorrow')
+await pageA.getByLabel('View name').press('Enter')
 await pageA.getByRole('heading', { name: 'Work tomorrow' }).waitFor()
-const sidebarViews = pageA.getByRole('navigation', { name: 'Filters' })
+const sidebarViews = pageA.getByRole('navigation', { name: 'Views' })
 await sidebarViews.getByText('Work tomorrow').waitFor()
 // The count renders before the view has evaluated; give it a moment to settle.
 await pageA.waitForFunction(() => document.querySelector('[data-page-meta]')?.textContent === '4', null, { timeout: 5000 }).catch(() => undefined)
 const viewCount = await pageA.locator('[data-page-meta]').first().textContent()
 assert(viewCount === '4', 'view result count ' + viewCount)
 // A filter row shows no number (quiet-sidebar): its name and data-open-count, the count read by assistive technology.
-await pageA.waitForFunction(() => [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].some((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? '') === 'Work tomorrow4'))
+await pageA.waitForFunction(() => [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].some((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? '') === 'Work tomorrow4'))
 await shot(pageA, 'views-saved.png')
 
 step('Edit a saved query: / then add "& !@waiting", Enter')
 await pageA.locator('body').click({ position: { x: 900, y: 700 } })
 await pageA.keyboard.press('/')
 const vq = pageA.getByLabel('View query')
-assert(await vq.evaluate((el) => el === document.activeElement), '/ focuses the query')
+// The filter panel opens (closed by default on a saved view) with focus in the query.
+await pageA.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'View query')
 await vq.press('End')
 await vq.type(' & !@waiting')
 await vq.press('Enter')
@@ -118,18 +125,18 @@ await vq.press('Escape')
 assert((await vq.inputValue()) === '@work & due <= tomorrow & p1 & !@waiting', 'Esc restores the query')
 
 step('Group by due date: Earlier, Today, Tomorrow headings in order; sort by priority descending')
-await pageA.getByLabel('Group by').selectOption('due')
+await (await display(pageA)).getByLabel('Group by').selectOption('due')
 await pageA.getByRole('heading', { name: 'Earlier', level: 2 }).waitFor()
-const headings = await pageA.locator('[aria-label="View results"] h2').allTextContents()
+const headings = await pageA.locator('[aria-label="View results"] [data-group-label]').allTextContents()
 assert(JSON.stringify(headings) === JSON.stringify(['Earlier', 'Today', 'Tomorrow']), 'headings ' + headings)
-await pageA.getByLabel('Sort by').selectOption('priority')
-await pageA.getByLabel('Sort direction').selectOption('desc')
-// keyboard reachability: the Builder toggle (filter-builder), then the options, in tab order after the query input
-await vq.focus()
-await pageA.keyboard.press('Tab')
-assert((await pageA.evaluate(() => document.activeElement?.textContent?.trim())) === 'Builder', 'Tab reaches the Builder toggle')
-await pageA.keyboard.press('Tab')
-assert(await pageA.evaluate(() => document.activeElement?.getAttribute('aria-label')) === 'Group by', 'Tab reaches Group by')
+await (await display(pageA)).getByLabel('Order by').selectOption('priority')
+await (await display(pageA)).getByRole('button', { name: 'More options' }).click()
+await (await display(pageA)).getByLabel('Sort direction').selectOption('desc')
+// keyboard reachability: the display button opens its panel with focus inside it
+await closeDisplay(pageA)
+await pageA.getByRole('button', { name: 'Display options' }).focus()
+await pageA.keyboard.press('Enter')
+await pageA.waitForFunction(() => !!document.activeElement?.closest('[data-display-panel]'))
 await shot(pageA, 'views-grouped.png')
 
 step('Save a second view "Waiting" and move it first in the sidebar')
@@ -139,14 +146,14 @@ await pageA.keyboard.press('g'); await pageA.keyboard.press('f')
 await pageA.getByLabel('Filter query').fill('@waiting')
 await pageA.getByLabel('Filter query').press('Enter')
 await pageA.getByText('Hear back from landlord').waitFor()
-await pageA.getByRole('button', { name: 'Save filter' }).click()
-await pageA.getByLabel('Filter name').fill('Waiting')
-await pageA.getByLabel('Filter name').press('Enter')
+await pageA.getByRole('button', { name: 'Save as view' }).click()
+await pageA.getByLabel('View name').fill('Waiting')
+await pageA.getByLabel('View name').press('Enter')
 await pageA.getByRole('heading', { name: 'Waiting' }).waitFor()
 await sidebarViews.getByLabel('Menu for view Waiting').click()
 await pageA.locator('[data-overlay]').getByRole('menuitem', { name: 'Move up' }).click() // menus open in the overlay layer
 await pageA.waitForFunction(() => {
-  const t = [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? ''))
+  const t = [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? ''))
   return t[0] === 'Waiting2' && t[1] === 'Work tomorrow3'
 })
 await shot(pageA, 'views-sidebar-order.png')
@@ -157,25 +164,27 @@ const pageB = B.page
 r = await B.ctx.request.post(`${base}/api/v1/auth/login`, { data: { email: 'ada@example.com', password: 'correct horse battery staple' } })
 assert(r.ok(), 'login B')
 await pageB.goto(base)
-const sidebarB = pageB.getByRole('navigation', { name: 'Filters' })
+const sidebarB = pageB.getByRole('navigation', { name: 'Views' })
 await pageB.waitForFunction(() => {
-  const t = [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? ''))
+  const t = [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? ''))
   return t[0] === 'Waiting2' && t[1] === 'Work tomorrow3'
 }, null, { timeout: 15000 })
 // The edited query arrived on B too.
 await sidebarB.getByText('Work tomorrow').click()
+await pageB.locator('[data-filter-toggle]').click()
 assert((await pageB.getByLabel('View query').inputValue()) === '@work & due <= tomorrow & p1 & !@waiting', 'B sees edited query')
-assert((await pageB.getByLabel('Group by').inputValue()) === 'due', 'B sees grouping')
+assert((await (await display(pageB)).getByLabel('Group by').inputValue()) === 'due', 'B sees grouping')
+await closeDisplay(pageB)
 
-step('Unpin "Waiting": leaves Favourites, still in Filters and the g v overview')
+step('Unpin "Waiting": leaves Favourites, still in Views and the g v overview')
 await sidebarViews.getByLabel('Menu for view Waiting').click()
 await pageA.locator('[data-overlay]').getByRole('menuitemcheckbox', { name: 'Pin to sidebar' }).click()
 await pageA.getByRole('navigation', { name: 'Favourites' }).getByText('Waiting').waitFor({ state: 'detached' })
 await sidebarViews.getByText('Waiting').waitFor()
 await pageA.locator('body').click({ position: { x: 900, y: 700 } })
 await pageA.keyboard.press('g'); await pageA.keyboard.press('v')
-await pageA.getByRole('heading', { name: 'Filters', level: 1 }).waitFor()
-// The overview lists every saved filter; an unpinned one offers Pin.
+await pageA.getByRole('heading', { name: 'Views', level: 1 }).waitFor()
+// The overview lists every saved view; an unpinned one offers Pin.
 const notPinned = pageA.locator('li', { has: pageA.getByRole('button', { name: 'Pin Waiting' }) })
 await notPinned.getByText('Waiting', { exact: true }).waitFor()
 await shot(pageA, 'views-overview.png')
@@ -221,7 +230,7 @@ await api.patch(`${base}/api/v1/tasks/${parcel.id}`, { data: { completed_at: Dat
 await pageA.waitForFunction(() => document.querySelector('section[aria-label="Errands"] h2 + span [aria-hidden="true"]')?.textContent === '1', null, { timeout: 15000 })
 await shot(pageA, 'views-dashboard.png')
 const dashId = (await get('views')).views.find((v) => v.name === 'Morning').id
-await pageB.goto(`${base}/view/${dashId}`)
+await pageB.goto(`${base}/views/${dashId}`)
 await pageB.locator('section[aria-label="Errands"]').waitFor({ timeout: 15000 })
 
 step('Panel view deleted: placeholder with a remove action, other panels keep working')
@@ -246,23 +255,23 @@ await pageA.goto(`${base}/settings/preferences`)
 await pageA.getByLabel('Start view on this device').selectOption({ label: 'Work tomorrow' })
 await pageA.waitForTimeout(200)
 await pageA.goto(base)
-await pageA.waitForURL(`**/view/${workId}`)
+await pageA.waitForURL(`**/views/${workId}`)
 await pageA.getByRole('heading', { name: 'Work tomorrow' }).waitFor()
 await pageB.goto(base)
 await pageB.waitForTimeout(800)
 assert(new URL(pageB.url()).pathname === '/', 'B stays on the Inbox: ' + pageB.url())
 await pageB.getByRole('combobox', { name: 'Add a task' }).waitFor()
 step('B sets its own start view from a view menu')
-await pageB.getByRole('navigation', { name: 'Filters' }).getByLabel('Menu for view Morning').click()
+await pageB.getByRole('navigation', { name: 'Views' }).getByLabel('Menu for view Morning').click()
 await pageB.getByRole('menuitemcheckbox', { name: 'Start view on this device' }).click()
 await pageB.waitForTimeout(200) // the preference is written to IndexedDB asynchronously
 await pageB.goto(base)
-await pageB.waitForURL(`**/view/${dashId}`)
+await pageB.waitForURL(`**/views/${dashId}`)
 await pageA.goto(base)
-await pageA.waitForURL(`**/view/${workId}`)
+await pageA.waitForURL(`**/views/${workId}`)
 
 step('Deleted start view: B deletes "Work tomorrow"; A syncs, relaunches on the Inbox with a notice')
-await pageB.getByRole('navigation', { name: 'Filters' }).getByLabel('Menu for view Work tomorrow').click()
+await pageB.getByRole('navigation', { name: 'Views' }).getByLabel('Menu for view Work tomorrow').click()
 await pageB.getByRole('menuitem', { name: 'Delete view…' }).click()
 // Deleting asks first (labels-and-menus): confirm in the alert dialog.
 await pageB.getByRole('alertdialog').getByRole('button', { name: 'Delete view' }).click()
@@ -281,42 +290,42 @@ await pageA.getByLabel('Filter query').press('Enter')
 await pageA.getByText('Quarterly goals').waitFor()
 await pageA.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'Filter results')
 await pageA.keyboard.press('s')
-await pageA.getByLabel('Filter name').fill('Work p1')
-await pageA.getByLabel('Filter name').press('Enter')
+await pageA.getByLabel('View name').fill('Work p1')
+await pageA.getByLabel('View name').press('Enter')
 await pageA.getByRole('heading', { name: 'Work p1' }).waitFor()
 await sidebarViews.getByText('Work p1').waitFor()
 await pageA.waitForTimeout(500)
 assert(!(await get('views')).views.some((v) => v.name === 'Work p1'), 'not on server while offline')
 await A.ctx.setOffline(false)
-await pageB.getByRole('navigation', { name: 'Filters' }).getByText('Work p1').waitFor({ timeout: 20000 })
+await pageB.getByRole('navigation', { name: 'Views' }).getByText('Work p1').waitFor({ timeout: 20000 })
 const wp1 = (await get('views')).views.find((v) => v.name === 'Work p1').id
 
 step('Both offline: A changes sort and grouping, B later changes grouping; reconnect and converge')
-await pageB.goto(`${base}/view/${wp1}`)
+await pageB.goto(`${base}/views/${wp1}`)
 await pageB.getByRole('heading', { name: 'Work p1' }).waitFor()
-await pageA.goto(`${base}/view/${wp1}`)
+await pageA.goto(`${base}/views/${wp1}`)
 await pageA.getByRole('heading', { name: 'Work p1' }).waitFor()
 await A.ctx.setOffline(true)
 await B.ctx.setOffline(true)
-await pageA.getByLabel('Group by').selectOption('priority')
-await pageA.getByLabel('Sort by').selectOption('title')
+await (await display(pageA)).getByLabel('Group by').selectOption('priority')
+await (await display(pageA)).getByLabel('Order by').selectOption('title')
 await pageA.waitForTimeout(50)
-await pageB.getByLabel('Group by').selectOption('due')
+await (await display(pageB)).getByLabel('Group by').selectOption('due')
 await pageA.waitForTimeout(300)
 await A.ctx.setOffline(false)
 await B.ctx.setOffline(false)
 const converged = async (p) => p.waitForFunction(() => {
   const g = document.querySelector('select[aria-label="Group by"]')?.value
-  const s = document.querySelector('select[aria-label="Sort by"]')?.value
+  const s = document.querySelector('select[aria-label="Order by"]')?.value
   return g === 'due' && s === 'title'
 }, null, { timeout: 30000 })
 await converged(pageA)
 await converged(pageB)
-const sideCounts = (p) => p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Filters"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? '')))
+const sideCounts = (p) => p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? '')))
 const ca = await sideCounts(pageA), cb = await sideCounts(pageB)
 assert(JSON.stringify(ca) === JSON.stringify(cb), `identical sidebars ${ca} / ${cb}`)
-const ha = await pageA.locator('[aria-label="View results"] h2').allTextContents()
-const hb = await pageB.locator('[aria-label="View results"] h2').allTextContents()
+const ha = await pageA.locator('[aria-label="View results"] [data-group-label]').allTextContents()
+const hb = await pageB.locator('[aria-label="View results"] [data-group-label]').allTextContents()
 assert(JSON.stringify(ha) === JSON.stringify(hb) && ha[0] === 'Earlier', `identical groups ${ha} / ${hb}`)
 const sv = (await get('views')).views.find((v) => v.id === wp1)
 assert(sv.group_by === 'due' && sv.sort_by === 'title', 'server converged ' + JSON.stringify(sv))
@@ -346,7 +355,7 @@ const layout = (name) => pageA.getByRole('group', { name: 'Project layout' }).ge
 const settle = async () => { await pageA.locator('[data-page-header-row]').first().waitFor(); await pageA.waitForTimeout(400) }
 await pageA.setViewportSize({ width: 1536, height: 900 })
 const standalone = []
-for (const path of ['/inbox', '/today', '/labels', '/trash', '/filter']) {
+for (const path of ['/inbox', '/today', '/labels', '/trash', '/views/new']) {
   await pageA.goto(base + path); await settle()
   const e = await frameEdges()
   assert(e && e.frame === 'standalone', `${path}: a standalone frame at 1536 px (${e?.frame})`)
@@ -429,7 +438,7 @@ await pageA.setViewportSize({ width: 1280, height: 860 })
 step('Help lists the new shortcuts')
 await pageA.locator('body').click({ position: { x: 900, y: 700 } })
 await pageA.keyboard.press('?')
-await pageA.getByText('Go to Filters: saved views, boards and dashboards').first().waitFor()
+await pageA.getByText('Go to Views: saved views and boards').first().waitFor()
 
 await browser.close()
 if (errors.length) {

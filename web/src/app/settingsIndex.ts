@@ -41,7 +41,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'appearance', label: msg('Mode'), description: msg('System, light or dark'), anchor: 'appearance-mode', keywords: 'dark light theme' },
   { section: 'appearance', label: msg('Theme'), description: msg('The colour of buttons, links and selection'), anchor: 'appearance-theme', keywords: 'accent colour color' },
   { section: 'appearance', label: msg('Density'), description: msg('Comfortable or compact rows'), anchor: 'appearance-density', keywords: 'compact rows' },
-  { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar'), anchor: 'sidebar-heading', keywords: 'promote more group' },
+  { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and New view sit next to Inbox, Today, Upcoming and Calendar'), anchor: 'sidebar-heading', keywords: 'promote more group' },
   // General
   { section: 'general', label: msg('Language'), description: msg('The language of the app on all your devices'), anchor: 'language-heading', keywords: 'language locale translation sprache langue idioma lingua idioma' },
   { section: 'general', label: msg('Start view'), description: msg('The view this device opens on'), anchor: 'start-view-heading', keywords: 'launch open on' },

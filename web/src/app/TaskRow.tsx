@@ -30,7 +30,7 @@ import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logi
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import { streakLabel, type HabitStats } from '../lib/habits'
-import type { Label, Project, Task } from '../lib/types'
+import type { Label, Project, RowProperty, Task } from '../lib/types'
 import { AssigneeChip } from './AssigneePicker'
 import { useAttachmentCount, useCommentCount, useSharedProject } from './useCommentCounts'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
@@ -309,7 +309,11 @@ export interface TaskRowProps {
   /** Stories: shown mid-swipe at this offset (the gate cannot swipe). */
   forceSwipe?: number
   motion?: RowMotion
+  /** The properties the view's display options hide (views-and-display D3); the task page still shows them. */
+  hidden?: readonly RowProperty[]
 }
+
+const NO_HIDDEN: readonly RowProperty[] = []
 
 /**
  * Where the row is in the completion sequence (task-list-presentation "Completion
@@ -384,8 +388,9 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN }: TaskRowProps) {
   const card = shape === 'card'
+  const hides = (p: RowProperty) => hidden.includes(p)
   // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
   const trackedLive = useTaskTracked(task.id)
   const tracked = trackedProp ?? trackedLive
@@ -397,13 +402,13 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // Start dates, Someday and This Evening (someday-and-evening D2): they say why a
   // task is in Later, or in Today without a date.
   const start = task.start ?? null
-  const startText = done || !start || (start === 'someday' && implied?.someday) ? null
+  const startText = done || !start || hides('start') || (start === 'someday' && implied?.someday) ? null
     : start === 'someday' ? t('Someday')
     : start > logicalToday() ? t('Starts {date}', { date: formatDate(start, 'compact', dt.resolved) }) : t('Started {date}', { date: formatDate(start, 'compact', dt.resolved) })
-  const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
+  const deadline = done || hides('deadline') ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const deadlineLabel = deadline ? t('Deadline {date}, {label}', { date: formatDate(task.deadline!, 'long', dt.resolved), label: deadline.label }) : ''
   // The column (rows-v2 D2, D3): the due time, else the deadline countdown; the line never repeats it.
-  const column = timeColumn && !card
+  const column = timeColumn && !card && !hides('date')
   const timeInColumn = column && !!due?.time
   const deadlineInColumn = column && !due?.time && !!deadline
   const comments = useCommentCount(task.id)
@@ -421,18 +426,18 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // Custom field values of the task's project (custom-fields): three values, then "+n".
   const fieldDefs = useFieldDefs()
   // Tracked time joins the estimate: one item, `35m / 1h` (time-tracking).
-  const estimate = tracked !== undefined
+  const estimate = hides('estimate') ? null : tracked !== undefined
     ? { text: trackedText(tracked, task.estimate_minutes ?? null), label: trackedLabel(tracked, task.estimate_minutes ?? null), tracked: true }
     : task.estimate_minutes ? { text: formatMinutes(task.estimate_minutes), label: t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) }), tracked: false } : null
   // Where the task came from (task-origin D7): quiet text, in the trailing group of a row and the line of a card.
-  const origin = originOf(task)
+  const origin = hides('origin') ? null : originOf(task)
   const originChip = origin ? <OriginChip origin={origin} quiet /> : null
-  const projectName = showProject && project ? project.name : null
+  const projectName = showProject && project && !hides('project') ? project.name : null
   const hint = zoneHint(task.due)
   const m: MetaValues = {
     sample: isSample(task),
     breadcrumb,
-    date: rowDateText(due, dueDay, !!task.evening && !done, implied, timeInColumn),
+    date: hides('date') ? null : rowDateText(due, dueDay, !!task.evening && !done, implied, timeInColumn),
     dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : 'muted',
     hint, zone: task.due?.tz ?? '',
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
@@ -440,12 +445,12 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     startText, someday: start === 'someday',
     estimate, blockedBy: done ? 0 : blockedBy, streak: habit && !done ? habit : null,
     badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved),
-    assignee: assignee && task.assignee_id ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
+    assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
     origin: null,
     labels: <LabelChips labels={labels} omit={omitLabel} />,
     counts: null,
   }
-  if (!labels.some((l) => l.id !== omitLabel)) m.labels = null
+  if (hides('labels') || !labels.some((l) => l.id !== omitLabel)) m.labels = null
   // The project: a cell of a list row's column (precision-rows D1), the end of a card's line.
   if (projectName) m.project = <span data-project="" className="inline-flex max-w-48 min-w-0 items-center gap-1 text-meta text-muted"><TruncatedText text={projectName} /></span>
   // A list row (precision-rows D2): the third cell takes the labels, else the deadline, else the progress, which then leaves the counts.
@@ -459,7 +464,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     m.counts = rest.length > 0 ? <RowCounts counts={rest} /> : null
   }
   const meta = card ? (metaItems(m) > 0 || m.project) && <CardMeta m={m} />
-    : (metaItems({ ...m, repeat: null }) > 0 || m.project || extra === 'progress') && <RowLine m={m} extra={extra} progress={progressCount} projectColor={projectName ? project?.color : undefined} projectColumn={showProject} />
+    : (metaItems({ ...m, repeat: null }) > 0 || m.project || extra === 'progress') && <RowLine m={m} extra={extra} progress={progressCount} projectColor={projectName ? project?.color : undefined} projectColumn={showProject && !hides('project')} />
   const revealed = !card && !readOnly && !inline && actions
 
   // A departing row is the last picture of a task that was completed: done, and out of reach.

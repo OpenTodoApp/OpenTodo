@@ -4,7 +4,7 @@
 // saved view behaves exactly like the same query typed into the Filter view.
 import { addDaysISO, compareDue, formatDateHeading, localDate, localDueOf } from './dates'
 import { db, getMeta, setMeta } from './db'
-import { compile, parse, type FilterContext, type Node } from './filter'
+import { compile, mentionsState, parse, type FilterContext, type Node } from './filter'
 import type { BoardTemplate } from './boardTemplates'
 import { activeLabels } from './labels'
 import { VIEW_DEFAULTS, getDeviceId, mutate, mutateMany, mutationTables, type Change } from './ops'
@@ -12,8 +12,8 @@ import { knownRule } from './rules'
 import { buildProjectTree } from './projects'
 import { ancestors, flattenTree } from './tree'
 import {
-  GROUP_BY_OPTIONS, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS,
-  type GroupBy, type OnDropRule, type Project, type SortBy, type SortDir, type Task, type View, type ViewKind,
+  GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS, VIEW_LAYOUTS,
+  type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
 } from './types'
 import { t, msg } from './i18n'
 import { uuid } from './ids'
@@ -108,6 +108,14 @@ export interface ViewOptions {
   sortDir: SortDir
 }
 
+/** A list view's display options (views-and-display D2), read like viewOptions. */
+export interface DisplayOptions {
+  layout: ViewLayout
+  showCompleted: boolean
+  /** Row properties the view hides; names this build does not know are left out. */
+  hidden: RowProperty[]
+}
+
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback
 }
@@ -123,6 +131,16 @@ export function viewOptions(v: Pick<View, 'kind' | 'group_by' | 'sort_by' | 'sor
     groupBy: pick(v.group_by, GROUP_BY_OPTIONS, VIEW_DEFAULTS.group_by as GroupBy),
     sortBy: pick(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
     sortDir: pick(v.sort_dir, SORT_DIR_OPTIONS, VIEW_DEFAULTS.sort_dir as SortDir),
+  }
+}
+
+/** The display options of a view; a row written before views-and-display (no fields) shows everything as before. */
+export function displayOptions(v: Partial<Pick<View, 'layout' | 'show_completed' | 'hidden_props'>>): DisplayOptions {
+  const hidden = Array.isArray(v.hidden_props) ? v.hidden_props : []
+  return {
+    layout: pick(v.layout, VIEW_LAYOUTS, 'list'),
+    showCompleted: v.show_completed === true,
+    hidden: ROW_PROPERTIES.filter((p) => hidden.includes(p)),
   }
 }
 
@@ -156,6 +174,9 @@ export interface NewView {
   sort_dir?: SortDir
   pinned?: boolean
   color?: string
+  layout?: ViewLayout
+  show_completed?: boolean
+  hidden_props?: RowProperty[]
 }
 
 /** Create a view, last in sidebar order. Pinned unless told otherwise (the Filter view's "Save view"). */
@@ -178,6 +199,10 @@ export async function createView(input: NewView): Promise<string> {
     position,
     color: input.color ?? VIEW_DEFAULTS.color,
     panels: [],
+    // Display options only when they differ from the defaults, so a plain view's ops stay as before.
+    ...(input.layout && input.layout !== 'list' ? { layout: input.layout } : {}),
+    ...(input.show_completed ? { show_completed: true } : {}),
+    ...(input.hidden_props?.length ? { hidden_props: input.hidden_props } : {}),
     ...(await workspaceFields()),
     created_at: now,
     deleted_at: null,
@@ -185,14 +210,18 @@ export async function createView(input: NewView): Promise<string> {
   return id
 }
 
-export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position'>>
+export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props'>>
 
 /** Edit a view: one op per changed field. The kind is fixed at creation; panels go through setPanels. */
 export async function updateView(id: string, patch: ViewPatch): Promise<void> {
   const view = await db.views.get(id)
   if (!view || view.deleted_at) throw new Error('View not found')
   const next: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(patch)) if ((view as unknown as Record<string, unknown>)[k] !== v) next[k] = v
+  for (const [k, v] of Object.entries(patch)) {
+    const cur = (view as unknown as Record<string, unknown>)[k]
+    // A list compares by its items: the same hidden properties are no change.
+    if (Array.isArray(v) && Array.isArray(cur) ? v.join() !== cur.join() : cur !== v) next[k] = v
+  }
   if (typeof next.name === 'string') {
     next.name = next.name.trim()
     if (!next.name) throw new Error(t('A view needs a name'))
@@ -357,8 +386,13 @@ interface Compiled {
   warnings: string[]
 }
 
-/** Parse and compile a stored query; a query that no longer parses yields its error. */
-export function compileView(view: Pick<View, 'query'>, ctx: FilterContext): Compiled | { ok: false; error: string } {
+/**
+ * Parse and compile a stored query; a query that no longer parses yields its error.
+ * `withCompleted` (the view's "Completed tasks: Show", views-and-display D4) lists
+ * completed matches too: the query is read as `(query) & (open | completed)`, so a
+ * query that names a state itself is unchanged.
+ */
+export function compileView(view: Pick<View, 'query'>, ctx: FilterContext, withCompleted = false): Compiled | { ok: false; error: string } {
   let ast: Node | null
   try {
     ast = parse(view.query)
@@ -366,6 +400,7 @@ export function compileView(view: Pick<View, 'query'>, ctx: FilterContext): Comp
     return { ok: false, error: (e as Error).message }
   }
   if (!ast) return { ok: false, error: t('This view has no query') }
+  if (withCompleted && !mentionsState(ast)) ast = parse(`(${view.query}) & (open | completed)`)!
   // Like the Filter view and the other cross-project views, tasks of archived projects stay out.
   const archived = new Set(ctx.projects.filter((p) => p.archived && !p.deleted_at).map((p) => p.id))
   let compiled: ReturnType<typeof compile>
@@ -476,7 +511,7 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
 
 /** Evaluate one list view: its query through the filter compiler, then its sort and grouping. */
 export function runView(view: View, ctx: ViewContext): ViewResult {
-  const c = compileView(view, ctx)
+  const c = compileView(view, ctx, displayOptions(view).showCompleted)
   if (!c.ok) return c
   const { groupBy, sortBy, sortDir } = viewOptions(view)
   const tasks = ctx.tasks.filter(c.test).sort(compareTasks(sortBy, sortDir))

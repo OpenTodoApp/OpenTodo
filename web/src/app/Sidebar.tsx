@@ -418,7 +418,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
       <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>
-          <input ref={findInput} className="ui-input py-1.5 text-body" type="search" placeholder={t('Find a project, label or filter…')} aria-label={t('Find in the sidebar')}
+          <input ref={findInput} className="ui-input py-1.5 text-body" type="search" placeholder={t('Find a project, label or view…')} aria-label={t('Find in the sidebar')}
             value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onFindKey} enterKeyHint="go" autoComplete="off" />
           {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
         </div>
@@ -522,8 +522,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} quiet label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
         {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
       </SidebarGroup>}
-      {groupsReady && filtersShown && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={views.length} collapsed={collapsed}
-        actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
+      {groupsReady && filtersShown && <SidebarGroup title={t('Views')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={views.length} collapsed={collapsed}
+        actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All views')}>{t('All')}</SidebarGroupAction>}>
         {shownViews.map((v) => {
           const active = route.view === 'view' && route.id === v.id
           const c = viewCounts.get(v.id)
@@ -586,7 +586,7 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     // Automation rules (automation-rules "Rules page"): after Locations in every mode.
     { id: 'rules', route: { view: 'rules' }, label: t('Rules'), icon: 'zap' },
     { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
-    { id: 'filter', route: { view: 'filter' }, label: t('Filter'), icon: 'filter' },
+    { id: 'filter', route: { view: 'filter' }, label: t('New view'), icon: 'filter' },
     ...(o.ask ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Ask'), icon: 'message-circle' as IconName }] : []),
   ]
 }

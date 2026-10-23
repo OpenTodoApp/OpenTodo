@@ -77,8 +77,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>c</kbd> | Go to Completed |
 | <kbd>g</kbd> then <kbd>l</kbd> | Go to Labels |
 | <kbd>g</kbd> then <kbd>Shift+P</kbd> | Go to All projects: the whole tree, find a project, archived projects |
-| <kbd>g</kbd> then <kbd>f</kbd> | Go to Filter |
-| <kbd>g</kbd> then <kbd>v</kbd> | Go to Filters: saved views, boards and dashboards |
+| <kbd>g</kbd> then <kbd>f</kbd> | Open New view: build a query, then save it as a view |
+| <kbd>g</kbd> then <kbd>v</kbd> | Go to Views: saved views and boards |
 | <kbd>g</kbd> then <kbd>d</kbd> | Go to the Calendar as Day (the sidebar opens it as last used) |
 | <kbd>g</kbd> then <kbd>w</kbd> | Go to the Calendar as Week |
 | <kbd>g</kbd> then <kbd>m</kbd> | Go to the Calendar as Month |
@@ -199,17 +199,17 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>]</kbd> | In Plan: the span one week later |
 | <kbd>t</kbd> | In Plan: back to today |
 
-### Filter, saved filters and boards
+### Views and boards
 
 | Keys | What it does |
 | --- | --- |
-| <kbd>Enter</kbd> / <kbd>Esc</kbd> | In Filter: jump from the query to the first result / back to the query |
-| <kbd>s</kbd> | In Filter results: save the Filter query as a view, pinned to the sidebar |
+| <kbd>Enter</kbd> / <kbd>Esc</kbd> | In New view: jump from the query to the first result / back to the query |
+| <kbd>s</kbd> | In New view results: save the query as a view, pinned to the sidebar |
 | <kbd>/</kbd> | In a saved view: edit the query of a saved view; Enter saves it, Esc discards |
 | <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> | On a dashboard: move between panels; j / k inside a panel, Enter opens, o opens the view |
 | <kbd>Shift+←</kbd> | On a board: move the selected card to the previous panel that has a rule, applying it (the card stays selected) |
 | <kbd>Shift+→</kbd> | On a board: move the selected card to the next panel that has a rule, applying it |
-| <kbd>↑</kbd> / <kbd>↓</kbd> | In the filter query: recall recent queries on this device |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | In the query of New view: recall recent queries on this device |
 
 ### Trash and projects
 

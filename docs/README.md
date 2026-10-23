@@ -96,7 +96,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | Page | What it covers |
 | --- | --- |
 | [Quick add syntax](quick-add.md) | Natural-language capture in six languages, preview chips, voice capture |
-| [Filter queries](filters.md) | The filter language, the Filter view, saved views and dashboards |
+| [Filter queries](filters.md) | The filter language, the New view page, saved views and their display options, dashboards |
 | [Recurring task rules](recurrence.md) | Rule grammar, how next dates are computed, completing, skipping and detaching |
 | [Reminders reference](reminders.md) | Relative and absolute reminders, snooze, web push and its privacy |
 | [Capturing pages](capture.md) | Share sheet, bookmarklet and browser extension |

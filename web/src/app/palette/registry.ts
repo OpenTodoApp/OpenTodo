@@ -89,8 +89,8 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Go to Completed'), route: { view: 'completed' }, icon: 'circle-check-big', shortcut: keysOf('go.completed') },
   { label: msg('Go to Projects'), route: { view: 'projects' }, icon: 'folder', shortcut: keysOf('go.projects'), keywords: 'all projects archived tree' },
   { label: msg('Go to Labels'), route: { view: 'labels' }, icon: 'tag', shortcut: keysOf('go.labels') },
-  { label: msg('Go to Filter'), route: { view: 'filter' }, icon: 'filter', shortcut: keysOf('go.filter') },
-  { label: msg('Go to Filters'), route: { view: 'views' }, icon: 'list', shortcut: keysOf('go.views'), keywords: 'views saved filters boards dashboards' },
+  { label: msg('New view'), route: { view: 'filter' }, icon: 'filter', shortcut: keysOf('go.filter'), keywords: 'filter query' },
+  { label: msg('Go to Views'), route: { view: 'views' }, icon: 'layers', shortcut: keysOf('go.views'), keywords: 'filters saved views boards dashboards' },
   { label: msg('Go to Trash'), route: { view: 'trash' }, icon: 'trash-2', shortcut: keysOf('go.trash') },
   // Saved locations (task-locations D7): a command without a default key.
   { label: msg('Go to Locations'), route: { view: 'places' }, icon: 'map-pin', keywords: 'places map addresses' },
@@ -265,7 +265,7 @@ export function commands(ctx: PaletteContext): Command[] {
 
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
     const q = ctx.filterQuery
-    out.push({ id: 'filter:save', label: t('Save filter as view'), icon: 'filter', shortcut: keysOf('filter.save'), run: () => prompt(t('Save view'), t('View name'), '', async (name) => {
+    out.push({ id: 'filter:save', label: t('Save as view'), icon: 'filter', shortcut: keysOf('filter.save'), run: () => prompt(t('Save view'), t('View name'), '', async (name) => {
       const id = await createView({ name, query: q })
       navigate({ view: 'view', id })
     }) })
@@ -287,7 +287,7 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'workspace:new', label: t('New workspace'), icon: 'plus', keywords: 'workspace add create', run: () => requestNewWorkspace() },
     { id: 'app:sync', label: t('Sync now'), icon: 'rotate-ccw', run: () => syncNow() },
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
-    { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label filter'), run: () => sidebarFind.request('open') },
+    { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
     { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
   )
   if (ctx.query.trim()) {

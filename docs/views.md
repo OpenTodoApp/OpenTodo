@@ -48,7 +48,7 @@ The **Filter** action in a list's header shows only quick wins, tasks under 30 m
 
 ## Save your own views
 
-Describe what you want in the **Filter** view, press <kbd>s</kbd> and name it. The saved view is pinned to the sidebar with a live count and syncs to all your devices. See [Saved views](saved-views.md#save-your-own-views).
+Describe what you want on the **New view** page, press <kbd>s</kbd> and name it. The saved view is pinned to the sidebar with a live count and syncs to all your devices. See [Saved views](saved-views.md#save-your-own-views).
 
 ## Build a dashboard
 

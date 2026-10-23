@@ -42,7 +42,7 @@ export function screens(ids, base) {
     // the dot grid scroll sideways inside their figures, never the page.
     { name: 'stats', path: '/stats', ready: (p) => p.locator('[data-testid="stats-panels"]').waitFor() },
     { name: 'completed', path: '/completed', ready: row('Submit expense report') },
-    { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
+    { name: 'filter', path: '/views/new', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'ask', path: '/ask', ready: heading('Ask OpenTodo') },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'updates', path: '/updates', ready: heading('Updates') },
@@ -58,11 +58,11 @@ export function screens(ids, base) {
       if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click()
       await p.getByRole('table', { name: 'Tasks and fields' }).waitFor()
     } },
-    { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
-    { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
+    { name: 'saved-view', path: `/views/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
+    { name: 'dashboard', path: `/views/${ids.dashboard}`, ready: heading(/Weekly review/) },
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
     { name: 'labels', path: '/labels', ready: heading('Labels'), overlays: ['label-menu', 'label-edit', 'label-merge-picker', 'confirm-dialog', 'new-label'] },
-    { name: 'views', path: '/views', ready: heading('Filters'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
+    { name: 'views', path: '/views', ready: heading('Views'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     // All projects (sidebar-favourites D6): the tree, the find field, and the archived projects opened from Settings → Data.
     { name: 'projects', path: '/projects', ready: heading('Projects') },
     { name: 'locations', path: '/locations', ready: heading('Locations'), overlays: ['new-location'] },

@@ -41,6 +41,8 @@ The [design system](design-system.md) says which tokens and building blocks exis
 
 **The sidebar toggle** is the first control of every header from 1024 px: the shell registers the sidebar's state in `ui/patterns/sidebarToggle.ts` and `PageHeader` renders it, pressed while the sidebar is expanded, with `[` in its tooltip.
 
+**A view's toolbar** (views-and-display). A saved view and the New view page have one toolbar row under the compact header (`ViewToolbar` in `app/views/`): the query's conditions as chips in words with "Filter" on the left, the filter and display buttons on the right. It is the second element of chrome, in place of a quick add. The filter panel opens in place under it when asked for (closed by default on a saved view); the display panel (`DisplayPanel`) is a popover, and every view option lives there, never as selects in the header. A view's title is the breadcrumb `ViewsCrumb` ("Views › name"). The row properties a view hides reach `TaskRow` as `hidden`.
+
 The header is sticky inside the content column. A string title is truncated; pass a node for an inline rename field. `back` adds a back action for nested pages and phones. `children` is a second row (a segmented control, tabs) and counts against the budget. Below 768 px the shell's bar shows the title and the first two actions, so a view declares its header once.
 
 ## The three columns

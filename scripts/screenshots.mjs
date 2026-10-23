@@ -313,7 +313,7 @@ await go(page, '/day', () => page.getByRole('button', { name: 'Day' }).first().w
 await shot(page, 'day')
 
 // Filters and saved views
-await go(page, '/filter', () => page.getByLabel('Filter query').waitFor())
+await go(page, '/views/new', () => page.getByLabel('Filter query').waitFor())
 await page.getByLabel('Filter query').fill('(@call | @errand) & due <= 7 days')
 await page.getByLabel('Filter query').press('Enter'); await settle(page, 600)
 await shot(page, 'filter')

@@ -136,6 +136,7 @@ export function parseRoute(pathname: string): Route {
     case 'projects':
       return hash === 'archived' ? { view: 'projects', archived: true } : { view: 'projects' }
     case 'filter': {
+      // The address before views-and-display, replaced by /views/new.
       // An initial query from the command palette (search-and-command-palette D4).
       const q = new URLSearchParams(query).get('q') ?? undefined
       return q ? { view: 'filter', q } : { view: 'filter' }
@@ -155,9 +156,17 @@ export function parseRoute(pathname: string): Route {
       const q = new URLSearchParams(query).get('q') ?? undefined
       return { view: 'help', ...(parts[1] ? { page: safeDecode(parts[1]) } : {}), ...(q ? { q } : {}) }
     }
-    case 'views':
-      return { view: 'views' }
+    case 'views': {
+      // Views (views-and-display D1): /views, /views/new (the New view page, with an
+      // initial query from the command palette) and /views/<id>.
+      if (parts[1] === 'new') {
+        const q = new URLSearchParams(query).get('q') ?? undefined
+        return q ? { view: 'filter', q } : { view: 'filter' }
+      }
+      return parts[1] ? { view: 'view', id: parts[1] } : { view: 'views' }
+    }
     case 'view':
+      // The address before views-and-display, replaced by /views/<id>.
       return parts[1] ? { view: 'view', id: parts[1] } : { view: 'views' }
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
@@ -218,6 +227,9 @@ export function canonicalPath(pathname: string): string | null {
   const [path] = pathname.split('?')
   const parts = path.split('/').filter(Boolean)
   if (parts[0] === 'activity' || parts[0] === 'calendar') return routePath(parseRoute(path))
+  // /filter and /view/<id> before views-and-display (D1); the caller keeps the query (?q=).
+  if (parts[0] === 'filter') return '/views/new'
+  if (parts[0] === 'view') return routePath(parseRoute(path))
   if (parts[0] === 'settings' && parts[1] && parts[1] in LEGACY_SETTINGS_IDS) return routePath(parseRoute(path))
   return null
 }
@@ -234,9 +246,10 @@ export function routePath(r: Route): string {
   switch (r.view) {
     case 'project':
     case 'label':
-    case 'view':
     case 'task':
       return `/${r.view}/${r.id}`
+    case 'view':
+      return `/views/${r.id}`
     case 'place':
       return `/location/${r.id}`
     case 'places':
@@ -275,7 +288,7 @@ export function routePath(r: Route): string {
     case 'ask':
       return '/ask'
     case 'filter':
-      return r.q ? `/filter?q=${encodeURIComponent(r.q)}` : '/filter'
+      return r.q ? `/views/new?q=${encodeURIComponent(r.q)}` : '/views/new'
     case 'display': {
       const q = serializeDisplayOptions(r.options)
       return `${displayTargetPath(r.target)}${q ? `?${q}` : ''}`

@@ -713,7 +713,7 @@ describe('docs examples', () => {
   })
 
   it('every row of the error table produces exactly the documented message', () => {
-    const section = filtersDoc.slice(filtersDoc.indexOf('## Errors'), filtersDoc.indexOf('## The Filter view'))
+    const section = filtersDoc.slice(filtersDoc.indexOf('## Errors'), filtersDoc.indexOf('## The New view page'))
     const rows = [...section.matchAll(/^\| `(.+?)` \| `(.+?)` \|$/gm)].map((m) => [m[1], m[2]].map((s) => s.replace(/\\\|/g, '|')))
     expect(rows.length).toBeGreaterThanOrEqual(5)
     for (const [q, msg] of rows) expect(errorOf(q).message, q).toBe(msg)

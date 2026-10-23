@@ -1,6 +1,6 @@
 ---
 title: Saved views
-summary: Turn a filter query into a view in the sidebar, pin it to Favourites, group and sort it, manage it from its menu, and put up to six views on one board whose columns re-plan the cards dropped on them.
+summary: Turn a filter query into a view in the sidebar, choose how it looks (list or board, grouping, completed tasks, what rows show), and put up to six views on one board.
 audience: user
 section: Guides
 specs: [custom-views]
@@ -9,24 +9,26 @@ order: 23
 ---
 # Saved views
 
-<picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The Filter view with the query (@call | @errand) & due <= 7 days and the matching tasks below."></picture>
+<picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The New view page with the query (@call | @errand) & due <= 7 days and the matching tasks below."></picture>
 
-When the built-in views aren't enough, describe the tasks you want with a filter query and save the result as a view of your own. Saved views sync to your devices; a view's menu can [make an automation rule](automations.md#turn-a-filter-into-a-rule) from it.
+When the built-in views aren't enough, describe the tasks you want with a filter query and save the result as a view of your own. A view's menu can [make an automation rule](automations.md#turn-a-filter-into-a-rule) from it.
 
 ## Save your own views
 
-Describe what you want in the **Filter** view, then save it. For example, `blocked` lists every task waiting for another one (save it as **Waiting for**), `@waiting & open` lists everything you labelled as waiting, and `due <= 7 days & p1` shows urgent tasks for the coming week. The filter language is explained in [Labels and filters](labels-and-filters.md), and [Filter queries](filters.md) has ten ready-made examples to copy.
+Describe what you want on the **New view** page (<kbd>g</kbd> <kbd>f</kbd>), then save it. For example, `blocked` lists every task waiting for another one, and `due <= 7 days & p1` shows urgent tasks for the coming week. Build the query from conditions or type it: see [Labels and filters](labels-and-filters.md), and [Filter queries](filters.md) for ten examples.
 
-To save the current filter, press <kbd>s</kbd> in the results (or use the save button), and give it a name. It is listed in the **Filters** group of the sidebar, pinned to **Favourites** at the top of the sidebar, and synced to all your devices. The **Filters** group lists every saved filter, pinned or not; it starts folded on a new device. A filter's live count is on the Filters overview (<kbd>g</kbd> <kbd>v</kbd>) and in its page header, not in the sidebar.
+To save it, press <kbd>s</kbd> in the results or choose **Save as view**, type a name in the card that replaces the header and press <kbd>Enter</kbd>. The view keeps its display options, is listed in the **Views** group of the sidebar (folded on a new device), pinned to **Favourites**, and synced to all your devices. Its live count is on the views list (<kbd>g</kbd> <kbd>v</kbd>) and in its header, not in the sidebar.
 
-Each saved view can group its tasks (by project, date, priority or label) and sort them (by date, priority, your own order, creation time or title). Change these from the top of the view. To change the query itself, press <kbd>/</kbd>, edit it and press <kbd>Enter</kbd>.
+## Conditions and display options
 
-The **All** link next to **Filters** (or <kbd>g</kbd> <kbd>v</kbd>) opens the list of all your saved filters and boards. From there you can rename, reorder, pin, unpin or delete them.
+Under a view's header (**Views › name**), the toolbar shows its conditions in words, such as **Label is waiting**. The funnel opens the filter panel to change them (<kbd>/</kbd> jumps to the query). **Display options** sets **List** or **Board**, the grouping and order, whether completed tasks are listed, and which properties rows show; each choice is saved to the view and syncs. [Filter queries](filters.md#saving-views) has every option.
+
+The **All** link next to **Views** (or <kbd>g</kbd> <kbd>v</kbd>) opens the list of all your saved views and boards to rename, reorder, pin or delete them.
 
 Every saved view has the same menu, wherever you open it: the **⋯** button on its row in the sidebar or the views list, its header, or a dashboard. With a row focused, <kbd>.</kbd> (or <kbd>Shift</kbd>+<kbd>F10</kbd>) opens it too.
 
 - **Rename**.
-- **Pin to sidebar** and **Start view on this device**: a check mark shows which apply. **Pin to sidebar** (called **Pinned to sidebar** before) adds the view to **Favourites** or takes it out; it stays in the **Filters** group either way.
+- **Pin to sidebar** and **Start view on this device**: a check mark shows which apply. **Pin to sidebar** (called **Pinned to sidebar** before) adds the view to **Favourites** or takes it out; it stays in the **Views** group either way.
 - **Move up** and **Move down**: unavailable at the top or bottom of the list, with the reason shown. Opened from **Favourites**, they move the view among your favourites.
 - **Delete view…** asks for confirmation first. Deleting a view never touches your tasks.
 

@@ -301,7 +301,7 @@ const shots = [
     await p.locator('main').getByRole('button', { name: 'Menu for label errand' }).click(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'view-menu', server: D, async run(p) {
-    await go(p, demoBase, '/views', () => p.getByRole('button', { name: 'New filter' }).waitFor())
+    await go(p, demoBase, '/views', () => p.getByRole('button', { name: 'New view' }).waitFor())
     await p.locator('main').getByRole('button', { name: /^Menu for view Deep work/ }).first().click(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
   // Completed tasks kept in the project (project-completed-section): the switch is per device, so the scene turns it on and off again.
@@ -317,7 +317,7 @@ const shots = [
     await p.keyboard.press('m'); await p.locator('[data-picker-step]').waitFor(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } },
   { name: 'filter', server: D, card: true, async run(p) {
-    await go(p, demoBase, '/filter', () => p.getByLabel('Filter query').waitFor())
+    await go(p, demoBase, '/views/new', () => p.getByLabel('Filter query').waitFor())
     await p.getByLabel('Filter query').fill('(@call | @errand) & due <= 7 days'); await p.getByLabel('Filter query').press('Enter'); await settle(p, 800)
   } },
   { name: 'dashboard', server: D, card: true, async run(p) {

@@ -18,8 +18,8 @@ export interface FilterBuilderProps {
   /** The formula as typed; it may not parse. */
   query: string
   onChange: (query: string) => void
-  /** Tasks the query matches, or null while unknown. */
-  count: number | null
+  /** Tasks the query matches, or null while unknown; omitted where the filter panel's header shows it (views-and-display). */
+  count?: number | null
   labels: readonly Label[]
   projects: readonly Project[]
   fields: readonly FieldDef[]
@@ -88,11 +88,13 @@ export function FilterBuilder({ query, onChange, count, labels, projects, fields
   }
 
   return (
-    <div ref={root} data-filter-builder className="mb-2">
+    <div ref={root} data-filter-builder className="mb-2 rounded-card border border-soft p-2">
       <GroupBlock group={tree} depth={1} root tree={tree} commit={commit} onEdit={setEditing} />
-      <p className="px-1 pt-1.5 text-meta text-muted" aria-live="polite" data-filter-count>
-        {count === null ? ' ' : t('{n, plural, one {# task matches} other {# tasks match}}', { n: count })}
-      </p>
+      {count !== undefined && (
+        <p className="px-1 pt-1.5 text-meta text-muted" aria-live="polite" data-filter-count>
+          {count === null ? ' ' : t('{n, plural, one {# task matches} other {# tasks match}}', { n: count })}
+        </p>
+      )}
       {editing && (
         <ConditionEditor leaf={editing.item?.leaf ?? null} not={editing.item?.not ?? false} labels={labels} projects={projects} fields={fields}
           onSave={save}
@@ -140,10 +142,10 @@ function GroupBlock({ group, depth, root, tree, commit, onEdit }: GroupProps) {
 
   return (
     <section role="group" aria-label={group.not ? t('Not: {group}', { group: name }) : name} data-filter-group={group.op} data-depth={depth}
-      className={root ? 'space-y-2' : 'space-y-2 rounded-card border border-default bg-sunken p-2 sm:p-3'}>
+      className={root ? 'space-y-1.5' : 'space-y-1.5 rounded-card border border-soft p-2'}>
       {(!root || group.items.length > 1 || group.not) && (
         <div className="flex flex-wrap items-center gap-2">
-          <select className="ui-input w-auto py-1 text-meta font-medium" aria-label={t('Combine the conditions')} value={group.op}
+          <select className="ui-input w-auto border-transparent bg-raised py-1 text-meta font-medium" aria-label={t('Combine the conditions')} value={group.op}
             onChange={(e) => setGroup({ op: e.target.value as 'and' | 'or' })}>
             <option value="and">{t('All of these')}</option>
             <option value="or">{t('Any of these')}</option>
@@ -157,7 +159,7 @@ function GroupBlock({ group, depth, root, tree, commit, onEdit }: GroupProps) {
         <p className="px-1 text-meta text-faint">{root ? t('No conditions yet: every open task matches.') : t('Empty group: add a condition to it.')}</p>
       )}
       {group.items.length > 0 && (
-        <ul data-filter-items className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-start">
+        <ul data-filter-items className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-start">
           {group.items.map((item) => (
             <li key={item.id} data-item-id={item.id} className={item.type === 'group' ? 'basis-full' : 'min-w-0'}>
               {item.type === 'group'
@@ -168,9 +170,9 @@ function GroupBlock({ group, depth, root, tree, commit, onEdit }: GroupProps) {
           ))}
         </ul>
       )}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" size="sm" icon="plus" data-add-condition onClick={() => onEdit({ groupId: group.id, item: null })}>{t('Condition')}</Button>
-        {depth < MAX_DEPTH && <Button variant="ghost" size="sm" icon="layers" onClick={addGroup}>{t('Group')}</Button>}
+      <div className="flex flex-wrap gap-1">
+        <Button variant="ghost" size="sm" icon="plus" data-add-condition onClick={() => onEdit({ groupId: group.id, item: null })}>{t('Condition')}</Button>
+        {depth < MAX_DEPTH && <Button variant="ghost" size="sm" icon="plus" onClick={addGroup}>{t('Group')}</Button>}
       </div>
     </section>
   )
@@ -180,7 +182,7 @@ function Chip({ item, onOpen, onKey, onRemove }: { item: BCondition; onOpen: () 
   const text = conditionText(item.leaf)
   return (
     <span data-filter-chip data-not={item.not || undefined}
-      className="flex min-h-9 w-full items-center gap-1 rounded-control border border-default bg-surface pl-3 pr-1 text-body shadow-1 sm:w-auto pointer-coarse:min-h-11">
+      className="flex min-h-8 w-full items-center gap-1 rounded-control border border-soft bg-raised pl-2.5 pr-0.5 text-meta sm:w-auto pointer-coarse:min-h-11">
       {/* Named by its visible text ("Not" and the condition), so speech and sight agree. */}
       <button type="button" data-chip-open className="flex min-w-0 flex-1 items-center gap-2 rounded-control py-1 text-left"
         onClick={onOpen} onKeyDown={onKey}>

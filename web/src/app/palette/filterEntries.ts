@@ -45,7 +45,7 @@ export function filterEntries(text: string, tasks: readonly Task[], ctx: FilterC
   const hidden = new Set(ctx.projects.filter((p) => p.archived).map((p) => p.id))
   const matches = tasks.filter((item) => (!item.project_id || !hidden.has(item.project_id)) && test(item))
   return [
-    { kind: 'filter', key: `filter:${q}`, label: t('Open in Filter view: {query}', { query: q }), secondary: t('{n, plural, one {# task} other {# tasks}}', { n: matches.length }), icon: 'filter',
+    { kind: 'filter', key: `filter:${q}`, label: t('Open as a new view: {query}', { query: q }), secondary: t('{n, plural, one {# task} other {# tasks}}', { n: matches.length }), icon: 'filter',
       run: () => navigate({ view: 'filter', q }) },
     ...matches.slice(0, FILTER_RESULTS).map(taskEntry),
   ]

@@ -702,14 +702,17 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `group_by` | `"project"`, `"due"`, `"priority"`, `"label"` or `"none"` | default `project` |
 | `sort_by` | `"due"`, `"priority"`, `"position"`, `"created"` or `"title"` | default `due` (undated tasks last) |
 | `sort_dir` | `"asc"` or `"desc"` | default `asc`; for `priority`, `desc` lists priority 1 first |
-| `pinned` | boolean | shown in the sidebar's Favourites group (every view is listed in the Filters group); default `false` |
+| `pinned` | boolean | shown in the sidebar's Favourites group (every view is listed in the Views group); default `false` |
 | `position` | number | sidebar order; defaults to the creation time |
 | `color` | string | CSS colour; default `#64748b` |
 | `panels` | string[] | dashboards only: up to 6 ids of existing, non-deleted **list** views, no duplicates, never the dashboard itself; replaced as a whole on PATCH |
 | `on_drop` | object or null | list views only: what a card dropped on a board column showing this view gets (OpenSpec `rule-boards`); `null` (the default) or an object with at most these keys: `add_labels` and `remove_labels` (up to 32 ids of existing, non-deleted labels each), `priority` (1–4), `due` (`"today"`, `"tomorrow"`, `"next-week"` or `"clear"`), `start` (`"someday"` or `"clear"`), `section` (`{"project_id":"…","section_id":"…"\|null}`, a section of that project or none) and `state` (`"complete"` or `"reopen"`). Unknown keys, values outside these sets and any rule on a dashboard are refused with 400 naming the field; replaced as a whole on PATCH; every representation and the export carry it, `null` when unset |
+| `layout` | `"list"` or `"board"` | list views: how the app shows the results (OpenSpec change `views-and-display`), a board being one column per group; absent until set, read as `list` |
+| `show_completed` | boolean | list views: the app also lists completed matches, unless the query names a state itself; absent until set, read as `false` |
+| `hidden_props` | string[] | list views: row properties the app leaves out, from `date`, `project`, `labels`, `estimate`, `assignee`, `deadline`, `start` and `origin`; absent until set, read as none; replaced as a whole on PATCH |
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
-Values outside the listed sets are rejected with 400 `invalid_input` on `POST` and `PATCH` and nothing is written. The sync endpoint, by contrast, accepts any string for `kind`, `group_by`, `sort_by` and `sort_dir` so that a future option stays additive; clients show the default for a value they do not know (see `docs/sync.md`, "Saved views"). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a "View removed" placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.
+Values outside the listed sets are rejected with 400 `invalid_input` on `POST` and `PATCH` and nothing is written. The sync endpoint, by contrast, accepts any string for `kind`, `group_by`, `sort_by`, `sort_dir` and `layout` so that a future option stays additive; clients show the default for a value they do not know (see `docs/sync.md`, "Saved views"). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a "View removed" placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.
 
 ### Reminders and push
 
