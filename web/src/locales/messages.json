@@ -670,8 +670,7 @@
     "web/src/app/TabBar.tsx",
     "web/src/app/calendar/PlanAgenda.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
-    "web/src/app/palette/BarParts.tsx",
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/palette/BarParts.tsx"
   ],
   "Add a task assigned to you…": [
     "web/src/app/task-list/ListChrome.tsx"
