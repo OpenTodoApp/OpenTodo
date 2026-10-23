@@ -16325,9 +16325,6 @@
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx"
   ],
-  "{name}, {role}": [
-    "web/src/app/WorkspacesSettings.tsx"
-  ],
   "{name}: uploading": [
     "web/src/app/Markdown.tsx"
   ],

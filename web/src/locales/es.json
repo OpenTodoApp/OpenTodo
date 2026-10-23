@@ -4966,7 +4966,6 @@
   "{inviter} invited you to the workspace {name} as {role}.": "{inviter} te invitó al espacio de trabajo {name} como {role}.",
   "{n, plural, one {# person} other {# people}}": "{n, plural, one {# persona} many {# personas} other {# personas}}",
   "{name} is no longer available": "{name} ya no está disponible",
-  "{name}, {role}": "{name}, {role}",
   "Yours alone. Share its projects by email, or create a workspace for a team.": "Solo tuyo. Comparte sus proyectos por correo o crea un espacio de trabajo para un equipo.",
   "Choose icon": "Elegir icono",
   "Haptic feedback": "Respuesta háptica",
