@@ -159,7 +159,7 @@ async function openProperty(p, field, label) {
   const panel = p.locator('[data-detail-for]')
   await panel.waitFor()
   // The lines settle after the panel's live queries (sections, parent) resolve.
-  await panel.locator('[data-facets]').waitFor()
+  await panel.locator('[data-facets], [data-facts]').first().waitFor()
   const part = panel.locator(`[data-part="${field}"]`).first()
   const shown = await part.waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false)
   if (shown) {
