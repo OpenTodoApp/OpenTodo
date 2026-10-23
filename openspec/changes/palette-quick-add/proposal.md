@@ -30,7 +30,7 @@ Today the command bar's Add mode is the list's quick-add line inside a dialog: c
   - The segmented control stays on phones and touch screens. On a desktop with a mouse, the footer's prefix hint replaces it.
   - Escape closes Add mode when the bar was opened in Add mode (`q`, a "New task" command); when Add was reached from Search, Escape still returns to Search.
 - **Quick add on a phone (the floating add button's sheet):**
-  - The line, at 16 px.
+  - The line, at the 15 px prose size.
   - A row of neutral chips for what the line sets, each one dismissable, and a dashed placeholder for the project or label when the line has none.
   - A tool row: date, priority, label, estimate and project buttons, each starting its token in the line, and a round accent send button.
 - **The list's own quick-add line, the capture screen and the title editors keep their chips** (`ParseChips`). The parser and its Go port are untouched: the same line gives the same task everywhere.

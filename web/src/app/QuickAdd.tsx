@@ -208,8 +208,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     return false
   }
 
-  // The field's text size: 15 px in the palette, 16 px on the phone's sheet (no zoom on focus).
-  const size = palette ? 'text-prose' : layout === 'sheet' ? 'text-[1rem]' : ''
+  // The field's text size: the prose step (15 px) in the palette and on the phone's sheet.
+  const size = layout === 'line' ? '' : 'text-prose'
   return (
     <form id={formId} onSubmit={submit} data-quick-add-layout={layout}>
       <div className={`relative flex items-center ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'gap-2'}`}>

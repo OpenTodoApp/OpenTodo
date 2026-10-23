@@ -62,7 +62,7 @@ export function FieldRows({ rows, highlight, chipHighlight, projects, labels, li
         const key = FIELD_TOKEN[row.kind]
         return (
           <div key={`${row.kind}:${row.chip?.key ?? 'unset'}`} data-field-row={row.kind} data-set={row.chip ? '' : undefined} data-highlighted={on || undefined}
-            className={`relative grid h-8 cursor-default grid-cols-[1rem_5rem_minmax(0,1fr)_auto] items-center gap-2.5 px-4 text-meta pointer-coarse:h-11 ${on ? 'row-selected' : 'hover:bg-hover'} ${row.chip && chipHighlight === row.chipIndex ? 'ring-2 ring-inset ring-focus' : ''}`}
+            className={`relative grid h-8 cursor-pointer grid-cols-[1rem_5rem_minmax(0,1fr)_auto] items-center gap-2.5 px-4 text-meta pointer-coarse:h-11 ${on ? 'row-selected' : 'hover:bg-hover'} ${row.chip && chipHighlight === row.chipIndex ? 'ring-2 ring-inset ring-focus' : ''}`}
             onMouseDown={(e) => e.preventDefault()} onClick={() => onEdit(row)}>
             <Icon name={FIELD_ICON[row.kind]} size={14} className="text-faint" />
             <span className="text-muted">{FIELD_NAME[row.kind]}</span>

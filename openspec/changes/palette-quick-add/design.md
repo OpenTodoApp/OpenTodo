@@ -96,7 +96,7 @@ The `BarHint` paragraph above the results is removed. Its Help link moves into t
 ### D7. The phone sheet
 
 `QuickAddSheet` keeps its `Popover`: a bottom sheet with a handle below 640 px, and a popover by the button from 640 px. Inside, `QuickAdd layout="sheet"`:
-- **The line** at 16 px, so iOS does not zoom.
+- **The line** at the 15 px prose size, as in the palette.
 - **A chip row**, horizontally scrollable:
   - one neutral chip per understood attribute, on the raised surface, 30 px, each with its icon and a dismiss control;
   - then a dashed placeholder chip for Project and for Label when the line sets none. Tapping a placeholder starts that token (D2).
