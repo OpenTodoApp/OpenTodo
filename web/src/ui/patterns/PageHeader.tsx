@@ -28,11 +28,11 @@ export type PageWidth = 'list' | 'form' | 'wide' | 'full'
  */
 export type PageFrame = 'standalone' | 'layout'
 
-/** The page frame (app-shell "Page template"): at most 80 rem, at the column's left edge (index.css); `data-page-body` picks the content width, `data-page-frame` the frame. */
+/** The page frame (app-shell "Page template"): at most 80 rem (72 rem for a project), at the column's left edge (index.css); `data-page-body` picks the content width, which the header takes too (page-frame-v3), `data-page-frame` the frame. */
 export const PAGE_FRAME = 'page-frame min-w-0 w-full max-w-[80rem]'
 
 export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
-  /** list: 48 rem (lists and feeds); form: 42 rem (settings and forms); wide: 72 rem (a list with field columns); full: the whole frame (boards, calendars). */
+  /** list: 60 rem (lists and feeds); form: 42 rem (settings and forms); wide: 72 rem (a list with field columns); full: the whole frame (boards, calendars). */
   width?: PageWidth
   /** No bottom padding: the page's own scroller (a board, the calendar grid) fills the column. */
   flush?: boolean

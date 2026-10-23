@@ -302,7 +302,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
-        <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page>
+        <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page
+          data-page-project={route.view === 'project' ? '' : undefined}>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}

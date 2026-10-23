@@ -84,7 +84,10 @@ describe('two frames (page-rhythm D3)', () => {
   it('the stylesheet gives a standalone frame its content width plus the padding', async () => {
     const css = (await import('../../index.css?raw')).default
     expect(css).toMatch(/\.page-frame\[data-page-frame="standalone"\]\s*\{[^}]*max-width:\s*calc\(var\(--page-width, 80rem\) \+ 2 \* var\(--page-gutter\)\)/)
-    expect(css).toMatch(/\.page-frame\[data-page-body="list"\]\s*\{\s*--page-width:\s*48rem/)
+    expect(css).toMatch(/\.page-frame\[data-page-body="list"\]\s*\{\s*--page-width:\s*60rem/)
+    // page-frame-v3 D1: the header takes the content width too (plus a sticky header's bleed).
+    expect(css).toMatch(/\.page-frame\[data-page-body\]:not\(\[data-page-body="full"\]\) > \* \{ max-width: var\(--page-width\); \}/)
+    expect(css).toMatch(/> \[data-page-header\]\.sticky \{ max-width: calc\(var\(--page-width\) \+ 4rem\); \}/)
     expect(css).toMatch(/\.page-frame\[data-page-body="form"\]\s*\{\s*--page-width:\s*42rem/)
     expect(css).toMatch(/\.page-frame\[data-page-body="wide"\]\s*\{\s*--page-width:\s*72rem/)
   })

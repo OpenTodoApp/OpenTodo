@@ -17,7 +17,7 @@ const rows = (n: number) => (
   </ul>
 )
 
-/** A list page: 48 rem, the title at the display step with its lead line under it, one action, the overflow and Help. */
+/** A list page: 60 rem, the title at the display step with its lead line under it, one action, the overflow and Help. */
 export const ListPage: StoryObj = {
   render: () => (
     <div className="h-[32rem] overflow-y-auto bg-canvas">

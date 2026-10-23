@@ -193,7 +193,7 @@ export function App() {
     if (route.view === 'public') return <PublicListScreen token={route.token} />
     if (phase.kind === 'loading') {
       // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
-      return <div className="mx-auto w-full max-w-3xl px-4 py-5 md:px-8"><Skeleton shape="row" count={8} label={t('Loading your tasks')} /></div>
+      return <div className="w-full max-w-[62rem] px-4 py-5 md:max-w-[64rem] md:px-8"><Skeleton shape="row" count={8} label={t('Loading your tasks')} /></div>
     }
     if (route.view === 'reset') {
       return (
