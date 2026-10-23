@@ -19,6 +19,7 @@ export { isCatalogueIcon, loadCatalogue, searchIcons, iconRank, categoryLabel, I
 export * from './Menu'
 export * from './ProgressRing'
 export * from './Skeleton'
+export * from './StatusIndicator'
 export * from './Switch'
 export * from './Tabs'
 export * from './Tooltip'

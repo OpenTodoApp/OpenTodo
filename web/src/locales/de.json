@@ -2293,6 +2293,7 @@
   "Settings → People → Members: revoke the focused pending invitation": "Einstellungen → Personen → Mitglieder: die fokussierte offene Einladung widerrufen",
   "Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms)": "Einstellungen → Personen → Benutzer: den fokussierten Benutzer deaktivieren oder reaktivieren, einen Link zum Zurücksetzen erstellen, löschen (jeweils mit Rückfrage)",
   "Settings → Server → Audit log: export with the current filters while the table has focus": "Einstellungen → Server → Audit-Protokoll: mit den aktuellen Filtern exportieren, solange die Tabelle fokussiert ist",
+  "Settings: focus the search field, which finds sections and single settings by name": "Einstellungen: das Suchfeld fokussieren, das Bereiche und einzelne Einstellungen nach Namen findet",
   "Settings: {section}": "Einstellungen: {section}",
   "Setup code": "Einrichtungscode",
   "Setup token": "Einrichtungstoken",

@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { Badge, Button, Field, Input, Notice, Select, SettingRow, SettingsSection } from '../ui'
+import { Button, Field, Input, Notice, Select, SettingRow, SettingsSection, StatusIndicator, toneForHue } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { formatInstant } from '../lib/dates'
 import { useOnline } from '../lib/online'
@@ -76,11 +76,11 @@ export interface OutgoingEmailViewProps {
 
 function TestLine({ outcome, stage, reply, to, at }: { outcome: 'sent' | 'failed'; stage?: SmtpStage; reply?: string; to?: string; at?: number }) {
   if (outcome === 'sent') {
-    return <span data-smtp-test="sent"><Badge hue="green">{t('Test sent')}</Badge> <span className="text-muted">{to ? t('to {to}', { to }) : ''}{at ? ` · ${formatInstant(at, 'datetime')}` : ''}</span></span>
+    return <span data-smtp-test="sent"><StatusIndicator tone="ok">{t('Test sent')}</StatusIndicator> <span className="text-muted">{to ? t('to {to}', { to }) : ''}{at ? ` · ${formatInstant(at, 'datetime')}` : ''}</span></span>
   }
   return (
     <span data-smtp-test="failed" className="block">
-      <Badge hue="red">{t('Test failed')}</Badge> <span className="text-default">{stage ? STAGE_TEXT[stage] : t('The test failed')}</span>
+      <StatusIndicator tone="danger">{t('Test failed')}</StatusIndicator> <span className="text-default">{stage ? STAGE_TEXT[stage] : t('The test failed')}</span>
       {at ? <span className="text-muted"> · {formatInstant(at, 'datetime')}</span> : null}
       {reply && <code className="mt-1 block break-all rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-meta text-default">{reply}</code>}
     </span>
@@ -109,7 +109,7 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
             description={s.configured ? undefined : rowCopy('outgoing-email', 'server').description}
             status={(
               <span className="block space-y-1">
-                <Badge hue={s.configured ? 'green' : 'slate'}>{s.configured ? t('Configured') : t('Not configured')}</Badge>
+                <StatusIndicator tone={toneForHue(s.configured ? 'green' : 'slate')}>{s.configured ? t('Configured') : t('Not configured')}</StatusIndicator>
                 {s.configured && <span className="block text-muted" data-smtp-summary>{t('{host}:{port} · from {from}', { host: s.host, port: s.port, from: s.from })}</span>}
                 {s.configured && last && (
                   <span className="block">

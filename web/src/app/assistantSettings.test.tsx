@@ -86,7 +86,7 @@ describe('OwnerAssistantSummary (settings-redesign)', () => {
   it('shows the state at a glance with the form behind Configure', () => {
     const html = summary()
     expect(html).toContain('data-assistant-owner')
-    expect(html).toMatch(/data-hue="green"[^>]*><span[^>]*>On<\/span>/)
+    expect(html).toMatch(/data-status="ok"[^>]*><span[^>]*><\/span><span[^>]*>On<\/span>/)
     expect(html).toContain('Everyone uses Anthropic (Claude) (claude-opus-5-5).')
     expect(html).toContain('500,000 tokens')
     expect(html).toContain('Not allowed.')
@@ -95,7 +95,7 @@ describe('OwnerAssistantSummary (settings-redesign)', () => {
   })
   it('says when it is off, flags a provider without a key and disables Configure offline', () => {
     const html = summary({ enabled: false, monthly_token_cap_per_user: 0, providers: { ...saved.providers, openai: { enabled: true, model: 'x', key_set: false, label: 'OpenAI' } } })
-    expect(html).toMatch(/data-hue="slate"[^>]*><span[^>]*>Off<\/span>/)
+    expect(html).toMatch(/data-status="off"[^>]*><span[^>]*><\/span><span[^>]*>Off<\/span>/)
     expect(html).toContain('OpenAI · no key')
     expect(html).toContain('Unlimited')
     expect(summary({}, false)).toMatch(/<button[^>]*disabled=""[^>]*>.*Configure/)

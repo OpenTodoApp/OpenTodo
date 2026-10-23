@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-// Card icons and Learn more (OpenSpec change settings-refresh, settings-navigation
-// "Card icons" and "Learn more links", design D1 and D2).
+// Card icons and Learn more (OpenSpec change settings-refresh, settings-navigation; the icons
+// show in search results only since precision-settings D3: "Card icons" and "Learn more links").
 import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { cardCopy, cardIcon, SETTINGS_COPY, type SettingsCopyId } from '../lib/settingsCopy'
@@ -23,10 +23,10 @@ describe('settings card icons', () => {
     expect(missing).toEqual([])
   })
 
-  it('the icon is decorative: the heading is named by its title alone', async () => {
+  it('the page heading has no icon; the title alone names it (precision-settings D3)', async () => {
     const r = await render(<SettingsSection {...cardCopy('security')}><div /></SettingsSection>)
     const heading = r.container.querySelector('h2')!
-    expect(heading.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
+    expect(heading.querySelector('svg')).toBeNull()
     expect(heading.textContent).toBe('Passkeys')
     await r.unmount()
   })

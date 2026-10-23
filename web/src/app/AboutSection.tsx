@@ -60,7 +60,7 @@ export function AboutSection({ user }: { user: User }) {
   const [note, setNote] = useState(false)
   return (
     <>
-      <SettingsSection {...cardCopy('about', { variant: version ? 'version' : 'plain', values: { version } })} tier="primary">
+      <SettingsSection {...cardCopy('about', { variant: version ? 'version' : 'plain', values: { version } })}>
         <ShellAppRow app={app} />
         <SettingRow id="about-help" {...rowCopy('about', 'help')}
           control={<button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={() => navigate({ view: 'help' })} data-about-help>{t('Open Help')}</button>} />

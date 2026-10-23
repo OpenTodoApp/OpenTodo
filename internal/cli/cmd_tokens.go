@@ -119,7 +119,7 @@ func tokenCreate(a *App, ctx context.Context, g *globalFlags, args []string) err
 	case "read":
 		fmt.Fprintln(a.Stderr, "It can read everything you can and is refused on every change.")
 	case "agent":
-		fmt.Fprintln(a.Stderr, "It is for an AI assistant: it reads everything and can create and edit tasks, projects, labels and comments (through MCP write tools or ot), and nothing else, and only while both assistant switches are on (the owner's \"AI assistants may make changes\" and your \"Allow AI assistants to make changes\", in Settings → AI → AI assistants). See docs/mcp.md and docs/cli.md.")
+		fmt.Fprintln(a.Stderr, "It is for an AI assistant: it reads everything and can create and edit tasks, projects, labels and comments (through MCP write tools or ot), and nothing else, and only while both assistant switches are on (the owner's \"AI assistants may make changes\" and your \"Allow AI assistants to make changes\", in Settings → Integrations → AI assistants). See docs/mcp.md and docs/cli.md.")
 	}
 	return nil
 }

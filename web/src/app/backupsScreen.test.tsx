@@ -109,7 +109,7 @@ describe('Settings → Backups', () => {
     expect(isDisabled(running, 'Backing up')).toBe(true)
     const failed = render({ status: status({ lastRun: { ...status().lastRun!, status: 'failed', error: 'webdav put: connection refused' } }) })
     expect(failed).toContain('connection refused')
-    expect(failed).toMatch(/data-hue="red"[^>]*>(<span[^>]*>(<\/span>)?)*Failed/)
+    expect(failed).toMatch(/data-status="danger"[^>]*>(<span[^>]*>(<\/span>)?)*Failed/)
   })
 
   it('offline: shows the cached status and disables every action', () => {

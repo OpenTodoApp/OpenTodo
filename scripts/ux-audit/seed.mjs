@@ -104,7 +104,7 @@ export async function seed({ base, pw, lang = '' }) {
   // The in-app assistant (in-app-assistant) against the scripted fake provider
   // in scripts/fake-llm.mjs: no real model provider is ever contacted.
   const llm = await startFakeLLM(0)
-  // Member keys allowed, so Settings → AI shows "Which assistant you use" and
+  // Member keys allowed, so Settings → Integrations shows "Which assistant you use" and
   // the owner's cap switch (assistant-member-provider); Ada stays on the server's.
   await A('PUT', '/api/v1/settings/assistant', { enabled: true, default_provider: 'compatible', allow_private_endpoint: true, allow_member_keys: true,
     providers: { compatible: { enabled: true, model: 'fake-model', base_url: `http://127.0.0.1:${llm.address().port}/v1` } } })

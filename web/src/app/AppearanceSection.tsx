@@ -73,7 +73,7 @@ export function AppearanceView({ value, onMode, onAccent, onDensity, haptics }: 
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const ids = ACCENTS.map((a) => a.id)
   return (
-    <SettingsSection {...cardCopy('appearance')} tier="primary">
+    <SettingsSection {...cardCopy('appearance')}>
       <SettingRow id="appearance-mode" {...rowCopy('appearance', 'mode')}
         control={<span data-appearance-mode><Segmented label={t('Mode')} items={THEME_MODES} labels={MODE_LABEL} value={value.mode} onChange={onMode} testId="appearance-mode" /></span>} />
       <div className="py-3" id="appearance-theme" tabIndex={-1} data-setting-row="appearance-theme">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, IconButton, Dialog, Menu } from '../ui'
+import { Button, IconButton, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Badge } from '../ui'
 import { Field, Input } from '../ui'
 import { Icon } from '../ui'
@@ -68,7 +68,7 @@ export function CaldavView(p: CaldavViewProps) {
       ) : (
         <SettingRow label={rowCopy('caldav', 'server', { variant: 'owner' }).label}
           description={p.isOwner || !on ? rowCopy('caldav', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description : undefined}
-          status={<span className="flex items-center gap-2"><Badge hue={on ? 'green' : 'slate'}>{on ? t('On') : t('Off')}</Badge>{!p.isOwner && <span>{on ? t('CalDAV is on for this server.') : t('CalDAV is off.')}</span>}</span>}
+          status={<span className="flex items-center gap-2"><StatusIndicator tone={toneForHue(on ? 'green' : 'slate')}>{on ? t('On') : t('Off')}</StatusIndicator>{!p.isOwner && <span>{on ? t('CalDAV is on for this server.') : t('CalDAV is off.')}</span>}</span>}
           control={p.isOwner && <Switch checked={on} disabled={p.busy} onChange={p.onToggle} label={t('Allow calendar apps to sync with this server')} hideLabel />} />
       )}
       {p.setting?.encryption && (

@@ -1,5 +1,5 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
-import { Skeleton, Dialog as OverlayDialog, Menu } from '../ui'
+import { Skeleton, Dialog as OverlayDialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
@@ -255,7 +255,7 @@ export function UsersView(p: UsersViewProps) {
   }
 
   return (
-    <SettingsSection {...cardCopy('users', { variant: isOwner ? 'owner' : 'admin' })} tier="primary">
+    <SettingsSection {...cardCopy('users', { variant: isOwner ? 'owner' : 'admin' })}>
       {p.offline && <Notice>{noticeCopy('users', 'offline')}</Notice>}
       {p.users && (
         <SettingRow {...rowCopy('users', 'accounts')} status={
@@ -301,7 +301,7 @@ export function UsersView(p: UsersViewProps) {
                 badges={(
                   <>
                     <Badge hue={ROLE_HUE[u.role]}>{ACCOUNT_ROLE_LABEL[u.role]}</Badge>
-                    <Badge hue={u.status === 'active' ? 'green' : 'red'} tone="solid">{u.status === 'active' ? t('Active') : t('Deactivated')}</Badge>
+                    <StatusIndicator tone={toneForHue(u.status === 'active' ? 'green' : 'red')}>{u.status === 'active' ? t('Active') : t('Deactivated')}</StatusIndicator>
                   </>
                 )}
                 onKeyDown={(e) => onRowKey(e, u, a)}

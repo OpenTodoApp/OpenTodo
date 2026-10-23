@@ -1,7 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
-import { Skeleton } from '../ui'
+import { Skeleton, StatusIndicator, toneForHue } from '../ui'
 import { Button } from '../ui'
-import { Badge } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
@@ -91,7 +90,7 @@ function MemberStatus({ status }: { status: McpStatus }) {
   return (
     <SettingRow {...rowCopy('assistants', 'server')} status={
       <span className="flex flex-wrap items-center gap-2">
-        <Badge hue={status.enabled ? 'green' : 'slate'}>{status.enabled ? (ownerWrites ? t('On, can make changes') : t('On, read-only')) : t('Off')}</Badge>
+        <StatusIndicator tone={toneForHue(status.enabled ? 'green' : 'slate')}>{status.enabled ? (ownerWrites ? t('On, can make changes') : t('On, read-only')) : t('Off')}</StatusIndicator>
         <span>{status.enabled
           ? (ownerWrites ? t('The server owner has enabled AI assistant access and allows assistants to make changes. Your assistant sees only your own projects and the shared projects you are a member of.') : t('The server owner has enabled AI assistant access (read-only). Your assistant sees only your own projects and the shared projects you are a member of.'))
           : t('The server owner has not enabled AI assistant access on this server, so assistants cannot connect yet.')}</span>

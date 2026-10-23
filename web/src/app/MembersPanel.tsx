@@ -1,11 +1,10 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
-import { Skeleton, Dialog, Menu } from '../ui'
+import { Skeleton, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { useOutgoingEmail } from '../lib/outgoingEmail'
 import type { Invitation, InvitationStatus } from '../lib/types'
-import { Badge } from '../ui'
 import { Button } from '../ui'
 import { Field, Input, Select } from '../ui'
 import { Icon } from '../ui'
@@ -179,7 +178,7 @@ export function MembersView(p: MembersViewProps) {
                   label={<>{who}{inv.acceptedBy && <span className="text-muted">{' '}{t('· joined as {name}', { name: inv.acceptedBy.name || inv.acceptedBy.email })}</span>}</>}
                   ariaLabel={t('Invitation {who}, {status}', { who: inv.email ?? t('open'), status: STATUS[inv.status].label })}
                   meta={[inv.status === 'pending' ? t('Expires {instant}', { instant: dt.formatInstant(inv.expiresAt, 'datetime') }) : t('Created {instant}', { instant: dt.formatInstant(inv.createdAt, 'date') }), inv.createdByName ? t('by {name}', { name: inv.createdByName }) : ''].filter(Boolean).join(' · ')}
-                  badges={<Badge hue={STATUS[inv.status].hue}>{STATUS[inv.status].label}</Badge>}
+                  badges={<StatusIndicator tone={toneForHue(STATUS[inv.status].hue)}>{STATUS[inv.status].label}</StatusIndicator>}
                   onKeyDown={(e) => onRowKey(e, inv)}
                   menu={inv.status === 'pending' && (
                     <Menu label={t('Actions for the invitation {who}', { who })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">

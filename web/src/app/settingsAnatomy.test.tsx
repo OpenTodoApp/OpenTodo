@@ -3,7 +3,7 @@
 // cards and rows", design D6): every card is a SettingsSection with heading,
 // description and rows; no button or help link in a card header, and no native
 // select in a settings panel. A source lint, in the style of the token lint; the
-// card tiers (surfaces-v2 D9) are checked on the rendered pages.
+// flat pages (precision-settings D3) are checked on the rendered pages.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '../lib/types'
@@ -52,15 +52,14 @@ describe('settings cards', () => {
   })
 })
 
-/** Every primary card of a rendered page beyond the first, named by page and heading (surfaces-v2 D9). */
-function primaryOffenders(page: string, root: ParentNode): string[] {
-  const primary = [...root.querySelectorAll('[data-settings-card][data-tier="primary"]')]
-  if (primary.length <= 1) return []
-  const names = primary.map((c) => `"${c.querySelector('h2, h3')?.textContent ?? '?'}"`)
-  return [`${page}: ${primary.length} primary cards (${names.join(', ')})`]
+/** Sections of a rendered page drawn as a card surface, named by page and heading (precision-settings D3). */
+function cardOffenders(page: string, root: ParentNode): string[] {
+  return [...root.querySelectorAll('[data-settings-card]')]
+    .filter((c) => /\b(shadow-1|rounded-card|bg-surface|bg-raised)\b/.test(c.className))
+    .map((c) => `${page}: "${c.querySelector('h2, h3')?.textContent ?? '?'}" is drawn as a card`)
 }
 
-describe('card tiers (surfaces-v2 D9)', () => {
+describe('flat settings pages (precision-settings D3)', () => {
   const owner: User = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'owner', createdAt: 1 }
   beforeEach(() => {
     window.matchMedia = ((q: string) => ({
@@ -71,45 +70,38 @@ describe('card tiers (surfaces-v2 D9)', () => {
   })
   afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = '' })
 
-  it('a section has the same heading, line and rows in both tiers; only the surface differs', async () => {
-    const section = (tier: 'primary' | 'flat') => (
-      <SettingsSection title="Backups" description="Snapshots of this server." learnMore="settings/server" tier={tier}>
+  it('a section is a label-size heading, its line and rows between hairlines, with no icon', async () => {
+    const r = await render(
+      <SettingsSection title="Backups" icon="archive" description="Snapshots of this server." learnMore="settings/server">
         <SettingRow label="Schedule" description="Every night." control={<button type="button">Change</button>} />
-      </SettingsSection>
+      </SettingsSection>,
     )
-    const a = await render(section('primary'))
-    const b = await render(section('flat'))
-    const [p, f] = [a.container.querySelector('[data-settings-card]')!, b.container.querySelector('[data-settings-card]')!]
-    expect(p.getAttribute('data-tier')).toBe('primary')
-    expect(f.getAttribute('data-tier')).toBe('flat')
-    expect(f.className).toBe('ui-section-flat')
-    expect(p.className).toContain('shadow-1')
-    const strip = (html: string) => html.replace(/ id="[^"]*"| aria-labelledby="[^"]*"/g, '')
-    expect(strip(f.innerHTML)).toBe(strip(p.innerHTML))
-    await a.unmount()
-    await b.unmount()
-  })
-
-  it('a page with two primary cards is named with both cards', async () => {
-    const r = await render(<>
-      <SettingsSection title="Backups" tier="primary"><SettingRow label="A" /></SettingsSection>
-      <SettingsSection title="Archive" tier="primary"><SettingRow label="B" /></SettingsSection>
-    </>)
-    expect(primaryOffenders('server', r.container)).toEqual(['server: 2 primary cards ("Backups", "Archive")'])
+    const card = r.container.querySelector('[data-settings-card]')!
+    expect(card.className).toBe('ui-settings-section')
+    expect(card.querySelector('h2')!.className).toContain('text-meta')
+    expect(card.querySelector('svg')).toBeNull()
+    expect(card.querySelector('[data-setting-control]')!.parentElement!.parentElement!.className).toContain('border-y')
+    expect(card.querySelector('[data-setting-control]')).not.toBeNull()
     await r.unmount()
   })
 
-  it('every rendered settings page has at most one primary card', async () => {
+  it('a section drawn as a card is named with its page', async () => {
+    const r = await render(<section data-settings-card className="rounded-card bg-surface shadow-1"><h2>Backups</h2></section>)
+    expect(cardOffenders('server', r.container)).toEqual(['server: "Backups" is drawn as a card'])
+    await r.unmount()
+  })
+
+  it('no rendered settings page draws a section as a card', async () => {
     const offenders: string[] = []
-    let primaries = 0
+    let sections = 0
     for (const page of SETTINGS_SECTION_IDS) {
       const r = await render(<SettingsView user={owner} onLogout={() => {}} section={page} />)
       await flush(40)
-      offenders.push(...primaryOffenders(page, r.container))
-      primaries += r.container.querySelectorAll('[data-tier="primary"]').length
+      offenders.push(...cardOffenders(page, r.container))
+      sections += r.container.querySelectorAll('[data-settings-card]').length
       await r.unmount()
     }
     expect(offenders).toEqual([])
-    expect(primaries).toBeGreaterThan(5)
+    expect(sections).toBeGreaterThan(20)
   })
 })

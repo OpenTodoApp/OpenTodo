@@ -22,7 +22,7 @@ describe('YourDataView', () => {
     expect(html).not.toContain('backups-link')
   })
   it('summarises sync with a badge and what is waiting', () => {
-    expect(render()).toMatch(/data-hue="green"[^>]*><span[^>]*>Up to date<\/span>/)
+    expect(render()).toMatch(/data-status="ok"[^>]*><span[^>]*><\/span><span[^>]*>Up to date<\/span>/)
     const waiting = render({ sync: { ...idle, state: 'offline', pending: 3 } })
     expect(waiting).toContain('Offline')
     expect(waiting).toContain('3 changes waiting to upload.')

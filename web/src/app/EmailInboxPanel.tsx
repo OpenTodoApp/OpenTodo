@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button } from '../ui'
-import { Badge } from '../ui'
+import { Button, StatusIndicator, toneForHue } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
@@ -48,7 +47,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
         <>
           <SettingRow {...rowCopy('email-inbox', 'address')} status={
             <span className="flex flex-wrap items-center gap-2">
-              <Badge hue={inbox.enabled ? 'green' : 'slate'}>{inbox.enabled ? t('On') : t('Off')}</Badge>
+              <StatusIndicator tone={toneForHue(inbox.enabled ? 'green' : 'slate')}>{inbox.enabled ? t('On') : t('Off')}</StatusIndicator>
               <code id="email-inbox-address" className={'break-all rounded-chip bg-sunken px-1.5 py-0.5 text-meta' + (inbox.enabled ? '' : ' text-faint line-through')}>
                 {inbox.address}
               </code>

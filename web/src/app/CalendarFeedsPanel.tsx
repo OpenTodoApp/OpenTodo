@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Badge, Button, ConfirmDialog, Field, HUES, hueFor, Icon, Input, ListRow, MenuItem, Notice, Select, SettingRow, SettingsSection, Switch, Dialog, Menu } from '../ui'
+import { Button, ConfirmDialog, Field, HUES, hueFor, Icon, Input, ListRow, MenuItem, Notice, Select, SettingRow, SettingsSection, Switch, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { refreshEvents } from '../lib/calendarFeeds'
 import { cachedCalendarSubscriptions } from '../lib/localData'
@@ -83,7 +83,7 @@ export function CalendarFeedsView(p: CalendarFeedsViewProps) {
       {p.enabled !== null && (
         <SettingRow label={rowCopy('calendar-feeds', 'server', { variant: 'owner' }).label}
           description={p.isOwner || !on ? rowCopy('calendar-feeds', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description : undefined}
-          status={<Badge hue={on ? 'green' : 'slate'}>{on ? t('On') : t('Off')}</Badge>}
+          status={<StatusIndicator tone={toneForHue(on ? 'green' : 'slate')}>{on ? t('On') : t('Off')}</StatusIndicator>}
           control={p.isOwner && <Switch checked={on} disabled={disabled} onChange={p.onToggle} label={t('Allow calendar feeds on this server')} hideLabel />} />
       )}
       {p.error && <Notice tone="danger">{p.error}</Notice>}
@@ -111,7 +111,7 @@ export function CalendarFeedsView(p: CalendarFeedsViewProps) {
                       {s.warnings?.length ? <span className="block text-faint">{s.warnings.join(' · ')}</span> : null}
                     </span>
                   )}
-                  badges={s.lastError && s.enabled ? <Badge hue="red">{t('Failing')}</Badge> : !s.enabled ? <Badge hue="slate">{t('Off')}</Badge> : undefined}
+                  badges={s.lastError && s.enabled ? <StatusIndicator tone="danger">{t('Failing')}</StatusIndicator> : !s.enabled ? <StatusIndicator tone="off">{t('Off')}</StatusIndicator> : undefined}
                   menu={(
                     <Menu label={t('Actions for {name}', { name: s.name })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
                       <MenuItem label={t('Edit')} icon="pencil" disabled={disabled} onSelect={() => p.onDraftChange({ id: s.id, url: s.url ?? '', name: s.name, color: s.color })} />

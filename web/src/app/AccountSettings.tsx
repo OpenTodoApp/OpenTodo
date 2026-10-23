@@ -36,7 +36,7 @@ export function SignOutDialog({ onConfirm, onCancel }: { onConfirm: () => void; 
 export function SessionPanel({ onLogout, onSignOutEverywhere = signOutEverywhere }: { onLogout: () => void; onSignOutEverywhere?: () => Promise<void> }) {
   const [confirming, setConfirming] = useState<'device' | 'everywhere' | null>(null)
   return (
-    <SettingsSection {...cardCopy('session')} tier="primary">
+    <SettingsSection {...cardCopy('session')}>
       <SettingRow {...rowCopy('session', 'device')}
         control={<Button variant="danger" icon="log-out" onClick={() => setConfirming('device')}>{t('Sign out')}</Button>} />
       <SettingRow {...rowCopy('session', 'everywhere')}

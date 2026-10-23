@@ -53,6 +53,8 @@ import { t } from '../lib/i18n'
 import { cardIcon, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 import { WorkspacesSettings } from './WorkspacesSettings'
+import { useShortcutScope } from './shortcuts'
+import { keysOf } from '../lib/shortcuts'
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
 const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
@@ -125,18 +127,38 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
       </PageBody>
     )
   }
+  // precision-settings D1–D3: from 1024 px the header is a breadcrumb across the surface,
+  // the navigation pane sits under it on a hairline, and the page opens with its title
+  // and lead line; below 1024 px the header carries Back and the list is its own page.
+  const crumb = twoColumn && (
+    <span className="flex shrink-0 items-center gap-1 text-h3 font-normal text-muted" data-settings-crumb>
+      <a href={routePath({ view: 'settings' })} className="rounded-control hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
+        onClick={(e) => followLink(e, { view: 'settings', section: first.id })}>{t('Settings')}</a>
+      <Icon name="chevron-right" size="xs" />
+    </span>
+  )
   return (
-    <div ref={pageRef} className="max-w-[80rem] px-4 py-6 outline-none md:px-8 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10" data-settings-section={page.id}>
-      {twoColumn && (
-        <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:pr-1" aria-label={t('Settings')}>
-          <SettingsList user={user} current={page.id} compact />
-        </aside>
-      )}
-      {/* workspaces-settings-v2 D2: the Workspaces page's two panes need 56 rem; every other section keeps 42. */}
-      <div className={`min-w-0 space-y-6 ${page.id === 'workspaces' ? 'lg:max-w-4xl' : 'lg:max-w-2xl'}`} data-settings-width={page.id === 'workspaces' ? 'wide' : 'form'}>
-        <PageHeader title={page.label} titleRef={headingRef} titleTabIndex={-1} help={PAGE_HELP_SCREENS[page.id]} sticky={false}
+    <div ref={pageRef} className="outline-none" data-settings-section={page.id}>
+      <div className="px-4 md:px-8">
+        <PageHeader title={page.label} leading={crumb} titleRef={headingRef} titleTabIndex={-1} help={PAGE_HELP_SCREENS[page.id]} sticky={false}
           back={{ label: t('Settings'), href: routePath({ view: 'settings' }), onClick: () => navigate({ view: 'settings' }), hideFrom: 'lg' }} />
-        <SettingsPendingGate key={page.id}><SectionContent section={page} user={user} onLogout={onLogout} /></SettingsPendingGate>
+      </div>
+      <div className="lg:-mt-2 lg:grid lg:grid-cols-[14.25rem_minmax(0,1fr)]">
+        {twoColumn && (
+          <aside className="hidden border-r border-soft lg:sticky lg:top-0 lg:block lg:max-h-[calc(100dvh-4.5rem)] lg:min-h-[calc(100dvh-4.5rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:py-3" aria-label={t('Settings')} data-settings-pane>
+            <SettingsList user={user} current={page.id} compact />
+          </aside>
+        )}
+        {/* workspaces-settings-v2 D2: the Workspaces page's two panes need 56 rem; every other section keeps 45 (precision-settings D3). */}
+        <div className={`min-w-0 space-y-8 px-4 pt-4 pb-10 md:px-8 lg:px-16 lg:pt-10 ${page.id === 'workspaces' ? 'lg:max-w-[64rem]' : 'lg:max-w-[53rem]'}`} data-settings-width={page.id === 'workspaces' ? 'wide' : 'form'}>
+          {twoColumn && (
+            <div aria-hidden="true" data-settings-page-head>
+              <p className="text-h1 text-strong">{page.label}</p>
+              <p className="mt-2 max-w-[72ch] text-body text-muted">{page.description(user)}</p>
+            </div>
+          )}
+          <SettingsPendingGate key={page.id}><SectionContent section={page} user={user} onLogout={onLogout} /></SettingsPendingGate>
+        </div>
       </div>
     </div>
   )
@@ -150,13 +172,14 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
 export function SettingsList({ user, current, compact = false }: { user: User; current?: SettingsSectionId; compact?: boolean }) {
   return (
     <div className={compact ? 'space-y-4' : 'space-y-6'} data-settings-list>
-      <ProfileCard user={user} compact={compact} />
-      <SettingsSearch user={user} />
+      {/* The pane beside a page (precision-settings D2) keeps only search and the groups. */}
+      {!compact && <ProfileCard user={user} />}
+      <SettingsSearch user={user} compact={compact} />
       {!compact && <ConfigWarningsNotice user={user} />}
       <nav aria-label={t('Settings sections')} className={compact ? 'space-y-4' : 'space-y-6'}>
         {groupedSections(user).map(({ group, sections }) => (
           <section key={group.id} aria-labelledby={`group-${group.id}`}>
-            <h2 id={`group-${group.id}`} className={`${compact ? 'px-2.5 pb-1' : 'mb-2 px-1'} text-hint font-semibold uppercase tracking-wide text-faint`}>{group.label}</h2>
+            <h2 id={`group-${group.id}`} className={compact ? 'px-2 pb-1 text-hint text-faint' : 'mb-2 px-1 text-hint font-semibold uppercase tracking-wide text-faint'}>{group.label}</h2>
             <ul className={compact ? 'space-y-0.5' : 'divide-y divide-(--ot-border) overflow-hidden rounded-card border border-default bg-surface shadow-1'}>{/* surface-lint-allow: the section list, not a section */}
               {sections.map((s) => {
                 const on = s.id === current
@@ -164,11 +187,11 @@ export function SettingsList({ user, current, compact = false }: { user: User; c
                   <li key={s.id}>
                     <a href={routePath({ view: 'settings', section: s.id })} data-settings-link={s.id} aria-current={on ? 'page' : undefined}
                       className={compact
-                        ? `touch-target flex items-center gap-2.5 rounded-control px-2.5 py-1.5 text-body ${on ? 'bg-accent-soft font-medium text-on-accent-soft' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`
+                        ? `touch-target flex min-h-[1.875rem] items-center gap-2.5 rounded-control px-2 text-body focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${on ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-hover'}`
                         : 'flex min-h-14 items-center gap-3 px-4 py-3 hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised'}
                       onClick={(e) => followLink(e, { view: 'settings', section: s.id })}>
                       {compact
-                        ? <span className={on ? '' : 'text-muted'}><Icon name={s.icon} /></span>
+                        ? <span className={on ? 'text-strong' : 'text-muted'}><Icon name={s.icon} /></span>
                         : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-on-accent-soft"><Icon name={s.icon} size="md" /></span>}
                       <span className="min-w-0 flex-1">
                         <span className="block font-medium">{s.label}</span>
@@ -183,18 +206,24 @@ export function SettingsList({ user, current, compact = false }: { user: User; c
           </section>
         ))}
       </nav>
-      <p className={`text-meta text-faint ${compact ? 'px-2.5' : ''}`}>
-        {t('OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.')}<a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">{t('Source code')}</a>
-      </p>
+      {!compact && (
+        <p className="text-meta text-faint">
+          {t('OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.')}<a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">{t('Source code')}</a>
+        </p>
+      )}
     </div>
   )
 }
 
 /** The search field (settings-navigation "Settings search"): rows under their section, Enter opens the first. */
-function SettingsSearch({ user }: { user: User }) {
+function SettingsSearch({ user, compact = false }: { user: User; compact?: boolean }) {
   const [query, setQuery] = useState('')
   const hits = useMemo(() => searchSettings(query, user), [query, user])
   const listRef = useRef<HTMLUListElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  // `/` focuses the field from anywhere on a Settings page (precision-settings D2).
+  useShortcutScope('view', { 'settings.search': () => inputRef.current?.focus() }, { view: 'settings' })
+  const slash = keysOf('settings.search')
   const open = (section: SettingsSectionId, anchor?: string) => {
     if (anchor) requestSettingsFocus(anchor)
     setQuery('')
@@ -212,8 +241,13 @@ function SettingsSearch({ user }: { user: User }) {
   }
   return (
     <form role="search" onSubmit={submit} className="space-y-2" data-settings-search>
-      <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey}
-        placeholder={t('Search settings')} aria-label={t('Search settings')} autoComplete="off" />
+      <div className="relative">
+        <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-faint"><Icon name="search" size="sm" /></span>
+        <Input ref={inputRef} type="search" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey}
+          placeholder={t('Search settings')} aria-label={t('Search settings')} autoComplete="off" aria-keyshortcuts={slash}
+          className={compact ? 'min-h-8 py-1 pr-8 pl-8 text-body' : 'pl-8'} />
+        {!query && slash && <kbd aria-hidden="true" className="ui-kbd pointer-events-none absolute top-1/2 right-2 -translate-y-1/2">{slash}</kbd>}
+      </div>
       {query.trim() && (
         <ul ref={listRef} className="rounded-card border border-default bg-surface p-1 shadow-1" aria-label={t('Matching settings')} data-settings-results>{/* surface-lint-allow: search results, not a section */}
           {hits.length === 0 && <li className="px-2 py-2 text-meta text-muted">{t('No setting matches “{trim}”.', { trim: query.trim() })}</li>}
@@ -402,13 +436,13 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
 
 /** A focusable landmark for a legacy address or a search result inside a page. */
 function Anchor({ id, children }: { id: string; children: ReactNode }) {
-  return <div id={id} tabIndex={-1} className="space-y-6 outline-none" data-settings-anchor={id}>{children}</div>
+  return <div id={id} tabIndex={-1} className="space-y-8 outline-none" data-settings-anchor={id}>{children}</div>
 }
 
 /** On a demo instance, the refused cards stay visible with their controls disabled (settings-navigation "Demo instance sections"). */
 function DemoDisabled({ on, children }: { on: boolean; children: ReactNode }) {
   if (!on) return <>{children}</>
-  return <fieldset disabled className="m-0 min-w-0 space-y-6 border-0 p-0" data-demo-disabled>{children}</fieldset>
+  return <fieldset disabled className="m-0 min-w-0 space-y-8 border-0 p-0" data-demo-disabled>{children}</fieldset>
 }
 
 /** Features a demo instance refuses (OpenSpec `demo-mode`); each section names its own (settingsSections.ts). */

@@ -1,6 +1,5 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react'
-import { Button, Dialog } from '../ui'
-import { Badge } from '../ui'
+import { Button, Dialog, StatusIndicator } from '../ui'
 import { Field, Input } from '../ui'
 import { Checkbox } from '../ui'
 import { ConfirmDialog } from '../ui'
@@ -124,9 +123,9 @@ export function EncryptionView(p: EncryptionViewProps) {
 
       <SettingRow {...rowCopy('e2ee', 'status')} status={
         <span className="flex flex-wrap items-center gap-2" data-testid="e2ee-status">
-          <Badge hue={status === 'on' ? 'green' : status === 'locked' ? 'orange' : 'slate'}>
+          <StatusIndicator tone={status === 'on' ? 'ok' : status === 'locked' ? 'warn' : 'off'}>
             {status === 'on' ? t('On') : status === 'locked' ? t('Locked on this device') : t('Off')}
-          </Badge>
+          </StatusIndicator>
           {state.enabled && <span className="text-muted">{state.unlocked ? t('Unlocked on this device · key version {version}', { version: state.keyVersion }) : t('This device is locked · key version {version}', { version: state.keyVersion })}</span>}
         </span>
       } control={!state.enabled && mode.kind === 'idle' && (
