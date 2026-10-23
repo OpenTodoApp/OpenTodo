@@ -51,10 +51,10 @@ describe('board surfaces', () => {
     }
     const cards = r.container.querySelector(`[data-column="${todo}"] ul`)!
     expect(cards.className).toContain('ui-cards--lift')
-    // An empty column offers "Add a task" inside its surface.
+    // Every column, empty or not, ends with "Add a task" inside its surface (precision-boards-timeline D2).
     const add = r.container.querySelector(`[data-column="${done}"] [data-column-add]`)
     expect(add?.textContent).toContain('Add a task')
-    expect(r.container.querySelector(`[data-column="${todo}"] [data-column-add]`)).toBeNull()
+    expect(r.container.querySelector(`[data-column="${todo}"] ul + [data-column-add]`)?.textContent).toContain('Add a task')
     // The count is muted with tabular figures.
     const count = r.container.querySelector(`[data-column="${todo}"] [data-group-count]`)!
     expect(count.className).toContain('text-muted')

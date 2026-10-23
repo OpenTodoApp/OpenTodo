@@ -316,6 +316,24 @@ describe('one row language (rows-v2)', () => {
     expect(r.container.querySelector('[data-row-actions]')).toBeNull()
     await r.unmount()
   }))
+
+  it('the card property row (precision-boards-timeline D3): date, estimate and progress lead with icons, the assignee ends it', () => atNoon(async () => {
+    const r = await row({ due: { date: '2026-10-16' }, estimate_minutes: 45, assignee_id: 'u2' },
+      { shape: 'card', progress: { done: 2, total: 5 }, assignee: 'Mia' })
+    const meta = r.container.querySelector('[data-row-meta="card"]')!
+    const items = [...meta.children]
+    expect(items[0].hasAttribute('data-date')).toBe(true)
+    expect(items[0].querySelector('[data-icon="calendar-days"]')).not.toBeNull()
+    expect(items[1].hasAttribute('data-estimate')).toBe(true)
+    expect(items[1].querySelector('[data-icon="clock"]')).not.toBeNull()
+    expect(items[2].hasAttribute('data-progress')).toBe(true)
+    expect(visibleText(items[2])).toBe('2/5')
+    expect(meta.lastElementChild!.hasAttribute('data-row-assignee')).toBe(true)
+    // The progress is not repeated among the counts, and the title may wrap to two lines.
+    expect(r.container.querySelector('[data-row-counts] [data-progress]')).toBeNull()
+    expect(r.container.querySelector('[data-row-title]')!.className).toContain('line-clamp-2')
+    await r.unmount()
+  }))
 })
 
 describe('time column (rows-v2 D2, D3)', () => {

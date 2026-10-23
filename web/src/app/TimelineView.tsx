@@ -4,8 +4,8 @@
 // Selection and opening stay with the list (j / k / Enter); this view adds the
 // axis, the bars and the date edits, each one batch of ordinary field ops.
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Icon } from '../ui'
-import { addDaysISO, viewedTask, dateLocaleOf } from '../lib/dates'
+import { Icon, ReadAs } from '../ui'
+import { addDaysISO, daysBetweenISO, formatDate, viewedTask, dateLocaleOf } from '../lib/dates'
 import { isBlocked } from '../lib/dependencies'
 import { getTask } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
@@ -17,7 +17,10 @@ import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
 
-const ROW_PX = 32
+// The list's comfortable row (precision-boards-timeline D5); bars are 24 px inside it.
+const ROW_PX = 36
+/** A bar at least this wide carries its title (D6). */
+const LABEL_MIN_PX = 96
 const ZOOM_KEY = 'ot.timeline.zoom'
 
 export interface TimelineGroup {
@@ -182,7 +185,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
         className={`flex border-b border-default ${selected ? 'bg-accent-soft' : ''}`} style={{ height: ROW_PX }}>
         <div role="rowheader" className={`sticky left-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1 border-r border-default px-2 sm:w-64 ${selected ? 'bg-accent-soft' : 'bg-surface'}`}
           style={{ paddingLeft: 8 + l.depth * 14 }}>
-          <button type="button" tabIndex={-1} className={`min-w-0 flex-1 truncate text-left text-meta ${blocked ? 'text-muted' : 'text-default'}`}
+          <button type="button" tabIndex={-1} className={`min-w-0 flex-1 truncate text-left text-body ${blocked ? 'text-muted' : 'text-default'}`}
             aria-label={blockers.length ? t('{title}, waits for {blockers}', { title: l.task.title || t('Untitled'), blockers: blockers.join(', ') }) : l.task.title || t('Untitled')}
             onClick={() => onSelect(l.task.id)} onDoubleClick={() => onOpen(l.task.id)}
             onPointerDown={!l.span ? (e) => startDrag(e, l.task, 'place') : undefined}>
@@ -196,50 +199,28 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     )
   }
 
-  const bar = (task: Task, s: Span, selected: boolean) => {
-    const from = Math.max(0, dayOffset(ax.from, s.from))
-    const to = Math.min(totalDays - 1, dayOffset(ax.from, s.to))
-    if (to < 0 || from > totalDays - 1) {
-      // Entirely outside the window: a marker at the near edge.
-      const before = dayOffset(ax.from, s.to) < 0
-      return <span data-beyond={before ? 'before' : 'after'} className={`absolute top-2 text-muted ${before ? 'left-1' : 'right-1'}`} aria-hidden><Icon name={before ? 'chevron-left' : 'chevron-right'} size="xs" /></span>
-    }
-    const clippedLeft = dayOffset(ax.from, s.from) < 0
-    const clippedRight = dayOffset(ax.from, s.to) > totalDays - 1
-    // The part before today is dimmed (surfaces-v2 D3): the whole bar when it ended, a second segment when it crosses today.
-    const allPast = !s.late && s.to < today
-    const pastDays = !s.late && !allPast && s.from < today ? Math.min(to + 1, dayOffset(ax.from, today)) - from : 0
-    return (
-      <div data-bar={task.id} data-late={s.late || undefined} data-hue={hue}
-        onPointerDown={(e) => startDrag(e, task, 'move')}
-        onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
-        className={`ui-block ui-block--row absolute top-1.5 flex h-5 items-center ${s.late ? 'ui-block--late' : ''} ${allPast ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${editable ? 'cursor-grab touch-manipulation' : ''} ${dragging ? 'pointer-events-none' : ''}`}
-        style={{ left: from * px, width: Math.max(px, (to - from + 1) * px) }}>
-        {pastDays > 0 && <span data-bar-past aria-hidden className="ui-block ui-block--row ui-block--past pointer-events-none absolute inset-y-0 rounded-e-none" style={{ insetInlineStart: -3, width: pastDays * px }} />}
-        {clippedLeft && <Icon name="chevron-left" size="xs" className="text-muted" />}
-        {editable && !clippedLeft && <span data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => startDrag(e, task, 'start')} />}
-        {s.dueAt && s.dueAt !== s.from && s.dueAt !== s.to && dayOffset(ax.from, s.dueAt) >= 0 && (
-          <span data-due-marker className="absolute top-1 h-2.5 w-0.5 rounded-full bg-accent" style={{ left: (dayOffset(ax.from, s.dueAt) - from + 0.5) * px }} aria-hidden />
-        )}
-        {s.deadlineAt && dayOffset(ax.from, s.deadlineAt) <= totalDays - 1 && (
-          <span data-deadline-marker className={`absolute -top-0.5 ${s.late ? 'text-danger' : 'text-muted'}`} style={{ left: Math.max(0, (dayOffset(ax.from, s.deadlineAt) - from + 0.5) * px - 6) }} aria-hidden>
-            <Icon name="flag" size="xs" />
-          </span>
-        )}
-        {clippedRight && <Icon name="chevron-right" size="xs" className="ml-auto text-muted" />}
-        {editable && !clippedRight && <span data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => startDrag(e, task, 'end')} />}
-      </div>
-    )
-  }
+  const bar = (task: Task, s: Span, selected: boolean) => (
+    <TimelineBar task={task} s={s} selected={selected} from={ax.from} totalDays={totalDays} px={px} today={today} hue={hue} editable={editable} dragging={dragging}
+      onDrag={startDrag} onSelect={onSelect} onOpen={onOpen} />
+  )
 
-  const heading = (key: string, text: string) => (
-    <div key={`h:${key}`} role="row" className="flex border-b border-default bg-sunken" style={{ height: ROW_PX }}>
-      <div role="rowheader" className="sticky left-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center bg-sunken px-2 text-hint font-semibold uppercase tracking-wide text-muted sm:w-64">{text}</div>
+  // A section heading is the list's group bar (D5): sentence case, the name and its number of rows.
+  const heading = (key: string, text: string, count: number) => (
+    <div key={`h:${key}`} role="row" data-timeline-group={key} className="flex border-b border-default bg-raised" style={{ height: ROW_PX }}>
+      <div role="rowheader" className="sticky left-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1.5 border-r border-default bg-raised px-2 sm:w-64">
+        <span className="min-w-0 truncate text-meta font-medium text-default">{text}</span>
+        <span className="text-meta tabular-nums text-faint" data-group-count><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>
+      </div>
       <div className="shrink-0" style={{ width }} />
     </div>
   )
 
   const monthLabel = (iso: string) => new Intl.DateTimeFormat(dateLocaleOf(), { month: 'short' }).format(new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, 1))
+  // A week column reads as its range, "20–26 Oct" (D9), in the user's locale.
+  const weekLabel = (iso: string) => {
+    const d = (v: string) => new Date(Number(v.slice(0, 4)), Number(v.slice(5, 7)) - 1, Number(v.slice(8)))
+    return new Intl.DateTimeFormat(dateLocaleOf(), { month: 'short', day: 'numeric' }).formatRange(d(iso), d(addDaysISO(iso, 6)))
+  }
   const headerRows = 1
   return (
     <div data-timeline className="min-w-0">
@@ -265,9 +246,13 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
             <div ref={axisRef} className="relative shrink-0" style={{ width }}>
               {ax.columns.map((c) => (
                 <span key={c} role="columnheader" className="absolute top-0 h-full border-l border-default px-0.5 text-hint leading-8 text-muted" style={{ left: x(c), width: (zoom === 'week' ? 7 : 1) * px }}>
-                  {zoom === 'week' || c.endsWith('-01') ? `${monthLabel(c)} ${Number(c.slice(8))}` : Number(c.slice(8))}
+                  {zoom === 'week' ? weekLabel(c) : c.endsWith('-01') ? `${monthLabel(c)} ${Number(c.slice(8))}` : Number(c.slice(8))}
                 </span>
               ))}
+              {dayOffset(ax.from, today) >= 0 && dayOffset(ax.from, today) < totalDays && (
+                // The today mark (D9): an accent pill on the axis above the line.
+                <span data-today-mark className="pointer-events-none absolute top-1.5 z-10 -translate-x-1/2 rounded-chip bg-accent px-1.5 text-hint font-medium leading-5 text-on-accent" style={{ left: (dayOffset(ax.from, today) + 0.5) * px }}>{t('Today')}</span>
+              )}
             </div>
           </div>
           {/* Day columns: the drop targets, under the rows. */}
@@ -278,13 +263,13 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
           </div>
           {/* Rows */}
           <div className={`relative ${dragging ? 'pointer-events-none' : ''}`}>
-            {sections.map((s) => [s.heading ? heading(s.key, s.heading) : null, ...s.lines.map(label)])}
-            {unscheduled.length > 0 && [heading('unscheduled', t('Unscheduled')), ...unscheduled.map(label)]}
+            {sections.map((s) => [s.heading ? heading(s.key, s.heading, s.lines.length) : null, ...s.lines.map(label)])}
+            {unscheduled.length > 0 && [heading('unscheduled', t('Unscheduled'), unscheduled.length), ...unscheduled.map(label)]}
             {lines.length === 0 && <p className="px-3 py-6 text-meta text-faint">{t('No open tasks in this project.')}</p>}
           </div>
           {/* Today line and dependency arrows */}
           {dayOffset(ax.from, today) >= 0 && dayOffset(ax.from, today) < totalDays && (
-            <div data-today-line className="pointer-events-none absolute bottom-0 z-10 w-0.5 bg-danger" style={{ top: ROW_PX, left: `calc(min(40vw, 16rem) + ${(dayOffset(ax.from, today) + 0.5) * px}px)` }} />
+            <div data-today-line className="pointer-events-none absolute bottom-0 z-10 w-0.5 -translate-x-1/2 bg-accent" style={{ top: ROW_PX, left: `calc(min(40vw, 16rem) + ${(dayOffset(ax.from, today) + 0.5) * px}px)` }} />
           )}
           {arrows.length > 0 && (
             <svg data-arrows className="pointer-events-none absolute z-10 overflow-visible" style={{ top: ROW_PX, left: 'min(40vw, 16rem)', width, height: rowCount * ROW_PX }} aria-hidden>
@@ -311,5 +296,71 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
         </div>
       </div>
     </div>
+  )
+}
+
+/** One task's bar (precision-boards-timeline D6–D8): its block, markers and the label after it. */
+function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, editable, dragging, onDrag, onSelect, onOpen }: {
+  task: Task
+  s: Span
+  selected: boolean
+  /** The axis' first day. */
+  from: string
+  totalDays: number
+  px: number
+  today: string
+  hue?: string
+  editable: boolean
+  dragging: boolean
+  onDrag: (e: React.PointerEvent, task: Task, kind: 'move' | 'start' | 'end') => void
+  onSelect: (id: string) => void
+  onOpen: (id: string) => void
+}) {
+  const { resolved } = useDateTimeFormat()
+  const first = Math.max(0, dayOffset(from, s.from))
+  const to = Math.min(totalDays - 1, dayOffset(from, s.to))
+  if (to < 0 || first > totalDays - 1) {
+    // Entirely outside the window: a marker at the near edge.
+    const before = dayOffset(from, s.to) < 0
+    return <span data-beyond={before ? 'before' : 'after'} className={`absolute top-2.5 text-muted ${before ? 'left-1' : 'right-1'}`} aria-hidden><Icon name={before ? 'chevron-left' : 'chevron-right'} size="xs" /></span>
+  }
+  const clippedLeft = dayOffset(from, s.from) < 0
+  const clippedRight = dayOffset(from, s.to) > totalDays - 1
+  // The part before today is dimmed (surfaces-v2 D3): the whole bar when it ended, a second segment when it crosses today.
+  const allPast = !s.late && s.to < today
+  const pastDays = !s.late && !allPast && s.from < today ? Math.min(to + 1, dayOffset(from, today)) - first : 0
+  const barPx = Math.max(px, (to - first + 1) * px)
+  const titled = barPx >= LABEL_MIN_PX
+  const deadlineIn = !!s.deadlineAt && dayOffset(from, s.deadlineAt) >= 0 && dayOffset(from, s.deadlineAt) <= totalDays - 1
+  // After the bar (D6, D8): how late it is, else its length when the title does not fit, else the deadline at its end.
+  const after = s.late ? { tone: 'text-danger', text: t('{n, plural, one {# day late} other {# days late}}', { n: s.lateBy }) }
+    : !titled ? { tone: 'text-faint', text: t('{n, plural, one {# day} other {# days}}', { n: daysBetweenISO(s.from, s.to) + 1 }) }
+    : deadlineIn && s.deadlineAt === s.to ? { tone: 'text-warning', text: t('Deadline {date}', { date: formatDate(s.deadlineAt, 'compact', resolved) }) }
+    : null
+  return (
+    <>
+    <div data-bar={task.id} data-late={s.late || undefined} data-hue={hue}
+      onPointerDown={(e) => onDrag(e, task, 'move')}
+      onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
+      className={`ui-block ui-block--row absolute top-1.5 flex h-6 items-center ${s.late ? 'ui-block--late' : ''} ${allPast ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${editable ? 'cursor-grab touch-manipulation' : ''} ${dragging ? 'pointer-events-none' : ''}`}
+      style={{ left: first * px, width: barPx }}>
+      {pastDays > 0 && <span data-bar-past aria-hidden className="ui-block ui-block--row ui-block--past pointer-events-none absolute inset-y-0 rounded-e-none" style={{ insetInlineStart: -3, width: pastDays * px }} />}
+      {clippedLeft && <Icon name="chevron-left" size="xs" className="relative text-muted" />}
+      {titled && <span data-bar-title aria-hidden className="user-text pointer-events-none relative min-w-0 flex-1 truncate px-1.5 text-meta font-medium">{task.title || t('Untitled')}</span>}
+      {editable && !clippedLeft && <span data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'start')} />}
+      {s.dueAt && s.dueAt !== s.from && s.dueAt !== s.to && dayOffset(from, s.dueAt) >= 0 && (
+        <span data-due-marker className="absolute top-1.5 h-3 w-0.5 rounded-full bg-accent" style={{ left: (dayOffset(from, s.dueAt) - first + 0.5) * px }} aria-hidden />
+      )}
+      {deadlineIn && (
+        // The deadline diamond (D8): a 10 px square turned 45 degrees, centred on its day.
+        <span data-deadline-marker className={`absolute top-1/2 size-2.5 -translate-y-1/2 rotate-45 rounded-[2px] ${s.late ? 'bg-danger' : 'bg-warning'}`} style={{ left: (dayOffset(from, s.deadlineAt!) - first + 0.5) * px - 5 }} aria-hidden />
+      )}
+      {clippedRight && <Icon name="chevron-right" size="xs" className="relative ml-auto text-muted" />}
+      {editable && !clippedRight && <span data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'end')} />}
+    </div>
+    {after && !clippedRight && (
+      <span data-bar-after className={`pointer-events-none absolute top-1.5 flex h-6 items-center whitespace-nowrap text-meta tabular-nums ${after.tone}`} style={{ left: first * px + barPx + 8 }}>{after.text}</span>
+    )}
+    </>
   )
 }

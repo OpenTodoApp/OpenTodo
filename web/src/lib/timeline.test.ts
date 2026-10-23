@@ -6,7 +6,7 @@ const today = '2026-10-15'
 describe('timeline bars (month-and-timeline-views D5)', () => {
   it('all three dates: from the start to the deadline with the due inside', () => {
     expect(spanOf({ start: '2026-11-03', due: { date: '2026-11-10' }, deadline: '2026-11-14' }, today)).toEqual({
-      from: '2026-11-03', to: '2026-11-14', dueAt: '2026-11-10', deadlineAt: '2026-11-14', late: false,
+      from: '2026-11-03', to: '2026-11-14', dueAt: '2026-11-10', deadlineAt: '2026-11-14', late: false, lateBy: 0,
     })
   })
 
@@ -15,6 +15,14 @@ describe('timeline bars (month-and-timeline-views D5)', () => {
     expect(spanOf({ due: null }, today)).toBeNull()
     expect(spanOf({ start: 'someday', due: { date: '2026-11-10' }, deadline: '2026-11-14' }, today)).toBeNull()
     expect(spanOf({ due: null, deadline: '2026-10-01' }, today)?.late).toBe(true)
+  })
+
+  it('late is overdue (precision-boards-timeline D7): a passed deadline counts first, then a passed due day; a past start alone is not late', () => {
+    expect(spanOf({ due: { date: '2026-10-13' } }, today)).toMatchObject({ late: true, lateBy: 2 })
+    expect(spanOf({ due: { date: '2026-10-13' }, deadline: '2026-10-10' }, today)).toMatchObject({ late: true, lateBy: 5 })
+    expect(spanOf({ due: { date: '2026-10-13' }, deadline: '2026-10-20' }, today)).toMatchObject({ late: true, lateBy: 2 })
+    expect(spanOf({ start: '2026-10-10', due: null }, today)).toMatchObject({ late: false, lateBy: 0 })
+    expect(spanOf({ due: { date: today } }, today)).toMatchObject({ late: false, lateBy: 0 })
   })
 
   it('a zoned due counts on the viewer day', () => {

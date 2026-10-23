@@ -3,13 +3,15 @@ import { seeded, seedProjectTimeline, storyUser, withSeed } from './stories/fixt
 import { TaskListView } from './TaskListView'
 
 // Core screen: a project's timeline (project-timeline "Timeline bars", OpenSpec
-// change surfaces-v2 task 3.2). The frozen Wednesday 14 October: bars filled in the
-// project's hue, the part of a bar before today dimmed, a bar that ended dimmed
-// whole, and a bar past its deadline with the danger edge.
+// changes surfaces-v2 task 3.2 and precision-boards-timeline). The frozen Wednesday
+// 14 October: bars filled in the project's hue and titled when they are long enough,
+// the part of a bar before today dimmed, an overdue bar and a bar past its deadline in
+// the overdue tone with "n days late", a deadline diamond, a short bar followed by its
+// length, a bar that only started in the past dimmed whole, and the accent today line.
 const meta: Meta = { title: 'Screens/Timeline' }
 export default meta
 
-/** A bar across today, one that ended, one past its deadline and an unscheduled task. */
+/** A bar across today, late bars, a short bar, one that only started and an unscheduled task. */
 export const AcrossTodayAndLate: StoryObj = {
   ...withSeed(seedProjectTimeline),
   render: () => (

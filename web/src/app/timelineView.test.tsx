@@ -83,15 +83,17 @@ describe('timeline', () => {
     await r.unmount()
   })
 
-  it('fills bars in the project hue, dims the part before today and gives a late bar the danger edge (surfaces-v2)', async () => {
+  it('fills bars in the project hue, dims the part before today and gives a late bar the danger edge (surfaces-v2, precision-boards-timeline D7)', async () => {
     const p = await createProject({ name: 'Garden', color: '#16a34a' })
     await saveViewMode(p, 'timeline')
-    // Today is 1 November: the first bar crosses it, the second ended, the third missed its deadline.
+    // Today is 1 November: the first bar crosses it, the second only started in the past,
+    // the third missed its deadline and the fourth its due day.
     const across = await createTask({ title: 'Across', project_id: p, start: '2026-10-29', due: { date: '2026-11-04' } })
-    const ended = await createTask({ title: 'Ended', project_id: p, start: '2026-10-25', due: { date: '2026-10-28' } })
+    const ended = await createTask({ title: 'Ended', project_id: p, start: '2026-10-25' })
     const late = await createTask({ title: 'Late', project_id: p, start: '2026-10-20', deadline: '2026-10-30' })
+    const overdue = await createTask({ title: 'Overdue', project_id: p, start: '2026-10-25', due: { date: '2026-10-28' } })
     const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
-    await waitFor(() => r.container.querySelectorAll('[data-bar]').length === 3)
+    await waitFor(() => r.container.querySelectorAll('[data-bar]').length === 4)
     const bar = (id: string) => r.container.querySelector<HTMLElement>(`[data-bar="${id}"]`)!
     expect(bar(across).className).toContain('ui-block')
     expect(bar(across).getAttribute('data-hue')).toBe(bar(ended).getAttribute('data-hue'))
@@ -107,6 +109,20 @@ describe('timeline', () => {
     expect(bar(late).className).toContain('ui-block--late')
     expect(bar(late).className).not.toContain('ui-block--past')
     expect(bar(late).querySelector('[data-bar-past]')).toBeNull()
+    // An overdue due day is late too, and every late bar says by how much (D6, D7).
+    expect(bar(overdue).className).toContain('ui-block--late')
+    const after = (id: string) => bar(id).nextElementSibling?.matches('[data-bar-after]') ? bar(id).nextElementSibling!.textContent : null
+    expect(after(late)).toBe('2 days late')
+    expect(after(overdue)).toBe('4 days late')
+    // A late bar's deadline diamond is in the overdue tone.
+    expect(bar(late).querySelector('[data-deadline-marker]')!.className).toContain('bg-danger')
+    // A short bar is followed by its length; a bar of 96 px or more carries its title.
+    expect(after(ended)).toBe('1 day')
+    expect(bar(across).querySelector('[data-bar-title]')!.textContent).toBe('Across')
+    expect(bar(ended).querySelector('[data-bar-title]')).toBeNull()
+    // Today is an accent line with its mark on the axis (D9).
+    expect(r.container.querySelector('[data-today-line]')!.className).toContain('bg-accent')
+    expect(r.container.querySelector('[data-today-mark]')!.textContent).toBe('Today')
     await r.unmount()
   })
 

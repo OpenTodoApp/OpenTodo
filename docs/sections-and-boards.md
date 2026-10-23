@@ -12,11 +12,11 @@ card: board
 
 <picture><source srcset="images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review."></picture>
 
-Sections divide a project into parts, like "Planning", "In progress" and "Waiting". The same project can be a list with headings, a board with a column per section, or a timeline of its dates.
+Sections divide a project into parts, like "Planning" and "Waiting". A project can be a list with headings, a board with a column per section, or a timeline of its dates.
 
 ## Add a section
 
-Open a project and select **+ Add section** at the bottom of the list. Type a name and press <kbd>Enter</kbd>.
+Open a project and select **+ Add section** at the bottom of the list or after the last column of a board. Type a name and press <kbd>Enter</kbd>.
 
 <picture><source srcset="images/project-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-list-light.webp" alt="A project in list layout with the section headings Planning and In progress, each with a task count and a plus button."></picture>
 
@@ -32,7 +32,7 @@ Use the **⋯** menu on a section heading (or press <kbd>.</kbd> with the headin
 
 - **Rename** (<kbd>F2</kbd>)
 - **Colour…** and **Icon…** mark the section before its name.
-- **Move** it up or down (left or right on the board). At the first or last place the option is unavailable and says why.
+- **Move** it up or down (left or right on the board).
 - **Delete section…** asks first and says how many open tasks move to **No section**. The tasks aren't deleted.
 
 Fold a section with the small arrow next to its name. Folding is remembered on that device only.

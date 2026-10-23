@@ -664,6 +664,9 @@
   "Add a remote MCP server (streamable HTTP) with the endpoint and send the token as the Authorization header. Clients that take a JSON entry accept this.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
+  "Add a section": [
+    "web/src/app/Sections.tsx"
+  ],
   "Add a someday task…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -3128,6 +3131,7 @@
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/ScheduleSheet.tsx",
+    "web/src/app/TimelineView.tsx",
     "web/src/lib/assistant.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -13064,6 +13068,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/TimelineView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/auditFormat.ts",
     "web/src/app/bulk/BulkActions.tsx",
@@ -16311,6 +16316,9 @@
   "{n, plural, one {# day from now} other {# days from now}}": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "{n, plural, one {# day late} other {# days late}}": [
+    "web/src/app/TimelineView.tsx"
+  ],
   "{n, plural, one {# day left} other {# days left}}": [
     "web/src/app/TrashView.tsx"
   ],
@@ -16319,6 +16327,7 @@
   ],
   "{n, plural, one {# day} other {# days}}": [
     "web/src/app/PublicLinksSection.tsx",
+    "web/src/app/TimelineView.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/lib/facets.ts"
   ],
@@ -16401,6 +16410,7 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/TimelineView.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/ui/patterns/ListGroupHeader.tsx"
   ],
