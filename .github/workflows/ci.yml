@@ -565,8 +565,8 @@ jobs:
           path: dist/opentodo-android-*
           if-no-files-found: warn
 
-  # The agent skill (OpenSpec change agent-ready-cli): the same SKILL.md that
-  # `ot skill` prints, zipped as a release asset.
+  # The agent skills (OpenSpec changes agent-ready-cli and claude-plugin): the CLI
+  # skill that `ot skill` prints and the MCP skill, zipped as release assets.
   skill:
     name: Agent skill (package)
     runs-on: ubuntu-latest
@@ -577,7 +577,9 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: opentodo-agent-skill
-          path: dist/opentodo-agent-skill.zip
+          path: |
+            dist/opentodo-agent-skill.zip
+            dist/opentodo-mcp-skill.zip
 
   # The parts of `make check` the jobs above do not run, through the same make
   # targets (`make ci-checks`): gofmt, OpenSpec validation (pinned CLI), the
@@ -757,3 +759,50 @@ jobs:
             gh release create "$GITHUB_REF_NAME" --verify-tag --title "OpenTodo $GITHUB_REF_NAME" --notes-file notes.md $pre
           fi
           gh release upload "$GITHUB_REF_NAME" release/* --clobber
+
+  # The Claude Code plugin marketplace (OpenSpec change claude-plugin): after the
+  # release, deploy/claude-plugin/upstream/ of the tag becomes the content of
+  # pixari/opentodo-claude, committed and tagged with the version. The deploy key in
+  # CLAUDE_PLUGIN_DEPLOY_KEY may write to that one repository only. Without it (a fork,
+  # or before the owner adds it) the job prints the manual steps and succeeds: the
+  # release never depends on it.
+  claude-plugin:
+    name: Claude Code plugin (publish)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [release]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Publish to pixari/opentodo-claude
+        env:
+          DEPLOY_KEY: ${{ secrets.CLAUDE_PLUGIN_DEPLOY_KEY }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::notice::CLAUDE_PLUGIN_DEPLOY_KEY is not set; publish the plugin by hand (deploy/claude-plugin/README.md):"
+            echo "  git clone git@github.com:pixari/opentodo-claude.git /tmp/opentodo-claude"
+            echo "  rsync -a --delete --exclude .git deploy/claude-plugin/upstream/ /tmp/opentodo-claude/"
+            echo "  cd /tmp/opentodo-claude && git add -A && git commit -m 'OpenTodo $version' && git tag v$version && git push origin HEAD --tags"
+            exit 0
+          fi
+          install -m 600 /dev/null "$RUNNER_TEMP/deploy_key"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/deploy_key"
+          export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git clone --depth 1 git@github.com:pixari/opentodo-claude.git "$RUNNER_TEMP/plugin"
+          rsync -a --delete --exclude .git deploy/claude-plugin/upstream/ "$RUNNER_TEMP/plugin/"
+          cd "$RUNNER_TEMP/plugin"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "nothing changed since the last publish"
+          else
+            git commit -q -m "OpenTodo $version"
+          fi
+          git tag -f "v$version"
+          git push origin HEAD
+          git push -f origin "v$version"
+          rm -f "$RUNNER_TEMP/deploy_key"

@@ -130,6 +130,7 @@ The highlights: the app in six languages, quick add in plain language, projects 
 - **Calendar apps (CalDAV)**: two-way sync with Apple Reminders, Thunderbird and Android tasks apps via DAVx⁵, with per-device app passwords. Off until the owner enables it. [CalDAV](docs/caldav.md)
 - **AI assistant in the app**: plan and change your tasks by talking (<kbd>Shift</kbd>+<kbd>I</kbd>), with Anthropic (Claude), OpenAI, Gemini or a model on your own network, using your own key. Off until the owner enables it; each person accepts what is sent first; every change is proposed for review and undone in one step; conversations stay on the device. [AI assistant](docs/assistant.md)
 - **AI assistants (MCP)**: a read-only Model Context Protocol endpoint so an assistant can answer "what is on my plate today?". Off until the owner enables it. [MCP](docs/mcp.md)
+- **Claude Code plugin**: `/plugin marketplace add pixari/opentodo-claude` connects Claude Code to your server with skills that use it safely. [Claude Code](docs/claude.md)
 - **Webhooks** on task and project events for Home Assistant, n8n or a Telegram relay: signed, retried, logged, with private-network protection. [Webhooks](docs/webhooks.md)
 - **Import** the app's own export, CSV or other task managers' exports (Todoist, TickTick, Things, Linear, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders and Any.do), with a preview, duplicate detection and undo. [Import](docs/import.md)
 - **Export** everything as JSON from Settings or `GET /api/v1/export`.

@@ -189,8 +189,10 @@ test('base and job images are pinned by digest', () => {
 
 test('the image, stable tag and release are published only after every gate', () => {
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
-  const publishing = ['docker', 'release']
+  // claude-plugin publishes the Claude Code marketplace after the release (claude-plugin D5).
+  const publishing = ['docker', 'release', 'claude-plugin']
   for (const p of publishing) assert.ok(jobs[p], `ci.yml has a ${p} job`)
+  assert.deepEqual(needsOf(jobs['claude-plugin']), ['release'], 'the plugin is published only after the release')
   const gates = Object.keys(jobs).filter((j) => !publishing.includes(j))
   for (const g of gates) {
     assert.ok(needsOf(jobs.docker).includes(g), `the docker (publish) job must need ${g}`)
