@@ -119,7 +119,7 @@ async function audit(name, env, mapsOn) {
   }
 
   step(`${name}: location editor${mapsOn ? ' and an address search' : ''}`)
-  await page.locator('[data-detail-for]').getByRole('button', { name: /^Where: .*Colosseo/ }).first().click()
+  await page.locator('[data-detail-for]').getByRole('button', { name: /^(Where|Location): .*Colosseo/ }).first().click()
   const editor = page.locator('[data-location-editor]')
   await editor.waitFor()
   if (mapsOn) {

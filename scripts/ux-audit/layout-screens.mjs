@@ -242,8 +242,10 @@ export const OVERLAYS = {
   },
   async 'label-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().locator('[data-row-open]').press('Enter')
-    await p.locator('[data-detail-for]').waitFor()
+    // The task's page opens; Esc returns to the list with it selected (task-full-page).
+    await p.locator('[data-task-page]').waitFor()
     await p.keyboard.press('Escape')
+    await p.locator('[data-task-id][aria-current]').first().waitFor()
     await p.keyboard.press('L')
     return { overlay: p.getByRole('dialog', { name: 'Labels for task' }), kind: 'dialog' }
   },

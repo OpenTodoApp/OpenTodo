@@ -378,8 +378,8 @@ for (const width of [1280, 1440]) {
   }
   console.log(`  ${width} px: project header ${first[1].left}–${first[1].actionsRight} in list, board and timeline`)
 }
-// Opening and closing a task moves no row and not the title (list-stays-still D1):
-// the frame starts at the column's left edge at every width.
+// Opening a task shows its page; Esc brings the list back with nothing moved
+// (list-stays-still D1, task-full-page): the same first row and title position.
 const rowAndTitle = () => pageA.evaluate(() => {
   const row = [...document.querySelectorAll('[data-task-id]')].map((r) => r.getBoundingClientRect()).find((r) => r.width > 0)
   const title = document.querySelector('[data-page-header-row]')?.getBoundingClientRect()
@@ -387,11 +387,12 @@ const rowAndTitle = () => pageA.evaluate(() => {
 })
 const openFirst = async () => {
   await pageA.keyboard.press('j'); await pageA.keyboard.press('Enter')
-  await pageA.locator('[data-detail-for]').waitFor(); await pageA.waitForTimeout(400)
+  await pageA.locator('[data-task-page]').waitFor(); await pageA.waitForTimeout(400)
 }
 const closeIt = async () => {
   await pageA.keyboard.press('Escape')
-  await pageA.locator('[data-detail-for]').waitFor({ state: 'detached' }); await pageA.waitForTimeout(400)
+  await pageA.locator('[data-task-page]').waitFor({ state: 'detached' })
+  await pageA.locator('[data-task-id][aria-current]').first().waitFor(); await pageA.waitForTimeout(400)
 }
 for (const width of [1280, 1440, 1920]) {
   await pageA.setViewportSize({ width, height: 860 })
@@ -402,15 +403,12 @@ for (const width of [1280, 1440, 1920]) {
     await pageA.locator('[data-task-id]:visible').first().waitFor()
     const closed = await rowAndTitle()
     await openFirst()
-    const open = await rowAndTitle()
     await closeIt()
     const again = await rowAndTitle()
-    for (const [when, at] of [['opening', open], ['closing', again]]) {
-      assert(Math.abs(at.row - closed.row) <= 1 && Math.abs(at.title - closed.title) <= 1,
-        `${path} at ${width} px: ${when} a task moved the first row ${closed.row} → ${at.row}, the title ${closed.title} → ${at.title}`)
-    }
+    assert(again && Math.abs(again.row - closed.row) <= 1 && Math.abs(again.title - closed.title) <= 1,
+      `${path} at ${width} px: returning from a task moved the first row ${closed.row} → ${again?.row}, the title ${closed.title} → ${again?.title}`)
   }
-  console.log(`  ${width} px: opening and closing a task moves nothing on Today and a project`)
+  console.log(`  ${width} px: returning from a task moves nothing on Today and a project`)
 }
 // On a wide screen too, every page starts at the column's left edge: Today, Labels and
 // a project share one title edge, and the panel opens into the space on the right.
