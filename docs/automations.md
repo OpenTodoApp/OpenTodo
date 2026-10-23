@@ -41,7 +41,7 @@ An account runs at most 60 rule runs a minute and 2,000 a day, a run changes at 
 
 ## Turn a filter into a rule
 
-A saved filter's menu and a board column's **Rule** dialog offer **Make an automation rule**. The editor opens with the column's changes as actions and the filter's project, label, priority, date and similar terms as conditions; terms a rule cannot use, such as a text search, are named.
+A saved view's menu and a board column's **Rule** dialog offer **Make an automation rule**. The editor opens with the column's changes as actions and the filter's project, label, priority, date and similar terms as conditions; terms a rule cannot use, such as a text search, are named.
 
 ## Encrypted accounts
 

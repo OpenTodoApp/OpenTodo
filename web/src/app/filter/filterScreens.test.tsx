@@ -40,7 +40,7 @@ describe('Filter view', () => {
     await type(input, 'p1')
     await waitFor(() => r.container.textContent?.includes('Priority is P1') ?? false, 'the condition chip')
     await waitFor(() => r.container.querySelector('[data-filter-count]')?.textContent === '1 task matches', 'the count')
-    await click(button(r.container, 'Builder'))
+    await click(r.container.querySelector('[data-filter-toggle]') as HTMLButtonElement)
     expect(r.container.querySelector('[data-filter-builder]')).toBeNull()
     expect(localStorage.getItem('opentodo.filterBuilder.filter')).toBe('closed')
     await r.unmount()
@@ -59,7 +59,7 @@ describe('Saved filter', () => {
     await waitFor(() => r.container.textContent?.includes('Calls') ?? false, 'the view')
     // Closed by default on a saved filter.
     expect(r.container.querySelector('[data-filter-builder]')).toBeNull()
-    await click(button(r.container, 'Builder'))
+    await click(r.container.querySelector('[data-filter-toggle]') as HTMLButtonElement)
     await waitFor(() => !!r.container.querySelector('[data-filter-builder]'), 'the builder')
     await click(r.container.querySelector('[data-add-condition]') as HTMLButtonElement)
     await waitFor(() => !!editor(), 'the condition dialog')

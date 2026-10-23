@@ -16,13 +16,13 @@ export function NewBoardDialog({ onCancel, onCreated }: { onCancel: () => void; 
   if (naming !== undefined) {
     return (
       <NamePrompt title={naming ? t(naming.title) : t('New board')} label={t('Board name')} confirm={t('Create')} initial={naming ? t(naming.name) : ''}
-        hint={naming ? t(naming.description) : t('Add up to six saved filters as panels.')}
+        hint={naming ? t(naming.description) : t('Add up to six views as panels.')}
         onCancel={onCancel}
         onSubmit={async (name) => onCreated(naming ? await createBoardFromTemplate(naming, name) : await createView({ name, kind: 'dashboard' }))} />
     )
   }
   const options = [
-    { id: EMPTY, title: t('Empty board'), description: t('Add up to six saved filters as panels.') },
+    { id: EMPTY, title: t('Empty board'), description: t('Add up to six views as panels.') },
     ...BOARD_TEMPLATES.map((b) => ({ id: b.id, title: t(b.title), description: t(b.description) })),
   ]
   return (

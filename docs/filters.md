@@ -9,7 +9,7 @@ order: 20
 ---
 # Filter queries
 
-The **Filter** view (sidebar, or `g` then `f`) lists the tasks that match a one-line query such as:
+The **New view** page (`g` then `f`, **New view** in the views list or the sidebar's **More**) lists the tasks that match a one-line query such as:
 
 ```text
 @work & due <= tomorrow & p1
@@ -119,7 +119,7 @@ A [custom field](custom-fields.md) is named like a project or label, ignoring ca
 
 ### Open, completed and deleted tasks
 
-A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it, or it compares the completion date (`completed >= this week`). `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the Filter view leaves out tasks of archived projects.
+A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it, or it compares the completion date (`completed >= this week`). `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the New view page leaves out tasks of archived projects.
 
 ### Dates
 
@@ -173,41 +173,41 @@ A query that does not follow the grammar shows a message under the input, and th
 
 An empty query shows a short usage hint and no results.
 
-## The Filter view
+## The New view page
 
-You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</kbd>+<kbd>K</kbd>): it lists the matching tasks and offers to open them here.
+You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</kbd>+<kbd>K</kbd>): it lists the matching tasks and offers to open them as a new view.
 
-- `g` then `f`, or **Filter** in the sidebar, opens the view with the cursor in the query input. Results update about 150 ms after you stop typing.
-- Results are grouped by project: Inbox first, then projects in sidebar order, each heading showing the project's path (`Work › Client A`). Within a group, tasks are ordered by due date, then priority.
+- `g` then `f` opens the page with the cursor in the query input, at the bottom of the filter panel. Results update about 150 ms after you stop typing. Under the header, the toolbar repeats the query's conditions in words, with the filter and display buttons on the right.
+- Results are grouped and ordered as a saved view would show them: by project (Inbox first, then projects in sidebar order, each heading showing the project's path, `Work › Client A`), then by due date and priority. **Display options** changes the grouping, the order, the layout, completed tasks and what rows show before you save.
 - **Enter** in the input runs the query at once and moves to the first result; **Esc** returns to the input. In the list, the usual keys work: `j` / `k`, Enter to open, `c` to complete, `1`–`4` for priority, `L` for labels, Delete.
 - **↑ / ↓** in the input step through the last 20 distinct queries you ran on this device. The history lives in the browser's local storage for the app, is never synced, and is cleared when you sign out.
 
 ### Build a filter without typing
 
-Above the query input, the **builder** shows the same query as conditions you can read: *Label is errand*, *Due on or before tomorrow*, *Priority is P1*, *No project*.
+In the filter panel, above the query input, the **builder** shows the same query as conditions you can read: *Label is errand*, *Due on or before tomorrow*, *Priority is P1*, *No project*.
 
 - **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, tracked time or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
 - **Groups.** A group is a block headed **All of these** (every condition must match, `&`) or **Any of these** (one is enough, `|`). **+ Group** adds one inside, up to three levels deep. Change the heading to switch between the two.
 - **Not.** The **Not** switch in a condition's dialog, or the **Not** button on a group, matches the tasks it would otherwise leave out (`!`).
 - **Keyboard.** Tab reaches every control. Inside a group, the arrow keys move between conditions, and Delete or Backspace removes the focused one.
-- **Both ways.** The query input stays under the builder. Every change in the builder rewrites it, with only the parentheses the grammar needs, and anything you type that parses updates the builder. What is saved is always the query text, so saved filters, `ot` and the API see exactly what they saw before.
+- **Both ways.** The query input stays under the builder (**Edit as text** jumps to it). Every change in the builder rewrites it, with only the parentheses the grammar needs, and anything you type that parses updates the builder. What is saved is always the query text, so saved filters, `ot` and the API see exactly what they saw before.
 - **What it cannot show.** A double `!!`, or groups nested deeper than three levels, stays editable as text; the builder shows a short notice instead.
-- **Show or hide it.** The **Builder** button beside the input folds it away. The choice is kept on this device, separately for the Filter view (shown by default) and for saved filters (hidden by default).
+- **Show or hide it.** The filter button at the right of the toolbar folds the panel away; the conditions stay in the toolbar. The choice is kept on this device, separately for the New view page (shown by default) and for saved views (hidden by default).
 
-Under the builder, a count says how many tasks the query matches.
+The panel's header says how many tasks the query matches.
 
 ## Saving views
 
-A query you come back to can be saved as a **view**: it keeps the query, how its results are grouped and sorted, and syncs to all your devices like your tasks do.
+A query you come back to can be saved as a **view**: it keeps the query and its display options, and syncs to all your devices like your tasks do.
 
-- **Save.** In the Filter view, press `s` while the results have focus (or click **Save filter**), type a name and press Enter. The view is created with the current query, grouped by project and sorted by due date, listed under **Filters** in the sidebar and pinned to **Favourites**, and opened. Saving works offline; other devices show the view after they sync.
-- **Edit.** Opening a view shows its query in an editable input (`/` jumps to it). **Builder** shows the same [builder](#build-a-filter-without-typing) as the Filter view over it, with a count for the changed query before you save. Enter or **Save** saves a changed query for every device, Esc discards the change. A query that does not parse shows the error and is not saved.
-- **Group and sort.** The header of a view has three menus, reachable with Tab: **Group** (project, due date, priority, label, none), **Sort** (due date, priority, manual order, created, title) and **Direction**. Defaults are *group by project, sort by due date ascending, undated tasks last*. Grouping by due date shows *Overdue*, *Today*, *Tomorrow*, then each later date and finally *No date*; grouping by label lists a task under each of its labels. For priority, *descending* puts priority 1 first. These options are stored on the view and sync.
-- **Sidebar.** The **Filters** group appears with your first saved filter. Pinned filters are listed under it with a live count of their open tasks, computed on the device. The `⋯` menu of a view renames, moves it up or down, unpins or deletes it, and sets it as this device's start view. `g` then `v` opens the overview of every view, pinned or not, where views can be pinned again.
+- **Save.** On the New view page, press `s` while the results have focus (or choose **Save as view**). The header becomes a card: type a name and press Enter, or Esc to cancel. The view is created with the current query, grouping, order and display options, listed under **Views** in the sidebar and pinned to **Favourites**, and opened at `/views/<id>`. Saving works offline; other devices show the view after they sync.
+- **Edit.** A view shows its conditions in the toolbar. The filter button, a condition chip or `/` opens the same filter panel as the New view page, with a count for the changed query before you save. Enter or **Save** saves a changed query for every device, Esc discards the change. A query that does not parse shows the error and is not saved.
+- **Display options.** The sliders button at the right of the toolbar opens them, reachable with Tab: **List** or **Board** (one column of cards per group), **Group by** (project, due date, priority, label, none), **Order by** (due date, priority, manual order, created, title), **Completed tasks** (hide or show) and **Show on rows** (date, project, labels, estimate, assignee, deadline, start, origin); the direction is under **More options**. Defaults are *list, group by project, order by due date ascending with undated tasks last, completed hidden, everything shown*. Grouping by due date shows *Earlier*, *Today*, *Tomorrow*, then each later date and finally *No date*; grouping by label lists a task under each of its labels. For priority, *descending* puts priority 1 first. **Show** completed lists finished matches too, unless the query already names a state (`completed`, `open` or a completion date); the sidebar still counts open tasks. Every choice is stored on the view at once and syncs.
+- **Sidebar.** The **Views** group appears with your first saved view. Pinned views are listed under it with a live count of their open tasks, computed on the device. The `⋯` menu of a view renames, moves it up or down, unpins or deletes it, and sets it as this device's start view. `g` then `v` opens the overview of every view, pinned or not, where views can be pinned again.
 - **Start view.** Each device can open on a different view: choose it in **Settings → General → Start view** or from a view's menu. The choice stays on the device (it is not synced). If the saved view is deleted, for example on another device, the app opens the Inbox and says so once.
 - **Dashboards.** **New dashboard** in the overview creates a view that shows up to six other views side by side as panels, each with its name, open-task count and first ten tasks, updating live. Add panels from the header, reorder or remove them with **Arrange**. Tab / Shift+Tab move between panels, `j` / `k` select a task inside one, Enter opens it (or the view when nothing is selected) and `o` opens the panel's view. A panel whose view was deleted shows *View removed* with a button to remove it. Panels stack on narrow screens. A panel whose view has an **on-drop rule** (set with **Rule** in **Arrange**) is a drop target: dragging a card onto it, or `Shift+→` / `Shift+←` on the selected card, applies the rule (labels added or removed, priority, a due date of today, tomorrow, next week or none, Someday or no start, a project and section, complete or reopen) as one undoable change; the rule's wording is the panel's description, and panels without a rule take no drops. A task that still does not match the panel's filter afterwards stays shown there, marked *Not matching*, until you leave the board. **New board** offers an empty board or the **Eisenhower matrix**: the filters `(p1 | p2) & (due <= tomorrow | deadline <= tomorrow)`, `(p1 | p2) & !(due <= tomorrow | deadline <= tomorrow) & !someday`, `!(p1 | p2) & (due <= tomorrow | deadline <= tomorrow)` and `!(p1 | p2) & !(due <= tomorrow | deadline <= tomorrow) & !someday` with the rules priority 1 and today, priority 2 and next week, priority 3 and today, priority 4 and no date, on one pinned board.
 
-A saved view evaluates its query exactly like the Filter view: open tasks only unless `completed` or `open` appears, tasks of archived projects left out, unknown names reported as warnings. If a view was saved by a newer version with a term this version does not understand, it shows the parse error instead of wrong results. When two devices change the same view while offline, each option keeps the newer value: a grouping changed on one device and a sort changed on the other both survive. A dashboard's panel list is replaced as a whole, so concurrent panel edits keep the newer list; so is a view's on-drop rule. Scripts can manage views through `/api/v1/views` (see `docs/api.md`); the server checks that the query parses with the same grammar.
+A saved view evaluates its query exactly like the New view page: open tasks only unless `completed` or `open` appears, tasks of archived projects left out, unknown names reported as warnings. If a view was saved by a newer version with a term this version does not understand, it shows the parse error instead of wrong results. When two devices change the same view while offline, each option keeps the newer value: a grouping changed on one device and a sort changed on the other both survive, and so do a layout and the properties a view hides. A dashboard's panel list is replaced as a whole, so concurrent panel edits keep the newer list; so is a view's on-drop rule. Scripts can manage views through `/api/v1/views` (see `docs/api.md`); the server checks that the query parses with the same grammar.
 
 ## Examples
 

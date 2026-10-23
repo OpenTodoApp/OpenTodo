@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -175,6 +176,8 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 		msg  string
 	}{
 		{list, map[string]any{"group_by": "colour"}, "view.group_by must be one of"},
+		{list, map[string]any{"layout": "grid"}, "view.layout must be one of"},
+		{list, map[string]any{"hidden_props": []string{"estimate", "colour"}}, "view.hidden_props"},
 		{list, map[string]any{"kind": "dashboard"}, "cannot be changed"},
 		{list, map[string]any{"name": ""}, "must not be empty"},
 		{list, map[string]any{"query": "p5"}, "Priority must be p1, p2, p3 or p4"},
@@ -196,6 +199,24 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 	// Restating the current kind and a valid panel list are fine.
 	resp, out = e.do("PATCH", "/api/v1/views/"+dash, map[string]any{"kind": "dashboard", "panels": []string{list}})
 	e.mustStatus(resp, 200, out)
+}
+
+func TestViewDisplayOptions(t *testing.T) {
+	// The display options of views-and-display: absent on create, written by a patch.
+	e := registeredEnv(t)
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	for _, f := range []string{"layout", "show_completed", "hidden_props"} {
+		if _, has := out[f]; has {
+			t.Errorf("create response carries %s: %v", f, out)
+		}
+	}
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"layout": "board", "show_completed": true, "hidden_props": []string{"estimate", "project"}})
+	e.mustStatus(resp, 200, out)
+	if out["layout"] != "board" || out["show_completed"] != true || fmt.Sprint(out["hidden_props"]) != "[estimate project]" {
+		t.Fatalf("patched view = %v", out)
+	}
 }
 
 func TestViewsSyncAcceptsUnknownOptionValues(t *testing.T) {

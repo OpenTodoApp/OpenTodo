@@ -133,9 +133,10 @@ describe('filter entries (3.1)', () => {
     expect(filterEntries('ren', tasks, ctx as never, te)).toEqual([])
     expect(hasFilterTerm(parse('search: x')!)).toBe(false)
   })
-  it('the Filter view route carries the query', () => {
+  it('the New view route carries the query, at its address and the one before views-and-display', () => {
+    expect(parseRoute('/views/new?q=%40errand%20%26%20p1')).toEqual({ view: 'filter', q: '@errand & p1' })
     expect(parseRoute('/filter?q=%40errand%20%26%20p1')).toEqual({ view: 'filter', q: '@errand & p1' })
-    expect(routePath({ view: 'filter', q: 'p1' })).toBe('/filter?q=p1')
+    expect(routePath({ view: 'filter', q: 'p1' })).toBe('/views/new?q=p1')
   })
 })
 

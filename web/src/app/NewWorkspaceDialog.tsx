@@ -71,7 +71,7 @@ export function NewWorkspaceForm({ onDone }: { onDone: () => void }) {
   return (
     <Dialog title={t('New workspace')} onClose={onDone} testId="new-workspace">
       <form onSubmit={(e) => void submit(e)} className="space-y-3">
-        <p className="text-meta text-muted">{t('A workspace has its own projects, labels and filters, and its own people. Projects stay private until you share them.')}</p>
+        <p className="text-meta text-muted">{t('A workspace has its own projects, labels and views, and its own people. Projects stay private until you share them.')}</p>
         <Field label={t('Name')} error={error ?? undefined}>
           <input className="ui-input" autoFocus maxLength={60} value={name} disabled={!online} onChange={(e) => { setName(e.target.value); setError(null) }} />
         </Field>

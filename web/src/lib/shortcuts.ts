@@ -64,7 +64,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'tasks', title: 'Tasks in a list' },
   { id: 'board', title: 'Board and timeline' },
   { id: 'calendar', title: 'Day, Week, Month and Plan calendar' },
-  { id: 'filter', title: 'Filter, saved filters and boards' },
+  { id: 'filter', title: 'Views and boards' },
   { id: 'trash', title: 'Trash and projects' },
   { id: 'triage', title: 'Process the Inbox' },
   { id: 'focus', title: 'Focus' },
@@ -143,8 +143,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.completed', keys: ['g c'], label: 'Completed', description: 'Go to Completed', section: 'go', scope: 'global' },
   { id: 'go.labels', keys: ['g l'], label: 'Labels', description: 'Go to Labels', section: 'go', scope: 'global' },
   { id: 'go.projects', keys: ['g Shift+P'], label: 'All projects', description: 'Go to All projects: the whole tree, find a project, archived projects', section: 'go', scope: 'global' },
-  { id: 'go.filter', keys: ['g f'], label: 'Filter', description: 'Go to Filter', section: 'go', scope: 'global' },
-  { id: 'go.views', keys: ['g v'], label: 'Filters', description: 'Go to Filters: saved views, boards and dashboards', section: 'go', scope: 'global' },
+  { id: 'go.filter', keys: ['g f'], label: 'New view', description: 'Open New view: build a query, then save it as a view', section: 'go', scope: 'global' },
+  { id: 'go.views', keys: ['g v'], label: 'Views', description: 'Go to Views: saved views and boards', section: 'go', scope: 'global' },
   { id: 'go.day', keys: ['g d'], label: 'Day', description: 'Go to the Calendar as Day (the sidebar opens it as last used)', section: 'go', scope: 'global' },
   { id: 'go.week', keys: ['g w'], label: 'Week', description: 'Go to the Calendar as Week', section: 'go', scope: 'global' },
   { id: 'go.month', keys: ['g m'], label: 'Month', description: 'Go to the Calendar as Month', section: 'go', scope: 'global' },
@@ -282,8 +282,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'plan.escape', keys: ['Esc'], description: 'In Plan: close the panel, else clear the selection', section: 'calendar', scope: 'view', views: ['plan'], hidden: true },
 
   // ---- filter, saved views and dashboards
-  { id: 'filter.jump', keys: ['Enter', 'Esc'], description: 'In Filter: jump from the query to the first result / back to the query', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
-  { id: 'filter.save', keys: ['s'], description: 'Save the Filter query as a view, pinned to the sidebar', section: 'filter', scope: 'view', views: ['filter'], when: 'in Filter results' },
+  { id: 'filter.jump', keys: ['Enter', 'Esc'], description: 'In New view: jump from the query to the first result / back to the query', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
+  { id: 'filter.save', keys: ['s'], description: 'Save the query as a view, pinned to the sidebar', section: 'filter', scope: 'view', views: ['filter'], when: 'in New view results' },
   { id: 'view.edit-query', keys: ['/'], description: 'Edit the query of a saved view; Enter saves it, Esc discards', section: 'filter', scope: 'list', when: 'in a saved view' },
   { id: 'dashboard.panels', keys: ['Tab', 'Shift+Tab'], description: 'On a dashboard: move between panels; j / k inside a panel, Enter opens, o opens the view', section: 'filter', scope: 'view', views: ['dashboard'] },
   { id: 'dashboard.down', keys: ['j', '↓'], description: 'Select the next task in the focused dashboard panel', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
@@ -294,7 +294,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'dashboard.escape', keys: ['Esc'], description: 'Clear the dashboard selection', section: 'filter', scope: 'view', views: ['dashboard'], hidden: true },
   { id: 'dashboard.move-prev', keys: ['Shift+←'], description: 'On a board: move the selected card to the previous panel that has a rule, applying it (the card stays selected)', section: 'filter', scope: 'view', views: ['dashboard'] },
   { id: 'dashboard.move-next', keys: ['Shift+→'], description: 'On a board: move the selected card to the next panel that has a rule, applying it', section: 'filter', scope: 'view', views: ['dashboard'] },
-  { id: 'filter.history', keys: ['↑', '↓'], description: 'In the filter query: recall recent queries on this device', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
+  { id: 'filter.history', keys: ['↑', '↓'], description: 'In the query of New view: recall recent queries on this device', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
 
   // ---- trash, projects and updates
   { id: 'trash.down', keys: ['j'], description: 'In the Trash: select the next item', section: 'trash', scope: 'view', views: ['trash'] },

@@ -66,7 +66,7 @@ const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
 /** Defaults for a view row created from partial ops; also the read-time fallback for unknown option values. */
 export const VIEW_DEFAULTS: Omit<View, 'id' | '_clock'> = {
   name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false,
-  position: 0, color: '#64748b', panels: [], on_drop: null, created_at: 0, deleted_at: null, workspace_id: null,
+  position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], created_at: 0, deleted_at: null, workspace_id: null,
 }
 const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
   task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null,

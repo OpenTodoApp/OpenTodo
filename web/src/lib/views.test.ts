@@ -4,7 +4,7 @@ import { getMeta, useDatabase } from './db'
 import { applyOps, createProject, deleteProject, getDeviceId, resetDeviceId } from './ops'
 import type { Label, Op, Project, Task, View } from './types'
 import {
-  MAX_PANELS, START_VIEW_KEY, addPanel, compareTasks, createView, dashboardPanels, deleteView, evaluateViews, groupTasks,
+  MAX_PANELS, START_VIEW_KEY, addPanel, compareTasks, createView, dashboardPanels, deleteView, displayOptions, evaluateViews, groupTasks,
   movePanel, removePanel, reorderView, resolveStartView, runView, setOnDrop, setPanels, setPinned, setStartView, updateView, type ViewContext,
 } from './views'
 
@@ -276,6 +276,39 @@ describe('runView', () => {
     const r = runView(view({ id: 'v', query: '@work', group_by: 'colour', sort_by: 'mood' }), CTX)
     expect(r.ok && r.groups[0].heading).toBe('Inbox')
     expect(groupTasks([], 'none', CTX)).toEqual([])
+  })
+})
+
+describe('display options (views-and-display)', () => {
+  it('a view without the fields reads as a list of open matches showing every property', () => {
+    expect(displayOptions(view({ id: 'v', query: '@work' }))).toEqual({ layout: 'list', showCompleted: false, hidden: [] })
+  })
+
+  it('unknown values from a newer client fall back without being rewritten', () => {
+    const v = view({ id: 'v', query: '@work', layout: 'gallery', hidden_props: ['mood', 'estimate', 'date'], show_completed: 'yes' as never })
+    expect(displayOptions(v)).toEqual({ layout: 'list', showCompleted: false, hidden: ['date', 'estimate'] })
+    expect(v.layout).toBe('gallery')
+  })
+
+  it('Completed tasks: Show lists completed matches, and leaves a query that names a state alone', () => {
+    expect(ids((runView(view({ id: 'v', query: '@work', group_by: 'none', show_completed: true }), CTX) as { tasks: Task[] }).tasks)).toContain('done')
+    expect(ids((runView(view({ id: 'v', query: '@work', group_by: 'none' }), CTX) as { tasks: Task[] }).tasks)).not.toContain('done')
+    const open = runView(view({ id: 'v', query: '@work & open', group_by: 'none', show_completed: true }), CTX) as { tasks: Task[] }
+    expect(ids(open.tasks)).not.toContain('done')
+    // The sidebar counts stay counts of open matches.
+    const s = evaluateViews([view({ id: 'v', query: '@work', show_completed: true })], CTX).get('v')!
+    expect(s.ok && s.count).toBe(6)
+  })
+
+  it('writes display options as ops, only when they change', async () => {
+    const id = await createView({ name: 'Board', query: '@work', layout: 'board', hidden_props: ['estimate'] })
+    expect(await db.views.get(id)).toMatchObject({ layout: 'board', hidden_props: ['estimate'] })
+    const before = await db.outbox.count()
+    await updateView(id, { hidden_props: ['estimate'] })
+    expect(await db.outbox.count()).toBe(before)
+    await updateView(id, { show_completed: true, hidden_props: ['estimate', 'project'] })
+    expect(await db.views.get(id)).toMatchObject({ show_completed: true, hidden_props: ['estimate', 'project'] })
+    expect(await db.outbox.count()).toBe(before + 2)
   })
 })
 

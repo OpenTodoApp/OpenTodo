@@ -722,7 +722,7 @@ export const SETTINGS_COPY = {
   'workspaces-list': {
     title: msg('Your workspaces'),
     icon: 'layers',
-    description: msg('Each workspace has its own projects, labels and filters, and its own people.'),
+    description: msg('Each workspace has its own projects, labels and views, and its own people.'),
   },
   'workspace-identity': { title: msg('Name and colour'), icon: 'palette' },
   'workspace-members': {

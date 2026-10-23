@@ -261,7 +261,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
 function PlannedActions() {
   return (
     <Button variant="ghost" size="sm" className="text-meta" onClick={() => navigate({ view: 'filter', q: 'no project' })} data-planned-filter>
-      {t('Open as filter')}
+      {t('Open as a new view')}
     </Button>
   )
 }

@@ -39,7 +39,7 @@ Inside a project you can also group tasks into sections and show them as a board
 
 **All** next to **Projects** in the sidebar (or <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>P</kbd>) opens the **Projects** page: the whole tree with counts, a field to find a project (<kbd>Enter</kbd> opens the first match), **New project**, **From a template…**, and your [archived projects](archived-projects.md) at the bottom.
 
-**Pin to sidebar** in the menu of a project, a label or a saved filter puts it in **Favourites** at the top of the sidebar. **Move up** and **Move down** in its menu there, or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, reorder them. A pin is yours alone, even on a shared project, and syncs to your devices.
+**Pin to sidebar** in the menu of a project, a label or a saved view puts it in **Favourites** at the top of the sidebar. **Move up** and **Move down** in its menu there, or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, reorder them. A pin is yours alone, even on a shared project, and syncs to your devices.
 
 ## Sub-projects
 

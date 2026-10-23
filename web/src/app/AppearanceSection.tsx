@@ -25,7 +25,7 @@ const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), 
 /** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
 export const PROMOTABLE_LABEL = translatedMap<Promotable>({
   loop: msg('Loop home'), next: msg('Next actions'), waiting: msg('Waiting'),
-  anytime: msg('Anytime'), someday: msg('Someday'), assigned: msg('Assigned to me'), completed: msg('Completed'), feed: msg('Updates'), trash: msg('Trash'), filter: msg('Filter'),
+  anytime: msg('Anytime'), someday: msg('Someday'), assigned: msg('Assigned to me'), completed: msg('Completed'), feed: msg('Updates'), trash: msg('Trash'), filter: msg('New view'),
 })
 
 export interface AppearanceViewProps {

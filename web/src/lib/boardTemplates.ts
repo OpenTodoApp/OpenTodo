@@ -31,7 +31,7 @@ export const EISENHOWER: BoardTemplate = {
   id: 'eisenhower',
   title: msg('Eisenhower matrix'),
   name: msg('Eisenhower'),
-  description: msg('Four filters over priority and date: sort work by urgent and important, and drag a card to re-plan it.'),
+  description: msg('Four views over priority and date: sort work by urgent and important, and drag a card to re-plan it.'),
   columns: [
     { name: msg('Urgent and important'), query: `${IMPORTANT} & ${URGENT}`, color: '#ef4444', on_drop: { priority: 1, due: 'today' } },
     { name: msg('Important, not urgent'), query: `${IMPORTANT} & !${URGENT} & !someday`, color: '#3b82f6', on_drop: { priority: 2, due: 'next-week' } },

@@ -66,7 +66,7 @@ describe('the Inbox view', () => {
     expect([...r.container.querySelectorAll('[data-task-id] [data-row-title]')].map((x) => x.textContent?.trim())).toEqual(['Undated', 'Thu task', 'Fri task', 'Sat task'])
     expect(r.container.querySelector('[data-planned-line]')).toBeNull()
     await click(group()!.querySelector('[data-planned-filter]')!)
-    expect(location.pathname + location.search).toBe('/filter?q=no%20project')
+    expect(location.pathname + location.search).toBe('/views/new?q=no%20project')
     await r.unmount()
   })
 

@@ -125,7 +125,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
           actions={<>
             <select className="ui-input w-auto py-1 text-meta" aria-label={t('Add panel')} value="" disabled={panels.length >= MAX_PANELS || candidates.length === 0}
               onChange={(e) => { const id = e.target.value; if (id) run(() => addPanel(dashboard.id, id)) }}>
-              <option value="">{panels.length >= MAX_PANELS ? t('Six panels at most') : candidates.length === 0 ? t('No filter to add') : t('+ Add panel…')}</option>
+              <option value="">{panels.length >= MAX_PANELS ? t('Six panels at most') : candidates.length === 0 ? t('No view to add') : t('+ Add panel…')}</option>
               {candidates.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
             </select>
             <Button variant="ghost" size="sm" aria-expanded={editing} onClick={() => setEditing((x) => !x)}>{editing ? t('Done') : t('Arrange')}</Button>
@@ -150,7 +150,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
         {ruleFor && <RuleEditor view={ruleFor} labels={labels} projects={projects} sections={sections} onClose={() => setRuleFor(null)} />}
         {panels.length === 0 ? (
           <p className="rounded-control border border-dashed border-input p-6 text-center text-body text-muted">
-            {t('Add up to six saved filters with “Add panel”.')}
+            {t('Add up to six views with “Add panel”.')}
           </p>
         ) : (
           <div ref={gridRef} className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">

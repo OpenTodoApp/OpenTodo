@@ -44,7 +44,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Subtask trees with parent progress | `subtask-trees` |
 | Labels | `labels` |
 | Filter query language (`@work & due <= tomorrow & p1`) | `filter-query-language` |
-| Saved filters pinned to the sidebar, custom dashboards (boards whose columns carry on-drop rules, with an Eisenhower matrix template: `rule-boards`) | `custom-views` |
+| Saved views pinned to the sidebar, with display options (list or board, grouping, order, completed tasks, the properties rows show: `views-and-display`), custom dashboards (boards whose columns carry on-drop rules, with an Eisenhower matrix template: `rule-boards`) | `custom-views` |
 | Filter by completion date (`completed = last week`), period dates (this, last or next week or month) and a Completed logbook (closes #86) | `completed-date-filters` |
 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | Drag-and-drop ordering | `manual-ordering` |

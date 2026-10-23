@@ -36,7 +36,7 @@ Once you have a label, the **Labels** group in the sidebar lists your labels; it
 
 Open **Filter** in the sidebar (or press <kbd>g</kbd> <kbd>f</kbd>) and type a query. Results appear as you type, grouped by project. Rather not type? **+ Condition** above the input builds the query for you ([the builder](filters.md#build-a-filter-without-typing)).
 
-<picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The Filter view with the query (@call | @errand) & due <= 7 days and the matching tasks below."></picture>
+<picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The New view page with the query (@call | @errand) & due <= 7 days and the matching tasks below."></picture>
 
 A query combines small pieces:
 
@@ -72,11 +72,11 @@ The full language, with ten worked examples, is in [Filter queries](filters.md).
 
 ## Save a filter as a view
 
-When a query is useful, keep it: press <kbd>s</kbd> in the results, give it a name, and it appears under **Filters** in the sidebar, and in **Favourites** until you unpin it. Its live count is in the Filters overview (<kbd>g</kbd> <kbd>v</kbd>) and its page header. Saved views sync to your other devices. See [Views](views.md#save-your-own-views) for grouping, sorting and dashboards.
+When a query is useful, keep it: press <kbd>s</kbd> in the results, give it a name, and it appears under **Views** in the sidebar, and in **Favourites** until you unpin it. Its live count is in the Filters overview (<kbd>g</kbd> <kbd>v</kbd>) and its page header. Saved views sync to your other devices. See [Views](views.md#save-your-own-views) for grouping, sorting and dashboards.
 
 ## Tips
 
 - Labels for context work well: `@call`, `@computer`, `@errand`, `@home`. Then a view like `@errand & due <= 2 days` is your shopping list.
 - A `@waiting` label plus a pinned "Waiting on others" view makes follow-ups hard to forget.
 - Filters run on your device. They're instant, and they work offline.
-- Labels and saved filters belong to one [workspace](workspaces.md), so the same name can exist in two of them.
+- Labels and saved views belong to one [workspace](workspaces.md), so the same name can exist in two of them.

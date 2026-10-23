@@ -42,9 +42,9 @@ export function secondaryOf(e: Entry, withShortcut = true): string | undefined {
   return parts.length ? parts.join(' · ') : undefined
 }
 
-/** Section headings of the palette (keyboard-shortcuts / search-and-command-palette: Recent, Tasks, Projects, Labels, Filters, Commands, Settings). */
+/** Section headings of the palette (keyboard-shortcuts / search-and-command-palette: Recent, Tasks, Projects, Labels, Views, Commands, Settings). */
 export const KIND_GROUP = translatedMap<EntryKind>({
-  command: msg('Commands'), task: msg('Tasks'), project: msg('Projects'), label: msg('Labels'), view: msg('Filters'), settings: msg('Settings'), filter: msg('Filters'),
+  command: msg('Commands'), task: msg('Tasks'), project: msg('Projects'), label: msg('Labels'), view: msg('Views'), settings: msg('Settings'), filter: msg('Views'),
 })
 
 export function groupOf(e: Entry): string {

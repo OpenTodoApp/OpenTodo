@@ -51,7 +51,7 @@ describe('New board chooser', () => {
     await waitFor(async () => (await db.views.count()) === 1)
     const [v] = await db.views.toArray()
     expect(v).toMatchObject({ name: 'Morning', kind: 'dashboard', panels: [] })
-    await waitFor(() => location.pathname === `/view/${v.id}`)
+    await waitFor(() => location.pathname === `/views/${v.id}`)
   })
 
   it('the Eisenhower matrix: four unpinned filters, one pinned board (spec "Create the matrix")', async () => {
@@ -66,6 +66,6 @@ describe('New board chooser', () => {
     expect(board.panels.map((id) => views.find((v) => v.id === id)!.name)).toEqual(['Urgent and important', 'Important, not urgent', 'Urgent, not important', 'Neither'])
     expect(views.filter((v) => v.kind === 'list').every((v) => !v.pinned)).toBe(true)
     expect(favouritesOf(await db.userPrefs.get(USER_PREFS_ID), { projects: [], labels: [], views }).map((f) => f.id)).toEqual([board.id])
-    await waitFor(() => location.pathname === `/view/${board.id}`)
+    await waitFor(() => location.pathname === `/views/${board.id}`)
   })
 })

@@ -137,15 +137,15 @@ export function ViewsView() {
 
   return (
     <PageBody width="form">
-      <PageHeader title={t('Filters')} meta={views.length} help="filters"
+      <PageHeader title={t('Views')} meta={views.length} help="filters"
         actions={<>
-          <Button variant="secondary" size="sm" icon="filter" onClick={() => navigate({ view: 'filter' })}>{t('New filter')}</Button>
+          <Button variant="secondary" size="sm" icon="plus" onClick={() => navigate({ view: 'filter' })}>{t('New view')}</Button>
           <Button variant="primary" size="sm" icon="plus" onClick={() => setCreating(true)}>{t('New board')}</Button>
         </>} />
-      {/* Saved filters and boards of filters (custom-views "Pinned views in the sidebar"), in their order. */}
-      <ListGroupHeader title={t('Saved filters')} count={filters.length} />
+      {/* Saved views and boards (custom-views "Pinned views in the sidebar"), in their order. */}
+      <ListGroupHeader title={t('Saved views')} count={filters.length} />
       <ul className="mb-5 space-y-0.5">{filters.map(row)}</ul>
-      {filters.length === 0 && <p className="mb-5 px-2 text-body text-faint">{t('None yet. Save a query from the Filter view.')}</p>}
+      {filters.length === 0 && <p className="mb-5 px-2 text-body text-faint">{t('None yet. Make one with New view.')}</p>}
       <ListGroupHeader title={t('Boards')} count={boards.length} />
       <ul className="space-y-0.5">{boards.map(row)}</ul>
       {boards.length === 0 && <p className="px-2 text-body text-faint">{t('None yet.')}</p>}
