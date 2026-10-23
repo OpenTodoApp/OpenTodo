@@ -1409,6 +1409,7 @@ export const AUDIT_EVENT_NAMES = [
   'calendar_feed.created', 'calendar_feed.rotated', 'calendar_feed.revoked',
   'email_inbox.created', 'email_inbox.rotated', 'email_inbox.updated',
   'issue_connection.created', 'issue_connection.updated', 'issue_connection.deleted',
+  'notification_channel.created', 'notification_channel.updated', 'notification_channel.deleted',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
   'project_invite.created', 'project_invite.revoked', 'project_invite.accepted',
   'public_link.created', 'public_link.revoked',

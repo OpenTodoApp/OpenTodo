@@ -13,6 +13,8 @@ web/src/app/AboutSection.tsx: GitHub
 web/src/app/IssueEditor.tsx: GitHub
 web/src/app/IssueEditor.tsx: GitLab
 web/src/app/IssueEditor.tsx: acme/web, acme/api
+# Settings → Notifications → Delivery channels (notification-channels): an address placeholder.
+web/src/app/NotificationChannelEditor.tsx: https://
 # The product name as the wordmark (sidebar-v2 D2): text, never translated.
 web/src/ui/icons/Brand.tsx: OpenTodo
 

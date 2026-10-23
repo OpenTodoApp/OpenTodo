@@ -79,6 +79,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 
 - **Reminder push scheduler** (`push.Service.Run`, unless `OPENTODO_PUSH=off`): one pass at startup and every 30 s. A single query over `scope_fields` (reminders are always personal) selects reminders whose `fire_at` has passed, not deleted, not delivered or dismissed for the current firing, whose task is open; each is encrypted and posted to every subscription of the owner (404/410 removes the subscription), then `delivered_at` is written through `sync.Apply` as device `server`. Delivery state lives in the op log, so a restart neither loses nor repeats a push (a crash between send and write can repeat one).
 - **Webhook worker** (`webhook.Run`): sends queued deliveries with retries; finishes the pass in progress on shutdown.
+- **Notification channel worker** (`channels.Run`): sends queued messages to ntfy, Pushover, Gotify and webhook channels with the same retries; never on a demo instance.
 - **Email poller** (`email.Run`): polls the configured IMAP mailbox, only when `OPENTODO_EMAIL_*` is set.
 - **Backup scheduler** (`backup.Start`): runs scheduled backups; a missed run executes once at startup.
 - **Trash retention** (`sync.RunRetention`): purges items older than `OPENTODO_TRASH_RETENTION_DAYS` at startup and daily.
@@ -105,6 +106,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `httpapi` | Router (stdlib `net/http` with method patterns), middleware (auth, origin check, security headers, rate limits, logging), JSON error envelope, handlers for every `/api/v1` route, the CalDAV transport (`caldav_*.go`), the MCP transport (`mcp.go`) and the event stream |
 | `web` | Embeds the Vite build (`internal/web/dist`) and serves it with SPA fallback and cache headers |
 | `notify` | Post-commit events for people: the `Sink` interface the sync service calls after a batch commits, and the in-app sink that stores `notifications` for assignments and mentions |
+| `channels` | A person's delivery channels (ntfy, Pushover, Gotify, a signed webhook): a notify sink and a consumer of the reminder scheduler that queue one message per channel and firing, one worker through `outbound` with the webhooks' retries, secrets in `<data>/secrets/notification-channels.json`. See [notification-channels.md](notification-channels.md) |
 | `activity` | Pure derivation of attributed activity events from ops (fold by actor and entity within 5 s, classify by touched fields, page newest first); mirrored by `web/src/lib/activity.ts` and pinned by a shared fixture |
 | `webhook` | Maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See [webhooks.md](webhooks.md) |
 | `push` | Web push for reminders with the standard library: VAPID key pair in `<data>/push_vapid.pem`, ES256 JWTs, RFC 8291 `aes128gcm`, per-device subscriptions and the scheduler. See [reminders.md](reminders.md) |
@@ -147,7 +149,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | Sharing | `project_scopes`, `project_members` (effective roles, outside the op log; `via` names the groups a role comes from), `project_grants` (direct and group grants; `project_members` is recomputed from them), `member_backfills` (history replay per member device) |
 | Workspaces | `workspaces` (one `default` per account), `workspace_members`, `groups`, `group_members`, `workspace_invites` (hashed link secrets) |
 | Accounts and credentials | `users`, `user_status`, `sessions`, `session_auth`, `session_oidc`, `api_tokens`, `api_token_scopes`, `api_token_agent`, `user_agent_access`, `app_passwords`, `passkeys`, `identities`, `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, `invitations`, `password_resets` |
-| Features | `notifications`, `push_subscriptions`, `webhooks`, `webhook_deliveries`, `import_jobs`, `import_items`, `caldav_resources`, `email_inboxes`, `email_receipts`, `encryption_keys` |
+| Features | `notifications`, `push_subscriptions`, `notification_channels`, `notification_deliveries`, `webhooks`, `webhook_deliveries`, `import_jobs`, `import_items`, `caldav_resources`, `email_inboxes`, `email_receipts`, `encryption_keys` |
 | Operations | `settings` (owner key/value settings, also the log `generation`), `audit_events`, `backup_runs` |
 
 Files in the data directory: `opentodo.db` (plus WAL files), `opentodo.lock`, `push_vapid.pem`, `secrets/` (backup and single sign-on secrets, 0600, never archived) and `backups/` (default local backup folder).

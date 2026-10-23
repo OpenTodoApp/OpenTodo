@@ -115,6 +115,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerPushRoutes(mux)
 	// Notifications (OpenSpec `task-assignment`).
 	s.registerNotificationRoutes(mux)
+	// Delivery channels: ntfy, Pushover, Gotify, a webhook (OpenSpec `notification-channels`).
+	s.registerChannelRoutes(mux)
 	// Trash and history (OpenSpec `trash-and-history`).
 	s.registerTrashRoutes(mux)
 	// CalDAV (OpenSpec `caldav`): app passwords, the owner toggle and /dav/.

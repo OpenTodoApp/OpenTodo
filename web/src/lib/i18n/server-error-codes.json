@@ -14,6 +14,7 @@
   "bad_request",
   "base_url_required",
   "busy",
+  "channels_disabled",
   "confirmation_mismatch",
   "conflict",
   "connection_disabled",

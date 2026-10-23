@@ -15,6 +15,7 @@ import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
 import { AdministrationSections } from './UsersPanel'
 import { NotificationsSettings } from './NotificationsSettings'
+import { NotificationChannelsCard } from './NotificationChannels'
 import { DigestCard } from './DigestCard'
 import { ActivityPanel } from './ActivityPanel'
 import { AuditPanel } from './AuditPanel'
@@ -311,7 +312,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
         </>
       )
     case 'notifications':
-      return <>{note}<DemoDisabled on={demo}><NotificationsSettings /><DigestCard /></DemoDisabled></>
+      return <>{note}<DemoDisabled on={demo}><NotificationsSettings /><NotificationChannelsCard isOwner={isOwner} /><DigestCard /></DemoDisabled></>
     case 'capture':
       return (
         <>

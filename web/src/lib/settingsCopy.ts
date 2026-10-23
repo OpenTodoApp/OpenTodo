@@ -271,6 +271,27 @@ export const SETTINGS_COPY = {
       renew: msg('The push service stopped accepting notifications for this device.'),
     },
   },
+  // Settings → Notifications → Delivery channels (notification-channels).
+  'notification-channels': {
+    title: msg('Delivery channels'),
+    icon: 'send',
+    description: msg('Send notifications to ntfy, Pushover, Gotify or any address you choose.'),
+    learnMore: 'settings/notification-channels',
+    rows: {
+      server: {
+        label: msg('On this server'),
+        description: {
+          owner: msg('People can send their notifications to ntfy, Pushover, Gotify or a webhook.'),
+          member: msg('The server owner has turned delivery channels off.'),
+        },
+      },
+      channels: { label: msg('Channels'), description: msg('Up to 5. Each one chooses the events it receives.') },
+    },
+    notices: {
+      offline: msg('Changing delivery channels needs a connection. You are seeing the last loaded list.'),
+      encrypted: msg('With end-to-end encryption, messages never name a task or a person.'),
+    },
+  },
   'email-digest': {
     title: msg('Weekly digest'),
     icon: 'mail',

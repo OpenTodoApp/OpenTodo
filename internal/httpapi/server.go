@@ -20,6 +20,7 @@ import (
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/blobs"
 	"github.com/pixari/opentodo/internal/calfeed"
+	"github.com/pixari/opentodo/internal/channels"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/email"
@@ -140,6 +141,10 @@ type Server struct {
 	// shared limit of hand-triggered checks and syncs.
 	issuesOn    caldavState
 	issueWorker *issues.Worker
+	// Notification channels (notification-channels): the service and the
+	// per-user limit of test messages; see channels.go.
+	channels       *channels.Service
+	channelLimiter *rateLimiter
 	// stt is the speech-to-text service (settings-refresh D7), see stt.go.
 	stt          *stt.Service
 	issueLimiter *rateLimiter

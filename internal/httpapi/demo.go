@@ -231,6 +231,10 @@ var demoRules = []demoRule{
 	{"Backups", false, prefix("/api/v1/backups/restore")},
 	{"Backups", true, prefix("/api/v1/backups")},
 	{"Webhooks", true, prefix("/api/v1/webhooks")},
+	// Notification channels send to addresses and services a visitor types
+	// (notification-channels D9): every method; nothing is sent on a demo.
+	{"Notification channels", false, prefix("/api/v1/notification-channels")},
+	{"Notification channels", false, exact("/api/v1/settings/notification-channels")},
 	{"Email to task", true, prefix("/api/v1/email-inbox")},
 	{"Import", true, prefix("/api/v1/import")},
 	// Only hosted tenants register it (multi-tenant-host), never a demo: listed

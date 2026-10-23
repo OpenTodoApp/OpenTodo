@@ -74,7 +74,24 @@ type Service struct {
 
 	keyMu sync.Mutex
 	keys  *Keys
+
+	// onDue receives every firing before the devices are pushed (OpenSpec
+	// notification-channels D1): delivery channels queue it once per firing.
+	onDue func(ctx context.Context, r DueReminder)
 }
+
+// DueReminder is a firing as the scheduler hands it to other consumers. Title
+// is empty when it may not leave the server (end-to-end encrypted).
+type DueReminder struct {
+	UserID, ID, TaskID string
+	FireAt             int64
+	Title              string
+}
+
+// SetReminderHook installs a consumer called for every eligible due reminder on
+// each pass, before the devices are pushed; it must be idempotent per firing,
+// because a reminder whose pushes are retried is handed over again.
+func (s *Service) SetReminderHook(f func(ctx context.Context, r DueReminder)) { s.onDue = f }
 
 // New wires a Service. Keys are created on first need, not here.
 func New(db *sql.DB, syncSvc *opsync.Service, dataDir string, o Options) *Service {
@@ -512,6 +529,9 @@ func (s *Service) tickUser(ctx context.Context, now time.Time, userID string, du
 	start := time.Now()
 	recorded := 0
 	for _, d := range due {
+		if s.onDue != nil {
+			s.onDue(ctx, DueReminder(d))
+		}
 		attempted, transient, deferred := 0, 0, false
 		for _, sub := range subs {
 			if sub.Disabled(now) {
