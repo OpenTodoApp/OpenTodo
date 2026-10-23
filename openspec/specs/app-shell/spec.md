@@ -103,12 +103,12 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 - **THEN** Rules (OpenSpec `automation-rules`) is listed after Locations and before Trash, and it is never a primary destination
 
 ### Requirement: Page template
-Every view SHALL render a page header with the title in the page title size, an optional lead line under the title (the page's meta: a date, totals, members and role, a count, a read-only note) in the muted tone at the metadata size, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 48 rem, settings and forms 42 rem, a list with field columns and a project's list layout 72 rem, boards, timelines and calendars the whole frame. The header SHALL stay visible while the content scrolls. Below 768 px the shell's bar SHALL carry the title and show the lead line as its subtitle on one line, cut at the bar's edge, so a lead line that arrives with the data does not grow the bar; on a project the subtitle is plain text, and members and public links open from Share.
+Every view SHALL render a page header with the title in the page title size, an optional lead line under the title (the page's meta: a date, totals, members and role, a count, a read-only note) in the muted tone at the metadata size, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 60 rem, settings and forms 42 rem, a list with field columns and a project's list layout 72 rem, boards, timelines and calendars the whole frame. The header SHALL be as wide as the content under it: the title SHALL start at the content's left edge and the header's actions SHALL end at the content's right edge, so no action sits beyond the content; on a board, a timeline or a calendar the header spans the frame. The header SHALL stay visible while the content scrolls. Below 768 px the shell's bar SHALL carry the title and show the lead line as its subtitle on one line, cut at the bar's edge, so a lead line that arrives with the data does not grow the bar; on a project the subtitle is plain text, and members and public links open from Share.
 
 There SHALL be two page frames, both with the same side padding and both starting at the content column's left edge, so every page's title starts at the same horizontal position:
 
 - A **standalone page**, one that offers no layout switch (Inbox, Today, Upcoming, Anytime, Someday, Next, Waiting, Assigned to me, Completed, a label, Filter, a saved filter, Trash, Updates, settings, Import, Ask, Help, the review screens), SHALL have a frame as wide as its content width plus the padding, with the header and the content inside it, so the title and the content start at the same left edge.
-- A **layout page**, one that offers a layout switch (a project, a saved view that offers a board or a timeline, the calendars), SHALL have one frame of at most 80 rem, shared by every layout: the header and any footer line span the frame, the content starts at the frame's left edge, wide content scrolls inside the frame rather than widening it, and switching a project between list, board and timeline SHALL not move its title or actions.
+- A **layout page**, one that offers a layout switch (a project, a saved view that offers a board or a timeline, the calendars), SHALL have one frame shared by every layout, 72 rem for a project and at most 80 rem otherwise: the header and any footer line span the frame, the content starts at the frame's left edge, wide content scrolls inside the frame rather than widening it, and switching a project between list, board and timeline SHALL not move its title or actions.
 
 When the panel opens as a column, the content column SHALL narrow by the panel's width and the panel SHALL open into the space to the right of the frame: no frame SHALL move horizontally when the panel opens or closes, and a frame wider than the narrowed column SHALL narrow from its right side, its left edge staying where it was. Nothing SHALL slide. This is presentation only, reads nothing from the server and behaves the same offline.
 
@@ -122,11 +122,11 @@ When the panel opens as a column, the content column SHALL narrow by the panel's
 
 #### Scenario: Centred on a wide screen
 - **WHEN** Today is open with the panel closed on a 2560 px screen with the sidebar at its default width
-- **THEN** the frame is no longer centred: it is 48 rem plus its padding wide and starts at the content column's left edge, at the same position as a project's title, and the space to its right is left for the panel
+- **THEN** the frame is no longer centred: it is 60 rem plus its padding wide and starts at the content column's left edge, at the same position as a project's title, and the space to its right is left for the panel
 
 #### Scenario: The panel docks
 - **WHEN** Today is open on a 1920 px screen and the user opens a task
-- **THEN** the panel is a 30 rem column at the right, the title and every row keep their horizontal position within 1 px, and the list keeps its 48 rem width
+- **THEN** the panel is a 30 rem column at the right, the title and every row keep their horizontal position within 1 px, and the list keeps its 60 rem width
 
 #### Scenario: No room to move
 - **WHEN** Today is open on a 1024 px screen and the user opens a task
@@ -146,7 +146,7 @@ When the panel opens as a column, the content column SHALL narrow by the panel's
 
 #### Scenario: A project list fills its frame
 - **WHEN** a project is shown as a list on a 1440 px screen with the panel closed
-- **THEN** its rows span the 72 rem content width from the frame's left edge, and the title starts at the same place as on the board
+- **THEN** its rows span the 72 rem content width from the frame's left edge, the title starts at the same place as on the board, and the header's actions end at the rows' right edge
 
 #### Scenario: Wide board inside the frame
 - **WHEN** a board has eight columns on a 1280 px screen
@@ -163,6 +163,14 @@ When the panel opens as a column, the content column SHALL narrow by the panel's
 #### Scenario: Long lead line on a phone
 - **WHEN** a shared project with a public link opens at 360 px and "2 · owner · Public" is wider than the space beside the title
 - **THEN** the subtitle stays one line, cut at the bar's edge with its full text reachable, and the bar keeps its height
+
+#### Scenario: Header as wide as its list
+- **WHEN** the Inbox is open on a 1920 px screen with the panel closed
+- **THEN** the list is 60 rem wide from the frame's left edge, and the header's last action ends at the list's right edge within 2 px
+
+#### Scenario: One project frame for every layout
+- **WHEN** a project with three sections is switched from List to Board on a 1920 px screen
+- **THEN** the frame stays 72 rem wide, the List/Board/Timeline control does not move, and the board and the list end at the same right edge as the header's actions
 
 ### Requirement: No desktop top bar
 From 768 px wide the shell SHALL have no bar above the content column; search SHALL be a button beside the app name in the sidebar, notifications, sync status and help SHALL live in the sidebar footer, and page actions in the page header. Below 768 px a bar SHALL show the menu button, the page title and up to two page actions, with the remaining actions in an overflow menu.

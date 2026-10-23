@@ -265,9 +265,8 @@ While a list, the panel or a settings page waits for local data, it SHALL show s
 - **THEN** the sections appear with their tasks in one step, without first showing empty sections or "This project has no open tasks"
 
 #### Scenario: Subtitle arrives on a phone
-- **WHEN** the Inbox opens at 360 px and its count of planned tasks without a project is read after the first frame
-- **THEN** the count appears under the title without moving the bar's buttons or the list
-
+- **WHEN** the Inbox opens at 360 px with planned tasks without a project
+- **THEN** their folded group appears at the end of the list in the same step as the Inbox's tasks, and nothing appears under the title later
 #### Scenario: Settings cards answer at different times
 - **WHEN** Settings → Integrations opens and the app passwords answer 200 ms after the calendar feeds
 - **THEN** the section's cards appear together when the last first answer arrives, and after 600 ms they appear in any case
@@ -642,7 +641,7 @@ The web app, the Daily check, the Today display, the weekly review and the diges
 - **THEN** the query runs as before and the results page's group labels do not read "Overdue"
 
 ### Requirement: Phone header actions
-Below 768 px a list SHALL show its actions in the shell's bar and its overflow menu, never as a row of controls between the bar and the quick add, so the rule "Nothing between the header and the list" holds at every width. The bar SHALL show at most two visible actions: Process the Inbox in the Inbox, the Ask action in Today when the assistant is available, and otherwise the duration filter where the view has one; Display mode, "Select tasks", the duration filter when the slots are taken, and the rest SHALL be in the overflow. The Inbox's count of planned tasks without a project SHALL be the bar's subtitle and SHALL open the Filter view as on the desktop. An active filter SHALL show as one chip with a clear control in the bar, not above the list.
+Below 768 px a list SHALL show its actions in the shell's bar and its overflow menu, never as a row of controls between the bar and the quick add, so the rule "Nothing between the header and the list" holds at every width. The bar SHALL show at most two visible actions: Process the Inbox in the Inbox, the Ask action in Today when the assistant is available, and otherwise the duration filter where the view has one; Display mode, "Select tasks", the duration filter when the slots are taken, and the rest SHALL be in the overflow. The Inbox SHALL have no subtitle: its planned tasks without a project are the last group of its list (OpenSpec `web-app`, "Standard views"). An active filter SHALL show as one chip with a clear control in the bar, not above the list.
 
 #### Scenario: Today on a phone
 - **WHEN** Today with ten tasks opens on a 390×844 phone
@@ -650,7 +649,7 @@ Below 768 px a list SHALL show its actions in the shell's bar and its overflow m
 
 #### Scenario: Inbox on a phone
 - **WHEN** the Inbox with eight tasks and three planned tasks without a project opens on a phone
-- **THEN** the bar shows "Process 8" as a visible action, "3 planned tasks without a project" as its subtitle, and no row of controls under it
+- **THEN** the bar shows "Process 8" as a visible action, no subtitle, and no row of controls under it; the three planned tasks are the folded group at the end of the list
 
 #### Scenario: Filter chip in the bar
 - **WHEN** the user picks "Quick wins" from the filter in the bar of a project on a phone

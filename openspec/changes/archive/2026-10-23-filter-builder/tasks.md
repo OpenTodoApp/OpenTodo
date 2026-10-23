@@ -26,4 +26,4 @@
 - [x] 4.1 Strings in the five shipped catalogs; verify `node scripts/i18n-check.mjs`
 - [x] 4.2 `docs/filters.md` gains "Build a filter without typing" (and the saved-filter guide mentions the builder); CHANGELOG under Unreleased; verify `make docs-check`
 - [x] 4.3 Measure the main bundle before and after (`npm run build`) and record it in design.md "Implementation notes"
-- [ ] 4.4 Run `make check` with TZ=UTC; open the pull request and get CI green
+- [x] 4.4 Run `make check` with TZ=UTC; open the pull request and get CI green

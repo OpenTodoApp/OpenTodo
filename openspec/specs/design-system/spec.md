@@ -650,7 +650,12 @@ The picker SHALL search as the person types, matching the name, the keywords and
 - **THEN** the test suite fails and names the icon missing on the server side
 
 ### Requirement: Illustrations
-The client SHALL draw illustrations for empty and finished states in one calm style: inline SVG line drawings built only from the design tokens (stroke in the muted text colour, at most one accent fill from the theme's accent at low opacity, the sunken surface as the only shape fill), round line caps and joins, one stroke width, no gradients, shadows, text, raster images or external files. Each illustration SHALL render correctly in light and dark themes and every colour theme by following the tokens, SHALL be decorative (hidden from assistive technology, the message is in the text beside it), SHALL fit a 160 by 120 px box, SHALL weigh at most 4 KB of markup, SHALL not animate when the user prefers reduced motion, and SHALL be shown as a story in the workbench in both themes. The empty-state pattern SHALL accept an illustration in place of its icon. The first illustration SHALL be Inbox zero: an empty tray with one small resting mark (a leaf or a check) beside it.
+The client SHALL draw illustrations for empty and finished states in one calm style: inline SVG line drawings built only from the design tokens, with round line caps and joins and no gradients, shadows, text, raster images or external files.
+- **Stroke weights:** two, a main line for the object and a fine detail line, with strokes in the muted text colour.
+- **Fills:** the surface as the object fill and the sunken surface for ground shapes. At most one accent shape, filled with the theme's accent at low opacity and outlined in the accent text colour.
+- **Motif:** every illustration SHALL sit inside the brand mark's open loop, drawn in the fine line with its opening at the upper right, and its accent shape SHALL sit in or leave through that opening.
+
+Each illustration SHALL render correctly in light and dark themes and every colour theme by following the tokens, SHALL be decorative (hidden from assistive technology, the message is in the text beside it), SHALL fit a 160 by 120 px box, SHALL weigh at most 4 KB of markup, SHALL not animate when the user prefers reduced motion, and SHALL be shown as a story in the workbench in both themes. The empty-state pattern SHALL accept an illustration in place of its icon. The first illustration SHALL be Inbox zero: an empty tray with a paper plane leaving through the loop's opening.
 
 #### Scenario: Follows the theme
 - **WHEN** the user switches from the light theme to the dark theme and to another colour theme while the Inbox zero state is shown
@@ -663,6 +668,14 @@ The client SHALL draw illustrations for empty and finished states in one calm st
 #### Scenario: Style gate
 - **WHEN** a contributor adds an illustration that uses a hard-coded hex colour or a raster image
 - **THEN** the UI lint fails and names the file
+
+#### Scenario: Weights and fills gate
+- **WHEN** a contributor draws a line with a third stroke width, fills a shape with the canvas colour, or fills two shapes with the accent
+- **THEN** the UI lint fails naming the file and the line
+
+#### Scenario: Objects stand out in the dark theme
+- **WHEN** an empty state is shown in the dark theme
+- **THEN** the drawing's object is lighter than the canvas behind it, and the accent shape's outline is the bright accent
 
 ### Requirement: Tone scale
 The four text tokens (strong, default, muted, faint) SHALL be the tone scale: the one way to make text or an icon quieter is to step down one tone. An icon SHALL take the tone of the text it accompanies. Screens and shared components SHALL NOT quiet text or icons with opacity utilities, alpha suffixes on text or border tokens, or a palette grey; the style lint SHALL refuse these, allowing a marked exception only for a dragged ghost, a disabled control and the overlay scrim. Dividers SHALL use the softer border token, container edges the border token and control edges the input border token.
@@ -733,7 +746,18 @@ OpenTodo SHALL have one brand mark and one wordmark, kept as a single SVG source
 - **THEN** the two are different shapes: the checkbox is a closed ring or a square, the mark is an open loop whose end becomes a tick
 
 ### Requirement: Illustration set
-The client SHALL provide, in the illustration style, the named illustrations `inbox-zero`, `today-clear` (a mug with steam and a small sun), `week-clear` (seven small squares on a baseline, the first raised), `project-new` (an open box with its lid back and a pencil on its edge), `day-done` (a closed notebook under a crescent moon) and `trash-empty` (a bin with its lid resting on top and one leaf beside it). The empty Today, the empty Upcoming, a project with no open task, Done for today and the empty Trash SHALL show the matching one above their sentence. Each SHALL follow every rule of "Illustrations" (tokens only, one stroke, one accent shape at low opacity, 160 by 120 px, at most 4 KB, decorative, light and dark, every colour theme, no animation under reduced motion) and SHALL have a story in the workbench in both themes. A view SHALL name an illustration from this set only; naming an unknown one SHALL fail the type check.
+The client SHALL provide, in the illustration style, these named illustrations, each inside the open loop with its accent in the opening:
+
+| Name | Object | Accent |
+| --- | --- | --- |
+| `inbox-zero` | an empty tray | a paper plane |
+| `today-clear` | a mug with steam | the sun |
+| `week-clear` | a desk calendar with seven open days | a kite |
+| `project-new` | an open box with a sprout | the sprout's leaf |
+| `day-done` | a closed notebook lying flat with its ribbon | a crescent moon |
+| `trash-empty` | a bin with its lid on | a drifting leaf |
+
+The empty Today, the empty Upcoming, a project with no open task, Done for today and the empty Trash SHALL show the matching one above their sentence. Each SHALL follow every rule of "Illustrations": tokens only, two stroke weights, one accent shape, 160 by 120 px, at most 4 KB, decorative, light and dark, every colour theme, and no animation under reduced motion. Each SHALL have a story in the workbench in both themes. A view SHALL name an illustration from this set only; naming an unknown one SHALL fail the type check.
 
 #### Scenario: Empty Today
 - **WHEN** Today has no task on any device
