@@ -9,7 +9,7 @@ OpenTodo is a self-hosted task manager. `ot` is its command-line client: every c
 
 ## Setup (once, done by the user)
 
-Ask the user for an **agent** token rather than a full-access one. They create it in Settings → AI → AI assistants or, when their own `ot` profile holds an admin token, with:
+Ask the user for an **agent** token rather than a full-access one. They create it in Settings → Integrations → AI assistants or, when their own `ot` profile holds an admin token, with:
 
 ```bash
 ot token create "my assistant" --scope agent

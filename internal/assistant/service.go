@@ -221,7 +221,7 @@ func (s *Service) TestMember(ctx context.Context, r Route, set Settings) TestRes
 }
 
 // ownKeyRejected replaces the provider_auth message on a member's own key.
-const ownKeyRejected = "the provider rejected your API key; check it in Settings → AI → Assistant"
+const ownKeyRejected = "the provider rejected your API key; check it in Settings → Integrations → Assistant"
 
 // OwnKeyRejected is the provider_auth message for a turn on the user's own key.
 func OwnKeyRejected() string { return ownKeyRejected }

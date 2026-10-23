@@ -104,7 +104,7 @@ export function TokensView(p: TokensViewProps) {
   useDateTimeFormat()
   const newButton = <Button variant="primary" size="sm" icon="plus" disabled={p.offline} onClick={p.onNew}>{t('New token')}</Button>
   return (
-    <SettingsSection {...cardCopy('tokens', { values: { header: 'Authorization: Bearer <token>' } })} tier="primary" testId="tokens-panel">
+    <SettingsSection {...cardCopy('tokens', { values: { header: 'Authorization: Bearer <token>' } })} testId="tokens-panel">
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.tokens && p.tokens.length === 0 && (
         <EmptyState icon="key-round" title={t('No API tokens yet')}

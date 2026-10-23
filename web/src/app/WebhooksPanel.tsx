@@ -1,8 +1,7 @@
-import { Skeleton, Dialog, Menu } from '../ui'
+import { Skeleton, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Tooltip } from '../ui'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Button } from '../ui'
-import { Badge } from '../ui'
 import { Field, Input, Select } from '../ui'
 import { Icon } from '../ui'
 import { MenuGroup, MenuItem, MenuSeparator } from '../ui'
@@ -100,7 +99,7 @@ export function WebhooksView(p: WebhooksViewProps) {
               <ListRow leading={<Icon name="link" size="md" />} ariaLabel={h.url}
                 label={<Tooltip label={h.url}><span className="block truncate font-mono text-meta">{h.url}</span></Tooltip>}
                 meta={`${h.events.join(', ')} · ${projectName(h.projectId)}`}
-                badges={<Badge hue={TONE[st.tone]}>{st.label}</Badge>}
+                badges={<StatusIndicator tone={toneForHue(TONE[st.tone])}>{st.label}</StatusIndicator>}
                 menu={(
                   <Menu label={t('Actions for webhook {url}', { url: h.url })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
                     <MenuGroup>
@@ -127,7 +126,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                   <ul className="space-y-2">
                     {p.log.deliveries?.map((d) => (
                       <li key={d.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta">
-                        <Badge hue={DELIVERY_TONE[d.status]}>{d.status}</Badge>
+                        <StatusIndicator tone={toneForHue(DELIVERY_TONE[d.status])}>{d.status}</StatusIndicator>
                         <code className="text-default">{d.event}</code>
                         <span className="text-faint">{dt.formatInstant(d.createdAt, 'datetime')}</span>
                         <span className="text-muted">

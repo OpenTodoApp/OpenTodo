@@ -18,6 +18,8 @@ export interface SwitchProps {
 export function Switch({ checked, onChange, label, description, disabled, hideLabel, id, describedBy }: SwitchProps) {
   return (
     <label className={`inline-flex items-start gap-3 ${disabled ? '' : 'cursor-pointer'}`}>
+      {/* precision-settings D4: a 32 × 18 px track inside the button, so a touch screen's
+          44 px minimum grows the hit area around it, never the track itself. */}
       <button
         id={id}
         type="button"
@@ -26,11 +28,14 @@ export function Switch({ checked, onChange, label, description, disabled, hideLa
         aria-describedby={describedBy}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition duration-(--duration-ui) ease-calm
-          focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50
-          ${checked ? 'border-accent bg-accent' : 'border-input bg-sunken'}`}
+        data-switch
+        className="mt-px inline-flex shrink-0 items-center justify-center rounded-full
+          focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <span aria-hidden="true" className={`inline-block h-4 w-4 rounded-full bg-surface shadow-1 transition-transform duration-(--duration-ui) ease-calm ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
+        <span aria-hidden="true" className={`relative inline-flex h-[1.125rem] w-8 items-center rounded-full border transition duration-(--duration-ui) ease-calm
+          ${checked ? 'border-accent bg-accent' : 'border-strong bg-selected'}`}>
+          <span className={`inline-block h-3.5 w-3.5 rounded-full shadow-1 transition-transform duration-(--duration-ui) ease-calm ${checked ? 'translate-x-[0.9375rem] bg-on-accent' : 'translate-x-px bg-muted'}`} />
+        </span>
       </button>
       {/* A disabled control fades; its label stays readable (AA) in the muted colour. */}
       <span className={hideLabel ? 'sr-only' : 'min-w-0'}>

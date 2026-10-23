@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Badge, Button, Card, ConfirmDialog, Icon, Menu, MenuItem, Notice, SettingRow, SettingsSection, Switch, type HueName } from '../ui'
+import { Button, Card, ConfirmDialog, Icon, Menu, MenuItem, Notice, SettingRow, SettingsSection, Switch, type HueName, StatusIndicator, toneForHue } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { cachedIssueConnections, cacheIssueConnections, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
@@ -110,7 +110,7 @@ function ConnectionCard({ c, p, disabled, onDelete }: { c: IssueConnection; p: I
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge hue={STATE[state].hue}>{STATE[state].label()}</Badge>
+            <StatusIndicator tone={toneForHue(STATE[state].hue)}>{STATE[state].label()}</StatusIndicator>
             <span className="text-body font-medium text-default">{c.name}</span>
           </div>
           <p className="text-meta text-default" data-issue-state>{stateLine(c, now)}</p>
@@ -144,7 +144,7 @@ export function IssuesView(p: IssuesViewProps) {
       {p.enabled !== null && (
         <SettingRow label={rowCopy('issues', 'server', { variant: 'owner' }).label}
           description={p.isOwner || !on ? rowCopy('issues', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description : undefined}
-          status={<Badge hue={on ? 'green' : 'slate'}>{on ? t('On') : t('Off')}</Badge>}
+          status={<StatusIndicator tone={toneForHue(on ? 'green' : 'slate')}>{on ? t('On') : t('Off')}</StatusIndicator>}
           control={p.isOwner && <Switch checked={on} disabled={disabled} onChange={p.onToggle} label={t('Allow issue connections on this server')} hideLabel />} />
       )}
       {p.error && !p.draft && <Notice tone="danger">{p.error}</Notice>}

@@ -118,7 +118,7 @@ func (e *ProviderError) Error() string {
 func providerErr(status int, typ string) *ProviderError {
 	switch {
 	case status == 401 || status == 403:
-		return &ProviderError{Code: CodeProviderAuth, Status: status, Type: typ, Msg: "the provider rejected the API key; the server owner can check it in Settings → AI → Assistant"}
+		return &ProviderError{Code: CodeProviderAuth, Status: status, Type: typ, Msg: "the provider rejected the API key; the server owner can check it in Settings → Integrations → Assistant"}
 	case status == 429:
 		return &ProviderError{Code: CodeProviderRateLimited, Status: status, Type: typ, Msg: "the provider is rate limiting requests; try again in a moment"}
 	case status >= 500:

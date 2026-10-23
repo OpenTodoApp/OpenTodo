@@ -279,7 +279,7 @@ func authStatus(a *App, ctx context.Context, g *globalFlags, args []string) erro
 		if !*cred.WritesAllowed {
 			state = "not allowed: " + map[string]string{
 				"writes_disabled_by_owner": "the server owner has not allowed AI assistants to make changes",
-				"writes_disabled_by_user":  "\"Allow AI assistants to make changes\" is off in Settings → AI → AI assistants",
+				"writes_disabled_by_user":  "\"Allow AI assistants to make changes\" is off in Settings → Integrations → AI assistants",
 			}[cred.WritesDenied]
 		}
 		fmt.Fprintf(a.Stdout, "Writes:   %s\n", state)

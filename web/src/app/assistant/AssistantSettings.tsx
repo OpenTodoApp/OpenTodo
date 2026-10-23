@@ -9,7 +9,7 @@ import {
   type AssistantTestDraft, type AssistantTestResult, type AssistantUsage, type MyAssistantInput, type MyAssistantTestDraft, type ProviderName,
 } from '../../lib/assistantTypes'
 import { useOnline } from '../../lib/online'
-import { Button, Dialog } from '../../ui'
+import { Button, Dialog, StatusIndicator, toneForHue } from '../../ui'
 import { Badge } from '../../ui'
 import { Field, Input, Select } from '../../ui'
 import { ConfirmDialog } from '../../ui'
@@ -242,7 +242,7 @@ export function OwnerAssistantSummary({ saved, connected, onConfigure }: OwnerSu
       <SettingRow {...rowCopy('assistant-settings', 'server')}
         status={(
           <span className="flex flex-wrap items-center gap-2" data-testid="assistant-owner-status">
-            <Badge hue={saved.enabled ? 'green' : 'slate'}>{saved.enabled ? t('On') : t('Off')}</Badge>
+            <StatusIndicator tone={toneForHue(saved.enabled ? 'green' : 'slate')}>{saved.enabled ? t('On') : t('Off')}</StatusIndicator>
             <span>{saved.enabled
               ? (model ? t('Everyone uses {provider} ({model}).', { provider: SHORT[saved.default_provider], model }) : t('Everyone uses {provider}.', { provider: SHORT[saved.default_provider] }))
               : t('No one sees the assistant and the server contacts no model provider.')}</span>
@@ -466,7 +466,7 @@ export function UserAssistantSettings(p: UserViewProps) {
           <span className="block space-y-1">
             <span className="block">{t.rich(s.source === 'own' ? 'Provider: <strong>{provider}</strong>{model}, with your own key.' : 'Provider: <strong>{provider}</strong>{model}.', { provider: s.provider_label, model: s.model ? ` (${s.model})` : '', strong: (chunks) => <strong>{chunks}</strong> })}</span>
             <span className="flex flex-wrap items-center gap-2 text-muted">
-              <Badge hue={s.consented ? 'green' : 'slate'}>{s.consented ? t('Accepted') : t('Not accepted yet')}</Badge>
+              <StatusIndicator tone={toneForHue(s.consented ? 'green' : 'slate')}>{s.consented ? t('Accepted') : t('Not accepted yet')}</StatusIndicator>
               {s.consented ? t('You accepted what is sent.') : t('You have not accepted yet; the assistant asks before your first message.')}{' '}{t.rich('Open it with {keys}.', { keys: <Kbd k={keysOf('global.assistant')} /> })}
             </span>
           </span>

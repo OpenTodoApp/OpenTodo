@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { Avatar } from '../Avatar'
 import { Badge } from '../Card'
+import { Select } from '../Field'
+import { StatusIndicator } from '../StatusIndicator'
 import { Button, IconButton } from '../Button'
 import { Icon } from '../Icon'
 import { Switch } from '../Switch'
@@ -12,23 +14,25 @@ import { SettingRow, SettingsSection } from './SettingsSection'
 import { SETTINGS_COPY } from '../../lib/settingsCopy'
 
 // Card and row text comes from the settings copy table, as in the app (settings-copy D2).
-// The two-factor card is the primary tier above a flat section (surfaces-v2 D9).
+// Every section is flat, its rows between hairlines; state is a status dot (precision-settings D3, D4).
 const MFA = SETTINGS_COPY.mfa
 const TITLES = SETTINGS_COPY.notifications.rows.titles
+const WEEK = SETTINGS_COPY['date-time'].rows.weekStart
 
 function Section({ learnMore }: { learnMore?: string }) {
   const [on, setOn] = useState(true)
   return (
-    <div className="space-y-4">
-      <SettingsSection title={MFA.title} description={MFA.description} learnMore={learnMore} tier="primary">
-        <SettingRow label={MFA.rows.status.label} status={<Badge hue="green">On · Authenticator app</Badge>} control={<Button size="sm">Manage</Button>} />
+    <div className="max-w-[45rem] space-y-8">
+      <SettingsSection title={MFA.title} description={MFA.description} learnMore={learnMore}>
+        <SettingRow label={MFA.rows.status.label} status={<StatusIndicator tone="ok">On · Authenticator app</StatusIndicator>} control={<Button size="sm">Manage</Button>} />
         <SettingRow label={MFA.rows.recovery.label} description={MFA.rows.recovery.description} status="7 of 10 left" control={<Button size="sm">View</Button>} />
         <SettingRow label={TITLES.label} description={TITLES.description} control={<Switch checked={on} onChange={setOn} label={TITLES.label} hideLabel />} />
+        <SettingRow label={WEEK.label} control={<Select aria-label={WEEK.label} defaultValue="mon"><option value="mon">Monday</option><option value="sun">Sunday</option></Select>} />
       </SettingsSection>
       <SettingsSection title="Passkeys" level={2}>
         <ListRow leading={<Icon name="key-round" size="md" />} label="MacBook Touch ID" meta="Used yesterday" menu={<IconButton icon="ellipsis" label="Passkey actions" size="sm" />} />
         <ListRow leading={<Avatar id="u-sam" name="Sam Rivera" size="md" />} label="Sam Rivera with a very long display name that has to wrap on a phone screen" meta="sam@example.com"
-          badges={<><Badge hue="indigo">Admin</Badge><Badge hue="yellow">Invited</Badge><Badge hue="slate">2FA off</Badge></>}
+          badges={<><Badge hue="indigo">Admin</Badge><StatusIndicator tone="warn">Invited</StatusIndicator></>}
           menu={<IconButton icon="ellipsis" label="Member actions" size="sm" />} />
       </SettingsSection>
     </div>

@@ -306,6 +306,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 | Keys | What it does |
 | --- | --- |
+| <kbd>/</kbd> | Settings: focus the search field, which finds sections and single settings by name |
 | <kbd>Enter</kbd> | Focused invitation: Settings → People → Members: copy the invite link created in this session |
 | <kbd>Delete</kbd> | Focused invitation: Settings → People → Members: revoke the focused pending invitation |
 | <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In the picture dialog: Settings → Account → Profile, picture dialog: move the picture inside the circle |

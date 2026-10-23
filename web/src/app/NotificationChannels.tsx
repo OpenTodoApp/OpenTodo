@@ -4,7 +4,7 @@
 // renders every state; NotificationChannelsCard loads and acts. Channels are server
 // data: offline, the last loaded rows stay with every control off.
 import { useCallback, useEffect, useState } from 'react'
-import { Badge, Button, ConfirmDialog, Icon, Input, Menu, MenuItem, Notice, SettingRow, SettingsSection, Switch } from '../ui'
+import { Badge, Button, ConfirmDialog, Icon, Input, Menu, MenuItem, Notice, SettingRow, SettingsSection, Switch, StatusIndicator, toneForHue } from '../ui'
 import { ApiError, isNetworkError } from '../lib/api'
 import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
@@ -108,7 +108,7 @@ export function ChannelsView(p: ChannelsViewProps) {
       {p.enabled !== null && (p.isOwner || !on) && (
         <SettingRow label={rowCopy('notification-channels', 'server', { variant: 'owner' }).label}
           description={rowCopy('notification-channels', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description}
-          status={<Badge hue={on ? 'green' : 'slate'}>{on ? t('On') : t('Off')}</Badge>}
+          status={<StatusIndicator tone={toneForHue(on ? 'green' : 'slate')}>{on ? t('On') : t('Off')}</StatusIndicator>}
           control={p.isOwner && <Switch checked={on} disabled={disabled} onChange={p.onToggle} label={t('Allow delivery channels on this server')} hideLabel />} />
       )}
       {p.error && !p.draft && <Notice tone="danger">{p.error}</Notice>}

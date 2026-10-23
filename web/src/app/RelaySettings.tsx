@@ -1,8 +1,8 @@
-// Settings → AI assistants, for an end-to-end encrypted account: let this
+// Settings → Integrations → AI assistants, for an end-to-end encrypted account: let this
 // device answer AI connectors (OpenSpec change mcp-device-relay). The trust
 // model is stated in plain words next to the switch (security review).
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
-import { Badge, Icon, Notice, SettingRow, Switch, Tooltip } from '../ui'
+import { Badge, Icon, Notice, SettingRow, Switch, Tooltip, StatusIndicator } from '../ui'
 import { api } from '../lib/api'
 import { formatInstant } from '../lib/dates'
 import { useEncryption } from '../lib/e2ee'
@@ -39,7 +39,7 @@ export function RelayView(p: RelayViewProps) {
     <div className="space-y-1 border-t border-default pt-3" data-relay-settings>
       <SettingRow label={rowCopy('assistants', 'relay').label}
         description={<span id="relay-help">{rowCopy('assistants', 'relay').description}</span>}
-        status={p.optedIn ? <Badge tone={p.connected ? 'solid' : 'soft'} hue={p.connected ? 'green' : undefined}>{p.connected ? t('Ready') : t('Connecting…')}</Badge> : undefined}
+        status={p.optedIn ? <StatusIndicator tone={p.connected ? 'ok' : 'busy'}>{p.connected ? t('Ready') : t('Connecting…')}</StatusIndicator> : undefined}
         control={<Switch checked={p.optedIn} disabled={p.busy || (!p.unlocked && !p.optedIn)} onChange={p.onToggle}
           label={rowCopy('assistants', 'relay').label} hideLabel describedBy="relay-help" />} />
       <Notice>

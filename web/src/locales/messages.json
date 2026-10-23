@@ -10746,6 +10746,9 @@
   "Settings → Server → Audit log: export with the current filters while the table has focus": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Settings: focus the search field, which finds sections and single settings by name": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Settings: {section}": [
     "web/src/app/palette/index.ts"
   ],

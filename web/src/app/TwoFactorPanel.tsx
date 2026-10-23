@@ -1,4 +1,4 @@
-import { Badge, Select, SettingRow, SettingsSection, Dialog, Menu } from '../ui'
+import { Select, SettingRow, SettingsSection, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Button } from '../ui'
 import { Icon } from '../ui'
 import { MenuItem } from '../ui'
@@ -286,7 +286,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
       {st && (
         <SettingRow {...rowCopy('mfa', 'status')} status={
           <span className="flex flex-wrap items-center gap-2" data-testid="mfa-status">
-            <Badge hue={st.enrolled ? (few ? 'orange' : 'green') : 'slate'}>{st.enrolled ? t('On') : t('Off')}</Badge>
+            <StatusIndicator tone={toneForHue(st.enrolled ? (few ? 'orange' : 'green') : 'slate')}>{st.enrolled ? t('On') : t('Off')}</StatusIndicator>
             {st.enrolled && <span>{t('{recoveryCodesRemaining} of 10 recovery codes left', { recoveryCodesRemaining: st.recoveryCodesRemaining })}</span>}
             {st.required && <span className="text-muted">{t('Required by the server owner')}</span>}
           </span>
@@ -451,7 +451,7 @@ export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
   return (
     <SettingsSection {...cardCopy('mfa-policy')} testId="mfa-policy-panel">
       <SettingRow {...rowCopy('mfa-policy', 'policy')} htmlFor="mfa-policy-select"
-        status={policy ? <Badge hue={policy === 'none' ? 'slate' : 'green'}>{POLICY_LABEL[policy]}</Badge> : undefined}
+        status={policy ? <StatusIndicator tone={toneForHue(policy === 'none' ? 'slate' : 'green')}>{POLICY_LABEL[policy]}</StatusIndicator> : undefined}
         control={
           <Select id="mfa-policy-select" className="max-w-xs" value={policy ?? 'none'} disabled={!online || busy || policy === null}
             onChange={(e) => onPolicy(e.target.value as MfaPolicy)} aria-label={t('Two-factor policy for this server')}>

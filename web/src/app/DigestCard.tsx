@@ -5,7 +5,7 @@
 // when saving and shown. Server data: it needs a connection. DigestView renders
 // every state without effects (tests, stories); DigestCard loads and saves.
 import { useEffect, useState } from 'react'
-import { Badge, Button, Field, Notice, Select, SettingRow, SettingsSection, Switch } from '../ui'
+import { Button, Field, Notice, Select, SettingRow, SettingsSection, Switch, StatusIndicator, toneForHue } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { formatDate, formatHour, formatInstant } from '../lib/dates'
 import { useDemo } from '../lib/demo'
@@ -106,7 +106,7 @@ export function DigestView(p: DigestViewProps) {
         <>
           <SettingRow {...rowCopy('email-digest', 'email')} status={
             <span className="flex flex-wrap items-center gap-2" data-testid="digest-summary">
-              <Badge hue={d!.enabled ? 'green' : 'slate'}>{digestSummary(d!)}</Badge>
+              <StatusIndicator tone={toneForHue(d!.enabled ? 'green' : 'slate')}>{digestSummary(d!)}</StatusIndicator>
               {d!.enabled && d!.nextSendAt !== null && <span className="text-muted">{t('Next: {instant}', { instant: formatInstant(d!.nextSendAt, 'long') })}</span>}
               {outcome && <span className={outcome.tone === 'warn' ? 'text-warning' : 'text-muted'} data-testid="digest-outcome">{outcome.text}</span>}
             </span>

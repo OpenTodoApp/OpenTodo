@@ -1,7 +1,6 @@
-import { Icon, type IconName } from '../ui'
+import { Icon, type IconName, StatusIndicator, toneForHue } from '../ui'
 import { type ReactNode, useEffect, useState } from 'react'
 import { Button } from '../ui'
-import { Badge } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
@@ -125,7 +124,7 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
 }) {
   const sub = s?.subscription ?? null
   return (
-    <SettingsSection {...cardCopy('notifications')} tier="primary">
+    <SettingsSection {...cardCopy('notifications')}>
       {!s ? (
         <p className="py-2 text-meta text-faint">{t('Checking…')}</p>
       ) : !s.available ? (
@@ -136,8 +135,8 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
         <>
           <SettingRow {...rowCopy('notifications', 'device')} status={
             <span className="flex flex-wrap items-center gap-2" data-testid="push-summary">
-              <Badge hue={s.enabled ? 'green' : 'slate'}>{s.enabled ? t('On') : t('Off')}</Badge>
-              <Badge hue={PERMISSION[s.permission].hue} tone="solid">{t('Permission: {label}', { label: PERMISSION[s.permission].label })}</Badge>
+              <StatusIndicator tone={toneForHue(s.enabled ? 'green' : 'slate')}>{s.enabled ? t('On') : t('Off')}</StatusIndicator>
+              <StatusIndicator tone={toneForHue(PERMISSION[s.permission].hue)}>{t('Permission: {label}', { label: PERMISSION[s.permission].label })}</StatusIndicator>
               {sub && (
                 <span className="text-muted">
                   {sub.lastOkAt ? t('Last delivered {ago}', { ago: relativeTime(sub.lastOkAt, now) }) : t('Nothing delivered yet')}

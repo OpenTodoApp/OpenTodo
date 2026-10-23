@@ -1,4 +1,4 @@
-import { Icon, Menu } from '../ui'
+import { Icon, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Tooltip } from '../ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '../ui'
@@ -176,7 +176,7 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
       {!p.online && <Notice>{noticeCopy('sso', 'offline')}</Notice>}
       <SettingRow {...rowCopy('sso', 'status')} status={
         <span className="flex flex-wrap items-center gap-2" data-testid="sso-status">
-          <Badge hue={s.enabled ? 'green' : 'slate'}>{s.enabled ? t('On') : t('Off')}</Badge>
+          <StatusIndicator tone={toneForHue(s.enabled ? 'green' : 'slate')}>{s.enabled ? t('On') : t('Off')}</StatusIndicator>
           <span>{s.enabled ? (s.issuer ? t('The sign-in screen shows "Sign in with {name}" ({host}).', { name, host: hostOf(s.issuer) }) : t('The sign-in screen shows "Sign in with {name}".', { name })) : t('Off until you save an issuer and client id.')}</span>
           {s.ssoOnly && <Badge hue="orange">{t('SSO only')}</Badge>}
         </span>

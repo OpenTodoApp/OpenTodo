@@ -732,6 +732,19 @@ body {
 select.ui-input { @apply truncate; contain: layout paint; }
 /* The composer frame draws the box and the focus ring; the field inside it is bare (task-full-page D6). */
 [data-composer-frame] .ui-input { @apply rounded-none border-0 bg-transparent px-0 py-1 focus:ring-0; }
+/* The design-system select (precision-settings D4): no platform arrow; a chevron drawn
+   with two gradients in the muted text colour, so no image and no hex. */
+select.ui-input:not([multiple]) {
+  appearance: none;
+  padding-right: 2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ot-muted) 50%), linear-gradient(135deg, var(--ot-muted) 50%, transparent 50%);
+  background-position: calc(100% - 0.9375rem) 50%, calc(100% - 0.625rem) 50%;
+  background-size: 0.3125rem 0.3125rem;
+  background-repeat: no-repeat;
+}
+/* A settings row's control column (precision-settings D4): controls at the 32 px step. */
+[data-setting-control] :is(.ui-input:not(textarea), .ui-btn--md) { @apply min-h-8 px-2.5 py-1 text-meta; }
+[data-setting-control] select.ui-input:not([multiple]) { padding-right: 2rem; }
 .ui-kbd { @apply whitespace-nowrap rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
    are inlined instead of importing its stylesheet. */
@@ -847,6 +860,8 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
   background: var(--ot-accent-soft);
 }
 .ui-section-flat { @apply px-4 py-5 sm:px-6; }
+/* A settings section (precision-settings D3): flat on the page, its rows between hairlines; the page spaces them. */
+.ui-settings-section { @apply min-w-0; }
 /* A hairline between a flat section and whatever comes before it on the page (D9). */
 .ui-section-flat:not(:first-child) { @apply border-t border-default; }
 /* A dashboard panel: flat, full width of its grid cell, a hairline above every one (statistics). */

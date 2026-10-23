@@ -196,7 +196,7 @@ Name it in `Illustration.tsx` and pass that name to the empty-state pattern (`<E
 
 ### Form controls
 
-Wrap a control in `<Field label description error>`: the label, the description and the error are wired to the control (`aria-describedby`, `aria-invalid`). `Input`, `Textarea` and `Select` are styled native elements; use `Select` for small fixed sets (role, sort order) and the Combobox for choosing an entity. A setting that applies immediately is a `Switch` (`role="switch"`); a choice submitted with a form is a `Checkbox` (with an indeterminate state).
+Wrap a control in `<Field label description error>`: the label, the description and the error are wired to the control (`aria-describedby`, `aria-invalid`). `Input`, `Textarea` and `Select` are styled native elements; use `Select` for small fixed sets (role, sort order) and the Combobox for choosing an entity. A setting that applies immediately is a `Switch` (`role="switch"`): a 32 × 18 px track, accent when on, whose hit area grows to 44 px on a touch screen. A choice submitted with a form is a `Checkbox` (with an indeterminate state). A `Select` draws its own chevron, two gradients in the muted text colour, instead of the platform's arrow (precision-settings).
 
 ### Menus
 
@@ -213,14 +213,14 @@ Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `
 
 ### Surfaces and patterns
 
-`Card`, `Badge` (soft or solid, any palette hue or stored colour), `Avatar` (initials on a colour derived from the account id, the same on every device), `Tabs` (arrow keys, Home/End), `EmptyState` and `Timeline` (events and comment threads). For settings: `SettingsSection` (a titled card with one line that may end with a **Learn more** link, `learnMore`, opening the card's guide section; never a header action) and `SettingRow` (label and state beside the control, stacked on phones), both fed by the settings copy table (`web/src/lib/settingsCopy.ts`; limits in the [interface guide](interface-guide.md#copy)). `ConfirmDialog` replaces `window.confirm` (focus starts on Cancel; a destructive one ignores taps outside); the app never uses the browser's `confirm()` or `prompt()`, and code never finds elements by translated text (use a `data-*` attribute), and `ListRow` is the focusable row for lists with a trailing menu.
+`Card`, `Badge` (soft or solid, any palette hue or stored colour; for a category such as a role or a scope), `StatusIndicator` (a 6 px dot in a tone, `ok`, `warn`, `danger`, `busy` or `off`, followed by the word that states it; for state such as On, Working or Failing; `busy` pulses unless motion is reduced), `Avatar` (initials on a colour derived from the account id, the same on every device), `Tabs` (arrow keys, Home/End), `EmptyState` and `Timeline` (events and comment threads). For settings: `SettingsSection` (a flat titled section with one line that may end with a **Learn more** link, `learnMore`, opening the card's guide section; never a header action) and `SettingRow` (label and state beside the control, stacked on phones), both fed by the settings copy table (`web/src/lib/settingsCopy.ts`; limits in the [interface guide](interface-guide.md#copy)). `ConfirmDialog` replaces `window.confirm` (focus starts on Cancel; a destructive one ignores taps outside); the app never uses the browser's `confirm()` or `prompt()`, and code never finds elements by translated text (use a `data-*` attribute), and `ListRow` is the focusable row for lists with a trailing menu.
 
 Five surface styles, each a class in `@layer components` built from tokens (`Foundations/Surfaces` in the workbench):
 
 | Style | Class | Used for |
 |---|---|---|
-| Card | `surface-card`, `SettingsSection tier="primary"` | statistics tiles, the one primary settings card |
-| Flat section | `ui-section-flat` | other settings sections, statistics panels |
+| Card | `surface-card` | statistics tiles |
+| Flat section | `ui-section-flat`, `ui-settings-section` | statistics panels; settings sections (rows between hairlines, no card) |
 | Column | `ui-column`, `ui-cards--lift`, `ui-drop-placeholder` | board columns, lifting cards, where a dragged card lands |
 | Block | `ui-block` (`--row`, `--dashed`, `--past`, `--late`) | calendar blocks, Month and Plan rows, timeline bars |
 | Event | `ui-block--event`, `ui-block-dot` | events from other calendars |

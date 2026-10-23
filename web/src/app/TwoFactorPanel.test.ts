@@ -35,7 +35,7 @@ describe('TwoFactorPanelView', () => {
   it('offers setup when off', () => {
     const html = panel({})
     expect(html).toContain('Two-factor authentication')
-    expect(html).toMatch(/data-hue="slate"[^>]*><span[^>]*>Off<\/span>/)
+    expect(html).toMatch(/data-status="off"[^>]*><span[^>]*><\/span><span[^>]*>Off<\/span>/)
     expect(html).toContain('Set up two-factor authentication')
     expect(disabledButtons(html)).toBe(0)
     expect(html).not.toContain('Remembered browsers')
@@ -43,7 +43,7 @@ describe('TwoFactorPanelView', () => {
 
   it('shows remaining codes, remembered browsers and actions when on', () => {
     const html = panel({ status: on, devices })
-    expect(html).toMatch(/data-hue="green"[^>]*><span[^>]*>On<\/span>/)
+    expect(html).toMatch(/data-status="ok"[^>]*><span[^>]*><\/span><span[^>]*>On<\/span>/)
     expect(html).toContain('9 of 10 recovery codes left')
     expect(html).toContain('New recovery codes')
     expect(html).toContain('Turn off')
@@ -57,7 +57,7 @@ describe('TwoFactorPanelView', () => {
   it('warns when few recovery codes are left', () => {
     const few = panel({ status: { ...on, recoveryCodesRemaining: 2 } })
     expect(few).toContain('Few recovery codes left')
-    expect(few).toContain('data-hue="orange"')
+    expect(few).toContain('data-status="warn"')
     expect(few).toMatch(/ui-btn--primary[^"]*"[^>]*>New recovery codes/)
   })
 

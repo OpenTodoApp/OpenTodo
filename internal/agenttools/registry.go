@@ -398,9 +398,9 @@ func (r *Registry) write(ctx context.Context, c Caller, name string, rawArgs jso
 func denialMessage(code string) string {
 	switch code {
 	case DeniedByOwner:
-		return "the server owner has not allowed AI assistants to make changes (Settings → AI → AI assistants)"
+		return "the server owner has not allowed AI assistants to make changes (Settings → Integrations → AI assistants)"
 	case DeniedByUser:
-		return "the user has not switched on \"Allow AI assistants to make changes\" (Settings → AI → AI assistants)"
+		return "the user has not switched on \"Allow AI assistants to make changes\" (Settings → Integrations → AI assistants)"
 	}
 	return "write tools need an API token created for an assistant that can make changes (scope agent); this token can only read"
 }

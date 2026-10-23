@@ -1,4 +1,4 @@
-// Settings → AI assistants without a DOM: the pure AssistantsView is rendered to
+// Settings → Integrations → AI assistants without a DOM: the pure AssistantsView is rendered to
 // static markup for each state, and the helpers and API client are checked.
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'

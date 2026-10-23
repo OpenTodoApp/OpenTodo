@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setDemo } from '../lib/demo'
 import type { DemoInfo, User } from '../lib/types'
 import { canonicalPath, LEGACY_SETTINGS_IDS, parseRoute, routePath, SETTINGS_SECTION_IDS, type SettingsSectionId } from './router'
-import { followLink, SettingsView } from './SettingsView'
+import { followLink, SettingsList, SettingsView } from './SettingsView'
 import { firstSection, groupedSections, joinList, resolveSection, SETTINGS_GROUPS, SETTINGS_SECTIONS } from './settingsSections'
 
 /** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
@@ -122,14 +122,28 @@ describe('section table', () => {
 })
 
 describe('the list', () => {
+  /** The list as the whole screen (below 1024 px), with the profile card and the footer. */
+  const list = (user: User) => renderToStaticMarkup(<SettingsList user={user} />)
+
   it('starts with the profile card: initials, name, email and role', () => {
-    const html = render(member)
+    const html = list(member)
     expect(html).toContain('data-profile-card')
     expect(html).toMatch(/aria-hidden="true">S<\/span>/)
     expect(html).toContain('>Sam</p>')
     expect(html).toContain('>sam@example.com</p>')
     expect(html).toContain('Member')
-    expect(render(owner)).toContain('Owner')
+    expect(list(owner)).toContain('Owner')
+  })
+
+  it('beside a page the pane keeps only search and the groups (precision-settings D2)', () => {
+    const html = render(member, 'general')
+    expect(html).toContain('data-settings-pane')
+    expect(html).not.toContain('data-profile-card')
+    expect(html).not.toContain('No telemetry, no tracking, no subscription.')
+    expect(html).toMatch(/aria-current="page"[^>]*class="[^"]*bg-selected/)
+    expect(html).toMatch(/<kbd[^>]*>\/<\/kbd>/)
+    expect(html).toContain('data-settings-crumb')
+    expect(html).toMatch(/data-settings-page-head[^>]*><p class="text-h1[^"]*">General<\/p>/)
   })
 
   it('shows the groups as labelled sections, a search field and the footer; no Server group for a member', () => {
@@ -142,7 +156,7 @@ describe('the list', () => {
     expect(render(owner)).toContain('aria-labelledby="group-server"')
     for (const id of ['account', 'appearance', 'general', 'notifications', 'capture', 'integrations', 'data']) expect(html).toContain(`href="/settings/${id}"`)
     for (const id of ['people', 'server']) expect(html).not.toContain(`href="/settings/${id}"`)
-    expect(html).toContain('No telemetry, no tracking, no subscription.')
+    expect(list(member)).toContain('No telemetry, no tracking, no subscription.')
   })
 
   it('lists People for admins and both Server sections for the owner', () => {

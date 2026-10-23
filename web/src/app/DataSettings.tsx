@@ -7,8 +7,7 @@ import { formatBytes, refreshLimits, useAttachmentLimits } from '../lib/attachme
 import { useSyncStatus } from '../lib/sync'
 import { DEMO_RESTRICTED_NOTE } from '../lib/demo'
 import type { AttachmentLimits, SyncState } from '../lib/types'
-import { Button } from '../ui'
-import { Badge } from '../ui'
+import { Button, StatusIndicator, toneForHue } from '../ui'
 import { Icon } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
@@ -49,7 +48,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
   const dt = useDateTimeFormat()
   const s = SYNC[sync.state] ?? { label: sync.state, hue: 'slate' as HueName }
   return (
-    <SettingsSection {...cardCopy('data')} tier="primary" testId="data-panel">
+    <SettingsSection {...cardCopy('data')} testId="data-panel">
       <SettingRow {...rowCopy('data', 'export')}
         control={(
           <>
@@ -73,7 +72,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
         status={(
           // The badge on its own line: its word changes while syncing and must not rewrap the sentence (motion-polish D2).
           <span className="flex flex-col items-start gap-1" data-testid="sync-summary">
-            <Badge hue={s.hue}>{s.label}</Badge>
+            <StatusIndicator tone={toneForHue(s.hue)}>{s.label}</StatusIndicator>
             <span className="text-muted">
               {sync.pending ? t('{n, plural, one {# change waiting to upload.} other {# changes waiting to upload.}}', { n: sync.pending }) : t('No changes waiting.')}
               {sync.lastSyncedAt ? ` ${t('Last synced {instant}.', { instant: dt.formatInstant(sync.lastSyncedAt, 'datetime') })}` : ''}

@@ -360,6 +360,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'display.exit', keys: ['Esc'], description: 'Leave display mode for the same view in the app', section: 'display', scope: 'view', views: ['display'] },
 
   // ---- settings
+  { id: 'settings.search', keys: ['/'], description: 'Settings: focus the search field, which finds sections and single settings by name', section: 'settings', scope: 'view', views: ['settings'] },
   { id: 'settings.invite-copy', keys: ['Enter'], description: 'Settings → People → Members: copy the invite link created in this session', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
   { id: 'settings.invite-revoke', keys: ['Delete'], description: 'Settings → People → Members: revoke the focused pending invitation', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
   // The profile picture dialog's cropper (settings-refresh D11): handled by the cropper itself, only inside its dialog.
