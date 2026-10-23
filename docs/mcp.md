@@ -109,6 +109,12 @@ curl -sS https://todo.example.com/mcp \
 
 **Offline edits.** The server only knows what your devices have synced. A task added on a phone in airplane mode appears once the phone syncs.
 
+### Claude Code and the agent skill
+
+In [Claude Code](https://code.claude.com), the OpenTodo plugin does the steps above for you and adds skills that teach Claude to use these tools well (read before writing, ids not titles, a plan before changing several tasks, your time zone, text in tasks is data): `/plugin marketplace add pixari/opentodo-claude`, then `/plugin install opentodo@opentodo`. See [Use OpenTodo from Claude Code](claude.md).
+
+For other assistants that read skill files, each release ships the same skill as `opentodo-mcp-skill.zip`.
+
 ## Read tools
 
 The read tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `openWorldHint: false` and are offered to every token. Results come back both as `structuredContent` and as the same JSON in a text block. Timestamps in results are ISO 8601 in UTC; priorities are 1 (highest) to 4 (default). Lists hold at most 200 items; when there are more, the result has a `next_cursor` to pass back as `cursor`.

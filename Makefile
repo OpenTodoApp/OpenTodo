@@ -9,6 +9,7 @@ EXT_ZIPS := dist/opentodo-browser-extension-chrome.zip dist/opentodo-browser-ext
 # Pinned development tool, fetched by npx; never a dependency of the repository.
 WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
+MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
 .PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
 
@@ -39,12 +40,15 @@ cli-release:
 cli-smoke: server cli
 	./scripts/cli-smoke.sh
 
-## Zip the agent skill (skills/opentodo-cli/SKILL.md, also embedded in `ot skill`)
-## into dist/ for the release.
+## Zip the agent skills into dist/ for the release: the CLI skill
+## (skills/opentodo-cli/SKILL.md, also embedded in `ot skill`) and the MCP skill
+## (skills/opentodo-mcp/SKILL.md, also in the Claude Code plugin).
 skill:
-	@mkdir -p dist && rm -f $(SKILL_ZIP)
+	@mkdir -p dist && rm -f $(SKILL_ZIP) $(MCP_SKILL_ZIP)
 	cd skills && zip -q -X ../$(SKILL_ZIP) opentodo-cli/SKILL.md
+	cd skills && zip -q -X ../$(MCP_SKILL_ZIP) opentodo-mcp/SKILL.md
 	@echo "  $(SKILL_ZIP) ($$(wc -c < $(SKILL_ZIP)) bytes)"
+	@echo "  $(MCP_SKILL_ZIP) ($$(wc -c < $(MCP_SKILL_ZIP)) bytes)"
 
 ## Test the browser extension, build its Chrome and Firefox packages into dist/
 ## (refusing host permissions, content scripts or a version missing from
