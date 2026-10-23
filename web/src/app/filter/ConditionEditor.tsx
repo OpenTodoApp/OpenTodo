@@ -1,7 +1,7 @@
 // The condition dialog of the filter builder (OpenSpec change filter-builder,
 // design D4): what to filter on, then its value with the app's own pickers.
 import { useMemo, useState } from 'react'
-import { Button, Combobox, Dialog, Field, Input, NeutralChip, Switch } from '../../ui'
+import { Button, Combobox, Dialog, Field, Input, NeutralChip, Select, Switch } from '../../ui'
 import { parse, type DateExpr } from '../../lib/filter'
 import { formatDate, formatMinutes, type Leaf } from '../../lib/filter/builder'
 import { type Cmp, type DateField, type Keyword, type Priority } from '../../lib/filter/parse'
@@ -169,7 +169,7 @@ export interface ConditionEditorProps {
   onClose: () => void
 }
 
-const select = 'ui-input'
+
 
 export function ConditionEditor({ leaf, not: initialNot, labels, projects, fields, onSave, onRemove, onClose }: ConditionEditorProps) {
   const [draft, setDraft] = useState<Draft>(() => draftOf(leaf))
@@ -187,9 +187,9 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
     <Dialog title={leaf ? t('Edit condition') : t('Add condition')} onClose={onClose} size="sm" placement="sheet" testId="condition-editor">
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); save() }}>
         <Field label={t('Filter on')}>
-          <select className={select} value={draft.kind} onChange={(e) => set({ kind: e.target.value as ConditionKind, op: e.target.value === 'tracked' ? '>' : '<=' })}>
+          <Select value={draft.kind} onChange={(e) => set({ kind: e.target.value as ConditionKind, op: e.target.value === 'tracked' ? '>' : '<=' })}>
             {kinds.map((k) => <option key={k} value={k}>{KIND_NAME[k]}</option>)}
-          </select>
+          </Select>
         </Field>
 
         {(draft.kind === 'label' || draft.kind === 'project') && (
@@ -223,14 +223,14 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
         {isDate && (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t('Comparison')}>
-              <select className={select} value={draft.op} onChange={(e) => set({ op: e.target.value as Cmp })}>
+              <Select value={draft.op} onChange={(e) => set({ op: e.target.value as Cmp })}>
                 {CMPS.map((c) => <option key={c} value={c}>{DATE_OP_NAME[c]}</option>)}
-              </select>
+              </Select>
             </Field>
             <Field label={t('When')}>
-              <select className={select} value={draft.when} onChange={(e) => set({ when: e.target.value as When })}>
+              <Select value={draft.when} onChange={(e) => set({ when: e.target.value as When })}>
                 {(Object.keys(WHEN_NAME) as When[]).map((w) => <option key={w} value={w}>{WHEN_NAME[w]}</option>)}
-              </select>
+              </Select>
             </Field>
             {(draft.when === 'days-ahead' || draft.when === 'days-ago' || draft.when === 'weeks-ago' || draft.when === 'months-ago') && (
               <Field label={draft.when === 'weeks-ago' ? t('Number of weeks') : draft.when === 'months-ago' ? t('Number of months') : t('Number of days')}>
@@ -239,9 +239,9 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
             )}
             {draft.when === 'weekday' && (
               <Field label={t('Day of the week')}>
-                <select className={select} value={draft.weekday} onChange={(e) => set({ weekday: Number(e.target.value) })}>
+                <Select value={draft.weekday} onChange={(e) => set({ weekday: Number(e.target.value) })}>
                   {WEEKDAY_NAME.map((w, i) => <option key={w} value={i}>{t(w)}</option>)}
-                </select>
+                </Select>
               </Field>
             )}
             {draft.when === 'date' && (
@@ -254,9 +254,9 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
 
         {draft.kind === 'state' && (
           <Field label={t('State')}>
-            <select className={select} value={draft.keyword} onChange={(e) => set({ keyword: e.target.value as Keyword })}>
+            <Select value={draft.keyword} onChange={(e) => set({ keyword: e.target.value as Keyword })}>
               {(Object.keys(KEYWORD_NAME) as Keyword[]).map((k) => <option key={k} value={k}>{KEYWORD_NAME[k]}</option>)}
-            </select>
+            </Select>
           </Field>
         )}
 
@@ -270,9 +270,9 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
         {draft.kind === 'tracked' && (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t('Comparison')}>
-              <select className={select} value={draft.op} onChange={(e) => set({ op: e.target.value as Cmp })}>
+              <Select value={draft.op} onChange={(e) => set({ op: e.target.value as Cmp })}>
                 {CMPS.map((c) => <option key={c} value={c}>{AMOUNT_OP_NAME[c]}</option>)}
-              </select>
+              </Select>
             </Field>
             <Field label={t('Duration')} description={t('For example 30m, 1h or 1h30')}>
               <Input value={draft.duration} onChange={(e) => set({ duration: e.target.value })} autoComplete="off" spellCheck={false} />
@@ -283,17 +283,17 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
         {(draft.kind === 'field' || draft.kind === 'nofield') && (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t('Field')}>
-              <select className={select} value={draft.name} onChange={(e) => set({ name: e.target.value })}>
+              <Select value={draft.name} onChange={(e) => set({ name: e.target.value })}>
                 <option value="">{t('Choose a field')}</option>
                 {[...new Set([...fieldNames, draft.name].filter(Boolean))].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
+              </Select>
             </Field>
             {draft.kind === 'field' && (
               <>
                 <Field label={t('Comparison')}>
-                  <select className={select} value={draft.op} onChange={(e) => set({ op: e.target.value as Cmp })}>
+                  <Select value={draft.op} onChange={(e) => set({ op: e.target.value as Cmp })}>
                     {CMPS.map((c) => <option key={c} value={c}>{AMOUNT_OP_NAME[c]}</option>)}
-                  </select>
+                  </Select>
                 </Field>
                 <Field label={t('Value')} description={t('A number, true or false, a date such as tomorrow, or text')}>
                   <Input value={draft.value} onChange={(e) => set({ value: e.target.value })} autoComplete="off" spellCheck={false} />

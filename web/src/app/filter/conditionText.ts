@@ -11,7 +11,8 @@ export const DATE_FIELD_NAME = translatedMap({
 
 /** The state keywords, in the order the editor lists them. */
 export const KEYWORD_NAME = translatedMap<Keyword>({
-  overdue: msg('Overdue'),
+  // The interface says "earlier", never "overdue" (page-rhythm D8); `overdue` is only the query keyword.
+  overdue: msg('Due earlier'),
   today: msg('Due today'),
   tomorrow: msg('Due tomorrow'),
   'no date': msg('No due date'),

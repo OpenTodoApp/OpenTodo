@@ -98,7 +98,7 @@ The builder sits directly above the formula input, inside the same block as toda
 
 Interface budget (docs/interface-guide.md):
 - With the builder closed, the chrome above the first result is unchanged: the header and the input row, 2 rows.
-- In the Filter view the builder is open by default. That screen is an editor whose content is the query, and while the input is empty the builder replaces the usage hint rather than adding to it.
+- In the Filter view the builder is open by default. That screen is an editor whose content is the query.
 - On a saved filter it is closed by default, so the list starts where it did.
 - No new shortcut is registered. The arrow and Delete keys work only inside the builder's own group, through roving focus.
 - No new scroll region: the builder grows with its content.
@@ -134,4 +134,15 @@ None. No new field, entity or op. `view.query` stays a string.
 
 ## Implementation notes
 
-(filled in while applying)
+- **Bundle (task 4.3).** Measured with `vite build` on this branch against the same tree with the two screens reverted to main:
+
+  | Main chunk | Raw | Gzipped |
+  | --- | --- | --- |
+  | Before | 1,067,540 B | 307,039 B |
+  | After | 1,090,081 B | 313,546 B |
+
+  That is +22.5 KB raw and +6.4 KB gzipped. The builder is not lazy-loaded. Loading it after the first paint would push the query input and the results down as it arrives, a layout shift the interface audit (M12) counts. Its two screens are the only users, and they are part of the main bundle already.
+- **A new group starts with the other connective.** "+ Group" inside "All of these" adds "Any of these" and vice versa, because that is almost always why a group is added. An empty group changes nothing in the formula until it gets a condition.
+- **Usage hint.** The hint keeps its place below the input, as the live spec says, rather than being replaced by the builder (D5 first proposed that). With the builder open on an empty query, the page shows the empty builder, the input and the hint.
+- **Future days read "5 days from now"** in a chip ("Due before 5 days from now"), which reads better than "in 5 days" after a comparison.
+- **Go vectors.** `internal/filter/testdata/formatted.txt` holds 198 formatted queries: the docs examples, the Go edge forms and 100 seeded trees. `TestFilterParserAcceptsFormatted` parses them all.

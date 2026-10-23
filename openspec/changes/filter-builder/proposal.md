@@ -53,4 +53,4 @@ None.
 - `web/src/app/filter/` (new): `FilterBuilder.tsx`, `ConditionEditor.tsx`, `conditionText.ts` and stories.
 - `web/src/app/FilterView.tsx`, `web/src/app/SavedViewView.tsx`: mount the builder over the formula field.
 - Catalogs in the five shipped languages, `docs/filters.md`, `docs/saved-filters.md` if present, CHANGELOG.
-- Bundle: the builder is a few hundred lines of app code with no dependency, loaded with the Filter and saved-filter screens. Expected main-bundle growth is under 6 KB gzipped; the design records the measured figure.
+- Bundle: the builder is a few hundred lines of app code with no dependency, loaded with the Filter and saved-filter screens. It adds about 6.5 KB gzipped to the main bundle; the design records the measurement and why it is not lazy-loaded.

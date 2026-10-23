@@ -3631,6 +3631,9 @@
   "Due date and time (6 languages)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Due earlier": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Due time": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/DueField.tsx",
@@ -7587,9 +7590,6 @@
   "Not you? <a>Sign out</a> and use another account.": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
-  "Not: {condition}. Edit": [
-    "web/src/app/filter/FilterBuilder.tsx"
-  ],
   "Not: {group}": [
     "web/src/app/filter/FilterBuilder.tsx"
   ],
@@ -8402,9 +8402,6 @@
   ],
   "Over the limit": [
     "web/src/app/RelaySettings.tsx"
-  ],
-  "Overdue": [
-    "web/src/app/filter/conditionText.ts"
   ],
   "Overwrite changed fields": [
     "web/src/app/ImportScreen.tsx"
@@ -16038,9 +16035,6 @@
   ],
   "{completed} completed": [
     "web/src/app/Sections.tsx"
-  ],
-  "{condition}. Edit": [
-    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "{count} more fields: {join}": [
     "web/src/app/TaskRow.tsx"

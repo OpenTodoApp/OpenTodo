@@ -5078,14 +5078,12 @@
   "No time of day": "Sem hora",
   "Not": "Não",
   "Not waiting on another task": "Não espera por outra tarefa",
-  "Not: {condition}. Edit": "Não: {condition}. Editar",
   "Not: {group}": "Não: {group}",
   "Number of days": "Número de dias",
   "Number of months": "Número de meses",
   "Number of weeks": "Número de semanas",
   "Origin": "Origem",
   "Origin is {value}": "Origem é {value}",
-  "Overdue": "Atrasada",
   "Priority is P{n}": "Prioridade é P{n}",
   "Project is {name}": "Projeto é {name}",
   "Project is {name} or a sub-project": "Projeto é {name} ou um subprojeto",
@@ -5119,7 +5117,6 @@
   "this month": "este mês",
   "this week": "esta semana",
   "tomorrow": "amanhã",
-  "{condition}. Edit": "{condition}. Editar",
   "{field} after {date}": "{field} depois de {date}",
   "{field} before {date}": "{field} antes de {date}",
   "{field} on or after {date}": "{field} em ou depois de {date}",
@@ -5136,5 +5133,6 @@
   "{name} is empty": "{name} está vazio",
   "{name} is less than {value}": "{name} é menor que {value}",
   "{name} is more than {value}": "{name} é maior que {value}",
-  "{name} is {value}": "{name} é {value}"
+  "{name} is {value}": "{name} é {value}",
+  "Due earlier": "Com data anterior"
 }

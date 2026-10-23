@@ -181,8 +181,8 @@ function Chip({ item, onOpen, onKey, onRemove }: { item: BCondition; onOpen: () 
   return (
     <span data-filter-chip data-not={item.not || undefined}
       className="flex min-h-9 w-full items-center gap-1 rounded-control border border-default bg-surface pl-3 pr-1 text-body shadow-1 sm:w-auto pointer-coarse:min-h-11">
+      {/* Named by its visible text ("Not" and the condition), so speech and sight agree. */}
       <button type="button" data-chip-open className="flex min-w-0 flex-1 items-center gap-2 rounded-control py-1 text-left"
-        aria-label={item.not ? t('Not: {condition}. Edit', { condition: text }) : t('{condition}. Edit', { condition: text })}
         onClick={onOpen} onKeyDown={onKey}>
         {item.not && <span className="shrink-0 rounded-chip bg-danger-soft px-1.5 text-hint font-semibold uppercase text-on-danger-soft">{t('Not')}</span>}
         <span className="min-w-0 truncate">{text}</span>
