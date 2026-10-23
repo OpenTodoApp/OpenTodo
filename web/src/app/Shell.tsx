@@ -190,11 +190,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   })
 
   const sidebar = useSidebarLayout()
-  // The sidebar toggle in every page header (precision-shell D2).
-  useEffect(() => {
-    setSidebarToggle({ collapsed: sidebar.collapsed, toggle: toggleSidebarCollapsed, shortcut: keysOf('global.sidebar') })
-    return () => setSidebarToggle(null)
-  }, [sidebar.collapsed])
+  useHeaderSidebarToggle(sidebar.collapsed)
   const openPalette = palette.openSearch
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
@@ -383,4 +379,12 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
       </div>
     </header>
   )
+}
+
+/** Registers the sidebar toggle every page header shows (precision-shell D2). */
+function useHeaderSidebarToggle(collapsed: boolean) {
+  useEffect(() => {
+    setSidebarToggle({ collapsed, toggle: toggleSidebarCollapsed, shortcut: keysOf('global.sidebar') })
+    return () => setSidebarToggle(null)
+  }, [collapsed])
 }
