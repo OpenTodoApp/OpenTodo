@@ -14,6 +14,7 @@ import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { buildTaskTree, progressMap } from '../../lib/subtasks'
 import type { Task } from '../../lib/types'
+import { isPlannedWithoutProject } from '../../lib/inbox'
 import { inLater } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
@@ -160,13 +161,21 @@ export function useListModel(route: ListRoute, userId?: string) {
   const tree = useMemo(() => (treeView ? buildTaskTree(treeTasks) : null), [treeView, treeTasks])
   const buckets = useMemo(() => sectionBuckets(projectId, tree, sections), [projectId, tree, sections])
   const columns = useMemo(() => boardColumns(buckets), [buckets])
+  // The Inbox's planned tasks without a project, in a folded group at its end (inbox-planned-group D1).
+  const planned = useMemo(() => {
+    if (route.view !== 'inbox') return NO_TASKS
+    const list = allTasks.filter(isPlannedWithoutProject)
+    return duration && filterKey ? list.filter(durationPredicate(duration)) : list
+  }, [route.view, allTasks, duration, filterKey])
 
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
+  // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
+  const ownRows = useMemo(() => (planned.length ? groups.filter((g) => g.key !== 'planned').flatMap((g) => g.rows) : rows), [planned, groups, rows])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
   const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task)), [board, rows])
@@ -194,7 +203,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
-    collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, siblingPos, timeColumn, doneBySection,
+    collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, ownRows, siblingPos, timeColumn, doneBySection,
     showCompleted, completedTasks, completedOpen,
   }
 }

@@ -15,6 +15,7 @@ import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
 import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGhosts, type Departure } from '../motion'
+import { navigate } from '../router'
 import type { RowMotion } from '../TaskRow'
 import { ListRow, SubtaskInput, type RowActions } from './ListRow'
 import type { ListRoute } from './useListModel'
@@ -244,7 +245,8 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
   return (
     <section className="mb-4" data-group={g.key}>
       {g.folded !== undefined ? (
-        <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(BLOCKED_OPEN_KEY)} />
+        <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
+          actions={g.key === 'planned' ? <PlannedActions /> : undefined} actionsAlwaysVisible={g.key === 'planned'} />
       ) : g.heading && (
         <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
           collapsed={collapsed} onToggle={toggle}
@@ -252,6 +254,15 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
       )}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
     </section>
+  )
+}
+
+/** The Inbox's "Planned, no project" group header action (inbox-planned-group D3): the same tasks in Filter. */
+function PlannedActions() {
+  return (
+    <Button variant="ghost" size="sm" className="text-meta" onClick={() => navigate({ view: 'filter', q: 'no project' })} data-planned-filter>
+      {t('Open as filter')}
+    </Button>
   )
 }
 

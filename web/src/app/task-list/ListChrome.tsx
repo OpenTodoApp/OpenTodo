@@ -5,8 +5,6 @@
 import type { ReactNode } from 'react'
 import { DURATION_FILTERS, type DurationFilter } from '../../lib/filters'
 import { msg, t, translatedMap } from '../../lib/i18n'
-import { isPlannedWithoutProject } from '../../lib/inbox'
-import { useOpenTasks } from '../../lib/liveTasks'
 import type { ProjectViewMode } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import type { AccountRole, Label, Place, Project, Task } from '../../lib/types'
@@ -43,30 +41,11 @@ export function LayoutSwitch({ mode, onChoose }: { mode: ProjectViewMode; onChoo
 }
 
 /**
- * "N planned tasks without a project" next to the Inbox title (inbox-means-unplaced
- * D4): where scheduled tasks without a project went, opening Filter with `no project`.
- * Hidden at zero; it sits in the header's meta, so it adds no row of chrome.
- */
-export function usePlannedWithoutProject(on: boolean): number {
-  const open = useOpenTasks()
-  return on ? open.filter(isPlannedWithoutProject).length : 0
-}
-
-export function PlannedWithoutProject({ count }: { count: number }) {
-  return (
-    <button type="button" className="max-w-full truncate text-meta text-muted underline-offset-2 hover:text-default hover:underline" data-planned-line
-      onClick={() => navigate({ view: 'filter', q: 'no project' })}>
-      {t('{n, plural, one {# planned task without a project} other {# planned tasks without a project}}', { n: count })}
-    </button>
-  )
-}
-
-/**
  * Page actions (ux-overhaul, task-list-presentation): the header row holds them, so
  * nothing sits between the quick add and the first task. Touch screens have no
  * hover: the Select button shows every checkbox (bulk-edit D3).
  */
-export function ListPageActions({ route, userRole, rowCount, topLevelCount, selectMode, onSelectMode, filterKey, duration, onDuration, planned = 0 }: {
+export function ListPageActions({ route, userRole, rowCount, topLevelCount, selectMode, onSelectMode, filterKey, duration, onDuration }: {
   route: ListRoute
   userRole?: AccountRole
   rowCount: number
@@ -76,13 +55,10 @@ export function ListPageActions({ route, userRole, rowCount, topLevelCount, sele
   filterKey: string | null
   duration: DurationFilter | null
   onDuration: (kind: DurationFilter | null) => void
-  /** Planned tasks without a project: shown here below 768 px, where the header's meta is not. */
-  planned?: number
 }) {
   return (
     <>
       {route.view === 'today' && <TodayAskAction role={userRole} />}
-      {route.view === 'inbox' && planned > 0 && <span className="w-full md:hidden"><PlannedWithoutProject count={planned} /></span>}
       {route.view === 'inbox' && rowCount > 0 && (
         // Process the Inbox one task at a time (inbox-triage); g then p.
         <Tooltip label={t('Process the Inbox')} shortcut="g p">
