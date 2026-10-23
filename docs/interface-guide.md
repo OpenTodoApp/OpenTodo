@@ -37,21 +37,23 @@ The [design system](design-system.md) says which tokens and building blocks exis
 
 | Width | Used by | Column |
 | --- | --- | --- |
-| `list` | Inbox, Today, Upcoming, labels, filters, Trash, Updates, Help | 48 rem |
+| `list` | Inbox, Today, Upcoming, labels, filters, Trash, Updates, Help | 60 rem |
 | `form` | Settings pages, Import, Ask | 42 rem |
 | `wide` | a project's list (with or without field columns) | 72 rem |
 | `full` | Board, timeline, Day, Week, Month and Plan | the whole frame |
 
 **The lead line.** The title is set at the `display` step on its own line; the page's `meta` (Today's date and totals, a project's members, a label's count, a read-only note) is a muted line under it at the metadata size (`data-page-lead`). It is inside the one header element, so the interface budget's "rows of chrome" (a count of elements) is unchanged. Below 768 px the shell's bar shows it as its subtitle.
 
-**Two page frames** (`data-page-frame`). A *standalone* page, one without a layout switch (Inbox, Today, Upcoming, a label, Filter, Trash, Updates, Settings, Import, Ask, Help, the review screens), has a frame as wide as its content plus the side padding: the title and the first row share one left edge. A *layout* page (a project, a saved view with a board or timeline, the calendars) keeps one frame of at most 80 rem; the header spans it and the content starts at its left edge, so a project's title and actions never move between list, board and timeline. Content wider than the frame scrolls sideways inside it. Both frames start at the content column's left edge (list-stays-still), so every page shares one left edge and the docked panel opens into the space on the right. `PageBody` picks the frame from its width (`full` is a layout page) or `frame`; the task lists mark theirs in `TaskListView`. The CSS is one unlayered rule in `index.css`.
+**Two page frames** (`data-page-frame`). A *standalone* page, one without a layout switch (Inbox, Today, Upcoming, a label, Filter, Trash, Updates, Settings, Import, Ask, Help, the review screens), has a frame as wide as its content plus the side padding: the title and the first row share one left edge. A *layout* page (a project, a saved view with a board or timeline, the calendars) keeps one frame for every layout: 72 rem for a project (`data-page-project`), at most 80 rem otherwise. The content starts at its left edge, so a project's title and actions never move between list, board and timeline.
+
+**The header is as wide as its content** (page-frame-v3). The title starts at the content's left edge and the last action ends at its right edge: on a list page, a project's list and the settings pages the header takes the page width (a sticky header adds the side padding it bleeds into); on a board, a timeline or a calendar it spans the frame. No action floats beyond the content. Content wider than the frame scrolls sideways inside it. Both frames start at the content column's left edge (list-stays-still), so every page shares one left edge and the docked panel opens into the space on the right. `PageBody` picks the frame from its width (`full` is a layout page) or `frame`; the task lists mark theirs in `TaskListView`. The CSS is one unlayered rule in `index.css`.
 
 | Window (sidebar 16 rem) | Content column | Panel | Standalone, panel closed | Standalone, panel open | Layout frame, closed / open |
 | --- | --- | --- | --- | --- | --- |
 | 1024 px | 48 rem | 26 rem | fills (list 44 rem) | fills (22 rem) | 48 / 22 rem |
-| 1280 px | 64 rem | 26 rem | 52 rem, 12 rem free on the right | fills (38 rem) | 64 / 38 rem |
-| 1440 px | 74 rem | 30 rem | 52 rem, 22 rem free on the right | fills (44 rem) | 74 / 44 rem |
-| 1920 px | 104 rem | 30 rem | 52 rem, 52 rem free on the right | 52 rem, 22 rem free on the right | 80 / 74 rem |
+| 1280 px | 64 rem | 26 rem | fills (list 60 rem) | fills (38 rem) | 64 / 38 rem |
+| 1440 px | 74 rem | 30 rem | 64 rem, 10 rem free on the right | fills (44 rem) | project 72 / 44 rem, calendars 74 / 44 rem |
+| 1920 px | 104 rem | 30 rem | 64 rem, 40 rem free on the right | 64 rem, 10 rem free on the right | project 72 / 72 rem, calendars 80 / 74 rem |
 
 Opening and closing the panel moves no row and not the title: the frame's left edge never changes, and a frame wider than the narrowed column gives up width on its right. Nothing slides. The panel's width is one custom property, `--panel-w` (26 rem, 30 rem from 1440 px), read by both docked panels. Enforced by `pageTemplate.test.ts`, `pageRhythm.test.tsx` and the frame step of `make e2e`.
 
