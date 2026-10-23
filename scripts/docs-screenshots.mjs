@@ -531,9 +531,10 @@ const shots = [
     return { x: Math.max(0, side.x - 8), y: Math.max(0, side.y - 8), width: Math.max(side.width, m.x + m.width - side.x) + 24, height: m.y + m.height - side.y + 24 }
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'workspaces', server: P, async run(p) { await go(p, plainBase, '/today', () => p.locator('[data-workspace-trigger]').waitFor()) } },
-  { name: 'settings-workspaces', server: P, async run(p) {
+  { name: 'settings-workspaces', server: P, card: true, async run(p) {
     await go(p, plainBase, '/settings/workspaces', () => p.getByRole('heading', { name: 'Workspaces', level: 1 }).waitFor())
-    await p.getByRole('group', { name: /^Family/ }).click(); await p.locator('#workspace-members').waitFor(); await settle(p, 600)
+    await p.getByRole('button', { name: /^Family/ }).first().click(); await p.getByRole('tab', { name: /^Members/ }).click()
+    await p.locator('#workspace-members').waitFor(); await settle(p, 600)
   } },
   { name: 'assistant-settings', server: 'assistant', async run(p) {
     await go(p, assistantBase, '/settings/integrations', () => p.getByRole('heading', { name: 'Integrations', level: 1 }).waitFor())

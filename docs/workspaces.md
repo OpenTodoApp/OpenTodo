@@ -6,7 +6,7 @@ section: Guides
 specs: [workspaces, project-sharing, app-shell]
 screens: [settings/workspaces]
 order: 72
-card: workspaces
+card: settings-workspaces
 ---
 # Workspaces
 
