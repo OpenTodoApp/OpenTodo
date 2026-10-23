@@ -230,7 +230,9 @@ export const OVERLAYS = {
     // title edits it in place instead (inline-task-editing), so the audit tour's 1280 px
     // pass opens the panel the keyboard way, as every width does here.
     await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().locator('[data-row-open]').press('Enter')
-    return { overlay: p.locator('[data-detail-for]'), kind: 'panel' }
+    // The task opens as its page (task-full-page), which scrolls like any page: its head
+    // (checkbox, title, notes) is checked in place, not as an overlay that must fit.
+    return { overlay: p.locator('[data-task-page] [data-task-content]'), kind: 'inline' }
   },
   // Process the Inbox's scheduling sheet (inbox-means-unplaced): a bottom sheet on phones.
   async 'schedule-sheet'(p) {
