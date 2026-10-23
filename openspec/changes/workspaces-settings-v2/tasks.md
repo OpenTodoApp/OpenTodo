@@ -18,6 +18,6 @@
 ## 4. Polish and docs
 
 - [x] 4.1 Strings in the five catalogs; verify `node scripts/i18n-check.mjs`
-- [ ] 4.2 Stories for owner, member, the groups editor and phone width, in both themes; regenerate baselines in the pinned Playwright image; verify `make ui-check` in CI
+- [x] 4.2 Stories for owner, member, the groups editor and phone width, in both themes; regenerate baselines in the pinned Playwright image; verify `make ui-check` in CI
 - [x] 4.3 `docs/workspaces.md` and CHANGELOG under Unreleased; verify `make docs-check`
 - [ ] 4.4 `make check` with TZ=UTC and `make openspec-validate`; open the pull request and get CI green
