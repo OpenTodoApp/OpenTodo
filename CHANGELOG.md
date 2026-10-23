@@ -4,6 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **Delivery channels add one migration** (`0046_notification_channels`: `notification_channels`, `notification_deliveries`) and a secrets file, `<data>/secrets/notification-channels.json`, that backups leave out like the other secrets: after a restore, people enter their channel tokens again. No new environment variable. Channels are on by default; the owner can turn them off in Settings → Notifications.
+
+### Added
+
+- **Delivery channels: ntfy, Pushover, Gotify and a webhook.** **Settings → Notifications → Delivery channels** sends your reminders, tasks assigned to you, mentions, tasks that are ready to start and task page replies to ntfy, Pushover, Gotify, or any address as a signed JSON message (Apprise and Home Assistant read it as is), up to five channels each with their own events and **Send test**. Messages say only what happened unless you include task titles, and never name a task with end-to-end encryption. Failed messages are retried for about a day; a channel that keeps failing turns itself off. (#271; [Delivery channels](docs/notification-channels.md))
+
 ## [0.10.0] - 2026-10-23
 
 OpenTodo 0.10.0 is a calmer app with room for more people. The interface was redrawn: one quiet task row, a new mark and sidebar, softer colours, motion that marks a completed task, and a phone layout with swipe actions and a task sheet. **Workspaces and groups** keep work and home apart and share a project with a team in one step. **Automation rules** let a task change itself, notes and comments share **one editor** with tables, images, mentions and **reactions**, and a **task page** hands one task to someone without an account. Tasks can have a **location** on a map, your account can live as a **Markdown vault** for Obsidian, the importer reads **six more apps**, and the owner can give the server its **own name and logo**. An early **Android app** is in the repository, not yet in the stores.

@@ -11,7 +11,7 @@ order: 85
 
 <picture><source srcset="images/settings-notifications-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-notifications-light.webp" alt="Settings, Notifications section with the options Enable notifications on this device and Include task titles."></picture>
 
-Push notifications deliver [reminders](notifications.md) even when OpenTodo isn't open. Each device decides for itself.
+Push notifications deliver [reminders](notifications.md) even when OpenTodo isn't open. Each device decides for itself. To receive them in ntfy, Pushover, Gotify or through a webhook instead, add a [delivery channel](notification-channels.md).
 
 ## Get reminders when the app is closed
 

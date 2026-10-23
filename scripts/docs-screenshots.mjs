@@ -449,6 +449,21 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 240 }
   } },
+  // Delivery channels (notification-channels): one ntfy channel added through the API.
+  { name: 'settings-notification-channels', server: P, async run(p) {
+    await go(p, plainBase, '/settings/notifications', () => p.getByRole('heading', { name: 'Notifications', level: 1 }).waitFor())
+    await p.evaluate(async () => {
+      const { channels } = await (await fetch('/api/v1/notification-channels')).json()
+      if (channels.length) return
+      await fetch('/api/v1/notification-channels', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'ntfy', name: 'Phone', url: 'https://ntfy.sh', topic: 'ana-tasks', events: ['reminder', 'assigned', 'mentioned'] }) })
+    })
+    await go(p, plainBase, '/settings/notifications', () => p.locator('[data-channel]').first().waitFor())
+    const h = p.getByRole('heading', { level: 2, name: 'Delivery channels' }); await h.waitFor()
+    await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
+    const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
+    return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 330 }
+  } },
   // Archived projects live at the bottom of the Projects page.
   { name: 'archived-projects', server: P, async run(p) {
     await go(p, plainBase, '/projects', () => p.locator('[data-archived-disclosure] summary').waitFor())

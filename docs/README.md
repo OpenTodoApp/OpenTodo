@@ -69,6 +69,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Set up the assistant](assistant-setup.md) | For the server owner, allow one or more model providers, enter models and keys, test the connection and turn the assistant on for everyone. |
 | &nbsp;&nbsp;↳ [Assistant owner options](assistant-owner-options.md) | Running the assistant on a local model, letting members bring their own key, counting their keys toward the limit, and the monthly token allowance. |
 | [Notifications](notifications.md) | The bell for assignments, mentions and tasks ready to start, reminder pop-ups inside the app, and push notifications on each device when the app is closed. |
+| &nbsp;&nbsp;↳ [Delivery channels](notification-channels.md) | Send reminders and notifications to ntfy, Pushover, Gotify, or any address through a signed webhook, including Apprise and Home Assistant. |
 | &nbsp;&nbsp;↳ [Push notifications](push-notifications.md) | Turn on reminders for when the app is closed, device by device, what iPhone and iPad need, what a push message contains, and what to do when nothing arrives. |
 | &nbsp;&nbsp;↳ [Check that push works](push-delivery-check.md) | The Delivery check under Settings → Notifications, each step it lists, and what every result of a test notification means. |
 | [Offline and sync](offline-and-sync.md) | How OpenTodo keeps working without a connection, what the sync status means, and what happens when two devices change the same task. |

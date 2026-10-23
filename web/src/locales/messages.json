@@ -504,6 +504,9 @@
   "Access key": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Access token": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Account": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/settingsSections.ts"
@@ -559,6 +562,7 @@
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/SsoPanel.tsx"
   ],
@@ -724,11 +728,18 @@
   "Add calendar": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Add channel": [
+    "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationChannels.tsx"
+  ],
   "Add column after": [
     "web/src/app/editorCommands.ts"
   ],
   "Add column before": [
     "web/src/app/editorCommands.ts"
+  ],
+  "Add delivery channel": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Add details, or send as it is…": [
     "web/src/app/assistant/AssistantComposer.tsx"
@@ -858,6 +869,7 @@
   ],
   "Address": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/locations/PlacesView.tsx"
   ],
   "Address logging": [
@@ -961,6 +973,9 @@
   ],
   "Allow calendar feeds on this server": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Allow delivery channels on this server": [
+    "web/src/app/NotificationChannels.tsx"
   ],
   "Allow issue connections on this server": [
     "web/src/app/IssuesPanel.tsx"
@@ -1163,6 +1178,9 @@
   "Apple Reminders (JSON from the Shortcut)": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Application token": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Applied": [
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleHistory.tsx"
@@ -1344,6 +1362,7 @@
   ],
   "Assigned to me": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -1824,6 +1843,7 @@
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NewBoardDialog.tsx",
     "web/src/app/NewWorkspaceDialog.tsx",
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PasswordSection.tsx",
     "web/src/app/ReauthDialog.tsx",
@@ -1954,6 +1974,9 @@
   "Changing calendar feeds needs a connection. You are seeing the last loaded state.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Changing delivery channels needs a connection. You are seeing the last loaded list.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Changing issue connections needs a connection. You are seeing the last loaded state.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -1967,6 +1990,12 @@
     "web/src/app/AgentAccessRow.tsx"
   ],
   "Changing your profile needs a connection.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Channel name": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "Channels": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Check": [
@@ -2086,6 +2115,9 @@
   ],
   "Choose another task": [
     "web/src/app/focus/FocusView.tsx"
+  ],
+  "Choose at least one event.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Choose files for the comment": [
     "web/src/app/task-detail/Composer.tsx"
@@ -2587,6 +2619,7 @@
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -2599,6 +2632,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Copy": [
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/WorkspacesSettings.tsx"
   ],
@@ -3068,6 +3102,7 @@
   "Delete": [
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/RestoreSection.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/WorkspacesSettings.tsx",
@@ -3174,6 +3209,7 @@
   "Delete {name}?": [
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/WorkspacesSettings.tsx"
   ],
   "Delete “{name}”?": [
@@ -3207,6 +3243,18 @@
   ],
   "Deliver it yourself; nothing is emailed. It works once until {instant}. API tokens keep working after a reset; deactivate the account instead if it may be compromised.": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "Delivery channel added": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Delivery channel changed": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Delivery channel deleted": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Delivery channels": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Delivery check": [
     "web/src/app/NotificationsSettings.tsx"
@@ -3403,6 +3451,7 @@
     "web/src/app/Markdown.tsx",
     "web/src/app/MarkdownView.tsx",
     "web/src/app/MembersPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/ProjectNote.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -3586,6 +3635,7 @@
   "Edit": [
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
@@ -3596,6 +3646,9 @@
   ],
   "Edit comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "Edit delivery channel": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Edit in place": [
     "web/src/app/PreferencesPanels.tsx",
@@ -3866,6 +3919,9 @@
   ],
   "Enter the address of GitHub, GitLab or your own instance.": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Enter the address.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Enter the email address of your account. We will send you a link to choose a new password.": [
     "web/src/app/EmailScreens.tsx"
@@ -5292,6 +5348,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Include task titles": [
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ShellNotifications.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -5405,6 +5462,9 @@
   "It has no open tasks.": [
     "web/src/app/Sections.tsx"
   ],
+  "It is never shown again.": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "It may have been revoked or have expired. Ask whoever shared it for a new one.": [
     "web/src/app/PublicListScreen.tsx"
   ],
@@ -5442,6 +5502,9 @@
   ],
   "Its events disappear from Day and Week on every device. The calendar itself is not changed.": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Its tokens are removed from the server and nothing more is sent to it.": [
+    "web/src/app/NotificationChannels.tsx"
   ],
   "JSON: lists of tasks": [
     "web/src/app/ImportScreen.tsx"
@@ -5697,10 +5760,14 @@
     "web/src/app/bulk/UndoToast.tsx"
   ],
   "Last delivered {ago}": [
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx"
   ],
   "Last delivered {instant}.": [
     "web/src/lib/push.ts"
+  ],
+  "Last error: {error}": [
+    "web/src/app/NotificationChannels.tsx"
   ],
   "Last look {instant}": [
     "web/src/app/review/MonthlyLook.tsx"
@@ -5920,7 +5987,8 @@
     "web/src/ui/Skeleton.tsx"
   ],
   "Loading activity": [
-    "web/src/app/ActivityPanel.tsx"
+    "web/src/app/ActivityPanel.tsx",
+    "web/src/app/FeedView.tsx"
   ],
   "Loading archives…": [
     "web/src/app/RestoreSection.tsx"
@@ -5980,6 +6048,7 @@
     "web/src/app/PreferencesPanels.tsx"
   ],
   "Loading the list…": [
+    "web/src/app/ProjectsView.tsx",
     "web/src/app/PublicListScreen.tsx"
   ],
   "Loading the review…": [
@@ -5992,7 +6061,8 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Loading your tasks": [
-    "web/src/app/App.tsx"
+    "web/src/app/App.tsx",
+    "web/src/app/PlanView.tsx"
   ],
   "Loading…": [
     "web/src/page/TaskPageScreen.tsx",
@@ -6214,6 +6284,9 @@
     "web/src/app/EditorChrome.tsx",
     "web/src/app/task-detail/Composer.tsx",
     "web/src/lib/richtextEditor.ts"
+  ],
+  "Mentions": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Menu for label {name}": [
     "web/src/app/LabelsView.tsx"
@@ -6552,6 +6625,7 @@
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/NewWorkspaceDialog.tsx",
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/TokensSection.tsx",
@@ -6607,6 +6681,9 @@
   ],
   "Never reviewed": [
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Never with end-to-end encryption: messages only say what happened.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "New": [
     "web/src/app/FeedView.tsx",
@@ -6698,6 +6775,9 @@
   ],
   "New section name": [
     "web/src/app/Sections.tsx"
+  ],
+  "New signing secret": [
+    "web/src/app/NotificationChannels.tsx"
   ],
   "New task in {project}: {title}": [
     "web/src/lib/assistant.ts"
@@ -7148,7 +7228,8 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "No token is stored, for example after a restore. Enter it again.": [
-    "web/src/app/IssuesPanel.tsx"
+    "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx"
   ],
   "No webhooks yet": [
     "web/src/app/WebhooksPanel.tsx"
@@ -7338,6 +7419,7 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing delivered yet": [
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx"
   ],
   "Nothing delivered yet; send a test.": [
@@ -7496,6 +7578,7 @@
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ShellNotifications.tsx",
     "web/src/app/SsoPanel.tsx",
@@ -7527,11 +7610,17 @@
   "Off: members' links only work for people who already have an account.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Off: messages only say what happened, such as “A reminder is due”.": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Off: no account’s rules run on this server. Rules stay and run again when turned back on.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Off: no maps or address search on your devices; locations still work.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Off: nothing is sent.": [
+    "web/src/app/NotificationChannels.tsx"
   ],
   "Off: reminders read \"Reminder\" until you open the app. Never with encryption.": [
     "web/src/lib/settingsCopy.ts"
@@ -7618,6 +7707,7 @@
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ShellNotifications.tsx",
     "web/src/app/SsoPanel.tsx",
@@ -7990,6 +8080,9 @@
   "Optional, such as 45.4642, 9.19": [
     "web/src/app/locations/PlacesView.tsx"
   ],
+  "Optional. It is never shown again.": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Optional. With a passphrase, archives are encrypted (AES-256-GCM) before they leave the server.": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -7998,6 +8091,9 @@
   ],
   "Optional; the host is used otherwise.": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Optional; the service’s name is used otherwise.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Optionally bind a link to someone's email so only they can use it.": [
     "web/src/lib/settingsCopy.ts"
@@ -8211,8 +8307,14 @@
   "Paste a personal access token.": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Paste the application token.": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Paste the key": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Paste your Pushover user key.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Paste your key": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -8254,6 +8356,9 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "People can let an assistant with a dedicated token change their tasks.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "People can send their notifications to ntfy, Pushover, Gotify or a webhook.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "People can subscribe to calendar addresses and get a private feed of their tasks.": [
@@ -8896,6 +9001,9 @@
   "Ready": [
     "web/src/app/RelaySettings.tsx"
   ],
+  "Ready to start": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Ready: {mode}": [
     "web/src/app/focus/FocusParts.tsx"
   ],
@@ -8904,6 +9012,9 @@
   ],
   "Received on this device. Reminders will reach it while the app is closed.": [
     "web/src/app/NotificationsSettings.tsx"
+  ],
+  "Receives a signed JSON message; Apprise and Home Assistant work too.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Recent": [
     "web/src/app/palette/CommandPalette.tsx",
@@ -9022,6 +9133,7 @@
     "web/src/app/ReminderToasts.tsx"
   ],
   "Reminders": [
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -9638,6 +9750,7 @@
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
     "web/src/app/NamePrompt.tsx",
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/RuleEditor.tsx",
@@ -9738,6 +9851,9 @@
   ],
   "Saved. Before your next message, the assistant asks you to accept what is sent to your provider.": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Saved. Leave empty to keep it; it is never shown again.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Saving…": [
     "web/src/app/BackupsPanel.tsx",
@@ -9950,6 +10066,7 @@
     "web/src/app/TaskRow.tsx"
   ],
   "Send": [
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -9970,6 +10087,9 @@
     "web/src/app/MembersPanel.tsx",
     "web/src/app/WorkspacesSettings.tsx"
   ],
+  "Send notifications to ntfy, Pushover, Gotify or any address you choose.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Send reset email": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -9977,6 +10097,7 @@
     "web/src/app/EmailScreens.tsx"
   ],
   "Send test": [
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Send test email": [
@@ -9987,6 +10108,9 @@
   ],
   "Send the link again": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Send to {name}": [
+    "web/src/app/NotificationChannels.tsx"
   ],
   "Send with {keys}": [
     "web/src/app/task-detail/Composer.tsx"
@@ -10001,6 +10125,7 @@
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Server": [
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/settingsSections.ts"
   ],
   "Server address": [
@@ -10026,6 +10151,9 @@
   ],
   "Server reaches the push service": [
     "web/src/lib/push.ts"
+  ],
+  "Service": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Service address": [
     "web/src/app/SpeechServerPanel.tsx"
@@ -10478,6 +10606,12 @@
   "Signing in with {provider} did not work. Try again; if it keeps failing, ask the server owner to check the single sign-on settings.": [
     "web/src/app/sso.ts"
   ],
+  "Signing secret": [
+    "web/src/app/NotificationChannels.tsx"
+  ],
+  "Signing secret of {name}. Copy it now; it is never shown again.": [
+    "web/src/app/NotificationChannels.tsx"
+  ],
   "Single occurrence of {title}": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
@@ -10637,7 +10771,8 @@
   "Something went wrong.": [
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/IssuesPanel.tsx"
+    "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx"
   ],
   "Something went wrong. Is the server reachable?": [
     "web/src/app/AuthScreen.tsx"
@@ -11054,6 +11189,9 @@
   "Task page published": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Task page replies": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Task pages need a connection": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
@@ -11133,11 +11271,20 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Test delivered.": [
+    "web/src/app/NotificationChannels.tsx"
+  ],
   "Test destination": [
     "web/src/app/BackupsPanel.tsx"
   ],
   "Test failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "Test failed (status {status}): {error}": [
+    "web/src/app/NotificationChannels.tsx"
+  ],
+  "Test failed: {error}": [
+    "web/src/app/NotificationChannels.tsx"
   ],
   "Test message": [
     "web/src/app/auditFormat.ts"
@@ -11237,6 +11384,12 @@
   ],
   "The Trash is empty.": [
     "web/src/app/TrashView.tsx"
+  ],
+  "The address is on a private network the server owner has not allowed.": [
+    "web/src/app/NotificationChannels.tsx"
+  ],
+  "The address of your Gotify server.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "The address stops working at once and calendar apps stop showing your tasks.": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -11611,6 +11764,7 @@
   "The server could not be reached.": [
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx",
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
   "The server could not be reached. Import needs a connection.": [
@@ -11707,6 +11861,12 @@
   "The server owner has turned AI assistants off.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The server owner has turned delivery channels off.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "The server owner has turned notification channels off.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "The server owner requires two-factor authentication for this account.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -11797,6 +11957,9 @@
   ],
   "The token is removed from the server and nothing is polled any more. The {n, plural, one {# task} other {# tasks}} it created stay as ordinary tasks.": [
     "web/src/app/IssuesPanel.tsx"
+  ],
+  "The topic your ntfy app subscribes to.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "The total per account is 0 (no total) to {max} MB.": [
     "web/src/app/AttachmentSettingsPanel.tsx"
@@ -12553,6 +12716,9 @@
   "Title:": [
     "web/src/app/QuickAdd.tsx"
   ],
+  "Titles": [
+    "web/src/app/NotificationChannels.tsx"
+  ],
   "Titles appear as “Encrypted item” in calendar apps: the server cannot read them.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12732,6 +12898,9 @@
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
+  "Topic": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Total per account": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12856,6 +13025,9 @@
   ],
   "Turn on voice capture?": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Turned off after 20 failed messages. Check its settings, then turn it on.": [
+    "web/src/app/NotificationChannels.tsx"
   ],
   "Turning off…": [
     "web/src/app/EncryptionPanel.tsx"
@@ -13154,6 +13326,9 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
+  "Up to 5. Each one chooses the events it receives.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Up to 5. Nothing is ever written back to GitHub or GitLab.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -13226,6 +13401,9 @@
   "Usage: {usage}": [
     "web/src/app/vim/commands.ts"
   ],
+  "Use 1 to 64 letters, digits, - or _.": [
+    "web/src/app/NotificationChannelEditor.tsx"
+  ],
   "Use a code from the app": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -13291,6 +13469,9 @@
   ],
   "Used {relativeTime} · until {instant}": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "User key": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "User name": [
     "web/src/app/OutgoingEmailPanel.tsx",
@@ -13433,6 +13614,7 @@
     "web/src/app/AuthScreen.tsx"
   ],
   "Webhook": [
+    "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Webhook created": [
@@ -13599,6 +13781,9 @@
   ],
   "With end-to-end encryption you can create workspaces and move things between them, but not add members, groups or invite links yet.": [
     "web/src/app/WorkspacesSettings.tsx"
+  ],
+  "With end-to-end encryption, messages never name a task or a person.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Withdraw consent": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -14825,6 +15010,9 @@
   ],
   "now waits for {tasks}": [
     "web/src/lib/activity.ts"
+  ],
+  "ntfy.sh or the address of your own ntfy server.": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "occurrence": [
     "web/src/app/TaskRow.tsx"
@@ -16134,7 +16322,8 @@
     "web/src/app/FirstDay.tsx"
   ],
   "{n} of {max}": [
-    "web/src/app/IssuesPanel.tsx"
+    "web/src/app/IssuesPanel.tsx",
+    "web/src/app/NotificationChannels.tsx"
   ],
   "{n} of {total}": [
     "web/src/app/TriageView.tsx",

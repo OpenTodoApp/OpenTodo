@@ -130,6 +130,7 @@ func TestChannelWebhookSecretShownOnceAndLimits(t *testing.T) {
 		t.Fatalf("created = %v", out)
 	}
 	resp, out = e.do("GET", "/api/v1/notification-channels", nil)
+	e.mustStatus(resp, 200, out)
 	if raw, _ := json.Marshal(out); strings.Contains(string(raw), secret) {
 		t.Fatalf("secret listed: %s", raw)
 	}

@@ -26,6 +26,9 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'issue_connection.created': msg('Issue connection added'),
   'issue_connection.updated': msg('Issue connection changed'),
   'issue_connection.deleted': msg('Issue connection deleted'),
+  'notification_channel.created': msg('Delivery channel added'),
+  'notification_channel.updated': msg('Delivery channel changed'),
+  'notification_channel.deleted': msg('Delivery channel deleted'),
   'invitation.created': msg('Invitation created'),
   'invitation.accepted': msg('Invitation accepted'),
   'invitation.revoked': msg('Invitation revoked'),
@@ -156,6 +159,7 @@ export function eventSummary(ev: AuditEvent): string {
   if (d.setting) parts.push(`${SETTINGS[d.setting] ?? d.setting}: ${d.from ?? '?'} → ${d.to ?? '?'}`)
   else if (d.from || d.to) parts.push(`${d.from ?? '?'} → ${d.to ?? '?'}`)
   if (d.provider) parts.push(d.provider)
+  if (d.channel_kind) parts.push(d.channel_kind)
   if (d.count) {
     const n = Number(d.count)
     parts.push(ev.name === 'agent.write' ? t('{n, plural, one {# item changed} other {# items changed}}', { n }) : t('{n, plural, one {# event} other {# events}}', { n }))

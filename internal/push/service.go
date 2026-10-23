@@ -530,7 +530,7 @@ func (s *Service) tickUser(ctx context.Context, now time.Time, userID string, du
 	recorded := 0
 	for _, d := range due {
 		if s.onDue != nil {
-			s.onDue(ctx, DueReminder{UserID: d.UserID, ID: d.ID, TaskID: d.TaskID, FireAt: d.FireAt, Title: d.Title})
+			s.onDue(ctx, DueReminder(d))
 		}
 		attempted, transient, deferred := 0, 0, false
 		for _, sub := range subs {
