@@ -17,22 +17,22 @@ From 768 px wide the shell SHALL fill the viewport height with the sidebar and t
 - **THEN** it fails if more than three elements can scroll vertically, naming the screen and the extra element
 
 ### Requirement: Sidebar structure
-The sidebar SHALL show, top to bottom: the workspace control (the current workspace's icon or colour and name, opening the workspace switcher; the app name is shown beside it only while the account has one workspace) with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Ask when available), the Favourites group when the user has pinned anything in the current workspace, then Projects, Labels and Filters, each collapsible with its state remembered on the device and its item count on the header while collapsed; then one pinned footer row holding the account (avatar and name, opening the account menu), the assistant launcher when the assistant is available, notifications and the sync status. Every group, row and count SHALL be those of the current workspace. On a device that has not stored a state for a group, Projects SHALL start open and Labels and Filters SHALL start closed. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same marker on the row. The Filters group SHALL be shown only once the user has a saved filter in the current workspace and the Labels group only once the user has a label there; an empty group shows nothing, not a placeholder sentence.
+The sidebar SHALL show, top to bottom: the workspace control (the current workspace's icon or colour and name, opening the workspace switcher; the app name is shown beside it only while the account has one workspace) with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, New view, Ask when available), the Favourites group when the user has pinned anything in the current workspace, then Projects, Labels and Views, each collapsible with its state remembered on the device and its item count on the header while collapsed; then one pinned footer row holding the account (avatar and name, opening the account menu), the assistant launcher when the assistant is available, notifications and the sync status. Every group, row and count SHALL be those of the current workspace. On a device that has not stored a state for a group, Projects SHALL start open and Labels and Views SHALL start closed. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same marker on the row. The Views group SHALL be shown only once the user has a saved view in the current workspace and the Labels group only once the user has a label there; an empty group shows nothing, not a placeholder sentence.
 
-Counts SHALL be visible at all times on Inbox, Today and collapsed group headers only. A project's count SHALL be visible while its row is hovered or focused, and at all times on a coarse pointer; favourites follow the rule of their own kind. Filter rows and label rows SHALL show no count. Every row that has a count SHALL carry it in its accessible name. The unread badges of shared projects and of Updates are governed by `activity-feed` and are unchanged. The workspace control SHALL carry one accent dot while another workspace has unread updates, with the workspace names in its tooltip and accessible name.
+Counts SHALL be visible at all times on Inbox, Today and collapsed group headers only. A project's count SHALL be visible while its row is hovered or focused, and at all times on a coarse pointer; favourites follow the rule of their own kind. View rows and label rows SHALL show no count. Every row that has a count SHALL carry it in its accessible name. The unread badges of shared projects and of Updates are governed by `activity-feed` and are unchanged. The workspace control SHALL carry one accent dot while another workspace has unread updates, with the workspace names in its tooltip and accessible name.
 
 The primary destinations and the More group SHALL depend on the user's "How you work" preference:
 
 | Preference | Primary destinations | More group |
 | --- | --- | --- |
-| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Review, Statistics, Ask when available |
-| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, Filter, Statistics, Ask when available |
+| `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, New view, Review, Statistics, Ask when available |
+| `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, New view, Statistics, Ask when available |
 
 In `first` mode the primary destinations SHALL never exceed six. Promoted destinations SHALL be listed in the More group, and the stored promotion list SHALL be kept unchanged. The workspace control is not a destination and SHALL not count against the six.
 
 #### Scenario: Default sidebar
-- **WHEN** a user with projects, labels, saved filters and no favourites opens the app on a 1280×800 screen on a device that never stored a group state
-- **THEN** the workspace control, five primary destinations and the More group are visible above Projects (open), Labels (closed, "Labels 3") and Filters (closed, "Filters 2"), no Favourites group is shown, the footer is one row that is visible without scrolling, and only the middle part scrolls when the project tree is long
+- **WHEN** a user with projects, labels, saved views and no favourites opens the app on a 1280×800 screen on a device that never stored a group state
+- **THEN** the workspace control, five primary destinations and the More group are visible above Projects (open), Labels (closed, "Labels 3") and Views (closed, "Views 2"), no Favourites group is shown, the footer is one row that is visible without scrolling, and only the middle part scrolls when the project tree is long
 
 #### Scenario: One workspace
 - **WHEN** an account that never created a workspace opens the app
@@ -40,11 +40,11 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 
 #### Scenario: Groups follow the workspace
 - **WHEN** the user switches from "Personal" (4 projects, 2 labels, 1 filter) to "Work" (6 projects, no labels, no filters)
-- **THEN** the Projects group lists Work's six projects, no Labels or Filters group is shown, the Favourites group shows Work's pinned items or nothing, and Inbox and Today show Work's counts
+- **THEN** the Projects group lists Work's six projects, no Labels or Views group is shown, the Favourites group shows Work's pinned items or nothing, and Inbox and Today show Work's counts
 
 #### Scenario: Only two numbers at rest
-- **WHEN** the same user has 8 Inbox tasks, 10 due today, projects with open tasks, labels in use and saved filters with matches, and nothing is hovered or focused
-- **THEN** the only visible counts in the sidebar are "8" on Inbox and "10" on Today (plus the item counts on the closed Labels and Filters headers), and the Upcoming row shows no number
+- **WHEN** the same user has 8 Inbox tasks, 10 due today, projects with open tasks, labels in use and saved views with matches, and nothing is hovered or focused
+- **THEN** the only visible counts in the sidebar are "8" on Inbox and "10" on Today (plus the item counts on the closed Labels and Views headers), and the Upcoming row shows no number
 
 #### Scenario: Labels are reachable
 - **WHEN** the user has forty projects and three labels
@@ -55,15 +55,15 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 - **THEN** Someday appears among the primary destinations on every device of that user after sync, and leaves the More group
 
 #### Scenario: Collapse a group
-- **WHEN** the user has six saved filters and collapses the Filters group, then reloads the app on the same device
-- **THEN** the Filters header reads "Filters 6" with no rows under it, and on the user's other devices the Filters group keeps its own state
+- **WHEN** the user has six saved views and collapses the Views group, then reloads the app on the same device
+- **THEN** the Views header reads "Views 6" with no rows under it, and on the user's other devices the Views group keeps its own state
 
 #### Scenario: Stored state wins over the default
 - **WHEN** the user opened the Labels group on this device before this version, so the device stores it as open, and the app is updated
 - **THEN** the Labels group is still open on this device, and a device that never stored a state shows it closed
 
 #### Scenario: Two groups closed
-- **WHEN** the user collapses Filters and Labels
+- **WHEN** the user collapses Views and Labels
 - **THEN** the Projects group has the whole height of the scroller, and its "All" and add actions still work on the collapsed groups' headers
 
 #### Scenario: More open on a phone
@@ -75,12 +75,12 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 - **THEN** a menu lists the More destinations below the row, the projects keep their place in the scroller, choosing Someday opens it and closes the menu, and the More row is marked current while Someday is open
 
 #### Scenario: No empty groups
-- **WHEN** a new account with no saved filter and no label opens the app
-- **THEN** the sidebar shows no Filters or Labels group and no placeholder sentence, and saving a first filter brings the Filters group back, closed, with its All action and "Filters 1" on its header
+- **WHEN** a new account with no saved view and no label opens the app
+- **THEN** the sidebar shows no Views or Labels group and no placeholder sentence, and saving a first view brings the Views group back, closed, with its All action and "Views 1" on its header
 
 #### Scenario: Favourites first
-- **WHEN** the user has pinned a project, a label and a saved filter
-- **THEN** the Favourites group is the first group of the scroller, above Projects, the pinned project's count appears on hover and the pinned label and filter show no count, and the Labels and Filters groups are collapsed on a device that never stored a group state
+- **WHEN** the user has pinned a project, a label and a saved view
+- **THEN** the Favourites group is the first group of the scroller, above Projects, the pinned project's count appears on hover and the pinned label and view show no count, and the Labels and Views groups are collapsed on a device that never stored a group state
 
 #### Scenario: Open Loops first sidebar
 - **WHEN** a user picks Open Loops first and opens the app on a 1280×800 screen
@@ -208,29 +208,29 @@ Shell notices (a removed start view, a change the server refused, a reminder, an
 - **THEN** a toast explains it with a Dismiss action, and the list does not move
 
 ### Requirement: The panel slot has an address
-The shell SHALL own one panel slot to the right of the content. The open task's id SHALL be in the address (`?task=<id>`), so reloading, sharing the link or a notification reopens the same task in the same view. The slot SHALL also host project activity, project history and the calendar's planning list, one at a time. Escape or Close SHALL empty the slot and return focus to the row or control that opened it.
+The shell SHALL own one panel slot to the right of the content. It SHALL host project activity, project history and the calendar's planning list, one at a time, and a task only on a page that keeps a split (Process the Inbox) from 1024 px; everywhere else a task opens as its page at `/task/<id>` (see `web-app` "Task page"). A docked task's id SHALL be in the address (`?task=<id>`), so reloading or sharing the link reopens it; a `?task=<id>` address opened on any other page SHALL open the task's page. Escape or Close SHALL empty the slot and return focus to the row or control that opened it.
 
 #### Scenario: Reload with a task open
-- **WHEN** the user has a task open in the Upcoming view and reloads
-- **THEN** Upcoming opens with the same task open in the panel
+- **WHEN** the user has a task's page open, opened from Upcoming, and reloads
+- **THEN** the same task's page opens, and Close goes to the task's own list
 
 #### Scenario: One occupant
 - **WHEN** project activity is shown in the slot and the user opens a task
-- **THEN** the task replaces the activity in the slot, and Close returns to the list, not to the activity
+- **THEN** the task opens as its page and the slot is empty behind it
 
 ### Requirement: Panel width and expansion
-From 1024 px the panel SHALL be a 26 rem column, 30 rem from 1440 px, and SHALL offer an Expand action that opens the task as a full page at `/task/<id>` with the same content and a Back action. Between 768 and 1023 px it SHALL be a sheet of at most 28 rem over the content column; below 768 px it SHALL open as a bottom sheet over the dimmed list, at most 90 percent of the viewport height, with a drag handle above its sticky header (see `web-app` "Task detail panel").
+From 1024 px the panel SHALL be a 26 rem column, 30 rem from 1440 px; a docked task SHALL offer an Expand action that opens it as its page at `/task/<id>`. Between 768 and 1023 px the slot's other occupants SHALL be a sheet of at most 28 rem over the content column, and below 768 px a bottom sheet; a task never docks there and opens as its page.
 
 #### Scenario: Expand a long note
-- **WHEN** the user activates Expand on an open task
-- **THEN** the task fills the content column, the address is `/task/<id>`, and Back returns to the list with the panel open
+- **WHEN** the user activates Expand on a task docked beside the triage card
+- **THEN** the task's page opens at `/task/<id>`
 
 #### Scenario: The list stays in sight on a phone
-- **WHEN** the user opens a task from Today on a 390×844 phone
-- **THEN** the task opens as a bottom sheet with a drag handle, the top of Today stays visible and dimmed above it, and the sheet is no taller than 90 percent of the screen
+- **WHEN** the user opens a task from Today on a 390×844 phone and taps Back
+- **THEN** the task opened as its page, not as a sheet, and Today is back at the same scroll position with the task selected
 
 ### Requirement: Phone navigation
-Below 768 px the shell SHALL show a bottom tab bar with Today, Inbox, Upcoming, Search and More (More opens the phone drawer, see "Phone drawer"), and a floating add button at the bottom right above the bar that opens quick add as a bottom sheet with the keyboard up. The bar and the button SHALL hide while a sheet or the task sheet is open. Tabs SHALL be at least 48 px tall and SHALL respect the bottom safe area. Every list SHALL reserve the add button's footprint under its last row, so the button never covers a row or its metadata. While the content scrolls down by more than 24 px the bar SHALL minimise to its icons and the button SHALL slide out below it; on any scroll up, at the end of the content, or 600 ms after scrolling stops, both SHALL return. When the system requests reduced motion the bar and the button SHALL stay in place at all times. This is presentation only; every action behind the bar and the button is the same local operation offline.
+Below 768 px the shell SHALL show a bottom tab bar with Today, Inbox, Upcoming, Search and More (More opens the phone drawer, see "Phone drawer"), and a floating add button at the bottom right above the bar that opens quick add as a bottom sheet with the keyboard up. The bar and the button SHALL hide while a sheet is open and on the task page, which has its own bar with Back and the next and previous task. Tabs SHALL be at least 48 px tall and SHALL respect the bottom safe area. Every list SHALL reserve the add button's footprint under its last row, so the button never covers a row or its metadata. While the content scrolls down by more than 24 px the bar SHALL minimise to its icons and the button SHALL slide out below it; on any scroll up, at the end of the content, or 600 ms after scrolling stops, both SHALL return. When the system requests reduced motion the bar and the button SHALL stay in place at all times. This is presentation only; every action behind the bar and the button is the same local operation offline.
 
 #### Scenario: Two taps to any primary view
 - **WHEN** the user is in a project on a phone and taps Today in the bar

@@ -19,4 +19,4 @@
 - [x] 3.2 Stories: the shell's and the phone's task page stories, `TaskFacts` and `ComposerFrame` in the workbench
 - [x] 3.3 Update `docs/interface-guide.md` and the task panel help, and add the CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
 - [x] 3.4 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
-- [ ] 3.5 Run `make check` with TZ=UTC, open the pull request and get CI green
+- [x] 3.5 Run `make check` with TZ=UTC, open the pull request and get CI green

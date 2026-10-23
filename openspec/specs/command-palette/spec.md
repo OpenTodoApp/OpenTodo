@@ -6,7 +6,7 @@ One box that finds any task, project, label, saved view or Settings section from
 ## Requirements
 
 ### Requirement: Open and close the palette
-The client SHALL open the palette with `Ctrl+K` (`⌘+K` on macOS) from every signed-in screen, including while a text field has focus, except inside the notes editor where the key keeps its formatting meaning; and from a search button in the header. It SHALL be a dialog with the app's overlay behaviour (bottom sheet below 640 px, Escape closes, focus returns to where it was). It SHALL open in Search mode with an empty, focused field and a segmented control offering Search, Add, Commands and, only when the assistant is available to the user, Ask; typing `+`, `>` or `?` as the first character of the empty field SHALL switch to Add, Commands or Ask and remove the character, a second press of the same prefix SHALL return to Search with the character kept, and Escape in a non-Search mode SHALL return to Search before closing. On a screen that has no quick add of its own, `q` SHALL open the palette in Add mode; on a list screen `q` keeps focusing the list's quick add. Opening, switching modes and closing touch no data.
+The client SHALL open the palette with `Ctrl+K` (`⌘+K` on macOS) from every signed-in screen, including while a text field has focus, except inside the notes editor where the key keeps its formatting meaning; and from a search button in the header. It SHALL be a dialog with the app's overlay behaviour (full-screen sheet below 640 px, Escape closes, focus returns to where it was); from 640 px it SHALL be a card 40 rem wide near the top of the screen, without a title bar, whose accessible name stays "Search and commands". It SHALL open in Search mode with an empty, focused field. Typing `+`, `>` or `?` as the first character of the empty field SHALL switch to Add, Commands or Ask and remove the character, and a second press of the same prefix SHALL return to Search with the character kept. A segmented control offering Search, Add, Commands and, only when the assistant is available to the user, Ask SHALL be shown below 640 px and on touch screens; with a fine pointer a footer SHALL name the prefixes instead. Escape in Commands or Ask, and in Add when Add was reached from Search, SHALL return to Search before closing; Escape in Add when the palette was opened in Add mode SHALL close it. On a screen that has no quick add of its own, `q` SHALL open the palette in Add mode; on a list screen `q` keeps focusing the list's quick add. Opening, switching modes and closing touch no data.
 
 #### Scenario: Open from a list
 - **WHEN** the user is in the Today view and presses `Ctrl+K`
@@ -26,7 +26,11 @@ The client SHALL open the palette with `Ctrl+K` (`⌘+K` on macOS) from every si
 
 #### Scenario: Touch
 - **WHEN** a user on a phone taps the header's search button
-- **THEN** the palette opens as a bottom sheet with its input focused and the segmented control under it
+- **THEN** the palette opens as a sheet with its input focused and the segmented control at its top
+
+#### Scenario: Desktop card
+- **WHEN** the user presses `Ctrl+K` on a 1440×900 screen with a mouse
+- **THEN** the palette is a 40 rem card near the top of the screen with no title bar, the field at its top, and a footer that reads "Type + to add, > for commands" (and "? to ask" when the assistant is available) instead of the segmented control
 
 #### Scenario: Prefix switches the mode
 - **WHEN** the field is empty and the user types `>`
@@ -39,6 +43,10 @@ The client SHALL open the palette with `Ctrl+K` (`⌘+K` on macOS) from every si
 #### Scenario: q where there is no quick add
 - **WHEN** the user is in Settings or the Week view and presses `q` outside a text field
 - **THEN** the palette opens in Add mode with its field focused, and in Today `q` focuses the list's quick add as before
+
+#### Scenario: Escape from Add depends on how it was reached
+- **WHEN** the palette was opened with `q` in Settings and the user presses Escape with no row highlighted and no suggestion list open
+- **THEN** the palette closes; and when the user had switched from Search to Add with `+`, Escape returns to Search instead
 
 ### Requirement: Search over local data
 The palette SHALL find tasks by title, notes text, origin id and origin title, projects by name and parent path, labels by name, saved views and dashboards by name, and Settings sections by name and description, from the device's local tables only. Deleted tasks, projects, labels and views SHALL never be listed; completed tasks and archived projects SHALL be listed after open and live ones with a marker. Search SHALL work offline and SHALL send nothing to the server.
@@ -79,19 +87,19 @@ Matching SHALL ignore case and accents and SHALL rank an exact match first, then
 - **THEN** "Work" is listed first on this device, and another device of the same account shows its own order
 
 ### Requirement: Filter queries inline
-When the typed text is a valid filter query containing at least one term other than `search:`, the palette SHALL also list the tasks the query matches, evaluated as the Filter view evaluates it, and SHALL offer "Open in Filter view" with that query. Text that is not a valid query SHALL be treated as a plain search without any error message.
+When the typed text is a valid filter query containing at least one term other than `search:`, the palette SHALL also list the tasks the query matches, evaluated as the New view page evaluates it, and SHALL offer "Open as a new view" with that query. Text that is not a valid query SHALL be treated as a plain search without any error message.
 
 #### Scenario: Label and priority
 - **WHEN** the user types `@errand & p1`
-- **THEN** open priority-1 tasks carrying "errand" are listed and the first entry is "Open in Filter view"
+- **THEN** open priority-1 tasks carrying "errand" are listed and the first entry is "Open as a new view"
 
 #### Scenario: Incomplete query shows no error
 - **WHEN** the user has typed `@errand &`
 - **THEN** no syntax error is shown and the entries matching the text "errand" are listed
 
 #### Scenario: Open in Filter view
-- **WHEN** the user picks "Open in Filter view" for `due <= friday`
-- **THEN** the Filter view opens with that query and its results, and the query is added to this device's filter history
+- **WHEN** the user picks "Open as a new view" for `due <= friday`
+- **THEN** the New view page opens at `/views/new` with that query and its results, and the query is added to this device's filter history
 
 ### Requirement: Commands by name
 The palette SHALL list every command the app offers by name, each with its keyboard shortcut when it has one, and only when it applies in the current context. A command SHALL run the same function as the button, key or menu item it stands for. The commands SHALL include "Go to Focus" (`g` then `Shift+F`) and, for the selected or open task, "Focus on this task" (OpenSpec change `focus-mode`).
@@ -143,7 +151,7 @@ Every action available in the project, saved view, label and section menus SHALL
 - **THEN** the test suite fails naming the missing command
 
 ### Requirement: Discoverability and help
-The cheat sheet and the keyboard guide SHALL list `Ctrl`/`⌘`+`K` from the shortcut registry, the palette's input SHALL show a hint about commands and filter queries while empty, the sidebar footer and the phone tab bar SHALL offer Search, and the user guide SHALL have a page on search and commands reachable from the palette's Help action.
+The cheat sheet and the keyboard guide SHALL list `Ctrl`/`⌘`+`K` from the shortcut registry, the palette's footer SHALL name the keys that move and run and the prefixes for Add, Commands and (when available) Ask, the sidebar footer and the phone tab bar SHALL offer Search, and the user guide SHALL have a page on search and commands reachable from the palette's Help action in its footer.
 
 #### Scenario: Listed in the shortcut help
 - **WHEN** the user presses `?`
@@ -153,8 +161,12 @@ The cheat sheet and the keyboard guide SHALL list `Ctrl`/`⌘`+`K` from the shor
 - **WHEN** the user taps Search in the phone tab bar
 - **THEN** the palette opens as a full-screen sheet with its field focused
 
+#### Scenario: Footer teaches the keys
+- **WHEN** the user opens the palette on a desktop with a mouse
+- **THEN** the footer shows `↑` `↓` "Choose", `↵` "Run" and the prefixes, and its Help link opens the guide page on search and commands
+
 ### Requirement: Palette sections and recents
-The palette SHALL group its results under headings (Recent, Tasks, Projects, Labels, Filters, Commands, Settings), SHALL show the shortcut of a command at the right of its row from the shortcut registry, and SHALL list the entries picked most recently on this device under Recent when the box is empty. Settings results SHALL include individual settings rows from the settings search index.
+The palette SHALL group its results under headings in sentence case (Recent, Tasks, Projects, Labels, Views, Commands, Settings), SHALL show the shortcut of a command at the right of its row as keycaps from the shortcut registry, a sequence as its steps joined by a translated "then" ("G then U") and a chord as one keycap, and SHALL list the entries picked most recently on this device under Recent when the box is empty. The highlighted row SHALL use the selected-row surface with its accent bar. When the palette opens with a selected or open task, the field SHALL show that task's title as a small chip at its end. Settings results SHALL include individual settings rows from the settings search index.
 
 #### Scenario: Empty box
 - **WHEN** the user opens the palette having recently opened "Website launch" and the Integrations settings
@@ -162,10 +174,18 @@ The palette SHALL group its results under headings (Recent, Tasks, Projects, Lab
 
 #### Scenario: Shortcut column
 - **WHEN** the user types "quick"
-- **THEN** "Quick add a task" is listed with `q` at its right
+- **THEN** "Quick add a task" is listed with a `Q` keycap at its right, not in its secondary text
+
+#### Scenario: Sequence as keycaps
+- **WHEN** the user types "upco"
+- **THEN** "Go to Upcoming" is listed with the keycaps `G` then `U` at its right
+
+#### Scenario: The selected task is named
+- **WHEN** the task "Call the plumber about the boiler" is selected in Today and the user presses `Ctrl+K`
+- **THEN** the field shows a chip reading "Call the plumber about the boiler" (cut to one line) and the commands for that task are listed first
 
 ### Requirement: Add mode
-In Add mode the palette's field SHALL be the quick add, with the defaults of the screen it was opened from (today's date in Today, the project in a project, the Inbox elsewhere), the inline highlighting and preview chips of `natural-language-capture`, and the "→ title" preview. Enter SHALL create the task through the same local-first path as the list's quick add, show the same "Added to …" toast, and keep the palette open with an empty field; Escape SHALL return to Search. Add mode SHALL work offline exactly like the quick add.
+In Add mode the palette's field SHALL be the quick add, with the defaults of the screen it was opened from (today's date in Today, the project in a project, the Inbox elsewhere), and the inline highlighting of `natural-language-capture`. Under the field it SHALL show one row per field: When, Project, Label, Priority and Estimate always, and Deadline, Repeats, Reminder and Time spent when the line sets them. Each row shows its name and either the value the line sets, with a "Keep as text" control that dismisses that token, or a hint saying how to set it; at its right it shows the token that sets the field (`#`, `@`, `p`, `+`). A footer SHALL show the title as it will be saved ("Understood as you type" before any attribute is recognised) and the keys Enter (Add), Shift+Enter (Add and open) and Escape. `↓` and `↑` in the field SHALL move a highlight over the rows while no suggestion list is open; Tab on a highlighted row, or a click on a row, SHALL edit it: a set row's words are selected in the field, and an unset row's token is started at the end of the line (opening the project or label suggestions for `#` and `@`). Enter SHALL create the task through the same local-first path as the list's quick add, show the same "Added to …" toast, and keep the palette open with an empty field; Shift+Enter SHALL create it the same way, close the palette and open the new task in the list it went to. Add mode SHALL work offline exactly like the quick add.
 
 #### Scenario: Add from Settings
 - **WHEN** the user presses `q` in Settings, types `Call Sam tomorrow at 4pm @call` and presses Enter
@@ -173,11 +193,27 @@ In Add mode the palette's field SHALL be the quick add, with the defaults of the
 
 #### Scenario: Add in a project
 - **WHEN** the palette is opened from the project "Home" and switched to Add with `+`, and the user adds `Fix the tap`
-- **THEN** the task is created in Home, and the project chip is shown in the preview before Enter
+- **THEN** the task is created in Home, and the Project row shows "Home" before Enter
 
 #### Scenario: Offline
 - **WHEN** the device is offline and the user adds a task from Add mode
 - **THEN** the task appears at once in its list and syncs when the connection returns
+
+#### Scenario: Field rows follow the line
+- **WHEN** a project "Home renovation" and a label "call" exist and the user types `Call Mia about the tiles tomorrow 5pm #HomeRenovation @call p2`
+- **THEN** When reads tomorrow at 17:00, Project "Home renovation", Label "call", Priority "Priority 2", Estimate shows a hint to type `+30m`, and the footer reads "→ Call Mia about the tiles"
+
+#### Scenario: Keep a token as text from its row
+- **WHEN** the line is `Review may report` and the user activates "Keep as text" on the When row
+- **THEN** the When row shows its hint, the title reads `Review may report`, and the task has no due date
+
+#### Scenario: Edit an unset row from the keyboard
+- **WHEN** the line is `Buy primer`, the user presses `↓` twice to highlight Project and presses Tab
+- **THEN** the line reads `Buy primer #` with the caret at its end and the project suggestions are open
+
+#### Scenario: Add and open
+- **WHEN** the user is in Settings, has typed `Draft the offer #Work` in Add mode and presses Shift+Enter
+- **THEN** the task is created in Work, the palette closes, and the Work project opens with the new task selected and open
 
 ### Requirement: Add as a task from Search
 In Search mode, while the field holds text, the last entry SHALL always be "Add '<text>' as a task", and `Ctrl`/`⌘`+`Enter` SHALL activate it without moving to it. It SHALL never be the first entry, so Enter on a search never creates a task. Activating it SHALL create the task as Add mode does and close the palette.

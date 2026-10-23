@@ -11,4 +11,4 @@
 - [x] 2.1 Story for the briefing's modes in the workbench; verify `make ui-check` in CI
 - [x] 2.2 Docs: `docs/interface-guide.md` (the day head's briefing) and the Today guide, CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
 - [x] 2.3 Regenerate the visual baselines in the pinned Playwright image; verify the visual job in CI
-- [ ] 2.4 Run `npm test` and `npm run build` in web/, open the pull request and get CI green
+- [x] 2.4 Run `npm test` and `npm run build` in web/, open the pull request and get CI green
