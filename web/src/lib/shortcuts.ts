@@ -339,10 +339,11 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'review.focus', keys: ['f'], description: 'Daily check: put the selected task in today\'s focus (up to three), or take it out', section: 'review', scope: 'view', views: ['review'] },
   // Close the day's carry-over (close-the-day D4): on the selected row. The screen's
   // rows pass the list's `y` (time tracking) through, so `y` reaches this entry there.
-  { id: 'close.tomorrow', keys: ['t'], description: 'Close the day: carry the selected task over to tomorrow', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.pick', keys: ['p'], description: 'Close the day: pick a day for the selected task', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.someday', keys: ['y'], description: 'Close the day: move the selected task to Someday', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.keep', keys: ['h'], description: 'Close the day: keep the selected task in Today', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.tomorrow', keys: ['t'], description: 'Close the day: carry the task on the card over to tomorrow', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.pick', keys: ['p'], description: 'Close the day: pick a day for the task on the card', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.someday', keys: ['y'], description: 'Close the day: move the task on the card to Someday', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.keep', keys: ['h'], description: 'Close the day: keep the task on the card in Today', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.done', keys: ['d'], description: 'Close the day: the task on the card was done already (completed with the carry-over)', section: 'review', scope: 'view', views: ['review'], overrides: ['vim.delete'] },
 
   // ---- display mode (display-mode D5): the shell's shortcuts (`g` sequences, `q`, `?`) are not active there
   { id: 'display.down', keys: ['j', '↓', '→'], description: 'Move the focus to the next row, across the day columns', section: 'display', scope: 'view', views: ['display'] },

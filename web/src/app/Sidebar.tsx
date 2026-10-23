@@ -607,7 +607,7 @@ function reviewMarker(review: Review | null | undefined, method: MethodMode, tod
   ]
   const due = parts.length > 0
   // Close the day (close-the-day D7): "Day closed" for the rest of the local day; a due marker wins and its text names both.
-  const closed = review && dayClosed(review.closed_at, today) ? formatInstant(review.closed_at, 'time') : null
+  const closed = review && dayClosed(review, today) ? formatInstant(review.closed_at, 'time') : null
   const text = due
     ? t('Review due · {details}', { details: parts.join('; ') }) + (closed ? `; ${t('the day is closed')}` : '')
     : closed ? t('Day closed, {time}', { time: closed }) : t('Last review {ago}', { ago: reviewAgo(review?.completed_at) })

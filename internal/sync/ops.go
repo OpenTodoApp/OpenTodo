@@ -667,6 +667,10 @@ var Schema = map[string]map[string]kind{
 		// with it. The note is user-written content (e2ee.ContentFields).
 		"closed_at":     kNumber,
 		"tomorrow_note": kString,
+		// The logical date the latest close closed (close-the-day-v2 D1),
+		// YYYY-MM-DD; "" = the logical day of closed_at (closes written before
+		// the field existed). A date, never user-written text.
+		"closed_day": kString,
 		// The latest carry-over (ux-feedback-2 D1): JSON {date, items:[{id, field,
 		// before, after}]} so Reopen the day can put it back on any device; "" =
 		// none. Task ids, field names and dates only, never user-written text.

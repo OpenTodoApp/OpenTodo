@@ -259,7 +259,7 @@ describe('rhythm markers (open-loops-method 5.6)', () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     const entry = () => r.container.querySelector('[data-destination="review"]')?.getAttribute('aria-description') ?? ''
     await waitFor(() => entry() === 'Last review yesterday')
-    await act(async () => { await closeDay('') })
+    await act(async () => { await closeDay('', (await import('../../lib/dates')).logicalToday()) })
     await waitFor(() => /^Day closed, (12:00|12:00\sPM)$/.test(entry()))
     await r.unmount()
     vi.setSystemTime(new Date(2026, 9, 15, 9, 0))

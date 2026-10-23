@@ -643,6 +643,8 @@ export interface Review {
   focus: string
   /** The latest Close the day (close-the-day D5), Unix ms; 0 = never. */
   closed_at: number
+  /** The logical date that close closed (close-the-day-v2 D1), YYYY-MM-DD; "" = the logical day of `closed_at`. Not content. */
+  closed_day: string
   /** The one-line note for tomorrow written at that close; content (encrypted for encrypted accounts). */
   tomorrow_note: string
   /** The latest carry-over as JSON (ux-feedback-2 D1), "" = none: what Reopen the day puts back. Not content. */

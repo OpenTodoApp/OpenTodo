@@ -263,10 +263,11 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>j</kbd> / <kbd>Space</kbd> | Project walk: skip to the next project |
 | <kbd>k</kbd> | Project walk: back to the previous project |
 | <kbd>f</kbd> | Daily check: put the selected task in today's focus (up to three), or take it out |
-| <kbd>t</kbd> | Close the day: carry the selected task over to tomorrow |
-| <kbd>p</kbd> | Close the day: pick a day for the selected task |
-| <kbd>y</kbd> | Close the day: move the selected task to Someday |
-| <kbd>h</kbd> | Close the day: keep the selected task in Today |
+| <kbd>t</kbd> | Close the day: carry the task on the card over to tomorrow |
+| <kbd>p</kbd> | Close the day: pick a day for the task on the card |
+| <kbd>y</kbd> | Close the day: move the task on the card to Someday |
+| <kbd>h</kbd> | Close the day: keep the task on the card in Today |
+| <kbd>d</kbd> | Close the day: the task on the card was done already (completed with the carry-over) |
 
 ### Display mode
 

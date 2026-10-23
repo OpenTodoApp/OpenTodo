@@ -186,9 +186,10 @@ const serverDue = async (p, title) => p.evaluate(async (t) => ((await (await fet
 await page.goto(`${base}/review/close`)
 await page.locator('[data-review-step="summary"]').waitFor()
 await page.keyboard.press(']')
-await page.locator('[data-close-apply]').click()
-await page.locator('[data-close-nothing]').waitFor()
+await page.locator('[data-carry-card]').waitFor()
+// Moving on from Carry over applies its decisions (close-the-day-v2 D3): Tomorrow by default.
 await page.keyboard.press(']')
+await page.locator('[data-review-step="note"]').waitFor()
 await page.locator('[data-close-note-input]').fill('Reopen check')
 await page.locator('[data-close-note-input]').press('Enter')
 // Done for today (moments-and-onboarding D6), then Back to Today.
