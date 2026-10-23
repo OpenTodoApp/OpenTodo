@@ -4,6 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-10-23
+
+A documentation fix for 0.10.0: nothing changes in the app or the server, and there is no migration.
+
+### Fixed
+
+- **The documentation's Workspaces card shows its picture.** The docs index linked a thumbnail for the Workspaces guide that 0.10.0 did not ship; the release now carries it, and the docs check refuses a card without its light and dark thumbnails. ([Workspaces](docs/workspaces.md))
+
 ## [0.10.0] - 2026-10-23
 
 OpenTodo 0.10.0 is a calmer app with room for more people. The interface was redrawn: one quiet task row, a new mark and sidebar, softer colours, motion that marks a completed task, and a phone layout with swipe actions and a task sheet. **Workspaces and groups** keep work and home apart and share a project with a team in one step. **Automation rules** let a task change itself, notes and comments share **one editor** with tables, images, mentions and **reactions**, and a **task page** hands one task to someone without an account. Tasks can have a **location** on a map, your account can live as a **Markdown vault** for Obsidian, the importer reads **six more apps**, and the owner can give the server its **own name and logo**. An early **Android app** is in the repository, not yet in the stores.
@@ -718,7 +726,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/pixari/opentodo/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/pixari/opentodo/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/pixari/opentodo/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.8.0
