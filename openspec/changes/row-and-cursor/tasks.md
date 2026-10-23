@@ -21,4 +21,5 @@
 ## 4. Wrap-up
 
 - [x] 4.1 CHANGELOG entry under Unreleased (Changed: the row's empty area, the hand cursor, empty views); verify by reading it
-- [ ] 4.2 Run `make check` with TZ=UTC; verify it passes
+- [x] 4.2 Run `make check` with TZ=UTC; verify it passes
+  - Done: every target passes locally except one load flake in `attachmentsRow.test.tsx` (3/3 alone, untouched here); CI on #277 is green (26 passed, 3 skipped).
