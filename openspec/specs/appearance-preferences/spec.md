@@ -92,11 +92,11 @@ The colour the browser or operating system uses around the app (address bar, ins
 - **THEN** the splash screen shows the server's neutral colour, and the first frame after it uses the user's remembered appearance
 
 ### Requirement: Density preference
-Each user SHALL have a density preference, `comfortable` (default) or `compact`, stored and synced like mode and theme as an additive preference, applied at once to task rows, group headers and the sidebar. A client SHALL treat an unknown value as `comfortable` and keep the stored value unchanged. Touch targets SHALL stay 44 px on coarse pointers in both densities.
+Each user SHALL have a density preference, `comfortable` (default) or `compact`, stored and synced like mode and theme as an additive preference, applied at once to task rows, group headers and the sidebar. Comfortable rows SHALL be 36 px and compact rows 32 px with a fine pointer. A client SHALL treat an unknown value as `comfortable` and keep the stored value unchanged. Touch targets SHALL stay 44 px on coarse pointers in both densities.
 
 #### Scenario: Compact on two devices
 - **WHEN** the user picks Compact on a laptop
-- **THEN** rows are 36 px tall there at once and on the user's tablet after sync, where touch targets remain 44 px
+- **THEN** rows are 32 px tall there at once and on the user's tablet after sync, where touch targets remain 44 px
 
 ### Requirement: Sidebar destinations preference
 Each user SHALL have a synced list of promoted destinations, shown among the primary sidebar items. Any of these can be promoted: Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter. The default is empty. Settings → Appearance SHALL offer one switch per destination. A client SHALL ignore unknown entries and keep the stored value unchanged. While the user's "How you work" preference is `first`, the switches SHALL be shown disabled with a sentence explaining that Open Loops first arranges the sidebar, and the stored list SHALL be kept.

@@ -103,34 +103,36 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 - **THEN** Rules (OpenSpec `automation-rules`) is listed after Locations and before Trash, and it is never a primary destination
 
 ### Requirement: Page template
-Every view SHALL render a page header with the title in the page title size, an optional lead line under the title (the page's meta: a date, totals, members and role, a count, a read-only note) in the muted tone at the metadata size, at most two visible actions, an overflow menu for the rest and the Help action; below it a content column whose width is fixed per page type: lists and feeds 60 rem, settings and forms 42 rem, a list with field columns and a project's list layout 72 rem, boards, timelines and calendars the whole frame. The header SHALL be as wide as the content under it: the title SHALL start at the content's left edge and the header's actions SHALL end at the content's right edge, so no action sits beyond the content; on a board, a timeline or a calendar the header spans the frame. The header SHALL stay visible while the content scrolls. Below 768 px the shell's bar SHALL carry the title and show the lead line as its subtitle on one line, cut at the bar's edge, so a lead line that arrives with the data does not grow the bar; on a project the subtitle is plain text, and members and public links open from Share.
+Every view SHALL render a page header and, below it, its content, inside one inset content surface (precision-shell D1). There SHALL be two page heads:
 
-There SHALL be two page frames, both with the same side padding and both starting at the content column's left edge, so every page's title starts at the same horizontal position:
+- A **day page** (Today and Upcoming) SHALL have a top row with the sidebar toggle on the left and the page's actions on the right, then the title at the display step with its lead line (the date and the day's totals) beside it at the prose step, in the muted tone, then an optional briefing at the prose step: one or two sentences about the day.
+- Every other page SHALL have a **compact header**, one 46 px row: the sidebar toggle, then the title at the header title step (a colour dot or icon, or a breadcrumb, before it), then the lead line (the page's meta: totals, members and role, a count, a read-only note) in the muted tone at the metadata size beside the title, then at most two visible actions, an overflow menu for the rest and the Help action at the right.
 
-- A **standalone page**, one that offers no layout switch (Inbox, Today, Upcoming, Anytime, Someday, Next, Waiting, Assigned to me, Completed, a label, Filter, a saved filter, Trash, Updates, settings, Import, Ask, Help, the review screens), SHALL have a frame as wide as its content width plus the padding, with the header and the content inside it, so the title and the content start at the same left edge.
-- A **layout page**, one that offers a layout switch (a project, a saved view that offers a board or a timeline, the calendars), SHALL have one frame shared by every layout, 72 rem for a project and at most 80 rem otherwise: the header and any footer line span the frame, the content starts at the frame's left edge, wide content scrolls inside the frame rather than widening it, and switching a project between list, board and timeline SHALL not move its title or actions.
+A second header row MAY hold the page's view tabs or filter chips on the left and its view tools (filter, display, panel) on the right. The header SHALL stay visible while the content scrolls. Content SHALL use the full width of the content surface, with the same side padding on every page, so every page's title and first row start at the same horizontal position; a settings or form page keeps its fields at 42 rem from that left edge. A board or a timeline scrolls sideways inside the surface rather than widening it, and switching a project between list, board and timeline SHALL not move its title or actions.
 
-When the panel opens as a column, the content column SHALL narrow by the panel's width and the panel SHALL open into the space to the right of the frame: no frame SHALL move horizontally when the panel opens or closes, and a frame wider than the narrowed column SHALL narrow from its right side, its left edge staying where it was. Nothing SHALL slide. This is presentation only, reads nothing from the server and behaves the same offline.
+Below 768 px the shell's bar SHALL carry the title and show the lead line as its subtitle on one line, cut at the bar's edge, so a lead line that arrives with the data does not grow the bar; on a project the subtitle is plain text, and members and public links open from Share.
+
+When the panel opens as a column, the content surface SHALL narrow by the panel's width from its right side: no title or row SHALL move horizontally when the panel opens or closes. Nothing SHALL slide. This is presentation only, reads nothing from the server and behaves the same offline.
 
 #### Scenario: Same left edge
 - **WHEN** the user moves between Inbox, Today, Labels, Trash, the Filter view and a project on a 1280 px screen
-- **THEN** the title and the first row start at the same horizontal position in all six, at the content column's left edge plus the page padding
+- **THEN** the title and the first row start at the same horizontal position in all six, at the content surface's left edge plus the page padding
 
 #### Scenario: A lead line under the title
 - **WHEN** Today is opened on a 1280 px screen with 5 h 15 m planned and 40 m tracked
-- **THEN** the title "Today" is on its own line and "Wednesday 21 October · 5 h 15 m planned · 40 m tracked" is a muted line under it, and the two header actions and Help are on the title's line
+- **THEN** the top row holds the sidebar toggle and the page's actions, and "Today" is at the display step with "Wednesday 21 October · 5 h 15 m planned · 40 m tracked" beside it in the muted tone
 
 #### Scenario: Centred on a wide screen
 - **WHEN** Today is open with the panel closed on a 2560 px screen with the sidebar at its default width
-- **THEN** the frame is no longer centred: it is 60 rem plus its padding wide and starts at the content column's left edge, at the same position as a project's title, and the space to its right is left for the panel
+- **THEN** nothing is centred: the rows span the content surface from its left padding to its right padding, and the header's actions end at the rows' right edge
 
 #### Scenario: The panel docks
 - **WHEN** Today is open on a 1920 px screen and the user opens a task
-- **THEN** the panel is a 30 rem column at the right, the title and every row keep their horizontal position within 1 px, and the list keeps its 60 rem width
+- **THEN** the panel is a 30 rem column at the right, the content surface narrows from its right side, and the title and every row keep their horizontal position within 1 px
 
 #### Scenario: No room to move
 - **WHEN** Today is open on a 1024 px screen and the user opens a task
-- **THEN** the frame narrows with the column from its right side and the title does not move horizontally
+- **THEN** the content surface narrows from its right side and the title does not move horizontally
 
 #### Scenario: Opening and closing a task moves no row
 - **WHEN** the user opens a task and closes it again on Today and on a project, at 1280, 1440 and 1920 px
@@ -142,15 +144,15 @@ When the panel opens as a column, the content column SHALL narrow by the panel's
 
 #### Scenario: List, board and timeline keep the header still
 - **WHEN** the user switches "Q4 launch" from List to Board to Timeline on a 1440 px screen
-- **THEN** the project title and the List/Board/Timeline control stay at the same position in all three, and only the content below changes width
+- **THEN** the project title and the List/Board/Timeline control stay at the same position in all three, and only the content below changes
 
 #### Scenario: A project list fills its frame
 - **WHEN** a project is shown as a list on a 1440 px screen with the panel closed
-- **THEN** its rows span the 72 rem content width from the frame's left edge, the title starts at the same place as on the board, and the header's actions end at the rows' right edge
+- **THEN** its rows span the content surface from its left padding, the title starts at the same place as on the board, and the header's actions end at the rows' right edge
 
 #### Scenario: Wide board inside the frame
 - **WHEN** a board has eight columns on a 1280 px screen
-- **THEN** the board scrolls sideways inside the frame and the header keeps its width and position
+- **THEN** the board scrolls sideways inside the content surface and the header keeps its width and position
 
 #### Scenario: Actions in the header
 - **WHEN** a project has Share, Rename, Move, Archive, Activity and History actions
@@ -166,11 +168,15 @@ When the panel opens as a column, the content column SHALL narrow by the panel's
 
 #### Scenario: Header as wide as its list
 - **WHEN** the Inbox is open on a 1920 px screen with the panel closed
-- **THEN** the list is 60 rem wide from the frame's left edge, and the header's last action ends at the list's right edge within 2 px
+- **THEN** the list spans the content surface, and the header's last action ends at the list's right edge within 2 px
 
 #### Scenario: One project frame for every layout
 - **WHEN** a project with three sections is switched from List to Board on a 1920 px screen
-- **THEN** the frame stays 72 rem wide, the List/Board/Timeline control does not move, and the board and the list end at the same right edge as the header's actions
+- **THEN** the List/Board/Timeline control does not move, and the board and the list end at the same right edge as the header's actions
+
+#### Scenario: Compact header on a tool page
+- **WHEN** a project, the Inbox or Settings is open on a 1440 px screen
+- **THEN** the header is one 46 px row: the sidebar toggle, the title at 14 px with its dot or icon, the lead line beside it, then the actions, the overflow menu and Help at the right
 
 ### Requirement: No desktop top bar
 From 768 px wide the shell SHALL have no bar above the content column; search SHALL be a button beside the app name in the sidebar, notifications, sync status and help SHALL live in the sidebar footer, and page actions in the page header. Below 768 px a bar SHALL show the menu button, the page title and up to two page actions, with the remaining actions in an overflow menu.
@@ -247,7 +253,7 @@ Below 768 px the shell SHALL show a bottom tab bar with Today, Inbox, Upcoming, 
 - **THEN** the tab bar and the add button do not move
 
 ### Requirement: Resizable sidebar
-From 1024 px the sidebar SHALL be resizable by dragging its edge between 15 rem and 22.5 rem, remembered per device, and SHALL be collapsible to icons with a control in its footer and the shortcut `[`.
+From 1024 px the sidebar SHALL be resizable by dragging its edge between 15 rem and 22.5 rem, remembered per device, and SHALL be collapsible to icons with the sidebar toggle in the page header (and, on the collapsed rail, an Expand control in its footer) and the shortcut `[`.
 
 #### Scenario: Collapse to icons
 - **WHEN** the user presses `[` outside a text field on a desktop
@@ -313,7 +319,7 @@ The browser tab title SHALL name the current page and the instance ("Today – O
 - **THEN** focus moves to the page heading
 
 ### Requirement: Compact sidebar on a desktop
-From 768 px the sidebar footer SHALL be one row: the account control (the person's avatar and name, truncated when the row is narrow) that opens the account menu, then, as icon buttons each with its name as tooltip and accessible name, the assistant launcher when the assistant is available, notifications, the sync dot and, from 1024 px, the collapse control. The account menu SHALL offer Settings, Help and Keyboard shortcuts, each with its registered shortcut shown, and after a separator Sign out, which opens the same confirmation as Settings → Account. Below 768 px the footer SHALL be the same row with touch-height targets. With a fine pointer, sidebar rows SHALL be 32 px high and group headings tighter; with a coarse pointer rows keep their touch height. The sidebar's scroller SHALL have a thin scrollbar in the theme's border colour, stronger while the pointer or focus is inside it, and SHALL fade its top or bottom edge only while content is hidden past that edge, leaving the scrollbar itself unfaded.
+From 768 px the sidebar footer SHALL be one row: the account control (the person's avatar and name, truncated when the row is narrow) that opens the account menu, then, as icon buttons each with its name as tooltip and accessible name, the assistant launcher when the assistant is available, notifications, the sync dot and, while the sidebar is the collapsed rail, an Expand control (the page header's sidebar toggle collapses it). The account menu SHALL offer Settings, Help and Keyboard shortcuts, each with its registered shortcut shown, and after a separator Sign out, which opens the same confirmation as Settings → Account. Below 768 px the footer SHALL be the same row with touch-height targets. With a fine pointer, sidebar rows SHALL be 32 px high and group headings tighter; with a coarse pointer rows keep their touch height. The sidebar's scroller SHALL have a thin scrollbar in the theme's border colour, stronger while the pointer or focus is inside it, and SHALL fade its top or bottom edge only while content is hidden past that edge, leaving the scrollbar itself unfaded.
 
 #### Scenario: Short desktop window
 - **WHEN** a user with twelve projects opens the app in a 1280×600 window with a mouse
@@ -321,7 +327,7 @@ From 768 px the sidebar footer SHALL be one row: the account control (the person
 
 #### Scenario: Footer names
 - **WHEN** a screen reader user moves through the footer row on a desktop
-- **THEN** each control announces its name (the person's name as the account menu button, Notifications with its unread count, the sync status, Collapse sidebar), and the account menu's items announce Settings, Help, Keyboard shortcuts and Sign out with their shortcuts as descriptions
+- **THEN** each control announces its name (the person's name as the account menu button, Notifications with its unread count, the sync status), and the account menu's items announce Settings, Help, Keyboard shortcuts and Sign out with their shortcuts as descriptions
 
 #### Scenario: Help from the account menu
 - **WHEN** the user opens the account menu and chooses Help, then later presses `g` then `?` from the Inbox
@@ -400,15 +406,15 @@ The top of the sidebar SHALL be one header row holding the instance's mark and n
 - **THEN** the search button keeps its place and shortcut, the primary destinations start at the same vertical position, and the sidebar's tests for the destinations, groups and footer pass unchanged
 
 ### Requirement: Sidebar tones
-Sidebar rows SHALL use three tones. An inactive row and its icon SHALL use the quiet text tone (the step below `muted` in the tone scale); while hovered or focused the row SHALL raise its label and icon to the default text tone over the sunken surface; the active row SHALL be an accent-soft pill with the strong text tone and the icon in the accent colour. Group headers SHALL use the quiet tone at the hint size, uppercase. Counts SHALL use the quiet tone and tabular figures. Every tone on every sidebar surface SHALL meet 4.5:1 for text and 3:1 for icons, measured by the token contrast test in both themes, with and without the sidebar tint. The tones are tokens, so a theme or accent change switches them without a reload.
+Sidebar rows SHALL use three tones. An inactive row and its icon SHALL use the quiet text tone (the step below `muted` in the tone scale); while hovered or focused the row SHALL raise its label and icon to the default text tone over the sunken surface; the active row SHALL be a pill on the neutral selected surface with the strong text tone, its icon in the same tone and its count in the muted tone (precision-shell D5: colour is kept for state). Group headers SHALL use the quiet tone at the hint size, uppercase. Counts SHALL use the quiet tone and tabular figures. Every tone on every sidebar surface SHALL meet 4.5:1 for text and 3:1 for icons, measured by the token contrast test in both themes, on the sidebar surface and the selected surface. The tones are tokens, so a theme or accent change switches them without a reload.
 
 #### Scenario: Three tones in one list
 - **WHEN** Today is open and the pointer rests on Upcoming
-- **THEN** Today is an accent-soft pill with strong text and an accent icon, Upcoming shows default-tone text and icon on the sunken surface, and every other row shows quiet-tone text and icons
+- **THEN** Today is a pill on the selected surface with strong text and icon, Upcoming shows default-tone text and icon on the sunken surface, and every other row shows quiet-tone text and icons
 
 #### Scenario: Contrast on the tinted sidebar
 - **WHEN** the token contrast test runs
-- **THEN** it measures the quiet, default and strong text tones and the accent icon against the sidebar surface token in light, dark and high contrast, and fails naming the pair when one is under its minimum
+- **THEN** it measures the quiet, default and strong text tones against the sidebar surface token, and the default, strong and muted tones against the selected surface, in light, dark and high contrast, and fails naming the pair when one is under its minimum
 
 #### Scenario: Keyboard shows the raised tone
 - **WHEN** a keyboard user presses Tab onto a project row
@@ -438,7 +444,7 @@ While the user has a running time entry on a screen 768 px or wider, the sidebar
 
 #### Scenario: Pill replaces the name
 - **WHEN** an entry on "Write the report" has run for 1 hour and 5 minutes on a 1280 px screen
-- **THEN** the footer is one row reading avatar, "1:05 · Write the report" in a pill with a Stop control, then the assistant, bell, sync dot and collapse control, and no second line exists above or below it
+- **THEN** the footer is one row reading avatar, "1:05 · Write the report" in a pill with a Stop control, then the assistant, bell and sync dot, and no second line exists above or below it
 
 #### Scenario: Stop from the pill
 - **WHEN** the user activates Stop inside the pill
@@ -468,23 +474,23 @@ The More entry SHALL read as a group, not a destination: on a desktop with a fin
 - **THEN** the More row is marked current and keeps its group style, and choosing Today removes the mark
 
 ### Requirement: Sidebar surface tint
-From 768 px with a fine pointer the sidebar's background SHALL be the sidebar surface token: the canvas mixed with a trace of the accent (3 % in light, 4 % in dark, both in the oklab colour space), so the sidebar reads as one quiet surface a step apart from the content column. The sticky group headers SHALL use the same token so scrolling never shows a seam. The sidebar SHALL never be translucent over content, and the high-contrast override SHALL set the sidebar surface to the plain canvas. The phone drawer and the sheets SHALL keep their surface colour. The tint SHALL follow the accent theme and the colour scheme without a reload.
+From 768 px with a fine pointer the sidebar's background SHALL be the sidebar surface token, which is the plain canvas in every accent theme and colour scheme (the accent tint of sidebar-v2 is retired: Precision keeps colour for state), so the sidebar reads as part of the window around the inset content surface. The sticky group headers SHALL use the same token so scrolling never shows a seam. The sidebar SHALL never be translucent over content, and the high-contrast override SHALL keep the sidebar surface the plain canvas. The phone drawer and the sheets SHALL keep their surface colour.
 
 #### Scenario: Tint follows the theme
 - **WHEN** the user switches the accent theme from emerald to blue and the colour scheme from light to dark
-- **THEN** the sidebar surface becomes the dark canvas mixed with 4 % of the blue accent, the sticky headers match it, and the content column keeps the plain canvas
+- **THEN** the sidebar surface becomes the dark canvas with no accent mixed in, the sticky headers match it, and nothing in the sidebar's background follows the accent
 
 #### Scenario: No seam while scrolling
 - **WHEN** the user scrolls a sidebar with forty projects
 - **THEN** the sticky Projects header shows the sidebar surface colour, and no band of a different colour appears above the rows
 
 #### Scenario: High contrast
-- **WHEN** the high-contrast override is on
-- **THEN** the sidebar surface is pure white in light and pure black in dark, with no accent mixed in
+- **WHEN** the user turns on high contrast
+- **THEN** the sidebar is the plain canvas, as it is without high contrast, and every sidebar pair meets the high-contrast minimums
 
 #### Scenario: Phone keeps the surface
-- **WHEN** the drawer opens on a 390 px phone
-- **THEN** its background is the surface colour of sheets, with no accent tint
+- **WHEN** the window is 390 px wide and the drawer opens
+- **THEN** the drawer has the surface colour, not the sidebar tint
 
 ### Requirement: Phone drawer
 Below 768 px, More SHALL open a drawer from the left edge, at most 85 percent of the viewport width and at most 20 rem, over a scrim that closes it on tap. The drawer SHALL NOT repeat the tab bar's destinations. It SHALL show, top to bottom, in one scroller: the find field, the primary destinations the tab bar does not hold (Calendar in Lists and Companion; Loop home, Next, Waiting and Review in Open Loops first), the More group, then Favourites, Projects, Labels and Filters as rows at least 48 px tall following the sidebar's counts and grouping rules; then a pinned footer with the account row (opening Settings, Help, Keyboard shortcuts and Sign out), the assistant launcher when the assistant is available, notifications and the sync status. Choosing a destination SHALL close the drawer. The drawer SHALL use the sidebar's tones. The page behind the drawer SHALL NOT scroll while it is open.
@@ -504,3 +510,18 @@ Below 768 px, More SHALL open a drawer from the left edge, at most 85 percent of
 #### Scenario: Settings from the drawer
 - **WHEN** the user taps the account row in the drawer's footer and chooses Settings
 - **THEN** Settings opens and the drawer is closed
+
+### Requirement: Sidebar toggle in the header
+From 1024 px every page header SHALL begin with the sidebar toggle: an icon button that collapses the sidebar to its icon rail and expands it again, shows its state (pressed while the sidebar is expanded), names the action as its accessible name ("Hide sidebar" or "Show sidebar") and shows its shortcut `[` in its tooltip. The toggle SHALL be the same control on every page, so it stays in one place when the user moves between pages. Below 1024 px the header shows no toggle (the sidebar does not collapse there, and below 768 px it is a drawer).
+
+#### Scenario: Collapse from the header
+- **WHEN** the user clicks the sidebar toggle at the start of the Inbox's header on a 1440 px screen
+- **THEN** the sidebar becomes the icon rail, the toggle shows itself not pressed with the name "Show sidebar", and the content surface widens
+
+#### Scenario: Same place on every page
+- **WHEN** the user moves from Today to a project and to Settings → General
+- **THEN** each page header starts with the sidebar toggle, and on Today and the project it is at the same position
+
+#### Scenario: No toggle on a tablet
+- **WHEN** the window is 900 px wide
+- **THEN** no page header shows the sidebar toggle
