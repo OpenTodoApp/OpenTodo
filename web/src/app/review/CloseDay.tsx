@@ -182,7 +182,7 @@ function SummaryStep({ summary }: { summary: DaySummary }) {
   // Each number is its own tag, so a translation can move it and the tests can read it.
   const figure = (key: string) => (s: ReactNode) => <strong className="font-semibold tabular-nums text-strong" data-close-figure={key}>{s}</strong>
   return (
-    <div className="space-y-2 text-h3 text-default" data-close-summary>
+    <div className="space-y-2 text-h3 font-normal text-default" data-close-summary>
       <p>{t.rich('You planned <n-planned>{planned}</n-planned> {planned, plural, one {task} other {tasks}} and finished <n-done>{done}</n-done>.', { planned: summary.planned, done: summary.done, 'n-planned': figure('planned'), 'n-done': figure('done') })}</p>
       {summary.focusTotal > 0 && (
         <p>{t.rich('Today’s focus: <n-focus>{done} of {total}</n-focus> done.', { done: summary.focusDone, total: summary.focusTotal, 'n-focus': figure('focus') })}</p>
