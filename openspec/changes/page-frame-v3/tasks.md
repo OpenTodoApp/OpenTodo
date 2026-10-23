@@ -10,4 +10,4 @@
 - [x] 2.2 Before/after screenshots at 1280 and 1920 px, light and dark, for the Inbox, Today, a project list and a board, reviewed and attached to the pull request; verify by the PR comment
 - [x] 2.3 Update `docs/interface-guide.md` (the frame table and the widths) and the component comments, and add the CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
 - [x] 2.4 Regenerate the visual baselines that change in the pinned Playwright image; verify `make ui-check` in CI
-- [ ] 2.5 Run `make check` with TZ=UTC, open the pull request and get CI green
+- [x] 2.5 Run `make check` with TZ=UTC, open the pull request and get CI green
