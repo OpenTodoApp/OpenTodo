@@ -140,8 +140,9 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
   const heading = typeof title === 'string'
     ? <TruncatedText as={H} text={title} elRef={titleRef} tabIndex={titleTabIndex} className={`min-w-0 ${TITLE[day ? 'day' : 'tool']} outline-none`} data-page-title="" />
     : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE[day ? 'day' : 'tool']} outline-none`} data-page-title>{title}</H>
-  // The lead line: beside a day page's title at the prose step, beside a tool page's title at the metadata step.
-  const lead = ownRow && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'truncate text-meta'}`} data-page-lead data-page-meta>{meta}</div>
+  // The lead line: beside a day page's title at the prose step, beside a tool page's title at the metadata step;
+  // there it takes the room that is left (basis 0), so a narrow head wraps its actions under the title, never sideways.
+  const lead = ownRow && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'flex-1 basis-0 truncate text-meta'}`} data-page-lead data-page-meta>{meta}</div>
   const toolsEnd = <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} /></div>
   return (
     <header data-page-header data-page-head={day ? 'day' : 'tool'} data-testid={testId}
@@ -161,7 +162,7 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
         </div>
         {briefing && <div className="mt-2 max-w-[72ch] text-prose text-muted" data-page-briefing>{briefing}</div>}
       </>}
-      {ownRow && !day && <div className="flex min-h-[2.875rem] min-w-0 items-center gap-2" data-page-header-row>
+      {ownRow && !day && <div className="flex min-h-[2.875rem] min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-1" data-page-header-row>
         <SidebarToggleButton />
         {backLink}
         {icon && <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><Icon name={icon} /></span>}
