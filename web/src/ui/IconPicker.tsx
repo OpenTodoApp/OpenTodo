@@ -140,7 +140,7 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
       <div key={key || 'none'} id={optionId(key)} role="option" aria-selected={selected} aria-label={title}
         data-icon-option={key || 'none'} data-active={isActive || undefined}
         onMouseDown={(e) => e.preventDefault()} onMouseEnter={() => setActive(key)} onClick={() => onPick(key === NONE ? null : key)}
-        className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-control ${isActive ? 'bg-sunken ring-2 ring-focus dark:bg-raised' : ''} ${selected ? 'bg-accent-soft' : ''}`}
+        className={`flex h-9 w-9 items-center justify-center rounded-control ${isActive ? 'bg-sunken ring-2 ring-focus dark:bg-raised' : ''} ${selected ? 'bg-accent-soft' : ''}`}
         style={{ color: color ?? undefined }}>
         {mark}
       </div>

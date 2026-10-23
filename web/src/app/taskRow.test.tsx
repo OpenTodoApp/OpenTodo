@@ -588,3 +588,65 @@ describe('calmer hover and selection (ux-feedback-2 D5)', () => {
     await r.unmount()
   })
 })
+
+describe('the row\'s empty area (row-and-cursor D1)', () => {
+  const parent = task({ id: 'p', title: 'Plan trip', priority: 2 })
+  async function mount(extra: Partial<TaskRowProps> = {}) {
+    const onOpen = vi.fn(), onToggle = vi.fn(), onTick = vi.fn(), onToggleCollapse = vi.fn()
+    const r = await render(<ul><TaskRow task={parent} selected={false} showProject={false} onToggle={onToggle} onOpen={onOpen} onTick={onTick}
+      hasChildren onToggleCollapse={onToggleCollapse} {...extra} /></ul>)
+    return { r, onOpen, onToggle, onTick, onToggleCollapse }
+  }
+  const click = (el: Element, init: MouseEventInit = {}) => act(() => { el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...init })) })
+
+  it('a click on the row itself opens the task with no event, so the list skips the inline editor', async () => {
+    const { r, onOpen } = await mount()
+    await click(r.container.querySelector('[data-task-id]')!)
+    expect(onOpen).toHaveBeenCalledTimes(1)
+    expect(onOpen.mock.calls[0][0]).toBeUndefined()
+    await r.unmount()
+  })
+
+  it('the leading slot and the trailing group are empty area too', async () => {
+    const { r, onOpen } = await mount({ hasChildren: false, project: { id: 'h', name: 'Home' } as Project, showProject: true })
+    await click(r.container.querySelector('[data-leading-slot]')!)
+    await click(r.container.querySelector('[data-row-trailing]')!)
+    expect(onOpen).toHaveBeenCalledTimes(2)
+    await r.unmount()
+  })
+
+  it('the title keeps its own click: the open button passes its event on', async () => {
+    const { r, onOpen } = await mount()
+    await click(r.container.querySelector('[data-row-open]')!)
+    expect(onOpen).toHaveBeenCalledTimes(1)
+    expect(onOpen.mock.calls[0][0]).toBeDefined()
+    await r.unmount()
+  })
+
+  it('the checkbox completes and the chevron folds; neither opens the task', async () => {
+    const { r, onOpen, onToggle, onToggleCollapse } = await mount()
+    await click(r.container.querySelector('button[aria-label^="Complete "]')!)
+    await click(r.container.querySelector('button[aria-label="Collapse subtasks"]')!)
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(onToggleCollapse).toHaveBeenCalledTimes(1)
+    expect(onOpen).not.toHaveBeenCalled()
+    await r.unmount()
+  })
+
+  it('Shift or Ctrl/⌘ on the empty area ticks the row instead of opening it', async () => {
+    const { r, onOpen, onTick } = await mount()
+    const li = r.container.querySelector('[data-task-id]')!
+    await click(li, { shiftKey: true })
+    await click(li, { metaKey: true })
+    expect(onTick.mock.calls).toEqual([[true], [false]])
+    expect(onOpen).not.toHaveBeenCalled()
+    await r.unmount()
+  })
+
+  it('a row being edited inline has no empty-area handler', async () => {
+    const { r, onOpen } = await mount({ inline: <input aria-label="Title" /> })
+    await click(r.container.querySelector('[data-task-id]')!)
+    expect(onOpen).not.toHaveBeenCalled()
+    await r.unmount()
+  })
+})

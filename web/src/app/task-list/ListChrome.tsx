@@ -244,20 +244,21 @@ export function placeholderFor(route: ListRoute, project?: Project, label?: Labe
 }
 
 // Empty views (OpenSpec change lean-chrome D7, task-list-presentation "Empty views"):
-// one sentence, one primary action, at most one secondary link, rendered through the
+// one sentence, at most one primary action (none where the view has its own quick add,
+// row-and-cursor D3), at most one secondary link, rendered through the
 // EmptyState primitive; the action's key is in its tooltip on fine pointers only.
 type EmptyView = ListRoute['view']
-interface EmptyCopy { title: string; action: 'add' | 'inbox' | 'today' }
+interface EmptyCopy { title: string; action?: 'inbox' | 'today' }
 const EMPTY_COPY: Record<EmptyView, EmptyCopy> = {
-  inbox: { get title() { return t('Inbox zero: every task has a place.') }, action: 'add' },
-  today: { get title() { return t('Nothing due today.') }, action: 'add' },
-  upcoming: { get title() { return t('Nothing scheduled yet.') }, action: 'add' },
-  anytime: { get title() { return t('Nothing waiting for a free moment.') }, action: 'add' },
-  someday: { get title() { return t('Nothing parked for later.') }, action: 'add' },
+  inbox: { get title() { return t('Inbox zero: every task has a place.') } },
+  today: { get title() { return t('Nothing due today.') } },
+  upcoming: { get title() { return t('Nothing scheduled yet.') } },
+  anytime: { get title() { return t('Nothing waiting for a free moment.') } },
+  someday: { get title() { return t('Nothing parked for later.') } },
   assigned: { get title() { return t('Nothing is assigned to you.') }, action: 'inbox' },
-  project: { get title() { return t('This project has no open tasks.') }, action: 'add' },
-  label: { get title() { return t('No open task carries this label.') }, action: 'add' },
-  place: { get title() { return t('No open task happens at this location.') }, action: 'add' },
+  project: { get title() { return t('This project has no open tasks.') } },
+  label: { get title() { return t('No open task carries this label.') } },
+  place: { get title() { return t('No open task happens at this location.') } },
   completed: { get title() { return t('Nothing completed yet.') }, action: 'today' },
 }
 
@@ -266,14 +267,17 @@ const EMPTY_ILLUSTRATION: Partial<Record<EmptyView, IllustrationName>> = {
   inbox: 'inbox-zero', today: 'today-clear', upcoming: 'week-clear', project: 'project-new',
 }
 
-/** The primary action of an empty view: add a task (the view's quick add), or open Inbox or Today. */
-function emptyAction(kind: EmptyCopy['action'], onAdd: () => void): EmptyStateAction {
+/**
+ * The primary action of an empty view: open Inbox or Today. A view with its own quick add
+ * has none (row-and-cursor D3): the field above is the way to add, and `q` focuses it.
+ */
+function emptyAction(kind: EmptyCopy['action']): EmptyStateAction | undefined {
   if (kind === 'today') return { label: t('Open Today'), onClick: () => navigate({ view: 'today' }), shortcut: keysOf('go.today') }
   if (kind === 'inbox') return { label: t('Open Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }
-  return { label: t('Add a task'), onClick: onAdd, shortcut: keysOf('list.quick-add') }
+  return undefined
 }
 
-export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0, onShowCompleted, onAdd }: {
+export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0, onShowCompleted }: {
   view: EmptyView
   /** Today: tasks due today that all wait for other tasks (task-dependencies). */
   waiting?: number
@@ -282,11 +286,10 @@ export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0,
   /** A project's completed tasks while its Completed group is off. */
   completed?: number
   onShowCompleted?: () => void
-  onAdd: () => void
 }) {
   const copy = EMPTY_COPY[view]
   const blocked = view === 'today' && waiting > 0
-  const action = emptyAction(view === 'project' && readOnly ? 'inbox' : copy.action, onAdd)
+  const action = emptyAction(view === 'project' && readOnly ? 'inbox' : copy.action)
   const secondary: EmptyStateLink | undefined = blocked
     ? { label: t('{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}', { n: waiting }), onClick: () => navigate({ view: 'waiting' }) }
     : view === 'today'

@@ -656,6 +656,17 @@ body {
   @apply bg-canvas text-default antialiased;
 }
 
+/* Pointer on clickable elements (OpenSpec change row-and-cursor D2, design-system):
+   Tailwind 4 resets buttons to the arrow. One rule gives everything clickable the hand,
+   at zero specificity in the base layer, so a utility still chooses another cursor that
+   means something (cursor-grab, cursor-text, cursor-not-allowed, cursor-progress).
+   A task row opens from its empty area, so it shows the hand too. */
+@layer base {
+  :where(button:not(:disabled), [role="button"]:not([aria-disabled="true"]), [role="menuitem"]:not([aria-disabled="true"]), [role="menuitemcheckbox"], [role="menuitemradio"], [role="tab"], [role="option"]:not([aria-disabled="true"]), summary, label[for], a[href], li[data-task-id]) {
+    cursor: pointer;
+  }
+}
+
 @layer components {
 /* Shared Input (src/ui/Field.tsx): 40 px tall, so it lines up with a medium button. */
 .ui-input {
@@ -1000,7 +1011,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .help-prose table { @apply w-full border-collapse text-meta; }
 .help-prose th, .help-prose td { @apply border-t border-default px-3 py-2 text-left align-top; }
 .help-prose thead th { @apply border-t-0 bg-sunken font-semibold; }
-.help-prose summary { @apply cursor-pointer font-medium; }
+.help-prose summary { @apply font-medium; }
 .help-snippet mark, .help-prose mark { @apply rounded-chip bg-highlight px-0.5 text-on-highlight; }
 }
 

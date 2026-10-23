@@ -43,13 +43,17 @@ async function waitFor(ok: () => boolean, ms = 3000) {
 }
 const q = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)
 
-/** One region with the sentence as heading, one button, no icon and no printed key. */
-function expectContract(empty: Element, title: string, action: string) {
+/**
+ * One region with the sentence as heading, at most one button (none where the view has its
+ * own quick add, row-and-cursor D3), no icon and no printed key.
+ */
+function expectContract(empty: Element, title: string, action: string | null) {
   const region = empty.querySelector('section')!
   expect(region.querySelector('h2')!.textContent).toBe(title)
   expect(region.getAttribute('aria-labelledby')).toBe(region.querySelector('h2')!.id)
-  expect(empty.querySelectorAll('.ui-btn')).toHaveLength(1)
-  expect(empty.querySelector('[data-empty-action]')!.textContent).toBe(action)
+  expect(empty.querySelectorAll('.ui-btn')).toHaveLength(action === null ? 0 : 1)
+  if (action === null) expect(empty.querySelector('[data-empty-action]')).toBeNull()
+  else expect(empty.querySelector('[data-empty-action]')!.textContent).toBe(action)
   // No icon; a decorative illustration (design-system "Illustrations") is the one drawing allowed.
   expect(empty.querySelector('svg:not([data-illustration])')).toBeNull()
   expect(empty.querySelector('kbd')).toBeNull()
@@ -57,29 +61,26 @@ function expectContract(empty: Element, title: string, action: string) {
 }
 
 describe('empty views', () => {
-  it('Empty Today on a phone: one sentence, Add a task, the Open Upcoming link, no icon and no key hint', async () => {
+  it('Empty Today on a phone: one sentence, the Open Upcoming link, no button, no icon and no key hint', async () => {
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => q('[data-empty-state="today"]') !== null)
     const empty = q('[data-empty-state="today"]')!
-    expectContract(empty, 'Nothing due today.', 'Add a task')
+    expectContract(empty, 'Nothing due today.', null)
     expect(empty.querySelector('[data-empty-secondary]')!.textContent).toBe('Open Upcoming')
-    // Without a Shell to open the quick-add sheet, the view's own field takes focus.
-    await click(empty.querySelector('[data-empty-action]')!)
-    expect(document.activeElement?.getAttribute('aria-label')).toBe('Add a task')
+    // The view's own quick add, above the empty view, stays the way to add.
+    expect(r.container.querySelector('input[aria-label="Add a task"]')).not.toBeNull()
     await click(empty.querySelector('[data-empty-secondary]')!)
     expect(location.pathname).toBe('/upcoming')
     await r.unmount()
   })
 
-  it('Empty Today on a desktop: the same sentence, button and link, nothing printed, "Press q" in the tooltip', async () => {
+  it('Empty Today on a desktop: the same sentence and link, no button and nothing printed', async () => {
     pointer('fine')
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => q('[data-empty-state="today"]') !== null)
     const empty = q('[data-empty-state="today"]')!
-    expectContract(empty, 'Nothing due today.', 'Add a task')
-    const button = empty.querySelector('[data-empty-action]')!
-    await act(async () => { button.dispatchEvent(new FocusEvent('focusin', { bubbles: true })) })
-    expect(q('[role="tooltip"]')!.textContent).toBe('Press q')
+    expectContract(empty, 'Nothing due today.', null)
+    expect(empty.querySelector('[data-empty-secondary]')!.textContent).toBe('Open Upcoming')
     await r.unmount()
   })
 
@@ -92,7 +93,7 @@ describe('empty views', () => {
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => q('[data-empty-state="today"] [data-empty-secondary]')?.textContent === '3 waiting for other tasks')
     const empty = q('[data-empty-state="today"]')!
-    expectContract(empty, 'Nothing is ready to start today.', 'Add a task')
+    expectContract(empty, 'Nothing is ready to start today.', null)
     expect(empty.querySelector('[data-empty-secondary]')!.textContent).toBe('3 waiting for other tasks')
     await click(empty.querySelector('[data-empty-secondary]')!)
     expect(location.pathname).toBe('/waiting')
@@ -105,7 +106,7 @@ describe('empty views', () => {
     const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)
     await waitFor(() => q('[data-empty-state="project"] [data-empty-secondary]') !== null)
     const empty = q('[data-empty-state="project"]')!
-    expectContract(empty, 'This project has no open tasks.', 'Add a task')
+    expectContract(empty, 'This project has no open tasks.', null)
     expect(empty.querySelector('[data-empty-secondary]')!.textContent).toBe('Show 4 completed')
     await click(empty.querySelector('[data-empty-secondary]')!)
     await waitFor(() => !!r.container.querySelector('[data-completed-group]'))
@@ -125,15 +126,15 @@ describe('empty views', () => {
     await r.unmount()
   })
 
-  it('every list view has its sentence and action', async () => {
+  it('every list view has its sentence, and a button only where it goes somewhere else', async () => {
     const pid = await createProject({ name: 'Home' })
     const cases = [
-      [{ view: 'inbox' }, 'Inbox zero: every task has a place.', 'Add a task'],
-      [{ view: 'upcoming' }, 'Nothing scheduled yet.', 'Add a task'],
-      [{ view: 'anytime' }, 'Nothing waiting for a free moment.', 'Add a task'],
-      [{ view: 'someday' }, 'Nothing parked for later.', 'Add a task'],
+      [{ view: 'inbox' }, 'Inbox zero: every task has a place.', null],
+      [{ view: 'upcoming' }, 'Nothing scheduled yet.', null],
+      [{ view: 'anytime' }, 'Nothing waiting for a free moment.', null],
+      [{ view: 'someday' }, 'Nothing parked for later.', null],
       [{ view: 'assigned' }, 'Nothing is assigned to you.', 'Open Inbox'],
-      [{ view: 'project', id: pid }, 'This project has no open tasks.', 'Add a task'],
+      [{ view: 'project', id: pid }, 'This project has no open tasks.', null],
     ] as const
     for (const [route, title, action] of cases) {
       const r = await render(<TaskListView route={route} userId="u1" />)

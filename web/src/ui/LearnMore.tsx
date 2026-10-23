@@ -20,7 +20,7 @@ export function LearnMore({ screen, topic, className = '', dataAttrs }: LearnMor
   return (
     <button type="button" data-help-screen={screen} data-learn-more aria-haspopup="dialog"
       aria-label={topic ? t('Learn more: {topic}', { topic }) : undefined}
-      className={`ot-learn-more cursor-pointer text-accent underline underline-offset-2 hover:decoration-2 ${className}`}
+      className={`ot-learn-more text-accent underline underline-offset-2 hover:decoration-2 ${className}`}
       onClick={(e) => openHelp(screen, e.currentTarget)} {...dataAttrs}>
       {t('Learn more')}
     </button>

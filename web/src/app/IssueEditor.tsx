@@ -158,7 +158,7 @@ function FilterFields({ d, set, at }: { d: IssueDraft; set: (p: Partial<IssueDra
 function MoreOptions({ d, set, at }: { d: IssueDraft; set: (p: Partial<IssueDraft>) => void; at: (f: string) => string | undefined }) {
   return (
     <details className="group rounded-control border border-default px-3 py-2" open={moreOptionsOpen(d) || !!at('name') || !!at('interval_minutes')} data-issue-more>
-      <summary className="cursor-pointer text-body font-medium text-default">{t('More options')}</summary>
+      <summary className="text-body font-medium text-default">{t('More options')}</summary>
       <div className="mt-3 space-y-4">
         <Field label={t('Name')} description={t('Optional; the host is used otherwise.')} error={at('name')}>
           <Input aria-label={t('Connection name')} value={d.name} maxLength={100} onChange={(e) => set({ name: e.target.value })} />

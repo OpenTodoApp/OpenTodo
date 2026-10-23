@@ -137,4 +137,22 @@ export function cancelledRings(path: string, source: string): Finding[] {
   return out
 }
 
+/**
+ * The arrow on something clickable (row-and-cursor D2, design-system "Pointer on clickable
+ * elements"): the base layer gives every clickable element the hand, so `cursor-default`
+ * or `cursor-auto` takes it away again. Allowed with `cursor-lint-allow` and a reason on
+ * the same line or the line above (a JSX attribute list has no room for a comment).
+ */
+export function cursorDefault(path: string, source: string): Finding[] {
+  const out: Finding[] = []
+  const lines = source.split('\n')
+  lines.forEach((line, i) => {
+    if (line.includes('cursor-lint-allow') || (i > 0 && lines[i - 1].includes('cursor-lint-allow'))) return
+    for (const value of classTokens(line)) {
+      if (value.split(/\s+/).some((tk) => /^(?:[\w-]+:)*cursor-(?:default|auto)$/.test(tk))) out.push({ path, line: i + 1, text: value.trim() })
+    }
+  })
+  return out
+}
+
 export const format = (f: Finding) => `${f.path}:${f.line}: ${f.text}`

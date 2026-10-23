@@ -125,7 +125,7 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
       {loaded && projects.length === 0 && <p className="px-2 py-2 text-body text-faint">{t('No projects yet.')}</p>}
       {loaded && <details ref={disclosure} id="archived" open={archivedOpen} onToggle={(e) => setArchivedOpen(e.currentTarget.open)}
         className="mt-6 border-t border-default pt-3" data-archived-disclosure>
-        <summary className="cursor-pointer rounded-control px-2 py-1.5 text-body font-medium text-default">
+        <summary className="rounded-control px-2 py-1.5 text-body font-medium text-default">
           {t('Archived projects')} <span className="text-meta font-normal tabular-nums text-faint" data-archived-count>{archivedCount}</span>
         </summary>
         <div className="pt-2">{archivedOpen && <ArchivedProjectsSection bare />}</div>

@@ -68,7 +68,7 @@ export function RelayView(p: RelayViewProps) {
       )}
       {p.optedIn && p.recent.length > 0 && (
         <details className="py-2 text-body" data-relay-recent>
-          <summary className="cursor-pointer font-medium text-default">{rowCopy('assistants', 'relayRecent').label}</summary>
+          <summary className="font-medium text-default">{rowCopy('assistants', 'relayRecent').label}</summary>
           <p className="mt-1 text-meta text-muted">{rowCopy('assistants', 'relayRecent').description}</p>
           <ul className="mt-2 space-y-1 text-meta">
             {p.recent.map((c, i) => (

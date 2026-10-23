@@ -270,6 +270,7 @@ export function LineChart({ points, aName, bName, summary }: { points: readonly 
           <div {...grid.gridProps} role="grid" aria-label={summary} className="absolute inset-0 flex" data-chart-grid>
             <div role="row" className="flex h-full w-full">
               {points.map((_, i) => (
+                // cursor-lint-allow: a data cell to read, not to click; the arrow keeps the I-beam off the chart.
                 <div key={i} {...grid.cellProps(0, i)} className="h-full min-w-0 flex-1 cursor-default outline-none focus-visible:bg-sunken/60 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus" data-point={i} />
               ))}
             </div>

@@ -152,7 +152,7 @@ function SuggestList({ id, open, items, active, onPick }: { id: string; open: { 
     <ul id={id} role="listbox" aria-label={label} className="slash-menu fixed" style={{ left, top }} data-suggest={open.s.kind}>
       {items.map((item, i) => (
         <li key={item.kind === 'command' ? item.cmd.id : item.m.userId} id={`${id}-${i}`} role="option" aria-selected={i === active}
-          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-control px-2 py-1 text-body"
+          className="flex min-h-11 items-center gap-2 rounded-control px-2 py-1 text-body"
           onMouseDown={(e) => { e.preventDefault(); onPick(item) }}>
           {item.kind === 'command'
             ? <><Icon name={item.cmd.icon} size="sm" className="text-muted" />{item.cmd.label}</>

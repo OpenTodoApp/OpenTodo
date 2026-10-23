@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import css from '../../index.css?raw'
 import { STYLE_NOT_YET_MIGRATED, STYLE_NOT_YET_MIGRATED_MAX, TITLE_NOT_YET_MIGRATED, TITLE_NOT_YET_MIGRATED_MAX } from './notYetMigrated'
-import { cancelledRings, format, handMadeSurfaces, momentOnHover, nativeTitles, rawStyles } from './styleLint'
+import { cancelledRings, cursorDefault, format, handMadeSurfaces, momentOnHover, nativeTitles, rawStyles } from './styleLint'
 
 // OpenSpec design-system "Semantic design tokens": shared UI, screens and the
 // component style classes colour through tokens, never raw Tailwind palette
@@ -263,6 +263,24 @@ describe('token lint', () => {
       .toEqual(['Cell.tsx:2: outline-none focus-visible:outline-2 focus-visible:outline-focus'])
     expect(cancelledRings('Cell.tsx', '<div className="outline-none focus-visible:outline-2 focus-visible:outline-solid" />')).toEqual([])
     expect(cancelledRings('Cell.tsx', '<div className="focus-visible:outline-2 focus-visible:outline-focus" />')).toEqual([])
+  })
+
+  it('everything clickable shows the hand: one base rule, and no arrow without a reason (row-and-cursor)', () => {
+    const base = /@layer base\s*\{\s*:where\(([^)]*(?:\([^)]*\)[^)]*)*)\)\s*\{\s*cursor:\s*pointer;/.exec(css)
+    expect(base, 'the base cursor rule in index.css').not.toBeNull()
+    for (const sel of ['button:not(:disabled)', '[role="button"]', '[role="menuitem"]', '[role="tab"]', '[role="option"]', 'summary', 'label[for]', 'a[href]', 'li[data-task-id]']) {
+      expect(base![1]).toContain(sel)
+    }
+    const screens = [
+      ...uiCode.map(([path, src]) => [path.replace(/^\.\.\//, 'src/ui/'), src] as const),
+      ...appFiles,
+    ]
+    expect(screens.flatMap(([path, src]) => cursorDefault(path, src)).map(format)).toEqual([])
+    // The rule itself: names the file and line; a reason on the line allows it.
+    expect(cursorDefault('Cell.tsx', '<a />\n<button className="cursor-default px-2" />').map(format)).toEqual(['Cell.tsx:2: cursor-default px-2'])
+    expect(cursorDefault('Cell.tsx', '<span className="md:cursor-auto" />')).toHaveLength(1)
+    expect(cursorDefault('Cell.tsx', '<button className="cursor-default" /> {/* cursor-lint-allow: a read-only badge styled as a button */}')).toEqual([])
+    expect(cursorDefault('Cell.tsx', '<div className="cursor-grab" />')).toEqual([])
   })
 
   it('the not-yet lists only shrink and name files that still need them', () => {
