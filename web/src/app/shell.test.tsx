@@ -74,7 +74,7 @@ describe('every view opens a task as its page', () => {
     await waitFor(() => r.container.textContent!.includes('Renew passport') && r.container.textContent!.includes('Paint the fence'))
     await openByClick('Paint the fence')
     await key(document.body, 'Escape')
-    await waitFor(() => location.pathname === '/filter' && new URLSearchParams(location.search).get('q') === 'p1')
+    await waitFor(() => location.pathname === '/views/new' && new URLSearchParams(location.search).get('q') === 'p1')
 
     // Saved view.
     navigate({ view: 'view', id: view })
