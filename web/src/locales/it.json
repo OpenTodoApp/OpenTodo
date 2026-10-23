@@ -5147,5 +5147,6 @@
   "Go to {page}": "Vai a {page}",
   "Hide sidebar": "Nascondi la barra laterale",
   "Show sidebar": "Mostra la barra laterale",
-  "then": "poi"
+  "then": "poi",
+  "{n, plural, one {# completed task hidden by display options} other {# completed tasks hidden by display options}}": "{n, plural, one {# attività completata nascosta dalle opzioni di visualizzazione} other {# attività completate nascoste dalle opzioni di visualizzazione}}"
 }

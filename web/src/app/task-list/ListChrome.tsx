@@ -281,6 +281,19 @@ export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0,
   )
 }
 
+/**
+ * The line after a project's list while its completed tasks are hidden (precision-rows
+ * D6): how many there are and one link that turns "Show completed tasks" on.
+ */
+export function HiddenNote({ count, onShow }: { count: number; onShow: () => void }) {
+  return (
+    <p className="flex flex-wrap items-center justify-center gap-x-2 pt-4 pb-2 text-meta text-muted" data-hidden-note>
+      <span>{t('{n, plural, one {# completed task hidden by display options} other {# completed tasks hidden by display options}}', { n: count })}</span>
+      <button type="button" onClick={onShow} className="rounded-chip text-default underline decoration-(--ot-line-strong) underline-offset-3 hover:decoration-current">{t('Show')}</button>
+    </p>
+  )
+}
+
 /** No list matches when the duration filter hides every task. */
 export function FilteredEmpty({ onClear }: { onClear: () => void }) {
   return (

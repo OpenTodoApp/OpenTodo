@@ -13,6 +13,15 @@
 // muted text separated by CSS middle dots; labels are the only chips (LabelChips);
 // the project, the counts and the origin form the trailing group, in whose place the
 // revealed actions (RowActionCluster) appear on a fine pointer.
+//
+// Precision rows (OpenSpec change precision-rows, design D1 to D5): a list row is one
+// line from 40 rem of row width. The title leads, with the repeat mark and the counts
+// beside it; the properties stand in a right-hand column of fixed cells (date, project,
+// labels or deadline or sub-task progress, estimate, assignee) that drops cells from
+// the end as the row narrows; the facts the column does not hold take a second line
+// only when there are any. Narrower rows keep the title and one run of text under it.
+// The row is its own size container (`@container/row`), so every host gets the layout
+// its width allows; the rules are in index.css, "The property column".
 import { isSample } from '../lib/sampleTasks'
 import { hueFor, Icon, LabelChips, ReadAs, ToneText, TruncatedText, type IconName, type Tone } from '../ui'
 import { memo, type ReactNode, useLayoutEffect, useRef } from 'react'
@@ -136,16 +145,16 @@ interface MetaValues {
   counts?: ReactNode
 }
 
-/** Whether the line has anything to show (the project below 640 px counts; see `RowMeta`). */
+/** How many items the line has to show (the project and the repeat mark are placed apart). */
 function metaItems(m: MetaValues): number {
   return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts].filter(Boolean).length
 }
 
-/** The metadata line (rows-v2 D4): one run of muted ToneText, dots drawn by CSS, then the label chips. */
-function RowMeta({ m, card, projectOnlyBelowSm }: { m: MetaValues; card: boolean; projectOnlyBelowSm: boolean }) {
+/** A card's line (rows-v2 D4): one run of muted ToneText, dots drawn by CSS, then the label chips. */
+function CardMeta({ m }: { m: MetaValues }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
   return (
-    <div className={`${card ? 'mt-1' : 'mt-0.5'} flex flex-wrap items-center gap-x-1 gap-y-0.5 ${projectOnlyBelowSm ? 'sm:hidden' : ''}`} data-row-meta>
+    <div className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-0.5" data-row-meta="card">
       {m.sample && <ToneText data-sample="">{t('Sample')}</ToneText>}
       {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="">{m.breadcrumb}</ToneText>}
       {m.date && <ToneText tone={m.dateTone} data-date="">{m.date}</ToneText>}
@@ -165,6 +174,57 @@ function RowMeta({ m, card, projectOnlyBelowSm }: { m: MetaValues; card: boolean
       {m.project}
       {m.labels && <span data-row-labels="" className="ml-1 inline-flex max-w-full min-w-0 first:ml-0">{m.labels}</span>}
       {m.counts}
+    </div>
+  )
+}
+
+/** What a list row's third cell holds (precision-rows D2): the labels, else the deadline, else the sub-task progress. */
+export type RowExtra = 'labels' | 'deadline' | 'progress' | null
+
+export function rowExtra(labels: boolean, deadline: boolean, progress: boolean): RowExtra {
+  return labels ? 'labels' : deadline ? 'deadline' : progress ? 'progress' : null
+}
+
+/**
+ * A list row's properties (precision-rows D1, D3): the cells of the column in their
+ * order, then the facts the column does not hold. Under 40 rem of row width the two
+ * wrappers are not boxes, so everything reads as one muted run under the title.
+ */
+function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaValues; extra: RowExtra; progress?: RowCount; projectColor?: string; projectColumn: boolean }) {
+  const more = m.badges.slice(MAX_FIELD_BADGES)
+  const deadline = m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" data-row-item="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>
+  const rest = [
+    m.sample && <ToneText key="sample" data-sample="" data-row-item="">{t('Sample')}</ToneText>,
+    m.breadcrumb && <ToneText key="crumb" icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="" data-row-item="">{m.breadcrumb}</ToneText>,
+    extra !== 'deadline' && deadline && <span key="deadline" className="contents">{deadline}</span>,
+    m.startText && <ToneText key="start" icon={m.someday ? 'archive' : 'calendar-days'} data-start="" data-row-item="">{m.startText}</ToneText>,
+    m.blockedBy > 0 && <ToneText key="blocked" icon="lock" data-blocked="" data-row-item="" label={t('Blocked by {blockedBy}', { blockedBy: m.blockedBy })}>{m.blockedBy}</ToneText>,
+    m.streak && <ToneText key="streak" icon="flame" data-streak="" data-row-item="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
+    ...m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id} data-row-item="">{b.text}</ToneText>),
+    more.length > 0 && <ToneText key="more" data-field-more="" data-row-item="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>,
+  ].filter(Boolean)
+  return (
+    <div className="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5" data-row-meta="row">
+      <span className="contents" data-row-props={projectColumn ? 'project' : ''}>
+        {(m.date || m.hint) && (
+          <span data-row-cell="date" data-row-item="" className="inline-flex min-w-0 items-center gap-1">
+            {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+            {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
+          </span>
+        )}
+        {m.project && (
+          <span data-row-cell="project" data-row-item="" className="inline-flex min-w-0 items-center gap-1 text-meta text-muted">
+            {projectColor && <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: projectColor }} />}
+            {m.project}
+          </span>
+        )}
+        {extra === 'labels' && <span data-row-cell="extra" data-row-labels="" className="inline-flex max-w-full min-w-0 items-center">{m.labels}</span>}
+        {extra === 'deadline' && <span data-row-cell="extra" data-row-item="" className="inline-flex min-w-0 items-center">{deadline}</span>}
+        {extra === 'progress' && progress && <span data-row-cell="extra" data-row-item="" className="inline-flex min-w-0 items-center"><ToneText icon="circle-check-big" data-progress="" label={progress.label}>{progress.text}</ToneText></span>}
+        {m.estimate && <span data-row-cell="estimate" data-row-item="" className="inline-flex min-w-0 items-center"><ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText></span>}
+        {m.assignee && <span data-row-cell="assignee" data-row-item="" data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
+      </span>
+      {rest.length > 0 && <span className="contents" data-row-rest>{rest}</span>}
     </div>
   )
 }
@@ -379,10 +439,14 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     counts: card && counts.length > 0 ? <RowCounts counts={counts} /> : null,
   }
   if (!labels.some((l) => l.id !== omitLabel)) m.labels = null
-  // The project (rows-v2 D6): the trailing group from 640 px, the end of the line below (and always on a card).
-  if (projectName) m.project = <span data-project="" className={`inline-flex max-w-48 min-w-0 items-center gap-1 text-meta text-muted ${card ? '' : 'sm:hidden'}`}><TruncatedText text={projectName} /></span>
-  const items = metaItems(m)
-  const meta = (items > 0 || m.project) && <RowMeta m={m} card={card} projectOnlyBelowSm={items === 0 && !card} />
+  // The project: a cell of a list row's column (precision-rows D1), the end of a card's line.
+  if (projectName) m.project = <span data-project="" className="inline-flex max-w-48 min-w-0 items-center gap-1 text-meta text-muted"><TruncatedText text={projectName} /></span>
+  // A list row (precision-rows D2): the third cell takes the labels, else the deadline, else the progress, which then leaves the counts.
+  const progressCount = counts.find((c) => c.key === 'progress')
+  const extra = rowExtra(!!m.labels, !!m.deadline, !!progressCount)
+  const headCounts = extra === 'progress' ? counts.filter((c) => c.key !== 'progress') : counts
+  const meta = card ? (metaItems(m) > 0 || m.project) && <CardMeta m={m} />
+    : (metaItems({ ...m, repeat: null }) > 0 || m.project || extra === 'progress') && <RowLine m={m} extra={extra} progress={progressCount} projectColor={projectName ? project?.color : undefined} projectColumn={showProject} />
   const revealed = !card && !readOnly && !inline && actions
 
   // A departing row is the last picture of a task that was completed: done, and out of reach.
@@ -396,12 +460,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
-    : (projectName || counts.length > 0 || originChip || revealed) && (
-    // min-w-0: in a narrow column (a dashboard panel) the project name gives way, never the page.
-    // While the row can reveal its actions the group keeps their width (7 rem), so they never cover the open control (ux-fixes-phone, audit M11) and revealing them moves nothing.
+    : (originChip || revealed) && (
+    // While a two-line row can reveal its actions the group keeps their width (7 rem), so they never cover the open control (ux-fixes-phone, audit M11) and revealing them moves nothing; a one-line row lets them float over its column (index.css).
     <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? `md:pointer-fine:min-w-28 ${forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0'}` : ''}`}>
-      {projectName && <TruncatedText text={projectName} data-project="" className="hidden max-w-48 min-w-0 text-meta text-muted sm:inline" />}
-      {counts.length > 0 && <RowCounts counts={counts} />}
       {originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>
   )
@@ -437,7 +498,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         onOpen()
       }}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-control px-2 ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 ${card ? '' : '@container/row'} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
@@ -492,7 +553,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           onOpen(e)
         }}>
-        <div className={`user-text text-body ${card ? '' : 'truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
+        <div className={card ? '' : 'flex min-w-0 items-center gap-2'} data-row-head>
+        <div className={`user-text text-body ${card ? '' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
           {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{task.title}</ReadAs></span>
             : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
           {unencrypted && (
@@ -500,6 +562,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
               <ReadAs label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>{t('not yet encrypted')}</ReadAs>
             </span>
           )}
+        </div>
+        {!card && m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeat} className="shrink-0">{null}</ToneText>}
+        {!card && headCounts.length > 0 && <RowCounts counts={headCounts} />}
         </div>
         {meta}
       </button>}

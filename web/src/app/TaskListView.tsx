@@ -49,7 +49,7 @@ import { useSelection } from './selection'
 import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
-import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
+import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
@@ -272,6 +272,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   // The Inbox's own rows: its planned group is not part of it (inbox-planned-group D2).
   const own = m.ownRows
+  // A project list whose completed tasks are hidden ends with how many (precision-rows D6).
+  const hiddenDone = !m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0
+  const showCompleted = projectId ? () => act(saveShowCompleted(projectId, true)) : undefined
   const pageActions = (
     <ListPageActions route={route} userRole={userRole} rowCount={own.length} topLevelCount={own.filter((r) => r.depth === 0).length}
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} />
@@ -343,8 +346,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {own.length === 0 && !(board || m.liveSections.length > 0) && (m.duration
             ? <FilteredEmpty onClear={() => m.chooseDuration(null)} />
             : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly}
-                completed={!m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0}
-                onShowCompleted={projectId ? () => act(saveShowCompleted(projectId, true)) : undefined} />)}
+                completed={hiddenDone} onShowCompleted={showCompleted} />)}
 
           {board && currentProject ? (
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}
@@ -360,6 +362,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               earlierActions={route.view === 'today' ? earlierActions : undefined}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />
           )}
+          {own.length > 0 && hiddenDone > 0 && showCompleted && !board && !timeline && <HiddenNote count={hiddenDone} onShow={showCompleted} />}
           {route.view === 'today' && <CloseDayRow />}
           {m.logbook && <LogbookMore total={m.logbook.total} limit={m.logbookLimit} onMore={() => m.setLogbookLimit((n) => n + LOGBOOK_PAGE)} />}
           {route.view === 'project' && !board && !timeline && m.projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}

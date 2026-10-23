@@ -92,10 +92,11 @@ describe('row text for screen readers', () => {
     created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, _clock: {}, ...over,
   } as Task)
 
-  it('the open button reads the title and its line; an undecryptable title is read as the warning', async () => {
-    // The counts follow the open button in the row and are read there (calm-rows D7, rows-v2).
+  it('the open button reads the title, its marks and its line; an undecryptable title is read as the warning', async () => {
+    // The counts sit beside the title inside the open button and are read with it (precision-rows D1).
     const c = await render(<ul><TaskRow task={task({ title: 'Buy milk', description: 'two litres' })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
-    expect(spokenText(c.container.querySelector('[data-row-open]')!)).toBe('Buy milk')
+    const open = spokenText(c.container.querySelector('[data-row-open]')!)
+    expect([open.startsWith('Buy milk'), open.endsWith('Has notes')]).toEqual([true, true])
     expect(c.container.querySelector('[data-row-controls] button')!.getAttribute('aria-label')).toBe('Complete Buy milk')
     expect(spokenText(c.container.querySelector('[data-row-counts]')!)).toBe('Has notes')
     await c.unmount()

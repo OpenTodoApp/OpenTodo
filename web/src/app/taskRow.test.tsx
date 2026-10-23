@@ -103,13 +103,16 @@ describe('one row language (rows-v2)', () => {
     try { return await fn() } finally { vi.useRealTimers() }
   }
 
-  it('a recurring evening task under This Evening shows no date text and a muted repeat icon with "repeats"', () => atNoon(async () => {
+  it('a recurring evening task under This Evening shows no date text and the repeat mark beside the title, read as "repeats"', () => atNoon(async () => {
     const r = await row({ due: { date: '2026-10-14' }, evening: true, recurrence: 'every day' }, { implied: { date: '2026-10-14', evening: true } })
     expect(r.container.querySelector('[data-date]')).toBeNull()
-    const repeat = r.container.querySelector('[data-repeat]')!
-    expect(visibleText(repeat)).toBe('repeats')
-    expect(repeat.className).toContain('text-muted')
+    const repeat = r.container.querySelector('[data-row-head] [data-repeat]')!
+    expect(visibleText(repeat)).toBe('')
+    expect(spokenText(repeat)).toBe('repeats')
+    expect(repeat.className).toContain('text-faint')
     expect(repeat.querySelector('svg')).toBeTruthy()
+    // Nothing else to show: the row is one line.
+    expect(r.container.querySelector('[data-row-meta]')).toBeNull()
     await r.unmount()
   }))
 
@@ -188,8 +191,9 @@ describe('one row language (rows-v2)', () => {
   it('One run of text: no item of the line has a pill background; the dots are generated content, not text', () => atNoon(async () => {
     const fields = await row({ due: { date: '2026-10-16', time: '14:00' }, estimate_minutes: 45, recurrence: 'every week', start: '2026-10-01' }, { blockedBy: 2, breadcrumb: 'Parent', timeColumn: true, implied: { date: '2026-10-16' } })
     const meta = fields.container.querySelector('[data-row-meta]')!
-    expect(meta.children.length).toBeGreaterThan(3)
-    for (const item of meta.children) expect(item.className).not.toMatch(/\bbg-|rounded-chip/)
+    const items = meta.querySelectorAll('[data-row-item]')
+    expect(items.length).toBeGreaterThan(2)
+    for (const item of items) expect(item.className).not.toMatch(/\bbg-|rounded-chip/)
     // No separator text node: a screen reader hears the items without the dots.
     expect(meta.textContent).not.toContain('·')
     expect(visibleText(fields.container.querySelector('[data-estimate]')!)).toBe('45m')
@@ -213,21 +217,48 @@ describe('one row language (rows-v2)', () => {
     await inView.unmount()
   })
 
-  it('counts sit in the quiet trailing group after the open button, read in full; a row with only counts is one line', async () => {
-    const r = await row({ description: 'n' }, { progress: { done: 2, total: 3 } })
+  it('counts sit beside the title, quiet and read in full; a row with only counts is one line', async () => {
+    const r = await row({ description: 'n' }, { progress: { done: 2, total: 3 }, labels: [L('l1', 'errand')] })
     const li = r.container.querySelector('li')!
-    const trailing = li.querySelector(':scope > [data-row-trailing]')!
-    expect(trailing.previousElementSibling!.hasAttribute('data-row-open')).toBe(true)
-    const counts = trailing.querySelector('[data-row-counts]')!
+    const counts = li.querySelector('[data-row-head] > [data-row-counts]')!
+    expect(counts.previousElementSibling!.hasAttribute('data-row-title')).toBe(true)
     for (const cls of ['text-faint', 'group-hover:text-muted', 'group-focus-within:text-muted', 'tabular-nums']) expect(counts.className).toContain(cls)
-    expect(trailing.hasAttribute('aria-hidden')).toBe(false)
     expect(counts.querySelector('button, [tabindex]')).toBeNull()
     expect(visibleText(counts.querySelector('[data-progress]')!)).toBe('2/3')
     expect(spokenText(counts.querySelector('[data-progress]')!)).toBe('2 of 3 subtasks completed')
     expect(spokenText(counts.querySelector('[data-notes]')!)).toBe('Has notes')
-    expect(li.querySelector('[data-row-meta]')).toBeNull()
     await r.unmount()
+    const only = await row({ description: 'n' }, { progress: undefined })
+    expect(only.container.querySelector('[data-row-head] [data-notes]')).toBeTruthy()
+    expect(only.container.querySelector('[data-row-meta]')).toBeNull()
+    await only.unmount()
   })
+
+  it('the third cell holds the labels, else the deadline, else the sub-task progress (precision-rows D2)', () => atNoon(async () => {
+    const extra = async (patch: Partial<Task>, extraProps: Record<string, unknown>) => {
+      const r = await row(patch, extraProps)
+      const cell = r.container.querySelector('[data-row-cell="extra"]')
+      const out = cell?.querySelector('[data-label-chips]') ? 'labels' : cell?.querySelector('[data-deadline]') ? 'deadline' : cell?.querySelector('[data-progress]') ? 'progress' : null
+      const inHead = !!r.container.querySelector('[data-row-head] [data-progress]')
+      const deadlineInRest = !!r.container.querySelector('[data-row-rest] [data-deadline]')
+      await r.unmount()
+      return { out, inHead, deadlineInRest }
+    }
+    const progress = { done: 1, total: 2 }
+    expect(await extra({ labels: ['l1'], deadline: '2026-10-16' }, { labels: [L('l1', 'errand')], progress })).toEqual({ out: 'labels', inHead: true, deadlineInRest: true })
+    expect(await extra({ deadline: '2026-10-16' }, { progress })).toEqual({ out: 'deadline', inHead: true, deadlineInRest: false })
+    expect(await extra({}, { progress })).toEqual({ out: 'progress', inHead: false, deadlineInRest: false })
+  }))
+
+  it('the cells come in the column\'s order, the other facts after them (precision-rows D1)', () => atNoon(async () => {
+    const r = await row({ due: { date: '2026-10-20' }, labels: ['l1'], estimate_minutes: 30, start: '2026-10-01' },
+      { showProject: true, project: { id: 'p', name: 'Home', color: '#f00' } as unknown as Project, labels: [L('l1', 'errand')], blockedBy: 1 })
+    const meta = r.container.querySelector('[data-row-meta="row"]')!
+    expect([...meta.querySelectorAll('[data-row-cell]')].map((c) => c.getAttribute('data-row-cell'))).toEqual(['date', 'project', 'extra', 'estimate'])
+    expect(meta.querySelector('[data-row-props]')!.getAttribute('data-row-props')).toBe('project')
+    expect([...meta.querySelectorAll('[data-row-rest] [data-row-item]')].map((c) => [...c.attributes].map((a) => a.name).find((n) => n !== 'data-row-item' && n.startsWith('data-')))).toEqual(['data-start', 'data-blocked'])
+    await r.unmount()
+  }))
 
   it('Tracked time stays one item: "35m / 1h" in the line, no second item', async () => {
     const r = await row({ estimate_minutes: 60 }, { tracked: 35 })
@@ -239,19 +270,20 @@ describe('one row language (rows-v2)', () => {
     await r.unmount()
   })
 
-  it('Project at the row\'s end: one name in the trailing group from 640 px, one at the end of the line below', async () => {
+  it('Project in the column: one name, in its own cell with the project\'s dot', async () => {
     const r = await row({ estimate_minutes: 30 }, { showProject: true, project: { id: 'p', name: 'Home renovation', color: '#f00' } as unknown as Project })
-    const wide = r.container.querySelector('[data-row-trailing] [data-project]')!
-    const narrow = r.container.querySelector('[data-row-meta] [data-project]')!
-    expect(wide.textContent).toBe('Home renovation')
-    expect(wide.className).toMatch(/\bhidden\b.*\bsm:inline\b|\bsm:inline\b.*\bhidden\b/)
-    expect(narrow.className).toContain('sm:hidden')
-    expect(wide.className).toContain('text-muted')
-    expect(wide.className).not.toMatch(/\bbg-/)
+    const names = r.container.querySelectorAll('[data-project]')
+    expect(names.length).toBe(1)
+    const cell = names[0].closest('[data-row-cell="project"]')!
+    expect(cell.textContent).toBe('Home renovation')
+    expect(names[0].className).toContain('text-muted')
+    expect(names[0].className).not.toMatch(/\bbg-/)
+    expect(cell.querySelector('[aria-hidden="true"]')).toBeTruthy()
+    expect(r.container.querySelector('[data-row-trailing] [data-project]')).toBeNull()
     await r.unmount()
-    // A row whose only metadata is the project keeps one line from 640 px.
-    const only = await row({}, { showProject: true, project: { id: 'p', name: 'Home', color: '#f00' } as unknown as Project })
-    expect(only.container.querySelector('[data-row-meta]')!.className).toContain('sm:hidden')
+    // The row is its own size container, so the column follows the row's width, not the screen's.
+    const only = await row({}, { showProject: true, project: { id: 'p', name: 'Home renovation', color: '#f00' } as unknown as Project })
+    expect(only.container.querySelector('li')!.className).toContain('@container/row')
     await only.unmount()
   })
 
@@ -529,7 +561,6 @@ describe('origin chip', () => {
     const r = await row({ origin: issue, estimate_minutes: 30 }, { progress: { done: 1, total: 2 } })
     const trailing = r.container.querySelector('li > [data-row-trailing]')!
     expect(trailing.querySelector('[data-origin]')).toBeTruthy()
-    expect(trailing.querySelector('[data-row-counts]')).toBeTruthy()
     expect(trailing.querySelector('[data-origin] .text-faint')!.className).toContain('group-hover:text-muted')
     expect(r.container.querySelector('[data-row-meta] [data-origin]')).toBeNull()
     await r.unmount()

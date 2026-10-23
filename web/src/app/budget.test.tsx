@@ -220,7 +220,7 @@ describe('visible properties', () => {
     await r.unmount()
   })
 
-  it('a busy row in Today shows at most five metadata items, its time in the column and the project and counts in the trailing group', async () => {
+  it('a busy row in Today shows at most five property items, its time in the column, the project in its cell and the counts beside the title', async () => {
     const project = await createProject({ name: 'Home' })
     const labels = [await createLabel({ name: 'errand' }), await createLabel({ name: 'call' }), await createLabel({ name: 'home' })]
     const id = await createTask({ title: 'Busy', project_id: project, due: { date: '2026-10-14', time: '10:00' }, estimate_minutes: 30, labels })
@@ -231,11 +231,11 @@ describe('visible properties', () => {
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => !!r.container.querySelector(`[data-task-id="${id}"] [data-row-counts] [data-comments]`), 'the busy row with its counts')
     const row = r.container.querySelector(`[data-task-id="${id}"]`)!
-    const items = [...row.querySelector('[data-row-meta]')!.children]
+    const items = [...row.querySelectorAll('[data-row-meta] :is([data-row-item], [data-row-labels])')]
     expect(items.length, items.map((e) => e.outerHTML.slice(0, 60)).join(' | ')).toBeLessThanOrEqual(MAX_ROW_META_ITEMS)
     expect(row.querySelector('[data-row-time]')!.textContent).toBe('10:00')
-    expect(row.querySelector('[data-row-trailing] [data-project]')!.textContent).toBe('Home')
-    expect(row.querySelector('[data-row-trailing] [data-row-counts] [data-progress]')).toBeTruthy()
+    expect(row.querySelector('[data-row-cell="project"] [data-project]')!.textContent).toBe('Home')
+    expect(row.querySelector('[data-row-head] [data-row-counts] [data-progress]')).toBeTruthy()
     await r.unmount()
   })
 
@@ -247,7 +247,7 @@ describe('visible properties', () => {
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => !!r.container.querySelector(`[data-task-id="${id}"] [data-origin]`), 'the row with its origin chip')
     const row = r.container.querySelector(`[data-task-id="${id}"]`)!
-    expect(row.querySelectorAll('[data-row-meta] > *').length).toBeLessThanOrEqual(MAX_ROW_META_ITEMS)
+    expect(row.querySelectorAll('[data-row-meta] :is([data-row-item], [data-row-labels])').length).toBeLessThanOrEqual(MAX_ROW_META_ITEMS)
     expect(row.querySelector('[data-row-meta] [data-origin]')).toBeNull()
     expect(row.querySelector('[data-row-trailing] [data-origin] .text-faint')).toBeTruthy()
     await r.unmount()
