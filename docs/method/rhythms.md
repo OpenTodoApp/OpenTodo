@@ -25,13 +25,13 @@ A day here ends at your [day start](../dates-and-times.md#when-a-day-ends): with
 
 ## Close the day
 
-<picture><source srcset="../images/close-day-dark.webp" media="(prefers-color-scheme: dark)"><img src="../images/close-day-light.webp" alt="Close the day on its Carry over step: each unfinished task of Today with Tomorrow, Pick a day, Someday and Keep in Today."></picture>
+<picture><source srcset="../images/close-day-dark.webp" media="(prefers-color-scheme: dark)"><img src="../images/close-day-light.webp" alt="Close the day on its Carry over step: one unfinished task on a card with Tomorrow, Pick a day, Someday, Keep in Today and Done already, and the decisions so far below."></picture>
 
-A few minutes in the evening: open it from the end of the Today list, the Review move on the Loop home, the command palette or <kbd>g</kbd> <kbd>Shift+D</kbd>. It has three steps; <kbd>[</kbd> and <kbd>]</kbd> move between them.
+A few minutes in the evening: open it from the end of the Today list, the Review move on the Loop home, the command palette or <kbd>g</kbd> <kbd>Shift+D</kbd>. It has three steps; <kbd>[</kbd> and <kbd>]</kbd> move between them. The day you close is the day you opened it on: start at 23:59 and finish after midnight, and it is still that evening that gets closed.
 
-1. **How the day went**: how many tasks were planned (what Today lists plus what you finished today), how many you completed (the same count as [Statistics](../review-and-statistics.md)) and how much of today's focus is done.
-2. **Carry over**: every unfinished task of Today, each going to **Tomorrow** unless you choose otherwise: **Pick a day**, **Someday** or **Keep in Today**. On the selected task, press <kbd>t</kbd>, <kbd>p</kbd>, <kbd>y</kbd> or <kbd>h</kbd>. Nothing changes until you select **Apply**; then every task moves at once and **Undo** (or <kbd>Ctrl</kbd>+<kbd>Z</kbd>) puts them all back in one step.
-3. **A line for tomorrow**: an optional note, shown at the top of tomorrow's Daily check.
+1. **How the day went**: one sentence with how many tasks were planned (what Today lists plus what you finished), how many you completed (the same count as [Statistics](../review-and-statistics.md)) and how much of today's focus is done.
+2. **Carry over**: the unfinished tasks of Today, one at a time, each with its whole title. Choose **Tomorrow** (the default), **Pick a day**, **Someday**, **Keep in Today** or **Done already** with <kbd>t</kbd>, <kbd>p</kbd>, <kbd>y</kbd>, <kbd>h</kbd> or <kbd>d</kbd>, and the next task comes up. The list below the card shows your decisions; select a line to change one. Nothing changes until you move on to the next step; then every task moves at once and **Undo** (or <kbd>Ctrl</kbd>+<kbd>Z</kbd>) puts them all back in one step.
+3. **A note for tomorrow morning**: an optional line; the step shows how tomorrow's Daily check will start with it.
 
 **Close the day** records the close and ends on **Done for today**: the time, the day's figures ("5 done, 3 moved to tomorrow, 1 kept") and your line for tomorrow. No streak, no score. **Back to Today** (or <kbd>Esc</kbd>) returns to Today, which then ends with **Day closed** and the time; so does the Review entry in the sidebar. You can close again later the same day. Close the day is never due: nothing reminds you of it.
 

@@ -272,9 +272,6 @@
   "A label needs a name": [
     "web/src/app/LabelsView.tsx"
   ],
-  "A line for tomorrow": [
-    "web/src/lib/review.ts"
-  ],
   "A link adds whoever opens it. It works once and expires after the time you choose.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -298,6 +295,9 @@
   ],
   "A newer version of OpenTodo is required to read your data.": [
     "web/src/app/App.tsx"
+  ],
+  "A note for tomorrow morning": [
+    "web/src/lib/review.ts"
   ],
   "A notice on any screen after a long stretch of work without a break.": [
     "web/src/lib/settingsCopy.ts"
@@ -1225,15 +1225,10 @@
     "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Applied": [
-    "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleHistory.tsx"
   ],
-  "Applied.": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "Apply": [
-    "web/src/app/RelayConfirm.tsx",
-    "web/src/app/review/CloseDay.tsx"
+    "web/src/app/RelayConfirm.tsx"
   ],
   "Apply all": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -2303,19 +2298,22 @@
   "Close the day progress": [
     "web/src/app/review/CloseDay.tsx"
   ],
-  "Close the day: carry the selected task over to tomorrow": [
+  "Close the day: carry the task on the card over to tomorrow": [
     "web/src/lib/shortcuts.ts"
   ],
   "Close the day: how it went, carry over what is left, a line for tomorrow": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Close the day: keep the selected task in Today": [
+  "Close the day: keep the task on the card in Today": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Close the day: move the selected task to Someday": [
+  "Close the day: move the task on the card to Someday": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Close the day: pick a day for the selected task": [
+  "Close the day: pick a day for the task on the card": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Close the day: the task on the card was done already (completed with the carry-over)": [
     "web/src/lib/shortcuts.ts"
   ],
   "Close the panel": [
@@ -3139,6 +3137,9 @@
   "Deadline {from} → {to}": [
     "web/src/lib/assistant.ts"
   ],
+  "Decide for each; moving on carries them over.": [
+    "web/src/app/review/CloseDay.tsx"
+  ],
   "Decide once what each item is and what it needs.": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -3148,6 +3149,9 @@
   "Decisions": [
     "web/src/app/TriageView.tsx",
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Decisions so far": [
+    "web/src/app/review/CarryOver.tsx"
   ],
   "Decline": [
     "web/src/app/RelayConfirm.tsx"
@@ -3551,6 +3555,9 @@
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Done already": [
+    "web/src/app/review/CarryOver.tsx"
+  ],
   "Done for today": [
     "web/src/app/review/DailyCheck.tsx"
   ],
@@ -3640,10 +3647,14 @@
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due today": [
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/app/review/CarryOver.tsx"
   ],
   "Due today and in the next six days. Set priorities with 1 to 4.": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Due today at {time}": [
+    "web/src/app/review/CarryOver.tsx"
   ],
   "Due today, then the next task": [
     "web/src/lib/shortcuts.ts"
@@ -4144,6 +4155,9 @@
   ],
   "Every stored client address will be erased from the audit log. This cannot be undone.": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Every task has a decision. Change one below, or move on.": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "Every task of these days is placed.": [
     "web/src/app/calendar/PlanPanel.tsx"
@@ -5378,6 +5392,9 @@
   "In Plan: the span one week later": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In Today since its start date": [
+    "web/src/app/review/CarryOver.tsx"
+  ],
   "In Updates: open the task of the selected change (Tab reaches the filters)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5719,7 +5736,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Keep in Today": [
-    "web/src/app/review/CloseDay.tsx"
+    "web/src/app/review/CarryOver.tsx"
   ],
   "Keep it private: anyone who knows it can add tasks. If it leaks, make a new one.": [
     "web/src/lib/settingsCopy.ts"
@@ -5848,7 +5865,6 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/method/MethodListView.tsx",
     "web/src/app/palette/entries.ts",
-    "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx",
@@ -5866,7 +5882,6 @@
     "web/src/app/SavedViewView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/method/MethodListView.tsx",
-    "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx",
@@ -6009,6 +6024,9 @@
   ],
   "Leave empty to keep the stored token. It is never shown again.": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Leave it empty if there’s nothing to remember.": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "Leave it empty to remove the link.": [
     "web/src/app/LinkDialog.tsx"
@@ -7474,12 +7492,6 @@
   "Not allowed.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Not applied": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
-  "Not applied yet: choose for each, then Apply.": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "Not asked yet": [
     "web/src/app/NotificationsSettings.tsx"
   ],
@@ -7596,6 +7608,9 @@
   "Note": [
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "Note (optional)": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "Notes": [
     "web/src/app/NotesEditor.tsx",
@@ -7958,9 +7973,6 @@
     "web/src/lib/relativeDoOn.ts",
     "web/src/lib/reminderTime.ts"
   ],
-  "On the selected task: t tomorrow, p pick a day, y Someday, h keep in Today.": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "On this page": [
     "web/src/app/help/HelpView.tsx"
   ],
@@ -7989,7 +8001,7 @@
   "One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters mistakes and casual spam; the secret address is the real protection.": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
-  "One line for tomorrow (optional)": [
+  "One line you want to read first tomorrow morning.": [
     "web/src/app/review/CloseDay.tsx"
   ],
   "One link for one person: whoever opens it joins this project with the role you pick. It works once.": [
@@ -8164,6 +8176,9 @@
   ],
   "Open recurring task": [
     "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Open since {date}": [
+    "web/src/app/review/CarryOver.tsx"
   ],
   "Open tasks including sub-projects": [
     "web/src/app/Sidebar.tsx",
@@ -8624,7 +8639,7 @@
     "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Pick a day": [
-    "web/src/app/review/CloseDay.tsx"
+    "web/src/app/review/CarryOver.tsx"
   ],
   "Pick a day for {title}": [
     "web/src/app/review/CloseDay.tsx"
@@ -10688,9 +10703,6 @@
   "Shown as {current}, the nearest palette colour. Pick one to store it.": [
     "web/src/app/LabelsView.tsx"
   ],
-  "Shown at the top of tomorrow’s Daily check.": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "Shown in place of OpenTodo. Up to 40 characters; empty keeps OpenTodo.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10982,7 +10994,7 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/filter/conditionText.ts",
-    "web/src/app/review/CloseDay.tsx",
+    "web/src/app/review/CarryOver.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/assistant.ts",
@@ -11478,7 +11490,8 @@
     "web/src/lib/webhooks.ts"
   ],
   "Task {n} of {total}": [
-    "web/src/app/TriageView.tsx"
+    "web/src/app/TriageView.tsx",
+    "web/src/app/review/CarryOver.tsx"
   ],
   "Tasks": [
     "web/src/app/PublicListScreen.tsx",
@@ -13057,7 +13070,6 @@
   ],
   "Today’s focus": [
     "web/src/app/method/LoopHome.tsx",
-    "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx"
   ],
   "Today’s focus holds {n} tasks. Take one out first.": [
@@ -13065,6 +13077,9 @@
   ],
   "Today’s focus is done.": [
     "web/src/app/focus/FocusView.tsx"
+  ],
+  "Today’s focus: <n-focus>{done} of {total}</n-focus> done.": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "Todoist backup (ZIP)": [
     "web/src/app/ImportScreen.tsx"
@@ -13100,7 +13115,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/registry.ts",
-    "web/src/app/review/CloseDay.tsx",
+    "web/src/app/review/CarryOver.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
@@ -13109,6 +13124,9 @@
   ],
   "Tomorrow 09:00": [
     "web/src/app/ReminderToasts.tsx"
+  ],
+  "Tomorrow your Daily check starts with: “{note}”": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "Too large: files may be at most {max} on this server.": [
     "web/src/lib/share.ts"
@@ -13587,6 +13605,7 @@
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
+    "web/src/app/review/CarryOver.tsx",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
@@ -13980,9 +13999,6 @@
   "Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.": [
     "web/src/app/AuthScreen.tsx"
   ],
-  "What Today listed plus what you finished today.": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "What changed in your shared projects": [
     "web/src/app/FeedView.tsx"
   ],
@@ -13993,7 +14009,7 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "What happens to {title}": [
-    "web/src/app/review/CloseDay.tsx"
+    "web/src/app/review/CarryOver.tsx"
   ],
   "What is due today?": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -14308,6 +14324,9 @@
   "You can have at most {n} rules": [
     "web/src/lib/rules/store.ts"
   ],
+  "You can only view tasks in this shared project, so it stays in Today.": [
+    "web/src/app/review/CarryOver.tsx"
+  ],
   "You can view this project but not add tasks": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -14341,6 +14360,9 @@
   ],
   "You now sign in with {email}.": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "You planned <n-planned>{planned}</n-planned> {planned, plural, one {task} other {tasks}} and finished <n-done>{done}</n-done>.": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "You seem to be offline": [
     "web/src/app/EmailScreens.tsx",
@@ -14863,7 +14885,6 @@
   ],
   "done": [
     "web/src/app/HabitHistory.tsx",
-    "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/ReviewProgress.tsx"
   ],
   "done today": [
@@ -15482,9 +15503,6 @@
   "pink": [
     "web/src/lib/colourNames.ts"
   ],
-  "planned": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "possible cloned passkey": [
     "web/src/app/auditFormat.ts"
   ],
@@ -16088,8 +16106,7 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "{done} of {total} done": [
-    "web/src/app/method/LoopHome.tsx",
-    "web/src/app/review/CloseDay.tsx"
+    "web/src/app/method/LoopHome.tsx"
   ],
   "{done} of {total} subtasks completed": [
     "web/src/app/TaskRow.tsx"
@@ -16467,6 +16484,9 @@
   "{n, plural, one {# task rescheduled} other {# tasks rescheduled}}": [
     "web/src/lib/bulk.ts"
   ],
+  "{n, plural, one {# task stays in Today.} other {# tasks stay in Today.}}": [
+    "web/src/app/review/CloseDay.tsx"
+  ],
   "{n, plural, one {# task will be updated.} other {# tasks will be updated.}}": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -16745,6 +16765,7 @@
   ],
   "{n} of {total}": [
     "web/src/app/TriageView.tsx",
+    "web/src/app/review/CarryOver.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "{n} of {total} changes applied": [

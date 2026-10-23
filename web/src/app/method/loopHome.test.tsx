@@ -158,7 +158,7 @@ describe('Loop home', () => {
     await click(link)
     await waitFor(() => location.pathname === '/review/close' && document.querySelector('[data-review-step]')?.getAttribute('data-review-step') === 'summary')
     const { closeDay } = await import('../../lib/review')
-    await act(async () => { await closeDay('') })
+    await act(async () => { await closeDay('', (await import('../../lib/dates')).logicalToday()) })
     navigate({ view: 'loop' })
     await waitFor(() => (tile('review')?.querySelector('[data-loop-day="closed"]')?.textContent ?? '').startsWith('Day: closed'))
     expect(document.querySelector('[data-loop-up]')!.getAttribute('data-loop-tile')).toBe(up)
