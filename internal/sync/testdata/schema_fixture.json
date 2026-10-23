@@ -82,6 +82,7 @@
     "review": [
       "carry_over",
       "closed_at",
+      "closed_day",
       "completed_at",
       "daily_at",
       "focus",

@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
-// Close the day on screen (OpenSpec change close-the-day, tasks 3.2, 4.2–4.4, 5.1,
-// 5.3, 5.4): the entry points, the three steps, the carry-over batch with its one
-// Undo, the close write, the Today row, the sidebar marker and yesterday's note.
+// Close the day on screen (OpenSpec changes close-the-day, tasks 3.2, 4.2–4.4, 5.1,
+// 5.3, 5.4, and close-the-day-v2): the entry points, the three steps, Carry over one
+// task at a time with its batch written on moving on, the close write with the day it
+// closes, the Today row, the sidebar marker and yesterday's note.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -48,8 +49,13 @@ async function waitFor(ok: () => boolean, ms = 3000) {
 const shell = async (route: Parameters<typeof navigate>[0]) => { navigate(route); return render(<Shell user={user} onLogout={() => {}} />) }
 const stepOf = () => document.querySelector('[data-review-step]')?.getAttribute('data-review-step')
 const titleEl = () => document.getElementById('review-step-title')
-const figure = (k: string) => document.querySelector(`[data-close-figure="${k}"] dd`)?.textContent
-const carryRow = (title: string) => [...document.querySelectorAll<HTMLElement>('[data-carry-row]')].find((r) => r.textContent?.includes(title))!
+const figure = (k: string) => document.querySelector(`[data-close-figure="${k}"]`)?.textContent
+const card = () => document.querySelector<HTMLElement>('[data-carry-card]')
+const cardTitle = () => card()?.querySelector('[data-carry-title]')?.textContent
+const lines = () => [...document.querySelectorAll<HTMLElement>('[data-carry-line]')]
+const line = (title: string) => lines().find((l) => l.textContent?.includes(title))!
+const lineDecision = (title: string) => line(title)?.querySelector('[data-carry-line-decision]')?.getAttribute('data-carry-line-decision')
+const carryStatus = () => document.querySelector('[data-progress-step="carry"]')?.textContent ?? ''
 const toast = () => document.querySelector('[data-bulk-toast]')?.textContent ?? ''
 const task = async (id: string) => (await db.tasks.get(id)) as Task
 const toCarry = async () => {
@@ -105,7 +111,10 @@ describe('Close the day steps', () => {
     await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', focus_date: TODAY, focus: [ids[0], ids[1], ids[6]].join(','), _clock: {} })
     const r = await shell({ view: 'review', step: 'close' })
     await waitFor(() => figure('planned') === '8' && figure('done') === '5')
-    expect(figure('focus')).toBe('2 of 3 done')
+    expect(figure('focus')).toBe('2 of 3')
+    expect(document.querySelector('[data-close-summary]')!.textContent).toBe('You planned 8 tasks and finished 5.Today’s focus: 2 of 3 done.')
+    // Back and Next sit inside the step card (close-the-day-v2 D5).
+    expect(document.querySelector('[data-review-step] [data-review-nav]')).not.toBeNull()
     await r.unmount()
   })
 
@@ -137,25 +146,26 @@ describe('Close the day steps', () => {
 })
 
 describe('Carry over', () => {
-  it('Default carry-over: three tasks leave Today at once, one toast "3 tasks rescheduled", Ctrl+Z undoes in one step', async () => {
+  it('Default carry-over: moving on writes one batch, "3 tasks rescheduled", Carry over shows a check, Ctrl+Z undoes in one step', async () => {
     const timed = await createTask({ title: 'Timed', due: { date: TODAY, time: '14:00' } })
     const overdue = await createTask({ title: 'Overdue', due: { date: '2026-10-12' } })
     const started = await createTask({ title: 'Started' })
     await db.tasks.update(started, { start: '2026-10-13' })
     const r = await shell({ view: 'review', step: 'close' })
     await toCarry()
-    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 3)
-    expect(document.querySelector('[data-close-count]')!.textContent).toContain('Not applied')
-    expect([...document.querySelectorAll('[data-carry-decision]')].map((g) => g.getAttribute('data-carry-decision'))).toEqual(['tomorrow', 'tomorrow', 'tomorrow'])
-    // Below 640 px the group is a 2×2 grid under the row; inline from sm.
-    expect(document.querySelector('[data-carry-decision]')!.className).toMatch(/grid-cols-2.*sm:flex/)
-    await click(document.querySelector('[data-close-apply]')!)
+    await waitFor(() => lines().length === 3 && !!card())
+    expect(lines().map((l) => l.querySelector('[data-carry-line-decision]')!.getAttribute('data-carry-line-decision'))).toEqual(['tomorrow', 'tomorrow', 'tomorrow'])
+    expect(document.querySelector('[data-close-count]')!.textContent).toContain('moving on carries them over')
+    expect(document.querySelector('[data-close-apply]')).toBeNull()
+    expect(card()!.querySelector('[data-carry-position]')!.textContent).toBe('1 of 3')
+    await key(document.body, ']')
     await waitFor(() => toast().includes('3 tasks rescheduled'))
-    expect(toast()).toContain('Undo')
+    await waitFor(() => stepOf() === 'note')
+    expect(carryStatus()).toContain('done')
+    expect(document.querySelector('[data-progress-step="carry"]')!.parentElement!.textContent).not.toMatch(/\d/)
     expect((await task(timed)).due).toEqual({ date: '2026-10-15', time: '14:00' })
     expect((await task(overdue)).due).toEqual({ date: '2026-10-15' })
     expect([(await task(started)).due, (await task(started)).start]).toEqual([{ date: '2026-10-15' }, null])
-    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 0)
     expect(await db.assistantUndo.count()).toBe(1)
     await key(document.body, 'z', { ctrlKey: true })
     await waitFor(() => toast().includes('3 restored'))
@@ -164,53 +174,105 @@ describe('Carry over', () => {
     await r.unmount()
   })
 
-  it('Mixed decisions: y, h and a picked Friday; y parks instead of tracking time; Undo restores the batch', async () => {
+  it('Mixed decisions: y, h and a picked Friday, one task at a time; y parks instead of tracking time; Undo restores the batch', async () => {
     const a = await createTask({ title: 'Alpha', due: { date: TODAY }, priority: 1 })
     const b = await createTask({ title: 'Bravo', due: { date: TODAY }, priority: 2 })
     const c = await createTask({ title: 'Charlie', due: { date: TODAY }, priority: 3 })
     const r = await shell({ view: 'review', step: 'close' })
     await toCarry()
-    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 3)
-    await key(document.body, 'j')
+    await waitFor(() => cardTitle() === 'Alpha')
     await key(document.body, 'y')
-    await waitFor(() => carryRow('Alpha').querySelector('[data-carry-decision]')!.getAttribute('data-carry-decision') === 'someday')
+    await waitFor(() => cardTitle() === 'Bravo' && lineDecision('Alpha') === 'someday')
     expect(await db.timeEntries.count()).toBe(0)
-    await key(document.body, 'j')
     await key(document.body, 'h')
-    await waitFor(() => carryRow('Bravo').querySelector('[data-carry-decision]')!.getAttribute('data-carry-decision') === 'keep')
-    await key(document.body, 'j')
+    await waitFor(() => cardTitle() === 'Charlie' && lineDecision('Bravo') === 'keep')
     await key(document.body, 'p')
     await waitFor(() => !!document.querySelector('[role="dialog"] input'))
     const input = document.querySelector<HTMLInputElement>('[role="dialog"] input')!
     await type(input, '2026-10-16')
     await key(input, 'Enter')
-    await waitFor(() => carryRow('Charlie').querySelector('[data-carry-decision]')!.getAttribute('data-carry-decision') === 'day')
-    await click(document.querySelector('[data-close-apply]')!)
+    await waitFor(() => lineDecision('Charlie') === 'day' && !!document.querySelector('[data-carry-all-set]'))
+    await click(document.querySelector('[data-review-next]')!)
     await waitFor(() => toast().includes('2 tasks carried over'))
     expect([(await task(a)).start, (await task(a)).due]).toEqual(['someday', null])
     expect((await task(b)).due).toEqual({ date: TODAY })
     expect((await task(c)).due).toEqual({ date: '2026-10-16' })
-    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 1)
-    expect(document.querySelector('[data-close-count]')!.textContent).toContain('Applied')
+    // Back on Carry over, the kept task is the one still in Today, with its decision.
+    await key(document.body, '[')
+    await waitFor(() => stepOf() === 'carry' && lines().length === 1)
+    expect(lineDecision('Bravo')).toBe('keep')
     await click(document.querySelector('[data-bulk-toast] button')!)
     await waitFor(() => toast().includes('2 restored'))
     expect([(await task(a)).start, (await task(a)).due, (await task(c)).due]).toEqual([null, { date: TODAY }, { date: TODAY }])
     await r.unmount()
   })
 
-  it('Read-only task: offers Keep only and Apply writes nothing for it', async () => {
+  it('Read-only task: its card offers Keep only with the reason, and moving on writes nothing for it', async () => {
     const shared = await createProject({ name: 'Family' })
     await db.memberships.put({ projectId: shared, role: 'viewer', ownerId: 'someone', members: [] })
     const viewer = await createTask({ title: 'Their task', project_id: shared, due: { date: TODAY } })
     const mine = await createTask({ title: 'Mine', due: { date: TODAY } })
     const r = await shell({ view: 'review', step: 'close' })
     await toCarry()
-    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 2)
-    expect([...carryRow('Their task').querySelectorAll('[data-carry-choice]')].map((b) => b.getAttribute('data-carry-choice'))).toEqual(['keep'])
-    await click(document.querySelector('[data-close-apply]')!)
+    await waitFor(() => lines().length === 2)
+    await click(line('Their task').querySelector('button')!)
+    await waitFor(() => cardTitle() === 'Their task')
+    expect([...card()!.querySelectorAll('[data-carry-choice]')].map((x) => x.getAttribute('data-carry-choice'))).toEqual(['keep'])
+    expect(card()!.textContent).toContain('You can only view tasks in this shared project')
+    expect(lineDecision('Their task')).toBe('keep')
+    await click(document.querySelector('[data-review-next]')!)
     await waitFor(() => toast().includes('1 task rescheduled'))
     expect((await task(viewer)).due).toEqual({ date: TODAY })
     expect((await task(mine)).due).toEqual({ date: '2026-10-15' })
+    await r.unmount()
+  })
+
+  it('Done already: d completes a task and rolls a weekly series with the rest of the batch', async () => {
+    const finished = await createTask({ title: 'Finished', due: { date: TODAY } })
+    const weekly = await createTask({ title: 'Weekly', due: { date: TODAY }, recurrence: 'every wednesday' })
+    const r = await shell({ view: 'review', step: 'close' })
+    await toCarry()
+    await waitFor(() => lines().length === 2 && !!card())
+    await key(document.body, 'd')
+    await waitFor(() => lines().filter((l) => l.querySelector('[data-carry-line-decision="done"]')).length === 1)
+    await key(document.body, 'd')
+    await waitFor(() => !!document.querySelector('[data-carry-all-set]'))
+    expect((await task(finished)).completed_at).toBeNull()
+    await key(document.body, ']')
+    await waitFor(() => toast().includes('2 tasks carried over'))
+    expect((await task(finished)).completed_at).not.toBeNull()
+    expect(await task(weekly)).toMatchObject({ completed_at: null, due: { date: '2026-10-21' } })
+    await r.unmount()
+  })
+
+  it('Change an earlier decision: a line brings its task back to the card', async () => {
+    await createTask({ title: 'First', due: { date: TODAY }, priority: 1 })
+    const second = await createTask({ title: 'Second', due: { date: TODAY }, priority: 2 })
+    const r = await shell({ view: 'review', step: 'close' })
+    await toCarry()
+    await waitFor(() => cardTitle() === 'First')
+    await key(document.body, 'y')
+    await waitFor(() => cardTitle() === 'Second')
+    await click(line('First').querySelector('button')!)
+    await waitFor(() => cardTitle() === 'First')
+    expect(card()!.querySelector('[data-carry-choice="someday"]')!.getAttribute('aria-pressed')).toBe('true')
+    await key(document.body, 't')
+    await waitFor(() => lineDecision('First') === 'tomorrow')
+    expect((await task(second)).due).toEqual({ date: TODAY })
+    await r.unmount()
+  })
+
+  it('No accidental completion: clicking the card or a line writes nothing until the user moves on', async () => {
+    const id = await createTask({ title: 'Careful', due: { date: TODAY } })
+    const r = await shell({ view: 'review', step: 'close' })
+    await toCarry()
+    await waitFor(() => cardTitle() === 'Careful')
+    const queued = await db.outbox.count()
+    await click(card()!.querySelector('[data-carry-title]')!)
+    await click(line('Careful').querySelector('button')!)
+    await flush(60)
+    expect(card()!.querySelector('[role="checkbox"], [data-check]')).toBeNull()
+    expect([await db.outbox.count(), (await task(id)).completed_at, (await task(id)).due]).toEqual([queued, null, { date: TODAY }])
     await r.unmount()
   })
 })
@@ -235,7 +297,7 @@ describe('Closing the day', () => {
     expect(document.querySelector<HTMLInputElement>('[data-close-note-input]')).toBeNull()
     await closeFromNote('  Start with the invoice ')
     const row = await db.review.get('me')
-    expect([row?.closed_at, row?.tomorrow_note]).toEqual([NOW.getTime(), 'Start with the invoice'])
+    expect([row?.closed_at, row?.closed_day, row?.tomorrow_note]).toEqual([NOW.getTime(), TODAY, 'Start with the invoice'])
     expect(document.querySelector('[data-day-done-note]')!.textContent).toBe('“Start with the invoice”')
     expect(document.activeElement).toBe(document.querySelector('[data-day-done-back]'))
     await click(document.querySelector('[data-day-done-back]')!)
@@ -252,10 +314,10 @@ describe('Closing the day', () => {
     for (const title of ['Move a', 'Move b', 'Move c', 'Stay']) await createTask({ title, due: { date: TODAY } })
     const r = await shell({ view: 'review', step: 'close' })
     await toCarry()
-    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 4)
-    await click(carryRow('Stay').querySelector('[data-carry-choice="keep"]')!)
-    await click(document.querySelector('[data-close-apply]')!)
-    await waitFor(() => document.querySelectorAll('[data-carry-row]').length === 1)
+    await waitFor(() => lines().length === 4)
+    await click(line('Stay').querySelector('button')!)
+    await waitFor(() => cardTitle() === 'Stay')
+    await click(card()!.querySelector('[data-carry-choice="keep"]')!)
     await key(document.body, ']')
     await waitFor(() => stepOf() === 'note')
     const input = document.querySelector<HTMLInputElement>('[data-close-note-input]')!
@@ -296,6 +358,51 @@ describe('Closing the day', () => {
     await r2.unmount()
   })
 
+  it('Note preview: the third step says where the note appears', async () => {
+    const r = await shell({ view: 'review', step: 'close' })
+    await waitFor(() => stepOf() === 'summary')
+    await key(document.body, ']')
+    await key(document.body, ']')
+    await waitFor(() => stepOf() === 'note')
+    expect(titleEl()!.textContent).toBe('A note for tomorrow morning')
+    expect(document.querySelector('[data-close-note-preview]')!.textContent).toContain('Leave it empty')
+    await type(document.querySelector<HTMLInputElement>('[data-close-note-input]')!, 'Call Ana first')
+    await waitFor(() => document.querySelector('[data-close-note-preview]')!.textContent === 'Tomorrow your Daily check starts with: “Call Ana first”')
+    await r.unmount()
+  })
+
+  it('Closing across midnight: opened at 23:59, closed at 00:02, the day started on is the day closed', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+    vi.setSystemTime(new Date(2026, 9, 14, 23, 59))
+    const done = await createTask({ title: 'Done tonight', due: { date: TODAY } })
+    await db.tasks.update(done, { completed_at: new Date(2026, 9, 14, 20, 0).getTime() })
+    const ids = await Promise.all(['Left 1', 'Left 2', 'Left 3'].map((title) => createTask({ title, due: { date: TODAY } })))
+    const r = await shell({ view: 'review', step: 'close' })
+    await waitFor(() => figure('planned') === '4' && figure('done') === '1')
+    // Midnight passes while the screen is open; the app's minute tick runs.
+    vi.setSystemTime(new Date(2026, 9, 15, 0, 2))
+    await act(async () => { vi.advanceTimersByTime(60_000) })
+    await flush(60)
+    expect([figure('planned'), figure('done')]).toEqual(['4', '1'])
+    await key(document.body, ']')
+    await waitFor(() => stepOf() === 'carry' && lines().length === 3)
+    await key(document.body, ']')
+    await waitFor(() => toast().includes('3 tasks rescheduled'))
+    for (const id of ids) expect((await task(id)).due).toEqual({ date: '2026-10-15' })
+    await waitFor(() => stepOf() === 'note')
+    await type(document.querySelector<HTMLInputElement>('[data-close-note-input]')!, 'Start with the invoice')
+    const input = document.querySelector<HTMLInputElement>('[data-close-note-input]')!
+    await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await waitFor(() => !!document.querySelector('[data-day-done]'))
+    expect(await db.review.get('me')).toMatchObject({ closed_day: TODAY, tomorrow_note: 'Start with the invoice' })
+    // The day closed has ended, so no Reopen; Thursday's Daily check starts with the note.
+    expect(document.querySelector('[data-day-done] [data-reopen-day]')).toBeNull()
+    await r.unmount()
+    const r2 = await shell({ view: 'review', step: 'daily' })
+    await waitFor(() => (document.querySelector('[data-daily-note]')?.textContent ?? '').includes('Start with the invoice'))
+    await r2.unmount()
+  })
+
   it('Reduced motion: the state only fades in (an opacity transition), with no movement', async () => {
     const r = await shell({ view: 'review', step: 'close' })
     await closeFromNote('')
@@ -316,7 +423,7 @@ describe('the morning note', () => {
     const note = document.querySelector('[data-daily-note]')!
     expect(note.textContent).toContain('Start with the invoice')
     expect(note.compareDocumentPosition(document.querySelector('[data-daily-inbox]')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    await act(async () => { await closeDay('') })
+    await act(async () => { await closeDay('', '2026-10-15') })
     await waitFor(() => !document.querySelector('[data-daily-note]'))
     await r.unmount()
   })
@@ -358,7 +465,7 @@ describe('Reopen the day (ux-feedback-2)', () => {
   it('Reopen after the toast is gone: tasks back in Today, the row offers Close the day, the note is kept', async () => {
     const ids = await Promise.all(['One', 'Two', 'Three', 'Four'].map((title) => createTask({ title, due: { date: TODAY } })))
     await carry(ids)
-    await closeDay('Start with the invoice')
+    await closeDay('Start with the invoice', TODAY)
     hideBulkToast()
     const r = await shell({ view: 'today' })
     await waitFor(() => !!document.querySelector('[data-reopen-day]'))
@@ -376,7 +483,7 @@ describe('Reopen the day (ux-feedback-2)', () => {
   it('A task changed since the close stays where it is and is named', async () => {
     const ids = await Promise.all(['A1', 'A2', 'A3', 'A4', 'Moved by hand'].map((title) => createTask({ title, due: { date: TODAY } })))
     await carry(ids)
-    await closeDay('')
+    await closeDay('', TODAY)
     await db.tasks.update(ids[4], { due: { date: '2026-10-16' } })
     const result = await reopenDay(TODAY)
     expect([result.restored, result.skipped]).toEqual([4, ['Moved by hand']])
@@ -385,7 +492,7 @@ describe('Reopen the day (ux-feedback-2)', () => {
   })
 
   it('Next morning: no Reopen for yesterday, and the row offers Close the day', async () => {
-    await closeDay('', new Date(2026, 9, 13, 21, 0).getTime())
+    await closeDay('', '2026-10-13', new Date(2026, 9, 13, 21, 0).getTime())
     expect(canReopenDay(await db.review.get('me'), TODAY)).toBe(false)
     expect((await reopenDay(TODAY)).entry).toBeNull()
     const r = await shell({ view: 'today' })

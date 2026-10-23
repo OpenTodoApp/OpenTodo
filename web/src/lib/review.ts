@@ -4,7 +4,7 @@
 // project walk's queue; the Daily check's focus and the Monthly look's areas;
 // and the synced personal `review` row and per-project review stamps that record
 // them. Pure apart from the writers at the end, each one op set.
-import { bulkLabel, mergeChanges, planDue, toProposed } from './bulk'
+import { bulkLabel, mergeChanges, planComplete, planDue, toProposed } from './bulk'
 import { todayList } from './dayLists'
 import { addDaysISO, currentDayStart, daysBetweenISO, logicalDay } from './dates'
 import { mutate, type Change } from './ops'
@@ -223,34 +223,51 @@ export function markProjectReviewed(projectId: string, now = Date.now()): Promis
 
 export type CloseStepId = 'summary' | 'carry' | 'note'
 export const CLOSE_STEP_IDS: readonly CloseStepId[] = ['summary', 'carry', 'note']
-export const CLOSE_STEP_TITLES = translatedMap<CloseStepId>({ summary: msg('How the day went'), carry: msg('Carry over'), note: msg('A line for tomorrow') })
+export const CLOSE_STEP_TITLES = translatedMap<CloseStepId>({ summary: msg('How the day went'), carry: msg('Carry over'), note: msg('A note for tomorrow morning') })
 /** Close the day has one phase. */
 export const CLOSE_PHASE_TITLES = translatedMap<'close'>({ close: msg('Close the day') })
 /** The longest line for tomorrow, in characters. */
 export const TOMORROW_NOTE_MAX = 500
 
+type CloseStamp = Pick<Review, 'closed_at'> & Partial<Pick<Review, 'closed_day'>>
+
 /**
- * Whether the day was closed on the user's logical `today` (weekly-review "Rhythm
- * markers", "Close the day is reachable"): derived from the stamp, so every device
- * gives the same answer for the same local date.
+ * The logical date the latest close closed (close-the-day-v2 D1): the stored
+ * `closed_day`, else the logical day of `closed_at` for a close written before that
+ * field existed; null when the day was never closed (or was reopened).
  */
-export function dayClosed(closedAt: number | null | undefined, today: string): boolean {
-  return !!closedAt && logicalDay(closedAt, currentDayStart()) === today
+export function closedDayOf(review: CloseStamp | null | undefined): string | null {
+  if (!review?.closed_at) return null
+  return /^\d{4}-\d{2}-\d{2}$/.test(review.closed_day ?? '') ? review.closed_day! : logicalDay(review.closed_at, currentDayStart())
+}
+
+/**
+ * Whether the user's logical `today` is closed (weekly-review "Rhythm markers",
+ * "Close the day is reachable"): derived from the stored close, so every device
+ * gives the same answer for the same day.
+ */
+export function dayClosed(review: CloseStamp | null | undefined, today: string): boolean {
+  return closedDayOf(review) === today
 }
 
 /**
  * Yesterday's line for tomorrow (weekly-review "Daily check"): the note of the latest
- * close when that close was on an earlier local day; null when there is none, it is
- * empty, or the day is already closed again. Needs no write to show or to hide.
+ * close when that close closed an earlier day; null when there is none, it is empty,
+ * or the day is already closed again. Needs no write to show or to hide.
  */
-export function yesterdaysNote(review: Pick<Review, 'closed_at' | 'tomorrow_note'> | null | undefined, today: string): string | null {
-  if (!review?.closed_at || logicalDay(review.closed_at, currentDayStart()) >= today) return null
-  return review.tomorrow_note?.trim() || null
+export function yesterdaysNote(review: (CloseStamp & Pick<Review, 'tomorrow_note'>) | null | undefined, today: string): string | null {
+  const day = closedDayOf(review)
+  if (!day || day >= today) return null
+  return review!.tomorrow_note?.trim() || null
 }
 
-/** Records a close (weekly-review "Closing the day"): the time and the trimmed note, one op pair through the outbox. */
-export function closeDay(note: string, now = Date.now()): Promise<void> {
-  return mutate('review', REVIEW_ID, { closed_at: now, tomorrow_note: note.trim().slice(0, TOMORROW_NOTE_MAX) })
+/**
+ * Records a close (weekly-review "Closing the day"): the time, the day being closed
+ * (captured when the screen opened, close-the-day-v2 D1) and the trimmed note, as one
+ * op triple through the outbox.
+ */
+export function closeDay(note: string, day: string, now = Date.now()): Promise<void> {
+  return mutate('review', REVIEW_ID, { closed_at: now, closed_day: day, tomorrow_note: note.trim().slice(0, TOMORROW_NOTE_MAX) })
 }
 
 /** One unfinished task of Today and whether the user may change it (a viewer gets Keep only). */
@@ -288,21 +305,26 @@ export function daySummary(input: MethodInput, review: Pick<Review, 'focus' | 'f
   return { planned: unfinished.length + done, done, focusDone: focus.filter((x) => x.completed_at).length, focusTotal: focus.length, unfinished }
 }
 
-/** One carry-over decision; nothing is stored until Apply (design D4). */
-export type CarryDecision = { kind: 'tomorrow' } | { kind: 'day'; date: string } | { kind: 'someday' } | { kind: 'keep' }
+/** One carry-over decision; nothing is stored until the user moves on from the step (close-the-day-v2 D3). */
+export type CarryDecision = { kind: 'tomorrow' } | { kind: 'day'; date: string } | { kind: 'someday' } | { kind: 'keep' } | { kind: 'done' }
 
 /**
  * The carry-over as one list of changes (weekly-review "Carry-over is one batch"):
  * Tomorrow and a day are the bulk reschedule (a time of day kept, a parked task
  * un-parked), and a task in Today only because its start date came gets its start
- * cleared so it leaves Today; Someday is the patch parking writes; Keep writes
- * nothing. Read-only tasks write nothing whatever their decision.
+ * cleared so it leaves Today; Someday is the patch parking writes; Done already is
+ * the bulk complete (a series rolls, subtasks complete; `all` is every task, for
+ * them); Keep writes nothing. Read-only tasks write nothing whatever their decision.
  */
-export function planCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string): Change[] {
+export function planCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string, all: Task[] = tasks.map((x) => x.task), now = Date.now()): Change[] {
   const out: Change[] = []
   for (const { task, editable } of tasks) {
     const d = decisions.get(task.id) ?? { kind: 'tomorrow' }
     if (!editable || d.kind === 'keep') continue
+    if (d.kind === 'done') {
+      out.push(...planComplete([task], all, now, today))
+      continue
+    }
     if (d.kind === 'someday') {
       const patch: Record<string, unknown> = { start: 'someday' }
       if (task.due) patch.due = null
@@ -354,24 +376,38 @@ export function carryOverOf(review: Pick<Review, 'carry_over'> | null | undefine
  * Applies the carry-over as ONE undoable batch through the bulk path; null when
  * nothing is written. The same batch records what it changed on the review row
  * (weekly-review "Reopen the day"), so its Undo also restores the previous record.
+ * A record of the same day is extended, not replaced (close-the-day-v2 D3): a field
+ * changed by both batches keeps its value before the first and after the latest.
  */
-export async function applyCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string): Promise<{ entry: AssistantUndo | null; label: string; count: number }> {
-  const changes = planCarryOver(decisions, tasks, today)
+export async function applyCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string, all?: Task[]): Promise<{ entry: AssistantUndo | null; label: string; count: number }> {
+  const changes = planCarryOver(decisions, tasks, today, all)
   const applied = tasks.filter((x) => changes.some((c) => c.entityId === x.task.id)).map((x) => decisions.get(x.task.id) ?? { kind: 'tomorrow' as const })
   const label = carryOverLabel(applied)
   const proposed = await toProposed(changes)
   if (proposed.length === 0) return { entry: null, label, count: 0 }
   const items: CarryOverItem[] = proposed.flatMap((c) => Object.entries(c.patch).map(([field, after]) => ({ id: c.entityId, field, before: c.base?.[field] ?? null, after: after ?? null })))
   const current = await db.review.get(REVIEW_ID)
-  const record: CarryOverRecord = { date: today, items }
+  const previous = carryOverOf(current)
+  const record: CarryOverRecord = { date: today, items: previous?.date === today ? joinItems(previous.items, items) : items }
   proposed.push({ entity: 'review', entityId: REVIEW_ID, patch: { carry_over: JSON.stringify(record) }, base: { carry_over: current?.carry_over ?? '' } })
   const entry = await applyBatch(proposed, { source: 'bulk', label })
   return { entry, label, count: changes.length }
 }
 
-/** Whether "Reopen the day" is offered: the day was closed on the user's logical `today`. */
-export function canReopenDay(review: Pick<Review, 'closed_at'> | null | undefined, today: string): boolean {
-  return dayClosed(review?.closed_at, today)
+/** Two batches' items as one record: a field in both keeps the first value before and the latest value after. */
+function joinItems(first: readonly CarryOverItem[], later: readonly CarryOverItem[]): CarryOverItem[] {
+  const out = first.map((it) => ({ ...it }))
+  for (const it of later) {
+    const seen = out.find((x) => x.id === it.id && x.field === it.field)
+    if (seen) seen.after = it.after
+    else out.push(it)
+  }
+  return out
+}
+
+/** Whether "Reopen the day" is offered: the user's logical `today` is closed. */
+export function canReopenDay(review: CloseStamp | null | undefined, today: string): boolean {
+  return dayClosed(review, today)
 }
 
 export interface ReopenResult {
@@ -389,7 +425,7 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stri
  * Reopens a day closed today (weekly-review "Reopen the day", ux-feedback-2 D1):
  * ONE undoable batch writes each recorded field back to its value before the
  * carry-over where the task still holds the value the carry-over wrote (others
- * are left alone and named), clears `closed_at` and empties `carry_over`, and
+ * are left alone and named), clears `closed_at` and `closed_day`, empties `carry_over`, and
  * keeps the line for tomorrow. A record from another day restores only the stamp.
  */
 export async function reopenDay(today: string): Promise<ReopenResult> {
@@ -417,7 +453,7 @@ export async function reopenDay(today: string): Promise<ReopenResult> {
     ? t('{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}', { n: restored })
     : t('Day reopened')
   const proposed = await toProposed(changes)
-  proposed.push({ entity: 'review', entityId: REVIEW_ID, patch: { closed_at: 0, carry_over: '' }, base: { closed_at: review?.closed_at ?? 0, carry_over: review?.carry_over ?? '' } })
+  proposed.push({ entity: 'review', entityId: REVIEW_ID, patch: { closed_at: 0, closed_day: '', carry_over: '' }, base: { closed_at: review?.closed_at ?? 0, closed_day: review?.closed_day ?? '', carry_over: review?.carry_over ?? '' } })
   const entry = await applyBatch(proposed, { source: 'bulk', label })
   return { entry, label, restored, skipped }
 }

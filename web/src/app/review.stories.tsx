@@ -141,14 +141,21 @@ async function seedCloseDay() {
   await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', focus_date: TODAY, focus: done.slice(0, 2).join(','), _clock: {} })
 }
 
-/** Close the day on Carry over: every unfinished task of Today with its decision, Tomorrow by default. */
+/** Close the day's first step (close-the-day-v2 D5): the day's figures as one sentence, Back and Next inside the card. */
+export const CloseTheDaySummary: StoryObj = {
+  name: 'Close the day · how it went',
+  ...withSeed(seedCloseDay),
+  render: () => <CloseDay />,
+}
+
+/** Close the day on Carry over (close-the-day-v2 D2): one task on the card with its five decisions, the decisions so far below. */
 export const CloseTheDay: StoryObj = {
   name: 'Close the day',
   ...withSeed(seedCloseDay),
   render: () => <CloseDay initialStep="carry" />,
 }
 
-/** Close the day's last step: the line for tomorrow and the primary "Close the day". */
+/** Close the day's last step: the note for tomorrow morning with its preview, and the primary "Close the day". */
 export const CloseTheDayNote: StoryObj = {
   name: 'Close the day · note',
   ...withSeed(seedCloseDay),
@@ -161,7 +168,7 @@ export const CloseTheDayDone: StoryObj = {
   render: () => (
     <PageBody width="list">
       <PageHeader title="Close the day" icon="moon" meta="Day closed, 18:42" />
-      <DoneForToday figures={{ time: '18:42', planned: 9, done: 5, carried: { tomorrow: 3, day: 0, someday: 0, keep: 0 }, kept: 1, note: 'Start with the invoice' }}
+      <DoneForToday figures={{ time: '18:42', planned: 9, done: 5, carried: { tomorrow: 3, day: 0, someday: 0, keep: 0, done: 0 }, kept: 1, note: 'Start with the invoice' }}
         onBack={() => {}} onReopen={() => {}} />
     </PageBody>
   ),

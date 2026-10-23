@@ -14,7 +14,7 @@ import { useToday } from './useViews'
 export function CloseDayRow() {
   const review = useReviewRow()
   const today = useToday()
-  const closed = dayClosed(review?.closed_at, today)
+  const closed = dayClosed(review, today)
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-default pt-3" data-close-day={closed ? 'closed' : 'open'}>
       {closed

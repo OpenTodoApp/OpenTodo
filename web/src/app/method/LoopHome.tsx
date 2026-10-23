@@ -85,7 +85,7 @@ export function LoopHome() {
       days: compute(stats, lastDays(input.today), weekStart).perDay,
     }
     const stamps = { weekly: review?.completed_at ?? null, monthly: review?.monthly_at ?? null }
-    const closedAt = review && dayClosed(review.closed_at, input.today) ? review.closed_at : null
+    const closedAt = review && dayClosed(review, input.today) ? review.closed_at : null
     return { inbox, withoutNext, stalled, contexts, nextCount, waiting, rhythms, rhythmDue, stamps, closedAt, focus, pulse, up: nextMove({ inbox, withoutNext, rhythmDue, nextCount }) }
   }, [input, labels, review, reviewedAt, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps -- reviewedAt: the walk's stamps change what Place counts
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])

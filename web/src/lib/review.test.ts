@@ -7,7 +7,7 @@ import { db, useDatabase } from './db'
 import { applyOps, createTask, resetDeviceId, updateTask } from './ops'
 import { compute, periodFor } from './stats'
 import { undoBatch } from './undo'
-import { applyCarryOver, areasOf, carryOverLabel, closeDay, dailyDue, dayClosed, daySummary, planCarryOver, yesterdaysNote, type CarryDecision, type CarryTask, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewAgo, reviewDue, reviewSteps, toggleFocus, walkProjects, type ReviewInput } from './review'
+import { applyCarryOver, areasOf, carryOverLabel, carryOverOf, closeDay, closedDayOf, reopenDay, dailyDue, dayClosed, daySummary, planCarryOver, yesterdaysNote, type CarryDecision, type CarryTask, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewAgo, reviewDue, reviewSteps, toggleFocus, walkProjects, type ReviewInput } from './review'
 import type { Membership, Project, Task } from './types'
 
 let n = 0
@@ -183,15 +183,26 @@ describe('Close the day (close-the-day 2.1–2.4)', () => {
     ({ tasks, projects, memberships: new Map(memberships.map((m) => [m.projectId, m])), me: 'me', today: TODAY })
 
   it('dayClosed: closed today vs yesterday vs never; the logical day counts', () => {
-    expect(dayClosed(at(14, 18, 42), TODAY)).toBe(true)
-    expect(dayClosed(at(13, 21), TODAY)).toBe(false)
-    expect(dayClosed(0, TODAY)).toBe(false)
+    expect(dayClosed({ closed_at: at(14, 18, 42) }, TODAY)).toBe(true)
+    expect(dayClosed({ closed_at: at(13, 21) }, TODAY)).toBe(false)
+    expect(dayClosed({ closed_at: 0 }, TODAY)).toBe(false)
     expect(dayClosed(undefined, TODAY)).toBe(false)
     setDayStart(240)
     try {
       // 01:30 on the 15th before a 04:00 day start still closes the 14th.
-      expect(dayClosed(at(15, 1, 30), TODAY)).toBe(true)
+      expect(dayClosed({ closed_at: at(15, 1, 30) }, TODAY)).toBe(true)
     } finally { setDayStart(0) }
+  })
+
+  it('closedDayOf (close-the-day-v2 D1): the stored day wins over the stamp; without it, the logical day of the stamp', () => {
+    // Opened at 23:59 on the 14th, closed at 00:02 on the 15th: the 14th is closed, not the 15th.
+    const late = { closed_at: at(15, 0, 2), closed_day: TODAY }
+    expect([closedDayOf(late), dayClosed(late, TODAY), dayClosed(late, '2026-10-15')]).toEqual([TODAY, true, false])
+    expect(yesterdaysNote({ ...late, tomorrow_note: 'Start with the invoice' }, '2026-10-15')).toBe('Start with the invoice')
+    // A close written before the field existed, and one whose field is not a date.
+    expect(closedDayOf({ closed_at: at(15, 0, 2), closed_day: '' })).toBe('2026-10-15')
+    expect(closedDayOf({ closed_at: at(15, 0, 2), closed_day: 'soon' })).toBe('2026-10-15')
+    expect(closedDayOf({ closed_at: 0, closed_day: TODAY })).toBeNull()
   })
 
   it('yesterdaysNote: shown only for an earlier day, empty is null, a close today hides it', () => {
@@ -203,12 +214,12 @@ describe('Close the day (close-the-day 2.1–2.4)', () => {
     expect(yesterdaysNote(null, TODAY)).toBeNull()
   })
 
-  it('closeDay writes both fields as one op pair, trimmed, through the outbox', async () => {
-    await closeDay('  Start with the invoice  ', 7000)
+  it('closeDay writes the time, the day and the trimmed note as one op triple through the outbox', async () => {
+    await closeDay('  Start with the invoice  ', TODAY, 7000)
     const row = await db.review.get('me')
-    expect([row?.closed_at, row?.tomorrow_note]).toEqual([7000, 'Start with the invoice'])
+    expect([row?.closed_at, row?.closed_day, row?.tomorrow_note]).toEqual([7000, TODAY, 'Start with the invoice'])
     const queued = (await db.outbox.toArray()).map(({ field, value }) => [field, value]).sort()
-    expect(queued).toEqual([['closed_at', 7000], ['tomorrow_note', 'Start with the invoice']])
+    expect(queued).toEqual([['closed_at', 7000], ['closed_day', TODAY], ['tomorrow_note', 'Start with the invoice']])
   })
 
   it('Two closes offline: each field by its own latest write', async () => {
@@ -298,5 +309,38 @@ describe('Close the day (close-the-day 2.1–2.4)', () => {
     const result = await undoBatch(entry!.id)
     expect(result.skipped).toEqual(['Two'])
     expect(((await db.tasks.bulkGet(ids)) as Task[]).map((x) => x.due)).toEqual([{ date: TODAY }, { date: '2026-10-20' }, { date: TODAY, time: '09:00' }])
+  })
+
+  it('Done already (close-the-day-v2 D3): a task completes and a weekly series rolls, in the same batch as the rest', async () => {
+    const plain = await createTask({ title: 'Plain', due: { date: TODAY } })
+    const weekly = await createTask({ title: 'Weekly', due: { date: TODAY }, recurrence: 'every wednesday' })
+    const moved = await createTask({ title: 'Moved', due: { date: TODAY } })
+    const rows = (await db.tasks.bulkGet([plain, weekly, moved])) as Task[]
+    const decisions = new Map<string, CarryDecision>([[plain, { kind: 'done' }], [weekly, { kind: 'done' }]])
+    const before = await db.assistantUndo.count()
+    const { entry, label } = await applyCarryOver(decisions, carry(rows), TODAY, rows)
+    expect([label, (await db.assistantUndo.count()) - before]).toEqual(['3 tasks carried over', 1])
+    expect((await db.tasks.get(plain))!.completed_at).not.toBeNull()
+    expect(await db.tasks.get(weekly)).toMatchObject({ completed_at: null, due: { date: '2026-10-21' } })
+    expect((await db.tasks.get(moved))!.due).toEqual({ date: '2026-10-15' })
+    await undoBatch(entry!.id)
+    expect([(await db.tasks.get(plain))!.completed_at, (await db.tasks.get(weekly))!.due, (await db.tasks.get(moved))!.due]).toEqual([null, { date: TODAY }, { date: TODAY }])
+  })
+
+  it('Two batches in one evening: the record joins them, and Reopen puts both back', async () => {
+    const a = await createTask({ title: 'A', due: { date: TODAY } })
+    const b = await createTask({ title: 'B', due: { date: TODAY } })
+    await applyCarryOver(new Map<string, CarryDecision>([[b, { kind: 'keep' }]]), carry((await db.tasks.bulkGet([a, b])) as Task[]), TODAY)
+    await applyCarryOver(new Map<string, CarryDecision>([[b, { kind: 'day', date: '2026-10-16' }]]), carry([(await db.tasks.get(b)) as Task]), TODAY)
+    const record = carryOverOf(await db.review.get('me'))
+    expect(record?.items.map((it) => [it.id, it.field, it.before, it.after])).toEqual([
+      [a, 'due', { date: TODAY }, { date: '2026-10-15' }],
+      [b, 'due', { date: TODAY }, { date: '2026-10-16' }],
+    ])
+    await closeDay('', TODAY, at(14, 21))
+    const r = await reopenDay(TODAY)
+    expect(r.restored).toBe(2)
+    expect([(await db.tasks.get(a))!.due, (await db.tasks.get(b))!.due]).toEqual([{ date: TODAY }, { date: TODAY }])
+    expect(await db.review.get('me')).toMatchObject({ closed_at: 0, closed_day: '' })
   })
 })

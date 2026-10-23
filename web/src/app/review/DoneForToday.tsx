@@ -12,7 +12,7 @@ import { Button, Illustration } from '../../ui'
 
 /** What the close carried: the decisions applied, by kind. */
 export type Carried = Record<CarryDecision['kind'], number>
-export const NOTHING_CARRIED: Carried = { tomorrow: 0, day: 0, someday: 0, keep: 0 }
+export const NOTHING_CARRIED: Carried = { tomorrow: 0, day: 0, someday: 0, keep: 0, done: 0 }
 
 export interface DayDoneFigures {
   /** The close's time, already formatted. */
