@@ -7,7 +7,8 @@ import type { ListColumn, ListRow } from '../../lib/listGroups'
 import type { Task } from '../../lib/types'
 import { act } from '../actionError'
 import { registerListState } from '../listActions'
-import { registerPanelHandlers, setPanelTaskId as setOpenId } from '../panel'
+import { panelTaskId, registerPanelHandlers, setPanelTaskId as setOpenId, taskSplitDocks } from '../panel'
+import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
 import { openTask, selectTask } from '../signals'
 import { isTypingTarget } from '../shortcuts'
@@ -142,6 +143,8 @@ export function useListBindings(c: BindingContext): RowActions {
     toggleCollapse: (id) => live.current.toggleCollapsed(id),
     open: (id, e) => {
       if (live.current.startInline?.(id, e)) return
+      // On the Inbox's split the task is already beside the list: Enter or Space on its row opens its page (inbox-split D1).
+      if (e?.detail === 0 && taskSplitDocks() && panelTaskId() === id) { openTaskPage(id); return }
       setSelectedId(id)
       setOpenId(id)
     },

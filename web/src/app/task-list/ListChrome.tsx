@@ -45,11 +45,10 @@ export function LayoutSwitch({ mode, onChoose }: { mode: ProjectViewMode; onChoo
  * nothing sits between the quick add and the first task. Touch screens have no
  * hover: the Select button shows every checkbox (bulk-edit D3).
  */
-export function ListPageActions({ route, userRole, rowCount, topLevelCount, selectMode, onSelectMode, filterKey, duration, onDuration }: {
+export function ListPageActions({ route, userRole, rowCount, selectMode, onSelectMode, filterKey, duration, onDuration }: {
   route: ListRoute
   userRole?: AccountRole
   rowCount: number
-  topLevelCount: number
   selectMode: boolean
   onSelectMode: () => void
   filterKey: string | null
@@ -60,10 +59,10 @@ export function ListPageActions({ route, userRole, rowCount, topLevelCount, sele
     <>
       {route.view === 'today' && <TodayAskAction role={userRole} />}
       {route.view === 'inbox' && rowCount > 0 && (
-        // Process the Inbox one task at a time (inbox-triage); g then p.
-        <Tooltip label={t('Process the Inbox')} shortcut="g p">
-          <Button variant="secondary" size="sm" icon="inbox" onClick={() => navigate({ view: 'triage' })} data-triage-start>
-            {t.rich('Process {count}', { count: <span className="tabular-nums text-muted">{topLevelCount}</span> })}
+        // Process the Inbox one task at a time (inbox-triage): the page's primary action, P (inbox-split D3).
+        <Tooltip label={t('Process the Inbox one task at a time')} shortcut={keysOf('inbox.process')}>
+          <Button variant="primary" size="sm" icon="inbox" onClick={() => navigate({ view: 'triage' })} data-triage-start aria-keyshortcuts="p">
+            {t('Process')} <kbd className="ui-kbd ml-1" aria-hidden="true">P</kbd>
           </Button>
         </Tooltip>
       )}

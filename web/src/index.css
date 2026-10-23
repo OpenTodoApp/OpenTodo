@@ -1207,6 +1207,9 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
    Tailwind's order (px and rem do not sort), so the panel stayed 26 rem. */
 :root { --panel-w: 26rem; }
 @media (min-width: 1440px) { :root { --panel-w: 30rem; } }
+/* A split page (inbox-split D1): the detail takes about half of the content beside the
+   sidebar, between 26 and 44 rem. */
+:root[data-task-split] { --panel-w: clamp(26rem, 42vw, 44rem); }
 /* The frame (precision-shell D3): the whole content surface, from its left edge, so the
    docked panel narrows it from the right and nothing moves. */
 .page-frame { margin-left: 0; margin-right: 0; }

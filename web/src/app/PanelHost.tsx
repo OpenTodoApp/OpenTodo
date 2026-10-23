@@ -2,11 +2,13 @@
 // the task detail panel is rendered. It owns the panel's data (projects, labels,
 // memberships) so every view, and the palette, notifications and reminders, open
 // a task the same way.
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { t } from '../lib/i18n'
 import { useLabels, useMembershipMap, useProjects, useTask } from '../lib/localData'
 import { roleOf } from '../lib/sharing'
 import type { Task, User } from '../lib/types'
-import { closePanel, openTaskPanel, usePanel, usePanelHandlers } from './panel'
+import { useMediaQuery } from '../ui'
+import { closePanel, openTaskPanel, SPLIT_QUERY, usePanel, usePanelHandlers, useSplitEmptyPane } from './panel'
 import { TaskDetail } from './TaskDetail'
 
 /** The data every task detail needs (the panel and the expanded page share it). */
@@ -26,6 +28,9 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   const { projects, labelMap, readOnly } = useTaskDetailData()
   // undefined while loading, null when the task does not exist.
   const task = useTask(taskId)
+  // A split page with nothing docked keeps its pane ("No task selected", inbox-split D2).
+  const empty = useSplitEmptyPane()
+  const wide = useMediaQuery(SPLIT_QUERY)
 
   // The panel slides in only when it opens from closed, never when it switches tasks
   // (web-app "Overlay motion", motion-v2 D5).
@@ -42,7 +47,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
     if (taskId && (task === null || task?.deleted_at)) closePanel()
   }, [taskId, task])
 
-  if (!occupant) return null
+  if (!occupant) return empty && wide ? <SplitPane>{empty()}</SplitPane> : null
   if (occupant.kind === 'custom') return <>{occupant.render()}</>
   if (!task) return null
   return (
@@ -59,5 +64,15 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
       onToggleComplete={handlers.toggleComplete}
       entering={occupant.id === enteredFor}
     />
+  )
+}
+
+/** The slot's frame while a split page has no task docked: where the docked task will stand. */
+function SplitPane({ children }: { children: ReactNode }) {
+  return (
+    <aside aria-label={t('Task details')} data-split-empty
+      className="hidden min-w-0 flex-col border-l border-default bg-surface lg:flex lg:w-(--panel-w)">
+      {children}
+    </aside>
   )
 }
