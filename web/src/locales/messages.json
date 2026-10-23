@@ -233,6 +233,9 @@
   "A dashboard cannot be shown in display mode. Open one of its views instead.": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
+  "A day of the week": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "A field": [
     "web/src/lib/assistant.ts"
   ],
@@ -299,6 +302,18 @@
   "A notice on any screen after a long stretch of work without a break.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "A number of days ago": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "A number of months ago": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "A number of weeks ago": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "A number, true or false, a date such as tomorrow, or text": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "A page anyone with the link can open, reply to and tick": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
@@ -361,6 +376,9 @@
   ],
   "A six-digit code from an authenticator app after your password.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "A specific date": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "A square PNG or JPEG of at least 192 pixels; the server renders every size.": [
     "web/src/lib/settingsCopy.ts"
@@ -602,6 +620,7 @@
   "Add": [
     "web/src/app/PlanView.tsx",
     "web/src/app/WorkspaceMembers.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/palette/modes.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
@@ -749,6 +768,9 @@
   ],
   "Add column before": [
     "web/src/app/editorCommands.ts"
+  ],
+  "Add condition": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Add delivery channel": [
     "web/src/app/NotificationChannelEditor.tsx"
@@ -942,6 +964,9 @@
   "All locations": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "All of these": [
+    "web/src/app/filter/FilterBuilder.tsx"
+  ],
   "All projects": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/WebhooksPanel.tsx",
@@ -1131,6 +1156,9 @@
   "Any": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Any of these": [
+    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "Any time": [
     "web/src/app/AuditPanel.tsx"
@@ -1735,6 +1763,10 @@
   "Bucket": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Builder": [
+    "web/src/app/FilterView.tsx",
+    "web/src/app/SavedViewView.tsx"
+  ],
   "Built-in": [
     "web/src/app/PreferencesPanels.tsx"
   ],
@@ -1877,6 +1909,7 @@
     "web/src/app/VoiceSettings.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx",
@@ -2079,7 +2112,11 @@
   "Choose a date": [
     "web/src/app/datetime/DateField.tsx"
   ],
+  "Choose a field": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Choose a label": [
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a member": [
@@ -2098,6 +2135,7 @@
     "web/src/app/ShareDirectory.tsx"
   ],
   "Choose a project": [
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a task": [
@@ -2167,6 +2205,9 @@
   ],
   "Choose what {title} waits for": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Chosen:": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Clarify|method": [
     "web/src/lib/method/vocabulary.json"
@@ -2349,6 +2390,9 @@
   "Columns used:": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Combine the conditions": [
+    "web/src/app/filter/FilterBuilder.tsx"
+  ],
   "Comfortable": [
     "web/src/app/AppearanceSection.tsx"
   ],
@@ -2425,6 +2469,9 @@
   "Companion": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Comparison": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Compatible endpoint": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -2485,6 +2532,7 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -2494,6 +2542,9 @@
   ],
   "Completed / reopened": [
     "web/src/lib/activity.ts"
+  ],
+  "Completed date": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Completed occurrence of {title}": [
     "web/src/app/task-detail/TaskDetail.tsx"
@@ -2521,6 +2572,9 @@
   ],
   "Compress (gzip)": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Condition": [
+    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "Configuration": [
     "web/src/app/AssistantsPanel.tsx"
@@ -2842,6 +2896,8 @@
   ],
   "Created": [
     "web/src/app/SavedViewView.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/lib/activity.ts",
@@ -2906,6 +2962,12 @@
   "Custom before the deadline…": [
     "web/src/app/RemindersField.tsx"
   ],
+  "Custom field": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Custom field is empty": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Custom fields": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -2967,6 +3029,7 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/editorCommands.ts",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
@@ -3015,6 +3078,9 @@
     "web/src/app/CalendarSettings.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Day of the week": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Day reopened": [
     "web/src/lib/review.ts"
   ],
@@ -3048,6 +3114,8 @@
   ],
   "Deadline": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
@@ -3549,13 +3617,15 @@
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Due": [
-    "web/src/app/ParseChips.tsx"
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Due date": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/DueField.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/ScheduleSheet.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due date and time (6 languages)": [
@@ -3566,6 +3636,9 @@
     "web/src/app/DueField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "Due today": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Due today and in the next six days. Set priorities with 1 to 4.": [
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -3574,6 +3647,9 @@
   ],
   "Due today: {title}.": [
     "web/src/app/TriageView.tsx"
+  ],
+  "Due tomorrow": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Due {date}": [
     "web/public/push-sw.js",
@@ -3600,6 +3676,9 @@
   ],
   "Duplicate…": [
     "web/src/app/ProjectHeader.tsx"
+  ],
+  "Duration": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Each change an AI connector asks for shows here before it is written.": [
     "web/src/lib/settingsCopy.ts"
@@ -3662,6 +3741,9 @@
   ],
   "Edit comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "Edit condition": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Edit delivery channel": [
     "web/src/app/NotificationChannelEditor.tsx"
@@ -3808,6 +3890,9 @@
   ],
   "Empty board": [
     "web/src/app/NewBoardDialog.tsx"
+  ],
+  "Empty group: add a condition to it.": [
+    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "Enable": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -4291,6 +4376,9 @@
   "Fewer": [
     "web/src/app/review/charts.tsx"
   ],
+  "Field": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Field names": [
     "web/src/app/FilterView.tsx"
   ],
@@ -4360,6 +4448,9 @@
   ],
   "Filter name": [
     "web/src/app/FilterView.tsx"
+  ],
+  "Filter on": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Filter query": [
     "web/src/app/FilterView.tsx"
@@ -4539,8 +4630,14 @@
   "For everyone on this server": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "For example 30m, 1h or 1h30": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "For example Systran/faster-whisper-small.": [
     "web/src/app/SpeechServerPanel.tsx"
+  ],
+  "For example github, gitlab, url, email or import": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "For example http://stt.home.lan:8000 (Speaches or whisper.cpp).": [
     "web/src/app/SpeechServerPanel.tsx"
@@ -4598,6 +4695,10 @@
   ],
   "Fri": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Friday": [
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "From": [
     "web/src/app/AuditPanel.tsx"
@@ -4857,6 +4958,7 @@
   ],
   "Group": [
     "web/src/app/SavedViewView.tsx",
+    "web/src/app/filter/FilterBuilder.tsx",
     "web/src/app/review/StatsView.tsx"
   ],
   "Group by": [
@@ -4903,6 +5005,9 @@
   "Guests see where the task happens.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Habit": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Haptic feedback": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -4913,8 +5018,14 @@
   "Has a day: Today and Upcoming.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Has an origin": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Has notes": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "Has tracked time": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Have an account? Sign in": [
     "web/src/app/AuthScreen.tsx"
@@ -5276,6 +5387,9 @@
   "In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In a number of days": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "In a table: next / previous cell; Tab in the last cell adds a row": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5374,6 +5488,9 @@
   "Inbox|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Include sub-projects": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Include task titles": [
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/NotificationsSettings.tsx",
@@ -5459,6 +5576,9 @@
   ],
   "Invites": [
     "web/src/app/WorkspacesSettings.tsx"
+  ],
+  "Is a subtask": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Issue connection added": [
     "web/src/app/auditFormat.ts"
@@ -5692,10 +5812,14 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Label (optional)": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Label is {name}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Label menu": [
     "web/src/app/LabelsView.tsx"
@@ -5802,6 +5926,9 @@
   "Last look {instant}": [
     "web/src/app/review/MonthlyLook.tsx"
   ],
+  "Last month": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Last review {ago}": [
     "web/src/app/Sidebar.tsx"
   ],
@@ -5836,6 +5963,7 @@
     "web/src/app/SyncStatus.tsx"
   ],
   "Last week": [
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/stats.ts"
   ],
   "Later": [
@@ -6275,6 +6403,9 @@
   "Markdown typing becomes formatting (``` and Enter starts a code block); Shift+Enter is a line break, Esc leaves the notes": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Match the tasks this condition does not match": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Matching settings": [
     "web/src/app/SettingsView.tsx"
   ],
@@ -6401,7 +6532,9 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Monday": [
-    "web/src/app/DateTimeSettings.tsx"
+    "web/src/app/DateTimeSettings.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Money, bills and paperwork": [
     "web/src/lib/review.ts"
@@ -6850,7 +6983,8 @@
   "Next month": [
     "web/src/app/HabitHistory.tsx",
     "web/src/app/MonthView.tsx",
-    "web/src/app/datetime/DateField.tsx"
+    "web/src/app/datetime/DateField.tsx",
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Next run:": [
     "web/src/app/BackupsPanel.tsx"
@@ -6870,6 +7004,7 @@
     "web/src/app/PlanView.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
@@ -6970,6 +7105,9 @@
   "No comments yet. Ask a question or leave a note; comments work offline.": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "No conditions yet: every open task matches.": [
+    "web/src/app/filter/FilterBuilder.tsx"
+  ],
   "No date": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -6981,11 +7119,15 @@
     "web/src/lib/views.ts"
   ],
   "No deadline": [
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "No deliveries yet.": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "No due date": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "No due dates in this period": [
     "web/src/app/review/StatsView.tsx"
@@ -7049,6 +7191,7 @@
     "web/src/lib/filter/evaluate.ts"
   ],
   "No labels": [
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
   "No labels yet": [
@@ -7127,6 +7270,9 @@
   "No option matches.": [
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
+  "No origin": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "No other project can hold this one": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -7148,6 +7294,7 @@
     "web/src/app/SecurityPanel.tsx"
   ],
   "No project": [
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/lib/pickerSources.ts"
   ],
@@ -7216,6 +7363,7 @@
     "web/src/app/ShortcutHelp.tsx"
   ],
   "No start date": [
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/assistant.ts"
   ],
@@ -7251,6 +7399,9 @@
   ],
   "No thanks": [
     "web/src/app/method/MethodModeChooser.tsx"
+  ],
+  "No time of day": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "No time tracked and nothing completed in this period.": [
     "web/src/app/review/StatsView.tsx"
@@ -7296,6 +7447,10 @@
   ],
   "Normal, Insert and Command modes with counts, {kbd}, {kbd2} and {kbd3}. This device only.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Not": [
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "Not a rule I understand: {error}. The previous rule is kept.": [
     "web/src/app/RecurrenceField.tsx"
@@ -7421,6 +7576,9 @@
   "Not today": [
     "web/src/app/method/DailyCheckToast.tsx"
   ],
+  "Not waiting on another task": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Not yet synced": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
@@ -7428,6 +7586,12 @@
   ],
   "Not you? <a>Sign out</a> and use another account.": [
     "web/src/app/ProjectInviteScreen.tsx"
+  ],
+  "Not: {condition}. Edit": [
+    "web/src/app/filter/FilterBuilder.tsx"
+  ],
+  "Not: {group}": [
+    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "Note": [
     "web/src/app/RelayConfirm.tsx",
@@ -7595,6 +7759,15 @@
   ],
   "Number": [
     "web/src/lib/fields.ts"
+  ],
+  "Number of days": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Number of months": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Number of weeks": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Numbered list": [
     "web/src/app/editorCommands.ts",
@@ -7887,6 +8060,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/palette/addFromBar.ts",
     "web/src/app/review/ProjectWalk.tsx"
   ],
@@ -8149,6 +8323,12 @@
   "Organize": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Origin": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Origin is {value}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Origin values": [
     "web/src/app/FilterView.tsx"
   ],
@@ -8222,6 +8402,9 @@
   ],
   "Over the limit": [
     "web/src/app/RelaySettings.tsx"
+  ],
+  "Overdue": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Overwrite changed fields": [
     "web/src/app/ImportScreen.tsx"
@@ -8641,6 +8824,7 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
@@ -8654,6 +8838,9 @@
   ],
   "Priority P{p}": [
     "web/src/lib/assistant.ts"
+  ],
+  "Priority is P{n}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Priority must be p1, p2, p3 or p4 at position {pos}": [
     "web/src/lib/filter/parse.ts"
@@ -8720,6 +8907,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -8751,6 +8939,12 @@
   "Project invite links": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Project is {name}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "Project is {name} or a sub-project": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Project layout": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -8861,6 +9055,9 @@
   ],
   "Provider everyone uses": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Provider or kind": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Provider reachable: sign-in at {authHost}, tokens from {tokenHost}, no provider sign-out endpoint.": [
     "web/src/app/SsoPanel.tsx"
@@ -9186,6 +9383,7 @@
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceGroups.tsx",
     "web/src/app/WorkspaceMembers.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Remove attachment?": [
@@ -9248,8 +9446,14 @@
   "Remove the skill {name}": [
     "web/src/app/assistant/AssistantComposer.tsx"
   ],
+  "Remove this group": [
+    "web/src/app/filter/FilterBuilder.tsx"
+  ],
   "Remove time": [
     "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Remove {condition}": [
+    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "Remove {nameOf} from the dashboard": [
     "web/src/app/DashboardView.tsx"
@@ -9782,7 +9986,9 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Saturday": [
-    "web/src/app/DateTimeSettings.tsx"
+    "web/src/app/DateTimeSettings.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Save": [
     "web/src/app/AttachmentSettingsPanel.tsx",
@@ -9804,6 +10010,7 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/profile/ProfileSection.tsx",
     "web/src/app/rules/RuleDialog.tsx",
@@ -9989,8 +10196,14 @@
     "web/src/app/menus/stylePickers.tsx",
     "web/src/ui/IconPicker.tsx"
   ],
+  "Search labels": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Search or type a command…": [
     "web/src/app/palette/CommandPalette.tsx"
+  ],
+  "Search projects": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Search results": [
     "web/src/app/help/HelpView.tsx"
@@ -10771,6 +10984,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
@@ -10870,6 +11084,7 @@
   ],
   "Start": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/method/DailyCheckToast.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -10891,6 +11106,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Start date": [
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Start from": [
@@ -10962,6 +11178,7 @@
     "web/src/app/TaskRow.tsx"
   ],
   "Starts later": [
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Starts {date}": [
@@ -10974,6 +11191,9 @@
   "Start|timer": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusView.tsx"
+  ],
+  "State": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Statistics": [
     "web/src/app/Sidebar.tsx",
@@ -11099,7 +11319,9 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Sunday": [
-    "web/src/app/DateTimeSettings.tsx"
+    "web/src/app/DateTimeSettings.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Sunday sweep": [
     "web/src/app/rules/RuleDialog.tsx"
@@ -11352,6 +11574,9 @@
   "Text": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts"
+  ],
+  "Text in the title or notes": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Text to write": [
     "web/src/app/RelayConfirm.tsx"
@@ -12281,6 +12506,7 @@
   ],
   "This evening": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/lib/assistant.ts"
   ],
   "This file could not be opened.": [
@@ -12420,6 +12646,7 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "This month": [
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/stats.ts"
   ],
   "This needs a signed-in browser session, not an API token.": [
@@ -12491,6 +12718,9 @@
   ],
   "This quarter": [
     "web/src/lib/stats.ts"
+  ],
+  "This query uses more nesting than the builder shows. Edit it as text below.": [
+    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "This request is not allowed here.": [
     "web/src/lib/i18n/errors.ts"
@@ -12638,6 +12868,7 @@
   ],
   "This week": [
     "web/src/app/DateTimeSettings.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/stats.ts"
   ],
   "This weekend": [
@@ -12651,6 +12882,10 @@
   ],
   "Thumbs up": [
     "web/src/app/task-detail/ReactionBar.tsx"
+  ],
+  "Thursday": [
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
@@ -12756,6 +12991,12 @@
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-list/InlineEditor.tsx"
   ],
+  "Title or notes": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Title or notes contain {text}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Title:": [
     "web/src/app/QuickAdd.tsx"
   ],
@@ -12801,6 +13042,7 @@
     "web/src/app/auditFormat.ts",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx",
@@ -12859,6 +13101,7 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -12956,6 +13199,10 @@
   "Tracked": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "Tracked time": [
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Tracked time per project: {values}.": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -13013,6 +13260,10 @@
   ],
   "Tue": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Tuesday": [
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Turn attachments on or off and set their size limits": [
     "web/src/app/settingsIndex.ts"
@@ -13539,6 +13790,9 @@
   "Users, invitations, members, access policies and single sign-on": [
     "web/src/app/settingsSections.ts"
   ],
+  "Value": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Verify": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/RestoreSection.tsx"
@@ -13629,6 +13883,9 @@
   "Waiting for the first refresh": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Waiting on another task": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Waiting|method": [
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
@@ -13677,6 +13934,10 @@
   ],
   "Wed": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Wednesday": [
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Week": [
     "web/src/app/CalendarRange.tsx",
@@ -13767,6 +14028,7 @@
   ],
   "When": [
     "web/src/app/AuditPanel.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
@@ -13953,6 +14215,7 @@
   "Yesterday": [
     "web/src/app/FeedView.tsx",
     "web/src/app/auditFormat.ts",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/logbook.ts"
   ],
   "Yesterday’s line": [
@@ -14388,7 +14651,8 @@
     "web/src/lib/roleNames.ts"
   ],
   "after": [
-    "web/src/app/RemindersField.tsx"
+    "web/src/app/RemindersField.tsx",
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "against {time} estimated": [
     "web/src/app/review/StatsView.tsx"
@@ -14450,6 +14714,12 @@
   "at due time": [
     "web/src/lib/nlp/reminders.ts"
   ],
+  "at least": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "at most": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "at risk": [
     "web/src/app/RecurrenceField.tsx"
   ],
@@ -14463,7 +14733,8 @@
     "web/src/app/settingsSections.ts"
   ],
   "before": [
-    "web/src/app/RemindersField.tsx"
+    "web/src/app/RemindersField.tsx",
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "blocked": [
     "web/src/lib/rules/summary.ts"
@@ -14709,6 +14980,9 @@
   "every day": [
     "web/src/lib/rules/summary.ts"
   ],
+  "exactly": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "expected \"completion\" after \"after\"": [
     "web/src/lib/recurrence.ts"
   ],
@@ -14868,6 +15142,9 @@
   "labels": [
     "web/src/lib/activityRuns.ts"
   ],
+  "last month": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "last opened {time}": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
@@ -14878,8 +15155,14 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/IssuesPanel.tsx"
   ],
+  "last week": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "last weekly review {ago}": [
     "web/src/app/Sidebar.tsx"
+  ],
+  "less than": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "lime": [
     "web/src/lib/colourNames.ts"
@@ -14913,6 +15196,9 @@
   ],
   "month {n}": [
     "web/src/lib/templateLibrary.ts"
+  ],
+  "more than": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "moved the due date to {date}": [
     "web/src/lib/activity.ts"
@@ -14948,10 +15234,17 @@
   "new account": [
     "web/src/app/auditFormat.ts"
   ],
+  "next month": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "next try {instant}": [
     "web/src/lib/webhooks.ts"
   ],
+  "next week": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "no": [
+    "web/src/app/filter/conditionText.ts",
     "web/src/lib/history.ts"
   ],
   "no date": [
@@ -15079,10 +15372,17 @@
     "web/src/app/method/LoopHome.tsx"
   ],
   "on": [
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/history.ts"
   ],
   "on a check-list line": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "on or after": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "on or before": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "on the task tabs": [
     "web/src/lib/shortcuts.ts"
@@ -15476,6 +15776,12 @@
   "this is not a valid recovery key; check for typos": [
     "web/src/lib/crypto.ts"
   ],
+  "this month": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "this week": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "through the task page": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
@@ -15493,6 +15799,7 @@
   ],
   "today": [
     "web/src/app/TokensSection.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/method/LoopHome.tsx",
     "web/src/lib/review.ts",
     "web/src/lib/rules/summary.ts"
@@ -15502,6 +15809,9 @@
   ],
   "token for an assistant that can make changes": [
     "web/src/app/AssistantsPanel.tsx"
+  ],
+  "tomorrow": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "too many attempts": [
     "web/src/app/auditFormat.ts"
@@ -15688,10 +15998,12 @@
     "web/src/lib/colourNames.ts"
   ],
   "yes": [
+    "web/src/app/filter/conditionText.ts",
     "web/src/lib/history.ts"
   ],
   "yesterday": [
     "web/src/app/TokensSection.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/lib/review.ts"
   ],
   "you@example.com": [
@@ -15726,6 +16038,9 @@
   ],
   "{completed} completed": [
     "web/src/app/Sections.tsx"
+  ],
+  "{condition}. Edit": [
+    "web/src/app/filter/FilterBuilder.tsx"
   ],
   "{count} more fields: {join}": [
     "web/src/app/TaskRow.tsx"
@@ -15813,11 +16128,29 @@
   "{field, select, title {This title} name {This name} other {This text}} is too long to encrypt (at most {max, number} bytes). Shorten it and try again.": [
     "web/src/lib/ops.ts"
   ],
+  "{field} after {date}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "{field} before {date}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "{field} cannot be restored": [
     "web/src/lib/history.ts"
   ],
   "{field} changed": [
     "web/src/lib/assistant.ts"
+  ],
+  "{field} on or after {date}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "{field} on or before {date}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "{field} on {date}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "{field} {date}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "{hostOf} · used {relativeTime}": [
     "web/src/app/SsoPanel.tsx"
@@ -15936,8 +16269,14 @@
   "{n, plural, one {# day after} other {# days after}}": [
     "web/src/lib/nlp/reminders.ts"
   ],
+  "{n, plural, one {# day ago} other {# days ago}}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "{n, plural, one {# day before} other {# days before}}": [
     "web/src/lib/nlp/reminders.ts"
+  ],
+  "{n, plural, one {# day from now} other {# days from now}}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "{n, plural, one {# day left} other {# days left}}": [
     "web/src/app/TrashView.tsx"
@@ -15996,6 +16335,9 @@
   ],
   "{n, plural, one {# minute} other {# minutes}}": [
     "web/src/lib/time.ts"
+  ],
+  "{n, plural, one {# month ago} other {# months ago}}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "{n, plural, one {# more file was left out: a share takes at most 10.} other {# more files were left out: a share takes at most 10.}}": [
     "web/src/app/ShareCapture.tsx"
@@ -16116,6 +16458,9 @@
   "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": [
     "web/src/app/locations/PlacesView.tsx"
   ],
+  "{n, plural, one {# task matches} other {# tasks match}}": [
+    "web/src/app/filter/FilterBuilder.tsx"
+  ],
   "{n, plural, one {# task moved to the Trash} other {# tasks moved to the Trash}}": [
     "web/src/lib/bulk.ts"
   ],
@@ -16169,6 +16514,9 @@
   ],
   "{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "{n, plural, one {# week ago} other {# weeks ago}}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "{n, plural, one {+# more reminder} other {+# more reminders}}": [
     "web/src/app/ReminderToasts.tsx"
@@ -16291,8 +16639,23 @@
   "{name} cleared": [
     "web/src/lib/assistant.ts"
   ],
+  "{name} is at least {value}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "{name} is at most {value}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "{name} is deactivated.": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "{name} is empty": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "{name} is less than {value}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "{name} is more than {value}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "{name} is no longer available": [
     "web/src/app/workspaceNav.ts"
@@ -16305,6 +16668,9 @@
   ],
   "{name} is now the owner. You are an admin.": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "{name} is {value}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "{name} moved to position {n} of {count}": [
     "web/src/app/LabelsView.tsx"

@@ -55,6 +55,28 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 	}
 }
 
+// The queries the web filter builder writes (OpenSpec filter-builder D2), printed
+// by web/src/lib/filter/builder.ts: the server must accept every one it saves.
+func TestFilterParserAcceptsFormatted(t *testing.T) {
+	b, err := os.ReadFile("testdata/formatted.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := 0
+	for _, line := range strings.Split(string(b), "\n") {
+		if line == "" || strings.HasPrefix(line, "# ") {
+			continue
+		}
+		n++
+		if err := Parse(line); err != nil {
+			t.Errorf("%q: %v", line, err)
+		}
+	}
+	if n < 150 {
+		t.Fatalf("testdata/formatted.txt has %d queries, want at least 150", n)
+	}
+}
+
 func TestFilterParserMatchesDocsErrorTable(t *testing.T) {
 	doc := readDocs(t)
 	section := doc[strings.Index(doc, "## Errors"):strings.Index(doc, "## The Filter view")]

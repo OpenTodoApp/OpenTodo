@@ -32,6 +32,8 @@ import { useTrackedTotals } from '../lib/timeEntries'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg } from '../lib/i18n'
 import { act } from './actionError'
+import { FilterBuilder } from './filter/FilterBuilder'
+import { useBuilderOpen } from './filter/builderToggle'
 
 const DEBOUNCE_MS = 150
 
@@ -211,6 +213,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     if (selectedId) document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [selectedId])
 
+  const [builderOpen, setBuilderOpen] = useBuilderOpen('filter')
   const error = parsed.ok ? (compiled && !compiled.ok && good.src === debounced ? compiled.error : null) : parsed.error
   const warnings = !error && good.src === debounced ? result?.warnings ?? [] : []
 
@@ -219,6 +222,11 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
           <PageHeader title={t('Filter')} meta={result ? rows.length : undefined} help="filter"
             actions={<Button variant="secondary" size="sm" disabled={!canSave} onClick={() => setSaving(true)}>{t('Save filter')}</Button>} />
           <div className="mb-3 border-b border-default pb-2">
+            {builderOpen && (
+              <FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} count={result ? rows.length : null}
+                labels={labels} projects={projects} fields={fieldDefs} />
+            )}
+            <div className="flex gap-2">
             <input
               ref={inputRef}
               className="ui-input font-mono"
@@ -237,24 +245,11 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
               }}
               onKeyDown={onInputKey}
             />
-            <div id="filter-message" className="min-h-5 px-1 pt-1 text-meta" aria-live="polite">
-              {error ? (
-                <p role="alert" className="text-danger">{error}</p>
-              ) : warnings.length > 0 ? (
-                <p className="text-warning">{warnings.join(' · ')}</p>
-              ) : null}
+            <Button variant={builderOpen ? 'secondary' : 'ghost'} icon="layers" aria-pressed={builderOpen} className="shrink-0"
+              onClick={() => setBuilderOpen(!builderOpen)}>{t('Builder')}</Button>
             </div>
-            {suggestions.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 px-1 pt-1 text-meta" role="group" aria-label={origins.length ? t('Origin values') : t('Field names')}>
-                <span className="text-faint">{origins.length ? t('Origins:') : t('Fields:')}</span>
-                {suggestions.map((s) => (
-                  <Button key={s.name} variant="ghost" size="sm" onClick={() => {
-                    setQuery(s.query)
-                    inputRef.current?.focus()
-                  }}>{s.name}</Button>
-                ))}
-              </div>
-            )}
+            <QueryHints error={error} warnings={warnings} suggestions={suggestions} origins={origins.length > 0}
+              onPick={(q) => { setQuery(q); inputRef.current?.focus() }} />
           </div>
 
           {!good.ast && <UsageHint />}
@@ -309,6 +304,29 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         </Dialog>
       )}
     </PageBody>
+  )
+}
+
+/** The error or warning line under the query, then field or origin completions. */
+function QueryHints({ error, warnings, suggestions, origins, onPick }: {
+  error: string | null; warnings: string[]; suggestions: { name: string; query: string }[]; origins: boolean; onPick: (query: string) => void
+}) {
+  return (
+    <>
+      <div id="filter-message" className="min-h-5 px-1 pt-1 text-meta" aria-live="polite">
+        {error ? (
+          <p role="alert" className="text-danger">{error}</p>
+        ) : warnings.length > 0 ? (
+          <p className="text-warning">{warnings.join(' · ')}</p>
+        ) : null}
+      </div>
+      {suggestions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1 px-1 pt-1 text-meta" role="group" aria-label={origins ? t('Origin values') : t('Field names')}>
+          <span className="text-faint">{origins ? t('Origins:') : t('Fields:')}</span>
+          {suggestions.map((s) => <Button key={s.name} variant="ghost" size="sm" onClick={() => onPick(s.query)}>{s.name}</Button>)}
+        </div>
+      )}
+    </>
   )
 }
 

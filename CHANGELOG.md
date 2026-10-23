@@ -10,6 +10,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **Build a filter without typing.** The Filter view and saved filters show the query as conditions that read in words (*Label is errand*, *Due on or before tomorrow*, *Priority is P1*), in groups headed **All of these** or **Any of these**, with **Not** on any condition or group and a live count of matching tasks. **+ Condition** picks what to filter on and its value with the app's own pickers. The query text stays under the builder and follows every change both ways, so saved filters still store that text; the **Builder** button folds it away, remembered per device. ([Build a filter without typing](docs/filters.md#build-a-filter-without-typing))
 - **Delivery channels: ntfy, Pushover, Gotify and a webhook.** **Settings → Notifications → Delivery channels** sends your reminders, tasks assigned to you, mentions, tasks that are ready to start and task page replies to ntfy, Pushover, Gotify, or any address as a signed JSON message (Apprise and Home Assistant read it as is), up to five channels each with their own events and **Send test**. Messages say only what happened unless you include task titles, and never name a task with end-to-end encryption. Failed messages are retried for about a day; a channel that keeps failing turns itself off. (#271; [Delivery channels](docs/notification-channels.md))
 
 ### Changed
