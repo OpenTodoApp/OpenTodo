@@ -153,7 +153,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.trash', keys: ['g x'], label: 'Trash', description: 'Go to the Trash', section: 'go', scope: 'global' },
   { id: 'go.triage', keys: ['g p'], label: 'Process Inbox', description: 'Process the Inbox one task at a time', section: 'go', scope: 'global' },
   { id: 'go.feed', keys: ['g h'], label: 'Updates', description: 'Go to Updates: what changed in your shared projects', section: 'go', scope: 'global' },
-  { id: 'go.ask', keys: ['g k'], label: 'Ask', description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go', scope: 'global' },
+  { id: 'go.ask', keys: ['g k'], label: 'Assistant', description: 'Go to the Assistant page: the conversation and its skills (when the assistant is on)', section: 'go', scope: 'global' },
   { id: 'go.settings', keys: ['g s'], label: 'Settings', description: 'Go to Settings', section: 'go', scope: 'global' },
   { id: 'go.import', keys: ['g Shift+I'], label: 'Import data', description: 'Go to Settings → Data → Import data', section: 'go', scope: 'global' },
   { id: 'go.help', keys: ['g ?'], label: 'Help', description: 'Open Help: the user guide, offline, with search', section: 'go', scope: 'global' },

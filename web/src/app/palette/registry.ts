@@ -97,7 +97,7 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Go to Rules'), route: { view: 'rules' }, icon: 'zap', keywords: 'automations automation triggers' },
   { label: msg('New rule'), route: { view: 'rules', create: true }, icon: 'zap', keywords: 'automation create' },
   { label: msg('Go to Updates'), route: { view: 'feed' }, icon: 'newspaper', shortcut: keysOf('go.feed'), keywords: 'activity feed changes' },
-  { label: msg('Go to Ask'), route: { view: 'ask' }, icon: 'message-circle', shortcut: keysOf('go.ask') },
+  { label: msg('Go to Assistant'), route: { view: 'ask' }, icon: 'message-circle', shortcut: keysOf('go.ask') },
   { label: msg('Open Help'), route: { view: 'help' }, icon: 'list', shortcut: keysOf('go.help') },
   { label: msg('Go to Review'), route: { view: 'review' }, icon: 'clipboard-check', shortcut: keysOf('go.review'), keywords: 'weekly review' },
   { label: msg('Close the day'), route: { view: 'review', step: 'close' }, icon: 'moon', shortcut: keysOf('go.close'), keywords: 'end of day evening tomorrow carry over' },

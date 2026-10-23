@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
-// Ask composer on Today, the Ask screen and their availability (OpenSpec change
-// assistant-skills, tasks 3.3 and 3.4).
+// Ask on Today, the Assistant page and their availability (OpenSpec changes
+// assistant-skills, tasks 3.3 and 3.4, and assistant-surface).
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetSkills } from '../lib/assistantSkills'
-import { resetAssistantStatus, setAssistantStatus, takeAssistantPrefill, type AssistantStatus } from '../lib/assistantStatus'
+import { openAssistantWith, resetAssistantStatus, setAssistantStatus, takeAssistantPrefill, type AssistantStatus } from '../lib/assistantStatus'
 import { db } from '../lib/db'
 import type { User } from '../lib/types'
 import { click, flush, key, render } from '../ui/test-utils'
@@ -70,13 +70,23 @@ describe('Today action (ux-overhaul, in-app-assistant "Ask composer")', () => {
 })
 
 describe('Ask screen (3.4)', () => {
-  it('lists every skill and "Use this skill" opens the panel with it', async () => {
+  it('is the conversation page: the greeting, the composer and the starter skills, and a starter fills the composer (assistant-surface)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     setAssistantStatus(base)
-    const r = await render(<AskScreen role="member" />)
+    const r = await render(<AskScreen role="member" name="Ada Lovelace" />)
+    await flush(40)
+    expect(document.querySelector('[data-assistant-page]')).not.toBeNull()
+    expect(document.querySelector('[data-assistant-empty] h2')!.textContent).toMatch(/^Good (morning|afternoon|evening), Ada\.What should we sort out\?$/)
+    // The starters follow the fixed order and skip skills the server does not offer.
+    expect([...document.querySelectorAll('[data-assistant-starter]')].map((b) => b.getAttribute('data-assistant-starter'))).toEqual(['plan-week', 'idea-to-project'])
+    await click(document.querySelector<HTMLButtonElement>('[data-assistant-starter="plan-week"]')!)
     await flush(10)
-    expect(document.querySelectorAll('[aria-label="Skills"] li')).toHaveLength(3)
-    await click([...document.querySelectorAll('[data-ask-screen] button')].find((b) => b.textContent === 'Use this skill')!)
-    expect(takeAssistantPrefill()).toEqual({ text: '', skill: 'idea-to-project', send: false })
+    expect(document.querySelector('[data-assistant-chosen]')!.textContent).toContain('Skill: Plan my week.')
+    // Hidden on this device once dismissed.
+    await click(document.querySelector<HTMLButtonElement>('[aria-label="Hide the skill suggestions"]')!)
+    expect(document.querySelector('[data-assistant-starters]')).toBeNull()
+    expect(localStorage.getItem('opentodo.assistant.startersHidden')).toBe('1')
+    localStorage.clear()
     await r.unmount()
   })
 
@@ -97,17 +107,22 @@ describe('Ask screen (3.4)', () => {
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await flush(30)
-    // The sidebar's More menu lists Ask while the assistant is available (ux-overhaul, sidebar-compact-desktop).
+    // The sidebar's More menu lists the Assistant while it is available (ux-overhaul, sidebar-compact-desktop, assistant-surface).
     await click(document.querySelector('[data-sidebar-more-menu] button[aria-haspopup="menu"]')!)
     await flush(10)
-    expect(document.querySelector('[role="menu"] [data-menu-label="Ask"]')).not.toBeNull()
+    expect(document.querySelector('[role="menu"] [data-menu-label="Assistant"]')).not.toBeNull()
     await key(document.body, 'Escape')
     await flush(10)
     await key(document.body, 'g')
     await key(document.body, 'k')
     await flush(30)
-    expect(document.querySelector('[data-ask-screen]')).toBeTruthy()
-    expect(document.activeElement?.hasAttribute('data-ask-input')).toBe(true)
+    expect(document.querySelector('[data-assistant-page]')).toBeTruthy()
+    expect(document.activeElement?.hasAttribute('data-assistant-composer')).toBe(true)
+    // On the page, opening the assistant (Shift+I, Ask) opens no sheet: the page is the conversation.
+    openAssistantWith({ text: 'What is due?' })
+    await flush(40)
+    expect(document.querySelector('[data-assistant-panel]')).toBeNull()
+    expect(document.querySelector<HTMLTextAreaElement>('[data-assistant-page] [data-assistant-composer]')!.value).toBe('What is due?')
     await r.unmount()
   })
 })

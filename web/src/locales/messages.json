@@ -1274,17 +1274,11 @@
   "Apply": [
     "web/src/app/RelayConfirm.tsx"
   ],
-  "Apply all": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
-  ],
   "Apply small changes without review (this device)": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Apply the checked changes / discard the proposal; Space toggles an item": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Apply {checked} of {count}": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "Archive": [
     "web/src/app/ArchivePrompt.tsx",
@@ -1379,24 +1373,21 @@
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "Ask": [
-    "web/src/app/Sidebar.tsx",
     "web/src/app/assistant/AskEntry.tsx",
     "web/src/app/palette/modes.ts",
-    "web/src/lib/shortcuts.ts",
     "web/src/ui/patterns/AskComposer.tsx"
   ],
   "Ask OpenTodo": [
-    "web/src/app/assistant/AskEntry.tsx",
     "web/src/ui/patterns/AskComposer.tsx"
   ],
-  "Ask about your tasks or ask for changes. For example:": [
-    "web/src/app/assistant/AssistantPanelBody.tsx"
-  ],
-  "Ask about your tasks, or let a skill do a common job. Changes are proposed for you to review; nothing changes until you apply them.": [
-    "web/src/app/assistant/AskEntry.tsx"
+  "Ask about your tasks or ask for changes. Changes are proposed for you to review; nothing changes until you apply them.": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
   ],
   "Ask about your tasks, or pick a skill…": [
     "web/src/ui/patterns/AskComposer.tsx"
+  ],
+  "Ask about your tasks, or tell me what to plan…": [
+    "web/src/app/assistant/AssistantPage.tsx"
   ],
   "Ask about your tasks…": [
     "web/src/app/assistant/AssistantComposer.tsx",
@@ -1482,12 +1473,16 @@
   ],
   "Assistant": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/Sidebar.tsx",
     "web/src/app/SidebarFooter.tsx",
     "web/src/app/TokensSection.tsx",
+    "web/src/app/assistant/AskEntry.tsx",
+    "web/src/app/assistant/AssistantPage.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/settingsIndex.ts",
-    "web/src/lib/settingsCopy.ts"
+    "web/src/lib/settingsCopy.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Assistant:": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -1789,9 +1784,6 @@
   "Break this down": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
-  "Break “Plan the team offsite” into steps.": [
-    "web/src/app/assistant/AssistantPanelBody.tsx"
-  ],
   "Bring back {title} from Someday": [
     "web/src/app/palette/registry.ts"
   ],
@@ -2051,9 +2043,6 @@
   "Changes appear here once this task has synced.": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
-  "Changes are proposed for you to review; nothing changes until you apply them.": [
-    "web/src/app/assistant/AssistantPanelBody.tsx"
-  ],
   "Changes in this group": [
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
@@ -2268,6 +2257,7 @@
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
   "Clear conversations": [
+    "web/src/app/assistant/AssistantPage.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -2729,6 +2719,9 @@
   ],
   "Contains": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Context: {name}": [
+    "web/src/app/assistant/AssistantComposer.tsx"
   ],
   "Continue": [
     "web/src/app/FirstRun.tsx",
@@ -4749,9 +4742,6 @@
   "For example: OpenTodo <todo@example.com>. Your mail provider may require an address it owns.": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
-  "For example: “{example}”": [
-    "web/src/app/assistant/AskEntry.tsx"
-  ],
   "For scripts, the ot command and AI assistants. Sent as {header}.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -4908,15 +4898,12 @@
     "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
   ],
-  "Go to Ask": [
-    "web/src/app/palette/registry.ts"
-  ],
-  "Go to Ask: the assistant’s composer and skills (when the assistant is on)": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Go to Assigned to me": [
     "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Go to Assistant": [
+    "web/src/app/palette/registry.ts"
   ],
   "Go to Calendar (Day)": [
     "web/src/app/palette/registry.ts"
@@ -5026,6 +5013,9 @@
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/ResetScreen.tsx"
   ],
+  "Go to the Assistant page: the conversation and its skills (when the assistant is on)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Go to the Calendar as Day (the sidebar opens it as last used)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5061,6 +5051,24 @@
   ],
   "Go to {page}": [
     "web/src/app/Sidebar.tsx"
+  ],
+  "Good afternoon, {name}.": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
+  ],
+  "Good afternoon.": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
+  ],
+  "Good evening, {name}.": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
+  ],
+  "Good evening.": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
+  ],
+  "Good morning, {name}.": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
+  ],
+  "Good morning.": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
   ],
   "Google Tasks (Takeout JSON)": [
     "web/src/app/ImportScreen.tsx"
@@ -5239,6 +5247,9 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
   ],
+  "Hide the skill suggestions": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
+  ],
   "Hide the start guide": [
     "web/src/app/FirstDay.tsx"
   ],
@@ -5251,6 +5262,7 @@
   "History": [
     "web/src/app/HistoryPanel.tsx",
     "web/src/app/ProjectHeader.tsx",
+    "web/src/app/assistant/AssistantPage.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/rules/RulesView.tsx",
     "web/src/app/task-detail/ConversationTabs.tsx"
@@ -5608,6 +5620,7 @@
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
@@ -6692,6 +6705,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Model server": [
+    "web/src/app/assistant/AssistantPage.tsx",
     "web/src/app/assistant/AssistantPanel.tsx"
   ],
   "Mon": [
@@ -6767,9 +6781,6 @@
   ],
   "Move earlier tasks to today": [
     "web/src/app/palette/registry.ts"
-  ],
-  "Move everything from earlier days to Friday.": [
-    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Move it one place down": [
     "web/src/lib/shortcuts.ts"
@@ -7020,8 +7031,7 @@
     "web/src/app/NotificationChannelEditor.tsx"
   ],
   "New": [
-    "web/src/app/FeedView.tsx",
-    "web/src/app/assistant/AssistantPanel.tsx"
+    "web/src/app/FeedView.tsx"
   ],
   "New API token": [
     "web/src/app/TokensSection.tsx"
@@ -7035,6 +7045,10 @@
   "New board": [
     "web/src/app/NewBoardDialog.tsx",
     "web/src/app/ViewsView.tsx"
+  ],
+  "New chat": [
+    "web/src/app/assistant/AssistantPage.tsx",
+    "web/src/app/assistant/AssistantPanel.tsx"
   ],
   "New conversation": [
     "web/src/lib/assistant.ts"
@@ -7787,7 +7801,7 @@
   "Notes edited": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
-  "Nothing changes until you apply: apply the checked items with {enter}, discard with {esc}.": [
+  "Nothing changes until you apply": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "Nothing completed in the last 53 weeks.": [
@@ -9290,9 +9304,6 @@
   "Proposed changes": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
-  "Proposed changes ({count})": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
-  ],
   "Provider": [
     "web/src/app/IssueEditor.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -9848,6 +9859,9 @@
   ],
   "Reply and tick": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Reply or ask for changes…": [
+    "web/src/app/assistant/AssistantPage.tsx"
   ],
   "Replying as {name}": [
     "web/src/page/TaskPageScreen.tsx"
@@ -11177,7 +11191,6 @@
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Skills": [
-    "web/src/app/assistant/AskEntry.tsx",
     "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/ui/patterns/AskComposer.tsx"
   ],
@@ -11387,6 +11400,9 @@
   ],
   "Start from": [
     "web/src/app/NewBoardDialog.tsx"
+  ],
+  "Start from a skill": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
   ],
   "Start guide": [
     "web/src/app/FirstDay.tsx",
@@ -12972,6 +12988,9 @@
   "This person is not a member of the workspace. Ask the workspace owner to add them first.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This project": [
+    "web/src/app/assistant/AssistantPanel.tsx"
+  ],
   "This project already has a field named “{name}”.": [
     "web/src/lib/fields.ts"
   ],
@@ -13128,6 +13147,9 @@
   ],
   "This upload would go over your attachment storage.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This view": [
+    "web/src/app/assistant/AssistantPanel.tsx"
   ],
   "This view does not exist (it may have been deleted on another device).": [
     "web/src/app/SavedViewView.tsx"
@@ -13320,6 +13342,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/auditFormat.ts",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/display/DisplayScreen.tsx",
@@ -13953,6 +13976,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -14069,9 +14093,6 @@
   ],
   "Use this address to sign in from now on.": [
     "web/src/app/EmailScreens.tsx"
-  ],
-  "Use this skill": [
-    "web/src/app/assistant/AskEntry.tsx"
   ],
   "Use {coords}": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -14320,9 +14341,6 @@
   "What happens to {title}": [
     "web/src/app/review/CarryOver.tsx"
   ],
-  "What is due today?": [
-    "web/src/app/assistant/AssistantPanelBody.tsx"
-  ],
   "What is the next step?": [
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -14331,6 +14349,9 @@
   ],
   "What may be sent": [
     "web/src/app/assistant/AssistantConsent.tsx"
+  ],
+  "What should we sort out?": [
+    "web/src/app/assistant/AssistantWelcome.tsx"
   ],
   "What the assistant may do": [
     "web/src/app/AssistantsPanel.tsx"
@@ -16374,6 +16395,9 @@
   "{browser} on {os}": [
     "web/src/app/auditFormat.ts"
   ],
+  "{checked} of {count} selected": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
+  ],
   "{choice}, {date}": [
     "web/src/app/ScheduleSheet.tsx"
   ],
@@ -16452,6 +16476,9 @@
   ],
   "{email} · via {groups}": [
     "web/src/app/ShareDialog.tsx"
+  ],
+  "{enter} applies, {esc} discards. Each change shows in its task’s history.": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "{enter} saves · {esc} cancels": [
     "web/src/app/ShareCapture.tsx"
@@ -16788,6 +16815,9 @@
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
+  "{n, plural, one {# selected task} other {# selected tasks}}": [
+    "web/src/app/assistant/AssistantPanel.tsx"
+  ],
   "{n, plural, one {# session} other {# sessions}}": [
     "web/src/app/auditFormat.ts"
   ],
@@ -16890,6 +16920,9 @@
   ],
   "{n, plural, one {Any of # condition} other {Any of # conditions}}": [
     "web/src/app/views/FilterChips.tsx"
+  ],
+  "{n, plural, one {Apply # change} other {Apply # changes}}": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "{n, plural, one {Assistant: # change applied.} other {Assistant: # changes applied.}}": [
     "web/src/app/assistant/useAssistantConversation.ts"

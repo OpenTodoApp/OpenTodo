@@ -86,7 +86,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
 | <kbd>g</kbd> then <kbd>p</kbd> | Process the Inbox one task at a time |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Updates: what changed in your shared projects |
-| <kbd>g</kbd> then <kbd>k</kbd> | Go to Ask: the assistant’s composer and skills (when the assistant is on) |
+| <kbd>g</kbd> then <kbd>k</kbd> | Go to the Assistant page: the conversation and its skills (when the assistant is on) |
 | <kbd>g</kbd> then <kbd>s</kbd> | Go to Settings |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |

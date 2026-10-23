@@ -288,7 +288,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'feed' ? (
             <FeedView />
           ) : route.view === 'ask' ? (
-            <AskScreen role={user.role} />
+            <AskScreen role={user.role} name={user.name} />
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
           ) : route.view === 'month' ? (
@@ -316,7 +316,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
-      {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
+      {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot name={user.name} onPage={route.view === 'ask'} context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
       {palette.loaded && palette.open && <PanelBoundary resetKey={palette.open}><Suspense fallback={null}><CommandPalette user={user} initialMode={palette.mode} onClose={palette.close} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
       <WelcomeDialog user={user} />

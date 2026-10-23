@@ -43,7 +43,7 @@ export function screens(ids, base) {
     { name: 'stats', path: '/stats', ready: (p) => p.locator('[data-testid="stats-panels"]').waitFor() },
     { name: 'completed', path: '/completed', ready: row('Submit expense report') },
     { name: 'filter', path: '/views/new', ready: (p) => p.getByLabel('Filter query').waitFor() },
-    { name: 'ask', path: '/ask', ready: heading('Ask OpenTodo') },
+    { name: 'ask', path: '/ask', ready: heading('Assistant') },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'updates', path: '/updates', ready: heading('Updates') },
     // The old address still opens Updates (ux-overhaul vocabulary).

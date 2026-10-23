@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { AskScreen } from './AskEntry'
 import { seedInbox, withSeed } from '../stories/fixtures'
 
-// Core screen: Ask (`/ask`), OpenSpec change ux-audit-three-widths task 5.6; weekly in
+// Core screen: the Assistant page (`/ask`), OpenSpec change ux-audit-three-widths task 5.6; weekly in
 // the inventory. The workbench has no assistant server, so the screen shows the state
 // it has when the assistant is off or unreachable.
 const meta: Meta = { title: 'Screens/Ask', ...withSeed(seedInbox) }

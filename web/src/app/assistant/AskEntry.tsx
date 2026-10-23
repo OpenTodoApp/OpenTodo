@@ -1,18 +1,18 @@
-// Entry points to the assistant (OpenSpec change assistant-skills, design D4):
-// an Ask action in Today's header and the Ask screen with the composer. Both only
-// collect the request and open the existing panel with it. When the assistant is
-// not available they show nothing. Part of the main chunk; the panel stays lazy.
-import { useAssistantSkills } from '../../lib/assistantSkills'
+// Entry points to the assistant (OpenSpec change assistant-skills, design D4;
+// assistant-surface D1): an Ask action in Today's header that opens the side sheet,
+// and the Assistant page at `/ask`, which holds the conversation itself. When the
+// assistant is not available they show nothing, or why. Part of the main chunk; the
+// sheet and the page's conversation stay in the lazy assistant chunk.
+import { lazy, Suspense } from 'react'
 import { openAssistant, openAssistantWith, useAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
 import type { AccountRole } from '../../lib/types'
 import { Button, PageBody, PageHeader, Tooltip } from '../../ui'
 import { keysOf } from '../../lib/shortcuts'
-import { Card } from '../../ui'
-import { AskComposer, type AskRequest } from '../../ui'
+import type { AskRequest } from '../../ui'
 import { Notice } from '../../ui'
 import { requestSettingsFocus } from '../settingsIndex'
 import { navigate } from '../router'
-import { EncryptionOffHint } from './AssistantPanel'
+import { EncryptionOffHint } from './AssistantPanelBody'
 import { t, msg } from '../../lib/i18n'
 
 export type AskMode = 'composer' | 'owner-hint' | 'encrypted' | 'none'
@@ -32,7 +32,7 @@ export function ask(r: AskRequest): void {
 /**
  * Today's page action (ux-overhaul, in-app-assistant "Ask composer"): one "Ask"
  * button in the header when the assistant is available, nothing otherwise. The
- * composer and the example cards live on the Ask screen.
+ * composer and the starter skills live on the Assistant page.
  */
 /** Whether Today offers Ask (the composer is available to this account). */
 export function useTodayAsk(role?: AccountRole): boolean {
@@ -54,33 +54,23 @@ export function TodayAskAction({ role }: { role?: AccountRole }) {
 
 const ENCRYPTED = msg('The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.')
 
-/** The Ask screen (`/ask`, `g` then `k`): the composer and every skill. */
-export function AskScreen({ role }: { role?: AccountRole }) {
+// The conversation on the page is in the assistant's own chunk, like the sheet.
+const AssistantPage = lazy(() => import('./AssistantPage'))
+
+/** The Assistant page (`/ask`, `g` then `k`): the conversation itself, or why the assistant is not available. */
+export function AskScreen({ role, name = '' }: { role?: AccountRole; name?: string }) {
   const status = useAssistantStatus()
   const mode = askMode(status, role)
-  const skills = useAssistantSkills(mode === 'composer')
+  if (mode === 'composer') {
+    return (
+      <Suspense fallback={<PageBody width="list" data-ask-screen><PageHeader title={t('Assistant')} help="ask" /></PageBody>}>
+        <AssistantPage name={name} />
+      </Suspense>
+    )
+  }
   return (
     <PageBody width="list" data-ask-screen>
-      <PageHeader title={t('Ask OpenTodo')} help="ask" />
-      <p className="mb-4 text-meta text-muted">{t('Ask about your tasks, or let a skill do a common job. Changes are proposed for you to review; nothing changes until you apply them.')}</p>
-      {mode === 'composer' && (
-        <>
-          <AskComposer skills={skills} onAsk={ask} examples={false} autoFocus />
-          <h2 className="mb-2 mt-6 text-body font-semibold">{t('Skills')}</h2>
-          <ul className="grid gap-3 sm:grid-cols-2" aria-label={t('Skills')}>
-            {skills.map((s) => (
-              <li key={s.id}>
-                <Card padding="none" className="flex h-full flex-col gap-2 p-4">
-                  <h3 className="text-body font-medium text-default">{s.name}</h3>
-                  <p className="flex-1 text-meta text-muted">{s.description}</p>
-                  <p className="text-meta text-faint">{t('For example: “{example}”', { example: s.example })}</p>
-                  <div><Button variant="secondary" size="sm" onClick={() => ask({ text: '', skill: s.id, send: false })}>{t('Use this skill')}</Button></div>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      <PageHeader title={t('Assistant')} help="ask" />
       {mode === 'encrypted' && <Notice tone="info"><span data-ask-unavailable>{t(ENCRYPTED)}</span> <EncryptionOffHint /></Notice>}
       {(mode === 'owner-hint' || mode === 'none') && (
         <Notice tone="info">

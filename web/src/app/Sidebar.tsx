@@ -587,7 +587,7 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     { id: 'rules', route: { view: 'rules' }, label: t('Rules'), icon: 'zap' },
     { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
     { id: 'filter', route: { view: 'filter' }, label: t('New view'), icon: 'filter' },
-    ...(o.ask ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Ask'), icon: 'message-circle' as IconName }] : []),
+    ...(o.ask ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Assistant'), icon: 'message-circle' as IconName }] : []),
   ]
 }
 
