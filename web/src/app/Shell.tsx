@@ -310,7 +310,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         )}
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
-      {phoneChrome && <TabBar route={route} onSearch={openPalette} onMore={() => setSidebarOpen(true)} moreOpen={sidebarOpen} minimised={minimised} />}
+      {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} />}
       {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} onClick={() => setAddOpen((v) => !v)} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
@@ -359,19 +359,26 @@ function SidebarResizer({ width }: { width: number }) {
   )
 }
 
-/** Below 768 px: the menu button, the page's title and its actions (app-shell "No desktop top bar"), from the page-bar store. */
+/**
+ * Below 768 px: the menu button, the page's title and its actions (app-shell "No
+ * desktop top bar"), from the page-bar store. A day page keeps its title in the page,
+ * so its bar holds only the menu button and the actions, without a hairline; a page
+ * with Back (a task, a nested page) puts Back where the menu button is (precision-phone D1).
+ */
 function PhoneBar({ onMenu }: { onMenu: () => void }) {
   const bar = usePageBar()
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   if (desktop) return null
+  const day = !!bar?.day
   return (
-    <header className="flex min-h-12 items-center gap-1 border-b border-default px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden" data-phone-bar>
-      <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />
-      {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />}
+    <header className={`flex min-h-12 items-center gap-1 px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden ${day ? '' : 'border-b border-soft'}`} data-phone-bar data-phone-bar-day={day || undefined}>
+      {bar?.back
+        ? <IconButton icon="chevron-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />
+        : <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />}
       <div className="min-w-0 flex-1">
-        <PageBarTitle>{bar?.title}</PageBarTitle>
+        {!day && <PageBarTitle>{bar?.title}</PageBarTitle>}
         {/* One line, so the bar keeps its height (audit M12): a plain subtitle keeps its full text reachable when cut; controls (the Inbox's planned line, a project's members) cut themselves and are named by their content (ux-fixes-phone D2). */}
-        {bar?.subtitle && (typeof bar.subtitle === 'string'
+        {!day && bar?.subtitle && (typeof bar.subtitle === 'string'
           ? <TruncatedText as="p" text={bar.subtitle} className="block text-meta text-muted" data-phone-subtitle="" />
           : <div className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-meta text-muted" data-phone-subtitle>{bar.subtitle}</div>)}
       </div>

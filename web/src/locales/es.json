@@ -5249,5 +5249,6 @@
   "{checked} of {count} selected": "{checked} de {count} seleccionados",
   "{enter} applies, {esc} discards. Each change shows in its task’s history.": "{enter} aplica, {esc} descarta. Cada cambio aparece en el historial de su tarea.",
   "{n, plural, one {# selected task} other {# selected tasks}}": "{n, plural, one {# tarea seleccionada} other {# tareas seleccionadas}}",
-  "{n, plural, one {Apply # change} other {Apply # changes}}": "{n, plural, one {Aplicar # cambio} other {Aplicar # cambios}}"
+  "{n, plural, one {Apply # change} other {Apply # changes}}": "{n, plural, one {Aplicar # cambio} other {Aplicar # cambios}}",
+  "More properties": "Más propiedades"
 }

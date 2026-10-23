@@ -5,7 +5,9 @@
 // toggle and the actions, then the title at the display step, then an optional
 // briefing; every other page has one compact 46 px row: the toggle, the title at the
 // header step, the lead line beside it, the actions, the overflow menu and Help. The
-// header stays visible while the content scrolls.
+// header stays visible while the content scrolls. Below 768 px the shell's bar takes
+// the title and the actions, except on a day page, whose title, date and briefing stay
+// in the page under the bar and scroll with it (precision-phone D1).
 import { useEffect, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
@@ -120,17 +122,20 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
   // (menus, dialogs, their shortcuts) are mounted once.
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   const ownRow = level !== 1 || desktop
+  const day = kind === 'day' && level === 1
+  // A day page on a phone keeps its title, date and briefing in the page, under a bar
+  // that holds only the menu button and the actions (precision-phone D1).
+  const phoneDay = day && !ownRow
   // The bar takes the title, Back, the overflow menu, the page menu and Help; the
   // page's own actions stay in the page as a wrapping row, so nothing is clipped at 360 px,
   // unless the page fitted them into the bar's two slots (phone-v2 D1).
   useEffect(() => {
     if (ownRow) return
-    setPageBar({ title, subtitle: subtitle ?? meta, overflow, menu, help, back, actions: barActions ? actions : undefined })
+    setPageBar({ title, subtitle: subtitle ?? meta, overflow, menu, help, back, actions: barActions ? actions : undefined, day: phoneDay || undefined })
     return () => setPageBar(null)
   })
   // Everything went to the phone bar: no empty header row in the page.
-  if (!ownRow && (!actions || barActions) && !children) return null
-  const day = kind === 'day' && level === 1
+  if (!ownRow && !phoneDay && (!actions || barActions) && !children) return null
   const backLink = back && (
     <a href={back.href ?? '#'} className={`ui-btn ui-btn--ghost ui-btn--sm -ml-2${back.hideFrom === 'lg' ? ' lg:hidden' : ''}`} data-page-back
       onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); back.onClick() }}>
@@ -142,11 +147,20 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
     : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE[day ? 'day' : 'tool']} outline-none`} data-page-title>{title}</H>
   // The lead line: beside a day page's title at the prose step, beside a tool page's title at the metadata step;
   // there it takes the room that is left (basis 0), so a narrow head wraps its actions under the title, never sideways.
-  const lead = ownRow && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'flex-1 basis-0 truncate text-meta'}`} data-page-lead data-page-meta>{meta}</div>
+  const lead = (ownRow || phoneDay) && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'flex-1 basis-0 truncate text-meta'}`} data-page-lead data-page-meta>{meta}</div>
   const toolsEnd = <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} /></div>
   return (
     <header data-page-header data-page-head={day ? 'day' : 'tool'} data-testid={testId}
-      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas px-4 md:-mx-8 md:bg-surface md:px-8' : ''} ${ownRow || (actions && !barActions) ? (day ? 'mb-3 pb-3' : 'mb-2 border-b border-soft') : ''} ${level === 1 ? (ownRow ? (day ? 'pt-2' : '') : '') : 'pt-5'}`}>
+      className={`${sticky && !phoneDay ? 'sticky top-0 z-10 -mx-4 bg-canvas px-4 md:-mx-8 md:bg-surface md:px-8' : ''} ${ownRow || phoneDay || (actions && !barActions) ? (day ? 'mb-3 pb-3' : 'mb-2 border-b border-soft') : ''} ${level === 1 ? (ownRow || phoneDay ? (day ? 'pt-2' : '') : '') : 'pt-5'}`}>
+      {/* The phone's day head scrolls with the list; the bar above it stays (precision-phone D1). */}
+      {phoneDay && <>
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1" data-page-header-row>
+          {leading}
+          {heading}
+          {lead}
+        </div>
+        {briefing && <div className="mt-2 text-prose text-muted" data-page-briefing>{briefing}</div>}
+      </>}
       {!ownRow && actions && !barActions && <div className="flex flex-wrap items-center gap-1 pt-2" data-page-actions>{actions}</div>}
       {ownRow && day && <>
         <div className="flex min-h-9 items-center gap-2" data-page-top-row>

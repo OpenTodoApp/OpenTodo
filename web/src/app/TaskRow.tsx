@@ -194,13 +194,23 @@ export function rowExtra(labels: boolean, deadline: boolean, progress: boolean):
   return labels ? 'labels' : deadline ? 'deadline' : progress ? 'progress' : null
 }
 
+/** The one cell a phone row keeps (precision-phone D2): the date, else the deadline, else the assignee, else the project's dot. */
+export type PhoneCell = 'date' | 'extra' | 'assignee' | 'project' | null
+
+export function phoneCell(c: { date: boolean; deadline: boolean; assignee: boolean; project: boolean }): PhoneCell {
+  return c.date ? 'date' : c.deadline ? 'extra' : c.assignee ? 'assignee' : c.project ? 'project' : null
+}
+
 /**
  * A list row's properties (precision-rows D1, D3): the cells of the column in their
  * order, then the facts the column does not hold. Under 40 rem of row width the two
- * wrappers are not boxes, so everything reads as one muted run under the title.
+ * wrappers are not boxes, so everything reads as one muted run under the title; on a
+ * phone the row is one line that keeps a single cell (`data-row-phone`, precision-phone D2).
  */
 function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaValues; extra: RowExtra; progress?: RowCount; projectColor?: string; projectColumn: boolean }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
+  const phone = phoneCell({ date: !!(m.date || m.hint), deadline: extra === 'deadline', assignee: !!m.assignee, project: !!m.project })
+  const keep = (cell: Exclude<PhoneCell, null>) => (phone === cell ? { 'data-row-phone': '' } : {})
   const deadline = m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" data-row-item="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>
   const rest = [
     m.sample && <ToneText key="sample" data-sample="" data-row-item="">{t('Sample')}</ToneText>,
@@ -216,22 +226,22 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
     <div className="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5" data-row-meta="row">
       <span className="contents" data-row-props={projectColumn ? 'project' : ''}>
         {(m.date || m.hint) && (
-          <span data-row-cell="date" data-row-item="" className="inline-flex min-w-0 items-center gap-1">
+          <span data-row-cell="date" data-row-item="" {...keep('date')} className="inline-flex min-w-0 items-center gap-1">
             {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
             {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
           </span>
         )}
         {m.project && (
-          <span data-row-cell="project" data-row-item="" className="inline-flex min-w-0 items-center gap-1 text-meta text-muted">
+          <span data-row-cell="project" data-row-item="" {...keep('project')} data-dot={projectColor ? '' : undefined} className="inline-flex min-w-0 items-center gap-1 text-meta text-muted">
             {projectColor && <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: projectColor }} />}
             {m.project}
           </span>
         )}
         {extra === 'labels' && <span data-row-cell="extra" data-row-labels="" className="inline-flex max-w-full min-w-0 items-center">{m.labels}</span>}
-        {extra === 'deadline' && <span data-row-cell="extra" data-row-item="" className="inline-flex min-w-0 items-center">{deadline}</span>}
+        {extra === 'deadline' && <span data-row-cell="extra" data-row-item="" {...keep('extra')} className="inline-flex min-w-0 items-center">{deadline}</span>}
         {extra === 'progress' && progress && <span data-row-cell="extra" data-row-item="" className="inline-flex min-w-0 items-center"><ToneText icon="circle-check-big" data-progress="" label={progress.label}>{progress.text}</ToneText></span>}
         {m.estimate && <span data-row-cell="estimate" data-row-item="" className="inline-flex min-w-0 items-center"><ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText></span>}
-        {m.assignee && <span data-row-cell="assignee" data-row-item="" data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
+        {m.assignee && <span data-row-cell="assignee" data-row-item="" data-row-assignee="" {...keep('assignee')} className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
       </span>
       {rest.length > 0 && <span className="contents" data-row-rest>{rest}</span>}
     </div>

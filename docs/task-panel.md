@@ -30,6 +30,8 @@ Beside the notes (under them on a narrow screen) are the task's facts, in the wo
 - **Labels**.
 - **Project**: the project, the section, the parent task and where the task came from.
 
+On a phone the facts are one card of rows: those with a value, **Do** and **Deadline**, then **More properties** for the rest.
+
 A fact without a value reads as what sets it, such as **Set a deadline** or **Add a place**. Click a fact, or <kbd>Tab</kbd> to it and press <kbd>Enter</kbd>, to open its editor next to it; click it again or press <kbd>Esc</kbd> to close it. Every editor has **Clear** and **Done**. The **When** editor shows one part at a time (**Do on**, **Start**, **Deadline**, **Repeat**, **Reminders**), starting with the one you clicked; **This Evening** and the time zone are in **Do on**. Press <kbd>1</kbd> to <kbd>4</kbd> anywhere on the page for the priority. See [Dates and times](dates-and-times.md), [Deadlines and start dates](deadlines-and-start-dates.md) and [Assign tasks](sharing.md#assign-tasks).
 
 ## Viewers

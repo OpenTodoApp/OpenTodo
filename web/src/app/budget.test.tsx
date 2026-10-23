@@ -287,7 +287,9 @@ describe('on a phone (390 px)', () => {
     for (const route of [{ view: 'inbox' } as const, { view: 'today' } as const, { view: 'project', id: project } as const]) {
       const r = await render(<TaskListView route={route} />)
       await waitFor(() => r.container.querySelectorAll('[data-task-id]').length > 0)
-      const rows = chromeRows(r.container)
+      // Today's head (title, date, briefing) is its header, in the page on a phone (precision-phone D1).
+      const rows = chromeRows(r.container).filter((e) => !e.matches('[data-page-head="day"]'))
+      if (route.view === 'today') expect(r.container.querySelector('[data-list-page] > [data-page-head="day"] h1')?.textContent).toBe('Today')
       expect(rows.map((e) => e.outerHTML.slice(0, 120)), route.view).toEqual([rows[0].outerHTML.slice(0, 120)])
       expect(rows[0].querySelector('[role="combobox"]'), route.view).toBeTruthy()
       await r.unmount()
