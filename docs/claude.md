@@ -3,7 +3,7 @@ title: Use OpenTodo from Claude Code
 summary: Install the OpenTodo plugin in Claude Code to connect Claude to your own server, with skills that teach it to read and plan your tasks safely.
 audience: developer
 section: Integrations
-specs: [mcp-server]
+specs: [mcp-server, claude-plugin]
 screens: []
 order: 41
 ---
