@@ -139,7 +139,7 @@ describe('Add mode (5.2)', () => {
     expect(mode()).toBe('add')
   })
 
-  it('Add and open: Shift+Enter creates the task, closes the bar and opens the task in its project', async () => {
+  it('Add and open: Shift+Enter creates the task, closes the bar and opens the task as its page (task-full-page)', async () => {
     const work = await createProject({ name: 'Work' })
     navigate({ view: 'settings' })
     const onClose = vi.fn()
@@ -151,7 +151,7 @@ describe('Add mode (5.2)', () => {
     await waitFor(() => onClose.mock.calls.length > 0)
     const [task] = await db.tasks.toArray()
     expect(task).toMatchObject({ title: 'Draft the offer', project_id: work })
-    expect(location.pathname).toBe(`/project/${work}`)
+    expect(location.pathname).toBe(`/task/${task.id}`)
     // Opened, not announced: no toast.
     expect(q('[data-bulk-toast]')).toBeNull()
   })

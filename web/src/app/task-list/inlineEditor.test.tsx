@@ -8,7 +8,7 @@ import { db } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { flush, mockFetch, noPublicLinks, render } from '../../ui/test-utils'
-import { panelTaskId, setPanelTaskId } from '../panel'
+import { openedTask, resetTaskPage } from '../taskPage.testkit'
 import { setRowClick } from '../rowClick'
 import { TaskListView } from '../TaskListView'
 
@@ -24,7 +24,7 @@ beforeEach(async () => {
   await db.open()
   resetDeviceId()
   localStorage.clear()
-  setPanelTaskId(null)
+  resetTaskPage()
   setDateTime({ date_format: 'day-month', time_format: '24h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })
 })
 afterEach(() => {
@@ -59,18 +59,18 @@ async function list(route: { view: 'inbox' } | { view: 'project'; id: string } =
 }
 
 describe('inline title editing', () => {
-  it('a click edits the title in place; Enter saves without opening the panel', async () => {
+  it('a click edits the title in place; Enter saves without opening the task', async () => {
     const id = await createTask({ title: 'Renew pasport' })
     const r = await list()
     await clickTitle(r.container, 'Renew pasport')
     await waitFor(() => !!editorTitle())
-    expect(panelTaskId()).toBeNull()
+    expect(openedTask()).toBeNull()
     expect(r.container.querySelector('[data-edit-bar]')).toBeTruthy()
     await typeInto(editorTitle()!, 'Renew passport')
     await key(editorTitle()!, 'Enter')
     await waitFor(async () => (await db.tasks.get(id))!.title === 'Renew passport')
     await waitFor(() => !editorTitle())
-    expect(panelTaskId()).toBeNull()
+    expect(openedTask()).toBeNull()
     expect(r.container.querySelector('[data-task-id][aria-current]')).toBeTruthy()
     await r.unmount()
   })
@@ -88,13 +88,13 @@ describe('inline title editing', () => {
     await r.unmount()
   })
 
-  it('Shift+Enter saves and opens the panel', async () => {
+  it('Shift+Enter saves and opens the task page', async () => {
     const id = await createTask({ title: 'Plan' })
     const r = await list()
     await clickTitle(r.container, 'Plan')
     await waitFor(() => !!editorTitle())
     await key(editorTitle()!, 'Enter', { shiftKey: true })
-    await waitFor(() => panelTaskId() === id)
+    await waitFor(() => openedTask() === id)
     await r.unmount()
   })
 
@@ -113,31 +113,22 @@ describe('inline title editing', () => {
     await r.unmount()
   })
 
-  it('opens the panel instead with the panel already open, on a coarse pointer, or with "Open details"', async () => {
+  it('opens the task page instead on a coarse pointer, or with "Open details"', async () => {
     const a = await createTask({ title: 'Alpha' })
     const b = await createTask({ title: 'Beta' })
-    let r = await list()
-    setPanelTaskId(a)
-    await flush()
-    await clickTitle(r.container, 'Beta')
-    await waitFor(() => panelTaskId() === b)
-    expect(editorTitle()).toBeNull()
-    await r.unmount()
-    setPanelTaskId(null)
-
     coarse = true
-    r = await list()
+    let r = await list()
     await clickTitle(r.container, 'Alpha')
-    await waitFor(() => panelTaskId() === a)
+    await waitFor(() => openedTask() === a)
     expect(editorTitle()).toBeNull()
     await r.unmount()
-    setPanelTaskId(null)
+    resetTaskPage()
     coarse = false
 
     setRowClick('open')
     r = await list()
     await clickTitle(r.container, 'Beta')
-    await waitFor(() => panelTaskId() === b)
+    await waitFor(() => openedTask() === b)
     expect(editorTitle()).toBeNull()
     setRowClick('edit')
     await r.unmount()
@@ -155,7 +146,7 @@ describe('inline title editing', () => {
 })
 
 describe('the contextual bar', () => {
-  it('shows Date, Priority, Labels, Project and Open details; Open details saves and opens the panel', async () => {
+  it('shows Date, Priority, Labels, Project and Open details; Open details saves and opens the task page', async () => {
     const id = await createTask({ title: 'Call the bank' })
     const r = await list()
     await clickTitle(r.container, 'Call the bank')
@@ -165,7 +156,7 @@ describe('the contextual bar', () => {
     expect(bar.querySelector('button[aria-label^="Labels"]')).toBeTruthy()
     expect(bar.querySelector('[data-edit-project] button')).toBeTruthy()
     await act(async () => { bar.querySelector<HTMLButtonElement>('[data-open-details]')!.click() })
-    await waitFor(() => panelTaskId() === id)
+    await waitFor(() => openedTask() === id)
     await r.unmount()
   })
 
@@ -180,7 +171,7 @@ describe('the contextual bar', () => {
     await waitFor(() => !!document.querySelector('[data-facet-editor] [data-choice="tomorrow"]'))
     await act(async () => { document.querySelector<HTMLButtonElement>('[data-facet-editor] [data-choice="tomorrow"]')!.click() })
     await waitFor(async () => (await db.tasks.get(id))!.due?.date === '2026-10-15')
-    expect(panelTaskId()).toBeNull()
+    expect(openedTask()).toBeNull()
     expect(editorTitle()).toBeTruthy()
     await r.unmount()
   })

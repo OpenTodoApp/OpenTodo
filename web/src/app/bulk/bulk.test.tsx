@@ -76,17 +76,16 @@ describe('ticking from the keyboard (2.1, 2.4)', () => {
     await waitFor(() => bar() === '2 selected')
   })
 
-  it('Escape closes the panel first, then clears the ticks', async () => {
-    await inbox('One', 'Two')
+  it('Escape clears the ticks; Enter opens the selected task as its page (task-full-page)', async () => {
+    const { ids } = await inbox('One', 'Two')
     await key(document.body, 'j')
     await key(document.body, 'x')
-    await key(document.body, 'Enter')
-    await waitFor(() => !!document.querySelector('aside[data-detail-for]'))
-    await key(document.body, 'Escape')
-    await waitFor(() => !document.querySelector('aside[data-detail-for]'))
     expect(bar()).toBe('1 selected')
     await key(document.body, 'Escape')
     await waitFor(() => bar() === null)
+    await key(document.body, 'Enter')
+    await waitFor(() => ids.some((id) => location.pathname === `/task/${id}`))
+    expect(document.querySelector('aside[data-detail-for]')).toBeNull()
   })
 })
 

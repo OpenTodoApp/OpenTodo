@@ -60,7 +60,7 @@
   "layoutCheckReason": "the task route opens the list with the panel; the layout check reaches the panel as the task-detail overlay",
   "story": "Task/Panel",
   "path": "/task/{quotes}",
-  "ready": "aside[data-detail-for]"
+  "ready": "[data-detail-for]"
  },
  {
   "id": "task-panel",

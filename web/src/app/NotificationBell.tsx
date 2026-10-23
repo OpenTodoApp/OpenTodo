@@ -4,7 +4,7 @@ import { getProject, useNotifications, useTask } from '../lib/localData'
 import { markTaskNotificationsRead } from '../lib/notifications'
 import type { AppNotification, PagePayload } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
-import { openTask } from './signals'
+import { openTaskPage } from './taskTrail'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 
@@ -44,13 +44,10 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
     await markTaskNotificationsRead(n.payload.taskId)
     // A task page's reply or completion opens the task itself (task-pages).
     if ('pageId' in n.payload) return navigate({ view: 'task', id: n.payload.taskId })
+    // The task opens as its page; Esc goes to its project, or to Assigned to me (task-full-page).
     const project = n.payload.projectId ? await getProject(n.payload.projectId) : undefined
     const target: Route = project && !project.deleted_at ? { view: 'project', id: project.id } : { view: 'assigned' }
-    if (routePath(target) === location.pathname) openTask.request(n.payload.taskId)
-    else {
-      openTask.set(n.payload.taskId)
-      navigate(target)
-    }
+    openTaskPage(n.payload.taskId, { from: routePath(target) })
   }
 
   return (

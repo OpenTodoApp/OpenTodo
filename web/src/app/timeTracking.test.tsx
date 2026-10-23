@@ -11,7 +11,7 @@ import { setCurrentUserId } from '../lib/sharing'
 import { logTime, startTracking } from '../lib/timeEntries'
 import type { Task } from '../lib/types'
 import { click, flush, key, render, spokenText, visibleText } from '../ui/test-utils'
-import { PanelHost } from './PanelHost'
+import { resetTaskPage, TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
@@ -23,6 +23,7 @@ const NOW = new Date(2026, 9, 14, 12, 0)
 const original = window.matchMedia
 let width = 1280
 beforeEach(async () => {
+  resetTaskPage()
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(NOW)
   useDatabase(`tracking-${Date.now()}-${n++}`)
@@ -79,7 +80,7 @@ describe('Chip with tracked and estimate (task-list-presentation)', () => {
 describe('the y key in Today (time-tracking "Start and stop from the web app")', () => {
   it('Keyboard start: y starts an entry, the chip reads 0m / 1h and the indicator names the task; y again stops it', async () => {
     const id = await createTask({ title: 'Write the report', due: { date: '2026-10-14' }, estimate_minutes: 60 })
-    const r = await render(<><TaskListView route={{ view: 'today' }} /><TrackingIndicator /><PanelHost /></>)
+    const r = await render(<><TaskListView route={{ view: 'today' }} /><TrackingIndicator /><TaskPageHost /></>)
     await waitFor(() => r.container.textContent!.includes('Write the report'))
     await key(document.body, 'j')
     await key(document.body, 'y')
@@ -124,7 +125,7 @@ describe('the running indicator', () => {
   it('Indicator on a desktop: 1:05 · the title, Stop, and activation opens the task', async () => {
     const id = await createTask({ title: 'Write the report' })
     await startTracking(id, { now: NOW.getTime() - 65 * 60000 })
-    const r = await render(<><TrackingIndicator /><PanelHost /></>)
+    const r = await render(<><TrackingIndicator /><TaskPageHost /></>)
     await waitFor(() => !!r.container.querySelector('[data-tracking-text]'))
     expect(visibleText(r.container.querySelector('[data-tracking-text]')!)).toBe('1:05 · Write the report')
     const open = r.container.querySelector<HTMLButtonElement>('[data-tracking-open]')!

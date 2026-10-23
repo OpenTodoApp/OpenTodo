@@ -70,7 +70,7 @@ async function context(theme, device, opts = {}) {
 const settle = (p, ms = 600) => p.waitForTimeout(ms)
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const row = (p, title) => p.getByRole('button', { name: new RegExp('^' + esc(title)) }).first()
-const detail = (p) => p.locator('aside[data-detail-for]')
+const detail = (p) => p.locator('[data-detail-for]')
 const quickAddInput = (p) => p.locator('input[aria-label="Add a task"]').first()
 async function go(p, path, ready) { await p.goto(base + path); if (ready) await ready(); await settle(p, 800) }
 async function openTask(p, title) { await row(p, title).click(); await detail(p).waitFor(); await settle(p, 500) }

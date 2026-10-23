@@ -28,8 +28,11 @@ export const MAX_SCROLLERS = budget.MAX_SCROLLERS
 export const MAX_CHROME_ROWS = budget.MAX_CHROME_ROWS
 /** The project page keeps its header, layout toggle and quick add until task 4.4 moves the toggle into the header. */
 const PROJECT_CHROME_ALLOWANCE = budget.PROJECT_CHROME_ALLOWANCE
-/** An empty task's panel: the breadcrumb, Do on, Priority and Add, never a form of empty rows. */
+/** An empty task: at most seven facts with a value; the unset ones are quiet actions, never a form of empty fields. */
 export const MAX_EMPTY_TASK_ITEMS = budget.MAX_EMPTY_TASK_ITEMS
+/** The task page's facts column (task-full-page D1): at most four named groups of at most six rows. */
+export const MAX_FACT_GROUPS = budget.MAX_FACT_GROUPS
+export const MAX_FACTS_PER_GROUP = budget.MAX_FACTS_PER_GROUP
 /** A row in Today: at most five items in its metadata line; the time column and the quiet trailing group are counted apart (rows-v2 D10). */
 export const MAX_ROW_META_ITEMS = budget.MAX_ROW_META_ITEMS
 
@@ -89,7 +92,7 @@ describe('scroll regions', () => {
       await waitFor(() => r.container.querySelectorAll('[data-task-id]').length > 0)
       const row = r.container.querySelector<HTMLElement>('[data-task-id] button.min-w-0')!
       row.click()
-      await waitFor(() => !!document.querySelector('aside[data-detail-for]'))
+      await waitFor(() => !!document.querySelector('[data-detail-for]'))
       const found = scrollers(document.body)
       expect(found.length, `${route.view}: ${found.map((e) => e.className).join(' | ')}`).toBeLessThanOrEqual(MAX_SCROLLERS)
     }
@@ -207,16 +210,19 @@ describe('chrome above the first task', () => {
 })
 
 describe('visible properties', () => {
-  it('an empty task shows at most seven items in the panel', async () => {
+  it('an empty task page shows at most seven facts with a value, in at most four groups of at most six rows', async () => {
     await createTask({ title: 'Blank' })
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => r.container.textContent!.includes('Blank'))
     r.container.querySelector<HTMLElement>('[data-task-id] button.min-w-0')!.click()
-    await waitFor(() => !!document.querySelector('aside[data-detail-for] [data-facets]'))
-    // Facet lines plus the Add control (task-panel-facets D6).
-    const items = document.querySelectorAll('aside[data-detail-for] [data-facet], aside[data-detail-for] button[aria-label="Add a property"]')
-    expect(items.length).toBeLessThanOrEqual(MAX_EMPTY_TASK_ITEMS)
+    await waitFor(() => !!document.querySelector('[data-task-page] [data-facts]'))
+    const groups = [...document.querySelectorAll('[data-task-page] [data-fact-group]')]
+    expect(groups.length).toBeLessThanOrEqual(MAX_FACT_GROUPS)
+    for (const g of groups) expect(g.querySelectorAll('[data-fact]').length, g.getAttribute('data-fact-group')!).toBeLessThanOrEqual(MAX_FACTS_PER_GROUP)
+    // Facts with a value; the unset ones read as quiet actions ("Set a deadline").
+    const valued = [...document.querySelectorAll('[data-task-page] [data-fact] [data-part]')].filter((el) => !el.classList.contains('text-faint'))
+    expect(valued.length, valued.map((e) => e.textContent).join(' | ')).toBeLessThanOrEqual(MAX_EMPTY_TASK_ITEMS)
     await r.unmount()
   })
 

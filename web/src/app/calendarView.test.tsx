@@ -204,12 +204,12 @@ describe('Week on a phone (ux-overhaul, time-blocking "Week on a phone")', () =>
     expect(rows[0]).toContain('Loose one')
     expect(rows[1]).toContain('Timed one')
     expect(rows[1]).toMatch(/9:30|09:30/)
-    // Tapping selects, Enter opens the task in the panel.
+    // Tapping selects, Enter opens the task as its page.
     const timed = r.container.querySelector<HTMLButtonElement>('[data-agenda-day="2026-10-15"] [data-agenda-task]:last-child')!
     await click(timed)
     expect(timed.className).toContain('ring-accent')
     await key(timed, 'Enter')
-    await waitFor(() => panelOccupant()?.kind === 'task')
+    await waitFor(() => location.pathname.startsWith('/task/'))
     await r.unmount()
   })
 })

@@ -730,6 +730,8 @@ body {
 /* WebKit lets a long option label in a native select paint past the box, and the
    GTK port (Linux) ignores overflow on it; paint containment keeps it inside. */
 select.ui-input { @apply truncate; contain: layout paint; }
+/* The composer frame draws the box and the focus ring; the field inside it is bare (task-full-page D6). */
+[data-composer-frame] .ui-input { @apply rounded-none border-0 bg-transparent px-0 py-1 focus:ring-0; }
 .ui-kbd { @apply whitespace-nowrap rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
    are inlined instead of importing its stylesheet. */

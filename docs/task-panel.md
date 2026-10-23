@@ -1,34 +1,36 @@
 ---
-title: The task panel
-summary: Everything in a task's panel: the title and its menu, the notes, the four lines of properties and the Add menu, what a viewer can do, and how to close it.
+title: The task page
+summary: Everything on a task's page: the breadcrumb and the next and previous task, the title and its menu, the notes, the facts and how to set them, what a viewer can do, and how to go back.
 audience: user
 section: Guides
 specs: [task-management, entity-pickers]
 screens: [task-panel]
 order: 11
 ---
-# The task panel
+# The task page
 
-<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right: the checkbox and title at the top, the notes, then four short lines for where the task lives, when it is due, its priority and labels, and who it waits for, with Add under them."></picture>
+<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A task open as its page: the breadcrumb and 2 / 5 at the top, the title, the notes and the subtasks on the left, and its facts on the right under Schedule, Details, Labels and Project."></picture>
 
-Select a task with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd> to open its panel; a click edits the title in place, and its arrow (or <kbd>Shift</kbd>+<kbd>Enter</kbd>) opens the panel. Every change is saved as you make it; there is no Save button. Click empty space or press <kbd>Esc</kbd> to let go.
+Select a task with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd> to open its page; a click edits the title in place, and its arrow (or <kbd>Shift</kbd>+<kbd>Enter</kbd>) opens the page. Every change is saved as you make it; there is no Save button.
 
-## The top of the panel
+## Moving around
 
-The top of the panel stays in view while you scroll: the task's **checkbox**, its **title** (edit it in place; a long one wraps onto two lines), a **⋯** menu with **Copy link**, **Expand**, **Attach**, **Delete** and the less frequent actions, and the **×** that closes it. Below is **Notes**: one quiet line until you click it, then an editor (see [Write notes](notes-and-subtasks.md#write-notes)). Long notes show about eight lines and **Show all**.
+The top of the page says where the task lives (its project, and its parent for a subtask) and where it sits in the list you opened it from, such as **2 / 5**. Press <kbd>j</kbd> or <kbd>k</kbd> (or the ↓ and ↑ buttons) for the next or previous task of that list, and <kbd>Esc</kbd> or **×** to go back to the list, with the task selected where it was. On a phone, **Back** in the bar does the same. Opened from a reminder, a notification or the search bar, the page goes back to the task's own list. **Process the Inbox** is the one place a task opens beside the card instead, from 1024 px wide.
 
-## The four lines
+## The top of the page
 
-Then come the task's properties as four short lines, in the words the list uses:
+The **⋯** menu holds **Copy link**, **Attach**, **Delete** and the less frequent actions. Under the breadcrumb are the task's **checkbox** and its **title** (edit it in place), then **Notes**: one quiet line until you click it, then an editor (see [Write notes](notes-and-subtasks.md#write-notes)).
 
-- **Where**: the project, then the section (`Work › Doing`), "under" the parent for a subtask, and where the task came from.
-- **When**: the date and time ("Tomorrow 09:00"), then evening, the repeat rule, the deadline, the start ("from" or "since") and the reminders. "Not scheduled" when there is none.
-- **How**: the priority, the estimate and the labels.
-- **Who**, when set: the assignee, what the task waits for, and how many tasks wait for it.
+## The facts
 
-Click a part, or <kbd>Tab</kbd> to it and press <kbd>Enter</kbd>, to open its editor next to it; click it again or press <kbd>Esc</kbd> to close it. Every editor has **Clear** and **Done**. The **When** editor shows one part at a time (**Do on**, **Start**, **Deadline**, **Repeat**, **Reminders**), starting with the one you clicked; **This Evening** and the time zone are in **Do on**. To set something that isn't shown, open **Add**: it lists the rest under Where, When, How and Who with their shortcuts, and **Choose files…** and **Add a link…** to attach. Press <kbd>1</kbd> to <kbd>4</kbd> anywhere in the panel for the priority. See [Dates and times](dates-and-times.md), [Deadlines and start dates](deadlines-and-start-dates.md) and [Assign tasks](sharing.md#assign-tasks).
+Beside the notes (under them on a narrow screen) are the task's facts, in the words the list uses:
 
-Below the lines: subtasks, attachments and the Comments, Activity and History tabs, described in [Notes, subtasks and dependencies](notes-and-subtasks.md), and **Time**, the task's time entries (see [Time tracking](time-tracking.md)). The tabs stay in view while you read a long thread.
+- **Schedule**: **Do** (the date and time, and evening), **Start**, **Deadline**, **Reminder** and **Repeat**.
+- **Details**: **Priority**, **Estimate**, **Assignee**, **Blocked by**, **Blocks** (when something waits for this task) and **Location**.
+- **Labels**.
+- **Project**: the project, the section, the parent task and where the task came from.
+
+A fact without a value reads as what sets it, such as **Set a deadline** or **Add a place**. Click a fact, or <kbd>Tab</kbd> to it and press <kbd>Enter</kbd>, to open its editor next to it; click it again or press <kbd>Esc</kbd> to close it. Every editor has **Clear** and **Done**. The **When** editor shows one part at a time (**Do on**, **Start**, **Deadline**, **Repeat**, **Reminders**), starting with the one you clicked; **This Evening** and the time zone are in **Do on**. Press <kbd>1</kbd> to <kbd>4</kbd> anywhere on the page for the priority. See [Dates and times](dates-and-times.md), [Deadlines and start dates](deadlines-and-start-dates.md) and [Assign tasks](sharing.md#assign-tasks).
 
 ## Viewers
 

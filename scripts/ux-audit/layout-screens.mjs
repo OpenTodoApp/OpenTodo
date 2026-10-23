@@ -156,10 +156,10 @@ async function tickTwo(p) {
  * there, the part as its trigger.
  */
 async function openProperty(p, field, label) {
-  const panel = p.locator('aside[data-detail-for]')
+  const panel = p.locator('[data-detail-for]')
   await panel.waitFor()
   // The lines settle after the panel's live queries (sections, parent) resolve.
-  await panel.locator('[data-facets]').waitFor()
+  await panel.locator('[data-facets], [data-facts]').first().waitFor()
   const part = panel.locator(`[data-part="${field}"]`).first()
   const shown = await part.waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false)
   if (shown) {
@@ -230,7 +230,9 @@ export const OVERLAYS = {
     // title edits it in place instead (inline-task-editing), so the audit tour's 1280 px
     // pass opens the panel the keyboard way, as every width does here.
     await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().locator('[data-row-open]').press('Enter')
-    return { overlay: p.locator('aside[data-detail-for]'), kind: 'panel' }
+    // The task opens as its page (task-full-page), which scrolls like any page: its head
+    // (checkbox, title, notes) is checked in place, not as an overlay that must fit.
+    return { overlay: p.locator('[data-task-page] [data-task-content]'), kind: 'inline' }
   },
   // Process the Inbox's scheduling sheet (inbox-means-unplaced): a bottom sheet on phones.
   async 'schedule-sheet'(p) {
@@ -240,8 +242,10 @@ export const OVERLAYS = {
   },
   async 'label-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().locator('[data-row-open]').press('Enter')
-    await p.locator('aside[data-detail-for]').waitFor()
+    // The task's page opens; Esc returns to the list with it selected (task-full-page).
+    await p.locator('[data-task-page]').waitFor()
     await p.keyboard.press('Escape')
+    await p.locator('[data-task-id][aria-current]').first().waitFor()
     await p.keyboard.press('L')
     return { overlay: p.getByRole('dialog', { name: 'Labels for task' }), kind: 'dialog' }
   },
@@ -334,14 +338,14 @@ export const OVERLAYS = {
   },
   async 'mention-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
-    const comments = p.locator('aside[data-detail-for]').getByRole('tab', { name: /^Comments/ })
+    const comments = p.locator('[data-detail-for]').getByRole('tab', { name: /^Comments/ })
     await comments.evaluate((el) => el.scrollIntoView({ block: 'start' }))
     await comments.click()
     // The composer rests as one line until clicked (task-panel-facets D4).
-    const resting = p.locator('aside[data-detail-for] [data-composer-resting]')
+    const resting = p.locator('[data-detail-for] [data-composer-resting]')
     // Focus, not click: the reminder toast can cover the bottom of the panel on a phone.
     if (await resting.count()) await resting.focus()
-    const box = p.locator('aside[data-detail-for]').getByLabel('Write a comment')
+    const box = p.locator('[data-detail-for]').getByLabel('Write a comment')
     // The composer sits at the end of the Comments tab, where the reminder toast can
     // cover it on a phone; focus it as a keyboard user would.
     await box.focus()
@@ -398,7 +402,7 @@ export const OVERLAYS = {
   },
   async 'task-history'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
-    const panel = p.locator('aside[data-detail-for]')
+    const panel = p.locator('[data-detail-for]')
     const tab = panel.getByRole('tab', { name: 'History' })
     await tab.evaluate((el) => el.scrollIntoView({ block: 'start' }))
     await tab.click()
@@ -416,8 +420,10 @@ export const OVERLAYS = {
   },
   async 'assignee-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().locator('[data-row-open]').press('Enter')
-    await p.locator('aside[data-detail-for]').waitFor()
+    // The task's page opens; Esc returns to the list with it selected (task-full-page).
+    await p.locator('[data-task-page]').waitFor()
     await p.keyboard.press('Escape')
+    await p.locator('[data-task-id][aria-current]').first().waitFor()
     await p.keyboard.press('A')
     return { overlay: p.getByRole('dialog', { name: 'Assign task' }), kind: 'dialog' }
   },

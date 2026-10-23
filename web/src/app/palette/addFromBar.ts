@@ -14,7 +14,8 @@ import { ACTION_TOAST_MS, showBulkToast } from '../bulk/toastStore'
 import { taskDefaults } from '../listActions'
 import { createLabelByName, nowHHMM, type QuickAddInput } from '../QuickAdd'
 import { navigate, routePath, type Route } from '../router'
-import { openTask, selectTask } from '../signals'
+import { selectTask } from '../signals'
+import { openTaskPage } from '../taskTrail'
 
 /** The route whose defaults a task added from the bar takes: a list screen's own, else the Inbox's. */
 export function defaultsRoute(route: Route): Route {
@@ -41,14 +42,9 @@ export async function addFromBar({ labels: typed, ...rest }: QuickAddInput, rout
   return id
 }
 
-/** Opens a task in the list it went to: at once when that list is showing, else when it shows. */
+/** Opens the new task as its page; Esc goes to the list it went to (task-full-page). */
 function openAt(id: string, target: Route) {
-  if (typeof location !== 'undefined' && location.pathname === routePath(target)) {
-    openTask.request(id)
-    return
-  }
-  openTask.set(id)
-  navigate(target)
+  openTaskPage(id, { from: routePath(target) })
 }
 
 /** One line read like the quick add reads it (Search's "Add as a task"); the plain line when parsing is off or leaves no title. */

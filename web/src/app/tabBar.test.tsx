@@ -10,7 +10,7 @@ import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { click, flush, key, render } from '../ui/test-utils'
-import { closePanel, openTaskPanel, resetPanel } from './panel'
+import { openTaskPanel, resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
 
@@ -79,15 +79,15 @@ describe('the tab bar', () => {
     await r.unmount()
   })
 
-  it('hides while the task panel is open and comes back when it closes', async () => {
+  it('hides on the task page and comes back on the list (task-full-page)', async () => {
     const id = await createTask({ title: 'Open me' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await flush(50)
     expect(bar()).toBeTruthy()
-    openTaskPanel(id)
-    await waitFor(() => !bar())
+    await act(async () => { openTaskPanel(id) })
+    await waitFor(() => !bar() && location.pathname === `/task/${id}`)
     expect(document.querySelector('main')!.getAttribute('data-phone-chrome')).toBeNull()
-    closePanel()
+    await act(async () => { navigate({ view: 'inbox' }) })
     await waitFor(() => !!bar())
     await r.unmount()
   })
@@ -168,7 +168,7 @@ describe('the tab bar while the list scrolls', () => {
     await r.unmount()
   })
 
-  it('a sheet open keeps both hidden, as before', async () => {
+  it('the task page keeps both hidden, as a sheet did', async () => {
     const id = await createTask({ title: 'Read' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await flush(50)
@@ -176,7 +176,6 @@ describe('the tab bar while the list scrolls', () => {
     await flush(50)
     expect(bar()).toBeNull()
     expect(document.querySelector('[data-add-button]')).toBeNull()
-    await act(async () => { closePanel() })
     await r.unmount()
   })
 })

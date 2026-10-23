@@ -11,7 +11,8 @@ import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { compute, periodFor, PERIOD_LABELS } from '../../lib/stats'
 import type { ActivityEntry } from '../../lib/types'
 import { click, flush, key, render } from '../../ui/test-utils'
-import { panelTaskId, resetPanel } from '../panel'
+import { resetPanel } from '../panel'
+import { openedTask, resetTaskPage } from '../taskPage.testkit'
 import { StatsContent, StatsView } from './StatsView'
 
 const NOW = new Date(2026, 9, 14, 12, 0) // Wednesday 14 October 2026
@@ -19,6 +20,7 @@ const at = (d: number, h = 10, month = 9) => new Date(2026, month, d, h).getTime
 
 let fetchSpy: ReturnType<typeof vi.fn>
 beforeEach(async () => {
+  resetTaskPage()
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(NOW)
   await db.delete()
@@ -207,7 +209,7 @@ describe('keeps slipping', () => {
     expect(panel.textContent).toContain("Based on this device's history")
     expect(panel.textContent).toContain('Inbox · moved 3 times')
     await click(panel.querySelector(`[data-slipping="${id}"]`)!)
-    expect(panelTaskId()).toBe(id)
+    expect(openedTask()).toBe(id)
     expect(fetchSpy).not.toHaveBeenCalled()
     await r.unmount()
   })
