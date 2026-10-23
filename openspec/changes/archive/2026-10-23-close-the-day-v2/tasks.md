@@ -31,4 +31,4 @@
 
 - [x] 4.1 Update `docs/method/rhythms.md` (the one-at-a-time carry-over, moving on applies, Done already, the note's preview, the day fixed on opening), regenerate `docs/keyboard.md`, add the CHANGELOG entry under Unreleased; verify `make docs-check`
   - Done: `docs/method/rhythms.md`, `docs/keyboard.md` (generated), CHANGELOG under Unreleased → Fixed; `make docs-check` passes.
-- [ ] 4.2 Run `make check` with `TZ=UTC`, `go test ./...`, `npm test` and `npm run build` in web/; open the pull request and get CI green
+- [x] 4.2 Run `make check` with `TZ=UTC`, `go test ./...`, `npm test` and `npm run build` in web/; open the pull request and get CI green

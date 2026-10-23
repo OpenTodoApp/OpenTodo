@@ -3,7 +3,7 @@ title: Delivery channels
 summary: Send your reminders and notifications to ntfy, Pushover, Gotify, or any address through a signed webhook, including Apprise and Home Assistant.
 audience: user
 section: Guides
-specs: [reminders]
+specs: [notification-channels, reminders]
 screens: [settings/notification-channels]
 order: 86
 ---
