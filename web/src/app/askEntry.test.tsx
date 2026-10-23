@@ -7,7 +7,7 @@ import { resetSkills } from '../lib/assistantSkills'
 import { openAssistantWith, resetAssistantStatus, setAssistantStatus, takeAssistantPrefill, type AssistantStatus } from '../lib/assistantStatus'
 import { db } from '../lib/db'
 import type { User } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { AskScreen, TodayAskAction } from './assistant/AskEntry'
 import { navigate, parseRoute } from './router'
 import { Shell } from './Shell'
@@ -74,13 +74,14 @@ describe('Ask screen (3.4)', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     setAssistantStatus(base)
     const r = await render(<AskScreen role="member" name="Ada Lovelace" />)
-    await flush(40)
+    // The page is a lazy chunk, and the skill list arrives after it.
+    await waitFor(() => document.querySelectorAll('[data-assistant-starter]').length > 0, 'the starters')
     expect(document.querySelector('[data-assistant-page]')).not.toBeNull()
     expect(document.querySelector('[data-assistant-empty] h2')!.textContent).toMatch(/^Good (morning|afternoon|evening), Ada\.What should we sort out\?$/)
     // The starters follow the fixed order and skip skills the server does not offer.
     expect([...document.querySelectorAll('[data-assistant-starter]')].map((b) => b.getAttribute('data-assistant-starter'))).toEqual(['plan-week', 'idea-to-project'])
     await click(document.querySelector<HTMLButtonElement>('[data-assistant-starter="plan-week"]')!)
-    await flush(10)
+    await waitFor(() => !!document.querySelector('[data-assistant-chosen]'), 'the chosen skill')
     expect(document.querySelector('[data-assistant-chosen]')!.textContent).toContain('Skill: Plan my week.')
     // Hidden on this device once dismissed.
     await click(document.querySelector<HTMLButtonElement>('[aria-label="Hide the skill suggestions"]')!)
@@ -115,14 +116,13 @@ describe('Ask screen (3.4)', () => {
     await flush(10)
     await key(document.body, 'g')
     await key(document.body, 'k')
-    await flush(30)
+    await waitFor(() => !!document.activeElement?.hasAttribute('data-assistant-composer'), 'focus in the page composer')
     expect(document.querySelector('[data-assistant-page]')).toBeTruthy()
-    expect(document.activeElement?.hasAttribute('data-assistant-composer')).toBe(true)
     // On the page, opening the assistant (Shift+I, Ask) opens no sheet: the page is the conversation.
     openAssistantWith({ text: 'What is due?' })
+    await waitFor(() => document.querySelector<HTMLTextAreaElement>('[data-assistant-page] [data-assistant-composer]')?.value === 'What is due?', 'the request in the page composer')
     await flush(40)
     expect(document.querySelector('[data-assistant-panel]')).toBeNull()
-    expect(document.querySelector<HTMLTextAreaElement>('[data-assistant-page] [data-assistant-composer]')!.value).toBe('What is due?')
     await r.unmount()
   })
 })
