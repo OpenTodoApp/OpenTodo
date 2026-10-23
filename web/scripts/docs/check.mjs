@@ -171,6 +171,12 @@ export async function runChecks(repoRoot) {
     if (p.fm.audience !== 'user') out.push(`docs/${p.rel}: only user pages can name screens (the app ships user pages only)`)
     if (anchor && !headings.get(p.rel).some((h) => h.id === anchor)) out.push(`docs/${p.rel}: screen "${s}" names a heading that does not exist`)
   }
+  // A page's card (the docs landing page and the website's docs index) needs its two
+  // thumbnails, written by scripts/docs-screenshots.mjs for shots marked `card`.
+  for (const p of pages) if (p.fm.card) for (const theme of ['light', 'dark']) {
+    const img = `docs/images/card-${p.fm.card}-${theme}.webp`
+    if (!existsSync(join(repoRoot, img))) out.push(`docs/${p.rel}: card "${p.fm.card}" has no ${img}; mark the shot \`card: true\` in scripts/docs-screenshots.mjs and run it`)
+  }
   out.push(...quickAddLinkProblems(pages))
   const used = appScreenIds(repoRoot)
   for (const [id, file] of used) if (!screens.has(id)) out.push(`${file}: help screen "${id}" is not named by any page's "screens"`)

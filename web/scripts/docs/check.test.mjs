@@ -81,6 +81,14 @@ describe('docs check', () => {
     expect(problems.filter((p) => p.startsWith('docs/boards.md'))).toEqual([])
   })
 
+  it('reports a card without its two thumbnails', async () => {
+    write('docs/boards.md', read('docs/boards.md').replace('order: 1', 'order: 1\ncard: board'))
+    write('docs/images/card-board-light.webp', WEBP)
+    const problems = await runChecks(root)
+    expect(problems).toContainEqual(expect.stringMatching(/^docs\/boards\.md: card "board" has no docs\/images\/card-board-dark\.webp/))
+    expect(problems.some((p) => p.includes('card-board-light.webp'))).toBe(false)
+  })
+
   it('reports a capability no page covers', async () => {
     write('openspec/specs/time-tracking/spec.md', '# time-tracking\n')
     expect(await runChecks(root)).toContainEqual('openspec/specs/time-tracking: no page under docs/ lists it in "specs"')
