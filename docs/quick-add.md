@@ -21,7 +21,7 @@ Everything runs in your browser. The parser needs no network, sends nothing anyw
 
 ## Preview chips
 
-As you type, each thing OpenTodo recognises shows up as a chip under the input and is tinted in the line itself (underlined in high contrast), and the title preview (`→ Meeting with Sarah`) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title. The same line works in the list, the phone's add sheet and the [command bar](search.md#four-modes)'s Add mode.
+As you type, each thing OpenTodo recognises shows up as a chip under the input and is tinted in the line itself (underlined in high contrast), and the title preview (`→ Meeting with Sarah`) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title. The same line works in the list, the phone's add sheet and the [command bar](#in-the-command-bar)'s Add mode, and gives the same task everywhere. The command bar lists what it understood as one row per field, with the token that sets each one; the phone's sheet shows plain chips, and buttons under them (date, priority, label, estimate, project) start a token for you.
 
 | To… | Do this |
 | --- | --- |
@@ -30,6 +30,12 @@ As you type, each thing OpenTodo recognises shows up as a chip under the input a
 | Turn parsing off on this device | Settings → Capture → Quick add → *Parse natural language in quick add*. Quick add then saves the line exactly as typed. |
 
 A dismissed chip stays dismissed while you keep typing; it comes back only if you edit that word. Backspace only highlights a chip when that chip's text ends the line; otherwise Backspace deletes text as usual.
+
+## In the command bar
+
+In the [command bar](search.md#four-modes)'s Add mode (<kbd>q</kbd> on screens without a quick add, or <kbd>+</kbd> in the box), what quick add understood is a row per field: **When**, **Project**, **Label**, **Priority** and **Estimate**, plus **Deadline**, **Repeats**, **Reminder** and **Time spent** when you type them. Each row shows its value, or how to set it (`#`, `@`, `p1`, `+30m`). Click a row, or move to it with <kbd>↓</kbd> and press <kbd>Tab</kbd>: a set field's words are selected so you can type over them, and an empty field gets its token at the end of the line. The `×` on a row keeps its words as text. <kbd>Enter</kbd> adds the task and keeps the box open for the next one; <kbd>Shift</kbd>+<kbd>Enter</kbd> adds it and opens it.
+
+On a phone, the add sheet shows plain chips for what it understood, and buttons under them (date, priority, label, estimate, project) that start a token for you.
 
 ## Tokens (any language)
 

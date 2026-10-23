@@ -13,16 +13,19 @@ import { addedWhere } from '../addedWhere'
 import { ACTION_TOAST_MS, showBulkToast } from '../bulk/toastStore'
 import { taskDefaults } from '../listActions'
 import { createLabelByName, nowHHMM, type QuickAddInput } from '../QuickAdd'
-import { navigate, type Route } from '../router'
-import { selectTask } from '../signals'
+import { navigate, routePath, type Route } from '../router'
+import { openTask, selectTask } from '../signals'
 
 /** The route whose defaults a task added from the bar takes: a list screen's own, else the Inbox's. */
 export function defaultsRoute(route: Route): Route {
   return VIEW_SCOPES[route.view]?.includes('list') && route.view !== 'completed' ? route : { view: 'inbox' }
 }
 
-/** Creates the task and shows where it went; returns its id. */
-export async function addFromBar({ labels: typed, ...rest }: QuickAddInput, route: Route, userId?: string): Promise<string> {
+/**
+ * Creates the task and shows where it went; returns its id. With `open` (Shift+Enter in
+ * Add mode, palette-quick-add D3) it opens the task where it went instead of the toast.
+ */
+export async function addFromBar({ labels: typed, ...rest }: QuickAddInput, route: Route, userId?: string, open = false): Promise<string> {
   const today = logicalToday()
   const { labels: viewLabels, ...defaults } = taskDefaults(defaultsRoute(route), today, userId)
   if (rest.due || rest.deadline) delete defaults.start
@@ -32,8 +35,20 @@ export async function addFromBar({ labels: typed, ...rest }: QuickAddInput, rout
   const where = task ? addedWhere(task, today, currentDateTime()) : null
   const label = where?.label ?? (project ? t('Added to {project}', { project: project.name }) : t('Added to Inbox'))
   const target: Route = where ? { view: where.view } : project ? { view: 'project', id: project.id } : { view: 'inbox' }
-  showBulkToast(label, null, { ttl: ACTION_TOAST_MS, action: { label: t('Open'), run: () => { selectTask.set(id); navigate(target) } } })
+  const show = () => { selectTask.set(id); navigate(target) }
+  if (open) openAt(id, target)
+  else showBulkToast(label, null, { ttl: ACTION_TOAST_MS, action: { label: t('Open'), run: show } })
   return id
+}
+
+/** Opens a task in the list it went to: at once when that list is showing, else when it shows. */
+function openAt(id: string, target: Route) {
+  if (typeof location !== 'undefined' && location.pathname === routePath(target)) {
+    openTask.request(id)
+    return
+  }
+  openTask.set(id)
+  navigate(target)
 }
 
 /** One line read like the quick add reads it (Search's "Add as a task"); the plain line when parsing is off or leaves no title. */

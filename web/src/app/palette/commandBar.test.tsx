@@ -129,6 +129,33 @@ describe('Add mode (5.2)', () => {
     expect(q('[data-bulk-toast]')!.textContent).toContain('Added to Home')
   })
 
+  it('Escape closes when the bar was opened in Add; the footer says Close (palette-quick-add D3)', async () => {
+    navigate({ view: 'settings' })
+    const onClose = vi.fn()
+    await bar({ initialMode: 'add', onClose })
+    expect(q('[data-quick-add-escape]')!.textContent).toContain('Close')
+    await key(q('[data-bar-add] input')!, 'Escape')
+    expect(onClose).toHaveBeenCalled()
+    expect(mode()).toBe('add')
+  })
+
+  it('Add and open: Shift+Enter creates the task, closes the bar and opens the task in its project', async () => {
+    const work = await createProject({ name: 'Work' })
+    navigate({ view: 'settings' })
+    const onClose = vi.fn()
+    await bar({ initialMode: 'add', onClose })
+    const input = q<HTMLInputElement>('[data-bar-add] input')!
+    // A space after the token: with the project list open, Enter picks from the list.
+    await type(input, 'Draft the offer #Work ')
+    await key(input, 'Enter', { shiftKey: true })
+    await waitFor(() => onClose.mock.calls.length > 0)
+    const [task] = await db.tasks.toArray()
+    expect(task).toMatchObject({ title: 'Draft the offer', project_id: work })
+    expect(location.pathname).toBe(`/project/${work}`)
+    // Opened, not announced: no toast.
+    expect(q('[data-bulk-toast]')).toBeNull()
+  })
+
   it('Offline: the task is written locally and waits in the outbox', async () => {
     navigate({ view: 'inbox' })
     await bar({ initialMode: 'add' })

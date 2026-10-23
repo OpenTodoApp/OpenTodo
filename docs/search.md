@@ -21,7 +21,7 @@ With nothing typed, the box lists what you can do right now (for the selected ta
 
 ## Four modes
 
-Under the field, **Search**, **Add**, **Commands** and **Ask** (when the assistant is on) switch what the box does. As the first character, <kbd>+</kbd> adds a task with [quick add](quick-add.md), <kbd>></kbd> lists commands and <kbd>?</kbd> asks the assistant; typing it again returns to Search. <kbd>Esc</kbd> returns to Search first. The last search result is always **Add "…" as a task**; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> picks it. On screens without a quick add, <kbd>q</kbd> opens the box in Add mode.
+**Search**, **Add**, **Commands** and **Ask** (when the assistant is on) switch what the box does: the strip at the bottom names their first characters, and a phone shows buttons. <kbd>+</kbd> adds a task with [quick add](quick-add.md#in-the-command-bar), <kbd>></kbd> lists commands and <kbd>?</kbd> asks the assistant; typing it again returns to Search. <kbd>Esc</kbd> returns to Search first. The last search result is always **Add "…" as a task**; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> picks it. On screens without a quick add, <kbd>q</kbd> opens the box in Add mode.
 
 ## What it finds
 
@@ -36,7 +36,7 @@ If what you type is a [filter query](filters.md), such as `@errand & p1`, `due <
 
 ## Commands
 
-Every action has a name in the box: go to any view, calendar or Settings section; act on the selected task (complete, priority, labels, assign, estimate, deadline, defer, park, This Evening, schedule, skip an occurrence, move to the Trash); act on the project, saved view, label or section you are in (everything in their menus, such as *Pin to sidebar* or *Archive*); save the current filter as a view; create a task, project, label or dashboard; sync now; show the keyboard shortcuts; turn Vim keybindings on or off; search Help for what you typed. Each command shows its shortcut, so the box also teaches the keys.
+Every action has a name in the box: go to any view, calendar or Settings section; act on the selected task (complete, priority, labels, assign, estimate, deadline, defer, park, This Evening, schedule, skip an occurrence, move to the Trash); act on the project, saved view, label or section you are in (everything in their menus, such as *Pin to sidebar* or *Archive*); save the current filter as a view; create a task, project, label or dashboard; sync now; show the keyboard shortcuts; turn Vim keybindings on or off; search Help for what you typed. Each command shows its keys (*G then U*), so the box also teaches them.
 
 Commands are listed only when they apply: with no task selected there are no task commands, and a viewer of a shared project doesn't see the ones that would change it.
 

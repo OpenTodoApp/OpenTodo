@@ -1,7 +1,8 @@
 // Quick add as a bottom sheet (OpenSpec change ux-overhaul, app-shell "Phone
 // navigation", "Add from anywhere"): opened by the floating add button, its field
 // focused with the keyboard up, the view's defaults applied (Today's date in Today,
-// tomorrow in Upcoming, the project in a project), the list visible above it.
+// tomorrow in Upcoming, the project in a project), the list visible above it. Under the
+// line, the understood fields as chips and a tool row with send (palette-quick-add D7).
 import { Popover } from '../ui'
 import type { RefObject } from 'react'
 import { useLabels, useProjects } from '../lib/localData'
@@ -53,9 +54,9 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
     onClose()
   }
   return (
-    <Popover open={open} onClose={onClose} anchor={anchor} label={t('Add a task')} side="top" align="end" width="sm:w-96" className="p-3">
+    <Popover open={open} onClose={onClose} anchor={anchor} label={t('Add a task')} side="top" align="end" width="sm:w-96" className="pt-3 pb-0">
       <div data-quick-add-sheet>
-        <QuickAdd autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} />
+        <QuickAdd layout="sheet" autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} />
       </div>
     </Popover>
   )

@@ -52,6 +52,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>q</kbd> | Quick add a task (the command bar in Add mode on screens without a quick add) |
 | <kbd>+</kbd> · <kbd>&gt;</kbd> · <kbd>?</kbd> | First character in the command bar: add a task, run a command, ask the assistant; the same character again returns to Search |
 | <kbd>Ctrl+Enter</kbd> / <kbd>⌘+Enter</kbd> | In the command bar: add what you typed as a task |
+| <kbd>Shift+Enter</kbd> | In the command bar's Add mode: add the task and open it |
+| <kbd>↓</kbd> / <kbd>↑</kbd> | In the command bar's Add mode: move over the fields; Tab edits the highlighted one |
 | <kbd>Shift+I</kbd> | Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> | Proposed changes: apply the checked changes / discard the proposal; Space toggles an item |
 | <kbd>Shift+V</kbd> | Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves |

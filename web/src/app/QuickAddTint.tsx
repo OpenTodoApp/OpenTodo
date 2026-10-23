@@ -28,13 +28,13 @@ export function tintSegments(value: string, chips: readonly Chip[]): TintSegment
   return out
 }
 
-export const QuickAddTint = forwardRef<HTMLDivElement, { value: string; chips: readonly Chip[] }>(function QuickAddTint({ value, chips }, ref) {
+export const QuickAddTint = forwardRef<HTMLDivElement, { value: string; chips: readonly Chip[]; className?: string }>(function QuickAddTint({ value, chips, className = '' }, ref) {
   const parts: ReactNode[] = tintSegments(value, chips).map((s, i) => (s.kind
     ? <mark key={i} className="quick-add-tint" data-hue={CHIP_HUE[s.kind]} data-tint={s.kind}>{s.text}</mark>
     : <span key={i}>{s.text}</span>))
   return (
     <div ref={ref} aria-hidden="true" data-quick-add-tints
-      className="ui-input pointer-events-none absolute inset-0 overflow-hidden whitespace-pre border-transparent bg-transparent px-1 text-transparent shadow-none dark:bg-transparent">
+      className={`ui-input pointer-events-none absolute inset-0 overflow-hidden whitespace-pre border-transparent bg-transparent px-1 text-transparent shadow-none dark:bg-transparent ${className}`}>
       {parts}
     </div>
   )
