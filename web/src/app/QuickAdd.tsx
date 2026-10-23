@@ -212,7 +212,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const size = layout === 'line' ? '' : 'text-prose'
   return (
     <form id={formId} onSubmit={submit} data-quick-add-layout={layout}>
-      <div className={`relative flex items-center ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'gap-2'}`}>
+      <div className={`relative flex items-center ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5 sm:pr-11' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'gap-2'}`}>
         {palette ? <Icon name="plus" className="shrink-0 text-faint" /> : layout === 'line' && <span className="text-h2 leading-none text-accent">+</span>}
         {/* The recognised spans tinted behind the text (moments-and-onboarding D8, QuickAddTint). */}
         <span className="relative flex min-w-0 flex-1">

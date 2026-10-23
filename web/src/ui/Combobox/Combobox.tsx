@@ -46,7 +46,8 @@ export function ComboboxList<T>({ state, renderLeading, renderTrailing, emptyTex
   const listRef = useRef<HTMLUListElement>(null)
   const windowed = options.length > WINDOW_ABOVE
   const palette = look === 'palette'
-  const rh = palette ? Math.max(34, rowHeight() - 2) : rowHeight()
+  // The palette row is 34 px, and the full 44 px touch target on a coarse pointer.
+  const rh = palette && rowHeight() < 44 ? 34 : rowHeight()
   const [scrollTop, setScrollTop] = useState(0)
 
   // Keep the active option in view (and, when windowed, rendered).
@@ -163,7 +164,7 @@ function Field<T>({ state, label, placeholder, inputRef, onFocus, expanded, auto
 }) {
   const palette = look === 'palette'
   return (
-    <div className={palette ? 'relative flex items-center gap-2.5 border-b border-default px-4' : 'relative'}>
+    <div className={palette ? 'relative flex items-center gap-2.5 border-b border-default px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-focus/30 sm:pr-11' : 'relative'}>
       <span className={palette ? 'pointer-events-none flex shrink-0 text-faint' : 'pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint'}><Icon name="search" /></span>
       <input
         ref={inputRef}

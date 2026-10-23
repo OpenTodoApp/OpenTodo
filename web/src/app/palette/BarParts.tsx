@@ -103,7 +103,7 @@ export function AskPanel({ onSent }: { onSent: () => void }) {
     onSent()
   }
   return (
-    <form onSubmit={submit} className="flex items-center gap-2.5 border-b border-default px-4 py-2.5" data-bar-ask>
+    <form onSubmit={submit} className="flex items-center gap-2.5 border-b border-default px-4 py-2.5 sm:pr-11" data-bar-ask>
       <Icon name="message-circle" className="shrink-0 text-accent" />
       <input className="ui-input border-transparent bg-transparent px-1 text-prose shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent" autoFocus
         value={text} onChange={(e) => setText(e.target.value)} aria-label={t('Ask the assistant')} placeholder={t('Ask about your tasks…')} enterKeyHint="send" data-bar-ask-input />

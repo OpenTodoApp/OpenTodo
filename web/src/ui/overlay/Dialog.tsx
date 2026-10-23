@@ -28,7 +28,8 @@ export interface DialogProps {
    * motion. From 640 px up both are the same centred card, which fades and scales up.
    * `palette` (the command bar, palette-quick-add D4): the full-screen sheet below 640 px;
    * from 640 px a 40 rem card 12 vh from the top, without a visible title bar or body
-   * padding, so the content brings its own field and footer.
+   * padding, so the content brings its own field and footer; the close button sits at
+   * the end of the first row, which leaves 2.5 rem for it.
    */
   placement?: 'center' | 'sheet' | 'palette'
   /**
@@ -47,9 +48,11 @@ const WIDTH = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg', xl: 'sm
 const HEADER = 'sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit pl-4 pr-1 pt-[env(safe-area-inset-top)] sm:-top-4 sm:rounded-t-card'
 // The sheet sits at the bottom, below the notch: no top inset, its own curved corners.
 const HEADER_SHEET = 'sticky top-0 z-10 flex items-center gap-2 rounded-t-card border-b border-default bg-inherit pl-4 pr-1 sm:-top-4'
+// The palette from 640 px: no title bar, only the close button at the first row's end (the content leaves room for it).
+const HEADER_PALETTE = 'sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit pl-4 pr-1 pt-[env(safe-area-inset-top)] sm:absolute sm:right-1 sm:top-1.5 sm:border-0 sm:bg-transparent sm:p-0'
 const CARD = {
   center: 'h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:my-auto sm:min-h-0',
-  palette: 'h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:mt-[12vh] sm:mb-auto sm:min-h-0 sm:overflow-hidden sm:max-w-[40rem]',
+  palette: 'h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:relative sm:mt-[12vh] sm:mb-auto sm:min-h-0 sm:overflow-hidden sm:max-w-[40rem]',
   sheet: 'dialog-sheet mt-auto h-fit max-h-[66dvh] w-full overflow-y-auto overscroll-contain rounded-t-card border-t border-default bg-surface shadow-3 outline-none sm:surface-overlay sm:my-auto sm:max-h-none sm:overflow-visible sm:border-t-0',
 }
 
@@ -78,8 +81,8 @@ export function Dialog({ title, onClose, children, size = 'sm', dismissable = tr
       onKeyDown={(e) => { if (panel.current) trapTab(e, panel.current); e.stopPropagation() }}>
       <div ref={panel} role={role} aria-modal="true" aria-labelledby={label ? undefined : titleId} aria-label={label} tabIndex={-1} data-overlay="dialog" data-testid={testId}
         data-placement={placement === 'center' ? undefined : placement} className={`${CARD[placement]} ${motion === 'fade' ? 'overlay-fade-in' : 'dialog-card'} ${placement === 'palette' ? '' : WIDTH[size]}`}>
-        <div className={placement === 'sheet' ? HEADER_SHEET : placement === 'palette' ? `${HEADER} sm:hidden` : HEADER}>
-          <h2 id={titleId} className="min-w-0 flex-1 py-2 text-body font-semibold">{title}</h2>
+        <div className={placement === 'sheet' ? HEADER_SHEET : placement === 'palette' ? HEADER_PALETTE : HEADER}>
+          <h2 id={titleId} className={`min-w-0 flex-1 py-2 text-body font-semibold ${placement === 'palette' ? 'sm:sr-only' : ''}`}>{title}</h2>
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label={t('Close')} data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className={`${placement === 'palette' ? 'pb-[env(safe-area-inset-bottom)]' : 'p-4 pb-[max(1rem,env(safe-area-inset-bottom))]'} ${className}`}>{children}</div>

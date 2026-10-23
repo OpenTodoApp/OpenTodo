@@ -66,7 +66,7 @@ The mock-up shows the first row highlighted at rest. That would make Tab edit a 
 ### D4. The shell: a `palette` placement of `Dialog`
 
 `Dialog` gets `placement="palette"`:
-- **From 640 px:** the card sits 12 vh from the top (not centred, so the field does not jump as results change), 40 rem wide, on the pop surface with the popover radius, with `overflow: hidden`. There is no visible title bar: the title stays as the accessible name, and the close control moves to the footer's `Esc`. The body has no padding.
+- **From 640 px:** the card sits 12 vh from the top (not centred, so the field does not jump as results change), 40 rem wide, on the pop surface with the popover radius, with `overflow: hidden`. There is no title bar: the title stays as the accessible name (visually hidden), and the close button sits at the right end of the first row, which leaves room for it. The body has no padding.
 - **Below 640 px:** the full-screen sheet with its title bar, exactly as today.
 
 The command bar uses it in every mode. The confirmation, prompt and picker steps keep the plain dialog.
@@ -74,7 +74,7 @@ The command bar uses it in every mode. The confirmation, prompt and picker steps
 ### D5. Results in the palette look
 
 `ComboboxField` and `ComboboxList` get `look="palette"`:
-- **The field:** borderless, 15 px, with a search mark and a hairline under it.
+- **The field:** borderless, 15 px, with a search mark and a hairline under it; while it has focus, the field row shows the inset focus ring (the accessibility gate needs a visible ring).
 - **Headings:** sentence case at 11.5 px in faint text, instead of uppercase.
 - **Rows:** 34 px. The active row uses `.row-selected` (the selected-row surface and the 2 px accent bar from `precision-rows`).
 - **A `renderTrailing` slot**, used for the shortcut.
@@ -120,6 +120,6 @@ None. No op, field or schema change. Adding a task goes through the same `create
 
 ## Risks / Trade-offs
 
-- **Hidden title bar from 640 px:** a pointer user closes with Escape, by clicking the scrim or with the footer's `Esc` button. The scrim click and the footer button keep it reachable without a keyboard.
+- **No title bar from 640 px:** the close button stays, small, at the end of the field row (the layout check requires a hit-testable close control on every dialog); Escape and a click on the scrim close too.
 - **The key column differs from the mock-up (D2).** Recorded for the owner.
 - **Tab edits a highlighted row.** It only does so while a row is highlighted with the arrows, so plain Tab never changes behaviour.
