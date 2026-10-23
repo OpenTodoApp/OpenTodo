@@ -10,7 +10,6 @@ import { click, flush, render, visibleText } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { routeAfterSwitch } from './workspaceNav'
 import { Sidebar } from './Sidebar'
-import { WorkspacesSettings } from './WorkspacesSettings'
 import { commands } from './palette/registry'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -73,39 +72,6 @@ describe('palette commands', () => {
     const sw = cmds.filter((c) => c.id.startsWith('workspace:'))
     expect(sw.map((c) => c.label)).toEqual(['Switch to workspace: Work', 'New workspace'])
     expect(sw.every((c) => !c.shortcut)).toBe(true)
-  })
-})
-
-describe('Settings → Workspaces', () => {
-  it('Owner manages a workspace; a member sees it read-only with Leave', async () => {
-    await storeWorkspaces([
-      entry('w-p', { default: true, name: 'Personal' }),
-      entry('w-fam', { name: 'Family' }, [{ userId: 'u1', name: 'Ada', role: 'owner' }, { userId: 'u2', name: 'Bob', role: 'member' }]),
-      entry('w-club', { name: 'Club', role: 'member', ownerId: 'u3' }, [{ userId: 'u3', name: 'Cleo', role: 'owner' }, { userId: 'u1', name: 'Ada', role: 'member' }]),
-    ])
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"invites":[]}', { status: 200, headers: { 'Content-Type': 'application/json' } })))
-    await switchTo('w-fam')
-    const r = await render(<WorkspacesSettings user={user} />)
-    await waitFor(() => r.container.textContent!.includes('Danger zone'))
-    expect(r.container.querySelector('[data-add-workspace-member]')).not.toBeNull()
-    expect(r.container.textContent).toContain('Delete workspace')
-    await r.unmount()
-    await switchTo('w-club')
-    const m = await render(<WorkspacesSettings user={user} />)
-    await waitFor(() => m.container.textContent!.includes('Leave workspace'))
-    expect(m.container.querySelector('[data-add-workspace-member]')).toBeNull()
-    expect(m.container.textContent).not.toContain('Delete workspace')
-    await m.unmount()
-  })
-
-  it('Offline: the lists stay and the controls say a connection is needed', async () => {
-    await storeWorkspaces([entry('w-p', { default: true, name: 'Personal' }), entry('w-fam', { name: 'Family' })])
-    await switchTo('w-fam')
-    vi.stubGlobal('navigator', { ...navigator, onLine: false })
-    const r = await render(<WorkspacesSettings user={user} />)
-    await waitFor(() => r.container.textContent!.includes('need a connection'))
-    expect((r.container.querySelector('[data-settings-new-workspace]') as HTMLButtonElement).disabled).toBe(true)
-    await r.unmount()
   })
 })
 

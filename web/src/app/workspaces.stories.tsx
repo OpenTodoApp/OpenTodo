@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect, useState } from 'react'
 import type { Membership } from '../lib/types'
 import { storeWorkspaces, switchTo } from '../lib/workspaces'
 import { seedInbox, storyUser, withSeed } from './stories/fixtures'
@@ -26,16 +27,70 @@ async function seedDirectory(current: 'ws-family' | 'ws-club'): Promise<void> {
 const meta: Meta = { title: 'Screens/Workspaces' }
 export default meta
 
-/** Settings → Workspaces as the owner of Family: name and colour, members, groups, invite links and the danger zone. */
-export const SettingsOwner: StoryObj = {
-  ...withSeed(() => seedDirectory('ws-family')),
-  render: () => <div className="max-w-2xl p-4"><WorkspacesSettings user={storyUser} /></div>,
+/**
+ * The page after a few clicks (workspaces-settings-v2): each step waits for its
+ * element, clicks it, and the story is marked pending until the last one is done.
+ */
+function Scripted({ steps }: { steps: string[] }) {
+  const [pending, setPending] = useState(steps.length > 0)
+  useEffect(() => {
+    let live = true
+    void (async () => {
+      for (const step of steps) {
+        // A step starting with "?" is optional: it is skipped when absent after a short wait.
+        const optional = step.startsWith('?')
+        const selector = optional ? step.slice(1) : step
+        let el: HTMLElement | null = null
+        for (let i = 0; i < (optional ? 10 : 100) && live && !(el = document.querySelector<HTMLElement>(selector)); i++) await new Promise((r) => setTimeout(r, 30))
+        if (!live) return
+        // Phone width shows the list alone: a step for the detail clicks the row first.
+        el?.click()
+        await new Promise((r) => setTimeout(r, 30))
+      }
+      if (live) setPending(false)
+    })()
+    return () => { live = false }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- one script per story
+  return (
+    <div className="max-w-4xl p-4">
+      <WorkspacesSettings user={storyUser} />
+      {pending && <span data-story-pending />}
+    </div>
+  )
 }
 
-/** A member of Book club: the lists without controls and Leave. */
+/** The detail opens by itself from 768 px; at phone width the row is clicked first. */
+const openFamily = '?[data-workspace-row="ws-family"]:not([aria-current])'
+const tabNamed = (name: string) => `[data-workspace-detail] [role="tab"][id$="-tab-${name}"]`
+
+/** Settings → Workspaces as the owner of Family: the list beside Family's General tab (name, colour, icon and the danger zone). */
+export const SettingsOwner: StoryObj = {
+  ...withSeed(() => seedDirectory('ws-family')),
+  render: () => <Scripted steps={[]} />,
+}
+
+/** A member of Book club: General without the identity controls, and Leave. */
 export const SettingsMember: StoryObj = {
   ...withSeed(() => seedDirectory('ws-club')),
-  render: () => <div className="max-w-2xl p-4"><WorkspacesSettings user={storyUser} /></div>,
+  render: () => <Scripted steps={[]} />,
+}
+
+/** Family's Members tab: avatars, the role select and Remove, and Add by email. */
+export const SettingsMembers: StoryObj = {
+  ...withSeed(() => seedDirectory('ws-family')),
+  render: () => <Scripted steps={[openFamily, tabNamed('members')]} />,
+}
+
+/** Family's Groups tab with "Adults" open: rename, the member picker, its members and Delete. */
+export const SettingsGroupEditor: StoryObj = {
+  ...withSeed(() => seedDirectory('ws-family')),
+  render: () => <Scripted steps={[openFamily, tabNamed('groups'), '[data-group-row="g-adults"]']} />,
+}
+
+/** Family's Invites tab: the role and the expiry beside the optional email. */
+export const SettingsInvites: StoryObj = {
+  ...withSeed(() => seedDirectory('ws-family')),
+  render: () => <Scripted steps={[openFamily, tabNamed('invites')]} />,
 }
 
 const membership: Membership = {
