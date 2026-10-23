@@ -26,7 +26,7 @@ export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => P
       className="my-2 flex flex-wrap items-center gap-3 rounded-card border border-strong bg-raised px-3 py-2.5">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-sunken text-muted" aria-hidden><Icon name="layers" size="md" /></span>
       <div className="min-w-0 flex-1 basis-48">
-        <input ref={input} className="w-full bg-transparent text-h3 text-strong outline-none placeholder:text-faint" aria-label={t('View name')}
+        <input ref={input} className="w-full rounded-control bg-transparent text-h3 text-strong placeholder:text-faint focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus" aria-label={t('View name')}
           placeholder={t('Name this view')} value={name} aria-invalid={!!error} aria-describedby="save-view-message"
           onChange={(e) => { setName(e.target.value); setError(null) }} />
         <p id="save-view-message" className="text-meta" aria-live="polite">

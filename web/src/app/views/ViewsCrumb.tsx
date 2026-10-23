@@ -7,7 +7,7 @@ import { navigate, routePath } from '../router'
 export function ViewsCrumb({ name }: { name: string }) {
   return (
     <span className="flex min-w-0 items-center gap-1.5" data-views-crumb>
-      <a href={routePath({ view: 'views' })} className="shrink-0 rounded-control text-muted hover:text-default"
+      <a href={routePath({ view: 'views' })} className="touch-target inline-flex shrink-0 items-center justify-center rounded-control text-muted hover:text-default"
         onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); navigate({ view: 'views' }) }}>
         {t('Views')}
       </a>
