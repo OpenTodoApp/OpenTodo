@@ -1,17 +1,16 @@
-// Today clear (OpenSpec change moments-and-onboarding, design D1; design-system
-// "Illustration set"): a mug seen from the side with two steam lines and a small sun,
-// drawn like Inbox zero: currentColor strokes, the sunken surface as the only shape
-// fill, one accent shape at low opacity.
+// Today clear (illustrations-v2): a mug with steam inside the open loop of the brand
+// mark, the sun rising through the loop's opening.
 export function TodayClear() {
   return (
-    <svg viewBox="0 0 160 120" width="160" height="120" fill="none" stroke="currentColor" strokeWidth="1.5"
+    <svg viewBox="0 0 160 120" width="160" height="120" fill="none" stroke="currentColor" strokeWidth="1.75"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false" data-illustration="today-clear">
-      <path d="M22 104h116" />
-      <path d="M50 62h44v28a14 14 0 0 1-14 14H64a14 14 0 0 1-14-14Z" fill="var(--color-sunken)" />
-      <path d="M94 70h5a9 9 0 0 1 0 18h-6" />
-      <path d="M64 52c-4-5 4-8 0-14M80 52c-4-5 4-8 0-14" />
-      <circle cx="124" cy="34" r="9" fill="var(--color-accent)" fillOpacity="0.15" />
-      <path d="M124 18v-4M140 34h4M136 22l3-3M136 46l3 3M112 22l-3-3" />
+      <path d="M118.6 43.6A40 40 0 1 1 83.5 14.2" strokeWidth="1" />
+      <path d="M40 100h80M26 100h6M128 100h6" />
+      <path d="M58 70h34v20a10 10 0 0 1-10 10H68a10 10 0 0 1-10-10Z" fill="var(--color-surface)" />
+      <path d="M92 76h4a6 6 0 0 1 0 12h-4" />
+      <path d="M67 62c-3-4 3-6 0-10M75 60c-3-4 3-6 0-10M83 62c-3-4 3-6 0-10M62 76h26" strokeWidth="1" />
+      <circle cx="108" cy="23" r="6" fill="var(--color-accent)" fillOpacity="0.2" stroke="var(--text-color-accent)" />
+      <path d="M108 11v2M120 23h-2M116.5 14.5l-1.4 1.4M99.5 14.5l1.4 1.4M116.5 31.5l-1.4-1.4" strokeWidth="1" />
     </svg>
   )
 }

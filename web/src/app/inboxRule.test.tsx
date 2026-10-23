@@ -124,7 +124,8 @@ describe('Inbox zero (design-system "Illustrations")', () => {
     await waitFor(() => !!r.container.querySelector('[data-illustration="inbox-zero"]'))
     const svg = r.container.querySelector('[data-illustration="inbox-zero"]')!
     const colours = [svg, ...svg.querySelectorAll('*')].flatMap((el) => ['stroke', 'fill'].map((a) => el.getAttribute(a)).filter((v): v is string => !!v))
-    for (const c of colours) expect(c).toMatch(/^(none|currentColor|var\(--color-[a-z-]+\))$/)
+    // The accent shape's outline is the accent text token (illustrations-v2 D3).
+    for (const c of colours) expect(c).toMatch(/^(none|currentColor|var\(--color-[a-z-]+\)|var\(--text-color-accent\))$/)
     await r.unmount()
   })
 })
