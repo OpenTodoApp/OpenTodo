@@ -194,6 +194,9 @@
   "<strong>{inviterName}</strong> invited you to the project <strong2>{projectName}</strong2> as <strong3>{role}</strong3>.": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
+  "<task>{title}</task> is {days, plural, one {a day} other {# days}} late": [
+    "web/src/app/Briefing.tsx"
+  ],
   "@calls": [
     "web/src/lib/method/starter.ts"
   ],
@@ -953,6 +956,9 @@
   ],
   "All day": [
     "web/src/app/CalendarEvents.tsx"
+  ],
+  "All done for today.": [
+    "web/src/app/Briefing.tsx"
   ],
   "All events": [
     "web/src/app/AuditPanel.tsx"
@@ -4125,6 +4131,9 @@
   ],
   "Every day at {time}": [
     "web/src/lib/backups.ts"
+  ],
+  "Every day still has room.": [
+    "web/src/app/Briefing.tsx"
   ],
   "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.": [
     "web/src/app/AccountSettings.tsx"
@@ -7674,6 +7683,12 @@
   "Nothing is parked in Someday.": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Nothing is planned for today.": [
+    "web/src/app/Briefing.tsx"
+  ],
+  "Nothing is planned for tomorrow yet.": [
+    "web/src/app/Briefing.tsx"
+  ],
   "Nothing is ready to start today.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -7727,6 +7742,9 @@
   ],
   "Nothing scheduled yet.": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "Nothing stands out today.": [
+    "web/src/app/Briefing.tsx"
   ],
   "Nothing waiting for a free moment.": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -13146,6 +13164,12 @@
   "Tomorrow 09:00": [
     "web/src/app/ReminderToasts.tsx"
   ],
+  "Tomorrow starts with {n, plural, one {one task} other {# tasks}}; the first is <task>{title}</task> at {time}.": [
+    "web/src/app/Briefing.tsx"
+  ],
+  "Tomorrow starts with {n, plural, one {one task} other {# tasks}}; the first is <task>{title}</task>.": [
+    "web/src/app/Briefing.tsx"
+  ],
   "Tomorrow your Daily check starts with: “{note}”": [
     "web/src/app/review/CloseDay.tsx"
   ],
@@ -15843,6 +15867,9 @@
     "web/src/lib/review.ts",
     "web/src/lib/rules/summary.ts"
   ],
+  "today holds {planned} of work, more than your {length} day": [
+    "web/src/app/Briefing.tsx"
+  ],
   "token": [
     "web/src/app/TokensSection.tsx"
   ],
@@ -16254,6 +16281,9 @@
   "{n, plural, =0 {No next action} one {# next action} other {# next actions}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "{n, plural, =0 {Nothing is planned for the next seven days.} one {One task in the next seven days.} other {# tasks in the next seven days.}}": [
+    "web/src/app/Briefing.tsx"
+  ],
   "{n, plural, =0 {Nothing to decide} one {# to decide} other {# to decide}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
@@ -16445,6 +16475,9 @@
   "{n, plural, one {# reminder} other {# reminders}}": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "{n, plural, one {# reply is} other {# replies are}} waiting": [
+    "web/src/app/Briefing.tsx"
+  ],
   "{n, plural, one {# reply} other {# replies}} from guests": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
@@ -16494,6 +16527,9 @@
   ],
   "{n, plural, one {# task is still in Today.} other {# tasks are still in Today.}}": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "{n, plural, one {# task is} other {# tasks are}} late": [
+    "web/src/app/Briefing.tsx"
   ],
   "{n, plural, one {# task keeps showing this location as it was set.} other {# tasks keep showing this location as it was set.}}": [
     "web/src/app/locations/PlacesView.tsx"
@@ -16600,6 +16636,15 @@
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [
     "web/src/app/task-detail/Facets.tsx"
   ],
+  "{n, plural, one {One task is} other {# tasks are}} planned, about {time} in all.": [
+    "web/src/app/Briefing.tsx"
+  ],
+  "{n, plural, one {One task is} other {# tasks are}} planned.": [
+    "web/src/app/Briefing.tsx"
+  ],
+  "{n, plural, one {One thing matters today.} =2 {Two things matter today.} =3 {Three things matter today.} other {# things matter today.}}": [
+    "web/src/app/Briefing.tsx"
+  ],
   "{n, plural, one {Pasted text, # line: used as material, not as instructions.} other {Pasted text, # lines: used as material, not as instructions.}}": [
     "web/src/app/assistant/AssistantComposer.tsx"
   ],
@@ -16663,6 +16708,9 @@
   "{n, plural, one {within # day} other {within # days}}": [
     "web/src/lib/rules/summary.ts"
   ],
+  "{n, plural, one {{days} is already full} other {{days} are already full}}": [
+    "web/src/app/Briefing.tsx"
+  ],
   "{name} (copy)": [
     "web/src/lib/rules/store.ts"
   ],
@@ -16675,6 +16723,9 @@
   ],
   "{name} (you)": [
     "web/src/app/ShareDialog.tsx"
+  ],
+  "{name} answered about <task>{title}</task>": [
+    "web/src/app/Briefing.tsx"
   ],
   "{name} can sign in again.": [
     "web/src/app/UsersPanel.tsx"
@@ -16717,6 +16768,9 @@
   ],
   "{name} moved to position {n} of {count}": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "{name} replied": [
+    "web/src/app/Briefing.tsx"
   ],
   "{name} reviewed.": [
     "web/src/app/review/ProjectWalk.tsx"

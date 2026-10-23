@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { completeTask, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { createLabel } from '../lib/labels'
 import { createSection } from '../lib/sections'
-import { click, flush, render, mockFetch, noPublicLinks, spokenText, visibleText } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks, spokenText, textWithoutBriefing, visibleText } from '../ui/test-utils'
 import { isGroupCollapsed, resetCollapsedGroups } from './collapsedGroups'
 import { TaskListView } from './TaskListView'
 
@@ -52,7 +52,7 @@ describe('generated groups', () => {
 
     await click(headers(r.container)[0].querySelector('[data-group-toggle]')!)
     await flush(20)
-    expect(r.container.textContent).not.toContain('Dentist')
+    expect(textWithoutBriefing(r.container)).not.toContain('Dentist')
     expect(r.container.textContent).toContain('Taxes')
     expect(headers(r.container)[0].getAttribute('data-collapsed')).toBe('true')
     expect(isGroupCollapsed('upcoming', '2026-10-15')).toBe(true)
@@ -62,10 +62,10 @@ describe('generated groups', () => {
     // Still collapsed when the view is opened again on this device.
     const again = await render(<TaskListView route={{ view: 'upcoming' }} />)
     await waitFor(() => again.container.textContent!.includes('Taxes'))
-    expect(again.container.textContent).not.toContain('Dentist')
+    expect(textWithoutBriefing(again.container)).not.toContain('Dentist')
     expect(headers(again.container)[0].getAttribute('data-collapsed')).toBe('true')
     await click(headers(again.container)[0].querySelector('[data-group-toggle]')!)
-    await waitFor(() => again.container.textContent!.includes('Dentist'))
+    await waitFor(() => textWithoutBriefing(again.container).includes('Dentist'))
     await again.unmount()
   })
 

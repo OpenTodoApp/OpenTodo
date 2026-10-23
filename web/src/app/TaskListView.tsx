@@ -28,6 +28,7 @@ import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
 import { offerMoveToWorkspace, useWorkspaceName } from './workspaceNav'
 import { BoardView } from './BoardView'
+import { BriefingText, useBriefing } from './Briefing'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
@@ -388,13 +389,16 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone }: {
   phone: { slots: ReactNode; items: PhoneItem[] } | null
 }) {
   const items = phone?.items ?? []
+  // The briefing under a day page's title (OpenSpec change briefing).
+  const briefing = useBriefing(route.view === 'today' || route.view === 'upcoming' ? route.view : null)
   const menu = route.view === 'label' && label ? <LabelMenu label={label} extra={phoneGroups(items)} />
     : route.view === 'inbox' ? <InboxMenu extra={items.length > 0 ? <PhoneMenuItems items={items} /> : undefined} /> : undefined
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
       overflow={route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : undefined}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
-      meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'} />
+      meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
+      briefing={briefing && <BriefingText briefing={briefing} />} />
   )
 }
 

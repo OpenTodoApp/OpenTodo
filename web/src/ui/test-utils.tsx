@@ -100,3 +100,10 @@ export function visibleText(el: Element): string {
   copy.querySelectorAll('.sr-only').forEach((n) => n.remove())
   return copy.textContent ?? ''
 }
+
+/** The text of a list page without the day page's briefing, which names tasks too (OpenSpec change briefing). */
+export function textWithoutBriefing(el: Element): string {
+  const copy = el.cloneNode(true) as Element
+  copy.querySelectorAll('[data-page-briefing]').forEach((n) => n.remove())
+  return copy.textContent ?? ''
+}

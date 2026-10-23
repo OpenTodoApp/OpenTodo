@@ -12,7 +12,7 @@ import { applyCatalog, loadLanguage } from '../lib/i18n/catalog'
 import { createProject, createTask, mutateMany, resetDeviceId, type Change } from '../lib/ops'
 import type { ImportJob, Membership, Project, ProjectInvite } from '../lib/types'
 import { SidebarGroup } from '../ui'
-import { click, flush, key, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
+import { click, flush, key, mockFetch, noPublicLinks, render, textWithoutBriefing, waitFor } from '../ui/test-utils'
 import { resetCollapsedGroups } from './collapsedGroups'
 import { ImportScreen } from './ImportScreen'
 import { InviteLinksSection } from './InviteLinksSection'
@@ -86,10 +86,10 @@ describe('midnight while the app is open (UI-17)', () => {
     const today = () => [...r.container.querySelectorAll('a, button')].find((a) => a.textContent?.startsWith('Today')) as HTMLElement | undefined
     await waitFor(() => !!r.container.querySelector('[data-list-page]') && !!today(), 'the list and sidebar')
     await flush(50)
-    expect(r.container.querySelector('[data-list-page]')!.textContent).not.toContain('Tomorrow thing')
+    expect(textWithoutBriefing(r.container.querySelector('[data-list-page]')!)).not.toContain('Tomorrow thing')
     vi.setSystemTime(new Date(2026, 9, 15, 0, 0, 30))
     await act(async () => { vi.advanceTimersByTime(60_000) })
-    await waitFor(() => r.container.querySelector('[data-list-page]')!.textContent!.includes('Tomorrow thing'), 'the task in Today after midnight', 3000)
+    await waitFor(() => textWithoutBriefing(r.container.querySelector('[data-list-page]')!).includes('Tomorrow thing'), 'the task in Today after midnight', 3000)
     await waitFor(() => today()!.querySelector('[data-count]')?.textContent === '1', 'the sidebar count after midnight', 3000)
     await r.unmount()
   })

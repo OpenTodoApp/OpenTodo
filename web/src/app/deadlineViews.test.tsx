@@ -7,7 +7,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { flush, key, render, type, spokenText, visibleText } from '../ui/test-utils'
+import { flush, key, render, spokenText, textWithoutBriefing, type, visibleText } from '../ui/test-utils'
 import { PanelHost } from './PanelHost'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
@@ -67,7 +67,7 @@ describe('Today and Upcoming lists (2.3)', () => {
     await createTask({ title: 'Still ahead', due: { date: '2026-10-20' }, deadline: '2026-10-24' })
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => r.container.textContent!.includes('Deadline today'))
-    const text = r.container.textContent!
+    const text = textWithoutBriefing(r.container)
     expect(text).not.toContain('Still ahead')
     expect(text.split('Planned late').length - 1).toBe(1)
     const overdue = text.indexOf('Earlier'), late = text.indexOf('Planned late'), todayH = text.indexOf('Today', overdue + 1)
@@ -83,7 +83,7 @@ describe('Today and Upcoming lists (2.3)', () => {
     await createTask({ title: 'Both dates', due: { date: '2026-10-15' }, deadline: '2026-10-17' })
     const r = await render(<TaskListView route={{ view: 'upcoming' }} />)
     await waitFor(() => r.container.textContent!.includes('Only deadline'))
-    const text = r.container.textContent!
+    const text = textWithoutBriefing(r.container)
     expect(text.split('Both dates').length - 1).toBe(1)
     const tomorrow = text.indexOf('Tomorrow')
     expect(text.indexOf('Both dates')).toBeGreaterThan(tomorrow)

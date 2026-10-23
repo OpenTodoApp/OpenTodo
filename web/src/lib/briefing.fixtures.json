@@ -1,0 +1,162 @@
+{
+  "_comment": "Scenarios for lib/briefing.ts (OpenSpec change briefing). Today is 2026-10-22, a Thursday; the day length is 480 minutes. Tasks list only the fields that differ from an open undated task; completed_at is a local noon on the named day.",
+  "today": "2026-10-22",
+  "dayLength": 480,
+  "scenarios": [
+    {
+      "name": "one late task, a full Monday and one reply: three things",
+      "view": "today",
+      "tasks": [
+        { "id": "passport", "title": "Renew the passport", "due": { "date": "2026-10-20" } },
+        { "id": "a", "title": "Write the report", "due": { "date": "2026-10-22" }, "estimate_minutes": 60 },
+        { "id": "m1", "title": "Workshop", "due": { "date": "2026-10-26" }, "estimate_minutes": 300 },
+        { "id": "m2", "title": "Slides", "due": { "date": "2026-10-26" }, "estimate_minutes": 180 },
+        { "id": "boiler", "title": "Boiler", "due": { "date": "2026-10-30" } }
+      ],
+      "notifications": [
+        { "id": "n1", "kind": "mentioned", "readAt": null, "payload": { "taskId": "boiler", "taskTitle": "Boiler", "actorName": "Mia" } },
+        { "id": "n2", "kind": "assigned", "readAt": null, "payload": { "taskId": "a", "taskTitle": "Write the report", "actorName": "Leo" } },
+        { "id": "n3", "kind": "mentioned", "readAt": 5, "payload": { "taskId": "a", "taskTitle": "Write the report", "actorName": "Leo" } }
+      ],
+      "expect": {
+        "mode": "today", "open": 2, "planned": 60,
+        "facts": [
+          { "kind": "late", "count": 1, "task": { "id": "passport", "title": "Renew the passport" }, "days": 2 },
+          { "kind": "full", "dates": ["2026-10-26"] },
+          { "kind": "replies", "count": 1, "name": "Mia", "task": { "id": "boiler", "title": "Boiler" } }
+        ]
+      }
+    },
+    {
+      "name": "several late tasks are counted; a blocked late task is left out; a passed deadline counts",
+      "view": "today",
+      "tasks": [
+        { "id": "l1", "due": { "date": "2026-10-21" } },
+        { "id": "l2", "deadline": "2026-10-19" },
+        { "id": "l3", "due": { "date": "2026-10-15" }, "blocked_by": ["x"] },
+        { "id": "x", "title": "Blocker" }
+      ],
+      "notifications": [],
+      "expect": { "mode": "today", "open": 3, "planned": 0, "facts": [{ "kind": "late", "count": 2 }] }
+    },
+    {
+      "name": "today past the day length is said instead of a later full day",
+      "view": "today",
+      "tasks": [
+        { "id": "a", "due": { "date": "2026-10-22" }, "estimate_minutes": 300 },
+        { "id": "b", "due": { "date": "2026-10-21" }, "estimate_minutes": 240 },
+        { "id": "c", "due": { "date": "2026-10-23" }, "estimate_minutes": 480 }
+      ],
+      "notifications": [],
+      "expect": {
+        "mode": "today", "open": 2, "planned": 540,
+        "facts": [
+          { "kind": "late", "count": 1, "task": { "id": "b", "title": "Task" }, "days": 1 },
+          { "kind": "overfull", "planned": 540, "dayLength": 480 }
+        ]
+      }
+    },
+    {
+      "name": "more than one unread reply is a count; a mention and a guest reply both count",
+      "view": "today",
+      "tasks": [
+        { "id": "a", "due": { "date": "2026-10-22" }, "estimate_minutes": 45 },
+        { "id": "b", "due": { "date": "2026-10-22", "time": "09:30" } },
+        { "id": "far", "due": { "date": "2026-11-20" }, "estimate_minutes": 600 }
+      ],
+      "notifications": [
+        { "id": "n1", "kind": "mentioned", "readAt": null, "payload": { "taskId": "a", "actorName": "Mia" } },
+        { "id": "n2", "kind": "page_replied", "readAt": null, "payload": { "pageId": "p", "taskId": "b", "guestName": "Ana" } }
+      ],
+      "expect": {
+        "mode": "today", "open": 2, "planned": 45,
+        "facts": [{ "kind": "replies", "count": 2 }]
+      }
+    },
+    {
+      "name": "nothing stands out: a calm day with the open count and the planned time; a day eight days ahead is outside the window",
+      "view": "today",
+      "tasks": [
+        { "id": "a", "due": { "date": "2026-10-22" }, "estimate_minutes": 45 },
+        { "id": "b", "due": { "date": "2026-10-22", "time": "09:30" } },
+        { "id": "far", "due": { "date": "2026-10-30" }, "estimate_minutes": 600 },
+        { "id": "done", "due": { "date": "2026-10-24" }, "estimate_minutes": 600, "completed": "2026-10-21" }
+      ],
+      "notifications": [],
+      "expect": { "mode": "today", "open": 2, "planned": 45, "facts": [] }
+    },
+    {
+      "name": "a reply about an encrypted task is named from the device's own copy",
+      "view": "today",
+      "tasks": [{ "id": "a", "title": "Call the plumber", "due": { "date": "2026-10-22" } }],
+      "notifications": [{ "id": "n1", "kind": "page_replied", "readAt": null, "payload": { "pageId": "p", "taskId": "a" } }],
+      "expect": {
+        "mode": "today", "open": 1, "planned": 0,
+        "facts": [{ "kind": "replies", "count": 1, "task": { "id": "a", "title": "Call the plumber" } }]
+      }
+    },
+    {
+      "name": "empty Today after a completion: all done, tomorrow's first task by time",
+      "view": "today",
+      "tasks": [
+        { "id": "done", "due": { "date": "2026-10-22" }, "completed": "2026-10-22" },
+        { "id": "t1", "title": "Groceries", "due": { "date": "2026-10-23" } },
+        { "id": "t2", "title": "Standup", "due": { "date": "2026-10-23", "time": "09:30" } },
+        { "id": "t3", "title": "Later", "due": { "date": "2026-10-24" } }
+      ],
+      "notifications": [],
+      "expect": { "mode": "done", "tomorrow": { "count": 2, "first": { "id": "t2", "title": "Standup", "time": "09:30" } } }
+    },
+    {
+      "name": "empty Today after closing the day with nothing completed: all done",
+      "view": "today",
+      "closed": true,
+      "tasks": [],
+      "notifications": [],
+      "expect": { "mode": "done", "tomorrow": { "count": 0, "first": null } }
+    },
+    {
+      "name": "empty Today with nothing done: a clear day; a completion yesterday does not count",
+      "view": "today",
+      "tasks": [
+        { "id": "old", "due": { "date": "2026-10-21" }, "completed": "2026-10-21" },
+        { "id": "t1", "title": "Groceries", "due": { "date": "2026-10-23" } }
+      ],
+      "notifications": [],
+      "expect": { "mode": "clear", "tomorrow": { "count": 1, "first": { "id": "t1", "title": "Groceries" } } }
+    },
+    {
+      "name": "tasks of archived projects are left out",
+      "view": "today",
+      "projects": [{ "id": "arch", "archived": true }],
+      "tasks": [{ "id": "a", "due": { "date": "2026-10-20" }, "project_id": "arch" }],
+      "notifications": [],
+      "expect": { "mode": "clear", "tomorrow": { "count": 0, "first": null } }
+    },
+    {
+      "name": "Upcoming: the next seven days, every full day, tomorrow",
+      "view": "upcoming",
+      "tasks": [
+        { "id": "t1", "title": "Groceries", "due": { "date": "2026-10-23" }, "estimate_minutes": 480 },
+        { "id": "s", "due": { "date": "2026-10-24" } },
+        { "id": "m", "due": { "date": "2026-10-26" }, "estimate_minutes": 500 },
+        { "id": "w", "due": { "date": "2026-10-29" } },
+        { "id": "beyond", "due": { "date": "2026-10-30" } },
+        { "id": "today", "due": { "date": "2026-10-22" }, "estimate_minutes": 900 }
+      ],
+      "notifications": [],
+      "expect": {
+        "mode": "upcoming", "count": 4,
+        "facts": [{ "kind": "full", "dates": ["2026-10-23", "2026-10-26"] }],
+        "tomorrow": { "count": 1, "first": { "id": "t1", "title": "Groceries" } }
+      }
+    },
+    {
+      "name": "Upcoming with nothing ahead",
+      "view": "upcoming",
+      "tasks": [{ "id": "a", "due": { "date": "2026-10-22" } }],
+      "notifications": [],
+      "expect": { "mode": "upcoming", "count": 0, "facts": [], "tomorrow": { "count": 0, "first": null } }
+    }
+  ]
+}
