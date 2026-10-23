@@ -1,15 +1,17 @@
 // @vitest-environment happy-dom
-// The sticky panel header and the expanded task page (OpenSpec change ux-overhaul,
-// web-app "Task panel layout", app-shell "Panel width and expansion").
+// The task as a page (OpenSpec change task-full-page): a task opens at /task/<id>
+// with the breadcrumb and its place in the list, j and k step through that list,
+// Esc returns to it with the task selected, and a reload or a link renders the page.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, key, render } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
+import { resetTaskTrail } from './taskTrail'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 
@@ -18,69 +20,120 @@ beforeEach(async () => {
   await db.open()
   resetDeviceId()
   resetPanel()
+  resetTaskTrail()
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
   history.replaceState(null, '', '/')
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel() })
+afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel(); resetTaskTrail() })
 
 async function waitFor(ok: () => boolean, ms = 3000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
   expect(ok()).toBe(true)
 }
-const panel = () => document.querySelector<HTMLElement>('aside[data-detail-for]')
+const page = () => document.querySelector<HTMLElement>('[data-detail-variant="page"]')
+const rowOpen = (title: string) => [...document.querySelectorAll<HTMLElement>('[data-task-id] button.min-w-0')].find((b) => b.textContent?.includes(title))!
+const position = () => document.querySelector('[data-task-position] [aria-hidden]')?.textContent
 
-describe('panel header', () => {
-  it('holds the checkbox and the title outside the scroller, and the checkbox completes the task', async () => {
-    const project = await createProject({ name: 'Home' })
-    const id = await createTask({ title: 'Paint the fence', project_id: project, priority: 2 })
+async function projectOfThree() {
+  const project = await createProject({ name: 'Home' })
+  const ids = [
+    await createTask({ title: 'Paint the fence', project_id: project, priority: 2 }),
+    await createTask({ title: 'Fix the gate', project_id: project }),
+    await createTask({ title: 'Clean the gutters', project_id: project }),
+  ]
+  return { project, ids }
+}
+
+describe('the task page', () => {
+  it('opens from a list as a page: breadcrumb, the title, and the checkbox completes the task', async () => {
+    const { project, ids } = await projectOfThree()
     navigate({ view: 'project', id: project })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => r.container.textContent!.includes('Paint the fence'))
-    r.container.querySelector<HTMLElement>('[data-task-id] button.min-w-0')!.click()
-    await waitFor(() => !!panel())
-    const header = panel()!.querySelector('[data-panel-header]')!
-    const title = header.querySelector<HTMLTextAreaElement>('[aria-label="Title"]')!
-    expect(title.value).toBe('Paint the fence')
-    expect(header.querySelector('[data-panel-complete]')).toBeTruthy()
-    // The header is not inside the panel's scroller.
-    expect(header.closest('.overflow-y-auto')).toBeNull()
-    expect([...panel()!.querySelectorAll('button')].some((b) => b.textContent === 'Complete')).toBe(false)
-    await click(header.querySelector<HTMLButtonElement>('[data-panel-complete]')!)
-    await waitFor(() => !!document.querySelector('[data-panel-complete][aria-pressed="true"]') || !panel())
-    expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
+    await click(rowOpen('Paint the fence'))
+    await waitFor(() => location.pathname === `/task/${ids[0]}` && !!page())
+    // Nothing docks beside a list: no panel, no list behind the page.
+    expect(document.querySelector('[data-detail-variant="panel"]')).toBeNull()
+    expect(document.querySelector('[data-task-id]')).toBeNull()
+    const crumbs = page()!.querySelector('[data-breadcrumb]')!
+    expect(crumbs.querySelector('[data-crumb="project"]')!.textContent).toContain('Home')
+    expect(crumbs.querySelector('[data-crumb="task"]')!.textContent).toBe('Paint the fence')
+    expect(page()!.querySelector<HTMLTextAreaElement>('[aria-label="Title"]')!.value).toBe('Paint the fence')
+    await click(page()!.querySelector<HTMLButtonElement>('[data-panel-complete]')!)
+    await waitFor(() => !!document.querySelector('[data-panel-complete][aria-pressed="true"]'))
+    expect((await db.tasks.get(ids[0]))!.completed_at).not.toBeNull()
     await r.unmount()
   })
 
-  it('Expand opens the task as a page at /task/<id>; Back returns to the list with the panel open', async () => {
-    const project = await createProject({ name: 'Home' })
-    const id = await createTask({ title: 'Paint the fence', project_id: project })
+  it('shows its place in the list, steps with j and k, and Esc returns to the list with the task selected', async () => {
+    const { project, ids } = await projectOfThree()
     navigate({ view: 'project', id: project })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => r.container.textContent!.includes('Paint the fence'))
-    r.container.querySelector<HTMLElement>('[data-task-id] button.min-w-0')!.click()
-    await waitFor(() => !!panel())
-    await click(panel()!.querySelector<HTMLButtonElement>('button[aria-label="Task actions"]')!)
-    const expand = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((i) => i.textContent?.startsWith('Expand'))!
-    await click(expand)
-    await waitFor(() => location.pathname === `/task/${id}`)
-    await waitFor(() => !!document.querySelector('aside[data-detail-variant="page"]'))
-    // One detail on screen: the page, no panel in the slot.
-    expect(document.querySelectorAll('aside[data-detail-for]')).toHaveLength(1)
-    expect(document.querySelector(`[data-task-page="${id}"]`)).toBeTruthy()
-    expect(document.querySelector('button[aria-label="Close"]')).toBeNull()
-    await click(document.querySelector<HTMLButtonElement>('[data-task-back]')!)
-    await waitFor(() => location.pathname === `/project/${project}`)
-    await waitFor(() => !!document.querySelector('aside[data-detail-variant="panel"]'))
-    expect(panel()!.getAttribute('data-detail-for')).toBe(id)
+    await waitFor(() => r.container.textContent!.includes('Fix the gate'))
+    await click(rowOpen('Fix the gate'))
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && !!page())
+    expect(position()).toBe('2 / 3')
+    await key(document.body, 'j')
+    await waitFor(() => location.pathname === `/task/${ids[2]}` && position() === '3 / 3')
+    expect(document.querySelector<HTMLButtonElement>('[data-task-next]')!.disabled).toBe(true)
+    // At the end of the list j does nothing.
+    await key(document.body, 'j')
+    await flush(50)
+    expect(location.pathname).toBe(`/task/${ids[2]}`)
+    await key(document.body, 'k')
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && position() === '2 / 3')
+    await key(document.body, 'Escape')
+    await waitFor(() => location.pathname === `/project/${project}` && !page())
+    await waitFor(() => document.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') === ids[1])
     await r.unmount()
   })
 
-  it('a reload of /task/<id> renders the page', async () => {
+  it('a reload of /task/<id> renders the page; Close goes to the task’s own list with it selected', async () => {
     const id = await createTask({ title: 'Call the bank' })
     navigate({ view: 'task', id })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('aside[data-detail-variant="page"]'))
+    await waitFor(() => !!page())
     expect(document.querySelector<HTMLTextAreaElement>('[aria-label="Title"]')!.value).toBe('Call the bank')
+    // Opened from the address: no list to count in.
+    expect(document.querySelector('[data-task-position]')).toBeNull()
+    await click(document.querySelector<HTMLButtonElement>('[data-task-close]')!)
+    await waitFor(() => location.pathname === '/' && !page())
+    await waitFor(() => document.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') === id)
+    await r.unmount()
+  })
+
+  it('an older ?task= link opens the page over the page in the address, and Esc goes back there', async () => {
+    const id = await createTask({ title: 'Renew the passport', due: { date: '2099-01-02' } })
+    navigate({ view: 'upcoming' })
+    history.replaceState(null, '', `/upcoming?task=${id}`)
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => location.pathname === `/task/${id}` && !!page())
+    await key(document.body, 'Escape')
+    await waitFor(() => location.pathname === '/upcoming' && !page())
+    await r.unmount()
+  })
+})
+
+describe('the facts column', () => {
+  it('names every fact, offers unset ones as actions, and opens the same editor as the panel', async () => {
+    const id = await createTask({ title: 'Call the plumber', priority: 2, due: { date: '2099-03-04' } })
+    navigate({ view: 'task', id })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!page()?.querySelector('[data-facts]'))
+    const facts = page()!.querySelector<HTMLElement>('[data-facts]')!
+    const fact = (name: string) => facts.querySelector<HTMLElement>(`[data-fact="${name}"]`)!
+    expect([...facts.querySelectorAll('[data-fact-group] > h3')].map((h) => h.textContent)).toEqual(['Schedule', 'Details', 'Labels', 'Project'])
+    expect(fact('priority').textContent).toContain('Priority 2')
+    expect(fact('deadline').textContent).toContain('Set a deadline')
+    expect(fact('location').textContent).toContain('Add a place')
+    expect(fact('repeat').textContent).toContain('Doesn’t repeat')
+    // Blocks and the origin only appear with a value.
+    expect(facts.querySelector('[data-fact="blocks"]')).toBeNull()
+    await click(fact('deadline').querySelector('button')!)
+    await waitFor(() => !!document.querySelector('[role="dialog"]'))
+    expect(fact('deadline').querySelector('button')!.getAttribute('aria-expanded')).toBe('true')
+    // The When editor opens on its Deadline segment.
+    expect(document.querySelector('[role="dialog"] [aria-pressed="true"], [role="dialog"] [aria-checked="true"], [role="dialog"] [aria-selected="true"]')?.textContent).toContain('Deadline')
     await r.unmount()
   })
 })

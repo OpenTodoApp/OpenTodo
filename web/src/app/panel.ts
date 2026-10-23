@@ -1,10 +1,13 @@
 // The shell's panel slot (OpenSpec change ux-overhaul, `app-shell` "The panel slot
-// has an address", design D1). One occupant at a time: the open task (its id kept
-// in `?task=` so a reload or a shared link reopens it) or a custom occupant such
-// as project activity. Views call `openTaskPanel` instead of mounting the panel
-// themselves; `PanelHost`, rendered once by the shell, draws whatever is open.
+// has an address", design D1). One occupant at a time: a custom occupant such as
+// project activity, or a docked task. Views call `openTaskPanel` to open a task:
+// since task-full-page (design D3) that opens the task page, unless the page on
+// screen asked to keep tasks beside it (`setTaskSplit`, the Inbox's triage split)
+// on a screen of at least 1024 px; then the task docks here, its id in `?task=`.
+// `PanelHost`, rendered once by the shell, draws whatever is open.
 import { type ReactNode, useSyncExternalStore } from 'react'
 import type { Task } from '../lib/types'
+import { openTaskPage } from './taskTrail'
 
 export type PanelOccupant =
   | { kind: 'task'; id: string; path: string }
@@ -37,7 +40,21 @@ function syncQuery(id: string | null): void {
   history.replaceState(history.state, '', `${location.pathname}${q ? `?${q}` : ''}${location.hash}`)
 }
 
+/** The page on screen docks tasks beside its list instead of opening them as pages (set while it is mounted). */
+let split = false
+export function setTaskSplit(on: boolean): () => void {
+  split = on
+  return () => { split = false }
+}
+
+const SPLIT_QUERY = '(min-width: 1024px)'
+function docks(): boolean {
+  return split && typeof matchMedia !== 'undefined' && matchMedia(SPLIT_QUERY).matches
+}
+
+/** Open a task: as a page, or docked in the slot on a page that keeps a split. */
 export function openTaskPanel(id: string): void {
+  if (!docks()) { openTaskPage(id); return }
   if (occupant?.kind === 'task' && occupant.id === id) return
   occupant = { kind: 'task', id, path: currentPath() }
   syncQuery(id)
@@ -119,6 +136,7 @@ export function usePanelHandlers(): PanelHandlers {
 export function resetPanel(): void {
   occupant = null
   handlers = {}
+  split = false
   emit()
 }
 

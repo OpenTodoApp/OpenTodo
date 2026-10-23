@@ -95,7 +95,7 @@ async function context(theme, opts = {}) {
 const settle = (p, ms = 600) => p.waitForTimeout(ms)
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const row = (p, title) => p.getByRole('button', { name: new RegExp('^' + esc(title)) }).first()
-const detail = (p) => p.locator('aside[data-detail-for]')
+const detail = (p) => p.locator('[data-detail-for]')
 const sidebar = (p) => p.locator('aside').first()
 async function go(p, base, path, ready) { await p.goto(base + path); if (ready) await ready(); await settle(p, 800) }
 async function unfold(p, button) { if ((await button.getAttribute('aria-expanded')) === 'false') { await button.click(); await settle(p, 300) } }

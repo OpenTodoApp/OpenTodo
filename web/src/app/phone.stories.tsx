@@ -35,14 +35,14 @@ export const RowMidSwipe: StoryObj = {
   ),
 }
 
-/** The viewport the shell fills: the theme frame's padding is undone so the sheet reaches the edges. */
+/** The viewport the shell fills: the theme frame's padding is undone so the page reaches the edges. */
 function Viewport({ children }: { children: ReactNode }) {
   return <div className="-m-4 h-[49rem] overflow-hidden bg-canvas">{children}</div>
 }
 
-/** A task open over its list (design D5): the handle, the sticky header, 90 dvh at most, the list dimmed behind. */
-export const TaskSheet: StoryObj = {
-  name: 'Task sheet',
+/** A task opened on a phone (task-full-page): its page, with Back to the list and the next and previous task in the bar. */
+export const TaskPage: StoryObj = {
+  name: 'Task page',
   ...withSeed(async () => {
     await seedInbox()
     openTask.set(seeded.inboxTask)

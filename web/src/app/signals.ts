@@ -6,6 +6,7 @@
 import { localDate } from '../lib/dates'
 import type { Task } from '../lib/types'
 import { navigate, routePath } from './router'
+import { openTaskPage } from './taskTrail'
 import { armGPrefix, clearPrefix, isPrefixPending } from './shortcuts/dispatch'
 
 /** The `g` prefix now lives in the shortcut dispatcher (ux-overhaul D5); these stay for the Vim layer and tests. */
@@ -75,23 +76,19 @@ export function placeInDay(task: Pick<Task, 'id' | 'due'>, today: string): void 
 }
 
 /**
- * Open a task's detail panel from outside a list (a reminder toast, a notification
- * click): go to the task's project (or the Inbox) and open it there. When the list
- * is already showing, its subscriber opens it at once; otherwise the list takes the
- * request when the route changes.
+ * Ask the list on screen to open a task (project activity, the triage card): the
+ * list selects the row and opens the task as its page, remembering the list.
  */
 export const openTask = channel()
 
 /** Select a task (without opening it) when the list next shows: leaving the triage mode (inbox-triage). */
 export const selectTask = channel()
 
+/**
+ * Open a task from outside a list (a reminder toast, a notification, the palette):
+ * as its page, with Esc going to the task's own list (its project, or the Inbox)
+ * with the task selected there (task-full-page D2).
+ */
 export function openTaskInList(task: Pick<Task, 'id' | 'project_id'>): void {
-  const route = task.project_id ? { view: 'project' as const, id: task.project_id } : { view: 'inbox' as const }
-  const path = routePath(route)
-  if (typeof location !== 'undefined' && (location.pathname === path || (path === '/' && location.pathname === '/inbox'))) {
-    openTask.request(task.id)
-    return
-  }
-  openTask.set(task.id)
-  navigate(route)
+  openTaskPage(task.id, { from: routePath(task.project_id ? { view: 'project', id: task.project_id } : { view: 'inbox' }) })
 }

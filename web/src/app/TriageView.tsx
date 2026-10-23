@@ -17,7 +17,7 @@ import type { Membership, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
 import { registerListState } from './listActions'
 import { Markdown } from './Markdown'
-import { setPanelTaskId, usePanelTaskId } from './panel'
+import { setPanelTaskId, setTaskSplit, usePanelTaskId } from './panel'
 import { ProjectPickerField } from './ProjectPickerField'
 import { ScheduleSheet } from './ScheduleSheet'
 import { navigate } from './router'
@@ -64,6 +64,8 @@ export function TriageView() {
   const memberships = useMemberships()
   const me = useLiveQuery(() => currentUserId(), [], null)
   const openId = usePanelTaskId()
+  // The card keeps the opened task beside it from 1024 px instead of leaving for the task page (task-full-page D3).
+  useEffect(() => setTaskSplit(true), [])
   const [state, setState] = useState<TriageState | null>(null)
   const [picker, setPicker] = useState<Picker>(null)
   const [announce, setAnnounce] = useState('')

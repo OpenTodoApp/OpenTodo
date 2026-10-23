@@ -12,11 +12,13 @@ import { db, setMeta } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { click, flush, key, render, type } from '../ui/test-utils'
 import { CalendarRangeSwitch } from './CalendarRange'
-import { panelTaskId, resetPanel } from './panel'
+import { resetPanel } from './panel'
+import { openedTask, resetTaskPage } from './taskPage.testkit'
 import { PlanView } from './PlanView'
 import { parseRoute, routePath } from './router'
 
 beforeEach(async () => {
+  resetTaskPage()
   vi.useFakeTimers({ toFake: ['Date'] })
   // Monday 12 October 2026.
   vi.setSystemTime(new Date(2026, 9, 12, 12, 0))
@@ -368,7 +370,7 @@ describe('keyboard in the plan', () => {
     await key(document.body, 'j')
     await key(document.body, 'j')
     await key(document.body, 'Enter')
-    expect(panelTaskId()).toBe(second)
+    expect(openedTask()).toBe(second)
     await r.unmount()
   })
 
@@ -436,9 +438,9 @@ describe('span and phone', () => {
       expect(projected.className).toContain('text-faint')
       expect(r.container.querySelector('[data-agenda-day="2026-10-19"] [data-capacity]')!.textContent).toBe('45m / 8h')
       await click(row(r.container, id))
-      expect(panelTaskId()).toBeNull()
+      expect(openedTask()).toBeNull()
       await click(row(r.container, id))
-      expect(panelTaskId()).toBe(id)
+      expect(openedTask()).toBe(id)
       const axe = (await import('axe-core')).default
       const res = await axe.run(r.container, { rules: { 'color-contrast': { enabled: false } } })
       expect(res.violations.map((v) => v.id)).toEqual([])

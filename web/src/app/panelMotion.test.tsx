@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 // The task panel's motion (OpenSpec change motion-v2, web-app "Overlay motion"): it
-// slides in when it opens from closed, never when it switches to another task.
+// slides in when it opens from closed, never when it switches to another task. Tasks dock
+// only on a page that keeps a split (task-full-page D3), so the test asks for one.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -8,7 +9,7 @@ import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { flush, render } from '../ui/test-utils'
-import { closePanel, openTaskPanel, resetPanel } from './panel'
+import { closePanel, openTaskPanel, resetPanel, setTaskSplit } from './panel'
 import { PanelHost } from './PanelHost'
 
 beforeEach(async () => {
@@ -17,6 +18,7 @@ beforeEach(async () => {
   resetDeviceId()
   setCurrentUserId('me')
   resetPanel()
+  setTaskSplit(true)
   vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
 })
 afterEach(() => { vi.unstubAllGlobals(); resetPanel(); document.body.innerHTML = '' })

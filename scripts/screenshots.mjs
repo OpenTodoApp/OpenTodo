@@ -55,7 +55,7 @@ const mk = async (o = {}, time = NOW) => {
 }
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const row = (p, title) => p.getByRole('button', { name: new RegExp('^' + esc(title)) }).first()
-const detail = (p) => p.locator('aside[data-detail-for]')
+const detail = (p) => p.locator('[data-detail-for]')
 const settle = (p, ms = 500) => p.waitForTimeout(ms)
 
 // ------------------------------------------------------------------ encoder

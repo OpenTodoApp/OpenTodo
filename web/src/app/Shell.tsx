@@ -28,15 +28,15 @@ import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
 import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
-import { sidebarFind, openTaskInList } from './signals'
+import { sidebarFind } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
-import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
+import { closePanelIfStale, panelTaskId, taskIdFromAddress, usePanel } from './panel'
+import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
-import { getTask } from '../lib/localData'
 import { watchViewerZone } from '../lib/dates'
 import { UndoToast } from './bulk/UndoToast'
 import { DailyCheckToast } from './method/DailyCheckToast'
@@ -99,18 +99,19 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
   useEffect(() => {
-    // `?task=<id>` (a notification click, a shared link, a reload with the panel
-    // open): at the root, show the task in its own list instead of the start view;
-    // on any other page, reopen it in the panel there (app-shell).
-    // Old and alias addresses (/activity, /calendar, earlier settings ids) are replaced in place.
+    // `?task=<id>` (a notification click, an older shared link, a link in a note):
+    // the task opens as its page over the page in the address, so Esc returns there
+    // (task-full-page D4). Old and alias addresses (/activity, /calendar, earlier
+    // settings ids) are replaced in place.
     const canonical = canonicalPath(location.pathname)
     if (canonical && canonical !== location.pathname) history.replaceState(null, '', `${canonical}${location.search}`)
     const taskParam = taskIdFromAddress()
     if (taskParam) {
-      if (location.pathname === '/') {
-        history.replaceState(null, '', location.pathname)
-        void getTask(taskParam).then((task) => task && openTaskInList(task))
-      } else openTaskPanel(taskParam)
+      const params = new URLSearchParams(location.search)
+      params.delete('task')
+      const q = params.toString()
+      history.replaceState(null, '', `${location.pathname}${q ? `?${q}` : ''}`)
+      openTaskPage(taskParam)
       return
     }
     if (location.pathname !== '/') return
@@ -132,8 +133,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
 
   useEffect(() => {
     setSidebarOpen(false)
-    // The panel belongs to the page that opened it (app-shell D1).
+    // The panel belongs to the page that opened it (app-shell D1); a return from the task page restores its list's scroll.
     closePanelIfStale(location.pathname)
+    settleTrail(currentAddress())
   }, [route])
 
   // Whether the owner turned the assistant on for this account (cached offline).
@@ -155,13 +157,13 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
 
   const palette = useCommandBar()
   const [showHelp, setShowHelp] = useState(false)
-  // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open.
+  // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open, and on the task page (its own bar).
   const [addOpen, setAddOpen] = useState(false)
   useEffect(() => { const off = onQuickAddSheetRequest(() => setAddOpen(true)); void handleShellUrl(requestQuickAddSheet); return off }, []) // and a native shell's address actions (native-shells)
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
   const panelOpen = !!usePanel()
-  const phoneChrome = !sheetOpen && !panelOpen && !['share', 'invite', 'project-invite', 'workspace-invite', 'reset'].includes(route.view)
+  const phoneChrome = !sheetOpen && !panelOpen && !['share', 'invite', 'project-invite', 'workspace-invite', 'reset', 'task'].includes(route.view)
   // The one keydown listener (keyboard-shortcuts "One shortcut registry with
   // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
   // cheat sheet, the sidebar toggle and the assistant.

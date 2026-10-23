@@ -42,8 +42,9 @@ describe('the panel title parses what is typed into it', () => {
     expect(field.value).toBe('Call the bank')
     // One undo entry holds the whole change: undoing it brings the task back.
     const { bulkToast } = await import('../bulk/toastStore')
+    // The offer follows the write a moment later.
+    await waitFor(() => !!bulkToast()?.undoId, 'the undo offer')
     const toast = bulkToast()
-    expect(toast?.undoId).toBeTruthy()
     const { undoBatch } = await import('../../lib/undo')
     await act(async () => { await undoBatch(toast!.undoId!) })
     await waitFor(async () => (await db.tasks.get(id))!.priority === 4, 'the change undone')

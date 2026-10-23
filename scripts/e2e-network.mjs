@@ -109,7 +109,7 @@ async function audit(name, env, mapsOn) {
   step(`${name}: task panel with its location`)
   await page.goto(`${base}/inbox`)
   await page.getByRole('button', { name: /^Visit the Colosseum/ }).first().click()
-  await page.locator('aside[data-detail-for]').waitFor()
+  await page.locator('[data-detail-for]').waitFor()
   if (mapsOn) {
     await page.locator('[data-location-preview] canvas').waitFor({ timeout: 20000 })
     await page.waitForTimeout(1500) // tiles
@@ -119,7 +119,7 @@ async function audit(name, env, mapsOn) {
   }
 
   step(`${name}: location editor${mapsOn ? ' and an address search' : ''}`)
-  await page.locator('aside[data-detail-for]').getByRole('button', { name: /^Where: .*Colosseo/ }).first().click()
+  await page.locator('[data-detail-for]').getByRole('button', { name: /^Where: .*Colosseo/ }).first().click()
   const editor = page.locator('[data-location-editor]')
   await editor.waitFor()
   if (mapsOn) {

@@ -9,7 +9,7 @@ import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { act } from 'react'
 import { flush, key, mockFetch, noPublicLinks, render, type, waitFor } from '../ui/test-utils'
 import { Sidebar } from './Sidebar'
-import { PanelHost } from './PanelHost'
+import { TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 
@@ -155,7 +155,7 @@ describe('keys (3.3)', () => {
     mockFetch(noPublicLinks)
     const home = await createProject({ name: 'Home' })
     const id = await createTask({ title: 'Renew passport', project_id: home })
-    const r = await render(<><TaskListView route={{ view: 'project', id: home }} /><PanelHost /></>)
+    const r = await render(<><TaskListView route={{ view: 'project', id: home }} /><TaskPageHost /></>)
     await waitFor(() => text(r.container).includes('Renew passport'))
     await key(document.body, 'j')
     await key(document.body, 'N', { shiftKey: true })

@@ -27,7 +27,7 @@ const snap = async (p, name) => { if (shots) await p.screenshot({ path: `${shots
 // Scoped to the role so the Parent task picker's <option> and subtask toggles never match.
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const row = (p, title) => p.getByRole('button', { name: new RegExp('^' + esc(title)) })
-const detail = (p) => p.locator('aside[data-detail-for]')
+const detail = (p) => p.locator('[data-detail-for]')
 
 await page.goto(base)
 step('setup screen')

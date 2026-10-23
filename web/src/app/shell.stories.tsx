@@ -26,12 +26,12 @@ export const ListOnly: StoryObj = {
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
 }
 
-/** The same Inbox with a task open in the panel: three columns, three scrollers. */
-export const ListWithPanel: StoryObj = {
+/** A task of the same Inbox opened as its page (task-full-page): breadcrumb, 1 / n, content and facts. */
+export const TaskPage: StoryObj = {
   ...withSeed(async () => {
     await seedInbox()
-    // A pending "open this task" request, as a notification click leaves it: the list
-    // takes it when it mounts, selects the row and opens the panel (openTaskInList).
+    // A pending "open this task" request: the list takes it when it mounts, selects the
+    // row and opens the task as its page, remembering the list for 1 / n and Esc.
     openTask.set(seeded.inboxTask)
   }),
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,

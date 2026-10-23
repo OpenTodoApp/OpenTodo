@@ -110,15 +110,15 @@ describe('list chrome', () => {
 describe('selection', () => {
   const press = (el: Element) => el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
 
-  it('a press on empty space clears the selection and closes the panel; rows, controls and overlays keep it', async () => {
-    const { panelTaskId } = await import('./panel')
+  it('a press on empty space clears the selection; rows, controls and overlays keep it', async () => {
     await createTask({ title: 'Renew passport' })
     const r = await render(<main><TaskListView route={{ view: 'inbox' }} /></main>)
     await waitFor(() => r.container.textContent!.includes('Renew passport'))
     const title = () => r.container.querySelector<HTMLButtonElement>('[data-task-id] [data-row-open]')!
     await click(title())
     await waitFor(() => !!r.container.querySelector('[data-task-id][aria-current]'))
-    expect(panelTaskId()).toBeTruthy()
+    // The click opened the task as its page (task-full-page); the list keeps the row selected.
+    expect(location.pathname.startsWith('/task/')).toBe(true)
 
     // A row, a control and an overlay do not clear.
     press(title())
@@ -133,7 +133,6 @@ describe('selection', () => {
     // The empty page does.
     press(r.container.querySelector('[data-list-page]')!)
     await waitFor(() => !r.container.querySelector('[data-task-id][aria-current]'))
-    expect(panelTaskId()).toBeNull()
     await r.unmount()
   })
 

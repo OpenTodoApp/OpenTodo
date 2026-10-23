@@ -9,10 +9,12 @@ import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { click, flush, key, render, type } from '../ui/test-utils'
 import { addMonthsISO, MonthView } from './MonthView'
-import { panelTaskId, resetPanel } from './panel'
+import { resetPanel } from './panel'
+import { openedTask, resetTaskPage } from './taskPage.testkit'
 import { parseRoute, routePath } from './router'
 
 beforeEach(async () => {
+  resetTaskPage()
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 10, 18, 12, 0))
   await db.delete()
@@ -154,7 +156,7 @@ describe('month grid', () => {
     await key(document.body, 'j')
     await key(document.body, 'j')
     await key(document.body, 'Enter')
-    expect(panelTaskId()).toBe(second)
+    expect(openedTask()).toBe(second)
     await r.unmount()
   })
 })

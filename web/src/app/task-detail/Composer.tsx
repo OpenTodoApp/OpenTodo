@@ -10,7 +10,7 @@ import { planFiles, type PlannedFile } from '../../lib/attachments'
 import { mentionAt, mentionCandidates, mentionsInBody, mentionToken } from '../../lib/comments'
 import { uuid } from '../../lib/ids'
 import type { ProjectMember } from '../../lib/types'
-import { Button, IconButton, Popover } from '../../ui'
+import { Button, ComposerFrame, IconButton, Popover } from '../../ui'
 import { Icon } from '../../ui'
 import { filesFrom } from './AttachmentsRow'
 import { t } from '../../lib/i18n'
@@ -227,33 +227,54 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
         } : undefined}
       />
   )
+  const fileList = files.length > 0 && (
+    <ul aria-label={t('Files to attach')} className="mt-1 flex flex-wrap gap-1">
+      {files.map((f, i) => (
+        <li key={`${f.name}-${i}`} className="flex max-w-full items-center gap-1 rounded-control bg-sunken py-0.5 pl-2 text-meta text-default">
+          <Icon name="paperclip" size="xs" className="text-faint" /><span className="min-w-0 truncate">{f.name}</span>
+          <IconButton icon="x" size="sm" label={t('Remove {name}', { name: f.name })} onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} />
+        </li>
+      ))}
+    </ul>
+  )
+  // The shared frame (task-full-page D6): the field, then attach on the left, the keys and Send on the right.
+  const tools = (
+    <>
+      {attach && (
+        <>
+          <input ref={picker} type="file" multiple hidden aria-label={t('Choose files for the comment')} data-testid="comment-file-picker"
+            onChange={(e) => { const picked = Array.from(e.target.files ?? []); e.target.value = ''; setFiles((f) => [...f, ...picked]) }} />
+          <IconButton icon="paperclip" size="sm" label={t('Attach files')} onClick={() => picker.current?.click()} />
+        </>
+      )}
+    </>
+  )
+  const end = (
+    <>
+      <span id={`${id}-hint`} className="hidden text-hint text-faint sm:inline">{t.rich('Send with {keys}', { keys: <Kbd k={`${key}+Enter`} /> })}</span>
+      {onCancel && <Button variant="ghost" size="sm" onClick={onCancel}>{t('Cancel')}</Button>}
+    </>
+  )
   return (
     <div className="relative" data-composer>
-      {rich ? (
-        <Suspense fallback={plain}>
-          <RichComposerField id={id} value={body} members={members} me={me} label={label} placeholder={placeholder} describedBy={`${id}-hint`}
-            autoFocus={autoFocus || (!!area.current && document.activeElement === area.current)} taskId={taskId ?? null} fieldRef={richField}
-            onChange={(next, ids) => { richMentions.current = ids; setBody(next) }}
-            onSubmit={() => void submit()}
-            onEscape={() => { if (onCancel) onCancel(); else (document.activeElement as HTMLElement | null)?.blur() }}
-            onFiles={attach ? (more) => setFiles((f) => [...f, ...more]) : undefined}
-            onImages={attach && taskId ? async (images) => {
-              const planned = await planFiles(taskId, images, { commentId: commentId.current })
-              embeds.current = [...embeds.current, ...planned]
-              return planned.map((x) => ({ id: x.blob.id, name: x.blob.name }))
-            } : undefined} />
-        </Suspense>
-      ) : plain}
-      {files.length > 0 && (
-        <ul aria-label={t('Files to attach')} className="mt-1 flex flex-wrap gap-1">
-          {files.map((f, i) => (
-            <li key={`${f.name}-${i}`} className="flex max-w-full items-center gap-1 rounded-control bg-sunken py-0.5 pl-2 text-meta text-default">
-              <Icon name="paperclip" size="xs" className="text-faint" /><span className="min-w-0 truncate">{f.name}</span>
-              <IconButton icon="x" size="sm" label={t('Remove {name}', { name: f.name })} onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <ComposerFrame tools={tools} end={end} below={fileList || undefined}
+        send={{ label: submitLabel, onSend: () => void submit(), disabled: !canSend, busy, shortcut: `${key}+Enter` }}>
+        {rich ? (
+          <Suspense fallback={plain}>
+            <RichComposerField id={id} value={body} members={members} me={me} label={label} placeholder={placeholder} describedBy={`${id}-hint`}
+              autoFocus={autoFocus || (!!area.current && document.activeElement === area.current)} taskId={taskId ?? null} fieldRef={richField}
+              onChange={(next, ids) => { richMentions.current = ids; setBody(next) }}
+              onSubmit={() => void submit()}
+              onEscape={() => { if (onCancel) onCancel(); else (document.activeElement as HTMLElement | null)?.blur() }}
+              onFiles={attach ? (more) => setFiles((f) => [...f, ...more]) : undefined}
+              onImages={attach && taskId ? async (images) => {
+                const planned = await planFiles(taskId, images, { commentId: commentId.current })
+                embeds.current = [...embeds.current, ...planned]
+                return planned.map((x) => ({ id: x.blob.id, name: x.blob.name }))
+              } : undefined} />
+          </Suspense>
+        ) : plain}
+      </ComposerFrame>
       {/* Non-modal: focus stays in the textarea (combobox pattern); a sheet on phones. */}
       <Popover open={options.length > 0} onClose={() => setClosed(true)} anchor={area} label={t('Mention a member')} modal={false} align="start" role={undefined} className="py-1">
         <ul id={listId} role="listbox" aria-label={t('Mention a member')}>
@@ -266,20 +287,6 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
           ))}
         </ul>
       </Popover>
-      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        <Button variant="primary" size="sm" disabled={!canSend} busy={busy} onClick={() => void submit()}>
-          {submitLabel === 'Comment' && <Icon name="send" size="sm" />}{submitLabel}
-        </Button>
-        {attach && (
-          <>
-            <input ref={picker} type="file" multiple hidden aria-label={t('Choose files for the comment')} data-testid="comment-file-picker"
-              onChange={(e) => { const picked = Array.from(e.target.files ?? []); e.target.value = ''; setFiles((f) => [...f, ...picked]) }} />
-            <IconButton icon="paperclip" size="sm" label={t('Attach files')} onClick={() => picker.current?.click()} />
-          </>
-        )}
-        {onCancel && <Button variant="ghost" size="sm" onClick={onCancel}>{t('Cancel')}</Button>}
-        <span id={`${id}-hint`} className="ml-auto text-hint text-faint">{t.rich('Send with {keys}', { keys: <Kbd k={`${key}+Enter`} /> })}</span>
-      </div>
     </div>
   )
 })

@@ -387,11 +387,11 @@ const rowAndTitle = () => pageA.evaluate(() => {
 })
 const openFirst = async () => {
   await pageA.keyboard.press('j'); await pageA.keyboard.press('Enter')
-  await pageA.locator('aside[data-detail-for]').waitFor(); await pageA.waitForTimeout(400)
+  await pageA.locator('[data-detail-for]').waitFor(); await pageA.waitForTimeout(400)
 }
 const closeIt = async () => {
   await pageA.keyboard.press('Escape')
-  await pageA.locator('aside[data-detail-for]').waitFor({ state: 'detached' }); await pageA.waitForTimeout(400)
+  await pageA.locator('[data-detail-for]').waitFor({ state: 'detached' }); await pageA.waitForTimeout(400)
 }
 for (const width of [1280, 1440, 1920]) {
   await pageA.setViewportSize({ width, height: 860 })

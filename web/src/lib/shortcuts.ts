@@ -123,7 +123,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'palette.add-open', keys: ['Shift+Enter'], description: 'In the command bar\'s Add mode: add the task and open it', section: 'everywhere', scope: 'global', local: true },
   { id: 'palette.fields', keys: ['↓', '↑'], description: 'In the command bar\'s Add mode: move over the fields; Tab edits the highlighted one', section: 'everywhere', scope: 'global', local: true },
   { id: 'global.assistant', keys: ['Shift+I'], description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere', scope: 'global' },
-  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'plan.open', 'plan.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'list.archive-offer'] },
+  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'plan.open', 'plan.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'task.escape', 'list.archive-offer'] },
   { id: 'list.dictate', keys: ['Shift+V'], description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere', scope: 'list' },
   { id: 'list.dictate-stop', keys: ['Esc'], description: 'Stop dictating', section: 'everywhere', scope: 'list', hidden: true, typing: true, overrides: ['list.escape', 'panel.escape'] },
   { id: 'global.row-menu', keys: ['.', 'Shift+F10', 'Menu'], description: 'Open the menu of the focused row: a label, view, section heading or project', section: 'everywhere', scope: 'global', local: true },
@@ -222,7 +222,11 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'panel.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the open task while the panel has focus', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.priority'] },
   { id: 'panel.track', keys: ['y'], description: 'Start or stop tracking time on the open task while the panel has focus', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.track'] },
   { id: 'panel.skip', keys: ['Shift+K'], description: 'Skip the current occurrence of the open recurring task', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.skip'] },
-  { id: 'panel.escape', keys: ['Esc'], description: 'Close the panel', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.escape', 'calendar.escape'] },
+  { id: 'panel.escape', keys: ['Esc'], description: 'Close the panel', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.escape', 'calendar.escape', 'task.escape'] },
+  // The task page (task-full-page): step through the list it was opened from, and back to it.
+  { id: 'task.next', keys: ['j'], description: 'On a task page: open the next task of the list it was opened from', section: 'tasks', scope: 'view', views: ['task'] },
+  { id: 'task.prev', keys: ['k'], description: 'On a task page: open the previous task of that list', section: 'tasks', scope: 'view', views: ['task'] },
+  { id: 'task.escape', keys: ['Esc'], description: 'On a task page: back to the list, with the task selected where it was', section: 'tasks', scope: 'view', views: ['task'] },
   { id: 'list.archive-offer', keys: ['Enter'], description: 'Archive the project after completing its last task; any other key dismisses the offer', section: 'trash', scope: 'list', when: 'archive offered', overrides: ['list.open'] },
 
   // ---- board
@@ -390,7 +394,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'display.exit'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'display.exit'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 

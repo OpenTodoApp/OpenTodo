@@ -222,9 +222,9 @@ describe('the box (2.2, 2.3, 5.2)', () => {
     await r.unmount()
   })
 
-  it('picking a task navigates to its project with the panel open and records the pick; clearLocalData removes it', async () => {
+  it('picking a task opens its page and records the pick; clearLocalData removes it', async () => {
     const home = await createProject({ name: 'Home' })
-    await createTask({ title: 'Fix the sink', project_id: home, })
+    const sink = await createTask({ title: 'Fix the sink', project_id: home, })
     navigate({ view: 'inbox' })
     let closed = false
     const r = await render(<CommandPalette user={user} onClose={() => { closed = true }} showShortcuts={() => {}} />)
@@ -233,7 +233,7 @@ describe('the box (2.2, 2.3, 5.2)', () => {
     await waitFor(() => options()[0]?.includes('Fix the sink'))
     await key(field(), 'Enter')
     await waitFor(() => closed)
-    expect(location.pathname).toBe(`/project/${home}`)
+    expect(location.pathname).toBe(`/task/${sink}`)
     await flush(50)
     expect((await db.pickHistory.where('context').equals('palette').toArray()).length).toBe(1)
     const { clearLocalData } = await import('../../lib/db')
