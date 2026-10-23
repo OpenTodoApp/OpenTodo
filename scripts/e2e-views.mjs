@@ -124,8 +124,10 @@ const headings = await pageA.locator('[aria-label="View results"] h2').allTextCo
 assert(JSON.stringify(headings) === JSON.stringify(['Earlier', 'Today', 'Tomorrow']), 'headings ' + headings)
 await pageA.getByLabel('Sort by').selectOption('priority')
 await pageA.getByLabel('Sort direction').selectOption('desc')
-// keyboard reachability: options are selects in tab order after the query input
+// keyboard reachability: the Builder toggle (filter-builder), then the options, in tab order after the query input
 await vq.focus()
+await pageA.keyboard.press('Tab')
+assert((await pageA.evaluate(() => document.activeElement?.textContent?.trim())) === 'Builder', 'Tab reaches the Builder toggle')
 await pageA.keyboard.press('Tab')
 assert(await pageA.evaluate(() => document.activeElement?.getAttribute('aria-label')) === 'Group by', 'Tab reaches Group by')
 await shot(pageA, 'views-grouped.png')

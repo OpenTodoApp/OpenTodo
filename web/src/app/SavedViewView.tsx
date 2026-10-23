@@ -26,6 +26,8 @@ import { useViewData, type ViewData } from './useViews'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { keysOf } from '../lib/shortcuts'
 import { act } from './actionError'
+import { FilterBuilder } from './filter/FilterBuilder'
+import { useBuilderOpen } from './filter/builderToggle'
 
 const GROUP_LABEL = translatedMap<GroupBy>({ project: msg('Project'), due: msg('Due date'), priority: msg('Priority'), label: msg('Label'), none: msg('None') })
 const SORT_LABEL = translatedMap<SortBy>({ due: msg('Due date'), priority: msg('Priority'), position: msg('Manual order'), created: msg('Created'), title: msg('Title') })
@@ -71,6 +73,14 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a remote query change triggers this; the draft is read, not a trigger
   }, [view.query])
   const dirty = draft.trim() !== view.query
+  const [builderOpen, setBuilderOpen] = useBuilderOpen('view')
+  // The builder's count follows the draft (filter-builder D6); the list keeps the saved query.
+  const draftCount = useMemo(() => {
+    if (!builderOpen) return null
+    if (!dirty) return result.ok ? result.tasks.length : null
+    const r = runView({ ...view, query: draft }, ctx)
+    return r.ok ? r.tasks.length : null
+  }, [builderOpen, dirty, draft, view, ctx, result])
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -135,10 +145,16 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             menu={<ViewMenu view={view} />} />
 
           <div className="mb-3 border-b border-default pb-2">
+            {builderOpen && (
+              <FilterBuilder query={draft} onChange={(q) => { setDraft(q); setDraftError(null) }} count={draftCount}
+                labels={labels} projects={projects} fields={ctx.fields ?? []} />
+            )}
             <div className="flex gap-2">
               <input ref={inputRef} className="ui-input font-mono" aria-label={t('View query')} aria-invalid={!!message} aria-describedby="view-message"
                 autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
                 value={draft} onChange={(e) => { setDraft(e.target.value); setDraftError(null) }} onKeyDown={onInputKey} />
+              <Button variant={builderOpen ? 'secondary' : 'ghost'} icon="layers" aria-pressed={builderOpen} className="shrink-0"
+                onClick={() => setBuilderOpen(!builderOpen)}>{t('Builder')}</Button>
               {dirty && <button className="ui-btn ui-btn--primary ui-btn--sm shrink-0 text-meta" onClick={() => void saveQuery()}>{t('Save')}</button>}
             </div>
             <div id="view-message" className="min-h-5 px-1 pt-1 text-meta" aria-live="polite">

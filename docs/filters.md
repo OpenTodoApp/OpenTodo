@@ -182,12 +182,26 @@ You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</
 - **Enter** in the input runs the query at once and moves to the first result; **Esc** returns to the input. In the list, the usual keys work: `j` / `k`, Enter to open, `c` to complete, `1`–`4` for priority, `L` for labels, Delete.
 - **↑ / ↓** in the input step through the last 20 distinct queries you ran on this device. The history lives in the browser's local storage for the app, is never synced, and is cleared when you sign out.
 
+### Build a filter without typing
+
+Above the query input, the **builder** shows the same query as conditions you can read: *Label is errand*, *Due on or before tomorrow*, *Priority is P1*, *No project*.
+
+- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, tracked time or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
+- **Groups.** A group is a block headed **All of these** (every condition must match, `&`) or **Any of these** (one is enough, `|`). **+ Group** adds one inside, up to three levels deep. Change the heading to switch between the two.
+- **Not.** The **Not** switch in a condition's dialog, or the **Not** button on a group, matches the tasks it would otherwise leave out (`!`).
+- **Keyboard.** Tab reaches every control. Inside a group, the arrow keys move between conditions, and Delete or Backspace removes the focused one.
+- **Both ways.** The query input stays under the builder. Every change in the builder rewrites it, with only the parentheses the grammar needs, and anything you type that parses updates the builder. What is saved is always the query text, so saved filters, `ot` and the API see exactly what they saw before.
+- **What it cannot show.** A double `!!`, or groups nested deeper than three levels, stays editable as text; the builder shows a short notice instead.
+- **Show or hide it.** The **Builder** button beside the input folds it away. The choice is kept on this device, separately for the Filter view (shown by default) and for saved filters (hidden by default).
+
+Under the builder, a count says how many tasks the query matches.
+
 ## Saving views
 
 A query you come back to can be saved as a **view**: it keeps the query, how its results are grouped and sorted, and syncs to all your devices like your tasks do.
 
 - **Save.** In the Filter view, press `s` while the results have focus (or click **Save filter**), type a name and press Enter. The view is created with the current query, grouped by project and sorted by due date, listed under **Filters** in the sidebar and pinned to **Favourites**, and opened. Saving works offline; other devices show the view after they sync.
-- **Edit.** Opening a view shows its query in an editable input (`/` jumps to it). Enter saves a changed query for every device, Esc discards the change. A query that does not parse shows the error and is not saved.
+- **Edit.** Opening a view shows its query in an editable input (`/` jumps to it). **Builder** shows the same [builder](#build-a-filter-without-typing) as the Filter view over it, with a count for the changed query before you save. Enter or **Save** saves a changed query for every device, Esc discards the change. A query that does not parse shows the error and is not saved.
 - **Group and sort.** The header of a view has three menus, reachable with Tab: **Group** (project, due date, priority, label, none), **Sort** (due date, priority, manual order, created, title) and **Direction**. Defaults are *group by project, sort by due date ascending, undated tasks last*. Grouping by due date shows *Overdue*, *Today*, *Tomorrow*, then each later date and finally *No date*; grouping by label lists a task under each of its labels. For priority, *descending* puts priority 1 first. These options are stored on the view and sync.
 - **Sidebar.** The **Filters** group appears with your first saved filter. Pinned filters are listed under it with a live count of their open tasks, computed on the device. The `⋯` menu of a view renames, moves it up or down, unpins or deletes it, and sets it as this device's start view. `g` then `v` opens the overview of every view, pinned or not, where views can be pinned again.
 - **Start view.** Each device can open on a different view: choose it in **Settings → General → Start view** or from a view's menu. The choice stays on the device (it is not synced). If the saved view is deleted, for example on another device, the app opens the Inbox and says so once.

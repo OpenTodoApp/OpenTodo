@@ -34,7 +34,7 @@ Once you have a label, the **Labels** group in the sidebar lists your labels; it
 
 ## Find tasks with a filter
 
-Open **Filter** in the sidebar (or press <kbd>g</kbd> <kbd>f</kbd>) and type a query. Results appear as you type, grouped by project.
+Open **Filter** in the sidebar (or press <kbd>g</kbd> <kbd>f</kbd>) and type a query. Results appear as you type, grouped by project. Rather not type? **+ Condition** above the input builds the query for you ([the builder](filters.md#build-a-filter-without-typing)).
 
 <picture><source srcset="images/filter-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/filter-light.webp" alt="The Filter view with the query (@call | @errand) & due <= 7 days and the matching tasks below."></picture>
 
