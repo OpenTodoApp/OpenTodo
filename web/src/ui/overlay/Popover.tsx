@@ -109,7 +109,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
         {/* A menu sheet is a dialog whose list carries the menu role: the title and the
             close button may not sit inside a menu. */}
         <div ref={panel} role={ariaRole === 'menu' ? 'dialog' : ariaRole} aria-label={label} aria-modal={ariaRole ? true : undefined} tabIndex={-1} data-overlay="sheet"
-          className="overlay-fade-in pointer-events-auto absolute inset-x-0 flex max-h-[90dvh] flex-col rounded-t-card border-t border-default bg-raised text-body shadow-3 outline-none"
+          className="overlay-fade-in pointer-events-auto absolute inset-x-0 flex max-h-[90dvh] flex-col rounded-t-popover border-t border-strong bg-pop text-body shadow-3 outline-none"
           style={{ bottom: 'var(--vv-bottom, 0px)' }}>
           {/* The handle strip and the title row: a drag down of more than 80 px closes the sheet (phone-v2 D5). */}
           <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2" {...dragToClose(onClose)}>

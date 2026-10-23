@@ -319,7 +319,7 @@ describe('token lint', () => {
   })
 
   it('the token-block rule names a hex, an rgb() and a named colour with their line', () => {
-    const bad = css.replace('--ot-muted: oklch(0.47 0.028 262);', '--ot-muted: #526075;')
+    const bad = css.replace('--ot-muted: oklch(0.491 0.0142 259.82);', '--ot-muted: #526075;')
       .replace('--ot-scrim: oklch(0.1288 0.0406 264.7 / 0.35);', '--ot-scrim: rgb(2 6 23 / 0.35);')
       .replace('--ot-a-on-accent: oklch(1 0 0); }', '--ot-a-on-accent: white; }')
     const found = tokenBlockProblems(bad)

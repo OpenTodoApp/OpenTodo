@@ -43,7 +43,7 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
       data-menu-label={label}
       onClick={() => { onSelect(); close?.() }}
       className={`flex w-full items-start gap-2.5 rounded-control px-2.5 py-2 text-left text-body outline-none transition duration-(--duration-ui)
-        hover:bg-sunken focus-visible:bg-sunken dark:hover:bg-raised dark:focus-visible:bg-raised
+        hover:bg-hover focus-visible:bg-selected
         disabled:cursor-not-allowed disabled:text-faint disabled:hover:bg-transparent
         ${danger ? 'text-danger hover:bg-danger-soft focus-visible:bg-danger-soft dark:hover:bg-danger-soft dark:focus-visible:bg-danger-soft' : 'text-default'}`}
     >

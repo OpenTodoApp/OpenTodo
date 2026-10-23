@@ -41,6 +41,11 @@
   --color-canvas: var(--ot-canvas);
   --color-surface: var(--ot-surface);
   --color-raised: var(--ot-raised);
+  /* Precision surfaces (precision-tokens D1): popovers, hover, the selected nav item and row. */
+  --color-pop: var(--ot-pop);
+  --color-hover: var(--ot-hover);
+  --color-selected: var(--ot-selected);
+  --color-selected-row: var(--ot-selected-row);
   /* The sidebar column (sidebar-v2 D8): the canvas with a trace of the accent. */
   --color-sidebar: var(--ot-sidebar);
   --color-sunken: var(--ot-sunken);
@@ -96,18 +101,27 @@
   /* The softer divider (tokens-v2 D6): a hairline between groups; `border-default` is a container edge. */
   --border-color-soft: var(--ot-border-soft);
   --border-color-input: var(--ot-border-input);
-  --text-hint: 0.6875rem; --text-hint--line-height: 0.875rem;
-  --text-meta: 0.8125rem; --text-meta--line-height: 1.125rem;
-  --text-body: 0.9375rem; --text-body--line-height: 1.375rem;
+  --border-color-strong: var(--ot-line-strong);
+  /* Precision type (precision-tokens D2): the list and control step is one token,
+     --ot-text-list (13 px); set it to 0.875rem for 14 px. Prose (notes, help, the
+     briefing) keeps 15 px through --text-prose. */
+  --text-hint: 0.71875rem; --text-hint--line-height: 1rem; --text-hint--font-weight: 500;
+  --text-meta: 0.78125rem; --text-meta--line-height: 1.125rem;
+  --text-body: var(--ot-text-list); --text-body--line-height: 1.25rem;
+  --text-prose: 0.9375rem; --text-prose--line-height: 1.5rem;
   /* Headings and the display step (tokens-v2 D7): weight 600, tighter tracking as the size grows. */
-  --text-h3: 1.0625rem; --text-h3--line-height: 1.5rem; --text-h3--font-weight: 600;
+  --text-h3: 0.875rem; --text-h3--line-height: 1.25rem; --text-h3--font-weight: 600;
   --text-h2: 1.25rem; --text-h2--line-height: 1.75rem; --text-h2--font-weight: 600; --text-h2--letter-spacing: -0.01em;
-  --text-h1: 1.5rem; --text-h1--line-height: 2rem; --text-h1--font-weight: 600; --text-h1--letter-spacing: -0.015em;
-  --text-display: 1.75rem; --text-display--line-height: 2.125rem; --text-display--font-weight: 600; --text-display--letter-spacing: -0.02em;
+  --text-h1: 1.375rem; --text-h1--line-height: 1.75rem; --text-h1--font-weight: 600; --text-h1--letter-spacing: -0.015em;
+  --text-display: 1.75rem; --text-display--line-height: 2.125rem; --text-display--font-weight: 650; --text-display--letter-spacing: -0.025em;
+  /* Precision radii (precision-tokens D3): row 6, control 7, card 8, the inset surface 10, popover 12. */
   --radius-chip: 6px;
-  --radius-control: 10px;
-  --radius-card: 14px;
-  --shadow-1: 0 1px 2px rgb(15 23 42 / 0.06);
+  --radius-control: 7px;
+  --radius-card: 8px;
+  --radius-surface: 10px;
+  --radius-popover: 12px;
+  /* Lists and cards are flat (precision-tokens D4); only overlays keep a shadow. */
+  --shadow-1: 0 0 #0000;
   --shadow-2: 0 4px 12px rgb(15 23 42 / 0.10);
   --shadow-3: 0 12px 32px rgb(15 23 42 / 0.16);
   --ease-calm: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -117,20 +131,26 @@
 }
 
 :root, [data-theme="light"] {
-  --ot-canvas: oklch(0.985 0.003 250);
+  --ot-canvas: oklch(0.9542 0.0034 247.86);
   --ot-coffee: oklch(0.9 0.19 100);
   --ot-on-coffee: oklch(0.1701 0.0447 282.6);
   --ot-surface: oklch(1 0 0);
-  --ot-raised: oklch(1 0 0);
-  --ot-sunken: oklch(0.965 0.004 250);
+  --ot-raised: oklch(0.9757 0 0);
+  --ot-sunken: oklch(0.9632 0.0034 247.86);
   /* The tone scale (tokens-v2 D6): to make text quieter, step down one tone. */
-  --ot-text-strong: oklch(0.15 0.02 260);
-  --ot-text: oklch(0.24 0.025 262);
-  --ot-muted: oklch(0.47 0.028 262);
-  --ot-faint: oklch(0.52 0.026 262);
+  --ot-text-strong: oklch(0.2126 0.0067 258.37);
+  /* Precision (precision-tokens D1): popovers, hover, the selected nav item and row, the strong hairline. */
+  --ot-pop: oklch(1 0 0);
+  --ot-hover: oklch(0.9787 0 0);
+  --ot-selected: oklch(0.9333 0.0046 258.33);
+  --ot-selected-row: oklch(0.9632 0.0034 247.86);
+  --ot-line-strong: oklch(0.878 0.0064 255.48);
+  --ot-text: oklch(0.2126 0.0067 258.37);
+  --ot-muted: oklch(0.491 0.0142 259.82);
+  --ot-faint: oklch(0.5145 0.0133 252.19);
   /* Edges: a container, a softer divider, a control. */
-  --ot-border: oklch(0.91 0.008 255);
-  --ot-border-soft: oklch(0.93 0.006 255);
+  --ot-border: oklch(0.905 0.0046 258.33);
+  --ot-border-soft: oklch(0.915 0.0046 258.33);
   --ot-border-input: oklch(0.62 0.03 262);
   /* Accent (tokens-v2 D4): derived from the theme's three values, emerald by default. */
   --ot-accent: var(--ot-al-accent, oklch(0.5081 0.1049 165.61));
@@ -138,7 +158,7 @@
   --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
   --ot-accent-text: var(--ot-accent);
   --ot-accent-soft: color-mix(in oklab, var(--ot-accent) var(--ot-mix-accent-soft-light), var(--ot-surface));
-  --ot-sidebar: color-mix(in oklab, var(--ot-accent) var(--ot-mix-sidebar-light), var(--ot-canvas));
+  --ot-sidebar: var(--ot-canvas);
   --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-soft-text-light), oklch(0 0 0));
   --ot-chart-base: var(--ot-accent);
   --ot-focus: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-focus-light), oklch(1 0 0));
@@ -153,13 +173,13 @@
   --ot-success: oklch(0.5081 0.1049 165.61);
   --ot-success-soft: oklch(0.9793 0.0207 166.11);
   --ot-success-soft-text: oklch(0.4318 0.0865 166.91);
-  --ot-warning: oklch(0.53 0.14 49);
+  --ot-warning: oklch(0.4921 0.1095 66.01);
   --ot-warning-soft: oklch(0.9869 0.0214 95.28);
   --ot-warning-soft-text: oklch(0.4732 0.1247 46.2);
-  --ot-danger: oklch(0.535 0.195 27.3);
+  --ot-danger: oklch(0.5283 0.1796 27.4);
   --ot-danger-soft: oklch(0.9705 0.0129 17.38);
   --ot-danger-soft-text: oklch(0.4437 0.1613 26.9);
-  --ot-info: oklch(0.5 0.1193 242.75);
+  --ot-info: oklch(0.5071 0.162 260.46);
   --ot-info-soft: oklch(0.9771 0.0125 236.62);
   --ot-info-soft-text: oklch(0.4434 0.1 240.79);
   --ot-scrim: oklch(0.1288 0.0406 264.7 / 0.35);
@@ -168,9 +188,9 @@
   /* Palette (tokens-v2 D5): one solid per hue; the soft step is mixed into the surface, the text step toward black. */
   --ot-hue-red-solid: oklch(0.5771 0.2152 27.33); --ot-hue-red-soft: color-mix(in oklab, var(--ot-hue-red-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-red-text: color-mix(in oklch, var(--ot-hue-red-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
   --ot-hue-orange-solid: oklch(0.6461 0.1943 41.12); --ot-hue-orange-soft: color-mix(in oklab, var(--ot-hue-orange-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-orange-text: color-mix(in oklch, var(--ot-hue-orange-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
-  --ot-hue-yellow-solid: oklch(0.6658 0.1574 58.32); --ot-hue-yellow-soft: color-mix(in oklab, var(--ot-hue-yellow-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-yellow-text: color-mix(in oklch, var(--ot-hue-yellow-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-yellow-solid: oklch(0.645 0.1574 58.32); --ot-hue-yellow-soft: color-mix(in oklab, var(--ot-hue-yellow-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-yellow-text: color-mix(in oklch, var(--ot-hue-yellow-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
   --ot-hue-lime-solid: oklch(0.5322 0.1405 131.59); --ot-hue-lime-soft: color-mix(in oklab, var(--ot-hue-lime-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-lime-text: color-mix(in oklch, var(--ot-hue-lime-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
-  --ot-hue-green-solid: oklch(0.6271 0.1699 149.21); --ot-hue-green-soft: color-mix(in oklab, var(--ot-hue-green-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-green-text: color-mix(in oklch, var(--ot-hue-green-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+  --ot-hue-green-solid: oklch(0.61 0.1699 149.21); --ot-hue-green-soft: color-mix(in oklab, var(--ot-hue-green-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-green-text: color-mix(in oklch, var(--ot-hue-green-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
   --ot-hue-teal-solid: oklch(0.6002 0.1038 184.7); --ot-hue-teal-soft: color-mix(in oklab, var(--ot-hue-teal-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-teal-text: color-mix(in oklch, var(--ot-hue-teal-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
   --ot-hue-cyan-solid: oklch(0.6089 0.1109 221.72); --ot-hue-cyan-soft: color-mix(in oklab, var(--ot-hue-cyan-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-cyan-text: color-mix(in oklch, var(--ot-hue-cyan-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
   --ot-hue-blue-solid: oklch(0.5461 0.2152 262.88); --ot-hue-blue-soft: color-mix(in oklab, var(--ot-hue-blue-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-blue-text: color-mix(in oklch, var(--ot-hue-blue-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
@@ -185,7 +205,8 @@
   /* The moment (tokens-v2 D9, motion-v2 D1): the one longer duration, for the completion
      sequence, list reflow and overlay entrances. Nothing lasts longer. */
   --duration-moment: 400ms;
-  --size-row: 44px;
+  --size-row: 36px;
+  --ot-text-list: 0.8125rem;
   /* Derivation ratios (tokens-v2 D4, D5): every accent and hue step is one of these
      mixes, so a theme or a hue is declared once. The contrast check reads them back.
      Soft steps mix into the surface in OKLab (a tinted dark surface would turn the
@@ -196,31 +217,34 @@
   --ot-mix-accent-focus-light: 85%;
   --ot-mix-accent-soft-dark: 14%;
   --ot-mix-accent-soft-text-dark: 80%;
-  /* The sidebar column tint (sidebar-v2 D8): a trace of the accent over the canvas. */
-  --ot-mix-sidebar-light: 3%;
-  --ot-mix-sidebar-dark: 4%;
   --ot-mix-hue-soft-light: 14%;
   --ot-mix-hue-text-light: 68%;
   --ot-mix-hue-soft-dark: 22%;
   --ot-mix-hue-text-dark: 78%;
 }
 @media (pointer: coarse) {
-  :root { --size-row: 48px; }
+  :root { --size-row: 44px; }
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ot-canvas: oklch(0.17 0.016 262);
+    --ot-canvas: oklch(0.1635 0.0045 264.44);
     --ot-coffee: oklch(0.9 0.19 100);
     --ot-on-coffee: oklch(0.1701 0.0447 282.6);
-    --ot-surface: oklch(0.22 0.018 262);
-    --ot-raised: oklch(0.27 0.02 262);
-    --ot-sunken: oklch(0.14 0.014 262);
-    --ot-text-strong: oklch(1 0 0);
-    --ot-text: oklch(0.95 0.008 262);
-    --ot-muted: oklch(0.74 0.02 262);
-    --ot-faint: oklch(0.68 0.022 262);
-    --ot-border: oklch(1 0 0 / 0.1);
-    --ot-border-soft: oklch(1 0 0 / 0.06);
+    --ot-surface: oklch(0.1959 0.0062 271.09);
+    --ot-raised: oklch(0.2184 0.0079 274.56);
+    --ot-sunken: oklch(0.1824 0.0063 271.05);
+    --ot-text-strong: oklch(0.9459 0.0029 264.54);
+    /* Precision (precision-tokens D1): popovers, hover, the selected nav item and row, the strong hairline. */
+    --ot-pop: oklch(0.2271 0.0079 274.58);
+    --ot-hover: oklch(0.2141 0.008 274.55);
+    --ot-selected: oklch(0.2728 0.0097 268.32);
+    --ot-selected-row: oklch(0.2389 0.0082 264.41);
+    --ot-line-strong: oklch(0.3122 0.0099 260.71);
+    --ot-text: oklch(0.9459 0.0029 264.54);
+    --ot-muted: oklch(0.7273 0.0111 261.78);
+    --ot-faint: oklch(0.66 0.0147 262.36);
+    --ot-border: oklch(0.2641 0.008 264.43);
+    --ot-border-soft: oklch(0.255 0.0082 264.41);
     --ot-border-input: oklch(0.6 0.02 262);
     /* Accent (tokens-v2 D4): buttons keep the light accent (or the theme's dark override); text, focus and soft steps use the bright accent. */
     --ot-accent: var(--ot-ad-accent, var(--ot-al-accent, oklch(0.5081 0.1049 165.61)));
@@ -228,7 +252,7 @@
     --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
     --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
     --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
-    --ot-sidebar: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-sidebar-dark), var(--ot-canvas));
+    --ot-sidebar: var(--ot-canvas);
     --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
     --ot-chart-base: var(--ot-accent-text);
     --ot-focus: var(--ot-accent-text);
@@ -243,13 +267,13 @@
     --ot-success: oklch(0.7729 0.1535 163.22);
     --ot-success-soft: oklch(0.2621 0.0487 172.55);
     --ot-success-soft-text: oklch(0.8452 0.1299 164.98);
-    --ot-warning: oklch(0.8369 0.1644 84.43);
+    --ot-warning: oklch(0.7665 0.1303 73.04);
     --ot-warning-soft: oklch(0.2791 0.0742 45.64);
     --ot-warning-soft-text: oklch(0.879 0.1534 91.61);
-    --ot-danger: oklch(0.7106 0.1661 22.22);
+    --ot-danger: oklch(0.6986 0.1576 23.81);
     --ot-danger-soft: oklch(0.2575 0.0886 26.04);
     --ot-danger-soft-text: oklch(0.8077 0.1035 19.57);
-    --ot-info: oklch(0.7535 0.139 232.66);
+    --ot-info: oklch(0.6988 0.133 259.53);
     --ot-info-soft: oklch(0.2935 0.0632 243.16);
     --ot-info-soft-text: oklch(0.8276 0.1013 230.32);
     --ot-scrim: oklch(0 0 0 / 0.55);
@@ -271,18 +295,24 @@
   }
 }
 :root[data-theme="dark"], [data-theme="dark"] {
-  --ot-canvas: oklch(0.17 0.016 262);
+  --ot-canvas: oklch(0.1635 0.0045 264.44);
   --ot-coffee: oklch(0.9 0.19 100);
   --ot-on-coffee: oklch(0.1701 0.0447 282.6);
-  --ot-surface: oklch(0.22 0.018 262);
-  --ot-raised: oklch(0.27 0.02 262);
-  --ot-sunken: oklch(0.14 0.014 262);
-  --ot-text-strong: oklch(1 0 0);
-  --ot-text: oklch(0.95 0.008 262);
-  --ot-muted: oklch(0.74 0.02 262);
-  --ot-faint: oklch(0.68 0.022 262);
-  --ot-border: oklch(1 0 0 / 0.1);
-  --ot-border-soft: oklch(1 0 0 / 0.06);
+  --ot-surface: oklch(0.1959 0.0062 271.09);
+  --ot-raised: oklch(0.2184 0.0079 274.56);
+  --ot-sunken: oklch(0.1824 0.0063 271.05);
+  --ot-text-strong: oklch(0.9459 0.0029 264.54);
+  /* Precision (precision-tokens D1): popovers, hover, the selected nav item and row, the strong hairline. */
+  --ot-pop: oklch(0.2271 0.0079 274.58);
+  --ot-hover: oklch(0.2141 0.008 274.55);
+  --ot-selected: oklch(0.2728 0.0097 268.32);
+  --ot-selected-row: oklch(0.2389 0.0082 264.41);
+  --ot-line-strong: oklch(0.3122 0.0099 260.71);
+  --ot-text: oklch(0.9459 0.0029 264.54);
+  --ot-muted: oklch(0.7273 0.0111 261.78);
+  --ot-faint: oklch(0.66 0.0147 262.36);
+  --ot-border: oklch(0.2641 0.008 264.43);
+  --ot-border-soft: oklch(0.255 0.0082 264.41);
   --ot-border-input: oklch(0.6 0.02 262);
   /* Accent (tokens-v2 D4): buttons keep the light accent (or the theme's dark override); text, focus and soft steps use the bright accent. */
   --ot-accent: var(--ot-ad-accent, var(--ot-al-accent, oklch(0.5081 0.1049 165.61)));
@@ -290,7 +320,7 @@
   --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
   --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
   --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
-  --ot-sidebar: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-sidebar-dark), var(--ot-canvas));
+  --ot-sidebar: var(--ot-canvas);
   --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
   --ot-chart-base: var(--ot-accent-text);
   --ot-focus: var(--ot-accent-text);
@@ -305,13 +335,13 @@
   --ot-success: oklch(0.7729 0.1535 163.22);
   --ot-success-soft: oklch(0.2621 0.0487 172.55);
   --ot-success-soft-text: oklch(0.8452 0.1299 164.98);
-  --ot-warning: oklch(0.8369 0.1644 84.43);
+  --ot-warning: oklch(0.7665 0.1303 73.04);
   --ot-warning-soft: oklch(0.2791 0.0742 45.64);
   --ot-warning-soft-text: oklch(0.879 0.1534 91.61);
-  --ot-danger: oklch(0.7106 0.1661 22.22);
+  --ot-danger: oklch(0.6986 0.1576 23.81);
   --ot-danger-soft: oklch(0.2575 0.0886 26.04);
   --ot-danger-soft-text: oklch(0.8077 0.1035 19.57);
-  --ot-info: oklch(0.7535 0.139 232.66);
+  --ot-info: oklch(0.6988 0.133 259.53);
   --ot-info-soft: oklch(0.2935 0.0632 243.16);
   --ot-info-soft-text: oklch(0.8276 0.1013 230.32);
   --ot-scrim: oklch(0 0 0 / 0.55);
@@ -361,7 +391,7 @@
   --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
   --ot-accent-text: var(--ot-accent);
   --ot-accent-soft: color-mix(in oklab, var(--ot-accent) var(--ot-mix-accent-soft-light), var(--ot-surface));
-  --ot-sidebar: color-mix(in oklab, var(--ot-accent) var(--ot-mix-sidebar-light), var(--ot-canvas));
+  --ot-sidebar: var(--ot-canvas);
   --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-soft-text-light), oklch(0 0 0));
   --ot-chart-base: var(--ot-accent);
   --ot-focus: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-focus-light), oklch(1 0 0));
@@ -373,7 +403,7 @@
     --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
     --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
     --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
-    --ot-sidebar: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-sidebar-dark), var(--ot-canvas));
+    --ot-sidebar: var(--ot-canvas);
     --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
     --ot-chart-base: var(--ot-accent-text);
     --ot-focus: var(--ot-accent-text);
@@ -386,7 +416,7 @@
   --ot-on-accent: var(--ot-a-on-accent, oklch(1 0 0));
   --ot-accent-text: var(--ot-ad-accent-text, oklch(0.7729 0.1535 163.22));
   --ot-accent-soft: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-accent-soft-dark), var(--ot-surface));
-  --ot-sidebar: color-mix(in oklab, var(--ot-accent-text) var(--ot-mix-sidebar-dark), var(--ot-canvas));
+  --ot-sidebar: var(--ot-canvas);
   --ot-accent-soft-text: color-mix(in oklch, var(--ot-accent-text) var(--ot-mix-accent-soft-text-dark), oklch(1 0 0));
   --ot-chart-base: var(--ot-accent-text);
   --ot-focus: var(--ot-accent-text);
@@ -427,7 +457,7 @@ html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"]
   --ot-faint: oklch(0.36 0 0);
   --ot-border: oklch(0 0 0);
   --ot-border-soft: oklch(0 0 0);
-  --ot-border-input: oklch(0 0 0);
+  --ot-border-input: oklch(0 0 0); --ot-line-strong: oklch(0 0 0);
   --ot-accent: oklch(0 0 0);
   --ot-accent-hover: oklch(0.2686 0 0);
   --ot-on-accent: oklch(1 0 0);
@@ -484,7 +514,7 @@ html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"]
     --ot-faint: oklch(0.8699 0 0);
     --ot-border: oklch(1 0 0);
     --ot-border-soft: oklch(1 0 0);
-    --ot-border-input: oklch(1 0 0);
+    --ot-border-input: oklch(1 0 0); --ot-line-strong: oklch(1 0 0);
     --ot-accent: oklch(1 0 0);
     --ot-accent-hover: oklch(0.9219 0 0);
     --ot-on-accent: oklch(0 0 0);
@@ -541,7 +571,7 @@ html:root[data-contrast="high"][data-theme="dark"], html[data-contrast="high"] [
   --ot-faint: oklch(0.8699 0 0);
   --ot-border: oklch(1 0 0);
   --ot-border-soft: oklch(1 0 0);
-  --ot-border-input: oklch(1 0 0);
+  --ot-border-input: oklch(1 0 0); --ot-line-strong: oklch(1 0 0);
   --ot-accent: oklch(1 0 0);
   --ot-accent-hover: oklch(0.9219 0 0);
   --ot-on-accent: oklch(0 0 0);
@@ -676,9 +706,9 @@ body {
 /* The three surfaces (ux-overhaul, design-system "Three surfaces"): a row, a card
    and an overlay. Dark pairs a border with the elevation, which does not read on a
    dark canvas on its own. */
-.surface-row { @apply rounded-control hover:bg-sunken dark:hover:bg-raised; }
-.surface-card { @apply rounded-card border border-default bg-surface shadow-1; }
-.surface-overlay { @apply rounded-card border border-default bg-raised shadow-3; }
+.surface-row { @apply rounded-chip hover:bg-hover; }
+.surface-card { @apply rounded-card border border-default bg-surface; }
+.surface-overlay { @apply rounded-popover border border-strong bg-pop shadow-3; }
 /* Shared Button (src/ui/Button.tsx, OpenSpec change ui-primitives D3): the same
    tokens as the legacy classes, plus sizes, icon-only and busy states. */
 /* Labels may wrap on narrow screens instead of pushing the page sideways; heights are minimums. */
@@ -694,8 +724,8 @@ body {
 .ui-btn--icon.ui-btn--md { @apply h-10 w-10 p-0; }
 .ui-btn--icon.ui-btn--lg { @apply h-12 w-12 p-0; }
 .ui-btn--primary { @apply bg-accent text-on-accent shadow-1 hover:bg-accent-hover active:translate-y-px; }
-.ui-btn--secondary { @apply border border-input bg-surface text-default hover:bg-sunken active:bg-sunken dark:hover:bg-raised; }
-.ui-btn--ghost { @apply text-muted hover:bg-sunken hover:text-default active:bg-sunken dark:hover:bg-raised; }
+.ui-btn--secondary { @apply border border-default bg-surface text-default hover:bg-hover active:bg-selected; }
+.ui-btn--ghost { @apply text-muted hover:bg-hover hover:text-default active:bg-selected; }
 .ui-btn--danger { @apply text-danger hover:bg-danger-soft active:bg-danger-soft; }
 /* WebKit lets a long option label in a native select paint past the box, and the
    GTK port (Linux) ignores overflow on it; paint containment keeps it inside. */
@@ -709,7 +739,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 /* Long notes at rest in the panel (task-panel-facets D4): eight lines and a fade; not a scroller. */
 .notes-clamp[data-clamped] > :first-child { max-height: calc(8lh + 0.5rem); overflow: hidden; mask-image: linear-gradient(to bottom, black 75%, transparent); }
 .notes-editor {
-  @apply relative min-h-8 w-full space-y-2 rounded-control border border-transparent px-2 py-1 text-body text-default
+  @apply relative min-h-8 w-full space-y-2 rounded-control border border-transparent px-2 py-1 text-prose text-default
     focus:outline-none;
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -834,7 +864,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 /* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */
 @layer components {
 /* Row density (OpenSpec change ux-overhaul, appearance-preferences "Density
-   preference"): comfortable rows by default, 36 px rows under compact. Touch
+   preference", precision-tokens D5): comfortable rows are 36 px, compact 32 px. Touch
    targets keep 44 px on coarse pointers through the rules further down. */
 .row-pad { padding-block: 0.5rem; }
 /* The page frame (page-frame-v3 D1, app-shell "Page template"): everything, the header
@@ -922,7 +952,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
-:root[data-density="compact"] .row-pad { padding-block: 0.25rem; }
+:root[data-density="compact"] .row-pad { padding-block: 0.375rem; }
 /* The task panel's facet lines follow the density too (task-panel-facets D4). */
 :root[data-density="compact"] .facet-line [data-part], :root[data-density="compact"] .facet-line > span:first-child { min-height: 1.5rem; height: auto; }
 :root[data-density="compact"] [data-sidebar-item] { min-height: 2rem; padding-block: 0.25rem; }
@@ -993,7 +1023,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 
 @layer components {
 /* In-app Help (user-documentation): the guide HTML generated from docs/. */
-.help-prose { @apply text-body leading-relaxed text-default; overflow-wrap: break-word; }
+.help-prose { @apply text-prose leading-relaxed text-default; overflow-wrap: break-word; }
 .help-prose h1 { @apply mb-3 text-h1 font-semibold; }
 .help-prose h2 { @apply mt-8 mb-2 scroll-mt-16 border-t border-default pt-4 text-h2 font-semibold; }
 .help-prose h3 { @apply mt-6 mb-1.5 scroll-mt-16 text-h3 font-semibold; }
@@ -1027,7 +1057,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
    --display-scale (set per size on the display's root), so they follow the
    browser's font-size setting: body text is about 20, 24 and 32 px at m, l, xl.
    Day columns stack below 768 px and wrap instead of scrolling sideways. */
-.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; font-size: calc(var(--text-body) * var(--display-scale)); line-height: 1.35; }
+.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
 .display-root[data-size="m"] { --display-scale: 1.35; }
 .display-root[data-size="xl"] { --display-scale: 2.15; }
 .display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * var(--display-scale) * 1.5), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
@@ -1038,7 +1068,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .display-heading { @apply font-semibold text-muted; font-size: calc(var(--text-meta) * var(--display-scale)); line-height: 1.3; }
 .display-heading[data-generated] { text-transform: uppercase; letter-spacing: 0.04em; }
 .display-meta { @apply text-muted; font-size: calc(var(--text-meta) * var(--display-scale)); line-height: 1.3; }
-.display-task { font-size: calc(var(--text-body) * var(--display-scale)); line-height: 1.3; }
+.display-task { font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.3; }
 /* A row is at least 56 px tall at size l; its checkbox is a 44 px touch target or larger. */
 .display-row { @apply flex items-center gap-3 rounded-control px-2 py-1 outline-none focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus; min-height: calc(35px * var(--display-scale)); }
 .display-check { @apply flex shrink-0 items-center justify-center rounded-full; width: max(44px, 1.5em); height: max(44px, 1.5em); }

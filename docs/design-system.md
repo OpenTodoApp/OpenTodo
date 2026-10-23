@@ -9,23 +9,23 @@ order: 30
 ---
 # Design system
 
-OpenTodo's interface is friendly and roomy, in the spirit of TickTick, Todoist and Any.do, and keeps its own identity: the emerald accent, calm slate neutrals, white cards in light and a dark slate canvas lifted off pure black, so dark surfaces separate by lightness. Every colour, size, radius, shadow and duration comes from a design token, and every shared building block is developed and checked in a workbench. The contract lives in the `design-system` OpenSpec capability; this page is the how-to. How a screen is put together (the page template, the panel, settings, rows and the interface budget) is in the [Interface guide](interface-guide.md).
+OpenTodo's interface follows the "Precision" direction: dense, near-monochrome and dark first, with the emerald accent as the only colour that isn't state. A flat cool slate canvas holds one inset content surface; rows are one line, hairlines separate instead of boxes, and colour appears only where it means something (late, a deadline, now, done, the primary action). Dark surfaces separate by lightness, a step at a time. Every colour, size, radius, shadow and duration comes from a design token, and every shared building block is developed and checked in a workbench. The contract lives in the `design-system` OpenSpec capability; this page is the how-to. How a screen is put together (the page template, the panel, settings, rows and the interface budget) is in the [Interface guide](interface-guide.md).
 
 ## Principles
 
 1. **Content first.** Chrome is neutral, and colour is reserved for meaning: priority, project and label colours, status.
-2. **Roomy, not sparse.** Generous padding, one idea per row, state before forms.
+2. **Dense, not noisy.** Compact rows and small precise type; calm comes from restraint, not space.
 3. **One way to do a thing.** Every control comes from a primitive and every value from a token.
 4. **Accessible by construction.** AA contrast, a visible focus ring, 44 px touch targets and reduced motion are enforced by tests, not left to review. A phrase for screen readers ("3 comments" for a chip showing "3") is visually hidden text inside the element (`ReadAs` in `web/src/ui/Chips.tsx`), never an `aria-label` on a `span` or `div` without a role, which screen readers ignore; `npm run lint` refuses that.
 5. **Calm motion.** Short transitions, nothing bouncing in the way.
 
 | | Keep (identity) | Evolve (craft) |
 |---|---|---|
-| Colour | emerald accent, slate neutrals, white / slate-950 | formal tokens, soft tints, canvas vs card surfaces |
-| Mood | calm, honest, a little technical | roomier and friendlier |
-| Space | | 4 px grid, 44–48 px rows, 16/24 px section gaps |
-| Surfaces | | cards with soft elevation instead of bare sections and thin borders |
-| Type | | bundled Inter, 15 px body, clear heading scale |
+| Colour | emerald accent, slate neutrals | a flatter, darker slate; colour only for state; the sidebar on the canvas |
+| Mood | calm, honest, a little technical | precise, quiet, fast |
+| Space | | 4 px grid, 36 px rows (44 px on touch), 16/24 px section gaps |
+| Surfaces | | one inset content surface, hairlines, flat cards; shadows only on overlays |
+| Type | | bundled Inter, 13 px list text (one token), 15 px prose, clear heading scale |
 | Delight | | gentle motion and a satisfying completion state, respecting reduced motion |
 
 ## Tokens
@@ -38,16 +38,16 @@ Tokens are defined once in `web/src/index.css`:
 
 | Group | Utilities | Notes |
 |---|---|---|
-| Surfaces | `bg-canvas`, `bg-surface`, `bg-raised`, `bg-sunken` | app background, cards and rows, popovers and dialogs, wells |
+| Surfaces | `bg-canvas`, `bg-surface`, `bg-raised`, `bg-sunken`, `bg-pop`, `bg-hover`, `bg-selected`, `bg-selected-row` | window and sidebar, the inset content surface, group bars and inputs, wells and board columns, popovers and menus, hover, the selected nav item or active tool, a selected row |
 | Text | `text-strong`, `text-default`, `text-muted`, `text-faint`, `text-accent`, `text-on-accent` | the four tones; each meets 4.5:1 on every surface it is allowed on |
-| Borders | `border-default`, `border-soft`, `border-input` | a container edge, a softer divider, a control edge (3:1); the first two stay at 1.1:1 or more on every surface |
+| Borders | `border-default`, `border-soft`, `border-input`, `border-strong` | a container edge, a softer divider, a control edge (3:1), a popover or selected-card edge; the first two stay at 1.1:1 or more on every surface |
 | Accent | `bg-accent`, `bg-accent-hover`, `bg-accent-soft`, `text-on-accent-soft`, `ring-focus`, `outline-focus` | emerald-700; focus ring 2 px with offset |
 | Priority | `border-p1` … `border-p4`, `bg-p1-soft` … `bg-p4-soft` | red, orange, blue, slate |
 | Status | `text-success`, `bg-warning-soft`, `text-on-danger-soft`, … | success, warning, danger, info, each with a soft step |
 | Palette | `bg-hue-solid`, `bg-hue-soft`, `text-hue` under `data-hue="<name>"` | 12 hues for projects and labels |
-| Type | `text-hint`, `text-meta`, `text-body`, `text-h3`, `text-h2`, `text-h1`, `text-display` | 11, 13, 15, 17, 20, 24, 28 px; rem-based; headings and display are weight 600 with tracking −0.01em (h2), −0.015em (h1) and −0.02em (display) |
-| Radius | `rounded-chip`, `rounded-control`, `rounded-card` | 6, 10, 14 px |
-| Elevation | `shadow-1`, `shadow-2`, `shadow-3` | cards, popovers, dialogs; pair with a border in dark |
+| Type | `text-hint`, `text-meta`, `text-body`, `text-prose`, `text-h3`, `text-h2`, `text-h1`, `text-display` | 11.5 (weight 500), 12.5, 13, 15, 14, 20, 22, 28 px; rem-based. `text-body` is the list and control step, one token (`--ot-text-list`): set it to `0.875rem` for 14 px. `text-prose` is for running text (notes, help, the briefing). Headings are weight 600, the display step 650, with tracking −0.01em (h2), −0.015em (h1) and −0.025em (display) |
+| Radius | `rounded-chip`, `rounded-control`, `rounded-card`, `rounded-surface`, `rounded-popover` | 6 (rows, chips), 7, 8, 10 (the inset surface), 12 px |
+| Elevation | `shadow-1`, `shadow-2`, `shadow-3` | `shadow-1` is no shadow (lists and cards are flat); popovers and dialogs keep `shadow-2` and `shadow-3` |
 | Motion | `duration-(--duration-ui)`, `duration-(--duration-emphasis)`, `duration-(--duration-moment)`, `ease-calm`, `ease-spring` | Three durations: 120 ms for interface feedback, 250 ms for emphasis and the 400 ms moment, reserved for the completion sequence, list reflow and overlay entrances; nothing lasts longer and an exit takes about three quarters of its entrance. `ease-spring` is an ease-out that settles without overshoot (nothing bounces). Reduced motion keeps only colour and opacity fades of at most 120 ms and skips view transitions; `data-motion="none"` zeroes all three, so everything is instant |
 
 Rules for code under `web/src/ui/`:
@@ -57,9 +57,14 @@ Rules for code under `web/src/ui/`:
 
 | Meaning | Tokens |
 | --- | --- |
-| Card, panel, input background | `bg-surface` |
-| Page background | `bg-canvas` |
-| Well, inset, hover tint | `bg-sunken` (dark hovers `dark:hover:bg-raised`) |
+| Content surface, card, panel, input background | `bg-surface` |
+| Window and sidebar background | `bg-canvas` |
+| Group bar, raised card, composer | `bg-raised` |
+| Well, board column | `bg-sunken` |
+| Popover, menu, tooltip, sheet, palette | `bg-pop` with `border-strong` |
+| Hover tint (rows, nav, buttons) | `bg-hover` |
+| Selected nav item, active tab or tool | `bg-selected` (never with `text-faint`) |
+| Selected row | `bg-selected-row` |
 | Body text, headings | `text-default`, `text-strong` |
 | Secondary text | `text-muted` |
 | Hints, placeholders | `text-faint`, `placeholder-faint` |
@@ -80,7 +85,7 @@ A token switches between light and dark by itself, so a screen needs no `dark:` 
 
 Every colour token is written in OKLCH: an `oklch(L C H)` literal inside the sRGB gamut, or a `color-mix()` over other tokens. A hex, `rgb()`, `hsl()` or named colour inside a token block fails the lint with the stylesheet line. The browser resolves everything; the tests resolve the same values with `src/ui/tokens/resolve.ts` (OKLCH, mixes and alpha composited over the real surface) and measure what is drawn.
 
-- **Neutrals** are the slate family with low chroma, the same in every theme. Light: canvas `oklch(0.985 0.003 250)`, surfaces white, sunken `oklch(0.965 0.004 250)`. Dark: canvas `oklch(0.17 0.016 262)`, surface `oklch(0.22 0.018 262)`, raised `oklch(0.27 0.02 262)`, sunken `oklch(0.14 0.014 262)`; dark borders are translucent white (10 % for the edge, 6 % for the divider).
+- **Neutrals** are a flat cool slate with low chroma, the same in every theme (precision-tokens D1). Light: canvas `oklch(0.9542 0.0034 248)`, surface and popover white, raised `oklch(0.9757 0 0)`. Dark: canvas `oklch(0.1635 0.0045 264)`, surface `oklch(0.1959 0.0062 271)`, raised `oklch(0.2184 0.0079 275)`, popover `oklch(0.2271 0.0079 275)`, selected `oklch(0.2728 0.0097 268)`. Borders are opaque hairlines a step from the surface. The sidebar sits on the canvas: the old accent tint is retired.
 - **An accent theme declares three values** in its `[data-accent]` block: `--ot-al-accent` (the light accent, also the browser bar colour), `--ot-ad-accent-text` (the bright accent for dark text, focus and the chart) and `--ot-a-on-accent` (text on the accent). Hover, soft, soft text and focus derive from them. A derived step that misses its minimum may be overridden in the accent block next to a comment naming the pair; `theme.test.ts` counts the overrides (today one: graphite's dark buttons).
 - **A palette hue declares one solid per mode**; its soft and text steps derive.
 - **The ratios** are `--ot-mix-*` custom properties in the `:root` block, read back by the tests:

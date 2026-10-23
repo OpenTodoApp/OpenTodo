@@ -12,7 +12,7 @@ describe('theme blocks', () => {
   const { light, darkMedia, darkAttr, lightTokens, darkTokens } = parseThemes(css)
 
   it('data-theme="dark" resolves the dark surface', () => {
-    expect(darkAttr.surface).toBe('oklch(0.22 0.018 262)')
+    expect(darkAttr.surface).toBe('oklch(0.1959 0.0062 271.09)')
     expect(toHex(resolveToken(lightTokens, 'surface'))).toBe('#ffffff')
   })
 
@@ -103,7 +103,7 @@ describe('theme blocks', () => {
   it('the derivation ratios are declared once, as percentages', () => {
     const constants = parseConstants(css)
     const ratios = Object.entries(constants).filter(([k]) => k.startsWith('mix-'))
-    expect(ratios.length).toBe(12) // ten accent and hue steps, two sidebar tints (sidebar-v2 D8)
+    expect(ratios.length).toBe(10) // ten accent and hue steps; the sidebar tint is retired (precision-tokens D1)
     for (const [k, v] of ratios) expect(v, k).toMatch(/^\d{1,3}%$/)
   })
 

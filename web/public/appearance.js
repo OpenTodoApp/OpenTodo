@@ -19,9 +19,9 @@
       if (media) m.media = media
       document.head.appendChild(m)
     }
-    if (a.mode === 'dark') add('#0c0f16')
+    if (a.mode === 'dark') add('#0d0e10')
     else if (a.mode === 'light') add(bar || '#0f172a')
-    else if (bar) { add(bar, '(prefers-color-scheme: light)'); add('#0c0f16', '(prefers-color-scheme: dark)') }
+    else if (bar) { add(bar, '(prefers-color-scheme: light)'); add('#0d0e10', '(prefers-color-scheme: dark)') }
   } catch (e) {
     // Blocked storage or bad JSON: the defaults apply.
   }

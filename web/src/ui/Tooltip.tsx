@@ -107,7 +107,7 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
 
   const tipNode = open ? (
     <div ref={tip} id={id} role="tooltip" data-tooltip
-      className="overlay-fade-in pointer-events-none fixed z-[70] max-w-64 rounded-chip border border-default bg-raised px-2 py-1 text-meta text-default shadow-2"
+      className="overlay-fade-in pointer-events-none fixed z-[70] max-w-64 rounded-chip border border-strong bg-pop px-2 py-1 text-meta text-default shadow-2"
       style={pos ? { top: pos.top, left: pos.left } : { top: -9999, left: -9999 }}>
       <span>{label}</span>
       {shortcut && <><span className="mx-1 text-faint"> · </span><kbd className="ui-kbd">{shortcut}</kbd></>}
