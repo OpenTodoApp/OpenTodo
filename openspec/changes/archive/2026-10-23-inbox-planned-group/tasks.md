@@ -19,11 +19,11 @@
 - [x] 3.1 Strings "Planned, no project" and "Open as filter" in the five catalogs, the old plural removed; verify `node scripts/i18n-check.mjs`
 - [x] 3.2 Update `docs/today-and-upcoming.md` ("Where planned tasks go") and the PageHeader story that showed the line; verify `make docs-check`
   - Done for the guide (kept under the 600-word limit) and `help.json`. The PageHeader story's "4 planned tasks without a project" is only sample meta text in a frame demo, not this feature, so it stays to avoid an unrelated baseline change.
-- [ ] 3.3 A story of the Inbox with the folded and the open group, and visual baselines regenerated in the pinned Playwright image; verify `make ui-check` in CI
+- [x] 3.3 A story of the Inbox with the folded and the open group, and visual baselines regenerated in the pinned Playwright image; verify `make ui-check` in CI
   - Stories `Screens/Task list` → InboxPlannedFolded and InboxPlannedOpen.
 - [x] 3.4 CHANGELOG entry under Unreleased
 
 ## 4. Integration
 
-- [ ] 4.1 Run `make check` (TZ=UTC); verify it passes
-- [ ] 4.2 Open the pull request and get CI green
+- [x] 4.1 Run `make check` (TZ=UTC); verify it passes
+- [x] 4.2 Open the pull request and get CI green

@@ -33,7 +33,7 @@ A saved view SHALL have a name, a query string in the filter grammar, a kind (`l
 - **THEN** the device switches to Work and the view is shown with Work's tasks
 
 ### Requirement: Save and edit a view from the Filter view
-The Filter view SHALL offer a "Save view" action (button and `s` shortcut when focus is in the result list) that asks for a name and creates a pinned view with the current query, grouping and sort. Opening a saved view SHALL show its query in an editable input; changing the query or options SHALL update the view after confirmation. A saved view whose query no longer parses SHALL show the parse error and no results.
+The Filter view SHALL offer a "Save view" action (button and `s` shortcut when focus is in the result list) that asks for a name and creates a pinned view with the current query, grouping and sort. Opening a saved view SHALL show its query in an editable input. The same visual builder as the Filter view SHALL edit it, hidden by default on a saved view and shown with the Builder toggle. Changing the query, in the input or in the builder, or the options SHALL update the view after confirmation; until then the builder's count shows how many tasks the changed query would match. A saved view whose query no longer parses SHALL show the parse error and no results. The view stores only the query text, so a change made with the builder syncs and converges like a typed one.
 
 #### Scenario: Save the current query
 - **WHEN** the user runs a query in the Filter view, presses `s`, types "Work tomorrow" and confirms
@@ -42,6 +42,14 @@ The Filter view SHALL offer a "Save view" action (button and `s` shortcut when f
 #### Scenario: Edit a saved query
 - **WHEN** the user opens "Work tomorrow", changes the query to add `& !@waiting` and confirms
 - **THEN** the view's results update, and the changed query is shown on other devices after sync
+
+#### Scenario: Edit a saved query with the builder
+- **WHEN** the user opens "Work tomorrow", shows the builder, adds the condition "Label is waiting" with Not set, and confirms with Save
+- **THEN** the stored query ends with `& !@waiting`, the results update, and another device shows the same query text after sync
+
+#### Scenario: Count before saving
+- **WHEN** the user changes a saved view's query in the builder without confirming
+- **THEN** the builder shows how many tasks the changed query matches, while the list still shows the saved query's results
 
 ### Requirement: Pinned views in the sidebar
 Every saved filter SHALL be listed in a "Filters" group in the sidebar, in the sidebar's single scroller, ordered by position, and SHALL be reorderable from its menu. A sidebar filter row SHALL show no count; its open-task count, computed locally, SHALL be in the row's accessible name ("Waiting, 2 open tasks"), on the Filters overview opened with `g v` and the group's "All" action, and in the view's page header. A saved filter whose query no longer parses SHALL keep an error mark on its row with the message in its accessible name. The Filters group SHALL start closed on a device that has not stored a state for it, and SHALL be hidden until the user has a saved filter. A pinned saved filter SHALL also appear in the sidebar's Favourites group, where "Pin to sidebar" sets its pinned flag and its favourites entry together and unpinning clears both; the Favourites row shows no count either. The sidebar SHALL reflect pins, order and renames from other devices after sync, and counts in the accessible names SHALL update live from local data without a reload.
