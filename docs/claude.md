@@ -30,7 +30,7 @@ order: 41
    /plugin install opentodo@opentodo
    ```
 
-   Claude Code asks for your server address, such as `https://todo.example.com`, and the token. It keeps the token in your system's credential store, not in a file.
+   Claude Code asks for your server address, such as `https://todo.example.com`, and the token; if it doesn't, run `/plugin configure opentodo@opentodo`. It keeps the token in your system's credential store, not in a file.
 
 To update, run `/plugin marketplace update opentodo`. Each OpenTodo release publishes a matching version of the plugin.
 
