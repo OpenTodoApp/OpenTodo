@@ -49,7 +49,7 @@ import { useSelection } from './selection'
 import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
-import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, PlannedWithoutProject, ReadOnlyQuickAdd, usePhoneListActions, usePlannedWithoutProject, RowPickerDialogs } from './task-list/ListChrome'
+import { CompleteParentPrompt, EmptyState, FilteredEmpty, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
@@ -270,15 +270,15 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     inlineId: inline?.id ?? null, renderInline, departures, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
   })
 
-  // Planned tasks without a project (inbox-means-unplaced D4): in the Inbox header's meta, or its action row on phones.
-  const planned = usePlannedWithoutProject(route.view === 'inbox')
+  // The Inbox's own rows: its planned group is not part of it (inbox-planned-group D2).
+  const own = m.ownRows
   const pageActions = (
-    <ListPageActions route={route} userRole={userRole} rowCount={rows.length} topLevelCount={rows.filter((r) => r.depth === 0).length}
-      selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} planned={planned} />
+    <ListPageActions route={route} userRole={userRole} rowCount={own.length} topLevelCount={own.filter((r) => r.depth === 0).length}
+      selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} />
   )
   const { currentProject, currentLabel, currentPlace } = m
   // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1).
-  const { phone, ...phoneActions } = usePhoneListActions({ route, userRole, rowCount: rows.length, topLevelCount: rows.filter((r) => r.depth === 0).length,
+  const { phone, ...phoneActions } = usePhoneListActions({ route, userRole, rowCount: own.length, topLevelCount: own.filter((r) => r.depth === 0).length,
     onSelectMode: () => setSelectMode(true), filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration,
     project: currentProject && { row: currentProject, editable: m.projectEditable, viewMode, onViewMode: chooseViewMode } })
   // The Open Loops move this screen serves (open-loops "References to the method").
@@ -287,9 +287,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const listedTasks = useMemo(() => (route.view === 'today' ? rows.map((r) => r.task) : []), [route.view, rows])
   const totals = useDayTotals(listedTasks, today, route.view === 'today')
   const todayMeta = [m.dt.formatDate(today, 'heading'), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
-  const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : planned > 0 ? <PlannedWithoutProject count={planned} /> : undefined)
-  // On a phone the Inbox's planned count is the bar's subtitle (phone-v2 D1), not a row.
-  const methodSubtitle = useWithMethod(methodMove, phone && planned > 0 ? <PlannedWithoutProject count={planned} /> : undefined)
+  const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : undefined)
+  const methodSubtitle = useWithMethod(methodMove, undefined)
   const title = {
     inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'), place: currentPlace?.name ?? t('Location'),
   }[route.view]
@@ -340,7 +339,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               </Button>
             </div>
           )}
-          {rows.length === 0 && !(board || m.liveSections.length > 0) && (m.duration
+          {own.length === 0 && !(board || m.liveSections.length > 0) && (m.duration
             ? <FilteredEmpty onClear={() => m.chooseDuration(null)} />
             : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly}
                 completed={!m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0}

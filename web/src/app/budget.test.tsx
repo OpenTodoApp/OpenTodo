@@ -305,15 +305,14 @@ describe('on a phone (390 px)', () => {
     await today.unmount()
   })
 
-  it('the Inbox\'s planned tasks without a project are the bar\'s subtitle, opening Filter', async () => {
+  it('the Inbox\'s planned tasks without a project are a folded group at the end of the list, not the bar\'s subtitle (inbox-planned-group)', async () => {
     await seed()
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-phone-subtitle] [data-planned-line]'))
-    const line = document.querySelector<HTMLButtonElement>('[data-phone-subtitle] [data-planned-line]')!
-    expect(line.textContent).toBe('8 planned tasks without a project')
-    line.click()
-    await waitFor(() => location.pathname.startsWith('/filter'))
+    await waitFor(() => !!document.querySelector('[data-group="planned"] [data-group-count]'))
+    expect(document.querySelector('[data-group="planned"] [data-group-count]')!.textContent).toContain('8')
+    expect(document.querySelector('[data-phone-subtitle] [data-planned-line]')).toBeNull()
+    expect(document.querySelector('[data-planned-line]')).toBeNull()
     await r.unmount()
   })
 

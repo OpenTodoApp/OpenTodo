@@ -7957,6 +7957,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Open as filter": [
+    "web/src/app/task-list/ListGroups.tsx"
+  ],
   "Open calendar": [
     "web/src/app/datetime/DateField.tsx"
   ],
@@ -8550,6 +8553,9 @@
   ],
   "Planned estimates against a {minutes} day.": [
     "web/src/app/MonthView.tsx"
+  ],
+  "Planned, no project": [
+    "web/src/lib/listGroups.ts"
   ],
   "Please enter a name": [
     "web/src/app/NamePrompt.tsx",
@@ -16059,9 +16065,6 @@
   ],
   "{n, plural, one {# person} other {# people}}": [
     "web/src/app/ShareDirectory.tsx"
-  ],
-  "{n, plural, one {# planned task without a project} other {# planned tasks without a project}}": [
-    "web/src/app/task-list/ListChrome.tsx"
   ],
   "{n, plural, one {# possible duplicate} other {# possible duplicates}}": [
     "web/src/app/ImportScreen.tsx"
