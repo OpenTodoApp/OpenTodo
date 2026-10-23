@@ -18,6 +18,6 @@
 ## 4. Docs, tests and baselines
 
 - [x] 4.1 Update `docs/design-system.md` (switch, select, status dot, flat settings sections) and `docs/interface-guide.md` (the settings page), and add the CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
-- [ ] 4.2 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
+- [x] 4.2 Regenerate the visual baselines in the pinned Playwright image; verify `make ui-check` in CI
 - [x] 4.3 Render Settings → Notifications from the real app at 1440×900 in dark next to `settings.png` and attach the side-by-side to the pull request
-- [ ] 4.4 Run `make check` with TZ=UTC, open the pull request and get CI green
+- [x] 4.4 Run `make check` with TZ=UTC, open the pull request and get CI green
