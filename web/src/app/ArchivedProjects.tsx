@@ -28,7 +28,7 @@ export function ArchivedProjectsSection({ bare = false }: { bare?: boolean } = {
       const buttons = listRef.current?.querySelectorAll<HTMLButtonElement>('button[data-restore]:not([disabled])')
       const next = buttons?.[Math.min(index, (buttons?.length ?? 1) - 1)]
       if (next) next.focus()
-      else (headingRef.current ?? document.querySelector<HTMLElement>('[data-archived-disclosure] summary'))?.focus()
+      else (headingRef.current ?? document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]'))?.focus()
     })
   }
 

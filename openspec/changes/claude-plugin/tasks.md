@@ -28,4 +28,4 @@
 
 - [x] 4.1 Write `docs/claude.md` ("Use OpenTodo from Claude Code"), citing `claude-plugin`; add a section to `docs/mcp.md`, a README line, a ROADMAP row and the CHANGELOG entry under Unreleased; verify `make docs-check`
   - Done: `docs/claude.md` cites `mcp-server` until the archive adds the `claude-plugin` spec (a page may cite only specs that exist; the archive changes it to `claude-plugin`). `make docs-check` passes.
-- [x] 4.2 Run `make check` (TZ=UTC), open the pull request and get CI green
+- [ ] 4.2 Run `make check` (TZ=UTC), open the pull request and get CI green

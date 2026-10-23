@@ -1,79 +1,90 @@
-// All projects (OpenSpec change sidebar-favourites, design D6; project-organization
-// "All projects page"): the whole tree with counts and menus, a find field that keeps
-// ancestors, New project and From a template, and the archived projects behind a
-// disclosure. Everything is read from local data, so it works offline and follows sync.
-import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { useProjects, useProjectsLoaded, useMembershipMap } from '../lib/localData'
-import { useOpenTasks } from '../lib/liveTasks'
+// All projects (OpenSpec change sidebar-favourites, design D6; projects-table, design
+// D1 to D7; project-organization "All projects page"): the whole tree as a table with
+// each project's health, progress, open tasks, next due date, people and last change,
+// a find field that keeps ancestors, New project and From a template, and the
+// archived projects in their own tab. Everything is read from local data, so it works
+// offline and follows sync.
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
+import { useAllTaskRows, useMembershipMap, useProjects, useProjectsLoaded } from '../lib/localData'
 import { createProject } from '../lib/ops'
-import { buildProjectTree, openCountsByProject, siblingEdges, visibleProjects } from '../lib/projects'
+import { compareProjects, firstDirection, summarizeProjects, type ProjectSortKey } from '../lib/projectHealth'
+import { buildProjectTree, siblingEdges, visibleProjects, type ProjectNode } from '../lib/projects'
 import { canEditProject, roleOf } from '../lib/sharing'
 import { matchSidebar } from '../lib/sidebarFind'
 import { flattenTree } from '../lib/tree'
-import { openCount } from '../lib/views'
+import { useMinuteNow } from '../lib/timeEntries'
 import { t } from '../lib/i18n'
-import { Button, Icon, MenuItem, PageBody, PageHeader, ReadAs, Skeleton } from '../ui'
+import { Button, MenuItem, PageBody, PageHeader, Skeleton, Tabs } from '../ui'
 import { ArchivedProjectsSection } from './ArchivedProjects'
 import { NamePrompt } from './NamePrompt'
-import { ProjectRowMenu } from './ProjectRowMenu'
+import { ProjectsTable, type ProjectsSort } from './ProjectsTable'
 import { navigate } from './router'
-import { ProjectMark } from './Sidebar'
 import { requestTemplateDialog } from './TemplateDialogs'
-import { MAX_INDENT } from './TaskRow'
-import { useToday } from './useViews'
+import { useToday, useViewerZone } from './useViews'
 
 /** Whether the page was opened at its archived projects (`/projects#archived`, Settings → Data). */
 function wantsArchived(prop?: boolean): boolean {
   return !!prop || (typeof location !== 'undefined' && location.hash === '#archived')
 }
 
+/** The tree with every level's siblings in the chosen column's order (design D4). */
+function sortedTree(roots: ProjectNode[], cmp: (a: ProjectNode, b: ProjectNode) => number): ProjectNode[] {
+  return roots.map((n) => ({ ...n, children: sortedTree(n.children, cmp) })).sort(cmp)
+}
+
 export function ProjectsView({ archived }: { archived?: boolean }) {
   const all = useProjects()
   const loaded = useProjectsLoaded() !== undefined
   const projects = useMemo(() => visibleProjects(all), [all])
-  const archivedCount = useMemo(() => all.filter((p) => p.archived).length, [all])
+  const archivedCount = useMemo(() => all.filter((p) => p.archived && !p.deleted_at).length, [all])
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   const memberMap = useMembershipMap()
-  const openTasks = useOpenTasks()
+  const tasks = useAllTaskRows()
   const today = useToday()
+  const zone = useViewerZone()
+  const now = useMinuteNow(true)
   // Folding on this page is its own (Collapse all / Expand all); the page opens with the whole tree.
   const [folded, setFolded] = useState<Set<string>>(() => new Set())
   const [query, setQuery] = useState('')
+  const [sort, setSort] = useState<ProjectsSort | null>(null)
   const [creating, setCreating] = useState(false)
-  const [archivedOpen, setArchivedOpen] = useState(() => wantsArchived(archived))
-  const disclosure = useRef<HTMLDetailsElement>(null)
+  const [tab, setTab] = useState<'active' | 'archived'>(() => (wantsArchived(archived) ? 'archived' : 'active'))
   useEffect(() => {
-    const reveal = () => {
-      if (!wantsArchived(archived)) return
-      setArchivedOpen(true)
-      requestAnimationFrame(() => disclosure.current?.scrollIntoView?.({ block: 'start' }))
-    }
-    reveal()
     // A link to #archived while the page is open changes only the fragment.
+    const reveal = () => { if (wantsArchived(archived)) setTab('archived') }
+    reveal()
     window.addEventListener('hashchange', reveal)
     return () => window.removeEventListener('hashchange', reveal)
-  }, [archived, loaded])
+  }, [archived])
 
   const everyRow = useMemo(() => flattenTree(tree.roots, () => false), [tree])
   const found = useMemo(() => (query.trim() ? matchSidebar(query, {
     rows: everyRow.map((n) => ({ id: n.id, parent: n.parent, name: n.item.name })), labels: [], views: [],
   }) : null), [query, everyRow])
-  const rows = useMemo(() => {
-    const shown = flattenTree(tree.roots, (id) => !found && folded.has(id))
-    return found ? shown.filter((n) => found.projects.has(n.id)) : shown
-  }, [tree, folded, found])
-  const counts = useMemo(
-    () => openCountsByProject(openTasks.filter((tk) => openCount(tk, today)), tree, found ? new Set<string>() : folded),
-    [openTasks, today, tree, folded, found],
+  // A folded row sums its sub-projects, an expanded one counts its own (project-organization "Open task counts").
+  const summaries = useMemo(
+    () => summarizeProjects({ projects: all, tasks, today, now, zone, rollUp: (id) => !found && folded.has(id) }),
+    [all, tasks, today, now, zone, found, folded],
   )
+  const rows = useMemo(() => {
+    const roots = sort ? sortedTree(tree.roots, (a, b) => compareProjects(sort.key, sort.dir,
+      { name: a.item.name, summary: summaries.get(a.id) }, { name: b.item.name, summary: summaries.get(b.id) }, zone)) : tree.roots
+    const shown = flattenTree(roots, (id) => !found && folded.has(id))
+    return found ? shown.filter((n) => found.projects.has(n.id)) : shown
+  }, [tree, sort, summaries, zone, folded, found])
+  const dimmed = useMemo(() => (found ? new Set(rows.filter((n) => !found.matched.has(n.id)).map((n) => n.id)) : undefined), [found, rows])
 
-  const toggle = (id: string) => setFolded((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const fold = (id: string, on: boolean) => setFolded((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n })
+  // First click sorts in the column's natural direction, the second reverses it, the third returns to your own order.
+  const onSort = (key: ProjectSortKey) => setSort((s) => (s?.key !== key ? { key, dir: firstDirection(key) }
+    : s.dir === firstDirection(key) ? { key, dir: s.dir === 1 ? -1 : 1 } : null))
   const onFindKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && found?.order[0]) { e.preventDefault(); navigate({ view: 'project', id: found.order[0].id }) }
     else if (e.key === 'Escape' && query) { e.preventDefault(); e.stopPropagation(); setQuery('') }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); document.querySelector<HTMLElement>('[data-projects-table] [data-project-open]')?.focus() }
   }
   // The find field takes focus where a keyboard is likely (`g r`, then type); a touch screen keeps its keyboard closed.
-  const autoFocus = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: fine)').matches
+  const autoFocus = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: fine)').matches && tab === 'active'
 
   return (
     <PageBody width="list" data-testid="projects-page">
@@ -86,50 +97,30 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => setFolded(new Set(tree.nodes.keys()))} />
           <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => setFolded(new Set())} />
         </>} />
-      <div className="mb-3">
-        <input className="ui-input" type="search" placeholder={t('Find a project…')} aria-label={t('Find a project')} value={query}
-          onChange={(e) => setQuery(e.target.value)} onKeyDown={onFindKey} autoFocus={autoFocus} enterKeyHint="go" autoComplete="off" data-projects-find />
-        {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
-      </div>
-      {/* Until the projects are read, the skeleton: the archived disclosure below would jump (motion-polish D2). */}
-      {!loaded && <Skeleton shape="row" count={5} label={t('Loading the list…')} />}
-      <ul className="space-y-0.5" aria-label={t('Projects')} data-projects-tree>
-        {rows.map((n) => {
-          const p = n.item
-          const has = n.children.length > 0
-          const isFolded = !found && folded.has(n.id)
-          const count = counts.get(n.id)
-          return (
-            <li key={n.id} data-projects-row={n.id} className="group flex items-center rounded-control hover:bg-sunken dark:hover:bg-raised"
-              style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * 1.25}rem` }}>
-              <span className="flex h-8 w-6 shrink-0 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11">
-                {has && !found && (
-                  <button type="button" onClick={() => toggle(n.id)} aria-expanded={!isFolded}
-                    aria-label={isFolded ? t('Expand {name}', { name: p.name }) : t('Collapse {name}', { name: p.name })}
-                    className="flex h-6 w-6 items-center justify-center rounded-chip text-faint hover:text-muted">
-                    <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isFolded ? '' : 'rotate-90'}`} />
-                  </button>
-                )}
-              </span>
-              <button type="button" className={`flex min-w-0 flex-1 items-center gap-2 py-1.5 pr-2 text-left text-body ${found && !found.matched.has(n.id) ? 'text-faint' : ''}`}
-                onClick={() => navigate({ view: 'project', id: n.id })} data-project-open={n.id}>
-                <span className="flex w-5 shrink-0 justify-center"><ProjectMark project={p} /></span>
-                <span className="user-text min-w-0 flex-1 truncate">{p.name}</span>
-                {count ? <span className="text-meta tabular-nums text-faint"><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span> : null}
-              </button>
-              <ProjectRowMenu project={p} movable={canEditProject(roleOf(n.id, memberMap))} edges={siblingEdges(tree, n)} className="hover-reveal" />
-            </li>
-          )
-        })}
-      </ul>
-      {loaded && projects.length === 0 && <p className="px-2 py-2 text-body text-faint">{t('No projects yet.')}</p>}
-      {loaded && <details ref={disclosure} id="archived" open={archivedOpen} onToggle={(e) => setArchivedOpen(e.currentTarget.open)}
-        className="mt-6 border-t border-default pt-3" data-archived-disclosure>
-        <summary className="rounded-control px-2 py-1.5 text-body font-medium text-default">
-          {t('Archived projects')} <span className="text-meta font-normal tabular-nums text-faint" data-archived-count>{archivedCount}</span>
-        </summary>
-        <div className="pt-2">{archivedOpen && <ArchivedProjectsSection bare />}</div>
-      </details>}
+      <Tabs label={t('Projects')} value={tab} rowClassName="border-soft"
+        onChange={(id) => {
+          setTab(id as 'active' | 'archived')
+          // The fragment follows the tab, so a reload or a shared link opens the same one.
+          history.replaceState(history.state, '', id === 'archived' ? '#archived' : location.pathname + location.search)
+        }}
+        tabs={[{ id: 'active', label: t('Active'), count: projects.length }, { id: 'archived', label: t('Archived'), count: archivedCount }]}>
+        {tab === 'active' ? <>
+          <div className="mb-2 max-w-sm">
+            <input className="ui-input" type="search" placeholder={t('Find a project…')} aria-label={t('Find a project')} value={query}
+              onChange={(e) => setQuery(e.target.value)} onKeyDown={onFindKey} autoFocus={autoFocus} enterKeyHint="go" autoComplete="off" data-projects-find />
+            {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
+          </div>
+          {/* Until the projects are read, the skeleton (motion-polish D2). */}
+          {!loaded && <Skeleton shape="row" count={5} label={t('Loading the list…')} />}
+          {loaded && projects.length > 0 && <ProjectsTable rows={rows} summaries={summaries} memberships={memberMap} dimmed={dimmed}
+            folded={folded} foldable={!found} onFold={fold} sort={sort} onSort={onSort} today={today} now={now}
+            canMove={(n) => canEditProject(roleOf(n.id, memberMap))} edges={(n) => siblingEdges(tree, n)} />}
+          {loaded && projects.length === 0 && <p className="px-2 py-2 text-body text-faint">{t('No projects yet.')}</p>}
+          {loaded && projects.length > 0 && <p className="px-2 pt-4 text-meta text-faint" data-health-note>
+            {t('Health is worked out on your device from late tasks, deadlines and recent activity.')}
+          </p>}
+        </> : <div data-archived-tab><ArchivedProjectsSection bare /></div>}
+      </Tabs>
       {creating && (
         <NamePrompt title={t('New project')} label={t('Project name')} confirm={t('Create')} onCancel={() => setCreating(false)}
           onSubmit={async (name) => {

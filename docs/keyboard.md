@@ -76,7 +76,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>a</kbd> | Go to Assigned to me |
 | <kbd>g</kbd> then <kbd>c</kbd> | Go to Completed |
 | <kbd>g</kbd> then <kbd>l</kbd> | Go to Labels |
-| <kbd>g</kbd> then <kbd>Shift+P</kbd> | Go to All projects: the whole tree, find a project, archived projects |
+| <kbd>g</kbd> then <kbd>Shift+P</kbd> | Go to All projects: every project with its health, find a project, archived projects |
 | <kbd>g</kbd> then <kbd>f</kbd> | Open New view: build a query, then save it as a view |
 | <kbd>g</kbd> then <kbd>v</kbd> | Go to Views: saved views and boards |
 | <kbd>g</kbd> then <kbd>d</kbd> | Go to the Calendar as Day (the sidebar opens it as last used) |

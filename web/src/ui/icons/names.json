@@ -1,4 +1,5 @@
 [
+  "activity",
   "alarm-clock",
   "anchor",
   "archive",
@@ -28,6 +29,7 @@
   "chevrons-down-up",
   "chevrons-up-down",
   "circle",
+  "circle-alert",
   "circle-check-big",
   "circle-help",
   "clipboard-check",
@@ -128,6 +130,7 @@
   "thumbs-up",
   "timer",
   "trash-2",
+  "trending-up",
   "undo-2",
   "upload",
   "user-check",
