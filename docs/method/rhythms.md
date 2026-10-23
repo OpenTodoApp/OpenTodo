@@ -19,7 +19,7 @@ Five minutes, usually in the morning: open it from the Review screen's menu, the
 2. Look at what is still open from **Earlier**: complete it, or give it a new date.
 3. Pick **today's focus**: press <kbd>f</kbd> on up to three of today's tasks. They are shown on the Loop home on every device, with how many of them are done. To work through them one at a time with a timer, press <kbd>g</kbd> <kbd>Shift+F</kbd> for [Focus](../focus.md).
 
-**Done for today** records the check. In Open Loops first, the app offers it once a day. If you closed yesterday with a line for tomorrow, it is shown at the top.
+The check opens with the same [briefing](../briefing.md) as Today: what is late, a full day and replies waiting. **Done for today** records the check. In Open Loops first, the app offers it once a day. If you closed yesterday with a line for tomorrow, it is shown right under the briefing.
 
 A day here ends at your [day start](../dates-and-times.md#when-a-day-ends): with 04:00, a check done or a focus picked at 00:30 still belongs to the evening before, and the focus stays until 04:00.
 

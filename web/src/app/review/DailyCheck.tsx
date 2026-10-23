@@ -17,6 +17,7 @@ import type { Task } from '../../lib/types'
 import { overdueInToday } from '../../lib/views'
 import { Button, Dialog, Notice, PageBody, PageHeader, Skeleton } from '../../ui'
 import { act } from '../actionError'
+import { BriefingText, useBriefing } from '../Briefing'
 import { useWithMethod } from '../help/MethodLink'
 import { LabelPicker } from '../LabelPicker'
 import { useMethodInput } from '../method/useMethodInput'
@@ -30,6 +31,8 @@ export function DailyCheck() {
   const input = useMethodInput()
   const labels = useAllLabels()
   const review = useReviewRow()
+  // Today's briefing opens the check (OpenSpec change briefing; weekly-review "Daily check").
+  const briefing = useBriefing('today')
   const [message, setMessage] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
@@ -85,6 +88,7 @@ export function DailyCheck() {
         actions={<Button size="sm" variant={done ? 'secondary' : 'primary'} onClick={() => act(finishDailyCheck().then(() => setMessage(t('Daily check done. See you tomorrow.'))))}>{t('Done for today')}</Button>} />
       {!groups ? <Skeleton shape="row" count={4} /> : (
         <>
+          {briefing && <p className="mb-4 max-w-[72ch] text-prose text-muted" data-page-briefing><BriefingText briefing={briefing} /></p>}
           {note && (
             <div className="mb-4" data-daily-note>
               <Notice tone="info">
