@@ -69,6 +69,9 @@
   "0 means unlimited. Usage resets on the first day of each month (UTC).": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "1 day": [
+    "web/src/app/WorkspaceInvites.tsx"
+  ],
   "1 day before": [
     "web/src/lib/relativeDoOn.ts",
     "web/src/lib/reminderTime.ts"
@@ -77,7 +80,8 @@
     "web/src/lib/reminderTime.ts"
   ],
   "1 hour": [
-    "web/src/app/ReminderToasts.tsx"
+    "web/src/app/ReminderToasts.tsx",
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "1 hour before": [
     "web/src/lib/reminderTime.ts"
@@ -109,11 +113,17 @@
   "3 days before": [
     "web/src/lib/relativeDoOn.ts"
   ],
+  "30 days": [
+    "web/src/app/WorkspaceInvites.tsx"
+  ],
   "30 minutes before": [
     "web/src/lib/reminderTime.ts"
   ],
   "45m, 1h30 or 90 (minutes); it ends now, or at 17:00 on another day": [
     "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "7 days": [
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   ": open the method guide": [
     "web/src/app/help/MethodLink.tsx"
@@ -262,7 +272,7 @@
   "A line for tomorrow": [
     "web/src/lib/review.ts"
   ],
-  "A link adds whoever opens it. It works once and expires after seven days.": [
+  "A link adds whoever opens it. It works once and expires after the time you choose.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "A map style URL; OpenFreeMap by default.": [
@@ -591,7 +601,7 @@
   ],
   "Add": [
     "web/src/app/PlanView.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/palette/modes.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
@@ -609,6 +619,9 @@
   "Add a link…": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Add a member…": [
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "Add a next action": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -657,8 +670,7 @@
     "web/src/app/TabBar.tsx",
     "web/src/app/calendar/PlanAgenda.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
-    "web/src/app/palette/BarParts.tsx",
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/palette/BarParts.tsx"
   ],
   "Add a task assigned to you…": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -723,7 +735,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Add by email": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceMembers.tsx"
   ],
   "Add calendar": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -812,6 +824,9 @@
   ],
   "Add to {app}": [
     "web/src/app/ShareCapture.tsx"
+  ],
+  "Add to {name}": [
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "Add to {workspace}…": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -1126,7 +1141,7 @@
   "Anyone with the link": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Anyone with the link can open the page, without an account.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -1622,7 +1637,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Bind the link to one address.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Block quote (``` and Enter: code block)": [
     "web/src/lib/richtextEditor.ts"
@@ -2068,7 +2083,7 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a member": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "Choose a model": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -2130,7 +2145,7 @@
     "web/src/app/task-detail/Facets.tsx"
   ],
   "Choose icon": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "Choose light or dark": [
     "web/src/app/FirstRun.tsx"
@@ -2315,7 +2330,7 @@
     "web/src/app/NewWorkspaceDialog.tsx",
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/menus/stylePickers.tsx"
   ],
   "Colour {name}": [
@@ -2634,7 +2649,7 @@
   "Copy": [
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/TokensSection.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Copy URL": [
     "web/src/app/AssistantsPanel.tsx"
@@ -2733,7 +2748,7 @@
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TemplateDialogs.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceGroups.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "Create a link…": [
@@ -2780,7 +2795,7 @@
   "Create link": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/UsersPanel.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Create my account": [
     "web/src/app/EmailScreens.tsx"
@@ -2834,7 +2849,7 @@
     "web/src/lib/historyVersions.ts"
   ],
   "Created by {name}": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Created {ago} · last used {used}": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -3105,7 +3120,7 @@
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/RestoreSection.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
@@ -3122,8 +3137,8 @@
   "Delete field": [
     "web/src/app/FieldsDialog.tsx"
   ],
-  "Delete group {name}": [
-    "web/src/app/WorkspacesSettings.tsx"
+  "Delete group": [
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "Delete label": [
     "web/src/app/LabelsView.tsx"
@@ -3210,7 +3225,8 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx",
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "Delete “{name}”?": [
     "web/src/app/ProjectHeader.tsx",
@@ -3729,7 +3745,7 @@
   ],
   "Email (optional)": [
     "web/src/app/MembersPanel.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Email <span>(optional, only they can use it)</span>": [
     "web/src/app/InviteLinksSection.tsx"
@@ -4069,6 +4085,9 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx"
   ],
+  "Everyone in the workspace is in this group.": [
+    "web/src/app/WorkspaceGroups.tsx"
+  ],
   "Everyone in {workspace} is on this project": [
     "web/src/app/ShareDirectory.tsx"
   ],
@@ -4194,6 +4213,9 @@
   "Expires": [
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Expires after": [
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Expires in": [
     "web/src/app/InviteLinksSection.tsx",
@@ -4626,6 +4648,7 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "General": [
+    "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/settingsSections.ts"
   ],
   "Get clear": [
@@ -4848,6 +4871,9 @@
   "Group deleted": [
     "web/src/app/auditFormat.ts"
   ],
+  "Group name": [
+    "web/src/app/WorkspaceGroups.tsx"
+  ],
   "Group removed from a project": [
     "web/src/app/auditFormat.ts"
   ],
@@ -4856,6 +4882,7 @@
   ],
   "Groups": [
     "web/src/app/ShareDirectory.tsx",
+    "web/src/app/WorkspacesSettings.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Guest (task page)": [
@@ -5083,7 +5110,7 @@
   "Icon": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/menus/stylePickers.tsx",
     "web/src/ui/IconPicker.tsx"
   ],
@@ -5410,7 +5437,7 @@
   ],
   "Invite link": [
     "web/src/app/InviteLinksSection.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Invite links": [
     "web/src/lib/settingsCopy.ts"
@@ -5429,6 +5456,9 @@
   ],
   "Invite with a link": [
     "web/src/app/InviteLinksSection.tsx"
+  ],
+  "Invites": [
+    "web/src/app/WorkspacesSettings.tsx"
   ],
   "Issue connection added": [
     "web/src/app/auditFormat.ts"
@@ -5835,7 +5865,7 @@
   ],
   "Leave": [
     "web/src/app/ShareDialog.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "Leave display mode for the same view in the app": [
     "web/src/lib/shortcuts.ts"
@@ -5862,7 +5892,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Leave {name}?": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "Leave “{project}”?": [
     "web/src/app/ShareDialog.tsx"
@@ -6269,7 +6299,7 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "Members of {name}": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "Members: {list}": [
     "web/src/app/ProjectHeader.tsx"
@@ -6629,8 +6659,8 @@
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/TokensSection.tsx",
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/profile/ProfileSection.tsx",
     "web/src/app/rules/RuleDialog.tsx",
@@ -6715,7 +6745,7 @@
     "web/src/app/ViewsView.tsx"
   ],
   "New group": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "New invitation": [
     "web/src/app/MembersPanel.tsx"
@@ -6741,7 +6771,7 @@
     "web/src/app/SecurityPanel.tsx"
   ],
   "New owner": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "New passphrase": [
     "web/src/app/BackupsPanel.tsx",
@@ -6988,7 +7018,7 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "No groups yet.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "No history on the server yet": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -7046,10 +7076,11 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "No member matches.": [
-    "web/src/app/AssigneePicker.tsx"
+    "web/src/app/AssigneePicker.tsx",
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "No members": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "No member’s assistant will see this project, its sub-projects or their tasks, and assistants cannot change them. The app, sync and calendar apps are not affected.": [
     "web/src/app/AgentAccessRow.tsx",
@@ -7119,6 +7150,9 @@
   "No project": [
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/lib/pickerSources.ts"
+  ],
+  "No project is shared with this group.": [
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "No project matches.": [
     "web/src/app/ProjectPickerField.tsx"
@@ -7827,6 +7861,9 @@
   ],
   "Only people who already have an account on this server can use it. The server owner can let members invite new people in Settings → People.": [
     "web/src/app/InviteLinksSection.tsx"
+  ],
+  "Only the owner and admins can change the name, colour and icon.": [
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "Only the owner or an admin can restore it": [
     "web/src/app/ArchivedProjects.tsx"
@@ -8789,7 +8826,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Projects shared with you in this workspace leave your devices.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "Projects|method": [
     "web/src/lib/method/vocabulary.json"
@@ -9147,7 +9184,8 @@
     "web/src/app/DashboardView.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ShareDialog.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceGroups.tsx",
+    "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Remove attachment?": [
@@ -9219,9 +9257,12 @@
   "Remove {name}": [
     "web/src/app/ShareCapture.tsx",
     "web/src/app/ShareDialog.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx"
+  ],
+  "Remove {name} from {group}": [
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "Remove {title} from This Evening": [
     "web/src/app/palette/registry.ts"
@@ -9253,7 +9294,8 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/SecurityPanel.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "Rename label": [
     "web/src/app/LabelsView.tsx",
@@ -9574,7 +9616,7 @@
     "web/src/app/MembersPanel.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TokensSection.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceInvites.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Revoke app password": [
@@ -9633,7 +9675,8 @@
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/ShareDirectory.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx",
+    "web/src/app/WorkspaceMembers.tsx"
   ],
   "Role changed": [
     "web/src/app/auditFormat.ts"
@@ -9641,7 +9684,7 @@
   "Role of {name}": [
     "web/src/app/ShareDialog.tsx",
     "web/src/app/ShareDirectory.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceMembers.tsx"
   ],
   "Rose": [
     "web/src/lib/colourNames.ts"
@@ -9760,7 +9803,7 @@
     "web/src/app/SpeechServerPanel.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/profile/ProfileSection.tsx",
     "web/src/app/rules/RuleDialog.tsx",
@@ -10085,7 +10128,7 @@
   "Send by email": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "Send notifications to ntfy, Pushover, Gotify or any address you choose.": [
     "web/src/lib/settingsCopy.ts"
@@ -11670,7 +11713,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "The person needs an account on this server.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceMembers.tsx"
   ],
   "The picture could not be saved. Try again.": [
     "web/src/app/profile/PictureDialog.tsx"
@@ -11995,7 +12038,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "The workspace is removed for everyone.": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "The {role} link for {email} will stop working.": [
     "web/src/app/InviteLinksSection.tsx"
@@ -12932,7 +12975,7 @@
     "web/src/app/TrackingIndicator.tsx"
   ],
   "Transfer": [
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Transfer ownership": [
@@ -13250,7 +13293,9 @@
   ],
   "Unnamed": [
     "web/src/app/ShareDirectory.tsx",
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspaceGeneral.tsx",
+    "web/src/app/WorkspaceGroups.tsx",
+    "web/src/app/WorkspaceMembers.tsx"
   ],
   "Unnamed link": [
     "web/src/app/PublicLinksSection.tsx"
@@ -13869,6 +13914,7 @@
   ],
   "Workspaces": [
     "web/src/app/WorkspaceControl.tsx",
+    "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/settingsSections.ts"
   ],
   "Workspaces need a connection to your server. The lists below are from this device.": [
@@ -13916,7 +13962,7 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
-    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
@@ -14122,6 +14168,9 @@
   "Your data is safe on this device and on the server.": [
     "web/src/app/ErrorBoundary.tsx",
     "web/src/app/PanelBoundary.tsx"
+  ],
+  "Your default workspace": [
+    "web/src/app/WorkspacesSettings.tsx"
   ],
   "Your default workspace cannot be deleted, left, transferred or shared.": [
     "web/src/lib/i18n/errors.ts"
@@ -14677,6 +14726,9 @@
   ],
   "expected day(s), week(s), month(s) or year(s) after {word}": [
     "web/src/lib/recurrence.ts"
+  ],
+  "expires {date}": [
+    "web/src/app/WorkspaceInvites.tsx"
   ],
   "expires {instant}": [
     "web/src/app/PublicLinksSection.tsx"
@@ -15930,6 +15982,12 @@
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
+  "{n, plural, one {# member} other {# members}}": [
+    "web/src/app/WorkspaceGroups.tsx"
+  ],
+  "{n, plural, one {# member} other {# members}} · {role}": [
+    "web/src/app/WorkspacesSettings.tsx"
+  ],
   "{n, plural, one {# minute left} other {# minutes left}}": [
     "web/src/lib/focus/timer.ts"
   ],
@@ -16254,6 +16312,9 @@
   "{name} reviewed.": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
+  "{name} settings": [
+    "web/src/app/WorkspacesSettings.tsx"
+  ],
   "{name}, column {n} of {count}": [
     "web/src/app/BoardView.tsx"
   ],
@@ -16262,9 +16323,6 @@
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx"
-  ],
-  "{name}, {role}": [
-    "web/src/app/WorkspacesSettings.tsx"
   ],
   "{name}: uploading": [
     "web/src/app/Markdown.tsx"
@@ -16404,6 +16462,9 @@
   ],
   "{planned} planned · {tracked} tracked": [
     "web/src/lib/time.ts"
+  ],
+  "{projects} lose access through this group. People with their own access keep it.": [
+    "web/src/app/WorkspaceGroups.tsx"
   ],
   "{project} · moved {n, plural, one {# time} other {# times}}": [
     "web/src/app/review/StatsView.tsx"

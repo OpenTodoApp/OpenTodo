@@ -741,7 +741,7 @@ export const SETTINGS_COPY = {
   'workspace-invites': {
     title: msg('Invite links'),
     icon: 'link',
-    description: msg('A link adds whoever opens it. It works once and expires after seven days.'),
+    description: msg('A link adds whoever opens it. It works once and expires after the time you choose.'),
   },
   'workspace-danger': {
     title: msg('Danger zone'),

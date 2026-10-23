@@ -132,7 +132,8 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
           <SettingsList user={user} current={page.id} compact />
         </aside>
       )}
-      <div className="min-w-0 space-y-6 lg:max-w-2xl">
+      {/* workspaces-settings-v2 D2: the Workspaces page's two panes need 56 rem; every other section keeps 42. */}
+      <div className={`min-w-0 space-y-6 ${page.id === 'workspaces' ? 'lg:max-w-4xl' : 'lg:max-w-2xl'}`} data-settings-width={page.id === 'workspaces' ? 'wide' : 'form'}>
         <PageHeader title={page.label} titleRef={headingRef} titleTabIndex={-1} help={PAGE_HELP_SCREENS[page.id]} sticky={false}
           back={{ label: t('Settings'), href: routePath({ view: 'settings' }), onClick: () => navigate({ view: 'settings' }), hideFrom: 'lg' }} />
         <SettingsPendingGate key={page.id}><SectionContent section={page} user={user} onLogout={onLogout} /></SettingsPendingGate>
