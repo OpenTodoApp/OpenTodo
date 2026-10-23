@@ -25,8 +25,10 @@ export async function switchWorkspace(id: string, route: Route, focus = false): 
   const next = routeAfterSwitch(route)
   if (next !== route) navigate(next)
   if (focus) {
-    // After the views re-render on the new workspace's data.
+    // After the views re-render on the new workspace's data; nothing to focus once the
+    // document is gone (a page unloading, or a test environment torn down before the tick).
     setTimeout(() => {
+      if (typeof document === 'undefined') return
       const h = pageHeading(document.querySelector('main'))
       if (h) focusHeading(h)
     }, 50)
