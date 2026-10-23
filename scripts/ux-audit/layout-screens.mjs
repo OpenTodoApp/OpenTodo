@@ -161,6 +161,9 @@ async function openProperty(p, field, label) {
   // The lines settle after the panel's live queries (sections, parent) resolve.
   await panel.locator('[data-facets], [data-facts]').first().waitFor()
   const part = panel.locator(`[data-part="${field}"]`).first()
+  // A phone's stacked facts keep the unset ones behind More properties (precision-phone D4).
+  const more = panel.locator('[data-facts-more]')
+  if (await part.count() === 0 && await more.count() > 0) { await more.scrollIntoViewIfNeeded(); await more.click() }
   const shown = await part.waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false)
   if (shown) {
     await part.scrollIntoViewIfNeeded()
