@@ -72,7 +72,7 @@ export const Applied: StoryObj = {
 /** The side sheet's empty state: the greeting and the starters, the composer at its foot. */
 export const EmptySheet: StoryObj = {
   render: () => (
-    <div className="-m-4 flex h-[44rem] w-[28rem] flex-col border-l border-default bg-surface">
+    <div className="-m-4 flex h-[44rem] w-full max-w-[28rem] flex-col border-l border-default bg-surface">
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3"><AssistantPanelBody {...base} layout="sheet" /></div>
       <div className="border-t border-default px-3 py-2">
         <Composer draft="" onDraft={noop} onSend={noop} onStop={noop} streaming={false} connected disabled={false} skills={SKILLS} onSkill={noop} context="Today" />

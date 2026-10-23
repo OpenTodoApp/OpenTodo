@@ -113,7 +113,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
             </ol>
           )}
           {(p.review || p.result) && (
-            <div className="pl-9">
+            <div className="sm:pl-9">
               <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
             </div>
           )}

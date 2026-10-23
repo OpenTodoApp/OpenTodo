@@ -77,14 +77,14 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
         <span className="ml-auto text-meta text-faint">{t('Nothing changes until you apply')}</span>
       </div>
       {review.dropped.map((d) => <p key={d} className="border-b border-default px-3 py-1.5 text-meta text-muted">{d}</p>)}
-      <ul className="divide-y divide-(--ot-border-default)" aria-label={t('Proposed changes')}>
+      <ul aria-label={t('Proposed changes')}>
         {review.items.map((item, i) => {
           const label = `${item.title}${item.lines.length ? ': ' + item.lines.join('; ') : ''}`
           return (
-            <li key={item.change.entity + item.change.entityId}>
+            <li key={item.change.entity + item.change.entityId} className="border-t border-soft first:border-t-0">
               <label className="flex flex-col gap-x-3 gap-y-0.5 px-3 py-2 text-body hover:bg-hover @md/review:flex-row @md/review:items-start">
                 <span className="flex min-w-0 flex-1 items-start gap-2">
-                  <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" checked={item.checked} onChange={(e) => p.onToggle(i, e.target.checked)}
+                  <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-(--ot-accent)" checked={item.checked} onChange={(e) => p.onToggle(i, e.target.checked)}
                     aria-label={label + (item.state === 'stale' ? ` ${t('(changed since proposed)')}` : '') + (item.shared ? ` ${t('(shared project)')}` : '')} />
                   <span className="min-w-0 flex-1 user-text">
                     <span className={item.checked ? 'text-default' : 'text-muted'}>{item.title}</span>
