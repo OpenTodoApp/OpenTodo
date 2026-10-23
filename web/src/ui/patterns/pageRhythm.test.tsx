@@ -18,22 +18,34 @@ function stubMedia(width: number, reduce = false) {
 }
 
 describe('PageHeader lead line (page-rhythm D1)', () => {
-  it('puts the title on its own line at the display step and the meta under it', async () => {
+  it('a day page puts the title at the display step with the date line beside it (precision-shell D1)', async () => {
     stubMedia(1280)
-    const r = await render(<PageHeader title="Today" meta="Wednesday 21 October · 5 h 15 m planned" actions={<button>Add</button>} help="today" />)
+    const r = await render(<PageHeader kind="day" title="Today" meta="Wednesday 21 October · 5 h 15 m planned" actions={<button>Add</button>} help="today" briefing="Three things matter today." />)
     const title = r.container.querySelector('[data-page-title]')!
     expect(title.className).toContain('text-display')
     const lead = r.container.querySelector('[data-page-lead]')!
     expect(lead.textContent).toBe('Wednesday 21 October · 5 h 15 m planned')
     expect(lead.className).toContain('text-muted')
-    expect(lead.className).toContain('text-meta')
-    // The title's row holds the title and the actions, not the lead line.
+    expect(lead.className).toContain('text-prose')
+    // The title's row holds the title and the date line; the actions are in the top row above it, and the briefing follows.
     const row = r.container.querySelector('[data-page-header-row]')!
-    expect(row.contains(lead)).toBe(false)
-    expect(row.querySelector('[data-page-actions]')).not.toBeNull()
+    expect(row.contains(lead)).toBe(true)
+    expect(r.container.querySelector('[data-page-top-row] [data-page-actions]')).not.toBeNull()
+    expect(r.container.querySelector('[data-page-briefing]')!.className).toContain('text-prose')
     // One header element: the lead line is inside it (the interface budget counts elements).
     expect(r.container.querySelectorAll('[data-page-header]')).toHaveLength(1)
     expect(r.container.querySelector('[data-page-header]')!.contains(lead)).toBe(true)
+    await r.unmount()
+  })
+
+  it('a tool page is one compact row: title at the header step, the lead line beside it, then the actions (precision-shell D1)', async () => {
+    stubMedia(1280)
+    const r = await render(<PageHeader title="Home renovation" meta="2 · owner" actions={<button>Share</button>} help="project" />)
+    const row = r.container.querySelector('[data-page-header-row]')!
+    expect(r.container.querySelector('[data-page-title]')!.className).toContain('text-h3')
+    expect(row.className).toContain('min-h-[2.875rem]')
+    expect(row.contains(r.container.querySelector('[data-page-lead]'))).toBe(true)
+    expect(row.querySelector('[data-page-actions]')).not.toBeNull()
     await r.unmount()
   })
 
@@ -81,22 +93,18 @@ describe('two frames (page-rhythm D3)', () => {
     await r.unmount()
   })
 
-  it('the stylesheet gives a standalone frame its content width plus the padding', async () => {
+  it('the stylesheet lets every page fill the content surface; only a form keeps its fields at 42 rem (precision-shell D3)', async () => {
     const css = (await import('../../index.css?raw')).default
-    expect(css).toMatch(/\.page-frame\[data-page-frame="standalone"\]\s*\{[^}]*max-width:\s*calc\(var\(--page-width, 80rem\) \+ 2 \* var\(--page-gutter\)\)/)
-    expect(css).toMatch(/\.page-frame\[data-page-body="list"\]\s*\{\s*--page-width:\s*60rem/)
-    // page-frame-v3 D1: the header takes the content width too (plus a sticky header's bleed).
-    expect(css).toMatch(/\.page-frame\[data-page-body\]:not\(\[data-page-body="full"\]\) > \* \{ max-width: var\(--page-width\); \}/)
-    expect(css).toMatch(/> \[data-page-header\]\.sticky \{ max-width: calc\(var\(--page-width\) \+ 4rem\); \}/)
-    expect(css).toMatch(/\.page-frame\[data-page-body="form"\]\s*\{\s*--page-width:\s*42rem/)
-    expect(css).toMatch(/\.page-frame\[data-page-body="wide"\]\s*\{\s*--page-width:\s*72rem/)
+    expect(css).not.toMatch(/--page-width:\s*60rem/)
+    expect(css).not.toMatch(/\.page-frame\[data-page-project\]/)
+    expect(css).toMatch(/\.page-frame\[data-page-body="form"\] > :not\(\[data-page-header\]\) \{ max-width: 42rem; \}/)
   })
 })
 
 describe('opening the panel moves nothing (list-stays-still D1)', () => {
   it('puts both frames at the column\'s left edge, never centred', async () => {
     const css = (await import('../../index.css?raw')).default
-    expect(css).toMatch(/\.page-frame\s*\{\s*margin-left:\s*0;\s*margin-right:\s*auto;\s*\}/)
+    expect(css).toMatch(/\.page-frame\s*\{\s*margin-left:\s*0;\s*margin-right:\s*0;\s*\}/)
     const r = await render(<PageBody width="list"><p>row</p></PageBody>)
     expect(r.container.querySelector('[data-page-body]')!.className).not.toContain('mx-auto')
   })

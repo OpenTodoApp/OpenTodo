@@ -8,10 +8,11 @@ import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
 import { Tooltip } from '../Tooltip'
 
-// The row tones (sidebar-v2 D4): quiet at rest, default on hover and focus, strong on
-// the accent tint when active. The icon follows the text, and turns accent when active.
-const ACTIVE = 'bg-accent-soft font-medium text-strong'
-const IDLE = 'text-faint hover:bg-sunken hover:text-default focus-visible:text-default dark:hover:bg-raised'
+// The row tones (sidebar-v2 D4, precision-shell D5): quiet at rest, default on hover and
+// focus over the hover tint, strong on the neutral selected surface when active. The icon
+// follows the text; colour is kept for state, so the active icon is not accent.
+const ACTIVE = 'bg-selected font-medium text-strong'
+const IDLE = 'text-faint hover:bg-hover hover:text-default focus-visible:text-default'
 
 /** A group heading's type (sidebar-v2 D7): More's menu row uses it too, so the two read as one kind. */
 export const SIDEBAR_HEADING = 'text-hint font-semibold uppercase tracking-wide text-faint'
@@ -50,10 +51,10 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
     <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth} data-tone={active ? 'active' : 'quiet'}
       className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
       {...rest}>
-      {icon ? <span className={`flex w-5 shrink-0 justify-center${active ? ' text-accent' : ''}`} aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
+      {icon ? <span className="flex w-5 shrink-0 justify-center" aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
       <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>
       {!collapsed && badge}
-      {!collapsed && count ? <span className={`text-meta tabular-nums text-faint${quiet}`} data-count data-open-count={count} aria-hidden={countLabel ? true : undefined}>{count}</span> : null}
+      {!collapsed && count ? <span className={`text-meta tabular-nums ${active ? 'text-muted' : 'text-faint'}${quiet}`} data-count data-open-count={count} aria-hidden={countLabel ? true : undefined}>{count}</span> : null}
       {count && countLabel ? <span className="sr-only">{`, ${countLabel}`}</span> : null}
     </button>
   )

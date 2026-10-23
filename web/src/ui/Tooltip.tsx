@@ -7,6 +7,7 @@
 // buttons use it by default; screens never use the native `title` attribute.
 import { cloneElement, type ReactElement, type ReactNode, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { t } from '../lib/i18n'
 
 export interface TooltipProps {
   /** What the control does, in a few words. */
@@ -27,6 +28,24 @@ const GAP = 6
 
 function coarsePointer(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
+}
+
+/**
+ * A shortcut as keys: a sequence like "g t" reads "G then T" (precision-shell D4); a
+ * chord or a single key is one badge.
+ */
+export function KeySequence({ keys }: { keys: string }) {
+  const steps = /^\S+( \S+)+$/.test(keys) && !keys.includes('+') ? keys.split(' ') : [keys]
+  return (
+    <span className="inline-flex items-center gap-1" data-key-sequence>
+      {steps.map((k, i) => (
+        <span key={i} className="inline-flex items-center gap-1">
+          {i > 0 && <span className="text-muted">{t('then')}</span>}
+          <kbd className="ui-kbd">{k.length === 1 ? k.toUpperCase() : k}</kbd>
+        </span>
+      ))}
+    </span>
+  )
 }
 
 export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 400, disabled = false }: TooltipProps) {
@@ -110,7 +129,7 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
       className="overlay-fade-in pointer-events-none fixed z-[70] max-w-64 rounded-chip border border-strong bg-pop px-2 py-1 text-meta text-default shadow-2"
       style={pos ? { top: pos.top, left: pos.left } : { top: -9999, left: -9999 }}>
       <span>{label}</span>
-      {shortcut && <><span className="mx-1 text-faint"> · </span><kbd className="ui-kbd">{shortcut}</kbd></>}
+      {shortcut && <><span className="mx-1 text-muted"> · </span><KeySequence keys={shortcut} /></>}
     </div>
   ) : null
 

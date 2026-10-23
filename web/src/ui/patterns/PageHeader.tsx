@@ -1,14 +1,11 @@
 // The page template (OpenSpec change ux-overhaul, design-system "Page template
-// primitives", app-shell "Page template"): every view renders a PageHeader (one
-// title size, optional meta, at most two visible actions, an overflow menu and the
-// Help action) inside a PageBody whose width is fixed per page type. The header
-// stays visible while the content column scrolls. Two frames (page-rhythm D3): a
-// standalone page's frame is its content width plus the padding; a layout page (a
-// project, the calendars) keeps the one 80 rem frame of ux-feedback-2 D7, so its
-// title and actions never move between list, board and timeline. Both start at the
-// column's left edge, so opening the panel moves nothing (list-stays-still D1,
-// index.css `.page-frame`). The page's meta is a lead line under the title
-// (page-rhythm D1), inside the one header element.
+// primitives", app-shell "Page template"): every view renders a PageHeader inside a
+// PageBody that fills the content surface (precision-shell D3). Two heads
+// (precision-shell D1): a day page (Today, Upcoming) has a top row with the sidebar
+// toggle and the actions, then the title at the display step, then an optional
+// briefing; every other page has one compact 46 px row: the toggle, the title at the
+// header step, the lead line beside it, the actions, the overflow menu and Help. The
+// header stays visible while the content scrolls.
 import { useEffect, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
@@ -16,6 +13,8 @@ import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
 import { TruncatedText } from '../TruncatedText'
 import { setPageBar } from './pageBar'
+import { useSidebarToggle } from './sidebarToggle'
+import { Tooltip } from '../Tooltip'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../useMediaQuery'
 import { t } from '../../lib/i18n'
 
@@ -28,11 +27,11 @@ export type PageWidth = 'list' | 'form' | 'wide' | 'full'
  */
 export type PageFrame = 'standalone' | 'layout'
 
-/** The page frame (app-shell "Page template"): at most 80 rem (72 rem for a project), at the column's left edge (index.css); `data-page-body` picks the content width, which the header takes too (page-frame-v3), `data-page-frame` the frame. */
-export const PAGE_FRAME = 'page-frame min-w-0 w-full max-w-[80rem]'
+/** The page frame (app-shell "Page template"): the whole content surface (precision-shell D3); `data-page-body` keeps a form's fields at 42 rem (index.css), `data-page-frame` names the frame. */
+export const PAGE_FRAME = 'page-frame min-w-0 w-full'
 
 export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
-  /** list: 60 rem (lists and feeds); form: 42 rem (settings and forms); wide: 72 rem (a list with field columns); full: the whole frame (boards, calendars). */
+  /** list, wide and full: the whole content surface; form: fields at 42 rem from the left edge (settings and forms). */
   width?: PageWidth
   /** No bottom padding: the page's own scroller (a board, the calendar grid) fills the column. */
   flush?: boolean
@@ -89,12 +88,32 @@ export interface PageHeaderProps {
   children?: ReactNode
   icon?: IconName
   testId?: string
+  /** The head (precision-shell D1): `day` (Today, Upcoming) puts the title at the display step under a top row; `tool` (default) is one compact row. */
+  kind?: 'day' | 'tool'
+  /** A day page's briefing under the title: one or two sentences at the prose step. */
+  briefing?: ReactNode
 }
 
-/** The page title at the display step (page-rhythm D1, tokens-v2). */
-const TITLE = 'text-display text-strong'
+/** The title of a day page at the display step, of every other page at the header step (precision-shell D1). */
+const TITLE = { day: 'text-display text-strong', tool: 'text-h3 text-strong' } as const
 
-export function PageHeader({ title, subtitle, meta, leading, actions, barActions = false, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex }: PageHeaderProps) {
+/** The sidebar toggle, first in every header from 1024 px, where the sidebar collapses (precision-shell D2). */
+function SidebarToggleButton() {
+  const toggle = useSidebarToggle()
+  const wide = useMediaQuery('(min-width: 1024px)')
+  if (!toggle || !wide) return null
+  const label = toggle.collapsed ? t('Show sidebar') : t('Hide sidebar')
+  return (
+    <Tooltip label={label} shortcut={toggle.shortcut}>
+      <button type="button" aria-label={label} aria-pressed={!toggle.collapsed} data-sidebar-toggle onClick={toggle.toggle}
+        className={`ui-btn ui-btn--ghost ui-btn--sm touch-target -ml-1 h-7 w-7 px-0 ${toggle.collapsed ? '' : 'bg-selected text-default'}`}>
+        <Icon name={toggle.collapsed ? 'panel-left-open' : 'panel-left-close'} />
+      </button>
+    </Tooltip>
+  )
+}
+
+export function PageHeader({ title, subtitle, meta, leading, actions, barActions = false, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex, kind = 'tool', briefing }: PageHeaderProps) {
   const H = level === 1 ? 'h1' : 'h2'
   // The shell's phone bar shows this page's title and actions below 768 px (app-shell
   // "No desktop top bar"); the header's own row exists only above it, so the actions
@@ -111,28 +130,48 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
   })
   // Everything went to the phone bar: no empty header row in the page.
   if (!ownRow && (!actions || barActions) && !children) return null
+  const day = kind === 'day' && level === 1
+  const backLink = back && (
+    <a href={back.href ?? '#'} className={`ui-btn ui-btn--ghost ui-btn--sm -ml-2${back.hideFrom === 'lg' ? ' lg:hidden' : ''}`} data-page-back
+      onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); back.onClick() }}>
+      <Icon name="arrow-left" />{back.label}
+    </a>
+  )
+  const heading = typeof title === 'string'
+    ? <TruncatedText as={H} text={title} elRef={titleRef} tabIndex={titleTabIndex} className={`min-w-0 ${TITLE[day ? 'day' : 'tool']} outline-none`} data-page-title="" />
+    : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE[day ? 'day' : 'tool']} outline-none`} data-page-title>{title}</H>
+  // The lead line: beside a day page's title at the prose step, beside a tool page's title at the metadata step;
+  // there it takes the room that is left (basis 0), so a narrow head wraps its actions under the title, never sideways.
+  const lead = ownRow && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'flex-1 basis-0 truncate text-meta'}`} data-page-lead data-page-meta>{meta}</div>
+  const toolsEnd = <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} /></div>
   return (
-    <header data-page-header data-testid={testId}
-      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} ${ownRow || (actions && !barActions) ? 'mb-3 pb-3' : ''} ${level === 1 ? (ownRow ? 'pt-2 md:pt-4' : '') : 'pt-5'}`}>
+    <header data-page-header data-page-head={day ? 'day' : 'tool'} data-testid={testId}
+      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas px-4 md:-mx-8 md:bg-surface md:px-8' : ''} ${ownRow || (actions && !barActions) ? (day ? 'mb-3 pb-3' : 'mb-2 border-b border-soft') : ''} ${level === 1 ? (ownRow ? (day ? 'pt-2' : '') : '') : 'pt-5'}`}>
       {!ownRow && actions && !barActions && <div className="flex flex-wrap items-center gap-1 pt-2" data-page-actions>{actions}</div>}
-      {ownRow && <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1" data-page-header-row>
-        {back && (
-          <a href={back.href ?? '#'} className={`ui-btn ui-btn--ghost ui-btn--sm -ml-2${back.hideFrom === 'lg' ? ' lg:hidden' : ''}`} data-page-back
-            onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); back.onClick() }}>
-            <Icon name="arrow-left" />{back.label}
-          </a>
-        )}
-        {icon && <span className="flex h-6 w-6 shrink-0 items-center justify-center text-muted" aria-hidden="true"><Icon name={icon} size="md" /></span>}
-        {leading}
-        {typeof title === 'string'
-          ? <TruncatedText as={H} text={title} elRef={titleRef} tabIndex={titleTabIndex} className={`min-w-0 ${TITLE} outline-none`} data-page-title="" />
-          : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE} outline-none`} data-page-title>{title}</H>}
-        <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions>
-          <PageActions actions={actions} overflow={overflow} menu={menu} help={help} />
+      {ownRow && day && <>
+        <div className="flex min-h-9 items-center gap-2" data-page-top-row>
+          <SidebarToggleButton />
+          {backLink}
+          {toolsEnd}
         </div>
+        <div className="mt-3 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1" data-page-header-row>
+          {icon && <span className="flex h-6 w-6 shrink-0 items-center justify-center self-center text-muted" aria-hidden="true"><Icon name={icon} size="md" /></span>}
+          {leading}
+          {heading}
+          {lead}
+        </div>
+        {briefing && <div className="mt-2 max-w-[72ch] text-prose text-muted" data-page-briefing>{briefing}</div>}
+      </>}
+      {ownRow && !day && <div className="flex min-h-[2.875rem] min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-1" data-page-header-row>
+        <SidebarToggleButton />
+        {backLink}
+        {icon && <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><Icon name={icon} /></span>}
+        {leading}
+        {heading}
+        {lead}
+        {toolsEnd}
       </div>}
-      {ownRow && meta && <div className="mt-1 min-w-0 text-meta text-muted" data-page-lead data-page-meta>{meta}</div>}
-      {children && <div className="mt-2 flex flex-wrap items-center gap-2" data-page-secondary>{children}</div>}
+      {children && <div className={`flex flex-wrap items-center gap-2 ${day ? 'mt-2' : 'py-2'}`} data-page-secondary>{children}</div>}
     </header>
   )
 }

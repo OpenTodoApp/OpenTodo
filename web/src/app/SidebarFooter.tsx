@@ -68,7 +68,8 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
         <RelayIndicator />
         <SyncStatus compact={collapsed} />
         {collapsed && onSearch && <SidebarItem icon="search" label={t('Search and commands')} collapsed onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
-        {onToggleCollapse && (
+        {/* The header carries the toggle (precision-shell D2); the collapsed rail keeps an Expand button here. */}
+        {onToggleCollapse && collapsed && (
           <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? t('Expand sidebar') : t('Collapse sidebar')} shortcut={keysOf('global.sidebar')} size="sm"
             className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
         )}

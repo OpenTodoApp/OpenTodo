@@ -1,9 +1,10 @@
-import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, TruncatedText, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, TruncatedText, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
+import { keysOf } from '../lib/shortcuts'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
@@ -189,6 +190,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   })
 
   const sidebar = useSidebarLayout()
+  useHeaderSidebarToggle(sidebar.collapsed)
   const openPalette = palette.openSearch
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
@@ -202,21 +204,22 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const minimised = usePhoneChrome(content, phoneChrome, sidebarOpen)
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-canvas">
       <SkipLink frame={frame} content={content} />
       {/* touch-none: a swipe on the scrim does not scroll the page behind the open drawer (sidebar-drawer-scroll). */}
       {sidebarOpen && <div className="fixed inset-0 z-[45] touch-none bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
-      {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell); its colour, shared by the sticky group headers, is --sidebar-bg: the surface in the drawer, the tinted sidebar token as a column with a fine pointer (sidebar-v2 D8). */}
+      {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell); its colour, shared by the sticky group headers, is --sidebar-bg: the surface in the drawer, the canvas as a column (precision-tokens D1), where it sits beside the inset content surface without an edge (precision-shell D1). */}
       <aside data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
-        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform border-r border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
           <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
-      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0" data-app-frame data-phone-chrome={phoneChrome || undefined}
+      {/* From 768 px the page is one inset content surface on the canvas: 8 px from the window, the surface radius, one hairline (precision-shell D1). */}
+      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:my-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined}
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + env(safe-area-inset-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
@@ -376,4 +379,12 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
       </div>
     </header>
   )
+}
+
+/** Registers the sidebar toggle every page header shows (precision-shell D2). */
+function useHeaderSidebarToggle(collapsed: boolean) {
+  useEffect(() => {
+    setSidebarToggle({ collapsed, toggle: toggleSidebarCollapsed, shortcut: keysOf('global.sidebar') })
+    return () => setSidebarToggle(null)
+  }, [collapsed])
 }

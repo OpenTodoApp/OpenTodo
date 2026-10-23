@@ -4955,6 +4955,9 @@
   "Go to the weekly Review": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Go to {page}": [
+    "web/src/app/Sidebar.tsx"
+  ],
   "Google Tasks (Takeout JSON)": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -5109,6 +5112,9 @@
   "Hide other calendars on this device": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
+  ],
+  "Hide sidebar": [
+    "web/src/ui/patterns/PageHeader.tsx"
   ],
   "Hide table": [
     "web/src/app/review/charts.tsx"
@@ -10673,6 +10679,9 @@
   "Show shortcut hints (this device)": [
     "web/src/app/PreferencesPanels.tsx"
   ],
+  "Show sidebar": [
+    "web/src/ui/patterns/PageHeader.tsx"
+  ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -15784,6 +15793,9 @@
   ],
   "the weekly digest": [
     "web/src/app/settingsSections.ts"
+  ],
+  "then": [
+    "web/src/ui/Tooltip.tsx"
   ],
   "then|keys": [
     "web/src/app/shortcuts/Kbd.tsx"

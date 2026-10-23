@@ -5143,5 +5143,9 @@
   "{name} is less than {value}": "{name} ist kleiner als {value}",
   "{name} is more than {value}": "{name} ist größer als {value}",
   "{name} is {value}": "{name} ist {value}",
-  "Due earlier": "Früher fällig"
+  "Due earlier": "Früher fällig",
+  "Go to {page}": "Zu {page}",
+  "Hide sidebar": "Seitenleiste ausblenden",
+  "Show sidebar": "Seitenleiste einblenden",
+  "then": "dann"
 }

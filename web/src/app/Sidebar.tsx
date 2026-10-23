@@ -369,7 +369,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
     const go = hints && !collapsed && badge == null ? GO_KEYS[r.view] : undefined
     const node = <SidebarItem key={label} icon={icon} label={label} count={count} countLabel={openTasksLabel(count)} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} aria-description={tip && badge == null ? tip : undefined} {...(r.view === 'inbox' ? INBOX_DROP : {})} />
-    return tip && !collapsed ? <Tooltip key={label} label={tip} side="right">{node}</Tooltip> : node
+    // Every destination with a `g` sequence names it in its tooltip (precision-shell D4).
+    const goKey = GO_KEYS[r.view]
+    return (tip || goKey) && !collapsed ? <Tooltip key={label} label={tip ?? t('Go to {page}', { page: label })} shortcut={goKey} side="right">{node}</Tooltip> : node
   }
 
   // The More group (app-shell "Sidebar structure"): the less frequent destinations,
