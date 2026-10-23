@@ -5147,5 +5147,6 @@
   "Go to {page}": "Ir a {page}",
   "Hide sidebar": "Ocultar la barra lateral",
   "Show sidebar": "Mostrar la barra lateral",
-  "then": "luego"
+  "then": "luego",
+  "{n, plural, one {# completed task hidden by display options} other {# completed tasks hidden by display options}}": "{n, plural, one {# tarea completada oculta por las opciones de visualización} other {# tareas completadas ocultas por las opciones de visualización}}"
 }

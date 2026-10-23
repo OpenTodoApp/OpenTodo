@@ -10624,7 +10624,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Show": [
-    "web/src/app/Sections.tsx"
+    "web/src/app/Sections.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
@@ -16294,6 +16295,9 @@
   ],
   "{n, plural, one {# comment} other {# comments}}": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "{n, plural, one {# completed task hidden by display options} other {# completed tasks hidden by display options}}": [
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "{n, plural, one {# day after} other {# days after}}": [
     "web/src/lib/nlp/reminders.ts"

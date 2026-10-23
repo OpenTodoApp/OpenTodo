@@ -45,7 +45,7 @@ export function RowActionCluster({ task, onMore, force = false }: {
   const shown = force || scheduling ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
   return (
     <span data-row-actions="" onKeyDown={onKeyDown} onFocus={(e) => reveal(e.target as HTMLElement)}
-      className={`absolute top-0.5 right-1 hidden items-center gap-2 transition-opacity duration-(--duration-ui) md:pointer-fine:flex ${shown}`}>
+      className={`absolute top-px right-1 hidden items-center gap-2 rounded-control border border-strong bg-pop px-0.5 shadow-2 transition-opacity duration-(--duration-ui) md:pointer-fine:flex ${shown}`}>
       <IconButton ref={schedule} icon="calendar-days" size="sm" label={t('Schedule')} aria-haspopup="dialog" aria-expanded={scheduling}
         data-row-action="schedule" onClick={() => setScheduling(true)} />
       <Menu kind="menu" label={`${t('Priority')}: ${PRIORITY_TEXT[task.priority]}`} tip={t('Priority')} tipShortcut={keysOf('list.priority')} align="end"

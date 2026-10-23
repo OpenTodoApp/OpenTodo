@@ -69,7 +69,7 @@ describe('generated groups', () => {
     await again.unmount()
   })
 
-  it('Earlier is quiet (page-rhythm D5): a muted uppercase label, the dates in the danger tone, nothing else red', async () => {
+  it('Earlier is quiet (page-rhythm D5): one group bar, the dates in the danger tone, nothing else red', async () => {
     await createTask({ title: 'Late', due: { date: '2026-10-10' } })
     await createTask({ title: 'Later still', due: { date: '2026-10-11' } })
     await createTask({ title: 'Older', due: { date: '2026-10-12' } })
@@ -78,8 +78,9 @@ describe('generated groups', () => {
     await waitFor(() => r.container.textContent!.includes('Now'))
     const earlier = headers(r.container).find((h) => h.textContent?.includes('Earlier'))!
     const label = earlier.querySelector('[data-group-label]')!
-    expect(label.className).toContain('text-muted')
-    expect(label.className).toContain('uppercase')
+    expect(label.className).toContain('text-default')
+    expect(label.className).not.toContain('uppercase')
+    expect(earlier.className).toContain('bg-raised')
     // The DOM keeps the word's case for assistive technology.
     expect(label.textContent).toBe('Earlier')
     expect(earlier.querySelector('[data-group-count]')!.className).toContain('text-faint')
