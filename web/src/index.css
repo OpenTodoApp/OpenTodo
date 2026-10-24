@@ -1036,12 +1036,14 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    its end, the one the row marks `data-row-phone`: the date, else the deadline, else the
    assignee's avatar, else the project's dot. The other facts are on the task page. A
    narrow list beside other content on a wider screen keeps its two lines. The open
-   control is the 44 px row (it already is on touch, so no padding adds to it); the
-   time column shows only where a row has a time, and the counts stay off the line. */
+   control is the 44 px row: 12 px above and below the title's 20 px line, so on touch
+   no row padding adds to its 44 px minimum; the slots before it sit on the title's first
+   line, also when a second line (the Inbox's source) follows. The time column shows
+   only where a row has a time, and the counts stay off the line. */
 @media (width < 48rem) {
-  .row-pad, :root[data-density="compact"] .row-pad { padding-block: 0; align-items: center; }
-  .row-pad > [data-row-open] { min-height: 2.75rem; }
-  .row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time]) { align-self: center; margin-top: 0; }
+  .row-pad, :root[data-density="compact"] .row-pad { padding-block: 0; }
+  .row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }
+  .row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time]) { margin-top: 0.75rem; }
   .row-pad > [data-row-time]:empty { display: none; }
   @container row (width < 40rem) {
     [data-row-counts] { display: none; }
