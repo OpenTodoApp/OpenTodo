@@ -7,10 +7,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MentionTarget } from '../../lib/comments'
 import type { Comment } from '../../lib/types'
 import { act } from 'react'
-import { flush, key, render, waitFor } from '../../ui/test-utils'
+import { flush, key, render as mount, waitFor } from '../../ui/test-utils'
 import { setRichComposer, writeDraft } from './Composer'
 import { CommentsView, type CommentsViewProps } from './CommentsTab'
 import { composerViewOf } from './RichComposerField'
+
+// Every rendered tree is unmounted after its test, so no live query fires once the environment is gone.
+const mounted: { unmount: () => Promise<void> }[] = []
+async function render(ui: Parameters<typeof mount>[0]) {
+  const r = await mount(ui)
+  mounted.push(r)
+  return r
+}
 
 const MON = new Date(2026, 9, 12, 15, 5).getTime()
 const targets: MentionTarget[] = [
@@ -52,7 +60,9 @@ beforeEach(() => {
   sessionStorage.clear()
   writeDraft('t1', '')
 })
-afterEach(() => {
+afterEach(async () => {
+  for (const r of mounted.splice(0)) await r.unmount()
+  await flush(20)
   setRichComposer(true)
   document.body.innerHTML = ''
 })
