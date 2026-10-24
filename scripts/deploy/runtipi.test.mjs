@@ -41,11 +41,11 @@ test('runtipi: the committed app and store pass', () => {
 })
 
 test('runtipi: the release tag, equal to the config version', () => {
-  has(comp('opentodo:0.11.0', 'opentodo:stable'), /image must be ghcr\.io\/pixari\/opentodo:0\.11\.0/)
-  has(comp('opentodo:0.11.0', 'opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:0\.11\.0/)
-  has(variant(cfg((c) => { c.version = '0.6.0' })), /version must be 0\.11\.0|tag must contain the config\.json version/)
-  const next = { ...ctx, changelog: '## [0.12.0] - 2026-11-15\n' + ctx.changelog }
-  has(variant({}, next), /image must be ghcr\.io\/pixari\/opentodo:0\.12\.0/)
+  has(comp('opentodo:0.12.0', 'opentodo:stable'), /image must be ghcr\.io\/pixari\/opentodo:0\.12\.0/)
+  has(comp('opentodo:0.12.0', 'opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:0\.12\.0/)
+  has(variant(cfg((c) => { c.version = '0.6.0' })), /version must be 0\.12\.0|tag must contain the config\.json version/)
+  const next = { ...ctx, changelog: '## [0.13.0] - 2026-11-29\n' + ctx.changelog }
+  has(variant({}, next), /image must be ghcr\.io\/pixari\/opentodo:0\.13\.0/)
 })
 
 test('runtipi: config.json rules', () => {

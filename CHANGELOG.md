@@ -4,6 +4,16 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-25
+
+OpenTodo 0.12.0 builds on Precision. **Press <kbd>→</kbd> on a task to see its details under the row**, without leaving the list. **Mention a whole group** with `@Adults`, and **filter by workspace** with `workspace: Home`. The comment box gets buttons for mentions and formatting, `ot` gets **shell completion**, and **end-to-end encrypted accounts can use the assistant** from their own device with their own key, when the owner allows it. The briefing links each full day, has a switch in Settings, and the rest of the app now holds up at larger text sizes.
+
+### Upgrade notes
+
+- **No migrations, no new environment variables.** Replace the image or the binary and restart. Upgrade the server before the devices, as for every release.
+- **The assistant for encrypted accounts is off until the owner turns it on** in Settings → Assistant. While it is on, the page's Content-Security-Policy lets the app connect to the provider addresses the owner allowed, for every account on the server; turn it off to keep the policy as before. ([Assistant on encrypted accounts](docs/assistant-encrypted.md))
+- **Group mentions are stored as `group:<id>` in the existing mention lists.** Devices still on 0.11 ignore those entries until they update; the server notifies the group either way. ([Sync protocol](docs/sync.md))
+
 ### Added
 
 - **Mention and format from the comment box.** The comment box has an **@** button that starts a mention (people first, then the workspace's groups), and on a computer a **Formatting** button that shows a row of bold, italic, link, lists and more. Comments are still stored as Markdown, so the API, `ot`, MCP and exports see them as before. ([Comments and activity](docs/comments-and-activity.md#comment-on-a-task))
@@ -795,7 +805,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/pixari/opentodo/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/pixari/opentodo/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/pixari/opentodo/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/pixari/opentodo/compare/v0.9.0...v0.10.0

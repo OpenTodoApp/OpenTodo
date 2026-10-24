@@ -1,7 +1,7 @@
 {
   "name": "opentodo",
   "displayName": "OpenTodo",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Connect Claude to your own OpenTodo server: read your tasks and, when you allow it, plan and change them, with every change in the task's history and undoable.",
   "author": {
     "name": "OpenTodo",
