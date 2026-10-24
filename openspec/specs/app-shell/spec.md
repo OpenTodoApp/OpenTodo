@@ -110,7 +110,7 @@ Every view SHALL render a page header and, below it, its content, inside one ins
 
 A second header row MAY hold the page's view tabs or filter chips on the left and its view tools (filter, display, panel) on the right. The header SHALL stay visible while the content scrolls. Content SHALL use the full width of the content surface, with the same side padding on every page, so every page's title and first row start at the same horizontal position; a settings or form page keeps its fields at 42 rem from that left edge. A board or a timeline scrolls sideways inside the surface rather than widening it, and switching a project between list, board and timeline SHALL not move its title or actions.
 
-Below 768 px the shell's bar SHALL carry the title and show the lead line as its subtitle on one line, cut at the bar's edge, so a lead line that arrives with the data does not grow the bar; on a project the subtitle is plain text, and members and public links open from Share.
+Below 768 px the shell's bar SHALL carry the title of every page except a day page and show the lead line as its subtitle on one line, cut at the bar's edge, so a lead line that arrives with the data does not grow the bar; on a project the subtitle is plain text, and members and public links open from Share. A day page below 768 px SHALL keep its head in the page, under the bar: the title at the display step, the lead line and the briefing, scrolling with the list rather than staying on screen; the bar then carries no title (see "No desktop top bar").
 
 When the panel opens as a column, the content surface SHALL narrow by the panel's width from its right side: no title or row SHALL move horizontally when the panel opens or closes. Nothing SHALL slide. This is presentation only, reads nothing from the server and behaves the same offline.
 
@@ -159,8 +159,12 @@ When the panel opens as a column, the content surface SHALL narrow by the panel'
 - **THEN** the header shows the List/Board control and Share, and the remaining actions are in the overflow menu
 
 #### Scenario: Phone bar carries the lead line
-- **WHEN** Today is open on a 390 px screen
-- **THEN** the shell's bar shows "Today" with the date line under it as its subtitle, and the page header row shows no second title
+- **WHEN** a project with 4 open tasks is open on a 390 px screen
+- **THEN** the shell's bar shows the project's name with its lead line under it as its subtitle, and the page shows no second title
+
+#### Scenario: The day head on a phone
+- **WHEN** Today is open on a 390×844 screen with a two-sentence briefing
+- **THEN** the bar shows the menu button and the page's actions only, "Today" is in the page at the display step with the date line beside or under it and the briefing below, there is one level-one heading, and scrolling the list moves the head up with it while the bar stays
 
 #### Scenario: Long lead line on a phone
 - **WHEN** a shared project with a public link opens at 360 px and "2 · owner · Public" is wider than the space beside the title
@@ -179,7 +183,7 @@ When the panel opens as a column, the content surface SHALL narrow by the panel'
 - **THEN** the header is one 46 px row: the sidebar toggle, the title at 14 px with its dot or icon, the lead line beside it, then the actions, the overflow menu and Help at the right
 
 ### Requirement: No desktop top bar
-From 768 px wide the shell SHALL have no bar above the content column; search SHALL be a button beside the app name in the sidebar, notifications, sync status and help SHALL live in the sidebar footer, and page actions in the page header. Below 768 px a bar SHALL show the menu button, the page title and up to two page actions, with the remaining actions in an overflow menu.
+From 768 px wide the shell SHALL have no bar above the content column; search SHALL be a button beside the app name in the sidebar, notifications, sync status and help SHALL live in the sidebar footer, and page actions in the page header. Below 768 px a bar SHALL show the menu button, the page title and up to two page actions, with the remaining actions in an overflow menu. On a day page (Today, Upcoming) the bar SHALL show no title and no dividing line, since the page shows its own head (see "Page template"). On a page that offers Back (the task page, a nested page) Back SHALL take the menu button's place.
 
 #### Scenario: Desktop height for content
 - **WHEN** the Inbox is open on a 1280×800 screen
@@ -188,6 +192,14 @@ From 768 px wide the shell SHALL have no bar above the content column; search SH
 #### Scenario: Phone bar
 - **WHEN** a project is open on a 390 px screen
 - **THEN** the bar shows the menu button, the project name and the List/Board control, and Share is in the overflow menu
+
+#### Scenario: Phone bar on a day page
+- **WHEN** Today is open on a 390 px screen
+- **THEN** the bar shows the menu button and Today's actions, no title, and no line under it
+
+#### Scenario: Back in the menu's place
+- **WHEN** a task is open as its page on a 390 px screen
+- **THEN** the bar starts with Back, named "Back to the list", and has no menu button
 
 ### Requirement: Sync status is quiet
 Sync status SHALL be a dot in the sidebar footer, green when synced, animated while syncing, grey when offline and red on error, with the text ("Synced", "3 pending", "Offline") in its tooltip and announced to assistive technology. The text SHALL be visible beside the dot only while offline, on error, or while changes are pending.
@@ -230,11 +242,15 @@ From 1024 px the panel SHALL be a 26 rem column, 30 rem from 1440 px; a docked t
 - **THEN** the task opened as its page, not as a sheet, and Today is back at the same scroll position with the task selected
 
 ### Requirement: Phone navigation
-Below 768 px the shell SHALL show a bottom tab bar with Today, Inbox, Upcoming, Search and More (More opens the phone drawer, see "Phone drawer"), and a floating add button at the bottom right above the bar that opens quick add as a bottom sheet with the keyboard up. The bar and the button SHALL hide while a sheet is open and on the task page, which has its own bar with Back and the next and previous task. Tabs SHALL be at least 48 px tall and SHALL respect the bottom safe area. Every list SHALL reserve the add button's footprint under its last row, so the button never covers a row or its metadata. While the content scrolls down by more than 24 px the bar SHALL minimise to its icons and the button SHALL slide out below it; on any scroll up, at the end of the content, or 600 ms after scrolling stops, both SHALL return. When the system requests reduced motion the bar and the button SHALL stay in place at all times. This is presentation only; every action behind the bar and the button is the same local operation offline.
+Below 768 px the shell SHALL show a bottom tab bar with Inbox, Today, Upcoming and Search (the phone drawer opens from the bar's menu button, see "Phone drawer"), marking the current tab in the strong text tone rather than the accent, and a floating add button at the bottom right above the bar that opens quick add as a bottom sheet with the keyboard up. The bar and the button SHALL hide while a sheet is open and on the task page, which has its own bar with Back and the next and previous task. Tabs SHALL be at least 48 px tall and SHALL respect the bottom safe area. Every list SHALL reserve the add button's footprint under its last row, so the button never covers a row or its metadata. While the content scrolls down by more than 24 px the bar SHALL minimise to its icons and the button SHALL slide out below it; on any scroll up, at the end of the content, or 600 ms after scrolling stops, both SHALL return. When the system requests reduced motion the bar and the button SHALL stay in place at all times. This is presentation only; every action behind the bar and the button is the same local operation offline.
 
 #### Scenario: Two taps to any primary view
 - **WHEN** the user is in a project on a phone and taps Today in the bar
 - **THEN** Today opens without the drawer
+
+#### Scenario: Four tabs
+- **WHEN** the Inbox is open on a 390 px phone
+- **THEN** the tab bar shows Inbox, Today, Upcoming and Search in that order, Inbox is marked current in the strong text tone, and no tab is in the accent colour
 
 #### Scenario: Add from anywhere
 - **WHEN** the user taps the floating add button in Upcoming
@@ -493,7 +509,7 @@ From 768 px with a fine pointer the sidebar's background SHALL be the sidebar su
 - **THEN** the drawer has the surface colour, not the sidebar tint
 
 ### Requirement: Phone drawer
-Below 768 px, More SHALL open a drawer from the left edge, at most 85 percent of the viewport width and at most 20 rem, over a scrim that closes it on tap. The drawer SHALL NOT repeat the tab bar's destinations. It SHALL show, top to bottom, in one scroller: the find field, the primary destinations the tab bar does not hold (Calendar in Lists and Companion; Loop home, Next, Waiting and Review in Open Loops first), the More group, then Favourites, Projects, Labels and Filters as rows at least 48 px tall following the sidebar's counts and grouping rules; then a pinned footer with the account row (opening Settings, Help, Keyboard shortcuts and Sign out), the assistant launcher when the assistant is available, notifications and the sync status. Choosing a destination SHALL close the drawer. The drawer SHALL use the sidebar's tones. The page behind the drawer SHALL NOT scroll while it is open.
+Below 768 px, the menu button at the start of the shell's bar SHALL open a drawer from the left edge, at most 85 percent of the viewport width and at most 20 rem, over a scrim that closes it on tap. The drawer SHALL NOT repeat the tab bar's destinations. It SHALL show, top to bottom, in one scroller: the find field, the primary destinations the tab bar does not hold (Calendar in Lists and Companion; Loop home, Next, Waiting and Review in Open Loops first), the More group, then Favourites, Projects, Labels and Filters as rows at least 48 px tall following the sidebar's counts and grouping rules; then a pinned footer with the account row (opening Settings, Help, Keyboard shortcuts and Sign out), the assistant launcher when the assistant is available, notifications and the sync status. Choosing a destination SHALL close the drawer. The drawer SHALL use the sidebar's tones. The page behind the drawer SHALL NOT scroll while it is open.
 
 #### Scenario: No repeated destinations
 - **WHEN** a user in Companion mode opens the drawer on a 390 px phone
