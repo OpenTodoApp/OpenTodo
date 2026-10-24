@@ -16649,6 +16649,9 @@
   "{n, plural, one {# completed task hidden by display options} other {# completed tasks hidden by display options}}": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "{n, plural, one {# completed task} other {# completed tasks}}": [
+    "web/src/app/task-list/ListGroups.tsx"
+  ],
   "{n, plural, one {# day after} other {# days after}}": [
     "web/src/lib/nlp/reminders.ts"
   ],

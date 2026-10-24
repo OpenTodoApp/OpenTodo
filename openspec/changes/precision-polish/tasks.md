@@ -23,6 +23,8 @@
 - [x] 4.1 Bulk label pick decides add or remove from the stored tasks (verified: `bulk.test.tsx` "removes it, even when picked at once" fails before the fix)
 - [x] 4.2 Timeline notes avoid the today line and the axis end through `notePlacement` (verified: `timelineView.test.tsx`)
 
+- [x] 4.3 A project's Completed group reads its count as completed tasks (verified: `projectCompleted.test.tsx`)
+
 ## 5. Overdue
 
 - [x] 5.1 The health label reads Overdue, translated in five languages, with the catalog refreshed (verified: `make i18n-check`, `projectsView.test.tsx`)

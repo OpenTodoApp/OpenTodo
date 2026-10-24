@@ -16,6 +16,8 @@ export interface ListGroupHeaderProps {
   title: ReactNode
   /** Open tasks beneath the header (omit to show none). */
   count?: number
+  /** What the count is read as; "n open tasks" unless the group lists something else (such as completed tasks). */
+  countLabel?: (n: number) => string
   /** The count's tone: faint in lists, muted on a board column's sunken surface (surfaces-v2 D6). */
   countTone?: 'faint' | 'muted'
   /** `generated` by the view (a date, Earlier, Today, Blocked, Later, Completed, No section): uppercase; `named` by the user (a section, a project, a label): sentence case. */
@@ -41,13 +43,13 @@ export interface ListGroupHeaderProps {
 /** The label's classes (precision-rows D4): one style whether the view or the user named the group; `kind` stays a hook for tests and drop targets. */
 const GROUP_LABEL = 'min-w-0 truncate text-meta font-medium text-default'
 
-export function ListGroupHeader({ title, count, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, level = 2, testId, className = '', bar = true }: ListGroupHeaderProps) {
+export function ListGroupHeader({ title, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, level = 2, testId, className = '', bar = true }: ListGroupHeaderProps) {
   const H = level === 2 ? 'h2' : 'h3'
   const collapsible = onToggle !== undefined
   const text = (
     <>
       <span className={GROUP_LABEL} data-group-label={kind}>{title}</span>
-      {count !== undefined && <span className={`text-meta tabular-nums ${countTone === 'muted' ? 'text-muted' : 'text-faint'}`} data-group-count><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>}
+      {count !== undefined && <span className={`text-meta tabular-nums ${countTone === 'muted' ? 'text-muted' : 'text-faint'}`} data-group-count><ReadAs label={countLabel ? countLabel(count) : t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>}
     </>
   )
   return (

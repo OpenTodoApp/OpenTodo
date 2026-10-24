@@ -3552,6 +3552,7 @@
   "{n, plural, one {# new project} other {# new projects}}": "{n, plural, one {# nouveau projet} other {# nouveaux projets}}",
   "{n, plural, one {# new section} other {# new sections}}": "{n, plural, one {# nouvelle section} other {# nouvelles sections}}",
   "{n, plural, one {# open task and its subtasks are copied; completed work, comments and reminders are not.} other {# open tasks and their subtasks are copied; completed work, comments and reminders are not.}}": "{n, plural, one {# tâche ouverte et ses sous-tâches sont copiées ; le travail terminé, les commentaires et les rappels ne le sont pas.} other {# tâches ouvertes et leurs sous-tâches sont copiées ; le travail terminé, les commentaires et les rappels ne le sont pas.}}",
+  "{n, plural, one {# completed task} other {# completed tasks}}": "{n, plural, one {# tâche terminée} other {# tâches terminées}}",
   "{n, plural, one {# open task} other {# open tasks}}": "{n, plural, one {# tâche ouverte} other {# tâches ouvertes}}",
   "{n, plural, one {# panel} other {# panels}}": "{n, plural, one {# panneau} other {# panneaux}}",
   "{n, plural, one {# person uses their own provider and key.} other {# people use their own provider and key.}}": "{n, plural, one {# personne utilise son propre fournisseur et sa clé.} other {# personnes utilisent leur propre fournisseur et leur clé.}}",

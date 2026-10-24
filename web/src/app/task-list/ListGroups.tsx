@@ -274,7 +274,7 @@ function PlannedActions() {
 function CompletedGroup({ c, rowList, renderRow, fieldColumns }: { c: NonNullable<GroupedListProps['completed']>; rowList: RowList; renderRow: (r: Row) => ReactNode; fieldColumns: boolean }) {
   return (
     <section role={fieldColumns ? 'rowgroup' : undefined} className="mb-4" data-completed-group>
-      <ListGroupHeader title={t('Completed')} count={c.tasks.length} collapsed={!c.open} onToggle={c.onToggle} />
+      <ListGroupHeader title={t('Completed')} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# completed task} other {# completed tasks}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />
       {c.open && rowList(c.tasks.map((task) => renderRow(flatRow(task))))}
     </section>
   )

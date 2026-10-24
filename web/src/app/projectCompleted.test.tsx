@@ -58,6 +58,8 @@ describe('Completed group in a project', () => {
     await waitFor(() => group(r.container) !== null)
     expect(group(r.container)!.textContent).toContain('Completed')
     expect(group(r.container)!.textContent).toContain('2')
+    // The count is read as completed tasks, not open ones.
+    expect(group(r.container)!.querySelector('[data-group-count] .sr-only')?.textContent).toBe('2 completed tasks')
     expect(toggleOf(r.container).getAttribute('aria-expanded')).toBe('false')
     expect(titlesIn(group(r.container))).toEqual([])
     await click(toggleOf(r.container))
