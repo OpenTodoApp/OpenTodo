@@ -6,7 +6,7 @@ One folder per platform, each with its template in that platform's own format. T
 | --- | --- | --- | --- |
 | CapRover | [`caprover/`](caprover/) | `release` | Paste it as a one-click template; the official list wants 1k+ GitHub stars, so a third-party repository first |
 | CasaOS / ZimaOS | [`casaos/`](casaos/) | `release` | Ready to submit to the CasaOS app store; install as a custom app meanwhile |
-| Coolify | [`coolify/`](coolify/) | `stable` | Pending in Coolify's service list; paste it as Docker Compose meanwhile |
+| Coolify | [`coolify/`](coolify/) | `stable` | Not yet submitted: Coolify lists services from 1,000 GitHub stars; paste it as Docker Compose meanwhile |
 | Cosmos Cloud | [`cosmos/`](cosmos/) | `stable` | Ready to submit to the official servapps market; install as a custom compose meanwhile |
 | Dokploy | [`dokploy/`](dokploy/) | `stable` | Ready to submit to Dokploy templates; usable now as a templates base URL |
 | Easypanel | [`easypanel/`](easypanel/) | `release` | Ready to submit to Easypanel templates; set up as an app service meanwhile |

@@ -10,9 +10,9 @@ order: 20
 
 OpenTodo is built to be a one-click Coolify resource: one service, one volume, no required variables.
 
-## One-click template (pending in Coolify's service list)
+## One-click template (not yet in Coolify's service list)
 
-[`deploy/coolify/opentodo.yaml`](https://github.com/pixari/opentodo/blob/main/deploy/coolify/opentodo.yaml) is a Coolify service template. It is prepared for Coolify's built-in service list and pending upstream review; Coolify only lists services whose repository has at least 1,000 GitHub stars, so it may take a while. Until **OpenTodo** shows up under **+ New Resource**, paste the template:
+[`deploy/coolify/opentodo.yaml`](https://github.com/pixari/opentodo/blob/main/deploy/coolify/opentodo.yaml) is a Coolify service template. It is prepared for Coolify's built-in service list and will be submitted once the repository has the 1,000 GitHub stars Coolify asks for. Until **OpenTodo** shows up under **+ New Resource**, paste the template:
 
 1. In your project choose **+ New → Docker Compose** (the option *without* a Git repository; older Coolify versions call it **Docker Compose Empty**).
 2. Paste the contents of `deploy/coolify/opentodo.yaml` and save.
