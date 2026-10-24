@@ -101,11 +101,24 @@ const COMBO_TIMEOUT_MS = Number(process.env.COMBO_TIMEOUT_MS ?? 8 * 60 * 1000)
 
 async function runCombo(engine, width, theme, ids, attempt = 1) {
   const mine = []
-  const run = { browser: null, step: 'launching the browser' }
+  const run = { browser: null, step: 'launching the browser', crashed: null }
   let timer
   const stalled = new Promise((resolve) => { timer = setTimeout(() => resolve('stalled'), COMBO_TIMEOUT_MS) })
   const outcome = await Promise.race([runComboOnce(engine, width, theme, ids, mine, run), stalled])
   clearTimeout(timer)
+  // A page whose web process crashed (Playwright's Linux WebKit is built with libstdc++
+  // assertions) answers nothing again, and a goto on it never returns: the browser is
+  // closed at the crash and the step is reported, instead of a stall. WebKit gets one
+  // more run, as above.
+  if (run.crashed) {
+    const tag = `${engine} ${width}px ${theme}`
+    if (engine === 'webkit' && attempt === 1) {
+      log(`  ${tag}: the page crashed at ${run.crashed}; running this combination again`)
+      return runCombo(engine, width, theme, ids, 2)
+    }
+    failures.push(`[${tag}] the page crashed at ${run.crashed}`)
+    return
+  }
   if (outcome === 'stalled') {
     const tag = `${engine} ${width}px ${theme}`
     run.browser?.close().catch(() => {})
@@ -149,6 +162,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())
+    page.on('crash', () => { run.crashed ??= run.step; browser.close().catch(() => {}) })
     const pageErrors = []
     // WebKit reports fetches cut off by a navigation as errors; those are not app bugs.
     page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled/i.test(e.message)) pageErrors.push(e.message) })
@@ -335,15 +349,17 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
     if (box && box.x <= 1 && box.width >= vs.width - 1 && box.y <= 1) { await p.keyboard.press('Escape'); return }
     // A point outside the panel: above a bottom sheet, else a top corner. The
     // tap must not land on a control, or it would also press it (a chip or a
-    // link under the point) and change the screen for the next overlay.
+    // link under the point) and change the screen for the next overlay. A task
+    // row counts: a click anywhere on it opens the task's page (task-full-page).
     const preferred = box && box.y > 40 ? { x: vs.width / 2, y: Math.max(5, box.y / 2) } : { x: 5, y: vs.height - 5 }
     const candidates = [preferred, { x: 5, y: vs.height - 5 }, { x: vs.width - 5, y: vs.height - 5 }, { x: vs.width / 2, y: vs.height - 5 }, { x: vs.width - 5, y: 5 }]
     const outside = (q) => !box || q.x < box.x || q.x > box.x + box.width || q.y < box.y || q.y > box.y + box.height
     let pt = preferred
     for (const q of candidates.filter(outside)) {
-      const inert = await p.evaluate(({ x, y }) => !document.elementFromPoint(x, y)?.closest('button, a, input, select, textarea, label, [role="button"], [role="switch"], [tabindex]'), q)
+      const inert = await p.evaluate(({ x, y }) => !document.elementFromPoint(x, y)?.closest('button, a, input, select, textarea, label, [role="button"], [role="switch"], [tabindex], [data-task-id]'), q)
       if (inert) { pt = q; break }
     }
+    const address = p.url()
     // What the tap lands on, so a failure names it (an element over the backdrop,
     // or a panel that grew under the point after it was measured).
     const under = await p.evaluate(({ x, y }) => { const el = document.elementFromPoint(x, y); return el ? `${el.tagName.toLowerCase()}${el.hasAttribute('data-overlay-root') ? '[data-overlay-root]' : ''}${el.getAttribute('aria-label') ? ` "${el.getAttribute('aria-label')}"` : ''}` : 'nothing' }, pt)
@@ -354,6 +370,9 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
       await fail(p, screen, name, `does not close with a tap outside (tap at ${Math.round(pt.x)},${Math.round(pt.y)} on ${under}; panel ${fmt(box)}, now ${fmt(now)})`)
       await p.keyboard.press('Escape')
     }
+    // The tap only closes: a tap that also opened another page would leave the next
+    // overlay on the wrong screen.
+    if (p.url() !== address) await fail(p, screen, name, `a tap outside also opened ${new URL(p.url()).pathname} (tap at ${Math.round(pt.x)},${Math.round(pt.y)} on ${under})`)
   }
 }
 
