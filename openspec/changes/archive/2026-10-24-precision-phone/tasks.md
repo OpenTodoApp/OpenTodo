@@ -15,5 +15,5 @@
 - [x] 3.1 The "Today" phone story; the task page story shows the stacked facts; verify `make ui-check` builds them
 - [x] 3.2 Render Today, a project and a task page from the real app at 390×844 in dark and light and compare them with `phone-today.png` and `phone-task.png`
 - [x] 3.3 Update the phone sections of the guides (`docs/` interface guide and the task page guide) and add the CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
-- [ ] 3.4 Regenerate the visual baselines with the "UI baselines" workflow; verify `make ui-check` in CI
-- [ ] 3.5 Run `npm test` and `npm run build` in `web/`, open the pull request and get CI green, the layout check at 360, 390 and 768 px included
+- [x] 3.4 Regenerate the visual baselines with the "UI baselines" workflow; verify `make ui-check` in CI
+- [x] 3.5 Run `npm test` and `npm run build` in `web/`, open the pull request and get CI green, the layout check at 360, 390 and 768 px included
