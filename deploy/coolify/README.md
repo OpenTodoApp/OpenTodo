@@ -2,9 +2,9 @@
 
 `opentodo.yaml` is a Coolify service template, in the format of Coolify's built-in service list (`templates/compose/` in the Coolify repository), and `opentodo.svg` is its logo (`public/svgs/`).
 
-**Status: prepared for Coolify's service list and pending upstream review.** Coolify lists a service only once its repository has 1,000 GitHub stars, so this can take a while. Until then:
+**Status: prepared for Coolify's service list, not yet submitted.** Coolify lists a service only once its repository has 1,000 GitHub stars, so it will be submitted then. Until then:
 
-- **Use it now:** in Coolify choose **+ New → Docker Compose** (without a Git repository; "Docker Compose Empty" in older versions), paste `opentodo.yaml`, set the `opentodo` service's domain and click **Deploy**. Then open the domain right away: the first visitor becomes the owner. Details are in [docs/self-hosting/coolify.md](../../docs/self-hosting/coolify.md#one-click-template-pending-in-coolifys-service-list).
+- **Use it now:** in Coolify choose **+ New → Docker Compose** (without a Git repository; "Docker Compose Empty" in older versions), paste `opentodo.yaml`, set the `opentodo` service's domain and click **Deploy**. Then open the domain right away: the first visitor becomes the owner. Details are in [docs/self-hosting/coolify.md](../../docs/self-hosting/coolify.md#one-click-template-not-yet-in-coolifys-service-list).
 - Or deploy from the repository with `docker-compose.yml` (Option A in the same guide).
 
 What the template does: it pulls the `stable` image, which every release moves (each release arrives on **Deploy**), routes the domain to port 8080 (`SERVICE_URL_OPENTODO_8080`) and passes it as `OPENTODO_BASE_URL` (secure cookies, passkeys, web push). It keeps sign-up closed, stores everything in one named volume, checks health with `/opentodo healthcheck`, and lists the useful optional variables, with their defaults, in Coolify's Environment Variables tab. No variable is required.
