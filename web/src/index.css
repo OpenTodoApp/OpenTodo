@@ -1031,6 +1031,35 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
   [data-row-props="project"] { grid-template-columns: [date] 5.75rem [project] 9.375rem [extra] 6rem; }
   [data-row-props="project"] > :is([data-row-cell="estimate"], [data-row-cell="assignee"]) { display: none; }
 }
+/* The phone row (precision-phone D2, task-list-presentation "Phone rows"): below 768 px
+   a narrow list row is one line, 44 px tall, with the title at 14.5 px and one cell at
+   its end, the one the row marks `data-row-phone`: the date, else the deadline, else the
+   assignee's avatar, else the project's dot. The other facts are on the task page. A
+   narrow list beside other content on a wider screen keeps its two lines. The open
+   control is the 44 px row: 12 px above and below the title's 20 px line, so on touch
+   no row padding adds to its 44 px minimum; the slots before it sit on the title's first
+   line, also when a second line (the Inbox's source) follows. The time column shows
+   only where a row has a time, and the counts stay off the line. */
+@media (width < 48rem) {
+  .row-pad, :root[data-density="compact"] .row-pad { padding-block: 0; }
+  .row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }
+  .row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time]) { margin-top: 0.75rem; }
+  .row-pad > [data-row-time]:empty { display: none; }
+  @container row (width < 40rem) {
+    [data-row-counts] { display: none; }
+    [data-row-time] { width: auto; margin-inline-end: 0.25rem; }
+    [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 0.75rem; }
+    [data-row-head] { grid-area: 1 / 1; }
+    [data-row-title] { font-size: 0.90625rem; }
+    [data-row-meta="row"] { display: contents; }
+    [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; white-space: nowrap; }
+    [data-row-props] > [data-row-cell]:not([data-row-phone]), [data-row-rest] { display: none; }
+    [data-row-meta="row"] > [data-row-props] > [data-row-item]::before { content: none; }
+    /* The project as its dot, the assignee as the avatar; both names stay in the accessible text. */
+    [data-row-cell="project"][data-dot] > :last-child,
+    [data-row-cell="assignee"] [data-assignee] > :last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  }
+}
 
 /* A side scroller (OpenSpec change sidebar-compact-desktop): a thin scrollbar in the
    border colour, a little stronger while the pointer or focus is inside, and a soft

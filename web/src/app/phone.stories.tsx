@@ -1,14 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { HEX, project, seeded, seedInbox, storyUser, task, withClock, withSeed } from './stories/fixtures'
+import { HEX, project, seeded, seedInbox, seedToday, storyUser, task, withClock, withSeed } from './stories/fixtures'
+import { navigate } from './router'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
 import { setMethodMode } from '../lib/method/mode'
 import { openTask } from './signals'
 import { TaskRow } from './TaskRow'
 
-// The phone (OpenSpec change phone-v2): swipe actions on rows, the task sheet and the
-// drawer, at 375 px in both themes. The gate cannot swipe, so the rows are held at a
+// The phone (OpenSpec changes phone-v2, precision-phone): Today, swipe actions on rows,
+// the task page and the drawer, at 375 px in both themes. The gate cannot swipe, so the rows are held at a
 // fixed offset through a story-only override.
 const meta: Meta = { title: 'Screens/Phone' }
 export default meta
@@ -40,7 +41,21 @@ function Viewport({ children }: { children: ReactNode }) {
   return <div className="-m-4 h-[49rem] overflow-hidden bg-canvas">{children}</div>
 }
 
-/** A task opened on a phone (task-full-page): its page, with Back to the list and the next and previous task in the bar. */
+/**
+ * Today on a phone (precision-phone): a bar with the menu and the actions only, the day
+ * head in the page (the title, the date and the briefing), one-line 44 px rows that
+ * keep one cell, and the tab bar with Inbox, Today, Upcoming and Search.
+ */
+export const Today: StoryObj = {
+  name: 'Today',
+  ...withSeed(async () => {
+    await seedToday()
+    navigate({ view: 'today' })
+  }),
+  render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
+}
+
+/** A task opened on a phone (task-full-page, precision-phone D4): its page, with Back and the next and previous task in the bar, and the facts as one stacked card. */
 export const TaskPage: StoryObj = {
   name: 'Task page',
   ...withSeed(async () => {
@@ -50,7 +65,7 @@ export const TaskPage: StoryObj = {
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
 }
 
-/** The drawer as the More tab opens it (design D7): a 20 rem column of 48 px rows, the footer pinned. */
+/** The drawer as the bar's menu button opens it (design D7, precision-phone D3): a 20 rem column of 48 px rows, the footer pinned. */
 function Drawer() {
   return (
     <div className="-m-4 flex h-[49rem] bg-canvas">

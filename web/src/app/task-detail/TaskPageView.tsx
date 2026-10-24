@@ -3,7 +3,9 @@
 // opened from ("4 / 12") with the next and previous task, the menu and Close; then
 // two columns: the content (title, notes, subtasks, attachments, the conversation and
 // its composer pinned to the bottom) and the facts (TaskFacts). Below 1024 px the
-// facts sit under the notes. Esc, Close and the phone's Back return to the list.
+// facts sit under the notes; below 768 px they are one stacked card of rows, the
+// unset ones behind More (precision-phone D4). Esc, Close and the phone's Back
+// return to the list.
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { roleOf } from '../../lib/sharing'
 import type { Label, Project } from '../../lib/types'
@@ -125,8 +127,9 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
             </div>
           )}
         </div>
-        <aside aria-label={t('Facts')} className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-(--panel-header-h) lg:self-start lg:border-l lg:border-soft lg:pl-8 lg:pt-4 max-lg:rounded-card max-lg:border max-lg:border-default max-lg:p-3" data-task-facts>
-          <TaskFacts task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
+        <aside aria-label={t('Facts')} className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-(--panel-header-h) lg:self-start lg:border-l lg:border-soft lg:pl-8 lg:pt-4 max-lg:rounded-card max-lg:border max-lg:border-default md:max-lg:p-3 max-md:overflow-hidden" data-task-facts>
+          {/* Below 768 px the facts are one stacked card of 44 px rows (precision-phone D4). */}
+          <TaskFacts stacked={!desktop} task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
             parent={m.parent ?? undefined} childCount={m.children.length} onOpen={onOpen} />
         </aside>
         <div className="min-w-0 space-y-4 lg:col-start-1" data-task-rest>

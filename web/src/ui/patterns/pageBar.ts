@@ -13,6 +13,8 @@ export interface PageBar {
   menu?: ReactNode
   help?: string
   back?: { label: string; href?: string; onClick: () => void }
+  /** A day page (Today, Upcoming): the page shows its own title, date and briefing, so the bar carries none (precision-phone D1). */
+  day?: boolean
 }
 
 let current: PageBar | null = null

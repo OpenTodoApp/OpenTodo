@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 // The phone tab bar (OpenSpec change ux-overhaul, app-shell "Phone navigation"):
-// Today, Inbox, Upcoming, Search and More below 768 px, two taps to any primary
-// view, hidden while a sheet or the task panel is open, 44 px tabs above the
-// bottom safe area.
+// Inbox, Today, Upcoming and Search below 768 px (precision-phone D3; the drawer opens
+// from the top bar's menu button), two taps to any primary view, hidden while a sheet
+// or the task page is open, 44 px tabs above the bottom safe area.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -40,11 +40,13 @@ const bar = () => document.querySelector('[data-tab-bar]')
 const tab = (id: string) => document.querySelector<HTMLButtonElement>(`[data-tab="${id}"]`)!
 
 describe('the tab bar', () => {
-  it('offers Today, Inbox, Upcoming, Search and More, marks the current view and is at least 44 px tall', async () => {
+  it('offers Inbox, Today, Upcoming and Search, marks the current view in the strong tone and is at least 44 px tall', async () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await flush(50)
-    expect([...document.querySelectorAll('[data-tab]')].map((t) => t.textContent)).toEqual(['Today', 'Inbox', 'Upcoming', 'Search', 'More'])
+    expect([...document.querySelectorAll('[data-tab]')].map((t) => t.textContent)).toEqual(['Inbox', 'Today', 'Upcoming', 'Search'])
     expect(tab('inbox').getAttribute('aria-current')).toBe('page')
+    expect(tab('inbox').className).toContain('text-strong')
+    expect(tab('inbox').className).not.toContain('text-accent')
     expect(tab('today').getAttribute('aria-current')).toBeNull()
     for (const t of document.querySelectorAll('[data-tab]')) expect(t.className).toContain('min-h-14')
     expect(bar()!.className).toContain('pb-[env(safe-area-inset-bottom)]')
@@ -54,7 +56,7 @@ describe('the tab bar', () => {
     await r.unmount()
   })
 
-  it('Today opens Today without the drawer; More opens the sidebar as a drawer; Search opens the palette', async () => {
+  it('Today opens Today without the drawer; the bar\'s menu button opens the sidebar as a drawer; Search opens the palette', async () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await flush(50)
     await click(tab('today'))
@@ -63,10 +65,10 @@ describe('the tab bar', () => {
     expect(tab('today').getAttribute('aria-current')).toBe('page')
     const aside = document.querySelector('aside[data-sidebar]')!
     expect(aside.className).toContain('-translate-x-full')
-    await click(tab('more'))
+    expect(tab('more' as string)).toBeNull()
+    await click(document.querySelector<HTMLButtonElement>('[data-phone-bar] button[aria-label="Open menu"]')!)
     await flush(30)
     expect(document.querySelector('aside[data-sidebar]')!.className).toContain('translate-x-0')
-    expect(tab('more').getAttribute('aria-expanded')).toBe('true')
     await click(document.querySelector<HTMLElement>('.bg-scrim')!)
     await flush(30)
     await click(tab('search'))

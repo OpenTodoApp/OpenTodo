@@ -603,7 +603,8 @@ describe('find in the drawer and the budget (sidebar-groups 3.4)', () => {
       await waitFor(() => document.querySelector('aside[data-sidebar]') !== null)
       const aside = () => document.querySelector('aside[data-sidebar]')!
       expect(aside().className).toContain('-translate-x-full')
-      await click([...document.querySelectorAll('[data-tab]')].find((t) => t.textContent === 'More')!)
+      // The phone bar's menu button opens the drawer (precision-phone D3).
+      await click(document.querySelector<HTMLElement>('[data-phone-bar] button[aria-label="Open menu"]')!)
       await waitFor(() => aside().className.includes('translate-x-0'))
       // The palette command (and `g /`) open the field inside the drawer.
       sidebarFind.request('open')

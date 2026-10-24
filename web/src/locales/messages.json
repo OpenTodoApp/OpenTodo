@@ -6744,7 +6744,6 @@
   ],
   "More": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TabBar.tsx",
     "web/src/app/review/charts.tsx"
   ],
   "More actions": [
@@ -6761,6 +6760,9 @@
   "More options": [
     "web/src/app/IssueEditor.tsx",
     "web/src/app/views/DisplayPanel.tsx"
+  ],
+  "More properties": [
+    "web/src/app/task-detail/TaskFacts.tsx"
   ],
   "Most tasks take {ratio} their estimate ({n} tasks).": [
     "web/src/app/review/StatsView.tsx"

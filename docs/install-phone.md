@@ -13,7 +13,7 @@ order: 21
 
 Sign in once in the browser first, at your server's `https://` address; then add the app to your home screen. The general picture, and the steps for computers, are in [Installing the app](install-app.md).
 
-Once installed, the round **+** at the bottom right adds a task, and **More** opens a drawer with your projects, labels and filters.
+Once installed, the round **+** at the bottom right adds a task, and the menu button at the top left opens a drawer with your projects, labels and views.
 
 ## iPhone and iPad
 

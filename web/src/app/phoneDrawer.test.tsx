@@ -77,7 +77,8 @@ describe('the phone drawer at 390 px', () => {
     expect(aside.className).toContain('w-80')
     expect(aside.className).toContain('max-w-[85vw]')
     expect(aside.className).toContain('max-md:[&_[data-sidebar-item]]:min-h-12')
-    await click(document.querySelector<HTMLButtonElement>('[data-tab="more"]')!)
+    // The top bar's menu button opens it (precision-phone D3).
+    await click(document.querySelector<HTMLButtonElement>('[data-phone-bar] button[aria-label="Open menu"]')!)
     expect(aside.className).toContain('translate-x-0')
     await click(document.querySelector<HTMLButtonElement>('[data-account-menu]')!)
     await waitFor(() => !!document.querySelector('[data-settings-button]'))
