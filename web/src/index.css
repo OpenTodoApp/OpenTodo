@@ -984,7 +984,7 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 /* A part of the day pages' briefing that leads somewhere (briefing-links D3): the clause's
    own colour and weight, underlined on hover and keyboard focus. Inline, so it wraps with
    the sentence. */
-.briefing-link { @apply inline cursor-pointer rounded-chip text-inherit underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus; font: inherit; text-align: inherit; }
+.briefing-link { @apply inline cursor-pointer rounded-chip text-inherit underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-focus; font: inherit; text-align: inherit; }
 }
 
 /* The property column (precision-rows D1 to D3, task-list-presentation "One row

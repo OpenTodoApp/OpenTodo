@@ -4,11 +4,13 @@ import type { Review } from '../../lib/assistant'
 import type { AssistantStatus } from '../../lib/assistantStatus'
 import { Composer } from './AssistantComposer'
 import { AssistantPanelBody, type PanelViewProps } from './AssistantPanelBody'
+import { withClock } from '../stories/fixtures'
 
 // The assistant's surface (OpenSpec change assistant-surface): the empty page with the
 // composer under the greeting and the starter skills, a conversation with a proposed
-// change set, and the empty side sheet. The parts are rendered without a server.
-const meta: Meta = { title: 'Screens/Assistant' }
+// change set, and the empty side sheet. The parts are rendered without a server. The
+// clock is frozen, so the greeting does not follow the hour the check runs at.
+const meta: Meta = { title: 'Screens/Assistant', decorators: [withClock] }
 export default meta
 
 const noop = () => {}
