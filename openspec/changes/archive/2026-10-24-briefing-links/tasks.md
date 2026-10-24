@@ -15,4 +15,4 @@
 - [x] 3.1 The new messages in every catalog; verify `make i18n-check`
 - [x] 3.2 Stories: the briefing with links, the narrow health cell; verify `make ui-check` in CI
 - [x] 3.3 Docs `docs/briefing.md` and `docs/all-projects.md`, CHANGELOG under Unreleased; verify `make docs-check`
-- [ ] 3.4 Run `npm test` and `npm run build` in web/, `go test ./internal/sync/...`, `make check`; baselines from CI's UI baselines workflow; CI green
+- [x] 3.4 Run `npm test` and `npm run build` in web/, `go test ./internal/sync/...`, `make check`; baselines from CI's UI baselines workflow; CI green

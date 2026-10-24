@@ -793,6 +793,10 @@ On Upcoming the lead SHALL say how many tasks the next seven days hold. When the
 - every one of those days that is already full, or that every day still has room;
 - and tomorrow as above.
 
+The parts of the briefing SHALL lead to what they name. A task the briefing names (one late task, the task a reply is about, tomorrow's first task) SHALL open that task's page, returning to the page it was opened from. A count of late tasks SHALL tick exactly those tasks in Today's list, as bulk selection does, and scroll to the first; from any other page it SHALL open Today first. A full day SHALL open Upcoming scrolled to that day. Replies that are not about one named task SHALL open the notifications. Each part SHALL keep its tone, SHALL be reachable with the keyboard, SHALL be underlined on hover and keyboard focus, and SHALL have an accessible name that says where it leads. Following a part writes nothing.
+
+The day page's menu on Today and Upcoming SHALL offer to hide the briefing and, once hidden, to show it again. The choice SHALL be a synced preference of the account (`user_prefs.briefing`, "hidden" or shown): it SHALL work offline, reach the account's other devices with sync and converge by last-writer-wins; an empty or unknown value SHALL read as shown. With the briefing hidden the day head SHALL keep its title and date. The Daily check SHALL keep its opening sentence either way.
+
 #### Scenario: Three things
 - **WHEN** "Renew the passport" was due two days ago, Monday's estimates fill the eight-hour day, and Mia's unread mention is about "Boiler"
 - **THEN** Today's briefing reads "Three things matter today. Renew the passport is 2 days late, Monday is already full, and Mia answered about Boiler."
@@ -829,6 +833,38 @@ On Upcoming the lead SHALL say how many tasks the next seven days hold. When the
 #### Scenario: Reply read
 - **WHEN** the user opens the task the unread reply was about
 - **THEN** the reply leaves the briefing
+
+#### Scenario: Open the late tasks
+- **WHEN** Today's briefing reads "Two things matter today. 2 tasks are late and Mia answered about Boiler." and the user activates "2 tasks are late"
+- **THEN** exactly those two tasks are ticked in Today's list, the first is scrolled into view, the selection bar offers its actions, and nothing was changed
+
+#### Scenario: Open a named task
+- **WHEN** the user activates "Renew the passport" in the briefing and then presses Escape
+- **THEN** the task's page opens, and Escape returns to Today
+
+#### Scenario: Open a full day
+- **WHEN** the user activates "Monday is already full" on Today
+- **THEN** Upcoming opens scrolled to Monday's group
+
+#### Scenario: Open the replies
+- **WHEN** the briefing says "3 replies are waiting" and the user activates it on a phone
+- **THEN** the drawer opens with the notifications list open
+
+#### Scenario: Keyboard
+- **WHEN** the user tabs into the briefing
+- **THEN** each part is a stop in reading order, underlined while focused, and announced with where it leads
+
+#### Scenario: Hide the briefing
+- **WHEN** the user chooses "Hide briefing" in Today's menu while offline
+- **THEN** Today shows its title and date without the sentence, Upcoming does too, and after sync the user's other devices hide it as well
+
+#### Scenario: Show it again
+- **WHEN** the briefing is hidden and the user chooses "Show briefing" in Upcoming's menu
+- **THEN** the sentence is back on Today and Upcoming
+
+#### Scenario: Daily check while hidden
+- **WHEN** the briefing is hidden and the user opens the Daily check
+- **THEN** the Daily check still opens with Today's briefing
 
 ### Requirement: Task page
 A task opened from a list SHALL remember that list: its address, its name, its tasks in display order and its scroll position. The page SHALL show the task's place in that list as "n / m" with controls for the next and previous task, and `j` and `k` SHALL open the next and previous task in place, so Escape still returns in one step. Escape (outside a text field and outside an overlay), Close and the phone's Back SHALL return to that list with the task selected and the list scrolled where it was. A task opened from outside a list (a reminder, a notification, the command palette) SHALL return to the task's own list (its project, or the Inbox); a task opened from its address alone (a reload, a link) SHALL show no place in a list and SHALL return to the task's own list with the task selected. Addresses of the form `?task=<id>` SHALL keep working and open the task's page over the page in the address.
