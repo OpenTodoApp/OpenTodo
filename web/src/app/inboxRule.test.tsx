@@ -92,6 +92,9 @@ describe('the Inbox view', () => {
     const empty = r.container.querySelector('[data-empty-state="inbox"]')!
     const group = r.container.querySelector('[data-group="planned"]')!
     expect(empty.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // One quiet line above the group, not the Inbox zero illustration (inbox-zero-quiet).
+    expect(empty.querySelector('[data-illustration]')).toBeNull()
+    expect(empty.textContent).toBe('Inbox zero: every task has a place.')
     await r.unmount()
   })
 
