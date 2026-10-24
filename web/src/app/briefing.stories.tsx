@@ -26,10 +26,18 @@ export const ThreeThings: StoryObj = {
   render: () => <Day title="Today" date="Thursday 22 October" briefing={{
     mode: 'today', open: 6, planned: 240,
     facts: [
-      { kind: 'late', count: 1, task: { id: 'p', title: 'Renew the passport' }, days: 2 },
+      { kind: 'late', count: 1, ids: ['p'], task: { id: 'p', title: 'Renew the passport' }, days: 2 },
       { kind: 'full', dates: ['2026-10-26'] },
       { kind: 'replies', count: 1, name: 'Mia', task: { id: 'b', title: 'Call the plumber about the boiler' } },
     ],
+  }} />,
+}
+
+/** Counts as links (briefing-links D2, D3): the late tasks select themselves in Today, the replies open the notifications. */
+export const CountsAsLinks: StoryObj = {
+  render: () => <Day title="Today" date="Thursday 22 October" briefing={{
+    mode: 'today', open: 7, planned: 0,
+    facts: [{ kind: 'late', count: 2, ids: ['a', 'b'] }, { kind: 'replies', count: 3 }],
   }} />,
 }
 

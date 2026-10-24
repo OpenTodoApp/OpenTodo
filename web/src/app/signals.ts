@@ -84,6 +84,9 @@ export const openTask = channel()
 /** Select a task (without opening it) when the list next shows: leaving the triage mode (inbox-triage). */
 export const selectTask = channel()
 
+/** The briefing's replies (briefing-links D2): the shell opens the drawer on a phone, the bell opens its list. Request id: `open`. */
+export const notificationsOpen = channel()
+
 /**
  * Open a task from outside a list (a reminder toast, a notification, the palette):
  * as its page, with Esc going to the task's own list (its project, or the Inbox)

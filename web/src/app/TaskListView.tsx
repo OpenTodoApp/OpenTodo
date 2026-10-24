@@ -10,7 +10,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
-import { useMembership } from '../lib/localData'
+import { useMembership, useUserPrefsRow } from '../lib/localData'
+import { briefingHidden, setBriefingShown } from '../lib/userPrefs'
 import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
@@ -21,7 +22,7 @@ import { useDayTotals } from '../lib/timeEntries'
 import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Label, Task } from '../lib/types'
-import { Button, frameKind, hueFor, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
+import { Button, frameKind, hueFor, MenuItem, MenuSeparator, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
 import { act } from './actionError'
 import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
@@ -390,13 +391,20 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone }: {
   phone: { slots: ReactNode; items: PhoneItem[] } | null
 }) {
   const items = phone?.items ?? []
-  // The briefing under a day page's title (OpenSpec change briefing).
-  const briefing = useBriefing(route.view === 'today' || route.view === 'upcoming' ? route.view : null)
+  // The briefing under a day page's title (OpenSpec change briefing), unless the account hid it (briefing-links D4).
+  const day = route.view === 'today' || route.view === 'upcoming'
+  const hidden = briefingHidden(useUserPrefsRow())
+  const briefing = useBriefing(day && !hidden ? route.view as 'today' | 'upcoming' : null)
   const menu = route.view === 'label' && label ? <LabelMenu label={label} extra={phoneGroups(items)} />
     : route.view === 'inbox' ? <InboxMenu extra={items.length > 0 ? <PhoneMenuItems items={items} /> : undefined} /> : undefined
+  const toggle = day && (
+    <MenuItem icon={hidden ? 'eye' : 'eye-off'} label={hidden ? t('Show briefing') : t('Hide briefing')} data-briefing-toggle
+      onSelect={() => act(setBriefingShown(hidden))} />
+  )
+  const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : undefined}
+      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}</> : undefined}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />

@@ -152,6 +152,7 @@
       "user_id"
     ],
     "user_prefs": [
+      "briefing",
       "date_format",
       "day_start",
       "density",

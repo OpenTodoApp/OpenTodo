@@ -28,7 +28,7 @@ import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
 import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
-import { sidebarFind } from './signals'
+import { notificationsOpen, sidebarFind } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, panelTaskId, taskIdFromAddress, usePanel } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
@@ -83,11 +83,18 @@ const LoopHome = lazy(() => import('./method/LoopHome').then((m) => ({ default: 
 // The start guide (lean-chrome D5): its own chunk; it opens over the Inbox once per account, or from Settings.
 const FirstRunGuide = lazy(() => import('./FirstRun').then((m) => ({ default: m.FirstRunGuide })))
 
+/** Requests that need the sidebar on screen: the phone drawer opens, and for a find the icon rail expands. */
+function useSidebarRequests(setSidebarOpen: (open: boolean) => void) {
+  // A find request (the shortcut, the palette): the icon rail expands and the phone drawer opens.
+  useEffect(() => sidebarFind.subscribe((id) => { if (id === 'open') { setSidebarCollapsed(false); setSidebarOpen(true) } }), [setSidebarOpen])
+  // The briefing's replies open the bell's list (briefing-links D2): on a phone it sits in the drawer.
+  useEffect(() => notificationsOpen.subscribe(() => { if (!window.matchMedia?.('(min-width: 768px)').matches) setSidebarOpen(true) }), [setSidebarOpen])
+}
+
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  // A find request (the shortcut, the palette) needs the sidebar on screen: the icon rail expands and the phone drawer opens.
-  useEffect(() => sidebarFind.subscribe((id) => { if (id === 'open') { setSidebarCollapsed(false); setSidebarOpen(true) } }), [])
+  useSidebarRequests(setSidebarOpen)
   const [notice, setNotice] = useState<string | null>(null)
   // Changes the server refused after a role change (project-sharing).
   const { rejected } = useSyncStatus()

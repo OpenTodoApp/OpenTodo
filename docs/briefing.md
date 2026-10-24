@@ -1,6 +1,6 @@
 ---
 title: The briefing
-summary: The sentence under the title of Today and Upcoming - what is late, a full day, replies waiting, and how tomorrow starts - worked out on your device.
+summary: The sentence under the title of Today and Upcoming - what is late, a full day, replies waiting, and how tomorrow starts - worked out on your device; each part opens what it names, and you can hide it.
 audience: user
 section: Guides
 specs: [web-app, localization, weekly-review]
@@ -19,6 +19,21 @@ Under the title, [Today](today-and-upcoming.md) says in a sentence or two what s
 
 When nothing stands out it says so, with how many tasks are planned and the time they add up to.
 
+## Open what it names
+
+Each part of the sentence leads to what it talks about. Click or tap it, or reach it with <kbd>Tab</kbd>; a part is underlined when you point at it.
+
+- **A task's name** ("Renew the passport", the task a reply is about, tomorrow's first task) opens the task. <kbd>Esc</kbd> brings you back.
+- **A count of late tasks** ("2 tasks are late") selects exactly those tasks in Today's list and scrolls to them, so the selection bar can reschedule them in one go. From the Daily check it opens Today first.
+- **A full day** ("Monday is already full") opens Upcoming at that day.
+- **Replies** ("3 replies are waiting") open your notifications.
+
+Following a part changes nothing.
+
+## Hide it
+
+Choose **Hide briefing** in the menu (<kbd>…</kbd>) of Today or Upcoming. The title and the date stay. The choice belongs to your account, so your other devices hide it too once they sync; **Show briefing** in the same menu brings it back. The Daily check always opens with the sentence.
+
 ## When Today is empty
 
 Once you have completed the last task, or [closed the day](method/rhythms.md#close-the-day), it reads **All done for today.** and tells you how tomorrow starts: "Tomorrow starts with 4 tasks; the first is Standup at 9:30 AM." On a day with nothing planned and nothing done it reads **Nothing is planned for today.** instead.
@@ -30,5 +45,3 @@ Upcoming's briefing counts the tasks of the next seven days, names the days that
 ## Where it comes from
 
 Your device works the briefing out from your own tasks, so it works offline, needs no connection and is never written by an AI. It changes as you work and as your other devices sync. The day length is the one in **Settings → General → Calendar grid**, set per device. The sentence follows your interface language; task titles and names stay as you wrote them.
-
-On a phone the header sits in the top bar, so the briefing isn't shown there yet.

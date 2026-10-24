@@ -5224,6 +5224,9 @@
     "web/src/app/Sections.tsx",
     "web/src/app/views/DisplayPanel.tsx"
   ],
+  "Hide briefing": [
+    "web/src/app/TaskListView.tsx"
+  ],
   "Hide delivery log": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -10903,6 +10906,9 @@
   ],
   "Show as table": [
     "web/src/app/review/charts.tsx"
+  ],
+  "Show briefing": [
+    "web/src/app/TaskListView.tsx"
   ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx"
@@ -17314,6 +17320,15 @@
   "{text} and {n} more": [
     "web/src/lib/activityRuns.ts"
   ],
+  "{text}, open in Upcoming": [
+    "web/src/app/Briefing.tsx"
+  ],
+  "{text}, open notifications": [
+    "web/src/app/Briefing.tsx"
+  ],
+  "{text}, select them in Today": [
+    "web/src/app/Briefing.tsx"
+  ],
   "{there} = {time}{day} your time ({city})": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
@@ -17340,6 +17355,9 @@
   ],
   "{title} left today’s focus.": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "{title}, open task": [
+    "web/src/app/Briefing.tsx"
   ],
   "{title}, waits for {blockers}": [
     "web/src/app/TimelineView.tsx"

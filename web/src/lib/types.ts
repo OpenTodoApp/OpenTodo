@@ -632,6 +632,8 @@ export interface UserPrefs {
   maps?: string
   /** Haptic feedback on this user's devices (motion-v2 D6): 'off' turns the tick off; '' and anything else read as on. */
   haptics?: string
+  /** The day pages' briefing (briefing-links D4): 'hidden' hides it; '' and anything else read as shown. */
+  briefing?: string
   _clock: Clock
 }
 

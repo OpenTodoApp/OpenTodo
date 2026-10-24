@@ -92,7 +92,7 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0, reviewed_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '', start_checklist: '',
-  focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '' }
+  focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '' }
 /** review (stats-and-review D4, open-loops-method D5): 0 means "never finished", an empty focus date no focus. */
 export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, closed_day: '', tomorrow_note: '', carry_over: '' }
 /** A time entry row before its ops arrive (time-tracking D1); `ended_at` null reads as running. */

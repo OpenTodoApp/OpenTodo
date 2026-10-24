@@ -21,7 +21,7 @@
       "expect": {
         "mode": "today", "open": 2, "planned": 60,
         "facts": [
-          { "kind": "late", "count": 1, "task": { "id": "passport", "title": "Renew the passport" }, "days": 2 },
+          { "kind": "late", "count": 1, "ids": ["passport"], "task": { "id": "passport", "title": "Renew the passport" }, "days": 2 },
           { "kind": "full", "dates": ["2026-10-26"] },
           { "kind": "replies", "count": 1, "name": "Mia", "task": { "id": "boiler", "title": "Boiler" } }
         ]
@@ -37,7 +37,7 @@
         { "id": "x", "title": "Blocker" }
       ],
       "notifications": [],
-      "expect": { "mode": "today", "open": 3, "planned": 0, "facts": [{ "kind": "late", "count": 2 }] }
+      "expect": { "mode": "today", "open": 3, "planned": 0, "facts": [{ "kind": "late", "count": 2, "ids": ["l1", "l2"] }] }
     },
     {
       "name": "today past the day length is said instead of a later full day",
@@ -51,7 +51,7 @@
       "expect": {
         "mode": "today", "open": 2, "planned": 540,
         "facts": [
-          { "kind": "late", "count": 1, "task": { "id": "b", "title": "Task" }, "days": 1 },
+          { "kind": "late", "count": 1, "ids": ["b"], "task": { "id": "b", "title": "Task" }, "days": 1 },
           { "kind": "overfull", "planned": 540, "dayLength": 480 }
         ]
       }

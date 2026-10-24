@@ -651,6 +651,10 @@ var Schema = map[string]map[string]kind{
 		// design D6): "on" or "off"; clients read an empty or unknown value as
 		// "on" and keep the stored value, so the field stays additive.
 		"haptics": kString,
+		// The day pages' briefing (OpenSpec change briefing-links, design D4):
+		// "hidden" hides it on Today and Upcoming; clients read an empty or
+		// unknown value as shown.
+		"briefing": kString,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

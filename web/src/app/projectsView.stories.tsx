@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { archiveProject, createProject, createTask } from '../lib/ops'
 import type { ArchivedProject } from '../lib/archive'
@@ -41,6 +42,27 @@ async function seedProjects() {
 
 /** Late, Slipping, Quiet, On track and Nothing open, with the note under the table; at 375 px the columns at the end give way. */
 export const Default: StoryObj = { ...withSeed(seedProjects), render: () => <ProjectsView /> }
+
+/** A narrow table taps the health word (briefing-links D5): Home's "Late" shows its reason, the passport, under the word. */
+function NarrowWhy() {
+  const frame = useRef<HTMLDivElement>(null)
+  const [pending, setPending] = useState(true)
+  useEffect(() => {
+    let tries = 0
+    const timer = setInterval(() => {
+      const why = frame.current?.querySelector<HTMLElement>(`[data-projects-row="${seeded.home}"] [data-health-why]`)
+      if (why || ++tries > 100) {
+        clearInterval(timer)
+        why?.click()
+        requestAnimationFrame(() => setPending(false))
+      }
+    }, 20)
+    return () => clearInterval(timer)
+  }, [])
+  // data-story-pending: the visual check waits until the reason shows.
+  return <div ref={frame} className="w-[22rem]" data-story-pending={pending || undefined}><ProjectsView /></div>
+}
+export const NarrowHealthReason: StoryObj = { ...withSeed(seedProjects), render: () => <NarrowWhy /> }
 
 /** Opened from Settings → Data (`/projects#archived`): the Archived tab is selected. */
 export const ArchivedOpen: StoryObj = { ...withSeed(seedProjects), render: () => <ProjectsView archived /> }

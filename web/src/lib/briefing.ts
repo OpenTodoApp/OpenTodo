@@ -28,8 +28,8 @@ export interface BriefingTask {
 
 /** What stands out, most pressing first (design D3). */
 export type BriefingFact =
-  /** Late tasks: the one task named with its days late, or only the count. */
-  | { kind: 'late'; count: number; task?: BriefingTask; days?: number }
+  /** Late tasks in Today's order (`ids`, briefing-links D1): the one task named with its days late, or only the count. */
+  | { kind: 'late'; count: number; ids: string[]; task?: BriefingTask; days?: number }
   /** Today's estimates are past the day length. */
   | { kind: 'overfull'; planned: number; dayLength: number }
   /** Later days whose estimates fill the day length, in date order. */
@@ -133,8 +133,9 @@ export function briefingFacts(input: BriefingInput): Briefing {
   const facts: BriefingFact[] = []
   const blocked = blockedMap(all)
   const late = list.filter((x) => !blocked.has(x.id) && overdueInToday(x, today))
-  if (late.length === 1) facts.push({ kind: 'late', count: 1, task: titleOf(late[0]), days: daysLate(late[0], today) })
-  else if (late.length > 1) facts.push({ kind: 'late', count: late.length })
+  const ids = late.map((x) => x.id)
+  if (late.length === 1) facts.push({ kind: 'late', count: 1, ids, task: titleOf(late[0]), days: daysLate(late[0], today) })
+  else if (late.length > 1) facts.push({ kind: 'late', count: late.length, ids })
   // Everything Today lists is today's work, late tasks included.
   const load = dayLoad(list.map((x) => ({ ...x, due: { date: today } })), today, dayLength)
   if (load.over) facts.push({ kind: 'overfull', planned: load.planned, dayLength })
