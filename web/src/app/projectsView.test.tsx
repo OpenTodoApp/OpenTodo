@@ -171,6 +171,31 @@ describe('All projects table', () => {
     await r.unmount()
   })
 
+  it('on a narrow table the health word says why: a tooltip on focus, the detail on a tap, read aloud always (briefing-links D5)', async () => {
+    const original = globalThis.ResizeObserver
+    // A table narrower than 36 rem: every observed size reads as 0 px wide.
+    globalThis.ResizeObserver = class { constructor(private cb: () => void) {} observe() { this.cb() } unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver
+    try {
+      const reno = await createProject({ name: 'Home renovation' })
+      await createTask({ title: 'Tiles', project_id: reno, due: { date: '2020-01-02' } })
+      const r = await render(<ProjectsView />)
+      await waitFor(() => !!cell(r.container, reno, '[data-health-why]'))
+      const why = cell(r.container, reno, '[data-health-why]') as HTMLButtonElement
+      expect(why.textContent).toBe('Slipping, 1 late')
+      expect(why.getAttribute('aria-expanded')).toBe('false')
+      why.focus()
+      await waitFor(() => document.querySelector('[data-tooltip]')?.textContent === '1 late')
+      await click(why)
+      expect(cell(r.container, reno, '[data-health-detail]')!.textContent).toBe('1 late')
+      expect(location.pathname).toBe('/projects')
+      await click(why)
+      expect(cell(r.container, reno, '[data-health-detail]')).toBeNull()
+      await r.unmount()
+    } finally {
+      globalThis.ResizeObserver = original
+    }
+  })
+
   it('a quiet project says for how long', async () => {
     const reading = await createProject({ name: 'Reading' })
     const id = await createTask({ title: 'Finish the novel', project_id: reading })

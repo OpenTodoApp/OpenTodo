@@ -16,7 +16,7 @@ const text = (b: Briefing) => {
 const THREE: Briefing = {
   mode: 'today', open: 4, planned: 90,
   facts: [
-    { kind: 'late', count: 1, task: { id: 'p', title: 'Renew the passport' }, days: 2 },
+    { kind: 'late', count: 1, ids: ['p'], task: { id: 'p', title: 'Renew the passport' }, days: 2 },
     { kind: 'full', dates: ['2026-10-23'] },
     { kind: 'replies', count: 1, name: 'Mia', task: { id: 'b', title: 'Boiler' } },
   ],
@@ -37,7 +37,7 @@ describe('briefing wording', () => {
   it('a clause that starts the sentence starts with a capital; counts and today past its length', () => {
     const el = text({ mode: 'today', open: 5, planned: 540, facts: [{ kind: 'overfull', planned: 540, dayLength: 480 }, { kind: 'replies', count: 3 }] })
     expect(el.textContent).toBe('Two things matter today. Today holds 9h of work, more than your 8h day and 3 replies are waiting.')
-    expect(text({ mode: 'today', open: 3, planned: 0, facts: [{ kind: 'late', count: 3 }] }).textContent).toBe('One thing matters today. 3 tasks are late.')
+    expect(text({ mode: 'today', open: 3, planned: 0, facts: [{ kind: 'late', count: 3, ids: ['a', 'b', 'c'] }] }).textContent).toBe('One thing matters today. 3 tasks are late.')
   })
 
   it('a calm day, all done, a clear day, and Upcoming', () => {
@@ -50,6 +50,24 @@ describe('briefing wording', () => {
       .toBe('6 tasks in the next seven days. Friday and Monday are already full. Tomorrow starts with one task; the first is Groceries.')
     expect(text({ mode: 'upcoming', count: 2, facts: [], tomorrow: { count: 0, first: null } }).textContent).toBe('2 tasks in the next seven days. Every day still has room. Nothing is planned for tomorrow yet.')
     expect(text({ mode: 'upcoming', count: 0, facts: [], tomorrow: { count: 0, first: null } }).textContent).toBe('Nothing is planned for the next seven days.')
+  })
+
+  it('each part leads somewhere: named tasks to their page, counts and days to their list, replies to the notifications (briefing-links D2, D3)', () => {
+    const el = text(THREE)
+    const task = el.querySelector<HTMLAnchorElement>('[data-briefing-link="task"]')!
+    expect(task.getAttribute('href')).toBe('/task/p')
+    expect(task.getAttribute('aria-label')).toBe('Renew the passport, open task')
+    expect(task.closest('[data-briefing-fact]')!.getAttribute('data-briefing-fact')).toBe('late')
+    expect(el.querySelector('[data-briefing-link="late"]')).toBeNull()
+    expect(el.querySelector('[data-briefing-link="full"]')!.getAttribute('aria-label')).toBe('Friday is already full, open in Upcoming')
+    expect(el.querySelector('[data-briefing-link="replies"]')).toBeNull()
+    const counts = text({ mode: 'today', open: 5, planned: 0, facts: [{ kind: 'late', count: 2, ids: ['a', 'b'] }, { kind: 'replies', count: 3 }] })
+    expect(counts.querySelector('[data-briefing-link="late"]')!.textContent).toBe('2 tasks are late')
+    const replies = counts.querySelector('[data-briefing-link="replies"]')!
+    expect(replies.tagName).toBe('BUTTON')
+    expect(replies.getAttribute('aria-label')).toBe('3 replies are waiting, open notifications')
+    const tomorrow = text({ mode: 'done', tomorrow: { count: 1, first: { id: 's', title: 'Standup' } } })
+    expect(tomorrow.querySelector('[data-briefing-link="task"]')!.getAttribute('href')).toBe('/task/s')
   })
 
   it('in Italian the same facts read in Italian; the task titles stay as written', async () => {

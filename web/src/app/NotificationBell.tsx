@@ -1,12 +1,16 @@
 import { Icon, Popover } from '../ui'
-import { type ReactNode, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { getProject, useNotifications, useTask } from '../lib/localData'
 import { markTaskNotificationsRead } from '../lib/notifications'
 import type { AppNotification, PagePayload } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
+import { notificationsOpen } from './signals'
 import { openTaskPage } from './taskTrail'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+
+/** The phone drawer's slide-in, after which the list anchors to the bell. */
+const DRAWER_MS = 220
 
 /**
  * A guest's reply or completion on a task page (task-pages D9). For an encrypted
@@ -38,6 +42,14 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
   const unread = list.filter((n) => n.readAt === null).length
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLButtonElement>(null)
+  // The briefing's replies ask for the list (briefing-links D2); on a phone the drawer
+  // slides in first, so the list opens once it is in place.
+  useEffect(() => notificationsOpen.subscribe(() => {
+    notificationsOpen.take()
+    const phone = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767px)').matches
+    if (phone) setTimeout(() => setOpen(true), DRAWER_MS)
+    else setOpen(true)
+  }), [])
 
   async function choose(n: AppNotification) {
     setOpen(false)

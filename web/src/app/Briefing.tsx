@@ -2,7 +2,9 @@
 // lib/briefing worded through the message layer. A bold lead sentence, then what
 // stands out joined by the language's own list pattern; late in the danger tone, a
 // full day in the warning tone, a reply in the strong text tone (design D2, D5).
-import { Fragment, useMemo, type ReactNode } from 'react'
+// Each part leads to what it names (briefing-links D2, D3): quiet links in the
+// clause's own tone, underlined on hover and keyboard focus.
+import { Fragment, useMemo, type MouseEvent, type ReactNode } from 'react'
 import { briefingFacts, type Briefing, type BriefingFact, type BriefingTask, type BriefingTomorrow } from '../lib/briefing'
 import { formatTime, weekday } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
@@ -11,7 +13,9 @@ import { useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { useNotifications, useReviewRow } from '../lib/localData'
 import { useLiveTasks } from '../lib/liveTasks'
 import { dayClosed } from '../lib/review'
+import { openBriefingTask, openNotifications, openUpcomingDay, revealTasks } from './briefingLinks'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { routePath } from './router'
 import { useToday } from './useViews'
 
 /** The briefing of Today or Upcoming from the live rows; null for any other view and until the tasks are read. */
@@ -29,11 +33,49 @@ export function useBriefing(view: 'today' | 'upcoming' | null): Briefing | null 
     : null), [view, tasks, projects, today, dayLength, notifications, review, dayStart])
 }
 
-/** A task named in the briefing: its own text, never translated. */
-const taskTag = (s: ReactNode) => <span className="user-text text-strong" data-briefing-task>{s}</span>
+/** A plain click (not one that opens a new tab) runs `go` instead of following the address. */
+function follow(go: () => void) {
+  return (e: MouseEvent) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+    e.preventDefault()
+    go()
+  }
+}
 
+/** One part of the sentence as a link: its text and tone unchanged, `label` saying where it leads. */
+function PartLink({ href, label, go, part, className = '', children }: { href?: string; label: string | undefined; go: () => void; part: string; className?: string; children: ReactNode }) {
+  return href
+    ? <a href={href} className={`briefing-link ${className}`} aria-label={label} onClick={follow(go)} data-briefing-link={part}>{children}</a>
+    : <button type="button" className={`briefing-link ${className}`} aria-label={label} onClick={go} data-briefing-link={part}>{children}</button>
+}
+
+/** A task named in the briefing: its own text, never translated, opening its page. */
 function taskValues(task: BriefingTask) {
-  return { title: task.title, task: taskTag }
+  return {
+    title: task.title,
+    task: (s: ReactNode) => (
+      <PartLink href={routePath({ view: 'task', id: task.id })} label={t('{title}, open task', { title: task.title })} go={() => openBriefingTask(task.id)}
+        part="task" className="user-text text-strong"><span data-briefing-task>{s}</span></PartLink>
+    ),
+  }
+}
+
+/** A whole clause as a link where it leads somewhere (briefing-links D2); a named task links itself. */
+function linked(fact: BriefingFact, node: ReactNode): ReactNode {
+  const text = typeof node === 'string' ? node : undefined
+  switch (fact.kind) {
+    case 'late':
+      return fact.task ? node : (
+        <PartLink href={routePath({ view: 'today' })} label={text && t('{text}, select them in Today', { text })} go={() => revealTasks(fact.ids)} part="late">{node}</PartLink>
+      )
+    case 'full':
+      return <PartLink href={routePath({ view: 'upcoming' })} label={text && t('{text}, open in Upcoming', { text })} go={() => openUpcomingDay(fact.dates[0])} part="full">{node}</PartLink>
+    case 'replies':
+      return fact.count === 1 && fact.name && fact.task ? node
+        : <PartLink label={text && t('{text}, open notifications', { text })} go={openNotifications} part="replies">{node}</PartLink>
+    case 'overfull':
+      return node
+  }
 }
 
 /** One clause of what stands out, without its sentence start. */
@@ -72,7 +114,7 @@ function factsSentence(facts: readonly BriefingFact[]): ReactNode {
         if (i % 2 === 0) return part ? <Fragment key={i}>{part}</Fragment> : null
         const n = Number(part)
         const node = clause(facts[n])
-        return <span key={i} className={`font-medium ${TONE[facts[n].kind]}`} data-briefing-fact={facts[n].kind}>{n === 0 ? sentenceStart(node) : node}</span>
+        return <span key={i} className={`font-medium ${TONE[facts[n].kind]}`} data-briefing-fact={facts[n].kind}>{linked(facts[n], n === 0 ? sentenceStart(node) : node)}</span>
       })}
       .
     </>

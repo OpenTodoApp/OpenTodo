@@ -4,15 +4,16 @@
 // headers sort the rows among their siblings, so the tree stays a tree. The table is
 // its own size container: its columns drop from the end as it narrows, down to the
 // name and the health word on a phone. Arrow keys (and j, k) move between rows,
-// Left and Right fold and unfold, Enter opens.
-import { type KeyboardEvent, type MouseEvent, useRef } from 'react'
+// Left and Right fold and unfold, Enter opens. Where the health detail is dropped, the
+// word says why in a tooltip and on a tap (briefing-links D5).
+import { type KeyboardEvent, type MouseEvent, type RefObject, useEffect, useRef, useState } from 'react'
 import { addDaysISO, describeDue, logicalDay } from '../lib/dates'
 import type { HealthWord, ProjectSortKey, ProjectSummary } from '../lib/projectHealth'
 import { avatarUrl } from '../lib/avatars'
 import type { Membership, Project } from '../lib/types'
 import type { TreeNode } from '../lib/tree'
 import { t } from '../lib/i18n'
-import { Avatar, Icon, ProgressRing, ReadAs, ToneText, type IconName, type Tone } from '../ui'
+import { Avatar, Icon, ProgressRing, ReadAs, ToneText, Tooltip, type IconName, type Tone } from '../ui'
 import { ProjectRowMenu } from './ProjectRowMenu'
 import { navigate } from './router'
 import { ProjectMark } from './Sidebar'
@@ -50,16 +51,47 @@ function healthDetail(s: ProjectSummary): string | null {
   }
 }
 
-function HealthCell({ summary }: { summary: ProjectSummary | undefined }) {
+/** The table width, in rem, from which the health detail shows beside the word (projects-table D6). */
+const DETAIL_FROM_REM = 36
+
+/** Whether the table is too narrow for the health detail, from its container's width. */
+function useNarrow(el: RefObject<HTMLElement | null>): boolean {
+  const [narrow, setNarrow] = useState(false)
+  useEffect(() => {
+    const node = el.current
+    if (!node || typeof ResizeObserver === 'undefined') return
+    const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    const ro = new ResizeObserver(() => setNarrow(node.clientWidth < DETAIL_FROM_REM * rem()))
+    ro.observe(node)
+    return () => ro.disconnect()
+  }, [el])
+  return narrow
+}
+
+function HealthCell({ summary, narrow }: { summary: ProjectSummary | undefined; narrow: boolean }) {
+  const [shown, setShown] = useState(false)
   const word = summary?.health.word
   if (!summary || !word) return <span className="text-meta text-faint">{t('Nothing open')}</span>
   const h = HEALTH[word]
   const detail = healthDetail(summary)
+  const userText = word === 'late' && summary.health.pastDeadline === 1 ? 'user-text' : ''
+  const label = <ToneText tone={h.tone} icon={h.icon} className="shrink-0 text-body">{h.label()}</ToneText>
+  // Narrow: the word is a button that shows why, on hover and focus as a tooltip and on a tap in place.
+  if (narrow && detail) return (
+    <span className="flex min-w-0 flex-col items-start" data-health={word}>
+      <Tooltip label={detail}>
+        <button type="button" className="briefing-link flex items-center" aria-expanded={shown} onClick={() => setShown((v) => !v)} data-health-why>
+          {label}<span className="sr-only">{`, ${detail}`}</span>
+        </button>
+      </Tooltip>
+      {shown && <span className={`min-w-0 max-w-full truncate text-meta text-faint ${userText}`} aria-hidden="true" data-health-detail>{detail}</span>}
+    </span>
+  )
   return (
     <span className="flex min-w-0 items-center gap-1" data-health={word}>
-      <ToneText tone={h.tone} icon={h.icon} className="shrink-0 text-body">{h.label()}</ToneText>
-      {detail && <span className="hidden min-w-0 truncate text-meta text-faint @min-[36rem]/projects:inline">
-        <span aria-hidden="true">· </span><span className={word === 'late' && summary.health.pastDeadline === 1 ? 'user-text' : ''}>{detail}</span>
+      {label}
+      {detail && <span className="sr-only min-w-0 truncate text-meta text-faint @min-[36rem]/projects:not-sr-only @min-[36rem]/projects:inline">
+        <span aria-hidden="true">· </span><span className={userText}>{detail}</span>
       </span>}
     </span>
   )
@@ -99,6 +131,8 @@ export interface ProjectsTableProps {
 export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, foldable, onFold, sort, onSort, today, now, canMove, edges }: ProjectsTableProps) {
   const dt = useDateTimeFormat()
   const body = useRef<HTMLTableSectionElement>(null)
+  const frame = useRef<HTMLDivElement>(null)
+  const narrow = useNarrow(frame)
   const opens = () => [...(body.current?.querySelectorAll<HTMLButtonElement>('[data-project-open]') ?? [])]
   const onKey = (e: KeyboardEvent<HTMLTableSectionElement>) => {
     const target = e.target as HTMLElement
@@ -129,7 +163,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
   }
 
   return (
-    <div className="@container/projects" data-projects-table>
+    <div ref={frame} className="@container/projects" data-projects-table>
       <table className="w-full table-fixed border-collapse text-left" aria-label={t('Projects')}>
         <thead>
           <tr className="border-b border-soft">
@@ -170,7 +204,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
                     </button>
                   </div>
                 </td>
-                <td className="px-2"><HealthCell summary={s} /></td>
+                <td className="px-2"><HealthCell summary={s} narrow={narrow} /></td>
                 <td className={`${cellOf('progress')} px-2`}>
                   {s?.progress != null && <span className="inline-flex items-center gap-1.5 text-body tabular-nums text-default">
                     <ProgressRing value={s.progress} /><ReadAs label={t('{n}% done', { n: Math.round(s.progress * 100) })}>{`${Math.round(s.progress * 100)}%`}</ReadAs>

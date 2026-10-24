@@ -55,4 +55,4 @@ Using the keyboard:
 - <kbd>←</kbd> folds a project, or moves to its parent; <kbd>→</kbd> unfolds it.
 - <kbd>Enter</kbd> opens the project.
 
-On a narrow window, the columns at the end give way. A phone shows each project's name and health.
+On a narrow window, the columns at the end give way. A phone shows each project's name and health. There the reason beside the health word ("1 late", the task past its deadline, "9 days") is left out, so the word tells you instead: point at it or focus it to see the reason in a tooltip, or tap it to show the reason under the word and tap again to hide it. Screen readers always read the reason.

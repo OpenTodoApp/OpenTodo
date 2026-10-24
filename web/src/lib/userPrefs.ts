@@ -89,3 +89,13 @@ export function startChecklistHidden(row: Partial<UserPrefs> | null | undefined)
 export function hideStartChecklist(): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { start_checklist: 'hidden' })
 }
+
+/** The day pages' briefing (OpenSpec change briefing-links, D4): hidden on any device of the account. */
+export function briefingHidden(row: Partial<UserPrefs> | null | undefined): boolean {
+  return row?.briefing === 'hidden'
+}
+
+/** Shows or hides the briefing on Today and Upcoming; an ordinary op, so it syncs to the account's other devices. */
+export function setBriefingShown(shown: boolean): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { briefing: shown ? 'shown' : 'hidden' })
+}
