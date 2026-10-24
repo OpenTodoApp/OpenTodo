@@ -48,7 +48,7 @@ export function MonthView({ date }: { date?: string }) {
   const { resolved } = useDateTimeFormat()
   const zone = useViewerZone()
   const prefs = useGridPrefs()
-  const narrow = useMediaQuery('(max-width: 639px)')
+  const narrow = useMediaQuery('(max-width: 39.99rem)')
   useEffect(() => rememberCalendarMode('month'), [])
 
   const grid = useMemo(() => monthGrid(anchor, resolved.weekStart), [anchor, resolved.weekStart])

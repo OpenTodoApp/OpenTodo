@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readCalendarMode } from '../lib/calendarMode'
 import { db, setMeta } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, minWidthPx } from '../ui/test-utils'
 import { CalendarView } from './CalendarView'
 import { panelOccupant, resetPanel } from './panel'
 import { PanelHost } from './PanelHost'
@@ -190,7 +190,7 @@ describe('Week on a phone (ux-overhaul, time-blocking "Week on a phone")', () =>
   afterEach(() => { window.matchMedia = original })
   it('lists the days vertically with their tasks and renders no seven-column grid below 640 px', async () => {
     window.matchMedia = ((q: string) => ({
-      matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390, media: q, onchange: null,
+      matches: minWidthPx(q) <= 390, media: q, onchange: null,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
     })) as typeof window.matchMedia
     await createTask({ title: 'Timed one', due: { date: '2026-10-15', time: '09:30' }, estimate_minutes: 30 })

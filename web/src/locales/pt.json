@@ -5192,7 +5192,7 @@
   "Open|count": "Abertas",
   "Progress": "Progresso",
   "Quiet": "Parado",
-  "Slipping": "Saindo do prazo",
+  "Overdue": "Tarefas atrasadas",
   "Updated": "Atualizado",
   "{n, plural, one {# past its deadline} other {# past their deadline}}": "{n, plural, one {# fora do prazo} other {# fora do prazo}}",
   "{n} late": "{n} atrasadas",

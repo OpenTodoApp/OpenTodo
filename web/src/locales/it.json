@@ -5192,7 +5192,7 @@
   "Open|count": "Aperte",
   "Progress": "Avanzamento",
   "Quiet": "Fermo",
-  "Slipping": "Sta slittando",
+  "Overdue": "Attività scadute",
   "Updated": "Aggiornato",
   "{n, plural, one {# past its deadline} other {# past their deadline}}": "{n, plural, one {# oltre la scadenza} other {# oltre la scadenza}}",
   "{n} late": "{n} in ritardo",

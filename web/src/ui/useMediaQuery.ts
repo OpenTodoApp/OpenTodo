@@ -19,4 +19,4 @@ export function useMediaQuery(query: string): boolean {
 }
 
 /** The breakpoint above which the page header shows its own title row (below it, the shell's phone bar does). */
-export const DESKTOP_HEADER_QUERY = '(min-width: 768px)'
+export const DESKTOP_HEADER_QUERY = '(min-width: 48rem)'

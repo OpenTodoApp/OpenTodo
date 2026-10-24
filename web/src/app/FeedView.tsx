@@ -165,7 +165,7 @@ export function FeedView() {
                 return (
                   <li key={e.id} data-feed-id={e.id} data-event={e.kind} data-actor={e.actor} data-unread={fresh || undefined}
                     onClick={() => setSelected(e.id)} onDoubleClick={() => open(e)}
-                    className={`flex items-baseline gap-2 px-2 py-1.5 text-body ${e.id === selected ? 'bg-accent-soft' : ''}`}>
+                    className={`flex items-baseline gap-2 px-2 py-1.5 text-body ${e.id === selected ? 'bg-selected-row' : ''}`}>
                     <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-accent' : 'bg-transparent'}`}>{fresh && <span className="sr-only">{t('New')}</span>}</span>
                     <span className="min-w-0 flex-1">
                       <strong className="font-medium text-default">{guestActorLabel(e) ?? name(e.actor)}</strong>{' '}
@@ -178,7 +178,7 @@ export function FeedView() {
                       {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
                       <span className="mt-0.5 flex items-center gap-1 text-meta text-faint">
                         <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(p?.color)} aria-hidden />
-                        <button type="button" className="hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
+                        <button type="button" className="min-w-0 truncate text-left hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
                           {projectName(e.projectId, e.projectName)}
                         </button>
                       </span>

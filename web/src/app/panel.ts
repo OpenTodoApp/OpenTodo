@@ -60,7 +60,7 @@ export function setTaskSplit(on: boolean, empty?: () => ReactNode): () => void {
   }
 }
 
-export const SPLIT_QUERY = '(min-width: 1024px)'
+export const SPLIT_QUERY = '(min-width: 64rem)'
 function docks(): boolean {
   return split && typeof matchMedia !== 'undefined' && matchMedia(SPLIT_QUERY).matches
 }

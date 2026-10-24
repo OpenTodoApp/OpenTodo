@@ -100,9 +100,10 @@ export function TrashView() {
             const ok = allowed(it)
             return (
               <li key={`${it.entity}:${it.id}`} data-trash-id={it.id} onClick={() => setSelected(i)}
-                className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-2 py-2 text-body ${i === selected ? 'bg-accent-soft' : ''}`}>
+                className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-control px-2 py-2 text-body ${i === selected ? 'bg-selected-row' : ''}`}>
                 <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : <Icon name="circle" size="xs" />}</span>
-                <span className="min-w-0 flex-1">
+                {/* At least 12rem for the name: on a phone Restore and Delete permanently wrap under it instead of squeezing it. */}
+                <span className="min-w-0 flex-[1_1_12rem]">
                   <TruncatedText className="block" text={it.title} />
                   <span className="block text-meta text-faint">
                     {[

@@ -74,7 +74,9 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
       { kind: 'picker', id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels'), disabled: live.length === 0, reason: t('There are no labels yet'), picker: {
         title: t('Labels'), placeholder: t('Add to all, or remove from all…'), source: live, multiple: true, selected: common, rankContext: 'label',
         getKey: (l: Label) => l.id, getLabel: (l: Label) => l.name,
-        onPick: (l: Label) => { void runBulk(ids, { kind: 'label', labelId: l.id, add: !common.includes(l.id) }) },
+        // Add or remove is decided from the ticked tasks as stored at the click, not from the
+        // menu's read, which can still be loading (or show an earlier selection) on a quick pick.
+        onPick: (l: Label) => { void labelToggle(ids, l.id) },
       } },
     ] },
     ...(besideRow ? [] : [{ label: t('Date'), items: [
@@ -103,6 +105,13 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
     ] },
     { items: [{ kind: 'action', id: 'trash', label: t('Move to Trash'), icon: 'trash-2', shortcut: keysOf('list.delete'), tone: 'danger', onSelect: run({ kind: 'trash' }) }] },
   ]
+}
+
+/** Removes the label when every ticked task has it, otherwise adds it to the ones lacking it. */
+async function labelToggle(ids: readonly string[], labelId: string) {
+  const { tasks } = await readTicked(ids)
+  const all = tasks.length > 0 && tasks.every((task) => task.labels.includes(labelId))
+  await runBulk(ids, { kind: 'label', labelId, add: !all })
 }
 
 /** Live data the menu needs, read while it is mounted. */
@@ -169,8 +178,8 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
 }) {
   if (ids.length === 0 && !onDone) return null
   return (
-    <div className="mb-2 flex items-center gap-2 rounded-control border border-accent/40 bg-accent-soft px-3 py-1.5 text-body" data-selection-bar>
-      <span role="status" className="min-w-0 flex-1 font-medium text-on-accent-soft">{t('{count} selected', { count: ids.length })}</span>
+    <div className="mb-2 flex items-center gap-2 rounded-control bg-selected px-3 py-1.5 text-body" data-selection-bar>
+      <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
       {ids.length > 0 && <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
         trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />}
       {ids.length > 0 && (

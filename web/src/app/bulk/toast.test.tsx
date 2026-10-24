@@ -92,7 +92,7 @@ describe('the toast primitive', () => {
   })
 
   it('Opposite corner: from 640 px a focused element under the region sends the toast to the other corner', async () => {
-    const mm = vi.spyOn(window, 'matchMedia').mockImplementation((q: string) => ({ matches: q.includes('640'), media: q, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList)
+    const mm = vi.spyOn(window, 'matchMedia').mockImplementation((q: string) => ({ matches: q.includes('40rem'), media: q, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList)
     const field = document.createElement('input')
     document.body.append(field)
     field.getBoundingClientRect = () => ({ left: 900, right: 1000, top: 700, bottom: 740, width: 100, height: 40, x: 900, y: 700, toJSON() {} }) as DOMRect

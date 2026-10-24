@@ -182,8 +182,8 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     const selected = selectedId === l.task.id
     return (
       <div key={l.task.id} role="row" aria-selected={selected} data-timeline-row={l.task.id} data-blocked={blocked || undefined}
-        className={`flex border-b border-default ${selected ? 'bg-accent-soft' : ''}`} style={{ height: ROW_PX }}>
-        <div role="rowheader" className={`sticky left-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1 border-r border-default px-2 sm:w-64 ${selected ? 'bg-accent-soft' : 'bg-surface'}`}
+        className={`flex border-b border-default ${selected ? 'bg-selected-row' : ''}`} style={{ height: ROW_PX }}>
+        <div role="rowheader" className={`sticky left-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1 border-r border-default px-2 sm:w-64 ${selected ? 'bg-selected-row' : 'bg-surface'}`}
           style={{ paddingLeft: 8 + l.depth * 14 }}>
           <button type="button" tabIndex={-1} className={`min-w-0 flex-1 truncate text-left text-body ${blocked ? 'text-muted' : 'text-default'}`}
             aria-label={blockers.length ? t('{title}, waits for {blockers}', { title: l.task.title || t('Untitled'), blockers: blockers.join(', ') }) : l.task.title || t('Untitled')}
@@ -299,6 +299,21 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   )
 }
 
+/** A rough width for a note in the 12 px meta size, enough to keep it clear of the today line and the axis end. */
+const noteWidth = (text: string) => Math.ceil(text.length * 6.5) + 4
+
+/**
+ * Where the note beside a bar goes (precision-polish D4): 8 px after the bar, unless it would cross the
+ * today line (then just past the line) or run off the axis (then just before the bar, ending 8 px from it).
+ * Returns the note's left edge in pixels from the axis start.
+ */
+export function notePlacement(barLeft: number, barRight: number, width: number, todayX: number | null, axisEnd: number): number {
+  let left = barRight + 8
+  if (todayX !== null && left < todayX + 4 && left + width > todayX - 4) left = todayX + 8
+  if (left + width > axisEnd) left = Math.max(0, barLeft - 8 - width)
+  return left
+}
+
 /** One task's bar (precision-boards-timeline D6–D8): its block, markers and the label after it. */
 function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, editable, dragging, onDrag, onSelect, onOpen }: {
   task: Task
@@ -331,6 +346,7 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
   const pastDays = !s.late && !allPast && s.from < today ? Math.min(to + 1, dayOffset(from, today)) - first : 0
   const barPx = Math.max(px, (to - first + 1) * px)
   const titled = barPx >= LABEL_MIN_PX
+  const todayIn = dayOffset(from, today) >= 0 && dayOffset(from, today) <= totalDays - 1
   const deadlineIn = !!s.deadlineAt && dayOffset(from, s.deadlineAt) >= 0 && dayOffset(from, s.deadlineAt) <= totalDays - 1
   // After the bar (D6, D8): how late it is, else its length when the title does not fit, else the deadline at its end.
   const after = s.late ? { tone: 'text-danger', text: t('{n, plural, one {# day late} other {# days late}}', { n: s.lateBy }) }
@@ -359,7 +375,7 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
       {editable && !clippedRight && <span data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'end')} />}
     </div>
     {after && !clippedRight && (
-      <span data-bar-after className={`pointer-events-none absolute top-1.5 flex h-6 items-center whitespace-nowrap text-meta tabular-nums ${after.tone}`} style={{ left: first * px + barPx + 8 }}>{after.text}</span>
+      <span data-bar-after className={`pointer-events-none absolute top-1.5 flex h-6 items-center whitespace-nowrap text-meta tabular-nums ${after.tone}`} style={{ left: notePlacement(first * px, first * px + barPx, noteWidth(after.text), todayIn ? (dayOffset(from, today) + 0.5) * px : null, totalDays * px) }}>{after.text}</span>
     )}
     </>
   )

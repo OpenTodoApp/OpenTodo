@@ -318,7 +318,7 @@ describe('resize and collapse (ux-overhaul 4.9)', () => {
   it('[ toggles the rail from 1024 px and the separator resizes with the arrow keys', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     const original = window.matchMedia
-    window.matchMedia = ((q: string) => ({ matches: /1024/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: /64rem/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
     try {
       navigate({ view: 'inbox' })
       const r = await render(<Shell user={user} onLogout={() => {}} />)
@@ -568,7 +568,7 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
   it('g / opens the field from the shell, expanding the icon rail first', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     const original = window.matchMedia
-    window.matchMedia = ((q: string) => ({ matches: /1024/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: /64rem/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
     try {
       await createProject({ name: 'Home' })
       navigate({ view: 'inbox' })

@@ -10,7 +10,7 @@ import { todayISO } from '../lib/dates'
 import { resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { act } from 'react'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, flush, key, render, type, minWidthPx } from '../ui/test-utils'
 import { navigate } from './router'
 import { Shell } from './Shell'
 
@@ -23,7 +23,7 @@ beforeEach(async () => {
   resetDeviceId()
   // A 390 px phone: every min-width query is false.
   window.matchMedia = ((q: string) => ({
-    matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390, media: q, onchange: null,
+    matches: minWidthPx(q) <= 390, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))

@@ -173,8 +173,7 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await waitFor(() => bar() === '3 selected')
     await key(document.body, 'L', { shiftKey: true })
     await waitFor(() => !!document.querySelector('[data-picker-step]'))
-    // The picker reads the ticked tasks' labels from the store; let that read land before picking.
-    await flush(50)
+    // Picked at once, before the menu's own read lands: the click reads the tasks itself.
     await act(async () => { ([...document.querySelectorAll('[data-picker-step] [role="option"]')].find((o) => o.textContent?.includes('errand')) as HTMLElement).click() })
     await waitFor(() => !!document.querySelector('[data-bulk-toast]'))
     // The toast can show before the batch's last row is read back; poll the store.
@@ -186,6 +185,25 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     }
     expect(labels).toEqual(ids.map(() => [l]))
     expect(document.querySelector('[data-picker-step]')).not.toBeNull()
+  })
+
+  it('L then a label every ticked task has removes it, even when picked at once', async () => {
+    const l = await createLabel({ name: 'errand' })
+    const { ids } = await inbox('One', 'Two')
+    for (const id of ids) await updateTask(id, { labels: [l] })
+    await key(document.body, 'j'); await key(document.body, 'x')
+    await key(document.body, 'ArrowDown', { shiftKey: true })
+    await waitFor(() => bar() === '2 selected')
+    await key(document.body, 'L', { shiftKey: true })
+    await waitFor(() => !!document.querySelector('[data-picker-step]'))
+    await act(async () => { ([...document.querySelectorAll('[data-picker-step] [role="option"]')].find((o) => o.textContent?.includes('errand')) as HTMLElement).click() })
+    let labels: string[][] = []
+    for (let t = 0; t < 2000; t += 20) {
+      labels = await Promise.all(ids.map(async (id) => (await db.tasks.get(id))!.labels))
+      if (labels.every((ls) => ls.length === 0)) break
+      await flush(20)
+    }
+    expect(labels).toEqual(ids.map(() => []))
   })
 
   it('Ctrl+Z undoes outside text fields, never inside a textarea', async () => {

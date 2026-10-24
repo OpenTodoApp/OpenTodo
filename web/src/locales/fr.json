@@ -5192,7 +5192,7 @@
   "Open|count": "Ouvertes",
   "Progress": "Progression",
   "Quiet": "Calme",
-  "Slipping": "Prend du retard",
+  "Overdue": "Tâches en retard",
   "Updated": "Mis à jour",
   "{n, plural, one {# past its deadline} other {# past their deadline}}": "{n, plural, one {# échéance dépassée} other {# échéances dépassées}}",
   "{n} late": "{n} en retard",

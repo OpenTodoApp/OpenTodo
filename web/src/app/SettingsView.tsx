@@ -66,7 +66,7 @@ const PAGE_HELP_SCREENS: Record<SettingsSectionId, string> = {
 }
 
 /** From here the section list is the left column and a section is open beside it (settings-navigation "Settings overview"). */
-export const SETTINGS_TWO_COLUMN_QUERY = '(min-width: 1024px)'
+export const SETTINGS_TWO_COLUMN_QUERY = '(min-width: 64rem)'
 
 /** Follows an in-app link without a reload; modified clicks (new tab, new window) keep the browser's behaviour. */
 export function followLink(e: Pick<MouseEvent<HTMLAnchorElement>, 'button' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'preventDefault'>, r: Route) {

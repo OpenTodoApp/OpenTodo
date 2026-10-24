@@ -12,7 +12,7 @@ import { setCurrentUserId } from '../lib/sharing'
 import { createLabel } from '../lib/labels'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { render, waitFor } from '../ui/test-utils'
+import { render, waitFor, minWidthPx } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -276,7 +276,7 @@ describe('on a phone (390 px)', () => {
   const original = window.matchMedia
   beforeEach(() => {
     window.matchMedia = ((q: string) => ({
-      matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390 && !/pointer:\s*fine/.test(q), media: q, onchange: null,
+      matches: minWidthPx(q) <= 390 && !/pointer:\s*fine/.test(q), media: q, onchange: null,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
     })) as typeof window.matchMedia
   })

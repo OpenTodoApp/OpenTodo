@@ -148,7 +148,7 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
       <div role="radiogroup" aria-label={t('Repeat')} className="flex flex-col gap-1" data-repeat-presets>
         {presets.map((p) => (
           <button key={p.id} type="button" role="radio" aria-checked={current === p.id} data-preset={p.id}
-            className={`flex min-h-8 items-center gap-2 rounded-control px-2 text-left text-body ${current === p.id ? 'bg-accent-soft font-medium text-on-accent-soft' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
+            className={`flex min-h-8 items-center gap-2 rounded-control px-2 text-left text-body ${current === p.id ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
             onClick={() => act(setRecurrence(task.id, p.rule))}>
             <Icon name={current === p.id ? 'check' : 'repeat'} size="xs" className={current === p.id ? '' : 'text-faint'} />{p.label}
           </button>

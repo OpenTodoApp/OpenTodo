@@ -8,7 +8,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '../lib/types'
 import { SettingRow, SettingsSection } from '../ui'
-import { flush, render } from '../ui/test-utils'
+import { flush, render, minWidthPx } from '../ui/test-utils'
 import { SETTINGS_SECTION_IDS } from './router'
 import { SettingsView } from './SettingsView'
 
@@ -63,7 +63,7 @@ describe('flat settings pages (precision-settings D3)', () => {
   const owner: User = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'owner', createdAt: 1 }
   beforeEach(() => {
     window.matchMedia = ((q: string) => ({
-      matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 1280, media: q, onchange: null,
+      matches: minWidthPx(q) <= 1280, media: q, onchange: null,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
     })) as typeof window.matchMedia
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))

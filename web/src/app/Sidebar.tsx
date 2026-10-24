@@ -52,7 +52,7 @@ import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
  * of a group in the scroller (sidebar-compact-desktop): the projects keep their room.
  * Touch keeps the inline group, which scrolls with the rest (sidebar-drawer-scroll).
  */
-export const MORE_MENU_QUERY = '(min-width: 768px) and (pointer: fine)'
+export const MORE_MENU_QUERY = '(min-width: 48rem) and (pointer: fine)'
 
 /** Indentation per level in the sidebar (16 px, ux-feedback-2 D6); capped so a deep tree still fits a 360 px screen. */
 const INDENT_REM = 1
@@ -134,7 +134,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const assistant = useAssistantStatus()
   const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
   // Below 768 px the sidebar is the phone drawer, under a tab bar with Today, Inbox and Upcoming (phone-v2 D7).
-  const drawer = !useMediaQuery('(min-width: 768px)')
+  const drawer = !useMediaQuery('(min-width: 48rem)')
   const projectCountMode = useMediaQuery('(pointer: coarse)') ? 'always' : 'hover'
   const scroller = useRef<HTMLDivElement>(null)
   useScrollEdges(scroller)
@@ -660,7 +660,7 @@ function MoreMenu({ entries, active, collapsed, hints, extra }: {
       {/* A group heading that opens a menu (sidebar-v2 D7): the heading's type, a chevron, no icon; the rail keeps the ellipsis. */}
       <Menu kind="menu" label={t('More')} namedByContent={!collapsed} title={t('More')} align="start" width="sm:w-64" triggerProps={{ 'aria-current': active ? 'true' : undefined }}
         triggerClassName={collapsed
-          ? `flex min-h-8 w-full items-center justify-center rounded-control py-1 ${active ? 'bg-accent-soft text-accent' : 'text-faint hover:bg-sunken hover:text-default dark:hover:bg-raised'}`
+          ? `flex min-h-8 w-full items-center justify-center rounded-control py-1 ${active ? 'bg-selected text-strong' : 'text-faint hover:bg-hover hover:text-default'}`
           : `mt-2 flex min-h-6 w-full items-center gap-1 rounded-chip px-2 text-left ${SIDEBAR_HEADING} hover:text-muted focus-visible:text-muted ${active ? 'text-strong' : ''}`}
         trigger={collapsed ? <span aria-hidden="true"><Icon name="ellipsis" /></span> : <>
           <span aria-hidden="true"><Icon name="chevron-right" size="xs" /></span>

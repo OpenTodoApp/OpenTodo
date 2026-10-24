@@ -315,7 +315,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
 
   return (
     <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-task-drop={taskDrop.label(label.id)} data-active={active || undefined} data-find-active={findActive || undefined}
-      className={`group relative rounded-control data-drop-active:ring-2 data-drop-active:ring-accent ${active ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}${findActive ? ' ring-2 ring-focus' : ''}`}>
+      className={`group relative rounded-control data-drop-active:ring-2 data-drop-active:ring-accent ${active ? 'bg-selected-row' : 'hover:bg-hover'}${findActive ? ' ring-2 ring-focus' : ''}`}>
       {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
       <div className="flex items-center gap-1 pr-1">
         {onDragStart && (
@@ -329,7 +329,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
             onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { e.stopPropagation(); setName(label.name); setEditing(false) } }} />
         ) : (
           <button data-label-open onClick={() => navigate({ view: 'label', id: label.id })} onDoubleClick={startRename} onKeyDown={onKeyDown}
-            className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-left text-body ${active ? 'font-medium text-on-accent-soft' : 'text-muted'}`}>
+            className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-left text-body ${active ? 'font-medium text-strong' : 'text-muted'}`}>
             <span data-hue={hueFor(label.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />
             <span className="flex-1 truncate">{label.name}</span>
             {duplicate && <Badge hue="yellow" title={t('Another label has this name. Merge them from the menu or the banner on the labels page.')}>{t('duplicate')}</Badge>}

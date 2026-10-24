@@ -24,7 +24,7 @@ import { WorkspaceInvites } from './WorkspaceInvites'
 import { manages } from './workspaceRoles'
 
 /** From here the list and the open workspace sit side by side (D1). */
-const TWO_PANES = '(min-width: 768px)'
+const TWO_PANES = '(min-width: 48rem)'
 
 /** The page. */
 export function WorkspacesSettings({ user }: { user: User }) {
@@ -80,7 +80,7 @@ function WorkspaceListItem({ ws, current, onOpen }: { ws: Workspace; current: bo
       <button type="button" onClick={onOpen} aria-current={current ? 'true' : undefined} data-workspace-row={ws.id}
         className={`touch-target relative flex w-full items-center gap-2.5 rounded-control py-2 pl-3 pr-2 text-left text-body
           focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus
-          ${current ? 'bg-accent-soft font-medium text-on-accent-soft' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}>
+          ${current ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-hover'}`}>
         {current && <span aria-hidden="true" className="absolute inset-y-1.5 left-0 w-1 rounded-full bg-accent" data-current-marker />}
         <WorkspaceMark workspace={ws} />
         <span className="user-text min-w-0 flex-1 truncate">{name}</span>

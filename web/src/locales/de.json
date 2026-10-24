@@ -5192,7 +5192,7 @@
   "Open|count": "Offen",
   "Progress": "Fortschritt",
   "Quiet": "Ruhig",
-  "Slipping": "Gerät in Verzug",
+  "Overdue": "Aufgaben überfällig",
   "Updated": "Geändert",
   "{n, plural, one {# past its deadline} other {# past their deadline}}": "{n, plural, one {# über der Frist} other {# über der Frist}}",
   "{n} late": "{n} überfällig",

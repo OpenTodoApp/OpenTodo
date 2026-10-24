@@ -8644,6 +8644,9 @@
   "Over the limit": [
     "web/src/app/RelaySettings.tsx"
   ],
+  "Overdue": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
   "Overwrite changed fields": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -11248,9 +11251,6 @@
   ],
   "Slipped": [
     "web/src/app/review/MonthlyLook.tsx"
-  ],
-  "Slipping": [
-    "web/src/app/ProjectsTable.tsx"
   ],
   "Slowed down": [
     "web/src/app/DataSettings.tsx"

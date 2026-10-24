@@ -181,7 +181,7 @@ describe('All projects table', () => {
       const r = await render(<ProjectsView />)
       await waitFor(() => !!cell(r.container, reno, '[data-health-why]'))
       const why = cell(r.container, reno, '[data-health-why]') as HTMLButtonElement
-      expect(why.textContent).toBe('Slipping, 1 late')
+      expect(why.textContent).toBe('Overdue, 1 late')
       expect(why.getAttribute('aria-expanded')).toBe('false')
       why.focus()
       await waitFor(() => document.querySelector('[data-tooltip]')?.textContent === '1 late')

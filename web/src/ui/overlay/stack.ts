@@ -148,7 +148,7 @@ export function trapTab(e: KeyboardEvent | React.KeyboardEvent, panel: HTMLEleme
 
 // ------------------------------------------------------------------ viewport
 
-const WIDE = '(min-width: 640px)'
+const WIDE = '(min-width: 40rem)'
 const FINE = '(pointer: fine)'
 const subscribers = new Map<string, (cb: () => void) => () => void>()
 function mediaSubscriber(query: string) {

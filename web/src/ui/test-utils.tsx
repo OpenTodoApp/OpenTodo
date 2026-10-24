@@ -107,3 +107,9 @@ export function textWithoutBriefing(el: Element): string {
   copy.querySelectorAll('[data-page-briefing]').forEach((n) => n.remove())
   return copy.textContent ?? ''
 }
+
+/** The pixel width a `(min-width: …)` media query needs, in px or rem (16 px each); 0 when it has none. */
+export function minWidthPx(query: string): number {
+  const m = /min-width:\s*([\d.]+)(px|rem)/.exec(query)
+  return m ? Number(m[1]) * (m[2] === 'rem' ? 16 : 1) : 0
+}

@@ -46,7 +46,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
   // slides in first, so the list opens once it is in place.
   useEffect(() => notificationsOpen.subscribe(() => {
     notificationsOpen.take()
-    const phone = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767px)').matches
+    const phone = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 47.99rem)').matches
     if (phone) setTimeout(() => setOpen(true), DRAWER_MS)
     else setOpen(true)
   }), [])

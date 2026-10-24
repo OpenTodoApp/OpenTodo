@@ -4,14 +4,14 @@
 // row; and the toast lifted above the phone's tab bar and add button.
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { click, flush, render } from '../test-utils'
+import { click, flush, render, minWidthPx } from '../test-utils'
 import { MenuItem } from '../Menu'
 import { Menu } from './Menu'
 
 const original = window.matchMedia
 beforeEach(() => {
   window.matchMedia = ((q: string) => ({
-    matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390, media: q, onchange: null,
+    matches: minWidthPx(q) <= 390, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
 })
