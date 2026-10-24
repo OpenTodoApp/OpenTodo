@@ -267,6 +267,9 @@ export async function focusWalk(page, maxSteps = 80) {
     const r = await page.evaluate(() => {
       const el = document.activeElement
       if (!el || el === document.body) return null
+      // A heading or panel with tabindex="-1" is focused by the page itself (on load, for screen
+      // readers), never by Tab; when that lands mid-walk it is not a stop that needs the ring.
+      if (el.tabIndex < 0) return null
       const key = el.id || window.__ux.d(el) + ':' + Math.round(el.getBoundingClientRect().top)
       // The element and its two nearest ancestors (a ring drawn by focus-within), focused and not.
       const chain = [el, el.parentElement, el.parentElement?.parentElement].filter((n) => n && n.nodeType === 1)
