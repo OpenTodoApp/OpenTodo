@@ -232,12 +232,12 @@ describe('Assistant card structure (settings-refresh D9; in-app-assistant "Assis
     expect(html).toContain('aria-valuenow="18"')
   })
 
-  it("Owner's view while off: the status line says off, and the owner form groups Provider and Limits", () => {
+  it("Owner's view while off: the status line says off, and the owner form groups Provider, Limits and the on-device assistant", () => {
     expect(assistantStatusLine({ ...status, enabled: false, reason: 'disabled' })).toBe('Off: the owner has not turned it on')
     const form = renderToStaticMarkup(<OwnerAssistantSettings saved={{ ...saved, enabled: false }} draft={draftFrom({ ...saved, enabled: false })} connected busy={false} error={null} message={null}
       tests={{}} onChange={noop} onSave={noop} onTest={noop} />)
     const groups = [...form.matchAll(/data-assistant-group="([^"]+)"/g)].map((m) => m[1])
-    expect(groups).toEqual(['Provider', 'Limits'])
+    expect(groups).toEqual(['Provider', 'Limits', 'device'])
     expect(form.indexOf('Monthly tokens per person')).toBeGreaterThan(form.indexOf('data-assistant-group="Limits"'))
   })
 })
