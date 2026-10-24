@@ -35,7 +35,7 @@ On a plain http address (`http://192.168.1.10:8400`) tasks, projects, sync, shar
 
 ## Updates
 
-The app names one release (`ghcr.io/pixari/opentodo:0.10.1`), not a moving tag. After each release the store repository gets an update with the new version; Runtipi shows it on the app once it refreshes its app stores (**Settings → Update App Stores** does it right away). Click **Update**; migrations run on start. There are no down-migrations, so back up first. Release candidates are never offered.
+The app names one release (`ghcr.io/pixari/opentodo:0.11.0`), not a moving tag. After each release the store repository gets an update with the new version; Runtipi shows it on the app once it refreshes its app stores (**Settings → Update App Stores** does it right away). Click **Update**; migrations run on start. There are no down-migrations, so back up first. Release candidates are never offered.
 
 ## Data and backups
 
