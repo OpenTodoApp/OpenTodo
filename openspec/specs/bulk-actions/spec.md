@@ -101,7 +101,7 @@ Complete or reopen (`c`), priority (`1`–`4`), date and move to Trash (Delete) 
 - **THEN** the parent and all its subtasks are in the Trash, each with one deletion operation
 
 ### Requirement: Labels on several tasks
-`L` or Labels with tasks ticked SHALL open the label picker showing labels carried by every ticked task as checked. Picking an unchecked label SHALL add it to each ticked task that lacks it; picking a checked label SHALL remove it from each. Each task's label array SHALL be read immediately before it is written, inside the batch, and written whole, so sequential edits on one device never lose a label; concurrent writes converge per task by last-writer-wins as for a single task.
+`L` or Labels with tasks ticked SHALL open the label picker showing labels carried by every ticked task as checked. Picking a label SHALL remove it from each ticked task when every ticked task carries it, and otherwise SHALL add it to each ticked task that lacks it, deciding from the ticked tasks as stored at the moment of the pick, not from what the picker showed, so a pick made before the picker has read the tasks acts as the checked state would have shown. Each task's label array SHALL be read immediately before it is written, inside the batch, and written whole, so sequential edits on one device never lose a label; concurrent writes converge per task by last-writer-wins as for a single task.
 
 #### Scenario: Add a label to three tasks
 - **WHEN** three tasks are ticked, one already carrying "errand", and the user picks "errand"
@@ -110,6 +110,10 @@ Complete or reopen (`c`), priority (`1`–`4`), date and move to Trash (Delete) 
 #### Scenario: Remove a common label
 - **WHEN** every ticked task carries "waiting" and the user picks the checked "waiting"
 - **THEN** "waiting" is removed from each ticked task and their other labels are kept
+
+#### Scenario: Picked before the picker has read the tasks
+- **WHEN** two ticked tasks both carry "errand" and the user opens the label picker and picks "errand" before its checked marks appear
+- **THEN** "errand" is removed from both tasks
 
 ### Requirement: Moves and assignments are reviewed first
 Moving ticked tasks to a project or section and assigning them SHALL first show the list of changes, one per task with old → new, shared destinations marked, every item checked; Enter applies the checked items as one batch and Escape discards. A move into another sharing scope SHALL be written as the copy-and-tombstone the single-task move uses. Assign SHALL be offered only when every ticked task is in one shared project. Applied changes converge like any edit.

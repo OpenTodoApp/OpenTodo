@@ -510,8 +510,12 @@ A view with nothing to list SHALL show one empty view, centred in the content co
 - **THEN** it reads "The Trash is empty." with one "Open Inbox" button and nothing else
 
 #### Scenario: Calendar day
-- **WHEN** a day of the Day view, the week's agenda or the month's day list has nothing planned
+- **WHEN** the Day view or the month's day list has nothing planned for its day
 - **THEN** it reads "Nothing planned." with "Add a task", which opens quick add with that day as the date
+
+#### Scenario: Empty days of the week agenda and Plan
+- **WHEN** a day of the week agenda or of Plan has nothing planned
+- **THEN** that day shows one quiet line, "Nothing planned." in the faint tone with a ghost "Add a task" that opens quick add with that day as the date, and not an empty view, so an empty week does not repeat seven empty views
 
 #### Scenario: Inbox triage
 - **WHEN** triage runs out of Inbox tasks
@@ -638,7 +642,7 @@ When a local action changes which rows a visible list shows or where they sit (c
 - **THEN** the list updates instantly and the title field keeps focus and its caret
 
 ### Requirement: Words for tasks that are late
-The web app, the Daily check, the Today display, the weekly review and the digest SHALL NOT use the word "overdue" or its translations for the user's tasks. A group of tasks whose day has passed SHALL be called "Earlier"; a count of them "n from earlier"; a sentence about them "still open from earlier". Measurements keep their words: Statistics' "completed late" and "slipped", and the deadline countdown's "nd over". The filter query keyword `overdue` and the REST API are unchanged. The words SHALL be translated in every interface language and checked by the translation check.
+The web app, the Daily check, the Today display, the weekly review and the digest SHALL NOT use the word "overdue" or its translations for the user's tasks. A group of tasks whose day has passed SHALL be called "Earlier"; a count of them "n from earlier"; a sentence about them "still open from earlier". Measurements keep their words: Statistics' "completed late" and "slipped", and the deadline countdown's "nd over". The filter query keyword `overdue` and the REST API are unchanged. The one exception is the project health word Overdue (statistics "Project health"): it names the state of a project on All projects, not a group or count of the user's tasks. The words SHALL be translated in every interface language and checked by the translation check.
 
 #### Scenario: Daily check
 - **WHEN** the Daily check lists two tasks due before today
@@ -659,6 +663,10 @@ The web app, the Daily check, the Today display, the weekly review and the diges
 #### Scenario: Query keyword unchanged
 - **WHEN** the user enters `overdue & #Home` in the Filter view
 - **THEN** the query runs as before and the results page's group labels do not read "Overdue"
+
+#### Scenario: Project health is the exception
+- **WHEN** a project has an open task due before today
+- **THEN** All projects reads "Overdue · 1 late" for it, while Today, the Daily check and the weekly review still call that task's group "Earlier"
 
 ### Requirement: Phone header actions
 Below 768 px a list SHALL show its actions in the shell's bar and its overflow menu, never as a row of controls between the bar and the quick add, so the rule "Nothing between the header and the list" holds at every width. The bar SHALL show at most two visible actions: Process the Inbox in the Inbox, the Ask action in Today when the assistant is available, and otherwise the duration filter where the view has one; Display mode, "Select tasks", the duration filter when the slots are taken, and the rest SHALL be in the overflow. The Inbox SHALL have no subtitle: its planned tasks without a project are the last group of its list (OpenSpec `web-app`, "Standard views"). An active filter SHALL show as one chip with a clear control in the bar, not above the list.
