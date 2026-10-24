@@ -11,7 +11,7 @@ An [Easypanel](https://easypanel.io) template in the format of [`easypanel-io/te
 
 The image is pinned to a release, not `stable`: the repository's checklist asks for "static versions" and "specific versions (2.1.7, instead of 2.1, or 2)". `make check` (`scripts/deploy/easypanel.mjs`) fails when the default image is not the latest release in `CHANGELOG.md`, and on the shared rules in [`../deploy.json`](../deploy.json). It reads the image from `meta.yaml` and the environment, port and mount from `index.ts`.
 
-**Status: not yet submitted.**
+**Status: Submitted: [easypanel-io/templates#1702](https://github.com/easypanel-io/templates/pull/1702).**
 
 ## Install it now, without the template list
 

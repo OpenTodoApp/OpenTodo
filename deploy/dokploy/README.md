@@ -4,7 +4,7 @@ A [Dokploy](https://dokploy.com) template in the format of Dokploy's template ca
 
 | Path | What |
 | --- | --- |
-| `blueprints/opentodo/docker-compose.yml` | One `opentodo` service: `ghcr.io/pixari/opentodo:stable` with `pull_policy: always`, `expose: 8080`, the named volume `opentodo-data` on `/data`, the image's health check. No ports, container name or networks (Dokploy's rules). |
+| `blueprints/opentodo/docker-compose.yml` | One `opentodo` service: `ghcr.io/pixari/opentodo:<release>` (the latest release, as Dokploy's catalogue requires a pinned tag), `expose: 8080`, the named volume `opentodo-data` on `/data`, the image's health check. No ports, container name or networks (Dokploy's rules). |
 | `blueprints/opentodo/template.toml` | The generated domain on port 8080, a generated setup token (`${password:32}`) passed as `OPENTODO_SETUP_TOKEN`, an empty `OPENTODO_BASE_URL`, closed sign-up, no trusted proxies. |
 | `blueprints/opentodo/meta.json`, `opentodo.svg` | The catalogue entry and the logo (a copy of `deploy/coolify/opentodo.svg`). |
 | `meta.json` | The list Dokploy reads from a templates base URL, so this folder works as one (see below). |
@@ -16,9 +16,9 @@ Edit the files under `blueprints/opentodo/`, copy them to `upstream/blueprints/o
 node -e 'const m=require("./deploy/dokploy/blueprints/opentodo/meta.json");process.stdout.write(JSON.stringify([m],null,2)+"\n")' > deploy/dokploy/meta.json
 ```
 
-`node scripts/deploy-check.mjs` (part of `make check`) fails when the copies drift. It also checks Dokploy's rules, the stable tag, the port, the volume, the variables and the empty base URL (`scripts/deploy/dokploy.mjs`; tests in `scripts/deploy/dokploy.test.mjs`).
+`node scripts/deploy-check.mjs` (part of `make check`) fails when the copies drift. It also checks Dokploy's rules, the release tag and `meta.json` `version` (both the latest release in `CHANGELOG.md`), the port, the volume, the variables and the empty base URL (`scripts/deploy/dokploy.mjs`; tests in `scripts/deploy/dokploy.test.mjs`).
 
-**Status: not yet submitted.**
+**Status: Submitted: [Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265).**
 
 ## Why the base URL starts empty
 
@@ -35,7 +35,7 @@ Either way works in a Dokploy project:
 
 Before you start:
 
-- The `stable` tag must exist on `ghcr.io/pixari/opentodo`. The release job publishes it from the next release on. Until then the template cannot deploy, because `pull_policy: always` fetches the tag.
+- The release the template names must be published on `ghcr.io/pixari/opentodo`.
 - You need a Dokploy instance to test on. Their PR template asks for it.
 
 Steps:
@@ -48,4 +48,6 @@ Steps:
 
 ## On a release
 
-Nothing changes. The template names `stable`, which every release moves, and `pull_policy: always` makes **Deploy** fetch it. `meta.json` says `"version": "stable"`, as other catalogue entries with a moving tag do.
+Dokploy/templates' `AGENTS.md` requires a pinned image (never `latest` or another moving tag) and `meta.json` `"version"` equal to the image tag, so the template uses the `release` image policy. Preparing a release fails `make check` until `blueprints/opentodo/docker-compose.yml` and `blueprints/opentodo/meta.json` name the new version; copy both to `upstream/` and regenerate `meta.json` as above.
+
+After the release is published, open a version-bump pull request to `Dokploy/templates` (against `canary`) that changes the image tag in `blueprints/opentodo/docker-compose.yml` and `"version"` in `blueprints/opentodo/meta.json`, and run `node build-scripts/generate-meta.js --check` there. Existing installs keep their version until their owner changes the tag (see `docs/self-hosting/dokploy.md`).

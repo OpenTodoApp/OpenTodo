@@ -6,17 +6,17 @@
 | --- | --- |
 | `app.yaml` | Catalogue metadata: version `1.0.0` of the app, `app_version` `0.11.0` (the image tag), category productivity, `run_as_context` 568:568, library `2.3.17` and its hash |
 | `ix_values.yaml` | The images: `ghcr.io/pixari/opentodo` tag `"0.11.0"`, and TrueNAS's `container-utils` for the permissions container |
-| `questions.yaml` | The install form: Base URL, Setup Token (private), Allow Sign-up, Trusted Proxies, additional variables, user and group (568), Web UI port (30530), storage, labels, resources |
+| `questions.yaml` | The install form: Base URL, Setup Token (private), Allow Sign-up, Trusted Proxies, additional variables, user and group (568), Web UI port (30536), storage, labels, resources |
 | `templates/docker-compose.yaml` | The Jinja template TrueNAS's library renders: user 568:568, health check `/opentodo healthcheck` (the image has no shell or wget), `OPENTODO_ADDR=:<chosen port>`, `OPENTODO_DATA_DIR=/data`, the data mount, and a permissions container that chowns it to the chosen user |
-| `templates/test_values/basic-values.yaml` | What their CI renders and starts |
+| `templates/test_values/basic-values.yaml`, `hostnet-values.yaml` | What their CI renders and starts: a published port (30080), and host networking (30081) with every setting filled in |
 | `item.yaml` | Generated from `app.yaml` by their `generate_metadata.py` |
 | `README.md` | The text on the app's page |
 
-TrueNAS apps listen on the port the user chooses (so the **Host Network** option works), which is why the template sets `OPENTODO_ADDR` from it instead of mapping a port to 8080. The test values choose 8080, the image's own port; the default in the form is 30530, which was free in `truenas/apps` on 17 October 2026 (their `.github/scripts/port_validation.py`).
+TrueNAS apps listen on the port the user chooses (so the **Host Network** option works), which is why the template sets `OPENTODO_ADDR` from it instead of mapping a port to 8080. The default in the form is 30536: the first choice, 30530, clashed with `community/money` in their `.github/scripts/port_validation.py`, so the submission moved it.
 
 The image is pinned to a release (`0.11.0`), not `stable`: `truenas/apps` versions every app by its image tag, and their Renovate bot bumps it. `make check` (`scripts/deploy/truenas.mjs`) fails when the tag is not the latest release in `CHANGELOG.md`, when `app_version` differs from it, and on the shared rules in [`../deploy.json`](../deploy.json).
 
-**Status: not yet submitted.**
+**Status: Submitted: [truenas/apps#6240](https://github.com/truenas/apps/pull/6240)** (after the issue [truenas/apps#6239](https://github.com/truenas/apps/issues/6239)). The files here are exactly what was submitted, including `lib_version_hash` and `date_added: '2026-10-24'`.
 
 ## Install it now, without the catalogue
 
@@ -31,7 +31,7 @@ rm -rf deploy/truenas/upstream/ix-dev/community/opentodo
 cp -R deploy/truenas/opentodo deploy/truenas/upstream/ix-dev/community/opentodo
 ```
 
-Not kept here: `templates/library/base_v2_3_17/` (about 560 KB of TrueNAS's own Python, generated from `lib_version`) and `templates/rendered/` (ci.py output). `truenas/apps` requires the library to be committed with the app; their `ci.py` (and `devbox run copy-lib`) writes it, so the steps below regenerate it on submission.
+Not kept here, and not committed in `truenas/apps` either (their `.gitignore` lists both): `templates/library/` (TrueNAS's own Python, copied according to `lib_version` by their `.github/scripts/prepare_libs.py`, `ci.py` and `devbox run copy-lib`) and `templates/rendered/` (ci.py output). `make check` fails when either appears under `upstream/`.
 
 ## Submitting to truenas/apps (maintainer)
 
@@ -50,10 +50,11 @@ Needs a GitHub account, Docker and Python 3 with `pyyaml psutil pytest pytest-co
    ```bash
    ./.github/scripts/port_validation.py
    ./.github/scripts/ci.py --app opentodo --train community --test-file basic-values.yaml
+   ./.github/scripts/ci.py --app opentodo --train community --test-file hostnet-values.yaml
    ```
 
    If the library has a newer version by then (`ls library/`), set `lib_version` in `app.yaml` to it, run `ci.py` again and copy `app.yaml` back here (`lib_version`, `lib_version_hash`). If `port_validation.py` reports a clash, change `PORT_DEFAULT` in `scripts/deploy/truenas.mjs`, the default in `questions.yaml` and the docs.
-4. Commit `ix-dev/community/opentodo/` including `templates/library/`, but not `templates/rendered/`. Open the pull request with the title and body in [`upstream/PR.md`](upstream/PR.md), attaching the icon ([`web/public/pwa-512.png`](../../web/public/pwa-512.png), or the SVG [`deploy/coolify/opentodo.svg`](../coolify/opentodo.svg)) and a screenshot ([`docs/images/board-light.webp`](../../docs/images/board-light.webp), converted to PNG).
+4. Commit `ix-dev/community/opentodo/` without `templates/library/` and `templates/rendered/` (their `.gitignore` already leaves both out, so only the files in `upstream/` are added). Open the pull request with the title and body in [`upstream/PR.md`](upstream/PR.md), attaching the icon ([`web/public/pwa-512.png`](../../web/public/pwa-512.png), or the SVG [`deploy/coolify/opentodo.svg`](../coolify/opentodo.svg)) and a screenshot ([`docs/images/board-light.webp`](../../docs/images/board-light.webp), converted to PNG).
 5. The reviewer uploads the icon (and screenshots) to TrueNAS's CDN and gives the URLs. `app.yaml` already names the usual icon URL, `https://media.sys.truenas.net/apps/opentodo/icons/icon.svg`, as a placeholder: replace it (and `screenshots`) with what they give, run `generate_metadata.py` (it rewrites `item.yaml`), and copy both files back to `opentodo/` and `upstream/` here.
 6. Answer review comments, here first, then copy to the fork.
 

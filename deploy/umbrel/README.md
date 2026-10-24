@@ -9,7 +9,9 @@
 
 Umbrel's login is one password for the whole device, so people you invite to OpenTodo also pass it to open the web app. On umbrelOS 2.0 the owner can turn off **Require Umbrel login** in OpenTodo's app settings; then OpenTodo's own login is the only one (set a setup token first if the device is reachable by others).
 
-**Status: not yet submitted.**
+**Status: Submitted: [getumbrel/umbrel-apps#6251](https://github.com/getumbrel/umbrel-apps/pull/6251).** `submission` in `umbrel-app.yml` is that URL.
+
+**CalDAV on iOS and macOS.** The whitelist covers `/.well-known/caldav` and `/dav`, but iOS (and macOS) Calendar first sends `PROPFIND /` to the server address, and `/` is behind Umbrel's login, so automatic discovery ends at the Umbrel login page. Enter the full address by hand as the server: `https://<host>/.well-known/caldav` (or the `/dav/` address shown in OpenTodo's settings). `docs/self-hosting/umbrel.md` says the same for users.
 
 ## Files
 
@@ -30,9 +32,9 @@ Not on umbrelOS: it installs apps only from app stores, and OpenTodo has no comm
 1. Fork `getumbrel/umbrel-apps` on GitHub (branch `master`) and clone the fork.
 2. Copy the package: `cp -R deploy/umbrel/upstream/opentodo <fork>/opentodo`.
 3. In the fork: `npm ci && npm run lint:apps -- opentodo --check-images` must report no issues (it also checks that port 8418 is still free; if another app took it meanwhile, pick a free port here, in `umbrel-app.yml`, and copy again).
-4. Test through umbrelOS, as the repository's `.agents/skills/umbrel-test-app/SKILL.md` asks: on an Umbrel device (copy the folder into `~/umbrel/app-stores/getumbrel-umbrel-apps-github-53f74447/opentodo/`, without `.gitkeep`) or in the `ghcr.io/getumbrel/umbrelos` container. Install, open OpenTodo from the home screen, create the owner, add a task, restart the app through Umbrel and check the task is still there; check CalDAV or an API token without the Umbrel cookie. This has not been done yet.
+4. Test through umbrelOS, as the repository's `.agents/skills/umbrel-test-app/SKILL.md` asks: on an Umbrel device (copy the folder into `~/umbrel/app-stores/getumbrel-umbrel-apps-github-53f74447/opentodo/`, without `.gitkeep`) or in the `ghcr.io/getumbrel/umbrelos` container. Install, open OpenTodo from the home screen, create the owner, add a task, restart the app through Umbrel and check the task is still there; check CalDAV or an API token without the Umbrel cookie. Done for the submission (see `upstream/PR.md`).
 5. Commit (`Add OpenTodo`), push, and open the pull request with the title and body from [`upstream/PR.md`](upstream/PR.md), with the test results filled in and the AI-use line confirmed. Attach the logo and screenshots it links.
-6. Put the pull request's URL in `submission` (here, then copy to `upstream/opentodo/`) and push it to the pull request branch. Umbrel adds the gallery images before merging.
+6. Put the pull request's URL in `submission` (here, then copy to `upstream/opentodo/`) and push it to the pull request branch. Umbrel adds the gallery images before merging. Done: `https://github.com/getumbrel/umbrel-apps/pull/6251`; `make check` refuses the `0000` placeholder.
 
 ## On every release
 

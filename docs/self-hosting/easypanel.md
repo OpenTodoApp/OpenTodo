@@ -10,7 +10,7 @@ order: 24
 
 OpenTodo is one container with one volume and no required settings. On [Easypanel](https://easypanel.io) it is one **App** service; Easypanel puts its domain behind https for you.
 
-An OpenTodo template has been prepared for Easypanel's template list but is not listed yet. Until it is, set the service up by hand as below; the result is the same.
+An OpenTodo template has been submitted to Easypanel's template list ([easypanel-io/templates#1702](https://github.com/easypanel-io/templates/pull/1702)) but is not listed yet. Until it is, set the service up by hand as below; the result is the same.
 
 ## Install as an app service
 

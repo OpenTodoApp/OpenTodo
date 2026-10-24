@@ -1,23 +1,20 @@
-# Pull request for azukaar/cosmos-servapps-official
+# Pull request to azukaar/cosmos-servapps-official
 
-Open it from a branch of your fork against `master`, after copying `servapps/OpenTodo/` (see ../README.md, "Submitting"). Tick the Testing lines only for what you actually did.
+Submitted on 2026-10-24 as [azukaar/cosmos-servapps-official#329](https://github.com/azukaar/cosmos-servapps-official/pull/329). The title and body below are what was submitted, kept as the record of it; later updates to the app are separate pull requests (see ../README.md).
 
 ## Title
 
-```
 Add OpenTodo
-```
 
-## Body (paste everything below the line)
-
----
+## Body
 
 Adds **OpenTodo**, an open-source (AGPL-3.0), self-hosted, local-first task manager: projects, labels, due dates, reminders and sharing in the browser and as an installable app that works offline and syncs across devices.
 
 - Source: https://github.com/pixari/opentodo
-- Image: `ghcr.io/pixari/opentodo:stable` (amd64, arm64), the tag the project's release workflow moves to each release
+- Website: https://open-todo.app
+- Image: `ghcr.io/pixari/opentodo:stable` (amd64, arm64), the tag the project's release workflow moves to each release (currently 0.11.0)
 
-**What changed:** adds `servapps/OpenTodo/` only (`description.json`, `cosmos-compose.json`, `icon.png`, two screenshots).
+**What changed:** adds `servapps/OpenTodo/` only (`description.json`, `cosmos-compose.json`, `icon.png` 256×256, `screenshots/1.png` and `2.png`).
 
 **Template**
 
@@ -27,5 +24,6 @@ Adds **OpenTodo**, an open-source (AGPL-3.0), self-hosted, local-first task mana
 
 **Testing**
 
-- [ ] `node .github/scripts/validate-servapps.js OpenTodo` passes
-- [ ] Installed through **Import Compose File** on Cosmos (version: ...): created the owner with the setup token, added a task, restarted the container, the task was still there
+- [x] `node .github/scripts/validate-servapps.js OpenTodo` passes with no errors or warnings
+- [x] Installed through **ServApps → Import Compose File** on Cosmos 0.23.4 (`azukaar/cosmos-server:0.23.4` in its own Docker-in-Docker daemon on an amd64 host, self-signed HTTPS): the service, volume, network and route were created and the post-install message showed the address and the setup token, which matched the container's `OPENTODO_SETUP_TOKEN`. Opened the route over https: OpenTodo asked for the setup token (a wrong token was refused with 403), created the owner with the right one, added a task. Restarted the container through Cosmos (`/cosmos/api/servapps/<name>/manage/restart`), signed in from a fresh browser session: the task was still there.
+- Not tested: installing from the market listing itself (it only exists once merged), and arm64.

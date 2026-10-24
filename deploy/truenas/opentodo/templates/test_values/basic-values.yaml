@@ -15,7 +15,7 @@ opentodo:
 network:
   web_port:
     bind_mode: published
-    port_number: 8080
+    port_number: 30080
   host_network: false
   networks: []
 

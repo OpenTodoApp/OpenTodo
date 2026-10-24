@@ -5,20 +5,20 @@ One folder per platform, each with its template in that platform's own format. T
 | Platform | Folder | Image | Status |
 | --- | --- | --- | --- |
 | CapRover | [`caprover/`](caprover/) | `release` | Paste it as a one-click template; the official list wants 1k+ GitHub stars, so a third-party repository first |
-| CasaOS / ZimaOS | [`casaos/`](casaos/) | `release` | Ready to submit to the CasaOS app store; install as a custom app meanwhile |
+| CasaOS / ZimaOS | [`casaos/`](casaos/) | `release` | Submitted: [IceWhaleTech/CasaOS-AppStore#1104](https://github.com/IceWhaleTech/CasaOS-AppStore/pull/1104); install as a custom app meanwhile |
 | Coolify | [`coolify/`](coolify/) | `stable` | Not yet submitted: Coolify lists services from 1,000 GitHub stars; paste it as Docker Compose meanwhile |
-| Cosmos Cloud | [`cosmos/`](cosmos/) | `stable` | Ready to submit to the official servapps market; install as a custom compose meanwhile |
-| Dokploy | [`dokploy/`](dokploy/) | `stable` | Ready to submit to Dokploy templates; usable now as a templates base URL |
-| Easypanel | [`easypanel/`](easypanel/) | `release` | Ready to submit to Easypanel templates; set up as an app service meanwhile |
+| Cosmos Cloud | [`cosmos/`](cosmos/) | `stable` | Submitted: [azukaar/cosmos-servapps-official#329](https://github.com/azukaar/cosmos-servapps-official/pull/329); install as a custom compose meanwhile |
+| Dokploy | [`dokploy/`](dokploy/) | `release` | Submitted: [Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265); usable now as a templates base URL |
+| Easypanel | [`easypanel/`](easypanel/) | `release` | Submitted: [easypanel-io/templates#1702](https://github.com/easypanel-io/templates/pull/1702); set up as an app service meanwhile |
 | Fly.io | [`fly/`](fly/) | `stable` | No store: `fly launch --copy-config` with the file from this repository |
 | Kubernetes (Helm) | [`helm/`](helm/) | `release` | Published to `oci://ghcr.io/pixari/charts/opentodo` by `.github/workflows/helm.yml` from the next release; install from a clone meanwhile |
 | Podman Quadlet | [`podman/`](podman/) | `stable` | No store: copy the two unit files; `podman auto-update` follows `stable` |
-| Portainer | [`portainer/`](portainer/) | `stable` | Usable now as an App Templates URL; ready to submit to the community list |
+| Portainer | [`portainer/`](portainer/) | `stable` | Submitted: [Lissy93/portainer-templates#160](https://github.com/lissy93/portainer-templates/pull/160); usable now as an App Templates URL |
 | Render | [`render/`](render/) | `stable` | Usable now with the Deploy to Render button (Blueprint path `deploy/render/render.yaml`) |
 | Runtipi | [`runtipi/`](runtipi/) | `release` | Our own app store, [`pixari/opentodo-runtipi`](https://github.com/pixari/opentodo-runtipi), published from `upstream/` |
 | Synology (Container Manager) | [`synology/`](synology/) | `stable` | Usable now as a Container Manager project; Synology has no container store |
-| TrueNAS Community Edition | [`truenas/`](truenas/) | `release` | Ready to submit to the community train; install via YAML meanwhile |
-| Umbrel | [`umbrel/`](umbrel/) | `release-digest` | Ready to submit to the Umbrel App Store |
+| TrueNAS Community Edition | [`truenas/`](truenas/) | `release` | Submitted: [truenas/apps#6240](https://github.com/truenas/apps/pull/6240); install via YAML meanwhile |
+| Umbrel | [`umbrel/`](umbrel/) | `release-digest` | Submitted: [getumbrel/umbrel-apps#6251](https://github.com/getumbrel/umbrel-apps/pull/6251) |
 | Unraid | [`unraid/`](unraid/) | `stable` | Listed in Community Applications (**Apps**), from [`pixari/opentodo-unraid`](https://github.com/pixari/opentodo-unraid) |
 
 ## Checks
@@ -43,4 +43,18 @@ A folder without a checker fails the run. Tests: `node --test scripts/deploy/*.t
 
 Templates on `stable` need no change: the release job moves the tag to the new version (release candidates leave it alone), so those installs get the release through their platform's update button.
 
-Templates on `release` or `release-digest` are for stores that refuse moving tags or offer updates only when a version changes. Preparing a release fails `make check` until they name the new version; after the release job has published the image, `node scripts/deploy/pin.mjs` writes the new digests (`--check` lists stale ones). Then copy each `upstream/` to its store, as its folder's README says. The Helm chart (`helm/opentodo/Chart.yaml`) also names the release: bump `version`, `appVersion` and the `artifacthub.io/images` tag; the release tag publishes it. The **Promote stable** workflow (Actions → Promote stable → Run workflow, with a version such as `0.6.1`) points `stable` at an older release to roll back, without rebuilding.
+Templates on `release` or `release-digest` are for stores that refuse moving tags or offer updates only when a version changes. Preparing a release fails `make check` until they name the new version; after the release job has published the image, `node scripts/deploy/pin.mjs` writes the new digests (`--check` lists stale ones).
+
+Then, once the release is published, open an update pull request in each store that pins the version (release candidates are never submitted). Each folder's README has the exact steps:
+
+| Store | After a release |
+| --- | --- |
+| Umbrel ([`umbrel/`](umbrel/README.md#on-every-release)) | Pull request to `getumbrel/umbrel-apps` titled `Update OpenTodo to <version>`: `version`, `releaseNotes`, the tag and the digest (after `pin.mjs`). Umbrel offers the update only when `version` changes. |
+| Dokploy ([`dokploy/`](dokploy/README.md#on-a-release)) | Pull request to `Dokploy/templates` (against `canary`): the image tag in `docker-compose.yml` and `"version"` in `meta.json`. |
+| TrueNAS ([`truenas/`](truenas/README.md#after-a-release)) | Once the app is accepted, their Renovate bumps the tag, `app_version` and `version`; check it did, and open the pull request yourself if it missed the release. While truenas/apps#6240 is open, push the bump to its branch. |
+| CasaOS ([`casaos/`](casaos/README.md#after-a-release)) | Pull request to `IceWhaleTech/CasaOS-AppStore`: the tag, `x-casaos.version`, `update_at` and `release_notes`. The store offers the update only when `version` changes. |
+| Easypanel ([`easypanel/`](easypanel/README.md#after-a-release)) | Pull request to `easypanel-io/templates`: the default image in `meta.yaml` and a `changeLog` entry. |
+| Runtipi ([`runtipi/`](runtipi/README.md#on-a-release)) | Our own store: review and merge the Renovate pull request in `pixari/opentodo-runtipi`, then bring the change back here. |
+| CapRover ([`caprover/`](caprover/README.md#on-a-release)) | Once submitted: the version field, as a pull request to `caprover/one-click-apps` or a push to `pixari/opentodo-caprover`. |
+
+No pull request after a release for Unraid, Cosmos and Portainer: they name `stable` (a store pull request only when the template itself changes). The Claude plugin is published by the CI job `claude-plugin`. The Helm chart (`helm/opentodo/Chart.yaml`) also names the release: bump `version`, `appVersion` and the `artifacthub.io/images` tag; the release tag publishes it. The **Promote stable** workflow (Actions → Promote stable → Run workflow, with a version such as `0.6.1`) points `stable` at an older release to roll back, without rebuilding.

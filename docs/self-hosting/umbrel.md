@@ -8,7 +8,7 @@ order: 30
 ---
 # Running OpenTodo on Umbrel
 
-OpenTodo has a package for the official Umbrel App Store ([`deploy/umbrel/`](https://github.com/pixari/opentodo/tree/main/deploy/umbrel)). It is not listed yet: it is waiting to be submitted to Umbrel. Until it is, umbrelOS cannot install it (umbrelOS installs only from app stores); run OpenTodo on another machine with [Docker](docker.md) instead. The rest of this page describes the package as it will be listed.
+OpenTodo has a package for the official Umbrel App Store ([`deploy/umbrel/`](https://github.com/pixari/opentodo/tree/main/deploy/umbrel)). It has been submitted ([getumbrel/umbrel-apps#6251](https://github.com/getumbrel/umbrel-apps/pull/6251)) but is not listed yet. Until it is, umbrelOS cannot install it (umbrelOS installs only from app stores); run OpenTodo on another machine with [Docker](docker.md) instead. The rest of this page describes the package as it will be listed.
 
 ## Install
 
@@ -23,6 +23,8 @@ Umbrel asks for its own login before it shows OpenTodo. Account creation stays b
 - `/feeds/…`: calendar feeds, with the secret in their address;
 - `/mcp`: MCP clients, with an API token;
 - `/public/…`: public list links, read-only, with the secret in their address (and the web app files such a page loads).
+
+**CalDAV on iPhone, iPad and Mac.** Apple's Calendar and Reminders look for the CalDAV service by asking the server's root address first (`PROPFIND /`), and the root is behind Umbrel's login, so automatic discovery ends at the Umbrel login page and the account cannot be added. Enter the full address by hand as the server instead: `https://<your-umbrel-address>/.well-known/caldav`, or the `/dav/` address that **Settings → Integrations → Calendar apps** shows ([client setup](../caldav.md#client-setup)), not just the host name. Turning off **Require Umbrel login** also lets discovery through.
 
 Umbrel's login is one password for the whole device, so people you invite to OpenTodo would need it as well. On umbrelOS 2.0 you can turn off **Require Umbrel login** in OpenTodo's settings on Umbrel; OpenTodo's own login then protects it.
 
