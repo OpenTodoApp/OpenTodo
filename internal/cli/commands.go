@@ -191,6 +191,8 @@ var cmdSpecs = []cmdSpec{
 	{Name: "schema", Summary: "print every command, flag, exit code and output schema as JSON (works offline)", Output: map[string]any{"type": "object", "description": "this document"}},
 	{Name: "skill", Summary: "print the agent skill file (SKILL.md) embedded in this binary", Output: ref("skill")},
 	{Name: "version", Summary: "print the client version", Output: ref("version")},
+	{Name: "completion", Summary: "print the completion script for bash, zsh or fish (works offline)", Args: []argSpec{{Name: "shell", Required: true}},
+		Output: map[string]any{"type": "string", "description": "the completion script"}},
 	{Name: "help", Summary: "show help for a command (--json: same as `ot schema`)", Args: []argSpec{{Name: "command"}}, Output: map[string]any{"type": "object", "description": "with --json: the `ot schema` document"}},
 }
 

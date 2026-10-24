@@ -189,7 +189,6 @@ Not commitments, just honest next steps. Each would start as an OpenSpec change.
 - **Rich text for comments.** Comments are Markdown today; reuse the notes editor where it helps without losing the plain-text API.
 - **Built-in SMTP receiver** for email to task, for operators who own an MX record (`email-smtp-receiver`).
 - **Published browser extension** in the Chromium and Firefox stores. (File and image sharing through the share target is part of `attachments` above.)
-- **Shell completion** for `ot` (`ot schema` already describes every command and flag).
 - **In-app assistant for end-to-end encrypted accounts.** The first in-app assistant runs its loop on the server, which cannot read encrypted content. A direct-from-device mode (the browser holds the key and calls the model provider itself) could serve encrypted accounts, at the cost of exposing the model key to the browser and depending on provider CORS rules.
 
 ## Principles that do not change

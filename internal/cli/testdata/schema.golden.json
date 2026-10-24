@@ -165,6 +165,26 @@
       }
     },
     {
+      "name": "completion",
+      "summary": "print the completion script for bash, zsh or fish (works offline)",
+      "args": [
+        {
+          "name": "shell",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "description": "the completion script",
+        "type": "string"
+      }
+    },
+    {
       "name": "done",
       "summary": "complete one or more tasks",
       "args": [

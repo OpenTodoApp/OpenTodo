@@ -184,6 +184,7 @@ func init() {
 		{"export", "download the full JSON export", "ot export [--out <file>]", cmdExport},
 		{"schema", "print commands, flags, exit codes and output schemas as JSON", "ot schema", cmdSchema},
 		{"skill", "print the agent skill file embedded in ot", "ot skill", cmdSkill},
+		{"completion", "print a shell completion script: bash, zsh or fish", "ot completion bash|zsh|fish", cmdCompletion},
 		{"version", "print the client version", "ot version", cmdVersion},
 		{"help", "show help for a command", "ot help [command] [--json]", cmdHelp},
 	}
@@ -199,6 +200,12 @@ func findCommand(name string) *command {
 }
 
 func (a *App) run(ctx context.Context, g *globalFlags, args []string) error {
+	// The hidden completion entry point (ot-completion design D2) takes the
+	// words of a command line as they are, before any flag parsing.
+	if len(args) > 0 && args[0] == completeCommand {
+		a.runComplete(ctx, args[1:])
+		return nil
+	}
 	fs := a.flagSet("ot", g)
 	showHelp := fs.Bool("help", false, "show help")
 	fs.BoolVar(showHelp, "h", false, "show help")
@@ -341,7 +348,7 @@ func (a *App) printUsage() {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Commands:")
 	for _, c := range commands {
-		fmt.Fprintf(w, "  %-9s %s\n", c.name, c.summary)
+		fmt.Fprintf(w, "  %-10s %s\n", c.name, c.summary)
 	}
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Global flags:")
@@ -357,6 +364,7 @@ func (a *App) printUsage() {
 	fmt.Fprintln(w, "Off a terminal or with --json, rm, project rm, token revoke and auth logout need --yes.")
 	fmt.Fprintln(w, "Exit codes: 0 ok, 1 server error, 2 usage or validation, 3 authentication or configuration, 4 server unreachable,")
 	fmt.Fprintln(w, "5 not permitted (scope, role, switch, encryption or read-only: do not retry). `ot schema` describes everything as JSON.")
+	fmt.Fprintln(w, "Shell completion: `ot completion bash|zsh|fish` (see `ot help completion`).")
 }
 
 func (a *App) printCommandUsage(name string) {
@@ -401,12 +409,13 @@ func flagUsage(f flagSpec) string {
 }
 
 var commandHelp = map[string]string{
-	"list": "Filters: --inbox (no project), --today (due today or earlier, overdue first), --upcoming (due after today),\n--project <name-or-id>, --completed (most recent first), --all (open and completed). Default: every open task.",
-	"add":  "--due accepts YYYY-MM-DD, today, tomorrow or an English weekday (next occurrence). --time needs HH:MM.\n--label may be repeated. Prints the new task id; with --json prints the task.",
-	"edit": "Clear a value with --due none, --project none or --note \"\". Only the given flags change.",
-	"rm":   "Soft-deletes (tombstone). Asks for confirmation on a terminal unless --yes is given;\noff a terminal or with --json it refuses without --yes (exit 2).",
-	"done": "A task that is already completed is reported as unchanged and nothing is sent.",
-	"mcp":  "Reads newline-delimited JSON-RPC messages from stdin and writes responses to stdout.\nA read-only token is required unless --allow-full-token is given.",
+	"list":       "Filters: --inbox (no project), --today (due today or earlier, overdue first), --upcoming (due after today),\n--project <name-or-id>, --completed (most recent first), --all (open and completed). Default: every open task.",
+	"add":        "--due accepts YYYY-MM-DD, today, tomorrow or an English weekday (next occurrence). --time needs HH:MM.\n--label may be repeated. Prints the new task id; with --json prints the task.",
+	"edit":       "Clear a value with --due none, --project none or --note \"\". Only the given flags change.",
+	"rm":         "Soft-deletes (tombstone). Asks for confirmation on a terminal unless --yes is given;\noff a terminal or with --json it refuses without --yes (exit 2).",
+	"done":       "A task that is already completed is reported as unchanged and nothing is sent.",
+	"completion": "Load it in your shell's startup file or completion directory, for example:\n  bash: ot completion bash > ~/.local/share/bash-completion/completions/ot\n  zsh:  ot completion zsh > ~/.zfunc/_ot   (with fpath=(~/.zfunc $fpath) before compinit)\n  fish: ot completion fish > ~/.config/fish/completions/ot.fish\nProject, label, workspace and task values are read from the profile's server (2 seconds at most).",
+	"mcp":        "Reads newline-delimited JSON-RPC messages from stdin and writes responses to stdout.\nA read-only token is required unless --allow-full-token is given.",
 }
 
 func cmdHelp(a *App, ctx context.Context, g *globalFlags, args []string) error {
