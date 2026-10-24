@@ -7,7 +7,7 @@ import { mutate } from './ops'
 import { commitFiles, planFiles, type PlannedFile } from './attachments'
 import { embeddedIds } from './markdown'
 import { currentUserId } from './sharing'
-import type { Comment, Membership, ProjectMember, ProjectRole } from './types'
+import type { Comment, Membership, ProjectMember, ProjectRole, WorkspaceGroup } from './types'
 import { t } from './i18n'
 import { uuid } from './ids'
 
@@ -188,21 +188,62 @@ export function mentionAt(text: string, caret: number): { query: string; start: 
   return { query: m[2], start: caret - m[2].length - 1 }
 }
 
-/** Members whose name or email starts with (or contains) the query, best matches first. */
-export function mentionCandidates(members: Pick<ProjectMember, 'userId' | 'name' | 'email'>[], query: string, me?: string | null): Pick<ProjectMember, 'userId' | 'name' | 'email'>[] {
+/**
+ * Something an @mention can name: a project member, or a workspace group
+ * (OpenSpec change group-mentions, D4) whose `userId` is `group:<group id>`, with
+ * no email and the number of people it reaches.
+ */
+export interface MentionTarget extends Pick<ProjectMember, 'userId' | 'name' | 'email'> {
+  group?: { size: number }
+}
+
+/** The prefix of a group in a mention list (the server's sync.GroupMentionPrefix). */
+export const GROUP_MENTION_PREFIX = 'group:'
+
+/** Whether a mention id names a group. */
+export const isGroupMention = (id: string): boolean => id.startsWith(GROUP_MENTION_PREFIX)
+
+/** People whose name or email starts with (or contains) the query, best matches first, then groups (group-mentions D4). */
+export function mentionCandidates<T extends MentionTarget>(targets: readonly T[], query: string, me?: string | null): T[] {
   const q = query.toLowerCase()
-  const scored = members
-    .filter((m) => m.userId !== me)
+  const rank = (list: T[], limit: number) => list
     .map((m) => {
       const name = (m.name || m.email).toLowerCase()
-      const score = name.startsWith(q) ? 0 : m.email.toLowerCase().startsWith(q) ? 1 : name.includes(q) ? 2 : -1
+      const score = name.startsWith(q) ? 0 : m.email.toLowerCase().startsWith(q) && m.email ? 1 : name.includes(q) ? 2 : -1
       return { m, score }
     })
     .filter((x) => x.score >= 0)
-  return scored.sort((a, b) => a.score - b.score || (a.m.name || a.m.email).localeCompare(b.m.name || b.m.email)).slice(0, 6).map((x) => x.m)
+    .sort((a, b) => a.score - b.score || (a.m.name || a.m.email).localeCompare(b.m.name || b.m.email))
+    .slice(0, limit)
+    .map((x) => x.m)
+  const people = targets.filter((m) => !m.group && m.userId !== me)
+  const groups = targets.filter((m) => !!m.group)
+  return [...rank(people, 6), ...rank(groups, 3)]
 }
 
-/** The token inserted for a member: their name without spaces, else the email's local part. */
+/**
+ * Who a comment or note on a task of `projectId` may mention: the members of its
+ * shared project, then the groups of the project's workspace that reach at least
+ * one other member (group-mentions D4). None for a personal task.
+ */
+export function mentionTargets(
+  projectId: string | null | undefined, memberships: Map<string, Membership>, groups: readonly WorkspaceGroup[],
+  workspaceOfProject: (id: string) => string, me: string | null,
+): MentionTarget[] {
+  const members = mentionableMembers(projectId, memberships)
+  if (!projectId || members.length === 0) return members
+  const ws = workspaceOfProject(projectId)
+  const onProject = new Set(members.map((m) => m.userId))
+  const out: MentionTarget[] = [...members]
+  for (const g of groups) {
+    if (g.workspaceId !== ws) continue
+    const size = g.members.filter((id) => onProject.has(id)).length
+    if (g.members.some((id) => id !== me && onProject.has(id))) out.push({ userId: GROUP_MENTION_PREFIX + g.id, name: g.name, email: '', group: { size } })
+  }
+  return out
+}
+
+/** The token inserted for a member or a group: the name without spaces, else the email's local part. */
 export function mentionToken(m: Pick<ProjectMember, 'name' | 'email'>): string {
   const base = (m.name || m.email.split('@')[0]).replace(/\s+/g, '')
   return base || m.email

@@ -168,7 +168,7 @@ The next candidates, in a suggested order. Each starts as an OpenSpec change; no
 
 | # | Capability | Change name | Notes |
 | --- | --- | --- | --- |
-| 1 | **In progress.** **Workspaces and groups**: separate rooms for work and home, each with its own projects, labels, filters and people, and sharing a project with a whole group in one step | `workspaces` | Additive `workspace_id` on projects, labels, views and project-less tasks; a server-side directory (members, groups, invite links) delivered in every sync; effective project membership materialised from grants. Follow-ups: group mentions (`@Family`) and a `workspace:` filter term |
+| 1 | **In progress.** **Workspaces and groups**: separate rooms for work and home, each with its own projects, labels, filters and people, and sharing a project with a whole group in one step | `workspaces` | Additive `workspace_id` on projects, labels, views and project-less tasks; a server-side directory (members, groups, invite links) delivered in every sync; effective project membership materialised from grants. Group mentions (`@Family`) and the `workspace:` filter term followed in `group-mentions` |
 
 ## Next: Native shells
 

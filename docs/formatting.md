@@ -33,7 +33,7 @@ Paste a screenshot, drop a picture, or choose **Image** from the `/` menu. The f
 
 ## Mention someone
 
-In a shared project, type `@` and a few letters of a member's name and pick them. Mentioning someone in a task's notes sends them a notification "mentioned you in the notes of …" once; later edits don't notify them again.
+In a shared project, type `@` and a few letters of a member's name and pick them. Mentioning someone in a task's notes sends them a notification "mentioned you in the notes of …" once; later edits don't notify them again. After the people, the list offers the [groups of the workspace](workspaces.md#mention-a-group), shown with a group icon: `@Adults` notifies everyone in the group who can see the task.
 
 ## Make a checklist line a subtask
 

@@ -41,6 +41,10 @@ Open **Settings → Workspaces** and pick a workspace in the list; on a wide scr
 
 Projects stay private until you share them. In a workspace you created, the Share dialog lists its members by name and its groups: share **House** with **Adults** as editor and everyone in the group can edit it. Someone outside the workspace cannot be added to its projects. In your default workspace you share by email, as before.
 
+## Mention a group
+
+In a comment or a task's notes, type `@` and pick a group, such as **Adults**, listed after the people. Everyone in the group who can see the task gets one notification; nobody else is told. See [Comments and activity](comments-and-activity.md#comment-on-a-task).
+
 ## Move things
 
 The project menu has **Move to workspace…** for projects you own. Its tasks, sections and sub-projects follow, and labels on its tasks are matched by name in the other workspace. Undo puts everything back. A task in the Inbox moves with the command **Move … to workspace** in search.
@@ -48,6 +52,7 @@ The project menu has **Move to workspace…** for projects you own. Its tasks, s
 ## Good to know
 
 - Preferences such as the theme and language are per account, not per workspace.
+- A [filter](filters.md#workspaces) such as `workspace: Home | workspace: Work` looks across workspaces.
 - With [end-to-end encryption](e2ee.md) you can create workspaces and move things, but not add members, groups or invite links yet.
 - An account owns at most 20 workspaces; a workspace has up to 200 members and 50 groups.
 - Sharing works as described in [Sharing and comments](sharing.md); labels and filters belong to one workspace each ([Labels and filters](labels-and-filters.md)).

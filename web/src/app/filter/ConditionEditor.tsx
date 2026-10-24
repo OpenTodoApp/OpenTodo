@@ -11,12 +11,12 @@ import type { FieldDef, Label, Project } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { KEYWORD_NAME } from './conditionText'
 
-export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'search' | 'origin' | 'tracked' | 'field' | 'nofield'
+export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'search' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield'
 
 const KIND_NAME = translatedMap<ConditionKind>({
   label: msg('Label'), project: msg('Project'), priority: msg('Priority'),
   due: msg('Due date'), deadline: msg('Deadline'), start: msg('Start date'), created: msg('Created'), completed: msg('Completed date'),
-  state: msg('State'), search: msg('Title or notes'), origin: msg('Origin'), tracked: msg('Tracked time'),
+  state: msg('State'), search: msg('Title or notes'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
   field: msg('Custom field'), nofield: msg('Custom field is empty'),
 })
 
@@ -108,6 +108,7 @@ export function draftOf(leaf: Leaf | null): Draft {
     case 'keyword': return { ...d, kind: 'state', keyword: leaf.keyword }
     case 'search': return { ...d, kind: 'search', text: leaf.text }
     case 'origin': return { ...d, kind: 'origin', text: leaf.value }
+    case 'workspace': return { ...d, kind: 'workspace', name: leaf.name }
     case 'tracked': return { ...d, kind: 'tracked', op: leaf.op, duration: formatMinutes(leaf.minutes) }
     case 'field': {
       const v = leaf.value
@@ -132,6 +133,7 @@ export function leafOf(d: Draft): Leaf | null {
     case 'state': return { kind: 'keyword', keyword: d.keyword }
     case 'search': return d.text.trim() ? { kind: 'search', text: d.text.trim() } : null
     case 'origin': return d.text.trim() ? { kind: 'origin', value: d.text.trim() } : null
+    case 'workspace': return name ? { kind: 'workspace', name, pos: 0 } : null
     case 'tracked': {
       const minutes = durationMinutes(d.duration)
       return minutes === null ? null : { kind: 'tracked', op: d.op, minutes }
@@ -164,6 +166,8 @@ export interface ConditionEditorProps {
   labels: readonly Label[]
   projects: readonly Project[]
   fields: readonly FieldDef[]
+  /** The cached workspaces (group-mentions D6): the Workspace condition is offered with more than one. */
+  workspaces?: readonly { id: string; name: string }[]
   onSave: (leaf: Leaf, not: boolean) => void
   onRemove?: () => void
   onClose: () => void
@@ -171,13 +175,14 @@ export interface ConditionEditorProps {
 
 
 
-export function ConditionEditor({ leaf, not: initialNot, labels, projects, fields, onSave, onRemove, onClose }: ConditionEditorProps) {
+export function ConditionEditor({ leaf, not: initialNot, labels, projects, fields, workspaces = [], onSave, onRemove, onClose }: ConditionEditorProps) {
   const [draft, setDraft] = useState<Draft>(() => draftOf(leaf))
   const [not, setNot] = useState(initialNot)
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
   const result = leafOf(draft)
   const fieldNames = useMemo(() => [...new Set(fields.filter((f) => !f.deleted_at).map((f) => f.name))].sort((a, b) => a.localeCompare(b)), [fields])
   const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'search', 'origin', 'tracked']
+  if (workspaces.length > 1 || draft.kind === 'workspace') kinds.splice(kinds.indexOf('origin') + 1, 0, 'workspace')
   if (fieldNames.length || draft.kind === 'field' || draft.kind === 'nofield') kinds.push('field', 'nofield')
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const isDate = DATE_KINDS.includes(draft.kind)
@@ -264,6 +269,15 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
           <Field label={draft.kind === 'search' ? t('Text in the title or notes') : t('Provider or kind')}
             description={draft.kind === 'origin' ? t('For example github, gitlab, url, email or import') : undefined}>
             <Input value={draft.text} onChange={(e) => set({ text: e.target.value })} autoComplete="off" spellCheck={false} />
+          </Field>
+        )}
+
+        {draft.kind === 'workspace' && (
+          <Field label={t('Workspace')}>
+            <Select value={draft.name} onChange={(e) => set({ name: e.target.value })}>
+              <option value="">{t('Choose a workspace')}</option>
+              {[...new Set([...workspaces.map((w) => w.name), draft.name].filter(Boolean))].map((n) => <option key={n} value={n}>{n}</option>)}
+            </Select>
           </Field>
         )}
 

@@ -7,7 +7,8 @@ import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { useAllLabels, useProjects } from '../lib/localData'
-import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, mentionsState, originSuggestions, parse, type Node } from '../lib/filter'
+import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, mentionsState, namesWorkspace, originSuggestions, parse, type Node } from '../lib/filter'
+import { useWorkspaceFilter } from './useWorkspaceFilter'
 import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
@@ -36,6 +37,7 @@ import { FilterPanel, ViewToolbar } from './views/ViewToolbar'
 import { ViewResults } from './views/ViewResults'
 import { SaveViewCard } from './views/SaveViewCard'
 import type { ViewDisplay } from './views/DisplayPanel'
+import type { Task } from '../lib/types'
 
 const DEBOUNCE_MS = 150
 
@@ -67,11 +69,22 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   }, [query])
   const [display, setDisplay] = useState<ViewDisplay>(NEW_VIEW_DISPLAY)
 
-  const projects = useProjects()
-  const labels = useAllLabels()
+  const hereProjects = useProjects()
+  const hereLabels = useAllLabels()
   // undefined until the first read: Enter can arrive before the tasks are loaded.
   const loadedTasks = useLiveTasks()
-  const allTasks = loadedTasks ?? NO_TASKS
+  const ws = useWorkspaceFilter()
+
+  // A syntax error keeps the last valid query (and so the previous results) on screen.
+  const parsed = useMemo(() => tryParse(debounced), [debounced])
+  const [good, setGood] = useState<{ src: string; ast: Node | null }>({ src: '', ast: null })
+  if (parsed.ok && good.src !== debounced) setGood({ src: debounced, ast: parsed.ast })
+
+  // A query that names a workspace looks at every workspace (group-mentions D6).
+  const every = good.ast && namesWorkspace(good.ast) ? ws.everyWorkspace : undefined
+  const projects = (every?.projects ?? hereProjects) as typeof hereProjects
+  const labels = (every?.labels ?? hereLabels) as typeof hereLabels
+  const allTasks = (every?.tasks ?? loadedTasks ?? NO_TASKS) as Task[]
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(allTasks.map((tk) => [tk.id, tk])), [allTasks])
@@ -79,15 +92,11 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
   const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
-  // A syntax error keeps the last valid query (and so the previous results) on screen.
-  const parsed = useMemo(() => tryParse(debounced), [debounced])
-  const [good, setGood] = useState<{ src: string; ast: Node | null }>({ src: '', ast: null })
-  if (parsed.ok && good.src !== debounced) setGood({ src: debounced, ast: parsed.ast })
-
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
   const fieldDefs = useFieldDefs(), tracked = useTrackedTotals()
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs, tracked }), [today, labels, projects, allTasks, weekStart, fieldDefs, tracked])
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
+    [today, labels, projects, allTasks, weekStart, fieldDefs, tracked, ws])
   const compiled = useMemo(() => {
     if (!good.ast) return null
     // "Completed tasks: Show" (views-and-display D4) reads the query as `(query) & (open | completed)`.
@@ -227,7 +236,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (
         <FilterPanel count={count} onClose={() => setFilterOpen(false)} inputRef={inputRef}
-          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} />}
+          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} workspaces={ws.workspaces} />}
           formula={(
             <input
               ref={inputRef}

@@ -1746,6 +1746,9 @@ export interface MentionedPayload {
   at: number
   /** "note" for a mention in a task's notes (editor-everywhere D7); absent for a comment. */
   source?: 'note'
+  /** The workspace group through which the recipient was mentioned (group-mentions D3); absent for a direct mention. */
+  groupId?: string
+  groupName?: string
 }
 
 /** Payload of an `assigned` notification (task-assignment); names resolved by the server. */

@@ -8,13 +8,14 @@ import { forwardRef, useCallback, useEffect, useRef, useState, useSyncExternalSt
 import { createPortal } from 'react-dom'
 import { useAttachmentLimits } from '../../lib/attachments'
 import {
-  canDeleteComment, canEditComment, createComment, deleteComment, editComment, mentionableMembers, mentionToken, type ReactionName, type Thread, threadOrder,
+  canDeleteComment, canEditComment, createComment, deleteComment, editComment, type MentionTarget, type ReactionName, type Thread, threadOrder,
   threadVisible, toggleReaction,
 } from '../../lib/comments'
 import { useCommentAttachments, useCommentRows } from '../../lib/localData'
 import { useDemo } from '../../lib/demo'
 import { currentUserId, membershipMap, memberName, roleOf } from '../../lib/sharing'
-import type { Attachment, Comment, Membership, ProjectMember, ProjectRole, Task } from '../../lib/types'
+import type { Attachment, Comment, Membership, ProjectRole, Task } from '../../lib/types'
+import { mentionChipsOf, useMentionTargets } from '../useMentionTargets'
 import { PersonAvatar } from '../PersonAvatar'
 import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
 import { ConfirmDialog } from '../../ui'
@@ -46,7 +47,8 @@ export interface CommentsViewProps {
   threads: Thread[]
   me: string | null
   role: ProjectRole
-  members: ProjectMember[]
+  /** Who can be mentioned: the project's members, then its workspace's groups (group-mentions D4). */
+  members: MentionTarget[]
   name: (id: string) => string
   /** Resolve true when stored. */
   onCreate: (body: string, mentions: string[], parentId: string | null, files: File[], extras?: ComposedExtras) => Promise<boolean>
@@ -74,8 +76,8 @@ export interface CommentsViewProps {
 export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(function CommentsView(
   { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, onReact, error, focusComment, now, attachments, canAttach = false, composerHost, expand = 0, richComposer }, composerRef,
 ) {
-  // Mention tokens of the members, shown as chips in the bodies.
-  const mentionChips = new Map(members.map((m) => [mentionToken(m), m.name || m.email]))
+  // Mention tokens of the members and groups, shown as chips in the bodies.
+  const { names: mentionChips, groups: groupChips } = mentionChipsOf(members)
   const coarse = useCoarsePointer()
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
@@ -187,7 +189,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
             </div>
           ) : (
             <>
-              {c.body && <Markdown source={c.body} taskId={taskId} mentions={mentionChips} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
+              {c.body && <Markdown source={c.body} taskId={taskId} mentions={mentionChips} mentionGroups={groupChips} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
               <CommentAttachments list={attachments?.get(c.id) ?? []} />
               {onReact && <ReactionBar comment={c} me={me} name={name} onReact={onReact} coarse={coarse} />}
             </>
@@ -282,6 +284,7 @@ export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(func
   useEffect(() => setError(null), [task.id])
 
   const name = useCallback((id: string) => (id && id === me ? t('You') : memberName(id, memberships) ?? t('Someone')), [me, memberships])
+  const targets = useMentionTargets(task.project_id, me)
   const run = async (fn: () => Promise<unknown>) => {
     setError(null)
     try {
@@ -295,7 +298,7 @@ export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(func
 
   return (
     <CommentsView ref={composerRef} taskId={task.id} threads={threadOrder(comments).filter(threadVisible)} me={me}
-      role={roleOf(task.project_id, memberships)} members={mentionableMembers(task.project_id, memberships)} name={name} error={error}
+      role={roleOf(task.project_id, memberships)} members={targets} name={name} error={error}
       focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false} composerHost={composerHost} expand={expand}
       onCreate={(body, mentions, parentId, files, extras) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files, id: extras?.id, embeds: extras?.embeds }))}
       onEdit={(id, body, mentions) => run(() => editComment(id, body, mentions))}

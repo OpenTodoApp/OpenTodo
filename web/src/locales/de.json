@@ -5257,5 +5257,14 @@
   "{enter} applies, {esc} discards. Each change shows in its task’s history.": "{enter} übernimmt, {esc} verwirft. Jede Änderung erscheint im Verlauf ihrer Aufgabe.",
   "{n, plural, one {# selected task} other {# selected tasks}}": "{n, plural, one {# ausgewählte Aufgabe} other {# ausgewählte Aufgaben}}",
   "{n, plural, one {Apply # change} other {Apply # changes}}": "{n, plural, one {# Änderung übernehmen} other {# Änderungen übernehmen}}",
-  "More properties": "Weitere Eigenschaften"
+  "More properties": "Weitere Eigenschaften",
+  "<b>{actor}</b> mentioned <b3>{group}</b3> in the notes of <b2>{task}</b2>": "<b>{actor}</b> hat <b3>{group}</b3> in den Notizen von <b2>{task}</b2> erwähnt",
+  "<b>{actor}</b> mentioned <b3>{group}</b3> on <b2>{task}</b2>": "<b>{actor}</b> hat <b3>{group}</b3> bei <b2>{task}</b2> erwähnt",
+  "Choose a workspace": "Arbeitsbereich wählen",
+  "Expected a workspace name after \"workspace:\" at position {pos}": "Name eines Arbeitsbereichs nach „workspace:“ erwartet, an Position {pos}",
+  "Group · {n, plural, one {# person} other {# people}}": "Gruppe · {n, plural, one {# Person} other {# Personen}}",
+  "Group: {name}": "Gruppe: {name}",
+  "No workspace named \"{name}\"": "Kein Arbeitsbereich namens „{name}“",
+  "Workspace": "Arbeitsbereich",
+  "Workspace is {name}": "Arbeitsbereich ist {name}"
 }

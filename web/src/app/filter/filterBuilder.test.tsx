@@ -16,12 +16,12 @@ afterEach(() => {
 })
 
 let current = ''
-function Harness({ initial }: { initial: string }) {
+function Harness({ initial, workspaces }: { initial: string; workspaces?: { id: string; name: string }[] }) {
   const [q, setQ] = useState(initial)
   current = q
   return (
     <div>
-      <FilterBuilder query={q} onChange={setQ} count={3} labels={[]} projects={[]} fields={[]} />
+      <FilterBuilder query={q} onChange={setQ} count={3} labels={[]} projects={[]} fields={[]} workspaces={workspaces} />
       <input aria-label="Filter query" value={q} onChange={(e) => setQ(e.target.value)} />
     </div>
   )
@@ -68,6 +68,23 @@ describe('FilterBuilder', () => {
     expect(current).toBe('@work & due <= tomorrow & (p1 & p2)')
     expect(r.container.querySelector('[data-filter-count]')?.textContent).toBe('3 tasks match')
     await r.unmount()
+  })
+
+  it('adds a Workspace condition when there is more than one workspace (group-mentions D6)', async () => {
+    const one = await render(<Harness initial="" workspaces={[{ id: 'w1', name: 'Personal' }]} />)
+    await click(one.container.querySelector('[data-add-condition]') as HTMLButtonElement)
+    await waitFor(() => !!editor(), 'the condition dialog')
+    expect([...(editor()!.querySelector('select') as HTMLSelectElement).options].map((o) => o.value)).not.toContain('workspace')
+    document.body.innerHTML = ''
+    const r = await render(<Harness initial="" workspaces={[{ id: 'w1', name: 'Personal' }, { id: 'w2', name: 'Side projects' }]} />)
+    await click(r.container.querySelector('[data-add-condition]') as HTMLButtonElement)
+    await waitFor(() => !!editor(), 'the condition dialog')
+    await setSelect(editor()!.querySelector('select') as HTMLSelectElement, 'workspace')
+    await setSelect(editor()!.querySelectorAll('select')[1] as HTMLSelectElement, 'Side projects')
+    await click(buttons(editor()!, 'Add')[0])
+    await waitFor(() => !editor(), 'the dialog to close')
+    expect(current).toBe('workspace: "Side projects"')
+    expect(r.container.textContent).toContain('Workspace is Side projects')
   })
 
   it('follows typing: groups and Not on a condition', async () => {
@@ -125,7 +142,7 @@ describe('condition dialog model', () => {
 
   it('reads back every kind of condition it edits', () => {
     for (const q of ['@work', '#Work', '##Work', 'p2', 'due <= tomorrow', 'deadline < 3 days', 'start = next week', 'created > 2 months ago',
-      'completed = last week', 'due before friday', 'due = 2026-11-01', 'overdue', 'no date', 'search: "oat milk"', 'origin: github',
+      'completed = last week', 'due before friday', 'due = 2026-11-01', 'overdue', 'no date', 'search: "oat milk"', 'origin: github', 'workspace: "Side projects"',
       'tracked > 1h30', '"cost" > 100', '"client" = "Acme Inc"', '"paid" = true', '"order date" <= 3 days', 'no "cost"']) {
       const back = leafOf(draftOf(leaf(q)))
       expect(back && stripPositions(back), q).toEqual(stripPositions(leaf(q)))
@@ -154,6 +171,7 @@ describe('conditionText', () => {
     expect(words('no project')).toBe('No project')
     expect(words('search: "oat milk"')).toBe('Title or notes contain oat milk')
     expect(words('origin: github')).toBe('Origin is github')
+    expect(words('workspace: Home')).toBe('Workspace is Home')
     expect(words('tracked > 90')).toBe('Tracked time is more than 1h30')
     expect(words('"cost" >= 100')).toBe('cost is at least 100')
     expect(words('no "cost"')).toBe('cost is empty')

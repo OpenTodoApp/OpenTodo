@@ -47,6 +47,9 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		// Origin terms (task-origin).
 		"origin", "no origin", "origin: github", "origin:github", `origin: "my tracker"`, "origin: url | origin: email",
 		"no origin & #Work", "origin: github & open", "!origin",
+		// Workspace terms (group-mentions).
+		"workspace: Home", "workspace:Home", `workspace:"Side projects"`, `workspace: "Side projects" & p1`, "WORKSPACE: work",
+		"(workspace: Home | workspace: Work) & due = this week", "!workspace: Home", "workspace: home & no project",
 		"paid = false", "cost >= -2.5", "status = Ordered", "due_by <= 3 days", `"due" = 2026-10-16`, "no idea", "kitchen = this week",
 	} {
 		if err := Parse(q); err != nil {
@@ -100,6 +103,9 @@ func TestFilterParserRejects(t *testing.T) {
 		`@"open`:             `Missing closing quote for the text starting at position 2`,
 		"search:":            `Expected text after "search:" at position 1`,
 		"origin:":            `Expected a provider or kind after "origin:" at position 1`,
+		"workspace:":         `Expected a workspace name after "workspace:" at position 1`,
+		"p1 & workspace: ":   `Expected a workspace name after "workspace:" at position 6`,
+		`workspace: "Home`:   `Missing closing quote for the text starting at position 12`,
 		"origin: & p1":       `Expected a provider or kind after "origin:" at position 1`,
 		"origin = x":         `Expected "&" or "|" before "=" at position 8`,
 		"p1 )":               `Unexpected ")" at position 4`,

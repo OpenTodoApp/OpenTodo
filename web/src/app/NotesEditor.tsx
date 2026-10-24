@@ -8,12 +8,10 @@ import type { Command } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import * as Y from 'yjs'
 import { queueFiles, isImage } from '../lib/attachments'
-import { mentionableMembers } from '../lib/comments'
 import { byteLength, MAX_PLAINTEXT_BYTES } from '../lib/crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE } from '../lib/docfields'
 import { encryptionSnapshot } from '../lib/e2ee'
 import { checkLineAt, mentionIds, sameIds, subtaskLine } from '../lib/editorNotes'
-import { useMembershipMap } from '../lib/localData'
 import { foldNote, mutate, mutateMany, planTask, type Change } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
 import { applyBody, createState, insertBlocks, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
@@ -24,6 +22,7 @@ import type { CommandEnv } from './editorCommands'
 import { imageViews } from './editorImage'
 import { LinkDialog } from './LinkDialog'
 import { Markdown } from './Markdown'
+import { useMentionTargets } from './useMentionTargets'
 import { filesFrom } from './task-detail/AttachmentsRow'
 import { t } from '../lib/i18n'
 
@@ -150,8 +149,8 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   const [linkAsk, setLinkAsk] = useState<{ current: string; answer: (href: string | null) => void } | null>(null)
   const askLink = (current: string) => new Promise<string | null>((answer) => setLinkAsk({ current, answer }))
   const isTask = entity === 'task'
-  const memberships = useMembershipMap()
-  const members = isTask ? mentionableMembers(note.project_id, memberships) : []
+  // People, then the workspace's groups (group-mentions D4).
+  const members = useMentionTargets(isTask ? note.project_id : null)
   const me = useMe()
   const picker = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)

@@ -5,15 +5,16 @@
 // formatting controls. Shared by the notes and the comment composer; lazy chunk.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { EditorView } from 'prosemirror-view'
-import { mentionCandidates, mentionToken } from '../lib/comments'
+import { mentionCandidates, mentionToken, type MentionTarget } from '../lib/comments'
 import { insertMention } from '../lib/editorNotes'
 import { dismissSuggest, type Suggest, type SuggestBridge } from '../lib/editorSuggest'
-import type { ProjectMember } from '../lib/types'
 import { t } from '../lib/i18n'
 import { Icon, IconButton, Menu, MenuItem, Popover, useMediaQuery } from '../ui'
 import { editorCommands, filterCommands, tableCommands, type CommandEnv, type EditorCommand } from './editorCommands'
+import { MentionOption } from './task-detail/MentionOption'
 
-type Member = Pick<ProjectMember, 'userId' | 'name' | 'email'>
+// A person or a workspace group (group-mentions D4).
+type Member = MentionTarget
 const MAX_ITEMS = 8
 type Item = { kind: 'command'; cmd: EditorCommand } | { kind: 'member'; m: Member }
 
@@ -156,7 +157,7 @@ function SuggestList({ id, open, items, active, onPick }: { id: string; open: { 
           onMouseDown={(e) => { e.preventDefault(); onPick(item) }}>
           {item.kind === 'command'
             ? <><Icon name={item.cmd.icon} size="sm" className="text-muted" />{item.cmd.label}</>
-            : <>{item.m.name || item.m.email} <span className="user-text text-meta text-faint">{item.m.email}</span></>}
+            : <MentionOption m={item.m} />}
         </li>
       ))}
     </ul>

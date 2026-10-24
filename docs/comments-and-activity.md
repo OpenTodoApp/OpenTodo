@@ -17,7 +17,7 @@ Each task in a shared project has a comment thread, and the Updates feed shows w
 
 Open a task: **Comments** is the first tab below its details, next to **Activity** and **History**, and the panel remembers the tab you used last on this device. Press <kbd>Shift</kbd>+<kbd>C</kbd> with the task open to jump to the comment box from any tab. Comments read like a chat, oldest first, with the box at the end. Write your comment and post it with **Comment** or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>Enter</kbd> on a Mac). If you close the task before sending, your draft is still there when you open it again on this device.
 
-- **Mention** someone by typing `@` and picking their name. They get a notification.
+- **Mention** someone by typing `@` and picking their name. They get a notification. In a [workspace](workspaces.md#mention-a-group) with groups, the list also offers the groups after the people: mentioning **@Adults** notifies everyone in the group who can see the task, once each.
 - **Reply** to a comment to keep a conversation together. The comment box shows who you're replying to, with a button to cancel and post a new comment instead. Replies are nested under the comment.
 - **Edit** or **Delete** your own comments; deleting asks you to confirm. Edited comments are marked as edited. Project admins and the owner can delete any comment. On a computer these actions appear when you point at a comment or move to it with the keyboard; on a phone they're always shown.
 - Hover over or focus a comment's time ("2 h ago") to see the full date and time in your format.

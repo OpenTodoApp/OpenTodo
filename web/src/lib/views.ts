@@ -4,7 +4,7 @@
 // saved view behaves exactly like the same query typed into the Filter view.
 import { addDaysISO, compareDue, formatDateHeading, localDate, localDueOf } from './dates'
 import { db, getMeta, setMeta } from './db'
-import { compile, mentionsState, parse, type FilterContext, type Node } from './filter'
+import { compile, filterScope, mentionsState, namesWorkspace, parse, type FilterContext, type Node } from './filter'
 import type { BoardTemplate } from './boardTemplates'
 import { activeLabels } from './labels'
 import { VIEW_DEFAULTS, getDeviceId, mutate, mutateMany, mutationTables, type Change } from './ops'
@@ -384,6 +384,13 @@ interface Compiled {
   ok: true
   test: (task: Task) => boolean
   warnings: string[]
+  /** The query names a workspace: the view looks at every workspace's tasks (group-mentions D6). */
+  every: boolean
+}
+
+/** The context a compiled view lists from: every workspace's data when it names a workspace. */
+export function viewScope<C extends ViewContext>(c: Pick<Compiled, 'every'>, ctx: C): C {
+  return c.every && ctx.everyWorkspace ? { ...ctx, ...ctx.everyWorkspace } : ctx
 }
 
 /**
@@ -392,7 +399,7 @@ interface Compiled {
  * completed matches too: the query is read as `(query) & (open | completed)`, so a
  * query that names a state itself is unchanged.
  */
-export function compileView(view: Pick<View, 'query'>, ctx: FilterContext, withCompleted = false): Compiled | { ok: false; error: string } {
+export function compileView(view: Pick<View, 'query'>, given: FilterContext, withCompleted = false): Compiled | { ok: false; error: string } {
   let ast: Node | null
   try {
     ast = parse(view.query)
@@ -401,6 +408,7 @@ export function compileView(view: Pick<View, 'query'>, ctx: FilterContext, withC
   }
   if (!ast) return { ok: false, error: t('This view has no query') }
   if (withCompleted && !mentionsState(ast)) ast = parse(`(${view.query}) & (open | completed)`)!
+  const ctx = filterScope(ast, given)
   // Like the Filter view and the other cross-project views, tasks of archived projects stay out.
   const archived = new Set(ctx.projects.filter((p) => p.archived && !p.deleted_at).map((p) => p.id))
   let compiled: ReturnType<typeof compile>
@@ -411,7 +419,7 @@ export function compileView(view: Pick<View, 'query'>, ctx: FilterContext, withC
     return { ok: false, error: (e as Error).message }
   }
   const { test, warnings } = compiled
-  return { ok: true, warnings, test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
+  return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
 }
 
 function byTitle(a: Task, b: Task): number {
@@ -514,8 +522,9 @@ export function runView(view: View, ctx: ViewContext): ViewResult {
   const c = compileView(view, ctx, displayOptions(view).showCompleted)
   if (!c.ok) return c
   const { groupBy, sortBy, sortDir } = viewOptions(view)
-  const tasks = ctx.tasks.filter(c.test).sort(compareTasks(sortBy, sortDir))
-  return { ok: true, tasks, groups: groupTasks(tasks, groupBy, ctx), warnings: c.warnings }
+  const scoped = viewScope(c, ctx)
+  const tasks = scoped.tasks.filter(c.test).sort(compareTasks(sortBy, sortDir))
+  return { ok: true, tasks, groups: groupTasks(tasks, groupBy, scoped), warnings: c.warnings }
 }
 
 export type ViewSummary =
@@ -530,16 +539,18 @@ export type ViewSummary =
  */
 export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TASKS): Map<string, ViewSummary> {
   const out = new Map<string, ViewSummary>()
-  const live: { view: View; test: (task: Task) => boolean; warnings: string[]; matches: Task[] }[] = []
+  const live: { view: View; test: (task: Task) => boolean; warnings: string[]; matches: Task[]; every: boolean }[] = []
   for (const view of views) {
     if (view.deleted_at || isDashboard(view)) continue
     const c = compileView(view, ctx)
     if (!c.ok) out.set(view.id, c)
-    else live.push({ view, test: c.test, warnings: c.warnings, matches: [] })
+    else live.push({ view, test: c.test, warnings: c.warnings, matches: [], every: c.every })
   }
-  if (live.length > 0) {
-    for (const tk of ctx.tasks) for (const l of live) if (l.test(tk)) l.matches.push(tk)
-  }
+  // One pass over the current workspace's tasks, and one over every workspace's for views that name a workspace.
+  const here = live.filter((l) => !l.every)
+  const every = live.filter((l) => l.every)
+  for (const tk of here.length ? ctx.tasks : []) for (const l of here) if (l.test(tk)) l.matches.push(tk)
+  for (const tk of every.length ? ctx.everyWorkspace!.tasks : []) for (const l of every) if (l.test(tk)) l.matches.push(tk)
   for (const l of live) {
     const { groupBy, sortBy, sortDir } = viewOptions(l.view)
     const sorted = l.matches.sort(compareTasks(sortBy, sortDir))
@@ -547,7 +558,7 @@ export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TAS
     if (limit > 0) {
       // Grouping by label can list a task twice; a panel shows each task once.
       const seen = new Set<string>()
-      for (const g of groupTasks(sorted, groupBy, ctx)) {
+      for (const g of groupTasks(sorted, groupBy, l.every ? viewScope(l, ctx) : ctx)) {
         for (const item of g.tasks) {
           if (firstN.length >= limit) break
           if (!seen.has(item.id)) {

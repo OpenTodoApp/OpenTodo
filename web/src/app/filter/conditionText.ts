@@ -100,6 +100,7 @@ export function conditionText(leaf: Leaf): string {
     case 'keyword': return KEYWORD_NAME[leaf.keyword]
     case 'search': return t('Title or notes contain {text}', { text: leaf.text })
     case 'origin': return t('Origin is {value}', { value: leaf.value })
+    case 'workspace': return t('Workspace is {name}', { name: leaf.name })
     case 'tracked': return compareText(t('Tracked time'), leaf.op, formatMinutes(leaf.minutes))
     case 'field': return compareText(leaf.name, leaf.op, fieldValueWords(leaf.value))
     case 'nofield': return t('{name} is empty', { name: leaf.name })

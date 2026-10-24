@@ -148,6 +148,7 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 		{map[string]any{"name": "x"}, "view.query is required"},
 		{map[string]any{"name": "x", "query": " "}, "view.query must not be empty"},
 		{map[string]any{"name": "x", "query": "@work p1"}, `view.query: Expected "&" or "|" before "p1" at position 7`},
+		{map[string]any{"name": "x", "query": "workspace: & p1"}, `view.query: Expected a workspace name after "workspace:" at position 1`},
 		{map[string]any{"name": "x", "query": "p1", "colour": "red"}, "unknown field"},
 		{map[string]any{"name": "x", "query": "p1", "pinned": "yes"}, "must be a boolean"},
 		{map[string]any{"name": "x", "query": "p1", "panels": []string{list}}, "only allowed on dashboards"},
@@ -387,4 +388,11 @@ func TestViewsAcceptEisenhowerQueries(t *testing.T) {
 		resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": c.name, "query": c.query, "kind": "list", "on_drop": c.rule})
 		e.mustStatus(resp, 201, out)
 	}
+}
+
+// A saved view may name a workspace (OpenSpec change group-mentions, D6).
+func TestViewsAcceptWorkspaceTerm(t *testing.T) {
+	e := registeredEnv(t)
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Both", "query": `(workspace: Home | workspace: "Side projects") & due = this week`})
+	e.mustStatus(resp, 201, out)
 }

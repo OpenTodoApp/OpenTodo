@@ -177,6 +177,29 @@ describe('mentions in notes', () => {
     expect(Math.abs(mentions.ts - doc.ts)).toBeLessThan(5)
     await unmount()
   })
+
+  it('A group of the project workspace is offered after the people and stored as group:<id> (group-mentions D4)', async () => {
+    await db.workspaces.bulkPut([
+      { id: 'w-me', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: ME },
+      { id: 'w-fam', name: 'Family', icon: '', color: '', default: false, role: 'owner', ownerId: ME },
+    ])
+    await db.groups.put({ id: 'g-adults', workspaceId: 'w-fam', name: 'Adults', members: [ME, 'u-bob'] })
+    const project = await createProject({ name: 'House' })
+    await db.projects.update(project, { workspace_id: 'w-fam' })
+    await membership(project, ME, 'u-bob')
+    const id = await createTask({ title: 'Paint', project_id: project })
+    const { container, unmount } = await open(id)
+    const v = await editorOf(container)
+    await typeText(v, '@A')
+    await waitFor(() => options().some((o) => o.includes('Adults')), 'the group option')
+    expect(options().at(-1)).toContain('Group · 2 people')
+    await press(v, 'Enter')
+    expect(md(v)).toBe('@Adults')
+    v.dom.blur()
+    await waitFor(async () => !!(await db.tasks.get(id))?.note_mentions?.length, 'note_mentions saved', 5000)
+    expect((await db.tasks.get(id))!.note_mentions).toEqual(['group:g-adults'])
+    await unmount()
+  })
 })
 
 describe('Make subtask', () => {

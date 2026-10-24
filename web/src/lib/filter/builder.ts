@@ -18,7 +18,7 @@ function quoteName(name: string): string {
   return BREAK.test(name) || name === '' || name.startsWith('#') ? quoteAlways(name) : name
 }
 
-/** `search:` and `origin:` text: bare when it reads back as one word. */
+/** `search:`, `origin:` and `workspace:` text: bare when it reads back as one word. */
 function quoteText(text: string): string {
   return BREAK.test(text) || text === '' || text.startsWith('"') ? quoteAlways(text) : text
 }
@@ -65,6 +65,7 @@ export function formatLeaf(n: Node): string {
     case 'keyword': return n.keyword
     case 'search': return `search: ${quoteText(n.text)}`
     case 'origin': return `origin: ${quoteText(n.value)}`
+    case 'workspace': return `workspace: ${quoteText(n.name)}`
     // Field names are always quoted: a bare one could be a reserved word.
     case 'field': return `${quoteAlways(n.name)} ${n.op} ${formatFieldValue(n.value)}`
     case 'nofield': return `no ${quoteAlways(n.name)}`
@@ -99,6 +100,7 @@ export function stripPositions(n: Node): Node {
     case 'not': return { kind: 'not', item: stripPositions(n.item) }
     case 'label': return { kind: 'label', name: n.name, pos: 0 }
     case 'project': return { kind: 'project', name: n.name, descendants: n.descendants, pos: 0 }
+    case 'workspace': return { kind: 'workspace', name: n.name, pos: 0 }
     case 'field': return { ...n, pos: 0, opPos: 0 }
     case 'nofield': return { ...n, pos: 0 }
     default: return n
