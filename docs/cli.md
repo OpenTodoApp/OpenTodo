@@ -29,6 +29,30 @@ make cli                                              # -> bin/ot
 
 The server container image does not include `ot`; it belongs on the machine you type on.
 
+### Shell completion
+
+`ot completion bash`, `ot completion zsh` and `ot completion fish` print a completion script. Install it once:
+
+```bash
+# bash (needs the bash-completion package, which most distributions and Homebrew ship)
+mkdir -p ~/.local/share/bash-completion/completions
+ot completion bash > ~/.local/share/bash-completion/completions/ot
+# or, without bash-completion, in ~/.bashrc:
+source <(ot completion bash)
+
+# zsh: a directory on $fpath, before compinit runs in ~/.zshrc
+mkdir -p ~/.zfunc
+ot completion zsh > ~/.zfunc/_ot
+#   in ~/.zshrc:  fpath=(~/.zfunc $fpath); autoload -U compinit; compinit
+
+# fish
+ot completion fish > ~/.config/fish/completions/ot.fish
+```
+
+Open a new shell afterwards. Tab then completes commands, subcommands, flags and fixed values (`--priority`, `--scope`), and reads names from the server of your profile: projects after `--project` and as `#Name` in an `ot add` title, labels after `--label` and as `@name`, workspaces after `--workspace`, and open task ids (with their titles in zsh and fish) after `ot done`, `edit`, `rm`, `time start` and `time log`; `ot reopen` offers completed ones. Profile names come from your config file, and `--out` or a vault folder complete as paths. A `--profile` or `--server` earlier on the line is respected.
+
+The script is a thin wrapper: on each Tab it asks the `ot` on your `PATH` (`ot __complete`, a hidden command), which answers from the same command table as `ot help` and `ot schema`, so an upgraded `ot` completes its new flags without a new script. Names are read with one request that may take at most 2 seconds; when the server cannot be reached, you are signed out or the account is end-to-end encrypted, you get commands and flags but no names, and nothing is printed into your prompt. Nothing is cached on disk. Names with spaces or quotes are inserted quoted. In bash, values complete after `--flag value`, not `--flag=value`.
+
 ## Sign in
 
 ```bash
@@ -335,7 +359,7 @@ Or add a reminder task every Monday morning:
 - Online only, apart from `ot vault`: no offline queue, no local cache. Offline capture is what the web app and PWA are for.
 - `--due` understands a fixed set of words; the natural-language quick-add grammar lives in the web client.
 - Rate limits on `auth/login` apply (10 per minute per address); `ot auth set-token` avoids them entirely.
-- No shell completion scripts yet (`ot schema` has everything a completion script needs).
+- Shell completion covers bash, zsh and fish; there is no PowerShell script.
 
 ## Using ot from an agent
 

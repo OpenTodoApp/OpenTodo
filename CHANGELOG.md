@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Shell completion for `ot`.** `ot completion bash`, `ot completion zsh` or `ot completion fish` prints a script; install it once and Tab completes commands, flags and fixed values, plus project, label and workspace names, open task ids with their titles, and `#project` and `@label` in `ot add`, read from your profile's server. Offline it still completes commands and flags and prints nothing into your prompt. ([Shell completion](docs/cli.md#shell-completion))
+
 ## [0.11.0] - 2026-10-24
 
 OpenTodo 0.11.0 is **Precision**, a new look for the whole app. Every task is one line with its date, project and labels in aligned columns, pages fill one quiet surface, and colour is kept for what needs you. **Today tells you in a sentence what stands out**, and each part of that sentence opens what it names. **Tasks open as a page**, the **Inbox keeps the selected task beside the list**, **Filters become Views** with display options, **All projects is a table** that says which project needs a look, and quick add and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> share one palette. The assistant, Settings, boards, the timeline, the review screens and the phone layout follow the same look, and larger text sizes no longer break the layout. Also new: **delivery channels** (ntfy, Pushover, Gotify, a signed webhook), a **filter builder** that needs no query syntax, and a **Claude Code plugin** for your own server.
