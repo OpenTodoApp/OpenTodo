@@ -351,7 +351,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {own.length === 0 && !(board || m.liveSections.length > 0) && (m.duration
             ? <FilteredEmpty onClear={() => m.chooseDuration(null)} />
             : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly}
-                completed={hiddenDone} onShowCompleted={showCompleted} compact={route.view === 'inbox' && groups.some((g) => g.key === 'planned' && g.count > 0)} />)}
+                completed={hiddenDone} onShowCompleted={showCompleted} compact={route.view === 'inbox' && groups.some((g) => g.key === 'planned' && (g.count ?? 0) > 0)} />)}
 
           {board && currentProject ? (
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}
