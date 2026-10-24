@@ -9,15 +9,17 @@ order: 77
 ---
 # Ask, review and undo
 
-<picture><source srcset="images/assistant-review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-review-light.webp" alt="The answer I've proposed moving 3 tasks to Friday, followed by a Proposed changes box listing Water the plants, Renew passport and Get three quotes for the kitchen, each with its old and new due date, a checkbox, and the buttons Apply all and Discard."></picture>
+<picture><source srcset="images/assistant-review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-review-light.webp" alt="The answer I've proposed moving 3 tasks to Friday, followed by a Proposed changes box listing Water the plants, Renew passport and Get three quotes for the kitchen, each with its old and new due date and a checkbox, and the buttons Apply 3 changes and Discard."></picture>
 
 The [assistant](assistant.md) answers from your tasks and proposes changes. This page is the loop you go through: open, ask, review, apply, undo.
 
 ## Open the assistant
 
-Press <kbd>Shift</kbd>+<kbd>I</kbd>, select **Assistant** in the header, or type in the **Ask OpenTodo** box at the top of **Today** or on the **Ask** screen (sidebar, or <kbd>g</kbd> then <kbd>k</kbd>). On a wide screen it opens as a panel on the right; on a phone it fills the screen, with the message box above the keyboard. <kbd>Esc</kbd> closes it and puts the focus back where it was.
+Press <kbd>Shift</kbd>+<kbd>I</kbd> or select **Ask** on **Today** to open the assistant beside the page you are on. The tray under the message box shows what it carries along, such as **Context: Today** or **Context: 1 selected task**. On a wide screen it opens as a panel on the right; on a phone it fills the screen, with the message box above the keyboard. <kbd>Esc</kbd> closes it and puts the focus back where it was.
 
-The button, the shortcut, the Ask box and the Ask screen only appear when the assistant is available to you. While it is off, the server owner sees one line on Today pointing to the assistant settings, which **Dismiss** hides for good on that device; other members see nothing.
+The **Assistant** page (sidebar, or <kbd>g</kbd> then <kbd>k</kbd>) is the same conversation with the whole screen: a greeting, the message box and three skills to start from (**Plan my week**, **Triage my inbox**, **Turn an idea into a project**). The × beside them hides them on that device. **History** lists earlier conversations and **New chat** starts one.
+
+The button, the shortcut and the page only work when the assistant is available to you. While it is off, the page says so, and the server owner finds the setup under **Settings → Integrations**.
 
 ## Ask and review
 
@@ -25,8 +27,8 @@ Type a question and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> ad
 
 When you ask for changes, the answer ends with **Proposed changes**: one line per task or project, each change in words ("Due Sun 11 Oct → Fri 16 Oct", "Completed", "New task in Garden: Buy seeds").
 
-- Every item is checked. Uncheck what you do not want.
-- **Apply** (or <kbd>Enter</kbd> inside the list) applies the checked items. The summary says how many were applied ("4 of 5 changes applied").
+- Every item is checked. Uncheck what you do not want; the head counts what is selected ("3 of 4 selected").
+- **Apply 3 changes** (or <kbd>Enter</kbd> inside the list) applies the checked items. The summary says how many were applied ("4 of 5 changes applied").
 - **Discard** (or <kbd>Esc</kbd> inside the list) drops the proposal. Nothing changes.
 - Items in a **shared** project are marked, because other people see the change.
 - An item that changed on another device after it was proposed is unchecked and marked **changed since proposed**. Applying the rest leaves the newer value alone.

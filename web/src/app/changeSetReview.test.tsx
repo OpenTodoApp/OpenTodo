@@ -19,7 +19,10 @@ const render = (over: Partial<Parameters<typeof ChangeSetReview>[0]> = {}) =>
 describe('ChangeSetReview', () => {
   it('lists each change in words with a checkbox, badges shared and stale items', () => {
     const html = render()
-    expect(html).toContain('Proposed changes (3)')
+    // The card's head (assistant-surface D4): what it is, how many are selected, that nothing changes yet.
+    expect(html).toContain('>Proposed changes<')
+    expect(html).toContain('2 of 3 selected')
+    expect(html).toContain('Nothing changes until you apply')
     expect(html).toContain('Due Wed 14 Oct → Fri 16 Oct')
     expect((html.match(/type="checkbox"/g) ?? []).length).toBe(3)
     expect((html.match(/checked=""/g) ?? []).length).toBe(2)
@@ -27,7 +30,8 @@ describe('ChangeSetReview', () => {
     expect(html).toContain('changed since proposed')
     expect(html).toContain('aria-label="Paint the fence: Completed (shared project)"')
     expect(html).toContain('no longer on this device')
-    expect(html).toContain('Apply 2 of 3')
+    expect(html).toContain('Apply 2 changes')
+    expect(render({ review: { ...review, items: review.items.slice(0, 1) } })).toContain('Apply 1 change<')
     expect(html).toContain('>Discard<')
     expect(html).toContain('role="group"')
   })

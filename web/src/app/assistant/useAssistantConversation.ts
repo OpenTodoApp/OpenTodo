@@ -83,6 +83,8 @@ function useComposerState() {
   const [pickedSkillId, setPickedSkillId] = useState<string | null>(null)
   const [pasted, setPasted] = useState<string | null>(null)
   const selectedFor = useRef<string[] | null>(null)
+  // The same selection as state, for the tray's context chip (assistant-surface D3).
+  const [selection, setSelection] = useState<string[] | null>(null)
   const [autoSend, setAutoSend] = useState(false)
   // Opened from the composer, the Ask screen or a task's menu (assistant-skills D4).
   const pendingPrefill = useAssistantPrefill()
@@ -92,6 +94,7 @@ function useComposerState() {
     setPickedSkillId(p.skill ?? null)
     setPasted(p.pasted ?? null)
     selectedFor.current = p.selected ?? null
+    setSelection(p.selected ?? null)
     setAutoSend(!!p.send)
   }, [])
   useEffect(() => { applyPrefill(takeAssistantPrefill()) }, [applyPrefill, pendingPrefill])
@@ -101,7 +104,8 @@ function useComposerState() {
     if (found) setSkill(found)
   }, [pickedSkillId, skills])
   const chooseSkill = (sk: AssistantSkill | null) => { setPickedSkillId(sk?.id ?? null); setSkill(sk) }
-  return { draft, setDraft, skills, skill, setSkill, pickedSkillId, chooseSkill, pasted, setPasted, selectedFor, autoSend, setAutoSend }
+  const clearSelection = () => { selectedFor.current = null; setSelection(null) }
+  return { draft, setDraft, skills, skill, setSkill, pickedSkillId, chooseSkill, pasted, setPasted, selectedFor, selection, clearSelection, autoSend, setAutoSend }
 }
 
 /** Accepting the provider's terms (in-app-assistant consent), with an optional own key. */
@@ -241,7 +245,7 @@ export function useAssistantConversation({ context, onApplied }: ConversationOpt
     composer.setDraft('')
     composer.setSkill(null)
     composer.setPasted(null)
-    composer.selectedFor.current = null
+    composer.clearSelection()
     setError(null)
     rv.setReview(null)
     rv.setResult(null)

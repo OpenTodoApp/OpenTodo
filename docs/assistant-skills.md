@@ -15,7 +15,7 @@ The [assistant](assistant.md) comes with skills for common jobs. Whatever it doe
 
 ## Skills
 
-Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills** in the Ask box or in the panel (next to the message box), or select one of the example cards. The panel shows what the skill does and an example; add your own words if you like, then send.
+Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills** under the message box, or select one of the cards on the **Assistant** page. The message box shows what the skill does and an example; add your own words if you like, then send.
 
 | Skill | What it does |
 |---|---|
@@ -29,7 +29,7 @@ A skill can only use the tools it needs (Break this down cannot move or complete
 
 ## Paste notes
 
-Paste meeting notes, an email or a list into the Ask box or the message box and it is kept apart as **pasted text**: the assistant uses it as material, never as instructions. If the text contains instructions ("ignore your rules…"), the assistant ignores them and says so. Pasted text counts toward the 256 KB limit of one message.
+Paste meeting notes, an email or a list into the message box and it is kept apart as **pasted text**: the assistant uses it as material, never as instructions. If the text contains instructions ("ignore your rules…"), the assistant ignores them and says so. Pasted text counts toward the 256 KB limit of one message.
 
 ## Safety
 

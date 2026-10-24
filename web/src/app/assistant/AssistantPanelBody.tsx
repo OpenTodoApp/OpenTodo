@@ -1,4 +1,7 @@
-import { Skeleton } from '../../ui'
+import type { ReactNode } from 'react'
+import { BrandMark, Skeleton } from '../../ui'
+import type { AssistantSkill } from '../../lib/assistantSkills'
+import { AssistantWelcome } from './AssistantWelcome'
 import type { Review } from '../../lib/assistant'
 import { usageLine, type AssistantMessage, type AssistantThread } from '../../lib/assistant'
 import type { AssistantStatus } from '../../lib/assistantStatus'
@@ -48,6 +51,13 @@ export interface PanelViewProps {
   onStop: () => void
   onAccept: (ownKey?: string) => void
   onPickThread: (id: string) => void
+  /** The empty state (assistant-surface D2): the person's name, the starter skills, what a starter does. */
+  name?: string
+  skills?: AssistantSkill[]
+  onStarter?: (s: AssistantSkill) => void
+  /** The page's empty state holds the composer; the sheet keeps it at its foot. */
+  composer?: ReactNode
+  layout?: 'page' | 'sheet'
 }
 
 /** The panel's content without state (rendered to markup in tests). */
@@ -89,27 +99,24 @@ export function AssistantPanelBody(p: PanelViewProps) {
         <AssistantConsent status={s} connected={p.connected} busy={p.consentBusy} error={p.consentError} onAccept={p.onAccept} />
       ) : (
         <>
-          {p.messages.length === 0 && !p.streaming && (
-            <div className="space-y-1 text-body text-muted" data-assistant-empty>
-              <p>{t('Ask about your tasks or ask for changes. For example:')}</p>
-              <ul className="list-disc pl-5">
-                <li>{t('What is due today?')}</li>
-                <li>{t('Move everything from earlier days to Friday.')}</li>
-                <li>{t('Break “Plan the team offsite” into steps.')}</li>
-              </ul>
-              <p>{t('Changes are proposed for you to review; nothing changes until you apply them.')}</p>
+          {p.messages.length === 0 && !p.streaming && !p.threads ? (
+            <AssistantWelcome name={p.name ?? ''} skills={p.skills ?? []} onStarter={(s) => p.onStarter?.(s)} composer={p.composer} layout={p.layout ?? 'sheet'} />
+          ) : (
+            <ol className="space-y-5" aria-label={t('Conversation')}>
+              {p.messages.map((m, i) => <MessageItem key={i} m={m} />)}
+              {p.streaming && (
+                <AnswerItem busy>
+                  {p.streaming.status.length > 0 && <p className="text-meta text-muted">{p.streaming.status[p.streaming.status.length - 1]}</p>}
+                  {p.streaming.text ? <Markdown source={p.streaming.text} /> : <p className="text-muted">{t('Thinking…')}</p>}
+                </AnswerItem>
+              )}
+            </ol>
+          )}
+          {(p.review || p.result) && (
+            <div className="sm:pl-9">
+              <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
             </div>
           )}
-          <ol className="space-y-3" aria-label={t('Conversation')}>
-            {p.messages.map((m, i) => <MessageItem key={i} m={m} />)}
-            {p.streaming && (
-              <li className="text-body" aria-busy="true">
-                {p.streaming.status.length > 0 && <p className="text-meta text-muted">{p.streaming.status[p.streaming.status.length - 1]}</p>}
-                {p.streaming.text ? <Markdown source={p.streaming.text} /> : <p className="text-muted">{t('Thinking…')}</p>}
-              </li>
-            )}
-          </ol>
-          <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
         </>
       )}
       {p.error && <p role="alert" className="text-body text-danger">{p.error}</p>}
@@ -119,10 +126,20 @@ export function AssistantPanelBody(p: PanelViewProps) {
   )
 }
 
+/** An answer: the assistant's mark at the left, the text beside it (assistant-surface D2). */
+function AnswerItem({ busy, children }: { busy?: boolean; children: ReactNode }) {
+  return (
+    <li className="flex gap-3 text-body" aria-busy={busy || undefined}>
+      <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-control border border-default" aria-hidden="true"><BrandMark size={16} /></span>
+      <div className="min-w-0 flex-1 space-y-1">{children}</div>
+    </li>
+  )
+}
+
 function MessageItem({ m }: { m: AssistantMessage }) {
   if (m.role === 'user') {
     return (
-      <li className="ml-8 rounded-control bg-sunken dark:bg-raised px-3 py-2 text-body">
+      <li className="ml-auto w-fit max-w-[85%] rounded-card bg-sunken px-3 py-2 text-body">
         {(m.skill || m.pastedLines) && (
           <p className="mb-1 text-meta text-muted">{[m.skill && t('Skill: {name}', { name: m.skill }), m.pastedLines && t('{n, plural, one {pasted text, # line} other {pasted text, # lines}}', { n: m.pastedLines })].filter(Boolean).join(' · ')}</p>
         )}
@@ -131,13 +148,13 @@ function MessageItem({ m }: { m: AssistantMessage }) {
     )
   }
   return (
-    <li className="space-y-1 text-body">
+    <AnswerItem>
       <span className="sr-only">{t('Assistant:')}{' '}</span>
       {m.text && <Markdown source={m.text} />}
       {m.stop === 'max_tokens' && <p className="text-meta font-medium text-on-warning-soft">{t('Cut off: the answer reached its length limit.')}</p>}
       {m.error && <p className="text-danger">{m.error}</p>}
       {m.note && <p className="text-meta text-muted">{m.note}</p>}
       {m.usage && <p className="text-meta text-faint">{usageLine(m.usage)}</p>}
-    </li>
+    </AnswerItem>
   )
 }
