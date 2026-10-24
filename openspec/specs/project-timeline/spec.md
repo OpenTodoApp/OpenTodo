@@ -29,7 +29,7 @@ Every project SHALL offer a timeline layout beside list and board: one row per o
 - **THEN** the rows sit under a group bar reading "Kitchen" and "4", in sentence case
 
 ### Requirement: Bars from start, due and deadline
-A task's bar SHALL span from the earliest to the latest of its start date, due date (in the viewer's zone) and deadline; a single date is a one-day bar. A bar SHALL be drawn as a soft fill of the project's palette hue with a 3 px solid hue edge on its leading side, and the part of a bar before today SHALL be dimmed to the faint tone. A bar at least 96 px wide SHALL show the task's title inside it in the strong text tone; a shorter bar SHALL be followed by its length in days. The due day SHALL be marked inside the bar when it is not one of its ends, and the deadline SHALL be marked by a diamond at its day in the warning tone, followed by "Deadline" and its date when the bar has no other label after it. A task with none of the three, or a `someday` start, SHALL be listed in an "Unscheduled" group at the end with no bar. A task SHALL be late when its deadline or its due day lies before today; a late bar SHALL use the overdue tone for its fill, edge and diamond, taking precedence over the hue, and SHALL be followed by "n days late", counted from the deadline when it has passed and from the due day otherwise.
+A task's bar SHALL span from the earliest to the latest of its start date, due date (in the viewer's zone) and deadline; a single date is a one-day bar. A bar SHALL be drawn as a soft fill of the project's palette hue with a 3 px solid hue edge on its leading side, and the part of a bar before today SHALL be dimmed to the faint tone. A bar at least 96 px wide SHALL show the task's title inside it in the strong text tone; a shorter bar SHALL be followed by its length in days. The due day SHALL be marked inside the bar when it is not one of its ends, and the deadline SHALL be marked by a diamond at its day in the warning tone, followed by "Deadline" and its date when the bar has no other label after it. A task with none of the three, or a `someday` start, SHALL be listed in an "Unscheduled" group at the end with no bar. A task SHALL be late when its deadline or its due day lies before today; a late bar SHALL use the overdue tone for its fill, edge and diamond, taking precedence over the hue, and SHALL be followed by "n days late", counted from the deadline when it has passed and from the due day otherwise. The note after a bar (its length, "n days late" or the deadline) SHALL start just after the bar unless it would cross the today line, in which case it SHALL start just past the line; and when it would run past the end of the axis it SHALL end just before the bar instead, so a note never covers the today line or leaves the axis.
 
 #### Scenario: All three dates
 - **WHEN** a task starts on the 3rd, is due on the 10th and has a deadline on the 14th
@@ -62,6 +62,14 @@ A task's bar SHALL span from the earliest to the latest of its start date, due d
 #### Scenario: A past start is not late
 - **WHEN** a task's only date is a start on the 10th and today is the 14th
 - **THEN** its bar is dimmed and not drawn as late
+
+#### Scenario: Late note clear of the today line
+- **WHEN** a task was due yesterday on the day axis, so "1 day late" after its bar would cross the today line
+- **THEN** the note starts just past the today line
+
+#### Scenario: Note at the end of the axis
+- **WHEN** a one-day bar sits on the axis's last day
+- **THEN** its "1 day" note is drawn before the bar, ending just before it
 
 ### Requirement: Dependencies on the timeline
 For every open task in the project that is blocked by another open task of the project, the timeline SHALL draw an arrow from the blocker's bar end to the dependent's bar start, and SHALL dim the blocked row as lists do. Blockers outside the project, completed or deleted SHALL not be drawn. Moving a blocker SHALL never move its dependents.
