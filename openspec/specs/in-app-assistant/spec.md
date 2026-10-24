@@ -135,7 +135,7 @@ The assistant SHALL use the agent tool registry shared with MCP: read tools run 
 - **THEN** the answer explains that it cannot change sharing and no change set is proposed
 
 ### Requirement: Reviewable change sets
-The panel SHALL show a proposed change set as a list grouped by task or project with each change in words (old → new), checked by default, with shared items marked, and SHALL apply only after confirmation (Enter) or discard it (Esc). Items whose local value changed since the proposal SHALL be unchecked and marked; items missing locally SHALL be dropped with a note. Review and apply work offline once the proposal has arrived; applied changes converge as ops.
+The panel and the Assistant page SHALL show a proposed change set as a card: a head naming it, the number of checked items out of all ("3 of 4 selected") and that nothing changes until the user applies; one row per task or project with a checkbox, the title and each change in words (old → new) at the right of a wide card and under the title of a narrow one, checked by default, with shared items marked; and a foot with an apply action naming how many changes it applies ("Apply 3 changes"), Discard, and the keys. It SHALL apply only after confirmation (Enter or the apply action) or discard it (Esc or Discard). Items whose local value changed since the proposal SHALL be unchecked and marked; items missing locally SHALL be dropped with a note. Review and apply work offline once the proposal has arrived; applied changes converge as ops.
 
 #### Scenario: Review and apply part
 - **WHEN** a change set proposes 5 changes and the user unchecks one and presses Enter
@@ -144,6 +144,10 @@ The panel SHALL show a proposed change set as a list grouped by task or project 
 #### Scenario: Changed since proposed
 - **WHEN** another device changed a task's due date after the proposal arrived and before the user applies
 - **THEN** that item is unchecked and marked "changed since proposed", and applying leaves the newer value in place
+
+#### Scenario: The card counts the selection
+- **WHEN** a change set proposes 4 changes, one of them changed since proposed
+- **THEN** the head reads "3 of 4 selected" and the apply action reads "Apply 3 changes"; unchecking another item makes them "2 of 4 selected" and "Apply 2 changes"
 
 ### Requirement: Applying through operations
 Confirmed changes SHALL be applied with `mutateMany()` as one batch with device `assistant:<device-id>`, so they apply locally first, work offline once proposed, sync later, converge with concurrent edits by last-writer-wins, appear in history and activity like any edit, and trigger the usual reminders, webhooks and notifications.
@@ -246,7 +250,7 @@ For an account with end-to-end encryption, the assistant SHALL be unavailable: t
 - **THEN** the response is 409 `encryption_enabled` and no outbound request is made
 
 ### Requirement: Chat panel
-The panel SHALL open from a header button and Shift+I, use the overlay module (side sheet from 640 px, full-screen sheet below), trap and return focus, close with Esc, announce streamed text at sentence boundaries in a polite live region, load as a separate chunk on first open, and offline show past conversations with the composer disabled.
+The panel SHALL open from a header button and Shift+I, use the overlay module (side sheet from 640 px, full-screen sheet below), trap and return focus, close with Esc, announce streamed text at sentence boundaries in a polite live region, load as a separate chunk on first open, and offline show past conversations with the composer disabled. It SHALL show the same empty state, messages, composer and change-set card as the Assistant page, with the composer at its foot. While the Assistant page is open, opening the assistant SHALL NOT open the panel: the page's composer SHALL take the request and the focus.
 
 #### Scenario: Keyboard only
 - **WHEN** a user presses Shift+I, types a question, presses Enter, then Tab to the change set and Enter
@@ -259,6 +263,10 @@ The panel SHALL open from a header button and Shift+I, use the overlay module (s
 #### Scenario: Offline
 - **WHEN** the device is offline and the user opens the panel
 - **THEN** past conversations are listed and the composer says the assistant needs a connection
+
+#### Scenario: Shift+I on the Assistant page
+- **WHEN** the Assistant page is open and the user presses Shift+I, or sends "plan my afternoon" from the command bar's Ask mode
+- **THEN** no panel opens, the focus moves to the page's composer, and the command bar's text is sent as a turn on the page
 
 ### Requirement: Member's own provider
 While the owner allows member keys, a user MAY choose their own provider (Anthropic, OpenAI or Google Gemini, never the compatible endpoint), a model and a key through `PUT /api/v1/me/assistant`. Anthropic models SHALL come from the offered list; other model ids SHALL be 1–100 characters of `A-Za-z0-9._:-`. A turn SHALL use that provider, model and key only while member keys are allowed and the key is set, otherwise the owner's provider. The choice is server state, not an op.
@@ -323,15 +331,27 @@ While the owner allows member keys, a user MAY choose their own provider (Anthro
 - **THEN** the response is 429 `rate_limited` with `Retry-After` and no provider request is made
 
 ### Requirement: Ask composer
-When the assistant is available to the user, the Ask screen SHALL show a composer with a text field, a Skills menu and up to three example cards, and the Today view SHALL offer an "Ask" action in its page header that opens the assistant panel; no composer or cards SHALL be rendered inside Today's list. Sending from the composer, choosing a skill or choosing a card SHALL open the assistant panel with that text or skill filled in.
+When the assistant is available to the user, the Ask screen (`/ask`, named "Assistant" in the sidebar, the command palette and the page header) SHALL be the Assistant page: it SHALL hold the conversation itself, with History and New chat in its header. With no messages it SHALL show the assistant's mark, a greeting with the user's first name for the time of day on the device, the composer in the middle of the page and up to three starter skills under it; once a conversation runs, the messages SHALL fill a centred column with the composer at the foot. The Today view SHALL offer an "Ask" action in its page header that opens the assistant panel; no composer or cards SHALL be rendered inside Today's list. Choosing a starter SHALL put its skill in the composer without sending. A turn from the page SHALL carry no view as context, only tasks a prefill names. The starters can be hidden on the device; the Skills menu keeps every skill.
 
 #### Scenario: Start from Today
 - **WHEN** a user with the assistant available activates Ask in Today's page header, types "what is overdue in Work?" and presses Enter
 - **THEN** the assistant panel opens and sends that message as a turn
 
 #### Scenario: Card fills the panel
-- **WHEN** a user with the assistant available chooses an example card on the Ask screen
-- **THEN** the assistant panel opens with that card's text filled in
+- **WHEN** a user with the assistant available chooses the "Plan my week" starter on the Assistant page, or in the panel's empty state
+- **THEN** that composer shows the skill with its description and example, ready to send, and nothing is sent yet
+
+#### Scenario: Greeting
+- **WHEN** Ada Lovelace opens the Assistant page at 14:00 with no conversation
+- **THEN** the page reads "Good afternoon, Ada." and "What should we sort out?" above the composer
+
+#### Scenario: Conversation on the page
+- **WHEN** the user sends "Friday is too full" from the page's composer
+- **THEN** the message appears at the right of a centred column, the answer streams beside the assistant's mark, any change set follows as a card, and the composer moves to the foot of the page
+
+#### Scenario: Hide the starters
+- **WHEN** the user selects × beside "Start from a skill"
+- **THEN** the starters are gone on that device, also after a reload, and the Skills menu still lists every skill
 
 ### Requirement: No composer when the assistant is unavailable
 When the assistant is not available, no composer, card or hint SHALL be shown to anyone in task views; the owner finds the assistant under Settings → Integrations.
@@ -345,11 +365,15 @@ When the assistant is not available, no composer, card or hint SHALL be shown to
 - **THEN** there is no hint above the list to dismiss, and the Integrations section offers the assistant setup
 
 ### Requirement: Skills menu in the panel
-The assistant panel SHALL offer the same Skills menu as the composer. Choosing a skill SHALL show its description and example and let the user add their own text before sending. The menu SHALL be fully operable by keyboard and announce the chosen skill.
+The composer of the panel and of the Assistant page SHALL offer the Skills menu in a tray under the text field, followed by a context line naming what the turn carries: the selected tasks a request names ("1 selected task"), else the panel's view (Today, Upcoming, Inbox, This project, This view), else nothing. Choosing a skill SHALL show its description and example and let the user add their own text before sending. The menu SHALL be fully operable by keyboard and announce the chosen skill.
 
 #### Scenario: Choose a skill by keyboard
 - **WHEN** the user opens the Skills menu with the keyboard, moves to "Break this down" and presses Enter while a task is selected
 - **THEN** the panel shows the skill with the selected task as its subject, ready to send
+
+#### Scenario: Context in the tray
+- **WHEN** the user opens the panel from Today, and later opens it with "Break down" from a task's menu
+- **THEN** the tray reads "Context: Today" the first time and "Context: 1 selected task" the second
 
 ### Requirement: Pasted text is untrusted context
 Text pasted into the composer or the panel SHALL be sent as user-provided content marked untrusted, like text from email to task. Instructions inside it SHALL be ignored and mentioned, and it SHALL count toward the existing turn size limit.
@@ -457,7 +481,7 @@ The Assistant card in Settings SHALL read top to bottom: a status line ("On for 
 - **THEN** the status line says it is off and nobody sees the assistant, and the "For everyone on this server" group offers Configure
 
 ### Requirement: Ask from the command bar
-When the assistant is available to the user, the command bar's Ask mode SHALL hand its text to the assistant panel as one turn on Enter, through the same path as the Ask composer, and SHALL be absent when the assistant is unavailable; no composer, hint or Ask segment SHALL be shown to a user without the assistant.
+When the assistant is available to the user, the command bar's Ask mode SHALL hand its text to the assistant as one turn on Enter, through the same path as the Ask composer: to the panel, or to the Assistant page while it is open. It SHALL be absent when the assistant is unavailable; no composer, hint or Ask segment SHALL be shown to a user without the assistant.
 
 #### Scenario: Member without the assistant
 - **WHEN** the owner has not enabled the assistant and a member opens the command bar
