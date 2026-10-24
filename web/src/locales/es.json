@@ -5309,5 +5309,8 @@
   "Your API key": "Tu clave de API",
   "Your account is end-to-end encrypted, so the server cannot read your tasks. This device can: it sends what a question needs directly to the provider you choose, with your own key. The OpenTodo server sees none of it.": "Tu cuenta tiene cifrado de extremo a extremo, así que el servidor no puede leer tus tareas. Este dispositivo sí: envía lo que necesita una pregunta directamente al proveedor que elijas, con tu propia clave. El servidor de OpenTodo no ve nada de ello.",
   "Your key is stored only in this browser. Like any page that calls a provider itself, this app’s page can read it.": "Tu clave se guarda solo en este navegador. Como cualquier página que llama a un proveedor por sí misma, la página de esta app puede leerla.",
-  "the model server at {origin}": "el servidor de modelos en {origin}"
+  "the model server at {origin}": "el servidor de modelos en {origin}",
+  "Briefing": "Resumen",
+  "Show the briefing": "Mostrar el resumen",
+  "The sentence under the title of Today and Upcoming. On all your devices.": "La frase bajo el título de Hoy y Próximo. En todos tus dispositivos."
 }
