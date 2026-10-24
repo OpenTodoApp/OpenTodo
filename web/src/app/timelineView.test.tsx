@@ -12,6 +12,7 @@ import { loadViewMode, nextViewMode, saveViewMode } from '../lib/sections'
 import { flush, key, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
+import { notePlacement } from './TimelineView'
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -203,5 +204,17 @@ describe('timeline', () => {
     await flush(50)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-10' })
     await r.unmount()
+  })
+})
+
+describe('notes beside short bars (precision-polish D4)', () => {
+  it('sits after the bar when clear', () => {
+    expect(notePlacement(0, 40, 60, 400, 1000)).toBe(48)
+  })
+  it('moves past the today line instead of crossing it', () => {
+    expect(notePlacement(0, 40, 60, 80, 1000)).toBe(88)
+  })
+  it('moves before the bar at the end of the axis', () => {
+    expect(notePlacement(900, 960, 60, null, 1000)).toBe(832)
   })
 })

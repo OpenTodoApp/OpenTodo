@@ -39,13 +39,14 @@ export function StepCard({ step, position, title, titleRef, icon, badge, onBack,
   return (
     <>
       <Card as="section" padding="none" aria-labelledby="review-step-title" data-review-step={step}>
-        <header className="flex items-start gap-3 border-b border-default bg-accent-soft/40 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
-          <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent">
+        <header className="flex items-start gap-3 border-b border-default px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
+          <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-raised text-muted">
             <Icon name={icon} size="lg" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-hint font-semibold uppercase tracking-wide text-accent" data-review-position>{position}</p>
-            <h2 id="review-step-title" ref={titleRef} tabIndex={-1} className="mt-0.5 text-h2 font-semibold text-strong outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus">
+            <p className="text-hint font-semibold uppercase tracking-wide text-faint" data-review-position>{position}</p>
+            {/* Focused from code on each step so a screen reader reads it; not a stop for Tab, so no ring (precision-polish D6). */}
+            <h2 id="review-step-title" ref={titleRef} tabIndex={-1} className="mt-0.5 text-h2 font-semibold text-strong outline-none">
               {title}
             </h2>
           </div>

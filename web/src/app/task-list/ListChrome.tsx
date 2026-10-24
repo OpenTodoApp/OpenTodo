@@ -62,7 +62,8 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
         // Process the Inbox one task at a time (inbox-triage): the page's primary action, P (inbox-split D3).
         <Tooltip label={t('Process the Inbox one task at a time')} shortcut={keysOf('inbox.process')}>
           <Button variant="primary" size="sm" icon="inbox" onClick={() => navigate({ view: 'triage' })} data-triage-start aria-keyshortcuts="p">
-            {t('Process')} <kbd className="ui-kbd ml-1" aria-hidden="true">P</kbd>
+            {/* A phone with a large text size keeps the icon, so the page title still fits beside it. */}
+            <span className="max-[21rem]:sr-only">{t('Process')}</span> <kbd className="ui-kbd ml-1 max-[21rem]:hidden" aria-hidden="true">P</kbd>
           </Button>
         </Tooltip>
       )}

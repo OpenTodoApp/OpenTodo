@@ -8,7 +8,7 @@ import { db } from '../lib/db'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { User, Workspace, WorkspaceEntry } from '../lib/types'
 import { storeWorkspaces, switchTo } from '../lib/workspaces'
-import { click, flush, render, type, visibleText } from '../ui/test-utils'
+import { click, flush, render, type, visibleText, minWidthPx } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { WorkspacesSettings } from './WorkspacesSettings'
 
@@ -47,7 +47,7 @@ beforeEach(async () => {
   width = 1280
   calls = []
   window.matchMedia = ((q: string) => ({
-    matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= width, media: q, onchange: null,
+    matches: minWidthPx(q) <= width, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {

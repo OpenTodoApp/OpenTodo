@@ -2,7 +2,7 @@
 // The page rhythm (OpenSpec change page-rhythm): the lead line under the title (D1),
 // the two frames (D3; list-stays-still D1), and group headers as labels (D2).
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render } from '../test-utils'
+import { minWidthPx, render } from '../test-utils'
 import { frameKind, PageBody, PageHeader } from './PageHeader'
 import { pageBar } from './pageBar'
 
@@ -11,8 +11,8 @@ afterEach(() => { vi.unstubAllGlobals() })
 /** matchMedia answering `width` for min-width queries and `reduce` for reduced motion. */
 function stubMedia(width: number, reduce = false) {
   vi.stubGlobal('matchMedia', (q: string) => {
-    const min = /min-width:\s*(\d+)px/.exec(q)
-    const matches = min ? width >= Number(min[1]) : q.includes('reduced-motion') ? reduce : false
+    const min = minWidthPx(q)
+    const matches = min ? width >= min : q.includes('reduced-motion') ? reduce : false
     return { matches, media: q, addEventListener() {}, removeEventListener() {} }
   })
 }

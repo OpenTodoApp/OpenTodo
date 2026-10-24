@@ -16,7 +16,7 @@ import { SyncStatus } from './SyncStatus'
 import { RelayIndicator } from './RelaySettings'
 import { RunningPill, TrackingAnnouncer, useRunning } from './TrackingIndicator'
 
-const ACTIVE = 'bg-accent-soft font-medium text-strong'
+const ACTIVE = 'bg-selected font-medium text-strong'
 const IDLE = 'text-faint hover:bg-sunken hover:text-default dark:hover:bg-raised'
 /** Below 768 px every control of the row keeps a touch-height target. */
 const TOUCH = 'max-md:min-h-11 max-md:min-w-11 touch-target'

@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
-import { click, flush, key, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
+import { click, flush, key, mockFetch, noPublicLinks, render, waitFor, minWidthPx } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { PanelHost } from './PanelHost'
 import { TaskListView } from './TaskListView'
@@ -19,7 +19,7 @@ let width = 1280
 function viewport(px: number) {
   width = px
   window.matchMedia = ((q: string) => ({
-    matches: /pointer:\s*fine/.test(q) ? true : /pointer:\s*coarse/.test(q) ? false : Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= width,
+    matches: /pointer:\s*fine/.test(q) ? true : /pointer:\s*coarse/.test(q) ? false : minWidthPx(q) <= width,
     media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
 }

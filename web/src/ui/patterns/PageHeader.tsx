@@ -102,7 +102,7 @@ const TITLE = { day: 'text-display text-strong', tool: 'text-h3 text-strong' } a
 /** The sidebar toggle, first in every header from 1024 px, where the sidebar collapses (precision-shell D2). */
 function SidebarToggleButton() {
   const toggle = useSidebarToggle()
-  const wide = useMediaQuery('(min-width: 1024px)')
+  const wide = useMediaQuery('(min-width: 64rem)')
   if (!toggle || !wide) return null
   const label = toggle.collapsed ? t('Show sidebar') : t('Hide sidebar')
   return (

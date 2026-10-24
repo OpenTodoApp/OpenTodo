@@ -24,7 +24,7 @@ export interface ProjectsSort { key: ProjectSortKey; dir: 1 | -1 }
 
 /** The columns after the name, in order; `from` is the table width a column needs (design D6). */
 const COLUMNS: { key: ProjectSortKey | 'people'; label: () => string; from: string; width: string }[] = [
-  { key: 'health', label: () => t('Health'), from: '', width: 'w-[7.5rem] @min-[36rem]/projects:w-[13rem]' },
+  { key: 'health', label: () => t('Health'), from: 'hidden @min-[18rem]/projects:table-cell', width: 'w-[7.5rem] @min-[36rem]/projects:w-[13rem]' },
   { key: 'progress', label: () => t('Progress'), from: 'hidden @min-[52rem]/projects:table-cell', width: 'w-[6.5rem]' },
   { key: 'open', label: () => t('Open', { context: 'count' }), from: 'hidden @min-[36rem]/projects:table-cell', width: 'w-[4.5rem]' },
   { key: 'next-due', label: () => t('Next due'), from: 'hidden @min-[44rem]/projects:table-cell', width: 'w-[7.5rem]' },
@@ -35,7 +35,7 @@ const cellOf = (key: (typeof COLUMNS)[number]['key']) => COLUMNS.find((c) => c.k
 
 const HEALTH: Record<HealthWord, { label: () => string; icon: IconName; tone: Tone }> = {
   late: { label: () => t('Late'), icon: 'circle-alert', tone: 'danger' },
-  slipping: { label: () => t('Slipping'), icon: 'activity', tone: 'warning' },
+  slipping: { label: () => t('Overdue'), icon: 'activity', tone: 'warning' },
   quiet: { label: () => t('Quiet'), icon: 'clock', tone: 'muted' },
   'on-track': { label: () => t('On track'), icon: 'trending-up', tone: 'success' },
 }
@@ -203,8 +203,12 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
                       <span className="user-text min-w-0 flex-1 truncate">{p.name}</span>
                     </button>
                   </div>
+                  {/* Too narrow for a health column (a large text size on a phone): the health sits under the name. */}
+                  <div className="-mt-1.5 pb-2 pointer-coarse:ml-5 @min-[18rem]/projects:hidden" style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * 1.25 + 3.25}rem` }} data-health-under>
+                    <HealthCell summary={s} narrow />
+                  </div>
                 </td>
-                <td className="px-2"><HealthCell summary={s} narrow={narrow} /></td>
+                <td className={`${cellOf('health')} px-2`}><HealthCell summary={s} narrow={narrow} /></td>
                 <td className={`${cellOf('progress')} px-2`}>
                   {s?.progress != null && <span className="inline-flex items-center gap-1.5 text-body tabular-nums text-default">
                     <ProgressRing value={s.progress} /><ReadAs label={t('{n}% done', { n: Math.round(s.progress * 100) })}>{`${Math.round(s.progress * 100)}%`}</ReadAs>

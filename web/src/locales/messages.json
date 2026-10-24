@@ -8644,6 +8644,9 @@
   "Over the limit": [
     "web/src/app/RelaySettings.tsx"
   ],
+  "Overdue": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
   "Overwrite changed fields": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -11248,9 +11251,6 @@
   ],
   "Slipped": [
     "web/src/app/review/MonthlyLook.tsx"
-  ],
-  "Slipping": [
-    "web/src/app/ProjectsTable.tsx"
   ],
   "Slowed down": [
     "web/src/app/DataSettings.tsx"
@@ -16648,6 +16648,9 @@
   ],
   "{n, plural, one {# completed task hidden by display options} other {# completed tasks hidden by display options}}": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "{n, plural, one {# completed task} other {# completed tasks}}": [
+    "web/src/app/task-list/ListGroups.tsx"
   ],
   "{n, plural, one {# day after} other {# days after}}": [
     "web/src/lib/nlp/reminders.ts"

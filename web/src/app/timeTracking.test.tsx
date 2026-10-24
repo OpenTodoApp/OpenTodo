@@ -10,7 +10,7 @@ import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { logTime, startTracking } from '../lib/timeEntries'
 import type { Task } from '../lib/types'
-import { click, flush, key, render, spokenText, visibleText } from '../ui/test-utils'
+import { click, flush, key, render, spokenText, visibleText, minWidthPx } from '../ui/test-utils'
 import { resetTaskPage, TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
@@ -31,7 +31,7 @@ beforeEach(async () => {
   await setCurrentUserId('u1')
   width = 1280
   window.matchMedia = ((q: string) => ({
-    matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= width, media: q, onchange: null,
+    matches: minWidthPx(q) <= width, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   setDateTime({ date_format: 'day-month', time_format: '24h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })

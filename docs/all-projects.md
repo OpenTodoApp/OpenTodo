@@ -33,7 +33,7 @@ Health is one word, worked out on your device from rules you can check, the firs
 | Health | When |
 |---|---|
 | **Late** | An open task's deadline has passed. The task is named, or the number of tasks past their deadline is given. |
-| **Slipping** | An open task is due before today. The number of late tasks is given. |
+| **Overdue** | An open task is due before today. The number of late tasks is given. |
 | **Quiet** | Nothing in the project changed for a week. The number of days is given. |
 | **On track** | Anything else, while something is open. |
 

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { flush, key, render } from '../ui/test-utils'
+import { flush, key, render, minWidthPx } from '../ui/test-utils'
 import type { User } from '../lib/types'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -32,7 +32,7 @@ beforeEach(() => {
   setDateTime({ date_format: 'day-month', time_format: '24h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })
   // A phone: 390 px, a coarse pointer.
   window.matchMedia = ((q: string) => ({
-    matches: /pointer:\s*fine/.test(q) ? false : /pointer:\s*coarse/.test(q) ? true : /prefers-reduced-motion/.test(q) ? reduce : Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390,
+    matches: /pointer:\s*fine/.test(q) ? false : /pointer:\s*coarse/.test(q) ? true : /prefers-reduced-motion/.test(q) ? reduce : minWidthPx(q) <= 390,
     media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
 })

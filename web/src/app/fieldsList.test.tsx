@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { createField, setFieldValue } from '../lib/fields'
 import { createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { loadListColumns, saveViewMode } from '../lib/sections'
-import { click, flush, render, mockFetch, noPublicLinks, spokenText, visibleText } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks, spokenText, visibleText, minWidthPx } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 
 // The project header asks the server for its public links.
@@ -24,7 +24,7 @@ beforeEach(async () => {
   resetDeviceId()
   width = 1280
   window.matchMedia = ((q: string) => ({
-    matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= width, media: q, onchange: null,
+    matches: minWidthPx(q) <= width, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
 })

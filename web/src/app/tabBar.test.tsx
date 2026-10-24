@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, render, minWidthPx } from '../ui/test-utils'
 import { openTaskPanel, resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -24,7 +24,7 @@ beforeEach(async () => {
   resetDeviceId()
   resetPanel()
   window.matchMedia = ((q: string) => ({
-    matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= width, media: q, onchange: null,
+    matches: minWidthPx(q) <= width, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
@@ -111,7 +111,7 @@ describe('the tab bar while the list scrolls', () => {
   beforeEach(() => {
     reduce = false
     window.matchMedia = ((q: string) => ({
-      matches: /prefers-reduced-motion/.test(q) ? reduce : Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= width, media: q, onchange: null,
+      matches: /prefers-reduced-motion/.test(q) ? reduce : minWidthPx(q) <= width, media: q, onchange: null,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
     })) as typeof window.matchMedia
   })

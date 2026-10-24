@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GRID_PREFS_META_KEY } from '../lib/calendar'
 import { db, setMeta } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, flush, key, render, type, minWidthPx } from '../ui/test-utils'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { resetPanel } from './panel'
 import { openedTask, resetTaskPage } from './taskPage.testkit'
@@ -421,7 +421,7 @@ describe('span and phone', () => {
     afterEach(() => { window.matchMedia = original })
     const phone = () => {
       window.matchMedia = ((q: string) => ({
-        matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390, media: q, onchange: null,
+        matches: minWidthPx(q) <= 390, media: q, onchange: null,
         addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
       })) as typeof window.matchMedia
     }

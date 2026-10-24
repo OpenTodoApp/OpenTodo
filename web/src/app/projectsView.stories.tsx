@@ -40,7 +40,7 @@ async function seedProjects() {
   await archiveProject(await createProject({ name: 'Trip 2026', color: HEX.blue }))
 }
 
-/** Late, Slipping, Quiet, On track and Nothing open, with the note under the table; at 375 px the columns at the end give way. */
+/** Late, Overdue, Quiet, On track and Nothing open, with the note under the table; at 375 px the columns at the end give way. */
 export const Default: StoryObj = { ...withSeed(seedProjects), render: () => <ProjectsView /> }
 
 /** A narrow table taps the health word (briefing-links D5): Home's "Late" shows its reason, the passport, under the word. */

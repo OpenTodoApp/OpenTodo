@@ -10,7 +10,7 @@ import { db } from '../lib/db'
 import { setMethodMode } from '../lib/method/mode'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, render, minWidthPx } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -26,7 +26,7 @@ beforeEach(async () => {
   resetPanel()
   localStorage.clear()
   window.matchMedia = ((q: string) => ({
-    matches: /pointer:\s*fine/.test(q) ? false : /pointer:\s*coarse/.test(q) ? true : Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= 390,
+    matches: /pointer:\s*fine/.test(q) ? false : /pointer:\s*coarse/.test(q) ? true : minWidthPx(q) <= 390,
     media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))

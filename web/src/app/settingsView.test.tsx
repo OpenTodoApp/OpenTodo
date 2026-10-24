@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useState } from 'react'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import type { User } from '../lib/types'
-import { click, flush, render, type } from '../ui/test-utils'
+import { click, flush, render, type, minWidthPx } from '../ui/test-utils'
 import { HelpPanel } from './help/HelpPanel'
 import { navigate } from './router'
 import { SettingsView } from './SettingsView'
@@ -23,7 +23,7 @@ const original = window.matchMedia
 
 beforeEach(() => {
   window.matchMedia = ((q: string) => ({
-    matches: Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0) <= width, media: q, onchange: null,
+    matches: minWidthPx(q) <= width, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   history.replaceState(null, '', '/settings')

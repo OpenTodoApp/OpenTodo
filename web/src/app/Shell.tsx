@@ -88,7 +88,7 @@ function useSidebarRequests(setSidebarOpen: (open: boolean) => void) {
   // A find request (the shortcut, the palette): the icon rail expands and the phone drawer opens.
   useEffect(() => sidebarFind.subscribe((id) => { if (id === 'open') { setSidebarCollapsed(false); setSidebarOpen(true) } }), [setSidebarOpen])
   // The briefing's replies open the bell's list (briefing-links D2): on a phone it sits in the drawer.
-  useEffect(() => notificationsOpen.subscribe(() => { if (!window.matchMedia?.('(min-width: 768px)').matches) setSidebarOpen(true) }), [setSidebarOpen])
+  useEffect(() => notificationsOpen.subscribe(() => { if (!window.matchMedia?.('(min-width: 48rem)').matches) setSidebarOpen(true) }), [setSidebarOpen])
 }
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
@@ -189,7 +189,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     'global.help': () => setShowHelp((v) => !v),
     // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar"); the calendar's and the timeline's own `[` win there.
     'global.sidebar': () => {
-      if (!window.matchMedia?.('(min-width: 1024px)').matches) return false
+      if (!window.matchMedia?.('(min-width: 64rem)').matches) return false
       toggleSidebarCollapsed()
     },
     'global.assistant': () => {

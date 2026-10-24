@@ -45,7 +45,7 @@ export function useToastClearance(region: RefObject<HTMLDivElement | null>, acti
       if (!overlaps(focused.getBoundingClientRect(), box)) return
       focused.scrollIntoView?.({ block: 'nearest' })
       box = el.getBoundingClientRect()
-      const wide = window.matchMedia?.('(min-width: 640px)').matches ?? false
+      const wide = window.matchMedia?.('(min-width: 40rem)').matches ?? false
       if (wide && overlaps(focused.getBoundingClientRect(), box)) setSide((s) => (s === 'end' ? 'start' : 'end'))
     }
     check()

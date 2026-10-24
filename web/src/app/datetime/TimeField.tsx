@@ -121,7 +121,7 @@ export function TimeField({ value, onChange, label, hideLabel, disabled, classNa
           {options.map((o, i) => (
             <li key={o.value} id={`${listId}-${i}`} role="option" aria-selected={i === active} data-index={i}
               onMouseDown={(e) => e.preventDefault()} onClick={() => pick(o.value)}
-              className={`rounded-control px-3 py-1.5 tabular-nums ${i === active ? 'bg-accent-soft text-on-accent-soft' : 'text-default hover:bg-sunken'}`}>
+              className={`rounded-control px-3 py-1.5 tabular-nums ${i === active ? 'bg-selected text-strong' : 'text-default hover:bg-hover'}`}>
               {o.label}
             </li>
           ))}

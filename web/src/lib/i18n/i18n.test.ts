@@ -150,8 +150,9 @@ describe('dates in the interface language (D4)', () => {
 describe('words for tasks that are late (page-rhythm D8)', () => {
   const OLD: Record<string, RegExp> = { de: /überfällig/i, fr: /en retard/i, es: /vencid/i, it: /scadut/i, pt: /atrasad/i }
 
-  it('no message of the web app uses "overdue"', () => {
-    expect(Object.keys(messages).filter((m) => /overdue/i.test(m))).toEqual([])
+  it('no message of the web app uses "overdue", except the project health word', () => {
+    expect(Object.keys(messages).filter((m) => /overdue/i.test(m))).toEqual(['Overdue'])
+    expect((messages as Record<string, string[]>).Overdue).toEqual(['web/src/app/ProjectsTable.tsx'])
   })
 
   it('no translation of the Earlier words uses the old word for overdue', async () => {

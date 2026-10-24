@@ -10,7 +10,7 @@ import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { PageHeader } from '../ui'
 import { pageBar } from '../ui/patterns/pageBar'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, minWidthPx, render } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -23,8 +23,8 @@ const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', cre
 /** matchMedia answering `width` for min-width queries. */
 function stubMedia(width: number) {
   vi.stubGlobal('matchMedia', (q: string) => {
-    const min = /min-width:\s*(\d+)px/.exec(q)
-    return { matches: min ? width >= Number(min[1]) : false, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false }
+    const min = minWidthPx(q)
+    return { matches: min ? width >= min : false, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false }
   })
 }
 

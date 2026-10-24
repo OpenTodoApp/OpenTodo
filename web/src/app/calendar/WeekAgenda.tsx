@@ -4,7 +4,7 @@ import { dateLocaleOf } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { Project, Task } from '../../lib/types'
-import { EmptyState, hueFor } from '../../ui'
+import { Button, hueFor } from '../../ui'
 import { CapacityLine } from './CapacityLine'
 import { formatTime } from './grid'
 
@@ -52,7 +52,13 @@ export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, sel
               <CapacityLine load={load} dayLength={prefs.dayLength} />
             </div>
             {d.lane.length === 0 && blocks.length === 0
-              ? <EmptyState compact title={t('Nothing planned.')} action={{ label: t('Add a task'), onClick: () => onAdd(d.date) }} />
+              // One quiet line per empty day, as on Plan (precision-polish D5): seven filled buttons outweighed the days that have tasks.
+              ? (
+                <div className="mt-1 flex items-center justify-between gap-2 px-1" data-agenda-empty>
+                  <span className="text-meta text-faint">{t('Nothing planned.')}</span>
+                  <Button variant="ghost" size="sm" icon="plus" onClick={() => onAdd(d.date)}>{t('Add a task')}</Button>
+                </div>
+              )
               : (
                 <ul className="mt-1 space-y-0.5">
                   {d.lane.map((tk) => row(tk, null, d.date < today))}

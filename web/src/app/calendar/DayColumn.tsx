@@ -275,7 +275,7 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                   onPointerDown={(e) => onDragStart(e, { taskId: id, kind: 'move' })}
                   onClick={() => onSelect(id)}
                   onDoubleClick={() => onOpen(id)}
-                  className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
+                  className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-selected-row' : 'hover:bg-hover'}`}
                 >
                   <span className="text-hint tabular-nums text-muted">{blk ? formatTime(blk.start) : ''}</span>
                   <span className="truncate">{tk?.title || t('Untitled')}</span>
