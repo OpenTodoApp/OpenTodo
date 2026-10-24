@@ -44,7 +44,7 @@ For https, point your own domain at the server and edit the domain in the **Doma
 
 ## Updates and backups
 
-The template pins one release, such as `ghcr.io/pixari/opentodo:0.11.0`, because Dokploy's catalogue only accepts fixed versions. A service keeps the version it was created with. To update, change the image tag in the service's compose file to the [new release](https://github.com/pixari/opentodo/releases) and click **Deploy**; migrations run on start. There are no down-migrations, so back up first. To follow every release without editing, use `ghcr.io/pixari/opentodo:stable` (every release moves it) and add `pull_policy: always` under the image, so **Deploy** fetches the current one.
+The template pins one release, such as `ghcr.io/pixari/opentodo:0.12.0`, because Dokploy's catalogue only accepts fixed versions. A service keeps the version it was created with. To update, change the image tag in the service's compose file to the [new release](https://github.com/pixari/opentodo/releases) and click **Deploy**; migrations run on start. There are no down-migrations, so back up first. To follow every release without editing, use `ghcr.io/pixari/opentodo:stable` (every release moves it) and add `pull_policy: always` under the image, so **Deploy** fetches the current one.
 
 Everything OpenTodo stores (the database, attachments and its own backups) is in the named volume `opentodo-data`. Back it up with Dokploy's **Volume Backups** to an S3 destination, or turn on scheduled backups in OpenTodo's **Settings → Server**. See [Backups](../backups.md).
 
