@@ -2,7 +2,7 @@ import { Icon, Popover } from '../ui'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { getProject, useNotifications, useTask } from '../lib/localData'
 import { markTaskNotificationsRead } from '../lib/notifications'
-import type { AppNotification, PagePayload } from '../lib/types'
+import type { AppNotification, MentionedPayload, PagePayload } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
 import { notificationsOpen } from './signals'
 import { openTaskPage } from './taskTrail'
@@ -85,9 +85,8 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                     {(n.kind === 'page_replied' || n.kind === 'page_completed') && 'pageId' in n.payload ? (
                       <PageNotification kind={n.kind} payload={n.payload} />
                     ) : n.kind === 'mentioned' ? (
-                      <span className="block" data-mention-source={'source' in n.payload ? n.payload.source : undefined}>{'source' in n.payload && n.payload.source === 'note'
-                        ? t.rich('<b>{actor}</b> mentioned you in the notes of <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })
-                        : t.rich('<b>{actor}</b> mentioned you on <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}
+                      <span className="block" data-mention-source={'source' in n.payload ? n.payload.source : undefined}>
+                        <MentionText payload={n.payload as MentionedPayload} />
                         {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-meta text-muted">“{n.payload.excerpt}”</span>}
                       </span>
                     ) : n.kind === 'unblocked' && 'blockerTitle' in n.payload ? (
@@ -106,4 +105,18 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
       </Popover>
     </>
   )
+}
+
+/** What a mention notification says: who, where, and the group it came through (group-mentions D3). */
+function MentionText({ payload: p }: { payload: MentionedPayload }) {
+  const strong = (chunks: ReactNode) => <strong>{chunks}</strong>
+  const v = { actor: p.actorName || t('Someone'), task: p.taskTitle || t('a task'), b: strong, b2: strong, b3: strong }
+  if (p.groupName) {
+    return p.source === 'note'
+      ? t.rich('<b>{actor}</b> mentioned <b3>{group}</b3> in the notes of <b2>{task}</b2>', { ...v, group: p.groupName })
+      : t.rich('<b>{actor}</b> mentioned <b3>{group}</b3> on <b2>{task}</b2>', { ...v, group: p.groupName })
+  }
+  return p.source === 'note'
+    ? t.rich('<b>{actor}</b> mentioned you in the notes of <b2>{task}</b2>', v)
+    : t.rich('<b>{actor}</b> mentioned you on <b2>{task}</b2>', v)
 }

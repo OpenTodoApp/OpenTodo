@@ -1,7 +1,7 @@
 // Filter queries inline (design D4): a query with at least one filter term lists its
 // matching tasks and offers the Filter view. Half-typed text is never an error here:
 // anything that does not parse is simply a text search.
-import { compile, parse, type FilterContext, type Node } from '../../lib/filter'
+import { compile, filterScope, parse, type FilterContext, type Node } from '../../lib/filter'
 import type { Task } from '../../lib/types'
 import { navigate } from '../router'
 import type { Entry } from './entries'
@@ -26,7 +26,7 @@ export function hasFilterTerm(n: Node): boolean {
  * a filter query. `taskEntry` builds a task's entry (the same as the text search's,
  * so a task found both ways is listed once).
  */
-export function filterEntries(text: string, tasks: readonly Task[], ctx: FilterContext, taskEntry: (task: Task) => Entry): Entry[] {
+export function filterEntries(text: string, here: readonly Task[], given: FilterContext, taskEntry: (task: Task) => Entry): Entry[] {
   const q = text.trim()
   if (!q) return []
   let ast: Node | null
@@ -36,6 +36,9 @@ export function filterEntries(text: string, tasks: readonly Task[], ctx: FilterC
     return []
   }
   if (!ast || !hasFilterTerm(ast)) return []
+  // A query that names a workspace looks at every workspace (group-mentions D6).
+  const ctx = filterScope(ast, { ...given, tasks: here })
+  const tasks = ctx.tasks ?? here
   let test: (tk: Task) => boolean
   try {
     test = compile(ast, { ...ctx, tasks }).test

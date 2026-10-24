@@ -23,6 +23,8 @@ origin: github & open
 tracked
 tracked > 1h & due <= today
 !tracked & #Work
+(workspace: Home | workspace: Work) & due = this week
+workspace: "Side projects" & p1
 @work & due <= tomorrow & p1
 @errand | @call & p1
 (@errand | @call) & p1

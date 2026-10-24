@@ -17,13 +17,16 @@ export interface MarkdownProps {
   className?: string
   /** The task the text belongs to: only its attachments are shown as images. */
   taskId?: string | null
-  /** Mention tokens of members (`@token` → display name), shown as chips. */
+  /** Mention tokens of members and groups (`@token` → display name), shown as chips. */
   mentions?: ReadonlyMap<string, string>
+  /** The tokens among `mentions` that name a workspace group: a group chip (group-mentions D4). */
+  mentionGroups?: ReadonlySet<string>
 }
 
 interface Ctx {
   taskId: string | null
   mentions: ReadonlyMap<string, string> | undefined
+  mentionGroups: ReadonlySet<string> | undefined
   embeds: MarkdownEmbeds | undefined
 }
 
@@ -33,9 +36,9 @@ interface Ctx {
  * new tab without referrer and marked nofollow/ugc (LINK_REL). Images come
  * only from the task's own attachments (OpenSpec editor-everywhere D5).
  */
-export function MarkdownView({ source, className = '', taskId = null, mentions, embeds }: MarkdownProps & { embeds?: MarkdownEmbeds }) {
+export function MarkdownView({ source, className = '', taskId = null, mentions, mentionGroups, embeds }: MarkdownProps & { embeds?: MarkdownEmbeds }) {
   const blocks = useMemo(() => parseMarkdown(source, 0, mentions?.size ? { mention: (token) => mentions.has(token) } : {}), [source, mentions])
-  const ctx: Ctx = { taskId, mentions, embeds }
+  const ctx: Ctx = { taskId, mentions, mentionGroups, embeds }
   return <div className={`markdown user-text space-y-2 ${className}`}>{blocks.map((b, i) => renderBlock(b, i, ctx))}</div>
 }
 
@@ -103,6 +106,13 @@ function renderInline(n: Inline, i: number, ctx: Ctx): ReactNode {
     case 'strong': return <strong key={i}>{inl(n.c)}</strong>
     case 'strike': return <s key={i}>{inl(n.c)}</s>
     case 'mention':
+      if (ctx.mentionGroups?.has(n.v)) {
+        return (
+          <Tooltip key={i} label={t('Group: {name}', { name: ctx.mentions?.get(n.v) ?? n.v })}>
+            <span className="mention-chip mention-chip--group" data-mention-token={n.v} data-mention-group=""><Icon name="users" size="xs" />@{n.v}</span>
+          </Tooltip>
+        )
+      }
       return <Tooltip key={i} label={ctx.mentions?.get(n.v) ?? `@${n.v}`}><span className="mention-chip" data-mention-token={n.v}>@{n.v}</span></Tooltip>
     case 'task':
       return ctx.embeds ? <ctx.embeds.TaskLink key={i} id={n.id}>{inl(n.c)}</ctx.embeds.TaskLink> : <Fragment key={i}>{inl(n.c)}</Fragment>

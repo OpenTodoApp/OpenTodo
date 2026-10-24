@@ -76,6 +76,11 @@ type Mentioned struct {
 	// Source is "note" for a mention in a task's notes (editor-everywhere D7, no
 	// CommentID); empty for a comment.
 	Source string `json:"source,omitempty"`
+	// GroupID and GroupName name the workspace group through which the
+	// recipient was mentioned, when they were not mentioned directly (OpenSpec
+	// change group-mentions, D3).
+	GroupID   string `json:"groupId,omitempty"`
+	GroupName string `json:"groupName,omitempty"`
 }
 
 // MentionSink is implemented by sinks that also handle mentions. It is separate

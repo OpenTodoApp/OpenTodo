@@ -810,6 +810,9 @@ select.ui-input:not([multiple]) {
 .notes-editor figure.note-image { @apply my-1; }
 .notes-editor figure.note-image.ProseMirror-selectednode { @apply rounded-control ring-2 ring-focus; }
 .mention, .mention-chip { @apply rounded-chip bg-accent-soft px-0.5 text-accent; }
+/* group-mentions D4: a group reads as the same chip with an outline (and the group icon where rendered). */
+.mention[data-mention^="group:"], .mention-chip--group { @apply font-medium ring-1 ring-inset ring-focus; }
+.mention-chip--group svg { display: inline; vertical-align: -0.125em; margin-right: 0.125rem; }
 .issue-chip { @apply inline-flex items-center gap-1 rounded-chip border border-default bg-sunken px-1 font-mono text-meta text-default no-underline; }
 .slash-menu { @apply z-50 w-64 max-w-[calc(100vw-2rem)] rounded-control border border-default bg-surface p-1 shadow-3 dark:bg-raised; }
 .slash-menu [aria-selected="true"] { @apply bg-accent-soft text-strong; }

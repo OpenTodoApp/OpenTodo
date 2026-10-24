@@ -6,11 +6,10 @@
 // composer is a plain text field.
 import { useEffect, useId, useImperativeHandle, useRef, useState, type Ref } from 'react'
 import { EditorView } from 'prosemirror-view'
-import { mentionToken } from '../../lib/comments'
+import { mentionToken, type MentionTarget } from '../../lib/comments'
 import { mentionIds } from '../../lib/editorNotes'
 import { parseMarkdown, renderMarkdown, type RNode } from '../../lib/richtext'
 import { createState, insertBlocks, markdownSlice, modelToPm, pmToModel, schema, type EditorHooks } from '../../lib/richtextEditor'
-import type { ProjectMember } from '../../lib/types'
 import { EditorToolbar, openCellMenu, useEditorChrome } from '../EditorChrome'
 import type { CommandEnv } from '../editorCommands'
 import { imageViews } from '../editorImage'
@@ -25,7 +24,7 @@ export interface RichComposerFieldProps {
   value: string
   /** The Markdown body and the members it mentions, after every change. */
   onChange: (body: string, mentions: string[]) => void
-  members: ProjectMember[]
+  members: MentionTarget[]
   me: string | null
   label: string
   placeholder: string

@@ -220,8 +220,9 @@ func (r *resolver) resolveComment(op Op) (scope, reason string, err error) {
 }
 
 // filterMentions keeps the mentioned ids that are current members of a shared
-// project scope, without duplicates; a personal scope keeps none. changed reports
-// whether the value differs from what was sent.
+// project scope, and the groups of its workspace (group-mentions D2), without
+// duplicates; a personal scope keeps none. changed reports whether the value
+// differs from what was sent.
 func (r *resolver) filterMentions(scope string, raw json.RawMessage) (json.RawMessage, bool, error) {
 	var ids []string
 	if err := json.Unmarshal(raw, &ids); err != nil {
@@ -235,7 +236,7 @@ func (r *resolver) filterMentions(scope string, raw json.RawMessage) (json.RawMe
 				continue
 			}
 			seen[id] = true
-			ok, err := r.canBeAssigned(scope, id)
+			ok, err := r.keepMention(scope, id)
 			if err != nil {
 				return nil, false, err
 			}
@@ -322,33 +323,58 @@ func (s *Service) emitMentions(ctx context.Context, author string, at int64, cha
 		if !ok {
 			continue
 		}
-		var before, after []string
-		_ = json.Unmarshal(fc.From, &before)
-		_ = json.Unmarshal(fc.To, &after)
-		had := map[string]bool{}
-		for _, id := range before {
-			had[id] = true
-		}
 		if raw := s.rawField(ctx, c.ScopeID, "comment", c.EntityID, "deleted_at"); raw != "" && raw != "null" {
 			continue
 		}
+		recipients, groupNames := s.newlyMentioned(ctx, c.ScopeID, author, fc)
 		taskID := idValue(json.RawMessage(s.rawField(ctx, c.ScopeID, "comment", c.EntityID, "task_id")))
-		for _, id := range after {
-			if had[id] || id == author {
-				continue
-			}
-			had[id] = true
+		for _, id := range recipients {
 			if !actorLoaded {
 				actorName = s.userName(ctx, author)
 				actorLoaded = true
 			}
 			e := notify.Mentioned{RecipientID: id, ActorID: author, ActorName: actorName, CommentID: c.EntityID, TaskID: taskID, At: at}
+			e.GroupID, e.GroupName = groupNames(id)
 			e.TaskTitle = s.stringField(ctx, c.ScopeID, "task", taskID, "title")
 			e.ProjectID = strings.TrimPrefix(c.ScopeID, "project:")
 			e.ProjectName = s.stringField(ctx, c.ScopeID, "project", e.ProjectID, "name")
 			e.Excerpt = excerpt(s.stringField(ctx, c.ScopeID, "comment", c.EntityID, "body"), 140)
 			s.sinks.Mentioned(ctx, e)
 		}
+	}
+}
+
+// newlyMentioned lists the accounts a mention change reaches that its previous
+// value did not, never the author, each once (group-mentions D3); groupOf names
+// the group through which an account was reached when it was not mentioned
+// directly.
+func (s *Service) newlyMentioned(ctx context.Context, scope, author string, fc FieldChange) (recipients []string, groupOf func(string) (string, string)) {
+	var before, after []string
+	_ = json.Unmarshal(fc.From, &before)
+	_ = json.Unmarshal(fc.To, &after)
+	had := map[string]bool{author: true}
+	if len(before) > 0 {
+		for _, id := range s.reach(ctx, scope, before).people {
+			had[id] = true
+		}
+	}
+	now := s.reach(ctx, scope, after)
+	for _, id := range now.people {
+		if !had[id] {
+			had[id] = true
+			recipients = append(recipients, id)
+		}
+	}
+	names := map[string]string{}
+	return recipients, func(id string) (string, string) {
+		g := now.via[id]
+		if g == "" {
+			return "", ""
+		}
+		if _, ok := names[g]; !ok {
+			names[g] = s.groupName(ctx, g)
+		}
+		return g, names[g]
 	}
 }
 
@@ -360,26 +386,17 @@ func (s *Service) emitNoteMentions(ctx context.Context, author string, at int64,
 	if !ok {
 		return
 	}
-	var before, after []string
-	_ = json.Unmarshal(fc.From, &before)
-	_ = json.Unmarshal(fc.To, &after)
 	if raw := s.rawField(ctx, c.ScopeID, "task", c.EntityID, "deleted_at"); raw != "" && raw != "null" {
 		return
 	}
-	had := map[string]bool{author: true}
-	for _, id := range before {
-		had[id] = true
-	}
+	recipients, groupNames := s.newlyMentioned(ctx, c.ScopeID, author, fc)
 	actorName := ""
-	for _, id := range after {
-		if had[id] {
-			continue
-		}
-		had[id] = true
+	for _, id := range recipients {
 		if actorName == "" {
 			actorName = s.userName(ctx, author)
 		}
 		e := notify.Mentioned{RecipientID: id, ActorID: author, ActorName: actorName, TaskID: c.EntityID, At: at, Source: "note"}
+		e.GroupID, e.GroupName = groupNames(id)
 		e.TaskTitle = s.stringField(ctx, c.ScopeID, "task", c.EntityID, "title")
 		e.ProjectID = strings.TrimPrefix(c.ScopeID, "project:")
 		e.ProjectName = s.stringField(ctx, c.ScopeID, "project", e.ProjectID, "name")

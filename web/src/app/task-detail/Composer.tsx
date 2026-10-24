@@ -7,9 +7,9 @@
 import { forwardRef, type KeyboardEvent, lazy, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Kbd } from '../shortcuts/Kbd'
 import { planFiles, type PlannedFile } from '../../lib/attachments'
-import { mentionAt, mentionCandidates, mentionsInBody, mentionToken } from '../../lib/comments'
+import { mentionAt, mentionCandidates, mentionsInBody, mentionToken, type MentionTarget } from '../../lib/comments'
+import { MentionOption } from './MentionOption'
 import { uuid } from '../../lib/ids'
-import type { ProjectMember } from '../../lib/types'
 import { Button, ComposerFrame, IconButton, Popover } from '../../ui'
 import { Icon } from '../../ui'
 import { filesFrom } from './AttachmentsRow'
@@ -66,7 +66,8 @@ export interface ComposerProps {
   /** Keep the unsent text as this task's draft (the main composer only). */
   draftTaskId?: string
   initial?: string
-  members: ProjectMember[]
+  /** People, then workspace groups, to mention (group-mentions D4). */
+  members: MentionTarget[]
   me: string | null
   /** Resolves false (or rejects inside) when the comment was not stored; the text is then kept. */
   onSubmit: (body: string, mentions: string[], files: File[], extras: ComposedExtras) => Promise<unknown>
@@ -133,7 +134,7 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
     el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden'
   }, [body])
 
-  function pick(m: Pick<ProjectMember, 'userId' | 'name' | 'email'>) {
+  function pick(m: MentionTarget) {
     if (!at) return
     const token = mentionToken(m)
     const next = `${body.slice(0, at.start)}@${token} ${body.slice(caret)}`
@@ -282,7 +283,7 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
             <li key={m.userId} id={`${listId}-${i}`} role="option" aria-selected={i === active}
               className={`flex min-h-11 flex-wrap items-center gap-x-1 px-3 py-1 ${i === active ? 'bg-sunken' : ''}`}
               onMouseDown={(e) => { e.preventDefault(); pick(m) }}>
-              {m.name || m.email} <span className="user-text text-meta text-faint">{m.email}</span>
+              <MentionOption m={m} />
             </li>
           ))}
         </ul>

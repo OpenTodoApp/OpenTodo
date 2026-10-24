@@ -11,6 +11,7 @@ import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { useTrackedTotals } from '../lib/timeEntries'
 import { useFieldDefs } from './useFields'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { useWorkspaceFilter } from './useWorkspaceFilter'
 
 /**
  * The viewer's IANA zone (absolute-datetimes); components that show zoned dues
@@ -69,8 +70,10 @@ export function useViewData(): ViewData {
   const fields = useFieldDefs()
   // Tracked minutes per task, ticking while an entry runs (time-tracking D4): `tracked > 1h` views follow it live.
   const tracked = useTrackedTotals()
+  // `workspace:` views look at every workspace (group-mentions D6).
+  const ws = useWorkspaceFilter()
   // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  const ctx = useMemo(() => ({ today, labels, projects, tasks, fields, tracked }), [today, labels, projects, tasks, fields, tracked, zone])
+  const ctx = useMemo(() => ({ today, labels, projects, tasks, fields, tracked, ...ws }), [today, labels, projects, tasks, fields, tracked, ws, zone])
   return { views, projects, labels, tasks, ctx }
 }
 

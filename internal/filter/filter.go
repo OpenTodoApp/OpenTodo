@@ -45,6 +45,8 @@ const (
 	tSearch
 	// tOrigin is `origin: value` (OpenSpec change task-origin).
 	tOrigin
+	// tWorkspace is `workspace: name` (OpenSpec change group-mentions, D6).
+	tWorkspace
 	tWord
 	tString
 )
@@ -71,6 +73,7 @@ func fail(offset int, format string, args ...any) error {
 var (
 	searchPrefix = regexp.MustCompile(`(?i)^search:`)
 	originPrefix = regexp.MustCompile(`(?i)^origin:`)
+	wsPrefix     = regexp.MustCompile(`(?i)^workspace:`)
 	priorityWord = regexp.MustCompile(`(?i)^p([1-4])$`)
 	anyPriority  = regexp.MustCompile(`^p\d+$`)
 	isoDate      = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
@@ -169,7 +172,8 @@ func tokenize(src []rune) ([]token, error) {
 			continue
 		}
 		word := readBare()
-		// `search: text` and `origin: value` (task-origin): the prefix, then the
+		// `search: text`, `origin: value` (task-origin) and `workspace: name`
+		// (group-mentions): the prefix, then the
 		// rest of the word, or the next bare word or quoted string.
 		readPrefixed := func(prefix string) (string, error) {
 			text := string([]rune(word)[len(prefix):])
@@ -204,6 +208,17 @@ func tokenize(src []rune) ([]token, error) {
 				return nil, fail(pos, `Expected a provider or kind after "origin:" at position %d`, pos+1)
 			}
 			out = append(out, token{typ: tOrigin, pos: pos, raw: string(src[pos:i]), value: text})
+			continue
+		}
+		if wsPrefix.MatchString(word) {
+			text, err := readPrefixed("workspace:")
+			if err != nil {
+				return nil, err
+			}
+			if text == "" {
+				return nil, fail(pos, `Expected a workspace name after "workspace:" at position %d`, pos+1)
+			}
+			out = append(out, token{typ: tWorkspace, pos: pos, raw: string(src[pos:i]), value: text})
 			continue
 		}
 		if priorityWord.MatchString(word) {
@@ -308,7 +323,7 @@ func (p *parser) parseNot(prev *token) error {
 func (p *parser) parseTerm(prev *token) error {
 	t := p.peek()
 	switch t.typ {
-	case tLabel, tProject, tPriority, tSearch, tOrigin:
+	case tLabel, tProject, tPriority, tSearch, tOrigin, tWorkspace:
 		p.i++
 		return nil
 	case tWord:

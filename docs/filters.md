@@ -31,6 +31,7 @@ term     := "@" name                       label
           | keyword
           | "search:" text
           | "origin:" text                              where the task came from
+          | "workspace:" name                           the task's workspace
           | "tracked" ("<" | "<=" | "=" | ">=" | ">") duration   tracked time
           | field ("<" | "<=" | "=" | ">=" | ">") value   custom field
           | "no" field                                  custom field without a value
@@ -99,6 +100,7 @@ text     := word | '"' chars '"'
 | `origin` | tasks that know where they came from: a captured page, an email, an issue or an import (see [Where a task came from](capture.md#where-a-task-came-from)) |
 | `no origin` | tasks without an origin |
 | `origin: value` | tasks whose origin's provider is the value, ignoring case (`origin: github`, `origin: linear`, `origin: todoist`), or, for an origin without a provider, whose kind is (`origin: url` for captured pages, `origin: email` for mail); quotes allowed |
+| `workspace: name` | tasks of the [workspace](workspaces.md) of that name, ignoring case (`workspace: Home`, `workspace: "Side projects"`); see [Workspaces](#workspaces) |
 | `tracked` | tasks with at least one minute of [tracked time](time-tracking.md), every member's entries counted and a running entry up to now |
 | `tracked <cmp> duration` | tasks whose tracked time compares as asked: `tracked > 1h`, `tracked <= 30m`, `tracked >= 1h30`, `tracked < 1.5h`, `tracked = 0`; a bare number is minutes |
 | `name <cmp> value` | tasks whose [custom field](custom-fields.md) of that name compares as asked (see [Custom fields](#custom-fields)) |
@@ -148,6 +150,10 @@ Against a period, `=` means *within it*, `<` (`before`) *before its first day*, 
 
 `before` is the same as `<` and `after` the same as `>`. `today` on its own is the keyword (due today); `due = today` is the same comparison written out, and `due <= today` also includes overdue tasks. Only English weekday names are accepted.
 
+### Workspaces
+
+A filter shows the [workspace](workspaces.md) you are in, like every list. A query with a `workspace:` term anywhere looks at the tasks of **every** workspace instead, and the term picks the ones you want: `(workspace: Home | workspace: Work) & due = this week` lists both, whichever workspace you are in, and `!workspace: Work & today` lists today's tasks everywhere but Work. Labels and projects in such a query are matched by name in every workspace. A task belongs to its project's workspace; a task without a project belongs to the workspace it was added in. A name that matches no workspace warns `No workspace named "…"`, like a label. A saved view that names a workspace counts every workspace's tasks in the sidebar too.
+
 ### Labels and projects that change
 
 Names are looked up every time the query runs, so renaming a label or project is picked up immediately. When several labels or projects share a name (two devices can create the same name while offline), the term matches any of them. A name that matches nothing is **not** an error: the view shows a warning such as `No label named "errands"`, that term matches no task, and the rest of the query still works. A saved or remembered query therefore survives a rename or deletion.
@@ -170,6 +176,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `no &` | `Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1` |
 | `cost >` | `Expected a value after ">" at position 6` |
 | `tracked > soon` | `Expected a duration such as 30m or 1h30 after ">" at position 11` |
+| `workspace: & p1` | `Expected a workspace name after "workspace:" at position 1` |
 
 An empty query shows a short usage hint and no results.
 
@@ -186,7 +193,7 @@ You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</
 
 In the filter panel, above the query input, the **builder** shows the same query as conditions you can read: *Label is errand*, *Due on or before tomorrow*, *Priority is P1*, *No project*.
 
-- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, tracked time or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
+- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, workspace (with more than one), tracked time or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
 - **Groups.** A group is a block headed **All of these** (every condition must match, `&`) or **Any of these** (one is enough, `|`). **+ Group** adds one inside, up to three levels deep. Change the heading to switch between the two.
 - **Not.** The **Not** switch in a condition's dialog, or the **Not** button on a group, matches the tasks it would otherwise leave out (`!`).
 - **Keyboard.** Tab reaches every control. Inside a group, the arrow keys move between conditions, and Delete or Backspace removes the focused one.
@@ -353,4 +360,16 @@ tracked > 1h & due <= today
 
 ```filter
 !tracked & #Work
+```
+
+### 25. Due this week at home and at work, from any workspace
+
+```filter
+(workspace: Home | workspace: Work) & due = this week
+```
+
+### 26. Urgent side projects
+
+```filter
+workspace: "Side projects" & p1
 ```

@@ -5257,5 +5257,14 @@
   "{enter} applies, {esc} discards. Each change shows in its task’s history.": "{enter} aplica, {esc} descarta. Cada mudança aparece no histórico da sua tarefa.",
   "{n, plural, one {# selected task} other {# selected tasks}}": "{n, plural, one {# tarefa selecionada} other {# tarefas selecionadas}}",
   "{n, plural, one {Apply # change} other {Apply # changes}}": "{n, plural, one {Aplicar # mudança} other {Aplicar # mudanças}}",
-  "More properties": "Mais propriedades"
+  "More properties": "Mais propriedades",
+  "<b>{actor}</b> mentioned <b3>{group}</b3> in the notes of <b2>{task}</b2>": "<b>{actor}</b> mencionou <b3>{group}</b3> nas notas de <b2>{task}</b2>",
+  "<b>{actor}</b> mentioned <b3>{group}</b3> on <b2>{task}</b2>": "<b>{actor}</b> mencionou <b3>{group}</b3> em <b2>{task}</b2>",
+  "Choose a workspace": "Escolha um espaço de trabalho",
+  "Expected a workspace name after \"workspace:\" at position {pos}": "Esperado o nome de um espaço de trabalho depois de “workspace:”, na posição {pos}",
+  "Group · {n, plural, one {# person} other {# people}}": "Grupo · {n, plural, one {# pessoa} other {# pessoas}}",
+  "Group: {name}": "Grupo: {name}",
+  "No workspace named \"{name}\"": "Nenhum espaço de trabalho chamado “{name}”",
+  "Workspace": "Espaço de trabalho",
+  "Workspace is {name}": "Espaço de trabalho é {name}"
 }

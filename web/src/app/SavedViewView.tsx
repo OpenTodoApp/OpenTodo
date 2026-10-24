@@ -170,7 +170,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
           {filterOpen && (
             <FilterPanel count={draftCount} onClose={() => setFilterOpen(false)} inputRef={inputRef}
-              builder={<FilterBuilder query={draft} onChange={(q) => { setDraft(q); setDraftError(null) }} labels={labels} projects={projects} fields={ctx.fields ?? []} />}
+              builder={<FilterBuilder query={draft} onChange={(q) => { setDraft(q); setDraftError(null) }} labels={labels} projects={projects} fields={ctx.fields ?? []} workspaces={ctx.workspaces} />}
               formula={(
                 <div className="flex items-center gap-2">
                   <input ref={inputRef} className="ui-input border-transparent bg-transparent font-mono" aria-label={t('View query')} aria-invalid={!!message} aria-describedby="view-message"

@@ -11,7 +11,7 @@ import { conditionText } from '../filter/conditionText'
 
 const LEAF_ICON: Record<Leaf['kind'], IconName> = {
   label: 'tag', project: 'folder', priority: 'flag', date: 'calendar-days', keyword: 'circle-check-big', search: 'search',
-  origin: 'link', tracked: 'timer', field: 'list', nofield: 'list',
+  origin: 'link', workspace: 'briefcase', tracked: 'timer', field: 'list', nofield: 'list',
 }
 
 export interface Chip { id: string; text: string; icon: IconName; not: boolean }

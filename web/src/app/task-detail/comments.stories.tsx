@@ -33,6 +33,18 @@ export const ThreadWithReplies: StoryObj = {
   ),
 }
 
+// group-mentions D4: a group chip beside a person chip.
+export const GroupMention: StoryObj = {
+  render: () => (
+    <div className="max-w-md">
+      <CommentsView taskId="story-group" me="u-ada" role="admin" name={(id) => names[id] ?? 'Someone'} now={NOW}
+        members={[...members, { userId: 'group:g-adults', name: 'Adults', email: '', group: { size: 2 } }]}
+        onCreate={noop} onEdit={noop} onDelete={async () => {}} richComposer={false}
+        threads={[{ root: c('c1', 'u-bob', 2 * H, '@Adults the fence is painted. @AdaLovelace can you check the gate?', { mentions: ['group:g-adults', 'u-ada'] }), replies: [] }]} />
+    </div>
+  ),
+}
+
 export const Empty: StoryObj = {
   render: () => (
     <div className="max-w-md">

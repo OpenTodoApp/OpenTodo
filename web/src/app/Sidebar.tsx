@@ -1,3 +1,4 @@
+import { useWorkspaceFilter } from './useWorkspaceFilter'
 import { Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
@@ -111,7 +112,9 @@ export const openTasksLabel = (n: number | undefined): string | undefined => (n 
  */
 function useViewCounts(views: View[], today: string, labels: Label[], projects: Project[], tasks: Task[]) {
   const tracked = useTrackedTotals()
-  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks, tracked }, 0), [views, today, labels, projects, tasks, tracked])
+  // A view that names a workspace counts every workspace's tasks (group-mentions D6).
+  const ws = useWorkspaceFilter()
+  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks, tracked, ...ws }, 0), [views, today, labels, projects, tasks, tracked, ws])
 }
 
 export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {

@@ -11,6 +11,7 @@ import { durationMinutes } from '../time'
 //   term    := "@" name | "##" name | "#" name | "p1".."p4"
 //            | ("due" | "created" | "deadline" | "start" | "completed") cmp date | keyword | "search:" text
 //            | "origin:" value                        (task origins, OpenSpec task-origin)
+//            | "workspace:" name                      (workspaces, OpenSpec group-mentions)
 //            | "tracked" cmp duration                 (tracked time, OpenSpec time-tracking)
 //            | field cmp value | "no" field          (custom fields, OpenSpec custom-fields)
 //   date    := day | period   (a day is a period of one day; see resolveRange)
@@ -32,6 +33,7 @@ export type Token =
   | { type: 'priority'; value: Priority; pos: number; raw: string }
   | { type: 'search'; text: string; pos: number; raw: string }
   | { type: 'origin'; value: string; pos: number; raw: string }
+  | { type: 'workspace'; name: string; pos: number; raw: string }
   | { type: 'word'; value: string; pos: number; raw: string }
   | { type: 'string'; value: string; pos: number; raw: string }
 
@@ -138,6 +140,12 @@ export function tokenize(src: string): Token[] {
       out.push({ type: 'search', text, pos, raw: src.slice(pos, i) })
       continue
     }
+    if (/^workspace:/i.test(word)) {
+      const name = readPrefixed('workspace:')
+      if (!name) throw new FilterSyntaxError(t('Expected a workspace name after "workspace:" at position {pos}', { pos: pos + 1 }), pos, ['workspace name'])
+      out.push({ type: 'workspace', name, pos, raw: src.slice(pos, i) })
+      continue
+    }
     if (/^origin:/i.test(word)) {
       const value = readPrefixed('origin:')
       if (!value) throw new FilterSyntaxError(t('Expected a provider or kind after "origin:" at position {pos}', { pos: pos + 1 }), pos, ['origin'])
@@ -183,6 +191,8 @@ export type Node =
   | { kind: 'search'; text: string }
   /** `origin: value`: the origin's provider, else its kind, equals value ignoring case (task-origin). */
   | { kind: 'origin'; value: string }
+  /** `workspace: name`: the task's workspace has that name, ignoring case (group-mentions D6). */
+  | { kind: 'workspace'; name: string; pos: number }
   /** `name cmp value` over a custom field (custom-fields); `opPos` places type errors. */
   | { kind: 'field'; name: string; op: Cmp; value: FieldValueExpr; pos: number; opPos: number }
   /** `no name`: a project defining the field, no value. */
@@ -282,6 +292,9 @@ export function parse(src: string): Node | null {
       case 'origin':
         i++
         return { kind: 'origin', value: tok.value }
+      case 'workspace':
+        i++
+        return { kind: 'workspace', name: tok.name, pos: tok.pos }
       case 'word':
         return parseWordTerm(tok)
       case 'string':
@@ -563,6 +576,8 @@ export function printQuery(n: Node): string {
       return `search: ${quote(n.text)}`
     case 'origin':
       return `origin: ${quote(n.value)}`
+    case 'workspace':
+      return `workspace: ${quote(n.name)}`
     case 'field':
       // Field names are always quoted: a bare one could collide with a reserved word.
       return `${quoteAlways(n.name)} ${n.op} ${printFieldValue(n.value)}`

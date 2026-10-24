@@ -32,6 +32,17 @@ export interface FilterContext {
    * (time-tracking D4), for `tracked` and `tracked cmp duration`; none tracked without it.
    */
   tracked?: ReadonlyMap<string, number>
+  /**
+   * The cached workspaces and the workspace a task belongs to (OpenSpec change
+   * group-mentions, D6), for `workspace: name`; without them the term matches nothing.
+   */
+  workspaces?: readonly { id: string; name: string }[]
+  workspaceOf?: (task: Task) => string
+  /**
+   * Every workspace's tasks, projects and labels. A query that names a workspace
+   * is evaluated over these instead of the current workspace's (filterScope).
+   */
+  everyWorkspace?: { tasks: readonly Task[]; projects: readonly Project[]; labels: readonly Label[] }
 }
 
 export interface CompiledFilter {
@@ -70,6 +81,29 @@ export function mentionsState(n: Node): boolean {
     default:
       return false
   }
+}
+
+/** True when the query has a `workspace:` term anywhere (group-mentions D6). */
+export function namesWorkspace(n: Node): boolean {
+  switch (n.kind) {
+    case 'or':
+    case 'and':
+      return n.items.some(namesWorkspace)
+    case 'not':
+      return namesWorkspace(n.item)
+    default:
+      return n.kind === 'workspace'
+  }
+}
+
+/**
+ * The context a query is evaluated in: every workspace's tasks, projects and
+ * labels when it names a workspace and the caller supplied them, else `ctx`.
+ * Callers that list results iterate the returned `tasks`.
+ */
+export function filterScope<C extends FilterContext>(ast: Node, ctx: C): C {
+  if (!ctx.everyWorkspace || !namesWorkspace(ast)) return ctx
+  return { ...ctx, ...ctx.everyWorkspace }
 }
 
 /** A day against a range of days (completed-date-filters D1); a one-day range is a plain comparison. */
@@ -177,7 +211,8 @@ function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: st
 }
 
 /** Compile an AST into a predicate. Deleted tasks never match; open-only unless the query mentions state. */
-export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
+export function compile(ast: Node, given: FilterContext): CompiledFilter {
+  const ctx = filterScope(ast, given)
   const warnings: string[] = []
   const warn = (msg: string) => {
     if (!warnings.includes(msg)) warnings.push(msg)
@@ -294,6 +329,15 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
       }
       case 'origin':
         return (task) => originMatches(originOf(task), n.value)
+      case 'workspace': {
+        const ids = new Set((ctx.workspaces ?? []).filter((w) => nameKey(w.name) === nameKey(n.name)).map((w) => w.id))
+        const of = ctx.workspaceOf
+        if (ids.size === 0 || !of) {
+          warn(t('No workspace named "{name}"', { name: n.name }))
+          return NEVER
+        }
+        return (task) => ids.has(of(task))
+      }
       case 'tracked': {
         const minutes = n.minutes
         const op = n.op
@@ -347,7 +391,9 @@ export function runFilter(source: string, tasks: readonly Task[], ctx: FilterCon
     if (!ast) return { ok: true, empty: true, tasks: [], warnings: [] }
     // A field term its type cannot answer is reported like a syntax error (custom-fields).
     const { test, warnings } = compile(ast, ctx.tasks ? ctx : { ...ctx, tasks })
-    return { ok: true, empty: false, tasks: tasks.filter(test), warnings }
+    // A query that names a workspace looks at every workspace's tasks (group-mentions D6).
+    const scope = ctx.everyWorkspace && namesWorkspace(ast) ? ctx.everyWorkspace.tasks : tasks
+    return { ok: true, empty: false, tasks: scope.filter(test), warnings }
   } catch (e) {
     const err = e as { message: string; offset?: number }
     if (typeof err.offset !== 'number') throw e

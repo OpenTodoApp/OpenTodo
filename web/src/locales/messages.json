@@ -140,6 +140,12 @@
   "<b>{actor}</b> completed <b2>{blocker}</b2>: <b3>{task}</b3> is ready to start": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<b>{actor}</b> mentioned <b3>{group}</b3> in the notes of <b2>{task}</b2>": [
+    "web/src/app/NotificationBell.tsx"
+  ],
+  "<b>{actor}</b> mentioned <b3>{group}</b3> on <b2>{task}</b2>": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "<b>{actor}</b> mentioned you in the notes of <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
   ],
@@ -2186,6 +2192,9 @@
   ],
   "Choose a type.": [
     "web/src/lib/fields.ts"
+  ],
+  "Choose a workspace": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Choose an archive…": [
     "web/src/app/RestoreSection.tsx"
@@ -4396,6 +4405,9 @@
   "Expected a value after \"{after}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
+  "Expected a workspace name after \"workspace:\" at position {pos}": [
+    "web/src/lib/filter/parse.ts"
+  ],
   "Expected text after \"search:\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
@@ -5112,6 +5124,12 @@
   ],
   "Group role on a project changed": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Group · {n, plural, one {# person} other {# people}}": [
+    "web/src/app/task-detail/MentionOption.tsx"
+  ],
+  "Group: {name}": [
+    "web/src/app/MarkdownView.tsx"
   ],
   "Groups": [
     "web/src/app/ShareDirectory.tsx",
@@ -7625,6 +7643,9 @@
   ],
   "No webhooks yet": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "No workspace named \"{name}\"": [
+    "web/src/lib/filter/evaluate.ts"
   ],
   "No zone matches": [
     "web/src/app/task-detail/ZoneControl.tsx"
@@ -14493,6 +14514,9 @@
   "Working…": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Workspace": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Workspace changed": [
     "web/src/app/auditFormat.ts"
   ],
@@ -14507,6 +14531,9 @@
   ],
   "Workspace invite link revoked": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Workspace is {name}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Workspace member added": [
     "web/src/app/auditFormat.ts"

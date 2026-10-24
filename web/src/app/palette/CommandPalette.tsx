@@ -8,6 +8,7 @@
 // Search, except in Add when the bar was opened in Add. One shell for every mode
 // (palette-quick-add D4-D6): a card near the top, the field, the results with their
 // keycaps, and a footer that names the keys.
+import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useFieldDefs } from '../useFields'
@@ -139,7 +140,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     return [...context, ...recent, ...general]
   }, [ctx, scores, source])
   const fieldDefs = useFieldDefs()
-  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, taskEntry])
+  const wsFilter = useWorkspaceFilter()
+  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs, ...wsFilter }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, wsFilter, taskEntry])
 
   const trailing = useMemo(() => trailingEntries(ctx), [ctx])
   // Search's last entry: the text as a new task, never first, so Enter never adds by surprise.
