@@ -2,7 +2,7 @@
 
 [`cosmos-compose.json`](cosmos-compose.json) and [`description.json`](description.json) are a servapp for the official Cosmos Cloud market ([azukaar/cosmos-servapps-official](https://github.com/azukaar/cosmos-servapps-official)). The compose template runs the `stable` image (every release moves it) with Cosmos's auto-update on, keeps the data in a named volume `{ServiceName}-data` on `/data`, and serves the web port 8080 through a Cosmos route on the hostname the user picks (no published port, network secured). Cosmos fills in `OPENTODO_BASE_URL` from that route (`{RootProtocol}://{Hostnames…host}`, so `minVersion` is `0.22.23`) and generates `OPENTODO_SETUP_TOKEN` (`{Passwords.0}`, 24 characters), which the post-install message shows next to the address. Sign-up stays closed and trusted proxies empty. The `cosmos-persistent-env` label keeps the base URL and setup token when the servapp is reinstalled over itself. The facts it shares with the other templates are in [`../deploy.json`](../deploy.json); `make check` keeps them in line ([`../README.md`](../README.md)).
 
-**Status: not yet submitted.** The steps for users, including installing it now as a custom compose, are in [docs/self-hosting/cosmos.md](../../docs/self-hosting/cosmos.md).
+**Status: Submitted: [azukaar/cosmos-servapps-official#329](https://github.com/azukaar/cosmos-servapps-official/pull/329).** The steps for users, including installing it now as a custom compose, are in [docs/self-hosting/cosmos.md](../../docs/self-hosting/cosmos.md).
 
 ## Install it now, without the market
 

@@ -6,10 +6,14 @@
 // container_name or networks, the service named like the folder, a domain on that service and port,
 // and a meta.json whose id is the folder name. The compose file is read with the repo's strict YAML
 // subset parser; template.toml with the small strict TOML parser below.
+//
+// Image policy 'release': Dokploy/templates' AGENTS.md requires a pinned image tag (never latest
+// or another moving tag) and meta.json "version" equal to that tag, so each release needs a
+// version-bump pull request there (submitted as Dokploy/templates#1265).
 
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { checkShared, readText, ROOT } from './common.mjs'
+import { checkShared, latestRelease, readText, ROOT } from './common.mjs'
 import { parseYaml as parseSubset, YAML_COMPOSE } from './yaml.mjs'
 
 export const ID = 'opentodo'
@@ -123,12 +127,9 @@ export function checkCompose(text, facts) {
   for (const k of ['ports', 'container_name', 'networks', 'build', 'network_mode']) {
     if (svc[k] !== undefined) errors.push(`compose: "${k}" is not allowed in Dokploy templates`)
   }
-  const allowed = ['image', 'pull_policy', 'restart', 'expose', 'environment', 'volumes', 'healthcheck']
+  const allowed = ['image', 'restart', 'expose', 'environment', 'volumes', 'healthcheck']
   for (const k of Object.keys(svc)) if (!allowed.includes(k)) errors.push(`compose: unexpected service key "${k}"`)
   if (svc.restart !== 'unless-stopped') errors.push('compose: restart must be unless-stopped')
-  // Dokploy runs `docker compose up`, which does not pull an image it already has: without this a
-  // redeploy would keep the old release under the moving stable tag.
-  if (svc.pull_policy !== 'always') errors.push('compose: pull_policy must be always, so Deploy fetches the release the stable tag points at')
   const expose = (svc.expose ?? []).map(String)
   if (expose.length !== 1) errors.push('compose: expose exactly one port')
   const hc = svc.healthcheck ?? {}
@@ -180,7 +181,7 @@ export function checkTemplateToml(text, compose, facts) {
   return { errors, env }
 }
 
-export function checkMeta(text, facts, root = ROOT) {
+export function checkMeta(text, facts, changelog, root = ROOT) {
   if (text === null) return { errors: [`${PATHS.meta} is missing`] }
   const errors = []
   let m
@@ -196,7 +197,9 @@ export function checkMeta(text, facts, root = ROOT) {
   for (const k of keys) if (m[k] === undefined || m[k] === '') errors.push(`meta.json: "${k}" is required`)
   if (m.id !== ID) errors.push(`meta.json: id must be "${ID}", the folder name`)
   if (m.name !== facts.name) errors.push(`meta.json: name must be ${facts.name}`)
-  if (m.version !== facts.tag) errors.push(`meta.json: version must be "${facts.tag}", the image tag`)
+  const { major, minor, patch } = latestRelease(changelog)
+  const tag = `${major}.${minor}.${patch}`
+  if (m.version !== tag) errors.push(`meta.json: version must be "${tag}", the image tag (the latest release in CHANGELOG.md)`)
   if (m.description !== facts.summary) errors.push('meta.json: description must be the summary in deploy/deploy.json')
   if (m.logo !== 'opentodo.svg') errors.push('meta.json: logo must be opentodo.svg')
   const want = { github: facts.repository, website: facts.project, docs: DOCS }
@@ -230,7 +233,7 @@ export function checkAll(files, ctx, root = ROOT) {
   const compose = checkCompose(files.compose, ctx.facts)
   if (!compose.env) return compose.errors
   const toml = checkTemplateToml(files.template, compose, ctx.facts)
-  const meta = checkMeta(files.meta, ctx.facts, root)
+  const meta = checkMeta(files.meta, ctx.facts, ctx.changelog, root)
   const errors = [...compose.errors, ...toml.errors, ...meta.errors]
   if (meta.meta) errors.push(...checkIndex(files.index, meta.meta))
   const variables = new Map()
@@ -240,7 +243,7 @@ export function checkAll(files, ctx, root = ROOT) {
     if (set !== undefined && !/\$\{/.test(set) && set !== def) errors.push(`${name}: template.toml sets ${JSON.stringify(set)} but the compose fallback is ${JSON.stringify(def)}`)
     variables.set(name, { default: def, required: false })
   }
-  errors.push(...checkShared({ image: compose.image, port: compose.port, dataTarget: compose.dataTarget, variables, policy: 'stable' }, ctx))
+  errors.push(...checkShared({ image: compose.image, port: compose.port, dataTarget: compose.dataTarget, variables, policy: 'release' }, ctx))
   return errors
 }
 
@@ -254,4 +257,4 @@ export function check(ctx, root = ROOT) {
   return [...checkAll(files, ctx, root), ...checkUpstream(root)]
 }
 
-export const summary = 'compose rules, stable tag pulled on deploy, domain, generated setup token, empty base URL, meta, base-URL list and upstream copy'
+export const summary = 'compose rules, release tag = meta version, domain, generated setup token, empty base URL, meta, base-URL list and upstream copy'

@@ -12,7 +12,7 @@ OpenTodo is one container with one data folder and no required settings. The app
 
 ## Install
 
-OpenTodo has been prepared for the CasaOS / ZimaOS app store but is not listed there yet. Until it is, install it as a custom app:
+OpenTodo has been submitted to the CasaOS / ZimaOS app store ([IceWhaleTech/CasaOS-AppStore#1104](https://github.com/IceWhaleTech/CasaOS-AppStore/pull/1104)) but is not listed there yet. Until it is, install it as a custom app:
 
 1. Download [`deploy/casaos/docker-compose.yml`](https://raw.githubusercontent.com/pixari/opentodo/main/deploy/casaos/docker-compose.yml).
 2. In the dashboard open the **App Store**, choose **Custom Install** (the **+** at the top right), then **Import** and pick the file (or paste its contents).

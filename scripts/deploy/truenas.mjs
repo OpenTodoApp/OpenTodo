@@ -26,9 +26,15 @@ export const FILES = [
   'questions.yaml',
   'templates/docker-compose.yaml',
   'templates/test_values/basic-values.yaml',
+  'templates/test_values/hostnet-values.yaml',
 ]
-/** The default host port. Unique in truenas/apps (their .github/scripts/port_validation.py); re-check before submitting. */
-export const PORT_DEFAULT = 30530
+/** The test values their CI renders and starts, one run each (ci.py --test-file). */
+export const TEST_VALUES = ['templates/test_values/basic-values.yaml', 'templates/test_values/hostnet-values.yaml']
+/**
+ * The default host port. Unique in truenas/apps (their .github/scripts/port_validation.py); 30530
+ * clashed with community/money, so the submission (truenas/apps#6240) moved it to 30536.
+ */
+export const PORT_DEFAULT = 30536
 /** The id TrueNAS apps run as by default (the "apps" user), which OpenTodo's static binary accepts. */
 export const RUN_AS = 568
 export const MAINTAINER = { email: 'dev@truenas.com', name: 'truenas', url: 'https://www.truenas.com/' }
@@ -81,6 +87,7 @@ function listFiles(dir) {
   return out.sort()
 }
 
+const base = (f) => f.split('/').at(-1)
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
 /** Reads the env lines of the compose template: name -> the Jinja expression it is set to. */
@@ -116,7 +123,6 @@ export function checkApp(files, ctx) {
   const values = y['ix_values.yaml']
   const item = y['item.yaml']
   const questions = y['questions.yaml']
-  const test = y['templates/test_values/basic-values.yaml']
 
   // app.yaml
   const want = { name: 'opentodo', train: 'community', title: facts.name, home: facts.project, changelog_url: `${facts.repository}/releases` }
@@ -193,23 +199,31 @@ export function checkApp(files, ctx) {
     if (!attr.description) errors.push(`questions.yaml: opentodo.${m[1]} needs a description`)
     if (entry?.secret && s.private !== true) errors.push(`questions.yaml: opentodo.${m[1]} holds a secret and must be private: true`)
     if (s.type === 'boolean' && typeof s.default !== 'boolean') errors.push(`questions.yaml: opentodo.${m[1]} needs a boolean default`)
-    if (!(m[1] in (test.opentodo ?? {}))) errors.push(`basic-values.yaml: opentodo.${m[1]} is missing`)
+    for (const t of TEST_VALUES) if (!(m[1] in (y[t].opentodo ?? {}))) errors.push(`${base(t)}: opentodo.${m[1]} is missing`)
     variables.set(name, { default: s.default === undefined ? undefined : String(s.default), required: s.required === true })
   }
   for (const name of Object.keys(SERVER_SETTINGS)) if (!env.has(name)) errors.push(`docker-compose.yaml must set ${name}`)
 
-  // The test values are what their CI renders and starts. The template sets OPENTODO_ADDR from
-  // the chosen port, so the container listens on it: the test values choose the image's port.
-  const testPort = test.network?.web_port?.port_number
-  if (test.run_as?.user !== RUN_AS || test.run_as?.group !== RUN_AS) errors.push(`basic-values.yaml: run_as must be ${RUN_AS}:${RUN_AS}`)
-  if (test.storage?.data?.type !== 'ix_volume') errors.push('basic-values.yaml: storage.data must be an ix_volume')
+  // The test values are what their CI renders and starts: one with a published port, one with
+  // host networking. The template sets OPENTODO_ADDR from the chosen port, so the container
+  // listens on whatever port they choose (their CI wants ports clear of the common ones, as 30080).
+  for (const t of TEST_VALUES) {
+    const v = y[t]
+    const p = v.network?.web_port?.port_number
+    if (!Number.isInteger(p) || p < 1024 || p > 65535) errors.push(`${base(t)}: network.web_port.port_number must be a port from 1024 to 65535, got ${p}`)
+    if (v.run_as?.user !== RUN_AS || v.run_as?.group !== RUN_AS) errors.push(`${base(t)}: run_as must be ${RUN_AS}:${RUN_AS}`)
+    if (v.storage?.data?.type !== 'ix_volume') errors.push(`${base(t)}: storage.data must be an ix_volume`)
+  }
+  if (y['templates/test_values/hostnet-values.yaml'].network?.host_network !== true) errors.push('hostnet-values.yaml: network.host_network must be true')
 
   // README.md (shown in the TrueNAS app page)
   if (!files['README.md'].includes(facts.project)) errors.push(`README.md must link ${facts.project}`)
 
   errors.push(...checkShared({
     image: image ? `${image.repository}:${image.tag}` : null,
-    port: testPort,
+    // The image's own port: the template moves the listener to the chosen port with OPENTODO_ADDR
+    // (checked above), so there is no fixed container port to compare.
+    port: facts.port,
     dataTarget: storage.length === 1 ? /add_storage\("([^"]*)"/.exec(storage[0])?.[1] : null,
     variables,
     policy: 'release',

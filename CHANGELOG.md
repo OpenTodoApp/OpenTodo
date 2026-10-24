@@ -15,6 +15,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Changed
 
+- **App store templates match what was submitted.** OpenTodo 0.11.0 is submitted to the Umbrel, TrueNAS, CasaOS, Dokploy, Easypanel, Cosmos and Portainer stores. The TrueNAS app's default Web UI port is now **30536** (30530 was taken by another app in the catalogue), and the Dokploy template names a release such as `0.11.0` instead of `stable`, as Dokploy's catalogue requires; to update a Dokploy service, change its image tag and redeploy. On Umbrel, add OpenTodo to Apple's Calendar or Reminders with the full CalDAV address, because automatic discovery stops at Umbrel's login. ([TrueNAS](docs/self-hosting/truenas.md), [Dokploy](docs/self-hosting/dokploy.md#updates-and-backups), [Umbrel](docs/self-hosting/umbrel.md#umbrel-login))
 - **The briefing links each full day, and has a switch in Settings.** When Upcoming says "Friday and Monday are already full", Friday and Monday are now separate links, each opening Upcoming at that day, in every language. **Settings → General → Briefing** has a **Show the briefing** switch, the same choice as **Hide briefing** in the menu of Today and Upcoming, on all your devices. "2 tasks are late" still selects those tasks, ready for the selection bar; <kbd>Esc</kbd> clears them. ([The briefing](docs/briefing.md))
 
 ### Fixed

@@ -12,7 +12,7 @@ OpenTodo is one container with one volume and no required settings. The servapp 
 
 ## Install
 
-OpenTodo has been prepared for the official Cosmos market but is not listed there yet. Until it is, install it as a custom compose:
+OpenTodo has been submitted to the official Cosmos market ([azukaar/cosmos-servapps-official#329](https://github.com/azukaar/cosmos-servapps-official/pull/329)) but is not listed there yet. Until it is, install it as a custom compose:
 
 1. Copy the contents of [`deploy/cosmos/cosmos-compose.json`](https://raw.githubusercontent.com/pixari/opentodo/main/deploy/cosmos/cosmos-compose.json).
 2. In Cosmos open **ServApps**, click **Import Compose File**, paste it and click **Next**.

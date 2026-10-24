@@ -4,11 +4,14 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText, ROOT } from './common.mjs'
+import { configVariables, latestRelease, loadFacts, readText, ROOT } from './common.mjs'
 import { check, checkAll, parseToml, PATHS } from './dokploy.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+const { major, minor, patch } = latestRelease(ctx.changelog)
+const TAG = `${major}.${minor}.${patch}`
+const esc = (s) => s.replace(/\./g, '\\.')
 const files = () => ({
   compose: readText(PATHS.compose),
   template: readText(PATHS.template),
@@ -34,10 +37,12 @@ test('dokploy: TOML subset parser', () => {
   assert.throws(() => parseToml('[x]\n[x]\n'), /defined twice/)
 })
 
-test('dokploy: image policy and the pull on deploy', () => {
-  has(withCompose('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(withCompose('opentodo:stable', 'opentodo:0.11.0'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(withCompose('    pull_policy: always\n', ''), /pull_policy must be always/)
+test('dokploy: image pinned to the latest release', () => {
+  const want = new RegExp(`image must be ghcr\\.io/pixari/opentodo:${esc(TAG)}`)
+  has(withCompose(`opentodo:${TAG}`, 'opentodo:latest'), want)
+  has(withCompose(`opentodo:${TAG}`, 'opentodo:stable'), want)
+  has(withCompose(`opentodo:${TAG}`, 'opentodo:0.1.0'), want)
+  has(withCompose('    restart: unless-stopped\n', '    pull_policy: always\n    restart: unless-stopped\n'), /unexpected service key "pull_policy"/)
 })
 
 test('dokploy: port, data path and Dokploy compose rules', () => {
@@ -70,7 +75,7 @@ test('dokploy: template.toml domain, token and base URL', () => {
 
 test('dokploy: meta.json and the base-URL list', () => {
   const meta = files().meta
-  has(checkAll({ ...files(), meta: meta.replace('"version": "stable"', '"version": "0.11.0"') }, ctx), /version must be "stable"/)
+  has(checkAll({ ...files(), meta: meta.replace(`"version": "${TAG}"`, '"version": "stable"') }, ctx), new RegExp(`version must be "${esc(TAG)}"`))
   has(checkAll({ ...files(), meta: meta.replace('"id": "opentodo"', '"id": "open-todo"') }, ctx), /id must be "opentodo"/)
   has(checkAll({ ...files(), index: '[]\n' }, ctx), /as Dokploy's generate-meta\.js writes it/)
 })

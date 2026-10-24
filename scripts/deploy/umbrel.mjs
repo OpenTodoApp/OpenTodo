@@ -113,7 +113,8 @@ export function checkManifest(text, ctx) {
   if (m.path !== '') errors.push('path must be "" (OpenTodo opens at the root)')
   if (m.defaultUsername !== '' || m.defaultPassword !== '') errors.push('defaultUsername and defaultPassword must be "": the first visitor creates the owner account')
   if (!/^https:\/\/github\.com\/getumbrel\/umbrel-apps\/pull\/\d+$/.test(m.submission ?? '')) errors.push('submission must be the pull request URL in getumbrel/umbrel-apps')
-  if (m.submission?.endsWith('/pull/0000') && m.releaseNotes !== '') errors.push('releaseNotes must be "" until the app is listed')
+  // Submitted as getumbrel/umbrel-apps#6251; the manifest keeps that URL for every later update.
+  if (m.submission?.endsWith('/pull/0000')) errors.push('submission must be the real pull request URL (getumbrel/umbrel-apps#6251), not the 0000 placeholder')
 
   // The essential settings are offered through umbrelOS's app settings (manifest `environment`).
   const variables = new Map()

@@ -8,7 +8,7 @@ The app, in Runtipi's native format (Runtipi 4.7.0 or newer):
 - [`docker-compose.yml`](docker-compose.yml): the `opentodo` service (the key is the app id; `x-runtipi.is_main`, `internal_port: 8080`) with the **release tag** (`ghcr.io/pixari/opentodo:0.11.0`; Runtipi's store test wants the tag to contain `version`), the health check, `${APP_DATA_DIR}/data` on `/data` and the form fields as `OPENTODO_*` with their defaults; and `opentodo-init`, a one-shot `busybox` that runs `chown -R 65532:65532 /data` before OpenTodo starts. Runtipi creates the data folder owned by root and only makes it writable (`chmod a+rwx`) after the first `compose up`, so without it the first start fails with `open /data/opentodo.lock: permission denied`. `restart: "no"` keeps Runtipi's default `unless-stopped` from restarting it after it finishes.
 - [`metadata/description.md`](metadata/description.md) and [`metadata/logo.jpg`](metadata/logo.jpg) (512×512, from `web/public/pwa-512.png`).
 
-**Status: not yet published.** The store repository does not exist yet.
+**Status: published** as our own app store, [`pixari/opentodo-runtipi`](https://github.com/pixari/opentodo-runtipi).
 
 ## The store repository
 

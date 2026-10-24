@@ -10,7 +10,7 @@ instructions:
   people. If you change the domain, set OPENTODO_BASE_URL to the new https
   address. Your data lives in the "data" volume, mounted at /data.
 changeLog:
-  - date: 2026-10-17
+  - date: 2026-10-24
     description: First Release
 links:
   - label: Website
