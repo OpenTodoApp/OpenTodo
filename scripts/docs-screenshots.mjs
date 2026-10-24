@@ -100,7 +100,7 @@ const sidebar = (p) => p.locator('aside').first()
 async function go(p, base, path, ready) { await p.goto(base + path); if (ready) await ready(); await settle(p, 800) }
 async function unfold(p, button) { if ((await button.getAttribute('aria-expanded')) === 'false') { await button.click(); await settle(p, 300) } }
 async function openProject(p, name) {
-  const link = sidebar(p).getByRole('button', { name: new RegExp('^' + esc(name)) }).first()
+  const link = sidebar(p).getByRole('button', { name: new RegExp('^' + esc(name) + '\\b') }).first()
   if (!(await link.isVisible())) for (const b of await sidebar(p).getByRole('button', { name: /^Expand / }).all()) await b.click()
   await link.click(); await p.getByRole('heading', { level: 1, name }).waitFor(); await settle(p)
 }
@@ -308,7 +308,7 @@ const shots = [
   { name: 'project-completed', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Work')
     await p.getByRole('button', { name: 'Project menu' }).click(); await p.locator('[data-menu-label="Show completed tasks"]').click()
-    await p.locator('[data-completed-group] button[aria-expanded]').click(); await p.locator('[data-completed-group] [data-task-id]').first().waitFor(); await p.mouse.move(700, 120); await settle(p, 500)
+    await unfold(p, p.locator('[data-completed-group] button[aria-expanded]').first()); await p.locator('[data-completed-group] [data-task-id]').first().waitFor(); await p.mouse.move(700, 120); await settle(p, 500)
   }, async after(p) {
     await p.getByRole('button', { name: 'Project menu' }).click(); await p.locator('[data-menu-label="Show completed tasks"]').click().catch(() => {})
   } },
@@ -336,12 +336,12 @@ const shots = [
   { name: 'repeat', server: D, async run(p) {
     // Dated tasks are not in the Inbox (inbox-means-unplaced): Run club is in Today.
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()); await openTask(p, 'Run club')
-    await detail(p).getByRole('button', { name: /^When: every/ }).click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor(); await settle(p, 400)
+    await detail(p).getByRole('button', { name: /^Repeat: every/ }).click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor(); await settle(p, 400)
     return clipOf(p, editor, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'reminders', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
-    await detail(p).getByRole('button', { name: /^When: / }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
+    await detail(p).getByRole('button', { name: /^Reminder: / }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
     await editor.getByRole('tab', { name: /^Reminders/ }).click(); await settle(p, 400)
     return clipOf(p, editor, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
@@ -376,7 +376,7 @@ const shots = [
   // The time-zone popover of a timed due (task-detail-redesign 5.4).
   { name: 'time-zone', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
-    await detail(p).getByRole('button', { name: /^When: / }).first().click(); await p.getByRole('dialog', { name: 'When' }).waitFor()
+    await detail(p).getByRole('button', { name: /^Do: / }).first().click(); await p.getByRole('dialog', { name: 'When' }).waitFor()
     await p.getByRole('dialog', { name: 'When' }).getByRole('button', { name: /^Time zone/ }).first().click()
     const d = p.getByRole('dialog', { name: 'Time zone' }); await d.waitFor(); await settle(p, 400)
     return clipOf(p, d, 16)
@@ -385,10 +385,10 @@ const shots = [
   { name: 'locations', server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()); await openTask(p, 'Pick up groceries')
     const d = p.getByRole('dialog', { name: 'Location' })
-    const part = detail(p).getByRole('button', { name: /^Where: .*45\.4642/ }).first()
+    const part = detail(p).getByRole('button', { name: /^Location: .*45\.4642/ }).first()
     if (!(await part.count())) {
       // The first theme sets it; the second finds it set (one sandbox for both).
-      await detail(p).getByRole('button', { name: 'Add a property' }).click(); await p.getByRole('menuitem', { name: 'Location' }).click(); await d.waitFor()
+      await detail(p).getByRole('button', { name: 'Location: Add a place' }).click(); await d.waitFor()
       await d.getByRole('combobox').fill('45.4642, 9.19'); await d.getByRole('option').first().waitFor(); await p.keyboard.press('Enter'); await settle(p, 400)
     }
     await part.click(); await d.waitFor(); await settle(p, 400)
