@@ -16,5 +16,5 @@
 
 - [x] 3.1 Stories: the Inbox split with a docked task and with "No task selected", and source lines on rows; verify `npm run build-storybook` through `make ui-check`
 - [x] 3.2 Update `docs/process-the-inbox.md` (the Inbox beside its tasks, `P`, source lines) and add the CHANGELOG entry under Unreleased → Changed; verify `make docs-check`
-- [ ] 3.3 Regenerate the visual baselines with the "UI baselines" workflow; verify `make ui-check` in CI
-- [ ] 3.4 Run `npm test` and `npm run build` in `web/`, `make openspec-validate`, open the pull request and get CI green
+- [x] 3.3 Regenerate the visual baselines with the "UI baselines" workflow; verify `make ui-check` in CI
+- [x] 3.4 Run `npm test` and `npm run build` in `web/`, `make openspec-validate`, open the pull request and get CI green

@@ -16,5 +16,5 @@
 
 ## 3. Baselines and CI
 
-- [ ] 3.1 Regenerate the visual baselines with the "UI baselines" workflow; verify `make ui-check` in CI
-- [ ] 3.2 Run the web suite, `npm run build`, open the pull request and get CI green
+- [x] 3.1 Regenerate the visual baselines with the "UI baselines" workflow; verify `make ui-check` in CI
+- [x] 3.2 Run the web suite, `npm run build`, open the pull request and get CI green
