@@ -254,7 +254,7 @@ function emptyAction(kind: EmptyCopy['action']): EmptyStateAction | undefined {
   return undefined
 }
 
-export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0, onShowCompleted }: {
+export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0, onShowCompleted, compact = false }: {
   view: EmptyView
   /** Today: tasks due today that all wait for other tasks (task-dependencies). */
   waiting?: number
@@ -263,6 +263,8 @@ export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0,
   /** A project's completed tasks while its Completed group is off. */
   completed?: number
   onShowCompleted?: () => void
+  /** The Inbox above its "Planned, no project" group: one quiet line, no illustration (inbox-zero-quiet). */
+  compact?: boolean
 }) {
   const copy = EMPTY_COPY[view]
   const blocked = view === 'today' && waiting > 0
@@ -277,7 +279,7 @@ export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0,
   return (
     <div data-empty-state={view}>
       <EmptyStatePattern title={blocked ? t('Nothing is ready to start today.') : copy.title} action={action} secondary={secondary}
-        illustration={EMPTY_ILLUSTRATION[view]} />
+        illustration={compact ? undefined : EMPTY_ILLUSTRATION[view]} compact={compact} />
     </div>
   )
 }

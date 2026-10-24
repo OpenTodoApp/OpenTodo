@@ -19,6 +19,8 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **Inbox zero is one quiet line when planned tasks are below it.** With every task that has no project already scheduled, the Inbox showed the large Inbox zero picture above the "Planned, no project" group and its count; it now shows only the sentence there, and keeps the picture for an Inbox with nothing below it. ([Today and Upcoming](docs/today-and-upcoming.md))
+
 - **The bulk label picker shows the right checkmarks.** Opened with <kbd>L</kbd> straight after ticking tasks, the label picker showed no checkmarks until it was closed, and none changed after a pick; it now marks the labels every ticked task has as soon as it has read them, and updates after each pick.
 - **Larger text sizes on the rest of the app.** With the browser's text size at 20 or 24 px, the date picker's month no longer runs off a phone, the Share dialog's email field gets its own line, Settings keeps your name readable beside your role, the command bar's mode buttons wrap instead of overlapping, Statistics shows its figures in one column on a phone, and the Inbox's **Process** on a phone keeps only its icon so the title fits. Display mode, dialogs and the wide task panel now switch layouts at the same points as the rest of the app.
 
