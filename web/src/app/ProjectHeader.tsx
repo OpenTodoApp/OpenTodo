@@ -291,7 +291,10 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
         actions={phone ? phone.slots : <>
           {layout}
           <Tooltip label={canManageMembers(role) ? t('Share project') : t('Members')} shortcut={keysOf('project.share')}>
-            <Button variant="ghost" size="sm" icon="users" onClick={() => setSharing(true)} aria-haspopup="dialog" data-project-share>{canManageMembers(role) ? t('Share') : t('Members')}</Button>
+            <Button variant="ghost" size="sm" icon="users" onClick={() => setSharing(true)} aria-haspopup="dialog" data-project-share>
+              {/* Beside the display options the header is full at 768 px: the word joins the tooltip below 1024 px. */}
+              <span className="max-lg:sr-only">{canManageMembers(role) ? t('Share') : t('Members')}</span>
+            </Button>
           </Tooltip>
           {actions}
         </>}
