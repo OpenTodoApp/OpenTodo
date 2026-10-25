@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **The task page's breadcrumb leads back.** Opened from Today, Upcoming, a label or a view, a task's page now starts its breadcrumb with that list's name as a link, which returns to the list with the task selected, like <kbd>Esc</kbd>. Before, it started with the task's project, or with the list's name as plain text when the task had no project. ([The task page](docs/task-panel.md))
+
 ## [0.13.0] - 2026-10-25
 
 OpenTodo 0.13.0 is about how you look at your lists. **Open tasks in a side panel** beside every list instead of on a page, give rows a **Detailed** layout with the parent task, all labels and a priority you can read without colour, and **group and order projects and labels** like saved views. **Settings opens as short lists of pages**, the Calendar's **Plan from a list** takes a label or a saved view, and a block's top edge now moves its start. Also: the **Home Assistant integration and add-on**, **import into a chosen workspace**, and fixes for the planning list, Undo notices, task details and section order.
