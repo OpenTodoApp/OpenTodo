@@ -21,6 +21,8 @@ To plan from your lists, open the side list with **Plan from a list** (in the he
 
 To change how long something takes, drag the bottom edge of its block. Dropping a block back on the Unscheduled lane keeps the date and removes the time.
 
+The time you place a task at is its **Do** time. In the task's details, **Do** shows the block the calendar draws, for example `Today 12:00–13:30` for a 90-minute estimate. **Start** is something else: the date from which the task is available (see [Deadlines and start dates](deadlines-and-start-dates.md)).
+
 ### With the keyboard
 
 Every move works without a mouse.
