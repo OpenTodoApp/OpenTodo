@@ -3,7 +3,7 @@ title: Group and order a list
 summary: Group a project's or a label's tasks by section, date, priority or label and order them by priority, date, deadline or title, kept for each project and label.
 audience: user
 section: Guides
-specs: [custom-views, manual-ordering]
+specs: [list-display-options, custom-views, manual-ordering]
 screens: []
 order: 18
 ---

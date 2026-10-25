@@ -104,7 +104,7 @@ The user interface SHALL call saved views "views" and dashboards "boards": the s
 - **THEN** the view or the New view page opens and the address bar shows `/views/<id>` or `/views/new`, and Back leaves the app as before
 
 ### Requirement: Grouping and sort options
-A list view SHALL group its results by project, due date, priority, label or none, and sort within groups by due date, priority, position, created time or title, ascending or descending, as stored on the view. Defaults SHALL be grouping by project and sort by due date ascending with undated tasks last. Options SHALL be changeable from the view's display panel (see "Display panel") with the keyboard; the sort direction is under its "More options". The New view page SHALL group and sort the same way, so a saved view shows what was seen before saving.
+A list view SHALL group its results by project, due date, priority, label or none, and sort within groups by due date, priority, position, created time, deadline or title, ascending or descending, as stored on the view; under a deadline sort, tasks without a deadline come last in either direction. Defaults SHALL be grouping by project and sort by due date ascending with undated tasks last. Options SHALL be changeable from the view's display panel (see "Display panel") with the keyboard; the sort direction is under its "More options". The New view page SHALL group and sort the same way, so a saved view shows what was seen before saving.
 
 #### Scenario: Group by due date
 - **WHEN** the user sets grouping to due date on "Work tomorrow"
@@ -117,6 +117,10 @@ A list view SHALL group its results by project, due date, priority, label or non
 #### Scenario: Same order before and after saving
 - **WHEN** the user groups the New view page's results by priority and orders them by title, then saves the view
 - **THEN** the saved view shows the same groups in the same order
+
+#### Scenario: Sort by deadline
+- **WHEN** the user orders "Work tomorrow" by deadline
+- **THEN** tasks with the nearest deadline come first and tasks without a deadline last
 
 ### Requirement: Start view per device
 The user SHALL be able to choose any built-in or saved view, or a display route (OpenSpec `display-mode`: Today, Upcoming, a project or a saved view in display mode), as the start view that opens on launch. The choice SHALL be a per-device preference that persists across reloads and is not synced. If the chosen saved view or project is deleted, the device SHALL fall back to the Inbox.
