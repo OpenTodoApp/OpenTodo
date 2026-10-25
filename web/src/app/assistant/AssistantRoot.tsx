@@ -30,7 +30,8 @@ export default function AssistantRoot({ context, name = '', onPage = false }: { 
       {open && <AssistantPanel onClose={closeAssistant} context={context} name={name} onApplied={(r) => setToast(r)} />}
       <ToastRegion label={t('Assistant')}>
         {toast && (
-          <div role="status" className="pointer-events-auto flex items-center gap-2 rounded-control bg-(--ot-text-strong) px-3 py-2 text-body text-(--ot-surface) shadow-2" data-assistant-toast>
+          <div role="status" className="pointer-events-auto flex items-center gap-2 rounded-control bg-(--ot-text-strong) px-3 py-2 text-body text-(--ot-surface) shadow-2" data-assistant-toast
+            onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setToast(null) } }}>
             <span className="min-w-0 flex-1">{toast.text}</span>
             {toast.undoId && (
               <button type="button" className="rounded-control px-2 py-1 font-medium underline focus-visible:outline-2 focus-visible:outline-focus"

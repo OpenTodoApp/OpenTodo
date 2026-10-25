@@ -70,7 +70,7 @@ describe('sample tasks in the Inbox', () => {
     await waitFor(() => !q('[data-inbox-menu]'))
     const undo = [...document.querySelectorAll<HTMLButtonElement>('[data-bulk-toast] button')].find((b) => b.textContent === 'Undo')!
     await act(async () => { undo.click() })
-    await waitFor(() => !document.querySelector('[data-bulk-toast] button'))
+    await waitFor(() => !document.querySelector('[data-bulk-toast] [data-toast-undo]'))
     const back = await live()
     expect(back).toHaveLength(5)
     expect(back.find((t) => t.id === ids[2])!.title).toBe('My own words')

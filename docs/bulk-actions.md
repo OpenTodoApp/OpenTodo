@@ -25,7 +25,7 @@ While tasks are ticked, a bar above the list says how many and offers **Actions*
 
 ## Preview and undo
 
-Moving and assigning show the changes first, task by task, because they can change who sees a task or notify someone: <kbd>Enter</kbd> applies the checked ones, <kbd>Esc</kbd> changes nothing. Everything else applies at once, and a notice with **Undo** stays for ten seconds (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> works too). Undo puts every task back in one step, except a task someone changed again since, which keeps the newer value and is named. See also [Undo a bulk action](trash-and-history.md#undo-a-bulk-action).
+Moving and assigning show the changes first, task by task, because they can change who sees a task or notify someone: <kbd>Enter</kbd> applies the checked ones, <kbd>Esc</kbd> changes nothing. Everything else applies at once, and a notice with **Undo** stays for ten seconds (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> works too). Undo puts every task back in one step, except a task someone changed again since, which keeps the newer value and is named; the notice then says what came back and leaves after five seconds. Its **×** button, or <kbd>Esc</kbd> while it has focus, closes it sooner. See also [Undo a bulk action](trash-and-history.md#undo-a-bulk-action).
 
 ## A whole group at once
 
