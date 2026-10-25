@@ -4,7 +4,7 @@
 // selection, moves, estimate. Split out of CalendarView (web-component-structure).
 import { type Dispatch, type SetStateAction, useCallback, useRef } from 'react'
 import { addDaysISO, dueFromView, viewedTask } from '../../lib/dates'
-import { clamp, LAST_SLOT, nudgeDue, placementStart, SLOT_MINUTES, stepEstimate, type GridPrefs } from '../../lib/calendar'
+import { clamp, formatTime as toHHMM, LAST_SLOT, nudgeDue, parseTime, placementStart, SLOT_MINUTES, stepEstimate, stepStart, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { getTask } from '../../lib/liveData'
 import { updateTask } from '../../lib/ops'
@@ -111,6 +111,13 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     },
     // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
     'calendar.estimate': arrows((tk, _due, e) => edit(tk.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
+    // Alt+Shift+Up starts earlier, Alt+Shift+Down later: the upper edge follows the arrow, the end stays (GitHub issue 355).
+    'calendar.estimate-start': arrows((tk, _due, e) => edit(tk.id, (x) => {
+      const start = parseTime(x.due?.time)
+      if (start === null || !x.due) return null
+      const r = stepStart(start, x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES)
+      return { due: { date: x.due.date, time: toHHMM(r.start) }, estimate_minutes: r.estimate }
+    })),
     'calendar.next': unlessPlacing(() => setSelectedId(order[Math.min(order.length - 1, idx + 1)] ?? null)),
     'calendar.prev': unlessPlacing(() => setSelectedId(order[Math.max(0, idx - 1)] ?? null)),
     'calendar.range-prev': unlessPlacing(() => c.goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))),

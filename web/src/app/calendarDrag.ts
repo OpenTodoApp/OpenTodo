@@ -4,16 +4,18 @@
 // Hit testing finds the day column or unscheduled lane under the pointer through
 // data attributes; the pure slot math in lib/calendar turns pixels into minutes.
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { dropStart, resizeEstimate } from '../lib/calendar'
+import { dropStart, resizeEstimate, resizeStart } from '../lib/calendar'
 import { registerShortcutScope } from './shortcuts/dispatch'
 import { tick } from './motion'
 
-export type DragKind = 'move' | 'resize'
+export type DragKind = 'move' | 'resize' | 'resize-start'
 
 export type DropTarget =
   | { type: 'slot'; date: string; start: number }
   | { type: 'lane'; date: string }
   | { type: 'resize'; estimate: number }
+  /** The upper edge: a new start on the block's day, the end kept (GitHub issue 355). */
+  | { type: 'resize-start'; date: string; start: number; estimate: number }
 
 export interface DragState {
   taskId: string
@@ -33,8 +35,9 @@ interface Pending {
   startY: number
   /** Pixels between the pointer and the top of the dragged block (0 for chips and list rows). */
   grabOffset: number
-  /** Resize only: the block's start and date. */
+  /** Resize only: the block's start, end and date. */
   blockStart: number
+  blockEnd: number
   blockDate: string
   lifted: boolean
   timer?: ReturnType<typeof setTimeout>
@@ -50,6 +53,7 @@ export interface StartOptions {
   kind: DragKind
   grabOffset?: number
   blockStart?: number
+  blockEnd?: number
   blockDate?: string
 }
 
@@ -73,10 +77,12 @@ export function useCalendarDrag(opts: { pxPerMinute: number; scroller: React.Ref
 
   const targetAt = useCallback((x: number, y: number, p: Pending): DropTarget | null => {
     const { pxPerMinute } = optsRef.current
-    if (p.kind === 'resize') {
+    if (p.kind === 'resize' || p.kind === 'resize-start') {
       const col = document.querySelector<HTMLElement>(`[data-drop-day="${p.blockDate}"]`)
       if (!col) return null
-      return { type: 'resize', estimate: resizeEstimate(p.blockStart, y - col.getBoundingClientRect().top, pxPerMinute) }
+      const offset = y - col.getBoundingClientRect().top
+      if (p.kind === 'resize') return { type: 'resize', estimate: resizeEstimate(p.blockStart, offset, pxPerMinute) }
+      return { type: 'resize-start', date: p.blockDate, ...resizeStart(p.blockEnd, offset, pxPerMinute) }
     }
     const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop-day],[data-drop-lane]')
     if (!el) return null
@@ -165,10 +171,10 @@ export function useCalendarDrag(opts: { pxPerMinute: number; scroller: React.Ref
   /** Call from a draggable's onPointerDown. */
   const start = useCallback((e: React.PointerEvent, o: StartOptions) => {
     if (e.button !== 0 || pending.current) return
-    if (o.kind === 'resize') e.stopPropagation()
+    if (o.kind !== 'move') e.stopPropagation()
     const p: Pending = {
       taskId: o.taskId, kind: o.kind, pointerId: e.pointerId, pointerType: e.pointerType, startX: e.clientX, startY: e.clientY,
-      grabOffset: o.grabOffset ?? 0, blockStart: o.blockStart ?? 0, blockDate: o.blockDate ?? '', lifted: false,
+      grabOffset: o.grabOffset ?? 0, blockStart: o.blockStart ?? 0, blockEnd: o.blockEnd ?? 0, blockDate: o.blockDate ?? '', lifted: false,
     }
     pending.current = p
     if (e.pointerType !== 'mouse') {

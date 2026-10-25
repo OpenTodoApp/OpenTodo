@@ -16,7 +16,7 @@ import { getTask, readGridPrefs, useGridPrefs, useLiveProjects } from '../lib/li
 import { updateTask } from '../lib/ops'
 import type { CalendarSubscription, Project, Task } from '../lib/types'
 import { useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
-import { setDueWithUndo } from './undoable'
+import { rescheduleWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { CalendarRangeSwitch } from './CalendarRange'
@@ -143,6 +143,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       if (task.due?.date !== target.date || task.due?.time !== time) act(setDueWithUndo(taskId, dueFromView(stored, { date: target.date, time })))
     } else if (target.type === 'lane') {
       if (task.due?.date !== target.date || task.due?.time) act(setDueWithUndo(taskId, dueFromView(stored, { date: target.date })))
+    } else if (target.type === 'resize-start') {
+      // The upper edge: a new start and the estimate that keeps the end, one change with Undo (GitHub issue 355).
+      const time = toHHMM(target.start)
+      if (task.due?.time !== time || target.estimate !== task.estimate_minutes) act(rescheduleWithUndo(taskId, dueFromView(stored, { date: target.date, time })!, target.estimate))
     } else if (target.estimate !== task.estimate_minutes) {
       act(updateTask(taskId, { estimate_minutes: target.estimate }))
     }
@@ -263,6 +267,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           {drag.target?.type === 'slot' && ` · ${formatTime(drag.target.start)}`}
           {drag.target?.type === 'lane' && ` · ${t('unscheduled')}`}
           {drag.target?.type === 'resize' && ` · ${formatMinutes(drag.target.estimate)}`}
+          {drag.target?.type === 'resize-start' && ` · ${formatTime(drag.target.start)} · ${formatMinutes(drag.target.estimate)}`}
         </div>
       )}
     </PageBody>
@@ -299,6 +304,7 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, taskMap, pr
     }
     const resized = drag && dragTask && drag.target?.type === 'resize' && dragTask.due?.date === d.date ? d.blocks.get(dragTask.id) : undefined
     if (drag?.target?.type === 'resize' && dragTask && resized) return { id: 'drag-ghost', start: resized.start, length: drag.target.estimate, title: dragTask.title }
+    if (drag?.target?.type === 'resize-start' && dragTask && drag.target.date === d.date) return { id: 'drag-ghost', start: drag.target.start, length: drag.target.estimate, title: dragTask.title }
     if (placing && placingTask && placing.date === d.date) return { id: 'placement-ghost', start: placing.start, length: placingTask.estimate_minutes ?? 30, title: placingTask.title }
     return null
   }

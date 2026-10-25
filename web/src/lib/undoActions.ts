@@ -111,6 +111,11 @@ export async function dueUndoable(id: string, due: Task['due']): Promise<Undoabl
   return apply([{ entity: 'task', entityId: id, patch: { due } }], due ? t('Date changed') : t('Date removed'))
 }
 
+/** A new start that keeps the end: the due and the estimate in one change (the calendar block's upper edge, GitHub issue 355). */
+export async function rescheduleUndoable(id: string, due: NonNullable<Task['due']>, estimate: number): Promise<UndoableResult> {
+  return apply([{ entity: 'task', entityId: id, patch: { due, estimate_minutes: estimate } }], t('Rescheduled'))
+}
+
 /** Park one task in Someday: no date, not an evening task. */
 export async function parkUndoable(id: string): Promise<UndoableResult> {
   const { tasks } = await readTicked([id])

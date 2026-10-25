@@ -255,6 +255,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'calendar.nudge', keys: ['↑', '↓'], description: 'Move the selected task 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first task', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.shift-day', keys: ['←', '→'], description: 'Move the selected task one day earlier / later', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.estimate', keys: ['Shift+↑', 'Shift+↓'], description: 'Shorten / lengthen the estimate by 15 minutes', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.estimate-start', keys: ['Alt+Shift+↑', 'Alt+Shift+↓'], description: 'Start 15 minutes earlier / later, keeping the end', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.unschedule', keys: ['u'], description: 'Unschedule the selected task (keep the date)', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.place', keys: ['p'], description: 'Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.open', keys: ['Enter'], description: 'Open the selected task', section: 'calendar', scope: 'calendar' },
