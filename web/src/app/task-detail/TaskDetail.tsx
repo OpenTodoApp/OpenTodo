@@ -28,6 +28,8 @@ export { NOTES_CLAMP_LINES } from './TaskNotes'
 
 export interface TaskDetailProps {
   taskId: string
+  /** The task as already read, shown until the detail's own read arrives (no empty first frame). */
+  initial?: Task
   /** The panel was closed before this task opened: it slides in (web-app "Overlay motion"). */
   entering?: boolean
   /** Signed-in account; enables the assignee row (task-assignment). */
@@ -45,9 +47,9 @@ export interface TaskDetailProps {
   onToggleComplete?: (task: Task) => void
 }
 
-export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onDismiss, onOpen, onToggleComplete, readOnly = false, entering = false }: TaskDetailProps) {
+export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClose, onDismiss, onOpen, onToggleComplete, readOnly = false, entering = false }: TaskDetailProps) {
   const panel = useRef<HTMLElement>(null)
-  const m = useTaskDetail({ taskId, readOnly, projects, labelMap, onClose, onOpen, onToggleComplete, scope: panel })
+  const m = useTaskDetail({ taskId, initial, readOnly, projects, labelMap, onClose, onOpen, onToggleComplete, scope: panel })
   // Closing the panel (not switching its task) slides it out on a copy (motion-v2 D5).
   useLayoutEffect(() => {
     const el = panel.current

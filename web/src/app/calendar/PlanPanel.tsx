@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import { useLabels } from '../../lib/localData'
-import { ComboboxPanel, EmptyState, hueFor, Icon, Popover, type IconName } from '../../ui'
+import { ComboboxPanel, EmptyState, hueFor, Icon, Popover, useMediaQuery, type IconName } from '../../ui'
+import { closePanel, openPanel, panelOccupant, SPLIT_QUERY, usePanelOccupantKey } from '../panel'
 import { PanelFrame } from '../PanelFrame'
 import { useViewData } from '../useViews'
 import { planSources, planSourceTasks, readTray, resolveSource, saveTray, type PlanSource, type PlanSourceKind } from './planSource'
@@ -35,6 +36,43 @@ export function usePlanActions(actions: React.RefObject<PlanActions>): void {
 }
 const current = (): PlanActions | null => mounted?.current ?? null
 
+/** Whether the planning list was left open on this device (plan-list-remembered D1). */
+export const PLAN_OPEN_KEY = 'opentodo.calendarPlan.open'
+function readPlanOpen(): boolean {
+  try { return localStorage.getItem(PLAN_OPEN_KEY) === '1' } catch { return false }
+}
+function savePlanOpen(open: boolean): void {
+  try {
+    if (open) localStorage.setItem(PLAN_OPEN_KEY, '1')
+    else localStorage.removeItem(PLAN_OPEN_KEY)
+  } catch { /* storage unavailable: the list just is not remembered */ }
+}
+
+/** The user closed the list (its Close, Escape, the menu): remembered closed (D2). */
+function closePlan(): void {
+  savePlanOpen(false)
+  closePanel()
+}
+
+/**
+ * The calendar views' planning list (GitHub issue 384): the menu item's toggle, and on
+ * arrival from 1024 px the list opens again when it was left open and the slot is empty
+ * (D3). Only the user's own open and close are remembered (D2).
+ */
+export function usePlanPanel(): { planOpen: boolean; togglePlan: () => void } {
+  const planOpen = usePanelOccupantKey() === PLAN_PANEL
+  const wide = useMediaQuery(SPLIT_QUERY)
+  useEffect(() => {
+    if (wide && readPlanOpen() && !panelOccupant()) openPanel(PLAN_PANEL, () => <PlanPanel />)
+  }, [wide])
+  const togglePlan = () => {
+    if (planOpen) return closePlan()
+    savePlanOpen(true)
+    openPanel(PLAN_PANEL, () => <PlanPanel />)
+  }
+  return { planOpen, togglePlan }
+}
+
 /**
  * The planning list in the shell's panel slot (time-blocking "Day and Week calendar
  * views"): the open tasks of one source (Inbox, no date, overdue, a project, a label or
@@ -51,7 +89,7 @@ export function PlanPanel() {
   const list = useMemo(() => planSourceTasks(chosen, { projects, labels, views, tasks, today: ctx.today, ctx }), [chosen, projects, labels, views, tasks, ctx])
   const group: Record<PlanSourceKind, string> = { list: t('Lists'), project: t('Projects'), label: t('Labels'), view: t('Saved views') }
   return (
-    <PanelFrame title={t('Plan')} testId="calendar-plan" onEscape={() => current()?.onEscape?.() ?? false}
+    <PanelFrame title={t('Plan')} testId="calendar-plan" onClose={closePlan} onEscape={() => current()?.onEscape?.() ?? false}
       actions={(
         <>
           {/* The source picker is the Combobox (plan-list-sources D2): type to find a project, a label or a saved view. */}

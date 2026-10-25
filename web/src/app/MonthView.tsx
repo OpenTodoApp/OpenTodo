@@ -18,8 +18,8 @@ import type { Task } from '../lib/types'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useGridPrefs } from './CalendarView'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
-import { PLAN_PANEL, PlanPanel, usePlanActions, type PlanActions } from './calendar/PlanPanel'
+import { setPanelTaskId, usePanelTaskId } from './panel'
+import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanPanel'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
 import { keysOf } from '../lib/shortcuts'
 import { navigate } from './router'
@@ -124,8 +124,7 @@ export function MonthView({ date }: { date?: string }) {
     onPlace: (id) => { const task = rawMap.get(id); if (task && editable(task)) dropOn(id, focused) },
     onOpen: (id) => setPanelTaskId(id),
   }
-  const planOpen = usePanelOccupantKey() === PLAN_PANEL
-  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel />))
+  const { planOpen, togglePlan } = usePlanPanel()
 
   // The Month view's keys are `view` entries of the shortcut registry (keyboard-
   // shortcuts "One shortcut registry with scopes"): the dispatcher keeps them out

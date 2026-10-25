@@ -25,10 +25,10 @@ import { CalendarRangeSwitch } from './CalendarRange'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { PlanAgenda } from './calendar/PlanAgenda'
-import { PLAN_PANEL, PlanPanel, usePlanActions, type PlanActions } from './calendar/PlanPanel'
+import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanPanel'
 import { CapacityBar, PlanDayRows, type PlanDayData } from './calendar/PlanRow'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
-import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
+import { setPanelTaskId, usePanelTaskId } from './panel'
 import { navigate } from './router'
 import { useShortcutScope } from './shortcuts'
 import { completeWithUndo, setDueWithUndo } from './undoable'
@@ -172,8 +172,7 @@ export function PlanView({ date }: { date?: string }) {
     onPlace: (id) => { const task = rawMap.get(id); if (task && editable(task)) dropOn(id, focused) },
     onOpen: (id) => setPanelTaskId(id),
   }
-  const planOpen = usePanelOccupantKey() === PLAN_PANEL
-  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel />))
+  const { planOpen, togglePlan } = usePlanPanel()
 
   const from = dates[0], to = dates[dates.length - 1]
   const title = `${anchor === today ? t('Next {n} days', { n: span }) : t('{n} days', { n: span })} · ${formatShort(from)} – ${formatShort(to)}`

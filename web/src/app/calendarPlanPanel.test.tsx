@@ -9,11 +9,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { getTask } from '../lib/localData'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, flush, key, minWidthPx, render } from '../ui/test-utils'
 import { CalendarView } from './CalendarView'
 import { MonthView } from './MonthView'
 import { PlanView } from './PlanView'
-import { closePanelIfStale, panelOccupant, resetPanel } from './panel'
+import { closePanelIfStale, panelOccupant, resetPanel, setPanelTaskId } from './panel'
 import { PanelHost } from './PanelHost'
 import { navigate, useRoute } from './router'
 
@@ -170,6 +170,70 @@ describe('the planning list across the Calendar', () => {
     expect(panelOccupant()).toMatchObject({ key: 'calendar-plan' })
     expect((document.activeElement as HTMLElement).dataset.trayTask).toBe(id)
     expect((await getTask(id))?.due).toBeFalsy()
+    await r.unmount()
+  })
+})
+
+// Whether the list is open is remembered on the device (GitHub issue 384, plan-list-remembered).
+describe('the planning list is remembered', () => {
+  const original = window.matchMedia
+  function viewport(px: number) {
+    window.matchMedia = ((q: string) => ({
+      matches: minWidthPx(q) <= px, media: q, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+  }
+  beforeEach(() => viewport(1280))
+  afterEach(() => { window.matchMedia = original })
+
+  async function leaveAndReturn(view: 'week' | 'month' = 'week') {
+    navigate({ view: 'today' })
+    await waitFor(() => panelOccupant() === null)
+    navigate({ view })
+    await flush(60)
+  }
+
+  it('opens again on return, and stays closed once closed', async () => {
+    const r = await render(<><Calendar /><PanelHost /></>)
+    await flush(50)
+    await openPlanList()
+    await leaveAndReturn()
+    await waitFor(() => planList() !== null)
+    await leaveAndReturn('month')
+    await waitFor(() => planList() !== null)
+
+    await click(planList()!.querySelector<HTMLElement>('[data-overlay-close]')!)
+    await waitFor(() => panelOccupant() === null)
+    await leaveAndReturn()
+    expect(planList()).toBeNull()
+    await r.unmount()
+  })
+
+  it('Escape remembers it closed; a task opened from the Calendar does not', async () => {
+    const id = await createTask({ title: 'Renew passport' })
+    const r = await render(<><Calendar /><PanelHost /></>)
+    await flush(50)
+    await openPlanList()
+    // Opening a task from the Calendar takes the slot or the page, not the user's choice about the list.
+    setPanelTaskId(id)
+    await waitFor(() => planList() === null)
+    navigate({ view: 'week' })
+    await waitFor(() => planList() !== null)
+
+    await key(document.body, 'Escape')
+    await waitFor(() => panelOccupant() === null)
+    await leaveAndReturn()
+    expect(planList()).toBeNull()
+    await r.unmount()
+  })
+
+  it('does not open by itself on a phone', async () => {
+    const r = await render(<><Calendar /><PanelHost /></>)
+    await flush(50)
+    await openPlanList()
+    viewport(390)
+    await leaveAndReturn()
+    expect(planList()).toBeNull()
     await r.unmount()
   })
 })
