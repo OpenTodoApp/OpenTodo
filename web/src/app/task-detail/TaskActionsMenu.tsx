@@ -32,6 +32,7 @@ export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailMo
         disabled={!m.online} onSelect={() => m.setPageDialog(true)} data-publish-page />}
       {!readOnly && <MenuItem label={t('Duplicate')} icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
       {!readOnly && <MenuItem label={t('Attach')} icon="paperclip" description={t('Or paste or drop files on the task')} onSelect={() => requestAttach(task.id)} />}
+      {!readOnly && <MenuItem label={t('Add a link…')} icon="link" onSelect={() => requestAttach(task.id, 'link')} />}
       {/* The origin's Remove lives here; its row opens the source (task-panel-facets). */}
       {!readOnly && task.origin && <MenuItem label={t('Remove origin')} icon="x" onSelect={() => act(updateTask(task.id, { origin: null }))} />}
       {!readOnly && m.assistantAvailable && <MenuItem label={t('Break this down')} icon="list" onSelect={m.breakDown} />}

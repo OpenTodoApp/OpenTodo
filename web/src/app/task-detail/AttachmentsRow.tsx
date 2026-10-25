@@ -12,6 +12,7 @@ import { embeddedIds } from '../../lib/markdown'
 import { useDemo } from '../../lib/demo'
 import type { Attachment, ProjectRole } from '../../lib/types'
 import { Button, ConfirmDialog, Icon, IconButton, MenuItem, Menu } from '../../ui'
+import { requestAttach } from './attachRequest'
 import { Tooltip } from '../../ui'
 import { showBulkToast } from '../bulk/toastStore'
 import { onAttachRequest } from './attachRequest'
@@ -234,6 +235,20 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
           confirmLabel={t('Remove')} onConfirm={() => remove(removing)} onCancel={() => setRemoving(null)} />
       )}
     </section>
+  )
+}
+
+/**
+ * The paperclip beside a task's notes (GitHub issue 342): files or a link, like the row's Attach menu,
+ * also on a task without attachments yet. Both ask the task's row through attachRequest.
+ */
+export function AttachMenu({ taskId }: { taskId: string }) {
+  return (
+    <Menu kind="menu" label={t('Attach')} align="start" width="sm:w-64" trigger={<Icon name="paperclip" size="sm" />}
+      triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm" triggerProps={{ 'data-attach-menu': true }}>
+      <MenuItem label={t('Choose files…')} icon="upload" description={t('Or paste or drop files on the task')} onSelect={() => requestAttach(taskId)} />
+      <MenuItem label={t('Add a link…')} icon="link" onSelect={() => requestAttach(taskId, 'link')} />
+    </Menu>
   )
 }
 

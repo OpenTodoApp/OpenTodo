@@ -12,7 +12,7 @@ import { click, flush, key, render, spokenText, visibleText } from '../../ui/tes
 import { hideBulkToast } from '../bulk/toastStore'
 import { TaskRow } from '../TaskRow'
 import { requestAttach } from './attachRequest'
-import { AttachmentsRow, pastedName, typeLabel } from './AttachmentsRow'
+import { AttachMenu, AttachmentsRow, pastedName, typeLabel } from './AttachmentsRow'
 
 let n = 0
 let task = ''
@@ -181,6 +181,19 @@ describe('AttachmentsRow', () => {
     await act(async () => { requestAttach(task, 'link') })
     await flush()
     expect(v.container.querySelector('form input')).toBeTruthy()
+  })
+
+  it('the paperclip offers a link on a task without attachments (issue #342)', async () => {
+    const v = await render(<><AttachMenu taskId={task} /><AttachmentsRow taskId={task} userId="me" role="owner" /></>)
+    await flush()
+    await click(v.container.querySelector('[data-attach-menu]')!)
+    const items = [...document.querySelectorAll('[role="menuitem"]')].map((el) => el.textContent ?? '')
+    expect(items.some((x) => x.includes('Choose files…'))).toBe(true)
+    const link = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent?.includes('Add a link…'))!
+    await click(link)
+    await flush()
+    expect(v.container.querySelector('form input[type="url"]')).toBeTruthy()
+    await v.unmount()
   })
 
   it('shows the drop zone only while files are dragged over the panel', async () => {
