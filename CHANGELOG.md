@@ -4,6 +4,16 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-25
+
+OpenTodo 0.13.0 is about how you look at your lists. **Open tasks in a side panel** beside every list instead of on a page, give rows a **Detailed** layout with the parent task, all labels and a priority you can read without colour, and **group and order projects and labels** like saved views. **Settings opens as short lists of pages**, the Calendar's **Plan from a list** takes a label or a saved view, and a block's top edge now moves its start. Also: the **Home Assistant integration and add-on**, **import into a chosen workspace**, and fixes for the planning list, Undo notices, task details and section order.
+
+### Upgrade notes
+
+- **No migrations, no new environment variables.** Replace the image or the binary and restart. Upgrade the server before the devices, as for every release.
+- **Display options and row layouts are new fields on labels, views, project preferences and user preferences.** Devices still on 0.12 ignore them until they update, and show their lists as before. ([Sync protocol](docs/sync.md))
+- **Settings pages have new addresses**, such as `/settings/integrations/webhooks`. Old addresses, bookmarks and anchors keep working, and the single sign-on return address is updated by itself. ([Settings](docs/settings.md))
+
 ### Added
 
 - **Home Assistant integration.** A separate integration, installed from HACS, shows the Inbox, Today and your projects as Home Assistant to-do lists you can change (with quick-add syntax), counts Today, Earlier and the Inbox, puts dated tasks on a calendar, and fires `opentodo_task_*` events through a signed webhook it sets up itself; Assist can add to and tick off the lists. It needs a Full access token and no change on the server. ([Home Assistant](docs/home-assistant.md))
@@ -830,7 +840,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/pixari/opentodo/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/pixari/opentodo/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/pixari/opentodo/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/pixari/opentodo/compare/v0.10.0...v0.10.1
