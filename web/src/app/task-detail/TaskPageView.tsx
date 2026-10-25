@@ -35,8 +35,10 @@ export interface TaskPageNav {
   hasNext: boolean
   onStep: (step: 1 | -1) => void
   onBack: () => void
-  /** The list's name, for the phone's bar ("Today"). */
+  /** The list's name, for the phone's bar and the breadcrumb's first crumb ("Today"). */
   backLabel: string
+  /** The task was opened from its own project, so the project crumb leads back. */
+  fromProject?: boolean
 }
 
 export interface TaskPageViewProps {
@@ -89,13 +91,20 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
       {nav.position && <IconButton icon="arrow-up" size="sm" label={t('Previous task')} shortcut={keysOf('task.prev')} disabled={!nav.hasPrev} onClick={() => nav.onStep(-1)} data-task-prev />}
     </>
   )
+  // The first crumb leads back to the list the task was opened from (Today, a view, a
+  // label), with the task selected there; the project follows when it is another page.
+  const crumbClass = 'rounded-control px-1 text-muted hover:bg-hover hover:text-default'
+  const origin = nav.backLabel && !nav.fromProject
   const crumbs = (
     <Breadcrumb>
+      {origin && (
+        <button type="button" className={`min-w-0 truncate ${crumbClass}`} onClick={nav.onBack} data-crumb="origin">{nav.backLabel}</button>
+      )}
       {project
-        ? <button type="button" className="inline-flex min-w-0 items-center gap-1.5 rounded-control px-1 text-muted hover:bg-hover hover:text-default" onClick={() => navigate({ view: 'project', id: project.id })} data-crumb="project">
+        ? <button type="button" className={`inline-flex min-w-0 items-center gap-1.5 ${crumbClass}`} onClick={nav.fromProject ? nav.onBack : () => navigate({ view: 'project', id: project.id })} data-crumb="project">
             <ProjectMark project={project} /><span className="truncate">{project.name}</span>
           </button>
-        : <span className="px-1 text-muted" data-crumb="project">{nav.backLabel || t('Inbox')}</span>}
+        : !origin && <button type="button" className={crumbClass} onClick={nav.onBack} data-crumb="project">{t('Inbox')}</button>}
       {m.parent && (
         <button type="button" className="min-w-0 truncate rounded-control px-1 text-muted hover:bg-hover hover:text-default" onClick={() => onOpen(m.parent!.id)} data-crumb="parent">
           {m.parent.title || t('Untitled')}

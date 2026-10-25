@@ -6,6 +6,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { todayISO } from '../lib/dates'
 import type { User } from '../lib/types'
 import { click, flush, key, render } from '../ui/test-utils'
 import { resetPanel } from './panel'
@@ -99,6 +100,53 @@ describe('the task page', () => {
     await click(document.querySelector<HTMLButtonElement>('[data-task-close]')!)
     await waitFor(() => location.pathname === '/' && !page())
     await waitFor(() => document.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') === id)
+    await r.unmount()
+  })
+
+  it('the first crumb names the list the task was opened from and leads back to it', async () => {
+    const project = await createProject({ name: 'Home' })
+    const id = await createTask({ title: 'Water the plants', project_id: project, due: { date: todayISO() } })
+    navigate({ view: 'today' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => r.container.textContent!.includes('Water the plants'))
+    const from = location.pathname
+    await click(rowOpen('Water the plants'))
+    await waitFor(() => location.pathname === `/task/${id}` && !!page())
+    const crumbs = page()!.querySelector('[data-breadcrumb]')!
+    const origin = crumbs.querySelector<HTMLButtonElement>('button[data-crumb="origin"]')!
+    expect(origin.textContent).toBe('Today')
+    expect(crumbs.querySelector('[data-crumb="project"]')!.textContent).toContain('Home')
+    await click(origin)
+    await waitFor(() => location.pathname === from && !page())
+    await waitFor(() => document.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') === id)
+    await r.unmount()
+  })
+
+  it('opened from its own project, the project is the first crumb and leads back', async () => {
+    const { project, ids } = await projectOfThree()
+    navigate({ view: 'project', id: project })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => r.container.textContent!.includes('Fix the gate'))
+    await click(rowOpen('Fix the gate'))
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && !!page())
+    const crumbs = page()!.querySelector('[data-breadcrumb]')!
+    expect(crumbs.querySelector('[data-crumb="origin"]')).toBeNull()
+    await click(crumbs.querySelector<HTMLButtonElement>('button[data-crumb="project"]')!)
+    await waitFor(() => location.pathname === `/project/${project}` && !page())
+    await waitFor(() => document.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') === ids[1])
+    await r.unmount()
+  })
+
+  it('without a trail, a task without a project offers Inbox as a link', async () => {
+    const id = await createTask({ title: 'Loose end' })
+    history.replaceState(null, '', `/task/${id}`)
+    navigate({ view: 'task', id }, { replace: true })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!page())
+    const inbox = page()!.querySelector<HTMLButtonElement>('button[data-crumb="project"]')!
+    expect(inbox.textContent).toBe('Inbox')
+    await click(inbox)
+    await waitFor(() => !page() && !location.pathname.startsWith('/task/'))
     await r.unmount()
   })
 

@@ -8,7 +8,7 @@ import type { User } from '../lib/types'
 import { PageBody, Skeleton } from '../ui'
 import { closePanel } from './panel'
 import { useTaskDetailData } from './PanelHost'
-import { navigate } from './router'
+import { navigate, parseRoute } from './router'
 import { selectTask } from './signals'
 import { leaveTaskPage, openTaskPage, stepTask, trailNeighbour, trailPosition, useTaskTrail } from './taskTrail'
 import { TaskPageView } from './task-detail/TaskPageView'
@@ -26,6 +26,10 @@ export function TaskPage({ id, user }: { id: string; user?: Pick<User, 'id'> }) 
     selectTask.set(id)
     navigate(task?.project_id ? { view: 'project', id: task.project_id } : { view: 'inbox' })
   })
+
+  // Opened from the task's own project: that crumb is the way back, not a second one before it.
+  const fromRoute = trail ? parseRoute(trail.from) : null
+  const fromProject = !!task?.project_id && fromRoute?.view === 'project' && fromRoute.id === task.project_id
 
   if (task === undefined) return <PageBody width="list"><div className="py-6"><Skeleton shape="line" count={4} label={t('Loading task')} /></div></PageBody>
   if (task === null || task.deleted_at) {
@@ -45,6 +49,7 @@ export function TaskPage({ id, user }: { id: string; user?: Pick<User, 'id'> }) 
         onStep: (step) => { stepTask(id, step) },
         onBack: back,
         backLabel: trail?.label ?? '',
+        fromProject,
       }} />
   )
 }
