@@ -15,7 +15,7 @@ A due date is just a calendar day, and a time is the time on the clock where you
 
 ## Type or pick a date and time
 
-Click the date on a task's **When** line. **Today**, **Tomorrow**, **This weekend**, **Next week** or **No date** sets it in one click. Or type in the field, which previews what it understood ("→ Fri 23 Oct"), or pick a day in the calendar. **Add time** suggests 09:00, 13:00 and 18:00. Formats follow **Settings → General → Date and time**:
+Click the date on a task's **When** line. **Today**, **Tomorrow**, **This weekend**, **Next week** or **No date** sets it in one click. Or type in the field, which previews what it understood ("→ Fri 23 Oct"), or pick a day in the calendar. **Add time** suggests 09:00, 13:00 and 18:00. Formats follow **Settings → Language and region → Date and time**:
 
 - **Date:** a date in your format (`14/10` or `10/14`, with or without a year), an ISO date (`2026-10-14`), or a word: `today`, `tomorrow`, a weekday such as `fri`, `next week` or `3 Nov`. A date without a year that has already passed this year means next year. Press <kbd>Enter</kbd> or leave the field to save it. If the date doesn't exist (`31/02`), the field says so and the task keeps its date.
 - **Calendar:** always shown under the field, with weeks starting on your first day of the week. Arrow keys move by day and week, <kbd>Page Up</kbd> and <kbd>Page Down</kbd> by month, <kbd>Home</kbd> and <kbd>End</kbd> to the start and end of the week, <kbd>Enter</kbd> picks the day and <kbd>Esc</kbd> closes it.
@@ -25,7 +25,7 @@ Click the date on a task's **When** line. **Today**, **Tomorrow**, **This weeken
 
 ## When a day ends
 
-For the app, a new day begins at midnight. If you often work past midnight, set **Settings → General → Date and time → My day starts at** to a time up to 06:00. With 04:00, at 01:30 on Thursday it is still Wednesday:
+For the app, a new day begins at midnight. If you often work past midnight, set **Settings → Language and region → Date and time → My day starts at** to a time up to 06:00. With 04:00, at 01:30 on Thursday it is still Wednesday:
 
 - **Today** still lists Wednesday's tasks, nothing moves to **Earlier**, and Thursday's tasks are **Tomorrow** in **Upcoming**.
 - A task you complete now counts for Wednesday in **Completed**, [Statistics](statistics.md) and the Loop pulse, and a habit keeps its streak.

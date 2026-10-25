@@ -40,15 +40,24 @@ describe('hosted settings', () => {
     setHosted(true)
     const r = await render(<SettingsView user={owner} onLogout={() => {}} section="server" />)
     await flush(20)
-    expect(r.container.querySelector('[data-testid="server-archive"]')).not.toBeNull()
-    expect(r.container.querySelector('#backups-heading')).toBeNull()
-    expect(r.container.querySelector('#outgoing-email-heading')).toBeNull()
-    expect(r.container.querySelector('#attachments-settings-heading')).toBeNull()
+    // The overview lists Download your data and none of the operator's pages.
+    expect([...r.container.querySelectorAll('[data-settings-subpage]')].map((a) => a.getAttribute('data-settings-subpage')))
+      .toEqual(['download', 'branding', 'maps', 'automations', 'audit'])
     await r.unmount()
+    const download = await render(<SettingsView user={owner} onLogout={() => {}} section="server" page="download" />)
+    await flush(20)
+    expect(download.container.querySelector('[data-testid="server-archive"]')).not.toBeNull()
+    await download.unmount()
+    for (const page of ['backups', 'outgoing-email', 'attachments']) {
+      const p = await render(<SettingsView user={owner} onLogout={() => {}} section="server" page={page} />)
+      await flush(20)
+      expect(p.container.querySelector('[data-settings-page]')).toBeNull()
+      await p.unmount()
+    }
   })
 
   it('keeps a self-hosted server exactly as before', async () => {
-    const r = await render(<SettingsView user={owner} onLogout={() => {}} section="server" />)
+    const r = await render(<SettingsView user={owner} onLogout={() => {}} section="server" page="attachments" />)
     await flush(20)
     expect(r.container.querySelector('[data-testid="server-archive"]')).toBeNull()
     expect(r.container.querySelector('#attachments-settings-heading')).not.toBeNull()

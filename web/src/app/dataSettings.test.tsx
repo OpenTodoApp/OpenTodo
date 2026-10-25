@@ -33,7 +33,7 @@ describe('YourDataView', () => {
   it('links the owner to Backups', () => {
     const html = render({ isOwner: true })
     expect(html).toContain('data-testid="backups-link"')
-    expect(html).toContain('href="/settings/server"')
+    expect(html).toContain('href="/settings/server/backups"')
   })
   it('disables import on a demo instance with the exact note', () => {
     const html = render({ demo: true })

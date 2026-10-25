@@ -10,7 +10,6 @@ import { Button, PageBody, PageHeader, Tooltip } from '../../ui'
 import { keysOf } from '../../lib/shortcuts'
 import type { AskRequest } from '../../ui'
 import { Notice } from '../../ui'
-import { requestSettingsFocus } from '../settingsIndex'
 import { navigate } from '../router'
 import { EncryptionOffHint } from './AssistantPanelBody'
 import { t, msg } from '../../lib/i18n'
@@ -77,7 +76,7 @@ export function AskScreen({ role, name = '' }: { role?: AccountRole; name?: stri
           <span data-ask-unavailable>
             {status?.reason === 'demo' ? t('The assistant is not available on the demo instance.') : t('The assistant is not turned on on this server.')}
             {mode === 'owner-hint' && (
-              <> <a className="underline" href="/settings/integrations" onClick={(e) => { e.preventDefault(); requestSettingsFocus('ai'); navigate({ view: 'settings', section: 'integrations' }) }}>{t('Set it up in the assistant settings.')}</a></>
+              <> <a className="underline" href="/settings/integrations/assistant" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'integrations', page: 'assistant' }) }}>{t('Set it up in the assistant settings.')}</a></>
             )}
           </span>
         </Notice>

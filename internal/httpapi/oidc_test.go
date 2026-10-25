@@ -214,7 +214,7 @@ func TestOIDCEndToEndWithFakeProvider(t *testing.T) {
 	if n := o.auditCount("name = 'login.failed' AND details LIKE '%oidc_link_required%'"); n != 1 {
 		t.Fatalf("refused link audited %d times", n)
 	}
-	if resp = o.ssoLogin(o.env); location(resp) != "/settings/security?linked=1" {
+	if resp = o.ssoLogin(o.env); location(resp) != "/settings/account/security?linked=1" {
 		t.Fatalf("owner link from Settings = %q", location(resp))
 	}
 	if resp = o.ssoLogin(ownerSSO); location(resp) != "/" || !hasCookie(resp, sessionCookie) {
@@ -228,7 +228,7 @@ func TestOIDCEndToEndWithFakeProvider(t *testing.T) {
 	// Linking from Settings with a session: a second identity, same session.
 	o.idp.SetUser(oidctest.User{Subject: "owner-second", Email: "", EmailVerified: false})
 	resp = o.ssoLogin(o.env)
-	if resp.StatusCode != http.StatusSeeOther || location(resp) != "/settings/security?linked=1" || hasCookie(resp, sessionCookie) {
+	if resp.StatusCode != http.StatusSeeOther || location(resp) != "/settings/account/security?linked=1" || hasCookie(resp, sessionCookie) {
 		t.Fatalf("link = %d %q", resp.StatusCode, location(resp))
 	}
 	resp, out = o.do("GET", "/api/v1/me/identities", nil)
@@ -247,7 +247,7 @@ func TestOIDCEndToEndWithFakeProvider(t *testing.T) {
 		t.Fatalf("taken identity = %d %v", resp.StatusCode, out)
 	}
 	resp = raw(o.env, o.authorize(o.env), "Accept", "text/html")
-	if location(resp) != "/settings/security?error=identity_taken" {
+	if location(resp) != "/settings/account/security?error=identity_taken" {
 		t.Fatalf("taken identity (browser) = %d %q", resp.StatusCode, location(resp))
 	}
 
@@ -435,7 +435,7 @@ func TestUnlinkLastCredentialRefused(t *testing.T) {
 	}
 	// The owner keeps a password (break-glass), so its identity can go.
 	o.idp.SetUser(oidctest.User{Subject: "owner-sub", Email: "owner@example.com", EmailVerified: true})
-	if resp := o.ssoLogin(o.env); location(resp) != "/settings/security?linked=1" {
+	if resp := o.ssoLogin(o.env); location(resp) != "/settings/account/security?linked=1" {
 		t.Fatalf("owner link = %q", location(resp))
 	}
 	_, out = o.do("GET", "/api/v1/me/identities", nil)
@@ -517,7 +517,7 @@ func TestOIDCSignInSatisfiesMFA(t *testing.T) {
 	if resp = o.ssoLogin(c); location(resp) != "/?error=oidc_link_required" || hasCookie(resp, sessionCookie) {
 		t.Fatalf("provider sign-in of enrolled owner before linking = %q", location(resp))
 	}
-	if resp = o.ssoLogin(o.env); location(resp) != "/settings/security?linked=1" {
+	if resp = o.ssoLogin(o.env); location(resp) != "/settings/account/security?linked=1" {
 		t.Fatalf("link from Settings = %q", location(resp))
 	}
 	resp = o.ssoLogin(c)
@@ -538,7 +538,7 @@ func TestOIDCSignInSatisfiesMFA(t *testing.T) {
 		t.Fatalf("stale PUT = %d %v", resp.StatusCode, out)
 	}
 	// Running the provider flow again from the signed-in browser re-authenticates.
-	if resp := o.ssoLogin(c); location(resp) != "/settings/security?reauthenticated=1" {
+	if resp := o.ssoLogin(c); location(resp) != "/settings/account/security?reauthenticated=1" {
 		t.Fatalf("provider re-authentication = %q", location(resp))
 	}
 	resp, out = c.do("PUT", "/api/v1/settings/oidc", map[string]any{"displayName": "Fresh"})

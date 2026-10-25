@@ -26,7 +26,7 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan*
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 
-Week starts on your first day of the week; the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → General → Date and time** and follow you to all your devices.
+Week starts on your first day of the week; the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → Language and region → Date and time** and follow you to all your devices.
 
 ## See the month
 

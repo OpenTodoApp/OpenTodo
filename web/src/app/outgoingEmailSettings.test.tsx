@@ -101,7 +101,7 @@ describe('Outgoing email panel', () => {
 
   it('is mounted on the Server page, for the owner only', () => {
     // Settings → Server is the owner's section (settings-navigation "Sections follow the user's role"); an admin opening it lands on Account.
-    const page = (user: User) => renderToStaticMarkup(<SettingsView user={user} onLogout={noop} section="server" />)
+    const page = (user: User) => renderToStaticMarkup(<SettingsView user={user} onLogout={noop} section="server" page="outgoing-email" />)
     expect(page(owner)).toContain('data-testid="outgoing-email-panel"')
     expect(page(admin)).not.toContain('outgoing-email-panel')
     expect(renderToStaticMarkup(<SettingsView user={owner} onLogout={noop} section="people" />)).not.toContain('outgoing-email-panel')

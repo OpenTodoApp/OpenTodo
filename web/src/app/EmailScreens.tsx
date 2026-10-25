@@ -63,7 +63,7 @@ export function ForgotScreen({ enabled, user }: { enabled: boolean; user: User |
     return (
       <Card title={t('You are signed in')}>
         <p className="text-meta text-muted">{t('Change your password in Settings → Account → Password. To reset the password of another account, sign out first.')}</p>
-        <Button variant="secondary" onClick={() => navigate({ view: 'settings', section: 'account', anchor: 'security' })}>{t('Open Account settings')}</Button>
+        <Button variant="secondary" onClick={() => navigate({ view: 'settings', section: 'account', page: 'security' })}>{t('Open Account settings')}</Button>
       </Card>
     )
   }

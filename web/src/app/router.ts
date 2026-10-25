@@ -31,7 +31,8 @@ export type Route =
   | { view: 'filter'; q?: string }
   | { view: 'views' }
   | { view: 'view'; id: string }
-  | { view: 'settings'; section?: SettingsSectionId; anchor?: string }
+  // A settings section, or one of its sub-pages at /settings/<section>/<page> (settings-subpages).
+  | { view: 'settings'; section?: SettingsSectionId; page?: string; anchor?: string }
   | { view: 'import' }
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
@@ -61,30 +62,30 @@ export type Route =
   // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
   | { view: 'focus'; id?: string }
 
-/** Settings sections, each at /settings/<id> (settings-navigation); eleven, in list order (workspaces added Workspaces). */
+/** Settings sections, each at /settings/<id> (settings-navigation), in list order (workspaces added Workspaces, settings-subpages Language and region). */
 export const SETTINGS_SECTION_IDS = [
   'account', 'workspaces', 'appearance',
-  'general', 'notifications', 'capture', 'about',
+  'general', 'language', 'notifications', 'capture', 'about',
   'integrations', 'data',
   'people', 'server',
 ] as const
 export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number]
 
 /**
- * Section ids of earlier layouts, opened as the section that now holds their
- * content, at the anchor of that content (settings-navigation "Legacy settings
- * addresses"). The address is replaced in place.
+ * Section ids of earlier layouts, opened as the section or sub-page that now
+ * holds their content, at the anchor of that content (settings-navigation "Legacy
+ * settings addresses"). The address is replaced in place.
  */
-export const LEGACY_SETTINGS_IDS: Readonly<Record<string, { section: SettingsSectionId; anchor?: string }>> = {
-  security: { section: 'account', anchor: 'security' },
-  encryption: { section: 'account', anchor: 'encryption' },
-  activity: { section: 'account', anchor: 'sessions' },
+export const LEGACY_SETTINGS_IDS: Readonly<Record<string, { section: SettingsSectionId; page?: string; anchor?: string }>> = {
+  security: { section: 'account', page: 'security' },
+  encryption: { section: 'account', page: 'encryption' },
+  activity: { section: 'account', page: 'activity' },
   preferences: { section: 'general' },
   projects: { section: 'data', anchor: 'projects' },
-  ai: { section: 'integrations', anchor: 'ai' },
+  ai: { section: 'integrations', page: 'assistant' },
   admin: { section: 'people' },
-  access: { section: 'people', anchor: 'access-policies' },
-  backups: { section: 'server' },
+  access: { section: 'people', page: 'access-policies' },
+  backups: { section: 'server', page: 'backups' },
 }
 
 function isSettingsSection(s: string | undefined): s is SettingsSectionId {
@@ -123,8 +124,10 @@ export function parseRoute(pathname: string): Route {
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
       if (parts[1] === 'import') return { view: 'import' }
-      if (parts[1] && parts[1] in LEGACY_SETTINGS_IDS) { const l = LEGACY_SETTINGS_IDS[parts[1]]; return { view: 'settings', section: l.section, ...(l.anchor ? { anchor: l.anchor } : {}) } }
-      return isSettingsSection(parts[1]) ? { view: 'settings', section: parts[1] } : { view: 'settings' }
+      if (parts[1] && parts[1] in LEGACY_SETTINGS_IDS) { const l = LEGACY_SETTINGS_IDS[parts[1]]; return { view: 'settings', section: l.section, ...(l.page ? { page: l.page } : {}), ...(l.anchor ? { anchor: l.anchor } : {}) } }
+      // A sub-page id is checked against the section table by the Settings screen (settings-subpages).
+      if (!isSettingsSection(parts[1])) return { view: 'settings' }
+      return parts[2] && /^[a-z][a-z-]*$/.test(parts[2]) ? { view: 'settings', section: parts[1], page: parts[2] } : { view: 'settings', section: parts[1] }
     case 'labels':
       return { view: 'labels' }
     case 'locations':
@@ -278,7 +281,7 @@ export function routePath(r: Route): string {
     case 'inbox':
       return '/'
     case 'settings':
-      return r.section ? `/settings/${r.section}` : '/settings'
+      return r.section ? `/settings/${r.section}${r.page ? `/${r.page}` : ''}` : '/settings'
     case 'import':
       return '/settings/import'
     case 'projects':

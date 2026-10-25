@@ -20,8 +20,9 @@ export function routerViews(src = read('web/src/app/router.ts')) {
 export function layoutNames(src = read('scripts/ux-audit/layout-screens.mjs')) {
   const screens = new Set([...src.matchAll(/\{ name: '([a-z0-9-]+)'/g)].map((m) => m[1]))
   // Settings sections are generated from a list of [id, title] pairs.
-  const list = src.match(/\.\.\.\[\n([\s\S]*?)\]\.map\(\(\[id, title, overlays\]\) => \(\{ name: `settings-\$\{id\}`/)
-  if (list) for (const m of list[1].matchAll(/\['([a-z-]+)', '/g)) screens.add(`settings-${m[1]}`)
+  // Sections and sub-pages (settings-subpages): `account` and `account/security` name `settings-account` and `settings-account-security`.
+  const list = src.match(/\.\.\.\[\n([\s\S]*?)\]\.map\(\(\[id, title, overlays\]\) => \(\{ name: `settings-\$\{id/)
+  if (list) for (const m of list[1].matchAll(/\['([a-z/-]+)', '/g)) screens.add(`settings-${m[1].replace('/', '-')}`)
   const block = src.slice(src.indexOf('export const OVERLAYS = {'))
   const overlays = new Set([...block.matchAll(/^ {2}async (?:'([a-z0-9-]+)'|([a-z0-9]+))\(/gm)].map((m) => m[1] ?? m[2]))
   // Openers made from a list: `...Object.fromEntries([['name', …], …]` and the `${field}-picker` ones.

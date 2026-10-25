@@ -5,7 +5,6 @@ import { MenuItem } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
-import { requestSettingsFocus } from './settingsIndex'
 import { navigate } from './router'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
@@ -328,7 +327,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
       )}
       {p.isOwner && (
         <p className="pt-3 text-meta text-muted" data-testid="mfa-policy-link">
-          {t.rich('Server policy: {policy}. <a>People → Access policies</a>', { policy: sentenceCase(POLICY_LABEL[p.policy ?? p.status?.policy ?? 'none']), a: (chunks) => <a className="text-accent underline" href="/settings/people" onClick={(e) => { e.preventDefault(); requestSettingsFocus('access-policies'); navigate({ view: 'settings', section: 'people' }) }}>{chunks}</a> })}
+          {t.rich('Server policy: {policy}. <a>People → Access policies</a>', { policy: sentenceCase(POLICY_LABEL[p.policy ?? p.status?.policy ?? 'none']), a: (chunks) => <a className="text-accent underline" href="/settings/people/access-policies" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'people', page: 'access-policies' }) }}>{chunks}</a> })}
         </p>
       )}
     </SettingsSection>

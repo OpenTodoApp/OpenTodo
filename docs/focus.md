@@ -55,4 +55,4 @@ The timer itself stays on the device: it is not synced or exported, and it is cl
 
 ## Settings
 
-All of this is in **Settings → General → Focus**: the timer, the lengths, the long break, starting breaks and the next session automatically, the break reminder and its length, and the sound. These settings follow your account to every device.
+All of this is in **Settings → General → Focus timer**: the timer, the lengths, the long break, starting breaks and the next session automatically, the break reminder and its length, and the sound. These settings follow your account to every device.

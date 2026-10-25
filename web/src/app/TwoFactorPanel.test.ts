@@ -79,7 +79,7 @@ describe('TwoFactorPanelView', () => {
     const owner = panel({ isOwner: true, policy: 'all' })
     expect(owner).toContain('data-testid="mfa-policy-link"')
     expect(owner).toContain('required for every account')
-    expect(owner).toContain('href="/settings/people"')
+    expect(owner).toContain('href="/settings/people/access-policies"')
     expect(owner).not.toContain('Policy for this server')
     expect(panel({ isOwner: false })).not.toContain('mfa-policy-link')
   })

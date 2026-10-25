@@ -34,7 +34,7 @@ No Passkeys card? Passkeys need a secure `https://` address on your server; ask 
 
 ## Turn on two-factor authentication
 
-With two-factor authentication, signing in takes your password plus a six-digit code from an authenticator app on your phone. Set it up under **Settings → Account → Two-factor authentication** and save the recovery codes it shows once. Signing in with a passkey skips the code. The steps are in [Two-factor authentication](two-factor.md).
+With two-factor authentication, signing in takes your password plus a six-digit code from an authenticator app on your phone. Set it up under **Settings → Account → Security → Two-factor authentication** and save the recovery codes it shows once. Signing in with a passkey skips the code. The steps are in [Two-factor authentication](two-factor.md).
 
 ### Remember this browser
 
@@ -60,9 +60,9 @@ Some changes, like creating an API token or turning off two-factor authenticatio
 
 ## Sign out
 
-**Settings → Account → Session → Sign out** ends your session on that device and removes your tasks from it. Changes that haven't been sent yet are uploaded first when you're online.
+**Settings → Account → Security → Session → Sign out** ends your session on that device and removes your tasks from it. Unsent changes are uploaded first when you're online.
 
 ## More protection
 
 - [End-to-end encryption](e2ee.md) encrypts your task titles, notes and comments on your devices, so even your server only stores scrambled text.
-- If your server uses a company or family login (single sign-on), you can link it under **Settings → Account → Linked accounts** and sign in with it.
+- If your server uses a company or family login (single sign-on), you can link it under **Settings → Account → Security → Linked accounts** and sign in with it.

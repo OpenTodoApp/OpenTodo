@@ -72,6 +72,7 @@ The interface audit (OpenSpec change `ux-audit-three-widths`); what it measures 
 - `ux-audit.test.mjs` (in `make ui-lint`): every router view has an entry, every `layoutCheck` name exists, `core` matches the frequency, overlays say how they open, and `screens.mjs` shots name inventory entries; plus the report's ranking.
 - `stories.mjs` (in `make ui-lint`): every core entry's story title exists.
 - `tour.mjs`, `report.mjs`, `audit-measures.mjs`, `measure.test.mjs` (fixture tests in Chromium, run by the CI job).
+- `settings-heights.mjs` (OpenSpec change `settings-subpages`): the height of every Settings section and sub-page at 1280×800 and 390×844, as the owner of a throwaway server with every owner feature on, as a Markdown table. `TEXT_SIZE`, `SHOTS=<dir>` (a screenshot of each whole page), `THEME=dark`, `JSON=1`, `LIMIT` and `STRICT=1` (exit 1 when a page is taller than `LIMIT` screens, 1.5 by default).
 
 ```bash
 make ux-audit                                        # builds, runs the tour, prints the report path

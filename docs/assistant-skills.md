@@ -20,7 +20,7 @@ Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills
 | Skill | What it does |
 |---|---|
 | **Turn an idea into a project** | Turns an idea or pasted notes into one new project: a few phases, each with tasks and estimates. |
-| **Plan my week** | Proposes due dates and times for your open work over the next 7 days, within your working day (Settings → General → Calendar: day start, day end and planned hours). It never plans more than a day holds, and counts tasks without an estimate as 30 minutes. Work that starts later gets a start date instead of a due date. |
+| **Plan my week** | Proposes due dates and times for your open work over the next 7 days, within your working day (Settings → Language and region → Calendar grid: day start, day end and planned hours). It never plans more than a day holds, and counts tasks without an estimate as 30 minutes. Work that starts later gets a start date instead of a due date. |
 | **Weekly review** | Looks at the Inbox, overdue tasks and the coming week, and proposes what to reschedule, move or complete (waiting tasks get what they wait for, later ones a start date or Someday), with a short summary. It never proposes trashing your tasks. |
 | **Triage my inbox** | Proposes a project, and a priority, labels and a date where the task gives a reason, for each Inbox task; may defer a task or park it in Someday. |
 | **Break this down** | Turns the selected task into subtasks with estimates. Also in a task's **⋯** menu. |

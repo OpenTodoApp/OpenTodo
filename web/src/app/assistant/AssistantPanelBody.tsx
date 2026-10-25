@@ -9,7 +9,6 @@ import { msg, t } from '../../lib/i18n'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Markdown } from '../Markdown'
 import { navigate } from '../router'
-import { requestSettingsFocus } from '../settingsIndex'
 import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
 import { DeviceLocked, DeviceSetupForm } from './AssistantDevice'
@@ -21,7 +20,7 @@ export const ENCRYPTED_MESSAGE = msg('The assistant can’t read end-to-end encr
 export function EncryptionOffHint() {
   return (
     <span data-assistant-encryption-hint>
-      {t.rich('To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.', { a: (chunks) => <a className="underline" href="/settings/account" onClick={(e) => { e.preventDefault(); requestSettingsFocus('encryption'); navigate({ view: 'settings', section: 'account' }) }}>{chunks}</a> })}
+      {t.rich('To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.', { a: (chunks) => <a className="underline" href="/settings/account/encryption" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'account', page: 'encryption' }) }}>{chunks}</a> })}
     </span>
   )
 }

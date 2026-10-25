@@ -59,7 +59,7 @@ describe('from 1024 px', () => {
     const aside = r.container.querySelector('aside')!
     expect([...aside.querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['You', 'App', 'Data'])
     expect([...aside.querySelectorAll('section[aria-labelledby] a[data-settings-link]')].map((a) => a.getAttribute('data-settings-link')))
-      .toEqual(['account', 'workspaces', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data'])
+      .toEqual(['account', 'workspaces', 'appearance', 'general', 'language', 'notifications', 'capture', 'about', 'integrations', 'data'])
     await r.unmount()
   })
 })
@@ -74,7 +74,7 @@ describe('below 1024 px', () => {
     expect(r.container.querySelector('[data-settings-section]')).toBeNull()
     expect(location.pathname).toBe('/settings')
     const entries = [...r.container.querySelectorAll<HTMLAnchorElement>('a[data-settings-link]')]
-    expect(entries.map((a) => a.getAttribute('data-settings-link'))).toEqual(['account', 'workspaces', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data'])
+    expect(entries.map((a) => a.getAttribute('data-settings-link'))).toEqual(['account', 'workspaces', 'appearance', 'general', 'language', 'notifications', 'capture', 'about', 'integrations', 'data'])
     expect(entries.every((a) => /min-h-14/.test(a.className))).toBe(true)
 
     await click(entries.find((a) => a.getAttribute('data-settings-link') === 'capture')!)
@@ -86,6 +86,45 @@ describe('below 1024 px', () => {
     expect(r.container.querySelector('[data-page-back]')?.getAttribute('href')).toBe('/settings')
     expect(document.activeElement?.textContent).toBe('Capture')
     await r.unmount()
+  })
+
+  it('each level is its own page: an overview row opens the sub-page, whose back action returns to the overview and its row', async () => {
+    // A tablet: the header renders its own row with the back action (below 768 px the shell's bar carries it).
+    width = 800
+    history.replaceState(null, '', '/settings/capture')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    const r = await render(<SettingsView user={member} onLogout={() => {}} section="capture" />)
+    await flush(30)
+    const rows = [...r.container.querySelectorAll<HTMLAnchorElement>('a[data-settings-subpage]')]
+    expect(rows.map((a) => a.getAttribute('data-settings-subpage'))).toEqual(['quick-add', 'voice', 'browser', 'email'])
+    expect(rows.every((a) => /min-h-11/.test(a.className))).toBe(true)
+    expect(r.container.querySelector('nav[aria-label="Capture"]')).toBeTruthy()
+    await click(rows[1])
+    expect(location.pathname).toBe('/settings/capture/voice')
+    await r.rerender(<SettingsView user={member} onLogout={() => {}} section="capture" page="voice" />)
+    await flush(30)
+    expect(r.container.querySelector('[data-settings-page]')?.getAttribute('data-settings-page')).toBe('voice')
+    expect(r.container.querySelector('#voice-settings-heading')).toBeTruthy()
+    expect(r.container.querySelector('#quick-add-heading')).toBeNull()
+    const back = r.container.querySelector<HTMLAnchorElement>('[data-page-back]')!
+    expect(back.getAttribute('href')).toBe('/settings/capture')
+    expect(back.className).not.toMatch(/lg:hidden/)
+    await click(back)
+    expect(location.pathname).toBe('/settings/capture')
+    await r.rerender(<SettingsView user={member} onLogout={() => {}} section="capture" />)
+    await waitFor(() => document.activeElement?.getAttribute('data-settings-subpage') === 'voice')
+    await r.unmount()
+  })
+
+  it('an unknown sub-page opens the section overview, replacing the address', async () => {
+    width = 390
+    history.replaceState(null, '', '/settings/integrations/nonsense')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    const r = await render(<SettingsView user={member} onLogout={() => {}} section="integrations" page="nonsense" />)
+    await waitFor(() => location.pathname === '/settings/integrations')
+    expect(r.container.querySelector('a[data-settings-subpage="webhooks"]')).toBeTruthy()
+    await r.unmount()
+    navigate({ view: 'settings' })
   })
 
   it('an unknown id opens the first section as a page', async () => {

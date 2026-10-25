@@ -9,7 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '../lib/types'
 import { SettingRow, SettingsSection } from '../ui'
 import { flush, render, minWidthPx } from '../ui/test-utils'
-import { SETTINGS_SECTION_IDS } from './router'
+import { SETTINGS_SECTION_IDS, type SettingsSectionId } from './router'
+import { resolveSection, visiblePages } from './settingsSections'
 import { SettingsView } from './SettingsView'
 
 vi.mock('./SsoPanel', async (orig) => ({ ...(await orig<typeof import('./SsoPanel')>()), SsoPanel: () => <div /> }))
@@ -94,10 +95,16 @@ describe('flat settings pages (precision-settings D3)', () => {
   it('no rendered settings page draws a section as a card', async () => {
     const offenders: string[] = []
     let sections = 0
-    for (const page of SETTINGS_SECTION_IDS) {
-      const r = await render(<SettingsView user={owner} onLogout={() => {}} section={page} />)
+    // Every one-page section and every sub-page (settings-subpages).
+    const pages: [SettingsSectionId, string | undefined][] = SETTINGS_SECTION_IDS.flatMap((id): [SettingsSectionId, string | undefined][] => {
+      const s = resolveSection(owner, id)
+      const subs = s ? visiblePages(owner, s) : []
+      return subs.length ? subs.map((p): [SettingsSectionId, string] => [id, p.id]) : [[id, undefined]]
+    })
+    for (const [section, page] of pages) {
+      const r = await render(<SettingsView user={owner} onLogout={() => {}} section={section} page={page} />)
       await flush(40)
-      offenders.push(...cardOffenders(page, r.container))
+      offenders.push(...cardOffenders(page ? `${section}/${page}` : section, r.container))
       sections += r.container.querySelectorAll('[data-settings-card]').length
       await r.unmount()
     }

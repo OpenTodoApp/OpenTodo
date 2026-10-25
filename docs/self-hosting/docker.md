@@ -35,7 +35,7 @@ Type it into the **Setup code** field (case and dashes do not matter). It works 
 
 Instead of the code you can set `OPENTODO_SETUP_TOKEN` (16+ characters) in `.env`, a secret you choose: the setup screen then asks for it from every address, including your own network, and no code is printed. It has no effect once the owner exists.
 
-To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL. If you do open it, configure [outgoing email](outgoing-email.md) too: new accounts are then created only after the person confirms their address through a mailed link.
+To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Users and invitations** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL. If you do open it, configure [outgoing email](outgoing-email.md) too: new accounts are then created only after the person confirms their address through a mailed link.
 
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`, and the host address it is published on with `OPENTODO_BIND` (default `0.0.0.0`, every interface, so other devices on your network reach it). Behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice: only the proxy reaches the server.
@@ -85,7 +85,7 @@ When the owner enables [CalDAV](../caldav.md), calendar apps use `/dav/` and `/.
 
 ### Passkeys need an https base URL
 
-Passkeys (Settings → Account → Passkeys) are only offered when `OPENTODO_BASE_URL` is an `https://` URL; browsers refuse WebAuthn on plain-http origins. With no base URL or an `http://` LAN address, the server keeps working with passwords and simply hides passkeys (`auth/status` reports `passkeysAvailable: false`). For local development `http://localhost:8080` also works, because browsers treat localhost as secure.
+Passkeys (Settings → Account → Security → Passkeys) are only offered when `OPENTODO_BASE_URL` is an `https://` URL; browsers refuse WebAuthn on plain-http origins. With no base URL or an `http://` LAN address, the server keeps working with passwords and simply hides passkeys (`auth/status` reports `passkeysAvailable: false`). For local development `http://localhost:8080` also works, because browsers treat localhost as secure.
 
 On a plain-http network address (for example `http://192.168.1.10:8080` on a NAS or home server) tasks, projects, sync, sharing and attachments all work. A few features need what browsers only offer over HTTPS or on localhost: installing the app and working offline, push notifications, passkeys and end-to-end encryption. Put the server behind a reverse proxy with a certificate, or a tool such as Tailscale with HTTPS, to use them.
 
@@ -179,7 +179,7 @@ Deleted tasks and projects stay in the Trash, restorable, for 30 days; then the 
 
 ## Audit log
 
-The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials (API tokens, app passwords, passkeys, second factors), invitations, user administration, exports, backups and setting changes in **Settings → Account → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:
+The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials (API tokens, app passwords, passkeys, second factors), invitations, user administration, exports, backups and setting changes in **Settings → Server → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:
 
 - **Retention** defaults to 90 days (7–3650, set in Settings). Expired events are pruned at startup, hourly and right after you lower the retention.
 - **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a trusted reverse proxy the address is the nearest untrusted `X-Forwarded-For` hop (the one the proxy appended; see [Which proxies are believed](#behind-a-reverse-proxy)), so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do). Turning address logging off erases every stored address immediately.
@@ -188,7 +188,7 @@ The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials
 
 ## Two-factor authentication
 
-Users turn on two-factor authentication in **Settings → Account → Two-factor authentication**. The owner can require it for themselves or for every account there. Nothing needs configuring, but two things are worth knowing:
+Users turn on two-factor authentication in **Settings → Account → Security → Two-factor authentication**. The owner can require it for themselves or for every account there. Nothing needs configuring, but two things are worth knowing:
 
 - **Keep the host clock right.** Codes are checked against the server's own clock with 30 seconds of tolerance either way, so a host that drifts by a minute or more rejects valid codes. Docker uses the host's clock: make sure the host runs NTP (`timedatectl` should report `System clock synchronized: yes`; Raspberry Pi OS and every major distribution do this by default). The enrolment step catches large drift straight away with a "code does not match" message.
 - **Owner locked out.** If the owner loses both their authenticator and their recovery codes, reset the second factor from the host while the container is stopped, then sign in with the password and enrol again:
@@ -203,7 +203,7 @@ Users turn on two-factor authentication in **Settings → Account → Two-factor
 
 ## Managing users
 
-The owner sees every account in **Settings → People → Users** with its role, status and last sign-in ([docs/api.md](../api.md#user-administration)). From there the owner makes trusted people **admins** (they can invite, and deactivate, reset or delete members, but never act on the owner or other admins), **deactivates** an account (signed out everywhere at once, API tokens and pending invitations revoked, data kept, sign-in blocked until reactivated), creates a **password reset link** for someone who forgot their password (single use, 24 hours, nothing is emailed: copy it and send it yourself), **deletes** an account and its data after typing its email, or **transfers ownership** to another account after re-entering the password (you become an admin). Every user changes their own password in **Settings → Account → Password**. Nothing needs configuring and no SQLite editing is ever needed.
+The owner sees every account in **Settings → People → Users and invitations** with its role, status and last sign-in ([docs/api.md](../api.md#user-administration)). From there the owner makes trusted people **admins** (they can invite, and deactivate, reset or delete members, but never act on the owner or other admins), **deactivates** an account (signed out everywhere at once, API tokens and pending invitations revoked, data kept, sign-in blocked until reactivated), creates a **password reset link** for someone who forgot their password (single use, 24 hours, nothing is emailed: copy it and send it yourself), **deletes** an account and its data after typing its email, or **transfers ownership** to another account after re-entering the password (you become an admin). Every user changes their own password in **Settings → Account → Security → Password**. Nothing needs configuring and no SQLite editing is ever needed.
 
 ### Recovering owner access
 

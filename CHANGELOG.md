@@ -11,6 +11,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **Import into a workspace.** The Import screen has a **Workspace** choice when you have more than one: it starts with the workspace you have open, everything the import creates goes there, projects and labels are matched by name only inside it, and the preview names it ("12 new projects into Work"). An OpenTodo export keeps its own workspaces unless you pick one. From the terminal, the new `ot import <file> --workspace Work` runs an import and waits for it (`--dry-run` shows the preview). ([Import formats](docs/import.md#workspace), [#349](https://github.com/pixari/opentodo/issues/349))
 
+### Changed
+
+- **Shorter Settings pages.** Account, Appearance, General, Notifications, Capture, Integrations, People and Server now open as a short list of their pages, each row with its state in a word ("Webhooks · 2", "Calendar feeds · Off"), and each page has its own address, such as `/settings/integrations/webhooks`. The language, date and time and the calendar grid moved from General to a new section, **Language and region**. Settings search and the command palette open the page that holds a setting, scrolled to it and briefly highlighted. Old links, bookmarks and anchors still open the right page. ([Settings](docs/settings.md))
+
 ### Fixed
 
 - **A link can be attached to a task that has no attachments yet.** The paperclip beside a task's notes and **Attach** in the task's menu went straight to the file picker, so a link could only be added once the task had a file. The paperclip now offers **Choose files…** and **Add a link…**, and the task's menu has **Add a link…** too. ([Attachments](docs/attachments.md), [#342](https://github.com/pixari/opentodo/issues/342))

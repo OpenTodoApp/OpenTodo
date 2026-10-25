@@ -254,7 +254,7 @@ await page.locator('[data-triage-start]').waitFor()
 
 step('Open Loops (open-loops-method): first, the Loop home, the walk, a focus, back to Lists only')
 const primary = () => page.locator('nav[data-sidebar-primary] [data-sidebar-item]').evaluateAll((els) => els.map((e) => e.getAttribute('data-destination')))
-await page.goto(`${base}/settings/account`)
+await page.goto(`${base}/settings/account/profile`)
 await page.locator('[data-method-mode="first"]').click()
 await page.locator('[data-offer="start"]').getByRole('button', { name: 'Keep my start view' }).click()
 await page.locator('[data-offer="contexts"]').getByRole('button', { name: 'Create them' }).click()
@@ -281,7 +281,7 @@ if (await page.locator('[data-group="today"] [data-task-id]').count()) {
   await page.keyboard.press('j'); await page.keyboard.press('f')
   await page.locator('[data-group="focus"] [data-task-id]').first().waitFor()
 }
-await page.goto(`${base}/settings/account`)
+await page.goto(`${base}/settings/account/profile`)
 await page.locator('[data-method-mode="lists"]').click()
 for (let i = 0; i < 50 && (await primary())[0] !== 'inbox'; i++) await page.waitForTimeout(100)
 const listsNav = await primary()
@@ -292,8 +292,8 @@ await page.keyboard.press('Escape')
 await page.keyboard.press('g'); await page.keyboard.press('s')
 // Settings opens on its first section (settings-navigation).
 await page.getByRole('heading', { name: 'Account', exact: true }).waitFor()
-// API tokens live in Settings → Integrations (settings-redesign); "New token" opens the form.
-await page.goto(`${base}/settings/integrations`)
+// API tokens live in Settings → Integrations → API tokens (settings-subpages); "New token" opens the form.
+await page.goto(`${base}/settings/integrations/tokens`)
 await page.getByRole('button', { name: 'New token' }).click()
 await page.getByLabel('Token name').fill('e2e')
 await page.getByRole('button', { name: 'Create token', exact: true }).click()

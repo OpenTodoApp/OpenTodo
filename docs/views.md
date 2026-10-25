@@ -60,7 +60,7 @@ A dashboard puts up to six saved views side by side, for a morning review on one
 
 ## Choose where the app opens
 
-Each device can open on a different view, a display included: pick it in **Settings → General → Start view**, or with **Start view on this device** in a saved view's menu. If that view is deleted, the device opens on the Inbox.
+Each device can open on a different view, a display included: pick it in **Settings → General → Start view and briefing**, or with **Start view on this device** in a saved view's menu. If that view is deleted, the device opens on the Inbox.
 
 ## Tips
 

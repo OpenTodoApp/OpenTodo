@@ -373,13 +373,13 @@ await shot(page, 'help')
 await go(page, '/settings/security', () => page.getByRole('heading', { name: 'Two-factor authentication', level: 2 }).first().waitFor()).catch((e) => console.log('  2fa page:', e.message))
 await page.getByRole('button', { name: 'Set up two-factor authentication' }).click().catch((e) => console.log('  2fa:', e.message))
 await settle(page, 800)
-await go(page, '/settings/preferences', () => page.getByRole('heading', { name: 'Keyboard', level: 2 }).first().waitFor()).catch((e) => console.log('  keyboard page:', e.message))
+await go(page, '/settings/general/keyboard', () => page.getByRole('heading', { name: 'Keyboard', level: 2 }).first().waitFor()).catch((e) => console.log('  keyboard page:', e.message))
 await page.getByLabel(/Vim keybindings/).check().catch((e) => console.log('  vim:', e.message))
 for (const [section, heading, name] of [
-  ['security', 'Two-factor authentication', 'settings-security'], ['encryption', 'End-to-end encryption', 'settings-encryption'],
-  ['preferences', 'Keyboard', 'settings-keyboard'], ['admin', 'Users', 'settings-users'], ['access', 'Single sign-on', 'settings-sso'],
-  ['integrations', 'Calendar apps (CalDAV)', 'settings-caldav'], ['integrations', 'Webhooks', 'settings-webhooks'],
-  ['capture', 'Email to task', 'settings-email'], ['backups', 'Backups', 'settings-backups'], ['ai', 'AI assistants', 'settings-ai'],
+  ['account/security', 'Two-factor authentication', 'settings-security'], ['account/encryption', 'End-to-end encryption', 'settings-encryption'],
+  ['general/keyboard', 'Keyboard', 'settings-keyboard'], ['people/users', 'Users', 'settings-users'], ['people/sso', 'Single sign-on', 'settings-sso'],
+  ['integrations/caldav', 'Calendar apps (CalDAV)', 'settings-caldav'], ['integrations/webhooks', 'Webhooks', 'settings-webhooks'],
+  ['capture/email', 'Email to task', 'settings-email'], ['server/backups', 'Backups', 'settings-backups'], ['integrations/mcp', 'AI assistants', 'settings-ai'],
 ]) {
   if (!want(name)) continue
   try {
@@ -393,7 +393,7 @@ for (const [section, heading, name] of [
 
 // Voice capture asks once, with its privacy statement
 if (want('settings-voice')) {
-  await go(page, '/settings/capture', () => page.getByRole('heading', { level: 2, name: 'Voice capture', exact: true }).first().waitFor())
+  await go(page, '/settings/capture/voice', () => page.getByRole('heading', { level: 2, name: 'Voice capture', exact: true }).first().waitFor())
   await toSection(page, 'Voice capture')
   await page.getByLabel(/Dictate tasks into quick add/).click()
   await page.getByRole('dialog').filter({ hasText: 'Turn on voice capture?' }).waitFor({ timeout: 5000 }).catch((e) => console.log('  voice:', e.message))
