@@ -17,8 +17,7 @@ import { isSample } from '../../lib/sampleTasks'
 import { useShortcutScope } from '../shortcuts'
 import { ProjectMark } from '../Sidebar'
 import { keysOf } from '../../lib/shortcuts'
-import { AttachmentsRow } from './AttachmentsRow'
-import { requestAttach } from './attachRequest'
+import { AttachMenu, AttachmentsRow } from './AttachmentsRow'
 import { ConversationTabs } from './ConversationTabs'
 import { FieldsGroup } from './FieldsGroup'
 import { Subtasks } from './Subtasks'
@@ -123,7 +122,7 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
           <TaskNotes task={task} readOnly={readOnly} clamp={false} />
           {!readOnly && (
             <div className="flex items-center gap-1" data-content-tools>
-              <IconButton icon="paperclip" size="sm" label={t('Attach')} onClick={() => requestAttach(task.id)} />
+              <AttachMenu taskId={task.id} />
             </div>
           )}
         </div>
