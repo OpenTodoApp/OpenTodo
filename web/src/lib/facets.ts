@@ -3,7 +3,7 @@
 // ordered list of parts. The words are the list row's (describeDue, the deadline
 // countdown, formatMinutes), expanded where the panel has room, so the row and the
 // panel tell the same story. Pure: everything the words need comes in `ctx`.
-import { daysBetweenISO, describeDeadline, describeDue, formatDate, logicalToday, type ResolvedDateTime } from './dates'
+import { daysBetweenISO, describeDeadline, describeDue, formatDate, formatTime, logicalToday, type ResolvedDateTime } from './dates'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
 import type { Due, Label, Priority, Task } from './types'
@@ -73,6 +73,13 @@ function deadlineText(deadline: string, ctx: FacetContext, today: string): strin
   return t('deadline {date}, {count}', { date: when, count })
 }
 
+/** The end of a block starting at `time` (HH:MM) and lasting `minutes`, kept on its day as the calendar draws it (23:59 at the latest). */
+export function blockEnd(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const end = Math.min(h * 60 + m + minutes, 24 * 60 - 1)
+  return `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
+}
+
 /** Builds the four facet lines of a task. */
 export function facetsOf(task: Task, ctx: FacetContext): Facets {
   const today = ctx.today ?? logicalToday()
@@ -92,7 +99,11 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   // When: do on (with evening and the zone), repeat, deadline, start, reminders.
   const when: FacetPart[] = []
   const due = describeDue(ctx.local, today, undefined, ctx.dateTime)
-  if (due) when.push({ id: 'due', text: ctx.zoneCity ? `${due.label} ${ctx.zoneCity}` : due.label, tone: due.tone, segment: 'due' })
+  if (due) {
+    // A timed due with an estimate is the block the calendar draws: show where it ends too (GitHub issue 356).
+    const label = ctx.local?.time && task.estimate_minutes ? `${due.label}–${formatTime(blockEnd(ctx.local.time, task.estimate_minutes), ctx.dateTime)}` : due.label
+    when.push({ id: 'due', text: ctx.zoneCity ? `${label} ${ctx.zoneCity}` : label, tone: due.tone, segment: 'due' })
+  }
   if (task.evening) when.push({ id: 'evening', text: t('evening'), segment: 'due' })
   if (task.recurrence) when.push({ id: 'repeat', text: task.recurrence, segment: 'repeat' })
   else if (revealed.has('repeat')) when.push({ id: 'repeat', text: t('Repeat'), segment: 'repeat', empty: true })

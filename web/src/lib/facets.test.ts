@@ -35,10 +35,20 @@ describe('facetsOf', () => {
     }))
     expect(texts(f.where)).toEqual(['Website launch', 'Doing'])
     expect(f.where[1].sep).toBe('chevron')
-    expect(texts(f.when)).toEqual(['Tomorrow 09:00', 'every 3 months', 'deadline Fri 23 Oct, 9 days', 'since Mon 12 Oct', '2 reminders'])
+    expect(texts(f.when)).toEqual(['Tomorrow 09:00–11:00', 'every 3 months', 'deadline Fri 23 Oct, 9 days', 'since Mon 12 Oct', '2 reminders'])
     expect(texts(f.how)).toEqual(['P2', '2h', 'finance, deck, deep-work'])
     expect(f.how[2].labels).toHaveLength(3)
     expect(texts(f.who)).toEqual(['You', 'waits for Collect the numbers'])
+  })
+
+  it('a timed due with an estimate shows the planned block, as the calendar does (GitHub issue 356)', () => {
+    const at = (time: string, estimate: number | null, zoneCity?: string) =>
+      texts(facetsOf({ ...base, due: { date: '2026-10-15', time }, estimate_minutes: estimate } as Task, ctx({ local: { date: '2026-10-15', time }, zoneCity })).when)[0]
+    expect(at('12:00', 90)).toBe('Tomorrow 12:00–13:30')
+    expect(at('12:00', null)).toBe('Tomorrow 12:00')
+    expect(at('15:00', 60, 'New York')).toBe('Tomorrow 15:00–16:00 New York')
+    expect(at('23:30', 120)).toBe('Tomorrow 23:30–23:59')
+    expect(texts(facetsOf({ ...base, due: { date: '2026-10-15' }, estimate_minutes: 90 } as Task, ctx({ local: { date: '2026-10-15' } })).when)[0]).toBe('Tomorrow')
   })
 
   it('a future start reads "from", a past one "since", a parked task "Someday"', () => {
