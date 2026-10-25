@@ -5330,5 +5330,6 @@
   "Two-factor on": "Double authentification activée",
   "Users and invitations": "Utilisateurs et invitations",
   "Whether automation rules run on this server": "Si les règles d’automatisation s’exécutent sur ce serveur",
-  "Start 15 minutes earlier / later, keeping the end": "Commencer 15 minutes plus tôt / plus tard, sans changer la fin"
+  "Start 15 minutes earlier / later, keeping the end": "Commencer 15 minutes plus tôt / plus tard, sans changer la fin",
+  "Lists": "Listes"
 }

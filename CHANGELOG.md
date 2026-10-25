@@ -15,6 +15,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Changed
 
 - **Shorter Settings pages.** Account, Appearance, General, Notifications, Capture, Integrations, People and Server now open as a short list of their pages, each row with its state in a word ("Webhooks · 2", "Calendar feeds · Off"), and each page has its own address, such as `/settings/integrations/webhooks`. The language, date and time and the calendar grid moved from General to a new section, **Language and region**. Settings search and the command palette open the page that holds a setting, scrolled to it and briefly highlighted. Old links, bookmarks and anchors still open the right page. ([Settings](docs/settings.md))
+- **Plan from a label or a saved view.** In the Calendar, **Plan from a list** can now list the tasks of a label or a saved view as well as the Inbox, tasks without a date, earlier tasks or a project. Label this week's tasks "week" and plan from that label. Type in the picker to find the source; this device remembers it. ([Place tasks on the calendar](docs/place-tasks-on-the-calendar.md), [#369](https://github.com/pixari/opentodo/issues/369))
 
 ### Fixed
 

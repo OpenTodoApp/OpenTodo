@@ -3859,7 +3859,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Earlier": [
-    "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/calendar/planSource.ts",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -4652,7 +4652,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Find a project, label or view…": [
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Find a project…": [
     "web/src/app/ProjectHeader.tsx",
@@ -5709,7 +5710,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
-    "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/calendar/planSource.ts",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
@@ -6107,6 +6108,7 @@
     "web/src/app/TokenSuggest.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/method/MethodListView.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/DailyCheck.tsx",
@@ -6396,6 +6398,9 @@
   ],
   "Listed on the All projects page, where each can be restored.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Lists": [
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Lists only": [
     "web/src/lib/settingsCopy.ts"
@@ -7427,7 +7432,7 @@
   "No date": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/calendar/planSource.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/lib/dates.ts",
@@ -8008,7 +8013,8 @@
   ],
   "Nothing matches.": [
     "web/src/app/ProjectsView.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Nothing matches. Try fewer letters, or a filter query.": [
     "web/src/app/palette/CommandPalette.tsx"
@@ -9327,7 +9333,6 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TriageView.tsx",
-    "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/index.ts",
@@ -10542,7 +10547,8 @@
   ],
   "Saved views": [
     "web/src/app/PreferencesPanels.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Saved with its conditions and display options, in the sidebar under Views.": [
     "web/src/app/views/SaveViewCard.tsx"

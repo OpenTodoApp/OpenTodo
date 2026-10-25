@@ -58,7 +58,7 @@ describe('one Calendar destination', () => {
     await r.unmount()
   })
 
-  it('Plan from a list opens the planning list in the panel slot, with a menu for its source', async () => {
+  it('Plan from a list opens the planning list in the panel slot, with a picker for its source', async () => {
     await createTask({ title: 'Renew passport' })
     const home = await createProject({ name: 'Home' })
     await createTask({ title: 'Paint the fence', project_id: home })
@@ -75,13 +75,14 @@ describe('one Calendar destination', () => {
     expect(panelOccupant()).toMatchObject({ kind: 'custom', key: 'calendar-plan' })
     await waitFor(() => document.querySelector('[data-panel-frame="calendar-plan"] [data-tray-task]') !== null)
     const frame = document.querySelector('[data-panel-frame="calendar-plan"]')!
-    // Inbox is the default source; the picker is a design-system menu.
+    // Inbox is the default source; the picker is the design-system Combobox.
     expect([...frame.querySelectorAll('[data-tray-task]')].map((b) => b.textContent)).toEqual(['Renew passport'])
     const source = frame.querySelector('button[aria-label="Plan from"]')!
     expect(source.textContent).toContain('Inbox')
     await click(source)
     await flush(30)
-    await click([...document.querySelectorAll('[role="menuitemcheckbox"]')].find((e) => e.textContent?.trim() === 'Home')!)
+    await waitFor(() => document.querySelector('[role="option"]') !== null)
+    await click([...document.querySelectorAll('[role="option"]')].find((e) => e.textContent?.trim() === 'Home')!)
     await waitFor(() => [...frame.querySelectorAll('[data-tray-task]')].map((b) => b.textContent).join() === 'Paint the fence')
     expect(localStorage.getItem('opentodo.calendar.tray')).toBe(`project:${home}`)
 
