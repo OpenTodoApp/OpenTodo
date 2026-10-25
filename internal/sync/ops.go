@@ -433,6 +433,13 @@ var Schema = map[string]map[string]kind{
 		"deleted_at": kNullableNumber,
 		// Workspace of the label, null for the default (OpenSpec change workspaces).
 		"workspace_id": kNullableString,
+		// Display options of the label's page (OpenSpec change list-display-options,
+		// design D1): grouping, order and direction, enumerations carried as strings
+		// like a view's; "" or an unknown value reads as the default. Labels are
+		// personal, so the choice follows the user to their own devices only.
+		"group_by": kString,
+		"sort_by":  kString,
+		"sort_dir": kString,
 	},
 	// view: a saved filter query with presentation options (OpenSpec `custom-views`).
 	// kind, group_by, sort_by and sort_dir are enumerations carried as plain strings so
@@ -569,6 +576,13 @@ var Schema = map[string]map[string]kind{
 		// When this user last marked the project reviewed in the weekly review's
 		// project walk (open-loops-method D4), Unix ms. Personal like the row.
 		"reviewed_at": kNumber,
+		// Display options of the project's list (OpenSpec change
+		// list-display-options, design D1): grouping, order and direction as
+		// strings; "" or an unknown value reads as the default (by section, manual
+		// order). Personal like the row, also on a shared project.
+		"group_by": kString,
+		"sort_by":  kString,
+		"sort_dir": kString,
 	},
 	// user_prefs: one user's date and time preferences (OpenSpec change
 	// `date-time-preferences`, design D1). Clients write a single row with the

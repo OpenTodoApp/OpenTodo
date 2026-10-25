@@ -24,7 +24,7 @@ const maxPanels = 6
 var (
 	viewKinds    = []string{"list", "dashboard"}
 	viewGroupBy  = []string{"project", "due", "priority", "label", "none"}
-	viewSortBy   = []string{"due", "priority", "position", "created", "title"}
+	viewSortBy   = []string{"due", "priority", "position", "created", "title", "deadline"}
 	viewSortDir  = []string{"asc", "desc"}
 	viewLayouts  = []string{"list", "board"}
 	viewEnumSets = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_by": viewSortBy, "sort_dir": viewSortDir, "layout": viewLayouts}

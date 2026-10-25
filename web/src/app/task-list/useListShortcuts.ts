@@ -54,6 +54,8 @@ export interface ShortcutContext {
   setSelectedId: (id: string | null) => void
   openId: string | null
   manual: boolean
+  /** A keyboard move while another order is shown switches the list to manual order first (list-display-options D4). */
+  onReorder?: () => void
   treeView: boolean
   projectReadOnly: boolean
   projectEditable: boolean
@@ -128,6 +130,7 @@ export function useListShortcuts(c: ShortcutContext) {
   const moveBy = (how: Step) => () => {
     // Keyboard moves (manual-ordering): only in manually ordered views; the selection stays on the moved task; edges do nothing.
     if (!c.manual || !selectedId) return false
+    c.onReorder?.()
     act(moveTaskBy(selectedId, how))
   }
   /** The selected (or open) task, for occurrence keys; false when it is missing or read-only. */

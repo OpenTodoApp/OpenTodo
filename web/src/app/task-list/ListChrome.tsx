@@ -45,8 +45,10 @@ export function LayoutSwitch({ mode, onChoose }: { mode: ProjectViewMode; onChoo
  * nothing sits between the quick add and the first task. Touch screens have no
  * hover: the Select button shows every checkbox (bulk-edit D3).
  */
-export function ListPageActions({ route, userRole, rowCount, selectMode, onSelectMode, filterKey, duration, onDuration }: {
+export function ListPageActions({ route, userRole, rowCount, selectMode, onSelectMode, filterKey, duration, onDuration, extra }: {
   route: ListRoute
+  /** The page's own last action: a project's or label's display options (list-display-options). */
+  extra?: ReactNode
   userRole?: AccountRole
   rowCount: number
   selectMode: boolean
@@ -78,6 +80,7 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
         <IconButton size="sm" icon="monitor" label={t('Display mode')} data-display-mode
           onClick={() => navigate({ view: 'display', target: { kind: route.view as 'today' | 'upcoming' }, options: { ...DEFAULT_DISPLAY_OPTIONS } })} />
       )}
+      {extra}
     </>
   )
 }
@@ -91,8 +94,10 @@ export interface PhoneItem { id: string; label: string; icon?: IconName; checked
  * as overflow items: Select tasks, Display mode, and the duration filter when it
  * had no slot (its active choice then shows as a chip in the bar).
  */
-export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project }: {
+export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project, extraSlot }: {
   route: ListRoute
+  /** A last slot of the bar: a project's or label's display options (list-display-options). */
+  extraSlot?: ReactNode
   userRole?: AccountRole
   rowCount: number
   topLevelCount: number
@@ -128,6 +133,7 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
       )}
       {filterSlot && <DurationFilterControl active={duration} onChange={onDuration} />}
       {!filterSlot && current && <DurationChip label={current.label} onClear={() => onDuration(null)} />}
+      {extraSlot}
     </>
   )
   const projectItems: PhoneItem[] = project ? [

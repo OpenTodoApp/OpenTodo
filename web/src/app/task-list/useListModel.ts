@@ -8,7 +8,9 @@ import { liveFields } from '../../lib/fields'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { habitStatsMap } from '../../lib/habits'
 import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
-import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
+import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
+import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
+import { useListDisplay } from './useListDisplay'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
@@ -168,11 +170,20 @@ export function useListModel(route: ListRoute, userId?: string) {
     return duration && filterKey ? list.filter(durationPredicate(duration)) : list
   }, [route.view, allTasks, duration, filterKey])
 
+  // A project's or label's display options (list-display-options): personal and synced.
+  const prefsRow = useProjectPrefsRow(projectId)
+  const labelRow = route.view === 'label' ? labelMap.get(route.id) : undefined
+  const displayScope = useMemo<DisplayScope | null>(() => (route.view === 'project' || route.view === 'label' ? { kind: route.view, id: route.id } : null), [route])
+  const { groupBy: dGroup, sortBy: dSort, sortDir: dDir } = displayScope ? listDisplayOf(displayScope.kind, displayScope.kind === 'project' ? prefsRow : labelRow) : { groupBy: undefined, sortBy: undefined, sortDir: undefined }
+  const display = useMemo(() => (dGroup && dSort && dDir ? { groupBy: dGroup, sortBy: dSort, sortDir: dDir } : undefined), [dGroup, dSort, dDir])
+  // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
+  const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list')
+
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
   const ownRows = useMemo(() => (planned.length ? groups.filter((g) => g.key !== 'planned').flatMap((g) => g.rows) : rows), [planned, groups, rows])
@@ -204,7 +215,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, ownRows, siblingPos, timeColumn, doneBySection,
-    showCompleted, completedTasks, completedOpen,
+    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay,
   }
 }
 

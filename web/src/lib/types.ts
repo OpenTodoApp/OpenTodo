@@ -294,17 +294,21 @@ export interface Label {
   deleted_at: number | null
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
   workspace_id?: string | null
+  /** The label page's display options (list-display-options D1); "" or absent reads as the default. Read with `listDisplayOf` from lib/listDisplay.ts. */
+  group_by?: string
+  sort_by?: string
+  sort_dir?: string
   _clock: Clock
 }
 
 export type ViewKind = 'list' | 'dashboard'
 export type GroupBy = 'project' | 'due' | 'priority' | 'label' | 'none'
-export type SortBy = 'due' | 'priority' | 'position' | 'created' | 'title'
+export type SortBy = 'due' | 'priority' | 'position' | 'created' | 'title' | 'deadline'
 export type SortDir = 'asc' | 'desc'
 
 export const VIEW_KINDS: readonly ViewKind[] = ['list', 'dashboard']
 export const GROUP_BY_OPTIONS: readonly GroupBy[] = ['project', 'due', 'priority', 'label', 'none']
-export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'title']
+export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'deadline', 'title']
 export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
 export type ViewLayout = 'list' | 'board'
 export const VIEW_LAYOUTS: readonly ViewLayout[] = ['list', 'board']
@@ -575,6 +579,10 @@ export interface ProjectPrefs {
   feed_seen_at: number
   /** When this user last marked the project reviewed in the review's project walk (open-loops-method D4), Unix ms; 0 = never. */
   reviewed_at: number
+  /** The project list's display options (list-display-options D1), personal; "" or absent reads as the default. */
+  group_by?: string
+  sort_by?: string
+  sort_dir?: string
   _clock: Clock
 }
 

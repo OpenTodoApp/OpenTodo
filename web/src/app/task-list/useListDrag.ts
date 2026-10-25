@@ -32,8 +32,10 @@ export interface DragSource {
  * onto a sidebar project, the Inbox or a label it moves or labels the task (and the
  * rest of the bulk selection with it). Escape or a drop elsewhere changes nothing.
  */
-export function useListDrag({ manual, source, moveToSection, onDropped }: {
+export function useListDrag({ manual, source, moveToSection, onDropped, onReorder }: {
   manual: boolean
+  /** A drop among rows while another order is shown: switch the list to manual order first (list-display-options D4). */
+  onReorder?: () => void
   source: DragSource
   /** Move a top-level task to a section ('' = none). */
   moveToSection: (task: Task, key: string) => void
@@ -93,6 +95,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
           if (!r || !current) return
           const entry = dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)
           const section = entry.parent_id === null ? secs.get(r.task.id) : undefined
+          onReorder?.()
           // The row travels to its new place and the others make room (motion-v2 D4).
           act(withListTransition(1, () => moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) })))
         } else if (target.startsWith('section:')) {
@@ -105,7 +108,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped }: {
       },
       onEnd: () => { show(null); showColumn(null); setDraggingId(null) },
     })
-  }, [manual, moveToSection, onDropped])
+  }, [manual, moveToSection, onDropped, onReorder])
 
   /** The section map of the latest render, for code that runs later (an `o` insertion). */
   const latestSectionMap = useCallback(() => dragState.current.sectionMap, [])

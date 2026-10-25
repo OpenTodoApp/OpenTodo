@@ -450,11 +450,22 @@ export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) =
       return (a, b) => sign * (a.created_at - b.created_at) || fallback(a, b)
     case 'title':
       return (a, b) => sign * byTitle(a, b) || fallback(a, b)
+    case 'deadline':
+      // Like the due date: tasks without a deadline come last in either direction.
+      return (a, b) => {
+        if (!a.deadline || !b.deadline) return (a.deadline ? -1 : b.deadline ? 1 : 0) || fallback(a, b)
+        return sign * (a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0) || fallback(a, b)
+      }
   }
 }
 
-/** Split sorted tasks into headed groups; headings come in a fixed, meaningful order. */
-export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext): ViewGroup[] {
+/**
+ * Split sorted tasks into headed groups; headings come in a fixed, meaningful order.
+ * `once` (a project or label page, list-display-options D3): a task with several
+ * labels is listed once, under the first of them in label order, since a list page
+ * selects, drags and opens a task by its id.
+ */
+export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: Pick<FilterContext, 'today' | 'labels' | 'projects'>, once = false): ViewGroup[] {
   const buckets = new Map<string, Task[]>()
   const put = (key: string, task: Task) => {
     const list = buckets.get(key)
@@ -498,7 +509,8 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
       for (const tVar of tasks) {
         const own = [...new Set(tVar.labels.filter((id) => known.has(id)))]
         if (own.length === 0) put('none', tVar)
-        for (const id of own) put(id, tVar)
+        else if (once) put(labels.find((l) => own.includes(l.id))!.id, tVar)
+        else for (const id of own) put(id, tVar)
       }
       return emit([...labels.map((l): [string, string] => [l.id, l.name]), ['none', t('No label')]])
     }

@@ -200,7 +200,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // and above) and the Inbox. Date and filter views keep their own sort.
   const manual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox'
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, dataGroups), [board, dataColumns, dataGroups])
-  const drag = useListDrag({ manual, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: fine ? undefined : (task) => holdSelect(task.id, selection, setSelectMode) }, moveToSection, onDropped: setSelectedId })
+  const drag = useListDrag({ manual, onReorder: m.listDisplay.onReorder, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: fine ? undefined : (task) => holdSelect(task.id, selection, setSelectMode) }, moveToSection, onDropped: setSelectedId })
   const { latestSectionMap } = drag
   // The view supplies defaults; attributes typed in the quick-add line override them.
   const onAdd = useCallback(async ({ labels: typed, ...rest }: QuickAddInput) => {
@@ -261,7 +261,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   const shared = { route, rows, columns: dataColumns, board, manual, selectedId, setSelectedId, openId, isReadOnly, taskMap, ticked, selection, ui, quickAddRef, toggleComplete, toggleCollapsed: m.toggleCollapsed }
   useListShortcuts({
-    ...shared, projectId, tree: m.tree, tickRows, treeView: m.treeView, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
+    ...shared, onReorder: m.listDisplay.onReorder, projectId, tree: m.tree, tickRows, treeView: m.treeView, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
     today, userId, acceptPrompt, moveToSection, toggleViewMode,
     editInline: (id) => { setSelectedId(id); setInline({ id }) }, expandedId, setExpandedId,
   })
@@ -281,13 +281,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const hiddenDone = !m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0
   const showCompleted = projectId ? () => act(saveShowCompleted(projectId, true)) : undefined
   const pageActions = (
-    <ListPageActions route={route} userRole={userRole} rowCount={own.length}
+    <ListPageActions route={route} userRole={userRole} rowCount={own.length} extra={m.listDisplay.control}
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} />
   )
   const { currentProject, currentLabel, currentPlace } = m
   // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1).
   const { phone, ...phoneActions } = usePhoneListActions({ route, userRole, rowCount: own.length, topLevelCount: own.filter((r) => r.depth === 0).length,
-    onSelectMode: () => setSelectMode(true), filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration,
+    onSelectMode: () => setSelectMode(true), extraSlot: m.listDisplay.control, filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration,
     project: currentProject && { row: currentProject, editable: m.projectEditable, viewMode, onViewMode: chooseViewMode } })
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
