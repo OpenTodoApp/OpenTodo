@@ -146,6 +146,7 @@ The full list of environment variables is in the [README](../README.md#configura
 | [Command-line client](cli.md) | `ot`: install, sign in, commands, JSON output and exit codes |
 | [Markdown vault](vault.md) | `ot vault`: a folder of Markdown files in two-way sync, for Obsidian Tasks and plain text |
 | [Webhooks](webhooks.md) | Events, payload, signature verification, retries, receiver recipes |
+| [Home Assistant](home-assistant.md) | The integration from HACS: the token, to-do lists, counts, calendar, events, Assist, automations and limits |
 | [Issue import](issue-import.md) | GitHub and GitLab issues assigned to you as tasks that follow the issue: tokens, filters, what follows, limits |
 | [AI assistants (MCP)](mcp.md) | Enabling the MCP endpoint, read-only and assistant tokens, read and write tools, limits, prompt-injection safety |
 
