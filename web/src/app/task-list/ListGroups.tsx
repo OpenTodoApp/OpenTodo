@@ -8,6 +8,7 @@ import type { DropAt } from '../listDrop'
 import { memberName } from '../../lib/sharing'
 import type { Progress } from '../../lib/subtasks'
 import type { HabitStats } from '../../lib/habits'
+import type { RowLayout } from '../../lib/rowLayout'
 import type { FieldDef, Label, Membership, Project, Task } from '../../lib/types'
 import { Button, ListGroupHeader } from '../../ui'
 import { sectionTarget, type BoardColumn } from '../BoardView'
@@ -47,6 +48,8 @@ export interface RowContext {
   siblingPos: Map<string, { pos: number; size: number }>
   /** The list shows the time column (rows-v2 D2). */
   timeColumn: boolean
+  /** A project's or label's own row layout (row-layouts); absent follows the account's. */
+  rowLayout?: RowLayout
   actions: RowActions
   addingUnder: string | null
   onCloseSubtask: () => void
@@ -139,6 +142,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           readOnly={ghost || c.isReadOnly(r.task)}
           shape={c.board ? 'card' : 'row'}
           timeColumn={c.timeColumn}
+          layout={c.rowLayout}
           draggable={!ghost && !editing && !c.isReadOnly(r.task)}
           reorderable={!ghost && c.manual}
           collapsible={tree}

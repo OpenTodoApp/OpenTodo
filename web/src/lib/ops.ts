@@ -61,12 +61,12 @@ const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null, note_mentions: [], sample: false, workspace_id: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
-  name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '',
+  name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
 }
 /** Defaults for a view row created from partial ops; also the read-time fallback for unknown option values. */
 export const VIEW_DEFAULTS: Omit<View, 'id' | '_clock'> = {
   name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false,
-  position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], created_at: 0, deleted_at: null, workspace_id: null,
+  position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null,
 }
 const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
   task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null,
@@ -89,10 +89,10 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
   author_id: '', created_at: 0, uploaded_at: null, deleted_at: null,
 }
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
-const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '' }
+const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '' }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '', start_checklist: '',
-  focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '' }
+  focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '' }
 /** review (stats-and-review D4, open-loops-method D5): 0 means "never finished", an empty focus date no focus. */
 export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, closed_day: '', tomorrow_note: '', carry_over: '' }
 /** A time entry row before its ops arrive (time-tracking D1); `ended_at` null reads as running. */

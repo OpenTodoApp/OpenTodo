@@ -12,6 +12,7 @@ import {
 } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ListGroupBy } from '../../lib/listDisplay'
+import { ROW_LAYOUTS, type RowLayout } from '../../lib/rowLayout'
 
 export interface ViewDisplay {
   layout: ViewLayout
@@ -20,6 +21,8 @@ export interface ViewDisplay {
   sortDir: SortDir
   showCompleted: boolean
   hidden: readonly RowProperty[]
+  /** The view's own row layout (row-layouts); absent follows the account's. */
+  rowLayout?: RowLayout
 }
 
 /** What the panel shows: a part without a value (layout, completed tasks, row properties) is left out. */
@@ -30,12 +33,16 @@ export interface PanelValue {
   layout?: ViewLayout
   showCompleted?: boolean
   hidden?: readonly RowProperty[]
+  /** One line or detailed rows (row-layouts). */
+  rowLayout?: RowLayout
 }
 
 export const GROUP_LABEL = translatedMap<ListGroupBy>({ project: msg('Project'), due: msg('Due date'), priority: msg('Priority'), label: msg('Label'), none: msg('None'), section: msg('Section') })
 export const SORT_LABEL = translatedMap<SortBy>({ due: msg('Due date'), priority: msg('Priority'), position: msg('Manual order'), created: msg('Created'), deadline: msg('Deadline'), title: msg('Title') })
 const LAYOUT_LABEL = translatedMap<ViewLayout>({ list: msg('List'), board: msg('Board') })
 const LAYOUT_ICON: Record<ViewLayout, IconName> = { list: 'list', board: 'kanban' }
+export const ROW_LAYOUT_LABEL = translatedMap<RowLayout>({ line: msg('One line'), detailed: msg('Detailed') })
+const ROW_LAYOUT_ICON: Record<RowLayout, IconName> = { line: 'rows-3', detailed: 'rows-2' }
 export const PROPERTY_LABEL = translatedMap<RowProperty>({
   date: msg('Date'), project: msg('Project'), labels: msg('Labels'), estimate: msg('Estimate'), assignee: msg('Assignee'),
   deadline: msg('Deadline'), start: msg('Start'), origin: msg('Origin'),
@@ -79,23 +86,12 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
   return (
     <div data-display-panel className="text-meta">
       <div className="space-y-2 p-3">
-        {layout !== undefined && <div role="radiogroup" aria-label={t('Layout')} className="grid grid-cols-2 gap-0.5 rounded-control bg-sunken p-0.5" data-display-layout>
-          {VIEW_LAYOUTS.map((l) => (
-            <button key={l} type="button" role="radio" aria-checked={layout === l}
-              className={`touch-target flex items-center justify-center gap-1.5 rounded-control px-3 py-1.5 ${layout === l ? 'bg-raised text-strong shadow-1' : 'text-muted hover:text-default'}`}
-              onClick={() => onChange({ layout: l })}
-              onKeyDown={(e) => {
-                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-                e.preventDefault()
-                const next = VIEW_LAYOUTS[(VIEW_LAYOUTS.indexOf(layout) + 1) % VIEW_LAYOUTS.length]
-                onChange({ layout: next })
-                ;(e.currentTarget.parentElement?.querySelector(`[data-layout="${next}"]`) as HTMLElement | null)?.focus()
-              }}
-              data-layout={l} tabIndex={layout === l ? 0 : -1}>
-              <Icon name={LAYOUT_ICON[l]} />{LAYOUT_LABEL[l]}
-            </button>
-          ))}
-        </div>}
+        {layout !== undefined && (
+          <Choice label={t('Layout')} items={VIEW_LAYOUTS} value={layout} labels={LAYOUT_LABEL} icons={LAYOUT_ICON} attr="layout" onChange={(l) => onChange({ layout: l })} />
+        )}
+        {value.rowLayout !== undefined && (
+          <Choice label={t('Rows')} items={ROW_LAYOUTS} value={value.rowLayout} labels={ROW_LAYOUT_LABEL} icons={ROW_LAYOUT_ICON} attr="row-layout" onChange={(r) => onChange({ rowLayout: r })} />
+        )}
         <OptionRow label={t('Group by')}>
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Group by')} value={value.groupBy}
             onChange={(e) => onChange({ groupBy: e.target.value as ListGroupBy })}>
@@ -149,6 +145,31 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+/** A two-way choice as a segmented radio group; the arrow keys move the choice and the focus. */
+function Choice<T extends string>({ label, items, value, labels, icons, attr, onChange }: {
+  label: string; items: readonly T[]; value: T; labels: Record<T, string>; icons: Record<T, IconName>; attr: string; onChange: (v: T) => void
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="grid grid-cols-2 gap-0.5 rounded-control bg-sunken p-0.5" {...{ [`data-display-${attr}`]: '' }}>
+      {items.map((l) => (
+        <button key={l} type="button" role="radio" aria-checked={value === l}
+          className={`touch-target flex min-w-0 items-center justify-center gap-1.5 rounded-control px-3 py-1.5 ${value === l ? 'bg-raised text-strong shadow-1' : 'text-muted hover:text-default'}`}
+          onClick={() => onChange(l)}
+          onKeyDown={(e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+            e.preventDefault()
+            const next = items[(items.indexOf(value) + (e.key === 'ArrowRight' ? 1 : items.length - 1)) % items.length]
+            onChange(next)
+            ;(e.currentTarget.parentElement?.querySelector(`[data-${attr}="${next}"]`) as HTMLElement | null)?.focus()
+          }}
+          {...{ [`data-${attr}`]: l }} tabIndex={value === l ? 0 : -1}>
+          <Icon name={icons[l]} /><span className="truncate">{labels[l]}</span>
+        </button>
+      ))}
     </div>
   )
 }

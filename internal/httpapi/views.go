@@ -22,12 +22,14 @@ import (
 const maxPanels = 6
 
 var (
-	viewKinds    = []string{"list", "dashboard"}
-	viewGroupBy  = []string{"project", "due", "priority", "label", "none"}
-	viewSortBy   = []string{"due", "priority", "position", "created", "title", "deadline"}
-	viewSortDir  = []string{"asc", "desc"}
-	viewLayouts  = []string{"list", "board"}
-	viewEnumSets = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_by": viewSortBy, "sort_dir": viewSortDir, "layout": viewLayouts}
+	viewKinds   = []string{"list", "dashboard"}
+	viewGroupBy = []string{"project", "due", "priority", "label", "none"}
+	viewSortBy  = []string{"due", "priority", "position", "created", "title", "deadline"}
+	viewSortDir = []string{"asc", "desc"}
+	viewLayouts = []string{"list", "board"}
+	// viewRowLayouts: one line or detailed rows; "" follows the account's choice (row-layouts D1).
+	viewRowLayouts = []string{"", "line", "detailed"}
+	viewEnumSets   = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_by": viewSortBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts}
 	// viewRowProps are the row properties a view can hide (views-and-display D3).
 	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin"}
 	// viewDefaults are written on create for every field the caller leaves out.

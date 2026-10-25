@@ -3,6 +3,7 @@
 // an op through mutate(); evaluation reuses the filter compiler from lib/filter, so a
 // saved view behaves exactly like the same query typed into the Filter view.
 import { addDaysISO, compareDue, formatDateHeading, localDate, localDueOf } from './dates'
+import type { RowLayout } from './rowLayout'
 import { db, getMeta, setMeta } from './db'
 import { compile, filterScope, mentionsState, namesWorkspace, parse, type FilterContext, type Node } from './filter'
 import type { BoardTemplate } from './boardTemplates'
@@ -177,6 +178,8 @@ export interface NewView {
   layout?: ViewLayout
   show_completed?: boolean
   hidden_props?: RowProperty[]
+  /** One line or detailed rows (row-layouts); absent follows the account's choice. */
+  row_layout?: RowLayout
 }
 
 /** Create a view, last in sidebar order. Pinned unless told otherwise (the Filter view's "Save view"). */
@@ -203,6 +206,7 @@ export async function createView(input: NewView): Promise<string> {
     ...(input.layout && input.layout !== 'list' ? { layout: input.layout } : {}),
     ...(input.show_completed ? { show_completed: true } : {}),
     ...(input.hidden_props?.length ? { hidden_props: input.hidden_props } : {}),
+    ...(input.row_layout ? { row_layout: input.row_layout } : {}),
     ...(await workspaceFields()),
     created_at: now,
     deleted_at: null,
@@ -210,7 +214,7 @@ export async function createView(input: NewView): Promise<string> {
   return id
 }
 
-export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props'>>
+export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props' | 'row_layout'>>
 
 /** Edit a view: one op per changed field. The kind is fixed at creation; panels go through setPanels. */
 export async function updateView(id: string, patch: ViewPatch): Promise<void> {

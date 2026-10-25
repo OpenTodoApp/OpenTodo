@@ -3530,6 +3530,12 @@
   "Destination works: a test file was written and deleted.": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Detailed": [
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
+  "Detailed adds the parent task and a line of dates, priority and labels.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Details": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DemoBanner.tsx",
@@ -8377,6 +8383,12 @@
   "One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters mistakes and casual spam; the secret address is the real protection.": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
+  "One line": [
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
+  "One line or detailed rows in every list without its own choice": [
+    "web/src/app/settingsIndex.ts"
+  ],
   "One line you want to read first tomorrow morning.": [
     "web/src/app/review/CloseDay.tsx"
   ],
@@ -9291,6 +9303,7 @@
   ],
   "Priority {p}": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/TaskRow.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/views.ts"
@@ -10377,6 +10390,9 @@
   "Row": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Rows": [
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
   "Rows with errors": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -10726,7 +10742,8 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Section menu for {title}": [
     "web/src/app/Sections.tsx"
@@ -12018,6 +12035,11 @@
   "Task reopened": [
     "web/src/lib/undoActions.ts",
     "web/src/lib/webhooks.ts"
+  ],
+  "Task rows": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Task title": [
     "web/src/app/ShareCapture.tsx"

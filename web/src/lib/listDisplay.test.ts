@@ -37,14 +37,16 @@ const titles = (g: { rows: { task: Task }[] }) => g.rows.map((r) => r.task.title
 
 describe('listDisplayOf', () => {
   it('reads missing, empty and unknown values as the page default', () => {
-    expect(listDisplayOf('project', null)).toEqual({ groupBy: 'section', sortBy: 'position', sortDir: 'asc' })
-    expect(listDisplayOf('label', { group_by: '', sort_by: 'colour', sort_dir: 'up' })).toEqual({ groupBy: 'project', sortBy: 'position', sortDir: 'asc' })
+    expect(listDisplayOf('project', null)).toEqual({ groupBy: 'section', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' })
+    expect(listDisplayOf('label', { group_by: '', sort_by: 'colour', sort_dir: 'up' }, 'detailed')).toEqual({ groupBy: 'project', sortBy: 'position', sortDir: 'asc', rowLayout: 'detailed' })
+    // The page's own layout wins over the account's.
+    expect(listDisplayOf('label', { row_layout: 'line' }, 'detailed').rowLayout).toBe('line')
     // A label page has no sections and no grouping by label; a project none by project.
     expect(listDisplayOf('label', { group_by: 'section' }).groupBy).toBe('project')
     expect(listDisplayOf('project', { group_by: 'project' }).groupBy).toBe('section')
-    expect(listDisplayOf('project', { group_by: 'priority', sort_by: 'deadline', sort_dir: 'desc' })).toEqual({ groupBy: 'priority', sortBy: 'deadline', sortDir: 'desc' })
+    expect(listDisplayOf('project', { group_by: 'priority', sort_by: 'deadline', sort_dir: 'desc' })).toEqual({ groupBy: 'priority', sortBy: 'deadline', sortDir: 'desc', rowLayout: 'line' })
     expect(isDefaultDisplay('project', defaultListDisplay('project'))).toBe(true)
-    expect(isDefaultDisplay('label', { groupBy: 'project', sortBy: 'title', sortDir: 'asc' })).toBe(false)
+    expect(isDefaultDisplay('label', { groupBy: 'project', sortBy: 'title', sortDir: 'asc', rowLayout: 'line' })).toBe(false)
   })
 })
 
@@ -83,7 +85,7 @@ describe('project list with display options', () => {
     const loose = task({ title: 'Loose' })
     const base = projectInput([late, urgent, loose], {}, [s1])
     expect(listGroups(base).map((g) => [g.key, titles(g)])).toEqual([['section:', ['Loose']], ['section:s1', ['Late', 'Urgent']]])
-    const byPriority = listGroups({ ...base, display: { groupBy: 'section', sortBy: 'priority', sortDir: 'desc' } })
+    const byPriority = listGroups({ ...base, display: { groupBy: 'section', sortBy: 'priority', sortDir: 'desc', rowLayout: 'line' } })
     expect(byPriority.map((g) => [g.key, titles(g)])).toEqual([['section:', ['Loose']], ['section:s1', ['Urgent', 'Late']]])
   })
 
@@ -93,17 +95,17 @@ describe('project list with display options', () => {
     const child = task({ title: 'Child', priority: 4, parent_id: parent.id })
     const other = task({ title: 'Other', priority: 4 })
     const base = projectInput([parent, child, other], {}, [s1])
-    const grouped = listGroups({ ...base, display: { groupBy: 'priority', sortBy: 'position', sortDir: 'asc' } })
+    const grouped = listGroups({ ...base, display: { groupBy: 'priority', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } })
     expect(grouped.map((g) => [g.heading, titles(g)])).toEqual([['Priority 2', ['Parent', 'Child']], ['Priority 4', ['Other']]])
     expect(grouped[0].rows[1]).toMatchObject({ depth: 1, parent: parent.id })
-    const flat = listGroups({ ...base, display: { groupBy: 'none', sortBy: 'title', sortDir: 'asc' } })
+    const flat = listGroups({ ...base, display: { groupBy: 'none', sortBy: 'title', sortDir: 'asc', rowLayout: 'line' } })
     expect(flat.map((g) => [g.key, titles(g)])).toEqual([['all', ['Other', 'Parent', 'Child']]])
   })
 
   it('groups by label with each task once, under its first label in label order', () => {
     const both = task({ title: 'Both', labels: ['l2', 'l1'] })
     const none = task({ title: 'Bare' })
-    const g = listGroups({ ...projectInput([both, none]), labels: [label('l2', 2), label('l1', 1)], display: { groupBy: 'label', sortBy: 'position', sortDir: 'asc' } })
+    const g = listGroups({ ...projectInput([both, none]), labels: [label('l2', 2), label('l1', 1)], display: { groupBy: 'label', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } })
     expect(g.map((x) => [x.heading, titles(x)])).toEqual([['l1', ['Both']], ['No label', ['Bare']]])
     expect(g[0].named).toBe(true)
   })
@@ -112,7 +114,7 @@ describe('project list with display options', () => {
     const today = task({ title: 'Now', due: { date: TODAY } })
     const later = task({ title: 'Later', due: { date: '2026-10-30' } })
     const undated = task({ title: 'Undated' })
-    const g = listGroups({ ...projectInput([undated, later, today]), display: { groupBy: 'due', sortBy: 'position', sortDir: 'asc' } })
+    const g = listGroups({ ...projectInput([undated, later, today]), display: { groupBy: 'due', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } })
     expect(g.map((x) => x.key)).toEqual(['today', '2026-10-30', 'none'])
   })
 })
@@ -122,8 +124,8 @@ describe('label page with display options', () => {
     const a = task({ title: 'Beta', project_id: null, priority: 1 })
     const b = task({ title: 'Alpha', project_id: null, priority: 3 })
     const base: GroupInput = { ...projectInput([]), view: 'label', tree: null, buckets: null, tasks: [a, b] }
-    expect(listGroups({ ...base, display: { groupBy: 'project', sortBy: 'title', sortDir: 'asc' } }).map(titles)).toEqual([['Alpha', 'Beta']])
-    const byPriority = listGroups({ ...base, display: { groupBy: 'priority', sortBy: 'position', sortDir: 'asc' } })
+    expect(listGroups({ ...base, display: { groupBy: 'project', sortBy: 'title', sortDir: 'asc', rowLayout: 'line' } }).map(titles)).toEqual([['Alpha', 'Beta']])
+    const byPriority = listGroups({ ...base, display: { groupBy: 'priority', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } })
     expect(byPriority.map((g) => [g.heading, titles(g)])).toEqual([['Priority 1', ['Beta']], ['Priority 3', ['Alpha']]])
   })
 })

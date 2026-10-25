@@ -39,6 +39,7 @@ import { ViewResults } from './views/ViewResults'
 import { SaveViewCard } from './views/SaveViewCard'
 import type { ViewDisplay } from './views/DisplayPanel'
 import type { Task } from '../lib/types'
+import { useAccountRowLayout } from '../lib/rowLayout'
 
 const DEBOUNCE_MS = 150
 
@@ -69,6 +70,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     return () => clearTimeout(id)
   }, [query])
   const [display, setDisplay] = useState<ViewDisplay>(NEW_VIEW_DISPLAY)
+  const account = useAccountRowLayout()
 
   const hereProjects = useProjects()
   const hereLabels = useAllLabels()
@@ -222,7 +224,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   async function save(name: string) {
     const id = await createView({
       name, query, group_by: display.groupBy, sort_by: display.sortBy, sort_dir: display.sortDir,
-      layout: display.layout, show_completed: display.showCompleted, hidden_props: [...display.hidden],
+      layout: display.layout, show_completed: display.showCompleted, hidden_props: [...display.hidden], row_layout: display.rowLayout,
     })
     remember(query)
     setSaving(false)
@@ -235,7 +237,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         <PageHeader title={<ViewsCrumb name={t('New view')} />} meta={count ?? undefined} help="filter"
           actions={<Button variant="secondary" size="sm" disabled={!canSave} onClick={() => setSaving(true)}>{t('Save as view')}</Button>} />
       )}
-      <ViewToolbar query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={display}
+      <ViewToolbar query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }}
         onDisplay={(patch) => setDisplay((d) => ({ ...d, ...patch }))}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (
@@ -284,6 +286,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             labels={resolveLabels(tk.labels, labelMap)}
             showProject={display.groupBy !== 'project'} timeColumn={timeColumn}
             hidden={display.hidden}
+            layout={display.rowLayout}
             onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
             selected={key === selected}
             progress={progress.get(tk.id)}

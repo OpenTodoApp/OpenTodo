@@ -5340,5 +5340,11 @@
   "Resize the task panel": "Ridimensiona il pannello dell’attività",
   "Select a task to see its details here.": "Seleziona un’attività per vederne qui i dettagli.",
   "The side panel needs a window at least 1024 px wide; phones open the page.": "Il pannello laterale richiede una finestra larga almeno 1024 px; sui telefoni si apre la pagina.",
-  "{n} pixels wide": "{n} pixel di larghezza"
+  "{n} pixels wide": "{n} pixel di larghezza",
+  "Detailed": "Dettagliato",
+  "One line": "Una riga",
+  "Rows": "Righe",
+  "Task rows": "Righe delle attività",
+  "One line or detailed rows in every list without its own choice": "Righe su una riga o dettagliate in ogni elenco senza una scelta propria",
+  "Detailed adds the parent task and a line of dates, priority and labels.": "Dettagliato aggiunge l’attività principale e una riga con date, priorità ed etichette."
 }

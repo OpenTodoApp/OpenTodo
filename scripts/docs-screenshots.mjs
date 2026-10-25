@@ -314,6 +314,18 @@ const shots = [
     await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('section').catch(() => {})
     await p.keyboard.press('Escape')
   } },
+  // Detailed rows (row-layouts): the project's own choice in Display options; the choice syncs, so the scene puts it back.
+  { name: 'row-layouts', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')
+    await p.locator('main [data-display-trigger]').first().click(); await p.locator('[data-display-panel]').waitFor()
+    await p.locator('[data-display-row-layout] [data-row-layout="detailed"]').click()
+    await p.locator('li[data-row-layout="detailed"]').first().waitFor(); await p.keyboard.press('Escape'); await p.mouse.move(700, 40)
+    await p.locator('body').evaluate(() => (document.activeElement)?.blur()); await settle(p, 500)
+  }, async after(p) {
+    await p.locator('main [data-display-trigger]').first().click().catch(() => {})
+    await p.locator('[data-display-row-layout] [data-row-layout="line"]').click().catch(() => {})
+    await p.keyboard.press('Escape')
+  } },
   // An expanded row (row-expand): Today with the kitchen quotes' details open under the row, as Show details opens them.
   { name: 'expand-a-row', server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { level: 1, name: 'Today' }).waitFor())

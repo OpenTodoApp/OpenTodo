@@ -49,6 +49,7 @@ import { useTaskTracked } from '../lib/timeEntries'
 import { OriginChip } from './OriginChip'
 import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
+import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -186,6 +187,72 @@ function CardMeta({ m }: { m: MetaValues }) {
       {m.labels && <span data-row-labels="" className="inline-flex max-w-full min-w-0">{m.labels}</span>}
       {m.counts}
       {m.assignee && <span data-row-assignee="" className="ml-auto inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
+    </div>
+  )
+}
+
+/** The bars of a priority (row-layouts D3): a shape per level, so priority never rests on colour alone. */
+const PRIORITY_ICON: Record<number, IconName> = { 1: 'signal-high', 2: 'signal-medium', 3: 'signal-low' }
+const PRIORITY_TEXT: Record<number, string> = { 1: 'text-p1', 2: 'text-p2', 3: 'text-p3' }
+
+/**
+ * A task's priority as a mark (row-layouts D3): the bars in the priority's colour,
+ * beside the title of a one-line row (read as "Priority 1"), with "P1" after them on
+ * a detailed row. Priority 4, the default, has none.
+ */
+export function PriorityMark({ priority, text = false }: { priority: number; text?: boolean }) {
+  if (!PRIORITY_ICON[priority]) return null
+  const label = t('Priority {p}', { p: priority })
+  return (
+    <span data-priority-mark={priority} className={`inline-flex shrink-0 items-center gap-0.5 text-meta font-medium ${PRIORITY_TEXT[priority]}`}>
+      <Icon name={PRIORITY_ICON[priority]} size="xs" />
+      {text ? <ReadAs label={label}>{`P${priority}`}</ReadAs> : <span className="sr-only">{label}</span>}
+    </span>
+  )
+}
+
+/**
+ * A detailed row's lines (row-layouts D2): the parent task when it is not shown
+ * above, then one details line that wraps on a narrow row or at a large text size:
+ * the do date and time, the priority, the deadline, the start, the project, the
+ * estimate, the assignee and the other facts, and the labels on one line, as many as
+ * fit, then "+n".
+ */
+function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; priority: number | null; projectColor?: string; labels: ReactNode }) {
+  const more = m.badges.slice(MAX_FIELD_BADGES)
+  const facts = [
+    (m.date || m.hint) && (
+      <span key="date" data-row-cell="date" className="inline-flex min-w-0 items-center gap-1">
+        {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+        {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
+      </span>
+    ),
+    priority && <PriorityMark key="priority" priority={priority} text />,
+    m.deadline && <ToneText key="deadline" tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>,
+    m.startText && <ToneText key="start" icon={m.someday ? 'archive' : 'calendar-days'} data-start="">{m.startText}</ToneText>,
+    m.project && (
+      <span key="project" data-row-cell="project" className="inline-flex min-w-0 items-center gap-1 text-meta text-muted">
+        {projectColor && <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: projectColor }} />}
+        {m.project}
+      </span>
+    ),
+    m.estimate && <ToneText key="estimate" icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>,
+    m.assignee && <span key="assignee" data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>,
+    m.sample && <ToneText key="sample" data-sample="">{t('Sample')}</ToneText>,
+    m.blockedBy > 0 && <ToneText key="blocked" icon="lock" data-blocked="" label={t('Blocked by {blockedBy}', { blockedBy: m.blockedBy })}>{m.blockedBy}</ToneText>,
+    m.streak && <ToneText key="streak" icon="flame" data-streak="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
+    ...m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id}>{b.text}</ToneText>),
+    more.length > 0 && <ToneText key="more" data-field-more="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>,
+  ].filter(Boolean)
+  return (
+    <div className="mt-0.5 flex min-w-0 flex-col gap-0.5" data-row-meta="detailed">
+      {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="" className="min-w-0">{m.breadcrumb}</ToneText>}
+      {(facts.length > 0 || labels) && (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5" data-row-details="">
+          {facts}
+          {labels && <span data-row-labels="" className="flex min-w-24 flex-1 basis-24">{labels}</span>}
+        </div>
+      )}
     </div>
   )
 }
@@ -332,6 +399,8 @@ export interface TaskRowProps {
   expanded?: boolean
   /** Shows or hides the details; without it the row cannot expand (boards, review screens). */
   onExpand?: () => void
+  /** One line or detailed (row-layouts); absent follows the account's choice. A card has its own shape. */
+  layout?: RowLayout
 }
 
 const NO_HIDDEN: readonly RowProperty[] = []
@@ -427,8 +496,11 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
   const card = shape === 'card'
+  // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
+  const accountLayout = useAccountRowLayout()
+  const detailed = !card && (layout ?? accountLayout) === 'detailed'
   const hides = (p: RowProperty) => hidden.includes(p)
   // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
   const trackedLive = useTaskTracked(task.id)
@@ -447,7 +519,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const deadline = done || hides('deadline') ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const deadlineLabel = deadline ? t('Deadline {date}, {label}', { date: formatDate(task.deadline!, 'long', dt.resolved), label: deadline.label }) : ''
   // The column (rows-v2 D2, D3): the due time, else the deadline countdown; the line never repeats it.
-  const column = timeColumn && !card && !hides('date')
+  const column = timeColumn && !card && !hides('date') && !detailed
   const timeInColumn = column && !!due?.time
   const deadlineInColumn = column && !due?.time && !!deadline
   const comments = useCommentCount(task.id)
@@ -503,7 +575,10 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     m.progress = progressCount
     m.counts = rest.length > 0 ? <RowCounts counts={rest} /> : null
   }
+  const priority = !done && task.priority < 4 ? task.priority : null
   const meta = card ? (metaItems(m) > 0 || m.project) && <CardMeta m={m} />
+    : detailed ? <DetailedMeta m={m} priority={priority} projectColor={projectName ? project?.color : undefined}
+      labels={m.labels && <LabelChips labels={labels} omit={omitLabel} fit />} />
     : (metaItems({ ...m, repeat: null }) > 0 || m.project || extra === 'progress') && <RowLine m={m} extra={extra} progress={progressCount} projectColor={projectName ? project?.color : undefined} projectColumn={showProject && !hides('project')} />
   // Expanded rows (row-expand D2): a list row may show its details under it; never a card, the row edited in place or a departing row.
   const canExpand = !!onExpand && !card && !inline && motion !== 'leave'
@@ -562,6 +637,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       }}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
+      data-row-layout={detailed ? 'detailed' : undefined}
       className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
@@ -619,7 +695,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           onOpen(e)
         }}>
         <div className={card ? '' : 'flex min-w-0 items-center gap-2'} data-row-head>
-        <div className={`user-text text-body ${card ? 'line-clamp-2' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
+        <div className={`user-text text-body ${card || detailed ? 'line-clamp-2' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
           {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{task.title}</ReadAs></span>
             : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
           {unencrypted && (
@@ -628,6 +704,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
             </span>
           )}
         </div>
+        {!card && !detailed && priority && <PriorityMark priority={priority} />}
         {!card && m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeat} className="shrink-0">{null}</ToneText>}
         {!card && headCounts.length > 0 && <RowCounts counts={headCounts} />}
         </div>
