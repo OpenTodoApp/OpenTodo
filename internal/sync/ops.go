@@ -655,6 +655,10 @@ var Schema = map[string]map[string]kind{
 		// "hidden" hides it on Today and Upcoming; clients read an empty or
 		// unknown value as shown.
 		"briefing": kString,
+		// How a task opens from a list (OpenSpec change task-side-panel,
+		// design D1): "page" or "panel"; clients read an empty or unknown
+		// value as "page" and keep the stored value.
+		"task_open": kString,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

@@ -24,6 +24,12 @@ beforeEach(() => {
 afterEach(() => { document.body.innerHTML = ''; vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('index', () => {
+  it('finds how tasks open under Appearance → Task details (task-side-panel)', () => {
+    for (const q of ['side panel', 'open tasks']) {
+      expect(searchSettings(q, member)[0].entries[0]).toMatchObject({ section: 'appearance', page: 'task-details', label: 'Open tasks', anchor: 'task-details-heading' })
+    }
+  })
+
   it('finds rows by label, description and keywords, grouped under their section', () => {
     const hits = searchSettings('week', member)
     // "week" also finds the weekly digest (stats-and-review) under Notifications.

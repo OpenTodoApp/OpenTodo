@@ -14,7 +14,8 @@ import type { Priority, Task } from '../../lib/types'
 import type { Tree } from '../../lib/tree'
 import { act } from '../actionError'
 import { runBulk } from '../bulk/BulkActions'
-import { setPanelTaskId as setOpenId, taskSplitDocks } from '../panel'
+import { panelTaskId, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from '../panel'
+import { closeSidePanelFrom } from '../sidePanel'
 import { navigate } from '../router'
 import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
@@ -143,6 +144,8 @@ export function useListShortcuts(c: ShortcutContext) {
     'list.escape': (e) => {
       const target = e.target as HTMLElement | null
       if (isTypingTarget(target)) target!.blur()
+      // Escape inside the side panel closes it (task-side-panel D4).
+      else if (closeSidePanelFrom(target)) return
       else if (ui.pickerFor) ui.setPickerFor(null)
       else if (ui.assignFor) ui.setAssignFor(null)
       else if (ui.prompt) ui.setPrompt(null)
@@ -151,8 +154,9 @@ export function useListShortcuts(c: ShortcutContext) {
       // The details of an expanded row close before the selection clears (row-expand D1).
       else if (c.expandedId) c.setExpandedId(null)
       else if (selection.ticked.size) selection.clear()
-      // On the Inbox's split the pane follows the cursor: Escape clears both (inbox-split D1).
-      else if (openId) { setOpenId(null); setSelectedId(null) }
+      // On the Inbox's split the pane follows the cursor: Escape clears both (inbox-split D1);
+      // the side panel keeps its task (task-side-panel D4).
+      else if (openId && !sidePanelDocks()) { setOpenId(null); setSelectedId(null) }
       else setSelectedId(null)
     },
     'list.move-up': moveBy(-1), 'list.move-down': moveBy(1), 'list.move-top': moveBy('top'), 'list.move-bottom': moveBy('bottom'),
@@ -182,7 +186,8 @@ export function useListShortcuts(c: ShortcutContext) {
       // Enter on a focused button or link is that control's own (the panel's tabs, a version's expander).
       if (!selectedId || isActivationTarget(e.target)) return false
       // On the Inbox's split the task is already beside the list: Enter opens its page (inbox-split D1).
-      if (taskSplitDocks()) openTaskPage(selectedId)
+      // The side panel shows it first, then opens its page (task-side-panel D4).
+      if (taskSplitDocks() && (!sidePanelDocks() || panelTaskId() === selectedId)) openTaskPage(selectedId)
       else setOpenId(selectedId)
     },
     'list.add-subtask': () => {

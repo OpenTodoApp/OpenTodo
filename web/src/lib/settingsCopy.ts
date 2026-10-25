@@ -180,6 +180,16 @@ export const SETTINGS_COPY = {
     },
     learnMore: 'settings/appearance',
   },
+  // How a task opens from a list (task-side-panel D1): the synced user_prefs.task_open.
+  'task-details': {
+    title: msg('Task details'),
+    icon: 'panel-right',
+    description: msg('How a task opens from a list, on all your devices.'),
+    learnMore: 'settings/appearance',
+    rows: {
+      open: { label: msg('Open tasks'), description: msg('The side panel needs a window at least 1024 px wide; phones open the page.') },
+    },
+  },
 
   // Settings → General
   language: {

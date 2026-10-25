@@ -634,6 +634,8 @@ export interface UserPrefs {
   haptics?: string
   /** The day pages' briefing (briefing-links D4): 'hidden' hides it; '' and anything else read as shown. */
   briefing?: string
+  /** How a task opens from a list (task-side-panel D1): 'panel' docks it beside the list from 1024 px; '' and anything else read as 'page'. */
+  task_open?: string
   _clock: Clock
 }
 

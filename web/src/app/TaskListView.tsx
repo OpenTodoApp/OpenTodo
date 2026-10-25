@@ -35,7 +35,7 @@ import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
 import { withListTransition } from './motion'
-import { usePanelTaskId, setPanelTaskId as setOpenId, taskSplitDocks } from './panel'
+import { usePanelTaskId, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
 import { useRowClick } from './rowClick'
@@ -53,7 +53,7 @@ import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
-import { useInboxSplit } from './task-list/useInboxSplit'
+import { useListSplit } from './task-list/useInboxSplit'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useListModel, type ListRoute } from './task-list/useListModel'
@@ -140,10 +140,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked } = useTickedRows(rows, taskMap, isReadOnly)
   const { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId } = useListUi()
-  // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens. The
-  // Inbox keeps its task there, beside the list, from 1024 px (inbox-split D1), set up before the bindings' route reset.
+  // The open task lives in the shell's panel slot (app-shell D1); the Inbox (inbox-split D1), and every list with the
+  // side panel (task-side-panel D2, D7), keep it there beside the list, set up before the bindings' route reset.
   const openId = usePanelTaskId()
-  const inbox = useInboxSplit({ on: route.view === 'inbox', rows: m.ownRows, selectedId, setSelectedId, openId, ticking: selection.ticked.size > 0 })
+  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, openId, ticking: selection.ticked.size > 0 })
   const quickAddRef = useRef<HTMLInputElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
@@ -152,11 +152,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // The row being edited in place and where its caret starts (inline-task-editing D1, D2).
   const [inline, setInline] = useState<{ id: string; caret?: number } | null>(null)
   const clickPref = useRowClick()
-  // A press on empty space of the column clears the selection and closes the panel (inline-task-editing D4).
+  // A press on empty space clears the selection and closes the panel (inline-task-editing D4), never the side panel (task-side-panel D4).
   useClickAway(listRoot, !!selectedId || !!openId || !!inline, () => {
     setInline(null)
     setSelectedId(null)
-    if (openId) setOpenId(null)
+    if (openId && !sidePanelDocks()) setOpenId(null)
   })
   // A click on a title edits it in place: a mouse click (not Enter) with a fine pointer from 768 px,
   // the "Edit in place" preference, no panel open and no Inbox split (inbox-split D1), a task the user may edit; otherwise the task opens.

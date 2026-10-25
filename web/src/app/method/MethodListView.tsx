@@ -16,6 +16,7 @@ import { useBulkList } from '../bulk/useBulkList'
 import { useWithMethod } from '../help/MethodLink'
 import { LabelPicker } from '../LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from '../panel'
+import { openFromRow } from '../sidePanel'
 import { keysOf } from '../../lib/shortcuts'
 import { navigate } from '../router'
 import { TaskRow } from '../TaskRow'
@@ -66,7 +67,7 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const openId = usePanelTaskId()
   const bulk = useBulkList(useMemo(() => rows.map((r) => r.task), [rows]))
-  useListKeys({ rows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor, bulk, onIdleEscape: () => setSelected(null) })
+  useListKeys({ rows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor, bulk, onIdleEscape: () => setSelected(null), sidePanel: true })
   // A completed or moved task leaves the list: keep a selection only while its row exists.
   useEffect(() => { if (selected && !rows.some((r) => r.key === selected)) setSelected(null) }, [rows, selected])
   const count = rows.length ? new Set(rows.map((r) => r.task.id)).size : undefined
@@ -96,7 +97,7 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
                         onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                         blockedBy={blocked.get(task.id)} breadcrumb={g.notes?.get(task.id) ?? null}
                         onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
-                        onOpen={() => { setSelected(key); setPanelTaskId(task.id) }}
+                        onOpen={(e) => { setSelected(key); openFromRow(task.id, e) }}
                         {...bulk.rowProps(task.id)} />
                     )
                   })}

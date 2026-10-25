@@ -222,7 +222,7 @@ describe('opening a section', () => {
   it('lists the sub-pages of each section with an overview, in order', () => {
     const rows = (u: User, id: SettingsSectionId) => [...render(u, id).matchAll(/data-settings-subpage="([a-z-]+)"/g)].map((m) => m[1])
     expect(rows(member, 'account')).toEqual(['profile', 'security', 'activity', 'encryption'])
-    expect(rows(member, 'appearance')).toEqual(['theme', 'sidebar'])
+    expect(rows(member, 'appearance')).toEqual(['theme', 'sidebar', 'task-details'])
     expect(rows(member, 'general')).toEqual(['start', 'keyboard', 'focus', 'maps'])
     expect(rows(member, 'language')).toEqual(['language', 'date-time', 'calendar'])
     expect(rows(member, 'notifications')).toEqual(['push', 'channels', 'digest'])

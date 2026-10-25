@@ -11,6 +11,9 @@ import type { BulkList } from './bulk/useBulkList'
 import { runBulk } from './bulk/BulkActions'
 import { act } from './actionError'
 import { toggleTracking } from '../lib/timeEntries'
+import { panelTaskId, sidePanelDocks } from './panel'
+import { closeSidePanelFrom, useSidePanel } from './sidePanel'
+import { openTaskPage } from './taskTrail'
 
 export interface KeyRow {
   key: string
@@ -36,6 +39,8 @@ export interface ListKeys {
   /** The row (by key) whose details are shown under it (row-expand D1, D4); without a setter the list does not expand (a board layout). */
   expanded?: string | null
   setExpanded?: (key: string | null) => void
+  /** The list keeps the side panel with the preference (task-side-panel): the Filter view, saved views, Next and Waiting. */
+  sidePanel?: boolean
 }
 
 export function useListKeys(opts: ListKeys): void {
@@ -65,6 +70,9 @@ export function useListKeys(opts: ListKeys): void {
   const b = o.bulk
   const idx = o.rows.findIndex((r) => r.key === o.selected)
   const row = idx >= 0 ? o.rows[idx].task : undefined
+  useSidePanel({ on: !!o.sidePanel, selectedTaskId: row?.id ?? null, ticking: !!b?.ticked.length, hasRows: o.rows.length > 0 })
+  // An open task closes on Escape, except in the side panel, which never closes by itself (task-side-panel D4).
+  const closable = !!o.openId && !sidePanelDocks()
   const openWith = (focus: { request(id: string): void }) => () => {
     if (!row) return false
     focus.request(row.id)
@@ -84,9 +92,10 @@ export function useListKeys(opts: ListKeys): void {
     'list.escape': (e) => {
       const target = e.target as HTMLElement | null
       if (isTypingTarget(target)) return false
-      if (b && b.ticked.length && !o.pickerFor && !o.openId) b.selection.clear()
+      if (closeSidePanelFrom(target)) return
+      if (b && b.ticked.length && !o.pickerFor && !closable) b.selection.clear()
       else if (o.pickerFor) o.setPickerFor(null)
-      else if (o.openId) o.setOpenId(null)
+      else if (closable) o.setOpenId(null)
       // The details of an expanded row close before the selection clears (row-expand D1).
       else if (o.expanded && o.setExpanded) o.setExpanded(null)
       else o.onIdleEscape()
@@ -99,7 +108,12 @@ export function useListKeys(opts: ListKeys): void {
     // → shows the selected row's details, ← hides them (row-expand D1); these rows have no subtask tree.
     'list.expand': () => { if (!row || !o.setExpanded) return false; o.setExpanded(o.selected) },
     'list.collapse': () => { if (!row || !o.setExpanded || o.expanded !== o.selected) return false; o.setExpanded(null) },
-    'list.open': (e) => { if (!row || isActivationTarget(e.target)) return false; o.setOpenId(row.id) },
+    'list.open': (e) => {
+      if (!row || isActivationTarget(e.target)) return false
+      // The side panel shows the task first; Enter on the task it shows opens its page (task-side-panel D4).
+      if (sidePanelDocks() && panelTaskId() === row.id) openTaskPage(row.id)
+      else o.setOpenId(row.id)
+    },
     'list.complete': () => {
       if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'complete' }); return }
       if (!row) return false

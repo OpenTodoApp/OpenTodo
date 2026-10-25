@@ -7,6 +7,7 @@ import { roleOf } from '../../lib/sharing'
 import type { Label, Project, Task } from '../../lib/types'
 import { IconButton, playExit } from '../../ui'
 import { panelTaskId } from '../panel'
+import { PanelResizeHandle } from '../sidePanel'
 import { SampleNotice } from '../SampleNotice'
 import { isSample } from '../../lib/sampleTasks'
 import { t } from '../../lib/i18n'
@@ -36,13 +37,15 @@ export interface TaskDetailProps {
   projects: Project[]
   labelMap: Map<string, Label>
   onClose: () => void
+  /** The header's Close, when it does more than close (the side panel stays closed, task-side-panel D4); defaults to onClose. */
+  onDismiss?: () => void
   /** Open another task (a subtask or the parent). */
   onOpen?: (id: string) => void
   /** Complete / reopen through the list so the "complete parent too" prompt can follow. */
   onToggleComplete?: (task: Task) => void
 }
 
-export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false, entering = false }: TaskDetailProps) {
+export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onDismiss, onOpen, onToggleComplete, readOnly = false, entering = false }: TaskDetailProps) {
   const panel = useRef<HTMLElement>(null)
   const m = useTaskDetail({ taskId, readOnly, projects, labelMap, onClose, onOpen, onToggleComplete, scope: panel })
   // Closing the panel (not switching its task) slides it out on a copy (motion-v2 D5).
@@ -58,12 +61,13 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 
   return (
     <aside ref={panel} data-detail-for={task.id} data-detail-variant="panel"
-      className={`fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:static lg:w-(--panel-w) lg:max-w-none lg:shadow-none ${entering ? 'panel-enter' : ''}`}>
+      className={`fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:relative lg:z-auto lg:w-(--panel-w) lg:max-w-none lg:shadow-none ${entering ? 'panel-enter' : ''}`}>
+      <PanelResizeHandle />
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
       <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <TaskHead m={m} readOnly={readOnly} projects={projects} size="panel" />
         <TaskActionsMenu m={m} page={false} readOnly={readOnly} onOpen={onOpen} />
-        <IconButton icon="x" label={t('Close')} onClick={onClose} data-overlay-close className="touch-target" />
+        <IconButton icon="x" label={t('Close')} onClick={onDismiss ?? onClose} data-overlay-close className="touch-target" />
       </div>
       {readOnly && <ReadOnlyNote />}
       {isSample(task) && !readOnly && <SampleNotice />}
