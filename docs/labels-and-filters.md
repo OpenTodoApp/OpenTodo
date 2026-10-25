@@ -28,7 +28,7 @@ Labels are personal. In a shared project, other members don't see the labels you
 
 ## See everything with one label
 
-Once you have a label, the **Labels** group in the sidebar lists your labels; it starts folded on a new device. The number of open tasks for each is on the labels page (<kbd>g</kbd> <kbd>l</kbd>) and in the label's header, not in the sidebar. Select one to see all its tasks, grouped by project; a task you add there with [quick add](quick-add.md) gets the label. **Pin to sidebar** in a label's menu (in the sidebar, on the labels page or in the label's header) adds it to **Favourites** at the top of the sidebar.
+Once you have a label, the **Labels** group in the sidebar lists your labels; it starts folded on a new device. The number of open tasks for each is on the labels page (<kbd>g</kbd> <kbd>l</kbd>) and in the label's header, not in the sidebar. Select one to see all its tasks, grouped by project ([or another way](group-and-order.md)); a task you add there with [quick add](quick-add.md) gets the label. **Pin to sidebar** in a label's menu (in the sidebar, on the labels page or in the label's header) adds it to **Favourites** at the top of the sidebar.
 
 **All** next to Labels (or <kbd>g</kbd> <kbd>l</kbd>) opens the labels page, where you rename, recolour, reorder, merge and delete labels: see [Manage labels](manage-labels.md).
 

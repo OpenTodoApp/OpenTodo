@@ -304,6 +304,16 @@ const shots = [
     await go(p, demoBase, '/views', () => p.getByRole('button', { name: 'New view' }).waitFor())
     await p.locator('main').getByRole('button', { name: /^Menu for view Deep work/ }).first().click(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
+  // A project grouped by priority with its display options open (list-display-options); the choice syncs, so the scene puts it back.
+  { name: 'group-and-order', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')
+    await p.locator('main [data-display-trigger]').first().click(); await p.locator('[data-display-panel]').waitFor()
+    await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('priority')
+    await p.locator('[data-group-label]').first().waitFor(); await settle(p, 500)
+  }, async after(p) {
+    await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('section').catch(() => {})
+    await p.keyboard.press('Escape')
+  } },
   // An expanded row (row-expand): Today with the kitchen quotes' details open under the row, as Show details opens them.
   { name: 'expand-a-row', server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { level: 1, name: 'Today' }).waitFor())

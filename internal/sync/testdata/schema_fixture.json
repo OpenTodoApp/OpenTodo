@@ -40,8 +40,11 @@
       "color",
       "created_at",
       "deleted_at",
+      "group_by",
       "name",
       "position",
+      "sort_by",
+      "sort_dir",
       "workspace_id"
     ],
     "place": [
@@ -67,7 +70,10 @@
     ],
     "project_prefs": [
       "feed_seen_at",
-      "reviewed_at"
+      "group_by",
+      "reviewed_at",
+      "sort_by",
+      "sort_dir"
     ],
     "reminder": [
       "created_at",

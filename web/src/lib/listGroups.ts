@@ -13,8 +13,9 @@ import { byPosition, compareByPosition, compareDueThenPriority } from './orderin
 import { effectiveSection, groupBySection } from './sections'
 import { breadcrumbOf } from './subtasks'
 import { flattenTree, type Tree, type TreeNode } from './tree'
-import type { Project, Section, Task } from './types'
-import { inAnytime, isSomeday } from './views'
+import type { Label, Project, Section, Task } from './types'
+import { compareTasks, groupTasks, inAnytime, isSomeday } from './views'
+import type { ListDisplay } from './listDisplay'
 import { linkedPlaceId } from './locations'
 
 /** The list views TaskListView renders, as the router names them. */
@@ -183,6 +184,20 @@ export interface GroupInput {
   logbook: { groups: LogbookGroup[] } | null
   /** The Inbox only: open, scheduled tasks without a project, shown in a folded group at the end. */
   planned?: readonly Task[]
+  /** A project's or label's display options (list-display-options); absent shows the page's default. */
+  display?: ListDisplay
+  /** Labels, for grouping by label. */
+  labels?: readonly Label[]
+}
+
+/** The comparator of a display's order, or null for manual order as stored (list-display-options D3). */
+function displayOrder(d: ListDisplay | undefined): ((a: Task, b: Task) => number) | null {
+  return d && !(d.sortBy === 'position' && d.sortDir === 'asc') ? compareTasks(d.sortBy, d.sortDir) : null
+}
+
+/** Top-level nodes in the display's order; subtasks keep their manual order under their parent. */
+function sortedRoots(roots: TreeNode<Task>[], order: ((a: Task, b: Task) => number) | null): TreeNode<Task>[] {
+  return order ? [...roots].sort((a, b) => order(a.item, b.item)) : roots
 }
 
 /** The list's groups, in render order: one pass, linear in the number of tasks. */
@@ -202,7 +217,19 @@ export function listGroups(p: GroupInput): ListGroup[] {
   const isCollapsed = (id: string) => p.collapsed.has(id)
   // Board: cards are top-level tasks, column by column (keyboard order).
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.cards.map((task) => flatRow(task)) }))
-  if (p.buckets && p.sectionCount > 0) {
+  const order = displayOrder(p.display)
+  const groupByKey = p.display?.groupBy
+  if (p.tree && p.view === 'project' && groupByKey && groupByKey !== 'section' && groupByKey !== 'none' && groupByKey !== 'project') {
+    // Grouped by a property of the top-level tasks (list-display-options D3); each brings its subtasks.
+    const roots = sortedRoots(p.tree.roots, order)
+    const byId = new Map(roots.map((n) => [n.id, n]))
+    const groups = groupTasks(roots.map((n) => n.item), groupByKey, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true)
+    return [...groups.map((g): ListGroup => ({
+      key: g.key, heading: g.heading, rows: flattenTree(g.tasks.map((task) => byId.get(task.id)!), isCollapsed).map(toRow),
+      ...(groupByKey === 'label' && g.key !== 'none' ? { named: true as const } : {}),
+    })), ...later]
+  }
+  if (p.buckets && p.sectionCount > 0 && groupByKey !== 'none') {
     // Project list with sections: "No section" first, then each section by position.
     const folded = new Set(p.collapsedSections)
     const bySection: ListGroup[] = p.buckets.filter((g) => g.section || g.roots.length > 0).map((g) => ({
@@ -211,12 +238,12 @@ export function listGroups(p: GroupInput): ListGroup[] {
       section: g.section,
       sectionCollapsed: folded.has(g.key),
       count: flattenTree(g.roots).length,
-      rows: folded.has(g.key) ? [] : flattenTree(g.roots, isCollapsed).map(toRow),
+      rows: folded.has(g.key) ? [] : flattenTree(sortedRoots(g.roots, order), isCollapsed).map(toRow),
     }))
     return [...bySection, ...later]
   }
   // Project and Inbox: one depth-first pass over the built tree (linear in task count).
-  if (p.tree) return [{ key: 'all', heading: null, rows: flattenTree(p.tree.roots, isCollapsed).map(toRow) }, ...later, ...plannedGroup(p)]
+  if (p.tree) return [{ key: 'all', heading: null, rows: flattenTree(sortedRoots(p.tree.roots, order), isCollapsed).map(toRow) }, ...later, ...plannedGroup(p)]
   return flatGroups(p)
 }
 
@@ -261,9 +288,18 @@ function flatGroups(p: GroupInput): ListGroup[] {
   if (p.view === 'upcoming') {
     return groupUpcoming(p.tasks, p.today).map(({ date, tasks: list }) => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }) }))
   }
+  if (p.view === 'label' && p.display && p.display.groupBy !== 'project') {
+    // A label page with its own grouping (list-display-options D3): in its order, each task once.
+    const order = displayOrder(p.display)
+    const tasks = order ? [...p.tasks].sort(order) : p.tasks
+    if (p.display.groupBy === 'none' || p.display.groupBy === 'section') return [{ key: 'all', heading: null, rows: tasks.map(row) }]
+    return groupTasks(tasks, p.display.groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true)
+      .map((g) => ({ key: g.key, heading: g.heading, rows: g.tasks.map(row) }))
+  }
   if (p.view === 'label' || p.view === 'assigned' || p.view === 'someday' || p.view === 'anytime') {
     // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
-    const byProject = groupBy(p.tasks, (tk) => tk.project_id ?? '')
+    const sort = p.view === 'label' ? displayOrder(p.display) : null
+    const byProject = groupBy(sort ? [...p.tasks].sort(sort) : p.tasks, (tk) => tk.project_id ?? '')
     const order = ['', ...p.projects.slice().sort(compareByPosition).map((pr) => pr.id)]
     const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined
     return order.filter((id) => byProject.has(id)).map((id) => ({
