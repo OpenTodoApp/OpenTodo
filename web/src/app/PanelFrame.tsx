@@ -8,11 +8,19 @@ import { closePanel } from './panel'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
 
-export function PanelFrame({ title, children, actions, testId }: { title: string; children: ReactNode; actions?: ReactNode; testId?: string }) {
+export function PanelFrame({ title, children, actions, testId, onEscape }: {
+  title: string
+  children: ReactNode
+  actions?: ReactNode
+  testId?: string
+  /** Runs before Escape closes the slot; true when it handled the key (the planning list cancels a placement first). */
+  onEscape?: () => boolean
+}) {
   // Escape empties the slot (the `panel` scope); an overlay above it keeps its own Escape.
   useShortcutScope('panel', {
     'panel.escape': (e) => {
       if ((e.target as HTMLElement | null)?.closest('[data-overlay]')) return false
+      if (onEscape?.()) return
       closePanel()
     },
   })

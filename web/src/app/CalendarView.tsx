@@ -30,7 +30,7 @@ import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { DayColumn, DayHeader, HourGutter } from './calendar/DayColumn'
 import { formatTime, PX_PER_MIN, type Placement, type Preview } from './calendar/grid'
-import { PLAN_PANEL, PlanPanel, type PlanActions } from './calendar/PlanPanel'
+import { PLAN_PANEL, PlanPanel, usePlanActions, type PlanActions } from './calendar/PlanPanel'
 import { useCalendarKeys } from './calendar/useCalendarKeys'
 import { WeekAgenda } from './calendar/WeekAgenda'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
@@ -131,9 +131,12 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     scroller.current.scrollTop = agenda ? 0 : Math.max(0, prefs.startHour * 60 * PX_PER_MIN - 8)
   }, [prefs.startHour, mode, wide])
 
+  /** The planning-list task being placed with the keys, to give focus back to the list after. */
+  const placeFrom = useRef<{ id: string; next: string | null; placed: boolean } | null>(null)
   const commit = useCallback((taskId: string, target: DropTarget) => {
     const task = taskMap.get(taskId)
     if (!task) return
+    if (placeFrom.current?.id === taskId) placeFrom.current.placed = true
     const stored = rawMap.get(taskId)?.due
     if (target.type === 'slot') {
       const time = toHHMM(target.start)
@@ -146,10 +149,21 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     setSelectedId(taskId)
   }, [taskMap, rawMap])
 
+  useEffect(() => {
+    const from = placeFrom.current
+    if (placing || !from) return
+    placeFrom.current = null
+    const list = document.querySelector('[data-panel-frame="calendar-plan"]')
+    const item = (id: string | null) => (id ? list?.querySelector<HTMLElement>(`[data-tray-task="${id}"]`) : null)
+    const back = (from.placed ? item(from.next) ?? item(from.id) : item(from.id)) ?? list?.querySelector<HTMLElement>('[data-tray-task]') ?? scroller.current
+    back?.focus({ preventScroll: true })
+  }, [placing])
+
   const { drag, start: startDrag } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: commit })
   // The planning list lives in the shell's panel slot (time-blocking, app-shell): its
   // actions read the latest handlers through this ref.
   const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })
+  usePlanActions(planActions)
   const planOpen = usePanelOccupantKey() === PLAN_PANEL
 
   const goTo = useCallback((d: string) => navigate({ view: mode, date: d === today ? undefined : d }), [mode, today])
@@ -184,12 +198,24 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const dragTask = drag ? taskMap.get(drag.taskId) : undefined
   const placingTask = placing ? taskMap.get(placing.taskId) : undefined
 
+  // `s` on a task in the planning list (GitHub issue 352): the grid takes the keys
+  // (arrows move the ghost, Enter places, Esc cancels), then focus goes back to the list:
+  // to the next task after Enter, to the same one after Esc.
   planActions.current = {
     onPointerDown: (e, id) => startDrag(e, { taskId: id, kind: 'move' }),
-    onPlace: (id) => { const task = taskMap.get(id); if (task) startPlacing(task) },
+    onPlace: (id) => {
+      const task = taskMap.get(id)
+      if (!task) return
+      const row = document.querySelector(`[data-tray-task="${id}"]`)?.closest('li')
+      const next = (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>('[data-tray-task]')?.dataset.trayTask ?? null
+      placeFrom.current = { id, next, placed: false }
+      startPlacing(task)
+      scroller.current?.focus({ preventScroll: true })
+    },
     onOpen: (id) => setOpenId(id),
+    onEscape: () => { if (!placing) return false; setPlacing(null); return true },
   }
-  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel actions={planActions} />))
+  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel />))
   const select = (id: string) => setSelectedId(id)
   const open = (id: string) => { setSelectedId(id); setOpenId(id) }
   const step = (dir: 1 | -1) => goTo(addDaysISO(anchor, (mode === 'day' ? 1 : 7) * dir))

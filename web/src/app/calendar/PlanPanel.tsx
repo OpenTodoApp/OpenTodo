@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { localDueOf } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
@@ -28,14 +28,30 @@ export interface PlanActions {
   onPointerDown: (e: React.PointerEvent, id: string) => void
   onPlace: (id: string) => void
   onOpen: (id: string) => void
+  /** Escape while a task from the list is being placed: cancel the placement, not the list (GitHub issue 352). */
+  onEscape?: () => boolean
 }
+
+/**
+ * The calendar view on screen registers its actions while mounted, so the open list
+ * keeps working when the user switches Day, Week, Month or Plan (GitHub issue 350): the
+ * panel outlives the view that opened it.
+ */
+let mounted: React.RefObject<PlanActions> | null = null
+export function usePlanActions(actions: React.RefObject<PlanActions>): void {
+  useEffect(() => {
+    mounted = actions
+    return () => { if (mounted === actions) mounted = null }
+  }, [actions])
+}
+const current = (): PlanActions | null => mounted?.current ?? null
 
 /**
  * The planning list in the shell's panel slot (time-blocking "Day and Week calendar
  * views"): the open tasks of one source (Inbox, no date, overdue or a project),
  * chosen with a design-system menu, to drag onto a time or place with `s`.
  */
-export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }) {
+export function PlanPanel() {
   const today = useToday()
   const projects = useLiveProjects()
   const tasks = useLiveTasks() ?? NO_TASKS
@@ -57,7 +73,7 @@ export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }
   }, [tasks, archived, source, today])
   const sourceLabel = source === 'nodate' ? t('No date') : source === 'overdue' ? t('Earlier') : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? t('Project') : t('Inbox')
   return (
-    <PanelFrame title={t('Plan')} testId="calendar-plan"
+    <PanelFrame title={t('Plan')} testId="calendar-plan" onEscape={() => current()?.onEscape?.() ?? false}
       actions={(
         <Menu kind="menu" label={t('Plan from')} title={t('Plan from')} width="sm:w-64" align="end"
           trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="filter" size="xs" />{sourceLabel}<Icon name="chevron-down" size="xs" /></span>}
@@ -82,15 +98,15 @@ export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }
             <button
               type="button"
               data-tray-task={task.id}
-              onPointerDown={(e) => actions.current?.onPointerDown(e, task.id)}
+              onPointerDown={(e) => current()?.onPointerDown(e, task.id)}
               onKeyDown={(e) => {
                 if (e.key === 's' || e.key === 'Enter') {
                   e.preventDefault()
                   e.stopPropagation()
-                  actions.current?.onPlace(task.id)
+                  current()?.onPlace(task.id)
                 }
               }}
-              onDoubleClick={() => actions.current?.onOpen(task.id)}
+              onDoubleClick={() => current()?.onOpen(task.id)}
               className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised"
             >
               <span className="truncate">{task.title || t('Untitled')}</span>
