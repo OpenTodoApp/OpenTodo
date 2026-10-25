@@ -116,4 +116,60 @@ describe('the planning list across the Calendar', () => {
     expect((await getTask(id))?.due).toEqual({ date: '2026-10-14' })
     await r.unmount()
   })
+
+  // GitHub issue 352: after `s` in the list the keys drive the placement, not the list.
+  for (const view of ['day', 'week'] as const) {
+    it(`${view}: s, arrows and Enter place a task from the list with the keyboard only, then focus moves to the next task`, async () => {
+      navigate({ view }, { replace: true })
+      const id = await createTask({ title: 'Renew passport' })
+      await createTask({ title: 'Call the plumber' })
+      const r = await render(<><Calendar /><PanelHost /></>)
+      await flush(50)
+      await openPlanList()
+      await waitFor(() => planList()!.querySelectorAll('[data-tray-task]').length === 2)
+      const item = planList()!.querySelector<HTMLElement>(`[data-tray-task="${id}"]`)!
+      item.focus()
+      await key(item, 's')
+      await flush(30)
+      const at = () => header().textContent!.match(/at (\d\d:\d\d)/)?.[1]
+      const start = at()!
+      expect(start).toBeTruthy()
+      expect(planList()!.contains(document.activeElement)).toBe(false)
+      for (const k of ['ArrowDown', 'ArrowDown', 'ArrowUp', 'ArrowDown']) { await key(document.activeElement!, k); await flush(10) }
+      const [h, m] = start.split(':').map(Number)
+      const moved = h * 60 + m + 30
+      const time = `${String(Math.floor(moved / 60)).padStart(2, '0')}:${String(moved % 60).padStart(2, '0')}`
+      expect(at()).toBe(time)
+      await key(document.activeElement!, 'Enter')
+      for (let t = 0; t < 2000 && !(await getTask(id))?.due; t += 20) await flush(20)
+      expect((await getTask(id))?.due).toEqual({ date: '2026-10-14', time })
+      expect(at()).toBeUndefined()
+      expect(panelOccupant()).toMatchObject({ key: 'calendar-plan' })
+      // The placed task left the Inbox list; focus is on the next one, ready for another `s`.
+      await waitFor(() => (document.activeElement as HTMLElement | null)?.textContent === 'Call the plumber')
+      await r.unmount()
+    })
+  }
+
+  it('Escape cancels a placement from the list, keeps the list open and gives focus back to the task', async () => {
+    navigate({ view: 'week' }, { replace: true })
+    const id = await createTask({ title: 'Renew passport' })
+    const r = await render(<><Calendar /><PanelHost /></>)
+    await flush(50)
+    await openPlanList()
+    await waitFor(() => planList()?.querySelector('[data-tray-task]') !== null)
+    const item = planList()!.querySelector<HTMLElement>('[data-tray-task]')!
+    item.focus()
+    await key(item, 's')
+    await flush(30)
+    expect(header().textContent).toContain('Placing')
+    await key(document.activeElement!, 'ArrowDown')
+    await key(document.activeElement!, 'Escape')
+    await flush(30)
+    expect(header().textContent).not.toContain('Placing')
+    expect(panelOccupant()).toMatchObject({ key: 'calendar-plan' })
+    expect((document.activeElement as HTMLElement).dataset.trayTask).toBe(id)
+    expect((await getTask(id))?.due).toBeFalsy()
+    await r.unmount()
+  })
 })

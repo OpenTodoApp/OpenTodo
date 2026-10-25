@@ -28,6 +28,8 @@ export interface PlanActions {
   onPointerDown: (e: React.PointerEvent, id: string) => void
   onPlace: (id: string) => void
   onOpen: (id: string) => void
+  /** Escape while a task from the list is being placed: cancel the placement, not the list (GitHub issue 352). */
+  onEscape?: () => boolean
 }
 
 /**
@@ -71,7 +73,7 @@ export function PlanPanel() {
   }, [tasks, archived, source, today])
   const sourceLabel = source === 'nodate' ? t('No date') : source === 'overdue' ? t('Earlier') : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? t('Project') : t('Inbox')
   return (
-    <PanelFrame title={t('Plan')} testId="calendar-plan"
+    <PanelFrame title={t('Plan')} testId="calendar-plan" onEscape={() => current()?.onEscape?.() ?? false}
       actions={(
         <Menu kind="menu" label={t('Plan from')} title={t('Plan from')} width="sm:w-64" align="end"
           trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="filter" size="xs" />{sourceLabel}<Icon name="chevron-down" size="xs" /></span>}
