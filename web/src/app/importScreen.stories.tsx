@@ -20,6 +20,7 @@ const job: ImportJob = {
 const base: ImportViewProps = {
   offline: false, fileName: null, format: '', options: { ...DEFAULT_OPTIONS, timeZone: 'Europe/Berlin', targetProject: '' },
   projects: [project({ id: 'p1', name: 'Home', color: HEX.green }), project({ id: 'p2', name: 'Work', color: HEX.blue })],
+  workspaces: [], workspace: '', onWorkspace: noop,
   zones: ['UTC', 'Europe/Berlin', 'America/New_York'], preview: null, busy: false, error: null, job: null, jobs: [job],
   onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onStart: noop, onUndo: noop,
 }
@@ -38,6 +39,16 @@ const preview: ImportPreview = {
 
 /** Before a file is chosen, with one earlier import that can be undone. */
 export const Start: StoryObj = { render: () => <ImportView {...base} /> }
+
+const workspaces = [
+  { id: 'w-personal', name: 'Personal', icon: '', color: '', default: true, role: 'owner' as const, ownerId: 'me' },
+  { id: 'w-work', name: 'Work', icon: '', color: '', default: false, role: 'owner' as const, ownerId: 'me' },
+]
+
+/** Two workspaces: the Todoist file goes into Work, named in the preview (import-workspace). */
+export const IntoWorkspace: StoryObj = {
+  render: () => <ImportView {...base} workspaces={workspaces} workspace="w-work" fileName="Work [Todoist].csv" format="todoist-csv" preview={preview} />,
+}
 
 /** A Todoist CSV previewed: totals, the rows and what happens to each. */
 export const Preview: StoryObj = { render: () => <ImportView {...base} fileName="Garden [Todoist].csv" format="todoist-csv" preview={preview} /> }

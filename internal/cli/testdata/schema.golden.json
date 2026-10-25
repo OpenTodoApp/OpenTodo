@@ -408,6 +408,54 @@
       }
     },
     {
+      "name": "import",
+      "summary": "import a file into the account (an OpenTodo export, CSV or another app's export) and wait for the job; --dry-run prints the server's preview; --workspace picks the target workspace",
+      "args": [
+        {
+          "name": "file",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "format",
+          "type": "string",
+          "description": "force a format instead of detecting it (the names `ot import` errors list, such as csv, opentodo or todoist-backup)"
+        },
+        {
+          "name": "existing",
+          "type": "string",
+          "enum": [
+            "skip",
+            "overwrite"
+          ],
+          "description": "own export: keep or overwrite items that already exist (default skip)"
+        },
+        {
+          "name": "duplicates",
+          "type": "string",
+          "enum": [
+            "skip",
+            "import"
+          ],
+          "description": "possible duplicates of open tasks: skip them or import them anyway (default skip)"
+        },
+        {
+          "name": "time-zone",
+          "type": "string",
+          "description": "IANA time zone for date-times with a zone (default: this machine's)"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/import_job"
+      }
+    },
+    {
       "name": "inbox",
       "summary": "alias for `ot list --inbox`",
       "args": [],
@@ -1424,6 +1472,11 @@
       "meaning": "the server refused a value"
     },
     {
+      "code": "import_failed",
+      "exit": 1,
+      "meaning": "an import job ended failed; its counts say how far it got and undo in the app removes what it wrote"
+    },
+    {
       "code": "not_found",
       "exit": 1,
       "meaning": "no such entity"
@@ -1745,6 +1798,10 @@
             "type": "string"
           },
           "description": "changes to the local config file that would be made"
+        },
+        "preview": {
+          "type": "object",
+          "description": "ot import: the server's import preview (format, totals, notes, rows); nothing was written"
         }
       }
     },
@@ -1837,6 +1894,104 @@
         },
         "exportedAt": {
           "type": "string"
+        }
+      }
+    },
+    "import_job": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "import_job",
+      "description": "ot import --json: the finished import job as the server reports it (GET /api/v1/import/jobs/{id}). With --dry-run the dry_run document is printed instead, with the server's preview.",
+      "type": "object",
+      "required": [
+        "id",
+        "format",
+        "status",
+        "options",
+        "totals",
+        "errors"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "done",
+            "failed",
+            "undone"
+          ]
+        },
+        "options": {
+          "type": "object",
+          "description": "the options the job ran with; workspace is the target workspace's id when one was chosen"
+        },
+        "totals": {
+          "type": "object",
+          "required": [
+            "rows",
+            "create",
+            "update",
+            "skip",
+            "error"
+          ],
+          "properties": {
+            "rows": {
+              "type": "integer"
+            },
+            "create": {
+              "type": "integer"
+            },
+            "update": {
+              "type": "integer"
+            },
+            "skip": {
+              "type": "integer"
+            },
+            "error": {
+              "type": "integer"
+            },
+            "newProjects": {
+              "type": "integer"
+            },
+            "newLabels": {
+              "type": "integer"
+            }
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "reason"
+            ],
+            "properties": {
+              "row": {
+                "type": "integer"
+              },
+              "sourceId": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "message": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "integer"
+        },
+        "finishedAt": {
+          "type": [
+            "integer",
+            "null"
+          ]
         }
       }
     },

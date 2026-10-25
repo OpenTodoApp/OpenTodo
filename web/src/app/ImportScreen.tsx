@@ -4,13 +4,14 @@ import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
-import { useProjects } from '../lib/localData'
+import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
 import { visibleProjects } from '../lib/projects'
+import { projectsIn } from '../lib/workspaces'
 import { applyImportViewHints } from '../lib/sections'
 import { useOnline } from '../lib/online'
 import { syncNow, useSyncStatus } from '../lib/sync'
 import {
-  IMPORT_FORMATS, type ImportFormat, type ImportJob, type ImportOptions, type ImportPreview, type ImportRow, type Project,
+  IMPORT_FORMATS, type ImportFormat, type ImportJob, type ImportOptions, type ImportPreview, type ImportRow, type Project, type Workspace,
 } from '../lib/types'
 import { navigate } from './router'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -82,7 +83,7 @@ function cacheJobs(jobs: ImportJob[]) {
   }
 }
 
-export const DEFAULT_OPTIONS: Required<Omit<ImportOptions, 'format' | 'targetProject'>> = {
+export const DEFAULT_OPTIONS: Required<Omit<ImportOptions, 'format' | 'targetProject' | 'workspace'>> = {
   timeZone: 'UTC', sections: 'section', duplicates: 'skip', errors: 'skip_rows', existing: 'skip',
 }
 
@@ -92,6 +93,14 @@ export interface ImportViewProps {
   format: ImportFormat | ''
   options: typeof DEFAULT_OPTIONS & { targetProject: string }
   projects: Project[]
+  /**
+   * The account's workspaces (OpenSpec change import-workspace); the choice is
+   * shown only with more than one. `workspace` is the chosen id, '' for "As in
+   * the export" (own exports only).
+   */
+  workspaces: Workspace[]
+  workspace: string
+  onWorkspace: (id: string) => void
   zones: string[]
   preview: ImportPreview | null
   busy: boolean
@@ -118,6 +127,16 @@ function Totals({ t: item }: { t: ImportPreview['totals'] }) {
   return <p className="text-body text-muted">{t('{n, plural, one {# row} other {# rows}}: {summary}', { n: item.rows, summary: parts.join(' · ') })}</p>
 }
 
+/** The preview's line naming the target workspace ("3 new projects into Work"). */
+export function workspaceLine(preview: ImportPreview, workspaces: readonly Workspace[], id: string): string {
+  const w = workspaces.length > 1 ? workspaces.find((x) => x.id === id) : undefined
+  if (!w) return ''
+  const n = preview.totals.newProjects
+  return n > 0
+    ? t('{n, plural, one {# new project} other {# new projects}} into {workspace}', { n, workspace: w.name })
+    : t('Everything goes into {workspace}', { workspace: w.name })
+}
+
 function jobSummary(j: ImportJob): string {
   const item = j.totals
   const base = j.status === 'running'
@@ -133,6 +152,7 @@ export function ImportView(p: ImportViewProps) {
   const disabled = p.offline || p.busy
   const isOwn = (p.format || p.preview?.format) === 'opentodo'
   const actionable = p.preview ? p.preview.totals.create + p.preview.totals.update : 0
+  const into = p.preview ? workspaceLine(p.preview, p.workspaces, p.workspace) : ''
   return (
     <PageBody width="list" className="space-y-6">
       <PageHeader title={t('Import data')} help="import" back={{ label: t('Data'), href: '/settings/data', onClick: () => navigate({ view: 'settings', section: 'data' }) }} />
@@ -162,9 +182,18 @@ export function ImportView(p: ImportViewProps) {
               {IMPORT_FORMATS.map((f) => <option key={f} value={f}>{FORMAT_LABELS[f]}</option>)}
             </select>
           </label>
+          {p.workspaces.length > 1 && (
+            <label className="text-body">
+              <span className="mb-1 block text-muted">{t('Workspace')}</span>
+              <select className="ui-input" value={p.workspace} disabled={disabled} onChange={(e) => p.onWorkspace(e.target.value)} data-import-workspace>
+                {(isOwn || p.workspace === '') && <option value="">{t('As in the export')}</option>}
+                {p.workspaces.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </label>
+          )}
           <div className="text-body">
             <span className="mb-1 block text-muted" aria-hidden>{t('Tasks without a project go to')}</span>
-            <ProjectPickerField label={t('Tasks without a project go to')} projects={p.projects} value={o.targetProject || null} disabled={disabled}
+            <ProjectPickerField label={t('Tasks without a project go to')} projects={p.projects} value={p.projects.some((x) => x.id === o.targetProject) ? o.targetProject : null} disabled={disabled}
               onChange={(id) => p.onOption('targetProject', id ?? '')} rankContext="import.target" />
           </div>
           <label className="text-body">
@@ -236,6 +265,7 @@ export function ImportView(p: ImportViewProps) {
             {t('Preview · {format}', { format: FORMAT_LABELS[p.preview.format] })}{p.preview.version ? ` v${p.preview.version}` : ''}
           </h2>
           <Totals t={p.preview.totals} />
+          {into && <p className="text-body" data-import-into>{into}</p>}
           {p.preview.template && (
             <p className="text-body text-muted" data-template-hint>
               {t('This file is a template. Importing it creates it once, with the ids and dates in the file. To start a fresh copy with dates moved to a start day, use')}{' '}
@@ -306,10 +336,19 @@ export function ImportScreen() {
   const online = useOnline()
   const sync = useSyncStatus()
   const offline = !online || sync.state === 'offline'
-  const live = useProjects()
-  const projects = useMemo(() => visibleProjects(live).sort((a, b) => a.name.localeCompare(b.name)), [live])
+  const every = useProjectsOfEveryWorkspace()
+  const wsState = useWorkspaceState()
   const [file, setFile] = useState<File | null>(null)
   const [format, setFormat] = useState<ImportFormat | ''>('')
+  // null until the user picks: the current workspace, or "As in the export" for an own export.
+  const [workspaceChoice, setWorkspaceChoice] = useState<string | null>(null)
+  const [detected, setDetected] = useState<ImportFormat | null>(null)
+  const isOwn = (format || detected) === 'opentodo'
+  const workspace = workspaceChoice ?? (isOwn ? '' : wsState.current)
+  const projects = useMemo(() => {
+    const here = projectsIn({ ...wsState, current: workspace || wsState.current }, every)
+    return visibleProjects(here).sort((a, b) => a.name.localeCompare(b.name))
+  }, [every, wsState, workspace])
   const [options, setOptions] = useState<ImportViewProps['options']>({ ...DEFAULT_OPTIONS, timeZone: browserTimeZone(), targetProject: '' })
   const [preview, setPreview] = useState<ImportPreview | null>(null)
   const [busy, setBusy] = useState(false)
@@ -334,12 +373,13 @@ export function ImportScreen() {
   }, [offline, loadJobs])
   useEffect(() => () => { if (pollRef.current) clearTimeout(pollRef.current) }, [])
 
-  function requestOptions(): ImportOptions {
+  function requestOptions(ws: string = workspace): ImportOptions {
     const out: ImportOptions = {
       timeZone: options.timeZone, sections: options.sections, duplicates: options.duplicates, errors: options.errors, existing: options.existing,
     }
     if (format) out.format = format
-    if (options.targetProject) out.targetProject = options.targetProject
+    if (options.targetProject && projects.some((p) => p.id === options.targetProject)) out.targetProject = options.targetProject
+    if (ws && wsState.list.length > 1) out.workspace = ws
     return out
   }
 
@@ -352,8 +392,17 @@ export function ImportScreen() {
     if (!f) return
     setBusy(true)
     setError(null)
+    // A new file's format is not known yet: the user's choice, else the
+    // current workspace unless the format was set to an own export.
+    const ws = workspaceChoice ?? (format === 'opentodo' ? '' : wsState.current)
     try {
-      setPreview(await api.previewImport(f, f.name, requestOptions()))
+      let res = await api.previewImport(f, f.name, requestOptions(ws))
+      if (res.format === 'opentodo' && workspaceChoice === null && ws) {
+        // An own export detected on the way: its default is "As in the export".
+        res = await api.previewImport(f, f.name, requestOptions(''))
+      }
+      setDetected(res.format)
+      setPreview(res)
     } catch (err) {
       setPreview(null)
       setError(describe(err))
@@ -424,6 +473,9 @@ export function ImportScreen() {
       format={format}
       options={options}
       projects={projects}
+      workspaces={wsState.list}
+      workspace={workspace}
+      onWorkspace={(id) => { setWorkspaceChoice(id); setPreview(null) }}
       zones={zones}
       preview={preview}
       busy={busy}
@@ -432,6 +484,7 @@ export function ImportScreen() {
       jobs={jobs}
       onPickFile={(f) => {
         setFile(f)
+        setDetected(null)
         setPreview(null)
         setJob(null)
         if (f) void runPreview(f)

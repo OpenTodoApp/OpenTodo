@@ -182,6 +182,7 @@ func init() {
 		{"time", "track time: start, stop, log, list, export", "ot time start <ref> [--note <text>]\not time stop\not time log <ref> <duration> [--on <day>] [--note <text>]\not time log <ref> --from HH:MM --to HH:MM [--on <day>] [--note <text>]\not time list [--task <ref>] [--from <day>] [--to <day>] [--running] [--limit <n>]\not time export [--from <day>] [--to <day>] [-o <file>]", cmdTime},
 		{"workspaces", "list your workspaces", "ot workspaces", cmdWorkspaces},
 		{"export", "download the full JSON export", "ot export [--out <file>]", cmdExport},
+		{"import", "import a file: an OpenTodo export, CSV or another app's export", "ot import <file> [--format <f>] [--existing skip|overwrite] [--duplicates skip|import] [--time-zone <zone>] [--workspace <name-or-id>]", cmdImport},
 		{"schema", "print commands, flags, exit codes and output schemas as JSON", "ot schema", cmdSchema},
 		{"skill", "print the agent skill file embedded in ot", "ot skill", cmdSkill},
 		{"completion", "print a shell completion script: bash, zsh or fish", "ot completion bash|zsh|fish", cmdCompletion},

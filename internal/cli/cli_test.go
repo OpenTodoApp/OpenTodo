@@ -59,7 +59,8 @@ func (h *harness) requestLog() []string {
 func writesIn(log []string) []string {
 	var out []string
 	for _, r := range log {
-		if !strings.HasPrefix(r, "GET ") {
+		// An import preview is a POST that writes nothing (`ot import --dry-run`).
+		if !strings.HasPrefix(r, "GET ") && r != "POST /api/v1/import/preview" {
 			out = append(out, r)
 		}
 	}

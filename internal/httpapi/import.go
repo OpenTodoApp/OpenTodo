@@ -135,6 +135,8 @@ func setOption(o *importer.Options, name, v string) bool {
 		o.Errors = v
 	case "existing":
 		o.Existing = v
+	case "workspace":
+		o.Workspace = v
 	default:
 		return false
 	}

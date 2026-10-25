@@ -9,7 +9,7 @@ order: 60
 ---
 # Import formats
 
-OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), CSV from a spreadsheet or a script, and the JSON exports of other task managers. Open **Settings → Data → Import data** in the web app (or press `g` then `Shift+I`), or drive the same endpoints from a script; see [API](#api) below.
+OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), CSV from a spreadsheet or a script, and the JSON exports of other task managers. Open **Settings → Data → Import data** in the web app (or press `g` then `Shift+I`), run [`ot import`](cli.md#import), or drive the same endpoints from a script; see [API](#api) below.
 
 Every import works in two steps:
 
@@ -417,8 +417,17 @@ Checked in this order:
 | `duplicates` | `skip`, `import` | `skip` |
 | `errors` | `skip_rows`, `abort` | `skip_rows` |
 | `existing` | `skip`, `overwrite` (own export only) | `skip` |
+| `workspace` | id of one of your workspaces | the default workspace; for an own export, the export's own workspaces |
 
 With `skip_rows`, bad rows are reported and everything else is imported; a bad row never leaves a partial task. With `abort`, any row in error fails the job before anything is written and names the first bad row.
+
+### Workspace
+
+`workspace` puts the import into one of your [workspaces](workspaces.md): every project, label and saved view it creates, and every task it creates without a project, goes there (tasks in a project follow their project). An existing project or label is reused by name only when it is in that workspace, and a task without a project is a possible duplicate only of an open task in that workspace's Inbox. The Import screen offers the choice when you have more than one workspace, and starts with the workspace you have open; `ot import --workspace Work` does the same from the terminal.
+
+For an OpenTodo export the default is **As in the export**: the export's workspaces are matched to yours by id, then by name; one that matches nothing is created when it was the exporter's own and you have room under the workspace limit, and otherwise its items go to your default workspace with a note. Members and groups are never imported. Choose a workspace instead to put everything into it; then no workspace is created and the preview says "Everything goes into Work".
+
+An id that is not one of your workspaces (it does not exist, or you are not a member) answers `400 invalid_input` with the same message either way, and a `targetProject` outside the chosen workspace is refused the same way. Any member of a workspace can import into it. Undo removes the job's items wherever they are.
 
 ## Jobs, limits and undo
 
@@ -441,7 +450,7 @@ All routes require a session or a bearer token, like the rest of the API. Upload
 ```bash
 # Preview (nothing is written)
 curl -sS "$OT/api/v1/import/preview" -H "Authorization: Bearer $TOKEN" \
-  -F file=@tasks.csv -F timeZone=Europe/Rome
+  -F file=@tasks.csv -F timeZone=Europe/Rome -F workspace=<workspace-id>
 
 # Start the job → 202 {"job": {"id": "…", "status": "running", …}}
 curl -sS "$OT/api/v1/import" -H "Authorization: Bearer $TOKEN" \

@@ -239,6 +239,21 @@ ot export                               # full JSON export (including tombstones
 ot export --out opentodo-$(date +%F).json
 ```
 
+## Import
+
+`ot import <file>` sends a file to the server's importer, the same one as **Settings → Data → Import data**: an OpenTodo export, a CSV file or another app's export (the [formats](import.md#formats)). It starts the job, waits until it has finished and prints what was created, skipped and failed; `--json` prints the job ([schema](#machine-readable-help-ot-schema) `import_job`). With `--dry-run` it only asks for the preview, which writes nothing, and prints its totals and notes (in `--json`, under `preview` in the dry-run document).
+
+`--workspace` (or `OPENTODO_WORKSPACE`, or the profile's workspace) chooses the [workspace](import.md#workspace) the import goes into. Without one, the server's default applies: the default workspace, or an OpenTodo export's own workspaces.
+
+```bash
+ot import todoist-backup.zip --workspace Work --dry-run   # what would happen
+ot import todoist-backup.zip --workspace Work             # import, wait, print the counts
+ot import tasks.csv --duplicates import --time-zone Europe/Rome
+ot import opentodo-export.json --existing overwrite       # restore, keeping the export's workspaces
+```
+
+`--format` forces a format id instead of detection, `--existing skip|overwrite` applies to an OpenTodo export, `--duplicates skip|import` to possible duplicates, and `--time-zone` (default: this machine's zone) to date-times written with a zone. Imports need a `full` or `admin` token: `read` and `agent` tokens and read-only mode exit 5 before the file is sent. A failed job exits 1 with `import_failed`; undo an import in the app under **Past imports**.
+
 ## MCP bridge and encryption
 
 `ot mcp` bridges an MCP client that only speaks stdio (Claude Desktop, Claude Code) to the server's [MCP endpoint](mcp.md); see [MCP](mcp.md#3-connect-an-assistant) for the client configuration. It starts with a `read` token, or an `agent` token for an assistant that may make changes through the server's write switches; a `full` token needs `--allow-full-token`, and `--read-only` accepts only a `read` token.

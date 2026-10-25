@@ -53,6 +53,11 @@ type State struct {
 	Rules []opsync.Entity
 	// UserID is the importing account (own-export assignees are kept only for it).
 	UserID string
+	// Partition places the account's entities in its workspaces, and Workspace
+	// is the import's target (import-workspace); nil and "" (tests) match and
+	// stamp nothing by workspace.
+	Partition *opsync.Partition
+	Workspace string
 	// Remembered maps source ids recorded by earlier, not undone imports of the
 	// same profile to the entity ids they created.
 	Remembered map[string]string
@@ -280,7 +285,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 	}
 	for _, e := range st.Projects {
-		if n := strings.ToLower(strings.TrimSpace(str(e, "name"))); n != "" && !e.Deleted() {
+		if n := strings.ToLower(strings.TrimSpace(str(e, "name"))); n != "" && !e.Deleted() && pl.inTarget(KindProject, e) {
 			if _, ok := pl.projectByName[n]; !ok {
 				pl.projectByName[n] = str(e, "id")
 			}
@@ -294,7 +299,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 	}
 	for _, e := range st.Labels {
-		if n := strings.ToLower(strings.TrimSpace(str(e, "name"))); n != "" && !e.Deleted() {
+		if n := strings.ToLower(strings.TrimSpace(str(e, "name"))); n != "" && !e.Deleted() && pl.inTarget(KindLabel, e) {
 			if _, ok := pl.labelByName[n]; !ok {
 				pl.labelByName[n] = str(e, "id")
 			}
@@ -310,7 +315,11 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		if v := e["due"]; !isNull(v) {
 			_ = json.Unmarshal(v, &due)
 		}
-		key := fingerprint(str(e, "title"), str(e, "project_id"), due.Date)
+		place := str(e, "project_id")
+		if place == "" && st.Partition != nil {
+			place = fingerprintPlace("", st.Partition.Task(str(e, "id")))
+		}
+		key := fingerprint(str(e, "title"), place, due.Date)
 		if _, ok := pl.fingerprints[key]; !ok {
 			pl.fingerprints[key] = str(e, "id")
 		}
@@ -332,6 +341,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 	} else {
 		p.changes = pl.planForeign(parsed.Rows)
+		pl.stampWorkspace(p.changes)
 	}
 	for i := range pl.results {
 		r := &pl.results[i]

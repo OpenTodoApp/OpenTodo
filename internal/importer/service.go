@@ -164,6 +164,10 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 	if err := opts.Normalize(); err != nil {
 		return nil, err
 	}
+	wsName, wsDefault, err := s.checkWorkspace(ctx, uid, opts.Workspace)
+	if err != nil {
+		return nil, err
+	}
 	if opts.TargetProject != "" {
 		p, err := s.sync.Get(ctx, uid, "project", opts.TargetProject)
 		if err != nil {
@@ -188,12 +192,17 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 	if err != nil {
 		return nil, err
 	}
-	// A real import creates the workspaces it needs; a preview only names them.
-	if err := s.mapWorkspaces(ctx, uid, parsed, write); err != nil {
+	if opts.Workspace != "" && parsed.Format == "opentodo" {
+		intoWorkspace(parsed, opts.Workspace, wsDefault, wsName)
+	} else if err := s.mapWorkspaces(ctx, uid, parsed, write); err != nil {
+		// A real import creates the workspaces it needs; a preview only names them.
 		return nil, err
 	}
 	st, err := s.loadState(ctx, uid, parsed.Format)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.targetWorkspace(ctx, uid, opts, st); err != nil {
 		return nil, err
 	}
 	return BuildPlan(parsed, opts, st, s.now(), s.newID), nil

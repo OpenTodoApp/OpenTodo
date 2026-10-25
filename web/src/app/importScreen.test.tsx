@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_OPTIONS, ImportView, type ImportViewProps } from './ImportScreen'
 import { parseRoute, routePath } from './router'
-import type { ImportJob, ImportPreview, ImportTotals, Project } from '../lib/types'
+import type { ImportJob, ImportPreview, ImportTotals, Project, Workspace } from '../lib/types'
 
 const noop = () => {}
 const project = (id: string, name: string, parent_id: string | null = null): Project =>
@@ -23,7 +23,7 @@ const job = (j: Partial<ImportJob>): ImportJob => ({
 function render(p: Partial<ImportViewProps> = {}) {
   const props: ImportViewProps = {
     offline: false, fileName: null, format: '', options: { ...DEFAULT_OPTIONS, targetProject: '' },
-    projects: [work, client], zones: ['Europe/Rome'], preview: null, busy: false, error: null,
+    projects: [work, client], workspaces: [], workspace: '', onWorkspace: noop, zones: ['Europe/Rome'], preview: null, busy: false, error: null,
     job: null, jobs: [], onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onStart: noop, onUndo: noop,
     ...p,
   }
@@ -135,6 +135,40 @@ describe('import route', () => {
     expect(html).toContain('From a template…')
     expect(html).not.toContain('Importing it creates it once.</p>')
     expect(render({ preview: { ...preview, template: undefined } })).not.toContain('data-template-hint')
+  })
+
+  describe('workspace choice (import-workspace)', () => {
+    const ws = (id: string, name: string, isDefault = false): Workspace => ({ id, name, icon: '', color: '', default: isDefault, role: 'owner', ownerId: 'me' })
+    const both = [ws('w1', 'Personal', true), ws('w2', 'Work')]
+    const csvPreview = (newProjects: number): ImportPreview => ({
+      format: 'csv', options: {}, truncated: false, totals: totals({ rows: 3, create: 3, newProjects }), rows: [],
+    })
+
+    it('is hidden with one workspace and names no target', () => {
+      const html = render({ workspaces: [both[0]], workspace: 'w1', preview: csvPreview(2) })
+      expect(html).not.toContain('data-import-workspace')
+      expect(html).not.toContain('data-import-into')
+    })
+
+    it('lists the workspaces, shows the chosen one and names it in the preview', () => {
+      const html = render({ workspaces: both, workspace: 'w2', preview: csvPreview(12) })
+      expect(html).toMatch(/<select class="ui-input" data-import-workspace="true">/)
+      expect(html).toContain('<option value="w2" selected="">Work</option>')
+      expect(html).not.toContain('As in the export')
+      expect(html).toContain('12 new projects into Work')
+      expect(render({ workspaces: both, workspace: 'w2', preview: csvPreview(0) })).toContain('Everything goes into Work')
+    })
+
+    it('offers As in the export for an own export', () => {
+      const own: ImportPreview = { ...csvPreview(1), format: 'opentodo' }
+      const html = render({ workspaces: both, workspace: '', preview: own })
+      expect(html).toContain('<option value="" selected="">As in the export</option>')
+      expect(html).not.toContain('data-import-into')
+    })
+
+    it('is disabled offline', () => {
+      expect(render({ workspaces: both, workspace: 'w1', offline: true })).toMatch(/<select class="ui-input" disabled="" data-import-workspace="true">/)
+    })
   })
 })
 
