@@ -177,4 +177,4 @@ actions:
 - In a shared project where you are a viewer, changes are refused with OpenTodo's message.
 - Projects kept away from AI assistants are not hidden: the integration uses an ordinary Full access token.
 
-To run OpenTodo itself inside Home Assistant OS, see the add-on, which is a separate project. Problems with the integration go to its [issue tracker](https://github.com/pixari/opentodo-homeassistant/issues).
+To run OpenTodo itself inside Home Assistant OS, see [Running as a Home Assistant add-on](self-hosting/home-assistant-addon.md), which is a separate project. Problems with the integration go to its [issue tracker](https://github.com/pixari/opentodo-homeassistant/issues).

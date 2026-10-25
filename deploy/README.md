@@ -11,6 +11,7 @@ One folder per platform, each with its template in that platform's own format. T
 | Dokploy | [`dokploy/`](dokploy/) | `release` | Submitted: [Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265); usable now as a templates base URL |
 | Easypanel | [`easypanel/`](easypanel/) | `release` | Submitted: [easypanel-io/templates#1702](https://github.com/easypanel-io/templates/pull/1702); set up as an app service meanwhile |
 | Fly.io | [`fly/`](fly/) | `stable` | No store: `fly launch --copy-config` with the file from this repository |
+| Home Assistant add-on | [`homeassistant/`](homeassistant/) | `release` | Our own add-on repository, [`pixari/opentodo-homeassistant-addons`](https://github.com/pixari/opentodo-homeassistant-addons), published from `upstream/`; it builds its own image from the release |
 | Kubernetes (Helm) | [`helm/`](helm/) | `release` | Published to `oci://ghcr.io/pixari/charts/opentodo` by `.github/workflows/helm.yml` from the next release; install from a clone meanwhile |
 | Podman Quadlet | [`podman/`](podman/) | `stable` | No store: copy the two unit files; `podman auto-update` follows `stable` |
 | Portainer | [`portainer/`](portainer/) | `stable` | Submitted: [Lissy93/portainer-templates#160](https://github.com/lissy93/portainer-templates/pull/160); usable now as an App Templates URL |
@@ -55,6 +56,7 @@ Then, once the release is published, open an update pull request in each store t
 | CasaOS ([`casaos/`](casaos/README.md#after-a-release)) | Pull request to `IceWhaleTech/CasaOS-AppStore`: the tag, `x-casaos.version`, `update_at` and `release_notes`. The store offers the update only when `version` changes. |
 | Easypanel ([`easypanel/`](easypanel/README.md#after-a-release)) | Pull request to `easypanel-io/templates`: the default image in `meta.yaml` and a `changeLog` entry. |
 | Runtipi ([`runtipi/`](runtipi/README.md#on-a-release)) | Our own store: review and merge the Renovate pull request in `pixari/opentodo-runtipi`, then bring the change back here. |
+| Home Assistant ([`homeassistant/`](homeassistant/README.md#on-a-release)) | Our own repository: its **Follow OpenTodo** workflow publishes the add-on for the release within a day; check it ran, then run `deploy/homeassistant/upstream/scripts/bump.sh <version>` here if release preparation did not already. |
 | CapRover ([`caprover/`](caprover/README.md#on-a-release)) | Once submitted: the version field, as a pull request to `caprover/one-click-apps` or a push to `pixari/opentodo-caprover`. |
 
 No pull request after a release for Unraid, Cosmos and Portainer: they name `stable` (a store pull request only when the template itself changes). The Claude plugin is published by the CI job `claude-plugin`. The Helm chart (`helm/opentodo/Chart.yaml`) also names the release: bump `version`, `appVersion` and the `artifacthub.io/images` tag; the release tag publishes it. The **Promote stable** workflow (Actions → Promote stable → Run workflow, with a version such as `0.6.1`) points `stable` at an older release to roll back, without rebuilding.

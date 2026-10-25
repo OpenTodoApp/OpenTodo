@@ -1,0 +1,18 @@
+configuration:
+  base_url:
+    name: Base URL
+    description: "The address people open, for example https://todo.example.com. Needed behind a reverse proxy for passkeys, secure cookies and links in emails. Include the port if there is one. Leave empty when you open OpenTodo by the server's address."
+  setup_token:
+    name: Setup token
+    description: "Optional, at least 16 characters. When set, creating the first (owner) account asks for this token, so a server reachable from the internet cannot be claimed by a stranger."
+  allow_signup:
+    name: Open sign-up
+    description: "true lets anyone who can reach the server create an account. Otherwise the owner invites people."
+  trusted_proxies:
+    name: Trusted proxies
+    description: "Reverse proxies whose X-Forwarded-For is trusted for the visitor's address: IP addresses or ranges such as 192.0.2.0/24 separated by commas, or cloudflare. Set it only when every request comes through them."
+  log_level:
+    name: Log level
+    description: "debug, info, warn or error. The first log line shows the level in use; debug adds one line per request the app makes."
+network:
+  8080/tcp: OpenTodo web interface

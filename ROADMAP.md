@@ -84,6 +84,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
+| Home Assistant add-on: OpenTodo on Home Assistant OS and Supervised, from its own add-on repository | `homeassistant-addon` |
 | Notification channels: ntfy, Pushover, Gotify and a webhook for reminders and notifications (closes #271) | `notification-channels` |
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 | AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |

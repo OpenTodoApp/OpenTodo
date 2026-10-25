@@ -1,0 +1,55 @@
+# Lints the add-on with Home Assistant's add-on linter and starts the image the way the
+# Supervisor does (options in /data/options.json), checking that the options reach OpenTodo.
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Home Assistant add-on linter
+        uses: frenck/action-addon-linter@v2.21
+        with:
+          path: ./opentodo
+      - name: ShellCheck
+        run: shellcheck -s bash opentodo/run.sh scripts/bump.sh
+
+  smoke:
+    name: Start the add-on
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Build the image
+        run: docker build -t opentodo-addon:test ./opentodo
+      - name: Start it with options
+        run: |
+          mkdir -p data
+          echo '{"allow_signup": false, "log_level": "debug", "setup_token": "0123456789abcdef-test"}' > data/options.json
+          docker run -d --name addon -p 8080:8080 -v "$PWD/data:/data" opentodo-addon:test
+          for _ in $(seq 1 30); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' addon)" = healthy ] && break
+            sleep 2
+          done
+          docker logs addon
+          [ "$(docker inspect -f '{{.State.Health.Status}}' addon)" = healthy ]
+      - name: Check the options took effect
+        run: |
+          status="$(curl -fsS http://127.0.0.1:8080/api/v1/auth/status)"
+          echo "${status}"
+          echo "${status}" | jq -e '.setupRequired == true and .setupTokenRequired == true'
+          docker logs addon 2>&1 | grep -q 'log_level=debug'
+          test -f data/opentodo.db
+      - name: Check the bump script
+        run: |
+          scripts/bump.sh "$(sed -n 's/^ARG OPENTODO_VERSION=//p' opentodo/Dockerfile)"
+          git diff --exit-code

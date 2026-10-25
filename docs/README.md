@@ -118,6 +118,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Running on Easypanel](self-hosting/easypanel.md) | App service or template, the setup token, the https domain, updates and backups |
 | [Running on Portainer](self-hosting/portainer.md) | App Templates, settings, the volume, https and reverse proxies, updates and backups |
 | [Running on Runtipi](self-hosting/runtipi.md) | Adding OpenTodo's app store, settings, the data folder, https, updates and backups |
+| [Running as a Home Assistant add-on](self-hosting/home-assistant-addon.md) | Home Assistant OS and Supervised: the add-on repository, options, https, updates and backups; Container installs use Docker |
 | [Running on TrueNAS](self-hosting/truenas.md) | Install via YAML or the Apps catalogue, settings, dataset permissions, https, updates and backups |
 | [Running on Umbrel](self-hosting/umbrel.md) | The App Store package, the first account, Umbrel login and the routes it lets through, settings, updates |
 | [Running on CapRover](self-hosting/caprover.md) | One-click app or pasted template, the setup token, https then the base URL, the volume, updates and backups |
