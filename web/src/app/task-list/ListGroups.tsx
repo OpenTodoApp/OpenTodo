@@ -197,8 +197,11 @@ export function GroupedList(p: GroupedListProps) {
   const rowList = (children: ReactNode, extra?: Record<string, string>) => (p.fieldColumns
     ? <div role="rowgroup" {...extra}>{children}</div>
     : <ul {...extra}>{children}</ul>)
-  const body = [...p.groups.map((g, gi) => (g.section !== undefined && p.project
-    ? <SectionGroup key={g.key} g={g} first={gi <= 1} last={gi === p.groups.length - 1} rowList={rowList} {...p} project={p.project} />
+  // First and last among the real sections: "No section" is not always there (a project
+  // whose every task has a section, as after an import), so its slot is not assumed (GitHub issue 359).
+  const sectionKeys = p.groups.filter((g) => g.section).map((g) => g.key)
+  const body = [...p.groups.map((g) => (g.section !== undefined && p.project
+    ? <SectionGroup key={g.key} g={g} first={!g.section || g.key === sectionKeys[0]} last={!g.section || g.key === sectionKeys[sectionKeys.length - 1]} rowList={rowList} {...p} project={p.project} />
     : <HeadedGroup key={g.key} g={g} rowList={rowList} {...p} />)),
   p.completed && p.completed.tasks.length > 0 && <CompletedGroup key="completed" c={p.completed} rowList={rowList} renderRow={p.renderRow} fieldColumns={p.fieldColumns} />]
   return p.fieldColumns ? <FieldColumnsTable defs={p.projectFieldDefs}>{body}</FieldColumnsTable> : <>{body}</>
