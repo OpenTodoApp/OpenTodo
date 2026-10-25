@@ -66,8 +66,9 @@ describe('the toast primitive', () => {
     const r = await render(<UndoToast />)
     act(() => showBulkToast('Added to Home', 'u1', { action: { label: 'Open', run: () => {} } }))
     expect(document.activeElement).toBe(before)
-    const controls = [...toastEl()!.querySelectorAll('button')].map((b) => b.textContent)
-    expect(controls).toEqual(['Undo', 'Open'])
+    const controls = [...toastEl()!.querySelectorAll('button')].map((b) => b.textContent || b.getAttribute('aria-label'))
+    // Two actions, Undo first, then the close button (issue 348).
+    expect(controls).toEqual(['Undo', 'Open', 'Dismiss'])
     expect(toastEl()!.querySelector('[role="status"]')).not.toBeNull()
     await r.unmount()
   })
