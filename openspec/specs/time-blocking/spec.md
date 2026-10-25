@@ -66,7 +66,7 @@ An open task with a due date and time SHALL appear as a block at that time, size
 - **THEN** today's column shows a line at 10:17 that moves as time passes, and the other six columns show none
 
 ### Requirement: Planning list and phone agenda
-The list of tasks to plan SHALL open in the shell's panel slot with a design-system picker for its source, from Day, Week, Month and Plan. It SHALL stay open while the user moves to another day, week or month and switches between Day, Week, Month and Plan, and work with the range on screen. After `s` on a task in the list, Day and Week SHALL take the keys for the placement (arrows move it, Enter places it, Escape cancels it without closing the list) and SHALL then return focus to the list. Only its close button, Escape outside a placement, or opening a page outside the Calendar SHALL close it. Below 640 px the Week SHALL render as a vertical agenda grouped by day.
+The list of tasks to plan SHALL open in the shell's panel slot with a design-system picker for its source, from Day, Week, Month and Plan. Its source SHALL be one of the Inbox, tasks without a date, earlier tasks, a project, a label or a saved list view, chosen with the Combobox (typing narrows the choices), and SHALL be remembered on the device; a source that no longer exists SHALL read as the Inbox. It SHALL list the source's open tasks only (never completed or deleted ones, nor tasks of archived projects), a label's by due date then priority and a view's in the view's own order. It SHALL stay open while the user moves to another day, week or month and switches between Day, Week, Month and Plan, and work with the range on screen. After `s` on a task in the list, Day and Week SHALL take the keys for the placement (arrows move it, Enter places it, Escape cancels it without closing the list) and SHALL then return focus to the list. Only its close button, Escape outside a placement, or opening a page outside the Calendar SHALL close it. Below 640 px the Week SHALL render as a vertical agenda grouped by day.
 
 #### Scenario: Week on a phone
 - **WHEN** the user opens the Week on a 390 px screen
@@ -91,6 +91,18 @@ The list of tasks to plan SHALL open in the shell's panel slot with a design-sys
 #### Scenario: Escape cancels the placement first
 - **WHEN** the user presses `s` on a task in the list and then Escape
 - **THEN** the placement ends without a change, the list stays open, and focus is back on that task
+
+#### Scenario: Plan from a label
+- **WHEN** the user has labelled three open tasks "week", opens Plan from a list and picks the label "week" by typing "wee"
+- **THEN** the list shows those three tasks, and after a reload the list opens on "week" again
+
+#### Scenario: Plan from a saved view
+- **WHEN** the user picks the saved view "Urgent" (`p1`) as the source
+- **THEN** the list shows the open tasks the view shows, in the view's order, and no completed task even when the view shows completed tasks
+
+#### Scenario: The source is gone
+- **WHEN** the remembered source is a label that was deleted on another device
+- **THEN** the list shows the Inbox
 
 ### Requirement: Calendar follows the date and time preferences
 The Week view SHALL start on the user's preferred first day of the week (OpenSpec `date-time-preferences`), and grid hours and block times SHALL follow the user's time format.
