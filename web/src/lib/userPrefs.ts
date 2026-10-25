@@ -99,3 +99,16 @@ export function briefingHidden(row: Partial<UserPrefs> | null | undefined): bool
 export function setBriefingShown(shown: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { briefing: shown ? 'shown' : 'hidden' })
 }
+
+/** How a task opens from a list (OpenSpec change task-side-panel, D1): its page, or a side panel beside the list. */
+export type TaskOpenPref = 'page' | 'panel'
+
+/** The stored choice; empty or unknown (a newer client) reads as 'page' without rewriting the row. */
+export function readTaskOpen(row: Partial<UserPrefs> | null | undefined): TaskOpenPref {
+  return row?.task_open === 'panel' ? 'panel' : 'page'
+}
+
+/** Chooses how tasks open; an ordinary op, so it works offline and reaches the account's other devices. */
+export function setTaskOpen(value: TaskOpenPref): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { task_open: value })
+}

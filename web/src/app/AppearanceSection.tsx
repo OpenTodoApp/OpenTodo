@@ -4,7 +4,8 @@
 // applied at once. Theme tiles are a radio group with roving focus; each tile
 // previews its theme through the real tokens (a data-accent subtree). Below
 // 640 px the tiles are one scrollable row of named swatches. On a device that can
-// vibrate, a switch turns the haptic tick off (motion-v2 D6).
+// vibrate, a switch turns the haptic tick off (motion-v2 D6). Task details holds how a
+// task opens from a list, as a page or in a side panel (task-side-panel D1).
 import { readMethodMode } from '../lib/method/mode'
 import { type KeyboardEvent, useRef } from 'react'
 import { DENSITIES, type Density, PROMOTABLE, type Promotable, readAppearance, setAppearance, setPromoted, THEME_MODES, type Appearance } from '../lib/appearance'
@@ -18,9 +19,12 @@ import { act } from './actionError'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { hapticsPrefOn, setHapticsPref } from '../lib/haptics'
 import { canVibrate } from './motion'
+import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
+const TASK_OPEN: readonly TaskOpenPref[] = ['page', 'panel']
+const TASK_OPEN_LABEL = translatedMap<TaskOpenPref>({ page: msg('As a page'), panel: msg('In a side panel') })
 
 /** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
 export const PROMOTABLE_LABEL = translatedMap<Promotable>({
@@ -145,4 +149,19 @@ export function SidebarSection() {
   const row = usePrefsRow()
   const value = readAppearance(row)
   return <SidebarView promoted={value.sidebar ?? []} arranged={readMethodMode(row) === 'first'} onPromote={(id, on) => act(setPromoted(row, id, on))} />
+}
+
+/** Settings → Appearance → Task details (task-side-panel D1): the synced choice, written through ops. */
+export function TaskDetailsSection() {
+  const row = usePrefsRow()
+  return <TaskDetailsView value={readTaskOpen(row)} onChange={(v) => act(setTaskOpen(v))} />
+}
+
+export function TaskDetailsView({ value, onChange }: { value: TaskOpenPref; onChange: (v: TaskOpenPref) => void }) {
+  return (
+    <SettingsSection {...cardCopy('task-details')}>
+      <SettingRow id="task-open" {...rowCopy('task-details', 'open')}
+        control={<Segmented label={t('Open tasks')} items={TASK_OPEN} labels={TASK_OPEN_LABEL} value={value} onChange={onChange} testId="task-open" />} />
+    </SettingsSection>
+  )
 }

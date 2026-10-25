@@ -1253,8 +1253,19 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 :root { --panel-w: 26rem; }
 @media (min-width: 90rem) { :root { --panel-w: 30rem; } }
 /* A split page (inbox-split D1): the detail takes about half of the content beside the
-   sidebar, between 26 and 44 rem. */
-:root[data-task-split] { --panel-w: clamp(26rem, 42vw, 44rem); }
+   sidebar, between 26 and 44 rem; the width the user chose with the panel's handle
+   (task-side-panel D3, `--task-panel-w`, this device only) instead, kept between 22 rem
+   and what leaves 38 rem for the sidebar and the list. */
+:root[data-task-split] {
+  --panel-w: clamp(22rem, var(--task-panel-w, clamp(26rem, 42vw, 44rem)), max(22rem, min(64rem, 100vw - 38rem)));
+}
+/* The panel's resize handle: a hairline that takes the accent on hover, focus and drag. */
+.panel-resize::after {
+  content: ""; position: absolute; inset-block: 0; left: 50%; width: 2px; transform: translateX(-50%);
+  background-color: transparent; transition: background-color var(--duration-ui, 120ms) var(--ease-calm, ease-out);
+}
+.panel-resize:hover::after, .panel-resize:focus-visible::after, .panel-resize:active::after { background-color: var(--color-accent); }
+.panel-resize:focus-visible { outline: none; }
 /* The frame (precision-shell D3): the whole content surface, from its left edge, so the
    docked panel narrows it from the right and nothing moves. */
 .page-frame { margin-left: 0; margin-right: 0; }

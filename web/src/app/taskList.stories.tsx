@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { createTask } from '../lib/ops'
 import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, withSeed } from './stories/fixtures'
 import { db } from '../lib/db'
+import { setTaskOpen } from '../lib/userPrefs'
+import { PANEL_WIDTH_KEY, SIDE_PANEL_CLOSED_KEY } from './panel'
 import { PanelHost } from './PanelHost'
 import { selectTask } from './signals'
 import { TaskListView } from './TaskListView'
@@ -131,4 +133,27 @@ export const InboxSplitEmpty: StoryObj = {
 export const InboxSplitSelected: StoryObj = {
   ...withSeed(() => seedInboxSources(true)),
   render: () => <Split><TaskListView route={{ view: 'inbox' }} userId={storyUser.id} userRole={storyUser.role} /></Split>,
+}
+
+/** "Open tasks: In a side panel" (task-side-panel D1, D4): the account's choice, and the panel open on this device. */
+async function seedSidePanel(seed: () => Promise<void>, select: string | null): Promise<void> {
+  await seed()
+  try { localStorage.removeItem(SIDE_PANEL_CLOSED_KEY); localStorage.removeItem(PANEL_WIDTH_KEY) } catch { /* stories only */ }
+  await setTaskOpen('panel')
+  if (select) {
+    const task = (await db.tasks.toArray()).find((tk) => tk.title === select)
+    if (task) selectTask.set(task.id)
+  }
+}
+
+/** Today with the side panel and nothing selected: "No task selected" with its Close (task-side-panel D8). */
+export const TodaySidePanelEmpty: StoryObj = {
+  ...withSeed(() => seedSidePanel(seedToday, null)),
+  render: () => <Split><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Split>,
+}
+
+/** A project with the side panel: the selected task beside the list, the rows dropping cells as the list narrows (task-side-panel D2). */
+export const ProjectSidePanelSelected: StoryObj = {
+  ...withSeed(() => seedSidePanel(() => seedProjectWithSections(false), 'Review the homepage copy')),
+  render: () => <Split><TaskListView route={{ view: 'project', id: seeded.website }} userId={storyUser.id} userRole={storyUser.role} /></Split>,
 }

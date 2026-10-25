@@ -1383,6 +1383,12 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
   ],
+  "As a page": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
+  "As a page, or in a side panel beside the list": [
+    "web/src/app/settingsIndex.ts"
+  ],
   "As in the export": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -2370,6 +2376,7 @@
     "web/src/app/assistant/AssistantSheet.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/palette/CommandPalette.tsx",
+    "web/src/app/sidePanel.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/ui/overlay/Dialog.tsx",
@@ -5391,6 +5398,9 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
+  "How a task opens from a list, on all your devices.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "How dates and times look and where weeks start, on all your devices.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -5635,6 +5645,9 @@
   ],
   "In a number of days": [
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "In a side panel": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "In a table: next / previous cell; Tab in the last cell adds a row": [
     "web/src/lib/shortcuts.ts"
@@ -6333,7 +6346,7 @@
   "Light or dark, colour and row density, on all your devices.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Light or dark, colour theme, density and the sidebar": [
+  "Light or dark, colour theme, density, the sidebar and how tasks open": [
     "web/src/app/settingsSections.ts"
   ],
   "Limits": [
@@ -7712,7 +7725,8 @@
     "web/src/app/SavedViewView.tsx"
   ],
   "No task selected": [
-    "web/src/app/InboxEmptyPane.tsx"
+    "web/src/app/InboxEmptyPane.tsx",
+    "web/src/app/sidePanel.tsx"
   ],
   "No tasks match this panel.": [
     "web/src/app/DashboardView.tsx"
@@ -8558,6 +8572,11 @@
   ],
   "Open task": [
     "web/src/app/task-list/RowDetails.tsx"
+  ],
+  "Open tasks": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Open tasks including sub-projects": [
     "web/src/app/Sidebar.tsx",
@@ -10136,6 +10155,9 @@
   "Resize sidebar": [
     "web/src/app/Shell.tsx"
   ],
+  "Resize the task panel": [
+    "web/src/app/sidePanel.tsx"
+  ],
   "Response": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -10745,6 +10767,9 @@
   ],
   "Select a task to decide where it goes, or press {key} to process {count, plural, one {it} other {all #, one at a time}}.": [
     "web/src/app/InboxEmptyPane.tsx"
+  ],
+  "Select a task to see its details here.": [
+    "web/src/app/sidePanel.tsx"
   ],
   "Select tasks": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -11965,7 +11990,9 @@
     "web/src/lib/webhooks.ts"
   ],
   "Task details": [
-    "web/src/app/PanelHost.tsx"
+    "web/src/app/PanelHost.tsx",
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Task name": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
@@ -12726,6 +12753,9 @@
   ],
   "The shared files did not arrive: open the app once so it can receive files, then share again.": [
     "web/src/app/ShareCapture.tsx"
+  ],
+  "The side panel needs a window at least 1024 px wide; phones open the page.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The sign-in attempt expired or had too many wrong codes. Enter your password again.": [
     "web/src/lib/i18n/errors.ts"
@@ -17514,6 +17544,9 @@
   ],
   "{n} pending": [
     "web/src/app/SyncStatus.tsx"
+  ],
+  "{n} pixels wide": [
+    "web/src/app/sidePanel.tsx"
   ],
   "{n} recurring": [
     "web/src/app/ImportScreen.tsx"

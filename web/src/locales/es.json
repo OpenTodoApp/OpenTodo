@@ -1374,7 +1374,7 @@
   "Let calendar apps sync with this server.": "Permite que las apps de calendario se sincronicen con este servidor.",
   "Let members bring their own key": "Permitir que los miembros usen su propia clave",
   "Light": "Claro",
-  "Light or dark, colour theme, density and the sidebar": "Claro u oscuro, tema de color, densidad y barra lateral",
+  "Light or dark, colour theme, density, the sidebar and how tasks open": "Claro u oscuro, tema de color, densidad, barra lateral y cómo se abren las tareas",
   "Line break": "Salto de línea",
   "Linear export (CSV)": "Exportación de Linear (CSV)",
   "Google Tasks (Takeout JSON)": "Google Tasks (JSON de Takeout)",
@@ -5331,5 +5331,14 @@
   "Users and invitations": "Usuarios e invitaciones",
   "Whether automation rules run on this server": "Si las reglas de automatización se ejecutan en este servidor",
   "Start 15 minutes earlier / later, keeping the end": "Empezar 15 minutos antes / después, sin mover el final",
-  "Lists": "Listas"
+  "Lists": "Listas",
+  "As a page": "Como página",
+  "As a page, or in a side panel beside the list": "Como página o en un panel lateral junto a la lista",
+  "How a task opens from a list, on all your devices.": "Cómo se abre una tarea desde una lista, en todos tus dispositivos.",
+  "In a side panel": "En un panel lateral",
+  "Open tasks": "Abrir tareas",
+  "Resize the task panel": "Cambiar el ancho del panel de la tarea",
+  "Select a task to see its details here.": "Selecciona una tarea para ver aquí sus detalles.",
+  "The side panel needs a window at least 1024 px wide; phones open the page.": "El panel lateral necesita una ventana de al menos 1024 px; los teléfonos abren la página.",
+  "{n} pixels wide": "{n} píxeles de ancho"
 }

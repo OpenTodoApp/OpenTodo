@@ -44,6 +44,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'appearance', label: msg('Theme'), description: msg('The colour of buttons, links and selection'), page: 'theme', anchor: 'appearance-theme', keywords: 'accent colour color' },
   { section: 'appearance', label: msg('Density'), description: msg('Comfortable or compact rows'), page: 'theme', anchor: 'appearance-density', keywords: 'compact rows' },
   { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and New view sit next to Inbox, Today, Upcoming and Calendar'), page: 'sidebar', anchor: 'sidebar-heading', keywords: 'promote more group' },
+  { section: 'appearance', label: msg('Open tasks'), description: msg('As a page, or in a side panel beside the list'), page: 'task-details', anchor: 'task-details-heading', keywords: 'side panel task details split pane open tasks page beside list' },
   // General
   { section: 'general', label: msg('Start view'), description: msg('The view this device opens on'), page: 'start', anchor: 'start-view-heading', keywords: 'launch open on' },
   { section: 'general', label: msg('Show the briefing'), description: msg('The sentence under the title of Today and Upcoming. On all your devices.'), page: 'start', anchor: 'briefing-heading', keywords: 'briefing summary sentence today upcoming hide' },

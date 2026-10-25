@@ -74,10 +74,12 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
     demo: () => [msg('workspaces')],
   },
   {
-    id: 'appearance', label: msg('Appearance'), group: 'you', icon: 'palette', description: () => t('Light or dark, colour theme, density and the sidebar'),
+    id: 'appearance', label: msg('Appearance'), group: 'you', icon: 'palette', description: () => t('Light or dark, colour theme, density, the sidebar and how tasks open'),
     pages: pages([
       page({ id: 'theme', label: msg('Theme and density'), icon: 'palette' }),
       page({ id: 'sidebar', label: msg('Sidebar'), icon: 'panel-left-open' }),
+      // task-side-panel D1: as a page or in a side panel.
+      page({ id: 'task-details', label: msg('Task details'), icon: 'panel-right', help: 'settings/appearance' }),
     ]),
   },
   {

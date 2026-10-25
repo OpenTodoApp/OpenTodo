@@ -8,7 +8,8 @@ import { useLabels, useMembershipMap, useProjects, useTask } from '../lib/localD
 import { roleOf } from '../lib/sharing'
 import type { Task, User } from '../lib/types'
 import { useMediaQuery } from '../ui'
-import { closePanel, openTaskPanel, SPLIT_QUERY, usePanel, usePanelHandlers, useSplitEmptyPane } from './panel'
+import { closePanel, closeTaskPanel, openTaskPanel, SPLIT_QUERY, usePanel, usePanelHandlers, useSplitEmptyPane, useSplitKind } from './panel'
+import { PanelResizeHandle, SidePanelClose } from './sidePanel'
 import { TaskDetail } from './TaskDetail'
 
 /** The data every task detail needs (the panel and the expanded page share it). */
@@ -30,6 +31,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   const task = useTask(taskId)
   // A split page with nothing docked keeps its pane ("No task selected", inbox-split D2).
   const empty = useSplitEmptyPane()
+  const kind = useSplitKind()
   const wide = useMediaQuery(SPLIT_QUERY)
 
   // The panel slides in only when it opens from closed, never when it switches tasks
@@ -47,7 +49,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
     if (taskId && (task === null || task?.deleted_at)) closePanel()
   }, [taskId, task])
 
-  if (!occupant) return empty && wide ? <SplitPane>{empty()}</SplitPane> : null
+  if (!occupant) return empty && wide ? <SplitPane side={kind === 'panel'}>{empty()}</SplitPane> : null
   if (occupant.kind === 'custom') return <>{occupant.render()}</>
   if (!task) return null
   return (
@@ -60,6 +62,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
       projects={projects}
       labelMap={labelMap}
       onClose={closePanel}
+      onDismiss={closeTaskPanel}
       onOpen={openTaskPanel}
       onToggleComplete={handlers.toggleComplete}
       entering={occupant.id === enteredFor}
@@ -68,10 +71,13 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
 }
 
 /** The slot's frame while a split page has no task docked: where the docked task will stand. */
-function SplitPane({ children }: { children: ReactNode }) {
+function SplitPane({ children, side }: { children: ReactNode; side: boolean }) {
   return (
     <aside aria-label={t('Task details')} data-split-empty
-      className="hidden min-w-0 flex-col border-l border-default bg-surface lg:flex lg:w-(--panel-w)">
+      className="relative hidden min-w-0 flex-col border-l border-default bg-surface lg:flex lg:w-(--panel-w)">
+      <PanelResizeHandle />
+      {/* The side panel closes from its empty pane too (task-side-panel D8); the Inbox's split has no Close here. */}
+      {side && <SidePanelClose />}
       {children}
     </aside>
   )

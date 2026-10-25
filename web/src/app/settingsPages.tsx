@@ -13,7 +13,7 @@ import { HowYouWorkSection } from './method/HowYouWorkSection'
 import { ProfileSection } from './profile/ProfileSection'
 import { DateTimeSection } from './DateTimeSettings'
 import { AssistantsPanel } from './AssistantsPanel'
-import { AppearanceSection, SidebarSection } from './AppearanceSection'
+import { AppearanceSection, SidebarSection, TaskDetailsSection } from './AppearanceSection'
 import { BackupsPanel } from './BackupsPanel'
 import { QuickAddSettingsSection } from './QuickAddSettings'
 import { VoiceSettingsSection } from './VoiceSettings'
@@ -85,6 +85,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'language/calendar': () => <CalendarSettingsSection />,
   'appearance/theme': () => <AppearanceSection />,
   'appearance/sidebar': () => <SidebarSection />,
+  'appearance/task-details': () => <TaskDetailsSection />,
   'notifications/push': ({ demo }) => <DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,

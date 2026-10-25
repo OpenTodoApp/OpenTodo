@@ -24,6 +24,7 @@ import { useListKeys } from './useListKeys'
 import { useShortcutScope } from './shortcuts'
 import { useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
+import { openFromRow } from './sidePanel'
 import { TaskRow } from './TaskRow'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { useTrackedTotals } from '../lib/timeEntries'
@@ -197,7 +198,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const bulkTasks = useMemo(() => rows.map((r) => r.task), [rows])
   const bulk = useBulkList(bulkTasks)
   useListKeys({
-    rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor, bulk,
+    rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor, bulk, sidePanel: true,
     expanded, setExpanded: display.layout === 'board' ? undefined : setExpanded,
     paused: saving,
     onIdleEscape: () => {
@@ -290,7 +291,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
             onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
-            onOpen={() => { setSelected(key); setOpenId(tk.id) }}
+            onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
             expanded={expanded === key}
             onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
             {...bulk.rowProps(tk.id)}

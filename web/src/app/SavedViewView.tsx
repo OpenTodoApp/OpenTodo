@@ -17,6 +17,7 @@ import { setFavourite } from '../lib/favourites'
 import { DashboardView } from './DashboardView'
 import { LabelPicker } from './LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from './panel'
+import { openFromRow } from './sidePanel'
 import { TaskRow } from './TaskRow'
 import { ViewMenu } from './ViewsView'
 import { useListKeys } from './useListKeys'
@@ -140,7 +141,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const bulk = useBulkList(bulkTasks)
 
   useListKeys({
-    rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor, bulk,
+    rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor, bulk, sidePanel: true,
     expanded, setExpanded: display.layout === 'board' ? undefined : setExpanded,
     onIdleEscape: () => setSelected(null),
     extra: {
@@ -221,7 +222,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 habit={habits.get(tk.id)}
                 breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
                 onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
-                onOpen={() => { setSelected(key); setOpenId(tk.id) }}
+                onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
                 expanded={expanded === key}
                 onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
                 {...bulk.rowProps(tk.id)}

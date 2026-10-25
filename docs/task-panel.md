@@ -1,9 +1,9 @@
 ---
 title: The task page
-summary: Everything on a task's page: the breadcrumb and the next and previous task, the title and its menu, the notes, the facts and how to set them, what a viewer can do, and how to go back.
+summary: A task's page: the breadcrumb, the next and previous task, the title and menu, the notes, the facts, what a viewer can do, going back, and the side panel beside the list.
 audience: user
 section: Guides
-specs: [task-management, entity-pickers]
+specs: [task-management, entity-pickers, web-app]
 screens: [task-panel]
 order: 11
 ---
@@ -38,6 +38,12 @@ A fact without a value reads as what sets it, such as **Set a deadline** or **Ad
 
 If you are a viewer of a shared project, the lines read as text and can't be changed, and the checkbox and **Delete** are disabled. You can still comment.
 
-## Close the panel
+## Open tasks beside the list
 
-Close the panel with <kbd>Esc</kbd> or the **×** at the top. On a phone the panel covers the list; close it to go back.
+To keep tasks beside the list, choose **In a side panel** under **Settings → Appearance → Task details**. From 1024 px wide every list (Inbox, Today, projects, labels, views and the rest) has a panel with the task's notes, facts, subtasks, attachments and comments:
+
+- A click on a task, or moving to it with <kbd>j</kbd> / <kbd>k</kbd>, shows it there; <kbd>Enter</kbd> on the task shown opens its page.
+- The panel never closes by itself. Only its **×**, or <kbd>Esc</kbd> inside it, closes it, and it stays closed until you click a task or press <kbd>Enter</kbd> on one.
+- Drag its left edge to resize it (or focus the edge and press ← or →; a double click resets it). Each device keeps its own width.
+
+Phones and narrow windows keep the page.

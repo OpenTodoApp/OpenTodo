@@ -34,5 +34,8 @@ export const SectionPage: StoryObj = {
 export const AppearancePage: StoryObj = { render: () => <SettingsView user={member} onLogout={() => {}} section="appearance" /> }
 /** A sub-page: the breadcrumb Settings › Appearance › Theme and density from 1024 px, Back to Appearance below. */
 export const SubPage: StoryObj = { render: () => <SettingsView user={member} onLogout={() => {}} section="appearance" page="theme" /> }
+
+/** Appearance → Task details (task-side-panel D1): Open tasks, as a page or in a side panel. */
+export const TaskDetailsPage: StoryObj = { render: () => <SettingsView user={member} onLogout={() => {}} section="appearance" page="task-details" /> }
 /** About (screen-stories-rare D1): the version, the licence and the links; the server's answers are stubbed. */
 export const AboutPage: StoryObj = { decorators: [withClock], render: () => <SettingsView user={member} onLogout={() => {}} section="about" /> }
