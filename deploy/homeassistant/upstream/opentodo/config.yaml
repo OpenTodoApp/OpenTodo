@@ -1,0 +1,24 @@
+# https://contributors.home-assistant.io/apps/reference/configuration/
+name: OpenTodo
+version: "0.12.0"
+slug: opentodo
+description: Open-source, local-first task manager. Works offline and syncs every device from one small container.
+url: https://github.com/pixari/opentodo-homeassistant-addons/tree/main/opentodo
+arch:
+  - aarch64
+  - amd64
+image: ghcr.io/pixari/opentodo-homeassistant
+init: false
+ports:
+  8080/tcp: 8080
+webui: http://[HOST]:[PORT:8080]/
+backup: cold
+options:
+  allow_signup: false
+  log_level: info
+schema:
+  base_url: url?
+  setup_token: password?
+  allow_signup: bool
+  trusted_proxies: str?
+  log_level: list(debug|info|warn|error)

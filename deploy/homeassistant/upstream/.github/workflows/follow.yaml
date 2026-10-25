@@ -1,0 +1,84 @@
+# Follows OpenTodo's releases. Every day (or by hand) it compares the latest OpenTodo release
+# with the version in the Dockerfile. When there is a newer one it runs scripts/bump.sh on a
+# branch, builds and publishes the images from that branch, and only then moves main to it,
+# so Home Assistant never offers an update whose image is missing. Release candidates are
+# skipped (GitHub's "latest release" is never a pre-release).
+name: Follow OpenTodo
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: follow-opentodo
+
+jobs:
+  check:
+    name: Look for a new release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      branch: ${{ steps.bump.outputs.branch }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Bump when OpenTodo has a newer release
+        id: bump
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest="$(gh api repos/pixari/opentodo/releases/latest --jq .tag_name)"
+          latest="${latest#v}"
+          current="$(sed -n 's/^ARG OPENTODO_VERSION=//p' opentodo/Dockerfile)"
+          echo "OpenTodo ${latest}, add-on runs ${current}"
+          newest="$(printf '%s\n%s\n' "${current}" "${latest}" | sort -V | tail -1)"
+          if [ "${latest}" = "${current}" ] || [ "${newest}" != "${latest}" ]; then
+            echo "Nothing to do."
+            exit 0
+          fi
+          docker manifest inspect "ghcr.io/pixari/opentodo:${latest}" > /dev/null
+          scripts/bump.sh "${latest}"
+          branch="follow/${latest}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${branch}"
+          git commit -am "OpenTodo ${latest}"
+          git push --force origin "${branch}"
+          echo "branch=${branch}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build and publish
+    needs: check
+    if: needs.check.outputs.branch != ''
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/build.yaml
+    with:
+      ref: ${{ needs.check.outputs.branch }}
+
+  release:
+    name: Offer the update
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ needs.check.outputs.branch }}
+          fetch-depth: 0
+      - name: Move main to the new version and tag it
+        env:
+          BRANCH: ${{ needs.check.outputs.branch }}
+        run: |
+          version="${BRANCH#follow/}"
+          git push origin "HEAD:refs/heads/main"
+          git tag "v${version}"
+          git push origin "v${version}"
+          git push origin --delete "${BRANCH}"

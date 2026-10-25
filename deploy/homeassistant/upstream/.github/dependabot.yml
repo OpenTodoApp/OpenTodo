@@ -1,0 +1,15 @@
+# GitHub Actions and the Home Assistant base image. A new base image lands with the next
+# version: build.yaml never republishes an existing one. OpenTodo itself is followed by
+# the Follow OpenTodo workflow, which also changes the add-on version.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /opentodo
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: ghcr.io/pixari/opentodo

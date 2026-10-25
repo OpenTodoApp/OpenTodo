@@ -7,6 +7,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Added
 
 - **Home Assistant integration.** A separate integration, installed from HACS, shows the Inbox, Today and your projects as Home Assistant to-do lists you can change (with quick-add syntax), counts Today, Earlier and the Inbox, puts dated tasks on a calendar, and fires `opentodo_task_*` events through a signed webhook it sets up itself; Assist can add to and tick off the lists. It needs a Full access token and no change on the server. ([Home Assistant](docs/home-assistant.md))
+- **Home Assistant add-on.** On Home Assistant OS or a Supervised installation, add the repository `https://github.com/pixari/opentodo-homeassistant-addons`, install **OpenTodo** and open it on port 8080. Options for the base URL, a setup token, open sign-up, trusted proxies and the log level; the data is in the add-on's own folder and in Home Assistant's backups. Images for amd64 and aarch64; each OpenTodo release becomes an add-on update within a day. Home Assistant Container installs run the Docker image instead. ([Home Assistant add-on](docs/self-hosting/home-assistant-addon.md))
 
 ## [0.12.0] - 2026-10-25
 
