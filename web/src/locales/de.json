@@ -5340,5 +5340,11 @@
   "Resize the task panel": "Breite des Aufgabenbereichs ändern",
   "Select a task to see its details here.": "Wähle eine Aufgabe, um ihre Details hier zu sehen.",
   "The side panel needs a window at least 1024 px wide; phones open the page.": "Der Seitenbereich braucht ein mindestens 1024 px breites Fenster; Telefone öffnen die Seite.",
-  "{n} pixels wide": "{n} Pixel breit"
+  "{n} pixels wide": "{n} Pixel breit",
+  "Detailed": "Ausführlich",
+  "One line": "Eine Zeile",
+  "Rows": "Zeilen",
+  "Task rows": "Aufgabenzeilen",
+  "One line or detailed rows in every list without its own choice": "Einzeilige oder ausführliche Zeilen in jeder Liste ohne eigene Wahl",
+  "Detailed adds the parent task and a line of dates, priority and labels.": "Ausführlich zeigt die übergeordnete Aufgabe und eine Zeile mit Daten, Priorität und Labels."
 }

@@ -35,6 +35,7 @@ import { ViewsCrumb } from './views/ViewsCrumb'
 import { FilterPanel, ViewToolbar } from './views/ViewToolbar'
 import { ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
+import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
 
 function parseError(src: string): string | null {
   if (!src.trim()) return t('The query must not be empty')
@@ -55,6 +56,7 @@ export function displayPatch(patch: Partial<ViewDisplay>): ViewPatch {
   if (patch.sortDir !== undefined) out.sort_dir = patch.sortDir
   if (patch.showCompleted !== undefined) out.show_completed = patch.showCompleted
   if (patch.hidden !== undefined) out.hidden_props = [...patch.hidden]
+  if (patch.rowLayout !== undefined) out.row_layout = patch.rowLayout
   return out
 }
 
@@ -71,7 +73,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const { projects, labels, tasks, ctx } = data
   const opts = viewOptions(view)
   const shown = displayOptions(view)
-  const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden }
+  const account = useAccountRowLayout()
+  const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account) }
   const result = useMemo(() => runView(view, ctx), [view, ctx])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
@@ -215,6 +218,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 showProject={opts.groupBy !== 'project'}
                 timeColumn={timeColumn}
                 hidden={display.hidden}
+                layout={display.rowLayout}
                 onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                 selected={key === selected}
                 progress={progress.get(tk.id)}

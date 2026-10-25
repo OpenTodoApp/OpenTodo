@@ -6,6 +6,7 @@
 // shared project. Read-time fallback like a view's: "" or a value this build does
 // not know reads as the page's default and is never rewritten.
 import { mutate } from './ops'
+import { rowLayoutOf, type RowLayout } from './rowLayout'
 import type { GroupBy, Label, ProjectPrefs, SortBy, SortDir } from './types'
 
 /** A list page's grouping: a view's choices plus the project's sections. */
@@ -15,6 +16,8 @@ export interface ListDisplay {
   groupBy: ListGroupBy
   sortBy: SortBy
   sortDir: SortDir
+  /** The rows' layout (row-layouts): the page's own choice, else the account's. */
+  rowLayout: RowLayout
 }
 
 /** Which page the options belong to. */
@@ -30,8 +33,8 @@ export const LABEL_GROUP_OPTIONS: readonly ListGroupBy[] = ['project', 'none', '
 const SORT_DIRS: readonly SortDir[] = ['asc', 'desc']
 
 /** The defaults: what the page showed before it had options. */
-export function defaultListDisplay(kind: DisplayScope['kind']): ListDisplay {
-  return { groupBy: kind === 'project' ? 'section' : 'project', sortBy: 'position', sortDir: 'asc' }
+export function defaultListDisplay(kind: DisplayScope['kind'], rowLayout: RowLayout = 'line'): ListDisplay {
+  return { groupBy: kind === 'project' ? 'section' : 'project', sortBy: 'position', sortDir: 'asc', rowLayout }
 }
 
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -39,9 +42,10 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
 }
 
 /** The options of a project's prefs row or a label row; missing or unknown values read as the default. */
-export function listDisplayOf(kind: DisplayScope['kind'], row: Pick<ProjectPrefs | Label, 'group_by' | 'sort_by' | 'sort_dir'> | null | undefined): ListDisplay {
+export function listDisplayOf(kind: DisplayScope['kind'], row: Pick<ProjectPrefs | Label, 'group_by' | 'sort_by' | 'sort_dir' | 'row_layout'> | null | undefined, account: RowLayout = 'line'): ListDisplay {
   const d = defaultListDisplay(kind)
   return {
+    rowLayout: rowLayoutOf(row?.row_layout, account),
     groupBy: pick(row?.group_by, kind === 'project' ? PROJECT_GROUP_OPTIONS : LABEL_GROUP_OPTIONS, d.groupBy),
     sortBy: pick(row?.sort_by, LIST_SORT_OPTIONS, d.sortBy),
     sortDir: pick(row?.sort_dir, SORT_DIRS, d.sortDir),
@@ -63,6 +67,7 @@ export async function setListDisplay(scope: DisplayScope, patch: Partial<ListDis
   if (patch.groupBy !== undefined) out.group_by = patch.groupBy
   if (patch.sortBy !== undefined) out.sort_by = patch.sortBy
   if (patch.sortDir !== undefined) out.sort_dir = patch.sortDir
+  if (patch.rowLayout !== undefined) out.row_layout = patch.rowLayout
   if (Object.keys(out).length === 0) return
   await mutate(scope.kind === 'project' ? 'project_prefs' : 'label', scope.id, out)
 }

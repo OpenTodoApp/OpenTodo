@@ -89,3 +89,25 @@ describe('LabelChips', () => {
     expect(none.container.querySelector('[data-label-chips]')).toBeNull()
   })
 })
+
+describe('labels that fit one line (row-layouts D2)', () => {
+  it('shows as many chips as the width holds, then "+n", and reads every name', async () => {
+    const labels = ['call', 'errand', 'home', 'deep work'].map((name, i) => ({ id: `l${i}`, name, color: '#888' }))
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
+    const offset = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
+    // Each chip 50 px wide in a 140 px row: two chips and the "+n" fit, not three.
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get() { return (this as HTMLElement).hasAttribute('data-label-chips') ? 140 : 0 } })
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get() { return (this as HTMLElement).hasAttribute('data-fit-chip') ? 50 : 0 } })
+    try {
+      const r = await render(<LabelChips labels={labels} fit />)
+      const g = r.container.querySelector('[data-label-chips]')!
+      const shown = [...g.querySelectorAll('[data-fit-chip]')].filter((c) => !c.className.includes('invisible')).map((c) => c.textContent)
+      expect(shown).toEqual(['call', 'errand'])
+      expect(g.querySelector('[data-label-more]')!.textContent).toBe('+2')
+      expect(spokenText(g)).toBe('Labels: call, errand, home, deep work')
+    } finally {
+      if (width) Object.defineProperty(HTMLElement.prototype, 'clientWidth', width)
+      if (offset) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', offset)
+    }
+  })
+})

@@ -440,6 +440,8 @@ var Schema = map[string]map[string]kind{
 		"group_by": kString,
 		"sort_by":  kString,
 		"sort_dir": kString,
+		// The label page's row layout (row-layouts D1); "" follows the account's.
+		"row_layout": kString,
 	},
 	// view: a saved filter query with presentation options (OpenSpec `custom-views`).
 	// kind, group_by, sort_by and sort_dir are enumerations carried as plain strings so
@@ -463,8 +465,11 @@ var Schema = map[string]map[string]kind{
 		"layout":         kString,
 		"show_completed": kBool,
 		"hidden_props":   kStringList,
-		"created_at":     kNumber,
-		"deleted_at":     kNullableNumber,
+		// The view's row layout (row-layouts D1): "line" or "detailed"; "" follows
+		// the account's choice (user_prefs.row_layout).
+		"row_layout": kString,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
 		// Workspace of the view, null for the default (OpenSpec change workspaces).
 		"workspace_id": kNullableString,
 	},
@@ -583,6 +588,8 @@ var Schema = map[string]map[string]kind{
 		"group_by": kString,
 		"sort_by":  kString,
 		"sort_dir": kString,
+		// The project list's row layout (row-layouts D1); "" follows the account's.
+		"row_layout": kString,
 	},
 	// user_prefs: one user's date and time preferences (OpenSpec change
 	// `date-time-preferences`, design D1). Clients write a single row with the
@@ -673,6 +680,10 @@ var Schema = map[string]map[string]kind{
 		// design D1): "page" or "panel"; clients read an empty or unknown
 		// value as "page" and keep the stored value.
 		"task_open": kString,
+		// The account's task row layout (OpenSpec change row-layouts, design
+		// D1): "line" or "detailed", the layout of every list without its own
+		// choice; clients read an empty or unknown value as "line".
+		"row_layout": kString,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

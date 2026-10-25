@@ -5340,5 +5340,11 @@
   "Resize the task panel": "Redimensionar o painel da tarefa",
   "Select a task to see its details here.": "Selecione uma tarefa para ver os detalhes aqui.",
   "The side panel needs a window at least 1024 px wide; phones open the page.": "O painel lateral precisa de uma janela com pelo menos 1024 px; no celular abre a página.",
-  "{n} pixels wide": "{n} pixels de largura"
+  "{n} pixels wide": "{n} pixels de largura",
+  "Detailed": "Detalhado",
+  "One line": "Uma linha",
+  "Rows": "Linhas",
+  "Task rows": "Linhas das tarefas",
+  "One line or detailed rows in every list without its own choice": "Linhas de uma linha ou detalhadas em cada lista sem escolha própria",
+  "Detailed adds the parent task and a line of dates, priority and labels.": "Detalhado acrescenta a tarefa principal e uma linha com datas, prioridade e etiquetas."
 }

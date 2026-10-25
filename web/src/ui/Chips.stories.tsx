@@ -47,6 +47,9 @@ export const LabelChipsVariants: StoryObj = {
       <LabelChips labels={[ERRAND, CALL]} />
       <LabelChips labels={[ERRAND, CALL, HOME, DEEP]} />
       <LabelChips labels={[ERRAND, CALL, HOME]} omit="l1" />
+      {/* One line with as many chips as fit, then "+n" (row-layouts D2). */}
+      <div className="w-40"><LabelChips labels={[ERRAND, CALL, HOME, DEEP]} fit /></div>
+      <div className="w-80"><LabelChips labels={[ERRAND, CALL, HOME, DEEP]} fit /></div>
     </div>
   ),
 }

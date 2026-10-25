@@ -80,6 +80,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | label | `position`, `created_at` | number |
 | label | `deleted_at` | number or null |
 | label | `group_by`, `sort_by`, `sort_dir` | string (the label page's display options, read like a view's; `""` = default) |
+| label, view, project_prefs | `row_layout` | string: `"line"` or `"detailed"` (the list's own row layout; `""` or unknown follows `user_prefs.row_layout`) |
 | view | `name`, `query`, `color` | string |
 | view | `kind`, `group_by`, `sort_by`, `sort_dir` | string (enumeration, see "Saved views") |
 | view | `pinned` | boolean |
@@ -128,6 +129,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | user_prefs | `week_start` | string: `"system"`, `"mon"`, `"sun"` or `"sat"` |
 | user_prefs | `day_start` | string: `"HH:MM"` from `"00:00"` to `"06:00"`, when a new day begins for this person (empty, malformed or out of range reads as `"00:00"`, midnight, and is kept as stored) |
 | user_prefs | `language` | string: `"system"` or a shipped interface language (`"en"`, `"de"`, `"fr"`, `"es"`, `"it"`, `"pt"`) |
+| user_prefs | `row_layout` | string: `"line"` or `"detailed"`, the row layout of every list without its own (unknown or empty reads as `"line"`) |
 | user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
 | user_prefs | `favourites` | string: an ordered, comma-separated list of `kind:id` entries (`project:<id>`, `label:<id>`, `view:<id>`), the sidebar's Favourites group; entries of an unknown kind or for a missing, archived or deleted item are ignored and kept |
 | review | `completed_at` | number (Unix ms: when the last weekly review was finished; personal scope only) |

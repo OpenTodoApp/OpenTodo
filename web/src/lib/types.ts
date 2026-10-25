@@ -298,6 +298,8 @@ export interface Label {
   group_by?: string
   sort_by?: string
   sort_dir?: string
+  /** The label page's row layout (row-layouts D1); '' or absent follows the account's. */
+  row_layout?: string
   _clock: Clock
 }
 
@@ -342,6 +344,8 @@ export interface View {
   show_completed?: boolean
   /** List views only: the row properties the view hides (ROW_PROPERTIES); empty shows them all. */
   hidden_props?: string[]
+  /** The view's row layout (row-layouts D1): 'line' or 'detailed'; '' or absent follows the account's. */
+  row_layout?: string
   created_at: number
   deleted_at: number | null
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
@@ -583,6 +587,8 @@ export interface ProjectPrefs {
   group_by?: string
   sort_by?: string
   sort_dir?: string
+  /** The project list's row layout (row-layouts D1); '' or absent follows the account's. */
+  row_layout?: string
   _clock: Clock
 }
 
@@ -644,6 +650,8 @@ export interface UserPrefs {
   briefing?: string
   /** How a task opens from a list (task-side-panel D1): 'panel' docks it beside the list from 1024 px; '' and anything else read as 'page'. */
   task_open?: string
+  /** The account's task row layout (row-layouts D1): 'line' or 'detailed'; '' and anything else read as 'line'. */
+  row_layout?: string
   _clock: Clock
 }
 

@@ -1077,6 +1077,19 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
   }
 }
 
+/* Detailed rows (OpenSpec change row-layouts, design D2): the title, the parent and a
+   details line, stacked at every width; the property column and the phone's one-line
+   row are for one-line rows only. Outside the layers, after the column's rules, so
+   they win over them. */
+@container row (width >= 40rem) {
+  [data-row-layout="detailed"] [data-row-open] { display: flex; align-items: stretch; }
+}
+@media (width < 48rem) {
+  @container row (width < 40rem) {
+    [data-row-layout="detailed"] [data-row-open] { display: flex; align-items: stretch; }
+  }
+}
+
 /* A side scroller (OpenSpec change sidebar-compact-desktop): a thin scrollbar in the
    border colour, a little stronger while the pointer or focus is inside, and a soft
    fade at an edge only while content is hidden past it (useScrollEdges sets the

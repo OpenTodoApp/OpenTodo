@@ -11,6 +11,7 @@ import { boardColumns, completedBySection, completedNewestFirst, completedOpenKe
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
 import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
 import { useListDisplay } from './useListDisplay'
+import { useAccountRowLayout } from '../../lib/rowLayout'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
@@ -174,8 +175,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const prefsRow = useProjectPrefsRow(projectId)
   const labelRow = route.view === 'label' ? labelMap.get(route.id) : undefined
   const displayScope = useMemo<DisplayScope | null>(() => (route.view === 'project' || route.view === 'label' ? { kind: route.view, id: route.id } : null), [route])
-  const { groupBy: dGroup, sortBy: dSort, sortDir: dDir } = displayScope ? listDisplayOf(displayScope.kind, displayScope.kind === 'project' ? prefsRow : labelRow) : { groupBy: undefined, sortBy: undefined, sortDir: undefined }
-  const display = useMemo(() => (dGroup && dSort && dDir ? { groupBy: dGroup, sortBy: dSort, sortDir: dDir } : undefined), [dGroup, dSort, dDir])
+  const account = useAccountRowLayout()
+  const { groupBy: dGroup, sortBy: dSort, sortDir: dDir, rowLayout: dRows } = displayScope ? listDisplayOf(displayScope.kind, displayScope.kind === 'project' ? prefsRow : labelRow, account) : { groupBy: undefined, sortBy: undefined, sortDir: undefined, rowLayout: undefined }
+  const display = useMemo(() => (dGroup && dSort && dDir && dRows ? { groupBy: dGroup, sortBy: dSort, sortDir: dDir, rowLayout: dRows } : undefined), [dGroup, dSort, dDir, dRows])
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
   const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list')
 

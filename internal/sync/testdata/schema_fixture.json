@@ -43,6 +43,7 @@
       "group_by",
       "name",
       "position",
+      "row_layout",
       "sort_by",
       "sort_dir",
       "workspace_id"
@@ -72,6 +73,7 @@
       "feed_seen_at",
       "group_by",
       "reviewed_at",
+      "row_layout",
       "sort_by",
       "sort_dir"
     ],
@@ -177,6 +179,7 @@
       "maps",
       "method_mode",
       "row_detail",
+      "row_layout",
       "sidebar_destinations",
       "start_checklist",
       "task_open",
@@ -200,6 +203,7 @@
       "pinned",
       "position",
       "query",
+      "row_layout",
       "show_completed",
       "sort_by",
       "sort_dir",

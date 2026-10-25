@@ -20,6 +20,8 @@ import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { hapticsPrefOn, setHapticsPref } from '../lib/haptics'
 import { canVibrate } from './motion'
 import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
+import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
+import { ROW_LAYOUT_LABEL } from './views/DisplayPanel'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
@@ -37,6 +39,8 @@ export interface AppearanceViewProps {
   onMode: (m: ThemeModePref) => void
   onAccent: (a: AccentId) => void
   onDensity?: (d: Density) => void
+  /** The account's task row layout (row-layouts D4): every list without its own choice. */
+  rows?: { value: RowLayout; onChange: (r: RowLayout) => void }
   /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
   haptics?: { on: boolean; onChange: (on: boolean) => void }
 }
@@ -73,7 +77,7 @@ function Segmented<T extends string>({ label, items, labels, value, onChange, te
   )
 }
 
-export function AppearanceView({ value, onMode, onAccent, onDensity, haptics }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, onDensity, rows, haptics }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const ids = ACCENTS.map((a) => a.id)
   return (
@@ -112,6 +116,10 @@ export function AppearanceView({ value, onMode, onAccent, onDensity, haptics }: 
         <SettingRow id="appearance-density" {...rowCopy('appearance', 'density')}
           control={<Segmented label={t('Density')} items={DENSITIES} labels={DENSITY_LABEL} value={value.density ?? 'comfortable'} onChange={onDensity} testId="appearance-density" />} />
       )}
+      {rows && (
+        <SettingRow id="appearance-rows" {...rowCopy('appearance', 'rows')}
+          control={<Segmented label={t('Task rows')} items={ROW_LAYOUTS} labels={ROW_LAYOUT_LABEL} value={rows.value} onChange={rows.onChange} testId="appearance-rows" />} />
+      )}
       {haptics && (
         <SettingRow id="appearance-haptics" {...rowCopy('appearance', 'haptics')} htmlFor="appearance-haptics-switch"
           control={<Switch id="appearance-haptics-switch" checked={haptics.on} onChange={haptics.onChange} label={t('Haptic feedback')} hideLabel />} />
@@ -142,6 +150,7 @@ export function AppearanceSection() {
   const value = readAppearance(row)
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
     onDensity={(d) => act(setAppearance('density', d))}
+    rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined} />
 }
 

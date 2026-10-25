@@ -43,6 +43,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'appearance', label: msg('Mode'), description: msg('System, light or dark'), page: 'theme', anchor: 'appearance-mode', keywords: 'dark light theme' },
   { section: 'appearance', label: msg('Theme'), description: msg('The colour of buttons, links and selection'), page: 'theme', anchor: 'appearance-theme', keywords: 'accent colour color' },
   { section: 'appearance', label: msg('Density'), description: msg('Comfortable or compact rows'), page: 'theme', anchor: 'appearance-density', keywords: 'compact rows' },
+  { section: 'appearance', label: msg('Task rows'), description: msg('One line or detailed rows in every list without its own choice'), page: 'theme', anchor: 'appearance-rows', keywords: 'row layout detailed one line priority labels' },
   { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and New view sit next to Inbox, Today, Upcoming and Calendar'), page: 'sidebar', anchor: 'sidebar-heading', keywords: 'promote more group' },
   { section: 'appearance', label: msg('Open tasks'), description: msg('As a page, or in a side panel beside the list'), page: 'task-details', anchor: 'task-details-heading', keywords: 'side panel task details split pane open tasks page beside list' },
   // General
