@@ -1,6 +1,6 @@
 # https://contributors.home-assistant.io/apps/reference/configuration/
 name: OpenTodo
-version: "0.12.0"
+version: "0.13.0"
 slug: opentodo
 description: Open-source, local-first task manager. Works offline and syncs every device from one small container.
 url: https://github.com/pixari/opentodo-homeassistant-addons/tree/main/opentodo

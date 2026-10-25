@@ -2,7 +2,7 @@
 # OpenTodo is a static Go binary; its own image is distroless (no shell). The add-on copies the
 # binary from the released image onto the Home Assistant base image, whose s6 init and bashio
 # turn the add-on options into OPENTODO_* variables (run.sh).
-ARG OPENTODO_VERSION=0.12.0
+ARG OPENTODO_VERSION=0.13.0
 FROM ghcr.io/pixari/opentodo:${OPENTODO_VERSION} AS opentodo
 
 FROM ghcr.io/home-assistant/base:3.24
