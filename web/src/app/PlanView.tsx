@@ -25,7 +25,7 @@ import { CalendarRangeSwitch } from './CalendarRange'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { PlanAgenda } from './calendar/PlanAgenda'
-import { PLAN_PANEL, PlanPanel, type PlanActions } from './calendar/PlanPanel'
+import { PLAN_PANEL, PlanPanel, usePlanActions, type PlanActions } from './calendar/PlanPanel'
 import { CapacityBar, PlanDayRows, type PlanDayData } from './calendar/PlanRow'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
@@ -166,13 +166,14 @@ export function PlanView({ date }: { date?: string }) {
 
   // The planning list in the panel slot (time-blocking): drag a task onto a day, or `s` puts it on the focused day.
   const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })
+  usePlanActions(planActions)
   planActions.current = {
     onPointerDown: (e, id) => { const task = rawMap.get(id); if (task) startDrag(task, e) },
     onPlace: (id) => { const task = rawMap.get(id); if (task && editable(task)) dropOn(id, focused) },
     onOpen: (id) => setPanelTaskId(id),
   }
   const planOpen = usePanelOccupantKey() === PLAN_PANEL
-  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel actions={planActions} />))
+  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel />))
 
   const from = dates[0], to = dates[dates.length - 1]
   const title = `${anchor === today ? t('Next {n} days', { n: span }) : t('{n} days', { n: span })} · ${formatShort(from)} – ${formatShort(to)}`

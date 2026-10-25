@@ -30,7 +30,7 @@ import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { DayColumn, DayHeader, HourGutter } from './calendar/DayColumn'
 import { formatTime, PX_PER_MIN, type Placement, type Preview } from './calendar/grid'
-import { PLAN_PANEL, PlanPanel, type PlanActions } from './calendar/PlanPanel'
+import { PLAN_PANEL, PlanPanel, usePlanActions, type PlanActions } from './calendar/PlanPanel'
 import { useCalendarKeys } from './calendar/useCalendarKeys'
 import { WeekAgenda } from './calendar/WeekAgenda'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
@@ -150,6 +150,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   // The planning list lives in the shell's panel slot (time-blocking, app-shell): its
   // actions read the latest handlers through this ref.
   const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })
+  usePlanActions(planActions)
   const planOpen = usePanelOccupantKey() === PLAN_PANEL
 
   const goTo = useCallback((d: string) => navigate({ view: mode, date: d === today ? undefined : d }), [mode, today])
@@ -189,7 +190,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     onPlace: (id) => { const task = taskMap.get(id); if (task) startPlacing(task) },
     onOpen: (id) => setOpenId(id),
   }
-  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel actions={planActions} />))
+  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel />))
   const select = (id: string) => setSelectedId(id)
   const open = (id: string) => { setSelectedId(id); setOpenId(id) }
   const step = (dir: 1 | -1) => goTo(addDaysISO(anchor, (mode === 'day' ? 1 : 7) * dir))

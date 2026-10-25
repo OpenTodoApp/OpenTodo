@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { localDueOf } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
@@ -31,11 +31,25 @@ export interface PlanActions {
 }
 
 /**
+ * The calendar view on screen registers its actions while mounted, so the open list
+ * keeps working when the user switches Day, Week, Month or Plan (GitHub issue 350): the
+ * panel outlives the view that opened it.
+ */
+let mounted: React.RefObject<PlanActions> | null = null
+export function usePlanActions(actions: React.RefObject<PlanActions>): void {
+  useEffect(() => {
+    mounted = actions
+    return () => { if (mounted === actions) mounted = null }
+  }, [actions])
+}
+const current = (): PlanActions | null => mounted?.current ?? null
+
+/**
  * The planning list in the shell's panel slot (time-blocking "Day and Week calendar
  * views"): the open tasks of one source (Inbox, no date, overdue or a project),
  * chosen with a design-system menu, to drag onto a time or place with `s`.
  */
-export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }) {
+export function PlanPanel() {
   const today = useToday()
   const projects = useLiveProjects()
   const tasks = useLiveTasks() ?? NO_TASKS
@@ -82,15 +96,15 @@ export function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }
             <button
               type="button"
               data-tray-task={task.id}
-              onPointerDown={(e) => actions.current?.onPointerDown(e, task.id)}
+              onPointerDown={(e) => current()?.onPointerDown(e, task.id)}
               onKeyDown={(e) => {
                 if (e.key === 's' || e.key === 'Enter') {
                   e.preventDefault()
                   e.stopPropagation()
-                  actions.current?.onPlace(task.id)
+                  current()?.onPlace(task.id)
                 }
               }}
-              onDoubleClick={() => actions.current?.onOpen(task.id)}
+              onDoubleClick={() => current()?.onOpen(task.id)}
               className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised"
             >
               <span className="truncate">{task.title || t('Untitled')}</span>

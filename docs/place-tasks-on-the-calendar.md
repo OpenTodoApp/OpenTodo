@@ -17,7 +17,7 @@ Once tasks have [estimates](time-blocking.md#estimate-how-long-a-task-takes), th
 
 Drag a task from the Unscheduled lane onto a time slot. Its due date and time become that slot. The grid works in 15-minute steps.
 
-To plan from your lists, open the side list with **Plan from a list** and drag tasks from there onto the calendar.
+To plan from your lists, open the side list with **Plan from a list** (in the header's **More actions** menu of Day, Week, Month and Plan) and drag tasks from there onto the calendar, or focus one and press <kbd>s</kbd> to put it on the focused day. The list stays open while you move to other days, weeks or months and switch between Day, Week, Month and Plan; close it with its close button or <kbd>Esc</kbd>.
 
 To change how long something takes, drag the bottom edge of its block. Dropping a block back on the Unscheduled lane keeps the date and removes the time.
 

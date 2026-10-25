@@ -3,7 +3,7 @@
 // Moving a task, by drag onto a day or with the arrows, is one due edit that keeps
 // its time and zone; `q` adds a task due on the focused day. Works offline.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, EmptyState, hueFor, PageBody, PageHeader, useMediaQuery } from '../ui'
+import { Button, EmptyState, hueFor, MenuItem, PageBody, PageHeader, useMediaQuery } from '../ui'
 import { calendarTasks, dayLoad, nudgeDue } from '../lib/calendar'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { addDaysISO, dueFromView, formatTime, viewedTask, dateLocaleOf } from '../lib/dates'
@@ -18,7 +18,8 @@ import type { Task } from '../lib/types'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useGridPrefs } from './CalendarView'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { setPanelTaskId, usePanelTaskId } from './panel'
+import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
+import { PLAN_PANEL, PlanPanel, usePlanActions, type PlanActions } from './calendar/PlanPanel'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
 import { keysOf } from '../lib/shortcuts'
 import { navigate } from './router'
@@ -102,14 +103,29 @@ export function MonthView({ date }: { date?: string }) {
     }).catch(reportActionError)
   }, [month, goTo])
 
-  /** Dropped on a day: same time and zone, new date (one due edit, with Undo). */
+  /** Dropped on a day: same time and zone, new date (one due edit, with Undo); a task from the planning list may have no date yet. */
   const dropOn = useCallback((id: string, d: string) => {
     const task = viewedMap.get(id)
-    if (!task?.due || task.due.date === d) return
-    act(setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due.time ? { time: task.due.time } : {}) })))
+    if (!task || task.due?.date === d) return
+    act(setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due?.time ? { time: task.due.time } : {}) })))
     setSelectedId(id)
     setFocused(d)
   }, [viewedMap, rawMap])
+
+  // The planning list in the panel slot, as in Day, Week and Plan: drag a task onto a day, or `s` puts it on the focused day.
+  const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })
+  usePlanActions(planActions)
+  planActions.current = {
+    onPointerDown: (e, id) => {
+      const task = rawMap.get(id)
+      if (!task || !editable(task) || e.button !== 0) return
+      beginDrag(e, { label: task.title, onDrop: (key) => { if (key.startsWith('day:')) dropOn(id, key.slice(4)) } })
+    },
+    onPlace: (id) => { const task = rawMap.get(id); if (task && editable(task)) dropOn(id, focused) },
+    onOpen: (id) => setPanelTaskId(id),
+  }
+  const planOpen = usePanelOccupantKey() === PLAN_PANEL
+  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel />))
 
   // The Month view's keys are `view` entries of the shortcut registry (keyboard-
   // shortcuts "One shortcut registry with scopes"): the dispatcher keeps them out
@@ -197,7 +213,8 @@ export function MonthView({ date }: { date?: string }) {
             <Button variant="ghost" size="sm" icon="chevron-right" aria-label={t('Next month')} onClick={() => goTo(addMonthsISO(anchor, 1))} />
           </span>
           <CalendarRangeSwitch mode="month" date={date} />
-        </>} />
+        </>}
+        overflow={<MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a day, or press s on one')} onSelect={togglePlan} />} />
       <div ref={gridRef} role="grid" aria-label={t('{title} calendar', { title })} aria-readonly={false} className="w-full min-w-0 select-none" data-month-grid>
         <div role="row" className="grid grid-cols-7 border-b border-default">
           {weekdays.map((w, i) => <div key={i} role="columnheader" className="px-1 py-1 text-center text-hint font-medium text-muted">{w}</div>)}

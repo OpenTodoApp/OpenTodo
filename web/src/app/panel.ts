@@ -25,8 +25,18 @@ const emit = () => listeners.forEach((fn) => fn())
 
 const QUERY = 'task'
 
+/**
+ * The page a panel belongs to. The Calendar's Day, Week, Month and Plan, at any date,
+ * are one page: the planning list stays open while the user moves through days and
+ * switches range (time-blocking "Planning list and phone agenda", GitHub issue 350).
+ */
+export function panelPage(pathname: string): string {
+  const first = pathname.split('/')[1]
+  return first === 'day' || first === 'week' || first === 'month' || first === 'plan' ? '/calendar' : pathname
+}
+
 function currentPath(): string {
-  return typeof location === 'undefined' ? '/' : location.pathname
+  return panelPage(typeof location === 'undefined' ? '/' : location.pathname)
 }
 
 /** Keep `?task=<id>` in the address without touching the history stack or the other query parameters. */
@@ -100,7 +110,7 @@ export function closePanel(): void {
 
 /** Close a panel opened for another page (the shell calls this on every route change). */
 export function closePanelIfStale(pathname: string): void {
-  if (occupant && occupant.path !== pathname) closePanel()
+  if (occupant && occupant.path !== panelPage(pathname)) closePanel()
 }
 
 export function panelOccupant(): PanelOccupant | null {

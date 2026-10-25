@@ -14,6 +14,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Fixed
 
 - **A link can be attached to a task that has no attachments yet.** The paperclip beside a task's notes and **Attach** in the task's menu went straight to the file picker, so a link could only be added once the task had a file. The paperclip now offers **Choose files…** and **Add a link…**, and the task's menu has **Add a link…** too. ([Attachments](docs/attachments.md), [#342](https://github.com/pixari/opentodo/issues/342))
+- **The planning list stays open across the Calendar.** After **Plan from a list**, moving to the previous or next day, week or month, or switching between Day, Week, Month and Plan, closed the list. It now stays open until you close it or leave the Calendar, and Month offers it too. ([Place tasks on the calendar](docs/place-tasks-on-the-calendar.md), [#350](https://github.com/pixari/opentodo/issues/350))
 
 ## [0.12.0] - 2026-10-25
 
