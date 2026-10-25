@@ -3,7 +3,7 @@
 // 1024 px (design D2): `useSidePanel` sets the split of kind `panel`, follows the cursor
 // while the panel is open (D4), and gives the slot its empty pane (D8). The panel's
 // width is set by the handle on its left edge and kept on this device (D3).
-import { type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, useEffect, useState } from 'react'
+import { type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { t } from '../lib/i18n'
 import { useUserPrefsRow } from '../lib/localData'
 import { readTaskOpen } from '../lib/userPrefs'
@@ -103,6 +103,9 @@ export function panelWidthBounds(): { min: number; max: number } {
   return { min, max: Math.max(min, Math.min(64 * rem, vw - 38 * rem)) }
 }
 
+/** The width of the panel a handle sits in. */
+const measure = (handle: HTMLElement) => Math.round(handle.parentElement?.getBoundingClientRect().width ?? 0)
+
 const clampWidth = (px: number) => {
   const { min, max } = panelWidthBounds()
   return Math.min(max, Math.max(min, px))
@@ -114,8 +117,9 @@ const clampWidth = (px: number) => {
  */
 export function PanelResizeHandle() {
   const [width, setWidth] = useState<number | null>(null)
-  const panelOf = (el: HTMLElement) => el.parentElement
-  const measure = (el: HTMLElement) => Math.round(panelOf(el)?.getBoundingClientRect().width ?? 0)
+  const self = useRef<HTMLDivElement>(null)
+  // A focusable separator must say its value (WAI-ARIA window splitter): the panel's width from the first paint.
+  useLayoutEffect(() => { if (self.current) setWidth(measure(self.current)) }, [])
   const apply = (px: number | null, el: HTMLElement, persist = true) => {
     setPanelWidth(px === null ? null : clampWidth(px), persist)
     setWidth(measure(el))
@@ -154,8 +158,8 @@ export function PanelResizeHandle() {
   return (
     // A focusable separator (WAI-ARIA window splitter): its value is the panel's width.
     <div role="separator" aria-orientation="vertical" tabIndex={0} aria-label={t('Resize the task panel')}
-      aria-valuenow={width ?? undefined} aria-valuemin={Math.round(min)} aria-valuemax={Math.round(max)}
-      aria-valuetext={width ? t('{n} pixels wide', { n: width }) : undefined}
+      ref={self} aria-valuenow={width ?? Math.round(min)} aria-valuemin={Math.round(min)} aria-valuemax={Math.round(max)}
+      aria-valuetext={t('{n} pixels wide', { n: width ?? Math.round(min) })}
       onPointerDown={onPointerDown} onKeyDown={onKeyDown} onDoubleClick={(e) => apply(null, e.currentTarget)}
       onFocus={(e) => setWidth(measure(e.currentTarget))}
       className="panel-resize absolute inset-y-0 left-0 z-10 hidden w-2 -translate-x-1/2 cursor-col-resize touch-none lg:block"

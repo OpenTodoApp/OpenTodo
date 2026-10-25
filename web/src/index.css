@@ -1265,7 +1265,7 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
   background-color: transparent; transition: background-color var(--duration-ui, 120ms) var(--ease-calm, ease-out);
 }
 .panel-resize:hover::after, .panel-resize:focus-visible::after, .panel-resize:active::after { background-color: var(--color-accent); }
-.panel-resize:focus-visible { outline: none; }
+
 /* The frame (precision-shell D3): the whole content surface, from its left edge, so the
    docked panel narrows it from the right and nothing moves. */
 .page-frame { margin-left: 0; margin-right: 0; }
