@@ -5329,5 +5329,6 @@
   "Two-factor off": "Due fattori disattivati",
   "Two-factor on": "Due fattori attivi",
   "Users and invitations": "Utenti e inviti",
-  "Whether automation rules run on this server": "Se le regole di automazione vengono eseguite su questo server"
+  "Whether automation rules run on this server": "Se le regole di automazione vengono eseguite su questo server",
+  "Start 15 minutes earlier / later, keeping the end": "Inizia 15 minuti prima / dopo, la fine resta"
 }

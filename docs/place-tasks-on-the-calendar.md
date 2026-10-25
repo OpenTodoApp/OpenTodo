@@ -19,7 +19,7 @@ Drag a task from the Unscheduled lane onto a time slot. Its due date and time be
 
 To plan from your lists, open the side list with **Plan from a list** (in the header's **More actions** menu of Day, Week, Month and Plan) and drag tasks from there onto the calendar, or focus one and press <kbd>s</kbd>: in Day and Week the arrows then move it, <kbd>Enter</kbd> places it and <kbd>Esc</kbd> cancels, and focus goes back to the list; in Month and Plan it goes straight onto the focused day. The list stays open while you move to other days, weeks or months and switch between Day, Week, Month and Plan; close it with its close button or <kbd>Esc</kbd>.
 
-To change how long something takes, drag the bottom edge of its block. Dropping a block back on the Unscheduled lane keeps the date and removes the time.
+To change how long something takes, drag the bottom edge of its block: the start stays and the end moves. Drag the top edge to start earlier or later while the end stays; the estimate grows or shrinks to match, never below 15 minutes, and **Undo** puts back both. Dragging the middle of a block moves it and keeps its length. Dropping a block back on the Unscheduled lane keeps the date and removes the time.
 
 The time you place a task at is its **Do** time. In the task's details, **Do** shows the block the calendar draws, for example `Today 12:00–13:30` for a 90-minute estimate. **Start** is something else: the date from which the task is available (see [Deadlines and start dates](deadlines-and-start-dates.md)).
 
@@ -31,7 +31,7 @@ Every move works without a mouse.
 2. Move it with the arrow keys: <kbd>↑</kbd> / <kbd>↓</kbd> by 15 minutes, <kbd>←</kbd> / <kbd>→</kbd> by a day.
 3. Press <kbd>Enter</kbd> to place it, or <kbd>Esc</kbd> to cancel.
 
-On the calendar itself, <kbd>j</kbd> / <kbd>k</kbd> select tasks, the arrows move the selected one, <kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>Shift</kbd>+<kbd>↓</kbd> shorten or lengthen it, and <kbd>u</kbd> takes it off the grid while keeping its date.
+On the calendar itself, <kbd>j</kbd> / <kbd>k</kbd> select tasks, the arrows move the selected one, <kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>Shift</kbd>+<kbd>↓</kbd> shorten or lengthen it, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↓</kbd> start it 15 minutes earlier or later while the end stays, and <kbd>u</kbd> takes it off the grid while keeping its date.
 
 ## See whether the day fits
 

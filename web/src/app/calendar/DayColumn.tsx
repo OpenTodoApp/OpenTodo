@@ -1,7 +1,7 @@
 // The Day and Week grid columns (OpenSpec `time-blocking`): the hour gutter, each
 // day's header with capacity and unscheduled lane, and the day column with its
 // task blocks, calendar events, "+N" overflow lists, ghosts and the now line.
-import { DAY_MINUTES, dayLoad, SLOT_MINUTES, type GridPrefs } from '../../lib/calendar'
+import { DAY_MINUTES, dayLoad, DEFAULT_BLOCK_MINUTES, SLOT_MINUTES, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { dateLocaleOf, formatHour } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
@@ -161,7 +161,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
   )
 }
 
-/** One task block: drag to move, drag its lower edge to resize, double-click to open. */
+/** One task block: drag to move, drag its upper edge to change the start or its lower edge the end, double-click to open. */
 function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging, onSelect, onOpen, onDragStart }: {
   b: PlacedBlock
   block: NonNullable<ReturnType<DayData['blocks']['get']>>
@@ -190,9 +190,11 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       role="button"
       tabIndex={-1}
       onPointerDown={(e) => {
-        // The lowest few pixels (handle and border) resize; the rest moves the block.
+        // The lowest few pixels resize the end, the highest few the start (GitHub issue 355); the rest moves the block.
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-        if (e.clientY >= rect.bottom - Math.min(RESIZE_ZONE_PX, rect.height / 3)) onDragStart(e, { taskId: b.id, kind: 'resize', blockStart: block.start, blockDate: date })
+        const zone = Math.min(RESIZE_ZONE_PX, rect.height / 3)
+        if (e.clientY >= rect.bottom - zone) onDragStart(e, { taskId: b.id, kind: 'resize', blockStart: block.start, blockDate: date })
+        else if (e.clientY <= rect.top + zone) onDragStart(e, { taskId: b.id, kind: 'resize-start', blockEnd: block.start + (task.estimate_minutes || DEFAULT_BLOCK_MINUTES), blockDate: date })
         else onDragStart(e, { taskId: b.id, kind: 'move', grabOffset: e.clientY - rect.top })
       }}
       onClick={() => onSelect(b.id)}
@@ -217,6 +219,11 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
           {block.estimated && <span className="ml-1">{formatMinutes(task.estimate_minutes!)}</span>}
         </div>
       )}
+      <div
+        data-resize-start-handle
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize touch-none hover:bg-accent/30"
+      />
       <div
         data-resize-handle
         aria-hidden

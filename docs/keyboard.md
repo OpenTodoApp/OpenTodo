@@ -177,6 +177,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>↑</kbd> / <kbd>↓</kbd> | Move the selected task 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first task |
 | <kbd>←</kbd> / <kbd>→</kbd> | Move the selected task one day earlier / later |
 | <kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd> | Shorten / lengthen the estimate by 15 minutes |
+| <kbd>Alt+Shift+↑</kbd> / <kbd>Alt+Shift+↓</kbd> | Start 15 minutes earlier / later, keeping the end |
 | <kbd>u</kbd> | Unschedule the selected task (keep the date) |
 | <kbd>p</kbd> | Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels |
 | <kbd>Enter</kbd> | Open the selected task |

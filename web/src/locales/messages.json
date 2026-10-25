@@ -10092,7 +10092,8 @@
   ],
   "Rescheduled": [
     "web/src/lib/activity.ts",
-    "web/src/lib/feed.ts"
+    "web/src/lib/feed.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Reschedule…": [
     "web/src/app/task-list/EarlierActions.tsx"
@@ -11591,6 +11592,9 @@
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts"
+  ],
+  "Start 15 minutes earlier / later, keeping the end": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Start a new sandbox": [
     "web/src/app/App.tsx"

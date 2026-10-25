@@ -2,7 +2,7 @@
 // task-list-presentation "Completion feedback", "Single-action undo"): the list,
 // the panel and the calendar call these instead of the plain ops, so every
 // complete, delete, move, date change and park shows the same toast.
-import { completeUndoable, dueUndoable, moveUndoable, parkUndoable, trashUndoable } from '../lib/undoActions'
+import { completeUndoable, dueUndoable, moveUndoable, parkUndoable, rescheduleUndoable, trashUndoable } from '../lib/undoActions'
 import type { Task } from '../lib/types'
 import { showUndoToast } from './bulk/toastStore'
 import { markCompleted, tick, withListTransition } from './motion'
@@ -36,6 +36,12 @@ export async function moveWithUndo(id: string, projectId: string | null, targetN
 
 export async function setDueWithUndo(id: string, due: Task['due']): Promise<void> {
   const r = await withListTransition(1, () => dueUndoable(id, due))
+  if (r.entry) showUndoToast(r.label, r.entry.id)
+}
+
+/** A calendar block's new start with the estimate that keeps its end, as one change. */
+export async function rescheduleWithUndo(id: string, due: NonNullable<Task['due']>, estimate: number): Promise<void> {
+  const r = await rescheduleUndoable(id, due, estimate)
   if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 

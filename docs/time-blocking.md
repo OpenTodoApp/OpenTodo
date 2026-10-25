@@ -38,7 +38,7 @@ For work that spans weeks, switch the project to **Timeline**. Each task is a ba
 
 ## Place a task on the calendar
 
-Drag a task from the Unscheduled lane onto a time slot, or select it in any list and press <kbd>s</kbd> to place it with the keyboard. Drag the bottom edge of a block to change how long it takes. See [Place tasks on the calendar](place-tasks-on-the-calendar.md#place-a-task-on-the-calendar).
+Drag a task from the Unscheduled lane onto a time slot, or select it in any list and press <kbd>s</kbd> to place it with the keyboard. Drag a block's top or bottom edge to change its start or end. See [Place tasks on the calendar](place-tasks-on-the-calendar.md#place-a-task-on-the-calendar).
 
 ## See whether the day fits
 

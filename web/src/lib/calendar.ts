@@ -56,6 +56,26 @@ export function resizeEstimate(startMinutes: number, pointerOffsetPx: number, px
   return clamp(Math.round(length / SLOT_MINUTES) * SLOT_MINUTES, SLOT_MINUTES, MAX_ESTIMATE_MINUTES)
 }
 
+/**
+ * Start from dragging a block's upper edge (GitHub issue 355): whole slots, the end stays
+ * where it is, so the estimate grows or shrinks by the same amount; at least one slot
+ * long, at most the longest estimate, never before 00:00. `blockEnd` is minutes from
+ * midnight (start plus the estimate, or the visual 30 minutes of an unestimated block).
+ */
+export function resizeStart(blockEnd: number, pointerOffsetPx: number, pxPerMinute: number): { start: number; estimate: number } {
+  const raw = pxPerMinute > 0 && Number.isFinite(pointerOffsetPx) ? pointerOffsetPx / pxPerMinute : 0
+  const start = clamp(Math.round(raw / SLOT_MINUTES) * SLOT_MINUTES, Math.max(0, blockEnd - MAX_ESTIMATE_MINUTES), clamp(blockEnd - SLOT_MINUTES, 0, LAST_SLOT))
+  return { start, estimate: blockEnd - start }
+}
+
+/** Keyboard: move a block's start by `delta` minutes keeping its end (the upper-edge twin of `stepEstimate`). */
+export function stepStart(start: number, estimate: number | null, delta: number): { start: number; estimate: number } {
+  const end = start + (estimate ?? DEFAULT_BLOCK_MINUTES)
+  const snapped = delta > 0 ? Math.floor(start / SLOT_MINUTES) * SLOT_MINUTES : Math.ceil(start / SLOT_MINUTES) * SLOT_MINUTES
+  const next = clamp(snapped + delta, Math.max(0, end - MAX_ESTIMATE_MINUTES), clamp(end - SLOT_MINUTES, 0, LAST_SLOT))
+  return { start: next, estimate: end - next }
+}
+
 /** Keyboard: estimate ± `delta` minutes from the current one (an unestimated block starts at its visual 30). */
 export function stepEstimate(current: number | null, delta: number): number {
   const base = current ?? DEFAULT_BLOCK_MINUTES

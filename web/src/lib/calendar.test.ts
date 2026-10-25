@@ -4,7 +4,7 @@ import {
   allDayEvents,
   eventBlocks,
   blockFor, calendarTasks, dayLoad, DEFAULT_GRID_PREFS, dropStart, formatLoad, formatTime, normalizeGridPrefs, nudgeDue, parseTime,
-  placementStart, resizeEstimate, slotFromOffset, stepEstimate, weekDates,
+  placementStart, resizeEstimate, resizeStart, slotFromOffset, stepEstimate, stepStart, weekDates,
 } from './calendar'
 import { formatHour, formatTime as formatWallTime, resolveDateTime } from './dates'
 import type { CalendarEvent, Task } from './types'
@@ -63,6 +63,27 @@ describe('slot math', () => {
     // Never below one slot, even when dragged above the start.
     expect(resizeEstimate(start, 0, PX)).toBe(15)
     expect(resizeEstimate(start, 0, 0)).toBe(15)
+  })
+})
+
+describe('the upper edge (GitHub issue 355)', () => {
+  it('moves the start in whole slots and keeps the end', () => {
+    const end = 11 * 60
+    expect(resizeStart(end, (9 * 60 + 30) * PX, PX)).toEqual({ start: 9 * 60 + 30, estimate: 90 })
+    expect(resizeStart(end, (9 * 60 + 37) * PX, PX)).toEqual({ start: 9 * 60 + 30, estimate: 90 })
+    expect(resizeStart(end, (9 * 60 + 38) * PX, PX)).toEqual({ start: 9 * 60 + 45, estimate: 75 })
+    // At least one slot long, never before midnight.
+    expect(resizeStart(end, 12 * 60 * PX, PX)).toEqual({ start: 10 * 60 + 45, estimate: 15 })
+    expect(resizeStart(30, -100, PX)).toEqual({ start: 0, estimate: 30 })
+  })
+
+  it('steps the start with the keyboard, snapping onto the grid and keeping the end', () => {
+    expect(stepStart(600, 60, -15)).toEqual({ start: 585, estimate: 75 })
+    expect(stepStart(600, 60, 15)).toEqual({ start: 615, estimate: 45 })
+    expect(stepStart(600, 15, 15)).toEqual({ start: 600, estimate: 15 })
+    expect(stepStart(600, null, -15)).toEqual({ start: 585, estimate: 45 })
+    expect(stepStart(605, 30, 15)).toEqual({ start: 615, estimate: 20 })
+    expect(stepStart(0, 30, -15)).toEqual({ start: 0, estimate: 30 })
   })
 })
 
