@@ -788,7 +788,7 @@ The empty Today, the empty Upcoming, a project with no open task, Done for today
 - **THEN** `make ui-lint` fails naming the file
 
 ### Requirement: Toast primitive
-The client SHALL show at most one toast at a time, in the toast region (bottom centre on phones, bottom right from 640 px up, clear of the home indicator and the on-screen keyboard); a new toast SHALL replace the previous one. A toast SHALL hold one sentence naming what happened, written as the result ("3 tasks rescheduled", "Moved to Home"), and at most two controls, Undo first when the action can be undone. It SHALL stay five seconds after one task's action and ten after a batch; the timer SHALL pause while the pointer is over the toast or focus is inside it and restart when both leave. Tab SHALL reach its controls; focus SHALL never move into a toast on its own; `Ctrl`/`⌘`+`Z` outside a text field SHALL activate Undo while the toast shows. The toast SHALL be announced politely to assistive technology. A toast SHALL never cover the element that has focus: while a toast is shown, the content column SHALL keep the focused element above the toast's height, and from 640 px up, when the region would overlap the focused element, the toast SHALL move to the opposite corner. Under reduced motion a toast SHALL only fade. Toasts are device interface state and write nothing.
+The client SHALL show at most one toast at a time, in the toast region (bottom centre on phones, bottom right from 640 px up, clear of the home indicator and the on-screen keyboard); a new toast SHALL replace the previous one. A toast SHALL hold one sentence naming what happened, written as the result ("3 tasks rescheduled", "Moved to Home"), at most two controls, Undo first when the action can be undone, and a close button that dismisses it. It SHALL stay five seconds after one task's action and ten after a batch; after Undo it SHALL show the result ("Undone.") for five seconds and then leave; the timer SHALL pause while the pointer is over the toast or focus is inside it and restart when both leave, and a control that disappears while it has focus SHALL not keep the toast paused. Tab SHALL reach its controls; focus SHALL never move into a toast on its own; `Ctrl`/`⌘`+`Z` outside a text field SHALL activate Undo while the toast shows; Escape with focus inside the toast SHALL dismiss it and return focus to where it was before. The toast SHALL be announced politely to assistive technology. A toast SHALL never cover the element that has focus: while a toast is shown, the content column SHALL keep the focused element above the toast's height, and from 640 px up, when the region would overlap the focused element, the toast SHALL move to the opposite corner. Under reduced motion a toast SHALL only fade. Toasts are device interface state and write nothing.
 
 #### Scenario: Pause on hover
 - **WHEN** a batch toast has shown for eight seconds and the user moves the pointer onto it and reads for ten seconds
@@ -809,6 +809,14 @@ The client SHALL show at most one toast at a time, in the toast region (bottom c
 #### Scenario: Reduced motion
 - **WHEN** the system prefers reduced motion and a toast appears and leaves
 - **THEN** it only fades in and out, with no movement
+
+#### Scenario: The result of Undo leaves
+- **WHEN** the user completes a task, clicks Undo in the toast and moves the pointer away
+- **THEN** the toast reads "Undone." and leaves five seconds later
+
+#### Scenario: Dismiss
+- **WHEN** a toast is shown and the user activates its close button, or tabs into it and presses Escape
+- **THEN** the toast leaves at once, and after Escape focus is back on the element that had it before
 
 ### Requirement: Motion sequences in the workbench
 The workbench SHALL have a Foundations motion story set showing the completion sequence on a row and on a card, the repeating-task completion, a list reflow and each overlay entrance, each playable with a control, in both themes. An automated check in the interface check SHALL open these stories with reduced motion emulated and fail if any running animation changes `transform`, `height`, `width` or `translate`, and SHALL open them with the no-motion attribute and fail if any animation runs at all.

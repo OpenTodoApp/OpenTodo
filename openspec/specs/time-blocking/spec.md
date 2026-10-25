@@ -66,7 +66,7 @@ An open task with a due date and time SHALL appear as a block at that time, size
 - **THEN** today's column shows a line at 10:17 that moves as time passes, and the other six columns show none
 
 ### Requirement: Planning list and phone agenda
-The list of tasks to plan SHALL open in the shell's panel slot with a design-system picker for its source. Below 640 px the Week SHALL render as a vertical agenda grouped by day.
+The list of tasks to plan SHALL open in the shell's panel slot with a design-system picker for its source, from Day, Week, Month and Plan. It SHALL stay open while the user moves to another day, week or month and switches between Day, Week, Month and Plan, and work with the range on screen. After `s` on a task in the list, Day and Week SHALL take the keys for the placement (arrows move it, Enter places it, Escape cancels it without closing the list) and SHALL then return focus to the list. Only its close button, Escape outside a placement, or opening a page outside the Calendar SHALL close it. Below 640 px the Week SHALL render as a vertical agenda grouped by day.
 
 #### Scenario: Week on a phone
 - **WHEN** the user opens the Week on a 390 px screen
@@ -75,6 +75,22 @@ The list of tasks to plan SHALL open in the shell's panel slot with a design-sys
 #### Scenario: Planning list in the panel slot
 - **WHEN** the user opens the list of tasks to plan from the Calendar
 - **THEN** it opens in the shell's panel slot with a picker for its source, and the grid stays in the content column
+
+#### Scenario: The list stays open while the user moves through the Calendar
+- **WHEN** the user opens Plan from a list in the Day, presses the next-day chevron, switches to Week and then to Month
+- **THEN** the list is still open after each step, and pressing `s` on one of its tasks in the Month puts the task on the focused day
+
+#### Scenario: Leaving the Calendar closes the list
+- **WHEN** the planning list is open and the user opens Today
+- **THEN** the panel slot is empty
+
+#### Scenario: Place from the list with the keyboard
+- **WHEN** the planning list is open in the Week, the user focuses a task in it, presses `s`, presses the down arrow twice and Enter
+- **THEN** the task's due becomes that day 30 minutes after the first proposed time as one undoable change, the list stays open, and focus is on the next task in the list
+
+#### Scenario: Escape cancels the placement first
+- **WHEN** the user presses `s` on a task in the list and then Escape
+- **THEN** the placement ends without a change, the list stays open, and focus is back on that task
 
 ### Requirement: Calendar follows the date and time preferences
 The Week view SHALL start on the user's preferred first day of the week (OpenSpec `date-time-preferences`), and grid hours and block times SHALL follow the user's time format.
@@ -88,7 +104,7 @@ The Week view SHALL start on the user's preferred first day of the week (OpenSpe
 - **THEN** the grid's hour labels read `9 AM`, `10 AM` and so on, and moving a block still sets the same stored `HH:MM` due time
 
 ### Requirement: Place and resize blocks
-Dragging a task from the unscheduled lane, from any list or from an existing block onto a grid slot SHALL set its due date and time to that slot; dragging a block's lower edge SHALL set its estimate in 15-minute steps. Dropping on the unscheduled lane SHALL keep the date and clear the time. Each action SHALL be an ordinary field edit: applied locally first, queued offline, converging by last-writer-wins.
+Dragging a task from the unscheduled lane, from any list or from an existing block onto a grid slot SHALL set its due date and time to that slot, keeping its estimate; dragging a block's lower edge SHALL set its estimate in 15-minute steps; dragging a block's upper edge SHALL set its due time in 15-minute steps and its estimate to the time left until the block's unchanged end (at least 15 minutes; a block without an estimate counts as its drawn 30 minutes), as one change offered with Undo. The upper and lower edges SHALL take the same hit size, with the mouse and with a long press on touch, in Day and Week. Dropping on the unscheduled lane SHALL keep the date and clear the time. Each action SHALL be an ordinary field edit: applied locally first, queued offline, converging by last-writer-wins. A time fixed to a zone SHALL stay fixed to that zone. Events of subscribed calendars stay read-only.
 
 #### Scenario: Drop on a slot
 - **WHEN** the user drags a task onto Tuesday 14:30
@@ -102,8 +118,20 @@ Dragging a task from the unscheduled lane, from any list or from an existing blo
 - **WHEN** device A moves a task to 09:00 and device B moves it to 11:00, both offline, and both sync
 - **THEN** every device shows the task at the time written with the greater timestamp
 
+#### Scenario: Start earlier from the upper edge
+- **WHEN** the user drags the top edge of a 10:00 block with a 60-minute estimate up to 09:30
+- **THEN** the task is due at 09:30 with a 90-minute estimate, the block still ends at 11:00, and one Undo puts back both
+
+#### Scenario: Start later, never shorter than a slot
+- **WHEN** the user drags the top edge of a 10:00 block without an estimate down past its end
+- **THEN** the task is due at 10:15 with a 15-minute estimate
+
+#### Scenario: Move keeps the length
+- **WHEN** the user drags the middle of a 10:00 block with a 60-minute estimate to 13:00
+- **THEN** the task is due at 13:00 and its estimate is still 60 minutes
+
 ### Requirement: Keyboard equivalent for every placement
-With a block or lane task selected, arrow keys SHALL move it by 15 minutes or one day, `Shift` with up and down SHALL change the estimate by 15 minutes, Enter SHALL open the detail panel, and a shortcut SHALL send a selected list task to the Day view's placement mode. No placement SHALL require a pointer.
+With a block or lane task selected, arrow keys SHALL move it by 15 minutes or one day, `Shift` with up and down SHALL change the estimate by 15 minutes, `Alt`+`Shift` with up and down SHALL move the start by 15 minutes keeping the end, Enter SHALL open the detail panel, and a shortcut SHALL send a selected list task to the Day view's placement mode. No placement SHALL require a pointer.
 
 #### Scenario: Move with arrows
 - **WHEN** a block at 09:00 is selected and the user presses the down arrow twice
@@ -112,6 +140,10 @@ With a block or lane task selected, arrow keys SHALL move it by 15 minutes or on
 #### Scenario: Schedule from a list
 - **WHEN** a task is selected in Today and the user presses `s`
 - **THEN** the Day view opens with that task in placement mode, arrows pick a slot and Enter confirms
+
+#### Scenario: Start earlier with the keyboard
+- **WHEN** a 10:00 block with a 60-minute estimate is selected and the user presses `Alt`+`Shift`+up
+- **THEN** the task is due at 09:45 with a 75-minute estimate
 
 ### Requirement: Overlap and capacity
 Blocks that overlap in time SHALL be laid out side by side without hiding each other and SHALL carry an overlap marker. Each day column SHALL show the sum of estimates of its open timed and untimed tasks against a configurable day length (default 8 hours) and SHALL mark the day when the sum exceeds it. The capacity line SHALL be set in the muted text tone with tabular figures of the interface typeface, and SHALL turn to the danger tone with the over-capacity text when the day is over capacity; it SHALL never use a monospace face. Blocks of subscribed calendar events (OpenSpec `calendar-feeds`) SHALL take part in the side-by-side layout and the marker, and SHALL NOT count toward the sum.
