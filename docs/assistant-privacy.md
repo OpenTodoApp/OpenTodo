@@ -40,7 +40,7 @@ If your account uses [end-to-end encryption](e2ee.md), the server never runs the
 
 When the server owner allows it, the assistant runs [on your device](assistant-encrypted.md) instead. Your device sends what you type and the task data a question needs directly to the provider you set up there, with your own key; the OpenTodo server receives only your consent (which provider you accepted, not the key, the model or the address) and nothing of the conversation. The key is kept in this browser only and deleted at sign-out. Usage is shown on the device and never reported.
 
-When the owner does not allow it, the panel explains that the assistant cannot read encrypted tasks, offers no consent step, and links to **Settings → Account → Encryption**, where you can turn encryption off if you want to use the server's assistant (your tasks are then stored without end-to-end encryption).
+When the owner does not allow it, the panel explains that the assistant cannot read encrypted tasks, offers no consent step, and links to **Settings → Account → End-to-end encryption**, where you can turn encryption off if you want to use the server's assistant (your tasks are then stored without end-to-end encryption).
 
 ## Demo instance
 

@@ -257,14 +257,14 @@ const shots = [
   { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('#review-step-title').waitFor()); await settle(p, 300) } },
   // Open Loops (open-loops-method): the Loop home with the sidebar by the Places, Next, and the project walk.
   { name: 'loop', server: D, async run(p) {
-    await go(p, demoBase, '/settings/account', () => p.locator('[data-method-mode="first"]').waitFor())
+    await go(p, demoBase, '/settings/account/profile', () => p.locator('[data-method-mode="first"]').waitFor())
     await p.locator('[data-method-mode="first"]').click()
     await p.locator('[data-offer="start"]').getByRole('button', { name: 'Keep my start view' }).click()
     const contexts = p.locator('[data-offer="contexts"]')
     if (await contexts.count()) await contexts.getByRole('button', { name: 'Create them' }).click()
     await go(p, demoBase, '/loop', () => p.locator('[data-loop-tile="do"]').waitFor()); await settle(p, 300)
   }, async after(p) {
-    await go(p, demoBase, '/settings/account', () => p.locator('[data-method-mode="lists"]').waitFor())
+    await go(p, demoBase, '/settings/account/profile', () => p.locator('[data-method-mode="lists"]').waitFor())
     await p.locator('[data-method-mode="lists"]').click(); await settle(p, 300)
   } },
   { name: 'next', server: D, async run(p) { await go(p, demoBase, '/next', () => p.locator('[data-group]').first().waitFor()); await settle(p, 300) } },
@@ -432,7 +432,7 @@ const shots = [
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'settings', server: P, card: true, async run(p) { await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor()) } },
   { name: 'settings-security', card: true, server: P, async run(p) {
-    await go(p, plainBase, '/settings/account', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/account/security', () => p.getByRole('heading', { name: 'Security', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Two-factor authentication' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
@@ -443,14 +443,14 @@ const shots = [
     await p.goto(plain.pageLink); await p.getByRole('heading', { level: 1, name: 'Paint the fence' }).waitFor(); await settle(p, 800)
   } },
   { name: 'settings-passkeys', server: P, async run(p) {
-    await go(p, plainBase, '/settings/account', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/account/security', () => p.getByRole('heading', { name: 'Security', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Passkeys', exact: true }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 270 }
   } },
   { name: 'settings-notifications', server: P, permissions: ['notifications'], async run(p) {
-    await go(p, plainBase, '/settings/notifications', () => p.getByRole('heading', { name: 'Notifications', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/notifications/push', () => p.getByRole('heading', { name: 'Push notifications', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Notifications' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
@@ -458,14 +458,14 @@ const shots = [
   } },
   // Delivery channels (notification-channels): one ntfy channel added through the API.
   { name: 'settings-notification-channels', server: P, async run(p) {
-    await go(p, plainBase, '/settings/notifications', () => p.getByRole('heading', { name: 'Notifications', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/notifications/channels', () => p.getByRole('heading', { name: 'Delivery channels', level: 1 }).waitFor())
     await p.evaluate(async () => {
       const { channels } = await (await fetch('/api/v1/notification-channels')).json()
       if (channels.length) return
       await fetch('/api/v1/notification-channels', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kind: 'ntfy', name: 'Phone', url: 'https://ntfy.sh', topic: 'ana-tasks', events: ['reminder', 'assigned', 'mentioned'] }) })
     })
-    await go(p, plainBase, '/settings/notifications', () => p.locator('[data-channel]').first().waitFor())
+    await go(p, plainBase, '/settings/notifications/channels', () => p.locator('[data-channel]').first().waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Delivery channels' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
@@ -488,7 +488,7 @@ const shots = [
     return { x: main.x, y: main.y, width: main.width, height: list.y + list.height - main.y + 32 }
   } },
   { name: 'members', server: P, async run(p) {
-    await go(p, plainBase, '/settings/people', () => p.getByRole('heading', { name: 'People', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/people/users', () => p.getByRole('heading', { name: 'Users and invitations', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Members' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
@@ -551,7 +551,7 @@ const shots = [
     await p.locator('#workspace-members').waitFor(); await settle(p, 600)
   } },
   { name: 'assistant-settings', server: 'assistant', async run(p) {
-    await go(p, assistantBase, '/settings/integrations', () => p.getByRole('heading', { name: 'Integrations', level: 1 }).waitFor())
+    await go(p, assistantBase, '/settings/integrations/assistant', () => p.getByRole('heading', { name: 'Assistant', level: 1 }).waitFor())
     const h = p.locator('#assistant-settings-heading'); await h.waitFor(); await p.locator('[data-assistant-owner]').waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
@@ -559,7 +559,7 @@ const shots = [
   } },
   // The owner's switch for the on-device assistant of encrypted accounts (assistant-on-device), not saved.
   { name: 'assistant-device-owner', server: 'assistant', async run(p) {
-    await go(p, assistantBase, '/settings/integrations', () => p.getByRole('heading', { name: 'Integrations', level: 1 }).waitFor())
+    await go(p, assistantBase, '/settings/integrations/assistant', () => p.getByRole('heading', { name: 'Assistant', level: 1 }).waitFor())
     await p.locator('[data-assistant-owner]').getByRole('button', { name: 'Configure' }).click()
     const group = p.locator('[data-assistant-group="device"]'); await group.waitFor()
     await group.getByLabel('Let encrypted accounts use the assistant from their own device').check()

@@ -71,14 +71,19 @@ export function screens(ids, base) {
     // the section that holds its control (the owner sees all of them).
     // From 1024 px /settings opens the first section (settings-navigation), so the page title reads Account there.
     { name: 'settings', path: '/settings', ready: (p) => p.getByRole('heading', { name: /^(Settings|Account)$/, level: 1 }).first().waitFor(), overlays: ['notifications'] },
+    // A section with sub-pages opens as their overview (settings-subpages); each sub-page is its own screen.
     ...[
       ['account', 'Account'], ['appearance', 'Appearance'],
-      ['general', 'General'], ['notifications', 'Notifications'], ['capture', 'Capture', ['voice-consent']],
+      ['general', 'General'], ['language', 'Language and region'], ['notifications', 'Notifications'], ['capture', 'Capture'],
       ['integrations', 'Integrations'], ['data', 'Data'],
-      ['people', 'People', ['delete-user']], ['server', 'Server'],
-    ].map(([id, title, overlays]) => ({ name: `settings-${id}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
-    // A legacy address opens its section in place (settings-navigation "Legacy settings addresses").
-    { name: 'settings-legacy', path: '/settings/security', ready: heading('Account') },
+      ['people', 'People'], ['server', 'Server'],
+      ['account/security', 'Security'], ['appearance/theme', 'Theme and density'], ['general/focus', 'Focus timer'],
+      ['language/date-time', 'Date and time'], ['capture/voice', 'Voice capture', ['voice-consent']],
+      ['integrations/webhooks', 'Webhooks'], ['integrations/mcp', 'AI assistants (MCP)'],
+      ['people/users', 'Users and invitations', ['delete-user']], ['server/backups', 'Backups'], ['server/audit', 'Audit log'],
+    ].map(([id, title, overlays]) => ({ name: `settings-${id.replace('/', '-')}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
+    // A legacy address opens the page that holds its content (settings-navigation "Legacy settings addresses").
+    { name: 'settings-legacy', path: '/settings/security', ready: heading('Security') },
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
     // The capture screen with shared files (attachments D9): the service worker's
     // hand-over store is filled in the page, then /share?inbox=<id> opens. Chromium

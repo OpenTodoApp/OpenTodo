@@ -57,7 +57,7 @@ The same rules apply to people in a [shared project](sharing.md).
 
 ## Signing out
 
-Signing out (**Settings → Account → Sign out here**) removes your tasks from that device. If you're online, waiting changes are sent first. Your data stays on the server, and signing in again downloads it.
+Signing out (**Settings → Account → Security → Sign out here**) removes your tasks from that device. If you're online, waiting changes are sent first. Your data stays on the server, and signing in again downloads it.
 
 ## Tips
 

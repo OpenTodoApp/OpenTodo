@@ -15,7 +15,7 @@ You are signed in (see [Getting started](getting-started.md)). This page adds a 
 
 ## Your first visit
 
-The first time an account opens the Inbox, a start guide opens over it, one step at a time: add your first task (the guide has its own box, and the task lands in the Inbox behind it), choose [how you work](method/set-up.md) (Lists only, Companion or Open Loops first) and light or dark, and install the app. On a phone it is a sheet at the bottom, with the Inbox visible above. Every step has a **Skip** button, and **Skip all**, the × button, <kbd>Esc</kbd> or a tap outside close it at once. It never comes back on its own on that account, on any of your devices; **Open the start guide** in the **Start guide** row of **Settings → Account → How you work** opens it again over the Inbox.
+The first time an account opens the Inbox, a start guide opens over it, one step at a time: add your first task (the guide has its own box, and the task lands in the Inbox behind it), choose [how you work](method/set-up.md) (Lists only, Companion or Open Loops first) and light or dark, and install the app. On a phone it is a sheet at the bottom, with the Inbox visible above. Every step has a **Skip** button, and **Skip all**, the × button, <kbd>Esc</kbd> or a tap outside close it at once. It never comes back on its own, on any of your devices; **Open the start guide** in the **Start guide** row of **Settings → Account → Profile → How you work** opens it again over the Inbox.
 
 The first step also offers **Start with three sample tasks**, marked "Sample" and never counted in Statistics. **Remove sample tasks**, in a sample's panel or the Inbox's menu, trashes them all at once, with Undo.
 

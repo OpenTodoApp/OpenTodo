@@ -12,7 +12,7 @@ import { Icon } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
-import { followLink } from './SettingsView'
+import { followLink } from './settingsLinks'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
@@ -84,7 +84,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
         <SettingRow {...rowCopy('data', 'backups')}
           status={(
             <span data-testid="backups-link">
-              {t.rich('Backups of the whole server are under <a>Settings → Server</a>.', { a: (chunks) => <a className="text-accent underline" href="/settings/server" onClick={(e) => followLink(e, { view: 'settings', section: 'server' })}>{chunks}</a> })}
+              {t.rich('Backups of the whole server are under <a>Settings → Server</a>.', { a: (chunks) => <a className="text-accent underline" href="/settings/server/backups" onClick={(e) => followLink(e, { view: 'settings', section: 'server', page: 'backups' })}>{chunks}</a> })}
             </span>
           )} />
       )}

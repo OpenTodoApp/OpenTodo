@@ -16,12 +16,18 @@ The **App** group of [Settings](settings.md) is about how the app behaves. Setti
 
 ## General
 
-- **Language**: the language of the app on all your devices. See [The app in your language](language.md).
-- **Start view**: the view this device opens on, including **Display: Today** and **Display: Upcoming** for a tablet or a wall panel; a project or saved view display is pinned from the display's own menu. See [Views](views.md#choose-where-the-app-opens) and [Display mode](display-mode.md).
-- **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
-- **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
-- **Keyboard**: **Show shortcut hints** prints the keys in the app itself (next to quick add, beside the sidebar's destinations, in prompts) as well as in tooltips and menus, and **Vim keybindings** turns the Vim layer on; both for this device. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
-- **Focus**: the timer of the [Focus](focus.md) screen, its lengths and breaks, the break reminder and the sound, on all your devices.
+- **Start view and briefing**: the start view is the view this device opens on, including **Display: Today** and **Display: Upcoming** for a wall panel. See [Views](views.md#choose-where-the-app-opens) and [Display mode](display-mode.md). **Show the briefing**: the sentence under Today's title.
+- **Keyboard**: **Show shortcut hints** prints the keys in the app itself as well as in tooltips, and **Vim keybindings** turns the Vim layer on; both for this device. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
+- **Focus timer**: the timer of the [Focus](focus.md) screen, its lengths and breaks, the break reminder and the sound, on all your devices.
+- **Maps**: maps and address search on your devices, if the owner allows. See [Locations and places](locations-and-places.md).
+
+## Language and region
+
+All following your account:
+
+- **Language**: the language of the app. See [The app in your language](language.md).
+- **Date and time**: how dates and times look and where weeks start (see below).
+- **Calendar grid**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
 
 ### Date and time
 
@@ -36,7 +42,7 @@ The **Preview** shows which day is today, a due date, a date, a due time, a comm
 
 ## Notifications
 
-Push notifications for reminders on this device, and a test that shows whether they arrive. See [Notifications](notifications.md) and [Push notifications](push-notifications.md).
+**Push notifications** for reminders on this device, and a test that shows whether they arrive. See [Notifications](notifications.md) and [Push notifications](push-notifications.md). **Delivery channels**: [ntfy, Pushover, Gotify or a webhook](notification-channels.md).
 
 **Weekly digest**: an email on the day you choose with last week's numbers; it needs outgoing email from the server owner. See [the weekly digest](statistics.md#weekly-digest-by-email).
 

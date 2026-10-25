@@ -69,7 +69,7 @@ describe('the Focus card', () => {
 
   it('Focus settings: the Pomodoro length and the break reminder are in General → Focus, found by search, with Help to the focus guide', async () => {
     const Probe = () => <span data-help-probe>{useHelpRequest()?.screen}</span>
-    const r = await render(<><SettingsView user={member} onLogout={() => {}} section="general" /><Probe /></>)
+    const r = await render(<><SettingsView user={member} onLogout={() => {}} section="general" page="focus" /><Probe /></>)
     await waitFor(() => !!document.querySelector('[data-testid="focus-settings"]'), 'card')
     const card = document.querySelector('[data-testid="focus-settings"]')!
     expect(card.textContent).toContain('Work session')

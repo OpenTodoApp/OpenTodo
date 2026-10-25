@@ -38,7 +38,7 @@ kubectl --namespace opentodo get secret opentodo-setup-token \
   -o jsonpath='{.data.setup-token}' | base64 -d; echo
 ```
 
-The token only matters until the owner exists. After that, sign-up is closed and the owner invites people from **Settings → People → Members**.
+The token only matters until the owner exists. After that, sign-up is closed and the owner invites people from **Settings → People → Users and invitations**.
 
 ## Settings
 

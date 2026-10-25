@@ -121,7 +121,7 @@ object Notifier {
             .setContentTitle(context.getString(R.string.test_title))
             .setContentText(context.getString(R.string.test_text))
             .setAutoCancel(true)
-            .setContentIntent(open(context, "/settings/notifications", 1))
+            .setContentIntent(open(context, "/settings/notifications/push", 1))
             .build()
         return try { NotificationManagerCompat.from(context).notify(1, n); true } catch (e: SecurityException) { false }
     }

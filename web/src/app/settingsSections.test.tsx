@@ -22,9 +22,9 @@ const admin: User = { ...member, id: 'u2', role: 'admin' }
 const owner: User = { ...member, id: 'u3', role: 'owner' }
 const info: DemoInfo = { token: '', sandboxHours: { idle: 2, max: 24 }, resetsAt: 1 }
 
-const render = (user: User, section?: SettingsSectionId, pathname = section ? `/settings/${section}` : '/settings') => {
+const render = (user: User, section?: SettingsSectionId, page?: string, pathname = section ? `/settings/${section}${page ? `/${page}` : ''}` : '/settings') => {
   vi.stubGlobal('location', { origin: 'https://todo.example', search: '', pathname, hash: '' })
-  return renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section={section} />)
+  return renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section={section} page={page} />)
 }
 
 beforeEach(() => {
@@ -36,10 +36,10 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const TEN = ['account', 'workspaces', 'appearance', 'general', 'notifications', 'capture', 'about', 'integrations', 'data', 'people', 'server'] as const
+const TEN = ['account', 'workspaces', 'appearance', 'general', 'language', 'notifications', 'capture', 'about', 'integrations', 'data', 'people', 'server'] as const
 
 describe('routes', () => {
-  it('parses and builds /settings/<section> for the ten sections', () => {
+  it('parses and builds /settings/<section> for the twelve sections', () => {
     expect(SETTINGS_SECTION_IDS).toEqual(TEN)
     for (const id of SETTINGS_SECTION_IDS) {
       expect(parseRoute(`/settings/${id}`)).toEqual({ view: 'settings', section: id })
@@ -48,22 +48,30 @@ describe('routes', () => {
     }
   })
 
-  it('opens every legacy id as its new section, at the anchor of the moved content, replacing the address', () => {
+  it('opens every legacy id as the section or sub-page that holds its content, replacing the address', () => {
     expect(Object.keys(LEGACY_SETTINGS_IDS).sort()).toEqual(['access', 'activity', 'admin', 'ai', 'backups', 'encryption', 'preferences', 'projects', 'security'])
-    expect(parseRoute('/settings/security')).toEqual({ view: 'settings', section: 'account', anchor: 'security' })
-    expect(parseRoute('/settings/encryption')).toEqual({ view: 'settings', section: 'account', anchor: 'encryption' })
-    expect(parseRoute('/settings/activity')).toEqual({ view: 'settings', section: 'account', anchor: 'sessions' })
+    expect(parseRoute('/settings/security')).toEqual({ view: 'settings', section: 'account', page: 'security' })
+    expect(parseRoute('/settings/encryption')).toEqual({ view: 'settings', section: 'account', page: 'encryption' })
+    expect(parseRoute('/settings/activity')).toEqual({ view: 'settings', section: 'account', page: 'activity' })
     expect(parseRoute('/settings/preferences')).toEqual({ view: 'settings', section: 'general' })
     expect(parseRoute('/settings/projects')).toEqual({ view: 'settings', section: 'data', anchor: 'projects' })
-    expect(parseRoute('/settings/ai')).toEqual({ view: 'settings', section: 'integrations', anchor: 'ai' })
+    expect(parseRoute('/settings/ai')).toEqual({ view: 'settings', section: 'integrations', page: 'assistant' })
     expect(parseRoute('/settings/admin')).toEqual({ view: 'settings', section: 'people' })
-    expect(parseRoute('/settings/access')).toEqual({ view: 'settings', section: 'people', anchor: 'access-policies' })
-    expect(parseRoute('/settings/backups')).toEqual({ view: 'settings', section: 'server' })
-    // The address is rewritten in place to the section alone.
-    expect(canonicalPath('/settings/security')).toBe('/settings/account')
+    expect(parseRoute('/settings/access')).toEqual({ view: 'settings', section: 'people', page: 'access-policies' })
+    expect(parseRoute('/settings/backups')).toEqual({ view: 'settings', section: 'server', page: 'backups' })
+    // The address is rewritten in place to the page that holds the content.
+    expect(canonicalPath('/settings/security')).toBe('/settings/account/security')
     expect(canonicalPath('/settings/preferences')).toBe('/settings/general')
     expect(canonicalPath('/settings/general')).toBeNull()
-    expect(routePath({ view: 'settings', section: 'account', anchor: 'security' })).toBe('/settings/account')
+    expect(routePath({ view: 'settings', section: 'data', anchor: 'projects' })).toBe('/settings/data')
+  })
+
+  it('parses and builds /settings/<section>/<page> for sub-pages', () => {
+    expect(parseRoute('/settings/integrations/webhooks')).toEqual({ view: 'settings', section: 'integrations', page: 'webhooks' })
+    expect(routePath({ view: 'settings', section: 'integrations', page: 'webhooks' })).toBe('/settings/integrations/webhooks')
+    // A page id is checked by the screen; only the shape is checked here.
+    expect(parseRoute('/settings/integrations/Bad%20Id')).toEqual({ view: 'settings', section: 'integrations' })
+    expect(parseRoute('/settings/nonsense/webhooks')).toEqual({ view: 'settings' })
   })
 
   it('keeps the list, the import screen, and sends unknown sections to the list route', () => {
@@ -89,7 +97,7 @@ describe('section table', () => {
     const shape = (u: User) => groupedSections(u).map((g) => [g.group.label, g.sections.map((s) => s.id)])
     expect(shape(owner)).toEqual([
       ['You', ['account', 'workspaces', 'appearance']],
-      ['App', ['general', 'notifications', 'capture', 'about']],
+      ['App', ['general', 'language', 'notifications', 'capture', 'about']],
       ['Data', ['integrations', 'data']],
       ['Server', ['people', 'server']],
     ])
@@ -171,8 +179,9 @@ describe('the list', () => {
     expect(html).toContain('data-settings-section="account"')
     expect(html).toMatch(/<a href="\/settings\/account" data-settings-link="account" aria-current="page"/)
     expect(html).toMatch(/<h1[^>]*>Account<\/h1>/)
-    expect(html).toContain('id="session-heading"')
-    expect(html).not.toContain('data-settings-overview')
+    // Account is an overview of its sub-pages (settings-subpages).
+    for (const p of ['profile', 'security', 'activity', 'encryption']) expect(html).toContain(`href="/settings/account/${p}" data-settings-subpage="${p}"`)
+    expect(html).not.toContain('data-settings-overview=')
   })
 })
 
@@ -191,50 +200,82 @@ describe('opening a section', () => {
     expect(pushState).toHaveBeenCalledTimes(1)
   })
 
-  it('renders a deep-linked section with its cards and one h1', () => {
-    const html = render(member, 'general')
+  it('renders a deep-linked page with its cards and one h1', () => {
+    const html = render(member, 'general', 'keyboard')
     expect(html).toContain('data-settings-section="general"')
     expect(html.match(/<h1/g)).toHaveLength(1)
-    expect(html).toMatch(/<h1[^>]*tabindex="-1"[^>]*>General<\/h1>/)
+    expect(html).toMatch(/<h1[^>]*tabindex="-1"[^>]*>Keyboard<\/h1>/)
     expect(html).toContain('Vim keybindings')
-    expect(html).toContain('Start view on this device')
-    expect(html).toContain('id="date-time-heading"')
-    // Cards of other sections are not on this page.
+    expect(render(member, 'general', 'start')).toContain('Start view on this device')
+    expect(render(member, 'general', 'focus')).toContain('id="focus-heading"')
+    // Language, date and time and the calendar grid moved to Language and region (settings-subpages D5).
+    expect(render(member, 'language', 'language')).toContain('id="language-heading"')
+    expect(render(member, 'language', 'date-time')).toContain('id="date-time-heading"')
+    expect(render(member, 'language', 'calendar')).toContain('id="calendar-heading"')
+    // Cards of other pages are not on this page.
+    expect(html).not.toContain('id="date-time-heading"')
     expect(html).not.toContain('Sign out')
     expect(html).not.toContain('Download export (JSON)')
     expect(html).not.toContain('data-appearance-themes')
   })
 
-  it('holds the right cards in each section', () => {
-    const account = render(member, 'account')
-    for (const id of ['session-heading', 'password-heading', 'mfa-heading', 'e2ee-heading', 'activity-heading']) expect(account).toContain(`id="${id}"`)
-    for (const id of ['security', 'encryption', 'sessions']) expect(account).toContain(`data-settings-anchor="${id}"`)
-    expect(account).not.toContain('Audit log')
-    const appearance = render(member, 'appearance')
-    expect(appearance).toContain('data-appearance-themes')
-    expect(appearance).toContain('data-testid="appearance-density"')
-    expect(appearance).not.toContain('data-testid="appearance-rows"')
-    expect(appearance).toContain('id="sidebar-heading"')
-    expect(appearance).toContain('id="sidebar-someday"')
+  it('lists the sub-pages of each section with an overview, in order', () => {
+    const rows = (u: User, id: SettingsSectionId) => [...render(u, id).matchAll(/data-settings-subpage="([a-z-]+)"/g)].map((m) => m[1])
+    expect(rows(member, 'account')).toEqual(['profile', 'security', 'activity', 'encryption'])
+    expect(rows(member, 'appearance')).toEqual(['theme', 'sidebar'])
+    expect(rows(member, 'general')).toEqual(['start', 'keyboard', 'focus', 'maps'])
+    expect(rows(member, 'language')).toEqual(['language', 'date-time', 'calendar'])
+    expect(rows(member, 'notifications')).toEqual(['push', 'channels', 'digest'])
+    expect(rows(member, 'capture')).toEqual(['quick-add', 'voice', 'browser', 'email'])
+    expect(rows(member, 'integrations')).toEqual(['caldav', 'calendar-feeds', 'issues', 'webhooks', 'tokens', 'assistant', 'mcp'])
+    expect(rows(owner, 'people')).toEqual(['users', 'access-policies', 'sso'])
+    expect(rows(owner, 'server')).toEqual(['backups', 'attachments', 'outgoing-email', 'branding', 'maps', 'automations', 'speech', 'audit'])
+    for (const id of ['workspaces', 'about', 'data'] as const) expect(rows(member, id)).toEqual([])
+    // The overview shows no card of its pages.
+    expect(render(owner, 'integrations')).not.toContain('id="webhooks-heading"')
+  })
+
+  it('holds the right cards on each page', () => {
+    const security = render(member, 'account', 'security')
+    for (const id of ['session-heading', 'password-heading', 'mfa-heading']) expect(security).toContain(`id="${id}"`)
+    expect(security).toContain('data-settings-anchor="security"')
+    expect(security).not.toContain('id="e2ee-heading"')
+    expect(render(member, 'account', 'encryption')).toContain('id="e2ee-heading"')
+    expect(render(member, 'account', 'activity')).toContain('id="activity-heading"')
+    expect(render(member, 'account', 'profile')).toContain('data-settings-anchor="how-you-work"')
+    const theme = render(member, 'appearance', 'theme')
+    expect(theme).toContain('data-appearance-themes')
+    expect(theme).toContain('data-testid="appearance-density"')
+    expect(theme).not.toContain('id="sidebar-heading"')
+    expect(render(member, 'appearance', 'sidebar')).toContain('id="sidebar-someday"')
     const data = render(member, 'data')
     expect(data).toContain('Download export (JSON)')
     expect(data).toContain('href="/settings/import"')
     expect(data).toContain('id="projects-heading"')
-    const integrations = render(owner, 'integrations')
-    for (const id of ['caldav-heading', 'webhooks-heading', 'tokens-heading', 'assistants-heading']) expect(integrations).toContain(`id="${id}"`)
-    expect(integrations).toContain('data-settings-anchor="ai"')
-    const people = render(owner, 'people')
-    for (const id of ['users-heading', 'members-heading', 'mfa-policy-heading', 'project-invite-policy-heading']) expect(people).toContain(`id="${id}"`)
-    expect(people).toContain('data-testid="sso-panel"')
-    const server = render(owner, 'server')
-    expect(server).toContain('data-testid="backups-panel"')
-    expect(server).toContain('id="attachments-settings-heading"')
-    // Outgoing email (outgoing-email change) sits between Attachments and the audit log, for the owner only.
-    expect(server).toContain('id="outgoing-email-heading"')
-    expect(server.indexOf('id="outgoing-email-heading"')).toBeGreaterThan(server.indexOf('id="attachments-settings-heading"'))
-    expect(server.indexOf('id="outgoing-email-heading"')).toBeLessThan(server.indexOf('Audit log'))
-    expect(render(owner, 'people')).not.toContain('outgoing-email-heading')
-    expect(server).toContain('Audit log')
+    expect(render(owner, 'integrations', 'caldav')).toContain('id="caldav-heading"')
+    expect(render(owner, 'integrations', 'webhooks')).toContain('id="webhooks-heading"')
+    expect(render(owner, 'integrations', 'tokens')).toContain('id="tokens-heading"')
+    expect(render(owner, 'integrations', 'mcp')).toContain('id="assistants-heading"')
+    expect(render(owner, 'integrations', 'assistant')).toContain('data-settings-anchor="ai"')
+    const users = render(owner, 'people', 'users')
+    for (const id of ['users-heading', 'members-heading']) expect(users).toContain(`id="${id}"`)
+    const policies = render(owner, 'people', 'access-policies')
+    for (const id of ['mfa-policy-heading', 'project-invite-policy-heading']) expect(policies).toContain(`id="${id}"`)
+    expect(render(owner, 'people', 'sso')).toContain('data-testid="sso-panel"')
+    expect(render(owner, 'server', 'backups')).toContain('data-testid="backups-panel"')
+    expect(render(owner, 'server', 'attachments')).toContain('id="attachments-settings-heading"')
+    expect(render(owner, 'server', 'outgoing-email')).toContain('id="outgoing-email-heading"')
+    expect(render(owner, 'server', 'audit')).toContain('Audit log')
+    expect(render(owner, 'people', 'users')).not.toContain('outgoing-email-heading')
+  })
+
+  it('a sub-page has the breadcrumb Settings › Section › Page, the page as its h1 and the section marked in the pane', () => {
+    const html = render(owner, 'integrations', 'webhooks')
+    expect(html).toContain('data-settings-page="webhooks"')
+    expect(html).toMatch(/<h1[^>]*>Webhooks<\/h1>/)
+    expect(html).toMatch(/data-settings-crumb[\s\S]*>Settings<\/a>[\s\S]*href="\/settings\/integrations"[^>]*data-settings-crumb-section[^>]*>Integrations<\/a>/)
+    expect(html).toMatch(/<a href="\/settings\/integrations" data-settings-link="integrations" aria-current="true"/)
+    expect(html).toContain('data-help-screen="settings/webhooks"')
   })
 
   it('marks the current section in the side list and offers a back action below 1024 px', () => {
@@ -265,22 +306,25 @@ describe('roles', () => {
   })
 
   it('shows users and members to admins; access policies and the Server section only to the owner', () => {
+    // An admin sees one page of People, so People is that page with no overview.
     const html = render(admin, 'people')
     expect(html).toContain('data-settings-section="people"')
     expect(html).toContain('id="users-heading"')
+    expect(html).not.toContain('data-settings-subpage')
     expect(html).not.toContain('data-settings-anchor="access-policies"')
+    expect(render(admin, 'people', 'access-policies')).not.toContain('data-settings-anchor="access-policies"')
     expect(render(admin, 'server')).toContain('data-settings-section="account"')
-    expect(render(owner, 'people')).toContain('data-testid="mfa-policy-panel"')
+    expect(render(owner, 'people', 'access-policies')).toContain('data-testid="mfa-policy-panel"')
   })
 
   it('links owners from Data to Server', () => {
     expect(render(owner, 'data')).toContain('data-testid="backups-link"')
-    expect(render(owner, 'data')).toContain('href="/settings/server"')
+    expect(render(owner, 'data')).toContain('href="/settings/server/backups"')
     expect(render(admin, 'data')).not.toContain('data-testid="backups-link"')
   })
 
   it('shows the audit log only to the owner', () => {
-    expect(render(owner, 'server')).toContain('Audit log')
+    expect(render(owner, 'server', 'audit')).toContain('Audit log')
     expect(render(admin, 'account')).not.toContain('Audit log')
   })
 })
@@ -288,25 +332,29 @@ describe('roles', () => {
 describe('demo instance', () => {
   beforeEach(() => setDemo(info))
 
-  it('keeps every card and disables the refused ones under one note', () => {
+  it('names everything the pages refuse on the overview, and each page its own, with the cards disabled', () => {
     const html = render(member, 'integrations')
     expect(html.match(/data-testid="demo-restricted"/g)).toHaveLength(1)
     expect(html).toContain('Demo instance: calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP) are disabled here.')
-    expect(html).toContain('id="caldav-heading"')
-    expect(html).toContain('id="tokens-heading"')
-    expect(html).toMatch(/<fieldset disabled=""[^>]*data-demo-disabled/)
-    const account = render(member, 'account')
-    expect(account).toContain('password and two-factor authentication, passkeys, linked accounts and end-to-end encryption')
-    expect(account).toContain('id="password-heading"')
-    expect(account).toContain('Sign out')
-    // Profile and sessions work: they are outside the disabled group.
-    expect(account.indexOf('data-demo-disabled')).toBeGreaterThan(account.indexOf('id="session-heading"'))
+    const caldav = render(member, 'integrations', 'caldav')
+    expect(caldav).toContain('Demo instance: calendar apps (CalDAV) is disabled here.')
+    expect(caldav).toContain('id="caldav-heading"')
+    expect(caldav).toMatch(/<fieldset disabled=""[^>]*data-demo-disabled/)
+    expect(render(member, 'account')).toContain('password and two-factor authentication, passkeys, linked accounts and end-to-end encryption')
+    const security = render(member, 'account', 'security')
+    expect(security).toContain('Demo instance: password and two-factor authentication, passkeys and linked accounts are disabled here.')
+    expect(security).toContain('id="password-heading"')
+    // Signing out works: it is outside the disabled group.
+    expect(security).toContain('Sign out')
+    expect(security.indexOf('id="session-heading"')).toBeGreaterThan(security.lastIndexOf('</fieldset>'))
+    // Profile works and has no note.
+    expect(render(member, 'account', 'profile')).not.toContain('demo-restricted')
   })
 
   it('says it in one line with Learn more to the demo guide, and the first card follows at once (settings-copy D6)', () => {
     const account = render(member, 'account')
-    const note = /<div data-testid="demo-restricted">([\s\S]*?)<\/div><div id="profile"/.exec(account)
-    expect(note, 'the profile card directly follows the note').toBeTruthy()
+    const note = /<div data-testid="demo-restricted">([\s\S]*?)<\/div><nav aria-label="Account"/.exec(account)
+    expect(note, 'the overview rows directly follow the note').toBeTruthy()
     const text = note![1].replace(/<[^>]+>/g, '')
     expect(text).toBe('Demo instance: password and two-factor authentication, passkeys, linked accounts and end-to-end encryption are disabled here.Learn more')
     expect(note![1]).toContain('data-help-screen="demo"')
@@ -316,14 +364,17 @@ describe('demo instance', () => {
   })
 
   it('keeps what works next to the note', () => {
-    const capture = render(member, 'capture')
-    expect(capture).toContain('Copy bookmarklet')
-    expect(capture).toContain('Demo instance: email to task is disabled here.')
-    expect(capture).toContain('id="email-inbox-heading"')
+    const browser = render(member, 'capture', 'browser')
+    expect(browser).toContain('Copy bookmarklet')
+    expect(browser).not.toContain('demo-restricted')
+    expect(render(member, 'capture')).toContain('Demo instance: email to task is disabled here.')
+    const email = render(member, 'capture', 'email')
+    expect(email).toContain('Demo instance: email to task is disabled here.')
+    expect(email).toContain('id="email-inbox-heading"')
   })
 
   it('leaves local settings alone and disables import', () => {
-    const general = render(member, 'general')
+    const general = render(member, 'general', 'keyboard')
     expect(general).not.toContain('demo-restricted')
     expect(general).toContain('Vim keybindings')
     const data = render(member, 'data')

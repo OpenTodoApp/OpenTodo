@@ -9,7 +9,7 @@ order: 32
 ---
 # Translating OpenTodo
 
-The web app ships in English, German, French, Spanish, Italian and Portuguese. People pick the language in **Settings → General → Language** (see [The app in your language](language.md)); the choice syncs to every device of the account. This page is for contributors who write text in the app or translate it. The documentation and the in-app Help guide stay in English.
+The web app ships in English, German, French, Spanish, Italian and Portuguese. People pick the language in **Settings → Language and region → Language** (see [The app in your language](language.md)); the choice syncs to every device of the account. This page is for contributors who write text in the app or translate it. The documentation and the in-app Help guide stay in English.
 
 ## How text is written
 

@@ -38,13 +38,13 @@ New accounts are created through a project link only when one of these is true:
 
 - the link was created by the **owner or an admin of the server**;
 - open sign-up is on for the server;
-- the server owner switched on **Invite new people** in **Settings → People → Project invite links**. It is off by default.
+- the server owner switched on **Invite new people** in **Settings → People → Access policies → Project invite links**. It is off by default.
 
 When none applies, the Share dialog says so under the new link, which then works only for people who already have an account. The switch is checked when a link is used, so changing it also affects links already sent.
 
 ## Invite someone new
 
-Sign-up on an OpenTodo server is closed by default. The quickest way to bring someone into one project is an [invite link](#invite-with-a-link). To invite someone to the server without a project, as its owner or an admin, go to **Settings → People → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it yourself, or, if the server sends email and you entered their address, leave **Send by email** on. The link works once.
+Sign-up on an OpenTodo server is closed by default. The quickest way to bring someone into one project is an [invite link](#invite-with-a-link). To invite someone to the server without a project, as its owner or an admin, go to **Settings → People → Users and invitations**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it yourself, or, if the server sends email and you entered their address, leave **Send by email** on. The link works once.
 
 <picture><source srcset="images/members-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/members-light.webp" alt="Settings, Members section: an email field, an expiry menu set to 7 days, a Create invitation button, and a list with one pending and one accepted invitation."></picture>
 

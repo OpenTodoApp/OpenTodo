@@ -251,7 +251,7 @@ await shot(pageA, 'views-dashboard-mobile.png')
 await pageA.setViewportSize({ width: 1280, height: 860 })
 
 step('Start view per device: A starts on "Work tomorrow", B keeps the Inbox')
-await pageA.goto(`${base}/settings/preferences`)
+await pageA.goto(`${base}/settings/general/start`)
 await pageA.getByLabel('Start view on this device').selectOption({ label: 'Work tomorrow' })
 await pageA.waitForTimeout(200)
 await pageA.goto(base)

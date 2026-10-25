@@ -101,9 +101,9 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, deadline, project, priority or estimate.
 
-**Day/month order.** Numeric dates follow your date format in **Settings → General → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, they follow your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The date format syncs, so every device reads a line the same way. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
+**Day/month order.** Numeric dates follow your date format in **Settings → Language and region → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, they follow your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The date format syncs, so every device reads a line the same way. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
 
-**Week start.** `next week` and `next <weekday>` use **Week starts on** in **Settings → General → Date and time**, so they give the same result on all your devices.
+**Week start.** `next week` and `next <weekday>` use **Week starts on** in **Settings → Language and region → Date and time**, so they give the same result on all your devices.
 
 ## Languages
 

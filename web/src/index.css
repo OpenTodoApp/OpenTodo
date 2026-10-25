@@ -865,6 +865,13 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 .ui-section-flat { @apply px-4 py-5 sm:px-6; }
 /* A settings section (precision-settings D3): flat on the page, its rows between hairlines; the page spaces them. */
 .ui-settings-section { @apply min-w-0; }
+/* The setting a search result or link opened (settings-subpages D3): tinted on arrival,
+   the tint fading out after a moment. A colour fade only, so it stays under reduced motion. */
+[data-settings-highlight] {
+  border-radius: var(--radius-control);
+  transition: background-color var(--duration-emphasis) var(--ease-calm), box-shadow var(--duration-emphasis) var(--ease-calm);
+}
+[data-settings-highlight="on"] { background-color: var(--ot-accent-soft); box-shadow: 0 0 0 0.5rem var(--ot-accent-soft); }
 /* A hairline between a flat section and whatever comes before it on the page (D9). */
 .ui-section-flat:not(:first-child) { @apply border-t border-default; }
 /* A dashboard panel: flat, full width of its grid cell, a hairline above every one (statistics). */

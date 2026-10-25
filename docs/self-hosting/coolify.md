@@ -79,7 +79,7 @@ None is required. With a Compose resource (the one-click template or Option A), 
 
 ## Passkeys
 
-Users can add passkeys in **Settings → Account → Passkeys** once the domain is https, which Coolify provisions when the domain starts with `https://`. Passkeys are tied to the domain's host. If you later change the domain assigned to the service, existing passkeys stop working: users sign in with their password and register new ones. Passwords are never disabled by passkeys. Details in [Running with Docker](docker.md#passkeys-need-an-https-base-url).
+Users can add passkeys in **Settings → Account → Security → Passkeys** once the domain is https, which Coolify provisions when the domain starts with `https://`. Passkeys are tied to the domain's host. If you later change the domain assigned to the service, existing passkeys stop working: users sign in with their password and register new ones. Passwords are never disabled by passkeys. Details in [Running with Docker](docker.md#passkeys-need-an-https-base-url).
 
 ## First visit
 
@@ -93,7 +93,7 @@ Coolify gives the app the **first** domain of the service as `OPENTODO_BASE_URL`
 
 ## Adding people
 
-Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → People → Members**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people). **Settings → People → Users** manages accounts afterwards: admins, deactivation, reset links, deletion and owner transfer. If the owner forgot their password, open the service's terminal in Coolify and run `/opentodo reset-owner-password` (see [Recovering owner access](docker.md#recovering-owner-access)).
+Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → People → Users and invitations**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people). **Settings → People → Users and invitations** manages accounts afterwards: admins, deactivation, reset links, deletion and owner transfer. If the owner forgot their password, open the service's terminal in Coolify and run `/opentodo reset-owner-password` (see [Recovering owner access](docker.md#recovering-owner-access)).
 
 ## Backups
 
@@ -101,7 +101,7 @@ Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files
 
 ## Audit log
 
-**Settings → Account → Audit log** (owner only) lists sign-ins, failed sign-ins, credentials, invitations, user administration, exports, backups and setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address is the hop Traefik appended to `X-Forwarded-For`, which Coolify sets for you; the header is believed only because Traefik connects from Coolify's private Docker network, so a client that reaches the container port directly is recorded with its own address. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
+**Settings → Server → Audit log** (owner only) lists sign-ins, failed sign-ins, credentials, invitations, user administration, exports, backups and setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address is the hop Traefik appended to `X-Forwarded-For`, which Coolify sets for you; the header is believed only because Traefik connects from Coolify's private Docker network, so a client that reaches the container port directly is recorded with its own address. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
 
 ## Updating
 
@@ -115,7 +115,7 @@ Click **Deploy**. The new version applies database migrations on startup, and yo
 
 ## Behind Cloudflare
 
-When the domain's DNS record is proxied by Cloudflare (orange cloud), every request reaches Coolify's proxy from a Cloudflare address. Set `OPENTODO_TRUSTED_PROXIES=cloudflare` in the environment tab and redeploy, so rate limits and the audit log see visitors' addresses (from `CF-Connecting-IP`) instead of one shared Cloudflare address. With a Cloudflare Tunnel instead, requests arrive from the `cloudflared` container on Coolify's Docker network, a private address that OpenTodo trusts by default, so nothing needs setting; check **Settings → Account → Audit log** with addresses enabled to confirm it shows your own address. See [Behind a reverse proxy](docker.md#behind-a-reverse-proxy).
+When the domain's DNS record is proxied by Cloudflare (orange cloud), every request reaches Coolify's proxy from a Cloudflare address. Set `OPENTODO_TRUSTED_PROXIES=cloudflare` in the environment tab and redeploy, so rate limits and the audit log see visitors' addresses (from `CF-Connecting-IP`) instead of one shared Cloudflare address. With a Cloudflare Tunnel instead, requests arrive from the `cloudflared` container on Coolify's Docker network, a private address that OpenTodo trusts by default, so nothing needs setting; check **Settings → Server → Audit log** with addresses enabled to confirm it shows your own address. See [Behind a reverse proxy](docker.md#behind-a-reverse-proxy).
 
 The server sends the service worker with `Cache-Control: no-store`, so phones pick up a new version on their next visit. Keep Cloudflare's **Caching → Configuration → Browser Cache TTL** at *Respect Existing Headers*, and do not add a Cache Rule that caches everything, or Cloudflare may serve an old app shell for hours.
 

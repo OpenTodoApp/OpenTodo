@@ -1129,6 +1129,6 @@
   "core": false,
   "story": "Settings/App",
   "layoutCheck": "voice-consent",
-  "on": "settings-capture"
+  "on": "settings-capture-voice"
  }
 ]

@@ -32,7 +32,7 @@ Following a part changes nothing.
 
 ## Hide it
 
-Choose **Hide briefing** in the menu (<kbd>…</kbd>) of Today or Upcoming, or turn off **Show the briefing** in **Settings → General → Briefing**. The title and the date stay. The choice belongs to your account, so your other devices hide it too once they sync; **Show briefing** in the same menu, or the switch, brings it back. The Daily check always opens with the sentence.
+Choose **Hide briefing** in the menu (<kbd>…</kbd>) of Today or Upcoming, or turn off **Show the briefing** in **Settings → General → Start view and briefing**. The title and the date stay. The choice belongs to your account, so your other devices hide it too once they sync; **Show briefing** in the same menu, or the switch, brings it back. The Daily check always opens with the sentence.
 
 ## When Today is empty
 
@@ -44,4 +44,4 @@ Upcoming's briefing counts the tasks of the next seven days, names the days that
 
 ## Where it comes from
 
-Your device works the briefing out from your own tasks, so it works offline, needs no connection and is never written by an AI. It changes as you work and as your other devices sync. The day length is the one in **Settings → General → Calendar grid**, set per device. The sentence follows your interface language; task titles and names stay as you wrote them.
+Your device works the briefing out from your own tasks, so it works offline, needs no connection and is never written by an AI. It changes as you work and as your other devices sync. The day length is the one in **Settings → Language and region → Calendar grid**, set per device. The sentence follows your interface language; task titles and names stay as you wrote them.

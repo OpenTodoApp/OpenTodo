@@ -16,7 +16,7 @@ The **Data** group of [Settings](settings.md) connects OpenTodo to other tools a
 
 ## Integrations
 
-These cards connect OpenTodo to other tools. Some appear only when the person running your server has switched the feature on.
+One page per tool, each row with its state (**Webhooks · 2**). Some work only when the person running your server has switched the feature on.
 
 - **Calendar apps (CalDAV)**: see your tasks in calendar and reminder apps such as Apple Reminders, Thunderbird or Nextcloud Tasks, with an app password. Each project is a list, and the Inbox is its own list. On a plain `http://` address app passwords would travel unencrypted, so use HTTPS outside your home network. See [Calendar apps](caldav.md).
 - **Calendar feeds**: show your Google, Outlook or Apple calendars in Day and Week, and get a private address that lets calendar apps show your tasks. The server owner turns it on here. See [Calendar feeds](calendar-feeds.md).

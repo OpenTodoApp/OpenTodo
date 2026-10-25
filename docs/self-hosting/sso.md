@@ -13,7 +13,7 @@ OpenTodo can let people sign in with an identity provider you already run: Authe
 What it does:
 
 - Adds **Sign in with &lt;name&gt;** to the sign-in screen, next to the password form.
-- Signs in the account linked to that identity. On the first sign-in, an identity whose provider says the email is **verified** is linked to the member account with that email. The owner, admins and accounts with two-factor authentication or a passkey are never linked by email alone: they sign in as usual and link the provider in **Settings → Account → Linked accounts**.
+- Signs in the account linked to that identity. On the first sign-in, an identity whose provider says the email is **verified** is linked to the member account with that email. The owner, admins and accounts with two-factor authentication or a passkey are never linked by email alone: they sign in as usual and link the provider in **Settings → Account → Security → Linked accounts**.
 - Optionally creates a `member` account for someone who has no account yet (**Allow new accounts via SSO**), or when open sign-up is on.
 - Optionally requires single sign-on for everyone except the owner (**SSO only**).
 - Optionally signs people out of the provider when they sign out of OpenTodo.
@@ -60,7 +60,7 @@ Open **Settings → People → Single sign-on** as the owner:
 1. Enter the **Issuer URL**, **Client ID**, **Client secret** and a **Button label** (for example "Home SSO").
 2. Click **Test connection**. OpenTodo fetches the discovery document and shows the sign-in and token hosts. An issuer that is not https, unreachable, or reports a different issuer is refused and nothing changes.
 3. Click **Save**. The sign-in screen now offers **Sign in with Home SSO**.
-4. Link your own account to check it: signed in as the owner, open **Settings → Account → Linked accounts** and connect the provider. The owner account is never linked by email alone, so a provider account with your email cannot take it over.
+4. Link your own account to check it: signed in as the owner, open **Settings → Account → Security → Linked accounts** and connect the provider. The owner account is never linked by email alone, so a provider account with your email cannot take it over.
 
 Saving needs a recent sign-in, as for other sensitive settings; if your session is older than ten minutes you are asked for your password or a code first.
 
@@ -94,8 +94,8 @@ Leave the switch off if the provider's picture addresses point to a host you do 
 - A first-time identity with a verified email that matches a member account is linked to it. The owner, admins and accounts with two-factor authentication or a passkey are refused (`oidc_link_required`) and link only from Settings while signed in, so the provider can never stand in for their own second factor. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created.
 - When nothing matches, a `member` account is created only if **Allow new accounts via SSO** is on or `OPENTODO_ALLOW_SIGNUP=true`. Otherwise the person sees "There is no account for this identity yet" and you can invite them.
 - Accounts created this way have no password. They can add a passkey in **Settings → Account**.
-- Everyone can link or unlink the provider in **Settings → Account → Linked accounts**. Unlinking is refused when it would leave the account with no way to sign in.
-- A provider sign-in counts as two-factor: someone with an authenticator app is not asked for a code, because the provider applies its own policy. If the owner requires two-factor for everyone (**Settings → People → Two-factor authentication**), accounts without an authenticator are still asked to enrol one.
+- Everyone can link or unlink the provider in **Settings → Account → Security → Linked accounts**. Unlinking is refused when it would leave the account with no way to sign in.
+- A provider sign-in counts as two-factor: someone with an authenticator app is not asked for a code, because the provider applies its own policy. If the owner requires two-factor for everyone (**Settings → People → Access policies → Two-factor policy**), accounts without an authenticator are still asked to enrol one.
 
 ## SSO only
 
@@ -126,7 +126,7 @@ An installed app that signed in through the provider opens offline from its cach
 | The provider says the redirect URI is invalid | `OPENTODO_BASE_URL` is unset or differs from the registered redirect URI; copy the value from the panel |
 | "Signing in with … did not work" | The code exchange or token check failed. The server log (`level=WARN msg="oidc sign-in failed"`) names the step: wrong client secret, audience, clock skew over 60 seconds, unsupported signing algorithm |
 | "did not confirm a verified email address" | The provider sends no `email_verified: true`; enable email verification or the `email` scope |
-| "This account is not linked to … yet" | The email belongs to the owner, an admin or an account with two-factor authentication or a passkey: sign in with the password (and code) and link the provider in **Settings → Account → Linked accounts** |
+| "This account is not linked to … yet" | The email belongs to the owner, an admin or an account with two-factor authentication or a passkey: sign in with the password (and code) and link the provider in **Settings → Account → Security → Linked accounts** |
 | "There is no account for this identity yet" | Provisioning is off: invite the person, or turn on **Allow new accounts via SSO** |
 | "That sign-in took too long or was started in another tab" | The 10-minute sign-in window passed, or the server restarted during the sign-in; start again |
 

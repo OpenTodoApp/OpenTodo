@@ -364,14 +364,14 @@ export const SHORTCUTS: Shortcut[] = [
 
   // ---- settings
   { id: 'settings.search', keys: ['/'], description: 'Settings: focus the search field, which finds sections and single settings by name', section: 'settings', scope: 'view', views: ['settings'] },
-  { id: 'settings.invite-copy', keys: ['Enter'], description: 'Settings → People → Members: copy the invite link created in this session', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
-  { id: 'settings.invite-revoke', keys: ['Delete'], description: 'Settings → People → Members: revoke the focused pending invitation', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
+  { id: 'settings.invite-copy', keys: ['Enter'], description: 'Settings → People → Users and invitations: copy the invite link created in this session', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
+  { id: 'settings.invite-revoke', keys: ['Delete'], description: 'Settings → People → Users and invitations: revoke the focused pending invitation', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused invitation' },
   // The profile picture dialog's cropper (settings-refresh D11): handled by the cropper itself, only inside its dialog.
   { id: 'settings.picture-pan', keys: ['←', '→', '↑', '↓'], description: 'Settings → Account → Profile, picture dialog: move the picture inside the circle', section: 'settings', scope: 'view', views: ['settings'], local: true, dialog: true, when: 'in the picture dialog' },
   { id: 'settings.picture-zoom', keys: ['+', '-'], description: 'Settings → Account → Profile, picture dialog: zoom in or out', section: 'settings', scope: 'view', views: ['settings'], local: true, dialog: true, when: 'in the picture dialog' },
   { id: 'settings.user-actions', keys: ['d', 'r', 'Delete'], description: 'Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms)', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused user' },
   { id: 'settings.audit-export', keys: ['e'], description: 'Settings → Server → Audit log: export with the current filters while the table has focus', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused table' },
-  { id: 'settings.passkeys', keys: ['Tab'], description: 'Settings → Account → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings', scope: 'view', views: ['settings'], local: true },
+  { id: 'settings.passkeys', keys: ['Tab'], description: 'Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings', scope: 'view', views: ['settings'], local: true },
 
   // ---- comments and notes
   { id: 'panel.comment', keys: ['Shift+C'], description: 'Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)', section: 'comments', scope: 'panel' },

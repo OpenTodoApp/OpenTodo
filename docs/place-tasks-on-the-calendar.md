@@ -41,4 +41,4 @@ Tasks that overlap in time are shown side by side, with a marker, so nothing hid
 
 Completing a task removes its block and lowers the day's total.
 
-Your day length and the hours the grid shows are set per device in **Settings → General → Calendar**; see [Adjust the grid](time-blocking.md#adjust-the-grid).
+Your day length and the hours the grid shows are set per device in **Settings → Language and region → Calendar grid**; see [Adjust the grid](time-blocking.md#adjust-the-grid).

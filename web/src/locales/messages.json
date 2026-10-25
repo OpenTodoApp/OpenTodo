@@ -548,6 +548,9 @@
   "Access key": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Access policies": [
+    "web/src/app/settingsSections.ts"
+  ],
   "Access token": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
@@ -659,7 +662,8 @@
   ],
   "Add a link…": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/app/task-detail/Facets.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
   "Add a member…": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -1500,6 +1504,7 @@
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -1553,8 +1558,7 @@
   ],
   "Attach": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/app/task-detail/TaskActionsMenu.tsx",
-    "web/src/app/task-detail/TaskPageView.tsx"
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
   "Attach files": [
     "web/src/app/task-detail/Composer.tsx"
@@ -1570,6 +1574,7 @@
   ],
   "Attachments": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/settingsCopy.ts",
     "web/src/page/TaskPageScreen.tsx"
@@ -1586,6 +1591,7 @@
   ],
   "Audit log": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Audit log exported": [
@@ -1611,6 +1617,8 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Automations": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Automations are off on this server.": [
@@ -1687,6 +1695,7 @@
   ],
   "Backups": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": [
@@ -1695,7 +1704,7 @@
   "Backups of the whole server are under <a>Settings → Server</a>.": [
     "web/src/app/DataSettings.tsx"
   ],
-  "Backups, attachments, outgoing email and the audit log": [
+  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": [
     "web/src/app/settingsSections.ts"
   ],
   "Base URL": [
@@ -1780,10 +1789,12 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Bookmarklet and extension": [
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts"
   ],
   "Branding": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Break down “{title}”": [
@@ -1874,9 +1885,10 @@
   ],
   "Calendar apps (CalDAV)": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP)": [
+  "Calendar apps (CalDAV), calendar feeds, issues, webhooks, API tokens, the assistant and AI assistants (MCP)": [
     "web/src/app/settingsSections.ts"
   ],
   "Calendar apps refresh subscriptions on their own schedule, from every few minutes to once a day.": [
@@ -1899,13 +1911,15 @@
   ],
   "Calendar feeds": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Calendar feeds are not enabled on this server.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "Calendar grid": [
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts"
   ],
   "Calendar name": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -3129,6 +3143,7 @@
     "web/src/lib/fields.ts"
   ],
   "Date and time": [
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Date changed": [
@@ -3439,6 +3454,8 @@
     "web/src/app/auditFormat.ts"
   ],
   "Delivery channels": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Delivery check": [
@@ -3448,7 +3465,7 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Demo instance": [
-    "web/src/app/SettingsView.tsx"
+    "web/src/app/settingsPages.tsx"
   ],
   "Demo instance: {features} are disabled here.": [
     "web/src/lib/settingsCopy.ts"
@@ -3513,7 +3530,7 @@
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
   "Details of {title}": [
-    "web/src/app/task-list/RowDetails.tsx"
+    "web/src/app/TaskRow.tsx"
   ],
   "Detect automatically": [
     "web/src/app/ImportScreen.tsx"
@@ -3592,7 +3609,8 @@
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/Shell.tsx",
-    "web/src/app/assistant/AssistantRoot.tsx"
+    "web/src/app/assistant/AssistantRoot.tsx",
+    "web/src/app/bulk/UndoToast.tsx"
   ],
   "Display mode": [
     "web/src/app/PreferencesPanels.tsx",
@@ -3702,9 +3720,10 @@
   ],
   "Download your data": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Download your data and the audit log": [
+  "Download your data, branding, maps, automations and the audit log": [
     "web/src/app/settingsSections.ts"
   ],
   "Download {name}": [
@@ -3723,6 +3742,7 @@
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Drag tasks onto a day, or press s on one": [
+    "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
   ],
   "Drag tasks onto a time, or press s on one": [
@@ -3993,6 +4013,7 @@
   ],
   "Email to task": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Email to task is not enabled on this server.": [
@@ -4103,6 +4124,7 @@
   ],
   "End-to-end encryption": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "End-to-end encryption is not enabled for this account.": [
@@ -4746,7 +4768,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Focus timer": [
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts"
   ],
   "Folder": [
     "web/src/app/BackupsPanel.tsx"
@@ -5308,6 +5331,7 @@
   ],
   "Hide the planning list": [
     "web/src/app/CalendarView.tsx",
+    "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
   ],
   "Hide the skill suggestions": [
@@ -5828,6 +5852,8 @@
   ],
   "Issues": [
     "web/src/app/IssueEditor.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "It disappears from your devices.": [
@@ -6014,6 +6040,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Keyboard": [
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Keyboard guide": [
@@ -6124,9 +6151,13 @@
   ],
   "Language": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Language, start view, date and time, calendar and keyboard": [
+  "Language and region": [
+    "web/src/app/settingsSections.ts"
+  ],
+  "Language, date and time formats, the first day of the week and the calendar grid": [
     "web/src/app/settingsSections.ts"
   ],
   "Languages for dates and times": [
@@ -6635,10 +6666,16 @@
     "web/src/app/locations/LocationEditor.tsx"
   ],
   "Maps": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Maps and address search from the provider below, always through this server.": [
+    "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Maps and address search on your devices": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Maps are turned off on this server.": [
     "web/src/lib/i18n/errors.ts"
@@ -7716,6 +7753,7 @@
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/settingsStatus.ts",
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "None (plain)": [
@@ -8092,6 +8130,7 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/settingsStatus.ts",
     "web/src/lib/backups.ts"
   ],
   "Off (manual backups only)": [
@@ -8226,7 +8265,8 @@
     "web/src/app/ShellNotifications.tsx",
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
-    "web/src/app/assistant/AssistantSettings.tsx"
+    "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/settingsStatus.ts"
   ],
   "On Android, check Settings → Apps → your browser → Notifications, and Do Not Disturb.": [
     "web/src/lib/push.ts"
@@ -8402,6 +8442,7 @@
     "web/src/app/EmailScreens.tsx"
   ],
   "Open GitHub and GitLab issues assigned to you become tasks that follow them.": [
+    "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Open Help": [
@@ -8722,6 +8763,7 @@
   ],
   "Outgoing email": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Outgoing email From address": [
@@ -9063,6 +9105,7 @@
   ],
   "Plan from a list": [
     "web/src/app/CalendarView.tsx",
+    "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
   ],
   "Plan today": [
@@ -9260,6 +9303,7 @@
   ],
   "Profile": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Profile picture": [
@@ -9268,7 +9312,7 @@
   "Profile picture changed": [
     "web/src/app/auditFormat.ts"
   ],
-  "Profile, sessions, password, two-factor, passkeys, linked accounts and encryption": [
+  "Profile, security, sessions and encryption": [
     "web/src/app/settingsSections.ts"
   ],
   "Progress": [
@@ -9507,12 +9551,13 @@
     "web/src/app/NotificationsSettings.tsx"
   ],
   "Push notifications": [
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts"
   ],
   "Push notifications are turned off on this server. Reminders are shown in the app.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Push notifications for reminders on this device, and the weekly digest by email": [
+  "Push notifications for reminders on this device, delivery channels and the weekly digest": [
     "web/src/app/settingsSections.ts"
   ],
   "Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a>command line</a>.": [
@@ -9530,6 +9575,7 @@
   ],
   "Quick add": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Quick add (read-only)": [
@@ -9646,6 +9692,7 @@
   ],
   "Recent activity": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Recent requests": [
@@ -10673,7 +10720,8 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Security": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/app/OutgoingEmailPanel.tsx",
+    "web/src/app/settingsSections.ts"
   ],
   "See statistics": [
     "web/src/app/review/MonthlyLook.tsx",
@@ -10750,6 +10798,7 @@
     "web/src/app/WorkspaceInvites.tsx"
   ],
   "Send notifications to ntfy, Pushover, Gotify or any address you choose.": [
+    "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Send reset email": [
@@ -10929,22 +10978,22 @@
   "Settings sections": [
     "web/src/app/SettingsView.tsx"
   ],
-  "Settings → Account → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Settings → Account → Profile, picture dialog: move the picture inside the circle": [
     "web/src/lib/shortcuts.ts"
   ],
   "Settings → Account → Profile, picture dialog: zoom in or out": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Settings → Developer → Edit Config, then add this entry to claude_desktop_config.json and restart Claude Desktop.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
-  "Settings → People → Members: copy the invite link created in this session": [
+  "Settings → People → Users and invitations: copy the invite link created in this session": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Settings → People → Members: revoke the focused pending invitation": [
+  "Settings → People → Users and invitations: revoke the focused pending invitation": [
     "web/src/lib/shortcuts.ts"
   ],
   "Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms)": [
@@ -11157,6 +11206,7 @@
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Sidebar": [
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Sidebar destinations": [
@@ -11326,6 +11376,7 @@
   ],
   "Single sign-on": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Single sign-on failed. Try again.": [
@@ -11516,6 +11567,7 @@
   ],
   "Speech to text": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Spent {duration}": [
@@ -11606,9 +11658,15 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Start view and briefing": [
+    "web/src/app/settingsSections.ts"
+  ],
   "Start view on this device": [
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ViewsView.tsx"
+  ],
+  "Start view, briefing, keyboard, focus timer and maps": [
+    "web/src/app/settingsSections.ts"
   ],
   "Start with four contexts? {names}. Any label that starts with @ is a context.": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -12754,6 +12812,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Theme and density": [
+    "web/src/app/settingsSections.ts"
+  ],
   "Then": [
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -13848,6 +13909,12 @@
   "Two-factor authentication reset for {name}.": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "Two-factor off": [
+    "web/src/app/settingsStatus.ts"
+  ],
+  "Two-factor on": [
+    "web/src/app/settingsStatus.ts"
+  ],
   "Two-factor policy": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
@@ -14119,7 +14186,6 @@
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
-    "web/src/app/task-list/RowDetails.tsx",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
     "web/src/lib/facets.ts",
@@ -14310,6 +14376,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Users and invitations": [
+    "web/src/app/settingsSections.ts"
+  ],
   "Users, invitations and members": [
     "web/src/app/settingsSections.ts"
   ],
@@ -14391,6 +14460,7 @@
   ],
   "Voice capture": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Voice capture is unavailable right now. Typing works as usual.": [
@@ -14462,6 +14532,7 @@
   ],
   "Webhooks": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Webhooks, calendar subscriptions and issue connections on your LAN. Off on public servers.": [
@@ -14495,6 +14566,7 @@
   ],
   "Weekly digest": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Weekly review": [
@@ -14591,6 +14663,9 @@
   "Where the Week view and calendars start": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Whether automation rules run on this server": [
+    "web/src/app/settingsIndex.ts"
+  ],
   "Whether members can bring new people with project links": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -14682,6 +14757,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Workspace": [
+    "web/src/app/ImportScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Workspace changed": [

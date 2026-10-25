@@ -8,7 +8,7 @@ import { originOf } from '../../lib/taskOrigin'
 import type { Label, Project, Task, User, View } from '../../lib/types'
 import { navigate } from '../router'
 import { SETTINGS_SECTIONS, visibleSections } from '../settingsSections'
-import { requestSettingsFocus, visibleEntries } from '../settingsIndex'
+import { openSetting, visibleEntries } from '../settingsIndex'
 import { openTaskInList } from '../signals'
 import type { Entry } from './entries'
 import { t } from '../../lib/i18n'
@@ -86,7 +86,7 @@ export function buildEntries(src: IndexSource): Entry[] {
       const section = SETTINGS_SECTIONS.find((s) => s.id === e.section)!
       return {
         kind: 'settings', key: `setting:${e.section}:${e.anchor}:${e.label}`, label: `${section.label} › ${e.label}`, secondary: e.description, icon: section.icon, keywords: e.keywords,
-        run: () => { requestSettingsFocus(e.anchor); navigate({ view: 'settings', section: e.section }) },
+        run: () => openSetting(src.user!, e),
       }
     }),
   ]
