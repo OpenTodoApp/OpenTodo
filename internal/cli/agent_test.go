@@ -602,6 +602,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"issues", "sync", issueConn[:6]},
 		{"rules", "enable", "Sweep"},
 		{"rules", "disable", "Sweep"},
+		{"import", writeTemp(t, "dry.csv", "title\nDry import\n")},
 	}
 	covered := map[string]bool{}
 	for _, c := range cases {

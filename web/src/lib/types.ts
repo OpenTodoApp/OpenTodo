@@ -1506,6 +1506,8 @@ export interface ImportOptions {
   duplicates?: 'skip' | 'import'
   errors?: 'skip_rows' | 'abort'
   existing?: 'skip' | 'overwrite'
+  /** Workspace id that receives what the import creates (import-workspace); omitted = default, or an own export's own mapping. */
+  workspace?: string
 }
 
 export interface ImportTotals {

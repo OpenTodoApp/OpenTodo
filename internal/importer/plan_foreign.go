@@ -264,7 +264,11 @@ func (fp *foreignPlan) resolve(i int) {
 	if row.Due != nil {
 		dueDate = row.Due.Date
 	}
-	if dup, ok := pl.fingerprints[fingerprint(row.Title, projectID, dueDate)]; ok {
+	place := projectID
+	if place == "" && pl.st.Partition != nil {
+		place = fingerprintPlace("", pl.st.Workspace)
+	}
+	if dup, ok := pl.fingerprints[fingerprint(row.Title, place, dueDate)]; ok {
 		if pl.opts.Duplicates != "import" {
 			res.Outcome, res.Reason = OutcomeSkip, ReasonPossibleDuplicate
 			tp.entityID = dup

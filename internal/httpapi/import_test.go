@@ -169,6 +169,7 @@ func TestImportInvalidOptions400(t *testing.T) {
 	}{
 		{map[string]any{"timeZone": "Atlantis/Capital"}, "invalid_input"},
 		{map[string]any{"targetProject": foreignProject}, "invalid_input"},
+		{map[string]any{"workspace": "no-such-workspace"}, "invalid_input"},
 		{map[string]any{"duplicates": "maybe"}, "invalid_input"},
 		{map[string]any{"format": "spreadsheet"}, "invalid_input"},
 		{map[string]any{"unknownOption": true}, "invalid_input"},

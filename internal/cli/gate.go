@@ -130,6 +130,8 @@ type dryPlan struct {
 	requests []plannedRequest
 	targets  []dryTarget
 	local    []string
+	// preview is the server's import preview (`ot import --dry-run`).
+	preview json.RawMessage
 }
 
 type plannedRequest struct {
@@ -197,6 +199,9 @@ func (a *App) printPlan(g *globalFlags) error {
 		if len(p.local) > 0 {
 			out["local"] = p.local
 		}
+		if p.preview != nil {
+			out["preview"] = p.preview
+		}
 		return a.printJSON(out)
 	}
 	w := a.Stdout
@@ -226,6 +231,9 @@ func (a *App) printPlan(g *globalFlags) error {
 	}
 	for _, l := range p.local {
 		fmt.Fprintln(w, "Would "+l+".")
+	}
+	if p.preview != nil {
+		printPreview(w, p.preview)
 	}
 	return nil
 }

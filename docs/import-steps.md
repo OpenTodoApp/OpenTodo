@@ -24,7 +24,7 @@ Open **Settings → Data**, select **Import data** (or press <kbd>g</kbd> then <
 Nothing is written straight away. OpenTodo first shows a preview:
 
 1. **Check the format** it detected. You can change it if it guessed wrong.
-2. **Choose the options**: which project gets tasks that have none, the time zone for dates, whether sections stay sections or become labels, and what to do with possible duplicates and with rows that have errors.
+2. **Choose the options**: with more than one workspace, the **Workspace** the import goes into (it starts with the one you have open, and the preview names it, such as "12 new projects into Work"; for an OpenTodo export it starts with **As in the export**), which project gets tasks that have none, the time zone for dates, whether sections stay sections or become labels, and what to do with possible duplicates and with rows that have errors.
 3. **Read the preview table.** Each row says what will happen: created, updated, skipped (with the reason) or an error (with the reason). Problems are listed first.
 4. **Import.** The import runs on the server, and the tasks reach all your devices on their next sync.
 

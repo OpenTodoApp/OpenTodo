@@ -1379,6 +1379,9 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
   ],
+  "As in the export": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Asana project (CSV)": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -4339,6 +4342,9 @@
   ],
   "Everyone with an account; you manage every account and choose admins.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Everything goes into {workspace}": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Everything stays on your devices and your own server, private by design.": [
     "web/src/lib/method/vocabulary.json"
@@ -16948,6 +16954,9 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "{n, plural, one {# new project} other {# new projects}}": [
+    "web/src/app/ImportScreen.tsx"
+  ],
+  "{n, plural, one {# new project} other {# new projects}} into {workspace}": [
     "web/src/app/ImportScreen.tsx"
   ],
   "{n, plural, one {# new section} other {# new sections}}": [

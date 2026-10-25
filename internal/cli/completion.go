@@ -350,6 +350,8 @@ func argKind(sp *cmdSpec, i int) valueKind {
 		return kindTasks
 	case "dir":
 		return kindDir
+	case "file":
+		return kindFile
 	case "command":
 		return kindCommands
 	case "shell":

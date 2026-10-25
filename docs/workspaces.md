@@ -49,6 +49,10 @@ In a comment or a task's notes, type `@` and pick a group, such as **Adults**, l
 
 The project menu has **Move to workspace…** for projects you own. Its tasks, sections and sub-projects follow, and labels on its tasks are matched by name in the other workspace. Undo puts everything back. A task in the Inbox moves with the command **Move … to workspace** in search.
 
+## Import into a workspace
+
+**Import data** has a **Workspace** choice, starting with the one you have open: everything the import creates goes there. In the terminal: `ot import todoist.zip --workspace Work`. See [Import formats](import.md#workspace).
+
 ## Good to know
 
 - Preferences such as the theme and language are per account, not per workspace.

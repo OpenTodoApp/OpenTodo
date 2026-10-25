@@ -378,6 +378,11 @@ type Options struct {
 	Errors string `json:"errors,omitempty"`
 	// Existing applies to own-export rows whose id exists: "skip" (default) or "overwrite".
 	Existing string `json:"existing,omitempty"`
+	// Workspace is the id of the account's workspace that receives every
+	// created project, label, view and project-less task (OpenSpec change
+	// import-workspace). Empty: the default workspace, or an own export's own
+	// mapping.
+	Workspace string `json:"workspace,omitempty"`
 
 	loc *time.Location
 	// Set by the Service for one preview or job, never by the client:
@@ -437,6 +442,7 @@ func (o *Options) Normalize() error {
 		return err
 	}
 	o.TargetProject = strings.TrimSpace(o.TargetProject)
+	o.Workspace = strings.TrimSpace(o.Workspace)
 	return nil
 }
 
