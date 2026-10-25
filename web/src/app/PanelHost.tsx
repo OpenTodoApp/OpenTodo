@@ -44,6 +44,14 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
     setEnteredFor(shown && !prevShown ? shown : null)
   }
 
+  // While the next task reads from the database the panel keeps the one it shows, so
+  // switching tasks never empties the slot for a frame and the list beside it never
+  // widens and narrows again (a flicker, GitHub issue 383).
+  const [held, setHeld] = useState<Task | null>(null)
+  if (task && task !== held) setHeld(task)
+  if (!taskId && held) setHeld(null)
+  const shownTask = task ?? (task === undefined && taskId ? held : null)
+
   // A task that is gone (deleted here or elsewhere) leaves the slot.
   useEffect(() => {
     if (taskId && (task === null || task?.deleted_at)) closePanel()
@@ -51,21 +59,22 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
 
   if (!occupant) return empty && wide ? <SplitPane side={kind === 'panel'}>{empty()}</SplitPane> : null
   if (occupant.kind === 'custom') return <>{occupant.render()}</>
-  if (!task) return null
+  if (!shownTask) return null
   return (
     <TaskDetail
       // Remount per task so pickers and drafts never show the previous task's data.
-      key={occupant.id}
-      taskId={occupant.id}
+      key={shownTask.id}
+      taskId={shownTask.id}
+      initial={shownTask}
       userId={user?.id}
-      readOnly={readOnly(task)}
+      readOnly={readOnly(shownTask)}
       projects={projects}
       labelMap={labelMap}
       onClose={closePanel}
       onDismiss={closeTaskPanel}
       onOpen={openTaskPanel}
       onToggleComplete={handlers.toggleComplete}
-      entering={occupant.id === enteredFor}
+      entering={shownTask.id === enteredFor}
     />
   )
 }

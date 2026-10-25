@@ -22,7 +22,7 @@ import { navigate } from './router'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { placement as placementSignal } from './signals'
 import { useWide } from '../ui'
-import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
+import { setPanelTaskId, usePanelTaskId } from './panel'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { useToday, useViewerZone } from './useViews'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
@@ -30,7 +30,7 @@ import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { DayColumn, DayHeader, HourGutter } from './calendar/DayColumn'
 import { formatTime, PX_PER_MIN, type Placement, type Preview } from './calendar/grid'
-import { PLAN_PANEL, PlanPanel, usePlanActions, type PlanActions } from './calendar/PlanPanel'
+import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanPanel'
 import { useCalendarKeys } from './calendar/useCalendarKeys'
 import { WeekAgenda } from './calendar/WeekAgenda'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
@@ -168,7 +168,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   // actions read the latest handlers through this ref.
   const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })
   usePlanActions(planActions)
-  const planOpen = usePanelOccupantKey() === PLAN_PANEL
+  const { planOpen, togglePlan } = usePlanPanel()
 
   const goTo = useCallback((d: string) => navigate({ view: mode, date: d === today ? undefined : d }), [mode, today])
   /** Keep a moved task in view: follow it to another day or week. */
@@ -219,7 +219,6 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     onOpen: (id) => setOpenId(id),
     onEscape: () => { if (!placing) return false; setPlacing(null); return true },
   }
-  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel />))
   const select = (id: string) => setSelectedId(id)
   const open = (id: string) => { setSelectedId(id); setOpenId(id) }
   const step = (dir: 1 | -1) => goTo(addDaysISO(anchor, (mode === 'day' ? 1 : 7) * dir))

@@ -111,6 +111,22 @@ describe('the side panel', () => {
     await r.unmount()
   })
 
+  it('switching tasks never empties the panel, even for a frame (GitHub issue 383)', async () => {
+    const { a, b, r } = await list({ view: 'today' })
+    await click(row('Order the tiles').querySelector('[data-row-open]')!)
+    await waitFor(() => docked() === a, 'the first task docked')
+    let gone = 0
+    const watch = new MutationObserver(() => { if (!docked()) gone++ })
+    watch.observe(document.body, { childList: true, subtree: true })
+    await click(row('Call the plumber').querySelector('[data-row-open]')!)
+    await waitFor(() => docked() === b, 'the second task docked')
+    await key(here(), 'k')
+    await waitFor(() => docked() === a, 'back to the first')
+    watch.disconnect()
+    expect(gone).toBe(0)
+    await r.unmount()
+  })
+
   it('a click on a title shows the task instead of editing it in place', async () => {
     const { b, r } = await list({ view: 'today' })
     await click(row('Call the plumber').querySelector('[data-row-open]')!)

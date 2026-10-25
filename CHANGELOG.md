@@ -4,7 +4,13 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **The Calendar remembers the planning list.** Left open, **Plan from a list** opens again the next time you come to Day, Week, Month or Plan on a wide screen, until you close it. ([Place tasks on the calendar](docs/place-tasks-on-the-calendar.md))
+
 ### Fixed
+
+- **The side panel no longer flickers when you switch tasks.** With tasks opening in a side panel, moving to another task emptied the panel for a moment while the next one loaded, so the list beside it widened and narrowed again. The panel now keeps the previous task until the next one is ready. ([The task panel](docs/task-panel.md))
 
 - **The task page's breadcrumb leads back.** Opened from Today, Upcoming, a label or a view, a task's page now starts its breadcrumb with that list's name as a link, which returns to the list with the task selected, like <kbd>Esc</kbd>. Before, it started with the task's project, or with the list's name as plain text when the task had no project. ([The task page](docs/task-panel.md))
 

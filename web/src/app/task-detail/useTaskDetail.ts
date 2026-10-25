@@ -28,6 +28,8 @@ export function taskLink(id: string, origin = typeof location === 'undefined' ? 
 
 export interface TaskDetailInput {
   taskId: string
+  /** The task as already read, used until this hook's own read arrives. */
+  initial?: Task
   readOnly: boolean
   projects: Project[]
   labelMap: Map<string, Label>
@@ -38,9 +40,10 @@ export interface TaskDetailInput {
   scope: RefObject<HTMLElement | null>
 }
 
-export function useTaskDetail({ taskId, readOnly, projects, labelMap, onClose, onOpen, onToggleComplete, scope }: TaskDetailInput) {
+export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, onClose, onOpen, onToggleComplete, scope }: TaskDetailInput) {
   const assistant = useAssistantStatus()
-  const task = useTask(taskId)
+  const live = useTask(taskId)
+  const task = live === undefined && initial?.id === taskId ? initial : live
   const [title, setTitle] = useState('')
   const [copied, setCopied] = useState(false)
   const children = useSubtasks(taskId)
