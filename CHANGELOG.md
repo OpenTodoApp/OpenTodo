@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Home Assistant integration.** A separate integration, installed from HACS, shows the Inbox, Today and your projects as Home Assistant to-do lists you can change (with quick-add syntax), counts Today, Earlier and the Inbox, puts dated tasks on a calendar, and fires `opentodo_task_*` events through a signed webhook it sets up itself; Assist can add to and tick off the lists. It needs a Full access token and no change on the server. ([Home Assistant](docs/home-assistant.md))
+
 ## [0.12.0] - 2026-10-25
 
 OpenTodo 0.12.0 builds on Precision. **Press <kbd>→</kbd> on a task to see its details under the row**, without leaving the list. **Mention a whole group** with `@Adults`, and **filter by workspace** with `workspace: Home`. The comment box gets buttons for mentions and formatting, `ot` gets **shell completion**, and **end-to-end encrypted accounts can use the assistant** from their own device with their own key, when the owner allows it. The briefing links each full day, has a switch in Settings, and the rest of the app now holds up at larger text sizes.

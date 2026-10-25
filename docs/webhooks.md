@@ -243,6 +243,8 @@ Settings warns when a target uses plain `http://` outside this machine: the payl
 
 ### Home Assistant
 
+The [Home Assistant integration](home-assistant.md) sets up a signed webhook like this for you, checks the signature, and turns every change into an `opentodo_task_*` event, next to to-do lists, counts and a calendar. The recipe below is for a single automation without the integration.
+
 1. In Home Assistant, create an automation with a **Webhook** trigger. Note the webhook id, for example `opentodo-plants`. Leave "Only accessible from the local network" on if OpenTodo runs on your LAN.
 2. As the owner, enable **Allow private network targets** in OpenTodo (Home Assistant usually lives at `http://192.168.x.x:8123`).
 3. In OpenTodo, add a webhook to `http://<home-assistant>:8123/api/webhook/opentodo-plants` with the event `task.completed`, optionally limited to a "Home" project.
