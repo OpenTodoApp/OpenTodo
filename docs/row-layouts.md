@@ -3,7 +3,7 @@ title: One-line and detailed rows
 summary: Show tasks on one line, or detailed with the parent task and a line of dates, priority, labels and project; for every list, or per view, project and label.
 audience: user
 section: Guides
-specs: [appearance-preferences, custom-views]
+specs: [row-layouts, appearance-preferences, custom-views]
 screens: []
 order: 19
 ---

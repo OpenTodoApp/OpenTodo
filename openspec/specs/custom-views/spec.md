@@ -315,6 +315,7 @@ A board column's Rule dialog and a saved filter's action menu SHALL offer "Make 
 ### Requirement: Display panel
 A list view and the New view page SHALL offer a display panel, opened from the toolbar's display button, that changes how the results are shown and never which tasks match:
 - **Layout:** List (rows under group bars) or Board (one column per group, the tasks as cards, the columns in the group order).
+- **Rows:** One line or Detailed (OpenSpec `row-layouts`); the view's own choice, else the account's.
 - **Group by** and **Order by:** the options of "Grouping and sort options".
 - **Completed tasks:** Hide (default) or Show. Show lists completed matches too, as if the query were `(query) & (open | completed)`; a query that names a state itself (`completed`, `open` or a completion date) is unchanged. Sidebar and overview counts stay counts of open matches.
 - **Show on rows:** one toggle per row property (date, project, labels, estimate, assignee, deadline, start, origin), all shown by default. A hidden property is left out of every row and card of the view, and the property column keeps no room for it; the task itself still shows every property.
@@ -337,6 +338,10 @@ On a saved view every change SHALL be written to the view at once, as operations
 #### Scenario: Offline
 - **WHEN** the device is offline and the user switches a view to the board layout
 - **THEN** the board is shown at once and the change reaches other devices after the network returns
+
+#### Scenario: Detailed rows for one view
+- **WHEN** the account uses one-line rows and the user chooses Detailed in the display panel of "Urgent"
+- **THEN** "Urgent" shows detailed rows, the choice is stored on the view, and the other lists keep one-line rows
 
 ### Requirement: Toolbar filter chips
 Under the header of a list view and of the New view page, a toolbar SHALL show the query's conditions as chips on the left, followed by "Filter", and the filter and display buttons on the right. A query whose top level is "All of these" SHALL show one chip per condition or group, in words ("Label is waiting", "Due on or before tomorrow", "Any of 2 conditions"), each with its property's icon and "Not" when negated; any other query SHALL show one chip for the whole query. A chip SHALL open the filter panel; "Filter" SHALL open it and start adding a condition. The chips only read the query and SHALL follow every change of it, including changes from other devices after sync. The toolbar SHALL be one row of chrome, wrapping its chips on a narrow screen.
