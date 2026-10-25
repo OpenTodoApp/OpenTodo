@@ -239,7 +239,7 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
 }
 
 /**
- * The paperclip beside a task's notes (issue #342): files or a link, like the row's Attach menu,
+ * The paperclip beside a task's notes (GitHub issue 342): files or a link, like the row's Attach menu,
  * also on a task without attachments yet. Both ask the task's row through attachRequest.
  */
 export function AttachMenu({ taskId }: { taskId: string }) {
