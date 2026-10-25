@@ -5330,5 +5330,6 @@
   "Two-factor on": "Dos pasos activado",
   "Users and invitations": "Usuarios e invitaciones",
   "Whether automation rules run on this server": "Si las reglas de automatización se ejecutan en este servidor",
-  "Start 15 minutes earlier / later, keeping the end": "Empezar 15 minutos antes / después, sin mover el final"
+  "Start 15 minutes earlier / later, keeping the end": "Empezar 15 minutos antes / después, sin mover el final",
+  "Lists": "Listas"
 }
