@@ -4,7 +4,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import type { Invitation } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, key, render, waitFor } from '../ui/test-utils'
 import { MembersView, type MembersViewProps, NewInvitationDialog } from './MembersPanel'
 
 /** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
@@ -57,7 +57,7 @@ describe('MembersView', () => {
   it('opens the row menu with copy and revoke', async () => {
     const { container, unmount } = await render(createElement(MembersView, props()))
     await click(container.querySelector('[data-invitation="i1"] button[aria-haspopup="menu"]')!)
-    await flush(20)
+    await waitFor(() => document.querySelectorAll('[role="menu"] [role^="menuitem"]').length > 0, 'the row menu')
     const labels = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')].map((i) => i.getAttribute('data-menu-label'))
     expect(labels).toEqual(['Copy link', 'Revoke'])
     await unmount()

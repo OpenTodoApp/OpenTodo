@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { flush, key, render, minWidthPx } from '../ui/test-utils'
+import { flush, key, render, minWidthPx, waitFor } from '../ui/test-utils'
 import type { User } from '../lib/types'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -48,10 +48,6 @@ afterEach(async () => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 async function inbox(...titles: string[]) {
   const ids: string[] = []
   for (const t of titles) ids.push(await createTask({ title: t }))
@@ -72,7 +68,8 @@ async function swipe(el: HTMLElement, xs: number[], { y = 0, ms = 120 } = {}) {
   }
   await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 3, pointerType: 'touch', clientX: 50 + xs[xs.length - 1], clientY: 50 + y })) })
   clock.mockRestore()
-  await flush(150)
+  // The row has slid back (or left): its edge is removed once the return animation ends.
+  await waitFor(() => !document.querySelector('[data-swipe-edge]'), 'the row settled')
 }
 
 describe('swipe actions on a touch list', () => {
@@ -82,7 +79,7 @@ describe('swipe actions on a touch list', () => {
     expect(row(id).className).toContain('touch-pan-y')
     await swipe(row(id), [20, 60, 110])
     await waitFor(() => !!document.querySelector('[data-bulk-toast] [data-toast-undo]'))
-    expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
+    await waitFor(async () => (await db.tasks.get(id))!.completed_at !== null, 'the completion written')
     expect(await db.outbox.count()).toBeGreaterThan(0)
   })
 
@@ -92,7 +89,7 @@ describe('swipe actions on a touch list', () => {
     expect((await db.tasks.get(a))!.completed_at).toBeNull()
     await swipe(row(b), [20, 80], { ms: 20 })
     await waitFor(() => !!document.querySelector('[data-bulk-toast]'))
-    expect((await db.tasks.get(b))!.completed_at).not.toBeNull()
+    await waitFor(async () => (await db.tasks.get(b))!.completed_at !== null, 'the completion written')
   })
 
   it('swipe left opens the Schedule sheet; Tomorrow sets the date', async () => {
@@ -102,7 +99,7 @@ describe('swipe actions on a touch list', () => {
     expect([...document.querySelectorAll('[data-schedule-choice]')].map((b) => b.textContent)).toEqual(['Today', 'Tomorrow', 'Next week', 'Pick a day…', 'Someday'])
     await act(async () => { document.querySelector<HTMLButtonElement>('[data-schedule-choice="tomorrow"]')!.click() })
     await waitFor(() => !document.querySelector('[data-testid="row-schedule-sheet"]'))
-    await flush(50)
+    await waitFor(async () => (await db.tasks.get(id))!.due?.date === '2026-10-15', 'the new due date')
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
   })
 
@@ -140,7 +137,8 @@ describe('swipe actions on a touch list', () => {
     for (const r of mounted.splice(0)) await r.unmount()
     hideBulkToast()
     await inbox('Second')
-    await flush(100)
+    // The cue is decided when the rows mount (useSwipeCue): seen already, so no toast.
+    await flush()
     expect(document.querySelector('[data-bulk-toast]')).toBeNull()
   })
 })
@@ -157,13 +155,13 @@ describe('the swipes\' twins and touch selection', () => {
     await act(async () => { items().find((m) => !m.closest('[inert]') && m.textContent?.startsWith('Schedule…'))!.click() })
     await waitFor(() => !!document.querySelector('[data-testid="row-schedule-sheet"]'))
     await act(async () => { document.querySelector<HTMLButtonElement>('[data-schedule-choice="today"]')!.click() })
-    await flush(50)
+    await waitFor(async () => (await db.tasks.get(id))!.due?.date === '2026-10-14', 'the new due date')
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-14' })
     await key(document.body, '.')
     await waitFor(() => items().length > 0)
     await act(async () => { items()[0].click() })
     await waitFor(() => !!document.querySelector('[data-bulk-toast] [data-toast-undo]'))
-    expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
+    await waitFor(async () => (await db.tasks.get(id))!.completed_at !== null, 'the completion written')
   })
 
   it('Select tasks in the bar\'s menu shows every checkbox without a tick; Done hides them and keeps the ticks', async () => {

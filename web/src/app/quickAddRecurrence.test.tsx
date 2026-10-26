@@ -8,7 +8,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatDate } from '../lib/dates'
 import type { QuickAddInput } from '../lib/nlp'
-import { flush, key, render, type } from '../ui/test-utils'
+import { key, render, type, waitFor } from '../ui/test-utils'
 import { QuickAdd } from './QuickAdd'
 
 beforeEach(() => {
@@ -28,18 +28,18 @@ describe('repeat and remind chips', () => {
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={(i) => { added.push(i) }} />)
     const input = r.container.querySelector('input')!
     await type(input, 'Water plants every Monday remind me at 8')
-    await flush(20)
     const kinds = () => [...r.container.querySelectorAll('[data-chip]')].map((c) => c.getAttribute('data-chip'))
+    await waitFor(() => kinds().includes('reminder'), 'the reminder chip')
     expect(kinds()).toEqual(expect.arrayContaining(['recurrence', 'reminder']))
     expect(r.container.querySelector('[data-chip="recurrence"]')!.textContent).toMatch(/every Monday/i)
     input.setSelectionRange(input.value.length, input.value.length)
     await key(input, 'Backspace')
     await key(input, 'Backspace')
-    await flush(20)
+    await waitFor(() => !kinds().includes('reminder'), 'the reminder chip removed')
     expect(kinds()).not.toContain('reminder')
     expect(kinds()).toContain('recurrence')
     await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
-    await flush(20)
+    await waitFor(() => added.length > 0, 'the add')
     expect(added).toHaveLength(1)
     expect(added[0].recurrence).toMatch(/every/i)
     expect(added[0].title).toContain('remind me at 8')
@@ -55,12 +55,12 @@ describe('ordinal weekday rules (quick-add-nth-weekday 2.5)', () => {
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={(i) => { added.push(i) }} />)
     const input = r.container.querySelector('input')!
     await type(input, 'Board every 2nd monday of the month')
-    await flush(20)
+    await waitFor(() => !!r.container.querySelector('[data-chip="recurrence"]'), 'the recurrence chip')
     const kinds = [...r.container.querySelectorAll('[data-chip]')].map((c) => c.getAttribute('data-chip'))
     expect(kinds).toEqual(['recurrence'])
     expect(r.container.querySelector('[data-chip="recurrence"]')!.textContent).toContain(`every 2nd monday · ${formatDate('2026-10-12', 'long')}`)
     await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
-    await flush(20)
+    await waitFor(() => added.length > 0, 'the add')
     expect(added).toHaveLength(1)
     expect(added[0]).toMatchObject({ title: 'Board', recurrence: 'every 2nd monday', due: { date: '2026-10-12' } })
     await r.unmount()
@@ -79,7 +79,7 @@ describe('the share screen', () => {
     resetDeviceId()
     setPendingShare(parseShare('?title=Read%20this&url=https://example.org/post'))
     await render(<ShareCapture />)
-    await flush(80)
+    await waitFor(() => !!document.querySelector('#share-capture input[aria-label="Task title"]'), 'the capture form')
     const input = document.querySelector<HTMLInputElement>('#share-capture input[aria-label="Task title"]')!
     await act(async () => {
       const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
@@ -87,9 +87,9 @@ describe('the share screen', () => {
       input.dispatchEvent(new Event('input', { bubbles: true }))
     })
     await type(input, 'Read this tomorrow at 9 every week remind me 30 minutes before')
-    await flush(20)
+    await waitFor(() => !!document.querySelector('#share-capture [data-chip="reminder"]'), 'the reminder chip')
     await act(async () => { (document.getElementById('share-capture') as HTMLFormElement).requestSubmit() })
-    for (let i = 0; i < 100 && (await dbm.db.tasks.count()) === 0; i++) await flush(20)
+    await waitFor(async () => (await dbm.db.tasks.count()) > 0, 'the saved task')
     const [task] = await dbm.db.tasks.toArray()
     expect(task.recurrence).toMatch(/every week/i)
     const reminders = await dbm.db.reminders.where('task_id').equals(task.id).toArray()

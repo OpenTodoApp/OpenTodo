@@ -11,7 +11,7 @@ import { resetDeviceId } from '../lib/ops'
 import { SHORTCUTS } from '../lib/shortcuts'
 import type { User } from '../lib/types'
 import { matchPrepared, prepare, prepareQuery } from '../ui'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { commandEntries, commands, type PaletteContext } from './palette/registry'
 import { resetPanel } from './panel'
 import { canonicalPath, parseRoute, routePath } from './router'
@@ -35,10 +35,6 @@ afterEach(() => {
   history.replaceState(null, '', '/')
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('addresses', () => {
   it('/activity opens Updates at /updates; /calendar opens the Day or Week last used', () => {
@@ -97,7 +93,7 @@ describe('old words', () => {
     // The Views group appears with the first saved view (sidebar-compact-desktop).
     await createView({ name: 'Errands', query: 'today' })
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('nav[aria-label="Views"]'), 'the Views group')
     expect(r.container.querySelector('nav[aria-label="Views"]')).toBeTruthy()
     expect(r.container.querySelector('nav[aria-label="Filters"]')).toBeNull()
     expect(r.container.textContent).not.toMatch(/\bFilters\b/)
