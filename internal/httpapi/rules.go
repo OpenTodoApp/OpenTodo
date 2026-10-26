@@ -10,7 +10,6 @@ import (
 
 	"github.com/pixari/opentodo/internal/rules"
 	"github.com/pixari/opentodo/internal/ruleval"
-	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -18,11 +17,6 @@ import (
 // entity through the generic collection handlers with checkRule, the run log,
 // the dry run, the user's "pause all" and the owner switch. Every route is
 // refused on a demo instance.
-
-// WithRules hands the server the rules engine (nil on a demo) and its switch.
-func WithRules(e *rules.Engine, sw *settings.Switch) Option {
-	return func(s *Server) { s.rules, s.ruleSwitch = e, sw }
-}
 
 // applyRuleDefaults fills the defaults of a rule being created: on, no
 // condition, live.

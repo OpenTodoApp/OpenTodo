@@ -13,10 +13,6 @@ import (
 // address. The routes require a session or API token and act on the caller's
 // account only; they never return the operator's mailbox host or credentials.
 
-// WithEmail (an Option) wires email capture; without it the routes report the
-// feature as not enabled by the operator.
-func WithEmail(svc *email.Service) Option { return func(s *Server) { s.email = svc } }
-
 func (s *Server) registerEmailRoutes(mux *routes) {
 	// The address is a capability to create tasks, so read and agent tokens get
 	// none of these routes (email-inbox-explicit).

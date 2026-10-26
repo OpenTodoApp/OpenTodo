@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log/slog"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -16,11 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/rules"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // Route matrix (wave 2 of the 2026-10 audit, G4): every route of the router's
@@ -57,13 +54,12 @@ func newMatrixEnv(t *testing.T) *matrixEnv {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour, DataDir: dir}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	authSvc := auth.NewService(db, cfg.SessionTTL, false)
+	set := testSet(t, config.Config{SessionTTL: time.Hour, DataDir: dir}, db, services.Options{})
+	syncSvc, authSvc := set.Sync, set.Auth
 	authSvc.SetClock(func() time.Time { return time.Now().Add(time.Duration(m.clockOffset.Load())) })
-	h := New(cfg, authSvc, syncSvc, nil, log, "test",
-		WithRules(nil, rules.NewSwitch(db, nil)), func(s *Server) { m.srv = s })
+	// The matrix exercises the routes, not the automation engine.
+	set.Rules = nil
+	h := New(set, nil, func(s *Server) { m.srv = s })
 	ts := httptest.NewServer(h)
 	t.Cleanup(ts.Close)
 	t.Cleanup(syncSvc.Notifier().CloseAll)

@@ -16,24 +16,6 @@ import (
 // owner with a settings.changed audit event, and a gate that answers 404 while
 // it is off.
 
-// openSwitches builds the switches the server itself owns. Integrations that
-// must stay off on a demo instance are fixed off there.
-func (s *Server) openSwitches() {
-	open := func(key string, demoOff bool) *settings.Switch {
-		o := settings.SwitchOptions{Log: s.log}
-		if demoOff && s.demo != nil {
-			off := false
-			o.Fixed, o.FixedBy = &off, "OPENTODO_DEMO"
-		}
-		return settings.NewSwitch(s.sync.DB(), key, o)
-	}
-	s.caldavOn = open(caldavSettingKey, false)
-	s.calFeedsOn = open(calendarFeedsSettingKey, true)
-	s.issuesOn = open(issuesSettingKey, true)
-	s.calsyncOn = open(calsyncSettingKey, true)
-	s.membersInviteOn = open(membersInviteKey, false)
-}
-
 // switchRoute describes the GET and PUT routes of one owner switch.
 type switchRoute struct {
 	sw       *settings.Switch

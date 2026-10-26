@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
@@ -17,8 +16,6 @@ import (
 // whose changes come back to the tasks. One owner switch, off by default,
 // governs every route and the worker (design D1, D14).
 
-const calsyncSettingKey = "calendar_sync.enabled"
-
 // Hand-triggered discoveries and syncs share one window per user.
 const (
 	calsyncActionsPerHr = 12
@@ -29,24 +26,8 @@ const (
 	calsyncCallback     = "/api/v1/calendar-sync/google/callback"
 )
 
-// WithCalendarSync hands the server the worker the tenant runs, so the routes
-// and the background job share one store, secrets file and policy.
-func WithCalendarSync(w *calsync.Worker) Option { return func(s *Server) { s.calsync = w } }
-
-// CalendarSync is the calendar sync worker, run by the jobs leader.
-func (s *Server) CalendarSync() *calsync.Worker { return s.calsync }
-
 func (s *Server) registerCalendarSyncRoutes(mux *routes) {
-	if s.calsync == nil {
-		s.calsync = calsync.NewWorker(s.sync.DB(), s.cfg.DataDir, s.sync, s.allowPrivate(), s.cfg.Google, s.version, s.log)
-	}
 	w := s.calsync
-	w.Enabled = s.calsyncOn.On
-	w.Tasks = s.feedTasksFor
-	w.Notify = s.sync.Notifier().NotifyCalendar
-	if s.cfg.BaseURL != nil {
-		w.BaseURL = strings.TrimRight(s.cfg.BaseURL.String(), "/")
-	}
 	s.calsyncLimiter = newRateLimiter(calsyncActionsPerHr, time.Hour)
 	gate := switchGate(s.calsyncOn, "calendar_sync_disabled", "the server owner has not enabled calendar sync")
 

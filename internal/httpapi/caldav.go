@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"encoding/base64"
 	"errors"
 	"net/http"
@@ -14,9 +13,6 @@ import (
 // the /dav/ endpoint. The endpoint authenticates with HTTP Basic and app
 // passwords only (never sessions or API tokens) and writes through ApplyStrict
 // like every REST route; see caldav_dav.go and caldav_write.go.
-
-// caldavSettingKey holds the owner toggle in the shared settings table (JSON bool).
-const caldavSettingKey = "caldav.enabled"
 
 // davRealm is the Basic authentication realm.
 const davRealm = "OpenTodo CalDAV"
@@ -47,13 +43,6 @@ func (s *Server) registerCaldavRoutes(mux *routes) {
 	mux.handle("OPTIONS /{$}", public("CalDAV discovery from the host root; reports the DAV capabilities").demoDenied(), s.handleDAVRoot)
 	mux.handle("/principals", public("CalDAV discovery; redirects to the principal under /dav/").demoDenied(), s.handleDAVRoot)
 	mux.handle("/principals/", public("CalDAV discovery; redirects to the principal under /dav/").demoDenied(), s.handleDAVRoot)
-}
-
-// seedCaldav applies the OPENTODO_CALDAV preset on first start only.
-func (s *Server) seedCaldav(ctx context.Context) {
-	if _, err := s.caldavOn.Seed(ctx, s.cfg.CalDAV); err != nil {
-		s.log.Error("seed caldav setting", "err", err)
-	}
 }
 
 // caldavURL is the address clients are configured with.

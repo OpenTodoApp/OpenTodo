@@ -1,13 +1,10 @@
 package httpapi
 
 import (
-	"context"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	gotoken "go/token"
-	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,10 +15,9 @@ import (
 
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // Route authorization policy (OpenSpec change `route-authorization-policy`).
@@ -36,22 +32,13 @@ func routeTableOf(t *testing.T, demoMode bool) []routeEntry {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour, DataDir: dir, Demo: demoMode}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	authSvc := auth.NewService(db, cfg.SessionTTL, false)
+	// Hosted, with web push on (even on a demo instance), so every optional
+	// route is registered.
+	set := testSet(t, config.Config{SessionTTL: time.Hour, DataDir: dir, Demo: demoMode}, db, services.Options{Hosted: &services.Hosted{}})
+	set.Push = push.New(db, set.Sync, dir, push.Options{AllowHTTP: true, Client: http.DefaultClient})
+	set.Cfg.PushDisabled = false
 	var srv *Server
-	opts := []Option{WithHosted(), WithPush(push.New(db, syncSvc, dir, push.Options{AllowHTTP: true, Client: http.DefaultClient})),
-		func(s *Server) { srv = s }}
-	if demoMode {
-		d := demo.New(authSvc, syncSvc, log)
-		if err := d.Start(context.Background()); err != nil {
-			t.Fatal(err)
-		}
-		opts = append(opts, WithDemo(d))
-	}
-	New(cfg, authSvc, syncSvc, http.NotFoundHandler(), log, "test", opts...)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
+	New(set, http.NotFoundHandler(), func(s *Server) { srv = s })
 	if srv == nil || len(srv.routeTable) < 150 {
 		t.Fatalf("route table not recorded")
 	}

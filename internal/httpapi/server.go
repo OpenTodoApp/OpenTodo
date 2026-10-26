@@ -8,8 +8,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -39,6 +37,7 @@ import (
 	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/stt"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 	"github.com/pixari/opentodo/internal/webhook"
 )
 
@@ -87,6 +86,9 @@ type Server struct {
 	projectInviteLimiter *rateLimiter
 	// membersInviteOn is the owner's "members may invite new people" switch.
 	membersInviteOn *settings.Switch
+	// set is every service of the tenant (services.Build); the fields below
+	// that hold a service are copied from it.
+	set *services.Set
 	// settings is the owner settings table (see also the switches, switch.go).
 	settings *settings.Store
 	// workspaceInviteLimiter caps workspace invite link creation per account
@@ -229,21 +231,19 @@ type Server struct {
 	streams streamCounter
 }
 
-// WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
-func WithBackups(b *backup.Service) Option { return func(s *Server) { s.backups = b } }
-
 // opTS stamps REST-originated ops with the sync service's server clock
 // (sync-convergence), shared with every other server-side writer, so two writes
 // to one field within the same millisecond never tie under the winner rule.
 func (s *Server) opTS() int64 { return s.sync.ServerTS() }
 
-// New builds the router. web may be nil when only the API is wanted (tests).
-func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string, opts ...Option) http.Handler {
-	s := newServer(cfg, authSvc, syncSvc, web, log, version)
+// New builds the router over the tenant's services (services.Build). web may
+// be nil when only the API is wanted (tests).
+func New(set *services.Set, web http.Handler, opts ...Option) http.Handler {
+	s := newServer(set, web)
 	for _, o := range opts {
 		o(s)
 	}
-	s.wireServices(cfg, log)
+	s.wireServices()
 	// Every route declares its access policy (route-authorization-policy); see
 	// policy.go and router.go.
 	mux := &routes{s: s, mux: http.NewServeMux()}
@@ -252,10 +252,10 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(s.hostGuard(mux.mux)))))
 }
 
-// newServer builds the Server with its rate limiters and the importer; the
-// options run after it.
-func newServer(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) *Server {
-	s := &Server{clock: time.Now, cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
+// newServer builds the Server over set with its rate limiters; the options
+// run after it.
+func newServer(set *services.Set, web http.Handler) *Server {
+	s := &Server{clock: time.Now, set: set, cfg: set.Cfg, auth: set.Auth, audit: set.Auth.Audit(), sync: set.Sync, web: web, log: set.Log, version: set.Version,
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
 		registerLimiter: newRateLimiter(10, time.Minute), resetLimiter: newRateLimiter(10, time.Minute),
 		invitePreviewLimiter: newRateLimiter(10, time.Minute), publicLinkLimiter: newRateLimiter(10, time.Minute),
@@ -267,66 +267,32 @@ func newServer(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service
 		emailChangeLimiter: newRateLimiter(5, time.Hour), avatarLimiter: newRateLimiter(30, time.Hour), sttLimiter: newRateLimiter(30, time.Minute),
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
 		emailLimiter: newRateLimiter(30, time.Hour), memberAddLimiter: newRateLimiter(memberAddsPerHour, time.Hour),
-		importer: importer.New(syncSvc.DB(), syncSvc, log), settings: settings.New(syncSvc.DB())}
-	// Imports: unpacked archives are bounded by the upload limit, and an uploaded
-	// database is read from a private copy under the data directory (OpenSpec
-	// change named-importers).
-	importTmp := ""
-	if cfg.DataDir != "" {
-		importTmp = filepath.Join(cfg.DataDir, "tmp")
-		if err := os.MkdirAll(importTmp, 0o700); err != nil {
-			log.Warn("import: temporary directory", "err", err)
-			importTmp = ""
-		}
-	}
-	s.importer.SetLimits(cfg.ImportMaxBytes(), importTmp)
+		settings: set.Settings, importer: set.Importer, hooks: set.Hooks, inbox: set.Inbox, backups: set.Backups,
+		mcpSettings: set.MCP, push: set.Push, channels: set.Channels, email: set.Email, calWorker: set.Calendar,
+		issueWorker: set.Issues, calsync: set.CalSync, mail: set.Mail, demo: set.Demo, rules: set.Rules,
+		ruleSwitch: set.RuleSwitch, oidc: set.OIDC, blobs: set.Blobs, maps: set.Maps, stt: set.STT, hosted: set.Hosted != nil,
+		caldavOn: set.CalDAV, calFeedsOn: set.CalendarFeeds, issuesOn: set.IssuesOn, calsyncOn: set.CalendarSync,
+		membersInviteOn: set.MembersInvite}
 	return s
 }
 
-// wireServices connects the services to each other once the options have run:
-// trusted proxies, the setup code, the idempotency salt, the demo write guard,
-// webhooks for imports, single sign-on, email capture, the in-app inbox,
-// passkeys and account deletion. cfg and log are New's arguments, not the
-// fields an option may have replaced.
-func (s *Server) wireServices(cfg config.Config, log *slog.Logger) {
-	authSvc, syncSvc := s.auth, s.sync
-	s.openSwitches()
-	setTrustedProxies(cfg.TrustedProxies, cfg.TrustCloudflare)
+// wireServices runs the HTTP layer's own start-up once the options have run:
+// trusted proxies, the setup code, the idempotency salt, and the adapters that
+// hand handler logic to the services (calendar sync's task source, the AI agent
+// tools, the device relay). Every service itself is built by services.Build.
+func (s *Server) wireServices() {
+	setTrustedProxies(s.cfg.TrustedProxies, s.cfg.TrustCloudflare)
 	s.announceSetupCode()
 	if err := s.loadIdempotencySalt(context.Background()); err != nil {
 		// Without a stored salt keyed ids still derive per user; they are only
 		// guessable by someone who knows the user id and the key.
-		log.Error("idempotency salt unavailable", "err", err)
+		s.log.Error("idempotency salt unavailable", "err", err)
 	}
-	if s.demo != nil {
-		// Sandbox writes are bounded: field sizes and the write budget (demo-sandboxes D3).
-		syncSvc.SetWriteGuard(s.demo.Guard())
+	// Calendar sync writes the user's tasks as events with the task feed's selection.
+	s.calsync.Tasks = s.feedTasksFor
+	if s.attachmentLimiter == nil {
+		s.attachmentLimiter = newRateLimiter(120, time.Hour)
 	}
-	if s.hooks != nil {
-		// Imports reach webhooks as one summary per job (harden-server-edges).
-		s.importer.SetSummaryObserver(s.hooks.ObserveImport)
-	}
-	if s.oidc == nil {
-		s.oidc = oidc.New(s.settings, cfg.DataDir, oidc.Options{Env: oidc.Env(cfg.OIDC)})
-	}
-	// SSO-only mode refuses local sign-in for members (oidc-login D6).
-	authSvc.SetSSOOnly(s.oidc.SSOOnly)
-	if s.email == nil {
-		// Disabled unless cfg.Email is set; only cmd/opentodo starts the poller.
-		s.email = email.New(syncSvc.DB(), syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit()})
-	}
-	if s.inbox == nil {
-		s.inbox = notify.NewInApp(syncSvc.DB(), log)
-		syncSvc.AddSink(s.inbox)
-	}
-	// Passkeys need a relying party; it is derived from the base URL so the
-	// 409 guard in the handlers and the service always agree.
-	if cfg.PasskeysAvailable() && !authSvc.PasskeysAvailable() {
-		authSvc.ConfigurePasskeys(cfg.RPID(), cfg.Origin())
-	}
-	// Deleting an account removes its synced data in the same transaction
-	// (user-management D4; the project-sharing hook lives in the sync package).
-	authSvc.SetBeforeDelete(syncSvc.DeleteAccountData)
 }
 
 // internal answers 500 (or 503 while every password-hashing slot is busy) and

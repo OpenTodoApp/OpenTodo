@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
@@ -17,10 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // newEnvConfig is newEnv with a caller-supplied configuration.
@@ -34,12 +32,11 @@ func newEnvConfig(t *testing.T, cfg config.Config) *env {
 	if cfg.SessionTTL == 0 {
 		cfg.SessionTTL = time.Hour
 	}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup), syncSvc, nil, log, "test")
+	set := testSet(t, cfg, db, services.Options{})
+	syncSvc := set.Sync
+	h := New(set, nil)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
 	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}
 }

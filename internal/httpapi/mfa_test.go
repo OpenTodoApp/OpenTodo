@@ -1,8 +1,6 @@
 package httpapi
 
 import (
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -16,7 +14,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 	"github.com/pixari/opentodo/internal/webauthn"
 	"github.com/pixari/opentodo/internal/webauthn/testauth"
 )
@@ -51,15 +49,13 @@ func newMFAEnv(t *testing.T) *mfaEnv {
 	t.Cleanup(func() { db.Close() })
 	cfg := config.Config{SessionTTL: 24 * time.Hour}
 	cfg.BaseURL, _ = url.Parse(testBase)
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	authSvc := auth.NewService(db, cfg.SessionTTL, false)
+	set := testSet(t, cfg, db, services.Options{})
+	syncSvc, authSvc := set.Sync, set.Auth
 	clk := &mfaClock{t: time.Now().Truncate(30 * time.Second)}
 	authSvc.SetClock(clk.now)
-	h := New(cfg, authSvc, syncSvc, nil, log, "test")
+	h := New(set, nil)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
 	e := &mfaEnv{env: &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}, clock: clk}
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
