@@ -68,7 +68,9 @@ func unquote(v string) string {
 // does or when task lines follow it before the next heading, otherwise it is
 // prose.
 func ParseDoc(text string, isSection func(name string) bool) *Doc {
-	text = strings.ReplaceAll(text, "\r\n", "\n")
+	// A lone carriage return (old Mac line ends) is a line end too; kept, a run
+	// of them would shrink by one on every print and read.
+	text = strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
 	lines := strings.Split(text, "\n")
 	if len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
@@ -235,6 +237,10 @@ func finishNotes(n *Node) {
 	}
 	width := widthOf(n.Line.Indent) + 2
 	for i, l := range n.Note {
+		if strings.TrimSpace(l) == "" {
+			n.Note[i] = "" // the printer writes a blank note line empty
+			continue
+		}
 		n.Note[i] = noteFromFile(dedent(l, width))
 	}
 	for _, c := range n.Children {
@@ -306,7 +312,10 @@ func (d *Doc) Print() string {
 		}
 		for _, it := range bl.Items {
 			if it.Task != nil {
-				run = append(run, printNode(it.Task, 0)...)
+				// A top-level task keeps its own indentation: prose indented
+				// like it after a blank line must stay prose, not become its
+				// note on the next read.
+				run = append(run, printNode(it.Task, it.Task.Line.Indent)...)
 				continue
 			}
 			flushRun()
@@ -317,6 +326,8 @@ func (d *Doc) Print() string {
 	if len(chunks) > 0 {
 		if b.Len() > 0 {
 			b.WriteString("\n")
+		} else if first, _, _ := strings.Cut(chunks[0], "\n"); strings.TrimSpace(first) == "---" {
+			b.WriteString("\n") // prose starting with --- is not front matter
 		}
 		b.WriteString(strings.Join(chunks, "\n\n"))
 		b.WriteString("\n")
@@ -325,8 +336,7 @@ func (d *Doc) Print() string {
 }
 
 // printNode writes a task line, its note and its subtasks.
-func printNode(n *Node, depth int) []string {
-	indent := strings.Repeat("  ", depth)
+func printNode(n *Node, indent string) []string {
 	l := n.Line
 	l.Indent = indent
 	out := []string{PrintLine(l)}
@@ -338,7 +348,7 @@ func printNode(n *Node, depth int) []string {
 		out = append(out, indent+"  "+noteToFile(nl))
 	}
 	for _, c := range n.Children {
-		out = append(out, printNode(c, depth+1)...)
+		out = append(out, printNode(c, indent+"  ")...)
 	}
 	return out
 }
