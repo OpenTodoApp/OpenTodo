@@ -16,6 +16,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
+import { readString, writeString } from '../lib/deviceStorage'
 
 // The list's comfortable row (precision-boards-timeline D5); bars are 24 px inside it.
 const ROW_PX = 36
@@ -38,7 +39,7 @@ interface Line {
 }
 
 function readZoom(): Zoom {
-  try { return localStorage.getItem(ZOOM_KEY) === 'week' ? 'week' : 'day' } catch { return 'day' }
+  return readString(ZOOM_KEY) === 'week' ? 'week' : 'day'
 }
 
 /** The deadline step of Shift+Left / Shift+Right: from the deadline, else from the due day. */
@@ -102,7 +103,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
 
   const chooseZoom = (z: Zoom) => {
     setZoom(z)
-    try { localStorage.setItem(ZOOM_KEY, z) } catch { /* per-device convenience */ }
+    writeString(ZOOM_KEY, z) // per-device convenience
   }
   // Start with today in view.
   useLayoutEffect(() => {

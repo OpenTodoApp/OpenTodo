@@ -6,13 +6,14 @@ import { navigate } from './router'
 import { ProjectMark } from './Sidebar'
 import { useOpenTasks } from '../lib/liveTasks'
 import { t } from '../lib/i18n'
+import { readJSON, writeJSON } from '../lib/deviceStorage'
 
 const KEY = 'ot.subprojects.collapsed'
 function readCollapsed(): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(KEY) ?? '[]') as string[]) } catch { return new Set() }
+  return new Set(readJSON<string[]>(KEY, [], (v) => (Array.isArray(v) ? v as string[] : null)))
 }
 function writeCollapsed(set: Set<string>): void {
-  try { localStorage.setItem(KEY, JSON.stringify([...set])) } catch { /* device state only */ }
+  writeJSON(KEY, [...set]) // device state only
 }
 
 /**

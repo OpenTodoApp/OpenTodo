@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { api } from '../api'
 import type { SpeechService } from '../types'
 import { createStore } from '../store'
+import { readJSON, writeJSON } from '../deviceStorage'
 
 const KEY = 'opentodo.speech-service'
 const NONE: SpeechService = { connected: false }
@@ -13,18 +14,13 @@ const NONE: SpeechService = { connected: false }
 const store = createStore<SpeechService>('speechService', read())
 
 function read(): SpeechService {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') as SpeechService | null
-    return v && typeof v.connected === 'boolean' ? v : NONE
-  } catch {
-    return NONE
-  }
+  return readJSON<SpeechService>(KEY, NONE, (v) => (v && typeof (v as SpeechService).connected === 'boolean' ? v as SpeechService : null))
 }
 
 /** Records the server's answer (also used by tests and stories). */
 export function setSpeechService(s: SpeechService): void {
   const next = s.connected ? { connected: true, host: s.host } : NONE
-  try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* memory only */ }
+  writeJSON(KEY, next) // storage refused: memory only
   store.set(next)
 }
 
