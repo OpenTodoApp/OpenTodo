@@ -5,7 +5,7 @@
 import { addDaysISO, compareDue, formatDateHeading, localDate, localDueOf } from './dates'
 import type { RowLayout } from './rowLayout'
 import { db, getMeta, setMeta } from './db'
-import { compile, filterScope, mentionsState, namesWorkspace, parse, type FilterContext, type Node } from './filter'
+import { compile, filterScope, mentionsState, namesWorkspace, parse, withCompletedTasks, type FilterContext, type Node } from './filter'
 import type { BoardTemplate } from './boardTemplates'
 import { activeLabels } from './labels'
 import { VIEW_DEFAULTS, getDeviceId, mutate, mutateMany, mutationTables, type Change } from './ops'
@@ -411,7 +411,7 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
     return { ok: false, error: (e as Error).message }
   }
   if (!ast) return { ok: false, error: t('This view has no query') }
-  if (withCompleted && !mentionsState(ast)) ast = parse(`(${view.query}) & (open | completed)`)!
+  if (withCompleted && !mentionsState(ast)) ast = withCompletedTasks(ast)
   const ctx = filterScope(ast, given)
   // Like the Filter view and the other cross-project views, tasks of archived projects stay out.
   const archived = new Set(ctx.projects.filter((p) => p.archived && !p.deleted_at).map((p) => p.id))

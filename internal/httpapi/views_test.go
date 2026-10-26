@@ -149,6 +149,9 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 		{map[string]any{"name": "x", "query": " "}, "view.query must not be empty"},
 		{map[string]any{"name": "x", "query": "@work p1"}, `view.query: Expected "&" or "|" before "p1" at position 7`},
 		{map[string]any{"name": "x", "query": "workspace: & p1"}, `view.query: Expected a workspace name after "workspace:" at position 1`},
+		// filter-limits: a body of millions of "(" used to overflow the parser's stack and end the process.
+		{map[string]any{"name": "x", "query": strings.Repeat("(", 3_000_000)}, "view.query: Query is too long: 3000000 characters, at most 4096"},
+		{map[string]any{"name": "x", "query": strings.Repeat("(", 4000)}, `view.query: Too deeply nested at position 65`},
 		{map[string]any{"name": "x", "query": "p1", "colour": "red"}, "unknown field"},
 		{map[string]any{"name": "x", "query": "p1", "pinned": "yes"}, "must be a boolean"},
 		{map[string]any{"name": "x", "query": "p1", "panels": []string{list}}, "only allowed on dashboards"},
@@ -182,6 +185,7 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 		{list, map[string]any{"kind": "dashboard"}, "cannot be changed"},
 		{list, map[string]any{"name": ""}, "must not be empty"},
 		{list, map[string]any{"query": "p5"}, "Priority must be p1, p2, p3 or p4"},
+		{list, map[string]any{"query": strings.Repeat("!", 3_000_000)}, "Query is too long"},
 		{dash, map[string]any{"panels": []string{dash}}, "cannot contain itself"},
 		{dash, map[string]any{"kind": "list"}, "cannot be changed"},
 	}

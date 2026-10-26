@@ -7,7 +7,7 @@ import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { useAllLabels, useProjects } from '../lib/localData'
-import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, mentionsState, namesWorkspace, originSuggestions, parse, type Node } from '../lib/filter'
+import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, mentionsState, namesWorkspace, originSuggestions, parse, withCompletedTasks, type Node } from '../lib/filter'
 import { useWorkspaceFilter } from './useWorkspaceFilter'
 import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
@@ -103,7 +103,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const compiled = useMemo(() => {
     if (!good.ast) return null
     // "Completed tasks: Show" (views-and-display D4) reads the query as `(query) & (open | completed)`.
-    const ast = display.showCompleted && !mentionsState(good.ast) ? parse(`(${good.src}) & (open | completed)`)! : good.ast
+    const ast = display.showCompleted && !mentionsState(good.ast) ? withCompletedTasks(good.ast) : good.ast
     try {
       return { ok: true as const, ...compile(ast, ctx) }
     } catch (e) {

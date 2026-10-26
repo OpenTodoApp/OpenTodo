@@ -217,11 +217,31 @@ const CMP_EXPECTED =['"<"', '"<="', '"="', '">="', '">"', '"before"', '"after"']
 
 // ---- parser ----
 
+/**
+ * The limits on a query (OpenSpec change filter-limits), the same as MaxQueryLength
+ * and MaxNesting in internal/filter: the longest query in characters (code points),
+ * and the deepest nesting of "(" and "!", each of which opens one level.
+ */
+export const MAX_QUERY_LENGTH = 4096
+export const MAX_NESTING = 64
+
+function codePoints(s: string): number {
+  let n = 0
+  for (const _ of s) n++
+  return n
+}
+
 /** Parse a query. Returns null for an empty (whitespace-only) query; throws FilterSyntaxError otherwise. */
 export function parse(src: string): Node | null {
+  // Code points, like the server: a UTF-16 length within the limit is always within it.
+  if (src.length > MAX_QUERY_LENGTH) {
+    const count = codePoints(src)
+    if (count > MAX_QUERY_LENGTH) throw new FilterSyntaxError(t('Query is too long: {count} characters, at most {max}', { count, max: MAX_QUERY_LENGTH }), MAX_QUERY_LENGTH, [])
+  }
   const tokens = tokenize(src)
   if (tokens.length === 0) return null
   let i = 0
+  let depth = 0
   const end = src.length
 
   const peek = (): Token | undefined => tokens[i]
@@ -255,20 +275,30 @@ export function parse(src: string): Node | null {
     return items.length === 1 ? items[0] : { kind: 'and', items }
   }
 
+  /** Opens one nesting level at `tok` ("(" or "!"), refusing one beyond MAX_NESTING. */
+  const enter = (tok: Token): void => {
+    if (++depth > MAX_NESTING) fail(t('Too deeply nested at position {pos}; use at most {max} levels of "(" and "!"', { pos: tok.pos + 1, max: MAX_NESTING }), tok.pos, [])
+  }
+
   function parseNot(prev: Token | undefined): Node {
     const tok = peek()
     if (!tok) return missingTerm(prev)
     if (tok.type === 'not') {
       i++
-      return { kind: 'not', item: parseNot(tok) }
+      enter(tok)
+      const item = parseNot(tok)
+      depth--
+      return { kind: 'not', item }
     }
     if (tok.type === 'lparen') {
       i++
+      enter(tok)
       const inner = parseOr(tok)
       const close = peek()
       if (!close) return fail(t('Missing ")" at end of query'), end, ['")"'])
       if (close.type !== 'rparen') return fail(t('Expected "&", "|" or ")" before "{before}" at position {pos}', { before: close.raw, pos: close.pos + 1 }), close.pos, ['"&"', '"|"', '")"'])
       i++
+      depth--
       return inner
     }
     return parseTerm(prev)

@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+- **A saved view can no longer take the server down.** A signed-in person, including a visitor of a public demo, could save a view with a specially crafted filter query that crashed the server while checking it, stopping it for everyone (on a hosted server, for every tenant). Filter queries are now limited to 4,096 characters and 64 levels of parentheses and `!`, in the app and on the server; a longer or deeper query is refused with a message like any other mistake in a query. Queries people write, and every query the filter builder makes, are far below both limits. Found in an internal audit. ([Filters](docs/filters.md))
+
 ### Added
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))

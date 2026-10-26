@@ -180,6 +180,8 @@ A query that does not follow the grammar shows a message under the input, and th
 
 An empty query shows a short usage hint and no results.
 
+A query can be at most 4,096 characters long and nest at most 64 levels of `(` and `!` (siblings such as `(p1) & (p2)` count once). A longer one is refused with `Query is too long: 5000 characters, at most 4096`, a deeper one with `Too deeply nested at position 65; use at most 64 levels of "(" and "!"`. The server refuses the same queries when a view is saved through the API.
+
 ## The New view page
 
 You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</kbd>+<kbd>K</kbd>): it lists the matching tasks and offers to open them as a new view.
