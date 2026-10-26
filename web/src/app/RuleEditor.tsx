@@ -13,6 +13,7 @@ import { ProjectPickerField } from './ProjectPickerField'
 import { ruleDraftFromView } from './rules/convertDraft'
 import { useMe } from '../lib/timeEntries'
 import { t, translatedMap, msg } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
 
 // The rule editor is its own chunk with the Rules page (automation-rules D11).
 const RuleDialog = lazy(() => import('./rules/RuleDialog').then((m) => ({ default: m.RuleDialog })))
@@ -86,7 +87,7 @@ export function RuleEditor({ view, labels, projects, sections, onClose }: RuleEd
   const set = <K extends keyof OnDropRule>(key: K, value: OnDropRule[K] | undefined) => setDraft((d) => withKey(d, key, value))
   const save = (rule: OnDropRule | null) => {
     setError(null)
-    setOnDrop(view.id, rule).then(onClose, (e: unknown) => setError(e instanceof Error ? e.message : String(e)))
+    setOnDrop(view.id, rule).then(onClose, (e: unknown) => setError(messageOf(e)))
   }
   const projectId = draft.section?.project_id ?? null
   const ownSections = sections.filter((s) => s.project_id === projectId && !s.deleted_at).sort((a, b) => a.position - b.position)

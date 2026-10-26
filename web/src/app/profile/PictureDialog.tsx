@@ -4,6 +4,7 @@
 // chunk, so react-easy-crop loads only when this dialog opens.
 import { lazy, Suspense, useEffect, useState, type ChangeEvent } from 'react'
 import { ApiError } from '../../lib/api'
+import { useAction } from '../../lib/useAction'
 import { errorMessage } from '../../lib/i18n/errors'
 import { t } from '../../lib/i18n'
 import type { Profile } from '../../lib/types'
@@ -28,8 +29,7 @@ function failure(err: unknown): string {
 export function PictureDialog({ hasPicture, onSave, onRemove, onDone, onClose }: PictureDialogProps) {
   const [image, setImage] = useState<string | null>(null)
   const [area, setArea] = useState<CropArea | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { busy, error, setError, run: attempt } = useAction({ describe: failure })
   useEffect(() => () => { if (image) URL.revokeObjectURL(image) }, [image])
 
   const choose = (e: ChangeEvent<HTMLInputElement>) => {
@@ -45,18 +45,10 @@ export function PictureDialog({ hasPicture, onSave, onRemove, onDone, onClose }:
     setArea(null)
     setImage(URL.createObjectURL(file))
   }
-  const run = async (fn: () => Promise<Profile>) => {
-    setBusy(true)
-    setError(null)
-    try {
-      onDone(await fn())
-      onClose()
-    } catch (err) {
-      setError(failure(err))
-    } finally {
-      setBusy(false)
-    }
-  }
+  const run = (fn: () => Promise<Profile>) => attempt(async () => {
+    onDone(await fn())
+    onClose()
+  })
   const save = () => { if (image && area) void run(async () => onSave(await cropToJpeg(image, area))) }
 
   return (

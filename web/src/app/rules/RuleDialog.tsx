@@ -15,6 +15,7 @@ import { summarizeRule } from '../../lib/rules/summary'
 import type { Rule, RuleActions, RuleCondition, RuleTrigger, Task, Webhook } from '../../lib/types'
 import { Button, Dialog, Field, Input } from '../../ui'
 import { ActionFields, ConditionFields, TriggerFields } from './RuleFields'
+import { messageOf } from '../../lib/errorText'
 
 /** What the editor starts from: a rule to edit, or a draft (a conversion, a duplicate). */
 export interface RuleDraft {
@@ -81,7 +82,7 @@ export function RuleDialog({ rule, draft, me, onClose }: { rule?: Rule; draft?: 
     const done = rule
       ? updateRule(rule.id, { name, trigger, condition: cond, actions })
       : createRule({ name, trigger, condition: cond, actions })
-    Promise.resolve(done).then(onClose, (e: unknown) => setError(e instanceof Error ? e.message : String(e)))
+    Promise.resolve(done).then(onClose, (e: unknown) => setError(messageOf(e)))
   }
   return (
     <Dialog title={rule ? t('Edit rule') : t('New rule')} onClose={onClose} size="md" testId="rule-dialog">

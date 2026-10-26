@@ -12,6 +12,7 @@ import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { messageOf } from '../lib/errorText'
 
 export const MAX_FILE_MB = 2048
 /** 1 TB, the server's bound. */
@@ -71,7 +72,7 @@ export function AttachmentSettingsPanel() {
   const [saved, setSaved] = useState(false)
   useEffect(() => {
     if (!online) return
-    void api.attachmentSettings().then(setValue, (err) => { if (!isNetworkError(err)) setError(err instanceof Error ? err.message : String(err)) })
+    void api.attachmentSettings().then(setValue, (err) => { if (!isNetworkError(err)) setError(messageOf(err)) })
   }, [online])
   return (
     <AttachmentSettingsView value={value} online={online} busy={busy} error={error} saved={saved}
@@ -84,7 +85,7 @@ export function AttachmentSettingsPanel() {
           setSaved(true)
           void refreshLimits()
         }, (err) => {
-          if (!(err instanceof ApiError && err.code === 'reauth_required')) setError(err instanceof Error ? err.message : String(err))
+          if (!(err instanceof ApiError && err.code === 'reauth_required')) setError(messageOf(err))
         }).finally(() => setBusy(false))
       }} />
   )
