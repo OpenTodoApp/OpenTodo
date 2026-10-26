@@ -280,8 +280,14 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   const e2e = read('Makefile').match(/^e2e:[^\n]*\n((?:\t.*\n)+)/m)?.[1] ?? ''
   assert.match(e2e, /e2e-smoke e2e-views e2e-offline/, 'make e2e runs the two-device, saved-view and offline-start scripts')
   // The built service worker and manifest tests run after the build, where they cannot skip.
-  const web = jobsOf(read('.github/workflows/ci.yml')).web ?? ''
-  assert.ok(web.indexOf('run: npm run test:built') > web.indexOf('run: npm run build'), 'the web job runs npm run test:built after npm run build')
+  const build = jobsOf(read('.github/workflows/ci.yml'))['web-build'] ?? ''
+  assert.ok(build.indexOf('run: npm run test:built') > build.indexOf('run: npm run build'), 'the web-build job runs npm run test:built after npm run build')
+  // The interface audit reports on every code pull request and nightly, off the push path (ci-speed).
+  const audit = read('.github/workflows/ux-audit.yml')
+  assert.match(audit, /^ {2}pull_request:\n {4}paths:\n(?: {6}- .*\n)*? {6}- web\/\*\*$/m, 'the interface audit runs on pull requests that change web/')
+  assert.match(audit, /^ {2}schedule:\n {4}- cron: /m, 'the interface audit runs nightly')
+  assert.match(audit, /run: node scripts\/ux-audit\/tour\.mjs$/m)
+  assert.ok(!jobsOf(read('.github/workflows/ci.yml'))['ux-audit'], 'the push run does not wait for the interface audit')
   const nightly = read('.github/workflows/nightly.yml')
   assert.match(nightly, /^ {2}schedule:\n {4}- cron: /m)
   assert.match(nightly, /go test -race /)
