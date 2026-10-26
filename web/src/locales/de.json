@@ -5346,5 +5346,9 @@
   "Rows": "Zeilen",
   "Task rows": "Aufgabenzeilen",
   "One line or detailed rows in every list without its own choice": "Einzeilige oder ausführliche Zeilen in jeder Liste ohne eigene Wahl",
-  "Detailed adds the parent task and a line of dates, priority and labels.": "Ausführlich zeigt die übergeordnete Aufgabe und eine Zeile mit Daten, Priorität und Labels."
+  "Detailed adds the parent task and a line of dates, priority and labels.": "Ausführlich zeigt die übergeordnete Aufgabe und eine Zeile mit Daten, Priorität und Labels.",
+  "Show calendar events": "Kalendertermine anzeigen",
+  "Hide calendar events": "Kalendertermine ausblenden",
+  "Calendar events today": "Kalendertermine heute",
+  "Ended": "Vorbei"
 }

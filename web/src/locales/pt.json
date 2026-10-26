@@ -5346,5 +5346,9 @@
   "Rows": "Linhas",
   "Task rows": "Linhas das tarefas",
   "One line or detailed rows in every list without its own choice": "Linhas de uma linha ou detalhadas em cada lista sem escolha própria",
-  "Detailed adds the parent task and a line of dates, priority and labels.": "Detalhado acrescenta a tarefa principal e uma linha com datas, prioridade e etiquetas."
+  "Detailed adds the parent task and a line of dates, priority and labels.": "Detalhado acrescenta a tarefa principal e uma linha com datas, prioridade e etiquetas.",
+  "Show calendar events": "Mostrar os eventos do calendário",
+  "Hide calendar events": "Ocultar os eventos do calendário",
+  "Calendar events today": "Eventos do calendário de hoje",
+  "Ended": "Terminado"
 }
