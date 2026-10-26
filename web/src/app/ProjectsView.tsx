@@ -97,7 +97,7 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => setFolded(new Set(tree.nodes.keys()))} />
           <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => setFolded(new Set())} />
         </>} />
-      <Tabs label={t('Projects')} value={tab} rowClassName="border-soft"
+      <Tabs label={t('Projects')} value={tab} rowClassName="ui-tab-row-soft"
         onChange={(id) => {
           setTab(id as 'active' | 'archived')
           // The fragment follows the tab, so a reload or a shared link opens the same one.

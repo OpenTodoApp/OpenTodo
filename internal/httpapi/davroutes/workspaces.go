@@ -1,4 +1,4 @@
-package httpapi
+package davroutes
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 // workspace. Paths never depend on a workspace, so moving a project renames
 // its calendar instead of removing it.
 
-const inboxPrefix = inboxCalendar + "-"
+const inboxPrefix = InboxCalendar + "-"
 
 // davWorkspaces is what the calendar listing needs to know about workspaces.
 type davWorkspaces struct {
@@ -26,7 +26,7 @@ type davWorkspaces struct {
 }
 
 // isInboxID reports whether a calendar segment names an Inbox calendar.
-func isInboxID(cal string) bool { return cal == inboxCalendar || strings.HasPrefix(cal, inboxPrefix) }
+func isInboxID(cal string) bool { return cal == InboxCalendar || strings.HasPrefix(cal, inboxPrefix) }
 
 func (d *davRequest) loadWorkspaces(ctx context.Context, v *davView) error {
 	list, err := d.s.sync.Workspaces(ctx, v.uid)
@@ -60,13 +60,13 @@ func (w *davWorkspaces) inboxOf(ws string) string {
 	if _, other := w.names[ws]; other {
 		return inboxPrefix + ws
 	}
-	return inboxCalendar
+	return InboxCalendar
 }
 
 // inboxWorkspace returns the workspace of an Inbox calendar and whether cal
 // names one this account has.
 func (w *davWorkspaces) inboxWorkspace(cal string) (string, bool) {
-	if cal == inboxCalendar {
+	if cal == InboxCalendar {
 		return w.def, true
 	}
 	ws, ok := strings.CutPrefix(cal, inboxPrefix)
@@ -89,7 +89,7 @@ func (w *davWorkspaces) inboxes() []string {
 		}
 		return ids[i] < ids[j]
 	})
-	out := []string{inboxCalendar}
+	out := []string{InboxCalendar}
 	for _, id := range ids {
 		out = append(out, inboxPrefix+id)
 	}

@@ -9,6 +9,7 @@ import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KE
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
 
 const NO_PURGES: PurgeRequest[] = []
 
@@ -43,7 +44,7 @@ export function TrashView() {
       if (it.entity === 'task') await restoreTask(it.id)
       else await restoreProject(it.id)
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(messageOf(err))
     }
   }
 
@@ -54,7 +55,7 @@ export function TrashView() {
       if (target === 'all') await emptyTrash()
       else await purgeItems([{ entity: target.entity, id: target.id }])
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(messageOf(err))
     }
   }
 

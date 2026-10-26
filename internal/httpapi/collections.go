@@ -383,16 +383,6 @@ func (s *Server) chainReaches(ctx context.Context, uid, entity, startID string, 
 	return false, nil
 }
 
-// idOf decodes a nullable id field; missing and null both read as "".
-func idOf(raw json.RawMessage) string {
-	var s string
-	if len(raw) == 0 || string(raw) == "null" {
-		return ""
-	}
-	_ = json.Unmarshal(raw, &s)
-	return s
-}
-
 func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	entity, ok := collection(r)
 	if !ok {

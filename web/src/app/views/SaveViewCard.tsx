@@ -5,6 +5,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Button, Icon } from '../../ui'
 import { t } from '../../lib/i18n'
+import { messageOf } from '../../lib/errorText'
 
 export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => Promise<void>; onCancel: () => void }) {
   const [name, setName] = useState('')
@@ -17,7 +18,7 @@ export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => P
     try {
       await onSave(name.trim())
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(messageOf(err))
     }
   }
   return (

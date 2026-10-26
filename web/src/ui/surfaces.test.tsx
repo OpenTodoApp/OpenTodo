@@ -45,6 +45,23 @@ describe('Tabs', () => {
     await unmount()
   })
 
+  it('scrolls the row sideways only, with a baseline nothing overflows (GitHub issue 445)', async () => {
+    const { container, unmount } = await render(
+      <Tabs label="Task conversation" value="a" onChange={() => {}} tabs={[{ id: 'a', label: 'Comments' }, { id: 'b', label: 'Activity' }]}>
+        <p>panel</p>
+      </Tabs>,
+    )
+    const row = container.querySelector('[role="tablist"]')!
+    const classes = row.className.split(/\s+/)
+    expect(classes).toEqual(expect.arrayContaining(['overflow-x-auto', 'overflow-y-hidden', 'ui-tab-row']))
+    // The baseline is the row's inset shadow (.ui-tab-row), not a border the tabs overlap.
+    expect(classes).not.toContain('border-b')
+    for (const tab of container.querySelectorAll('[role="tab"]')) {
+      expect(tab.className.split(/\s+/).some((c) => /^-mb-/.test(c))).toBe(false)
+    }
+    await unmount()
+  })
+
   function Demo() {
     const [v, setV] = useState('comments')
     return (

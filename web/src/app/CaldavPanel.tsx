@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button, IconButton, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Badge } from '../ui'
 import { Field, Input } from '../ui'
@@ -10,7 +10,9 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { SecretReveal } from './TokensSection'
-import { api, ApiError } from '../lib/api'
+import { api } from '../lib/api'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import type { AppPassword, CaldavSetting } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
@@ -148,7 +150,7 @@ export function CaldavView(p: CaldavViewProps) {
   )
 }
 
-const message = (err: unknown) => (err instanceof ApiError ? err.message : t('Offline: CalDAV is managed on the server.'))
+const message = (err: unknown) => errorText(err, { capitalise: false, offline: t('Offline: CalDAV is managed on the server.') })
 
 export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: string }) {
   const [setting, setSetting] = useState<CaldavSetting | null>(null)
@@ -156,12 +158,11 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
   useSettingsPending(setting === null || passwords === null)
   const [newName, setNewName] = useState('')
   const [secret, setSecret] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { busy, error, setError, run } = useAction({ describe: message })
   const [creating, setCreating] = useState(false)
   const [revoking, setRevoking] = useState<AppPassword | null>(null)
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const [s, list] = await Promise.all([api.caldavSetting(), api.listAppPasswords()])
       setSetting(s)
@@ -169,22 +170,10 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
     } catch (err) {
       setError(message(err))
     }
-  }
+  }, [setError])
   useEffect(() => {
     void load()
-  }, [])
-
-  async function run(fn: () => Promise<void>) {
-    setBusy(true)
-    setError(null)
-    try {
-      await fn()
-    } catch (err) {
-      setError(message(err))
-    } finally {
-      setBusy(false)
-    }
-  }
+  }, [load])
 
   return (
     <>

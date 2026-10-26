@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, Card, ConfirmDialog, Icon, Menu, MenuItem, Notice, SettingRow, SettingsSection, StatusIndicator, Switch, type HueName, toneForHue } from '../ui'
-import { api, ApiError, isNetworkError } from '../lib/api'
+import { api, isNetworkError } from '../lib/api'
 import { refreshEvents } from '../lib/calendarFeeds'
 import { cacheCalendarConnections, cachedCalendarConnections } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import type { CalendarConnection, CalendarConnectionPatch, GoogleClientSetting } from '../lib/types'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
@@ -232,12 +234,6 @@ export function CalendarSyncView(p: CalendarSyncViewProps) {
   )
 }
 
-function describe(err: unknown): string {
-  if (err instanceof ApiError) return err.message.charAt(0).toUpperCase() + err.message.slice(1)
-  if (isNetworkError(err)) return t('The server could not be reached.')
-  return t('Something went wrong.')
-}
-
 /** Reads (and removes) the result Google's sign-in left in the address. */
 function takeGoogleResult(): { result: string; id: string | null } | null {
   if (typeof window === 'undefined') return null
@@ -261,9 +257,8 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
   const [connections, setConnections] = useState<CalendarConnection[] | null>(null)
   useSettingsPending(enabled === null || (enabled && connections === null))
   const [unreachable, setUnreachable] = useState(false)
-  const [busy, setBusy] = useState(false)
   const [syncing, setSyncing] = useState<ReadonlySet<string>>(new Set())
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, setError, run, act } = useAction({ onError: (err) => { if (isNetworkError(err)) setUnreachable(true) } })
   const [notice, setNotice] = useState<string | null>(null)
   const [choose, setChoose] = useState<string | null>(null)
 
@@ -282,9 +277,9 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
       if (s.enabled && isOwner) setGoogleClient(await api.getGoogleClient())
     } catch (err) {
       if (isNetworkError(err)) setUnreachable(true)
-      else setError(describe(err))
+      else setError(errorText(err))
     }
-  }, [keep, isOwner])
+  }, [keep, isOwner, setError])
   useEffect(() => {
     const back = takeGoogleResult()
     if (back) {
@@ -307,26 +302,12 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
     const list = connections ?? []
     keep(list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c])
   }
-  async function act<T>(action: () => Promise<T>): Promise<T> {
-    setError(null)
-    setBusy(true)
-    try {
-      return await action()
-    } catch (err) {
-      if (isNetworkError(err)) setUnreachable(true)
-      setError(describe(err))
-      throw err
-    } finally {
-      setBusy(false)
-    }
-  }
-  const quiet = (action: () => Promise<void>) => act(action).catch(() => undefined)
 
   return (
     <CalendarSyncView isOwner={isOwner} enabled={enabled} google={google} maxConnections={maxConnections} googleClient={googleClient}
       connected={connected} encrypted={encrypted} connections={connections} busy={busy} syncing={syncing} error={error} notice={notice}
       choose={choose} onChoose={setChoose}
-      onToggle={(on) => void quiet(async () => {
+      onToggle={(on) => void run(async () => {
         await api.putCalendarSyncSetting(on)
         setEnabled(on)
         if (on) await load()
@@ -341,7 +322,7 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
         upsert(res.connection)
         return res.connection
       }).catch(() => null)}
-      onConnectGoogle={(c) => void quiet(async () => {
+      onConnectGoogle={(c) => void run(async () => {
         const { url } = await api.startGoogleCalendar(c?.id)
         window.location.assign(url)
       })}
@@ -351,7 +332,7 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
       })}
       onSync={(c) => {
         setSyncing((s) => new Set(s).add(c.id))
-        void quiet(async () => {
+        void run(async () => {
           const res = await api.syncCalendarConnection(c.id)
           upsert(res.connection)
           void refreshEvents()

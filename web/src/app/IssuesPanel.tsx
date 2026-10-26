@@ -4,6 +4,8 @@ import { api, ApiError, isNetworkError } from '../lib/api'
 import { cachedIssueConnections, cacheIssueConnections, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import { formatClock } from '../lib/dates'
 import type { IssueConnection, Project } from '../lib/types'
 import { t } from '../lib/i18n'
@@ -175,12 +177,6 @@ export function IssuesView(p: IssuesViewProps) {
   )
 }
 
-function describe(err: unknown): string {
-  if (err instanceof ApiError) return err.message.charAt(0).toUpperCase() + err.message.slice(1)
-  if (isNetworkError(err)) return t('The server could not be reached.')
-  return t('Something went wrong.')
-}
-
 /** A server answer naming a field, as the editor shows it beside that field. */
 function fieldErrorOf(err: unknown): FieldErrorState | null {
   if (!(err instanceof ApiError)) return null
@@ -197,10 +193,15 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
   const [connections, setConnections] = useState<IssueConnection[] | null>(null)
   useSettingsPending(enabled === null || connections === null)
   const [unreachable, setUnreachable] = useState(false)
-  const [busy, setBusy] = useState(false)
   const [polling, setPolling] = useState<ReadonlySet<string>>(new Set())
-  const [error, setError] = useState<string | null>(null)
   const [fieldError, setFieldError] = useState<FieldErrorState | null>(null)
+  const { busy, error, setError, run, act } = useAction({
+    onStart: () => setFieldError(null),
+    onError: (err) => {
+      if (isNetworkError(err)) setUnreachable(true)
+      setFieldError(fieldErrorOf(err))
+    },
+  })
   const [draft, setDraft] = useState<IssueDraft | null>(null)
 
   const keep = useCallback((list: IssueConnection[]) => {
@@ -215,9 +216,9 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
       if (on) keep((await api.listIssueConnections()).connections)
     } catch (err) {
       if (isNetworkError(err)) setUnreachable(true)
-      else setError(describe(err))
+      else setError(errorText(err))
     }
-  }, [keep])
+  }, [keep, setError])
   useEffect(() => {
     void cachedIssueConnections().then((cached) => {
       if (cached.length) {
@@ -235,31 +236,15 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
     const list = connections ?? []
     keep(list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c])
   }
-  async function act(action: () => Promise<void>) {
-    setError(null)
-    setFieldError(null)
-    setBusy(true)
-    try {
-      await action()
-    } catch (err) {
-      if (isNetworkError(err)) setUnreachable(true)
-      setError(describe(err))
-      setFieldError(fieldErrorOf(err))
-      throw err
-    } finally {
-      setBusy(false)
-    }
-  }
-  const quiet = (action: () => Promise<void>) => act(action).catch(() => undefined)
   const poll = (c: IssueConnection, action: () => Promise<void>) => {
     setPolling((s) => new Set(s).add(c.id))
-    void quiet(action).finally(() => setPolling((s) => { const n = new Set(s); n.delete(c.id); return n }))
+    void run(action).finally(() => setPolling((s) => { const n = new Set(s); n.delete(c.id); return n }))
   }
 
   return (
     <IssuesView isOwner={isOwner} enabled={enabled} connected={connected} encrypted={encrypted} connections={connections} projects={projects}
       busy={busy} polling={polling} error={error} draft={draft} fieldError={fieldError}
-      onToggle={(on) => void quiet(async () => {
+      onToggle={(on) => void run(async () => {
         await api.putIssuesSetting(on)
         setEnabled(on)
         if (on) await load()
@@ -273,7 +258,7 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
           setError(local.message)
           return
         }
-        void quiet(async () => {
+        void run(async () => {
           const body = draftBody(draft)
           const res = draft.id ? await api.patchIssueConnection(draft.id, body) : await api.createIssueConnection(body)
           upsert(res.connection)
@@ -288,7 +273,7 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
         const res = await api.testIssueConnection(c.id)
         if (res.connection) upsert(res.connection)
       })}
-      onSetEnabled={(c, on) => void quiet(async () => { upsert((await api.patchIssueConnection(c.id, { enabled: on })).connection) })}
+      onSetEnabled={(c, on) => void run(async () => { upsert((await api.patchIssueConnection(c.id, { enabled: on })).connection) })}
       onDelete={(c) => act(async () => {
         await api.deleteIssueConnection(c.id)
         keep((connections ?? []).filter((x) => x.id !== c.id))

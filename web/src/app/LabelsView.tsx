@@ -27,6 +27,7 @@ import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
 import { useFavourites, useIsFavourite } from './useFavourites'
 import { NamePrompt } from './NamePrompt'
 import { pinItem } from './menus/pinItem'
+import { messageOf } from '../lib/errorText'
 
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
@@ -56,7 +57,7 @@ export function NewLabelForm({ onDone, className = '' }: { onDone: () => void; c
       onDone()
       navigate({ view: 'label', id })
     } catch (err) {
-      setError(err instanceof LabelExistsError ? { message: err.message, id: err.existing.id } : { message: err instanceof Error ? err.message : String(err) })
+      setError(err instanceof LabelExistsError ? { message: err.message, id: err.existing.id } : { message: messageOf(err) })
     }
   }
   return (
@@ -155,7 +156,7 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
     try {
       await updateLabel(label.id, { name })
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(messageOf(e))
     }
   }
   function onSwatchKey(e: KeyboardEvent<HTMLDivElement>) {
@@ -304,7 +305,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
       await updateLabel(label.id, { name: n })
     } catch (err) {
       setName(label.name)
-      setError(err instanceof Error ? err.message : String(err))
+      setError(messageOf(err))
     }
   }
   const startRename = () => { setName(label.name); setEditing(true) }
