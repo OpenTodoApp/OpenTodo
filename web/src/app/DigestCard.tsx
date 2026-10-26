@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import { Button, Field, Notice, Select, SettingRow, SettingsSection, Switch, StatusIndicator, toneForHue } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
-import { formatDate, formatHour, formatInstant } from '../lib/dates'
+import { formatDate, formatHour, formatInstant, weekdayName as nameOfWeekday } from '../lib/dates'
 import { useDemo } from '../lib/demo'
 import type { EmailDigest, EmailDigestInput } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -38,7 +38,7 @@ export function browserTimeZone(): string {
 
 /** Weekday names, 0 = Sunday (2026-10-11 is a Sunday). */
 export function weekdayName(wd: number, style: 'long' | 'short' = 'long'): string {
-  return new Intl.DateTimeFormat(currentLocale(), { weekday: style, timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + wd)))
+  return nameOfWeekday(wd, style, currentLocale())
 }
 
 /** The state line: "On, Fridays at 07:00 (Europe/Zurich)" or "Off". */

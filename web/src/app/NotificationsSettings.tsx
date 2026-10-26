@@ -5,7 +5,6 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import type { HueName } from '../ui'
-import { relativeTime } from './SecurityPanel'
 import { getDeviceId } from '../lib/ops'
 import {
   disablePush, enablePush, loadPushState, localTestNotification, PushPermissionError, pushChecklist, sendTestPush, setIncludeContent,
@@ -18,6 +17,7 @@ import { has as shellHas } from '../lib/shell'
 import { ShellNotifications } from './ShellNotifications'
 import { useSettingsPending } from './settingsPending'
 import { messageOf } from '../lib/errorText'
+import { relativeTime } from '../lib/dates'
 
 /**
  * Settings → Notifications (OpenSpec change `reminders`): per device, enable or

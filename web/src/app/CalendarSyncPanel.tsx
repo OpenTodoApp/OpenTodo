@@ -8,9 +8,9 @@ import { useServerList } from '../lib/useServerList'
 import type { CalendarConnection, CalendarConnectionPatch, GoogleClientSetting } from '../lib/types'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
-import { ago } from './CalendarFeedsPanel'
 import { CalDAVDialog, CalendarsDialog, emptyCalDAVDraft, GoogleClientDialog, PasswordDialog, type CalDAVDraft } from './CalendarSyncDialogs'
 import { useSettingsPending } from './settingsPending'
+import { ago } from '../lib/dates'
 
 // Settings → Integrations → Calendar sync (OpenSpec change calendar-two-way): the
 // owner's switch and Google client, and the user's calendar accounts as cards that

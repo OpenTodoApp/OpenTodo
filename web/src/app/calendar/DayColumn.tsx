@@ -3,7 +3,7 @@
 // task blocks, calendar events, "+N" overflow lists, ghosts and the now line.
 import { DAY_MINUTES, dayLoad, DEFAULT_BLOCK_MINUTES, SLOT_MINUTES, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
-import { dateLocaleOf, formatHour } from '../../lib/dates'
+import { formatHour, formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
@@ -45,8 +45,8 @@ export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subM
   projectMap: Map<string, Project>
 }) {
   const load = dayLoad(tasks, day.date, prefs.dayLength)
-  const [y, m, d] = day.date.split('-').map(Number)
-  const weekdayName = new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short' }).format(new Date(y, m - 1, d))
+  const d = Number(day.date.slice(8))
+  const weekdayName = formatDateParts(day.date, { weekday: 'short' })
   return (
     <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
       <div className="flex items-baseline justify-between gap-1 px-1">

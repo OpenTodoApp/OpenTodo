@@ -14,7 +14,7 @@ import { useOnline } from '../lib/online'
 import { createPasskey, isCancellation, passkeysSupported, rpIdMatches } from '../lib/passkeys'
 import type { Passkey } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { formatInstant } from '../lib/dates'
+import { relativeTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
@@ -26,17 +26,6 @@ import { readString, writeString } from '../lib/deviceStorage'
 // it fetched earlier in this session, read-only.
 
 const AVAILABLE_KEY = 'opentodo.passkeysAvailable'
-
-export function relativeTime(ts: number | null, now = Date.now()): string {
-  if (ts === null) return t('never')
-  const s = Math.max(0, Math.round((now - ts) / 1000))
-  if (s < 60) return t('just now')
-  const m = Math.round(s / 60)
-  if (m < 60) return t('{m} min ago', { m })
-  const h = Math.round(m / 60)
-  if (h < 24) return t('{h} h ago', { h })
-  return formatInstant(ts, 'date')
-}
 
 function readCachedAvailability(): boolean {
   return readString(AVAILABLE_KEY) === 'true'
