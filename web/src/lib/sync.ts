@@ -29,6 +29,7 @@ import { t } from './i18n'
 import { uuid } from './ids'
 import { onTestTeardown } from './testTeardown'
 import { resettable } from './moduleState'
+import { messageOf } from './errorText'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -394,7 +395,7 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       scheduleRetry()
       return
     }
-    publish({ state: 'error', error: err instanceof Error ? err.message : String(err) })
+    publish({ state: 'error', error: messageOf(err) })
   }
 }
 

@@ -18,9 +18,9 @@ import { isInboxTask } from '../../lib/inbox'
 import { useViewerZone } from '../useViews'
 import type { PropertiesProps } from './Facets'
 import { type Optional, usePropertyEditing } from './usePropertyEditing'
+import { messageOf } from '../../lib/errorText'
 
 /** An error message from a failed write, shown beside its chip. */
-const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err))
 
 export function usePropertiesModel({ task, userId, projects, labelMap, parent, onOpen }: PropertiesProps) {
   const zone = useViewerZone()

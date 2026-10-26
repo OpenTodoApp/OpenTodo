@@ -14,6 +14,7 @@ import { Checkbox, Switch } from '../ui'
 import type { HueName } from '../ui'
 import { SecretReveal } from './TokensSection'
 import { api, isNetworkError } from '../lib/api'
+import { useAction } from '../lib/useAction'
 import { useProjects } from '../lib/localData'
 import { useOnline } from '../lib/online'
 import type { Webhook, WebhookDelivery, WebhookEvent } from '../lib/types'
@@ -210,8 +211,10 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
   const [unreachable, setUnreachable] = useState(false)
   const [allowPrivate, setAllowPrivate] = useState<boolean | null>(null)
   useSettingsPending(webhooks === null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, setError, run } = useAction({
+    describe: describeWebhookError,
+    onError: (err) => { if (isNetworkError(err)) setUnreachable(true) },
+  })
   const [draft, setDraft] = useState<WebhookDraft | null>(null)
   const [secret, setSecret] = useState<{ webhookId: string; value: string } | null>(null)
   const [deleting, setDeleting] = useState<Webhook | null>(null)
@@ -222,7 +225,7 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
   const fail = useCallback((err: unknown) => {
     if (isNetworkError(err)) setUnreachable(true)
     setError(describeWebhookError(err))
-  }, [])
+  }, [setError])
 
   const load = useCallback(async () => {
     try {
@@ -235,7 +238,7 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
       if (isNetworkError(err)) setUnreachable(true)
       else setError(describeWebhookError(err))
     }
-  }, [isOwner])
+  }, [isOwner, setError])
 
   useEffect(() => {
     void loadCachedWebhooks().then((cached) => setWebhooks((cur) => cur ?? cached))
@@ -245,18 +248,6 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
   }, [online, load])
 
   const connected = online && !unreachable
-
-  async function run(action: () => Promise<void>) {
-    setError(null)
-    setBusy(true)
-    try {
-      await action()
-    } catch (err) {
-      fail(err)
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function loadLog(webhookId: string) {
     setLog({ webhookId, deliveries: null })

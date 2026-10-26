@@ -4,13 +4,15 @@
 // file the owner picked (PNG or JPEG, at most 2 MB); the server renders the
 // favicon, touch icon, app icons and sidebar sizes from it.
 import { useEffect, useState, type ChangeEvent } from 'react'
-import { api, ApiError, isNetworkError } from '../lib/api'
+import { api, isNetworkError } from '../lib/api'
 import { type Branding, logoUrl, setBranding, useBranding } from '../lib/branding'
 import { t } from '../lib/i18n'
 import { useOnline } from '../lib/online'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { Button, Input, Notice, SettingRow, SettingsSection } from '../ui'
 import { BrandMark } from '../ui'
+import { messageOf } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 
 export const LOGO_TYPES = ['image/png', 'image/jpeg']
 export const LOGO_MAX_BYTES = 2 << 20
@@ -84,28 +86,18 @@ export function BrandingPanel() {
   const online = useOnline()
   const live = useBranding()
   const [value, setValue] = useState<Branding | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const { busy, error, setError, run: attempt } = useAction({ describe: messageOf, onStart: () => setSaved(false) })
   useEffect(() => {
     if (!online) return
-    void api.brandingSettings().then(setValue, (err) => { if (!isNetworkError(err)) setError(err instanceof Error ? err.message : String(err)) })
-  }, [online])
-  const run = async (fn: () => Promise<Branding>) => {
-    setBusy(true)
-    setError(null)
-    setSaved(false)
-    try {
-      const next = await fn()
-      setValue(next)
-      setBranding(next)
-      setSaved(true)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : String(err))
-    } finally {
-      setBusy(false)
-    }
-  }
+    void api.brandingSettings().then(setValue, (err) => { if (!isNetworkError(err)) setError(messageOf(err)) })
+  }, [online, setError])
+  const run = (fn: () => Promise<Branding>) => attempt(async () => {
+    const next = await fn()
+    setValue(next)
+    setBranding(next)
+    setSaved(true)
+  })
   return (
     <BrandingView value={value ?? (online ? null : live)} online={online} busy={busy} error={error} saved={saved}
       onSaveName={(name) => void run(() => api.putBrandingName(name))}
