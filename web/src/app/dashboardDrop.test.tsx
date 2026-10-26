@@ -78,7 +78,7 @@ describe('drop targets and drops', () => {
     expect(desc?.textContent).toBe('On drop: Priority 1, due today')
     const before = await db.outbox.count()
     await drag(card(id)!, panel('Backlog'))
-    // A fixed wait on purpose: it proves that nothing is written, and no event marks "no write".
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- it proves that nothing is written, and no event marks "no write"
     await flush(30)
     expect(await db.outbox.count()).toBe(before)
   })
@@ -140,7 +140,7 @@ describe('keyboard moves', () => {
     await waitFor(() => card(id, panel('Next'))?.getAttribute('aria-current') === 'true')
     const before = await db.outbox.count()
     await key(document.activeElement!, 'ArrowLeft', { shiftKey: true })
-    // A fixed wait on purpose: it proves that nothing is written, and no event marks "no write".
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- it proves that nothing is written, and no event marks "no write"
     await flush(50)
     expect(await db.outbox.count()).toBe(before)
     expect((await db.tasks.get(id))!.priority).toBe(2)
