@@ -135,8 +135,16 @@ func TestShownCalendarsBecomeEvents(t *testing.T) {
 	if list, _ := h.w.Feeds.List(h.ctx, "alice"); len(list) != 0 {
 		t.Fatalf("subscriptions = %+v", list)
 	}
+	// One cycle creates both in the same millisecond: find the shown calendar by
+	// name, not by position.
 	managed, _ := h.w.Feeds.Managed(h.ctx, "alice")
-	if len(managed) != 2 || managed[1].Name != "Fake · Family" || managed[1].Color != "#FF0000" {
+	family := -1
+	for i, m := range managed {
+		if m.Name == "Fake · Family" {
+			family = i
+		}
+	}
+	if len(managed) != 2 || family < 0 || managed[family].Color != "#FF0000" {
 		t.Fatalf("managed = %+v", managed)
 	}
 	// Unchanged calendars are not read again (the cycle after OpenTodo's own
