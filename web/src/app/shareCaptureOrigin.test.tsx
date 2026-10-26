@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { resetDeviceId } from '../lib/ops'
 import { parseShare } from '../lib/share'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { setPendingShare, ShareCapture } from './ShareCapture'
 
 let n = 0
@@ -27,9 +27,9 @@ afterEach(() => {
 async function saveShare(search: string) {
   setPendingShare(parseShare(search))
   const r = await render(<ShareCapture />)
-  await flush(80)
+  await waitFor(() => !!document.getElementById('share-capture'), 'the capture form')
   await act(async () => { (document.getElementById('share-capture') as HTMLFormElement).requestSubmit() })
-  for (let i = 0; i < 100 && (await db.tasks.count()) === 0; i++) await flush(20)
+  await waitFor(async () => (await db.tasks.count()) > 0, 'the shared task saved')
   await r.unmount()
   const [task] = await db.tasks.toArray()
   return task

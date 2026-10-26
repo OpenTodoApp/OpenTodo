@@ -10,7 +10,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { completeTask, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { createSampleTasks } from '../lib/sampleTasks'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { hideBulkToast } from './bulk/toastStore'
 import { UndoToast } from './bulk/UndoToast'
 import { resetPanel } from './panel'
@@ -31,10 +31,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const q = (sel: string) => document.querySelector<HTMLElement>(sel)
 
 describe('sample tasks in the Inbox', () => {
@@ -88,7 +84,6 @@ describe('sample tasks in the Inbox', () => {
     await r.unmount()
     const r2 = await render(<TaskDetail taskId={real} userId="u" projects={[]} labelMap={new Map()} onClose={() => {}} />)
     await waitFor(() => document.body.textContent!.includes('Real task') || !!q('[data-facets]'))
-    await flush(60)
     expect(q('[data-sample-notice]')).toBeNull()
     await r2.unmount()
   })

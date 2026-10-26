@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useState } from 'react'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import type { User } from '../lib/types'
-import { click, flush, render, type, minWidthPx } from '../ui/test-utils'
+import { click, render, type, minWidthPx, waitFor } from '../ui/test-utils'
 import { HelpPanel } from './help/HelpPanel'
 import { navigate } from './router'
 import { SettingsView } from './SettingsView'
@@ -32,17 +32,13 @@ beforeEach(() => {
 })
 afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('from 1024 px', () => {
   it('/settings opens Account beside the list and the address becomes /settings/account', async () => {
     width = 1280
     const replace = vi.spyOn(history, 'replaceState')
     const r = await render(<SettingsView user={member} onLogout={() => {}} />)
-    await flush(30)
+    await waitFor(() => r.container.querySelector('[data-settings-section]')?.getAttribute('data-settings-section') === 'account', 'Account open')
     expect(r.container.querySelector('[data-settings-section]')?.getAttribute('data-settings-section')).toBe('account')
     expect(r.container.querySelector('aside [data-settings-list]')).toBeTruthy()
     expect(r.container.querySelector('aside a[aria-current="page"]')?.getAttribute('href')).toBe('/settings/account')
@@ -55,7 +51,7 @@ describe('from 1024 px', () => {
   it('the list column has group headings for assistive technology, in the stated order', async () => {
     width = 1280
     const r = await render(<SettingsView user={member} onLogout={() => {}} section="general" />)
-    await flush(30)
+    await waitFor(() => !!r.container.querySelector('aside h2'), 'the list column')
     const aside = r.container.querySelector('aside')!
     expect([...aside.querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['You', 'App', 'Data'])
     expect([...aside.querySelectorAll('section[aria-labelledby] a[data-settings-link]')].map((a) => a.getAttribute('data-settings-link')))
@@ -69,7 +65,7 @@ describe('below 1024 px', () => {
     // A tablet: one column, the header renders its own row with the back action.
     width = 800
     const r = await render(<SettingsView user={member} onLogout={() => {}} />)
-    await flush(30)
+    await waitFor(() => !!r.container.querySelector('[data-settings-overview]'), 'the list')
     expect(r.container.querySelector('[data-settings-overview]')).toBeTruthy()
     expect(r.container.querySelector('[data-settings-section]')).toBeNull()
     expect(location.pathname).toBe('/settings')
@@ -80,7 +76,7 @@ describe('below 1024 px', () => {
     await click(entries.find((a) => a.getAttribute('data-settings-link') === 'capture')!)
     expect(location.pathname).toBe('/settings/capture')
     await r.rerender(<SettingsView user={member} onLogout={() => {}} section="capture" />)
-    await flush(30)
+    await waitFor(() => r.container.querySelector('[data-settings-section]')?.getAttribute('data-settings-section') === 'capture' && document.activeElement?.textContent === 'Capture', 'Capture open with focus on its heading')
     expect(r.container.querySelector('[data-settings-section]')?.getAttribute('data-settings-section')).toBe('capture')
     expect(r.container.querySelector('aside')).toBeNull()
     expect(r.container.querySelector('[data-page-back]')?.getAttribute('href')).toBe('/settings')
@@ -94,7 +90,7 @@ describe('below 1024 px', () => {
     history.replaceState(null, '', '/settings/capture')
     window.dispatchEvent(new PopStateEvent('popstate'))
     const r = await render(<SettingsView user={member} onLogout={() => {}} section="capture" />)
-    await flush(30)
+    await waitFor(() => r.container.querySelectorAll('a[data-settings-subpage]').length > 0, 'the Capture pages')
     const rows = [...r.container.querySelectorAll<HTMLAnchorElement>('a[data-settings-subpage]')]
     expect(rows.map((a) => a.getAttribute('data-settings-subpage'))).toEqual(['quick-add', 'voice', 'browser', 'email'])
     expect(rows.every((a) => /min-h-11/.test(a.className))).toBe(true)
@@ -102,7 +98,7 @@ describe('below 1024 px', () => {
     await click(rows[1])
     expect(location.pathname).toBe('/settings/capture/voice')
     await r.rerender(<SettingsView user={member} onLogout={() => {}} section="capture" page="voice" />)
-    await flush(30)
+    await waitFor(() => r.container.querySelector('[data-settings-page]')?.getAttribute('data-settings-page') === 'voice' && !!r.container.querySelector('#voice-settings-heading'), 'the voice page')
     expect(r.container.querySelector('[data-settings-page]')?.getAttribute('data-settings-page')).toBe('voice')
     expect(r.container.querySelector('#voice-settings-heading')).toBeTruthy()
     expect(r.container.querySelector('#quick-add-heading')).toBeNull()
@@ -175,7 +171,7 @@ describe('Learn more on a settings card', () => {
     expect(document.querySelector<HTMLInputElement>('input[type="url"]')!.value).toBe('https://n8n.example.com/webhook/garden')
     expect(r.container.querySelector('[data-testid="webhooks-panel"]')).toBeTruthy()
     await click(document.querySelector('[data-help-panel] [data-overlay-close]')!)
-    await flush(30)
+    await waitFor(() => document.querySelector('[data-help-panel]') === null, 'the help panel closed')
     expect(document.querySelector('[data-help-panel]')).toBeNull()
     expect(document.activeElement).toBe(link)
     expect(document.querySelector<HTMLInputElement>('input[type="url"]')!.value).toBe('https://n8n.example.com/webhook/garden')

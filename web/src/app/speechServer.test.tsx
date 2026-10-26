@@ -3,7 +3,7 @@
 // D7 and D8): Test shows the text or the failed stage; fields set by a variable
 // are read-only and name it; the key is never shown.
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { click, flush, render, type } from '../ui/test-utils'
+import { click, render, type, waitFor } from '../ui/test-utils'
 import type { SpeechSettings } from '../lib/types'
 import { SpeechServerView } from './SpeechServerPanel'
 
@@ -22,14 +22,14 @@ describe('SpeechServerView', () => {
     await type(field('url'), 'http://stt.home.lan:8000')
     await type(field('model'), 'Systran/faster-whisper-small')
     await click(document.querySelector('[data-speech-run-test]')!)
-    await flush(10)
+    await waitFor(() => !!document.querySelector('[data-speech-test="ok"]'), 'the test result')
     expect(onTest).toHaveBeenCalledWith({ url: 'http://stt.home.lan:8000', model: 'Systran/faster-whisper-small' })
     expect(document.querySelector('[data-speech-test="ok"]')?.textContent).toBe('The service answered: “hello”')
     await click(document.querySelector('[data-speech-run-test]')!)
-    await flush(10)
+    await waitFor(() => !!document.querySelector('[data-speech-test="failed"]'), 'the failed test')
     expect(document.querySelector('[data-speech-test="failed"]')?.textContent).toContain('private network')
     await click(document.querySelector('[data-speech-save]')!)
-    await flush(10)
+    await waitFor(() => onSave.mock.calls.length > 0, 'saved')
     expect(onSave).toHaveBeenCalledWith({ url: 'http://stt.home.lan:8000', model: 'Systran/faster-whisper-small' })
     await r.unmount()
   })

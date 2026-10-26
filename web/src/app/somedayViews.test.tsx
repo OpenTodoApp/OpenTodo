@@ -7,7 +7,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { act } from 'react'
-import { flush, key, mockFetch, noPublicLinks, render, type, waitFor } from '../ui/test-utils'
+import { key, mockFetch, noPublicLinks, render, type, waitFor } from '../ui/test-utils'
 import { Sidebar } from './Sidebar'
 import { TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
@@ -45,6 +45,7 @@ describe('Today groups (2.3)', () => {
     // Calm rows (calm-rows D3): the heading says "This Evening", so the row carries no date text.
     const row = [...r.container.querySelectorAll('[data-task-id]')].find((li) => li.textContent?.includes('Read a chapter'))!
     expect(row.querySelector('[data-date]')).toBeNull()
+    await r.unmount()
   })
 
   it('a hard date wins over deferral; a started task shows its chip', async () => {
@@ -57,6 +58,7 @@ describe('Today groups (2.3)', () => {
     expect(t).toContain('Deferred with deadline')
     expect(t).not.toMatch(/Deferred(?! with)/)
     expect(t).toContain('Started 7 Oct')
+    await r.unmount()
   })
 
   it('started and due later: in Today and in Upcoming', async () => {
@@ -66,6 +68,7 @@ describe('Today groups (2.3)', () => {
     await r.unmount()
     r = await render(<TaskListView route={{ view: 'upcoming' }} />)
     await waitFor(() => text(r.container).includes('Prepare talk'))
+    await r.unmount()
   })
 })
 
@@ -85,8 +88,10 @@ describe('Later group, Upcoming and counts (2.3, 2.4)', () => {
     expect(t).toContain('Starts 21 Oct')
     expect(t).toContain('Someday')
     await r.unmount()
+    // A task Upcoming does list: once it shows, the list is read.
+    await createTask({ title: 'Dentist', due: { date: '2026-10-24' } })
     const up = await render(<TaskListView route={{ view: 'upcoming' }} />)
-    await flush(200)
+    await waitFor(() => text(up.container).includes('Dentist'), 'Upcoming with its dated task')
     expect(text(up.container)).not.toContain('Renew passport')
     await up.unmount()
   })
@@ -97,7 +102,6 @@ describe('Later group, Upcoming and counts (2.3, 2.4)', () => {
     await createTask({ title: 'Buy milk' })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => text(r.container).includes('Buy milk'))
-    await flush(100)
     expect(text(r.container)).not.toContain('Book flights')
     expect(text(r.container)).not.toContain('Learn Italian')
     expect(text(r.container)).not.toContain('Later')
@@ -110,6 +114,7 @@ describe('Later group, Upcoming and counts (2.3, 2.4)', () => {
     const side = await render(<Sidebar route={{ view: 'inbox' }} user={{ id: 'u1', email: 'u@example.com', name: 'U', role: 'owner' } as never} />)
     const inbox = () => [...side.container.querySelectorAll('a, button')].find((a) => text(a as HTMLElement).startsWith('Inbox')) as HTMLElement | undefined
     await waitFor(() => !!inbox() && inbox()!.querySelector('[data-count]')?.textContent === '1')
+    await side.unmount()
   })
 })
 
@@ -128,10 +133,11 @@ describe('Someday and Anytime views (3.1)', () => {
     expect(added).toMatchObject({ start: 'someday', project_id: null })
     await type(quick, 'Read Proust tomorrow')
     await act(async () => { quick.form!.requestSubmit() })
-    await flush(100)
+    await waitFor(async () => (await db.tasks.toArray()).some((t) => t.title === 'Read Proust'), 'Read Proust added')
     const dated = (await db.tasks.toArray()).find((t) => t.title === 'Read Proust')!
     expect(dated.due).toEqual({ date: '2026-10-15' })
     expect(dated.start ?? null).toBeNull()
+    await r.unmount()
   })
 
   it('Anytime lists only undated, unstarted, active tasks and follows sync', async () => {
@@ -145,6 +151,7 @@ describe('Someday and Anytime views (3.1)', () => {
     await applyOps([{ id: 'x', entity: 'task', entityId: id, field: 'due', value: { date: '2026-10-20' }, ts: Date.now() * 2, device: 'other' }])
     await waitFor(() => !text(r.container).includes('Whenever'))
     expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-10-20' })
+    await r.unmount()
   })
 })
 
@@ -174,6 +181,7 @@ describe('keys (3.3)', () => {
     await key(document.body, 'n')
     await waitFor(async () => (await db.tasks.get(id))!.start === null, 'the task un-parked')
     expect(await db.tasks.get(id)).toMatchObject({ start: null, due: null })
+    await r.unmount()
   })
 
   it('Shift+E toggles evening; the keys type letters inside a text field', async () => {
@@ -182,14 +190,19 @@ describe('keys (3.3)', () => {
     await waitFor(() => text(r.container).includes('Read'))
     await key(document.body, 'j')
     await key(document.body, 'E', { shiftKey: true })
-    await flush(60)
+    await waitFor(async () => (await db.tasks.get(id))!.evening === true, 'evening on')
     expect((await db.tasks.get(id))!.evening).toBe(true)
     const other = r.container.querySelector('input[aria-label="Elsewhere"]') as HTMLInputElement
     other.focus()
     for (const k of ['n', 'N', 'E']) await key(other, k)
-    await flush(60)
+    // The letters stayed in the field: Shift+E on the list turns evening off again,
+    // which it would turn back on had the field's E toggled it.
+    other.blur()
+    await key(document.body, 'E', { shiftKey: true })
+    await waitFor(async () => (await db.tasks.get(id))!.evening === false, 'evening off from the list')
     const t = (await db.tasks.get(id))!
-    expect(t.evening).toBe(true)
+    expect(t.evening).toBe(false)
     expect(t.start ?? null).toBeNull()
+    await r.unmount()
   })
 })

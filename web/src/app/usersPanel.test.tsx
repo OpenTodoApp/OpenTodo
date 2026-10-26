@@ -3,7 +3,7 @@
 import { createElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { AdminUser, User } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, key, render, waitFor } from '../ui/test-utils'
 import { UsersView, type UsersViewProps } from './UsersPanel'
 
 const owner: User = { id: 'o', email: 'owner@example.com', name: 'Owner', role: 'owner', createdAt: 0 }
@@ -24,7 +24,7 @@ async function menuOf(over: Partial<UsersViewProps>, email: string) {
   const r = await render(createElement(UsersView, props(over)))
   const li = r.container.querySelector(`[data-user="${email}"]`)!
   await click(li.querySelector('button[aria-haspopup="menu"]')!)
-  await flush(20)
+  await waitFor(() => document.querySelectorAll('[role="menu"] [role^="menuitem"]').length > 0, 'the menu')
   const items = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')] as HTMLButtonElement[]
   return { ...r, items, labels: items.map((i) => i.getAttribute('data-menu-label')) }
 }

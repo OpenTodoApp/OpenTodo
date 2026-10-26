@@ -14,7 +14,7 @@ import { createView } from '../lib/views'
 import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import type { Membership, Op, User } from '../lib/types'
-import { click, flush, key, render, spokenText, type, visibleText } from '../ui/test-utils'
+import { click, flush, key, render, spokenText, type, visibleText, waitFor } from '../ui/test-utils'
 import { setMethodMode } from '../lib/method/mode'
 import { REVIEW_DEFAULTS } from '../lib/ops'
 import { resetPanel } from './panel'
@@ -52,10 +52,6 @@ function openGroups(...ids: ('labels' | 'filters')[]) {
   for (const id of ids) localStorage.setItem(`ot.sidebar.group.${id}`, '1')
 }
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('one scroller', () => {
   it('only the middle part scrolls; More and labels live in it, the account row and the primary navigation outside it', async () => {
@@ -99,7 +95,7 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
 
   it('on a touch screen the More group scrolls with the groups, so opening it on a short phone screen cannot squeeze the scroller away (sidebar-drawer-scroll)', async () => {
     const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-testid="sidebar-more"] button[aria-expanded]'), 'the More group')
     expect(r.container.querySelector('[data-sidebar-scroll]')!.contains(moreOf(r.container))).toBe(true)
     expect(r.container.querySelector('[data-sidebar-more-menu]')).toBeNull()
     await r.unmount()
@@ -107,7 +103,7 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
 
   it('shows Inbox, Today, Upcoming and Calendar, then a closed More group; Assigned and Updates only once a project is shared', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-testid="sidebar-more"] button[aria-expanded]'), 'the More group')
     expect(primaryOf(r.container)).toEqual(['inbox', 'today', 'upcoming', 'day'])
     expect(moreToggle(r.container).getAttribute('aria-expanded')).toBe('false')
     expect(moreItems(r.container)).toEqual([])
@@ -132,7 +128,7 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     expect(moreItems(r.container)).not.toContain('completed')
     // Day and Week are one active item.
     await r.rerender(<Sidebar route={{ view: 'day' }} user={user} />)
-    await flush(20)
+    await waitFor(() => r.container.querySelector('[data-destination="week"]')?.getAttribute('aria-current') === 'page', 'Week current on the day view')
     expect(r.container.querySelector('[data-destination="week"]')?.getAttribute('aria-current')).toBe('page')
     await r.unmount()
   })
@@ -176,12 +172,16 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     ]
     await applyOps(byBob)
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await flush(100)
+    await waitFor(() => !!r.container.querySelector('[data-testid="sidebar-more"] button[aria-expanded]'), 'the More group')
     expect(moreOf(r.container).querySelector('[data-unread-count]')).toBeNull()
     await click(moreToggle(r.container))
     await waitFor(() => moreOf(r.container).querySelector('[data-destination="feed"] [data-unread-count]') !== null)
     expect(moreOf(r.container).querySelector('[data-destination="feed"] [data-unread-count]')?.getAttribute('data-unread-count')).toBe('1')
     expect(moreOf(r.container).querySelector('button[aria-expanded] [data-unread-count]')).toBeNull()
+    // Closed again, with the count loaded: still nothing on the header.
+    await click(moreToggle(r.container))
+    await waitFor(() => moreItems(r.container).length === 0, 'More closed')
+    expect(moreOf(r.container).querySelector('[data-unread-count]')).toBeNull()
     await r.unmount()
   })
 })
@@ -192,7 +192,7 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
 
   it('opens More as a menu from a group-style heading; a chosen item navigates; the review due marker is on Review (sidebar-v2 D7)', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await flush(50)
+    await waitFor(() => !!moreButton(r.container), 'the More menu button')
     expect(r.container.querySelector('[data-testid="sidebar-more"]')).toBeNull()
     const trigger = moreButton(r.container)
     expect(trigger.getAttribute('aria-label')).toBeNull()
@@ -203,7 +203,8 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     expect(trigger.querySelector('[data-dot]')).toBeNull()
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
     await click(trigger)
-    await waitFor(() => menuItems().length > 0)
+    // The review state arrives on its own: wait for its marker on the Review entry.
+    await waitFor(() => menuItems().length > 0 && !!document.querySelector('[data-menu-label="Review"]')?.textContent?.includes('Review due'), 'the More menu with Review due')
     expect(menuItems()).toEqual(['Loop home', 'Next', 'Waiting', 'Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Locations', 'Rules', 'Trash', 'New view'])
     // Never reviewed: the dot and the words are on the Review entry.
     const reviewItem = document.querySelector('[data-menu-label="Review"]')!
@@ -220,7 +221,7 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
 
   it('puts Search beside the name; the footer is one row with the account menu, the bell, the sync dot and collapse', async () => {
     const r = await render(<Sidebar route={{ view: 'help' }} user={user} onSearch={() => {}} onShortcuts={() => {}} onToggleCollapse={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-palette-button]') && !!r.container.querySelector('[data-sidebar-footer] [data-footer-icons]'), 'the header and footer')
     const search = r.container.querySelector('[data-palette-button]')!
     expect(search.getAttribute('aria-label')).toBe('Search and commands')
     expect(search.getAttribute('aria-keyshortcuts')).toBe('Control+K Meta+K')
@@ -241,14 +242,14 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     window.matchMedia = ((q: string) => ({ matches: false, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
     try {
       const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} />)
-      await flush(50)
+      await waitFor(() => !!r.container.querySelector('[data-sidebar-footer] [data-account-menu]'), 'the footer')
       expect(r.container.querySelector('[data-sidebar-footer] [data-help-button]')).toBeNull()
       expect(r.container.querySelectorAll('[data-sidebar-footer] [data-footer-icons]')).toHaveLength(1)
       expect(r.container.querySelector('[data-sidebar-footer] [data-account-menu]')).not.toBeNull()
       await r.unmount()
     } finally { window.matchMedia = original }
     const rail = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} collapsed onToggleCollapse={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!rail.container.querySelector('[data-sidebar-footer] [data-palette-button]'), 'the rail footer')
     expect(rail.container.querySelector('[data-sidebar-footer] [data-palette-button]')).not.toBeNull()
     expect(rail.container.querySelector('[data-account-menu]')?.getAttribute('aria-label')).toBe('Account menu for Ada')
     await rail.unmount()
@@ -256,7 +257,7 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
 
   it('shows no Filters or Labels group while there is nothing in it, and brings each back with its first item', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-sidebar-group="Projects"]'), 'the groups')
     const groups = () => [...r.container.querySelectorAll('[data-sidebar-group]')].map((g) => g.getAttribute('data-sidebar-group'))
     expect(groups()).toEqual(['Projects'])
     expect(r.container.textContent).not.toContain('Save a filter')
@@ -339,9 +340,12 @@ describe('resize and collapse (ux-overhaul 4.9)', () => {
       await waitFor(() => aside().getAttribute('data-sidebar-width') === '22.5')
       // The calendar keeps [ for its range.
       navigate({ view: 'day' })
-      await flush(50)
+      await waitFor(() => !!document.querySelector('[data-day-header]'), 'the day view')
+      const shown = () => document.querySelector('[data-day-header]')?.getAttribute('data-day-header')
+      const before = shown()
       await key(document.body, '[')
-      await flush(50)
+      // The calendar took the key: it moved to the previous day.
+      await waitFor(() => shown() !== before, 'the calendar to move back a day')
       expect(aside().getAttribute('data-sidebar-width')).toBe('22.5')
       await r.unmount()
     } finally {
@@ -416,7 +420,7 @@ describe('collapsible groups (sidebar-groups 1.2)', () => {
     await waitFor(() => r.container.querySelectorAll('[data-view-id]').length === 6)
     expect(groupOf(r.container, 'Views').querySelector('[data-group-count]')).toBeNull()
     await click(headingOf(r.container, 'Views'))
-    await flush(20)
+    await waitFor(() => r.container.querySelectorAll('[data-view-id]').length === 0, 'Views folded')
     expect(r.container.querySelectorAll('[data-view-id]')).toHaveLength(0)
     expect(groupOf(r.container, 'Views').querySelector('[data-group-count]')?.textContent).toBe('6')
     expect(headingOf(r.container, 'Views').textContent).toContain('Views')
@@ -427,7 +431,7 @@ describe('collapsible groups (sidebar-groups 1.2)', () => {
     expect(location.pathname).toBe('/views')
     await r.unmount()
     const again = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await flush(50)
+    await waitFor(() => !!again.container.querySelector('[data-sidebar-group="Views"] button[aria-expanded]'), 'the Views heading')
     expect(again.container.querySelectorAll('[data-view-id]')).toHaveLength(0)
     expect(headingOf(again.container, 'Views').getAttribute('aria-expanded')).toBe('false')
     // Other devices are not told: nothing synced, only localStorage.
@@ -443,13 +447,13 @@ describe('collapsible groups (sidebar-groups 1.2)', () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
     for (const g of ['Projects', 'Labels']) await click(headingOf(r.container, g))
-    await flush(20)
+    await waitFor(() => r.container.querySelector('[data-project-id]') === null && r.container.querySelector('[data-label-row]') === null, 'both groups folded')
     expect(r.container.querySelector('[data-project-id]')).toBeNull()
     expect(r.container.querySelector('[data-label-row]')).toBeNull()
     expect(groupOf(r.container, 'Projects').querySelector('[data-group-count]')?.textContent).toBe('1')
     expect(groupOf(r.container, 'Labels').querySelector('[data-group-count]')?.textContent).toBe('1')
     await click(groupOf(r.container, 'Labels').querySelector('button[aria-label="New label"]')!)
-    await flush(20)
+    await waitFor(() => headingOf(r.container, 'Labels').getAttribute('aria-expanded') === 'true', 'Labels reopened')
     expect(headingOf(r.container, 'Labels').getAttribute('aria-expanded')).toBe('true')
     expect(r.container.querySelector('[data-label-row]')).not.toBeNull()
     await r.unmount()
@@ -549,7 +553,7 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
     await click(headingOf(r.container, 'Labels'))
-    await flush(20)
+    await waitFor(() => r.container.querySelector('[data-label-row]') === null, 'Labels folded')
     expect(r.container.querySelector('[data-label-row]')).toBeNull()
     await click(opener(r.container))
     await waitFor(() => field(r.container) !== null)
@@ -557,7 +561,7 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
     await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
     expect(localStorage.getItem('ot.sidebar.group.labels')).toBe('0')
     await key(field(r.container)!, 'Escape')
-    await flush(20)
+    await waitFor(() => field(r.container) === null, 'the field closed')
     expect(field(r.container)).toBeNull()
     expect(r.container.querySelector('[data-label-row]')).toBeNull()
     expect(headingOf(r.container, 'Labels').getAttribute('aria-expanded')).toBe('false')
@@ -575,7 +579,8 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
       toggleSidebarCollapsed()
       const r = await render(<Shell user={user} onLogout={() => {}} />)
       await waitFor(() => document.querySelector('aside[data-sidebar]')?.getAttribute('data-sidebar-width') === 'collapsed')
-      await flush(100)
+      // The shell's shortcuts listen once the page is on screen.
+      await waitFor(() => !!document.querySelector('[data-list-page]'), 'the Inbox page')
       await key(document.body, 'g')
       await key(document.body, '/')
       await waitFor(() => document.querySelector('input[aria-label="Find in the sidebar"]') !== null)
@@ -630,7 +635,7 @@ describe('find in the drawer and the budget (sidebar-groups 3.4)', () => {
     await click(r.container.querySelector('button[aria-label="Find in the sidebar"]')!)
     await waitFor(() => r.container.querySelector('input[aria-label="Find in the sidebar"]') !== null)
     await type(r.container.querySelector<HTMLInputElement>('input[aria-label="Find in the sidebar"]')!, 'project 1')
-    await flush(50)
+    await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 11, 'the matches for "project 1"')
     const scrollers = [...r.container.querySelectorAll('*')].filter((el) => /\boverflow-y-auto\b/.test(el.className))
     expect(scrollers).toHaveLength(1)
     expect(scrollers[0].contains(r.container.querySelector('[data-sidebar-find]'))).toBe(true)
@@ -797,7 +802,7 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
     expect(spokenText(row)).toBe('Website launch, 7 open tasks')
     // Focus does not change what is read; the reveal is styling only (no re-render, no layout change).
     ;(row as HTMLElement).focus()
-    await flush(20)
+    await flush()
     expect(spokenText(row)).toBe('Website launch, 7 open tasks')
     await r.unmount()
   })
@@ -846,7 +851,7 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
 
   it('No empty groups: a first saved filter brings Filters back closed, with "Filters 1" on its header', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-sidebar-group="Projects"]'), 'the groups')
     expect(r.container.querySelector('[data-sidebar-group="Views"]')).toBeNull()
     await createView({ name: 'Errands', query: 'today', pinned: false })
     await waitFor(() => r.container.querySelector('[data-sidebar-group="Views"]') !== null)
@@ -896,7 +901,7 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
     it('Review due: no dot on More; one dot on the Review entry, the words in its description', async () => {
       await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: Date.now() - 9 * DAY, _clock: {} })
       const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-      await flush(100)
+      await waitFor(() => !!moreButton(r.container), 'the More menu button')
       const trigger = moreButton(r.container)
       expect(visibleText(trigger)).toBe('More')
       expect(spokenText(trigger)).toBe('More')
@@ -905,6 +910,8 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
       await waitFor(() => !!reviewItem()?.textContent?.includes('Review due · last weekly review 9 days ago'))
       expect(reviewItem()!.querySelectorAll('[data-dot]')).toHaveLength(1)
       expect(reviewItem()!.innerHTML).not.toContain('data-hue')
+      // The review is read by now, and More still carries no dot.
+      expect(trigger.querySelector('[data-dot]')).toBeNull()
       await r.unmount()
     })
 
@@ -912,7 +919,7 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
       await setMethodMode('companion')
       await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: Date.now() - 9 * DAY, monthly_at: Date.now() - 40 * DAY, _clock: {} })
       const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-      await flush(50)
+      await waitFor(() => !!moreButton(r.container), 'the More menu button')
       await click(moreButton(r.container))
       await waitFor(() => !!reviewItem()?.textContent?.includes('Review due · last weekly review 9 days ago; the Monthly look is due'))
       expect(reviewItem()!.querySelector('[data-review-due]')).not.toBeNull()
@@ -925,9 +932,9 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
     it('Lists only: no marker; the Review item in the More menu reads "Last review yesterday"', async () => {
       await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: Date.now() - DAY, _clock: {} })
       const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-      await flush(50)
+      await waitFor(() => !!moreButton(r.container), 'the More menu button')
       await click(moreButton(r.container))
-      await waitFor(() => !!document.querySelector('[data-menu-label="Review"]'))
+      await waitFor(() => !!document.querySelector('[data-menu-label="Review"]')?.textContent?.includes('Last review'), 'the Review entry with the last review')
       expect(document.querySelector('[data-menu-label="Review"]')!.textContent).toContain('Last review yesterday')
       await r.unmount()
     })
@@ -949,7 +956,7 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
 describe('the brand header and the sidebar colour', () => {
   it('Header: the mono mark and the wordmark, no image, search beside them, one row of at most 40 px', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-sidebar-header] [data-palette-button]'), 'the header')
     const header = r.container.querySelector('[data-sidebar-header]')!
     expect(header.querySelector('[data-brand-mark="mono"]')).not.toBeNull()
     expect(header.querySelector('[data-brand-wordmark]')!.textContent).toBe('OpenTodo')
@@ -963,7 +970,7 @@ describe('the brand header and the sidebar colour', () => {
 
   it('Rail: the mark alone, named OpenTodo', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} collapsed />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-sidebar-header] [role="img"]'), 'the rail header')
     const header = r.container.querySelector('[data-sidebar-header]')!
     expect(header.querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('OpenTodo')
     expect(header.querySelector('[data-brand-wordmark]')).toBeNull()
@@ -974,14 +981,14 @@ describe('the brand header and the sidebar colour', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     await createProject({ name: 'Home' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('aside[data-sidebar]'), 'the sidebar')
     const aside = document.querySelector('aside[data-sidebar]')!
     expect(aside.className).toContain('md:pointer-fine:[--sidebar-bg:var(--color-sidebar)]')
     expect(aside.className).toContain('[--sidebar-bg:var(--color-surface)]')
     expect(aside.className).toContain('bg-(--sidebar-bg)')
     expect(aside.className).not.toMatch(/(^|\s)bg-canvas(\s|$)/)
     // The groups appear once the rows and the collapse state are read (motion-polish D2).
-    await waitFor(() => !!document.querySelector('[data-sidebar-group-header]'), 5000)
+    await waitFor(() => !!document.querySelector('[data-sidebar-group-header]'))
     const header = document.querySelector('[data-sidebar-group-header]')!
     expect(header.className).toContain('bg-(--sidebar-bg,var(--color-canvas))')
     await r.unmount()
@@ -1027,8 +1034,9 @@ describe('the start guide entry (moments-and-onboarding 3.3)', () => {
     await createTask({ title: 'On the phone' })
     await applyOps(ops.map(({ local: _local, ...op }) => op))
     const r2 = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await click(moreToggle(r2.container))
-    await flush(150)
+    // More stays open on this device (remembered in localStorage): it lists its
+    // destinations once the preferences are read, and the entry would be last.
+    await waitFor(() => moreItems(r2.container).includes('trash'), 'the More group')
     expect(entry()).toBeNull()
     await r2.unmount()
   })
@@ -1036,7 +1044,7 @@ describe('the start guide entry (moments-and-onboarding 3.3)', () => {
   it('in the desktop More menu: the entry with its count, then Hide; absent before the guide is finished', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     const more = () => r.container.querySelector<HTMLButtonElement>('[data-sidebar-more-menu] button[aria-haspopup="menu"]')!
-    await flush(100)
+    await waitFor(() => !!more(), 'the More menu button')
     await click(more())
     await waitFor(() => !!document.querySelector('[role="menu"]'))
     expect(entry()).toBeNull()
@@ -1056,7 +1064,7 @@ describe('the start guide entry (moments-and-onboarding 3.3)', () => {
     await guideDone()
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await click(moreToggle(r.container))
-    await flush(150)
+    await waitFor(() => moreItems(r.container).includes('trash'), 'the More group')
     expect(entry()).toBeNull()
     setDemo(null)
     await r.unmount()
