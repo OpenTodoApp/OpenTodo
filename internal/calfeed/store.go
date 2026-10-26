@@ -97,7 +97,7 @@ func scanSub(row interface{ Scan(...any) error }) (*Subscription, error) {
 
 // List returns the user's subscriptions in creation order.
 func (s *Store) List(ctx context.Context, userID string) ([]Subscription, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT `+subColumns+` FROM calendar_subscriptions WHERE user_id = ? ORDER BY created_at, id`, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT `+subColumns+` FROM calendar_subscriptions WHERE user_id = ? AND id NOT IN (SELECT subscription_id FROM calsync_calendars) ORDER BY created_at, id`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *Store) List(ctx context.Context, userID string) ([]Subscription, error)
 
 // Get returns one of the user's subscriptions (ErrNotFound for anyone else's).
 func (s *Store) Get(ctx context.Context, userID, id string) (*Subscription, error) {
-	sub, err := scanSub(s.db.QueryRowContext(ctx, `SELECT `+subColumns+` FROM calendar_subscriptions WHERE id = ? AND user_id = ?`, id, userID))
+	sub, err := scanSub(s.db.QueryRowContext(ctx, `SELECT `+subColumns+` FROM calendar_subscriptions WHERE id = ? AND user_id = ? AND id NOT IN (SELECT subscription_id FROM calsync_calendars)`, id, userID))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -139,7 +139,7 @@ func (s *Store) Create(ctx context.Context, userID, url, name, color string) (*S
 	}
 	defer tx.Rollback()
 	var n int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM calendar_subscriptions WHERE user_id = ?`, userID).Scan(&n); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM calendar_subscriptions WHERE user_id = ? AND id NOT IN (SELECT subscription_id FROM calsync_calendars)`, userID).Scan(&n); err != nil {
 		return nil, err
 	}
 	if n >= MaxSubscriptions {
@@ -203,7 +203,7 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Subscr
 
 // Delete removes a subscription and its occurrences.
 func (s *Store) Delete(ctx context.Context, userID, id string) error {
-	res, err := s.db.ExecContext(ctx, `DELETE FROM calendar_subscriptions WHERE id = ? AND user_id = ?`, id, userID)
+	res, err := s.db.ExecContext(ctx, `DELETE FROM calendar_subscriptions WHERE id = ? AND user_id = ? AND id NOT IN (SELECT subscription_id FROM calsync_calendars)`, id, userID)
 	if err != nil {
 		return err
 	}
@@ -305,7 +305,7 @@ func (s *Store) Failure(ctx context.Context, id, reason string) error {
 // Due lists the subscriptions to fetch now: enabled, not stopped, next_fetch_at passed.
 func (s *Store) Due(ctx context.Context, limit int) ([]Subscription, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+subColumns+` FROM calendar_subscriptions
-		WHERE enabled = 1 AND stopped_reason IS NULL AND next_fetch_at <= ? ORDER BY next_fetch_at LIMIT ?`, s.now().UnixMilli(), limit)
+		WHERE enabled = 1 AND stopped_reason IS NULL AND next_fetch_at <= ? AND id NOT IN (SELECT subscription_id FROM calsync_calendars) ORDER BY next_fetch_at LIMIT ?`, s.now().UnixMilli(), limit)
 	if err != nil {
 		return nil, err
 	}
@@ -374,6 +374,12 @@ type EventRow struct {
 // touch the calendar days [from, to] ("YYYY-MM-DD"). Zoned times are kept when
 // they overlap the days in any zone; floating and all-day ones by their dates.
 func (s *Store) Events(ctx context.Context, userID, from, to string) ([]EventRow, error) {
+	return s.EventsOf(ctx, userID, from, to, true, true)
+}
+
+// EventsOf is Events limited to the user's own subscriptions (feeds), the
+// calendars of their calendar sync connections (managed), or both.
+func (s *Store) EventsOf(ctx context.Context, userID, from, to string, feeds, managed bool) ([]EventRow, error) {
 	f, err := time.Parse("2006-01-02", from)
 	if err != nil {
 		return nil, err
@@ -387,7 +393,7 @@ func (s *Store) Events(ctx context.Context, userID, from, to string) ([]EventRow
 	rows, err := s.db.QueryContext(ctx, `SELECT e.subscription_id, e.uid, e.instance, e.summary, e.location, e.start_date, e.start_time, e.start_tz,
 		e.end_date, e.end_time, e.end_tz, e.all_day, e.free, e.start_ms, e.end_ms
 		FROM calendar_events e JOIN calendar_subscriptions s ON s.id = e.subscription_id
-		WHERE s.user_id = ? AND s.enabled = 1 AND e.start_ms < ? AND e.end_ms >= ? ORDER BY e.start_ms, e.uid`, userID, hi, lo)
+		WHERE s.user_id = ? AND s.enabled = 1 AND e.start_ms < ? AND e.end_ms >= ?`+kindFilter("s.", feeds, managed)+` ORDER BY e.start_ms, e.uid`, userID, hi, lo)
 	if err != nil {
 		return nil, err
 	}

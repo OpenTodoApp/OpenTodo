@@ -227,7 +227,7 @@ describe('opening a section', () => {
     expect(rows(member, 'language')).toEqual(['language', 'date-time', 'calendar'])
     expect(rows(member, 'notifications')).toEqual(['push', 'channels', 'digest'])
     expect(rows(member, 'capture')).toEqual(['quick-add', 'voice', 'browser', 'email'])
-    expect(rows(member, 'integrations')).toEqual(['caldav', 'calendar-feeds', 'issues', 'webhooks', 'tokens', 'assistant', 'mcp'])
+    expect(rows(member, 'integrations')).toEqual(['caldav', 'calendar-feeds', 'calendar-sync', 'issues', 'webhooks', 'tokens', 'assistant', 'mcp'])
     expect(rows(owner, 'people')).toEqual(['users', 'access-policies', 'sso'])
     expect(rows(owner, 'server')).toEqual(['backups', 'attachments', 'outgoing-email', 'branding', 'maps', 'automations', 'speech', 'audit'])
     for (const id of ['workspaces', 'about', 'data'] as const) expect(rows(member, id)).toEqual([])
@@ -335,7 +335,7 @@ describe('demo instance', () => {
   it('names everything the pages refuse on the overview, and each page its own, with the cards disabled', () => {
     const html = render(member, 'integrations')
     expect(html.match(/data-testid="demo-restricted"/g)).toHaveLength(1)
-    expect(html).toContain('Demo instance: calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP) are disabled here.')
+    expect(html).toContain('Demo instance: calendar apps (CalDAV), calendar feeds, calendar sync, webhooks, API tokens, the assistant and AI assistants (MCP) are disabled here.')
     const caldav = render(member, 'integrations', 'caldav')
     expect(caldav).toContain('Demo instance: calendar apps (CalDAV) is disabled here.')
     expect(caldav).toContain('id="caldav-heading"')
