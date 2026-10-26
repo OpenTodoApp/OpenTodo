@@ -19,6 +19,7 @@ import type { RowEncryption } from './types'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { workspaceFields } from './workspaces'
+import { resettable } from './moduleState'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -51,6 +52,7 @@ export function getDeviceId(): Promise<string> {
 export function resetDeviceId(): void {
   devicePromise = null
 }
+resettable('deviceId', resetDeviceId)
 
 const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, archived: false, parent_id: null, icon: null, created_at: 0, deleted_at: null, description: '', notes_doc: '', workspace_id: null,

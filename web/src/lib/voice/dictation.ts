@@ -4,6 +4,7 @@
 // becomes input text; saving stays the quick-add Enter handler.
 import { type RecognitionCallbacks, type RecognitionSession, startRecognition, type VoiceErrorKind } from './recognition'
 import { t } from '../i18n'
+import { resettable } from '../moduleState'
 
 export type DictationStatus = 'idle' | 'starting' | 'listening'
 
@@ -46,6 +47,7 @@ const unsupportedTags = new Set<string>()
 export function resetLanguageFallbacks(): void {
   unsupportedTags.clear()
 }
+resettable('dictation', resetLanguageFallbacks)
 
 /** Insert `text` between `prefix` and `suffix` with single spaces; the caret goes right after it. */
 export function insertTranscript(prefix: string, text: string, suffix: string): { value: string; caret: number } {

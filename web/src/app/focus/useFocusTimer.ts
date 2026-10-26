@@ -20,6 +20,7 @@ import { inRun, isDue, isRunning, type FocusState } from '../../lib/focus/timer'
 import { playTone } from '../../lib/focus/tone'
 import { t } from '../../lib/i18n'
 import { useToday } from '../useViews'
+import { resettable } from '../../lib/moduleState'
 
 /** Now, re-read every second while `active` and whenever the tab is shown or focused. */
 export function useFocusClock(active: boolean): number {
@@ -46,6 +47,7 @@ const notified = new Set<string>()
 export function resetFocusNotices(): void {
   notified.clear()
 }
+resettable('focusNotices', resetFocusNotices)
 
 /** The end of a run while the tab is hidden: one system notification through the service worker, when allowed. */
 export async function notifyFocusEnd(s: FocusState): Promise<boolean> {
