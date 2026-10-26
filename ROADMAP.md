@@ -12,7 +12,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | --- | --- | --- |
 | Local-first storage, works fully offline, installable PWA | `bootstrap-core-platform` | IndexedDB is the source of truth on each device |
 | Conflict-free multi-device sync | `bootstrap-core-platform` | Field-level last-writer-wins op log, convergent by construction. See [docs/sync.md](docs/sync.md) |
-| Single small container, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary of about 23 MB with the web app embedded, distroless image of about 25 MB |
+| Single small container, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary of about 34 MB with the web app embedded, distroless image of about 40 MB (about 13 MB to download) |
 | Keyboard navigation (q, j/k, c, 1–4, g+key, ?) | `bootstrap-core-platform` | |
 | Live push of changes between devices | `realtime-sync-channel` | Server-sent event wake-ups; the protocol stays op-based, polling is the fallback |
 | Rich text with collaborative editing for task notes | `collaborative-rich-text` | Yjs document in `task.notes_doc`, editor lazy-loaded; comments stay Markdown |
@@ -137,7 +137,7 @@ Related usability fixes, independent of the refresh: your own date and time form
 
 ## Next: Parity and depth
 
-Nineteen candidates for after the design refresh, in a suggested order: the first ten close gaps with the apps people switch from, the next four add views and ways to share for households and small teams, and the last five deepen capture and projects. They come from four sources: what the named importers must drop today with a warning (`named-importers`, now shipped with `deadlines` and `someday-and-evening` mapped), the gaps the comparison pages on open-todo.app concede to Todoist, Things and Linear, the open issues, and what the code does not have yet (no search, no multi-select, no attachments, no outgoing mail, English only). Parity with the apps people switch from came first because the hosted offering (`multi-tenant-host`, now shipped as host mode) was scheduled after it. Each starts as an OpenSpec change; none is a commitment.
+Nineteen candidates for after the design refresh, in a suggested order: the first ten close gaps with the apps people switch from, the next four add views and ways to share for households and small teams, and the last five deepen capture and projects. They come from four sources: what the named importers must drop today with a warning (`named-importers`, now shipped with `deadlines` and `someday-and-evening` mapped), the gaps the comparison pages on open-todo.app concede to Todoist, Things and Linear, the open issues, and what the code did not have yet at the time (search, multi-select, attachments, outgoing mail and other languages, all shipped since). Parity with the apps people switch from came first because the hosted offering (`multi-tenant-host`, now shipped as host mode) was scheduled after it. Each starts as an OpenSpec change; none is a commitment.
 
 | # | Capability | Change name | Notes |
 | --- | --- | --- | --- |

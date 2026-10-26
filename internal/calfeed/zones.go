@@ -11,7 +11,7 @@ import (
 
 // Resolve finds the time zone a TZID names: an IANA name, a vendor path that
 // ends in one (/mozilla.org/20050126_1/Europe/Berlin), or a Windows name
-// (W. Europe Standard Time) through the CLDR table in windows_zones.go. ok is
+// (W. Europe Standard Time) through the CLDR table (zoned.WindowsZone). ok is
 // false when nothing matches; the caller then reads the times as floating.
 func Resolve(tzid string) (*time.Location, bool) {
 	tzid = strings.Trim(strings.TrimSpace(tzid), "\"")
@@ -30,7 +30,7 @@ func Resolve(tzid string) (*time.Location, bool) {
 			return loc, true
 		}
 	}
-	if iana, ok := windowsZones[tzid]; ok {
+	if iana, ok := zoned.WindowsZone(tzid); ok {
 		if loc, err := zoned.Load(iana); err == nil {
 			return loc, true
 		}
