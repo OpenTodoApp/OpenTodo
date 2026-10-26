@@ -5,10 +5,12 @@
 # itself counts as code (skills/ is embedded in the binary, scripts/deploy*
 # generate and check the deploy/ templates); docs/, the in-app help and the
 # changelog count as docs. templates/ is compiled into the web app (template-library).
-# mobile/ is the Android app (native-shells D9) and mobile/ios the iOS app
-# (ios-shell D7): only the android and ios jobs, which also run when the workflow
-# or this filter changes; iOS gets its own answer because a macOS runner costs ten
-# times an Ubuntu one. Tiered CI (ci-speed): on a pull
+# mobile/android is the Android app (native-shells D9) and mobile/ios the iOS app
+# (ios-shell D7): each has its own answer, so an iOS-only change does not run the
+# Android job. Both also run when the workflow or this filter changes; iOS is
+# separate because a macOS runner costs ten times an Ubuntu one, which is also why
+# a Makefile edit deliberately starts the other jobs but not that one — a broken
+# `make ios` shows up with the next mobile/ios change. Tiered CI (ci-speed): on a pull
 # request `ui` gates the workbench checks (Storybook a11y and visual), `layout` the
 # one browser layout and end-to-end job, `extension` and `skill` their packages;
 # every one of them is true when the workflow or this filter changes.
@@ -26,7 +28,7 @@ fi
 if printf '%s\n' "$files" | grep -qE '^(docs/|website/|web/src/generated/help\.json$|CHANGELOG\.md$|README\.md$|openspec/|scripts/(site-bundle|e2e-docs|screenshots|docs-screenshots))'; then
   docs=true
 fi
-if printf '%s\n' "$files" | grep -qE '^(mobile/|\.github/workflows/ci\.yml$|scripts/ci-changes\.sh$)'; then
+if printf '%s\n' "$files" | grep -qE '^(mobile/android/|\.github/workflows/ci\.yml$|scripts/ci-changes\.sh$)'; then
   mobile=true
 fi
 # Changes to CI itself run every tier, so a workflow edit is tested by its own run.

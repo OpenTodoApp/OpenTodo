@@ -604,6 +604,9 @@ jobs:
     if: needs.changes.outputs.ios == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # `make ios` reads the version from `git describe --tags`; a shallow clone has none.
+          fetch-tags: true
       - name: Xcode and simulator runtimes
         run: |
           xcodebuild -version
