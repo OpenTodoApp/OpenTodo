@@ -157,7 +157,7 @@ func TestReauthAccountLockout(t *testing.T) {
 // registration from a public address needs the setup code; from the local
 // network it does not.
 func TestSetupFromPublicAddressNeedsCode(t *testing.T) {
-	e := newEnv(t, false)
+	e := newEnvWith(t, false, withSetupCode)
 	remote := newClientAt(e, "203.0.113.9")
 	_, out := remote.do("GET", "/api/v1/auth/status", nil)
 	if out["setupRequired"] != true || out["setupCodeRequired"] != true || out["setupTokenRequired"] != false {
@@ -181,7 +181,7 @@ func TestSetupFromPublicAddressNeedsCode(t *testing.T) {
 // address named by a forwarding header no longer skips the setup code; only
 // a loopback connection without one does.
 func TestSetupCodeOnlySkippedOnThisMachine(t *testing.T) {
-	e := newEnv(t, false)
+	e := newEnvWith(t, false, withSetupCode)
 	for _, ip := range []string{"192.168.1.5", "127.0.0.1", "10.0.2.2, 127.0.0.1"} {
 		lan := newClientAt(e, ip)
 		_, out := lan.do("GET", "/api/v1/auth/status", nil)

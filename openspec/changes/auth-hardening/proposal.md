@@ -11,11 +11,11 @@ An internal security audit found three low-severity weaknesses around accounts:
 ## What Changes
 
 - Accounts record when their address was confirmed (`users.email_verified_at`): a sign-up or email change confirmed through an emailed link, or a provider identity whose verified email matches. An unconfirmed email change clears it. Single sign-on links to an existing account by email only when it is set; otherwise the person links from Settings while signed in (the existing `oidc_link_required` flow). On upgrade, accounts with a matching provider identity count as confirmed.
-- The first account needs no setup code only from this machine: a loopback connection with no forwarding header. Every other first registration needs the code from the log (or the configured setup token).
+- The setup code becomes opt-in: off by default, on with the optional `OPENTODO_SETUP_CODE=required` (any other value stops startup). While it is off and no owner exists, the server logs one warning at startup. When it is on, only a loopback connection with no forwarding header skips it. A setup token still wins, and hosted tenants keep it on.
 - When every forwarded hop is trusted, the client is the last `X-Forwarded-For` entry. One warning per process is logged when a trusted, non-loopback peer sends no `X-Forwarded-For`.
 - The self-service reset request answers after the fixed padding and looks up and mails in the background.
 
-**Behaviour change for new installs:** the first visit from another machine on the local network (for example a NAS running Docker) now asks for the setup code printed in the log. Not **BREAKING** for the op log; no new route or environment variable. One added column, created by a Go migration step.
+**Behaviour change for new installs:** the setup code is no longer asked for by default; operators who relied on it set `OPENTODO_SETUP_CODE=required`. With it on, a first visit from another machine on the local network also needs it. Not **BREAKING** for the op log; no new route or environment variable. One added column, created by a Go migration step.
 
 Out of scope: a way to confirm the current address without changing it, emailing the user when a credential is added, and changing how invitations treat addresses.
 
