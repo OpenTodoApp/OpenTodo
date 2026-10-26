@@ -63,6 +63,17 @@ func (e *engine) sealing(entity, id, field string, b map[string]any) bool {
 		if p, ok := b["project_id"].(string); ok {
 			project = p
 		}
+	case "time_entry":
+		task := e.app.Get(entity, id).Str("task_id")
+		if t, ok := b["task_id"].(string); ok {
+			task = t
+		}
+		project = e.app.Get("task", task).Str("project_id")
+		if tb := e.bodies["task"][task]; tb != nil {
+			if p, ok := tb["project_id"].(string); ok {
+				project = p
+			}
+		}
 	}
 	return e.scopeOf(project) == ""
 }
@@ -148,6 +159,11 @@ func (e *engine) plan(dry bool) error {
 		recorded[fs.Project] = p
 	}
 	touched := e.touched(v, layout, recorded)
+	for pid := range e.retouch {
+		if _, ok := layout[pid]; ok {
+			touched[pid] = true
+		}
+	}
 	printedBefore := map[string]string{}
 	for id, p := range e.st.Printed {
 		printedBefore[id] = p
@@ -177,7 +193,7 @@ func (e *engine) plan(dry bool) error {
 		} else if b, ok := e.disk[src]; ok {
 			tmpl = ParseDoc(string(b), e.sectionNames(v, pid))
 		}
-		doc := v.render(renderInput{project: pid, tmpl: tmpl, printed: printed, extra: e.st.Extra, labels: labels})
+		doc := v.render(renderInput{project: pid, tmpl: tmpl, printed: printed, extra: e.st.Extra, labels: labels, skip: e.noteTaskIDs()})
 		out := []byte(doc.Print())
 		for id, p := range e.st.Printed {
 			if p == src || p == old || p == target {

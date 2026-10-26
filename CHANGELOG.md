@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **`ot vault` syncs TaskNotes task notes.** Link the folder where the Obsidian plugin TaskNotes keeps your task notes with `ot vault tasknotes <folder>`, and every task note becomes an OpenTodo task, so it shows in Today, the calendar and your reminders. Status, priority, scheduled and due dates, tags and contexts, the project link, the estimate, recurrence with completed instances, time entries and the note's text sync both ways with the vault's field-by-field merge. The vault reads your TaskNotes settings, so renamed fields, your own statuses and priorities work. Only the keys whose value changed are rewritten, and the note is matched by an `opentodo-id` key TaskNotes leaves alone. ([Markdown vault](docs/vault.md#tasknotes), #440)
+
 ### Changed
 
 - **OpenTodo moved to the OpenTodoApp organization, and the image to `ghcr.io/opentodoapp/opentodo`.** The repository is now [github.com/OpenTodoApp/OpenTodo](https://github.com/OpenTodoApp/OpenTodo) (old links redirect), the image `ghcr.io/opentodoapp/opentodo` with the same tags, and the Helm chart `oci://ghcr.io/opentodoapp/charts/opentodo`. The old image `ghcr.io/pixari/opentodo` and chart `oci://ghcr.io/pixari/charts/opentodo` keep getting every release through 0.16.x and stop being updated with 0.17.0: replace `ghcr.io/pixari/opentodo` with `ghcr.io/opentodoapp/opentodo` where you run OpenTodo, nothing else changes. The Go module is now `github.com/OpenTodoApp/opentodo` (`go install github.com/OpenTodoApp/opentodo/cmd/ot@latest`). ([Docker](docs/self-hosting/docker.md#the-move-to-opentodoapp))

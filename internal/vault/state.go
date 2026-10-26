@@ -18,8 +18,9 @@ const StateDir = ".opentodo"
 // stateFile is the vault's state inside StateDir.
 const stateFile = "state.json"
 
-// StateVersion is the state file format.
-const StateVersion = 1
+// StateVersion is the state file format: 2 adds the linked TaskNotes folder
+// (OpenSpec change vault-tasknotes). A version-1 file reads as "nothing linked".
+const StateVersion = 2
 
 // State is what the vault remembers between syncs (design D6): its device, the
 // cursor and log generation, its clock, the last-synced value of every field it
@@ -49,7 +50,33 @@ type State struct {
 	Extra map[string]string `json:"extra,omitempty"`
 	// Initialized is false until the first sync wrote the files.
 	Initialized bool `json:"initialized"`
+	// TaskNotes is the linked TaskNotes folder, nil when none is linked.
+	TaskNotes *TaskNotesState `json:"tasknotes,omitempty"`
 }
+
+// TaskNotesState is a linked TaskNotes folder (design D1): where it is, which
+// note holds which task, what was last written to each note, and the notes
+// archived in TaskNotes, which sync in neither direction.
+type TaskNotesState struct {
+	// Folder is relative to the vault folder when below it, else absolute.
+	Folder string `json:"folder"`
+	// Notes maps a task id to its note, slash-separated and relative to Folder.
+	Notes map[string]string `json:"notes"`
+	// Hashes maps a note to the hash of the bytes last written or read.
+	Hashes   map[string]string `json:"hashes"`
+	Archived map[string]bool   `json:"archived,omitempty"`
+}
+
+// Dir is the linked folder as a path on this machine.
+func (t *TaskNotesState) Dir(vaultDir string) string {
+	if filepath.IsAbs(t.Folder) {
+		return t.Folder
+	}
+	return filepath.Join(vaultDir, filepath.FromSlash(t.Folder))
+}
+
+// ErrNewerState is a state file written by a newer ot.
+var ErrNewerState = errors.New("the vault state was written by a newer ot")
 
 // FileState is one written file: its project ("" for the Inbox) and the hash
 // of the bytes written.
@@ -83,6 +110,20 @@ func LoadState(dir string) (*State, error) {
 	if err := json.Unmarshal(raw, &st); err != nil {
 		return nil, fmt.Errorf("the vault state %s is unreadable: %w", StatePath(dir), err)
 	}
+	if st.Version > StateVersion {
+		return nil, fmt.Errorf("%w (format %d; this ot reads up to %d): update ot on this machine", ErrNewerState, st.Version, StateVersion)
+	}
+	if tn := st.TaskNotes; tn != nil {
+		if tn.Notes == nil {
+			tn.Notes = map[string]string{}
+		}
+		if tn.Hashes == nil {
+			tn.Hashes = map[string]string{}
+		}
+		if tn.Archived == nil {
+			tn.Archived = map[string]bool{}
+		}
+	}
 	if st.Store == nil {
 		st.Store = Store{}
 	}
@@ -105,6 +146,7 @@ func (st *State) Save(dir string) error {
 		return err
 	}
 	_ = os.Chmod(sd, 0o700)
+	st.Version = StateVersion
 	raw, err := json.Marshal(st)
 	if err != nil {
 		return err

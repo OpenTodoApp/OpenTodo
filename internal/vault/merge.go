@@ -90,7 +90,7 @@ func (e *engine) merge() error {
 	for _, k := range m.groupKeys {
 		e.positions(m, m.groups[k])
 	}
-	return nil
+	return e.mergeNotes(m)
 }
 
 func sortedKeys[V any](mp map[string]V) []string {
@@ -339,6 +339,10 @@ func (e *engine) placeTasks(m *mergeRun) error {
 			case id != "" && taken[id]:
 				e.rep.warn("%s: the task %s appears twice; the second line becomes a new task", p, short(id))
 				id = ""
+			case id != "" && e.tn != nil && e.tn.ids[id]:
+				e.rep.warn("%s: the task %s lives in a TaskNotes note; the line is left as text", p, short(id))
+				unknown = append(unknown, id)
+				return
 			case id != "" && e.app.Get("task", id) == nil:
 				e.rep.warn("%s: the task id %s is not in the account; the line is left as it is", p, id)
 				unknown = append(unknown, id)

@@ -52,7 +52,7 @@ func TestFixtureVault(t *testing.T) {
 	for pid, p := range layout {
 		byPath[p] = pid
 	}
-	disk, err := scanFiles("testdata/vault")
+	disk, err := scanFiles("testdata/vault", "")
 	if err != nil {
 		t.Fatal(err)
 	}

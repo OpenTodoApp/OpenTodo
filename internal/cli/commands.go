@@ -154,6 +154,13 @@ var cmdSpecs = []cmdSpec{
 		Args: []argSpec{{Name: "dir"}}, Output: ref("vault_status")},
 	{Name: "vault watch", Summary: "keep a vault in sync until interrupted: the server's live channel and a two-second file poll",
 		Args: []argSpec{{Name: "dir"}}, Writes: true, Output: ref("vault_report")},
+	{Name: "vault tasknotes", Summary: "link a folder of Obsidian TaskNotes task notes to the vault in --vault (default .): each task note becomes one task, synced by the next vault sync; --off unlinks it",
+		Args: []argSpec{{Name: "folder"}},
+		Flags: []flagSpec{
+			{Name: "vault", Type: "string", Default: ".", Description: "the vault folder"},
+			{Name: "off", Type: "bool", Description: "unlink the TaskNotes folder; the notes keep their ids and their tasks stay in the account"},
+			{Name: "inside", Type: "bool", Description: "accept a folder inside the vault folder (every machine syncing the vault then needs this ot)"},
+		}, Writes: true, DryRun: true, Output: ref("vault_tasknotes")},
 	{Name: "time start", Summary: "start tracking time on a task (stops the running entry)", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: []flagSpec{{Name: "note", Type: "string", Description: "note on the entry"}}, Writes: true, DryRun: true, Output: ref("time_entry")},
 	{Name: "time stop", Summary: "stop the running time entry", Writes: true, DryRun: true, Output: ref("time_entry")},

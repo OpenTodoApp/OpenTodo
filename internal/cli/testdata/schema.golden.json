@@ -1328,6 +1328,42 @@
       }
     },
     {
+      "name": "vault tasknotes",
+      "summary": "link a folder of Obsidian TaskNotes task notes to the vault in --vault (default .): each task note becomes one task, synced by the next vault sync; --off unlinks it",
+      "args": [
+        {
+          "name": "folder",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "vault",
+          "type": "string",
+          "default": ".",
+          "description": "the vault folder"
+        },
+        {
+          "name": "off",
+          "type": "bool",
+          "description": "unlink the TaskNotes folder; the notes keep their ids and their tasks stay in the account"
+        },
+        {
+          "name": "inside",
+          "type": "bool",
+          "description": "accept a folder inside the vault folder (every machine syncing the vault then needs this ot)"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/vault_tasknotes"
+      }
+    },
+    {
       "name": "vault watch",
       "summary": "keep a vault in sync until interrupted: the server's live channel and a two-second file poll",
       "args": [
@@ -2794,11 +2830,11 @@
       "properties": {
         "written": {
           "type": "integer",
-          "description": "project files written"
+          "description": "project files and task notes written"
         },
         "created": {
           "type": "integer",
-          "description": "tasks created from new lines"
+          "description": "tasks created from new lines and new task notes"
         },
         "updated": {
           "type": "integer",
@@ -2849,7 +2885,12 @@
                   "conflict",
                   "project",
                   "section",
-                  "label"
+                  "label",
+                  "notes",
+                  "moved",
+                  "archived",
+                  "unarchived",
+                  "time"
                 ]
               },
               "file": {
@@ -2924,6 +2965,28 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "vault_tasknotes": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "vault_tasknotes",
+      "description": "The TaskNotes folder linked to a vault (OpenSpec vault-tasknotes): the folder as stored, relative to the vault folder when below it, else absolute; linked is false after --off.",
+      "type": "object",
+      "required": [
+        "vault",
+        "folder",
+        "linked"
+      ],
+      "properties": {
+        "vault": {
+          "type": "string"
+        },
+        "folder": {
+          "type": "string"
+        },
+        "linked": {
+          "type": "boolean"
         }
       }
     },
