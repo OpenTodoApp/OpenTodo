@@ -45,9 +45,12 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
               aria-pressed={!!c.completed_at}
               onClick={() => onToggle(c)}
               disabled={readOnly}
-              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${c.completed_at ? 'border-accent bg-accent text-on-accent' : 'border-input hover:bg-success-soft'}`}
+              className="touch-target inline-flex shrink-0 items-center justify-center rounded-full"
             >
-              {c.completed_at && <Icon name="check" size={10} />}
+              {/* The circle is a span: on a touch screen the button grows to 44 px, the circle stays 16 px. */}
+              <span data-check-mark className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${c.completed_at ? 'border-accent bg-accent text-on-accent' : 'border-input hover:bg-success-soft'}`}>
+                {c.completed_at && <Icon name="check" size={10} />}
+              </span>
             </button>
             <button type="button" className={`min-w-0 flex-1 truncate text-left text-body ${c.completed_at ? 'text-faint line-through' : 'text-default'}`} onClick={() => onOpen?.(c.id)}>
               {c.title || <span className="italic text-faint">{t('Untitled')}</span>}
