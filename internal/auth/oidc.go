@@ -224,6 +224,27 @@ func (s *Service) LinkIdentity(ctx context.Context, userID string, id ExternalId
 	return false, tx.Commit()
 }
 
+// ConfirmLinkedIdentity is the sign-in half of LinkIdentity: when id is
+// already linked to userID it records the use and reports true; an identity
+// linked to another account is ErrIdentityTaken; an unlinked identity reports
+// false and links nothing. A session that is not fresh may only re-confirm an
+// identity it already has (credential-freshness).
+func (s *Service) ConfirmLinkedIdentity(ctx context.Context, userID string, id ExternalIdentity) (bool, error) {
+	u, identityID, err := identityUser(ctx, s.db, id.Issuer, id.Subject)
+	switch {
+	case err != nil:
+		return false, err
+	case u == nil:
+		return false, nil
+	case u.ID != userID:
+		return false, ErrIdentityTaken
+	}
+	if _, err := s.db.ExecContext(ctx, "UPDATE identities SET last_login_at = ? WHERE id = ?", s.clock().UnixMilli(), identityID); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // ListIdentities returns the identities linked to an account.
 func (s *Service) ListIdentities(ctx context.Context, userID string) ([]Identity, error) {
 	rows, err := s.db.QueryContext(ctx, "SELECT id,issuer,email,created_at,last_login_at FROM identities WHERE user_id = ? ORDER BY created_at", userID)

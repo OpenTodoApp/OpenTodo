@@ -56,7 +56,7 @@ Forgot it? If your server sends email, choose **Forgot password?** on the sign-i
 
 ## Confirm it's you
 
-Some changes, like creating an API token or turning off two-factor authentication, ask for your password or a code again unless you entered one in the last ten minutes, so someone who finds your unlocked laptop can't change them.
+Adding a passkey, two-factor or a linked account, an API token and similar changes ask for your password or a code unless you entered one in the last ten minutes. Single sign-on only? Choose **Confirm with …**.
 
 ## Sign out
 

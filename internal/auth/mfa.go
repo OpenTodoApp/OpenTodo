@@ -416,9 +416,12 @@ func (s *Service) ConfirmTOTPEnrollment(ctx context.Context, u *User, code, toke
 	if err != nil {
 		return nil, err
 	}
+	// The session now satisfies the second factor, but enrolling is not a proof
+	// of identity: reauth_at stays as it was, so enrolment never makes a stale
+	// session fresh (credential-freshness).
 	if tokenHash != "" {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO session_auth(token_hash,mfa_at,reauth_at) VALUES(?,?,?)
-			ON CONFLICT(token_hash) DO UPDATE SET mfa_at = excluded.mfa_at, reauth_at = excluded.reauth_at`, tokenHash, now.UnixMilli(), now.UnixMilli()); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO session_auth(token_hash,mfa_at) VALUES(?,?)
+			ON CONFLICT(token_hash) DO UPDATE SET mfa_at = excluded.mfa_at`, tokenHash, now.UnixMilli()); err != nil {
 			return nil, err
 		}
 	}

@@ -2761,6 +2761,9 @@
   "Confirm permanent deletion": [
     "web/src/app/TrashView.tsx"
   ],
+  "Confirm with {provider} instead": [
+    "web/src/app/ReauthDialog.tsx"
+  ],
   "Confirm your account": [
     "web/src/app/EmailScreens.tsx"
   ],
@@ -6517,6 +6520,9 @@
   ],
   "Linked. You can now sign in with the provider.": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Linking {provider} needs a recent sign-in. Confirm your password or a code, then link it again.": [
+    "web/src/app/sso.ts"
   ],
   "Links start with http:// or https://.": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
