@@ -57,7 +57,7 @@ var (
 	dateRe     = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}`)
 	idRe       = regexp.MustCompile(`^[A-Za-z0-9_-]+`)
 	blockedRe  = regexp.MustCompile(`^[A-Za-z0-9_-]+(?:[ \t]*,[ \t]*[A-Za-z0-9_-]+)*`)
-	inlineRe   = regexp.MustCompile(`^\[([A-Za-z][A-Za-z0-9_\- ]*(?::[^:\]]+)?)::[ \t]*([^\]]*)\]`)
+	inlineRe   = regexp.MustCompile(`^\[([A-Za-z][A-Za-z0-9_\- ]*(?::[^:\[\]]+)?)::[ \t]*([^\[\]\\]*)\]`)
 	tagRe      = regexp.MustCompile(`^#([\p{L}\p{N}_/\-]+)`)
 )
 
@@ -180,6 +180,9 @@ func fieldAt(s string) (token, int, bool) {
 			v = strings.TrimRight(recurText(rest), " \t")
 		}
 		kind := map[string]string{markDue: "due", markStart: "start", markDone: "done", markCreated: "created", markRecur: "recur", markID: "id", markBlocked: "blocked"}[m]
+		if v == "" {
+			sp = 0 // a marker without a value ends at the marker: the space after it still separates the next word
+		}
 		return token{kind: kind, text: s[:n+sp+len(v)], value: v}, n + sp + len(v), true
 	}
 	if p, n := atPriority(s); p > 0 {
@@ -189,7 +192,7 @@ func fieldAt(s string) (token, int, bool) {
 		return token{kind: "unknown", text: s[:n]}, n, true
 	}
 	if strings.HasPrefix(s, "[[") {
-		if end := strings.Index(s, "]]"); end >= 0 {
+		if end := strings.Index(s, "]]"); end >= 0 && !strings.Contains(s[2:end], "[[") {
 			return token{kind: "unknown", text: s[:end+2]}, end + 2, true
 		}
 	}
@@ -199,24 +202,33 @@ func fieldAt(s string) (token, int, bool) {
 		switch {
 		case inlineFields[key]:
 			return token{kind: key, text: m[0], value: val}, len(m[0]), true
-		case readOnlyFields[key] || strings.HasPrefix(key, "field:"):
+		case readOnlyFields[key] || strings.HasPrefix(key, "field:") && strings.TrimSpace(key[len("field:"):]) != "":
 			return token{kind: "ro:" + key, text: m[0], value: val}, len(m[0]), true
 		}
 		return token{kind: "unknown", text: m[0]}, len(m[0]), true
 	}
 	if m := tagRe.FindStringSubmatch(s); m != nil && isTag(m[1]) {
 		end := len(m[0])
-		if end == len(s) || s[end] == ' ' || s[end] == '\t' {
+		if r, _ := utf8.DecodeRuneInString(s[end:]); end == len(s) || unicode.IsSpace(r) {
 			return token{kind: "tag", text: m[0], value: m[1]}, end, true
 		}
 	}
 	return token{}, 0, false
 }
 
-// recurText is a rule's text: everything up to the next recognised field.
+// recurText is a rule's text: everything up to the next recognised field, or
+// up to the word holding a bracket (no rule has one, and a stray "]" could
+// close a field begun before it).
 func recurText(s string) string {
 	for i := 0; i < len(s); {
-		if i > 0 && (s[i-1] == ' ' || s[i-1] == '\t') {
+		if s[i] == '[' || s[i] == ']' {
+			if j := strings.LastIndexFunc(s[:i], unicode.IsSpace); j >= 0 {
+				return s[:j]
+			}
+			return ""
+		}
+		// A field right at the start means the rule is empty.
+		if prev, _ := utf8.DecodeLastRuneInString(s[:i]); i == 0 || unicode.IsSpace(prev) {
 			if _, n, ok := fieldAt(s[i:]); ok && n > 0 {
 				return s[:i]
 			}
@@ -259,7 +271,7 @@ func tokenize(s string) []token {
 		}
 		r, size := utf8.DecodeRuneInString(s[i:])
 		text.WriteRune(r)
-		boundary = r == ' ' || r == '\t'
+		boundary = unicode.IsSpace(r) // the same space TrimSpace drops around the pieces
 		i += size
 	}
 	flush()
@@ -276,7 +288,7 @@ func ParseLine(indent string, done bool, content string) Line {
 		case "text":
 			if t := strings.TrimSpace(tok.text); t != "" {
 				if unknown {
-					trailing = append(trailing, t)
+					trailing = append(trailing, strings.ReplaceAll(t, `\]`, "]"))
 				} else {
 					title = append(title, t)
 				}
@@ -339,12 +351,24 @@ func ParseLine(indent string, done bool, content string) Line {
 
 // escapeTitle puts a backslash before every word of a title that the parser
 // would read as a field, so a printed title always parses back to itself.
-func escapeTitle(title string) string {
+func escapeTitle(title string) string { return escapeFields(title, false) }
+
+// escapeTrailing escapes the fields that the pieces of unknown text form when
+// they are joined ("[tz::0" and "]" around a field read back as a time zone),
+// and keeps the unknown text itself as it is.
+func escapeTrailing(text string) string { return escapeFields(text, true) }
+
+func escapeFields(title string, keepUnknown bool) string {
 	var b strings.Builder
 	boundary := true
 	for i := 0; i < len(title); {
 		if boundary {
-			if _, n, ok := fieldAt(title[i:]); ok && n > 0 {
+			if tok, n, ok := fieldAt(title[i:]); ok && n > 0 {
+				if keepUnknown && tok.kind == "unknown" {
+					b.WriteString(title[i : i+n])
+					i += n
+					continue
+				}
 				b.WriteByte('\\')
 				b.WriteString(title[i : i+n])
 				i += n
@@ -353,8 +377,11 @@ func escapeTitle(title string) string {
 			}
 		}
 		r, size := utf8.DecodeRuneInString(title[i:])
+		if keepUnknown && r == ']' {
+			b.WriteByte('\\') // a stray "]" could close a "[note::" printed before it
+		}
 		b.WriteRune(r)
-		boundary = r == ' ' || r == '\t'
+		boundary = unicode.IsSpace(r)
 		i += size
 	}
 	return b.String()
@@ -374,7 +401,7 @@ func PrintLine(l Line) string {
 		parts = nil
 	}
 	if l.Trailing != "" {
-		parts = append(parts, l.Trailing)
+		parts = append(parts, escapeTrailing(l.Trailing))
 	}
 	if l.Due != "" {
 		parts = append(parts, markDue+" "+l.Due)
@@ -426,7 +453,7 @@ func PrintLine(l Line) string {
 		return readOnlyRank(keys[i]) < readOnlyRank(keys[j]) || (readOnlyRank(keys[i]) == readOnlyRank(keys[j]) && keys[i] < keys[j])
 	})
 	for _, k := range keys {
-		parts = append(parts, "["+k+":: "+l.ReadOnly[k]+"]")
+		parts = append(parts, "["+k+":: "+fieldValue.Replace(l.ReadOnly[k])+"]")
 	}
 	if l.ID != "" {
 		parts = append(parts, markID+" "+l.ID)
@@ -434,6 +461,11 @@ func PrintLine(l Line) string {
 	b.WriteString(strings.Join(parts, " "))
 	return b.String()
 }
+
+// fieldValue keeps a read-only value inside its [key:: value] field: brackets
+// and backslashes would end the field early or swallow the title before it on
+// the next read, and a line break would end the task line.
+var fieldValue = strings.NewReplacer("[", "", "]", "", "\\", "", "\r", " ", "\n", " ")
 
 // readOnlyRank orders the read-only fields: origin, location, tracked, then
 // custom fields by name.

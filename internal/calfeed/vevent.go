@@ -222,6 +222,9 @@ func zoneName(loc *time.Location) string {
 
 // parseDuration reads an RFC 5545 duration (P1D, PT1H30M, -PT15M, P1W). days is
 // set for a whole-day duration, which all-day events add as calendar days.
+// maxDurationSecs is the longest DURATION or refresh interval read: a century.
+const maxDurationSecs = 100 * 366 * 86400
+
 func parseDuration(v string) (time.Duration, int, error) {
 	v = strings.ToUpper(strings.TrimSpace(v))
 	neg := strings.HasPrefix(v, "-")
@@ -230,7 +233,7 @@ func parseDuration(v string) (time.Duration, int, error) {
 		return 0, 0, errors.New("bad duration")
 	}
 	v = v[1:]
-	var d time.Duration
+	var secs int64
 	days := 0
 	inTime := false
 	num := ""
@@ -238,7 +241,11 @@ func parseDuration(v string) (time.Duration, int, error) {
 	for _, r := range v {
 		switch {
 		case r >= '0' && r <= '9':
-			num += string(r)
+			if num += string(r); len(num) > 9 {
+				// No duration needs more digits; refusing early keeps a long
+				// digit run from growing num quadratically.
+				return 0, 0, errors.New("bad duration")
+			}
 		case r == 'T':
 			inTime = true
 		default:
@@ -255,11 +262,11 @@ func parseDuration(v string) (time.Duration, int, error) {
 				days += n
 				timeOnly = false
 			case r == 'H' && inTime:
-				d += time.Duration(n) * time.Hour
+				secs += int64(n) * 3600
 			case r == 'M' && inTime:
-				d += time.Duration(n) * time.Minute
+				secs += int64(n) * 60
 			case r == 'S' && inTime:
-				d += time.Duration(n) * time.Second
+				secs += int64(n)
 			default:
 				return 0, 0, errors.New("bad duration")
 			}
@@ -268,6 +275,12 @@ func parseDuration(v string) (time.Duration, int, error) {
 	if num != "" {
 		return 0, 0, errors.New("bad duration")
 	}
+	// At most nine digits per unit keeps these sums in range; a duration
+	// beyond a century is refused rather than overflowing time.Duration.
+	if secs+int64(days)*86400 > maxDurationSecs {
+		return 0, 0, errors.New("bad duration")
+	}
+	d := time.Duration(secs) * time.Second
 	total := d + time.Duration(days)*24*time.Hour
 	if d != 0 || timeOnly {
 		days = 0 // a mixed or time-only duration is not a calendar-day count

@@ -2,7 +2,8 @@ name: Nightly
 
 # Checks too slow for every pull request (OpenSpec ci-release-gates): the Go tests
 # under the race detector, which watches the background schedulers (backups,
-# reminders, digests, email polling, webhooks) and the sync hub. Also runs on demand.
+# reminders, digests, email polling, webhooks) and the sync hub, and the fuzz
+# targets (scripts/fuzz.sh). Also runs on demand.
 on:
   schedule:
     - cron: "23 3 * * *"
@@ -34,3 +35,32 @@ jobs:
       - run: npm ci --no-audit --no-fund && npm run build
         working-directory: web
       - run: go test -race -timeout 45m ./...
+
+  # Fuzz targets of the parsers of untrusted input (2026-10 audit, wave 2):
+  # every func FuzzXxx runs for a minute. Their seed corpora and any committed
+  # crashers (testdata/fuzz) already run as plain tests in every CI run; this
+  # explores beyond them. A failing input is uploaded so it can be committed
+  # with its fix.
+  fuzz:
+    name: Go fuzz targets
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund && npm run build
+        working-directory: web
+      - run: scripts/fuzz.sh 60s
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-failing-inputs
+          path: internal/**/testdata/fuzz/
+          retention-days: 30
