@@ -48,6 +48,61 @@ var deniedPrefixes = []netip.Prefix{
 	netip.MustParsePrefix("169.254.169.254/32"), // cloud metadata (explicit)
 }
 
+// alwaysDeniedPrefixes are refused even when private targets are allowed:
+// nothing an owner means by "my local network" lives there, and they hold the
+// cloud metadata services.
+var alwaysDeniedPrefixes = []netip.Prefix{
+	netip.MustParsePrefix("0.0.0.0/8"),          // "this network", reaches the host itself
+	netip.MustParsePrefix("169.254.0.0/16"),     // link-local, incl. the 169.254.169.254 metadata address
+	netip.MustParsePrefix("100.100.100.200/32"), // Alibaba Cloud metadata (inside CGNAT)
+	netip.MustParsePrefix("fd00:ec2::254/128"),  // AWS IPv6 metadata (inside ULA)
+	netip.MustParsePrefix("fe80::/10"),          // IPv6 link-local
+}
+
+var (
+	nat64Prefix  = netip.MustParsePrefix("64:ff9b::/96")
+	compatPrefix = netip.MustParsePrefix("::/96")
+	sixToFour    = netip.MustParsePrefix("2002::/16")
+)
+
+// IsAlwaysDenied reports whether addr is refused even when the owner allowed
+// private network targets: unspecified, "this network", link-local and the
+// cloud metadata addresses, also when carried inside an IPv6 address.
+func IsAlwaysDenied(addr netip.Addr) bool {
+	if !addr.IsValid() {
+		return true
+	}
+	addr = addr.Unmap()
+	if addr.IsUnspecified() || addr.IsLinkLocalUnicast() || addr.IsLinkLocalMulticast() || addr.IsInterfaceLocalMulticast() {
+		return true
+	}
+	for _, p := range alwaysDeniedPrefixes {
+		if p.Contains(addr) {
+			return true
+		}
+	}
+	if v4, ok := embeddedIPv4(addr); ok && !addr.IsLoopback() {
+		return IsAlwaysDenied(v4)
+	}
+	return false
+}
+
+// embeddedIPv4 extracts the IPv4 address a NAT64, IPv4-compatible or 6to4
+// address carries.
+func embeddedIPv4(a netip.Addr) (netip.Addr, bool) {
+	if !a.Is6() {
+		return netip.Addr{}, false
+	}
+	b := a.As16()
+	switch {
+	case nat64Prefix.Contains(a), compatPrefix.Contains(a):
+		return netip.AddrFrom4([4]byte{b[12], b[13], b[14], b[15]}), true
+	case sixToFour.Contains(a):
+		return netip.AddrFrom4([4]byte{b[2], b[3], b[4], b[5]}), true
+	}
+	return netip.Addr{}, false
+}
+
 // IsDenied reports whether connecting to addr must be refused by default.
 // IPv4-mapped IPv6 addresses (::ffff:a.b.c.d) are judged as their IPv4 form.
 func IsDenied(addr netip.Addr) bool {
@@ -96,8 +151,15 @@ type Resolver interface {
 // allowed address directly. Because the connection goes to the very address
 // that was checked, a second DNS answer cannot swap in a private one.
 type Dialer struct {
-	Resolver     Resolver
+	Resolver Resolver
+	// AllowPrivate is the owner's "allow private network targets" switch. Even
+	// when it is on, the addresses IsAlwaysDenied names stay refused.
 	AllowPrivate func(ctx context.Context) bool
+	// AllowPrivateHost allows private targets for one host name only: for a
+	// client whose owner-typed server may be on the local network while the
+	// addresses that server hands out must not be (the map proxy). host is the
+	// name as dialled, without port or brackets.
+	AllowPrivateHost func(ctx context.Context, host string) bool
 	// Dial opens the TCP connection to an already-checked "ip:port".
 	Dial func(ctx context.Context, network, address string) (net.Conn, error)
 }
@@ -114,10 +176,11 @@ func (d *Dialer) Allowed(ctx context.Context, host string) ([]netip.Addr, error)
 			return nil, fmt.Errorf("resolve %s: %w", host, err)
 		}
 	}
-	allowPrivate := d.AllowPrivate != nil && d.AllowPrivate(ctx)
+	allowPrivate := (d.AllowPrivate != nil && d.AllowPrivate(ctx)) ||
+		(d.AllowPrivateHost != nil && d.AllowPrivateHost(ctx, strings.Trim(host, "[]")))
 	out := make([]netip.Addr, 0, len(addrs))
 	for _, a := range addrs {
-		if allowPrivate || !IsDenied(a) {
+		if !IsDenied(a) || (allowPrivate && !IsAlwaysDenied(a)) {
 			out = append(out, a.Unmap())
 		}
 	}

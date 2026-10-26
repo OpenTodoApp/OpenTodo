@@ -36,6 +36,10 @@ func newFakeMapProvider(t *testing.T) *fakeMapProvider {
 		switch {
 		case r.URL.Path == "/style":
 			_, _ = w.Write([]byte(`{"version":8,"sources":{"omt":{"type":"vector","tiles":["` + base + `/t/{z}/{x}/{y}.pbf"],"attribution":"OpenStreetMap"}},"layers":[]}`))
+		case r.URL.Path == "/style-elsewhere":
+			// The style points the tiles at another name for a loopback address.
+			_, port, _ := strings.Cut(r.Host, ":")
+			_, _ = w.Write([]byte(`{"version":8,"sources":{"omt":{"type":"vector","tiles":["http://localhost:` + port + `/t/{z}/{x}/{y}.pbf"]}},"layers":[]}`))
 		case strings.HasPrefix(r.URL.Path, "/t/"):
 			_, _ = w.Write([]byte("tile"))
 		case r.URL.Path == "/api":
@@ -140,6 +144,41 @@ func TestMapProxyRoutes(t *testing.T) {
 	}
 	resp, out = e.do("PUT", "/api/v1/settings/maps", map[string]any{"enabled": true, "tiles_url": "ftp://x"})
 	e.mustStatus(resp, 400, out)
+}
+
+// private-network-reach "Map proxy network reach": the server's real
+// client reaches the owner's own provider host on the local network, but not
+// a local address that the provider's style names, and a hosted tenant's
+// provider never reaches the host's network.
+func TestMapProxyPrivateTargets(t *testing.T) {
+	f := newFakeMapProvider(t)
+	e := newEnvWith(t, true)
+	e.register("owner@example.com")
+	resp, out := e.do("PUT", "/api/v1/settings/maps", map[string]any{"enabled": true, "tiles_url": f.srv.URL + "/style-elsewhere", "geocoder_url": f.srv.URL})
+	e.mustStatus(resp, 200, out)
+	resp, out = e.do("GET", "/api/v1/maps/style", nil)
+	e.mustStatus(resp, 200, out)
+	resp, out = e.do("GET", "/api/v1/maps/search?q=Duomo", nil)
+	e.mustStatus(resp, 200, out)
+	hits := f.hits.Load()
+	resp, out = e.do("GET", "/api/v1/maps/tiles/1/0/0.pbf", nil)
+	e.mustStatus(resp, 502, out)
+	if f.hits.Load() != hits {
+		t.Fatal("a tile URL from the provider's style reached a local address")
+	}
+
+	hosted := newEnvWith(t, true, WithHosted())
+	hosted.register("owner@example.com")
+	resp, out = hosted.do("PUT", "/api/v1/settings/maps", map[string]any{"enabled": true, "tiles_url": f.srv.URL + "/style", "geocoder_url": f.srv.URL})
+	hosted.mustStatus(resp, 200, out)
+	hits = f.hits.Load()
+	for _, p := range []string{"/api/v1/maps/style", "/api/v1/maps/search?q=Duomo"} {
+		resp, out = hosted.do("GET", p, nil)
+		hosted.mustStatus(resp, 502, out)
+	}
+	if f.hits.Load() != hits {
+		t.Fatal("a hosted tenant's map provider reached the host's network")
+	}
 }
 
 // "Provider unreachable": 502 maps_unavailable for anything not in the cache.
