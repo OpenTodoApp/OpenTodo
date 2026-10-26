@@ -14,6 +14,11 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))
 
+### Security
+
+- **Hosted services: one client can no longer lock a tenant out.** The request limit per minute applied to all of a tenant's traffic, signed in or not, so anyone could use it up and every user of that tenant got "too many requests". It now counts each client address separately. Found in an internal audit. ([Host mode](docs/self-hosting/host-mode.md#limits))
+- **Public demo: the sandbox limit can no longer be held by one party.** When the demo is full, the oldest sandbox now makes room for a new visitor after 15 minutes even if it is being kept busy, new sandboxes per IPv6 site (`/48`) are limited together, and the demo creates at most twice its sandbox limit per hour. Found in an internal audit. ([Demo instance](docs/self-hosting/demo.md))
+
 ### Fixed
 
 - **A long task in the side panel no longer scrolls the whole page.** With a long note, the window got a second scroll bar and the page moved instead of the panel, pushing the comment box out of view. Only the panel scrolls now. ([The task panel](docs/task-panel.md))

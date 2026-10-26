@@ -39,6 +39,16 @@ func setTrustedProxies(p []netip.Prefix, cloudflare bool) {
 	trustedProxies.Store(t)
 }
 
+// ConfigureClientIdentity installs the operator's trusted proxies before any
+// server is built: a host counts requests per client before a tenant opens.
+func ConfigureClientIdentity(cfg config.Config) {
+	setTrustedProxies(cfg.TrustedProxies, cfg.TrustCloudflare)
+}
+
+// ClientKey is the rate-limit key of the request's client, the same address
+// every limiter of a server uses (IPv6 grouped by /64).
+func ClientKey(r *http.Request) string { return addrKey(clientIP(r)) }
+
 // trusted returns the prefixes whose X-Forwarded-* headers are believed: the
 // configured list, or the default when none is configured.
 func trusted() *proxyTrust {
@@ -123,6 +133,25 @@ func fromTrustedProxy(r *http.Request) bool {
 // link-local: a first registration from there needs no setup code.
 // Unparseable addresses are not local.
 func isLocalAddr(ip string) bool { return within(ip, privatePrefixes) }
+
+// demoAddrKey is the key of the demo's sandbox-creation limit: IPv6 addresses
+// grouped by their /48, the usual size of one site's allocation, so one site
+// cannot hold the live cap with addresses from its own range.
+func demoAddrKey(ip string) string {
+	a, err := netip.ParseAddr(ip)
+	if err != nil {
+		return ip
+	}
+	a = a.Unmap()
+	if a.Is4() {
+		return a.String()
+	}
+	p, err := a.WithZone("").Prefix(48)
+	if err != nil {
+		return ip
+	}
+	return p.String()
+}
 
 // addrKey is the rate-limit key for a client address: IPv6 addresses are
 // grouped by their /64 (one subscriber usually holds a whole /64), IPv4 and

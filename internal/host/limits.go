@@ -102,7 +102,7 @@ func (q *quota) hourLocked() int {
 	return sum
 }
 
-// requestLimiter counts requests per tenant in fixed one-minute windows.
+// requestLimiter counts requests per key (tenant and client) in fixed one-minute windows.
 type requestLimiter struct {
 	now func() time.Time
 	mu  sync.Mutex
