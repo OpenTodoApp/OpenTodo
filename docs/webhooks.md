@@ -270,6 +270,8 @@ Home Assistant's webhook trigger does not check signatures; the long random webh
 
 ### n8n
 
+The [OpenTodo nodes for n8n](n8n.md) include a trigger that creates a signed webhook like this for you, checks the signature and removes the webhook when the workflow is turned off, next to nodes that create and change tasks. The recipe below uses n8n's plain Webhook node instead.
+
 1. Add a **Webhook** node, method `POST`, and under *Options* enable **Raw Body** so the exact bytes are available for verification. Copy the production URL.
 2. In OpenTodo, add a webhook with that URL and the events you need. If n8n runs on your LAN, the owner enables private network targets first.
 3. Add a **Code** node after the webhook to verify the signature (set the secret as an n8n credential or environment variable rather than in the code):

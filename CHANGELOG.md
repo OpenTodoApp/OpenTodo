@@ -7,6 +7,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Added
 
 - **Calendar sync, both ways.** Connect the calendar you already use, iCloud, Fastmail, Nextcloud, Synology, Radicale or any CalDAV service with an app password, or Google Calendar, and your dated tasks appear there as events in a calendar you choose. Drag an event to another time, stretch it, rename it or delete it, and the task follows; change the task and the event follows. When both changed, the newer change wins. Other calendars of the same account can be shown in Day and Week. The server owner turns it on under **Settings → Integrations → Calendar sync** and, for Google, sets up an OAuth client there or with the optional `OPENTODO_GOOGLE_CLIENT_ID` and `OPENTODO_GOOGLE_CLIENT_SECRET`. Outlook and Microsoft 365 are not supported yet. ([Calendar sync](docs/calendar-sync.md))
+- **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))
 
 ### Changed
 
