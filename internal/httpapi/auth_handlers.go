@@ -291,6 +291,10 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.secureCookie(r), SameSite: http.SameSiteLaxMode})
+	// The browser drops its HTTP cache (attachments, profile pictures) for
+	// this site; browsers honour it on https and localhost
+	// (attachment-client-hardening D2).
+	w.Header().Set("Clear-Site-Data", `"cache"`)
 	// Provider sign-out (oidc-login D7): the local session is already gone; the
 	// client follows the redirect to the provider's end-session endpoint.
 	if redirect != "" {

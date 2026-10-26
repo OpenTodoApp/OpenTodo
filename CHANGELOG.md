@@ -14,6 +14,12 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))
 
+### Security
+
+- **The attachment total can no longer be exceeded.** Undoing the removal of a file is now checked against your total, and several uploads at once share it, so neither can store more than the owner allows. Found in an internal audit. ([Attachments](docs/attachments.md#limits))
+- **Files no longer stay readable in the browser after signing out.** Attachments are now checked with the server each time they are shown, and signing out asks the browser to empty its cache for OpenTodo (on https), so the next person on a shared computer cannot open them. Found in an internal audit.
+- **Links from encrypted data open only as web links.** A task's source link and a link attachment of an encrypted account open only `http` and `https` addresses; anything else is shown without a link. Found in an internal audit.
+
 ### Fixed
 
 - **A long task in the side panel no longer scrolls the whole page.** With a long note, the window got a second scroll bar and the page moved instead of the panel, pushing the comment box out of view. Only the panel scrolls now. ([The task panel](docs/task-panel.md))

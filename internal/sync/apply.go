@@ -22,6 +22,10 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if s.attachmentLimit != nil {
 		attachmentLimit = s.attachmentLimit()
 	}
+	var attachmentQuota int64
+	if s.attachmentQuota != nil {
+		attachmentQuota = s.attachmentQuota()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return ApplyResult{}, err
@@ -31,6 +35,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if err != nil {
 		return ApplyResult{}, err
 	}
+	b.rs.attachmentQuota = attachmentQuota
 	for _, op := range ops {
 		if err := b.applyOne(op); err != nil {
 			return b.res, err

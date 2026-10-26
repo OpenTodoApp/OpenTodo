@@ -58,6 +58,10 @@ type Server struct {
 	blobs *blobs.Store
 	// attachmentLimiter caps uploads per account (120/hour, attachments D5).
 	attachmentLimiter *rateLimiter
+	// uploading holds the bytes of each account's uploads in progress, under
+	// uploadsMu, so parallel uploads share the quota (see checkRoom).
+	uploadsMu sync.Mutex
+	uploading map[string]int64
 	// One limiter per purpose, per client address, 10 a minute each
 	// (trusted-client-identity): limiter counts failed password sign-ins,
 	// registerLimiter registrations and sign-up links, resetLimiter password
