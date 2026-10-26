@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 // TestTaskDeadlineREST covers the REST side of deadlines (OpenSpec change

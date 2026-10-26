@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
 )
 
 // commentOps builds the ops of a new comment in one batch.

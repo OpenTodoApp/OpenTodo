@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant"
 )
 
 // Kinds of background work in the "next due" index (design D3).

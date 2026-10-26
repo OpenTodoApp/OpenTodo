@@ -11,10 +11,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/caldav"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/recurrence"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Every CalDAV write is a batch of ops applied with ApplyStrict under the

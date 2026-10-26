@@ -3,7 +3,7 @@ package agenttools
 import (
 	"encoding/json"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // Encrypted accounts and write tools (OpenSpec change mcp-projects, design D3).

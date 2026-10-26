@@ -8,7 +8,7 @@ import (
 	gosync "sync"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // queryLog records the SQL statements a Service sends, so a test can count the

@@ -3,7 +3,7 @@ package rules
 import (
 	"database/sql"
 
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // SettingKey is the owner setting that turns automations on or off for the

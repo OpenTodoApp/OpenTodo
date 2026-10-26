@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/pixari/opentodo/internal/demo"
+	"github.com/OpenTodoApp/opentodo/internal/demo"
 )
 
 // resetOnSignal runs the nightly reset (every sandbox deleted, then VACUUM)

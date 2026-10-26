@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/oidc"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/oidc"
 )
 
 // User is who the provider signs in at the next authorization request.

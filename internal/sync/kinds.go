@@ -9,11 +9,11 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/location"
-	"github.com/pixari/opentodo/internal/origin"
-	"github.com/pixari/opentodo/internal/recurrence"
-	"github.com/pixari/opentodo/internal/ruleval"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/location"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // kindChecks validates an op value per field kind (see the kind constants in

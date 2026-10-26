@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/relay"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/relay"
 )
 
 // fakeRelay plays an opted-in device: an envelope is "enc:v1:" + base64url of

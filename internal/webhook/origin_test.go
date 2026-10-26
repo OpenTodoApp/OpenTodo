@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // A task created from a shared issue page (OpenSpec change task-origin,

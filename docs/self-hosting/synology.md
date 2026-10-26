@@ -22,7 +22,7 @@ OpenTodo is not in Package Center: Package Center installs packages (`.spk` file
    ```yaml
    services:
      opentodo:
-       image: ghcr.io/pixari/opentodo:stable
+       image: ghcr.io/opentodoapp/opentodo:stable
        container_name: opentodo
        pull_policy: always
        user: "1026:100"
@@ -61,7 +61,7 @@ Change them in the project's YAML (**Project → opentodo → YAML Configuration
 | `OPENTODO_ALLOW_SIGNUP` | `false` | `true` lets anyone who can reach the server create an account. |
 | `OPENTODO_TRUSTED_PROXIES` | empty | Leave it empty behind DSM's reverse proxy (OpenTodo trusts proxies on loopback and private addresses). Set `cloudflare` if Cloudflare's proxy sits in front. |
 
-Other `OPENTODO_*` variables are in the [configuration table](https://github.com/pixari/opentodo#configuration).
+Other `OPENTODO_*` variables are in the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration).
 
 ## The data folder and its owner
 
@@ -95,7 +95,7 @@ Do not set an `https://` address while you open OpenTodo over plain http: the se
 
 The project uses the `stable` image, which every release moves. Container Manager shows no update notice for images from `ghcr.io`, so update by hand: **Project → opentodo → Action → Stop**, then **Action → Build**. Because of `pull_policy: always`, the build pulls the current `stable` image and recreates the container; the data folder is kept and migrations run on start. There are no down-migrations, so back up first. If the version at `http://<your-nas-address>:8080/healthz` did not change, stop the project, choose **Action → Clean**, delete the image under **Image**, and **Build** again.
 
-To stay on one release line, use `ghcr.io/pixari/opentodo:0.13` (or one version, `0.14.2`) as the image.
+To stay on one release line, use `ghcr.io/opentodoapp/opentodo:0.13` (or one version, `0.14.2`) as the image.
 
 ## Backups
 

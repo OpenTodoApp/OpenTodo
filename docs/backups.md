@@ -272,7 +272,7 @@ For an unencrypted archive leave out the passphrase mount and flag. The files
 you mount must be readable by uid 65532. On Coolify the image has no shell for
 the web terminal: stop the resource, run the restore on the host with
 `docker run --rm -v <data volume>:/data -v <archive>:/restore/archive:ro
-ghcr.io/pixari/opentodo restore /restore/archive`, then start the resource
+ghcr.io/opentodoapp/opentodo restore /restore/archive`, then start the resource
 again.
 
 #### With the binary

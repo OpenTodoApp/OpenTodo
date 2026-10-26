@@ -4,8 +4,8 @@ import (
 	"context"
 	"slices"
 
-	"github.com/pixari/opentodo/internal/ruleval"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // importDevice is the importer's device (internal/importer.Device): an import

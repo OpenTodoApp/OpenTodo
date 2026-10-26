@@ -1,14 +1,14 @@
 # Runtipi app
 
-Runtipi's official app store ([`runtipi/runtipi-appstore`](https://github.com/runtipi/runtipi-appstore)) no longer accepts new apps, so OpenTodo ships its own app store: a repository made from Runtipi's template [`runtipi/example-appstore`](https://github.com/runtipi/example-appstore), to be published as **`pixari/opentodo-runtipi`**. Runtipi users add it under **Settings → App Stores → Add App Store**.
+Runtipi's official app store ([`runtipi/runtipi-appstore`](https://github.com/runtipi/runtipi-appstore)) no longer accepts new apps, so OpenTodo ships its own app store: a repository made from Runtipi's template [`runtipi/example-appstore`](https://github.com/runtipi/example-appstore), to be published as **`OpenTodoApp/opentodo-runtipi`**. Runtipi users add it under **Settings → App Stores → Add App Store**.
 
 The app, in Runtipi's native format (Runtipi 4.7.0 or newer):
 
 - [`config.json`](config.json): id `opentodo`, port 8400 (the host port when the user opens one), category `utilities`, `exposable` (a domain with https through Runtipi's Traefik), `version` = the release, `tipi_version` (raised on every change users should get), and four optional form fields: base URL, setup token, open sign-up, trusted proxies.
-- [`docker-compose.yml`](docker-compose.yml): the `opentodo` service (the key is the app id; `x-runtipi.is_main`, `internal_port: 8080`) with the **release tag** (`ghcr.io/pixari/opentodo:0.14.2`; Runtipi's store test wants the tag to contain `version`), the health check, `${APP_DATA_DIR}/data` on `/data` and the form fields as `OPENTODO_*` with their defaults; and `opentodo-init`, a one-shot `busybox` that runs `chown -R 65532:65532 /data` before OpenTodo starts. Runtipi creates the data folder owned by root and only makes it writable (`chmod a+rwx`) after the first `compose up`, so without it the first start fails with `open /data/opentodo.lock: permission denied`. `restart: "no"` keeps Runtipi's default `unless-stopped` from restarting it after it finishes.
+- [`docker-compose.yml`](docker-compose.yml): the `opentodo` service (the key is the app id; `x-runtipi.is_main`, `internal_port: 8080`) with the **release tag** (`ghcr.io/opentodoapp/opentodo:0.14.2`; Runtipi's store test wants the tag to contain `version`), the health check, `${APP_DATA_DIR}/data` on `/data` and the form fields as `OPENTODO_*` with their defaults; and `opentodo-init`, a one-shot `busybox` that runs `chown -R 65532:65532 /data` before OpenTodo starts. Runtipi creates the data folder owned by root and only makes it writable (`chmod a+rwx`) after the first `compose up`, so without it the first start fails with `open /data/opentodo.lock: permission denied`. `restart: "no"` keeps Runtipi's default `unless-stopped` from restarting it after it finishes.
 - [`metadata/description.md`](metadata/description.md) and [`metadata/logo.jpg`](metadata/logo.jpg) (512×512, from `web/public/pwa-512.png`).
 
-**Status: published** as our own app store, [`pixari/opentodo-runtipi`](https://github.com/pixari/opentodo-runtipi).
+**Status: published** as our own app store, [`OpenTodoApp/opentodo-runtipi`](https://github.com/OpenTodoApp/opentodo-runtipi).
 
 ## The store repository
 
@@ -28,14 +28,14 @@ The template still tests `docker-compose.json` files and its Renovate rule only 
 Edit the app here, never in the store repository. To publish, copy `upstream/` over the repository's content and push:
 
 ```bash
-git clone https://github.com/pixari/opentodo-runtipi /tmp/opentodo-runtipi
+git clone https://github.com/OpenTodoApp/opentodo-runtipi /tmp/opentodo-runtipi
 cp -R deploy/runtipi/upstream/. /tmp/opentodo-runtipi/
 cd /tmp/opentodo-runtipi && git add -A && git commit -m "OpenTodo app: <what changed>" && git push
 ```
 
 ## Publishing (maintainer)
 
-1. Create the repository from the template: on [`runtipi/example-appstore`](https://github.com/runtipi/example-appstore) click **Use this template → Create a new repository**, owner `pixari`, name `opentodo-runtipi`, public. (An empty public repository works too: the content comes from `upstream/`.)
+1. Create the repository from the template: on [`runtipi/example-appstore`](https://github.com/runtipi/example-appstore) click **Use this template → Create a new repository**, owner `OpenTodoApp`, name `opentodo-runtipi`, public. (An empty public repository works too: the content comes from `upstream/`.)
 2. Clone it, delete the template's files (`apps/whoami`, `bun.lockb`), copy `upstream/` over it as above, commit and push to `main`. The Test workflow must pass.
 3. In the repository's **Settings → Actions → General**, allow GitHub Actions to **create and approve pull requests** (Renovate opens its pull requests with the workflow's token), then run the Renovate workflow once by hand (**Actions → Renovate → Run workflow**) and check its log.
 4. Test on Runtipi 4.7 or newer: add the store, install OpenTodo, open it, create the owner, add a task, restart the app and check the task is still there, then try exposing it with a domain and setting **Base URL**. This has not been done on a real Runtipi yet (the compose file was only run with Docker Compose the way Runtipi runs it).

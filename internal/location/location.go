@@ -17,7 +17,7 @@ import (
 	"math"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // Limits on the members ("Location validation", "Places").

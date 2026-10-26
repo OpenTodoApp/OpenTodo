@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/quickadd"
+	"github.com/OpenTodoApp/opentodo/internal/quickadd"
 )
 
 // Quick-add parse route (OpenSpec change extension-v2, http-api "Quick-add parse route").

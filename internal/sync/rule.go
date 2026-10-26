@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/pixari/opentodo/internal/ruleval"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 )
 
 // MaxRuleLabels caps each label list of an on-drop rule.

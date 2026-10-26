@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ruleval"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 )
 
 type planCase struct {

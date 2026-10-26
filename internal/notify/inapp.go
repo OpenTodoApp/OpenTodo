@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Retention: read notifications older than this are removed by Sweep. Unread

@@ -1,6 +1,6 @@
 // Home Assistant add-on (deploy/homeassistant/), OpenSpec change homeassistant-addon. Home
 // Assistant OS and Supervised installs add add-on repositories by URL, so OpenTodo has its own,
-// pixari/opentodo-homeassistant-addons, whose content is deploy/homeassistant/upstream/ file for
+// OpenTodoApp/opentodo-homeassistant-addons, whose content is deploy/homeassistant/upstream/ file for
 // file. The add-on is upstream/opentodo/: config.yaml, a Dockerfile that copies the OpenTodo
 // binary from the released image onto Home Assistant's base image, run.sh (options to
 // OPENTODO_* variables), translations, docs and images. Policy 'release': the add-on's version is
@@ -9,13 +9,13 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { checkShared, isMap, latestRelease, listFiles, pngSize, readText, ROOT, same } from './common.mjs'
+import { checkShared, imageFor, isMap, latestRelease, listFiles, pngSize, readText, ROOT, same } from './common.mjs'
 import { parseYaml, YAML_FULL } from './yaml.mjs'
 
 export const UPSTREAM = 'deploy/homeassistant/upstream'
 export const ADDON = `${UPSTREAM}/opentodo`
-export const REPOSITORY = 'https://github.com/pixari/opentodo-homeassistant-addons'
-export const IMAGE = 'ghcr.io/pixari/opentodo-homeassistant'
+export const REPOSITORY = 'https://github.com/OpenTodoApp/opentodo-homeassistant-addons'
+export const IMAGE = 'ghcr.io/opentodoapp/opentodo-homeassistant'
 export const FILES = [
   '.github/dependabot.yml', '.github/workflows/build.yaml', '.github/workflows/follow.yaml', '.github/workflows/test.yaml',
   '.gitignore', 'LICENSE', 'README.md', 'repository.yaml', 'scripts/bump.sh',
@@ -111,7 +111,9 @@ export function checkDockerfile(text, ctx) {
   const errors = []
   const version = /^ARG OPENTODO_VERSION=(\S+)$/m.exec(text)?.[1]
   if (!version) errors.push('Dockerfile: needs ARG OPENTODO_VERSION=<release> (scripts/bump.sh changes it)')
-  if (!new RegExp(`^FROM ${ctx.facts.image.replace(/[./]/g, '\\$&')}:\\$\\{OPENTODO_VERSION\\} AS opentodo$`, 'm').test(text)) errors.push(`Dockerfile: needs FROM ${ctx.facts.image}:\${OPENTODO_VERSION} AS opentodo`)
+  // A release from before the move to OpenTodoApp exists only under the legacy name (scripts/bump.sh picks it the same way).
+  const image = version ? imageFor(ctx.facts, version) : ctx.facts.image
+  if (!new RegExp(`^FROM ${image.replace(/[./]/g, '\\$&')}:\\$\\{OPENTODO_VERSION\\} AS opentodo$`, 'm').test(text)) errors.push(`Dockerfile: needs FROM ${image}:\${OPENTODO_VERSION} AS opentodo`)
   if (!/^FROM ghcr\.io\/home-assistant\/base:\d+\.\d+$/m.test(text)) errors.push('Dockerfile: the add-on must be FROM ghcr.io/home-assistant/base:<x.y> (Dependabot follows it)')
   if (!/^COPY --from=opentodo \/opentodo \/usr\/bin\/opentodo$/m.test(text)) errors.push('Dockerfile: must COPY --from=opentodo /opentodo /usr/bin/opentodo')
   if (!/^HEALTHCHECK .*CMD \["\/usr\/bin\/opentodo", "healthcheck"\]$/m.test(text)) errors.push('Dockerfile: the HEALTHCHECK must run ["/usr/bin/opentodo", "healthcheck"]')

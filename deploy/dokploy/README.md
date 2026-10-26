@@ -4,7 +4,7 @@ A [Dokploy](https://dokploy.com) template in the format of Dokploy's template ca
 
 | Path | What |
 | --- | --- |
-| `blueprints/opentodo/docker-compose.yml` | One `opentodo` service: `ghcr.io/pixari/opentodo:<release>` (the latest release, as Dokploy's catalogue requires a pinned tag), `expose: 8080`, the named volume `opentodo-data` on `/data`, the image's health check. No ports, container name or networks (Dokploy's rules). |
+| `blueprints/opentodo/docker-compose.yml` | One `opentodo` service: `ghcr.io/opentodoapp/opentodo:<release>` (the latest release, as Dokploy's catalogue requires a pinned tag), `expose: 8080`, the named volume `opentodo-data` on `/data`, the image's health check. No ports, container name or networks (Dokploy's rules). |
 | `blueprints/opentodo/template.toml` | The generated domain on port 8080, a generated setup token (`${password:32}`) passed as `OPENTODO_SETUP_TOKEN`, an empty `OPENTODO_BASE_URL`, closed sign-up, no trusted proxies. |
 | `blueprints/opentodo/meta.json`, `opentodo.svg` | The catalogue entry and the logo (a copy of `deploy/coolify/opentodo.svg`). |
 | `meta.json` | The list Dokploy reads from a templates base URL, so this folder works as one (see below). |
@@ -28,14 +28,14 @@ Dokploy gives a template's domain a generated `*.sslip.io` name served over plai
 
 Either way works in a Dokploy project:
 
-- **Templates base URL.** Dokploy reads templates from `https://templates.dokploy.com` by default, and its template dialog accepts another base URL. Enter `https://raw.githubusercontent.com/pixari/opentodo/main/deploy/dokploy`, which serves `meta.json` and `blueprints/opentodo/` the same way. Then pick **OpenTodo** and create it.
+- **Templates base URL.** Dokploy reads templates from `https://templates.dokploy.com` by default, and its template dialog accepts another base URL. Enter `https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/dokploy`, which serves `meta.json` and `blueprints/opentodo/` the same way. Then pick **OpenTodo** and create it.
 - **By hand.** Choose **Create Service → Compose** and paste `blueprints/opentodo/docker-compose.yml` as the compose file. Under **Environment**, add the variables from `template.toml`, with a token of 32 letters and digits for `OPENTODO_SETUP_TOKEN`. Under **Domains**, add a domain for the service `opentodo` on port 8080. Then **Deploy**.
 
 ## Submit
 
 Before you start:
 
-- The release the template names must be published on `ghcr.io/pixari/opentodo`.
+- The release the template names must be published on `ghcr.io/opentodoapp/opentodo`.
 - You need a Dokploy instance to test on. Their PR template asks for it.
 
 Steps:

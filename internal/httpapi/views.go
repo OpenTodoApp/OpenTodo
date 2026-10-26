@@ -9,8 +9,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/filter"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/filter"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Saved views (OpenSpec `custom-views`) use the generic collection handlers; this file

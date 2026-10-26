@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 func strp(s string) *string { return &s }

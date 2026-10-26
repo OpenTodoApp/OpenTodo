@@ -12,16 +12,16 @@ The chart's `version` and `appVersion` are the OpenTodo release, and `image.tag`
 
 ## Install it now
 
-From a clone: `helm install opentodo ./deploy/helm/opentodo --namespace opentodo --create-namespace`. After the first release with the chart: `helm install opentodo oci://ghcr.io/pixari/charts/opentodo --namespace opentodo --create-namespace`.
+From a clone: `helm install opentodo ./deploy/helm/opentodo --namespace opentodo --create-namespace`. After the first release with the chart: `helm install opentodo oci://ghcr.io/opentodoapp/charts/opentodo --namespace opentodo --create-namespace`.
 
 ## Publishing
 
-`.github/workflows/helm.yml` lints and renders the chart on pull requests that touch `deploy/helm`. On a `v*` tag without a `-` (release candidates are skipped) it checks that `Chart.yaml` names that version, waits until the CI workflow has published `ghcr.io/pixari/opentodo:<version>`, packages the chart, pushes it with `helm push` to `oci://ghcr.io/pixari/charts` (package `charts/opentodo`, with `GITHUB_TOKEN` and `packages: write`), and pushes `artifacthub-repo.yml` with `oras` as the `artifacthub.io` tag beside it.
+`.github/workflows/helm.yml` lints and renders the chart on pull requests that touch `deploy/helm`. On a `v*` tag without a `-` (release candidates are skipped) it checks that `Chart.yaml` names that version, waits until the CI workflow has published `ghcr.io/opentodoapp/opentodo:<version>`, packages the chart, pushes it with `helm push` to `oci://ghcr.io/opentodoapp/charts` (package `charts/opentodo`, with `GITHUB_TOKEN` and `packages: write`), and pushes `artifacthub-repo.yml` with `oras` as the `artifacthub.io` tag beside it.
 
 One-time steps for the maintainer after the first publish:
 
-1. On GitHub, open the package **charts/opentodo** (github.com/pixari → Packages), **Package settings → Change visibility → Public** (new GHCR packages are private), and under **Manage Actions access** check that `pixari/opentodo` has write access (it has when the workflow created the package).
-2. On <https://artifacthub.io> sign in (GitHub account), **Control Panel → Add repository**: kind **Helm charts**, name `opentodo`, URL `oci://ghcr.io/pixari/charts/opentodo`. Artifact Hub scans it about every 30 minutes.
+1. On GitHub, open the package **charts/opentodo** (github.com/OpenTodoApp → Packages), **Package settings → Change visibility → Public** (new GHCR packages are private), and under **Manage Actions access** check that `OpenTodoApp/OpenTodo` has write access (it has when the workflow created the package).
+2. On <https://artifacthub.io> sign in (GitHub account), **Control Panel → Add repository**: kind **Helm charts**, name `opentodo`, URL `oci://ghcr.io/opentodoapp/charts/opentodo`. Artifact Hub scans it about every 30 minutes.
 3. Optional, for the **Verified publisher** badge: copy the repository ID from the Control Panel into `artifacthub-repo.yml` (uncomment `repositoryID`, add `owners` with the Artifact Hub account's email); the next release pushes it, or push it once by hand with the `oras push` command in the workflow.
 
 There is no third-party pull request to open.

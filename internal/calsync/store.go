@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Store keeps connections, links and pending Google sign-ins in SQLite.

@@ -6,7 +6,7 @@
     "description": "Open-source, local-first task manager. Works offline and syncs every device from one small container.",
     "logo": "opentodo.svg",
     "links": {
-      "github": "https://github.com/pixari/opentodo",
+      "github": "https://github.com/OpenTodoApp/OpenTodo",
       "website": "https://open-todo.app",
       "docs": "https://open-todo.app/docs/self-hosting/dokploy/"
     },

@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/calfeed"
-	"github.com/pixari/opentodo/internal/calsync/calsynctest"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/calsync/calsynctest"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 var quietLog = slog.New(slog.NewTextHandler(io.Discard, nil))

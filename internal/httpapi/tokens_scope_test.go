@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 // token creates an API token with the given scope ("" leaves it out) as the

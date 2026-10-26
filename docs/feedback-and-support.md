@@ -13,7 +13,7 @@ OpenTodo is free and open source, made by one person in the open. These are the 
 
 ## Report a problem or suggest an idea
 
-[Open an issue on GitHub](https://github.com/pixari/opentodo/issues). Say what you did, what you expected and what happened instead, and which version you run (the Help page shows it at the top). Every report is read. Before reporting a problem, the [troubleshooting guide](troubleshooting.md) may already have the fix.
+[Open an issue on GitHub](https://github.com/OpenTodoApp/OpenTodo/issues). Say what you did, what you expected and what happened instead, and which version you run (the Help page shows it at the top). Every report is read. Before reporting a problem, the [troubleshooting guide](troubleshooting.md) may already have the fix.
 
 If you found a security problem, do not open a public issue: follow `SECURITY.md` in the repository instead.
 
@@ -23,7 +23,7 @@ If you found a security problem, do not open a public issue: follow `SECURITY.md
 
 ## Help other people find it
 
-[Star OpenTodo on GitHub](https://github.com/pixari/opentodo). Stars are how many people discover open-source projects, so a star is a real help. Telling a friend who pays for a task app works too.
+[Star OpenTodo on GitHub](https://github.com/OpenTodoApp/OpenTodo). Stars are how many people discover open-source projects, so a star is a real help. Telling a friend who pays for a task app works too.
 
 ## Buy me a coffee
 

@@ -9,9 +9,9 @@ Plan your day, keep projects in order, set reminders and share lists with your f
 
 <p align="center">
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg"></a>
-  <a href="https://github.com/pixari/opentodo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/pixari/opentodo/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/pixari/opentodo/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/pixari/opentodo?include_prereleases&sort=semver"></a>
-  <a href="https://github.com/pixari/opentodo/pkgs/container/opentodo"><img alt="Container image" src="https://img.shields.io/badge/ghcr.io-pixari%2Fopentodo-2496ED?logo=docker&logoColor=white"></a>
+  <a href="https://github.com/OpenTodoApp/OpenTodo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/OpenTodoApp/OpenTodo/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/OpenTodoApp/OpenTodo/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/OpenTodoApp/OpenTodo?include_prereleases&sort=semver"></a>
+  <a href="https://github.com/OpenTodoApp/OpenTodo/pkgs/container/opentodo"><img alt="Container image" src="https://img.shields.io/badge/ghcr.io-opentodoapp%2Fopentodo-2496ED?logo=docker&logoColor=white"></a>
   <img alt="Docker image size" src="https://img.shields.io/badge/image-%3C%2025%20MB-success">
   <img alt="Spec-driven with OpenSpec" src="https://img.shields.io/badge/specs-OpenSpec-8A2BE2">
   <a href="https://www.opensourcealternatives.to"><img src="https://www.opensourcealternatives.to/badge-osa.svg" alt="Listed on Open Source Alternatives"></a>
@@ -40,12 +40,12 @@ Plan your day, keep projects in order, set reminders and share lists with your f
 - **On your machine or server:**
 
   ```bash
-  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:stable
+  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/opentodoapp/opentodo:stable
   ```
 
   Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Unraid, Compose and plain binaries are in [Quick start](#quick-start).
 
-Questions, ideas and bug reports are welcome in [issues](https://github.com/pixari/opentodo/issues). To talk to other people who use OpenTodo, [join the Discord server](https://discord.gg/Jmj7WuRQ).
+Questions, ideas and bug reports are welcome in [issues](https://github.com/OpenTodoApp/OpenTodo/issues). To talk to other people who use OpenTodo, [join the Discord server](https://discord.gg/Jmj7WuRQ).
 
 
 <p align="center">
@@ -74,7 +74,7 @@ Questions, ideas and bug reports are welcome in [issues](https://github.com/pixa
 
 ## Status
 
-OpenTodo is at **0.4**: every feature on the roadmap is in, covered by automated tests, but some integrations still need real-world testing (CalDAV with specific apps, single sign-on providers, real phones). If you try it, tell us how it went in the [call for testers](https://github.com/pixari/opentodo/issues/9).
+OpenTodo is at **0.4**: every feature on the roadmap is in, covered by automated tests, but some integrations still need real-world testing (CalDAV with specific apps, single sign-on providers, real phones). If you try it, tell us how it went in the [call for testers](https://github.com/OpenTodoApp/OpenTodo/issues/9).
 
 **How it's built:** every feature starts as a written spec ([OpenSpec](openspec/)), and much of the code was written with AI coding agents working from those specs. A strict CI checks every change: Go and web tests, spec validation, a phone-layout check in Chromium and WebKit, and accessibility checks. Everything is reviewed before it's merged, and the full history is public.
 
@@ -130,7 +130,7 @@ The highlights: the app in six languages, quick add in plain language, projects 
 - **Calendar apps (CalDAV)**: two-way sync with Apple Reminders, Thunderbird and Android tasks apps via DAVx⁵, with per-device app passwords. Off until the owner enables it. [CalDAV](docs/caldav.md)
 - **AI assistant in the app**: plan and change your tasks by talking (<kbd>Shift</kbd>+<kbd>I</kbd>), with Anthropic (Claude), OpenAI, Gemini or a model on your own network, using your own key. Off until the owner enables it; each person accepts what is sent first; every change is proposed for review and undone in one step; conversations stay on the device. [AI assistant](docs/assistant.md)
 - **AI assistants (MCP)**: a read-only Model Context Protocol endpoint so an assistant can answer "what is on my plate today?". Off until the owner enables it. [MCP](docs/mcp.md)
-- **Claude Code plugin**: `/plugin marketplace add pixari/opentodo-claude` connects Claude Code to your server with skills that use it safely. [Claude Code](docs/claude.md)
+- **Claude Code plugin**: `/plugin marketplace add OpenTodoApp/opentodo-claude` connects Claude Code to your server with skills that use it safely. [Claude Code](docs/claude.md)
 - **Webhooks** on task and project events for Home Assistant, n8n or a Telegram relay: signed, retried, logged, with private-network protection. [Webhooks](docs/webhooks.md)
 - **n8n nodes**: `n8n-nodes-opentodo` adds an OpenTodo node (tasks, projects, labels, comments; usable by n8n's AI Agent) and a trigger with a signed webhook it sets up itself. [n8n](docs/n8n.md)
 - **Import** the app's own export, CSV or other task managers' exports (Todoist, TickTick, Things, Linear, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders and Any.do), with a preview, duplicate detection and undo. [Import](docs/import.md)
@@ -168,7 +168,7 @@ No environment variable is required. Open the app, create the owner account, and
 
 ```bash
 docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
-  ghcr.io/pixari/opentodo:stable
+  ghcr.io/opentodoapp/opentodo:stable
 ```
 
 Open <http://localhost:8080> and create the owner account. On a server reachable from the internet, finish setup right after starting it, or set `OPENTODO_SETUP_CODE=required`. ([details](docs/self-hosting/docker.md#the-setup-code)). Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.6` follows the 0.6 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
@@ -176,8 +176,8 @@ Open <http://localhost:8080> and create the owner account. On a server reachable
 ### Docker Compose
 
 ```bash
-git clone https://github.com/pixari/opentodo.git
-cd opentodo
+git clone https://github.com/OpenTodoApp/OpenTodo.git
+cd OpenTodo
 cp .env.example .env          # optional, every value has a default
 docker compose up -d
 ```
@@ -186,7 +186,7 @@ Data is kept in the `opentodo-data` volume. On a server reachable from the inter
 
 ### Coolify
 
-1. **New Resource → Public Repository**, URL `https://github.com/pixari/opentodo`, build pack **Docker Compose**.
+1. **New Resource → Public Repository**, URL `https://github.com/OpenTodoApp/OpenTodo`, build pack **Docker Compose**.
 2. Assign a domain to the `opentodo` service; Coolify provisions HTTPS and passes the URL to the app.
 3. Deploy, open the domain, create the owner account.
 
@@ -194,7 +194,7 @@ Or paste the one-click template [`deploy/coolify/opentodo.yaml`](deploy/coolify/
 
 ### Unraid
 
-OpenTodo is in Community Applications: open **Apps**, search for **OpenTodo** and click **Install**, then open the WebUI and create the owner account. The template lives in [`pixari/opentodo-unraid`](https://github.com/pixari/opentodo-unraid), published from [`deploy/unraid/`](deploy/unraid/). Details: [docs/self-hosting/unraid.md](docs/self-hosting/unraid.md).
+OpenTodo is in Community Applications: open **Apps**, search for **OpenTodo** and click **Install**, then open the WebUI and create the owner account. The template lives in [`OpenTodoApp/opentodo-unraid`](https://github.com/OpenTodoApp/opentodo-unraid), published from [`deploy/unraid/`](deploy/unraid/). Details: [docs/self-hosting/unraid.md](docs/self-hosting/unraid.md).
 
 ### Other platforms
 
@@ -202,7 +202,7 @@ Templates for CapRover, CasaOS and ZimaOS, Cosmos Cloud, Dokploy, Easypanel, Fly
 
 ### Single binary
 
-Download `opentodo-<os>-<arch>` from the [latest release](https://github.com/pixari/opentodo/releases/latest) (Linux, macOS and Windows; check it with `SHA256SUMS`), or build it yourself:
+Download `opentodo-<os>-<arch>` from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) (Linux, macOS and Windows; check it with `SHA256SUMS`), or build it yourself:
 
 ```bash
 chmod +x opentodo-linux-amd64 && ./opentodo-linux-amd64   # serves on :8080, data in ./data
@@ -214,7 +214,7 @@ The binary is fully static (`CGO_ENABLED=0`, pure-Go SQLite) and also offers `op
 
 ### Command line client
 
-`ot` talks to any OpenTodo server over the REST API with a token it creates at login. It is a separate static binary (release assets for Linux, macOS and Windows, or `go install github.com/pixari/opentodo/cmd/ot@latest`) and is not part of the container image.
+`ot` talks to any OpenTodo server over the REST API with a token it creates at login. It is a separate static binary (release assets for Linux, macOS and Windows, or `go install github.com/OpenTodoApp/opentodo/cmd/ot@latest`) and is not part of the container image.
 
 ```bash
 ot login https://todo.example.com

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // fakeClock is the injectable clock used by scheduler tests.

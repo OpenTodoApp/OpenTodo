@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // opentodoProfile reads the app's own export (`GET /api/v1/export`). Records are

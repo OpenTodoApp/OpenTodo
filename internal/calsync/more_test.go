@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/calsync/calsynctest"
-	"github.com/pixari/opentodo/internal/config"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/calsync/calsynctest"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // fakeTokens is Google's token endpoint: it trades codes and refresh tokens

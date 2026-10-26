@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
 )
 
 // recordingSink checks, from inside the sink, that the batch is already visible.

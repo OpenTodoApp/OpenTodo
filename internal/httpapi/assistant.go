@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	"github.com/pixari/opentodo/internal/assistant"
-	"github.com/pixari/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/assistant"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
 )
 
 // In-app assistant (OpenSpec change `in-app-assistant`): the owner's settings

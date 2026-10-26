@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/pixari/opentodo/internal/deliveryq"
+	"github.com/OpenTodoApp/opentodo/internal/deliveryq"
 )
 
 // NextDue is the earliest queued delivery of an enabled webhook; ok is false

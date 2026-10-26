@@ -85,7 +85,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | Home Assistant add-on: OpenTodo on Home Assistant OS and Supervised, from its own add-on repository | `homeassistant-addon` |
-| n8n community nodes: tasks, projects, labels and comments, usable as an AI Agent tool, and a trigger with a signed webhook; separate repository `pixari/n8n-nodes-opentodo`, published to npm as `n8n-nodes-opentodo` | none (separate repository) |
+| n8n community nodes: tasks, projects, labels and comments, usable as an AI Agent tool, and a trigger with a signed webhook; separate repository `OpenTodoApp/n8n-nodes-opentodo`, published to npm as `n8n-nodes-opentodo` | none (separate repository) |
 | Notification channels: ntfy, Pushover, Gotify and a webhook for reminders and notifications (closes #271) | `notification-channels` |
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 | AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |
@@ -115,7 +115,7 @@ In this order. Each starts as an OpenSpec change under `openspec/changes/`. The 
 | 1 | **Shipped.** AI assistants can act through MCP: create, edit, complete, reschedule and move tasks, create projects and labels, comment | `mcp-write-tools` | Needs an `agent` token plus owner and user switches (both off by default). Every write goes through the op log, is attributed in history, audited, rate limited and reversible. No permanent deletion |
 | 2 | **Shipped.** `ot` as a dependable tool for agent harnesses | `agent-ready-cli` | Versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` required without a terminal, read-only mode, a shipped agent skill file. The CLI stays in this repository; no Homebrew or Scoop repositories for now |
 | 3 | **Shipped.** Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. End-to-end encrypted accounts run it on their own device with their own key when the owner allows it (`assistant-on-device`). Its own page, the composer tray and the change-set card: `assistant-surface` |
-| 4 | **Shipped.** A Claude Code plugin with an MCP agent skill | `claude-plugin` | Built in `deploy/claude-plugin/`, published to `pixari/opentodo-claude` after each release. Asks for the server address and an agent token; checks keep the skills in step with the MCP tools |
+| 4 | **Shipped.** A Claude Code plugin with an MCP agent skill | `claude-plugin` | Built in `deploy/claude-plugin/`, published to `OpenTodoApp/opentodo-claude` after each release. Asks for the server address and an agent token; checks keep the skills in step with the MCP tools |
 
 ## Next: Design refresh
 

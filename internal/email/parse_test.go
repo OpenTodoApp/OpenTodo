@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 func fixture(t *testing.T, name string) []byte {

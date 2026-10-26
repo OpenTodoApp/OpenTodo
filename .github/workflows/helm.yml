@@ -2,7 +2,7 @@ name: Helm chart
 
 # The Kubernetes chart in deploy/helm/opentodo (docs/self-hosting/kubernetes.md).
 # Pull requests that touch it: lint and render it. Release tags (v*, not release
-# candidates): publish it as an OCI artifact at oci://ghcr.io/pixari/charts/opentodo,
+# candidates): publish it as an OCI artifact at oci://ghcr.io/opentodoapp/charts/opentodo,
 # with the Artifact Hub metadata beside it. The chart's version and appVersion are the
 # release; node scripts/deploy-check.mjs keeps them on the latest release in CHANGELOG.md.
 on:
@@ -45,7 +45,7 @@ jobs:
       - run: node --test scripts/deploy/helm.test.mjs
 
   publish:
-    name: Publish to ghcr.io/pixari/charts
+    name: Publish to ghcr.io/opentodoapp/charts
     if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
     runs-on: ubuntu-latest
     # Waits up to 90 minutes for the release image (published only after every CI gate).
@@ -96,3 +96,14 @@ jobs:
           oras push "${registry}/opentodo:artifacthub.io" \
             --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
             artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
+      # After the move to OpenTodoApp (deploy/deploy.json `legacy`): the same chart also at
+      # oci://ghcr.io/pixari/charts/opentodo, which existing installs and Artifact Hub read,
+      # through the 0.16 releases. Uses the secret GHCR_LEGACY_TOKEN when it is set; a refused
+      # push is a warning.
+      - name: Also publish under the legacy name
+        env:
+          GHCR_LEGACY_TOKEN: ${{ secrets.GHCR_LEGACY_TOKEN }}
+        run: |
+          scripts/legacy-image.sh check "$VERSION" || exit 0
+          scripts/legacy-image.sh login
+          scripts/legacy-image.sh chart "dist/opentodo-${VERSION}.tgz" deploy/helm/artifacthub-repo.yml

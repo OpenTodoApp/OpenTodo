@@ -1,6 +1,6 @@
 package assistant
 
-import "github.com/pixari/opentodo/internal/agenttools"
+import "github.com/OpenTodoApp/opentodo/internal/agenttools"
 
 // The on-device assistant's manifest (OpenSpec change assistant-on-device, design
 // D8): everything the browser's loop needs from the server's assistant, built

@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	"github.com/pixari/opentodo/internal/auth"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Agent content routes (OpenSpec change `agent-ready-cli`, design D8).

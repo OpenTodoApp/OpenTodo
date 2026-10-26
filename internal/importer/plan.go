@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Row outcomes in a preview or job.

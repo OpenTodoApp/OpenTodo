@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 // events reads the log directly (bypassing the API) for one event name.

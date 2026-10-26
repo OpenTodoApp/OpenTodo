@@ -8,13 +8,13 @@ order: 26
 ---
 # Running OpenTodo on CasaOS and ZimaOS
 
-OpenTodo is one container with one data folder and no required settings. The app definition ([`docker-compose.yml`](https://github.com/pixari/opentodo/blob/main/deploy/casaos/docker-compose.yml)) fills in everything.
+OpenTodo is one container with one data folder and no required settings. The app definition ([`docker-compose.yml`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/casaos/docker-compose.yml)) fills in everything.
 
 ## Install
 
 OpenTodo has been submitted to the CasaOS / ZimaOS app store ([IceWhaleTech/CasaOS-AppStore#1104](https://github.com/IceWhaleTech/CasaOS-AppStore/pull/1104)) but is not listed there yet. Until it is, install it as a custom app:
 
-1. Download [`deploy/casaos/docker-compose.yml`](https://raw.githubusercontent.com/pixari/opentodo/main/deploy/casaos/docker-compose.yml).
+1. Download [`deploy/casaos/docker-compose.yml`](https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/casaos/docker-compose.yml).
 2. In the dashboard open the **App Store**, choose **Custom Install** (the **+** at the top right), then **Import** and pick the file (or paste its contents).
 3. Check the settings below and click **Install**.
 
@@ -33,7 +33,7 @@ Open OpenTodo from its icon on the dashboard (port 8418). The first visitor crea
 | `OPENTODO_ALLOW_SIGNUP` | `false` | `true` lets anyone who can reach the server create an account. |
 | `OPENTODO_TRUSTED_PROXIES` | empty | Proxies in front of your reverse proxy, such as `cloudflare`; set it only when every request comes through them. |
 
-Every other `OPENTODO_*` variable from the [configuration table](https://github.com/pixari/opentodo#configuration) can be added in the app's settings under **Environment variables**.
+Every other `OPENTODO_*` variable from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration) can be added in the app's settings under **Environment variables**.
 
 The app also has a small helper container, `opentodo-init`, that runs when the app is installed or started from the dashboard. Docker creates the data folder owned by root, and OpenTodo runs as user 65532, so the helper hands the folder to that user and exits. It shows as stopped; that is expected.
 
@@ -43,7 +43,7 @@ On the server's address (`http://192.168.1.10:8418`) tasks, projects, sync, shar
 
 ## Updates and backups
 
-The app store does not follow moving image tags: the app names one release (for example `ghcr.io/pixari/opentodo:0.14.2`), and the store offers an update once its entry moves to the next release (OpenTodo's maintainers send that change to the store after each release). Migrations run on start and there are no down-migrations, so back up first (see below). A custom install stays on the release it was installed with; to update it, edit the app, change the image tag to the new version and save.
+The app store does not follow moving image tags: the app names one release (for example `ghcr.io/opentodoapp/opentodo:0.14.2`), and the store offers an update once its entry moves to the next release (OpenTodo's maintainers send that change to the store after each release). Migrations run on start and there are no down-migrations, so back up first (see below). A custom install stays on the release it was installed with; to update it, edit the app, change the image tag to the new version and save.
 
 Back up `/DATA/AppData/opentodo/data` with your usual backup tool (stop the app first for a consistent copy), or turn on scheduled backups in **Settings → Server** (they are written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
 

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 // Microsoft To Do has no export of its own (OpenSpec change more-importers, D1):

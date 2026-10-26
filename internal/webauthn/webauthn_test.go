@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/webauthn"
-	"github.com/pixari/opentodo/internal/webauthn/testauth"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn/testauth"
 )
 
 var rp = webauthn.RelyingParty{ID: "todo.example.com", Origin: "https://todo.example.com"}

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/mail/smtptest"
+	"github.com/OpenTodoApp/opentodo/internal/mail/smtptest"
 )
 
 // TestMailedLinksNeedBaseURL: without OPENTODO_BASE_URL no access-granting link

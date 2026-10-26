@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {

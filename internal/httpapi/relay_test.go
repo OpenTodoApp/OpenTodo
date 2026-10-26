@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/relay"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/relay"
 )
 
 // Device relay through the real HTTP stack (OpenSpec change mcp-device-relay).

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // TestWithoutNextActionSharedVectors (open-loops-method D3): the digest's

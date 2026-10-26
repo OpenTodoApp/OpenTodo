@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 func TestValidateMemberChoice(t *testing.T) {

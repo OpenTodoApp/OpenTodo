@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // Defaults (design D3): OpenStreetMap data, OpenFreeMap vector tiles, Photon search.

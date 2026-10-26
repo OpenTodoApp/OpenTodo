@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Custom fields (OpenSpec change `custom-fields`, design D3). The op log stores

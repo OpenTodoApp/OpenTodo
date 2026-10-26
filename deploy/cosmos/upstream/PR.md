@@ -10,9 +10,9 @@ Add OpenTodo
 
 Adds **OpenTodo**, an open-source (AGPL-3.0), self-hosted, local-first task manager: projects, labels, due dates, reminders and sharing in the browser and as an installable app that works offline and syncs across devices.
 
-- Source: https://github.com/pixari/opentodo
+- Source: https://github.com/OpenTodoApp/OpenTodo
 - Website: https://open-todo.app
-- Image: `ghcr.io/pixari/opentodo:stable` (amd64, arm64), the tag the project's release workflow moves to each release (currently 0.11.0)
+- Image: `ghcr.io/opentodoapp/opentodo:stable` (amd64, arm64), the tag the project's release workflow moves to each release (currently 0.11.0)
 
 **What changed:** adds `servapps/OpenTodo/` only (`description.json`, `cosmos-compose.json`, `icon.png` 256×256, `screenshots/1.png` and `2.png`).
 

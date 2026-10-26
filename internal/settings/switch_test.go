@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 func TestSwitch(t *testing.T) {

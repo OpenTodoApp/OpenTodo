@@ -6,7 +6,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/pixari/opentodo/internal/demo"
+	"github.com/OpenTodoApp/opentodo/internal/demo"
 )
 
 // resetOnSignal is a no-op on Windows (no SIGUSR1); the nightly reset still runs.

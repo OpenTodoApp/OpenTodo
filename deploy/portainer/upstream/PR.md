@@ -12,9 +12,9 @@ Add OpenTodo (app source)
 New app source
 
 ### Summary
-Adds [OpenTodo](https://github.com/pixari/opentodo) as an `app` source. OpenTodo is an open-source (AGPL-3.0), self-hosted, local-first task manager: one container with SQLite, an embedded web app that works offline and syncs every device. The template lives in the OpenTodo repository on `main`, at https://raw.githubusercontent.com/pixari/opentodo/main/deploy/portainer/portainer-template.json, and holds one container template (no `id`):
+Adds [OpenTodo](https://github.com/OpenTodoApp/OpenTodo) as an `app` source. OpenTodo is an open-source (AGPL-3.0), self-hosted, local-first task manager: one container with SQLite, an embedded web app that works offline and syncs every device. The template lives in the OpenTodo repository on `main`, at https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/portainer/portainer-template.json, and holds one container template (no `id`):
 
-- official image `ghcr.io/pixari/opentodo:stable` (amd64 and arm64; `stable` is moved by every release), `unless-stopped`, port `8080:8080/tcp`, one new volume on `/data`;
+- official image `ghcr.io/opentodoapp/opentodo:stable` (amd64 and arm64; `stable` is moved by every release), `unless-stopped`, port `8080:8080/tcp`, one new volume on `/data`;
 - four optional, labelled variables with safe defaults (setup token, public https address, sign-up, trusted proxies). No secrets, no default passwords;
 - a note covering the port, the first visit creating the owner account (with the optional setup token), where the data lives, and what needs https.
 

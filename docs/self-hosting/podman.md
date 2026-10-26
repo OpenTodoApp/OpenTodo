@@ -8,14 +8,14 @@ order: 33
 ---
 # Running OpenTodo with Podman
 
-A Quadlet is a small systemd unit that Podman turns into a service. OpenTodo's has two files: [`opentodo.container`](https://github.com/pixari/opentodo/blob/main/deploy/podman/opentodo.container) (the container) and [`opentodo.volume`](https://github.com/pixari/opentodo/blob/main/deploy/podman/opentodo.volume) (its data). You need Podman 4.6 or later with systemd; check with `podman --version`. Fedora, RHEL 9.3 or later and its rebuilds, CentOS Stream 9, openSUSE Tumbleweed, Debian 13 and Ubuntu 24.04 ship a new enough Podman. Debian 12 and Ubuntu 22.04 do not.
+A Quadlet is a small systemd unit that Podman turns into a service. OpenTodo's has two files: [`opentodo.container`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/podman/opentodo.container) (the container) and [`opentodo.volume`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/podman/opentodo.volume) (its data). You need Podman 4.6 or later with systemd; check with `podman --version`. Fedora, RHEL 9.3 or later and its rebuilds, CentOS Stream 9, openSUSE Tumbleweed, Debian 13 and Ubuntu 24.04 ship a new enough Podman. Debian 12 and Ubuntu 22.04 do not.
 
 ## Install as root
 
 ```bash
 cd /etc/containers/systemd
-sudo curl -fsSLO https://raw.githubusercontent.com/pixari/opentodo/main/deploy/podman/opentodo.container
-sudo curl -fsSLO https://raw.githubusercontent.com/pixari/opentodo/main/deploy/podman/opentodo.volume
+sudo curl -fsSLO https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/podman/opentodo.container
+sudo curl -fsSLO https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/podman/opentodo.volume
 sudo systemctl daemon-reload
 sudo systemctl start opentodo
 ```
@@ -27,8 +27,8 @@ Create `/etc/containers/systemd` first if it does not exist. The service starts 
 ```bash
 mkdir -p ~/.config/containers/systemd
 cd ~/.config/containers/systemd
-curl -fsSLO https://raw.githubusercontent.com/pixari/opentodo/main/deploy/podman/opentodo.container
-curl -fsSLO https://raw.githubusercontent.com/pixari/opentodo/main/deploy/podman/opentodo.volume
+curl -fsSLO https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/podman/opentodo.container
+curl -fsSLO https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/podman/opentodo.volume
 systemctl --user daemon-reload
 systemctl --user start opentodo
 sudo loginctl enable-linger "$USER"
@@ -57,7 +57,7 @@ The settings are the `Environment=` lines in `opentodo.container`:
 | `OPENTODO_ALLOW_SIGNUP` | `false` | `true` lets anyone who can reach the server create an account. |
 | `OPENTODO_TRUSTED_PROXIES` | empty | Reverse proxies whose `X-Forwarded-For` is trusted, or `cloudflare`. Set it only when every request comes through them. |
 
-Add any other variable from the [configuration table](https://github.com/pixari/opentodo#configuration) as another `Environment=NAME=value` line. To use another host port, change the left side of `PublishPort=8080:8080`. After editing, run `systemctl daemon-reload` and `systemctl restart opentodo` (with `sudo`, or `--user` when rootless).
+Add any other variable from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration) as another `Environment=NAME=value` line. To use another host port, change the left side of `PublishPort=8080:8080`. After editing, run `systemctl daemon-reload` and `systemctl restart opentodo` (with `sudo`, or `--user` when rootless).
 
 ## https and reverse proxies
 
@@ -72,7 +72,7 @@ sudo systemctl enable --now podman-auto-update.timer        # as root
 systemctl --user enable --now podman-auto-update.timer      # rootless
 ```
 
-`podman auto-update --dry-run` shows what would change. Migrations run on start and there are no down-migrations, so keep backups. To stay on one release line, change the image to `ghcr.io/pixari/opentodo:0.13` (its fixes only) or pin one version, `0.14.2`.
+`podman auto-update --dry-run` shows what would change. Migrations run on start and there are no down-migrations, so keep backups. To stay on one release line, change the image to `ghcr.io/opentodoapp/opentodo:0.13` (its fixes only) or pin one version, `0.14.2`.
 
 Everything OpenTodo stores is in the volume `systemd-opentodo`; `podman volume inspect systemd-opentodo` shows where it is on disk. Turn on scheduled backups in OpenTodo's **Settings → Server** (written to `backups/` in the same volume, or to S3 or WebDAV), or stop the service and run `podman volume export systemd-opentodo --output opentodo-data.tar`. See [Backups](../backups.md).
 

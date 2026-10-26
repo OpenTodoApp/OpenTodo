@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // completionRange reads `completed_after` and `completed_before` of a list request

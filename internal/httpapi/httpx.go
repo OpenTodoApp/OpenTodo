@@ -1,6 +1,6 @@
 package httpapi
 
-import "github.com/pixari/opentodo/internal/httpapi/httpx"
+import "github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
 
 // The shared pieces of internal/httpapi/httpx under the short names the
 // handlers of this package use.

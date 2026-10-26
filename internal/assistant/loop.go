@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Loop limits (design D5).

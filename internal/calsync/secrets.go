@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // SecretsName is the secrets file of calendar sync: <data>/secrets/calendar-sync.json

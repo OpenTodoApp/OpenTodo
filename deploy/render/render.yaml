@@ -7,7 +7,7 @@ services:
     name: opentodo
     runtime: image
     image:
-      url: ghcr.io/pixari/opentodo:stable
+      url: ghcr.io/opentodoapp/opentodo:stable
     plan: 0.5c-512mb
     healthCheckPath: /healthz
     disk:

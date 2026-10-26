@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 func digestOf(b []byte) string {

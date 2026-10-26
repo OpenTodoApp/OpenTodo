@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // Entity id ownership (OpenSpec change entity-id-ownership, security finding

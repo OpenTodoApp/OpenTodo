@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 func ptr[T any](v T) *T { return &v }

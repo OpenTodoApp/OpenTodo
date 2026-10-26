@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // ---- helpers shared by the tests in this package ----

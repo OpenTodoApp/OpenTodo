@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 )
 
 // Project and section tools on MCP (OpenSpec change mcp-projects).

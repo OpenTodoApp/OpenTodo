@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // ownExportWithEntries is an own export holding 40 entries of the exporting
