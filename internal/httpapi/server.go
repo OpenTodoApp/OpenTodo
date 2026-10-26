@@ -352,3 +352,24 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func writeError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})
 }
+
+// writeErrorWith is writeError with more fields in the error object (the
+// field a message is about, when a quota resets, ...).
+func writeErrorWith(w http.ResponseWriter, status int, code, message string, more map[string]any) {
+	e := map[string]any{"code": code, "message": message}
+	for k, v := range more {
+		e[k] = v
+	}
+	writeJSON(w, status, map[string]any{"error": e})
+}
+
+// writeFieldError answers 400 invalid_input naming the field it is about, so
+// the editor shows the message beside it.
+func writeFieldError(w http.ResponseWriter, field, msg string) {
+	invalidField(w, field, field+": "+msg)
+}
+
+// invalidField is writeFieldError with a message that already names the field.
+func invalidField(w http.ResponseWriter, field, msg string) {
+	writeErrorWith(w, http.StatusBadRequest, "invalid_input", msg, map[string]any{"field": field})
+}

@@ -22,10 +22,6 @@ func liftDeadlines(w http.ResponseWriter) {
 	_ = rc.SetWriteDeadline(time.Time{})
 }
 
-func invalidField(w http.ResponseWriter, field, msg string) {
-	writeJSON(w, http.StatusBadRequest, map[string]any{"error": map[string]string{"code": "invalid_input", "message": msg, "field": field}})
-}
-
 // restoreError maps backup errors to the documented codes.
 func (s *Server) restoreError(w http.ResponseWriter, err error) {
 	var de *backup.DestinationError

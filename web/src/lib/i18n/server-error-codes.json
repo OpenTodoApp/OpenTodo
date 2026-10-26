@@ -6,6 +6,7 @@
   "already_uploaded",
   "assistant_busy",
   "assistant_disabled",
+  "assistant_quota",
   "attachment_mismatch",
   "attachment_too_large",
   "attachments_disabled",

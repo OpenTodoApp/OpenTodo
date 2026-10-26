@@ -67,12 +67,6 @@ func (s *Server) issuesGate(next http.HandlerFunc) http.HandlerFunc {
 	return switchGate(s.issuesOn, "issues_disabled", "the server owner has not enabled issue connections")(next)
 }
 
-// writeFieldError answers 400 invalid_input naming the field it is about, so
-// the editor shows the message beside it.
-func writeFieldError(w http.ResponseWriter, field, msg string) {
-	writeJSON(w, http.StatusBadRequest, map[string]any{"error": map[string]string{"code": "invalid_input", "message": field + ": " + msg, "field": field}})
-}
-
 // withTokenSet fills token_set from the tokens file.
 func (s *Server) withTokenSet(list []issues.Connection) ([]issues.Connection, error) {
 	ids := make([]string, len(list))

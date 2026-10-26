@@ -214,24 +214,10 @@ func (s *Server) handleDeleteComment(w http.ResponseWriter, r *http.Request) {
 func (s *Server) writeComment(w http.ResponseWriter, r *http.Request, id string, body map[string]json.RawMessage, status int) {
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
-	res, err := s.sync.ApplyStrict(ctx, uid, fieldOps("comment", id, body, s.opTS()))
-	if err != nil {
-		var rej *opsync.RejectedError
-		switch {
-		case writeLimited(w, err):
-		case errors.Is(err, opsync.ErrInvalidOp):
-			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
-		case errors.As(err, &rej) && rej.Reason == opsync.ReasonRateLimited:
-			writeError(w, http.StatusTooManyRequests, "rate_limited", "too many comments, try again in a minute")
-		case errors.As(err, &rej):
-			writeError(w, http.StatusForbidden, "forbidden", "only the author can edit a comment; the author, project admins and the owner can delete it")
-		default:
-			s.internal(w, err)
-		}
+	if _, ok := s.applyREST(w, ctx, uid, fieldOps("comment", id, body, s.opTS()),
+		"only the author can edit a comment; the author, project admins and the owner can delete it",
+		refusals{opsync.ReasonRateLimited: refuse(http.StatusTooManyRequests, "rate_limited", "too many comments, try again in a minute")}); !ok {
 		return
-	}
-	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, serverDevice)
 	}
 	if status == http.StatusNoContent {
 		w.WriteHeader(status)
