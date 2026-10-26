@@ -127,6 +127,18 @@ describe('the side panel', () => {
     await r.unmount()
   })
 
+  it('the panel body holds its absolutely placed descendants, so a long task never scrolls the page (GitHub issue 395)', async () => {
+    const { a, r } = await list({ view: 'today' })
+    await click(row('Order the tiles').querySelector('[data-row-open]')!)
+    await waitFor(() => docked() === a, 'the task docked')
+    // The scroll container must be their containing block: a static one let screen-reader
+    // labels far down a long task hang below the window and add a second, page-wide scroll.
+    const body = document.querySelector<HTMLElement>('[data-detail-variant="panel"] [data-panel-body]')!
+    expect(body.className).toMatch(/\boverflow-y-auto\b/)
+    expect(body.className).toMatch(/\brelative\b/)
+    await r.unmount()
+  })
+
   it('a click on a title shows the task instead of editing it in place', async () => {
     const { b, r } = await list({ view: 'today' })
     await click(row('Call the plumber').querySelector('[data-row-open]')!)
