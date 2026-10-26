@@ -1,0 +1,14 @@
+{
+  "description": "A locked encrypted account: counts only, no rows.",
+  "method": "publishWidget",
+  "payload": "{\"updatedAt\":1792670400000,\"locked\":true,\"count\":3,\"overdue\":1,\"tasks\":[]}",
+  "now": 1792670400000,
+  "expect": {
+    "updatedAt": 1792670400000,
+    "locked": true,
+    "count": 3,
+    "overdue": 1,
+    "rows": [],
+    "more": 3
+  }
+}

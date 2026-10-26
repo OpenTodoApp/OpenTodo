@@ -77,7 +77,7 @@ class TodayWidget : AppWidgetProvider() {
 class QuickAddWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val v = RemoteViews(context.packageName, R.layout.widget_quick_add)
-        v.setOnClickPendingIntent(R.id.quick_add, WidgetStore.open(context, "/?add=", 200))
+        v.setOnClickPendingIntent(R.id.quick_add, WidgetStore.open(context, ReminderSchedule.QUICK_ADD_PATH, 200))
         manager.updateAppWidget(ids, v)
     }
 }
