@@ -14,8 +14,21 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/pixari/opentodo/internal/timetrack"
+)
+
+// The limits on a query (OpenSpec change filter-limits), the same as
+// MAX_QUERY_LENGTH and MAX_NESTING in web/src/lib/filter/parse.ts. Each "(" and
+// "!" opens one level; the parser recurses once per level, so without the depth
+// limit a long run of "(" exhausts the goroutine stack, which is fatal to the
+// whole process (recover cannot catch it).
+const (
+	// MaxQueryLength is the longest query in characters (Unicode code points).
+	MaxQueryLength = 4096
+	// MaxNesting is the deepest nesting of "(" and "!".
+	MaxNesting = 64
 )
 
 // SyntaxError is a rejected query: a message naming a 1-based position and the
@@ -237,9 +250,19 @@ var (
 )
 
 type parser struct {
-	toks []token
-	i    int
-	end  int
+	toks  []token
+	i     int
+	end   int
+	depth int // open "(" and "!" levels
+}
+
+// enter opens one nesting level at t, refusing one beyond MaxNesting.
+func (p *parser) enter(t *token) error {
+	p.depth++
+	if p.depth > MaxNesting {
+		return fail(t.pos, `Too deeply nested at position %d; use at most %d levels of "(" and "!"`, t.pos+1, MaxNesting)
+	}
+	return nil
 }
 
 func (p *parser) peek() *token {
@@ -301,9 +324,17 @@ func (p *parser) parseNot(prev *token) error {
 	switch t.typ {
 	case tNot:
 		p.i++
+		if err := p.enter(t); err != nil {
+			return err
+		}
+		defer func() { p.depth-- }()
 		return p.parseNot(t)
 	case tLParen:
 		p.i++
+		if err := p.enter(t); err != nil {
+			return err
+		}
+		defer func() { p.depth-- }()
 		if err := p.parseOr(t); err != nil {
 			return err
 		}
@@ -477,8 +508,12 @@ func validISO(s string) bool {
 
 // Parse checks a query against the grammar. It returns nil for a valid query and
 // for an empty (whitespace-only) one; callers that need a non-empty query check
-// that themselves. Errors are *SyntaxError.
+// that themselves. Errors are *SyntaxError. A query longer than MaxQueryLength or
+// nested deeper than MaxNesting is refused.
 func Parse(query string) error {
+	if n := utf8.RuneCountInString(query); n > MaxQueryLength {
+		return fail(MaxQueryLength, "Query is too long: %d characters, at most %d", n, MaxQueryLength)
+	}
 	src := []rune(query)
 	toks, err := tokenize(src)
 	if err != nil {

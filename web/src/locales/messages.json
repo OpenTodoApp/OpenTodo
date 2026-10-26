@@ -9750,6 +9750,9 @@
   "QR code to scan with your authenticator app": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Query is too long: {count} characters, at most {max}": [
+    "web/src/lib/filter/parse.ts"
+  ],
   "Question": [
     "web/src/app/task-detail/ReactionBar.tsx"
   ],
@@ -13971,6 +13974,9 @@
   ],
   "Tomorrow your Daily check starts with: “{note}”": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "Too deeply nested at position {pos}; use at most {max} levels of \"(\" and \"!\"": [
+    "web/src/lib/filter/parse.ts"
   ],
   "Too large: files may be at most {max} on this server.": [
     "web/src/lib/share.ts"

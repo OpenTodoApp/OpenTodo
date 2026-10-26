@@ -4,6 +4,12 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+- **A saved view can no longer take the server down.** A signed-in person, including a visitor of a public demo, could save a view with a specially crafted filter query that crashed the server while checking it, stopping it for everyone (on a hosted server, for every tenant). Filter queries are now limited to 4,096 characters and 64 levels of parentheses and `!`, in the app and on the server; a longer or deeper query is refused with a message like any other mistake in a query. Queries people write, and every query the filter builder makes, are far below both limits. Found in an internal audit. ([Filters](docs/filters.md))
+- **Importing a Things database can no longer tie up the server.** A specially prepared file uploaded for a Things import could make the server compute values while reading it, keeping a processor busy or using a lot of memory for each preview. The importer now refuses a file whose Things tables compute their values (Things' own databases never do) and any value over 1 MB, before or while reading it; real Things databases import as before. Found in an internal audit. ([Import](docs/import.md#things-database-things-db))
+- **An import can no longer reach another account's attached file.** Importing a ZIP export that named the id of a file attached in someone else's account could link that file into the importing account, letting it be downloaded there. An import now stores each file itself and refuses one whose id already belongs to a stored file the importing account does not have; the row is listed among the import's errors. Found in an internal audit. ([Import](docs/import.md))
+
 ### Added
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))

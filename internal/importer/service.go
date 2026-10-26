@@ -394,8 +394,22 @@ func (s *Service) storeFiles(ctx context.Context, uid string, job *Job, batch []
 			refuse(c, "attachment file not imported: it would go over your attachments total")
 			continue
 		}
-		err := s.blobs.Write(c.id, bytes.NewReader(c.file), blobs.Spec{Size: size, SHA256: digest})
-		if err != nil && !errors.Is(err, blobs.ErrExists) {
+		spec := blobs.Spec{Size: size, SHA256: digest}
+		err := s.blobs.Write(c.id, bytes.NewReader(c.file), spec)
+		if errors.Is(err, blobs.ErrExists) {
+			// A file is already stored under this id. Only the importing account's
+			// own uploaded attachment with these very bytes may be relinked: any
+			// other file with this id belongs to someone else (security audit M2).
+			mine, ownErr := s.ownStoredFile(ctx, uid, c.id, spec)
+			if ownErr != nil {
+				return nil, nil, ownErr
+			}
+			if !mine {
+				s.log.Warn("import: attachment id names a file the account does not own", "id", c.id)
+				refuse(c, "attachment file not imported: another file with this id is stored on this server")
+				continue
+			}
+		} else if err != nil {
 			s.log.Warn("import: attachment file", "id", c.id, "err", err)
 			refuse(c, "attachment file not imported: "+err.Error())
 			continue
@@ -407,6 +421,30 @@ func (s *Service) storeFiles(ctx context.Context, uid string, job *Job, batch []
 		out = append(out, c)
 	}
 	return out, stored, nil
+}
+
+// ownStoredFile reports whether the file already stored under id may serve an
+// imported attachment of uid: uid sees an attachment row with that id whose file
+// the server stored (uploaded_at set, by device server only), the row's size and
+// digest are want, and so are the stored bytes. A row only another account sees,
+// or one created without the server storing its file, never qualifies.
+func (s *Service) ownStoredFile(ctx context.Context, uid, id string, want blobs.Spec) (bool, error) {
+	row, err := s.sync.Get(ctx, uid, KindAttachment, id)
+	if err != nil {
+		return false, err
+	}
+	if row == nil || isNull(row["uploaded_at"]) || str(row, "sha256") != want.SHA256 {
+		return false, nil
+	}
+	var size int64
+	if json.Unmarshal(row["size"], &size) != nil || size != want.Size {
+		return false, nil
+	}
+	ok, err := s.blobs.Matches(id, want)
+	if errors.Is(err, blobs.ErrNotFound) {
+		return false, nil
+	}
+	return ok, err
 }
 
 func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []change, tl *tally) error {
