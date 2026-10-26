@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, ConfirmDialog, Field, HUES, hueFor, Icon, Input, ListRow, MenuItem, Notice, Select, SettingRow, SettingsSection, Switch, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
-import { refreshEvents } from '../lib/calendarFeeds'
+import { refreshAfterChange } from '../lib/calendarFeeds'
 import { cachedCalendarSubscriptions } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
@@ -268,7 +268,7 @@ export function CalendarFeedsPanel({ isOwner }: { isOwner: boolean }) {
     return list.some((x) => x.id === s.id) ? list.map((x) => (x.id === s.id ? s : x)) : [...list, s]
   })
   // Day and Week read the device cache: refresh it after every change.
-  const changed = () => void refreshEvents()
+  const changed = () => void refreshAfterChange()
 
   return (
     <CalendarFeedsView isOwner={isOwner} enabled={enabled} connected={connected} encrypted={encrypted}

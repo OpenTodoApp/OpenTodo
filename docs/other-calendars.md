@@ -37,7 +37,7 @@ Each calendar's row shows when it was last refreshed. When fetches fail, the row
 - Events never count toward the day's planned total here; only the [Plan](calendar-views.md#plan-the-next-two-weeks) counts busy ones, overlaps once.
 - Events can't be dragged, resized or completed. Tab onto an event and press Enter, or click it, to see its time, location and calendar.
 
-The **Calendars** button in the calendar's toolbar hides or shows events on this device only. Your choice is kept when you reload.
+The **Calendars** button in the toolbar hides or shows events on this device. Today can list them too: [Calendar events in Today](calendar-events-in-today.md).
 
 Events are cached on each device, so Day and Week still show them offline, as of the last refresh. The toolbar then says **Calendars as of** and the time. Weeks your device has not loaded yet show no events while you're offline.
 

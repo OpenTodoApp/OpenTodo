@@ -186,6 +186,7 @@
       "theme_accent",
       "theme_mode",
       "time_format",
+      "today_events",
       "week_start",
       "welcome"
     ],

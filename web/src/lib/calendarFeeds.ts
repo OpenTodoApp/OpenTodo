@@ -3,7 +3,7 @@
 // Week show, kept in Dexie for offline use, refreshed when stale, on reconnect
 // and when the server says the calendars changed.
 import { api } from './api'
-import { addDaysISO, daysBetweenISO } from './dates'
+import { addDaysISO, daysBetweenISO, logicalToday } from './dates'
 import { db, getMeta, setMeta } from './db'
 
 const WINDOW_KEY = 'calendar.events.window'
@@ -78,6 +78,15 @@ export async function refreshEvents(range?: DayRange): Promise<boolean> {
     }
   })()
   return inflight
+}
+
+/**
+ * After the user changed their subscriptions (Settings): refresh the cached window, or
+ * today when the device has none yet, so Today learns about a first calendar (today-agenda D3).
+ */
+export async function refreshAfterChange(): Promise<boolean> {
+  const today = logicalToday()
+  return refreshEvents((await cachedWindow()) ? undefined : { from: today, to: today })
 }
 
 /** Make sure the cache holds a fresh copy of the range (Day and Week call this on navigation). */
