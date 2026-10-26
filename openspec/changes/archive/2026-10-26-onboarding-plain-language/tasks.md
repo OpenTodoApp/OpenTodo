@@ -22,4 +22,4 @@
 
 - [x] 4.1 Add a CHANGELOG.md entry under Unreleased ("Plainer words in the start guide and How you work", Fixes #433). Verify: `npm run docs:check`.
 - [x] 4.2 Run `make check` and `make openspec-validate`. Verify: both pass.
-- [ ] 4.3 After the PR is merged, reply on issue #433 with a short, friendly note: which words changed, a before/after of the three choices, and the release they land in. Then close the issue. Verify: `gh issue view 433 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
+- [x] 4.3 After the PR is merged, reply on issue #433 with a short, friendly note: which words changed, a before/after of the three choices, and the release they land in. Then close the issue. Verify: `gh issue view 433 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
