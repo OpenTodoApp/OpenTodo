@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // CalDAV request costs (OpenSpec change `server-query-costs`): the view is

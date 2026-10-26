@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { configVariables, loadFacts, readText, ROOT } from './common.mjs'
-import { ADDON, check, checkVersion, UPSTREAM } from './homeassistant.mjs'
+import { ADDON, check, checkDockerfile, checkVersion, UPSTREAM } from './homeassistant.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
@@ -45,13 +45,13 @@ test('homeassistant: the version follows the release', () => {
   const next = { ...ctx, changelog: '## [9.9.0] - 2099-01-01\n' + ctx.changelog }
   const errors = variant({}, next)
   has(errors, /version must be 9\.9\.0/)
-  has(errors, /image must be ghcr\.io\/pixari\/opentodo:9\.9\.0/)
+  has(errors, /image must be ghcr\.io\/opentodoapp\/opentodo:9\.9\.0/)
   has(config(`version: "${v}"`, `version: "${v}.1"`), /needs a "## .*\.1" entry/)
   has(config(`version: "${v}"`, `version: ${v}`.replace(/\.\d+$/, '')), /version must be a quoted string|version must be/)
 })
 
 test('homeassistant: config.yaml rules', () => {
-  has(config('image: ghcr.io/pixari/opentodo-homeassistant', 'image: ghcr.io/pixari/opentodo'), /image must be ghcr\.io\/pixari\/opentodo-homeassistant/)
+  has(config('image: ghcr.io/opentodoapp/opentodo-homeassistant', 'image: ghcr.io/opentodoapp/opentodo'), /image must be ghcr\.io\/opentodoapp\/opentodo-homeassistant/)
   has(config('  - aarch64\n', ''), /arch must be aarch64 and amd64/)
   has(config('init: false', 'init: true'), /init must be false/)
   has(config('backup: cold', 'backup: hot'), /backup must be cold/)
@@ -77,7 +77,14 @@ test('homeassistant: the image and the start script', () => {
   has(edit('Dockerfile', 'FROM ghcr.io/home-assistant/base:', 'FROM alpine:'), /FROM ghcr\.io\/home-assistant\/base/)
   has(edit('Dockerfile', 'OPENTODO_DATA_DIR=/data', 'OPENTODO_DATA_DIR=/data/opentodo'), /mounted on \/data/)
   has(edit('Dockerfile', '"healthcheck"]', '"version"]'), /HEALTHCHECK must run/)
-  has(edit('Dockerfile', 'FROM ghcr.io/pixari/opentodo:${OPENTODO_VERSION} AS opentodo', 'FROM ghcr.io/pixari/opentodo:stable AS opentodo'), /needs FROM ghcr\.io\/pixari\/opentodo:\$\{OPENTODO_VERSION\}/)
+  const from = /^FROM \S+:\$\{OPENTODO_VERSION\} AS opentodo$/m.exec(readText(`${ADDON}/Dockerfile`))[0]
+  has(edit('Dockerfile', from, from.replace('${OPENTODO_VERSION}', 'stable')), /needs FROM ghcr\.io\/\S+\/opentodo:\$\{OPENTODO_VERSION\}/)
+  // Releases up to deploy.json legacy.lastRelease were only published under the legacy name.
+  const dockerfile = (version, image) => readText(`${ADDON}/Dockerfile`).replace(/^ARG OPENTODO_VERSION=.*$/m, `ARG OPENTODO_VERSION=${version}`).replace(from, `FROM ${image}:\${OPENTODO_VERSION} AS opentodo`)
+  assert.deepEqual(checkDockerfile(dockerfile(facts.legacy.lastRelease, facts.legacy.image), ctx).errors, [])
+  has(checkDockerfile(dockerfile(facts.legacy.lastRelease, facts.image), ctx).errors, /needs FROM ghcr\.io\/pixari\/opentodo:/)
+  assert.deepEqual(checkDockerfile(dockerfile('99.0.0', facts.image), ctx).errors, [])
+  has(checkDockerfile(dockerfile('99.0.0', facts.legacy.image), ctx).errors, /needs FROM ghcr\.io\/opentodoapp\/opentodo:/)
   has(edit('run.sh', 'export OPENTODO_TRUSTED_PROXIES=', 'export TRUSTED_PROXIES='), /does not export OPENTODO_TRUSTED_PROXIES/)
   has(edit('run.sh', 'option base_url', 'option url'), /does not read the option base_url/)
 })
@@ -86,5 +93,5 @@ test('homeassistant: the repository files', () => {
   has(variant({ [`${UPSTREAM}/opentodo/apparmor.txt`]: null }), /apparmor\.txt is missing/)
   has(variant({ [`${UPSTREAM}/notes.txt`]: 'x' }), /notes\.txt is not part of the add-on repository/)
   has(variant({ [`${UPSTREAM}/opentodo/icon.png`]: 'not a png' }), /icon\.png must be a 128x128 PNG/)
-  has(edit('../repository.yaml', 'url: https://github.com/pixari/opentodo-homeassistant-addons', 'url: https://example.com'), /repository\.yaml: url must be/)
+  has(edit('../repository.yaml', 'url: https://github.com/OpenTodoApp/opentodo-homeassistant-addons', 'url: https://example.com'), /repository\.yaml: url must be/)
 })

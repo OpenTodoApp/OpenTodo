@@ -743,6 +743,23 @@ jobs:
         run: |
           image=$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')
           cosign sign --yes "${image}@${DIGEST}"
+      # After the move to OpenTodoApp (deploy/deploy.json `legacy`): the same image, with the same
+      # tags and its own signature, also as ghcr.io/pixari/opentodo, which existing installs pull,
+      # through the 0.16 releases. Uses the secret GHCR_LEGACY_TOKEN when it is set; a refused push
+      # is a warning and never fails the release (docs/self-hosting/docker.md#the-move-to-opentodoapp).
+      - name: Also publish under the legacy name
+        env:
+          GHCR_LEGACY_TOKEN: ${{ secrets.GHCR_LEGACY_TOKEN }}
+          IMAGE: ghcr.io/${{ github.repository }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          scripts/legacy-image.sh check || exit 0
+          scripts/legacy-image.sh login
+          image=$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')
+          # The metadata step lists full references, one per line; keep their tags.
+          mapfile -t tags < <(printf '%s\n' "$TAGS" | sed -n 's/^.*://p')
+          scripts/legacy-image.sh image "${image}@${DIGEST}" "${tags[@]}" --sign
 
   # One job publishes the GitHub release for a v* tag, after everything it ships
   # has built and every gate passed: server and `ot` binaries for every platform,
@@ -794,7 +811,7 @@ jobs:
 
   # The Claude Code plugin marketplace (OpenSpec change claude-plugin): after the
   # release, deploy/claude-plugin/upstream/ of the tag becomes the content of
-  # pixari/opentodo-claude, committed and tagged with the version. The deploy key in
+  # OpenTodoApp/opentodo-claude, committed and tagged with the version. The deploy key in
   # CLAUDE_PLUGIN_DEPLOY_KEY may write to that one repository only. Without it (a fork,
   # or before the owner adds it) the job prints the manual steps and succeeds: the
   # release never depends on it.
@@ -808,14 +825,14 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Publish to pixari/opentodo-claude
+      - name: Publish to OpenTodoApp/opentodo-claude
         env:
           DEPLOY_KEY: ${{ secrets.CLAUDE_PLUGIN_DEPLOY_KEY }}
         run: |
           version="${GITHUB_REF_NAME#v}"
           if [ -z "$DEPLOY_KEY" ]; then
             echo "::notice::CLAUDE_PLUGIN_DEPLOY_KEY is not set; publish the plugin by hand (deploy/claude-plugin/README.md):"
-            echo "  git clone git@github.com:pixari/opentodo-claude.git /tmp/opentodo-claude"
+            echo "  git clone git@github.com:OpenTodoApp/opentodo-claude.git /tmp/opentodo-claude"
             echo "  rsync -a --delete --exclude .git deploy/claude-plugin/upstream/ /tmp/opentodo-claude/"
             echo "  cd /tmp/opentodo-claude && git add -A && git commit -m 'OpenTodo $version' && git tag v$version && git push origin HEAD --tags"
             exit 0
@@ -823,7 +840,7 @@ jobs:
           install -m 600 /dev/null "$RUNNER_TEMP/deploy_key"
           printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/deploy_key"
           export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
-          git clone --depth 1 git@github.com:pixari/opentodo-claude.git "$RUNNER_TEMP/plugin"
+          git clone --depth 1 git@github.com:OpenTodoApp/opentodo-claude.git "$RUNNER_TEMP/plugin"
           rsync -a --delete --exclude .git deploy/claude-plugin/upstream/ "$RUNNER_TEMP/plugin/"
           cd "$RUNNER_TEMP/plugin"
           git config user.name "github-actions[bot]"

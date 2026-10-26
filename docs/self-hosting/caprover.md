@@ -16,7 +16,7 @@ OpenTodo is not in CapRover's one-click list yet. Until it is, paste it as a tem
 
 1. In the CapRover dashboard, open **Apps → One-Click Apps/Databases**.
 2. At the end of the list, choose **>> TEMPLATE <<**.
-3. Paste the content of [`opentodo.yml`](https://raw.githubusercontent.com/pixari/opentodo/main/deploy/caprover/opentodo.yml) and click **Next**.
+3. Paste the content of [`opentodo.yml`](https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/caprover/opentodo.yml) and click **Next**.
 4. Give the app a name, for example `todo`, check the fields below and click **Deploy**.
 
 When it is done, CapRover shows a message with the address and the setup token. Copy the token.
@@ -29,13 +29,13 @@ Open `http://<app name>.<your root domain>`. The first visitor creates the owner
 
 | Field | Default | What it does |
 | --- | --- | --- |
-| OpenTodo version | the latest release, for example `0.14.2` | The image tag of `ghcr.io/pixari/opentodo`. |
+| OpenTodo version | the latest release, for example `0.14.2` | The image tag of `ghcr.io/opentodoapp/opentodo`. |
 | Base URL | empty | The https address people open. Leave it empty until https is on (see below). |
 | Setup token | generated, 32 characters | Asked for when the owner account is created, so a stranger cannot claim a new server first. |
 | Open sign-up | `false` | `true` lets anyone who can reach the server create an account. |
 | Trusted proxies | empty | Set it to `cloudflare` when the domain is proxied by Cloudflare. CapRover's own proxy needs nothing here. |
 
-The fields become environment variables of the app. Change them later under **App Configs → Environmental Variables** and click **Save & Update**. Other `OPENTODO_*` variables from the [configuration table](https://github.com/pixari/opentodo#configuration) can be added there too.
+The fields become environment variables of the app. Change them later under **App Configs → Environmental Variables** and click **Save & Update**. Other `OPENTODO_*` variables from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration) can be added there too.
 
 ## https and the base URL
 
@@ -63,7 +63,7 @@ chown -R 65532:65532 /path/on/the/server
 
 ## Updates and backups
 
-The version field picks one release, and CapRover never updates an installed app by itself. To update, open the app's **Deployment** tab and, under **Deploy via ImageName**, enter the new version, for example `ghcr.io/pixari/opentodo:0.14.2`, then deploy. CapRover pulls the image you name each time you deploy, so entering `ghcr.io/pixari/opentodo:stable` instead gets the current release whenever you deploy it again. Migrations run on start. There are no down-migrations, so back up first. Releases are listed on [GitHub](https://github.com/pixari/opentodo/releases).
+The version field picks one release, and CapRover never updates an installed app by itself. To update, open the app's **Deployment** tab and, under **Deploy via ImageName**, enter the new version, for example `ghcr.io/opentodoapp/opentodo:0.14.2`, then deploy. CapRover pulls the image you name each time you deploy, so entering `ghcr.io/opentodoapp/opentodo:stable` instead gets the current release whenever you deploy it again. Migrations run on start. There are no down-migrations, so back up first. Releases are listed on [GitHub](https://github.com/OpenTodoApp/OpenTodo/releases).
 
 Back up the volume folder above with your server's backups, or turn on scheduled backups in OpenTodo's **Settings → Server** (they are written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
 

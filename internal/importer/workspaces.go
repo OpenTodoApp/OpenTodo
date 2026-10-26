@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Workspaces in the own export (OpenSpec change workspaces, data-import

@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { run } from '../deploy-check.mjs'
-import { checkFacts, checkPublishesTag, checkShared, configVariables, loadFacts, readText, ROOT } from './common.mjs'
+import { checkFacts, checkPublishesTag, checkShared, compareVersions, configVariables, imageFor, loadFacts, readText, ROOT } from './common.mjs'
+import { pinnedRefs } from './pin.mjs'
 import { checkTemplate as checkUnraid, checkUpstream, PROFILE, TEMPLATE } from './unraid.mjs'
 
 const facts = loadFacts()
@@ -27,6 +28,29 @@ test('every catalogue variable is read by the server', () => {
   has(checkFacts({ variables: [{ name: 'OPENTODO_NOPE', default: '', description: 'x' }] }, configVars), /does not read/)
 })
 
+test('releases before the move to OpenTodoApp keep their legacy image name', () => {
+  assert.equal(facts.legacy.image, 'ghcr.io/pixari/opentodo')
+  assert.equal(compareVersions('0.14.2', '0.14.2'), 0)
+  assert.equal(compareVersions('0.14.10', '0.14.2'), 1)
+  assert.equal(compareVersions('0.9.0', '0.14.2'), -1)
+  assert.equal(compareVersions('0.16.3', '0.16'), 0)
+  assert.equal(compareVersions('0.17.0', '0.16'), 1)
+  assert.equal(imageFor(facts, facts.legacy.lastRelease), facts.legacy.image)
+  assert.equal(imageFor(facts, '0.6.0'), facts.legacy.image)
+  assert.equal(imageFor(facts, '99.0.0'), facts.image)
+  assert.equal(imageFor({ image: 'x' }, '0.1.0'), 'x')
+  // pin.mjs finds a pinned reference under either name.
+  const dir = mkdtempSync(join(tmpdir(), 'pin-'))
+  try {
+    mkdirSync(join(dir, 'deploy'))
+    const d = 'a'.repeat(64)
+    writeFileSync(join(dir, 'deploy/a.yml'), `image: ${facts.legacy.image}:0.14.2@sha256:${d}\nimage: ${facts.image}:0.15.0@sha256:${d}\nimage: ghcr.io/other/x:1.0.0@sha256:${d}\n`)
+    assert.deepEqual(pinnedRefs(dir, facts).map((r) => r.version), ['0.14.2', '0.15.0'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('the committed templates pass', async () => {
   for (const r of await run()) assert.deepEqual(r.errors, [], r.name)
 })
@@ -40,8 +64,8 @@ test('shared rules: tag, port, data, variables', () => {
   })
   assert.deepEqual(checkShared(ok(), ctx), [])
   // Every template names the stable tag (OpenSpec stable-image-tag): not latest (main), not a release line.
-  has(checkShared({ ...ok(), image: `${facts.image}:latest` }, ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(checkShared({ ...ok(), image: `${facts.image}:0.6` }, ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(checkShared({ ...ok(), image: `${facts.image}:latest` }, ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(checkShared({ ...ok(), image: `${facts.image}:0.6` }, ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(checkShared({ ...ok(), port: 3000 }, ctx), /port must be 8080/)
   has(checkShared({ ...ok(), dataTarget: '/config' }, ctx), /mounted on \/data/)
   const unknown = ok(); unknown.variables.set('OPENTODO_NOPE', { default: '', required: false })
@@ -65,7 +89,7 @@ test('unraid: path, port, required, shell, description', () => {
   has(checkUnraid(unraid.replace(/(Target="OPENTODO_SESSION_DAYS" Default="90" Mode="" Description=")[^"]*/, '$1Something else'), ctx), /must be the catalogue's/)
   has(checkUnraid(unraid.replace('opentodo:stable', 'opentodo:0.6'), ctx), /image must be .*:stable/)
   has(checkUnraid(unraid.replace('<Privileged>false', '<Privileged>true'), ctx), /Privileged/)
-  has(checkUnraid(unraid.replace('pixari/opentodo-unraid/main/templates', 'pixari/opentodo/main/deploy/unraid'), ctx), /TemplateURL/)
+  has(checkUnraid(unraid.replace('OpenTodoApp/opentodo-unraid/main/templates', 'OpenTodoApp/OpenTodo/main/deploy/unraid'), ctx), /TemplateURL/)
 })
 
 test('unraid: the template repository copy', () => {

@@ -15,8 +15,8 @@ import type { User } from '../lib/types'
 import { setWelcomeSeen, welcomeSeen } from '../lib/userPrefs'
 import { act } from './actionError'
 
-export const ISSUES_URL = 'https://github.com/pixari/opentodo/issues'
-export const REPO_URL = 'https://github.com/pixari/opentodo'
+export const ISSUES_URL = 'https://github.com/OpenTodoApp/OpenTodo/issues'
+export const REPO_URL = 'https://github.com/OpenTodoApp/OpenTodo'
 export const COFFEE_URL = 'https://buymeacoffee.com/pixari'
 /** The OpenTodo Discord server (OpenSpec change discord-community): a plain link, nothing is loaded from Discord. */
 export const DISCORD_URL = 'https://discord.gg/Jmj7WuRQ'

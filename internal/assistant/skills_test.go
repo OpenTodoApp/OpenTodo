@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 )
 
 func skill(t *testing.T, id string) *agenttools.Skill {

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // jobsRetry is how often a server that does not run the background jobs checks

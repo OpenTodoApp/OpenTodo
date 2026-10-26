@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/origin"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Imported origins (OpenSpec change task-origin, data-import "Linear attributes"

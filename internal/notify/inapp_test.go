@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 func TestInAppSweepKeepsUnreadAndRecent(t *testing.T) {

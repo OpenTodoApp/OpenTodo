@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Workspace routes (OpenSpec change workspaces, design D9). Reads need any

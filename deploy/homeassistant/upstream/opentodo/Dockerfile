@@ -1,7 +1,8 @@
 # https://contributors.home-assistant.io/apps/guides/dockerfile/
 # OpenTodo is a static Go binary; its own image is distroless (no shell). The add-on copies the
 # binary from the released image onto the Home Assistant base image, whose s6 init and bashio
-# turn the add-on options into OPENTODO_* variables (run.sh).
+# turn the add-on options into OPENTODO_* variables (run.sh). Releases up to 0.14.2 come from
+# ghcr.io/pixari/opentodo, later ones from ghcr.io/opentodoapp/opentodo (scripts/bump.sh).
 ARG OPENTODO_VERSION=0.14.2
 FROM ghcr.io/pixari/opentodo:${OPENTODO_VERSION} AS opentodo
 
@@ -20,5 +21,5 @@ CMD ["/run.sh"]
 LABEL \
     org.opencontainers.image.title="Home Assistant App: OpenTodo" \
     org.opencontainers.image.description="Open-source, local-first task manager." \
-    org.opencontainers.image.source="https://github.com/pixari/opentodo-homeassistant-addons" \
+    org.opencontainers.image.source="https://github.com/OpenTodoApp/opentodo-homeassistant-addons" \
     org.opencontainers.image.licenses="AGPL-3.0-only"

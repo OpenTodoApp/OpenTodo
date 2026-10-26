@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/httpapi/maproutes"
-	"github.com/pixari/opentodo/internal/maps"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/maproutes"
+	"github.com/OpenTodoApp/opentodo/internal/maps"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // fakeMapProvider is a stand-in for OpenFreeMap and Photon (no real network).

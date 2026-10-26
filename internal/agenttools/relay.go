@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/relay"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/relay"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Content through an opted-in device (OpenSpec change mcp-device-relay, design

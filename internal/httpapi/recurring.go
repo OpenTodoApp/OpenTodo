@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // REST behaviour of recurring tasks (OpenSpec change recurring-tasks, design D5).

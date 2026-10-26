@@ -7,10 +7,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/oidc"
-	"github.com/pixari/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/oidc"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // ---- single sign-on (OpenSpec change `oidc-login`) ----

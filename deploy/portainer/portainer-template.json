@@ -5,13 +5,13 @@
       "type": 1,
       "title": "OpenTodo",
       "name": "opentodo",
-      "description": "Open-source, local-first task manager. Works offline and syncs every device from one small container. Source: https://github.com/pixari/opentodo",
+      "description": "Open-source, local-first task manager. Works offline and syncs every device from one small container. Source: https://github.com/OpenTodoApp/OpenTodo",
       "categories": [
         "Productivity"
       ],
       "platform": "linux",
-      "logo": "https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png",
-      "image": "ghcr.io/pixari/opentodo:stable",
+      "logo": "https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/web/public/pwa-512.png",
+      "image": "ghcr.io/opentodoapp/opentodo:stable",
       "restart_policy": "unless-stopped",
       "ports": [
         "8080:8080/tcp"

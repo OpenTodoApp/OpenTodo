@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // keyRecord builds a well-formed record body: random-looking wrapped material

@@ -5,9 +5,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/config"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/tenant"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/tenant"
 )
 
 // TestTenantWorkspaceLimits: the operator's host-wide workspace limits apply

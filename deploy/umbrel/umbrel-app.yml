@@ -46,8 +46,8 @@ releaseNotes: ""
 developer: OpenTodo
 website: https://open-todo.app
 dependencies: []
-repo: https://github.com/pixari/opentodo
-support: https://github.com/pixari/opentodo/issues
+repo: https://github.com/OpenTodoApp/OpenTodo
+support: https://github.com/OpenTodoApp/OpenTodo/issues
 
 port: 8418
 gallery: []

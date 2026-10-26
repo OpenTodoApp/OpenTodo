@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // TestResetOwnerPasswordCommand runs `opentodo reset-owner-password` against a

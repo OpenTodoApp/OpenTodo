@@ -26,7 +26,7 @@ order: 41
 3. **Add the plugin** in Claude Code:
 
    ```
-   /plugin marketplace add pixari/opentodo-claude
+   /plugin marketplace add OpenTodoApp/opentodo-claude
    /plugin install opentodo@opentodo
    ```
 

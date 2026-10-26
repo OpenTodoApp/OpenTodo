@@ -52,12 +52,15 @@ test('umbrel: the manifest parser reads folded text, lists of maps and quotes, a
 test('umbrel: image pinned by release tag and digest, equal to the manifest version', () => {
   // The committed digest, whatever scripts/deploy/pin.mjs last wrote.
   const digest = /@sha256:([0-9a-f]{64})/.exec(compose)[1]
+  // 0.14.2 was published before the move to OpenTodoApp, so it stays pinned under the legacy name.
   has(variant(both('docker-compose.yml', compose.replace(`0.14.2@sha256:${digest}`, 'stable'))), /image must be ghcr\.io\/pixari\/opentodo:0\.14\.2@sha256/)
+  has(variant(both('docker-compose.yml', compose.replaceAll('ghcr.io/pixari/opentodo:', 'ghcr.io/opentodoapp/opentodo:'))), /image must be ghcr\.io\/pixari\/opentodo:0\.14\.2@sha256/)
   has(variant(both('docker-compose.yml', compose.replace(`@sha256:${digest}`, ''))), /image must be .*@sha256:<index digest>/)
   has(variant(both('umbrel-app.yml', manifest.replace('version: "0.14.2"', 'version: "0.6.0"'))), /manifest version 0\.6\.0 must equal the image tag 0\.14\.2/)
   // A new release makes the pinned package stale until the version, tag and digest are bumped.
   const next = { ...ctx, changelog: '## [0.15.1] - 2026-12-20\n' + ctx.changelog }
-  has(variant({}, next), /image must be ghcr\.io\/pixari\/opentodo:0\.15\.1@sha256/)
+  // A release after the move to OpenTodoApp is pinned under the new name (the digest is per repository).
+  has(variant({}, next), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.15\.1@sha256/)
 })
 
 test('umbrel: manifest rules', () => {

@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/backup"
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // fakePushService is a push endpoint that decrypts what it receives with the

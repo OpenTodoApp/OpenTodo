@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/origin"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // DevicePrefix marks the ops a connection's polls write: issues:<connection-id>.

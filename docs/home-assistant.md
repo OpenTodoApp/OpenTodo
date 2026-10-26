@@ -9,7 +9,7 @@ order: 32
 ---
 # Home Assistant
 
-The [OpenTodo integration for Home Assistant](https://github.com/pixari/opentodo-homeassistant) shows your OpenTodo lists as Home Assistant to-do lists, counts what is due, puts dated tasks on a calendar and fires an event when a task changes. Automations can then react to your tasks, and you can add and tick off tasks from a dashboard, a script or by voice.
+The [OpenTodo integration for Home Assistant](https://github.com/OpenTodoApp/opentodo-homeassistant) shows your OpenTodo lists as Home Assistant to-do lists, counts what is due, puts dated tasks on a calendar and fires an event when a task changes. Automations can then react to your tasks, and you can add and tick off tasks from a dashboard, a script or by voice.
 
 It talks only to your own OpenTodo server, through the [HTTP API](api.md) with one token, and needs no change on the server. It runs in Home Assistant 2026.3 or later against OpenTodo 0.12 or later.
 
@@ -17,7 +17,7 @@ It talks only to your own OpenTodo server, through the [HTTP API](api.md) with o
 
 The integration is installed through [HACS](https://hacs.xyz) as a custom repository:
 
-1. In HACS, open the menu (⋮), choose **Custom repositories**, enter `https://github.com/pixari/opentodo-homeassistant` and pick the type **Integration**.
+1. In HACS, open the menu (⋮), choose **Custom repositories**, enter `https://github.com/OpenTodoApp/opentodo-homeassistant` and pick the type **Integration**.
 2. Search HACS for **OpenTodo**, open it and choose **Download**.
 3. Restart Home Assistant.
 
@@ -177,4 +177,4 @@ actions:
 - In a shared project where you are a viewer, changes are refused with OpenTodo's message.
 - Projects kept away from AI assistants are not hidden: the integration uses an ordinary Full access token.
 
-To run OpenTodo itself inside Home Assistant OS, see [Running as a Home Assistant add-on](self-hosting/home-assistant-addon.md), which is a separate project. Problems with the integration go to its [issue tracker](https://github.com/pixari/opentodo-homeassistant/issues).
+To run OpenTodo itself inside Home Assistant OS, see [Running as a Home Assistant add-on](self-hosting/home-assistant-addon.md), which is a separate project. Problems with the integration go to its [issue tracker](https://github.com/OpenTodoApp/opentodo-homeassistant/issues).

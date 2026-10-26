@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 )
 
 // Planning vocabulary in the fixed instructions and the skills (OpenSpec change

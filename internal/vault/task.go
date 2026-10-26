@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/recurrence"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // taskFields are the projections the merge compares, each a string so that

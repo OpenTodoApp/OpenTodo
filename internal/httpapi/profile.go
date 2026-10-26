@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/mail"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
 )
 
 // Profile routes (OpenSpec change settings-refresh, design D10): every user

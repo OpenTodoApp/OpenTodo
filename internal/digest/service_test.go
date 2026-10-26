@@ -14,13 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/mail"
-	"github.com/pixari/opentodo/internal/mail/smtptest"
-	"github.com/pixari/opentodo/internal/settings"
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
+	"github.com/OpenTodoApp/opentodo/internal/mail/smtptest"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // flaky is a real SMTP transport to the in-process sink that can be "down".

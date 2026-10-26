@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/pixari/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
 )
 
 // In-app notifications (OpenSpec change `task-assignment`, design D4). Both

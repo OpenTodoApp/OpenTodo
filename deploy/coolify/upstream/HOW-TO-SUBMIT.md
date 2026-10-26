@@ -16,7 +16,7 @@ The rules below were taken from Coolify's `CONTRIBUTING.md`, `.github/pull_reque
 
 ## 0. Before you start: eligibility
 
-- **1,000 GitHub stars.** The docs page says: "The service repository must have at least 1,000 GitHub stars before it can be added to Coolify as a one-click service." On 12 October 2026 `pixari/opentodo` had 2. Until it reaches 1,000, a PR will most likely be closed. Users can still deploy the template by pasting it (step 1), and you can post it in the [service template requests](https://github.com/coollabsio/coolify/discussions/categories/service-template-requests) discussion so others can upvote it.
+- **1,000 GitHub stars.** The docs page says: "The service repository must have at least 1,000 GitHub stars before it can be added to Coolify as a one-click service." On 12 October 2026 `OpenTodoApp/OpenTodo` had 2. Until it reaches 1,000, a PR will most likely be closed. Users can still deploy the template by pasting it (step 1), and you can post it in the [service template requests](https://github.com/coollabsio/coolify/discussions/categories/service-template-requests) discussion so others can upvote it.
 - Coolify's PR quality check closes PRs automatically when, among other things, the GitHub account is younger than 30 days, the profile is mostly empty, "Allow edits by maintainers" is off, the title is not a conventional commit, the description is longer than 2,500 characters or contains "Generated with Claude Code", or the PR touches `templates/service-templates.json` or `templates/service-templates-latest.json`.
 - One PR = one logical change: the template and its logo only.
 
@@ -96,4 +96,4 @@ Open the PR on GitHub (so the template is filled in), against `coollabsio/coolif
 ## 5. After it is merged
 
 - Nothing to regenerate. Coolify's maintainers rebuild the template index and publish it to their CDN.
-- New OpenTodo releases need no PR: the template names `ghcr.io/pixari/opentodo:stable`, which every release moves (release candidates never do), and **Deploy** pulls it. If Coolify's reviewers ask for a versioned tag instead, that needs a Coolify-only exception to the shared image rule (`scripts/deploy/common.mjs`).
+- New OpenTodo releases need no PR: the template names `ghcr.io/opentodoapp/opentodo:stable`, which every release moves (release candidates never do), and **Deploy** pulls it. If Coolify's reviewers ask for a versioned tag instead, that needs a Coolify-only exception to the shared image rule (`scripts/deploy/common.mjs`).

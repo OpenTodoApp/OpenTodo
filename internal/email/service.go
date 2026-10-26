@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/config"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Service bundles the per-user inbox settings, the message processor and,

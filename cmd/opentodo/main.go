@@ -29,12 +29,12 @@ import (
 	// and zoned due values (absolute-datetimes) are validated by zone name.
 	_ "time/tzdata"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/backup"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/demo"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/demo"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".

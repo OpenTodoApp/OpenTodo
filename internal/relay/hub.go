@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Limits of the relay (design D4-D6). Tests may lower the deadlines.

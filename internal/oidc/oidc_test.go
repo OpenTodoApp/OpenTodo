@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/oidc"
-	"github.com/pixari/opentodo/internal/oidc/oidctest"
-	"github.com/pixari/opentodo/internal/settings"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/oidc"
+	"github.com/OpenTodoApp/opentodo/internal/oidc/oidctest"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 func baseClaims(p *oidctest.Provider, now time.Time) map[string]any {

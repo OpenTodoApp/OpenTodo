@@ -20,9 +20,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/settings"
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
 // SettingKey is the owner settings key (JSON value in the settings table).

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 // AccessSetting names the per-user switch in settings.changed audit events.

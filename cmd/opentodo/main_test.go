@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // TestMFAResetSubcommand runs `opentodo mfa-reset` against a temporary data

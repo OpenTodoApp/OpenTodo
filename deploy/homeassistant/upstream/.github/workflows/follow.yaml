@@ -31,7 +31,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          latest="$(gh api repos/pixari/opentodo/releases/latest --jq .tag_name)"
+          latest="$(gh api repos/OpenTodoApp/OpenTodo/releases/latest --jq .tag_name)"
           latest="${latest#v}"
           current="$(sed -n 's/^ARG OPENTODO_VERSION=//p' opentodo/Dockerfile)"
           echo "OpenTodo ${latest}, add-on runs ${current}"
@@ -40,7 +40,7 @@ jobs:
             echo "Nothing to do."
             exit 0
           fi
-          docker manifest inspect "ghcr.io/pixari/opentodo:${latest}" > /dev/null
+          docker manifest inspect "ghcr.io/opentodoapp/opentodo:${latest}" > /dev/null
           scripts/bump.sh "${latest}"
           branch="follow/${latest}"
           git config user.name "github-actions[bot]"

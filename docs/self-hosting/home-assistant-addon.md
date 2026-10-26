@@ -8,7 +8,7 @@ order: 38
 ---
 # Running OpenTodo as a Home Assistant add-on
 
-On Home Assistant OS or a Supervised installation, OpenTodo runs as an add-on (Home Assistant now calls add-ons apps) on the same machine. It comes from OpenTodo's own add-on repository, [`pixari/opentodo-homeassistant-addons`](https://github.com/pixari/opentodo-homeassistant-addons), published from [`deploy/homeassistant/upstream/`](https://github.com/pixari/opentodo/tree/main/deploy/homeassistant/upstream). Images are built for amd64 and aarch64 (a Raspberry Pi 4 or 5, Home Assistant Green and Yellow).
+On Home Assistant OS or a Supervised installation, OpenTodo runs as an add-on (Home Assistant now calls add-ons apps) on the same machine. It comes from OpenTodo's own add-on repository, [`OpenTodoApp/opentodo-homeassistant-addons`](https://github.com/OpenTodoApp/opentodo-homeassistant-addons), published from [`deploy/homeassistant/upstream/`](https://github.com/OpenTodoApp/OpenTodo/tree/main/deploy/homeassistant/upstream). Images are built for amd64 and aarch64 (a Raspberry Pi 4 or 5, Home Assistant Green and Yellow).
 
 To see and change your tasks in Home Assistant itself (to-do lists, automations), add the OpenTodo integration too: see [Home Assistant](../home-assistant.md).
 
@@ -17,7 +17,7 @@ To see and change your tasks in Home Assistant itself (to-do lists, automations)
 ## Install
 
 1. In Home Assistant, open **Settings → Apps → App store** (**Settings → Add-ons → Add-on store** on older versions).
-2. In the menu (⋮) choose **Repositories**, add `https://github.com/pixari/opentodo-homeassistant-addons` and close the dialog.
+2. In the menu (⋮) choose **Repositories**, add `https://github.com/OpenTodoApp/opentodo-homeassistant-addons` and close the dialog.
 3. Find **OpenTodo**, click **Install**, then **Start**.
 4. Click **Open Web UI**. OpenTodo opens on port 8080 of your Home Assistant machine, for example `http://homeassistant.local:8080`.
 

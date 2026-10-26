@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/activity"
+	"github.com/OpenTodoApp/opentodo/internal/activity"
 )
 
 // ActivityOps returns the operations the activity log of one task or project is

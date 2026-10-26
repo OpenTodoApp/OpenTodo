@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/outbound"
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/OpenTodoApp/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
 // SendTimeout bounds one request to a channel.

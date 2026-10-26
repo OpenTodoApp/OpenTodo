@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // A custom field value change (custom-fields) is a task.updated event whose

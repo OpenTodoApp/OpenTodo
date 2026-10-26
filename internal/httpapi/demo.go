@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/demo"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/demo"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // registerDemoRoutes adds the sandbox route on a demo instance only. It is

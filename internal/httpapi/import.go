@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/importer"
+	"github.com/OpenTodoApp/opentodo/internal/importer"
 )
 
 // ---- handlers: import (OpenSpec `data-import`) ----

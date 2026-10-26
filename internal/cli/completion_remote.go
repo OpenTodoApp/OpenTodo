@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // completionTimeout bounds every network read of a Tab press (design D3).

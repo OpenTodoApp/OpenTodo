@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Time-based one-time passwords (RFC 6238) with the standard library only

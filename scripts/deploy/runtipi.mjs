@@ -1,5 +1,5 @@
 // Runtipi app (deploy/runtipi/), OpenSpec change platform-catalogs. Runtipi's official app store no
-// longer takes new apps, so OpenTodo has its own store, the repository pixari/opentodo-runtipi
+// longer takes new apps, so OpenTodo has its own store, the repository OpenTodoApp/opentodo-runtipi
 // (made from runtipi/example-appstore), whose content is deploy/runtipi/upstream/ file for file.
 // The app is apps/opentodo/: config.json, a native docker-compose.yml (x-runtipi schema 2) and
 // metadata/. Policy 'release': Runtipi offers an update when config.json changes, so the image

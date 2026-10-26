@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/oidc"
-	"github.com/pixari/opentodo/internal/oidc/oidctest"
-	"github.com/pixari/opentodo/internal/settings"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant/services"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/oidc"
+	"github.com/OpenTodoApp/opentodo/internal/oidc/oidctest"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
 // oidcEnv is a server wired to an in-process provider, with the controllable

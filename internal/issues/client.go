@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	ob "github.com/pixari/opentodo/internal/outbound"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // Request limits (spec "Request limits", design D2).

@@ -48,8 +48,8 @@ describe('link rewriting', () => {
     const site = renderPage(md, ctx, 'site').html
     expect(site).toContain('<a href="/docs/filters/#saved-views">Filters</a>')
     expect(site).toContain('<a href="/docs/self-hosting/docker/">Docker</a>')
-    expect(site).toContain('<a href="https://github.com/pixari/opentodo/blob/main/README.md#configuration" rel="noopener">Readme</a>')
-    expect(site).toContain('href="https://github.com/pixari/opentodo/tree/main/extension"')
+    expect(site).toContain('<a href="https://github.com/OpenTodoApp/OpenTodo/blob/main/README.md#configuration" rel="noopener">Readme</a>')
+    expect(site).toContain('href="https://github.com/OpenTodoApp/OpenTodo/tree/main/extension"')
     expect(site).toContain('<a href="https://example.com" rel="noopener">web</a>')
     const app = renderPage(md, ctx, 'app').html
     expect(app).toContain('<a href="/docs/filters/#saved-views" data-doc="filters">Filters</a>')

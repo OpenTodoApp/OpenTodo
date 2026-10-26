@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")

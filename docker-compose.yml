@@ -16,7 +16,7 @@
 
 services:
   opentodo:
-    image: ghcr.io/pixari/opentodo:stable
+    image: ghcr.io/opentodoapp/opentodo:stable
     restart: unless-stopped
     environment:
       # Coolify magic variables (ignored by plain docker compose). An OPENTODO_BASE_URL

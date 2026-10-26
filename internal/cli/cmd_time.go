@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/quickadd"
-	"github.com/pixari/opentodo/internal/timetrack"
+	"github.com/OpenTodoApp/opentodo/internal/quickadd"
+	"github.com/OpenTodoApp/opentodo/internal/timetrack"
 )
 
 // Time commands (OpenSpec change `time-tracking`, design D11): start, stop,

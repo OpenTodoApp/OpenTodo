@@ -10,13 +10,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/blobs"
-	"github.com/pixari/opentodo/internal/importer"
-	"github.com/pixari/opentodo/internal/maps"
-	"github.com/pixari/opentodo/internal/oidc"
-	ob "github.com/pixari/opentodo/internal/outbound"
-	"github.com/pixari/opentodo/internal/settings"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/blobs"
+	"github.com/OpenTodoApp/opentodo/internal/importer"
+	"github.com/OpenTodoApp/opentodo/internal/maps"
+	"github.com/OpenTodoApp/opentodo/internal/oidc"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // The keys of the owner switches httpapi serves (settings.Switch).

@@ -7,7 +7,7 @@ import (
 	"math"
 	"net/http"
 
-	"github.com/pixari/opentodo/internal/activity"
+	"github.com/OpenTodoApp/opentodo/internal/activity"
 )
 
 // handleFeed serves GET /api/v1/activity (OpenSpec change `activity-feed`,

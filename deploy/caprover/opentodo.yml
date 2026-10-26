@@ -1,7 +1,7 @@
 captainVersion: 4
 services:
     $$cap_appname:
-        image: ghcr.io/pixari/opentodo:$$cap_opentodo_version
+        image: ghcr.io/opentodoapp/opentodo:$$cap_opentodo_version
         environment:
             OPENTODO_BASE_URL: $$cap_opentodo_base_url
             OPENTODO_SETUP_TOKEN: $$cap_opentodo_setup_token
@@ -16,7 +16,7 @@ caproverOneClickApp:
         - id: $$cap_opentodo_version
           label: OpenTodo version
           defaultValue: '0.14.2'
-          description: The image tag of ghcr.io/pixari/opentodo. Releases are listed at https://github.com/pixari/opentodo/releases
+          description: The image tag of ghcr.io/opentodoapp/opentodo. Releases are listed at https://github.com/OpenTodoApp/OpenTodo/releases
           validRegex: /^[0-9]+\.[0-9]+(\.[0-9]+)?$/
         - id: $$cap_opentodo_base_url
           label: Base URL

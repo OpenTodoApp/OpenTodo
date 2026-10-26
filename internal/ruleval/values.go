@@ -15,7 +15,7 @@ import (
 	"slices"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/origin"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
 )
 
 // Bounds of the values (spec "Rule validation").

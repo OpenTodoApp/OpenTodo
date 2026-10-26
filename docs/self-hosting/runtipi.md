@@ -8,12 +8,12 @@ order: 31
 ---
 # Running OpenTodo on Runtipi
 
-Runtipi's own app store no longer takes new apps, so OpenTodo has its own app store for Runtipi: [`pixari/opentodo-runtipi`](https://github.com/pixari/opentodo-runtipi), published from [`deploy/runtipi/upstream/`](https://github.com/pixari/opentodo/tree/main/deploy/runtipi/upstream). It holds one app, OpenTodo, with no required settings. Runtipi 4.7.0 or newer is needed.
+Runtipi's own app store no longer takes new apps, so OpenTodo has its own app store for Runtipi: [`OpenTodoApp/opentodo-runtipi`](https://github.com/OpenTodoApp/opentodo-runtipi), published from [`deploy/runtipi/upstream/`](https://github.com/OpenTodoApp/OpenTodo/tree/main/deploy/runtipi/upstream). It holds one app, OpenTodo, with no required settings. Runtipi 4.7.0 or newer is needed.
 
 ## Install
 
 1. In Runtipi, open **Settings**, then **App Stores → Add App Store**.
-2. Paste `https://github.com/pixari/opentodo-runtipi` and give it a name, for example `opentodo`.
+2. Paste `https://github.com/OpenTodoApp/opentodo-runtipi` and give it a name, for example `opentodo`.
 3. Open the app store, choose **OpenTodo** and click **Install**. Leave the settings empty unless you need one (below).
 
 Open OpenTodo from its page in Runtipi (by default on port 8400). There is no default password: the first person to open it creates the owner account, so open it right after installing. After that, sign-up is closed and the owner invites people.
@@ -35,7 +35,7 @@ On a plain http address (`http://192.168.1.10:8400`) tasks, projects, sync, shar
 
 ## Updates
 
-The app names one release (`ghcr.io/pixari/opentodo:0.14.2`), not a moving tag. After each release the store repository gets an update with the new version; Runtipi shows it on the app once it refreshes its app stores (**Settings → Update App Stores** does it right away). Click **Update**; migrations run on start. There are no down-migrations, so back up first. Release candidates are never offered.
+The app names one release (`ghcr.io/opentodoapp/opentodo:0.14.2`), not a moving tag. After each release the store repository gets an update with the new version; Runtipi shows it on the app once it refreshes its app stores (**Settings → Update App Stores** does it right away). Click **Update**; migrations run on start. There are no down-migrations, so back up first. Release candidates are never offered.
 
 ## Data and backups
 

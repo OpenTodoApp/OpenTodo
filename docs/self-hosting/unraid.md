@@ -8,7 +8,7 @@ order: 21
 ---
 # Running OpenTodo on Unraid
 
-OpenTodo is one container with one appdata folder and no required settings. The template ([`opentodo.xml`](https://github.com/pixari/opentodo-unraid/blob/main/templates/opentodo.xml) in OpenTodo's [template repository](https://github.com/pixari/opentodo-unraid)) fills in everything.
+OpenTodo is one container with one appdata folder and no required settings. The template ([`opentodo.xml`](https://github.com/OpenTodoApp/opentodo-unraid/blob/main/templates/opentodo.xml) in OpenTodo's [template repository](https://github.com/OpenTodoApp/opentodo-unraid)) fills in everything.
 
 ## Install
 
@@ -18,7 +18,7 @@ Without the Apps tab (Community Applications not installed), add the template by
 
 ```bash
 wget -O /boot/config/plugins/dockerMan/templates-user/my-OpenTodo.xml \
-  https://raw.githubusercontent.com/pixari/opentodo-unraid/main/templates/opentodo.xml
+  https://raw.githubusercontent.com/OpenTodoApp/opentodo-unraid/main/templates/opentodo.xml
 ```
 
 Then open **Docker → Add Container**, choose **OpenTodo** under *User templates* and continue as above.
@@ -34,7 +34,7 @@ Open the **WebUI** from the container's menu. The first visitor creates the owne
 | Base URL | empty | Leave empty when you open OpenTodo by the server's address. Behind a reverse proxy, set the https address people open, for example `https://todo.example.com`. |
 | Setup token | empty | Optional, 16+ characters. Set it when the server is reachable from the internet, so a stranger cannot create the owner account first. |
 
-Under **Show more settings**: open sign-up, trusted proxies, push notifications, session length, trash retention, the largest import and the log level. Every other `OPENTODO_*` variable from the [configuration table](https://github.com/pixari/opentodo#configuration) can be added with **Add another Path, Port, Variable…**.
+Under **Show more settings**: open sign-up, trusted proxies, push notifications, session length, trash retention, the largest import and the log level. Every other `OPENTODO_*` variable from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration) can be added with **Add another Path, Port, Variable…**.
 
 ## Permissions
 
@@ -70,7 +70,7 @@ Open OpenTodo at that address from every device on your tailnet. Installing the 
 
 ## Updates and backups
 
-The template uses the `stable` image, which every release moves: **Check for Updates** in the Docker tab shows each new release, **Update** installs it, and migrations run on start. There are no down-migrations, so back up the appdata folder first (see below). To stay on one release line and take only its fixes, change **Repository** to `ghcr.io/pixari/opentodo:0.6` (or pin one version, `0.6.1`) in the container's settings.
+The template uses the `stable` image, which every release moves: **Check for Updates** in the Docker tab shows each new release, **Update** installs it, and migrations run on start. There are no down-migrations, so back up the appdata folder first (see below). To stay on one release line and take only its fixes, change **Repository** to `ghcr.io/opentodoapp/opentodo:0.6` (or pin one version, `0.6.1`) in the container's settings.
 
 Back up `/mnt/user/appdata/opentodo` with the Appdata Backup plugin, or turn on scheduled backups in **Settings → Server** (they are written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
 

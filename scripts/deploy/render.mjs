@@ -15,7 +15,7 @@ export const BLUEPRINT = 'deploy/render/render.yaml'
 export const DOCS = 'docs/self-hosting/render.md'
 export const README = 'deploy/render/README.md'
 /** The button target: Render's deploy URL with the repository and the Blueprint path in it. */
-export const BUTTON_URL = 'https://render.com/deploy?repo=https://github.com/pixari/opentodo&path=deploy/render/render.yaml'
+export const BUTTON_URL = 'https://render.com/deploy?repo=https://github.com/OpenTodoApp/OpenTodo&path=deploy/render/render.yaml'
 
 /** Every field of a web/worker/pserv service in render.yaml.json (serverService). */
 export const SCHEMA_SERVICE_FIELDS = [

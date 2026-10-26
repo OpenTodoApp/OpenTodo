@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/notify"
-	"github.com/pixari/opentodo/internal/ruleval"
-	"github.com/pixari/opentodo/internal/settings"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/timetrack"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/timetrack"
 )
 
 // DevicePrefix marks the batches a rule writes: rule:<rule-id> (design D5).

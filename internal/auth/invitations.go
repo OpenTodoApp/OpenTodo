@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Invitation expiry bounds (OpenSpec `invitations`): one hour to 30 days, default seven days.

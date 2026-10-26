@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Entity id ownership (OpenSpec change entity-id-ownership, security findings

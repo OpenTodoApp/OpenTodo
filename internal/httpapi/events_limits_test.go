@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // TestEventsPerAccountCap (SEC-6): an account holds at most ten streams.

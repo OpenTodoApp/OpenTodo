@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/httpapi/httpx"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
 )
 
 // Middleware: authentication, origin checks, security headers and request

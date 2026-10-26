@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/oidc/oidctest"
-	"github.com/pixari/opentodo/internal/webauthn"
-	"github.com/pixari/opentodo/internal/webauthn/testauth"
+	"github.com/OpenTodoApp/opentodo/internal/oidc/oidctest"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn/testauth"
 )
 
 // credential-freshness: adding a way to sign in (a passkey, an authenticator

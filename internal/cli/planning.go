@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/inbox"
+	"github.com/OpenTodoApp/opentodo/internal/inbox"
 )
 
 // Planning fields on `ot add`, `ot edit` and `ot list` (OpenSpec change

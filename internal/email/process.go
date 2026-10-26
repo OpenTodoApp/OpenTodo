@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/origin"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Outcome is what happened to one message. Every outcome except a transient

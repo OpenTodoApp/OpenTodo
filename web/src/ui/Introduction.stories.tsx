@@ -9,7 +9,7 @@ function Introduction() {
         the smart picker, surfaces and patterns. Every story is checked for accessibility and visual changes in light and dark.
       </p>
       <p>
-        How to use them, add an icon or update baselines: <a className="text-accent underline" href="https://github.com/pixari/opentodo/blob/main/docs/design-system.md">docs/design-system.md</a>.
+        How to use them, add an icon or update baselines: <a className="text-accent underline" href="https://github.com/OpenTodoApp/OpenTodo/blob/main/docs/design-system.md">docs/design-system.md</a>.
       </p>
     </div>
   )

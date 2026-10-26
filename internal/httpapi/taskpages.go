@@ -8,8 +8,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/auth"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Task pages (OpenSpec change `task-pages`): a user publishes one task as a page
