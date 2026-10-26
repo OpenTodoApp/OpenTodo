@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Card, ConfirmDialog, Icon, Menu, MenuItem, Notice, SettingRow, SettingsSection, StatusIndicator, Switch, type HueName, toneForHue } from '../ui'
-import { api, isNetworkError } from '../lib/api'
+import { api } from '../lib/api'
 import { refreshEvents } from '../lib/calendarFeeds'
 import { cacheCalendarConnections, cachedCalendarConnections } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
-import { useOnline } from '../lib/online'
-import { errorText } from '../lib/errorText'
-import { useAction } from '../lib/useAction'
+import { useServerList } from '../lib/useServerList'
 import type { CalendarConnection, CalendarConnectionPatch, GoogleClientSetting } from '../lib/types'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
@@ -248,60 +246,34 @@ function takeGoogleResult(): { result: string; id: string | null } | null {
 }
 
 export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
-  const online = useOnline()
   const { enabled: encrypted } = useEncryption()
-  const [enabled, setEnabled] = useState<boolean | null>(null)
   const [google, setGoogle] = useState(false)
   const [maxConnections, setMax] = useState(3)
   const [googleClient, setGoogleClient] = useState<GoogleClientSetting | null>(null)
-  const [connections, setConnections] = useState<CalendarConnection[] | null>(null)
-  useSettingsPending(enabled === null || (enabled && connections === null))
-  const [unreachable, setUnreachable] = useState(false)
   const [syncing, setSyncing] = useState<ReadonlySet<string>>(new Set())
-  const { busy, error, setError, run, act } = useAction({ onError: (err) => { if (isNetworkError(err)) setUnreachable(true) } })
   const [notice, setNotice] = useState<string | null>(null)
   const [choose, setChoose] = useState<string | null>(null)
-
-  const keep = useCallback((list: CalendarConnection[]) => {
-    setConnections(list)
-    void cacheCalendarConnections(list).catch(() => undefined)
-  }, [])
-  const load = useCallback(async () => {
-    try {
-      const s = await api.getCalendarSyncSetting()
-      setEnabled(s.enabled)
+  const server = useServerList({
+    setting: api.getCalendarSyncSetting,
+    onSetting: (s) => {
       setGoogle(s.google)
       setMax(s.max_connections || 3)
-      setUnreachable(false)
-      if (s.enabled) keep((await api.listCalendarConnections()).connections)
-      if (s.enabled && isOwner) setGoogleClient(await api.getGoogleClient())
-    } catch (err) {
-      if (isNetworkError(err)) setUnreachable(true)
-      else setError(errorText(err))
-    }
-  }, [keep, isOwner, setError])
+    },
+    list: async () => (await api.listCalendarConnections()).connections,
+    afterList: async (s) => { if (s.enabled && isOwner) setGoogleClient(await api.getGoogleClient()) },
+    cached: cachedCalendarConnections,
+    cache: cacheCalendarConnections,
+    reloadKey: isOwner,
+  })
+  const { enabled, setEnabled, rows: connections, upsert, connected, load, busy, error, run, act } = server
+  useSettingsPending(enabled === null || (enabled && connections === null))
   useEffect(() => {
     const back = takeGoogleResult()
     if (back) {
       setNotice(googleResultText(back.result))
       if (back.result === 'connected' && back.id) setChoose(back.id)
     }
-    void cachedCalendarConnections().then((cached) => {
-      if (cached.length) {
-        setConnections((cur) => cur ?? cached)
-        setEnabled((cur) => cur ?? true)
-      }
-    }).catch(() => undefined)
   }, [])
-  useEffect(() => {
-    if (online) void load()
-  }, [online, load])
-
-  const connected = online && !unreachable
-  const upsert = (c: CalendarConnection) => {
-    const list = connections ?? []
-    keep(list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c])
-  }
 
   return (
     <CalendarSyncView isOwner={isOwner} enabled={enabled} google={google} maxConnections={maxConnections} googleClient={googleClient}
@@ -340,7 +312,7 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
       }}
       onDelete={(c) => act(async () => {
         await api.deleteCalendarConnection(c.id)
-        keep((connections ?? []).filter((x) => x.id !== c.id))
+        server.remove(c.id)
         void refreshEvents()
       })} />
   )
