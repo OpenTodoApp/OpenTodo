@@ -244,9 +244,10 @@ release-prepare:
 	node scripts/release/prepare.mjs $(VERSION)
 
 ## CI path filter cases, the shared Go toolchain (go.mod, Dockerfile, CI) and compose defaults;
+## the Go/TypeScript contract index (docs/contracts.md);
 ## the brand rasters rendered from the current brand.svg (sidebar-v2 D3).
 repo-check:
-	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs
+	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs
 
 ## Every brand raster (app icons, favicon, extension icons) from web/src/ui/icons/brand.svg.
 brand-icons:
