@@ -45,15 +45,14 @@ func (s *Server) allowPrivate() func(context.Context) bool {
 }
 
 func (s *Server) registerIssueRoutes(mux *routes) {
-	s.issuesOn = &ownerSwitch{key: issuesSettingKey, code: "issues_disabled", message: "the server owner has not enabled issue connections"}
 	if s.issueWorker == nil {
 		s.issueWorker = issues.NewWorker(s.sync.DB(), s.cfg.DataDir, s.sync, s.allowPrivate(), s.version, s.log)
 	}
-	s.issueWorker.Enabled = s.issuesEnabled
+	s.issueWorker.Enabled = s.issuesOn.On
 	s.issueLimiter = newRateLimiter(issueChecksPerHr, time.Hour)
 
-	mux.handle("GET /api/v1/settings/issues", signedIn.demoDenied(), s.issuesOn.get(s, nil))
-	mux.handle("PUT /api/v1/settings/issues", ownerOnly("manage the issue connections setting").demoDenied(), s.issuesOn.put(s, nil))
+	s.switchRoutes(mux, "/api/v1/settings/issues", switchRoute{sw: s.issuesOn,
+		get: signedIn.demoDenied(), put: ownerOnly("manage the issue connections setting").demoDenied()})
 	mux.handle("GET /api/v1/issues/connections", signedIn.demoDenied(), s.issuesGate(s.handleListIssueConnections))
 	mux.handle("POST /api/v1/issues/connections", signedIn.recent().demoDenied(), s.issuesGate(s.handleCreateIssueConnection))
 	// One route, one policy: the handler asks for a fresh session when the body carries a token.
@@ -63,11 +62,10 @@ func (s *Server) registerIssueRoutes(mux *routes) {
 	mux.handle("POST /api/v1/issues/connections/{id}/sync", signedIn.demoDenied(), s.issuesGate(s.handleSyncIssueConnection))
 }
 
-// issuesEnabled reads the owner switch through the cache (never on a demo instance).
-func (s *Server) issuesEnabled(ctx context.Context) bool { return s.issuesOn.on(ctx, s) }
-
 // issuesGate answers 404 issues_disabled while the owner switch is off.
-func (s *Server) issuesGate(next http.HandlerFunc) http.HandlerFunc { return s.issuesOn.gate(s, next) }
+func (s *Server) issuesGate(next http.HandlerFunc) http.HandlerFunc {
+	return switchGate(s.issuesOn, "issues_disabled", "the server owner has not enabled issue connections")(next)
+}
 
 // writeFieldError answers 400 invalid_input naming the field it is about, so
 // the editor shows the message beside it.
@@ -115,7 +113,7 @@ func (s *Server) issueConnection(ctx context.Context, uid, id string) (*issues.C
 
 // issuesResource is the MCP resource opentodo://integrations/issues.
 func (s *Server) issuesResource(ctx context.Context, uid string) (any, error) {
-	if !s.issuesEnabled(ctx) {
+	if !s.issuesOn.On(ctx) {
 		return map[string]any{"enabled": false, "connections": []any{}}, nil
 	}
 	list, err := s.issueConnections(ctx, uid)

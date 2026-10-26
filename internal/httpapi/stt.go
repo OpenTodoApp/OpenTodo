@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/stt"
 )
 
@@ -21,7 +20,7 @@ import (
 // in the audit log. Only the per-user rate limiter counts requests.
 func (s *Server) registerSTTRoutes(mux *routes) {
 	if s.stt == nil {
-		s.stt = stt.New(settings.New(s.sync.DB()), s.cfg.DataDir, s.cfg.STT, s.allowPrivate())
+		s.stt = stt.New(s.settings, s.cfg.DataDir, s.cfg.STT, s.allowPrivate())
 	}
 	mux.handle("GET /api/v1/settings/stt", ownerOnly("manage the speech-to-text service").credential().demoDenied(), s.handleGetSTT)
 	mux.handle("PUT /api/v1/settings/stt", ownerOnly("manage the speech-to-text service").credential().demoDenied(), s.handlePutSTT)

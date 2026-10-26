@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/pixari/opentodo/internal/rules"
-	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -18,7 +17,7 @@ func rulesEnv(t *testing.T, env *bool) *env {
 	t.Helper()
 	e := newEnvWith(t, false, func(s *Server) {
 		s.rules = rules.New(s.sync.DB(), s.sync, slog.New(slog.NewTextHandler(io.Discard, nil)))
-		s.ruleSwitch = rules.NewSwitch(settings.New(s.sync.DB()), env)
+		s.ruleSwitch = rules.NewSwitch(s.sync.DB(), env)
 	})
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
