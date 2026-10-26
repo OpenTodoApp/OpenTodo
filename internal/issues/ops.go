@@ -69,11 +69,6 @@ func Origin(provider string, is Issue) (origin.Origin, bool) {
 	return o, true
 }
 
-func jsonOf(v any) json.RawMessage {
-	b, _ := json.Marshal(v)
-	return b
-}
-
 type field struct {
 	name  string
 	value json.RawMessage
@@ -94,20 +89,20 @@ func taskOps(connID string, is Issue, ts int64, fields []field) []opsync.Op {
 func CreateOps(c *Connection, is Issue, labelIDs []string, ts, nowMs int64) []opsync.Op {
 	now := json.RawMessage(strconv.FormatInt(nowMs, 10))
 	fields := []field{
-		{"title", jsonOf(strings.TrimSpace(origin.CutTitle(is.Title)))},
-		{"description", jsonOf(Description(is.Body))},
+		{"title", opsync.JSONOf(strings.TrimSpace(origin.CutTitle(is.Title)))},
+		{"description", opsync.JSONOf(Description(is.Body))},
 		{"priority", json.RawMessage("4")},
 		{"created_at", now},
 		{"position", now},
 	}
 	if c.ProjectID != nil && *c.ProjectID != "" {
-		fields = append(fields, field{"project_id", jsonOf(*c.ProjectID)})
+		fields = append(fields, field{"project_id", opsync.JSONOf(*c.ProjectID)})
 	}
 	if len(labelIDs) > 0 {
-		fields = append(fields, field{"labels", jsonOf(labelIDs)})
+		fields = append(fields, field{"labels", opsync.JSONOf(labelIDs)})
 	}
 	if o, ok := Origin(c.Provider, is); ok {
-		fields = append(fields, field{"origin", jsonOf(o)})
+		fields = append(fields, field{"origin", opsync.JSONOf(o)})
 	}
 	return taskOps(c.ID, is, ts, fields)
 }
@@ -124,16 +119,16 @@ type Change struct {
 // mapped is the issue's labels mapped to label ids (nil when mapping is off).
 func FollowOps(c *Connection, is Issue, l *Link, task opsync.Entity, mapped []string, ts int64) ([]opsync.Op, Change) {
 	var ch Change
-	if task == nil || !nullish(task["deleted_at"]) {
+	if task == nil || !opsync.IsNull(task["deleted_at"]) {
 		return nil, ch
 	}
 	var fields []field
 	title := strings.TrimSpace(origin.CutTitle(is.Title))
 	if is.Title != l.Title && str(task["title"]) != title {
-		fields = append(fields, field{"title", jsonOf(title)})
+		fields = append(fields, field{"title", opsync.JSONOf(title)})
 		ch.Renamed = true
 	}
-	open := nullish(task["completed_at"])
+	open := opsync.IsNull(task["completed_at"])
 	switch {
 	case is.State == Closed && l.State != Closed && open:
 		at := is.ClosedAt
@@ -161,7 +156,7 @@ func FollowOps(c *Connection, is Issue, l *Link, task opsync.Entity, mapped []st
 			}
 		}
 		if !sameSet(next, current) {
-			fields = append(fields, field{"labels", jsonOf(next)})
+			fields = append(fields, field{"labels", opsync.JSONOf(next)})
 		}
 	}
 	return taskOps(c.ID, is, ts, fields), ch
@@ -183,7 +178,7 @@ type LabelIndex struct {
 func NewLabelIndex(userID, connID string, labels []opsync.Entity) *LabelIndex {
 	ix := &LabelIndex{userID: userID, connID: connID, byName: map[string]string{}}
 	for _, l := range labels {
-		if !nullish(l["deleted_at"]) {
+		if !opsync.IsNull(l["deleted_at"]) {
 			continue
 		}
 		name := strings.ToLower(strings.TrimSpace(str(l["name"])))
@@ -212,7 +207,7 @@ func (ix *LabelIndex) Resolve(names []string, ts, nowMs int64) []string {
 			ix.byName[key] = id
 			h := fnv.New32a()
 			_, _ = h.Write([]byte(key))
-			for _, f := range []field{{"name", jsonOf(n)}, {"color", jsonOf(labelPalette[int(h.Sum32()%uint32(len(labelPalette)))])},
+			for _, f := range []field{{"name", opsync.JSONOf(n)}, {"color", opsync.JSONOf(labelPalette[int(h.Sum32()%uint32(len(labelPalette)))])},
 				{"created_at", json.RawMessage(strconv.FormatInt(nowMs, 10))}} {
 				ix.pending = append(ix.pending, opsync.Op{ID: ids.NameID("issue-label-op", ix.userID+"\x00"+key+"\x00"+f.name), Entity: "label",
 					EntityID: id, Field: f.name, Value: f.value, TS: ts, Device: Device(ix.connID)})
@@ -242,8 +237,6 @@ func Matches(f Filter, is Issue) bool {
 	}
 	return true
 }
-
-func nullish(v json.RawMessage) bool { return len(v) == 0 || string(v) == "null" }
 
 func str(v json.RawMessage) string {
 	var s string

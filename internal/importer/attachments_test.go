@@ -88,10 +88,10 @@ func TestOwnZipExportRestoresFiles(t *testing.T) {
 	if file == nil || link == nil {
 		t.Fatalf("attachments = %v", got)
 	}
-	if str(file, "author_id") != h.uid || string(file["comment_id"]) != "null" || isNull(file["uploaded_at"]) {
+	if str(file, "author_id") != h.uid || string(file["comment_id"]) != "null" || opsync.IsNull(file["uploaded_at"]) {
 		t.Fatalf("file = %v", file)
 	}
-	if !isNull(link["uploaded_at"]) || str(link, "url") != "https://example.com/spec" {
+	if !opsync.IsNull(link["uploaded_at"]) || str(link, "url") != "https://example.com/spec" {
 		t.Fatalf("link = %v", link)
 	}
 	f, _, err := store.Open("a-file")

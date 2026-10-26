@@ -309,10 +309,10 @@ func TestCompletingARecurringTaskAndSubtasks(t *testing.T) {
 	h.write("alice", "phone", "task", "parent", map[string]any{"labels": []string{"done"}})
 	h.e.Drain(h.ctx)
 	s := h.get("alice", "series")
-	if !isNull(s["completed_at"]) || !strings.Contains(string(s["due"]), "2026-10-26") {
+	if !opsync.IsNull(s["completed_at"]) || !strings.Contains(string(s["due"]), "2026-10-26") {
 		t.Fatalf("series %s %s", s["completed_at"], s["due"])
 	}
-	if c := h.get("alice", "child"); isNull(c["completed_at"]) {
+	if c := h.get("alice", "child"); opsync.IsNull(c["completed_at"]) {
 		t.Fatal("subtask left open")
 	}
 }

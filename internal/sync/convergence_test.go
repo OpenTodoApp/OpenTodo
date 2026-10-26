@@ -79,7 +79,7 @@ func (d *device) edit(now int64, v string) {
 	d.seq++
 	ts := d.hlc(now)
 	d.value, d.ts, d.vdev = v, ts, d.id
-	d.outbox = append(d.outbox, op(fmt.Sprintf("%s-%d", d.id, d.seq), "task", "t1", "title", string(jsonOf(v)), ts, d.id))
+	d.outbox = append(d.outbox, op(fmt.Sprintf("%s-%d", d.id, d.seq), "task", "t1", "title", string(JSONOf(v)), ts, d.id))
 }
 
 func (d *device) receive(o Op) {

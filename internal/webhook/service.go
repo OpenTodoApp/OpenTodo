@@ -326,7 +326,7 @@ func (s *Service) Create(ctx context.Context, userID string, in Patch) (*Webhook
 	w := &Webhook{ID: ids.New(), URL: url, Events: events, ProjectID: project, Enabled: enabled, CreatedAt: now, UpdatedAt: now, secret: NewSecret()}
 	ev, _ := json.Marshal(events)
 	_, err = s.db.ExecContext(ctx, `INSERT INTO webhooks(id,user_id,url,secret,events,project_id,enabled,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)`,
-		w.ID, userID, w.URL, w.secret, string(ev), project, boolInt(enabled), now, now)
+		w.ID, userID, w.URL, w.secret, string(ev), project, enabled, now, now)
 	if err != nil {
 		return nil, fmt.Errorf("insert webhook: %w", err)
 	}
@@ -371,7 +371,7 @@ func (s *Service) Update(ctx context.Context, userID, id string, in Patch) (*Web
 	w.UpdatedAt = s.nowMs()
 	ev, _ := json.Marshal(w.Events)
 	_, err = s.db.ExecContext(ctx, `UPDATE webhooks SET url=?, events=?, project_id=?, enabled=?, disabled_reason=?, consecutive_failures=?, updated_at=?
-		WHERE id = ? AND user_id = ?`, w.URL, string(ev), w.ProjectID, boolInt(w.Enabled), w.DisabledReason, w.ConsecutiveFailures, w.UpdatedAt, id, userID)
+		WHERE id = ? AND user_id = ?`, w.URL, string(ev), w.ProjectID, w.Enabled, w.DisabledReason, w.ConsecutiveFailures, w.UpdatedAt, id, userID)
 	if err != nil {
 		return nil, fmt.Errorf("update webhook: %w", err)
 	}
@@ -729,11 +729,4 @@ func idValue(raw json.RawMessage) string {
 	}
 	_ = json.Unmarshal(raw, &v)
 	return v
-}
-
-func boolInt(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
 }

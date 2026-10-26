@@ -88,7 +88,7 @@ func intoWorkspace(parsed *Parsed, target string, isDefault bool, name string) {
 		case KindProject, KindLabel, KindView:
 			e["workspace_id"] = value
 		case KindTask:
-			if _, has := e["workspace_id"]; has || isNull(e["project_id"]) {
+			if _, has := e["workspace_id"]; has || opsync.IsNull(e["project_id"]) {
 				e["workspace_id"] = value
 			}
 		}
@@ -140,7 +140,7 @@ func (pl *planner) stampWorkspace(changes []change) {
 		switch c.entity {
 		case KindProject, KindLabel, KindView:
 		case KindTask:
-			if !isNull(c.value("project_id")) {
+			if !opsync.IsNull(c.value("project_id")) {
 				continue
 			}
 		default:

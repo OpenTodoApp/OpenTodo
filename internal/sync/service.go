@@ -298,13 +298,13 @@ func StampCompletedBy(userID string, ops []Op) []Op {
 		if op.Entity != "task" || op.Field != "completed_at" || has[op.EntityID] {
 			continue
 		}
-		done := !nullish(op.Value)
+		done := !IsNull(op.Value)
 		if !done && creates[op.EntityID] {
 			continue
 		}
 		value := json.RawMessage("null")
 		if done {
-			value = jsonOf(userID)
+			value = JSONOf(userID)
 		}
 		has[op.EntityID] = true
 		extra = append(extra, Op{ID: ids.NameID("completed_by", op.ID), Entity: "task", EntityID: op.EntityID,

@@ -377,7 +377,7 @@ func (s *Store) Create(ctx context.Context, userID string, in Input) (*Connectio
 	now := s.now().UnixMilli()
 	filter, _ := json.Marshal(in.Filter)
 	if _, err := tx.ExecContext(ctx, `INSERT INTO issue_connections(id,user_id,provider,host,name,project_id,filter,map_labels,enabled,interval_seconds,next_poll_at,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, id, userID, in.Provider, in.Host, in.Name, nullStr(in.ProjectID), string(filter), boolInt(in.MapLabels), boolInt(in.Enabled),
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, id, userID, in.Provider, in.Host, in.Name, nullStr(in.ProjectID), string(filter), in.MapLabels, in.Enabled,
 		in.IntervalMinutes*60, now, now, now); err != nil {
 		return nil, err
 	}
@@ -443,7 +443,7 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Connec
 	}
 	if p.MapLabels != nil {
 		set = append(set, "map_labels = ?")
-		args = append(args, boolInt(*p.MapLabels))
+		args = append(args, *p.MapLabels)
 	}
 	if p.IntervalMinutes != nil {
 		set = append(set, "interval_seconds = ?")
@@ -451,7 +451,7 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Connec
 	}
 	if p.Enabled != nil {
 		set = append(set, "enabled = ?")
-		args = append(args, boolInt(*p.Enabled))
+		args = append(args, *p.Enabled)
 		if *p.Enabled && (!cur.Enabled || cur.StoppedReason != "") {
 			unstop()
 		}
@@ -500,7 +500,7 @@ func (s *Store) NextPoll(ctx context.Context) (time.Time, bool, error) {
 // Account records the result of a token check.
 func (s *Store) Account(ctx context.Context, id, login string, canRead bool) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE issue_connections SET account_login = ?, can_read_issues = ?, updated_at = ? WHERE id = ?`,
-		login, boolInt(canRead), s.now().UnixMilli(), id)
+		login, canRead, s.now().UnixMilli(), id)
 	return err
 }
 
@@ -637,18 +637,11 @@ func (s *Store) SaveLinks(ctx context.Context, links []*Link) error {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO issue_links(connection_id,issue_key,task_id,title,state,closed_at,labels,issue_updated_ms,matched,created_at)
 			VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(connection_id,issue_key) DO UPDATE SET title=excluded.title, state=excluded.state, closed_at=excluded.closed_at,
 			labels=excluded.labels, issue_updated_ms=excluded.issue_updated_ms, matched=excluded.matched`,
-			l.ConnectionID, l.IssueKey, l.TaskID, l.Title, l.State, closed, string(labels), l.IssueUpdatedMs, boolInt(l.Matched), now); err != nil {
+			l.ConnectionID, l.IssueKey, l.TaskID, l.Title, l.State, closed, string(labels), l.IssueUpdatedMs, l.Matched, now); err != nil {
 			return err
 		}
 	}
 	return tx.Commit()
-}
-
-func boolInt(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
 }
 
 func nullStr(p *string) any {

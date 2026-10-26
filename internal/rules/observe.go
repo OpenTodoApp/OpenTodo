@@ -95,14 +95,14 @@ func (e *Engine) clearPauseOnEnable(ctx context.Context, c opsync.Change) {
 func Derive(c opsync.Change) []Event {
 	var out []Event
 	ev := func(kind string) Event { return Event{TaskID: c.EntityID, Kind: kind} }
-	if f, ok := c.Fields["created_at"]; ok && isNull(f.From) && !isNull(f.To) {
+	if f, ok := c.Fields["created_at"]; ok && opsync.IsNull(f.From) && !opsync.IsNull(f.To) {
 		out = append(out, ev(ruleval.TaskCreated))
 	}
 	if f, ok := c.Fields["completed_at"]; ok {
 		switch {
-		case isNull(f.From) && !isNull(f.To):
+		case opsync.IsNull(f.From) && !opsync.IsNull(f.To):
 			out = append(out, ev(ruleval.TaskCompleted))
-		case !isNull(f.From) && isNull(f.To):
+		case !opsync.IsNull(f.From) && opsync.IsNull(f.To):
 			out = append(out, ev(ruleval.TaskReopened))
 		}
 	}

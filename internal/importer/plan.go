@@ -200,8 +200,6 @@ func str(e opsync.Entity, f string) string {
 	return s
 }
 
-func isNull(v json.RawMessage) bool { return len(v) == 0 || string(v) == "null" }
-
 // validateFields runs the op schema check on every field so a row that the op log
 // would refuse is reported as a row error instead of failing a whole batch.
 func validateFields(entity, id string, fields []field) error {
@@ -306,13 +304,13 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 	}
 	for _, e := range st.Tasks {
-		if e.Deleted() || !isNull(e["completed_at"]) {
+		if e.Deleted() || !opsync.IsNull(e["completed_at"]) {
 			continue
 		}
 		var due struct {
 			Date string `json:"date"`
 		}
-		if v := e["due"]; !isNull(v) {
+		if v := e["due"]; !opsync.IsNull(v) {
 			_ = json.Unmarshal(v, &due)
 		}
 		place := str(e, "project_id")
@@ -371,18 +369,18 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		if c.created && c.entity == KindLabel {
 			p.Totals.NewLabels++
 		}
-		live := isNull(c.value("deleted_at"))
+		live := opsync.IsNull(c.value("deleted_at"))
 		switch {
 		case c.created && c.entity == KindField && live:
 			p.Totals.Fields++
 		case c.created && c.entity == KindSection && live:
 			p.Totals.NewSections++
-		case c.entity == KindTask && live && !isNull(c.value("recurrence")):
+		case c.entity == KindTask && live && !opsync.IsNull(c.value("recurrence")):
 			p.Totals.Recurring++
 		case c.created && c.entity == KindReminder && live:
 			p.Totals.Reminders++
 		}
-		if c.entity == KindTask && live && !isNull(c.value("deadline")) {
+		if c.entity == KindTask && live && !opsync.IsNull(c.value("deadline")) {
 			p.Totals.Deadlines++
 		}
 		if c.created && c.entity == KindAttachment && live {

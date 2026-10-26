@@ -7,9 +7,7 @@ package host
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +16,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/store"
 )
 
@@ -117,11 +116,7 @@ func OpenRegistry(root string, now func() time.Time) (*Registry, error) {
 // Close closes the registry database.
 func (r *Registry) Close() error { return r.db.Close() }
 
-func newSetupToken() string {
-	b := make([]byte, 24)
-	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
-}
+func newSetupToken() string { return ids.Hex(24) }
 
 // Create registers an active tenant and returns its setup token. A name in
 // use, or deleted less than TombstoneGrace ago, is ErrExists.

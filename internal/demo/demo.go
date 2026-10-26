@@ -9,8 +9,6 @@ package demo
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -19,6 +17,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/auth"
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -142,8 +141,7 @@ func New(authSvc *auth.Service, syncSvc *opsync.Service, log *slog.Logger) *Serv
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
-	salt := make([]byte, 32)
-	_, _ = rand.Read(salt)
+	salt := ids.Bytes(32)
 	return &Service{auth: authSvc, sync: syncSvc, settings: settings.New(syncSvc.DB()), log: log, now: time.Now, salt: salt,
 		maxSandboxes: DefaultMaxSandboxes, maxDBBytes: DefaultMaxDBMB << 20}
 }
@@ -312,8 +310,4 @@ func Stale(resetAt, now time.Time) bool {
 	return resetAt.Before(last)
 }
 
-func randomPassword() string {
-	b := make([]byte, 24)
-	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
-}
+func randomPassword() string { return ids.Hex(24) }

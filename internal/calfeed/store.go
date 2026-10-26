@@ -188,7 +188,7 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Subscr
 	}
 	if p.Enabled != nil {
 		set = append(set, "enabled = ?")
-		args = append(args, boolInt(*p.Enabled))
+		args = append(args, *p.Enabled)
 		if *p.Enabled {
 			set = append(set, "stopped_reason = NULL", "next_fetch_at = ?", "interval_seconds = ?")
 			args = append(args, now, int64(DefaultInterval/time.Second))
@@ -211,13 +211,6 @@ func (s *Store) Delete(ctx context.Context, userID, id string) error {
 		return ErrNotFound
 	}
 	return nil
-}
-
-func boolInt(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
 }
 
 // interval is how long to wait after a successful fetch: the calendar's hint
@@ -252,7 +245,7 @@ func (s *Store) Success(ctx context.Context, id string, r *Result) error {
 		for _, o := range r.Occurrences {
 			sd, st, sz := pointParts(o.Start)
 			ed, et, ez := pointParts(o.End)
-			if _, err := stmt.ExecContext(ctx, id, o.UID, o.Instance, o.Summary, o.Location, sd, st, sz, ed, et, ez, boolInt(o.AllDay), boolInt(o.Free), pointMs(o.Start), pointMs(o.End)); err != nil {
+			if _, err := stmt.ExecContext(ctx, id, o.UID, o.Instance, o.Summary, o.Location, sd, st, sz, ed, et, ez, o.AllDay, o.Free, pointMs(o.Start), pointMs(o.End)); err != nil {
 				return err
 			}
 		}

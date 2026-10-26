@@ -165,10 +165,10 @@ func (s *Service) send(ctx context.Context, t target, deliveryID string, m Messa
 		switch {
 		case errors.Is(err, outbound.ErrPrivateTarget):
 			return outcome{errMsg: "private_target", terminal: true}
-		case errors.Is(err, context.DeadlineExceeded) || isTimeout(err):
+		case errors.Is(err, context.DeadlineExceeded) || outbound.IsTimeout(err):
 			return outcome{errMsg: "timeout"}
 		default:
-			return outcome{errMsg: "connection failed: " + scrub(rootCause(err), t)}
+			return outcome{errMsg: "connection failed: " + scrub(outbound.RootCause(err), t)}
 		}
 	}
 	defer resp.Body.Close()
@@ -194,19 +194,4 @@ func scrub(msg string, t target) string {
 		}
 	}
 	return msg
-}
-
-func isTimeout(err error) bool {
-	var ne net.Error
-	return errors.As(err, &ne) && ne.Timeout()
-}
-
-func rootCause(err error) string {
-	for {
-		u := errors.Unwrap(err)
-		if u == nil {
-			return err.Error()
-		}
-		err = u
-	}
 }

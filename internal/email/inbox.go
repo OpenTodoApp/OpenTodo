@@ -10,7 +10,6 @@ package email
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"encoding/base32"
 	"encoding/json"
@@ -22,6 +21,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
+	"github.com/pixari/opentodo/internal/ids"
 )
 
 // Limits on per-user settings and abuse protection (design D5, D7).
@@ -68,13 +68,7 @@ func NewStore(db *sql.DB, rec *audit.Recorder) *Store {
 	return &Store{db: db, audit: rec, now: time.Now}
 }
 
-func newSecret() string {
-	b := make([]byte, SecretBytes)
-	if _, err := rand.Read(b); err != nil {
-		panic(fmt.Sprintf("email: crypto/rand failed: %v", err))
-	}
-	return secretEncoding.EncodeToString(b)
-}
+func newSecret() string { return secretEncoding.EncodeToString(ids.Bytes(SecretBytes)) }
 
 // ValidSecret reports whether s has the shape of an inbox secret.
 func ValidSecret(s string) bool {

@@ -262,3 +262,20 @@ func NewClient(d *Dialer, timeout time.Duration, opts ...Option) *http.Client {
 	}
 	return c
 }
+
+// IsTimeout reports whether err is a network timeout.
+func IsTimeout(err error) bool {
+	var ne net.Error
+	return errors.As(err, &ne) && ne.Timeout()
+}
+
+// RootCause is the message of the innermost error err wraps.
+func RootCause(err error) string {
+	for {
+		u := errors.Unwrap(err)
+		if u == nil {
+			return err.Error()
+		}
+		err = u
+	}
+}
