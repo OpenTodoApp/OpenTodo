@@ -7,6 +7,7 @@ import { Switch } from '../ui'
 import { SecretReveal } from './TokensSection'
 import { RelaySettings } from './RelaySettings'
 import { api, isNetworkError } from '../lib/api'
+import { useAction } from '../lib/useAction'
 import {
   cacheAccess, cacheStatus, connectionSnippet, describeAssistantsError, loadCachedAccess, loadCachedStatus, writesAllowed,
   type AgentAccess, type McpStatus,
@@ -209,8 +210,10 @@ export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean;
   const [access, setAccess] = useState<AgentAccess | null>(null)
   const [secretScope, setSecretScope] = useState<'read' | 'agent'>('read')
   const [unreachable, setUnreachable] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, setError, run } = useAction({
+    describe: describeAssistantsError,
+    onError: (err) => { if (isNetworkError(err)) setUnreachable(true) },
+  })
   const [secret, setSecret] = useState<string | null>(null)
   const [copied, setCopied] = useState<CopyTarget | null>(null)
 
@@ -227,7 +230,7 @@ export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean;
       if (isNetworkError(err)) setUnreachable(true)
       else setError(describeAssistantsError(err))
     }
-  }, [])
+  }, [setError])
   useEffect(() => {
     void loadCachedStatus().then((cached) => setStatus((cur) => cur ?? cached))
     void loadCachedAccess().then((cached) => setAccess((cur) => cur ?? cached))
@@ -235,19 +238,6 @@ export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean;
   useEffect(() => {
     if (online) void load()
   }, [online, load])
-
-  async function run(action: () => Promise<void>) {
-    setError(null)
-    setBusy(true)
-    try {
-      await action()
-    } catch (err) {
-      if (isNetworkError(err)) setUnreachable(true)
-      setError(describeAssistantsError(err))
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <AssistantsView

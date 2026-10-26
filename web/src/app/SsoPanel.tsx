@@ -12,6 +12,8 @@ import { ListRow } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { api, ApiError, OIDC_START_URL, promptReauth } from '../lib/api'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
 import type { LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult } from '../lib/types'
 import { relativeTime } from './SecurityPanel'
@@ -58,8 +60,7 @@ export function saveInput(s: OidcSettings, f: SsoForm): OidcSettingsInput {
 }
 
 function describe(err: unknown): string {
-  if (err instanceof ApiError) return err.message
-  return t('Offline: single sign-on is configured on the server.')
+  return errorText(err, { capitalise: false, offline: t('Offline: single sign-on is configured on the server.') })
 }
 
 /** Container for the owner's provider settings. */
@@ -67,9 +68,8 @@ export function SsoPanel() {
   const online = useOnline()
   const [settings, setSettings] = useState<OidcSettings | null>(null)
   const [form, setForm] = useState<SsoForm | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const { busy, error, setError, run } = useAction({ describe, onStart: () => setNotice(null) })
   const [test, setTest] = useState<OidcTestResult | null>(null)
 
   const apply = useCallback((s: OidcSettings) => {
@@ -80,20 +80,7 @@ export function SsoPanel() {
   useEffect(() => {
     if (!online) return
     api.getOidcSettings().then(apply, (err) => setError(describe(err)))
-  }, [online, apply])
-
-  async function run(fn: () => Promise<void>) {
-    setBusy(true)
-    setError(null)
-    setNotice(null)
-    try {
-      await fn()
-    } catch (err) {
-      setError(describe(err))
-    } finally {
-      setBusy(false)
-    }
-  }
+  }, [online, apply, setError])
 
   if (!settings || !form) {
     return error ? (
@@ -240,8 +227,12 @@ export function LinkedAccountsPanel() {
   const online = useOnline()
   const [identities, setIdentities] = useState<LinkedIdentity[] | null>(null)
   const [provider, setProvider] = useState<OidcStatus | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, setError, run } = useAction({
+    describe: (err) => errorText(err, {
+      capitalise: false, offline: t('Offline: single sign-on is configured on the server.'),
+      codes: { last_credential: t('This is your only way to sign in. Add a passkey or another linked account first.') },
+    }),
+  })
   // The link flow returns to /settings/security (this panel's section) with ?linked=1, ?reauthenticated=1 or ?error=<code>.
   const [notice] = useState<string | null>(() => {
     if (takeQueryParam('linked')) return t('Linked. You can now sign in with the provider.')
@@ -269,7 +260,7 @@ export function LinkedAccountsPanel() {
     } catch (err) {
       if (err instanceof ApiError) setError(err.message)
     }
-  }, [])
+  }, [setError])
 
   useEffect(() => {
     if (online) void load()
@@ -289,14 +280,10 @@ export function LinkedAccountsPanel() {
         consequence={t('You will no longer be able to sign in with {provider} using this account. Your password and passkeys keep working.', { provider: provider.displayName || 'SSO' })}
         onCancel={() => setConfirmId(null)} onConfirm={() => {
         const id = unlinking.id
-        setBusy(true)
-        setError(null)
-        api.unlinkIdentity(id)
-          .then(load)
-          .catch((err) => setError(err instanceof ApiError && err.code === 'last_credential'
-            ? t('This is your only way to sign in. Add a passkey or another linked account first.')
-            : describe(err)))
-          .finally(() => setBusy(false))
+        void run(async () => {
+          await api.unlinkIdentity(id)
+          await load()
+        })
       }} />
     )}
     </>

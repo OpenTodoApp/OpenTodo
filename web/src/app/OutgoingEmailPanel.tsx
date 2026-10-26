@@ -1,8 +1,10 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Button, Field, Input, Notice, Select, SettingRow, SettingsSection, StatusIndicator, toneForHue } from '../ui'
-import { api, ApiError, isNetworkError } from '../lib/api'
+import { api, isNetworkError } from '../lib/api'
 import { formatInstant } from '../lib/dates'
 import { useOnline } from '../lib/online'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
 import type { SmtpSecurity, SmtpSettings, SmtpSettingsInput, SmtpStage, SmtpTestResult } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -178,18 +180,12 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
   )
 }
 
-function describe(err: unknown): string {
-  if (err instanceof ApiError) return err.message.charAt(0).toUpperCase() + err.message.slice(1)
-  return t('The server could not be reached.')
-}
-
 /** Loads and saves the owner's outgoing email settings. */
 export function OutgoingEmailPanel() {
   const online = useOnline()
   const [settings, setSettings] = useState<SmtpSettings | null>(null)
   const [unreachable, setUnreachable] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, setError, run } = useAction({ onError: (err) => { if (isNetworkError(err)) setUnreachable(true) } })
   const [draft, setDraft] = useState<SmtpDraft | null>(null)
   const [test, setTest] = useState<SmtpTestResult | null>(null)
 
@@ -202,25 +198,12 @@ export function OutgoingEmailPanel() {
       setUnreachable(false)
     } catch (err) {
       if (isNetworkError(err)) setUnreachable(true)
-      else setError(describe(err))
+      else setError(errorText(err))
     }
-  }, [])
+  }, [setError])
   useEffect(() => {
     if (online) void load()
   }, [online, load])
-
-  async function run(action: () => Promise<void>) {
-    setBusy(true)
-    setError(null)
-    try {
-      await action()
-    } catch (err) {
-      if (isNetworkError(err)) setUnreachable(true)
-      setError(describe(err))
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <OutgoingEmailView settings={settings} offline={!online || unreachable} busy={busy} error={error} draft={draft} test={test}

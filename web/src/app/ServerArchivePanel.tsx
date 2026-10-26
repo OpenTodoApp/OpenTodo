@@ -8,6 +8,7 @@ import { useOnline } from '../lib/online'
 import { Button, Notice, SettingRow, SettingsSection } from '../ui'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { messageOf } from '../lib/errorText'
 
 export function ServerArchiveView({ online, busy, error, onDownload }: {
   online: boolean
@@ -28,7 +29,7 @@ export function ServerArchiveView({ online, busy, error, onDownload }: {
 export function archiveErrorMessage(err: unknown): string {
   if (isNetworkError(err)) return t('Your server cannot be reached. Try again when you are online.')
   if (err instanceof ApiError && err.code === 'reauth_required') return t('Confirm your password, then download again.')
-  return err instanceof Error ? err.message : String(err)
+  return messageOf(err)
 }
 
 export function ServerArchivePanel() {

@@ -41,6 +41,23 @@ func decodeRecurringDue(raw json.RawMessage) *recurringDue {
 // IsNull reports whether an op or field value is absent or JSON null.
 func IsNull(raw json.RawMessage) bool { return len(raw) == 0 || string(raw) == "null" }
 
+// StringOf is a string op value, "" when absent, null or not a string.
+func StringOf(raw json.RawMessage) string {
+	var s string
+	if IsNull(raw) {
+		return ""
+	}
+	_ = json.Unmarshal(raw, &s)
+	return s
+}
+
+// NumberOf is a number op value, 0 when absent, null or not a number.
+func NumberOf(raw json.RawMessage) float64 {
+	var f float64
+	_ = json.Unmarshal(raw, &f)
+	return f
+}
+
 // JSONOf is v as an op value; v must be JSON-encodable.
 func JSONOf(v any) json.RawMessage {
 	b, _ := json.Marshal(v)

@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/base64"
 	"errors"
 	"net/http"
 	"strings"
@@ -9,13 +8,8 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 )
 
-// CalDAV (OpenSpec change `caldav`): app-password routes, the owner toggle and
-// the /dav/ endpoint. The endpoint authenticates with HTTP Basic and app
-// passwords only (never sessions or API tokens) and writes through ApplyStrict
-// like every REST route; see caldav_dav.go and caldav_write.go.
-
-// davRealm is the Basic authentication realm.
-const davRealm = "OpenTodo CalDAV"
+// CalDAV (OpenSpec change `caldav`): app-password routes and the owner toggle
+// here; the /dav/ endpoint is the route package internal/httpapi/davroutes.
 
 func (s *Server) registerCaldavRoutes(mux *routes) {
 	mux.handle("GET /api/v1/app-passwords", signedIn, s.handleListAppPasswords)
@@ -32,17 +26,7 @@ func (s *Server) registerCaldavRoutes(mux *routes) {
 			return body
 		},
 		putMore: s.caldavSettingBody})
-	mux.handle("/dav/", public("CalDAV clients authenticate with an app password in the handler").DemoDenied(), s.handleDAV)
-	mux.handle("/dav", public("CalDAV clients authenticate with an app password in the handler").DemoDenied(), s.handleDAV)
-	mux.handle("/.well-known/caldav", public("CalDAV discovery; the handler authenticates with an app password").DemoDenied(), s.handleDAV)
-	mux.handle("/.well-known/caldav/", public("CalDAV discovery; the handler authenticates with an app password").DemoDenied(), s.handleDAV)
-	// Discovery from the host root (issue #249): Apple's clients probe the root
-	// and /principals/ with WebDAV methods when the well-known address does not
-	// lead them; without CalDAV these answer as the web app did (405, 404).
-	mux.handle("PROPFIND /{$}", public("CalDAV discovery from the host root; redirects to /dav/").DemoDenied(), s.handleDAVRoot)
-	mux.handle("OPTIONS /{$}", public("CalDAV discovery from the host root; reports the DAV capabilities").DemoDenied(), s.handleDAVRoot)
-	mux.handle("/principals", public("CalDAV discovery; redirects to the principal under /dav/").DemoDenied(), s.handleDAVRoot)
-	mux.handle("/principals/", public("CalDAV discovery; redirects to the principal under /dav/").DemoDenied(), s.handleDAVRoot)
+	s.dav.Register(mux)
 }
 
 // caldavURL is the address clients are configured with.
@@ -93,51 +77,4 @@ func (s *Server) handleRevokeAppPassword(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// davAuth resolves HTTP Basic credentials (email and app password). Failures,
-// including revoked passwords, count toward a per-address limit of 10 a minute;
-// while an address is over it every attempt is refused with 429.
-func (s *Server) davAuth(w http.ResponseWriter, r *http.Request) (*auth.User, string, bool) {
-	ip := clientIP(r)
-	if s.davLimiter.blocked(ip) {
-		w.Header().Set("Retry-After", "60")
-		http.Error(w, "too many failed attempts", http.StatusTooManyRequests)
-		return nil, "", false
-	}
-	challenge := func() {
-		w.Header().Set("WWW-Authenticate", `Basic realm="`+davRealm+`", charset="UTF-8"`)
-		http.Error(w, "authentication required", http.StatusUnauthorized)
-	}
-	email, secret, ok := basicAuth(r)
-	if !ok {
-		challenge()
-		return nil, "", false
-	}
-	u, id, err := s.auth.UserByAppPassword(r.Context(), email, secret)
-	if errors.Is(err, auth.ErrNotFound) {
-		s.davLimiter.allow(ip)
-		challenge()
-		return nil, "", false
-	}
-	if err != nil {
-		s.log.Error("caldav auth lookup failed", "err", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return nil, "", false
-	}
-	return u, id, true
-}
-
-func basicAuth(r *http.Request) (user, pass string, ok bool) {
-	h := r.Header.Get("Authorization")
-	const prefix = "Basic "
-	if len(h) < len(prefix) || !strings.EqualFold(h[:len(prefix)], prefix) {
-		return "", "", false
-	}
-	raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(h[len(prefix):]))
-	if err != nil {
-		return "", "", false
-	}
-	user, pass, ok = strings.Cut(string(raw), ":")
-	return user, pass, ok && user != "" && pass != ""
 }

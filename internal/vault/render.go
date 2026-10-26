@@ -13,6 +13,8 @@ type renderInput struct {
 	printed func(taskID string) bool
 	extra   map[string]string // trailing text per task
 	labels  map[string]string // tag slug → label id
+	// skip are tasks that live in TaskNotes notes: never a line.
+	skip map[string]bool
 }
 
 // fileTasks lists the tasks a project file shows: live tasks of the project
@@ -69,6 +71,15 @@ func (v *view) render(in renderInput) *Doc {
 		}
 	}
 	ids := v.fileTasks(in.project, in.printed)
+	if len(in.skip) > 0 {
+		kept := ids[:0]
+		for _, id := range ids {
+			if !in.skip[id] {
+				kept = append(kept, id)
+			}
+		}
+		ids = kept
+	}
 	inFile := map[string]bool{}
 	for _, id := range ids {
 		inFile[id] = true

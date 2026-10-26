@@ -9,6 +9,7 @@ import { useEncryption } from '../lib/e2ee'
 import { formatNumber, t } from '../lib/i18n'
 import { DAY_CAP, HOUR_CAP, onRelayChange, optIn, optOut, relaySnapshot, setConfirmWrites, type RecentCall, type RelayDevice } from '../lib/relay'
 import { rowCopy } from '../lib/settingsCopy'
+import { messageOf } from '../lib/errorText'
 
 export interface RelayViewProps {
   unlocked: boolean
@@ -116,7 +117,7 @@ export function RelaySettings() {
   const onToggle = (on: boolean) => {
     setBusy(true)
     setError(null)
-    void (on ? optIn() : optOut()).then(refresh, (err: unknown) => setError(err instanceof Error ? err.message : String(err))).finally(() => setBusy(false))
+    void (on ? optIn() : optOut()).then(refresh, (err: unknown) => setError(messageOf(err))).finally(() => setBusy(false))
   }
   return (
     <RelayView unlocked={enc.unlocked} optedIn={relay.optedIn} connected={relay.connected} confirmWrites={relay.confirmWrites}

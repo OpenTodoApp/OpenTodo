@@ -5,7 +5,9 @@
 // offline the controls are disabled.
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Button, ConfirmDialog, Field, Input, Notice, Select } from '../ui'
-import { api, ApiError, isNetworkError } from '../lib/api'
+import { api, isNetworkError } from '../lib/api'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import { formatInstant } from '../lib/dates'
 import { useOnline } from '../lib/online'
 import type { PublicLink } from '../lib/types'
@@ -17,13 +19,14 @@ const EXPIRY: readonly (number | null)[] = [null, 1, 7, 30, 90]
 export const rightsText = (r: PublicLink['rights']) => (r === 'tick' ? t('Anyone with this link can tick items') : t('Anyone with this link can view the list'))
 
 function describe(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (err.code === 'encryption_enabled') return t('This project is end-to-end encrypted, so it cannot be published: the server cannot read its tasks.')
-    if (err.code === 'rate_limited') return t('Too many links created recently. Try again later.')
-    if (err.code === 'reauth_required') return t('Confirm your password, then create the link again.')
-    return err.message.charAt(0).toUpperCase() + err.message.slice(1)
-  }
-  return t('The server could not be reached; public links need a connection.')
+  return errorText(err, {
+    offline: t('The server could not be reached; public links need a connection.'),
+    codes: {
+      encryption_enabled: t('This project is end-to-end encrypted, so it cannot be published: the server cannot read its tasks.'),
+      rate_limited: t('Too many links created recently. Try again later.'),
+      reauth_required: t('Confirm your password, then create the link again.'),
+    },
+  })
 }
 
 export function PublicLinksSection({ projectId, focus = false, onChange }: {
@@ -42,8 +45,7 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
   const [days, setDays] = useState<number | null>(null)
   const [created, setCreated] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, setError, run } = useAction({ describe })
   const [revoking, setRevoking] = useState<PublicLink | null>(null)
   const ref = useRef<HTMLElement>(null)
   const onChangeRef = useRef(onChange)
@@ -68,19 +70,13 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
 
   async function create(e: FormEvent) {
     e.preventDefault()
-    setError(null)
-    setBusy(true)
-    try {
+    await run(async () => {
       const res = await api.createPublicLink(projectId, { rights, ...(name.trim() ? { name: name.trim() } : {}), ...(days ? { expiresInDays: days } : {}) })
       setCreated(res.link)
       setCopied(false)
       setName('')
       await load()
-    } catch (err) {
-      setError(describe(err))
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
   async function copy() {

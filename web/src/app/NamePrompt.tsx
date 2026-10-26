@@ -1,6 +1,7 @@
 import { Dialog } from '../ui'
 import { type FormEvent, useState } from 'react'
 import { t } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
 
 /** A small dialog asking for a name: Enter confirms, Esc cancels. Errors from onSubmit are shown inline. */
 export function NamePrompt({ title, label, initial = '', confirm = t('Save'), hint, onSubmit, onCancel }: {
@@ -20,7 +21,7 @@ export function NamePrompt({ title, label, initial = '', confirm = t('Save'), hi
     try {
       await onSubmit(name.trim())
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(messageOf(err))
     }
   }
   return (

@@ -27,6 +27,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { useFieldDefs } from '../useFields'
 import { RelativeTime } from './RelativeTime'
 import { t, msg, translatedMap, currentLanguage } from '../../lib/i18n'
+import { messageOf } from '../../lib/errorText'
 
 const PRIORITY_HUE: Record<number, HueName> = { 1: 'red', 2: 'orange', 3: 'blue', 4: 'slate' }
 const EMPTY_REF = translatedMap<string>({ project_id: msg('Inbox'), parent_id: msg('No parent'), section_id: msg('No section'), assignee_id: msg('Unassigned') })
@@ -259,7 +260,7 @@ export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
       const id = await restoreValue('task', taskId, field, value)
       await afterRestore(id, changeLabel(field).toLowerCase())
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : String(err))
+      setMessage(messageOf(err))
     }
   }
 

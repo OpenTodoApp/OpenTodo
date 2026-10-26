@@ -34,16 +34,6 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   const kind = useSplitKind()
   const wide = useMediaQuery(SPLIT_QUERY)
 
-  // The panel slides in only when it opens from closed, never when it switches tasks
-  // (web-app "Overlay motion", motion-v2 D5).
-  const shown = occupant?.kind === 'task' ? occupant.id : null
-  const [prevShown, setPrevShown] = useState<string | null>(null)
-  const [enteredFor, setEnteredFor] = useState<string | null>(null)
-  if (shown !== prevShown) {
-    setPrevShown(shown)
-    setEnteredFor(shown && !prevShown ? shown : null)
-  }
-
   // While the next task reads from the database the panel keeps the one it shows, so
   // switching tasks never empties the slot for a frame and the list beside it never
   // widens and narrows again (a flicker, GitHub issue 383).
@@ -52,14 +42,33 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   if (!taskId && held) setHeld(null)
   const shownTask = task ?? (task === undefined && taskId ? held : null)
 
+  // The panel slides in only when it opens from closed: when the slot was not on screen,
+  // neither a task nor the empty pane. Switching tasks or filling the empty pane never
+  // replays it (web-app "Overlay motion", motion-v2 D5, GitHub issue 442).
+  const hasEmptyPane = !!empty && wide
+  const visible = occupant?.kind === 'task' ? !!shownTask || hasEmptyPane : !occupant && hasEmptyPane
+  const shown = occupant?.kind === 'task' ? occupant.id : null
+  const [prevShown, setPrevShown] = useState<string | null>(null)
+  const [wasVisible, setWasVisible] = useState(false)
+  const [enteredFor, setEnteredFor] = useState<string | null>(null)
+  if (shown !== prevShown) {
+    setPrevShown(shown)
+    setEnteredFor(shown && !prevShown && !wasVisible ? shown : null)
+  }
+  if (visible !== wasVisible) setWasVisible(visible)
+
   // A task that is gone (deleted here or elsewhere) leaves the slot.
   useEffect(() => {
     if (taskId && (task === null || task?.deleted_at)) closePanel()
   }, [taskId, task])
 
-  if (!occupant) return empty && wide ? <SplitPane side={kind === 'panel'}>{empty()}</SplitPane> : null
+  const emptyPane = empty && wide ? <SplitPane side={kind === 'panel'}>{empty()}</SplitPane> : null
+  if (!occupant) return emptyPane
   if (occupant.kind === 'custom') return <>{occupant.render()}</>
-  if (!shownTask) return null
+  // The first task after the empty pane is still reading, or turned out not to exist and
+  // is about to leave: the pane stays until a task replaces it in one step, so the slot
+  // never disappears for a frame (GitHub issue 442).
+  if (!shownTask) return emptyPane
   return (
     <TaskDetail
       // Remount per task so pickers and drafts never show the previous task's data.
