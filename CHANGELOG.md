@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-10-26
+
+OpenTodo 0.14.2 is the second **security release** of the internal audit; please upgrade. It narrows what the server can reach on its own network (map proxy, private-target switch), keeps one client from using up a hosted tenant's or the demo's limits, tightens single sign-on linking and password reset, and closes attachment quota and cache gaps. **The first-run setup code is now off by default**: a fresh server can be set up without reading its log; set `OPENTODO_SETUP_CODE=required` to keep the code.
+
 ### Upgrade notes
 
 - **The first-run setup code is now off by default.** If you relied on it to protect a fresh server reachable from the internet, set `OPENTODO_SETUP_CODE=required`; `OPENTODO_SETUP_TOKEN` works as before. Without either, the first person to open a server with no owner becomes its owner: finish setup right after starting it. ([The setup code](docs/self-hosting/docker.md#the-setup-code))
@@ -25,6 +29,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 - **The attachment total can no longer be exceeded.** Undoing the removal of a file is now checked against your total, and several uploads at once share it, so neither can store more than the owner allows. Found in an internal audit. ([Attachments](docs/attachments.md#limits))
 - **Files no longer stay readable in the browser after signing out.** Attachments are now checked with the server each time they are shown, and signing out asks the browser to empty its cache for OpenTodo (on https), so the next person on a shared computer cannot open them. Found in an internal audit.
 - **Links from encrypted data open only as web links.** A task's source link and a link attachment of an encrypted account open only `http` and `https` addresses; anything else is shown without a link. Found in an internal audit.
+
+### Fixed
+
+- **The Assistant page shows its title on a phone in every language.** On a narrow phone, the page's History and New chat buttons took the whole top bar in French, Spanish, Italian, German and Portuguese, leaving no room for the title. Below tablet width the two buttons now show their icons only, and their names stay available to screen readers.
 
 ## [0.14.1] - 2026-10-26
 
@@ -63,7 +71,6 @@ OpenTodo 0.14.1 is a **security release**; please upgrade. It fixes the findings
 - **A database read that fails part way is no longer taken as complete.** The cleanup of notification channel secrets, at start and with the regular maintenance, could remove the tokens of channels that still exist when reading the channel list stopped early with an error; it now removes nothing then. A Things import that hits a read error stops with the error instead of importing part of the database, and the webhook and notification channel workers retry instead of sending a partial batch. Found in an internal audit.
 - **`ot vault` no longer changes tasks by rewriting a file.** In some files the vault wrote a line that read back differently, so the next sync sent a change to the server: a task's location, origin or custom field holding a bracket or a line break, a title that began like a field (`[note::`) or ended in a marker such as 📅, a recurrence directly followed by another field, unusual spaces between words, a top-level task indented by a space (prose after it became its note), a note line of only spaces, prose starting with `---`, and old Mac line ends. A stray `]` in unknown text is now written as `\]`. Each of these now reads back exactly as written. Found by fuzzing. ([Vault](docs/vault.md))
 - **A long task in the side panel no longer scrolls the whole page.** With a long note, the window got a second scroll bar and the page moved instead of the panel, pushing the comment box out of view. Only the panel scrolls now. ([The task panel](docs/task-panel.md))
-- **The Assistant page shows its title on a phone in every language.** On a narrow phone, the page's History and New chat buttons took the whole top bar in French, Spanish, Italian, German and Portuguese, leaving no room for the title. Below tablet width the two buttons now show their icons only, and their names stay available to screen readers.
 
 ## [0.14.0] - 2026-10-26
 
@@ -926,7 +933,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.14.1...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.14.2...HEAD
+[0.14.2]: https://github.com/pixari/opentodo/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/pixari/opentodo/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/pixari/opentodo/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/pixari/opentodo/compare/v0.12.0...v0.13.0
