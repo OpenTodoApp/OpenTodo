@@ -12,6 +12,23 @@ import { ME, membership, open, setupTaskDetailTests, waitFor } from './taskDetai
 
 setupTaskDetailTests()
 
+describe('panel order (task-panel-notes-below 1.1, GitHub issue 444)', () => {
+  it('the properties, subtasks and attachments come first, then the notes, then the tabs', async () => {
+    const id = await createTask({ title: 'Plan', description: 'Bring the ladder.\n\nAnd the paint.' })
+    await createSubtask(id, 'Buy brushes')
+    const { container, unmount } = await open(id)
+    const body = () => container.querySelector('[data-panel-body]')!
+    await waitFor(() => !!body().querySelector('.notes-host') && !!body().querySelector('[data-subtasks] li'), 'the notes and the subtask')
+    const parts = ['[data-facets]', '[data-subtasks]', '[data-testid="attachments-row"]', '.notes-host', '[data-conversation]']
+      .map((sel) => body().querySelector(sel))
+    parts.forEach((el, i) => expect(el, `part ${i} rendered`).toBeTruthy())
+    for (let i = 1; i < parts.length; i++) {
+      expect(parts[i - 1]!.compareDocumentPosition(parts[i]!) & Node.DOCUMENT_POSITION_FOLLOWING, `part ${i - 1} before part ${i}`).toBeTruthy()
+    }
+    await unmount()
+  })
+})
+
 describe('header (2.2)', () => {
   it('Delete in the header menu trashes the task and closes the panel; the menu works by keyboard', async () => {
     const id = await createTask({ title: 'Old errand' })
