@@ -4,11 +4,16 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText, ROOT } from './common.mjs'
+import { configVariables, escapeRegExp, imageFor, laterRelease, loadFacts, readText, releaseVersion, ROOT } from './common.mjs'
 import { check, COMPOSE, MANIFEST, parseManifest, routes, UPSTREAM } from './umbrel.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
+const VR = escapeRegExp(V)
+const LATER = laterRelease(V)
+const LATER_R = escapeRegExp(LATER)
 const manifest = readText(MANIFEST)
 const compose = readText(COMPOSE)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
@@ -52,15 +57,18 @@ test('umbrel: the manifest parser reads folded text, lists of maps and quotes, a
 test('umbrel: image pinned by release tag and digest, equal to the manifest version', () => {
   // The committed digest, whatever scripts/deploy/pin.mjs last wrote.
   const digest = /@sha256:([0-9a-f]{64})/.exec(compose)[1]
-  // 0.14.2 was published before the move to OpenTodoApp, so it stays pinned under the legacy name.
-  has(variant(both('docker-compose.yml', compose.replace(`0.14.2@sha256:${digest}`, 'stable'))), /image must be ghcr\.io\/pixari\/opentodo:0\.14\.2@sha256/)
-  has(variant(both('docker-compose.yml', compose.replaceAll('ghcr.io/pixari/opentodo:', 'ghcr.io/opentodoapp/opentodo:'))), /image must be ghcr\.io\/pixari\/opentodo:0\.14\.2@sha256/)
+  // A release from before the move to OpenTodoApp (up to deploy.json legacy.lastRelease) stays pinned under the legacy name.
+  const pinned = imageFor(facts, V)
+  const other = pinned === facts.image ? facts.legacy.image : facts.image
+  const wantPin = new RegExp(`image must be ${escapeRegExp(pinned)}:${VR}@sha256`)
+  has(variant(both('docker-compose.yml', compose.replace(`${V}@sha256:${digest}`, 'stable'))), wantPin)
+  has(variant(both('docker-compose.yml', compose.replaceAll(`${pinned}:`, `${other}:`))), wantPin)
   has(variant(both('docker-compose.yml', compose.replace(`@sha256:${digest}`, ''))), /image must be .*@sha256:<index digest>/)
-  has(variant(both('umbrel-app.yml', manifest.replace('version: "0.14.2"', 'version: "0.6.0"'))), /manifest version 0\.6\.0 must equal the image tag 0\.14\.2/)
+  has(variant(both('umbrel-app.yml', manifest.replace(`version: "${V}"`, 'version: "0.6.0"'))), new RegExp(String.raw`manifest version 0\.6\.0 must equal the image tag ${VR}`))
   // A new release makes the pinned package stale until the version, tag and digest are bumped.
-  const next = { ...ctx, changelog: '## [0.15.1] - 2026-12-20\n' + ctx.changelog }
+  const next = { ...ctx, changelog: `## [${LATER}] - 2026-12-20\n` + ctx.changelog }
   // A release after the move to OpenTodoApp is pinned under the new name (the digest is per repository).
-  has(variant({}, next), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.15\.1@sha256/)
+  has(variant({}, next), new RegExp(`image must be ${escapeRegExp(facts.image)}:${LATER_R}@sha256`))
 })
 
 test('umbrel: manifest rules', () => {
@@ -75,7 +83,7 @@ test('umbrel: manifest rules', () => {
   has(m('umbrel-apps/pull/6251', 'umbrel-apps/pull/0000'), /not the 0000 placeholder/)
   has(m('submission: https://github.com/getumbrel/umbrel-apps/pull/6251', 'submission: https://example.com'), /submission must be the pull request URL/)
   has(m('path: ""', 'path: ""\nicon: https://example.com/x.svg'), /icon is not used/)
-  has(m('name: OpenTodo\nversion', 'version: "0.14.2"\nname: OpenTodo\nversion'), /duplicate key|Umbrel's order/)
+  has(m('name: OpenTodo\nversion', `version: "${V}"\nname: OpenTodo\nversion`), /duplicate key|Umbrel's order/)
   has(m('There is no default password', 'There is no password'), /no default password/)
 })
 

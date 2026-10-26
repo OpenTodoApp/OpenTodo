@@ -52,6 +52,10 @@ A pull request runs a fast tier picked by the paths it changes (`scripts/ci-chan
 
 Imperative mood, one logical change per commit, reference the OpenSpec change name when applicable, e.g. `sync: clamp future timestamps (bootstrap-core-platform)`.
 
+## Releases
+
+Maintainers cut releases with `make release-prepare VERSION=x.y.z` and a `v*` tag; [RELEASING.md](RELEASING.md) has the whole flow.
+
 ## License
 
 By contributing you agree that your contributions are licensed under the AGPL-3.0-only, like the rest of the project. Project templates in `templates/` are content and are licensed under CC BY 4.0 (see `templates/README.md`).

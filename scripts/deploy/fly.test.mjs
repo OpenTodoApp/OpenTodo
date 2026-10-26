@@ -1,11 +1,13 @@
 // node --test scripts/deploy/fly.test.mjs  (OpenSpec change platform-catalogs)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { checkShared, configVariables, loadFacts, readText } from './common.mjs'
+import { checkShared, configVariables, loadFacts, readText, releaseVersion } from './common.mjs'
 import { check, checkInstructions, checkTemplate, GUIDE, parseToml, parseValue, README, TEMPLATE } from './fly.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
 const toml = readText(TEMPLATE)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
 const all = (text) => {
@@ -48,7 +50,7 @@ test('fly: TOML subset parser', () => {
 
 test('fly: image policy', () => {
   has(withToml('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
-  has(withToml('opentodo:stable', 'opentodo:0.14.2'), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(withToml('opentodo:stable', `opentodo:${V}`), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(withToml('[build]\n  image = "ghcr.io/opentodoapp/opentodo:stable"\n', ''), /\[build\] with image is required/)
   has(withToml('  image = "ghcr.io/opentodoapp/opentodo:stable"\n', '  image = "ghcr.io/opentodoapp/opentodo:stable"\n  dockerfile = "Dockerfile"\n'), /\[build\] "dockerfile" is not allowed/)
 })
