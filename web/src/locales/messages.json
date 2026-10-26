@@ -263,6 +263,9 @@
   "A group with this name already exists in the workspace.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "A home page for the method and a daily check-in.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "A key is saved; type to replace it": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -834,6 +837,9 @@
   ],
   "Add field": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "Add four context labels, {names}? A context is where or how you can do a task; any label starting with @ is one.": [
+    "web/src/app/method/MethodModeChooser.tsx"
   ],
   "Add it to your assistant": [
     "web/src/app/AssistantsPanel.tsx"
@@ -2614,9 +2620,6 @@
     "web/src/app/AppearanceSection.tsx"
   ],
   "Compact tightens rows, headers and the sidebar; touch targets stay full size.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Companion": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Comparison": [
@@ -5026,6 +5029,9 @@
   "From {text}": [
     "web/src/app/OriginChip.tsx"
   ],
+  "Full Open Loops method": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Full access": [
     "web/src/app/TokensSection.tsx"
   ],
@@ -5536,7 +5542,7 @@
   "How long the audit log keeps events, and whether it records addresses.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "How much the app shows its method, Open Loops. Synced; never changes a task.": [
+  "How much of the Open Loops method the app shows. Synced; never changes a task.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "How people who share a project with you see you.": [
@@ -6095,6 +6101,9 @@
   "Joining…": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
+  "Just your tasks and lists, nothing else.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Keep": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/rules/RuleFields.tsx"
@@ -6401,9 +6410,6 @@
   "Learn more: {topic}": [
     "web/src/ui/LearnMore.tsx"
   ],
-  "Learn the method: {method}": [
-    "web/src/app/method/MethodModeChooser.tsx"
-  ],
   "Learning|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
@@ -6550,11 +6556,8 @@
   "Lists": [
     "web/src/app/calendar/PlanPanel.tsx"
   ],
-  "Lists only": [
+  "Lists with method hints": [
     "web/src/lib/settingsCopy.ts"
-  ],
-  "Lists only, Companion or Open Loops first: how much the app shows its method": [
-    "web/src/app/settingsIndex.ts"
   ],
   "Live updates connected": [
     "web/src/app/SyncStatus.tsx"
@@ -8638,12 +8641,6 @@
     "web/src/app/TrashView.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
-  "Open Loops first": [
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Open Loops first arranges the sidebar; these choices apply in the other modes.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "Open New view: build a query, then save it as a view": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -8716,7 +8713,7 @@
   "Open on the Loop home": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
-  "Open on the Loop home on this device? Your other devices keep their own start view.": [
+  "Open on the Loop home on this device? It shows what needs your attention today. Your other devices keep their own start view.": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
   "Open parent task": [
@@ -8800,9 +8797,6 @@
   ],
   "Open {title}": [
     "web/src/app/palette/registry.ts"
-  ],
-  "OpenTodo as a plain task app, with no method words.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "OpenTodo asks the browser to recognise speech on this device when it offers that choice.": [
     "web/src/app/VoiceSettings.tsx"
@@ -10638,6 +10632,9 @@
   "Safety copy from {instant}, {size}": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "Same sidebar, plus a hint on each screen's purpose.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Sample": [
     "web/src/app/TaskRow.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -11599,6 +11596,12 @@
   "Signing secret of {name}. Copy it now; it is never shown again.": [
     "web/src/app/NotificationChannels.tsx"
   ],
+  "Simple lists": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Simple lists, method hints or the full Open Loops method": [
+    "web/src/app/settingsIndex.ts"
+  ],
   "Single occurrence of {title}": [
     "web/src/app/task-detail/TaskHead.tsx"
   ],
@@ -11899,9 +11902,6 @@
   ],
   "Start view, briefing, keyboard, focus timer and maps": [
     "web/src/app/settingsSections.ts"
-  ],
-  "Start with four contexts? {names}. Any label that starts with @ is a context.": [
-    "web/src/app/method/MethodModeChooser.tsx"
   ],
   "Start with three sample tasks": [
     "web/src/app/FirstRun.tsx"
@@ -12413,9 +12413,6 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
-  "The Loop home first, a sidebar by the Places, a daily check.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -12602,6 +12599,9 @@
   ],
   "The five moves": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "The full Open Loops method arranges the sidebar; these choices apply in the other modes.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The guide is in English.": [
     "web/src/app/help/EnglishGuideNote.tsx"
@@ -14927,6 +14927,9 @@
   "What is the next step?": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "What is {method}?": [
+    "web/src/app/method/MethodModeChooser.tsx"
+  ],
   "What keeps slipping?": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -15500,9 +15503,6 @@
   "Your server cannot be reached. Try again when you are online.": [
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/ServerArchivePanel.tsx"
-  ],
-  "Your sidebar as it is; screens name the move they serve.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "Your sign-in provider manages it: {provider}.": [
     "web/src/lib/settingsCopy.ts"
@@ -17185,6 +17185,9 @@
   ],
   "{label} backup, {instant}, {kind}": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "{method} is an optional way to clear your head: write everything down, decide what each thing needs, and look back weekly. Choose how much of it you want; you can change this in Settings.": [
+    "web/src/app/FirstRun.tsx"
   ],
   "{minutes} in calendar events": [
     "web/src/lib/plan.ts"

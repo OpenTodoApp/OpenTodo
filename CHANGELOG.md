@@ -7,6 +7,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Changed
 
 - **OpenTodo moved to the OpenTodoApp organization, and the image to `ghcr.io/opentodoapp/opentodo`.** The repository is now [github.com/OpenTodoApp/OpenTodo](https://github.com/OpenTodoApp/OpenTodo) (old links redirect), the image `ghcr.io/opentodoapp/opentodo` with the same tags, and the Helm chart `oci://ghcr.io/opentodoapp/charts/opentodo`. The old image `ghcr.io/pixari/opentodo` and chart `oci://ghcr.io/pixari/charts/opentodo` keep getting every release through 0.16.x and stop being updated with 0.17.0: replace `ghcr.io/pixari/opentodo` with `ghcr.io/opentodoapp/opentodo` where you run OpenTodo, nothing else changes. The Go module is now `github.com/OpenTodoApp/opentodo` (`go install github.com/OpenTodoApp/opentodo/cmd/ot@latest`). ([Docker](docs/self-hosting/docker.md#the-move-to-opentodoapp))
+- **Plainer words in the start guide and How you work.** The start guide now says what Open Loops is before asking how much of it you want. The three choices are now called **Simple lists**, **Lists with method hints** and **Full Open Loops method** (they were Lists only, Companion and Open Loops first), the link reads **What is Open Loops?**, and the offers explain what a context and the Loop home are. Your choice is kept; nothing else changes. ([#433](https://github.com/OpenTodoApp/OpenTodo/issues/433), [Set up in ten minutes](docs/method/set-up.md))
 
 ### Fixed
 
