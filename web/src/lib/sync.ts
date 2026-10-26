@@ -27,6 +27,7 @@ import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitReje
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
 import { uuid } from './ids'
+import { onTestTeardown } from './testTeardown'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -344,7 +345,8 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
     alive()
     // Encrypted task pages (task-pages D3, D4): a new snapshot after a change, and the
     // guests' replies imported. Loaded on demand; it skips itself when there is nothing.
-    void import('./taskPages').then((m) => m.maintainTaskPages()).catch(() => undefined)
+    // Not once the session ended (sign-out, stopSync) while the module loaded.
+    void import('./taskPages').then((m) => { alive(); return m.maintainTaskPages() }).catch(() => undefined)
     failures = 0
     const held = await heldCount()
     alive()
@@ -708,6 +710,9 @@ export async function stopSyncAndWait(): Promise<void> {
   stopSync()
   await running?.catch(() => undefined)
 }
+
+// A debounced exchange a test's write scheduled never fires into the next test.
+onTestTeardown(stopSyncAndWait)
 
 // ---- one tab syncs (client-sync-robustness) ----
 //

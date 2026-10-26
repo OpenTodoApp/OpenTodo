@@ -2,7 +2,7 @@
 // Guard test (OpenSpec change search-and-command-palette, design D6): every item of
 // the project, view, label and section menus has a palette command for that row.
 import 'fake-indexeddb/auto'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { Label, Project, Section, Task, User, View } from '../../lib/types'
 import type { ListState } from '../listActions'
 import { render } from '../../ui/test-utils'
@@ -14,7 +14,6 @@ import { viewMenuGroups } from '../ViewsView'
 import { HUES } from '../../ui'
 import { commands, type PaletteContext } from './registry'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const project = { id: 'p1', name: 'Home', color: '#000', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, _clock: {} } as Project

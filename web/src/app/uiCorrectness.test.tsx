@@ -43,7 +43,6 @@ afterEach(() => {
   resetPanel()
   applyCatalog('en', 'en', {})
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
-  document.body.innerHTML = ''
 })
 
 const confirmDialog = () => document.querySelector<HTMLElement>('[data-testid="confirm-dialog"]')

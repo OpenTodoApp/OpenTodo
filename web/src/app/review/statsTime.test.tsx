@@ -31,7 +31,6 @@ beforeEach(async () => {
 afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 async function waitFor(ok: () => boolean, ms = 3000) {

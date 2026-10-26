@@ -38,7 +38,6 @@ afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
   resetPanel()
-  document.body.innerHTML = ''
 })
 
 const notice = () => document.querySelector<HTMLElement>('[data-break-reminder]')

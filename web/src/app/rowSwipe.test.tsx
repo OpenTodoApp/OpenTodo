@@ -45,7 +45,6 @@ afterEach(async () => {
   vi.unstubAllGlobals()
   hideBulkToast()
   resetPanel()
-  document.body.innerHTML = ''
 })
 
 async function inbox(...titles: string[]) {

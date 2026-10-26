@@ -27,7 +27,7 @@ beforeEach(async () => {
   resetDepartures()
   vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
 })
-afterEach(() => { vi.unstubAllGlobals(); hideBulkToast(); resetPanel(); resetDepartures(); document.body.innerHTML = '' })
+afterEach(() => { vi.unstubAllGlobals(); hideBulkToast(); resetPanel(); resetDepartures() })
 
 const row = (c: HTMLElement, title: string) => [...c.querySelectorAll<HTMLElement>('[data-task-id]')].find((li) => li.textContent?.includes(title))
 const ghost = (c: HTMLElement) => c.querySelector<HTMLElement>('[data-departing]')

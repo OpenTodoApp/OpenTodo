@@ -3,7 +3,7 @@
 // 3.1 and 3.2): open by default in the Filter view and remembered per device,
 // closed by default on a saved filter, whose draft it edits and counts.
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId } from '../../lib/ops'
 import { createView } from '../../lib/views'
@@ -16,9 +16,6 @@ beforeEach(() => {
   useDatabase(`filter-builder-${Date.now()}-${n++}`)
   resetDeviceId()
   localStorage.clear()
-})
-afterEach(() => {
-  document.body.innerHTML = ''
 })
 
 const button = (root: ParentNode, text: string) =>

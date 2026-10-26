@@ -123,6 +123,9 @@ export default defineConfig({
     // waitFor (ui/test-utils, 10 s), so the cap only has to catch a hang
     // (web-lint-and-test-hygiene).
     testTimeout: 30_000,
+    // After-hooks run in the order they are declared: the shared teardown of
+    // test-setup.ts first, while a file's own mocks still answer, then the file's.
+    sequence: { hooks: 'list' },
     // Floating and zoned dates are pinned in UTC, as CI runs (planView's zoned due,
     // the "Calendars as of" time): a developer's own zone must not change results.
     env: { TZ: 'UTC' },

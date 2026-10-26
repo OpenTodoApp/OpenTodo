@@ -2,7 +2,7 @@
 // web-app "Settings": sign out from the Account section confirms first; the
 // Profile card (settings-refresh, account-profile "Profile in Settings").
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { SessionPanel } from './AccountSettings'
 import type { Profile, User } from '../lib/types'
@@ -90,7 +90,6 @@ describe('ProfileSection', () => {
     localStorage.clear()
     Object.values(calls).forEach((f) => f.mockReset())
   })
-  afterEach(() => { document.body.innerHTML = '' })
 
   it('Rename: the new name shows at once and the app is told', async () => {
     calls.profile.mockResolvedValue(prof())

@@ -34,7 +34,6 @@ afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
   resetPanel()
-  document.body.innerHTML = ''
 })
 
 const cardTitle = () => document.querySelector('[data-triage-card] h2')?.textContent

@@ -27,7 +27,7 @@ beforeEach(async () => {
   await db.views.put(view)
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel() })
+afterEach(() => { vi.unstubAllGlobals(); resetPanel() })
 
 const pinItem = () => document.querySelector<HTMLElement>('[data-menu-label="Pin to sidebar"]')
 const ops = async () => (await db.outbox.toArray()).map((o) => `${o.entity}.${o.field}=${JSON.stringify(o.value)}`).sort()

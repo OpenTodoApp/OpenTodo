@@ -19,7 +19,6 @@ beforeEach(async () => {
 })
 afterEach(() => {
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 const note = (root: ParentNode) => root.querySelector('[data-project-note]')

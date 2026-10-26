@@ -39,7 +39,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 const mapRequests = () => requests.filter((r) => r.path.startsWith('/api/v1/maps'))

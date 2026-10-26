@@ -22,7 +22,7 @@ beforeEach(async () => {
   resetDeviceId()
   root().removeAttribute('data-density')
 })
-afterEach(() => { document.body.innerHTML = ''; root().removeAttribute('data-density') })
+afterEach(() => { root().removeAttribute('data-density') })
 
 describe('preference', () => {
   it('reads compact, treats an unknown value as comfortable and leaves the stored value alone', async () => {

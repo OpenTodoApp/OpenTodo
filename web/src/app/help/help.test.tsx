@@ -12,7 +12,6 @@ import { HELP_TASKS, HelpView } from './HelpView'
 import { closeHelp, openHelp } from '../../lib/helpRequest'
 import { applyLanguagePreference } from '../../lib/i18n'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 async function waitFor(ok: () => boolean, ms = 3000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)

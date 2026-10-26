@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
 // The cheat sheet (OpenSpec change ux-overhaul, keyboard-shortcuts "Cheat sheet"):
 // context first, searchable, capped height with its own scroller.
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { flush, render, type, waitFor } from '../ui/test-utils'
 import { contextSections, orderedSections, ShortcutHelp } from './ShortcutHelp'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 const sections = () => [...document.querySelectorAll('[data-help-section]')].map((s) => s.getAttribute('data-help-section'))
 

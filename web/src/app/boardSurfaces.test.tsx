@@ -24,7 +24,6 @@ beforeEach(async () => {
 })
 afterEach(() => {
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 async function board() {

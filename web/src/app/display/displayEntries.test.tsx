@@ -26,7 +26,6 @@ beforeEach(async () => {
   window.dispatchEvent(new PopStateEvent('popstate'))
 })
 afterEach(() => {
-  document.body.innerHTML = ''
   vi.unstubAllGlobals()
 })
 

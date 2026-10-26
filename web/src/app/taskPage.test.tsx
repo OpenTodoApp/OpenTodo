@@ -25,7 +25,7 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
   history.replaceState(null, '', '/')
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel(); resetTaskTrail() })
+afterEach(() => { vi.unstubAllGlobals(); resetPanel(); resetTaskTrail() })
 
 const page = () => document.querySelector<HTMLElement>('[data-detail-variant="page"]')
 const rowOpen = (title: string) => [...document.querySelectorAll<HTMLElement>('[data-task-id] button.min-w-0')].find((b) => b.textContent?.includes(title))!

@@ -3,7 +3,7 @@
 // formula, groups and Not, keyboard removal, and the notice for queries it
 // cannot show.
 import { useState } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { parse } from '../../lib/filter'
 import { stripPositions, type Leaf } from '../../lib/filter/builder'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
@@ -11,9 +11,6 @@ import { conditionText } from './conditionText'
 import { draftOf, leafOf } from './ConditionEditor'
 import { FilterBuilder } from './FilterBuilder'
 
-afterEach(() => {
-  document.body.innerHTML = ''
-})
 
 let current = ''
 function Harness({ initial, workspaces }: { initial: string; workspaces?: { id: string; name: string }[] }) {
@@ -75,7 +72,7 @@ describe('FilterBuilder', () => {
     await click(one.container.querySelector('[data-add-condition]') as HTMLButtonElement)
     await waitFor(() => !!editor(), 'the condition dialog')
     expect([...(editor()!.querySelector('select') as HTMLSelectElement).options].map((o) => o.value)).not.toContain('workspace')
-    document.body.innerHTML = ''
+    await one.unmount()
     const r = await render(<Harness initial="" workspaces={[{ id: 'w1', name: 'Personal' }, { id: 'w2', name: 'Side projects' }]} />)
     await click(r.container.querySelector('[data-add-condition]') as HTMLButtonElement)
     await waitFor(() => !!editor(), 'the condition dialog')

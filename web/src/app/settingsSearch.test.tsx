@@ -21,7 +21,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
   takeSettingsFocus()
 })
-afterEach(() => { document.body.innerHTML = ''; vi.restoreAllMocks(); vi.unstubAllGlobals() })
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('index', () => {
   it('finds how tasks open under Appearance → Task details (task-side-panel)', () => {

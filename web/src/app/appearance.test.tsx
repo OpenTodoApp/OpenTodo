@@ -18,7 +18,6 @@ beforeEach(async () => {
   document.documentElement.removeAttribute('data-accent')
   localStorage.clear()
 })
-afterEach(() => { document.body.innerHTML = '' })
 
 const root = () => document.documentElement
 const tile = (id: string) => document.querySelector<HTMLButtonElement>(`[data-theme-tile="${id}"]`)!

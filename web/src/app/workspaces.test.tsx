@@ -24,7 +24,7 @@ beforeEach(async () => {
   localStorage.clear()
   resetPanel()
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllGlobals() })
 
 
 describe('the workspace control', () => {

@@ -49,7 +49,6 @@ afterEach(() => {
   closeStartGuide()
   vi.useRealTimers()
   setDemo(null)
-  document.body.innerHTML = ''
 })
 
 const q = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)

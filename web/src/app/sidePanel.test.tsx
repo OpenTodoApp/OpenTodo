@@ -47,7 +47,6 @@ afterEach(async () => {
   window.matchMedia = original
   resetPanel()
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 /** Enter as a browser presses it: the keydown, then, on a focused button nobody stopped, its click (detail 0). */

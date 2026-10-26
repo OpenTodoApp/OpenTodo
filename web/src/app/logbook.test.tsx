@@ -90,7 +90,6 @@ describe('Completed view', () => {
   afterEach(() => {
     vi.useRealTimers()
     resetCollapsedGroups()
-    document.body.innerHTML = ''
   })
 
   const headings = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-group-header] h2')].map((h) => h.textContent)

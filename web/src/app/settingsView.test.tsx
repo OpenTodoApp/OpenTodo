@@ -30,7 +30,7 @@ beforeEach(() => {
   window.dispatchEvent(new PopStateEvent('popstate'))
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
 })
-afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.restoreAllMocks(); vi.unstubAllGlobals() })
+afterEach(() => { window.matchMedia = original; vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 
 describe('from 1024 px', () => {

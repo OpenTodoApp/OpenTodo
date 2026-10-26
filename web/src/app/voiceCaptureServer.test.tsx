@@ -46,7 +46,6 @@ beforeEach(() => {
   setSpeechService({ connected: false })
 })
 afterEach(() => {
-  document.body.innerHTML = ''
   delete g.SpeechRecognition
   delete g.MediaRecorder
 })

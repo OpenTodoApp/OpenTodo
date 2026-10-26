@@ -35,7 +35,6 @@ afterEach(async () => {
   vi.useRealTimers()
   hideBulkToast()
   closeAssistant()
-  document.body.innerHTML = ''
   vi.unstubAllGlobals()
 })
 

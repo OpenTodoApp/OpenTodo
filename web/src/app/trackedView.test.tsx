@@ -23,7 +23,6 @@ beforeEach(async () => {
 })
 afterEach(() => {
   vi.useRealTimers()
-  document.body.innerHTML = ''
 })
 
 

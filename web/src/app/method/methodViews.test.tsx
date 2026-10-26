@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { useDatabase } from '../../lib/db'
 import { createLabel } from '../../lib/labels'
 import { createProject, createTask, resetDeviceId, setTaskCompleted, updateTask } from '../../lib/ops'
@@ -13,7 +13,6 @@ beforeEach(() => {
   resetDeviceId()
   window.history.replaceState(null, '', '/next')
 })
-afterEach(() => { document.body.innerHTML = '' })
 
 async function waitFor(ok: () => boolean, ms = 3000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)

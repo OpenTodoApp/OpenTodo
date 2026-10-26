@@ -28,7 +28,6 @@ beforeEach(async () => {
 afterEach(() => {
   setDemo(null)
   closeHelp()
-  document.body.innerHTML = ''
 })
 
 describe('demo banner', () => {

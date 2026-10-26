@@ -32,7 +32,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
   resetPanel()
-  document.body.innerHTML = ''
 })
 
 

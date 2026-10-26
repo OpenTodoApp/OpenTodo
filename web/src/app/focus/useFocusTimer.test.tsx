@@ -81,7 +81,6 @@ beforeEach(async () => {
 afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 /** Tones are counted per oscillator: one tone is two notes. */

@@ -41,7 +41,6 @@ describe('useToday with a day start', () => {
     vi.useRealTimers()
     setDayStart(0)
     resetCollapsedGroups()
-    document.body.innerHTML = ''
   })
 
   const overdue = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-group-header] h2')].some((h) => h.textContent!.startsWith('Earlier'))

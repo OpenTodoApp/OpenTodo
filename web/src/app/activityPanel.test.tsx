@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // Recent activity as a compact list (OpenSpec change settings-refresh D4; audit-log
 // "Compact recent activity"): days, folded sign-ins, ten lines and Show all.
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { AuditEvent } from '../lib/types'
 import { click, render } from '../ui/test-utils'
 import { ActivityView } from './ActivityPanel'
@@ -16,7 +16,6 @@ const ev = (name: AuditEvent['name'], hoursAgo: number, over: Partial<AuditEvent
 })
 const lines = () => [...document.querySelectorAll('[data-activity-line]')].map((e) => e.textContent)
 
-afterEach(() => { document.body.innerHTML = '' })
 
 describe('Recent activity', () => {
   it('Compact recent activity: "Signed in ×4 · Chrome on Linux" today and the token yesterday, one line each', async () => {
