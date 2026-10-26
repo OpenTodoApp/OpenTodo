@@ -66,4 +66,41 @@ export function A({ id }: { id: string }) {
 }`
     expect(await lint(code)).toEqual([])
   })
+
+  // Test audit F2: tests wait for a condition, never for a fixed time.
+  describe('no fixed waits in tests', () => {
+    const test = 'src/app/fixture.test.tsx'
+    it('refuses flush(n), sleep(n) and a promise around setTimeout', async () => {
+      const code = `import { flush } from '../ui/test-utils'
+declare const sleep: (ms: number) => Promise<void>
+export async function t() {
+  await flush(40)
+  await sleep(100)
+  await new Promise((r) => setTimeout(r, 50))
+  await new Promise<void>((resolve) => setTimeout(() => resolve(), 20))
+}`
+      expect(await lint(code, test)).toEqual(Array(4).fill('test-hygiene/no-fixed-wait: 2'))
+    })
+
+    it('accepts flush(), a zero delay, waitFor and timers that are not waits', async () => {
+      const code = `import { flush, waitFor } from '../ui/test-utils'
+export async function t(done: () => boolean) {
+  await flush()
+  await flush(0)
+  await new Promise((r) => setTimeout(r, 0))
+  await waitFor(done, 'the list')
+  setTimeout(() => {}, 500)
+}`
+      expect(await lint(code, test)).toEqual([])
+    })
+
+    it('accepts a fixed wait that carries its reason, and app code', async () => {
+      const reasoned = `export async function t() {
+  // eslint-disable-next-line test-hygiene/no-fixed-wait -- the type-ahead buffer resets after 500 ms
+  await new Promise((r) => setTimeout(r, 550))
+}`
+      expect(await lint(reasoned, test)).toEqual([])
+      expect(await lint(`export const pause = () => new Promise((r) => setTimeout(r, 50))`, 'src/lib/pause.ts')).toEqual([])
+    })
+  })
 })
