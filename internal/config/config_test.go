@@ -332,6 +332,25 @@ func TestSetupTokenValidation(t *testing.T) {
 	}
 }
 
+// TestSetupCodeSetting (auth-hardening D6): OPENTODO_SETUP_CODE is off when
+// unset, empty or "off", on with "required" (any case), and anything else
+// stops startup with a message naming the variable.
+func TestSetupCodeSetting(t *testing.T) {
+	for in, want := range map[string]bool{"": false, "off": false, " OFF ": false, "required": true, "Required\n": true} {
+		t.Setenv("OPENTODO_SETUP_CODE", in)
+		c, err := Load()
+		if err != nil || c.SetupCodeRequired != want {
+			t.Fatalf("%q: required %v, err %v", in, c.SetupCodeRequired, err)
+		}
+	}
+	for _, bad := range []string{"on", "true", "yes", "require"} {
+		t.Setenv("OPENTODO_SETUP_CODE", bad)
+		if _, err := Load(); err == nil || !strings.Contains(err.Error(), "OPENTODO_SETUP_CODE") {
+			t.Fatalf("%q: want an error naming the variable, got %v", bad, err)
+		}
+	}
+}
+
 // TestLogLevel: OPENTODO_LOG_LEVEL is read in any case and with stray spaces,
 // as panels such as Unraid may pass it (#128); an unknown value is refused.
 func TestLogLevel(t *testing.T) {

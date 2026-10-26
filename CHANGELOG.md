@@ -4,6 +4,28 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **The first-run setup code is now off by default.** If you relied on it to protect a fresh server reachable from the internet, set `OPENTODO_SETUP_CODE=required`; `OPENTODO_SETUP_TOKEN` works as before. Without either, the first person to open a server with no owner becomes its owner: finish setup right after starting it. ([The setup code](docs/self-hosting/docker.md#the-setup-code))
+
+### Changed
+
+- **The setup code for a new server is opt-in.** A fresh server no longer asks for the one-time code from its log: the first person to open it creates the owner account, and the log says so at every start until then. Set the new optional `OPENTODO_SETUP_CODE=required` to ask for the code again; `OPENTODO_SETUP_TOKEN` still works and wins. On a server reachable from the internet, finish setup right after starting it, or set `OPENTODO_SETUP_CODE=required`. ([The setup code](docs/self-hosting/docker.md#the-setup-code))
+
+### Security
+
+- **Hosted services: the map proxy no longer reaches the operator's network.** On a server that hosts several tenants, a tenant's owner could choose a map provider that made the server fetch addresses on the operator's private network or a cloud metadata service. The map proxy of a hosted tenant now reaches only public addresses. Found in an internal audit. ([Host mode](docs/self-hosting/host-mode.md))
+- **The map provider can no longer point your server at your local network.** A self-hosted tile or search server on your network keeps working, but only the two hosts you typed may be local: tile, font and sprite addresses that a provider's style names, and redirects, follow the same rules as a webhook. Found in an internal audit. ([Maps](docs/self-hosting/maps.md))
+- **"Allow private network targets" no longer opens cloud metadata and link-local addresses.** With the switch on, webhooks, notification channels, calendar subscriptions, issue connections and AI providers still reach your LAN and this machine, but never `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8` or a cloud metadata address. Webhook test sends and redeliveries are limited to 30 per account per hour. Found in an internal audit. ([Webhooks](docs/webhooks.md#private-network-protection))
+- **Hosted services: one client can no longer lock a tenant out.** The request limit per minute applied to all of a tenant's traffic, signed in or not, so anyone could use it up and every user of that tenant got "too many requests". It now counts each client address separately. Found in an internal audit. ([Host mode](docs/self-hosting/host-mode.md#limits))
+- **Public demo: the sandbox limit can no longer be held by one party.** When the demo is full, the oldest sandbox now makes room for a new visitor after 15 minutes even if it is being kept busy, new sandboxes per IPv6 site (`/48`) are limited together, and the demo creates at most twice its sandbox limit per hour. Found in an internal audit. ([Demo instance](docs/self-hosting/demo.md))
+- **Single sign-on links to an existing account only when its address was confirmed.** An address nobody confirmed (set without outgoing email) could catch another person's first sign-on. Accounts whose address was confirmed through an emailed link, or that already signed on with the same address, still link at the first sign-on; others sign in with their password once and link the provider in Settings → Account → Security. Found in an internal audit. ([Single sign-on](docs/self-hosting/sso.md))
+- **The setup code, when turned on, is asked for from every other machine.** With `OPENTODO_SETUP_CODE=required`, a browser on the local network no longer skips it: behind Docker's port publishing, a NAT or a rootless container, a visitor from the internet could look local. Only a browser on the server itself, connecting directly, skips it. Behind a reverse proxy, a forged leading `X-Forwarded-For` entry no longer becomes the client's address. Found in an internal audit. ([The setup code](docs/self-hosting/docker.md#the-setup-code))
+- **"Forgot password?" no longer reveals which addresses have accounts by its response time.** The reset email is now sent after the answer. Found in an internal audit.
+- **The attachment total can no longer be exceeded.** Undoing the removal of a file is now checked against your total, and several uploads at once share it, so neither can store more than the owner allows. Found in an internal audit. ([Attachments](docs/attachments.md#limits))
+- **Files no longer stay readable in the browser after signing out.** Attachments are now checked with the server each time they are shown, and signing out asks the browser to empty its cache for OpenTodo (on https), so the next person on a shared computer cannot open them. Found in an internal audit.
+- **Links from encrypted data open only as web links.** A task's source link and a link attachment of an encrypted account open only `http` and `https` addresses; anything else is shown without a link. Found in an internal audit.
+
 ## [0.14.1] - 2026-10-26
 
 OpenTodo 0.14.1 is a **security release**; please upgrade. It fixes the findings of an internal security audit: a shared project could take over another person's private task if its id was known, a saved view or a crafted email or calendar could slow down or crash the server, and an old session could add a new way to sign in without signing in again. It also makes the sync clock follow newer edits, so a device whose clock runs behind no longer loses its own changes, and fixes a long task scrolling the whole page in the side panel.

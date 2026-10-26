@@ -76,8 +76,17 @@ func (s *Server) announceSetupCode() {
 		return
 	}
 	if code == "" {
+		// The code is off by default (auth-hardening D6): without a token, the
+		// first visitor becomes the owner, so say so once while no owner exists.
+		if s.auth.SetupTokenRequired() || s.auth.SetupCodeRequired() {
+			return
+		}
+		if n, err := s.auth.UserCount(context.Background()); err == nil && n == 0 {
+			s.log.Warn("No owner account exists yet: the first person to open this server becomes its owner. " +
+				"Finish setup now, or set OPENTODO_SETUP_CODE=required to require the code printed in this log.")
+		}
 		return
 	}
-	s.log.Warn("No owner account exists yet. To create it from outside this server's local network, enter this setup code on the setup screen: "+code+
-		" (from this machine or a private network no code is needed).", "setup_code", code)
+	s.log.Warn("No owner account exists yet. To create it from another machine, enter this setup code on the setup screen: "+code+
+		" (only a browser on this machine itself, without a proxy, needs no code).", "setup_code", code)
 }

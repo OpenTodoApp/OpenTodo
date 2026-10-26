@@ -165,6 +165,7 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	}
 	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	authSvc.SetSetupToken(cfg.SetupToken)
+	authSvc.SetSetupCodeRequired(cfg.SetupCodeRequired)
 	syncSvc := opsync.NewService(db)
 	syncSvc.SetReader(t.Reader)
 	hooks, err := wireWebhooks(ctx, cfg, o, db, authSvc, syncSvc, log)

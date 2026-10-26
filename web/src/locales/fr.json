@@ -3087,7 +3087,7 @@
   "You are offline. Two-factor settings need a connection to your server.": "Vous êtes hors ligne. Les réglages de double authentification nécessitent une connexion à votre serveur.",
   "You are offline: the weekly digest is set on the server. Try again when connected.": "Vous êtes hors ligne : le résumé hebdomadaire est réglé sur le serveur. Réessayez une fois connecté.",
   "You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.": "Vous faites déjà partie de ce projet : le lien reste inutilisé. Transmettez-le à la personne à qui il était destiné, ou ignorez-le.",
-  "You are setting up this server from outside its local network, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.": "Vous configurez ce serveur depuis l’extérieur de son réseau local : il demande donc le code à usage unique qu’il a écrit dans son journal. Exécutez {command} sur le serveur, ou ouvrez les journaux dans votre panneau d’hébergement.",
+  "You are setting up this server from another machine, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.": "Vous configurez ce serveur depuis une autre machine : il demande donc le code à usage unique qu’il a écrit dans son journal. Exécutez {command} sur le serveur, ou ouvrez les journaux dans votre panneau d’hébergement.",
   "You are signed in": "Vous êtes connecté",
   "You can view this project but not add tasks": "Vous pouvez voir ce projet mais pas y ajouter de tâches",
   "You can view this project but not change dates.": "Vous pouvez voir ce projet mais pas modifier les dates.",

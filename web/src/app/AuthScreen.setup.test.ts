@@ -33,7 +33,7 @@ describe('AuthScreen setup token', () => {
     expect(render({ ...setup, setupRequired: false, setupTokenRequired: true })).not.toContain('Setup token')
   })
 
-  it('asks for the setup code from the log outside the local network', () => {
+  it('asks for the setup code from the log from another machine', () => {
     const html = render({ ...setup, setupCodeRequired: true })
     expect(html).toContain('Setup code')
     expect(html).toContain('docker logs opentodo')

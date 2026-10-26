@@ -55,8 +55,11 @@ const (
 	TouchInterval = time.Minute
 	// TokenTTL is the lifetime of a sandbox-creation token.
 	TokenTTL = 10 * time.Minute
-	// PerAddressPerHour caps new sandboxes per client address.
+	// PerAddressPerHour caps new sandboxes per client address (an IPv6 /48).
 	PerAddressPerHour = 5
+	// GlobalPerHourFactor times the live cap is how many sandboxes the whole
+	// demo creates per hour.
+	GlobalPerHourFactor = 2
 	// OpsPerHour and OpsTotal are a sandbox's write budget.
 	OpsPerHour = 600
 	OpsTotal   = 5000
@@ -113,7 +116,9 @@ type Service struct {
 	// createMu serializes the limit checks and the reservation of a sandbox in
 	// this process; resetMu serializes resets.
 	createMu sync.Mutex
-	resetMu  sync.Mutex
+	// createdAt holds the creation times of the last hour, oldest first (under createMu).
+	createdAt []time.Time
+	resetMu   sync.Mutex
 
 	// salt hashes client addresses; it lives only in this process's memory, so
 	// stored hashes cannot be linked to an address after a restart.

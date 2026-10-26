@@ -271,6 +271,64 @@ func TestSandboxCapEvictsIdle(t *testing.T) {
 	}
 }
 
+// hosted-demo-limits: kept-busy sandboxes cannot hold the cap; the oldest one
+// older than 15 minutes gives way, and a global hourly rate bounds turnover.
+func TestSandboxCapEvictsOldestAndLimitsTurnover(t *testing.T) {
+	d := newDemoServer(t)
+	d.demo.SetLimits(2, 0)
+	_, firstID := d.visitor()
+	_, secondID := d.visitor()
+	// Both are active, but the first was created 20 minutes ago.
+	old := time.Now().Add(-20 * time.Minute).UnixMilli()
+	if _, err := d.base.db.Exec(`UPDATE demo_sandboxes SET created_at = ? WHERE user_id = ?`, old, firstID); err != nil {
+		t.Fatal(err)
+	}
+	third := d.anonymous()
+	resp, out := createSandbox(third, token(third))
+	third.mustStatus(resp, http.StatusCreated, out)
+	if n := demoRows(t, third, `SELECT COUNT(*) FROM users WHERE id = ?`, firstID); n != 0 {
+		t.Fatal("the oldest sandbox did not give way")
+	}
+	if n := demoRows(t, third, `SELECT COUNT(*) FROM users WHERE id = ?`, secondID); n != 1 {
+		t.Fatal("a young sandbox was evicted")
+	}
+	// Three created this hour; the global rate is twice the cap (4).
+	if _, err := d.base.db.Exec(`UPDATE demo_sandboxes SET created_at = ?`, old); err != nil {
+		t.Fatal(err)
+	}
+	fourth := d.anonymous()
+	resp, out = createSandbox(fourth, token(fourth))
+	fourth.mustStatus(resp, http.StatusCreated, out)
+	if _, err := d.base.db.Exec(`UPDATE demo_sandboxes SET created_at = ?`, old); err != nil {
+		t.Fatal(err)
+	}
+	fifth := d.anonymous()
+	resp, out = createSandbox(fifth, token(fifth))
+	if resp.StatusCode != http.StatusServiceUnavailable || errCode(out) != "demo_busy" {
+		t.Fatalf("over the hourly turnover: %d %v", resp.StatusCode, out)
+	}
+}
+
+// hosted-demo-limits: the per-address creation limit groups IPv6 by /48.
+func TestSandboxLimitGroupsIPv6Sites(t *testing.T) {
+	d := newDemoServer(t)
+	for i := 0; i < demo.PerAddressPerHour; i++ {
+		e := d.anonymous()
+		e.ip = "2001:db8:42:" + strconv.Itoa(i+1) + "::1"
+		resp, out := createSandbox(e, token(e))
+		e.mustStatus(resp, http.StatusCreated, out)
+	}
+	e := d.anonymous()
+	e.ip = "2001:db8:42:ff::1"
+	resp, out := createSandbox(e, token(e))
+	if resp.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("sixth sandbox from the same /48: %d %v", resp.StatusCode, out)
+	}
+	e.ip = "2001:db8:43::1"
+	resp, out = createSandbox(e, token(e))
+	e.mustStatus(resp, http.StatusCreated, out)
+}
+
 // pullAll returns every op and purge a visitor can pull from cursor 0, as JSON.
 func pullAll(e *env) string {
 	e.t.Helper()
