@@ -183,12 +183,17 @@ func TestBackupRunConflict409(t *testing.T) {
 	var once sync.Once
 	unblock := func() { once.Do(func() { close(release) }) }
 	t.Cleanup(unblock)
+	// The first upload reached the destination: the run has recorded its row by
+	// then (backup.Service.execute inserts it before uploading).
+	uploading := make(chan struct{})
+	var uploadOnce sync.Once
 	dav := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "MKCOL":
 			w.WriteHeader(201)
 		case "PUT":
 			io.Copy(io.Discard, r.Body)
+			uploadOnce.Do(func() { close(uploading) })
 			<-release
 			w.WriteHeader(201)
 		case "PROPFIND":
@@ -216,6 +221,13 @@ func TestBackupRunConflict409(t *testing.T) {
 	e.mustStatus(resp, 409, out)
 	if errCode(out) != "conflict" {
 		t.Fatalf("code = %s", errCode(out))
+	}
+	// The run inserts its row in the background after the 202; count once it is
+	// uploading, so a slow start is not read as a missing run.
+	select {
+	case <-uploading:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the first run never reached the destination")
 	}
 	var n int
 	e.db.QueryRow(`SELECT COUNT(*) FROM backup_runs`).Scan(&n)
