@@ -122,7 +122,9 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
         actions={<>{stepper}{desktop && <IconButton icon="x" size="sm" label={t('Close')} shortcut="Esc" onClick={nav.onBack} data-task-close />}</>} />
       {readOnly && <ReadOnlyNote />}
       {isSample(task) && !readOnly && <SampleNotice />}
-      <div className="grid min-w-0 gap-x-10 gap-y-6 pb-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {/* From 1024 px the facts column spans the three blocks; the last row takes the height the
+          facts need beyond the content, so no gap opens between the title and the notes. */}
+      <div className="grid min-w-0 gap-x-10 gap-y-6 pb-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr]">
         {/* The facts sit between the title and the notes in reading order, so below 1024 px the
             card shows above a long note; from 1024 px they are the sticky column beside all
             three blocks (task-panel-notes-below D3, GitHub issue 444). */}
