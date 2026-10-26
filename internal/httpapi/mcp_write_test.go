@@ -473,9 +473,10 @@ func TestAgentWriteConvergesWithOfflineEdit(t *testing.T) {
 // phone completing the same occurrence offline give one record.
 func TestAgentCompleteRecurringConvergesWithDevice(t *testing.T) {
 	e, _, secret, c := agentReady(t)
-	// Due today, so the next occurrence is a week later whatever day the test runs.
-	now := time.Now()
-	due, next := now.Format("2006-01-02"), now.AddDate(0, 0, 7).Format("2006-01-02")
+	// Due far ahead of the clock, so the next occurrence is a week after it
+	// whatever day (or side of midnight) the test runs; the cases with a pinned
+	// "today" are TestRecurringCompletionPinnedToday in internal/sync.
+	due, next := "2099-01-06", "2099-01-13"
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Water plants", "recurrence": "every week", "due": map[string]any{"date": due}})
 	e.mustStatus(resp, 201, out)
 	series := out["id"].(string)
