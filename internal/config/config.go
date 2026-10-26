@@ -79,6 +79,9 @@ type Config struct {
 	// STT is the optional speech-to-text service override (OpenSpec change
 	// settings-refresh, see stt.go).
 	STT STTConfig
+	// Google is the optional Google OAuth client of calendar sync (OpenSpec
+	// change calendar-two-way, see google.go).
+	Google GoogleConfig
 	// Demo turns the server into a public demo instance (OPENTODO_DEMO=true;
 	// OpenSpec `demo-mode`): a private, short-lived sandbox per visitor
 	// (`demo-sandboxes`), a nightly reset, sign-up and every abusable feature
@@ -191,6 +194,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if err := c.loadSTT(); err != nil {
+		return c, err
+	}
+	if err := c.loadGoogle(); err != nil {
 		return c, err
 	}
 	if raw := strings.TrimSpace(os.Getenv("OPENTODO_TRUSTED_PROXIES")); raw != "" {

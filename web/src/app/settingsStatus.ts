@@ -22,6 +22,7 @@ export const PAGE_STATUS: Readonly<Record<string, Loader>> = {
   'notifications/digest': async () => { const d = await api.emailDigest(); return d.available ? onOff(d.enabled) : null },
   'integrations/caldav': async () => onOff((await api.caldavSetting()).enabled),
   'integrations/calendar-feeds': async () => onOff((await api.calendarFeedsSetting()).enabled),
+  'integrations/calendar-sync': async () => ((await api.getCalendarSyncSetting()).enabled ? count((await api.listCalendarConnections()).connections.length) : t('Off')),
   'integrations/issues': async () => ((await api.getIssuesSetting()).enabled ? count((await api.listIssueConnections()).connections.length) : t('Off')),
   'integrations/webhooks': async () => count((await api.listWebhooks()).webhooks.length),
   'integrations/tokens': async () => count((await api.listTokens()).tokens.length),

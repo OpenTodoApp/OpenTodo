@@ -125,6 +125,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerCalendarFeedRoutes(mux)
 	// Issue import (OpenSpec `issue-connections`); before MCP, whose resource reads it.
 	s.registerIssueRoutes(mux)
+	// Calendar sync (OpenSpec change calendar-two-way), after calendar feeds, whose event store it shares.
+	s.registerCalendarSyncRoutes(mux)
 	s.registerSTTRoutes(mux)
 	// Map proxy and its switches (OpenSpec `task-locations`).
 	s.registerMapRoutes(mux)

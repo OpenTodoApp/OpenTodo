@@ -230,6 +230,9 @@
   "A backup is running. Try again when it has finished.": [
     "web/src/lib/restore.ts"
   ],
+  "A calendar": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "A card dropped on this column gets these changes.": [
     "web/src/app/RuleEditor.tsx"
   ],
@@ -295,6 +298,9 @@
   ],
   "A name has at most {n} characters.": [
     "web/src/lib/fields.ts"
+  ],
+  "A new app-specific password for {user}.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "A new link is on its way; the earlier one no longer works.": [
     "web/src/app/AuthScreen.tsx"
@@ -367,6 +373,9 @@
   ],
   "A saved location needs a name": [
     "web/src/lib/locations.ts"
+  ],
+  "A secret is stored. Enter a new one to replace it.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "A server variable sets this; change it in the server configuration.": [
     "web/src/lib/i18n/errors.ts"
@@ -609,6 +618,7 @@
   "Actions for {name}": [
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/SecurityPanel.tsx",
@@ -1075,6 +1085,9 @@
   "Allow calendar feeds on this server": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Allow calendar sync on this server": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Allow delivery channels on this server": [
     "web/src/app/NotificationChannels.tsx"
   ],
@@ -1137,6 +1150,9 @@
   ],
   "Already matched": [
     "web/src/app/rules/RuleHistory.tsx"
+  ],
+  "Also show in Day and Week": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Alternative text": [
     "web/src/app/editorImage.tsx"
@@ -1267,6 +1283,9 @@
   ],
   "App": [
     "web/src/app/settingsSections.ts"
+  ],
+  "App password": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "App password created": [
     "web/src/app/CaldavPanel.tsx"
@@ -1880,6 +1899,9 @@
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Calendar accounts": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Calendar address": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
@@ -1894,7 +1916,7 @@
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Calendar apps (CalDAV), calendar feeds, issues, webhooks, API tokens, the assistant and AI assistants (MCP)": [
+  "Calendar apps (CalDAV), calendar feeds and sync, issues, webhooks, API tokens, the assistant and AI assistants (MCP)": [
     "web/src/app/settingsSections.ts"
   ],
   "Calendar apps refresh subscriptions on their own schedule, from every few minutes to once a day.": [
@@ -1933,12 +1955,23 @@
   "Calendar range": [
     "web/src/app/CalendarRange.tsx"
   ],
+  "Calendar sync": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Calendar sync is not enabled on this server.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Calendars": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
   ],
   "Calendars as of {wallTime}": [
     "web/src/app/calendar/CalendarStatus.tsx"
+  ],
+  "Calendars of {name}": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Calendars unavailable offline for these days": [
     "web/src/app/calendar/CalendarStatus.tsx"
@@ -1961,6 +1994,7 @@
   "Cancel": [
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/FieldsDialog.tsx",
@@ -2040,6 +2074,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Change": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
@@ -2103,6 +2138,9 @@
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
   "Changing calendar feeds needs a connection. You are seeing the last loaded state.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Changing calendar sync needs a connection. You are seeing the last loaded state.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Changing delivery channels needs a connection. You are seeing the last loaded list.": [
@@ -2195,6 +2233,9 @@
   "Choose a PNG, JPEG or WebP image.": [
     "web/src/app/profile/PictureDialog.tsx"
   ],
+  "Choose a calendar": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Choose a date": [
     "web/src/app/datetime/DateField.tsx"
   ],
@@ -2261,6 +2302,9 @@
   "Choose at least one event.": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
+  "Choose calendars": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Choose files for the comment": [
     "web/src/app/task-detail/Composer.tsx"
   ],
@@ -2285,6 +2329,9 @@
   ],
   "Choose one of the offered Anthropic models.": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Choose the calendar to write tasks into.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Choose the tasks the selected task waits for (Blocked by)": [
     "web/src/lib/shortcuts.ts"
@@ -2360,9 +2407,11 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Client ID": [
+    "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/SsoPanel.tsx"
   ],
   "Client secret": [
+    "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/SsoPanel.tsx"
   ],
   "Client secret removed.": [
@@ -2736,6 +2785,15 @@
   "Connect": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Connect CalDAV": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Connect Google": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Connect a CalDAV calendar": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Connect a speech service for dictation": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -2757,6 +2815,7 @@
     "web/src/app/RelaySettings.tsx"
   ],
   "Connection name": [
+    "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/IssueEditor.tsx"
   ],
   "Connection works.": [
@@ -2941,6 +3000,9 @@
   ],
   "Create an account to join {name}": [
     "web/src/app/WorkspaceInviteScreen.tsx"
+  ],
+  "Create an app-specific password at your provider. It is stored on your server and never shown again.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Create app password": [
     "web/src/app/CaldavPanel.tsx"
@@ -3167,6 +3229,9 @@
   "Date removed": [
     "web/src/lib/undoActions.ts"
   ],
+  "Dated tasks become events in this calendar. Choose one you use only for tasks, or your main one.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; \"quotes\" keep text as is.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -3307,6 +3372,7 @@
   ],
   "Delete": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/RestoreSection.tsx",
@@ -3414,6 +3480,7 @@
   ],
   "Delete {name}?": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
@@ -3593,6 +3660,7 @@
   ],
   "Disable": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -3610,6 +3678,9 @@
   ],
   "Disabled; nothing is polled.": [
     "web/src/app/IssuesPanel.tsx"
+  ],
+  "Disabled; nothing is synced.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Discard": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -4061,6 +4132,7 @@
   ],
   "Enable": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/WebhooksPanel.tsx"
@@ -4222,6 +4294,7 @@
     "web/src/app/DataSettings.tsx"
   ],
   "Error: {reason}": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx"
   ],
   "Estimate": [
@@ -4270,6 +4343,9 @@
   ],
   "Events from other calendars are stored unencrypted on the server.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Events of these calendars appear next to your tasks, read-only.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Every account can connect an assistant with its own token.": [
     "web/src/lib/settingsCopy.ts"
@@ -4527,6 +4603,7 @@
   ],
   "Failed": [
     "web/src/app/BackupsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/rules/RuleHistory.tsx"
   ],
@@ -4645,6 +4722,9 @@
   "Filters": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "Find a calendar…": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Find a colour…": [
     "web/src/app/menus/stylePickers.tsx"
   ],
@@ -4693,6 +4773,9 @@
   ],
   "Find an option…": [
     "web/src/app/task-detail/FieldsGroup.tsx"
+  ],
+  "Find calendars": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Find in sidebar": [
     "web/src/lib/shortcuts.ts"
@@ -5153,8 +5236,24 @@
   "Good morning.": [
     "web/src/app/assistant/AssistantWelcome.tsx"
   ],
+  "Google Calendar was not connected: the permission was not granted.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Google Calendar was not connected: the sign-in expired or was started elsewhere. Try again.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Google Calendar was not connected: {reason}": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Google Tasks (Takeout JSON)": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Google client": [
+    "web/src/app/CalendarSyncDialogs.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Google did not grant lasting access. Remove OpenTodo at myaccount.google.com/permissions and connect again.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Graphite": [
     "web/src/lib/colourNames.ts"
@@ -5562,6 +5661,9 @@
   "In 90 days": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "In Google Cloud, create an OAuth client of type “Web application”, enable the CalDAV API, and add this authorized redirect address:": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "In MB, from 1 to {MAX_FILE_MB}. Larger files are refused before they are sent.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -5771,6 +5873,9 @@
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ShellNotifications.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Include tasks without a time": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Indent list item, or next table cell (Shift-Tab: back)": [
     "web/src/lib/richtextEditor.ts"
@@ -6236,6 +6341,9 @@
   "Last sent {day}": [
     "web/src/app/DigestCard.tsx"
   ],
+  "Last sync: {moved} tasks moved, {renamed} renamed, {unscheduled} unscheduled; {written} events written, {removed} removed": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Last synced just now": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
@@ -6340,6 +6448,9 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Lets connectors such as Claude.ai read and write your encrypted text through this device.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Lets people connect Google Calendar. Register the redirect address in your OAuth client.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Lets this server mail password resets, confirmations and invitations.": [
@@ -7105,6 +7216,7 @@
   "Name": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LabelsView.tsx",
@@ -7422,6 +7534,9 @@
   "No bucket set": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "No calendar of this account can be written.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "No calendars yet.": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
@@ -7611,6 +7726,9 @@
   "No origin": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "No other calendars.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "No other project can hold this one": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -7630,6 +7748,9 @@
   ],
   "No passkeys yet": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "No password is stored, for example after a restore. Reconnect.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "No project": [
     "web/src/app/filter/conditionText.ts",
@@ -7907,6 +8028,9 @@
   "Not sent: the account uses end-to-end encryption": [
     "web/src/app/DigestCard.tsx"
   ],
+  "Not set up": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Not set up on this device yet.": [
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
@@ -8012,6 +8136,9 @@
   ],
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "Nothing is synced any more and the password or Google access is removed from the server. Your tasks stay as they are; the {n, plural, one {# event} other {# events}} already written stay in the calendar.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Nothing is waiting on anyone.": [
     "web/src/app/method/MethodListView.tsx"
@@ -8146,6 +8273,7 @@
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
@@ -8283,6 +8411,7 @@
   "On": [
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
@@ -8731,6 +8860,9 @@
   "Optional; the host is used otherwise.": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Optional; the server’s name is used otherwise.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Optional; the service’s name is used otherwise.": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
@@ -9012,6 +9144,9 @@
     "web/src/app/settingsSections.ts"
   ],
   "People can connect GitHub or GitLab; the server polls their issues.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "People can connect a CalDAV or Google calendar; tasks and events stay in step.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "People can let an assistant with a dedicated token change their tasks.": [
@@ -9744,6 +9879,13 @@
   "Recognition language": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Reconnect": [
+    "web/src/app/CalendarSyncDialogs.tsx",
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Reconnect {name}": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Record client addresses (IP)": [
     "web/src/app/AuditPanel.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -9766,6 +9908,9 @@
   ],
   "Redirect URI (paste into your provider)": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Redirect address": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Refresh": [
     "web/src/app/WebhooksPanel.tsx"
@@ -10488,6 +10633,7 @@
     "web/src/app/AttachmentSettingsPanel.tsx",
     "web/src/app/BrandingPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
@@ -10885,6 +11031,7 @@
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Server": [
+    "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/settingsSections.ts"
   ],
@@ -10948,6 +11095,9 @@
   "Set a time to fix this due to a time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
+  "Set by OPENTODO_GOOGLE_CLIENT_ID and OPENTODO_GOOGLE_CLIENT_SECRET on this server.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Set by an OPENTODO_OIDC_* environment variable": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -10985,6 +11135,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Set up": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
   "Set up encryption": [
@@ -11579,6 +11730,7 @@
   ],
   "Something went wrong.": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/EmailScreens.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx"
@@ -11800,6 +11952,7 @@
     "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Stopped": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx"
   ],
   "Stopped because this account uses end-to-end encryption.": [
@@ -11922,6 +12075,7 @@
     "web/src/app/SyncStatus.tsx"
   ],
   "Sync now": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/vim/commands.ts"
@@ -11935,7 +12089,11 @@
   "Synced": [
     "web/src/app/SyncStatus.tsx"
   ],
+  "Synced {ago}": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Syncing": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/DataSettings.tsx"
   ],
   "Syncing…": [
@@ -12065,6 +12223,9 @@
   "Tasks and fields": [
     "web/src/app/FieldColumns.tsx"
   ],
+  "Tasks go to {calendar} · {n, plural, one {# calendar shown} other {# calendars shown}}": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Tasks go to {project} · {filter} · {interval}": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -12082,6 +12243,9 @@
   ],
   "Tasks waiting for this one": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Tasks with only a date become all-day events.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Tasks without a project go to": [
     "web/src/app/ImportScreen.tsx"
@@ -12211,6 +12375,9 @@
   "That workspace is no longer available": [
     "web/src/app/workspaceNav.ts"
   ],
+  "The CalDAV address, the server’s host name, or your email address: caldav.icloud.com, caldav.fastmail.com, your Nextcloud.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "The Focus timer: mode, lengths, breaks and sound. Synced to your devices.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12304,6 +12471,30 @@
   ],
   "The browser has not been asked yet.": [
     "web/src/lib/push.ts"
+  ],
+  "The calendar server asked to slow down.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "The calendar server could not be reached.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "The calendar server could not be used: {detail}": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "The calendar server did not answer in time.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "The calendar server refused the password or the Google grant. Reconnect.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "The calendar server refused the username or the app password.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "The calendar server sent more than 4 MB at once.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "The calendar tasks are written into no longer exists. Choose another one.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "The calendar's secret or public iCal address (https, ending in .ics on most services).": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -12499,6 +12690,9 @@
   "The owner has not enabled calendar feeds on this server.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "The owner has not enabled calendar sync on this server.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "The owner has not enabled issue connections on this server.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12615,6 +12809,7 @@
   ],
   "The server could not be reached.": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -12646,6 +12841,9 @@
   "The server did not accept this: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The server did not answer like a CalDAV server.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "The server does not have enough disk space.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -12657,6 +12855,9 @@
   ],
   "The server is busy. Try again in a moment.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "The server is on a private network the server owner has not allowed.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.": [
     "web/src/app/RestoreSection.tsx"
@@ -12715,6 +12916,9 @@
   "The server owner has not enabled AI assistant access on this server, so assistants cannot connect yet.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
+  "The server owner has not set up a Google client for calendar sync.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "The server owner has not turned the assistant on.": [
     "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -12728,6 +12932,9 @@
   "The server owner has turned notification channels off.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The server owner removed the Google client.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "The server owner requires two-factor authentication for this account.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -12739,6 +12946,9 @@
   ],
   "The server passes it to the speech service the owner connected, {host}, and returns the text.": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "The server redirected to another site, which is never followed.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "The server refused a change: {detail}": [
     "web/src/lib/i18n/errors.ts"
@@ -12934,6 +13144,10 @@
     "web/src/app/AuthScreen.tsx"
   ],
   "This account has been deactivated. Ask the server owner or an admin.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This account has no calendar that holds events.": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/lib/i18n/errors.ts"
   ],
   "This account is already a member of the project.": [
@@ -13177,6 +13391,9 @@
     "web/src/lib/templates.ts"
   ],
   "This is not available on this server.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This is set by environment variables on the server.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "This is the last occurrence; complete or delete it instead.": [
@@ -14285,11 +14502,15 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Up to date": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/DataSettings.tsx",
     "web/src/app/IssuesPanel.tsx"
   ],
   "Up to {bytes} with the free space on the server.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Up to {max}. Outlook and Microsoft 365 are not supported yet.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Upcoming": [
     "web/src/app/PreferencesPanels.tsx",
@@ -14431,7 +14652,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Username": [
-    "web/src/app/BackupsPanel.tsx"
+    "web/src/app/BackupsPanel.tsx",
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Users": [
     "web/src/app/UsersPanel.tsx",
@@ -14536,6 +14758,7 @@
   ],
   "Waiting": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
@@ -14552,6 +14775,9 @@
   ],
   "Waiting for the first refresh": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Waiting for the first sync": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Waiting on another task": [
     "web/src/app/filter/conditionText.ts"
@@ -14762,6 +14988,9 @@
   "Windows PC": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "With encryption, events are titled “Encrypted item”; calendar renames are not applied.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "With end-to-end encryption you can create workspaces and move things between them, but not add members, groups or invite links yet.": [
     "web/src/app/WorkspacesSettings.tsx"
   ],
@@ -14890,6 +15119,9 @@
   "Write a reply…": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Write tasks into": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "XXXXX-XXXXX": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -14923,6 +15155,9 @@
   ],
   "You already have the maximum of 20 webhooks.": [
     "web/src/lib/webhooks.ts"
+  ],
+  "You already have the most calendar accounts allowed.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "You are a member of this workspace already.": [
     "web/src/app/WorkspaceInviteScreen.tsx"
@@ -15127,6 +15362,10 @@
   "Your data is safe on this device and on the server.": [
     "web/src/app/ErrorBoundary.tsx",
     "web/src/app/PanelBoundary.tsx"
+  ],
+  "Your dated tasks become events in your own calendar; moving an event moves the task.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Your default workspace": [
     "web/src/app/WorkspacesSettings.tsx"
@@ -15452,6 +15691,10 @@
   ],
   "calendar feeds": [
     "web/src/app/settingsSections.ts"
+  ],
+  "calendar sync": [
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/history.ts"
   ],
   "can tick off tasks": [
     "web/src/app/auditFormat.ts"
@@ -15855,6 +16098,7 @@
   ],
   "last success {ago}": [
     "web/src/app/CalendarFeedsPanel.tsx",
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx"
   ],
   "last week": [
@@ -15931,6 +16175,7 @@
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "never succeeded": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx"
   ],
   "new account": [
@@ -17537,6 +17782,7 @@
     "web/src/app/FirstDay.tsx"
   ],
   "{n} of {max}": [
+    "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx"
   ],

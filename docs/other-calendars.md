@@ -13,6 +13,8 @@ order: 64
 
 With [calendar feeds](calendar-feeds.md) turned on by the server owner, you can subscribe to up to ten of your other calendars. Their events are read-only in OpenTodo and count toward a day's planned total only in the Plan; they're there so you can see your real free time while you plan.
 
+Calendars of an account connected through [calendar sync](calendar-sync.md) refresh within minutes.
+
 ## Subscribe to another calendar
 
 1. Copy the calendar's iCal address from its app:

@@ -62,7 +62,7 @@ func (s *Server) registerCalendarFeedRoutes(mux *routes) {
 	mux.handle("PATCH /api/v1/calendar-feeds/subscriptions/{id}", signedIn.demoDenied(), s.feedsGate(s.handlePatchSubscription))
 	mux.handle("DELETE /api/v1/calendar-feeds/subscriptions/{id}", signedIn.demoDenied(), s.feedsGate(s.handleDeleteSubscription))
 	mux.handle("POST /api/v1/calendar-feeds/subscriptions/{id}/refresh", signedIn.demoDenied(), s.feedsGate(s.handleRefreshSubscription))
-	mux.handle("GET /api/v1/calendar-feeds/events", signedIn.demoDenied(), s.feedsGate(s.handleCalendarEvents))
+	mux.handle("GET /api/v1/calendar-feeds/events", signedIn.demoDenied(), s.eventsGate(s.handleCalendarEvents))
 	mux.handle("GET /api/v1/calendar-feeds/feed", signedIn.demoDenied(), s.feedsGate(s.handleGetFeed))
 	mux.handle("POST /api/v1/calendar-feeds/feed", signedIn.recent().demoDenied(), s.feedsGate(s.handleRotateFeed))
 	mux.handle("DELETE /api/v1/calendar-feeds/feed", signedIn.demoDenied(), s.feedsGate(s.handleRevokeFeed))
@@ -133,6 +133,18 @@ func (s *Server) handlePutCalendarFeedsSetting(w http.ResponseWriter, r *http.Re
 		s.audit.Record(r.Context(), audit.SettingsChanged(userFrom(r.Context()).ID, calendarFeedsSettingKey, boolText(before), boolText(*in.Enabled)))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"enabled": *in.Enabled})
+}
+
+// eventsGate lets the events route answer while calendar feeds or calendar
+// sync is on (calendar-two-way D10), else 404 feeds_disabled.
+func (s *Server) eventsGate(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !s.calendarFeedsEnabled(r.Context()) && !s.calendarSyncEnabled(r.Context()) {
+			writeError(w, http.StatusNotFound, "feeds_disabled", "calendar feeds are not enabled")
+			return
+		}
+		next(w, r)
+	}
 }
 
 // feedsGate answers 404 feeds_disabled while the owner switch is off.
@@ -318,15 +330,29 @@ func (s *Server) handleCalendarEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	uid := userFrom(r.Context()).ID
-	events, err := s.calWorker.Store.Events(r.Context(), uid, from, to)
+	// Connected calendars (calendar-two-way D10) are served while calendar sync
+	// is on, the user's subscriptions while calendar feeds are.
+	feeds, managed := s.calendarFeedsEnabled(r.Context()), s.calendarSyncEnabled(r.Context())
+	events, err := s.calWorker.Store.EventsOf(r.Context(), uid, from, to, feeds, managed)
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
-	subs, err := s.calWorker.Store.List(r.Context(), uid)
-	if err != nil {
-		s.internal(w, err)
-		return
+	subs, own := []calfeed.Subscription{}, 0
+	if feeds {
+		if subs, err = s.calWorker.Store.List(r.Context(), uid); err != nil {
+			s.internal(w, err)
+			return
+		}
+		own = len(subs)
+	}
+	if managed {
+		more, err := s.calWorker.Store.Managed(r.Context(), uid)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		subs = append(subs, more...)
 	}
 	type subInfo struct {
 		ID            string `json:"id"`
@@ -334,10 +360,12 @@ func (s *Server) handleCalendarEvents(w http.ResponseWriter, r *http.Request) {
 		Color         string `json:"color"`
 		Enabled       bool   `json:"enabled"`
 		LastSuccessAt *int64 `json:"lastSuccessAt"`
+		// Managed is a calendar sync connection's calendar, not a subscription.
+		Managed bool `json:"managed,omitempty"`
 	}
 	info := []subInfo{}
-	for _, sub := range subs {
-		info = append(info, subInfo{sub.ID, sub.Name, sub.Color, sub.Enabled, sub.LastSuccessAt})
+	for i, sub := range subs {
+		info = append(info, subInfo{sub.ID, sub.Name, sub.Color, sub.Enabled, sub.LastSuccessAt, i >= own})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"events": events, "subscriptions": info})
 }

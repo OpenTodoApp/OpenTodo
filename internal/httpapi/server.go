@@ -20,6 +20,7 @@ import (
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/blobs"
 	"github.com/pixari/opentodo/internal/calfeed"
+	"github.com/pixari/opentodo/internal/calsync"
 	"github.com/pixari/opentodo/internal/channels"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
@@ -139,8 +140,13 @@ type Server struct {
 	davLimiter      *rateLimiter
 	// Issue import (issue-import): the switch cache, the poller and the
 	// shared limit of hand-triggered checks and syncs.
-	issuesOn    caldavState
+	issuesOn    *ownerSwitch
 	issueWorker *issues.Worker
+	// Calendar sync (calendar-two-way): the switch, the worker and the shared
+	// limit of hand-triggered checks and syncs; see calsync.go.
+	calsyncOn      *ownerSwitch
+	calsync        *calsync.Worker
+	calsyncLimiter *rateLimiter
 	// Notification channels (notification-channels): the service and the
 	// per-user limit of test messages; see channels.go.
 	channels       *channels.Service

@@ -61,6 +61,19 @@ func TestErrorCodesFixture(t *testing.T) {
 						set[s] = true
 					}
 				}
+			case *ast.CompositeLit:
+				// An owner switch's gate answers with its code (switch.go).
+				if id, ok := n.Type.(*ast.Ident); ok && id.Name == "ownerSwitch" {
+					for _, el := range n.Elts {
+						if kv, ok := el.(*ast.KeyValueExpr); ok {
+							if k, ok := kv.Key.(*ast.Ident); ok && k.Name == "code" {
+								if s, ok := lit(kv.Value); ok {
+									set[s] = true
+								}
+							}
+						}
+					}
+				}
 			case *ast.FuncDecl:
 				if n.Name.Name != "checkSubscriptionURL" || n.Body == nil {
 					return true

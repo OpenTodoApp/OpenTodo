@@ -18,6 +18,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/calfeed"
+	"github.com/pixari/opentodo/internal/calsync"
 	"github.com/pixari/opentodo/internal/channels"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
@@ -95,6 +96,7 @@ type Tenant struct {
 	Email    *email.Service
 	Calendar *calfeed.Worker
 	Issues   *issues.Worker    // issue connections (issue-import)
+	CalSync  *calsync.Worker   // calendar sync (calendar-two-way)
 	Mail     *mail.Service     // nil on a demo instance
 	Digest   *digest.Service   // weekly digests (stats-and-review); nil with Mail
 	Demo     *demo.Service     // nil unless OPENTODO_DEMO
@@ -171,7 +173,14 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	}
 	inbox := openInbox(ctx, db, syncSvc, log)
 	ruleEngine, ruleSwitch := openRules(cfg, o, db, syncSvc, inbox, hooks, log)
-	wireObserver(syncSvc, hooks, ruleEngine, hosted)
+	// Calendar sync (calendar-two-way): the user's own calendar accounts, under
+	// the webhooks' policy; the server sets the owner switch and the task source,
+	// and task changes make it due soon (D9).
+	calSync := calsync.NewWorker(db, cfg.DataDir, syncSvc, hooks.AllowPrivate, cfg.Google, o.Version, log)
+	if o.Now != nil {
+		calSync.SetClock(o.Now)
+	}
+	wireObserver(syncSvc, hooks, ruleEngine, hosted, calSync)
 	backups, err := openBackups(ctx, cfg, o, db, authSvc, log)
 	if err != nil {
 		return err
@@ -213,6 +222,7 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 		issueWorker.SetClock(o.Now)
 	}
 	opts = append(opts, httpapi.WithIssues(issueWorker))
+	opts = append(opts, httpapi.WithCalendarSync(calSync))
 	mailSvc, digestSvc := openMail(cfg, o, db, authSvc, syncSvc, log)
 	if mailSvc != nil {
 		opts = append(opts, httpapi.WithMail(mailSvc))
@@ -232,6 +242,7 @@ func (t *Tenant) wire(ctx context.Context, o Options) error {
 	t.Handler = httpapi.New(cfg, authSvc, syncSvc, webHandler, log, o.Version, opts...)
 	t.Cfg, t.Auth, t.Sync, t.Hooks, t.Inbox, t.Backups, t.MCP = cfg, authSvc, syncSvc, hooks, inbox, backups, mcpSettings
 	t.Push, t.Email, t.Calendar, t.Issues, t.Demo = pushSvc, emailSvc, calWorker, issueWorker, demoSvc
+	t.CalSync = calSync
 	t.Mail, t.Digest, t.Rules, t.Channels = mailSvc, digestSvc, ruleEngine, chanSvc
 	return nil
 }
@@ -261,8 +272,9 @@ func wireWebhooks(ctx context.Context, cfg config.Config, o Options, db *sql.DB,
 }
 
 // wireObserver installs the post-commit observer: webhooks first, then the
-// automation rules (automation-rules D5), then a host's change callback.
-func wireObserver(syncSvc *opsync.Service, hooks *webhook.Service, engine *rules.Engine, hosted *Hosted) {
+// automation rules (automation-rules D5), then calendar sync's debounced
+// trigger (calendar-two-way D9), then a host's change callback.
+func wireObserver(syncSvc *opsync.Service, hooks *webhook.Service, engine *rules.Engine, hosted *Hosted, cal *calsync.Worker) {
 	var changed func()
 	if hosted != nil {
 		changed = hosted.Changed
@@ -271,6 +283,9 @@ func wireObserver(syncSvc *opsync.Service, hooks *webhook.Service, engine *rules
 		hooks.Observe(ctx, changes)
 		if engine != nil {
 			engine.Observe(ctx, changes)
+		}
+		if cal != nil {
+			cal.Observe(ctx, changes)
 		}
 		if changed != nil {
 			changed()
@@ -500,6 +515,8 @@ func (t *Tenant) StartJobs(ctx context.Context, demoSignal func(context.Context,
 		spawn(t.Calendar.Run)
 		// No outbound issue polls on a demo instance.
 		spawn(t.Issues.Run)
+		// No calendar sync on a demo instance.
+		spawn(t.CalSync.Run)
 		// No outbound webhook deliveries on a demo instance.
 		spawn(t.Hooks.Run)
 	}
