@@ -2,6 +2,7 @@
 // task-list-presentation "Group headers"): date, project and Later groups, keyed
 // by view and group. Device state, never synced; sections keep their own store.
 import { useSyncExternalStore } from 'react'
+import { resettable } from '../lib/moduleState'
 
 const KEY = 'ot.groups.collapsed'
 let current: ReadonlySet<string> = read()
@@ -38,3 +39,4 @@ export function resetCollapsedGroups(): void {
   try { localStorage.removeItem(KEY) } catch { /* ignore */ }
   listeners.forEach((fn) => fn())
 }
+resettable('collapsedGroups', resetCollapsedGroups)

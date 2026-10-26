@@ -6,6 +6,7 @@
 import { flushSync } from 'react-dom'
 import { useSyncExternalStore } from 'react'
 import { readHapticsPref, watchHapticsPref } from '../lib/haptics'
+import { resettable } from '../lib/moduleState'
 
 /** A duration token in milliseconds, or the fallback when the stylesheet has none (tests). */
 function tokenMs(name: string, fallback: number): number {
@@ -100,6 +101,7 @@ export function resetDepartures(): void {
   departures = new Map()
   for (const l of listeners) l()
 }
+resettable('departures', resetDepartures)
 
 /**
  * Ghost rows and cards (motion-v2 D2): the last row model of a task that left the list
@@ -271,3 +273,4 @@ export function tick(): void {
 export function resetHaptics(): void {
   hapticsOn = null
 }
+resettable('haptics', resetHaptics)

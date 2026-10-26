@@ -9,6 +9,7 @@ import { useSyncExternalStore } from 'react'
 import { listState } from './listActions'
 import { navigate, parseRoute } from './router'
 import { selectTask } from './signals'
+import { resettable } from '../lib/moduleState'
 
 export interface TaskTrail {
   /** The address the task was opened from (path, query and hash). */
@@ -175,3 +176,4 @@ export function resetTaskTrail(): void {
   returning = null
   emit()
 }
+resettable('taskTrail', resetTaskTrail)

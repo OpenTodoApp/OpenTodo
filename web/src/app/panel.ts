@@ -10,6 +10,7 @@
 import { type ReactNode, useSyncExternalStore } from 'react'
 import type { Task } from '../lib/types'
 import { openTaskPage } from './taskTrail'
+import { resettable } from '../lib/moduleState'
 
 export type PanelOccupant =
   | { kind: 'task'; id: string; path: string }
@@ -272,6 +273,7 @@ export function resetPanel(): void {
   sideOpen = null
   emit()
 }
+resettable('panel', resetPanel)
 
 /** The page's split kind, following `setTaskSplit`. */
 export function useSplitKind(): SplitKind | null {
