@@ -45,7 +45,7 @@ func (s *Server) registerMapRoutes(mux *routes) {
 	mux.handle("GET /api/v1/maps/search", read, s.handleMapSearch)
 	mux.handle("GET /api/v1/maps/reverse", read, s.handleMapReverse)
 	mux.handle("GET /api/v1/settings/maps", ownerOnly("see the maps setting"), s.handleGetMapsSetting)
-	mux.handle("PUT /api/v1/settings/maps", ownerOnly("manage the maps setting").demoDenied(), s.handlePutMapsSetting)
+	mux.handle("PUT /api/v1/settings/maps", ownerOnly("manage the maps setting").credential().demoDenied(), s.handlePutMapsSetting)
 	// Saved locations, read only, so `ot` can set a task's location by name
 	// (agent-planning-fields D6); they are written through sync like the app does.
 	mux.handle("GET /api/v1/places", signedIn, s.handleListPlaces)

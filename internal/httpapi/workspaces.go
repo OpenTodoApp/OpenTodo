@@ -252,6 +252,9 @@ func (s *Server) handleAddWorkspaceMember(w http.ResponseWriter, r *http.Request
 	if in.Role == "" {
 		in.Role = opsync.WorkspaceMember
 	}
+	if !s.allowMemberAdd(w, userFrom(r.Context()).ID) {
+		return
+	}
 	target, err := s.auth.UserByEmail(r.Context(), in.Email)
 	if errors.Is(err, auth.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "user_not_found", "no account with this email exists on this server")

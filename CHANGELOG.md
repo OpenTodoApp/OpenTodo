@@ -4,12 +4,18 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+Found in an internal audit:
+
+- **Reading your email-to-task settings no longer creates an address.** Before, simply opening the settings (or any token, even a read-only one, reading them) created an active address that accepts mail from anyone. Now the address is created when you turn email to task on, and read-only and assistant tokens can neither see nor create it. Addresses that already exist keep working. ([Email to task](docs/email.md))
+- **The owner's security settings need an admin token.** Changing whether webhooks may reach private networks, the map providers, the AI assistant (MCP) switches or audit log retention now takes a signed-in session or an `admin` API token; a `full` token is refused, as for the other security settings. ([API](docs/api.md#token-scopes))
+- **Adding people to projects and workspaces by email is limited** to 30 attempts per account per hour, so the share dialog cannot be used to find out which accounts exist on the server or to push projects at many people, and each person added to a project is recorded in the audit log as `project.member_added`. ([Sharing](docs/api.md#sharing))
 ### Upgrade notes
 
 - **One migration** (`0048_caldav_resources_per_account`): the names calendar apps chose for tasks are now kept per account; each existing name is kept for every account that can see its task. No data is rewritten otherwise and no environment variable changes. Replace the image or the binary and restart; there are no down-migrations, so back up first.
 - **Ids that two accounts already share stay as they are.** Earlier versions could store one id in two places (through the problem fixed below, or when two accounts imported the same export file). The server now reads and writes the oldest copy each person can see, so nothing is lost and nothing needs repair. To check whether your database has such ids, run `SELECT entity, entity_id, group_concat(DISTINCT scope_id) FROM scope_fields WHERE entity IN ('project','task','section','field','comment','attachment','time_entry','rule') GROUP BY entity, entity_id HAVING COUNT(DISTINCT scope_id) > 1;` with `sqlite3` on a copy of `<data>/opentodo.db`.
 
-### Security
 
 - **A shared project can no longer take over a private task.** Someone who shared a project with you and knew the id of one of your private tasks (ids appear in task pages, public links, exports and calendar apps) could create a task with that id in the shared project. Your later edits to the private task then reached that project's members, and they could delete it. Every task, project, section, field, comment, attachment, time entry and automation rule id now names one item on the server: such a write is refused like any other write you may not make, and it reveals nothing about your item. Found in an internal audit. ([Sync protocol](docs/sync.md))
 - **Calendar apps of different accounts no longer share resource names.** One account's calendar app could rename or drop the name another account's app had given a task they both see, which made items vanish or appear twice in the other person's calendar. Found in an internal audit. ([CalDAV](docs/caldav.md))

@@ -79,7 +79,7 @@ func (s *Server) registerAdminRoutes(mux *routes) {
 	mux.handle("GET /api/v1/audit", ownerOnly("access the audit log"), s.handleAuditList)
 	mux.handle("GET /api/v1/audit/export", ownerOnly("access the audit log"), s.handleAuditExport)
 	mux.handle("GET /api/v1/settings/audit", ownerOnly("access the audit log"), s.handleGetAuditSettings)
-	mux.handle("PUT /api/v1/settings/audit", ownerOnly("access the audit log").demoDenied(), s.handlePutAuditSettings)
+	mux.handle("PUT /api/v1/settings/audit", ownerOnly("access the audit log").credential().demoDenied(), s.handlePutAuditSettings)
 	mux.handle("GET /api/v1/me/activity", signedIn, s.handleMyActivity)
 	// Webhooks (OpenSpec `webhooks`): /api/v1/webhooks* and /api/v1/settings/webhooks,
 	// all behind requireAuth.

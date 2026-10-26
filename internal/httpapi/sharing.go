@@ -129,6 +129,9 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request) {
 	if len(m.Members) <= 1 && s.refuseIfEncrypted(w, r, "sharing is not available for accounts with end-to-end encryption yet") {
 		return
 	}
+	if in.UserID == "" && !s.allowMemberAdd(w, actor.ID) {
+		return
+	}
 	target, err := s.memberTarget(r, in.Email, in.UserID)
 	if errors.Is(err, auth.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "user_not_found", "no account with this email exists on this server")
@@ -143,7 +146,22 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request) {
 		s.memberError(w, err)
 		return
 	}
+	s.audit.Record(ctx, audit.ProjectMemberAdded(actor.ID, target.ID, r.PathValue("id"), in.Role))
 	s.respondMembers(w, r, http.StatusCreated, target.ID, ch)
+}
+
+// memberAddsPerHour is how many people one account may try to add to projects
+// and workspaces by email in an hour, found or not.
+const memberAddsPerHour = 30
+
+// allowMemberAdd counts one add by email for actor and answers 429
+// rate_limited when the hour's budget is used up.
+func (s *Server) allowMemberAdd(w http.ResponseWriter, actor string) bool {
+	if s.memberAddLimiter.allow(actor) {
+		return true
+	}
+	writeError(w, http.StatusTooManyRequests, "rate_limited", "too many people added in the last hour, try again later")
+	return false
 }
 
 func (s *Server) handleSetMemberRole(w http.ResponseWriter, r *http.Request) {
