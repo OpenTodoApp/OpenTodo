@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vault_tasknotes",
+  "description": "The TaskNotes folder linked to a vault (OpenSpec vault-tasknotes): the folder as stored, relative to the vault folder when below it, else absolute; linked is false after --off.",
+  "type": "object",
+  "required": ["vault", "folder", "linked"],
+  "properties": {
+    "vault": {"type": "string"},
+    "folder": {"type": "string"},
+    "linked": {"type": "boolean"}
+  }
+}

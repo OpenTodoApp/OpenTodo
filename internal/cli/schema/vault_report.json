@@ -5,8 +5,8 @@
   "type": "object",
   "required": ["written", "created", "updated", "trashed", "conflicts", "warnings", "cursor", "events"],
   "properties": {
-    "written": {"type": "integer", "description": "project files written"},
-    "created": {"type": "integer", "description": "tasks created from new lines"},
+    "written": {"type": "integer", "description": "project files and task notes written"},
+    "created": {"type": "integer", "description": "tasks created from new lines and new task notes"},
     "updated": {"type": "integer", "description": "tasks changed, completed or reopened from the files"},
     "trashed": {"type": "integer", "description": "tasks trashed because their line was removed"},
     "conflicts": {"type": "integer"},
@@ -20,7 +20,7 @@
         "type": "object",
         "required": ["kind", "text"],
         "properties": {
-          "kind": {"type": "string", "enum": ["written", "restored", "removed", "created", "updated", "completed", "reopened", "trashed", "conflict", "project", "section", "label"]},
+          "kind": {"type": "string", "enum": ["written", "restored", "removed", "created", "updated", "completed", "reopened", "trashed", "conflict", "project", "section", "label", "notes", "moved", "archived", "unarchived", "time"]},
           "file": {"type": "string"},
           "task": {"type": "string"},
           "text": {"type": "string"}
