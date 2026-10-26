@@ -30,6 +30,7 @@ func (e *env) newTask(body map[string]any) string {
 }
 
 func TestAgentPlanningFieldsWriteAndRead(t *testing.T) {
+	t.Parallel()
 	e, _, secret, _ := agentReady(t)
 	report := e.newTask(map[string]any{"title": "Quarterly report", "due": map[string]any{"date": "2026-11-02"}})
 	parts := e.newTask(map[string]any{"title": "Order parts"})
@@ -89,6 +90,7 @@ func TestAgentPlanningFieldsWriteAndRead(t *testing.T) {
 }
 
 func TestAgentPlanningFieldsRefusals(t *testing.T) {
+	t.Parallel()
 	e, _, secret, _ := agentReady(t)
 	a := e.newTask(map[string]any{"title": "A"})
 	b := e.newTask(map[string]any{"title": "B"})
@@ -131,6 +133,7 @@ func TestAgentPlanningFieldsRefusals(t *testing.T) {
 }
 
 func TestAgentPlanningLocation(t *testing.T) {
+	t.Parallel()
 	e, _, secret, _ := agentReady(t)
 	task := e.newTask(map[string]any{"title": "Swim"})
 	gym := "pl-gym"
@@ -162,6 +165,7 @@ func TestAgentPlanningLocation(t *testing.T) {
 }
 
 func TestAgentPlanningEncryptedAccount(t *testing.T) {
+	t.Parallel()
 	e, _, secret, _ := agentReady(t)
 	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
 	e.mustStatus(resp, 201, out)
@@ -184,6 +188,7 @@ func TestAgentPlanningEncryptedAccount(t *testing.T) {
 }
 
 func TestAgentRestPlanningFields(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	id := e.newTask(map[string]any{"title": "Report"})
 	other := e.newTask(map[string]any{"title": "Order parts"})
@@ -207,6 +212,7 @@ func TestAgentRestPlanningFields(t *testing.T) {
 }
 
 func TestAgentPlanningDeadlineReminderFollows(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, false)
 	e.allowWrites(true)
 	e.allowMyAssistants(true)

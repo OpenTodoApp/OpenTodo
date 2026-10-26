@@ -17,8 +17,8 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/push"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // countingPush is a push service endpoint that answers status and counts requests.
@@ -54,6 +54,7 @@ func (c *countingPush) body(device string) map[string]any {
 
 // OpenSpec push-test-delivery, requirement "Push test route".
 func TestPushTestOutcomes(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, false)
 	ps := newCountingPush(t)
 	resp, out := e.do("POST", "/api/v1/push/subscriptions", ps.body("laptop"))
@@ -94,6 +95,7 @@ func TestPushTestOutcomes(t *testing.T) {
 }
 
 func TestPushTestRefusals(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, false)
 	ps := newCountingPush(t)
 	resp, out := e.do("POST", "/api/v1/push/subscriptions", ps.body("laptop"))
@@ -134,13 +136,15 @@ func TestPushTestRefusals(t *testing.T) {
 }
 
 func TestPushTestNotFoundWhenPushOff(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, true)
 	resp, out := e.do("POST", "/api/v1/push/test", map[string]any{"deviceId": "laptop"})
 	e.mustStatus(resp, 404, out)
 }
 
 func TestPushTestRefusedInDemoMode(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	t.Parallel()
+	db, err := testenv.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

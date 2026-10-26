@@ -31,6 +31,7 @@ func (e *env) postRaw(path, body string) (int, map[string]string) {
 // after the value, answer 413 over the size limit, and never echo the Go
 // decoder's messages.
 func TestJSONBodyStrict(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	other := newClientAt(e, "192.0.2.9")
@@ -64,6 +65,7 @@ func TestJSONBodyStrict(t *testing.T) {
 // TestJSONBodyLooseRoutes (SEC-14): the sync exchange accepts op properties
 // this server does not know, so newer clients keep syncing.
 func TestJSONBodyLooseRoutes(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	body, _ := json.Marshal(map[string]any{"device": "d1", "cursor": 0, "future": true, "ops": []any{

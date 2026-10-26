@@ -148,6 +148,7 @@ func (e *env) pushTitle(device, taskID, title string) float64 {
 }
 
 func TestEventsRequiresAuth(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	bare := &env{t: t, srv: e.srv, client: &http.Client{}}
@@ -164,6 +165,7 @@ func TestEventsRequiresAuth(t *testing.T) {
 }
 
 func TestEventsRequiresDevice(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	st := e.openStream(e.srv.URL, "/api/v1/sync/events")
@@ -176,6 +178,7 @@ func TestEventsRequiresDevice(t *testing.T) {
 }
 
 func TestEventsDeliversCursorOnlyPayload(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	laptop := e.connected("laptop")
@@ -200,6 +203,7 @@ func TestEventsDeliversCursorOnlyPayload(t *testing.T) {
 }
 
 func TestEventsSkipOriginDevice(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	phone := e.connected("phone")
@@ -220,6 +224,7 @@ func TestEventsSkipOriginDevice(t *testing.T) {
 }
 
 func TestRestWriteWakesDevices(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	phone := e.connected("phone")
@@ -240,6 +245,7 @@ func TestRestWriteWakesDevices(t *testing.T) {
 }
 
 func TestEventsAreIsolatedPerUser(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, true)
 	e.register("a@example.com")
 	b := newClientFor(e)
@@ -263,6 +269,7 @@ func TestEventsAreIsolatedPerUser(t *testing.T) {
 }
 
 func TestEventsClosedOnShutdown(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	st := e.connected("laptop")
@@ -281,6 +288,7 @@ func TestEventsClosedOnShutdown(t *testing.T) {
 }
 
 func TestEventsCloseOnSessionRevoked(t *testing.T) {
+	// Not parallel: it changes a package-level limit (maxLiveStreams, heartbeatInterval or resetMinDuration) that every server reads.
 	prev := heartbeatInterval
 	heartbeatInterval = 30 * time.Millisecond
 	t.Cleanup(func() { heartbeatInterval = prev })
@@ -303,6 +311,7 @@ func TestEventsCloseOnSessionRevoked(t *testing.T) {
 }
 
 func TestEventsEvictOldestOverCap(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	streams := make([]*stream, 0, opsync.MaxStreamsPerUser+1)
@@ -325,6 +334,7 @@ func TestEventsEvictOldestOverCap(t *testing.T) {
 // TestEventsSurviveServerTimeouts runs the handler under the production server
 // deadlines (scaled down) and checks the stream outlives both of them.
 func TestEventsSurviveServerTimeouts(t *testing.T) {
+	// Not parallel: it changes a package-level limit (maxLiveStreams, heartbeatInterval or resetMinDuration) that every server reads.
 	prev := heartbeatInterval
 	heartbeatInterval = 40 * time.Millisecond
 	t.Cleanup(func() { heartbeatInterval = prev })
@@ -372,6 +382,7 @@ loop:
 
 // Subscribed calendars changed (calendar-feeds 3.5): the stream says so with its own event.
 func TestEventsDeliverCalendarSignal(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	laptop := e.connected("laptop")

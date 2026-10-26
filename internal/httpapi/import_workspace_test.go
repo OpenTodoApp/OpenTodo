@@ -9,6 +9,7 @@ import (
 
 // Import into a chosen workspace (OpenSpec change import-workspace).
 func TestImportIntoWorkspaceHTTP(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("a@example.com")
 	resp, out := e.do("POST", "/api/v1/workspaces", map[string]any{"name": "Work"})

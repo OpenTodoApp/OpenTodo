@@ -11,6 +11,7 @@ import (
 // invalid value with invalid_input and changes nothing, keeps description as
 // plain Markdown text, and the export carries both fields.
 func TestRestNotesDocRoundTrip(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)

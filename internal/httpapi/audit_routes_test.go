@@ -46,6 +46,7 @@ func eventsOf(t *testing.T, out map[string]any) []map[string]any {
 }
 
 func TestAuditRoutesRequireOwner(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	m, _ := e.member("member@example.com", "10.1.0.1")
 	anon := newClientAt(e, "10.1.0.2")
@@ -85,6 +86,7 @@ func TestAuditRoutesRequireOwner(t *testing.T) {
 }
 
 func TestAuditNoModifyOrDeleteRoutes(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/audit", nil)
 	e.mustStatus(resp, 200, out)
@@ -109,6 +111,7 @@ func TestAuditNoModifyOrDeleteRoutes(t *testing.T) {
 }
 
 func TestAuditFiltersAndCursor(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	ownerID := e.userID()
 	m, memberID := e.member("member@example.com", "10.2.0.1")
@@ -184,6 +187,7 @@ func TestAuditFiltersAndCursor(t *testing.T) {
 }
 
 func TestAuditExportRecordsItself(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	bad := newClientAt(e, "10.3.0.9")
 	for i := 0; i < 3; i++ {
@@ -230,6 +234,7 @@ func TestAuditExportRecordsItself(t *testing.T) {
 }
 
 func TestAuditSettingsBounds(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/settings/audit", nil)
 	e.mustStatus(resp, 200, out)
@@ -284,6 +289,7 @@ func TestAuditSettingsBounds(t *testing.T) {
 }
 
 func TestActivityShowsOnlyOwnEvents(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	m, memberID := e.member("member@example.com", "10.4.0.1")
 	// Second browser for the member.
@@ -323,6 +329,7 @@ func TestActivityShowsOnlyOwnEvents(t *testing.T) {
 }
 
 func TestUserExportExcludesAudit(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/tokens", map[string]string{"name": "x"})
 	e.mustStatus(resp, 201, out)
@@ -360,6 +367,7 @@ func TestUserExportExcludesAudit(t *testing.T) {
 // TestAuditDocumentedShape keeps docs/api.md#audit-log honest: an event has
 // exactly the documented keys, and every event name in the catalogue is listed.
 func TestAuditDocumentedShape(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/audit", nil)
 	e.mustStatus(resp, 200, out)

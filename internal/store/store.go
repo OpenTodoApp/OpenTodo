@@ -3,8 +3,10 @@ package store
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"embed"
+	"encoding/hex"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -144,6 +146,19 @@ func OpenReader(dataDir string) (*sql.DB, error) {
 		return nil, fmt.Errorf("open database reader: %w", err)
 	}
 	return db, nil
+}
+
+// MigrationsDigest is a hex SHA-256 over the embedded migrations' names and
+// contents: the key of the migrated test database template (internal/testenv).
+func MigrationsDigest() string {
+	h := sha256.New()
+	entries, _ := fs.ReadDir(migrations, "migrations")
+	for _, e := range entries {
+		b, _ := fs.ReadFile(migrations, "migrations/"+e.Name())
+		fmt.Fprintf(h, "%s\x00%d\x00", e.Name(), len(b))
+		h.Write(b)
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // LatestVersion is the schema version this binary migrates to: the highest

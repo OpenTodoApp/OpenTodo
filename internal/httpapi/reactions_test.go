@@ -7,6 +7,7 @@ import (
 
 // TestReactionRoutes covers comments "Reaction routes" (editor-everywhere D8).
 func TestReactionRoutes(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "viewer")
 	resp, out := se.alice.do("POST", "/api/v1/tasks/"+se.task+"/comments", map[string]any{"body": "Whole or skimmed?"})

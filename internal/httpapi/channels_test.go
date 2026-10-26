@@ -19,6 +19,7 @@ func channelOf(out map[string]any) map[string]any {
 }
 
 func TestChannelsSwitch(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/settings/notification-channels", nil)
 	e.mustStatus(resp, 200, out)
@@ -48,6 +49,7 @@ func TestChannelsSwitch(t *testing.T) {
 }
 
 func TestChannelLifecycle(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	var hits atomic.Int32
 	var lastAuth atomic.Value
@@ -121,6 +123,7 @@ func TestChannelLifecycle(t *testing.T) {
 }
 
 func TestChannelWebhookSecretShownOnceAndLimits(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	body := map[string]any{"kind": "webhook", "url": "https://hooks.example.com/opentodo"}
 	resp, out := e.do("POST", "/api/v1/notification-channels", body)

@@ -31,6 +31,7 @@ func personalTask(t *testing.T, e *env, body map[string]any) string {
 }
 
 func TestTaskPagePublishing(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	task := personalTask(t, se.alice, map[string]any{"title": "Paint the fence"})
 	sub := personalTask(t, se.alice, map[string]any{"title": "Buy primer", "parent_id": task})
@@ -100,6 +101,7 @@ func TestTaskPagePublishing(t *testing.T) {
 }
 
 func TestTaskPageLiveRead(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	task := personalTask(t, se.alice, map[string]any{"title": "Paint the fence", "description": "Two coats, **white**"})
 	for _, title := range []string{"Buy primer", "Sand the boards", "First coat"} {
@@ -212,6 +214,7 @@ func TestTaskPageLiveRead(t *testing.T) {
 }
 
 func TestTaskPageRights(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	task := personalTask(t, se.alice, map[string]any{"title": "Water the plants"})
 	guest := newClientAt(se.alice, "10.7.2.1")
@@ -234,6 +237,7 @@ func TestTaskPageRights(t *testing.T) {
 }
 
 func TestTaskPageLifecycle(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	task := personalTask(t, se.alice, map[string]any{"title": "Fix the gate"})
 	secret, _ := publishPage(t, se.alice, task, map[string]any{"rights": "view", "expiresInDays": 7})
@@ -274,6 +278,7 @@ func TestTaskPageLifecycle(t *testing.T) {
 }
 
 func TestTaskPageLimits(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	task := personalTask(t, se.alice, map[string]any{"title": "Flood"})
 	secret, _ := publishPage(t, se.alice, task, map[string]any{"rights": "reply"})
@@ -311,6 +316,7 @@ func TestTaskPageLimits(t *testing.T) {
 }
 
 func TestTaskPageEncrypted(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	e := se.alice
 	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 3))
@@ -402,6 +408,7 @@ func TestTaskPageEncrypted(t *testing.T) {
 // TestTaskPageModeSwitch: a page follows its task between an encrypted personal
 // scope and a readable one (lifecycle requirement, task 4.4).
 func TestTaskPageModeSwitch(t *testing.T) {
+	t.Parallel()
 	// Entering an encrypted scope: the owner turns encryption on; the live page is
 	// unavailable until a device uploads a snapshot with the wrapped key.
 	se := newShareEnv(t)
@@ -450,6 +457,7 @@ func TestTaskPageModeSwitch(t *testing.T) {
 // TestTaskPageConcurrentEdit: a guest completes the task while its owner, offline,
 // changes the due date; both changes survive (last writer wins per field).
 func TestTaskPageConcurrentEdit(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.alice.now.Freeze(time.Now())
 	task := personalTask(t, se.alice, map[string]any{"title": "Fix the gate", "due": map[string]any{"date": "2026-10-20"}})
@@ -469,6 +477,7 @@ func TestTaskPageConcurrentEdit(t *testing.T) {
 }
 
 func TestTaskPageShellAndLog(t *testing.T) {
+	t.Parallel()
 	if got := redactPath("/t/abcdefghijklmnopqrstuv/paint-the-fence"); got != "/t/[redacted]" {
 		t.Fatalf("redact page = %q", got)
 	}

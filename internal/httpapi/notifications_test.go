@@ -5,6 +5,7 @@ import (
 )
 
 func TestNotificationRoutesAuthAndOwnership(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	anon := newClientFor(se.alice)
 	for _, rt := range [][2]string{{"GET", "/api/v1/notifications"}, {"POST", "/api/v1/notifications/x/read"}} {

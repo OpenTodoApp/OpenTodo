@@ -22,6 +22,7 @@ import (
 // Profile routes (OpenSpec change settings-refresh, design D10; account-profile).
 
 func TestProfileRename(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Raffa", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -51,6 +52,7 @@ func TestProfileRename(t *testing.T) {
 }
 
 func TestProfileEmailWithoutOutgoingEmail(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -82,6 +84,7 @@ func TestProfileEmailWithoutOutgoingEmail(t *testing.T) {
 }
 
 func TestProfileEmailNeedsRecentSession(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	m.clock.advance(FreshWindow + time.Second)
 	resp, out := m.do("POST", "/api/v1/me/email", map[string]string{"email": "new@example.com"})
@@ -91,6 +94,7 @@ func TestProfileEmailNeedsRecentSession(t *testing.T) {
 }
 
 func TestProfileEmailByLink(t *testing.T) {
+	t.Parallel()
 	e, srv := mailEnv(t, false)
 	e.configureMail(srv)
 	before := len(srv.Messages())
@@ -192,6 +196,7 @@ func (e *env) putBytes(method, path string, body []byte) (*http.Response, []byte
 }
 
 func TestProfilePicture(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)

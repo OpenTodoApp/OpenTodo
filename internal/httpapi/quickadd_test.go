@@ -20,6 +20,7 @@ func parseBody(line string, extra ...string) map[string]any {
 }
 
 func TestQuickAddParseWithTheAccountsProjects(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Home"})
 	e.mustStatus(resp, 201, out)
@@ -54,6 +55,7 @@ func TestQuickAddParseWithTheAccountsProjects(t *testing.T) {
 }
 
 func TestQuickAddParseExistingLabelHasItsID(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/labels", map[string]any{"name": "Plumbing"})
 	e.mustStatus(resp, 201, out)
@@ -67,6 +69,7 @@ func TestQuickAddParseExistingLabelHasItsID(t *testing.T) {
 }
 
 func TestQuickAddParseRecognisedOrigin(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", parsePath, parseBody("Look at this", "url", "https://github.com/o/r/issues/7"))
 	e.mustStatus(resp, 200, out)
@@ -82,6 +85,7 @@ func TestQuickAddParseRecognisedOrigin(t *testing.T) {
 }
 
 func TestQuickAddParseReadTokenAcceptedAndWritesNothing(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	secret := e.token("read")
 	c := e.bearerClient()
@@ -97,6 +101,7 @@ func TestQuickAddParseReadTokenAcceptedAndWritesNothing(t *testing.T) {
 }
 
 func TestQuickAddParseAnonymous(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	c := e.bearerClient()
 	resp, out := c.do("POST", parsePath, parseBody("Buy milk"))
@@ -107,6 +112,7 @@ func TestQuickAddParseAnonymous(t *testing.T) {
 }
 
 func TestQuickAddParseInvalidInput(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", parsePath, parseBody(strings.Repeat("a", 3000)))
 	e.mustStatus(resp, 400, out)
@@ -123,6 +129,7 @@ func TestQuickAddParseInvalidInput(t *testing.T) {
 }
 
 func TestQuickAddParseRateLimit(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	for i := 0; i < parsesPerMinute; i++ {
 		resp, out := e.do("POST", parsePath, parseBody("Buy milk"))
@@ -138,6 +145,7 @@ func TestQuickAddParseRateLimit(t *testing.T) {
 // TestQuickAddParseChipsInSixLanguages: the date chip follows the account's
 // interface language, and "tomorrow" is read in each language.
 func TestQuickAddParseChipsInSixLanguages(t *testing.T) {
+	t.Parallel()
 	for lang, line := range map[string]string{"en": "Call tomorrow", "de": "Anrufen morgen", "fr": "Appeler demain", "es": "Llamar mañana", "it": "Chiamare domani", "pt": "Ligar amanhã"} {
 		a := parseAccountData{lang: lang, labels: map[string]string{}, names: map[string]string{}}
 		a.ctx.Languages = quickadd.ActiveLanguages([]string{lang})
@@ -156,6 +164,7 @@ func TestQuickAddParseChipsInSixLanguages(t *testing.T) {
 }
 
 func TestQuickAddParseUnmatchedProjectAndSpans(t *testing.T) {
+	t.Parallel()
 	a := parseAccountData{lang: "en", labels: map[string]string{}, names: map[string]string{}}
 	a.ctx.Languages = []string{"en"}
 	got := parseLine("Pay the bill #Fiance p2", a, "2026-10-21", "08:00")
@@ -181,6 +190,7 @@ func TestQuickAddParseUnmatchedProjectAndSpans(t *testing.T) {
 // TestQuickAddParseSharedVectors pins the route to the web parser: every case of
 // web/src/lib/nlp/quickadd.vectors.json goes through the function the handler uses.
 func TestQuickAddParseSharedVectors(t *testing.T) {
+	t.Parallel()
 	raw, err := os.ReadFile("../../web/src/lib/nlp/quickadd.vectors.json")
 	if err != nil {
 		t.Fatal(err)

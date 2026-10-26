@@ -20,6 +20,7 @@ func digestEnv(t *testing.T) *env {
 var zurichFriday = map[string]any{"enabled": true, "weekday": 5, "hour": 7, "timeZone": "Europe/Zurich", "language": "de"}
 
 func TestDigestEnable(t *testing.T) {
+	t.Parallel()
 	e := digestEnv(t)
 	resp, out := e.do("GET", "/api/v1/me/email-digest", nil)
 	e.mustStatus(resp, 200, out)
@@ -51,6 +52,7 @@ func TestDigestEnable(t *testing.T) {
 }
 
 func TestDigestUnavailableWithoutOutgoingEmail(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t) // no mailer wired
 	resp, out := e.do("GET", "/api/v1/me/email-digest", nil)
 	e.mustStatus(resp, 200, out)
@@ -70,6 +72,7 @@ func TestDigestUnavailableWithoutOutgoingEmail(t *testing.T) {
 }
 
 func TestDigestRefusedOnDemo(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e, _ := d.visitor()
 	resp, out := e.do("PUT", "/api/v1/me/email-digest", zurichFriday)
@@ -84,6 +87,7 @@ func TestDigestRefusedOnDemo(t *testing.T) {
 }
 
 func TestDigestEncryptedAccountRefused(t *testing.T) {
+	t.Parallel()
 	e := digestEnv(t)
 	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
 	e.mustStatus(resp, 201, out)
@@ -99,6 +103,7 @@ func TestDigestEncryptedAccountRefused(t *testing.T) {
 }
 
 func TestDigestInvalidInput(t *testing.T) {
+	t.Parallel()
 	e := digestEnv(t)
 	for field, body := range map[string]map[string]any{
 		"timeZone": {"enabled": true, "weekday": 5, "hour": 7, "timeZone": "Mars/Olympus", "language": "en"},
@@ -119,6 +124,7 @@ func TestDigestInvalidInput(t *testing.T) {
 }
 
 func TestDigestAnonymousAndLimitedTokens(t *testing.T) {
+	t.Parallel()
 	e := digestEnv(t)
 	anon := e.bearerClient()
 	for _, method := range []string{"GET", "PUT"} {
@@ -143,6 +149,7 @@ func TestDigestAnonymousAndLimitedTokens(t *testing.T) {
 
 // TestEncryptionTurnsDigestOff (email-digest "Enable encryption with a digest on").
 func TestEncryptionTurnsDigestOff(t *testing.T) {
+	t.Parallel()
 	e := digestEnv(t)
 	resp, out := e.do("PUT", "/api/v1/me/email-digest", zurichFriday)
 	e.mustStatus(resp, 200, out)

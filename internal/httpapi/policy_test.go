@@ -20,8 +20,8 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/push"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // Route authorization policy (OpenSpec change `route-authorization-policy`).
@@ -31,7 +31,7 @@ import (
 func routeTableOf(t *testing.T, demoMode bool) []routeEntry {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := testenv.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,6 +62,7 @@ func routeTableOf(t *testing.T, demoMode bool) []routeEntry {
 // wrapper with a valid policy, and no source file registers a handler on a
 // ServeMux directly (which would bypass the policy).
 func TestEveryRouteDeclaresAPolicy(t *testing.T) {
+	t.Parallel()
 	table := routeTableOf(t, true)
 	got := map[string]routePolicy{}
 	for _, e := range table {
@@ -150,6 +151,7 @@ func describe(p routePolicy) string {
 // TestSecurityRoutePolicies pins the policy of the security-relevant routes:
 // credentials, administration, secrets and the anonymous sign-in routes.
 func TestSecurityRoutePolicies(t *testing.T) {
+	t.Parallel()
 	want := map[string]string{
 		// Anonymous by design.
 		"GET /healthz":                         "public",
@@ -264,6 +266,7 @@ func samplePath(path string) string {
 // routing) refuses exactly the routes whose policy says demoDenied, and every
 // route that changes credentials, administration or owner settings is among them.
 func TestDemoDenyListMatchesPolicy(t *testing.T) {
+	t.Parallel()
 	for _, e := range routeTableOf(t, true) {
 		method, path, ok := strings.Cut(e.pattern, " ")
 		methods := []string{method}
@@ -314,6 +317,7 @@ func (p *policyEnv) as(token, method, path string, body any) (*http.Response, ma
 // credential and administration route that changes something, an admin token
 // is accepted, and a read token stays read-only. Full tokens keep everything else.
 func TestCredentialRoutesNeedAdminToken(t *testing.T) {
+	t.Parallel()
 	p := newPolicyEnv(t)
 	resp, out := p.do("POST", "/api/v1/invitations", map[string]any{})
 	p.mustStatus(resp, 201, out)
@@ -379,6 +383,7 @@ func TestCredentialRoutesNeedAdminToken(t *testing.T) {
 // TestAdminTokenOnlyFromFreshSession (SEC-3): an admin token is created only
 // by a recently confirmed session, never by another token.
 func TestAdminTokenOnlyFromFreshSession(t *testing.T) {
+	t.Parallel()
 	p := newPolicyEnv(t)
 	resp, out := p.as(p.admin, "POST", "/api/v1/tokens", map[string]string{"name": "again", "scope": "admin"})
 	if resp.StatusCode != 403 || errCode(out) != "session_required" {
@@ -413,6 +418,7 @@ func TestAdminTokenOnlyFromFreshSession(t *testing.T) {
 // scopes) keeps full access and, like every full token, is refused on the
 // credential routes.
 func TestPreScopeTokensAreFull(t *testing.T) {
+	t.Parallel()
 	p := newPolicyEnv(t)
 	var uid string
 	if err := p.db.QueryRow("SELECT id FROM users WHERE email = 'owner@example.com'").Scan(&uid); err != nil {
@@ -436,6 +442,7 @@ func TestPreScopeTokensAreFull(t *testing.T) {
 // TestRolePolicyBeforeCredentials: a member is told "forbidden" on an owner
 // route whatever the credential, before any freshness or scope rule.
 func TestRolePolicyBeforeCredentials(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	mc, _ := m.member("member@example.com", "203.0.113.70")
 	m.clock.advance(FreshWindow + time.Second)

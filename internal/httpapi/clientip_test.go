@@ -12,6 +12,7 @@ import (
 // request from a Cloudflare edge name the client with CF-Connecting-IP. The
 // connection itself must come from a listed proxy (trusted-client-identity).
 func TestClientAddressBehindTrustedProxies(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	t.Cleanup(func() { setTrustedProxies(nil, false) })
 	req := func(xff, cf string) string {
 		r := httptest.NewRequest("GET", "/", nil)
@@ -73,6 +74,7 @@ func TestClientAddressBehindTrustedProxies(t *testing.T) {
 // invalid entry is dropped, the valid ones still apply, and with every entry
 // invalid the client address is the same as with the variable unset.
 func TestInvalidTrustedProxyEntriesNeverWidenTrust(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	t.Cleanup(func() { setTrustedProxies(nil, false) })
 	req := func(xff, cf string) string {
 		r := httptest.NewRequest("GET", "/", nil)

@@ -16,8 +16,8 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // demoServer is a demo instance; visitors are envs with their own cookie jar
@@ -31,7 +31,7 @@ type demoServer struct {
 
 func newDemoServer(t *testing.T) *demoServer {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := testenv.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,6 +113,7 @@ func findProject(t *testing.T, e *env, name string) string {
 }
 
 func TestDemoStatusHasTokenNotCredentials(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e := d.anonymous()
 	resp, out := e.do("GET", "/api/v1/auth/status", nil)
@@ -135,6 +136,7 @@ func TestDemoStatusHasTokenNotCredentials(t *testing.T) {
 }
 
 func TestSandboxCreation(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e := d.anonymous()
 	tok := token(e)
@@ -191,6 +193,7 @@ func TestSandboxCreation(t *testing.T) {
 }
 
 func TestSandboxTokenSingleUse(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e := d.anonymous()
 	tok := token(e)
@@ -211,6 +214,7 @@ func TestSandboxTokenSingleUse(t *testing.T) {
 }
 
 func TestSandboxCreationLimits(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e := d.anonymous()
 	for i := 0; i < demo.PerAddressPerHour; i++ {
@@ -240,6 +244,7 @@ func TestSandboxCreationLimits(t *testing.T) {
 }
 
 func TestSandboxCapEvictsIdle(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	d.demo.SetLimits(2, 0)
 	first, firstID := d.visitor()
@@ -289,6 +294,7 @@ func pullAll(e *env) string {
 }
 
 func TestSandboxIsolation(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	a, aID := d.visitor()
 	b, bID := d.visitor()
@@ -377,6 +383,7 @@ func TestSandboxIsolation(t *testing.T) {
 }
 
 func TestSandboxWriteBudget(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e, uid := d.visitor()
 	// Near the hourly budget: a batch that would cross it is refused whole.
@@ -421,6 +428,7 @@ func TestSandboxWriteBudget(t *testing.T) {
 }
 
 func TestDemoFieldSizes(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e, _ := d.visitor()
 	big := strings.Repeat("x", demo.MaxTextBytes+1)
@@ -455,6 +463,7 @@ func TestDemoFieldSizes(t *testing.T) {
 }
 
 func TestExpiredSessionGetsDemoExpired(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e, _ := d.visitor()
 	resp, out := e.do("GET", "/api/v1/tasks", nil)
@@ -485,6 +494,7 @@ func TestExpiredSessionGetsDemoExpired(t *testing.T) {
 }
 
 func TestDemoRobotsHeader(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e := d.anonymous()
 	for _, c := range []struct{ method, path string }{{"GET", "/"}, {"GET", "/inbox"}, {"GET", "/api/v1/auth/status"}, {"GET", "/api/v1/tasks"},
@@ -502,6 +512,7 @@ func TestDemoRobotsHeader(t *testing.T) {
 }
 
 func TestDemoRestrictedRoutes(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e, _ := d.visitor()
 	shared := findProject(t, e, "Home renovation")
@@ -606,6 +617,7 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 }
 
 func TestDemoGuardOffByDefault(t *testing.T) {
+	t.Parallel()
 	// Without demo mode the same routes reach their handlers (never demo_restricted).
 	e := newEnv(t, false)
 	resp, out := e.do("GET", "/api/v1/auth/status", nil)
@@ -641,6 +653,7 @@ func TestDemoGuardOffByDefault(t *testing.T) {
 // TestDemoRefusesAgentAccess: a demo visitor cannot switch on assistant writes,
 // and /mcp stays closed before any token is evaluated (mcp-write-tools).
 func TestDemoRefusesAgentAccess(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e, _ := d.visitor()
 	resp, out := e.do("PUT", "/api/v1/me/agent-access", map[string]any{"allow_writes": true})

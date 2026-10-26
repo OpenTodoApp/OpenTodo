@@ -8,6 +8,7 @@ import (
 // OpenSpec change sync-convergence: the sync route refuses far-future ops for
 // devices that announce clock_skew and keeps clamping for the rest.
 func TestSyncClockSkewFeature(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, true)
 	e.register("skew@example.com")
 	far := time.Now().Add(time.Hour).UnixMilli()

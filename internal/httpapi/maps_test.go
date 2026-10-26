@@ -63,6 +63,7 @@ func mapsEnv(t *testing.T, f *fakeMapProvider, env config.MapsConfig, timeout ti
 
 // task-locations "Map proxy": every scenario.
 func TestMapProxyRoutes(t *testing.T) {
+	t.Parallel()
 	f := newFakeMapProvider(t)
 	e := mapsEnv(t, f, config.MapsConfig{}, 2*time.Second)
 
@@ -144,6 +145,7 @@ func TestMapProxyRoutes(t *testing.T) {
 
 // "Provider unreachable": 502 maps_unavailable for anything not in the cache.
 func TestMapProxyProviderUnreachable(t *testing.T) {
+	t.Parallel()
 	f := newFakeMapProvider(t)
 	e := mapsEnv(t, f, config.MapsConfig{}, 100*time.Millisecond)
 	e.register("owner@example.com")
@@ -157,6 +159,7 @@ func TestMapProxyProviderUnreachable(t *testing.T) {
 
 // "Map switches": a variable locks the switch, shown read-only in Settings.
 func TestMapsSettingLockedByVariable(t *testing.T) {
+	t.Parallel()
 	f := newFakeMapProvider(t)
 	off := false
 	e := mapsEnv(t, f, config.MapsConfig{Enabled: &off}, time.Second)
@@ -169,6 +172,7 @@ func TestMapsSettingLockedByVariable(t *testing.T) {
 }
 
 func TestPermissionsPolicyAllowsGeolocationForSelf(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, true)
 	resp, _ := e.do("GET", "/healthz", nil)
 	if got := resp.Header.Get("Permissions-Policy"); got != "camera=(), geolocation=(self)" {
@@ -178,6 +182,7 @@ func TestPermissionsPolicyAllowsGeolocationForSelf(t *testing.T) {
 
 // The export carries places (task-locations "Places", "Export round trip").
 func TestExportIncludesPlaces(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, true)
 	e.register("owner@example.com")
 	resp, out := e.do("POST", "/api/v1/sync", map[string]any{"device": "d1", "ops": []map[string]any{

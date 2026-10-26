@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -20,6 +21,7 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // restoreEnv is backupEnv with a settable free-space probe and a restart hook.
@@ -34,7 +36,7 @@ type restoreEnv struct {
 func newRestoreEnv(t *testing.T) *restoreEnv {
 	t.Helper()
 	re := &restoreEnv{dir: t.TempDir(), free: -1}
-	db, err := store.Open(re.dir)
+	db, err := testenv.Open(re.dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,6 +117,7 @@ var restoreRoutes = []struct{ method, path string }{
 
 // 4.1–4.5: no session is 401, a member is 403 and nothing is touched.
 func TestRestoreRoutesAuth(t *testing.T) {
+	t.Parallel()
 	re := newRestoreEnv(t)
 	anon := newClientFor(re.env)
 	for _, r := range restoreRoutes {
@@ -143,6 +146,7 @@ func TestRestoreRoutesAuth(t *testing.T) {
 }
 
 func TestRestoreArchivesList(t *testing.T) {
+	t.Parallel()
 	re := newRestoreEnv(t)
 	name := re.archive("pw")
 	os.WriteFile(filepath.Join(re.dir, "backups", "notes.txt"), []byte("x"), 0o600)
@@ -155,7 +159,15 @@ func TestRestoreArchivesList(t *testing.T) {
 	// An unreachable WebDAV destination: 502 naming it, without credentials.
 	set := backup.DefaultSettings()
 	set.Destination = backup.DestWebDAV
-	set.WebDAV = backup.WebDAVSettings{URL: "http://127.0.0.1:1/dav/", Username: "me", AllowHTTP: true}
+	// A listener that is closed again: the port refuses at once (127.0.0.1:1 is
+	// dropped rather than refused on some hosts, which waits out the dial timeout).
+	gone, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	unreachable := "http://" + gone.Addr().String() + "/dav/"
+	gone.Close()
+	set.WebDAV = backup.WebDAVSettings{URL: unreachable, Username: "me", AllowHTTP: true}
 	pw := "hunter2-secret"
 	if _, err := re.bk.SaveSettings(context.Background(), set, backup.SecretUpdate{WebDAVPassword: &pw}); err != nil {
 		t.Fatal(err)
@@ -163,12 +175,13 @@ func TestRestoreArchivesList(t *testing.T) {
 	resp, out = re.do("GET", "/api/v1/backups/archives", nil)
 	re.mustStatus(resp, 502, out)
 	msg := out["error"].(map[string]any)["message"].(string)
-	if errCode(out) != "destination_error" || !strings.Contains(msg, "127.0.0.1:1/dav/") || strings.Contains(msg, pw) {
+	if errCode(out) != "destination_error" || !strings.Contains(msg, strings.TrimPrefix(unreachable, "http://")) || strings.Contains(msg, pw) {
 		t.Fatalf("unreachable = %v", out)
 	}
 }
 
 func TestRestoreUploadRoute(t *testing.T) {
+	t.Parallel()
 	re := newRestoreEnv(t)
 	name := re.archive("")
 	raw, _ := os.ReadFile(filepath.Join(re.dir, "backups", name))
@@ -202,6 +215,7 @@ func TestRestoreUploadRoute(t *testing.T) {
 }
 
 func TestRestorePrepareRoute(t *testing.T) {
+	t.Parallel()
 	re := newRestoreEnv(t)
 	name := re.archive("secret")
 	prep := func(body map[string]any) (*http.Response, map[string]any) {
@@ -254,6 +268,7 @@ func (re *restoreEnv) archiveAt(d time.Duration, pass string) string {
 }
 
 func TestRestoreConfirmRoute(t *testing.T) {
+	t.Parallel()
 	re := newRestoreEnv(t)
 	name := re.archive("")
 	resp, out := re.do("POST", "/api/v1/backups/restore/prepare", map[string]any{"source": map[string]string{"archive": name}})
@@ -305,6 +320,7 @@ func TestRestoreConfirmRoute(t *testing.T) {
 }
 
 func TestRestoreConfirmDuringBackup(t *testing.T) {
+	t.Parallel()
 	re := newRestoreEnv(t)
 	name := re.archive("")
 	resp, out := re.do("POST", "/api/v1/backups/restore/prepare", map[string]any{"source": map[string]string{"archive": name}})
@@ -327,6 +343,7 @@ func TestRestoreConfirmDuringBackup(t *testing.T) {
 }
 
 func TestRestoreStateCancelAndSafetyCopies(t *testing.T) {
+	t.Parallel()
 	re := newRestoreEnv(t)
 	name := re.archive("")
 	resp, out := re.do("POST", "/api/v1/backups/restore/prepare", map[string]any{"source": map[string]string{"archive": name}})

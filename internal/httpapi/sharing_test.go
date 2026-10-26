@@ -84,6 +84,7 @@ func syncOp(id, entity, entityID, field string, value any) map[string]any {
 }
 
 func TestMembershipRoutesAuthAndErrors(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	p := "/api/v1/projects/" + se.project
 	anon := newClientFor(se.alice)
@@ -178,6 +179,7 @@ func TestMembershipRoutesAuthAndErrors(t *testing.T) {
 }
 
 func TestOwnerTransferDemotesPreviousOwner(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	p := "/api/v1/projects/" + se.project
 	se.share(se.alice, "bob@example.com", "editor")
@@ -207,6 +209,7 @@ func TestOwnerTransferDemotesPreviousOwner(t *testing.T) {
 }
 
 func TestRestReadsUnionScopes(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.bob.do("POST", "/api/v1/tasks", map[string]any{"title": "Bob's own"})
 	se.bob.mustStatus(resp, 201, out)
@@ -254,6 +257,7 @@ func TestRestReadsUnionScopes(t *testing.T) {
 }
 
 func TestRestPatchByViewerIsForbidden(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "carol@example.com", "viewer")
 	resp, out := se.carol.do("GET", "/api/v1/tasks/"+se.task, nil)
@@ -281,6 +285,7 @@ func TestRestPatchByViewerIsForbidden(t *testing.T) {
 }
 
 func TestExportIncludesSharedProjects(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.bob.do("POST", "/api/v1/projects", map[string]any{"name": "Bob's"})
 	se.bob.mustStatus(resp, 201, out)
@@ -309,6 +314,7 @@ func TestExportIncludesSharedProjects(t *testing.T) {
 }
 
 func TestSyncReportsRejectionsAndMemberships(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	// Old-style exchange before sharing: memberships empty, rejected empty.
 	out := syncOnce(se.bob, "B", 0, nil)
@@ -357,6 +363,7 @@ func TestSyncReportsRejectionsAndMemberships(t *testing.T) {
 }
 
 func TestMembershipChangeWakesMemberDevices(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -407,6 +414,7 @@ func TestMembershipChangeWakesMemberDevices(t *testing.T) {
 }
 
 func TestWebhooksFireForEveryMemberOfASharedProject(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.alice.allowPrivate(true)
 	recv := newHookReceiver(t)
@@ -434,6 +442,7 @@ func TestWebhooksFireForEveryMemberOfASharedProject(t *testing.T) {
 }
 
 func TestImportIntoSharedProjectRespectsRole(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "carol@example.com", "viewer")
 	// The importer refuses a shared project the caller cannot write to.

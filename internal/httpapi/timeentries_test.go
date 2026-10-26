@@ -10,6 +10,7 @@ import (
 // Time entry routes (OpenSpec change time-tracking, design D7).
 
 func TestTimeEntryRoutesAuth(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientFor(e)
 	for _, rt := range [][2]string{
@@ -55,6 +56,7 @@ func TestTimeEntryRoutesAuth(t *testing.T) {
 }
 
 func TestTimeEntryStartStopLogEdit(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.now.Freeze(time.Now())
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Write the report"})
@@ -177,6 +179,7 @@ func TestTimeEntryStartStopLogEdit(t *testing.T) {
 }
 
 func TestTimeEntrySharedAuthorship(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	se.share(se.alice, "carol@example.com", "viewer")
@@ -219,6 +222,7 @@ func TestTimeEntrySharedAuthorship(t *testing.T) {
 }
 
 func TestTimeEntryCSVExport(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Client A"})
 	e.mustStatus(resp, 201, out)

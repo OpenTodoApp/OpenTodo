@@ -14,15 +14,15 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // backupEnv is newEnv plus the backup service, with the owner signed in.
 func backupEnv(t *testing.T) (*env, *backup.Service, string) {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := testenv.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,6 +51,7 @@ var backupRoutes = []struct{ method, path string }{
 }
 
 func TestBackupRoutesRequireAuth(t *testing.T) {
+	t.Parallel()
 	e, _, _ := backupEnv(t)
 	anon := newClientFor(e)
 	for _, r := range backupRoutes {
@@ -69,6 +70,7 @@ func TestBackupRoutesRequireAuth(t *testing.T) {
 }
 
 func TestBackupRoutesForbidMembers(t *testing.T) {
+	t.Parallel()
 	e, _, _ := backupEnv(t)
 	_, secret, _ := e.invite(map[string]any{})
 	member := newClientFor(e)
@@ -96,6 +98,7 @@ func putSettings(e *env, set backup.Settings, secrets map[string]any) (*http.Res
 }
 
 func TestBackupSettingsValidation400(t *testing.T) {
+	t.Parallel()
 	e, _, _ := backupEnv(t)
 	good := backup.DefaultSettings()
 	good.Schedule.Frequency = "daily"
@@ -136,6 +139,7 @@ func TestBackupSettingsValidation400(t *testing.T) {
 }
 
 func TestSettingsResponseHasNoSecrets(t *testing.T) {
+	t.Parallel()
 	e, _, _ := backupEnv(t)
 	set := backup.DefaultSettings()
 	set.Destination = "webdav"
@@ -176,6 +180,7 @@ func TestSettingsResponseHasNoSecrets(t *testing.T) {
 }
 
 func TestBackupRunConflict409(t *testing.T) {
+	t.Parallel()
 	e, _, _ := backupEnv(t)
 	// A WebDAV destination that holds every upload until released keeps the
 	// first run in progress.
@@ -252,6 +257,7 @@ func TestBackupRunConflict409(t *testing.T) {
 }
 
 func TestBackupTestEndpoint(t *testing.T) {
+	t.Parallel()
 	e, _, _ := backupEnv(t)
 	resp, out := e.do("POST", "/api/v1/backups/test", nil)
 	e.mustStatus(resp, 200, out) // default local destination
@@ -274,6 +280,7 @@ func TestBackupTestEndpoint(t *testing.T) {
 // Every sync response carries the log generation; it is stable until a restore
 // changes it (simulated here by rewriting the settings row, as restore does).
 func TestSyncResponseCarriesGeneration(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, true)
 	e.register("a@example.com")
 	resp, out := e.do("POST", "/api/v1/sync", map[string]any{"device": "d1", "cursor": 0, "ops": []any{}})

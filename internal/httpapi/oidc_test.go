@@ -21,8 +21,8 @@ import (
 	"github.com/pixari/opentodo/internal/oidc"
 	"github.com/pixari/opentodo/internal/oidc/oidctest"
 	"github.com/pixari/opentodo/internal/settings"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // oidcEnv is a server wired to an in-process provider, with the controllable
@@ -42,7 +42,7 @@ func newOIDCEnvWith(t *testing.T, allowSignup bool, opts ...Option) *oidcEnv {
 	t.Helper()
 	idp := oidctest.New(t)
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := testenv.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,6 +137,7 @@ func (o *oidcEnv) auditCount(where string, args ...any) int {
 }
 
 func TestOIDCEndToEndWithFakeProvider(t *testing.T) {
+	t.Parallel()
 	o := newOIDCEnv(t, false)
 
 	// Not configured: dormant.
@@ -304,6 +305,7 @@ func TestOIDCEndToEndWithFakeProvider(t *testing.T) {
 }
 
 func TestOIDCSettingsRequireOwner(t *testing.T) {
+	t.Parallel()
 	o := newOIDCEnv(t, true)
 	anon := o.client("203.0.113.10")
 	for _, r := range []struct{ method, path string }{
@@ -362,6 +364,7 @@ func TestOIDCSettingsRequireOwner(t *testing.T) {
 }
 
 func TestOIDCCallbackStateInvalid(t *testing.T) {
+	t.Parallel()
 	o := newOIDCEnv(t, false)
 	o.configure(map[string]any{"allowProvision": true})
 	c := o.client("203.0.113.20")
@@ -409,6 +412,7 @@ func mustURL(s string) *url.URL {
 }
 
 func TestUnlinkLastCredentialRefused(t *testing.T) {
+	t.Parallel()
 	o := newOIDCEnv(t, false)
 	o.configure(map[string]any{"allowProvision": true, "ssoOnly": true})
 	member := o.client("203.0.113.30")
@@ -450,6 +454,7 @@ func TestUnlinkLastCredentialRefused(t *testing.T) {
 }
 
 func TestMemberPasswordRefusedInSSOOnly(t *testing.T) {
+	t.Parallel()
 	o := newOIDCEnv(t, true)
 	member := o.client("203.0.113.40")
 	resp, out := member.do("POST", "/api/v1/auth/register", map[string]string{"email": "m@example.com", "password": "member password 1"})
@@ -502,6 +507,7 @@ func TestMemberPasswordRefusedInSSOOnly(t *testing.T) {
 // that signs in through the provider is not asked for a code, and changing the
 // provider settings on a stale session needs re-authentication.
 func TestOIDCSignInSatisfiesMFA(t *testing.T) {
+	t.Parallel()
 	o := newOIDCEnv(t, false)
 	o.configure(nil)
 	o.enrol(o.env)
@@ -550,6 +556,7 @@ func TestOIDCSignInSatisfiesMFA(t *testing.T) {
 // picture is never replaced, a removed one is not fetched again, an unchanged
 // address is not fetched twice, and the sign-in never fails on the picture.
 func TestOIDCProviderPicture(t *testing.T) {
+	t.Parallel()
 	fetches := 0
 	var picture []byte
 	pictures := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

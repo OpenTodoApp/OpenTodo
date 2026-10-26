@@ -7,6 +7,7 @@ import (
 // Sections API (OpenSpec change `board-view`).
 
 func TestSectionsCrud(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Work"})
 	e.mustStatus(resp, 201, out)
@@ -80,6 +81,7 @@ func TestSectionsCrud(t *testing.T) {
 }
 
 func TestSectionCreateRejectsMissingProject(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Gone"})
 	e.mustStatus(resp, 201, out)
@@ -107,6 +109,7 @@ func TestSectionCreateRejectsMissingProject(t *testing.T) {
 
 // Section colour and icon (OpenSpec change icons-and-section-style, "Sections API").
 func TestSectionStyle(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Work"})
 	e.mustStatus(resp, 201, out)
@@ -160,6 +163,7 @@ func TestSectionStyle(t *testing.T) {
 }
 
 func TestSectionsRequireAuth(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientFor(e)
 	for _, rt := range [][2]string{{"GET", "/api/v1/sections"}, {"POST", "/api/v1/sections"}, {"GET", "/api/v1/sections/x"},
@@ -173,6 +177,7 @@ func TestSectionsRequireAuth(t *testing.T) {
 }
 
 func TestTaskSectionMustMatchProject(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	mk := func(path string, body map[string]any) string {
 		t.Helper()
@@ -223,6 +228,7 @@ func TestTaskSectionMustMatchProject(t *testing.T) {
 }
 
 func TestExportIncludesSections(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Work"})
 	e.mustStatus(resp, 201, out)
@@ -263,6 +269,7 @@ func TestExportIncludesSections(t *testing.T) {
 }
 
 func TestSharedProjectSectionsFollowRoles(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.alice.do("POST", "/api/v1/sections", map[string]any{"name": "Backlog", "project_id": se.project})
 	se.alice.mustStatus(resp, 201, out)

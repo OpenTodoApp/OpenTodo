@@ -19,14 +19,14 @@ import (
 
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // newEnvConfig is newEnv with a caller-supplied configuration.
 func newEnvConfig(t *testing.T, cfg config.Config) *env {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := testenv.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,6 +93,7 @@ func (e *env) importAndWait(filename string, data []byte, opts map[string]any) m
 }
 
 func TestImportRoutesRequireAuth(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	anon := &env{t: t, srv: e.srv, client: &http.Client{}}
@@ -121,6 +122,7 @@ func TestImportRoutesRequireAuth(t *testing.T) {
 }
 
 func TestImportTooLarge413(t *testing.T) {
+	t.Parallel()
 	e := newEnvConfig(t, config.Config{ImportMaxMB: 1})
 	e.register("o@example.com")
 	big := bytes.Repeat([]byte("title\n"), 1)
@@ -149,6 +151,7 @@ func TestImportTooLarge413(t *testing.T) {
 }
 
 func TestImportInvalidOptions400(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("a@example.com")
 	other := newClientAt(e, "10.0.0.2")
@@ -206,6 +209,7 @@ func TestImportInvalidOptions400(t *testing.T) {
 }
 
 func TestUndoForeignJob404(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("a@example.com")
 	job := e.importAndWait("a.csv", []byte("title\nMine\n"), nil)
@@ -266,6 +270,7 @@ func exportEntities(e *env) map[string]any {
 }
 
 func TestRoundTripExportImportExport(t *testing.T) {
+	t.Parallel()
 	a := newEnv(t, false)
 	a.register("a@example.com")
 	mk := func(path string, body map[string]any) string {
@@ -388,6 +393,7 @@ func TestRoundTripExportImportExport(t *testing.T) {
 }
 
 func TestImportCSVPreviewAndCommit(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	var b strings.Builder
@@ -464,6 +470,7 @@ func TestImportCSVPreviewAndCommit(t *testing.T) {
 }
 
 func TestImportGenericJSONOverHTTP(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	doc := []byte(`{"tasks":[{"id":"1","title":"Parent","project":"Side","tags":["x"],"subtasks":[{"id":"2","title":"Child","done":true}]},
@@ -502,6 +509,7 @@ func TestImportGenericJSONOverHTTP(t *testing.T) {
 // OpenSpec change named-importers: archive and database refusals are 400s with a
 // clear message, and real exports import over HTTP.
 func TestImportNamedFormatRefusals(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("o@example.com")
 	var buf bytes.Buffer
@@ -527,6 +535,7 @@ func TestImportNamedFormatRefusals(t *testing.T) {
 // An Asana CSV names its project after the uploaded file and creates one
 // custom field for its "Effort" column (OpenSpec change more-importers).
 func TestImportAsanaPreviewOverHTTP(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("owner@example.test")
 	data, err := os.ReadFile("../importer/testdata/asana-csv/export.csv")
@@ -554,6 +563,7 @@ func TestImportAsanaPreviewOverHTTP(t *testing.T) {
 }
 
 func TestImportLinearOverHTTP(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.register("owner@example.test")
 	data, err := os.ReadFile("../importer/testdata/linear-csv/export.csv")

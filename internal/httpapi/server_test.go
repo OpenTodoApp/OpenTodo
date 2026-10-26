@@ -17,8 +17,8 @@ import (
 
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 	"github.com/pixari/opentodo/internal/webhook"
 )
 
@@ -48,7 +48,7 @@ func newEnv(t *testing.T, allowSignup bool) *env {
 func newEnvWith(t *testing.T, allowSignup bool, opts ...Option) *env {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := testenv.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,6 +156,7 @@ func (e *env) mustStatus(resp *http.Response, want int, out map[string]any) {
 }
 
 func TestFirstRunSetupThenSignupClosed(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("GET", "/healthz", nil)
 	e.mustStatus(resp, 200, out)
@@ -215,6 +216,7 @@ func newClientAt(e *env, ip string) *env {
 }
 
 func TestUnauthenticatedIsRejected(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	for _, p := range []string{"/api/v1/me", "/api/v1/tasks", "/api/v1/export"} {
 		resp, out := e.do("GET", p, nil)
@@ -227,6 +229,7 @@ func TestUnauthenticatedIsRejected(t *testing.T) {
 }
 
 func TestCrossSiteCookieWritesAreRejected(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -240,6 +243,7 @@ func TestCrossSiteCookieWritesAreRejected(t *testing.T) {
 }
 
 func TestRestWriteThroughAndSyncRoundTrip(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -334,6 +338,7 @@ func TestRestWriteThroughAndSyncRoundTrip(t *testing.T) {
 }
 
 func TestLabelsRequireAuth(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("GET", "/api/v1/labels", nil)
 	e.mustStatus(resp, 401, out)
@@ -345,6 +350,7 @@ func TestLabelsRequireAuth(t *testing.T) {
 }
 
 func TestLabelsCrud(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -403,6 +409,7 @@ func TestLabelsCrud(t *testing.T) {
 }
 
 func TestTaskLabelsMustExist(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -447,6 +454,7 @@ func TestTaskLabelsMustExist(t *testing.T) {
 }
 
 func TestExportIncludesLabels(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -475,6 +483,7 @@ func TestExportIncludesLabels(t *testing.T) {
 }
 
 func TestApiTokens(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -502,6 +511,7 @@ func TestApiTokens(t *testing.T) {
 }
 
 func TestLoginRateLimit(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	other := newClientFor(e)
@@ -540,6 +550,7 @@ func subtaskEnv(t *testing.T) (e *env, projectID, trip, hotel, compare string) {
 }
 
 func TestTaskParentRejectsCycle(t *testing.T) {
+	t.Parallel()
 	e, _, trip, hotel, compare := subtaskEnv(t)
 	for _, bad := range []string{hotel, compare, trip} {
 		resp, out := e.do("PATCH", "/api/v1/tasks/"+trip, map[string]any{"parent_id": bad})
@@ -568,6 +579,7 @@ func TestTaskParentRejectsCycle(t *testing.T) {
 }
 
 func TestTaskParentMustShareProject(t *testing.T) {
+	t.Parallel()
 	e, projectID, trip, hotel, _ := subtaskEnv(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Inbox item"})
 	e.mustStatus(resp, 201, out)
@@ -614,6 +626,7 @@ func projectTreeEnv(t *testing.T) (e *env, work, clientA, q4, home string) {
 }
 
 func TestProjectPatchRejectsCycle(t *testing.T) {
+	t.Parallel()
 	e, work, clientA, q4, home := projectTreeEnv(t)
 	for _, bad := range []string{work, clientA, q4} {
 		resp, out := e.do("PATCH", "/api/v1/projects/"+work, map[string]any{"parent_id": bad})
@@ -652,6 +665,7 @@ func TestProjectPatchRejectsCycle(t *testing.T) {
 // Back-to-back REST writes to one field must each take effect, even within a
 // millisecond: they share device "server", so equal timestamps would tie.
 func TestRapidPatchesAllApply(t *testing.T) {
+	t.Parallel()
 	e, _, clientA, _, home := projectTreeEnv(t)
 	for i := 0; i < 50; i++ {
 		want := any(home)
@@ -667,6 +681,7 @@ func TestRapidPatchesAllApply(t *testing.T) {
 }
 
 func TestProjectPatchParentRequiresAuth(t *testing.T) {
+	t.Parallel()
 	e, work, clientA, _, _ := projectTreeEnv(t)
 	bare := &env{t: t, srv: e.srv, client: &http.Client{}}
 	resp, out := bare.do("PATCH", "/api/v1/projects/"+clientA, map[string]any{"parent_id": nil})
@@ -682,6 +697,7 @@ func TestProjectPatchParentRequiresAuth(t *testing.T) {
 }
 
 func TestTaskParentRequiresAuth(t *testing.T) {
+	t.Parallel()
 	e, _, trip, hotel, _ := subtaskEnv(t)
 	bare := &env{t: t, srv: e.srv, client: &http.Client{}}
 	resp, out := bare.do("PATCH", "/api/v1/tasks/"+hotel, map[string]any{"parent_id": nil})

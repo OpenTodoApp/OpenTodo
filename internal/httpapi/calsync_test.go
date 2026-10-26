@@ -39,6 +39,7 @@ func calsyncOn(t *testing.T, e *env) {
 }
 
 func TestCalendarSyncSwitch(t *testing.T) {
+	t.Parallel()
 	e, _ := calsyncEnv(t)
 	resp, out := e.do("GET", "/api/v1/settings/calendar-sync", nil)
 	e.mustStatus(resp, 200, out)
@@ -79,6 +80,7 @@ func TestCalendarSyncSwitch(t *testing.T) {
 }
 
 func TestCalendarConnectionLifecycle(t *testing.T) {
+	t.Parallel()
 	e, srv := calsyncEnv(t)
 	calsyncOn(t, e)
 	cal := calsynctest.New()
@@ -158,6 +160,7 @@ func TestCalendarConnectionLifecycle(t *testing.T) {
 }
 
 func TestCalendarConnectionLimitsAndFreshness(t *testing.T) {
+	t.Parallel()
 	e, srv := calsyncEnv(t)
 	calsyncOn(t, e)
 	uid := userIDOf(t, e)
@@ -184,6 +187,7 @@ func TestCalendarConnectionLimitsAndFreshness(t *testing.T) {
 }
 
 func TestGoogleConnectFlow(t *testing.T) {
+	t.Parallel()
 	e, srv := calsyncEnv(t)
 	calsyncOn(t, e)
 	allowPrivateTargets(t, e)

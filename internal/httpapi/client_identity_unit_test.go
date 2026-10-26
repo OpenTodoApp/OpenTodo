@@ -16,6 +16,7 @@ import (
 // TestLimiterIPv6Per64: addresses in one IPv6 /64 share a window; IPv4 and
 // other keys are unchanged.
 func TestLimiterIPv6Per64(t *testing.T) {
+	t.Parallel()
 	l := newRateLimiter(1, time.Minute)
 	if !l.allow("2001:db8:1:2::1") {
 		t.Fatal("first")
@@ -36,6 +37,7 @@ func TestLimiterIPv6Per64(t *testing.T) {
 // TestLimiterSweepsOutsideHit: counting a hit never scans the table; the
 // periodic sweep removes ended windows.
 func TestLimiterSweepsOutsideHit(t *testing.T) {
+	t.Parallel()
 	l := newRateLimiter(10, time.Minute)
 	old := time.Now().Add(-time.Hour)
 	for i := range 10001 {
@@ -55,6 +57,7 @@ func TestLimiterSweepsOutsideHit(t *testing.T) {
 // registration from a public address, in any case and without dashes, and is
 // gone once the owner exists.
 func TestSetupCodeFromLog(t *testing.T) {
+	t.Parallel()
 	var buf bytes.Buffer
 	var srv *Server
 	e := newEnvWith(t, false, func(s *Server) {
@@ -81,6 +84,7 @@ func TestSetupCodeFromLog(t *testing.T) {
 
 // TestNoSetupCodeWithToken: a configured setup token replaces the code.
 func TestNoSetupCodeWithToken(t *testing.T) {
+	t.Parallel()
 	var buf bytes.Buffer
 	e := newEnvWith(t, false, func(s *Server) {
 		s.auth.SetSetupToken(testSetupToken)

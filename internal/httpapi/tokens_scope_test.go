@@ -28,6 +28,7 @@ func bearer(secret string) []string {
 func (e *env) bearerClient() *env { return newClientAt(e, "203.0.113.50") }
 
 func TestReadTokenRefusedOnWrites(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Existing"})
 	e.mustStatus(resp, 201, out)
@@ -72,6 +73,7 @@ func TestReadTokenRefusedOnWrites(t *testing.T) {
 }
 
 func TestReadTokenAllowedOnReads(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Visible"})
 	e.mustStatus(resp, 201, out)
@@ -84,6 +86,7 @@ func TestReadTokenAllowedOnReads(t *testing.T) {
 }
 
 func TestLegacyTokensKeepFullAccess(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	full := e.token("") // no scope in the request: full, as before scopes existed
 	// A token from before the migration has no scope row at all.

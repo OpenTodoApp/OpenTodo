@@ -25,6 +25,7 @@ func str(p *string) string {
 }
 
 func TestAuthEventsRecorded(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/me", nil)
 	e.mustStatus(resp, 200, out)
@@ -116,6 +117,7 @@ func TestAuthEventsRecorded(t *testing.T) {
 }
 
 func TestLoginRateLimitRecordsOneEvent(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	c := newClientAt(e, "198.51.100.77")
 	for i := 0; i < 25; i++ {
@@ -136,6 +138,7 @@ func TestLoginRateLimitRecordsOneEvent(t *testing.T) {
 }
 
 func TestWebhookPolicyChangeRecorded(t *testing.T) {
+	t.Parallel()
 	owner, member := memberEnv(t)
 	ownerID := owner.userID()
 	owner.allowPrivate(true)

@@ -9,6 +9,7 @@ import (
 // TestFeedRouteAuthFiltersAndIsolation covers GET /api/v1/activity
 // (activity-feed): authentication, scope isolation, filters and pagination.
 func TestFeedRouteAuthFiltersAndIsolation(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 

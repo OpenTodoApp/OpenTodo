@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 func bareServer(t *testing.T) (*Server, *sql.DB) {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := testenv.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,6 +28,7 @@ func bareServer(t *testing.T) (*Server, *sql.DB) {
 // TestBusyHashingAnswers503 (SEC-5): a request that found every
 // password-hashing slot taken gets 503 busy with Retry-After, not 500.
 func TestBusyHashingAnswers503(t *testing.T) {
+	t.Parallel()
 	s, _ := bareServer(t)
 	rec := httptest.NewRecorder()
 	s.internal(rec, fmt.Errorf("register: %w", auth.ErrBusy))
@@ -43,6 +44,7 @@ func TestBusyHashingAnswers503(t *testing.T) {
 // full-token rule reads the scope requireAuth put in the context instead of
 // resolving the token a second time (route-authorization-policy).
 func TestRequireSessionOrFullUsesResolvedToken(t *testing.T) {
+	t.Parallel()
 	s, _ := bareServer(t)
 	for _, tc := range []struct {
 		scope string

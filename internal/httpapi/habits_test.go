@@ -10,6 +10,7 @@ import (
 // habit as an ordinary recurring VTODO with no new property, and a client
 // round trip and completion keep the flag and record a done occurrence.
 func TestHabitOverRESTAndCalDAV(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"h1.ics", vtodoBody("h1", "SUMMARY:Stretch", "DUE;VALUE=DATE:20261012", "RRULE:FREQ=DAILY"), 201)
 	r, out := e.do("PATCH", "/api/v1/tasks/h1", map[string]any{"habit": true})

@@ -7,6 +7,7 @@ import (
 
 // Task dependencies over REST (OpenSpec change task-dependencies, task 1.3).
 func TestTaskBlockedByOverREST(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	mk := func(body map[string]any) string {
 		resp, out := e.do("POST", "/api/v1/tasks", body)

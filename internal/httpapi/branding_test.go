@@ -15,8 +15,8 @@ import (
 
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // fakeWeb stands in for the built web app: the page and the manifest as Vite writes them.
@@ -38,7 +38,7 @@ var fakeWeb = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 func brandingEnv(t *testing.T) *env {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := testenv.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,6 +73,7 @@ func logoPNG(t *testing.T, w, h int) []byte {
 }
 
 func TestBranding(t *testing.T) {
+	t.Parallel()
 	e := brandingEnv(t)
 	// Unbranded: the page and the manifest pass through unchanged, status says so.
 	resp, body := e.raw("GET", "/", nil)

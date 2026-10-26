@@ -6,6 +6,7 @@ import "testing"
 // patched independently of due, validated (invalid values leave it unchanged),
 // requires authentication, and is part of the export.
 func TestTaskPatchEstimate(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("PATCH", "/api/v1/tasks/x", map[string]any{"estimate_minutes": 30})
 	e.mustStatus(resp, 401, out)

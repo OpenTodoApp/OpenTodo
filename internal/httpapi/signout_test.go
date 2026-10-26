@@ -10,6 +10,7 @@ import (
 // confirmed session, every session (this one too), remembered browser, API
 // token and app password of the account ends; tokens cannot call it.
 func TestSignOutEverywhere(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	resp, out := m.do("POST", "/api/v1/tokens", map[string]string{"name": "script", "scope": "admin"})
 	m.mustStatus(resp, 201, out)

@@ -5,6 +5,7 @@ import (
 )
 
 func TestHistoryRequiresAuthAnd404(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientFor(e)
 	resp, out := anon.do("GET", "/api/v1/tasks/t1/history", nil)
@@ -48,6 +49,7 @@ func TestHistoryRequiresAuthAnd404(t *testing.T) {
 }
 
 func TestPurgeRejectsLiveEntity(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Keep me"})
 	e.mustStatus(resp, 201, out)
@@ -100,6 +102,7 @@ func TestPurgeRejectsLiveEntity(t *testing.T) {
 }
 
 func TestTrashPurgeRequiresAuth(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientFor(e)
 	for _, r := range [][2]string{{"POST", "/api/v1/trash/purge"}, {"DELETE", "/api/v1/tasks/x/purge"}, {"DELETE", "/api/v1/projects/x/purge"}, {"GET", "/api/v1/projects/x/history"}} {
@@ -126,6 +129,7 @@ func TestTrashPurgeRequiresAuth(t *testing.T) {
 }
 
 func TestProjectDeleteKeepsTaskReferences(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Garden"})
 	e.mustStatus(resp, 201, out)

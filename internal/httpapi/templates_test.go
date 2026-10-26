@@ -9,6 +9,7 @@ import (
 // The import preview tells the web app a file is a template (OpenSpec change
 // project-templates, task 3.1).
 func TestImportPreviewTemplateHint(t *testing.T) {
+	t.Parallel()
 	data, err := os.ReadFile("../importer/testdata/template/trip.json")
 	if err != nil {
 		t.Fatal(err)

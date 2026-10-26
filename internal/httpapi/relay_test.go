@@ -123,6 +123,7 @@ func encryptedOwner(t *testing.T, opts ...Option) (e *env, secret string, c *env
 }
 
 func TestRelayRoutesAuthAndConflicts(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientAt(e, "10.9.9.9")
 	for _, r := range [][2]string{{"GET", "/api/v1/relay/devices"}, {"PUT", "/api/v1/relay/devices/laptop"}, {"DELETE", "/api/v1/relay/devices/laptop"}, {"GET", "/api/v1/relay/events?device=laptop&key=x"}, {"POST", "/api/v1/relay/answers/abc"}} {
@@ -159,6 +160,7 @@ func TestRelayRoutesAuthAndConflicts(t *testing.T) {
 }
 
 func TestRelayEndToEndNoPlaintextLeft(t *testing.T) {
+	t.Parallel()
 	logs := &syncBuf{}
 	e, secret, c := encryptedOwner(t, withLog(slog.New(slog.NewTextHandler(logs, &slog.HandlerOptions{Level: slog.LevelDebug}))))
 	const title, note = "Call the plumber about the leak", "Ask for the boiler too"
@@ -279,6 +281,7 @@ func TestRelayEndToEndNoPlaintextLeft(t *testing.T) {
 }
 
 func TestRelayAnswerFromAnotherSession(t *testing.T) {
+	t.Parallel()
 	e, secret, c := encryptedOwner(t)
 	resp, out := e.do("PUT", "/api/v1/relay/devices/laptop", map[string]any{"label": "Laptop"})
 	e.mustStatus(resp, 204, out)
@@ -313,6 +316,7 @@ func TestRelayAnswerFromAnotherSession(t *testing.T) {
 }
 
 func TestRelayEndsWithEncryptionAndOnLock(t *testing.T) {
+	t.Parallel()
 	e, _, _ := encryptedOwner(t)
 	for _, d := range []string{"laptop", "phone"} {
 		resp, out := e.do("PUT", "/api/v1/relay/devices/"+d, map[string]any{"label": d})

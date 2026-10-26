@@ -88,6 +88,7 @@ func mailLink(t *testing.T, m smtptest.Message) string {
 }
 
 func TestSMTPSettingsRoutes(t *testing.T) {
+	t.Parallel()
 	e, srv := mailEnv(t, false)
 	resp, out := e.do("GET", "/api/v1/auth/status", nil)
 	e.mustStatus(resp, 200, out)
@@ -206,6 +207,7 @@ func TestSMTPSettingsRoutes(t *testing.T) {
 }
 
 func TestSMTPManagedByEnvironment(t *testing.T) {
+	t.Parallel()
 	srv := smtptest.New(t, smtptest.Options{})
 	e := newEnvWith(t, false, func(s *Server) {
 		s.mail = mail.New(settings.New(s.sync.DB()), s.cfg.DataDir, mail.Options{Audit: s.audit, Log: s.log,
@@ -225,6 +227,7 @@ func TestSMTPManagedByEnvironment(t *testing.T) {
 }
 
 func TestOutgoingEmailOffOnDemoAndUnwired(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/auth/status", nil)
 	e.mustStatus(resp, 200, out)
@@ -242,6 +245,7 @@ func configSMTP(host string, port int) config.SMTPConfig {
 }
 
 func TestSelfServicePasswordReset(t *testing.T) {
+	// Not parallel: it changes a package-level limit (maxLiveStreams, heartbeatInterval or resetMinDuration) that every server reads.
 	resetMinDuration = 0
 	defer func() { resetMinDuration = 200 * time.Millisecond }()
 	e, srv := mailEnv(t, false)
@@ -307,6 +311,7 @@ func TestSelfServicePasswordReset(t *testing.T) {
 }
 
 func TestPasswordResetLimitsAndFailures(t *testing.T) {
+	// Not parallel: it changes a package-level limit (maxLiveStreams, heartbeatInterval or resetMinDuration) that every server reads.
 	resetMinDuration = 0
 	defer func() { resetMinDuration = 200 * time.Millisecond }()
 	e, srv := mailEnv(t, false)
@@ -353,6 +358,7 @@ func TestPasswordResetLimitsAndFailures(t *testing.T) {
 }
 
 func TestAdminResetSend(t *testing.T) {
+	t.Parallel()
 	e, srv := mailEnv(t, false)
 	_, secret, _ := e.invite(map[string]any{})
 	m := newClientFor(e)
@@ -393,6 +399,7 @@ func TestAdminResetSend(t *testing.T) {
 }
 
 func TestPasswordResetTiming(t *testing.T) {
+	t.Parallel()
 	e, srv := mailEnv(t, false)
 	e.configureMail(srv)
 	timed := func(ip, email string) time.Duration {
@@ -411,6 +418,7 @@ func TestPasswordResetTiming(t *testing.T) {
 }
 
 func TestPasswordResetSSOOnlySendsNothing(t *testing.T) {
+	// Not parallel: it changes a package-level limit (maxLiveStreams, heartbeatInterval or resetMinDuration) that every server reads.
 	resetMinDuration = 0
 	defer func() { resetMinDuration = 200 * time.Millisecond }()
 	ssoOnly := false
@@ -429,6 +437,7 @@ func TestPasswordResetSSOOnlySendsNothing(t *testing.T) {
 }
 
 func TestVerifiedOpenSignup(t *testing.T) {
+	t.Parallel()
 	e, srv := mailEnv(t, true)
 	e.configureMail(srv)
 	visitor := newClientAt(e, "10.5.0.1")
@@ -499,6 +508,7 @@ func TestVerifiedOpenSignup(t *testing.T) {
 }
 
 func TestOpenSignupWithoutMailUnchanged(t *testing.T) {
+	t.Parallel()
 	e, _ := mailEnv(t, true)
 	c := newClientAt(e, "10.6.0.1")
 	resp, out := c.do("POST", "/api/v1/auth/register", map[string]string{"email": "direct@example.com", "password": "a long enough password"}, "Origin", testBaseURL)
@@ -510,6 +520,7 @@ func TestOpenSignupWithoutMailUnchanged(t *testing.T) {
 }
 
 func TestVerifyRateLimit(t *testing.T) {
+	t.Parallel()
 	e, _ := mailEnv(t, true)
 	c := newClientAt(e, "10.7.0.1")
 	var last int
@@ -523,6 +534,7 @@ func TestVerifyRateLimit(t *testing.T) {
 }
 
 func TestInvitationsSentByEmail(t *testing.T) {
+	t.Parallel()
 	e, srv := mailEnv(t, false)
 	// Unconfigured: 409 and nothing created.
 	resp, out := e.do("POST", "/api/v1/invitations", map[string]any{"email": "bob@example.com", "send": true})
@@ -570,6 +582,7 @@ func TestInvitationsSentByEmail(t *testing.T) {
 }
 
 func TestProjectInviteSentByEmail(t *testing.T) {
+	t.Parallel()
 	e, srv := mailEnv(t, false)
 	e.configureMail(srv)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Secret plans"})

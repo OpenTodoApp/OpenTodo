@@ -23,6 +23,7 @@ func feedsOn(t *testing.T, e *env) {
 }
 
 func TestCalendarFeedsSwitch(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/settings/calendar-feeds", nil)
 	e.mustStatus(resp, 200, out)
@@ -51,6 +52,7 @@ func TestCalendarFeedsSwitch(t *testing.T) {
 }
 
 func TestCalendarFeedsSubscriptionsAndEvents(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	feedsOn(t, e)
 	src := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, icsBody) }))
@@ -139,6 +141,7 @@ func TestCalendarFeedsSubscriptionsAndEvents(t *testing.T) {
 }
 
 func TestCalendarFeedsLimit(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	feedsOn(t, e)
 	yes := true
@@ -162,6 +165,7 @@ func TestCalendarFeedsLimit(t *testing.T) {
 }
 
 func TestCalendarFeedURL(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	feedsOn(t, e)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Dentist", "due": map[string]any{"date": "2026-10-16", "time": "15:00"}, "estimate_minutes": 45})

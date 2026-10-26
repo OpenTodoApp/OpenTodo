@@ -10,6 +10,7 @@ import (
 // replaces the saved one for that request only, "" means no key, an empty
 // model is refused before any request, and the key is never logged.
 func TestOwnerTestUsesOnScreenValues(t *testing.T) {
+	t.Parallel()
 	me := newOwnProviderEnv(t, nil)
 	const typed = "sk-owner-TYPED-OPENAI-7777"
 	resp, out := me.owner.do("POST", "/api/v1/settings/assistant/test", map[string]any{"provider": "openai", "model": "gpt-5.4-mini-2026-03-17", "key": typed})
@@ -68,6 +69,7 @@ func TestOwnerTestUsesOnScreenValues(t *testing.T) {
 // member tests a provider they have not saved, a key saved for another
 // provider is never used, and the compatible endpoint is refused.
 func TestMemberTestUsesOnScreenValues(t *testing.T) {
+	t.Parallel()
 	me := newOwnProviderEnv(t, nil)
 	resp, out := me.member.do("POST", "/api/v1/me/assistant/test", map[string]any{"provider": "gemini", "model": "gemini-test-1", "key": memberGeminiKey})
 	me.member.mustStatus(resp, 200, out)

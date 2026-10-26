@@ -16,6 +16,7 @@ import (
 // base_url_required, and the owner sees a configuration warning
 // (harden-links-and-sharing).
 func TestMailedLinksNeedBaseURL(t *testing.T) {
+	// Not parallel: it changes a package-level limit (maxLiveStreams, heartbeatInterval or resetMinDuration) that every server reads.
 	resetMinDuration = 0
 	defer func() { resetMinDuration = 200 * time.Millisecond }()
 	srv := smtptest.New(t, smtptest.Options{User: "todo", Pass: "hunter2"})
@@ -73,6 +74,7 @@ func TestMailedLinksNeedBaseURL(t *testing.T) {
 // from it, whatever X-Forwarded-Host the anonymous caller sends, even through
 // a trusted proxy.
 func TestMailedLinksIgnoreRequestHost(t *testing.T) {
+	// Not parallel: it changes resetMinDuration and the process-wide trusted proxy list.
 	resetMinDuration = 0
 	defer func() { resetMinDuration = 200 * time.Millisecond }()
 	t.Cleanup(func() { setTrustedProxies(nil, false) })
@@ -96,6 +98,7 @@ func TestMailedLinksIgnoreRequestHost(t *testing.T) {
 // TestForwardedHostOnlyFromTrustedProxy: publicOrigin and the origin check use
 // X-Forwarded-Host/-Proto only when the connection comes from a trusted proxy.
 func TestForwardedHostOnlyFromTrustedProxy(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	t.Cleanup(func() { setTrustedProxies(nil, false) })
 	s := &Server{}
 	req := func(peer string) *http.Request {

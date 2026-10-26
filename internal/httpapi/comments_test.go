@@ -7,6 +7,7 @@ import (
 )
 
 func TestCommentRoutesAuthAndScope(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "viewer")
 	anon := newClientFor(se.alice)
@@ -84,6 +85,7 @@ func TestCommentRoutesAuthAndScope(t *testing.T) {
 }
 
 func TestActivityRoutesAuthScopeAndPagination(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	anon := newClientFor(se.alice)
