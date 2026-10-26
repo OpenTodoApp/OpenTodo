@@ -75,7 +75,7 @@ func resourceHref(uid, cal, name string) string { return calendarHref(uid, cal) 
 // handleDAV is the CalDAV endpoint: 404 while disabled (before any
 // authentication), a redirect for the well-known address, then Basic auth.
 func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
-	if !s.caldavEnabled(r.Context()) {
+	if !s.caldavOn.On(r.Context()) {
 		http.NotFound(w, r)
 		return
 	}
@@ -144,7 +144,7 @@ func (s *Server) davRedirect(w http.ResponseWriter, r *http.Request, path string
 // CalDAV is disabled the root behaves as the web app did (405) and /principals/
 // is unknown (404), so nothing reveals the endpoint.
 func (s *Server) handleDAVRoot(w http.ResponseWriter, r *http.Request) {
-	enabled := s.caldavEnabled(r.Context())
+	enabled := s.caldavOn.On(r.Context())
 	if strings.HasPrefix(r.URL.Path, "/principals") {
 		if !enabled {
 			http.NotFound(w, r)

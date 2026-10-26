@@ -29,8 +29,13 @@ func (s *Server) registerChannelRoutes(mux *routes) {
 			AllowPrivate: s.allowPrivate(), Encrypted: s.keys().Enabled, BaseOrigin: s.baseOrigin()})
 	}
 	s.channelLimiter = newRateLimiter(channels.TestsPerHour, time.Hour)
-	mux.handle("GET /api/v1/settings/notification-channels", signedIn.demoDenied(), s.handleGetChannelsSetting)
-	mux.handle("PUT /api/v1/settings/notification-channels", ownerOnly("manage notification channels on this server").demoDenied(), s.handlePutChannelsSetting)
+	s.switchRoutes(mux, "/api/v1/settings/notification-channels", switchRoute{sw: s.channels.Switch(),
+		get: signedIn.demoDenied(), put: ownerOnly("manage notification channels on this server").demoDenied(),
+		after: func(_ context.Context, _, on bool) {
+			if on {
+				s.channels.Wake()
+			}
+		}})
 	mux.handle("GET /api/v1/notification-channels", signedIn.demoDenied(), s.channelsGate(s.handleListChannels))
 	mux.handle("POST /api/v1/notification-channels", signedIn.demoDenied(), s.channelsGate(s.handleCreateChannel))
 	mux.handle("PATCH /api/v1/notification-channels/{id}", signedIn.demoDenied(), s.channelsGate(s.handlePatchChannel))
@@ -47,38 +52,9 @@ func (s *Server) baseOrigin() string {
 	return s.cfg.BaseURL.Scheme + "://" + s.cfg.BaseURL.Host
 }
 
-func (s *Server) handleGetChannelsSetting(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"enabled": s.channels.On(r.Context())})
-}
-
-func (s *Server) handlePutChannelsSetting(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Enabled *bool `json:"enabled"`
-	}
-	if err := readJSON(r, &in); err != nil || in.Enabled == nil {
-		badBodyWith(w, err, "invalid_input", `body must be {"enabled": true|false}`)
-		return
-	}
-	before, err := s.channels.SetEnabled(r.Context(), *in.Enabled)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	if before != *in.Enabled {
-		s.audit.Record(r.Context(), audit.SettingsChanged(userFrom(r.Context()).ID, channels.SettingKey, boolText(before), boolText(*in.Enabled)))
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"enabled": *in.Enabled})
-}
-
 // channelsGate answers 404 channels_disabled while the owner switch is off.
 func (s *Server) channelsGate(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.channels.On(r.Context()) {
-			writeError(w, http.StatusNotFound, "channels_disabled", "the server owner has turned notification channels off")
-			return
-		}
-		next(w, r)
-	}
+	return switchGate(s.channels.Switch(), "channels_disabled", "the server owner has turned notification channels off")(next)
 }
 
 // channelError maps service errors onto the JSON error envelope.

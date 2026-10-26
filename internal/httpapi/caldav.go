@@ -6,11 +6,8 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"sync/atomic"
 
-	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/settings"
 )
 
 // CalDAV (OpenSpec change `caldav`): app-password routes, the owner toggle and
@@ -24,15 +21,21 @@ const caldavSettingKey = "caldav.enabled"
 // davRealm is the Basic authentication realm.
 const davRealm = "OpenTodo CalDAV"
 
-// caldavState caches the toggle: 0 = not loaded, 1 = off, 2 = on.
-type caldavState struct{ v atomic.Int32 }
-
 func (s *Server) registerCaldavRoutes(mux *routes) {
 	mux.handle("GET /api/v1/app-passwords", signedIn, s.handleListAppPasswords)
 	mux.handle("POST /api/v1/app-passwords", signedIn.sensitive().demoDenied(), s.handleCreateAppPassword)
 	mux.handle("DELETE /api/v1/app-passwords/{id}", signedIn.demoDenied(), s.handleRevokeAppPassword)
-	mux.handle("GET /api/v1/settings/caldav", signedIn, s.handleGetCaldavSetting)
-	mux.handle("PUT /api/v1/settings/caldav", ownerOnly("manage the CalDAV setting").demoDenied(), s.handlePutCaldavSetting)
+	// Every signed-in user learns whether the endpoint is on and where it is, so
+	// the Settings screen can show setup instructions; only the owner may change it.
+	s.switchRoutes(mux, "/api/v1/settings/caldav", switchRoute{sw: s.caldavOn,
+		get: signedIn, put: ownerOnly("manage the CalDAV setting").demoDenied(),
+		more: func(r *http.Request) map[string]any {
+			body := s.caldavSettingBody(r)
+			// Tells the Settings screen why the endpoint refuses this account (OpenSpec `e2ee`).
+			body["encryption"] = s.encryptionStatus(r.Context(), userFrom(r.Context()).ID).Enabled
+			return body
+		},
+		putMore: s.caldavSettingBody})
 	mux.handle("/dav/", public("CalDAV clients authenticate with an app password in the handler").demoDenied(), s.handleDAV)
 	mux.handle("/dav", public("CalDAV clients authenticate with an app password in the handler").demoDenied(), s.handleDAV)
 	mux.handle("/.well-known/caldav", public("CalDAV discovery; the handler authenticates with an app password").demoDenied(), s.handleDAV)
@@ -48,86 +51,16 @@ func (s *Server) registerCaldavRoutes(mux *routes) {
 
 // seedCaldav applies the OPENTODO_CALDAV preset on first start only.
 func (s *Server) seedCaldav(ctx context.Context) {
-	if s.cfg.CalDAV == nil {
-		return
-	}
-	v := "false"
-	if *s.cfg.CalDAV {
-		v = "true"
-	}
-	if _, err := s.sync.DB().ExecContext(ctx, `INSERT OR IGNORE INTO settings(key,value,updated_at) VALUES(?,?,?)`,
-		caldavSettingKey, v, s.now().UnixMilli()); err != nil {
+	if _, err := s.caldavOn.Seed(ctx, s.cfg.CalDAV); err != nil {
 		s.log.Error("seed caldav setting", "err", err)
-	}
-}
-
-// caldavEnabled reads the toggle through the in-memory cache.
-func (s *Server) caldavEnabled(ctx context.Context) bool {
-	switch s.caldav.v.Load() {
-	case 1:
-		return false
-	case 2:
-		return true
-	}
-	var on bool
-	if _, err := settings.New(s.sync.DB()).Get(ctx, caldavSettingKey, &on); err != nil {
-		s.log.Error("read caldav setting", "err", err)
-		return false
-	}
-	s.setCaldavCache(on)
-	return on
-}
-
-func (s *Server) setCaldavCache(on bool) {
-	if on {
-		s.caldav.v.Store(2)
-	} else {
-		s.caldav.v.Store(1)
 	}
 }
 
 // caldavURL is the address clients are configured with.
 func (s *Server) caldavURL(r *http.Request) string { return s.publicOrigin(r) + "/dav/" }
 
-func (s *Server) caldavSettingBody(r *http.Request, on bool) map[string]any {
-	return map[string]any{"enabled": on, "url": s.caldavURL(r), "secure": strings.HasPrefix(s.caldavURL(r), "https://")}
-}
-
-// handleGetCaldavSetting tells every signed-in user whether the endpoint is on
-// and where it is, so the Settings screen can show setup instructions; only the
-// owner may change it.
-func (s *Server) handleGetCaldavSetting(w http.ResponseWriter, r *http.Request) {
-	body := s.caldavSettingBody(r, s.caldavEnabled(r.Context()))
-	// Tells the Settings screen why the endpoint refuses this account (OpenSpec `e2ee`).
-	body["encryption"] = s.encryptionStatus(r.Context(), userFrom(r.Context()).ID).Enabled
-	writeJSON(w, http.StatusOK, body)
-}
-
-func (s *Server) handlePutCaldavSetting(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Enabled *bool `json:"enabled"`
-	}
-	if err := readJSON(r, &in); err != nil || in.Enabled == nil {
-		badBodyWith(w, err, "invalid_input", `body must be {"enabled": true|false}`)
-		return
-	}
-	before := s.caldavEnabled(r.Context())
-	if err := settings.New(s.sync.DB()).Set(r.Context(), caldavSettingKey, *in.Enabled); err != nil {
-		s.internal(w, err)
-		return
-	}
-	s.setCaldavCache(*in.Enabled)
-	if before != *in.Enabled {
-		s.audit.Record(r.Context(), audit.SettingsChanged(userFrom(r.Context()).ID, caldavSettingKey, boolText(before), boolText(*in.Enabled)))
-	}
-	writeJSON(w, http.StatusOK, s.caldavSettingBody(r, *in.Enabled))
-}
-
-func boolText(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
+func (s *Server) caldavSettingBody(r *http.Request) map[string]any {
+	return map[string]any{"url": s.caldavURL(r), "secure": strings.HasPrefix(s.caldavURL(r), "https://")}
 }
 
 func (s *Server) handleListAppPasswords(w http.ResponseWriter, r *http.Request) {

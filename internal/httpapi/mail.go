@@ -10,7 +10,6 @@ import (
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/mail"
-	"github.com/pixari/opentodo/internal/settings"
 )
 
 // WithMail (an Option) supplies outgoing email (OpenSpec `outgoing-email`). A
@@ -70,7 +69,7 @@ func (s *Server) smtpJSON(ctx context.Context, c mail.Config) map[string]any {
 		"lastTest":    nil,
 	}
 	var lt smtpLastTest
-	if ok, err := settings.New(s.sync.DB()).Get(ctx, lastTestKey, &lt); err == nil && ok {
+	if ok, err := s.settings.Get(ctx, lastTestKey, &lt); err == nil && ok {
 		out["lastTest"] = lt
 	}
 	return out
@@ -123,7 +122,7 @@ func (s *Server) handlePutSMTP(w http.ResponseWriter, r *http.Request) {
 		s.audit.Record(r.Context(), audit.SettingsChanged(u.ID, ch.Key, ch.From, ch.To))
 	}
 	if len(changes) > 0 {
-		_ = settings.New(s.sync.DB()).Delete(r.Context(), lastTestKey)
+		_ = s.settings.Delete(r.Context(), lastTestKey)
 	}
 	c, err := s.mail.Config(r.Context())
 	if err != nil {
@@ -157,7 +156,7 @@ func (s *Server) handleTestSMTP(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	_ = settings.New(s.sync.DB()).Set(r.Context(), lastTestKey, lt)
+	_ = s.settings.Set(r.Context(), lastTestKey, lt)
 	out := map[string]any{"outcome": lt.Outcome, "to": u.Email}
 	if lt.Stage != "" {
 		out["stage"], out["reply"] = lt.Stage, lt.Reply

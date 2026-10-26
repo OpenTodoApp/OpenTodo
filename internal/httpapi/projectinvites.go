@@ -12,7 +12,6 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/mail"
-	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -34,19 +33,12 @@ func (s *Server) registerProjectInviteRoutes(mux *routes) {
 	mux.handle("DELETE /api/v1/projects/{id}/invites/{inviteId}", signedIn.demoDenied(), s.handleRevokeProjectInvite)
 	mux.handle("GET /api/v1/project-invites/{token}", public("someone with an invite link previews the project before joining").demoDenied(), s.handlePreviewProjectInvite)
 	mux.handle("POST /api/v1/project-invites/{token}/accept", signedIn.demoDenied(), s.handleAcceptProjectInvite)
-	mux.handle("GET /api/v1/settings/project-invites", signedIn, s.handleGetProjectInviteSettings)
-	mux.handle("PUT /api/v1/settings/project-invites", ownerOnly("manage the project invite setting").demoDenied(), s.handlePutProjectInviteSettings)
+	s.switchRoutes(mux, "/api/v1/settings/project-invites", switchRoute{sw: s.membersInviteOn, field: "membersCanInviteNewPeople",
+		get: signedIn, put: ownerOnly("manage the project invite setting").demoDenied()})
 }
 
 // membersMayInvite reads the owner switch; an unreadable setting counts as off.
-func (s *Server) membersMayInvite(ctx context.Context) bool {
-	var on bool
-	if _, err := settings.New(s.sync.DB()).Get(ctx, membersInviteKey, &on); err != nil {
-		s.log.Error("read project invite setting", "err", err)
-		return false
-	}
-	return on
-}
+func (s *Server) membersMayInvite(ctx context.Context) bool { return s.membersInviteOn.On(ctx) }
 
 // projectManager answers the request and returns "" unless the caller is the
 // owner or an admin of the project; otherwise it returns the caller's role and
@@ -330,29 +322,6 @@ func (s *Server) registerWithProjectInvite(w http.ResponseWriter, r *http.Reques
 	}
 	s.audit.Record(ctx, audit.LoginSucceeded(u.ID, u.Email, "register"))
 	writeJSON(w, http.StatusCreated, map[string]any{"user": u, "projectId": inv.ProjectID, "role": inv.Role})
-}
-
-func (s *Server) handleGetProjectInviteSettings(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"membersCanInviteNewPeople": s.membersMayInvite(r.Context())})
-}
-
-func (s *Server) handlePutProjectInviteSettings(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		MembersCanInviteNewPeople *bool `json:"membersCanInviteNewPeople"`
-	}
-	if err := readJSON(r, &in); err != nil || in.MembersCanInviteNewPeople == nil {
-		badBodyWith(w, err, "invalid_input", `body must be {"membersCanInviteNewPeople": true|false}`)
-		return
-	}
-	before := s.membersMayInvite(r.Context())
-	if err := settings.New(s.sync.DB()).Set(r.Context(), membersInviteKey, *in.MembersCanInviteNewPeople); err != nil {
-		s.internal(w, err)
-		return
-	}
-	if before != *in.MembersCanInviteNewPeople {
-		s.audit.Record(r.Context(), audit.SettingsChanged(userFrom(r.Context()).ID, membersInviteKey, boolText(before), boolText(*in.MembersCanInviteNewPeople)))
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"membersCanInviteNewPeople": *in.MembersCanInviteNewPeople})
 }
 
 // redactPath keeps link secrets out of the request log: a path segment that

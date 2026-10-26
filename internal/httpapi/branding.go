@@ -19,7 +19,6 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/imgfit"
-	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/web"
 )
 
@@ -78,7 +77,7 @@ func (s *Server) branding(r *http.Request) brandingSetting {
 		return *b
 	}
 	var b brandingSetting
-	if _, err := settings.New(s.sync.DB()).Get(r.Context(), brandingSettingKey, &b); err != nil {
+	if _, err := s.settings.Get(r.Context(), brandingSettingKey, &b); err != nil {
 		s.log.Warn("read branding", "err", err)
 		return brandingSetting{}
 	}
@@ -87,7 +86,7 @@ func (s *Server) branding(r *http.Request) brandingSetting {
 }
 
 func (s *Server) setBranding(r *http.Request, b brandingSetting) error {
-	if err := settings.New(s.sync.DB()).Set(r.Context(), brandingSettingKey, b); err != nil {
+	if err := s.settings.Set(r.Context(), brandingSettingKey, b); err != nil {
 		return err
 	}
 	s.brand.v.Store(&b)
