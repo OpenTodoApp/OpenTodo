@@ -29,47 +29,11 @@ const (
 // instead of a ciphertext value.
 const Placeholder = "Encrypted item"
 
-// ContentFields are the fields a device encrypts for an account with
-// encryption enabled, inside the account's personal scope only (shared
-// projects are never encrypted; sharing is refused for encrypted accounts).
-// Everything else stays plaintext so scheduling, ordering and structure keep
-// working everywhere (design D2, adapted in design.md "Implementation notes":
-// task.labels holds label ids, so the label names are encrypted instead).
-// Keep in step with CONTENT_FIELDS in web/src/lib/e2ee.ts.
-var ContentFields = map[string][]string{
-	// A task's origin (OpenSpec change task-origin, design D2) is an object;
-	// devices serialise it and encrypt it whole into one ciphertext string.
-	// A task's location (OpenSpec task-locations, design D1) is an object too.
-	"task":    {"title", "description", "ical_extra", "notes_doc", "origin", "location"},
-	"project": {"name", "description", "notes_doc"},
-	"label":   {"name"},
-	"section": {"name"},
-	"view":    {"name", "query"},
-	// A guest's typed name on a task page reply (OpenSpec task-pages, design D6).
-	"comment": {"body", "guest_name"},
-	// Attachments (OpenSpec attachments, design D8): the bytes are an envelope too.
-	"attachment": {"name", "mime", "url"},
-	// Custom field definitions (OpenSpec custom-fields, design D4).
-	"field": {"name", "options"},
-	// A time entry's note (OpenSpec time-tracking, design D1); its times stay
-	// plaintext so totals and the CSV work on the server.
-	"time_entry": {"note"},
-	// The review record's line for tomorrow (OpenSpec close-the-day, design D5);
-	// the close time and the other rhythm stamps stay plaintext.
-	"review": {"tomorrow_note"},
-	// A place (OpenSpec task-locations, design D1): its coordinates are one
-	// object, encrypted whole; its position and timestamps stay plaintext.
-	"place": {"name", "address", "geo"},
-	// An automation rule (automation-rules D1): its name. Trigger, condition and
-	// actions are structural; the comment action is refused for encrypted accounts.
-	"rule": {"name"},
-}
-
 // ContentPrefixes are families of content fields named by a prefix: a task's
 // custom field values `fields.<id>` (OpenSpec custom-fields, design D4). Only
 // string values are encrypted (text, link, date, choice); numbers and booleans
 // stay plaintext like priority. Keep in step with CONTENT_PREFIXES in
-// web/src/lib/e2ee.ts.
+// web/src/lib/e2ee.ts. ContentFields is generated from sync.Schema (contentfields.go).
 var ContentPrefixes = map[string][]string{
 	"task": {"fields."},
 }
