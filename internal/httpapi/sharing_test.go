@@ -460,3 +460,40 @@ func TestImportIntoSharedProjectRespectsRole(t *testing.T) {
 	}
 	_ = opsync.RoleViewer
 }
+
+// TestAddMemberByEmailIsLimitedAndAudited (L6 of the 2026-10 audit): adding
+// people by email is recorded as project.member_added, and one account gets
+// memberAddsPerHour attempts an hour, found or not, so the route cannot list
+// the server's accounts or push projects at many people.
+func TestAddMemberByEmailIsLimitedAndAudited(t *testing.T) {
+	se := newShareEnv(t)
+	se.share(se.alice, "bob@example.com", "editor")
+	var n int
+	if err := se.alice.db.QueryRow(`SELECT COUNT(*) FROM audit_events WHERE name = 'project.member_added' AND actor_id = ? AND target_id = ?`,
+		se.ids["alice"], se.ids["bob"]).Scan(&n); err != nil || n != 1 {
+		t.Fatalf("project.member_added events = %d %v", n, err)
+	}
+	p := "/api/v1/projects/" + se.project + "/members"
+	for i := 1; i < memberAddsPerHour; i++ {
+		resp, out := se.alice.do("POST", p, map[string]any{"email": fmt.Sprintf("probe%d@example.com", i), "role": "viewer"})
+		if resp.StatusCode != 404 {
+			t.Fatalf("probe %d = %d %v", i, resp.StatusCode, out)
+		}
+	}
+	resp, out := se.alice.do("POST", p, map[string]any{"email": "carol@example.com", "role": "viewer"})
+	if resp.StatusCode != 429 || errCode(out) != "rate_limited" {
+		t.Fatalf("add after %d attempts = %d %v", memberAddsPerHour, resp.StatusCode, out)
+	}
+	// Workspaces share the budget.
+	resp, out = se.alice.do("POST", "/api/v1/workspaces", map[string]any{"name": "Team"})
+	se.alice.mustStatus(resp, 201, out)
+	resp, out = se.alice.do("POST", "/api/v1/workspaces/"+out["id"].(string)+"/members", map[string]any{"email": "carol@example.com"})
+	if resp.StatusCode != 429 || errCode(out) != "rate_limited" {
+		t.Fatalf("workspace add over the budget = %d %v", resp.StatusCode, out)
+	}
+	// Another account has its own budget.
+	resp, out = se.bob.do("POST", "/api/v1/projects", map[string]any{"name": "Bob's"})
+	se.bob.mustStatus(resp, 201, out)
+	resp, out = se.bob.do("POST", "/api/v1/projects/"+out["id"].(string)+"/members", map[string]any{"email": "carol@example.com", "role": "viewer"})
+	se.bob.mustStatus(resp, 201, out)
+}

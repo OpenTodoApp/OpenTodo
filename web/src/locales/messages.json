@@ -9199,6 +9199,9 @@
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/ShareDirectory.tsx"
   ],
+  "Person added to a project": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Personal": [
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/workspaceNav.ts",

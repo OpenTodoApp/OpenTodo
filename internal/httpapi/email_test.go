@@ -111,7 +111,19 @@ func TestEmailInboxRoutes(t *testing.T) {
 	}
 	registerOwner(e)
 
+	// Reading creates nothing (email-inbox-explicit): no address until the
+	// account turns capture on.
 	resp, out := e.do("GET", "/api/v1/email-inbox", nil)
+	e.mustStatus(resp, 200, out)
+	if out["enabledByOperator"] != true || out["address"] != nil || out["enabled"] != false {
+		t.Fatalf("inbox before turning it on = %v", out)
+	}
+	var rows int
+	_ = e.db.QueryRow(`SELECT COUNT(*) FROM email_inboxes`).Scan(&rows)
+	if rows != 0 {
+		t.Fatal("GET created an inbox")
+	}
+	resp, out = e.do("PATCH", "/api/v1/email-inbox", map[string]any{"enabled": true})
 	e.mustStatus(resp, 200, out)
 	addr, _ := out["address"].(string)
 	if out["enabledByOperator"] != true || out["enabled"] != true || !strings.HasPrefix(addr, "todo+") || !strings.HasSuffix(addr, "@example.com") {
@@ -189,7 +201,7 @@ func TestEmailInboxDisabledByOperator(t *testing.T) {
 func TestEmailToTaskEndToEnd(t *testing.T) {
 	e, svc, box := emailEnv(t)
 	registerOwner(e)
-	resp, out := e.do("GET", "/api/v1/email-inbox", nil)
+	resp, out := e.do("PATCH", "/api/v1/email-inbox", map[string]any{"enabled": true})
 	e.mustStatus(resp, 200, out)
 	addr := out["address"].(string)
 
@@ -235,5 +247,42 @@ func TestEmailToTaskEndToEnd(t *testing.T) {
 	// title, description, priority, created_at, position and origin (task-origin).
 	if found != 6 {
 		t.Fatalf("synced ops for the task = %d", found)
+	}
+}
+
+// TestEmailInboxNeedsFullAccess (email-inbox-explicit): the address creates
+// tasks, so read and agent tokens can neither read nor create it, and a GET by
+// any credential leaves the account without an inbox.
+func TestEmailInboxNeedsFullAccess(t *testing.T) {
+	e, _, _ := emailEnv(t)
+	registerOwner(e)
+	tokens := map[string]string{}
+	for _, scope := range []string{"read", "agent", "full"} {
+		resp, out := e.do("POST", "/api/v1/tokens", map[string]string{"name": scope, "scope": scope})
+		e.mustStatus(resp, 201, out)
+		tokens[scope] = out["secret"].(string)
+	}
+	c := newClientFor(e) // no session cookie: the bearer token is the only credential
+	for _, scope := range []string{"read", "agent"} {
+		for _, r := range []struct{ method, path string }{
+			{"GET", "/api/v1/email-inbox"}, {"PATCH", "/api/v1/email-inbox"}, {"POST", "/api/v1/email-inbox/rotate"},
+		} {
+			resp, out := c.do(r.method, r.path, map[string]any{"enabled": true}, "Authorization", "Bearer "+tokens[scope])
+			if resp.StatusCode != 403 || errCode(out) != "insufficient_scope" {
+				t.Fatalf("%s token on %s %s = %d %v", scope, r.method, r.path, resp.StatusCode, out)
+			}
+		}
+	}
+	resp, out := c.do("GET", "/api/v1/email-inbox", nil, "Authorization", "Bearer "+tokens["full"])
+	e.mustStatus(resp, 200, out)
+	var rows int
+	_ = e.db.QueryRow(`SELECT COUNT(*) FROM email_inboxes`).Scan(&rows)
+	if rows != 0 || out["address"] != nil {
+		t.Fatalf("GET created an inbox: rows=%d %v", rows, out)
+	}
+	resp, out = c.do("PATCH", "/api/v1/email-inbox", map[string]any{"enabled": true}, "Authorization", "Bearer "+tokens["full"])
+	e.mustStatus(resp, 200, out)
+	if a, _ := out["address"].(string); a == "" || out["enabled"] != true {
+		t.Fatalf("PATCH by a full token = %v", out)
 	}
 }
