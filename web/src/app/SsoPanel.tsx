@@ -16,10 +16,10 @@ import { errorText } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
 import type { LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult } from '../lib/types'
-import { relativeTime } from './SecurityPanel'
 import { oidcErrorMessage, takeQueryParam } from './sso'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { relativeTime } from '../lib/dates'
 
 // Settings → Single sign-on (owner) and Linked accounts (everyone), OpenSpec
 // `oidc-login`. Both read server state that is never cached for offline use:

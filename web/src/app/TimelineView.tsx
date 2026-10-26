@@ -5,7 +5,7 @@
 // axis, the bars and the date edits, each one batch of ordinary field ops.
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon, ReadAs } from '../ui'
-import { addDaysISO, daysBetweenISO, formatDate, viewedTask, dateLocaleOf } from '../lib/dates'
+import { addDaysISO, daysBetweenISO, formatDate, viewedTask, formatDateRange, monthName } from '../lib/dates'
 import { isBlocked } from '../lib/dependencies'
 import { getTask } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
@@ -216,12 +216,9 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     </div>
   )
 
-  const monthLabel = (iso: string) => new Intl.DateTimeFormat(dateLocaleOf(), { month: 'short' }).format(new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, 1))
+  const monthLabel = (iso: string) => monthName(iso, 'short')
   // A week column reads as its range, "20–26 Oct" (D9), in the user's locale.
-  const weekLabel = (iso: string) => {
-    const d = (v: string) => new Date(Number(v.slice(0, 4)), Number(v.slice(5, 7)) - 1, Number(v.slice(8)))
-    return new Intl.DateTimeFormat(dateLocaleOf(), { month: 'short', day: 'numeric' }).formatRange(d(iso), d(addDaysISO(iso, 6)))
-  }
+  const weekLabel = (iso: string) => formatDateRange(iso, addDaysISO(iso, 6), { month: 'short', day: 'numeric' })
   const headerRows = 1
   return (
     <div data-timeline className="min-w-0">

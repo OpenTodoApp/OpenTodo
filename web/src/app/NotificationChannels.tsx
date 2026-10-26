@@ -12,12 +12,12 @@ import { fieldErrorOf } from '../lib/errorText'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { cacheChannels, cachedChannels, channelsApi, MAX_CHANNELS, type NotificationChannel } from '../lib/notificationChannels'
-import { ago } from './CalendarFeedsPanel'
 import {
   channelDraftBody, channelDraftError, channelDraftOf, KIND_ICON, kindName, newChannelDraft, NotificationChannelEditor,
   type ChannelDraft, type ChannelFieldError,
 } from './NotificationChannelEditor'
 import { useSettingsPending } from './settingsPending'
+import { ago } from '../lib/dates'
 
 /** The row's second line: why it is off, the last error, or when it last delivered. */
 export function channelStatus(c: NotificationChannel, now = Date.now()): string {
