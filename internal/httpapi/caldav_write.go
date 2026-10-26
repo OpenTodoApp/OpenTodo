@@ -471,11 +471,11 @@ func (d *davRequest) applyCreate(v *davView, in *caldav.Inbound, id, cal string)
 // the defaults (<id>.ics, UID = id).
 func (d *davRequest) recordName(id, name, uid string) error {
 	if name == id+".ics" && uid == id {
-		_, err := d.s.sync.DB().ExecContext(d.ctx(), `DELETE FROM caldav_resources WHERE task_id = ?`, id)
+		_, err := d.s.sync.DB().ExecContext(d.ctx(), `DELETE FROM caldav_resources WHERE user_id = ? AND task_id = ?`, d.user.ID, id)
 		return err
 	}
-	_, err := d.s.sync.DB().ExecContext(d.ctx(), `INSERT INTO caldav_resources(task_id,name,uid) VALUES(?,?,?)
-		ON CONFLICT(task_id) DO UPDATE SET name = excluded.name, uid = excluded.uid`, id, name, uid)
+	_, err := d.s.sync.DB().ExecContext(d.ctx(), `INSERT INTO caldav_resources(user_id,task_id,name,uid) VALUES(?,?,?,?)
+		ON CONFLICT(user_id,task_id) DO UPDATE SET name = excluded.name, uid = excluded.uid`, d.user.ID, id, name, uid)
 	return err
 }
 

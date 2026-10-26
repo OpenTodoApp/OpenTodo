@@ -4,6 +4,17 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **One migration** (`0048_caldav_resources_per_account`): the names calendar apps chose for tasks are now kept per account; each existing name is kept for every account that can see its task. No data is rewritten otherwise and no environment variable changes. Replace the image or the binary and restart; there are no down-migrations, so back up first.
+- **Ids that two accounts already share stay as they are.** Earlier versions could store one id in two places (through the problem fixed below, or when two accounts imported the same export file). The server now reads and writes the oldest copy each person can see, so nothing is lost and nothing needs repair. To check whether your database has such ids, run `SELECT entity, entity_id, group_concat(DISTINCT scope_id) FROM scope_fields WHERE entity IN ('project','task','section','field','comment','attachment','time_entry','rule') GROUP BY entity, entity_id HAVING COUNT(DISTINCT scope_id) > 1;` with `sqlite3` on a copy of `<data>/opentodo.db`.
+
+### Security
+
+- **A shared project can no longer take over a private task.** Someone who shared a project with you and knew the id of one of your private tasks (ids appear in task pages, public links, exports and calendar apps) could create a task with that id in the shared project. Your later edits to the private task then reached that project's members, and they could delete it. Every task, project, section, field, comment, attachment, time entry and automation rule id now names one item on the server: such a write is refused like any other write you may not make, and it reveals nothing about your item. Found in an internal audit. ([Sync protocol](docs/sync.md))
+- **Calendar apps of different accounts no longer share resource names.** One account's calendar app could rename or drop the name another account's app had given a task they both see, which made items vanish or appear twice in the other person's calendar. Found in an internal audit. ([CalDAV](docs/caldav.md))
+- **A project can only join your own workspaces.** Anyone could mark one of their projects as part of a workspace they did not belong to, which stopped the workspace's owner from deleting it. Such a change is now refused, and values written before are ignored. Found in an internal audit.
+
 ### Added
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))

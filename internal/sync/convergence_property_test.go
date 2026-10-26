@@ -242,6 +242,8 @@ func runConvergence(t *testing.T, seed uint64) {
 			t.Fatal(err)
 		}
 	}
+	joinWorkspace(t, s.db, "w-work", "alice", "bob")
+	joinWorkspace(t, s.db, "w-family", "alice", "bob")
 	for _, id := range []string{"A1", "A2", "B1", "B2"} {
 		user := "alice"
 		if id[0] == 'B' {

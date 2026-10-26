@@ -470,13 +470,15 @@ func (s *Service) UpdateWorkspace(ctx context.Context, actorID, wsID string, in 
 	})
 }
 
-// workspaceProjectIDs lists the live projects in a workspace (any scope).
+// workspaceProjectIDs lists the live projects in a workspace (any scope),
+// counting only each project's own record (ownWorkspaceRecord).
 func workspaceProjectIDs(ctx context.Context, q querier, wsID string) ([]string, error) {
 	want, err := json.Marshal(wsID)
 	if err != nil {
 		return nil, err
 	}
 	rows, err := q.QueryContext(ctx, `SELECT DISTINCT f.entity_id FROM scope_fields f WHERE f.entity = 'project' AND f.field = 'workspace_id' AND f.value = ?
+		AND `+ownWorkspaceRecord+`
 		AND NOT EXISTS (SELECT 1 FROM scope_fields d WHERE d.scope_id = f.scope_id AND d.entity = 'project' AND d.entity_id = f.entity_id
 			AND d.field = 'deleted_at' AND d.value != 'null')
 		ORDER BY f.entity_id`, string(want))
