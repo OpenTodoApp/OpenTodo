@@ -69,6 +69,21 @@ export function pageOverflow() {
   }
 }
 
+// Tab rows (OpenSpec tab-row-scrollbar, design-system "Tab rows scroll only
+// sideways"): a tab row never scrolls vertically, not even by the 1 px that
+// verticalScrollers() tolerates for rounding elsewhere (GitHub issue 445).
+export function tabRowOverflow() {
+  const out = []
+  for (const el of document.querySelectorAll('[role="tablist"]')) {
+    const cs = getComputedStyle(el)
+    if (cs.display === 'none' || cs.visibility === 'hidden' || el.clientHeight === 0) continue
+    const label = el.getAttribute('aria-label') || 'tablist'
+    if (el.hasAttribute('data-tabs-row') && cs.overflowY !== 'hidden') out.push(`tab row "${label}" can scroll vertically (overflow-y: ${cs.overflowY})`)
+    if (el.scrollHeight > el.clientHeight) out.push(`tab row "${label}" overflows vertically (${el.scrollHeight}px in ${el.clientHeight}px)`)
+  }
+  return out
+}
+
 // Vertical scroll regions (OpenSpec ux-overhaul, app-shell "Three columns, three
 // scrollers"): at most the sidebar, the content column and the panel may scroll
 // vertically; everything else scrolls inside them. Designated regions
