@@ -11760,11 +11760,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "Something went wrong.": [
-    "web/src/app/CalendarFeedsPanel.tsx",
-    "web/src/app/CalendarSyncPanel.tsx",
-    "web/src/app/EmailScreens.tsx",
-    "web/src/app/IssuesPanel.tsx",
-    "web/src/app/NotificationChannels.tsx"
+    "web/src/app/EmailScreens.tsx"
   ],
   "Something went wrong. Is the server reachable?": [
     "web/src/app/AuthScreen.tsx"
@@ -12836,11 +12832,7 @@
     "web/src/app/PublicListScreen.tsx"
   ],
   "The server could not be reached.": [
-    "web/src/app/CalendarFeedsPanel.tsx",
-    "web/src/app/CalendarSyncPanel.tsx",
-    "web/src/app/IssuesPanel.tsx",
-    "web/src/app/NotificationChannels.tsx",
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/lib/errorText.ts"
   ],
   "The server could not be reached. Import needs a connection.": [
     "web/src/app/ImportScreen.tsx"
