@@ -16,7 +16,7 @@ The add-on's documentation tab explains the options, https and backups ([DOCS.md
 
 ## How it is built
 
-The image `ghcr.io/opentodoapp/opentodo-homeassistant` (amd64 and aarch64) is the Home Assistant base image with the OpenTodo binary copied from the released image `ghcr.io/opentodoapp/opentodo:<version>`, plus a short start script that turns the add-on options into OpenTodo's `OPENTODO_*` settings. The **Build** workflow builds it with Home Assistant's builder actions and publishes a version only once: a tag that already exists is never rebuilt.
+The image `ghcr.io/opentodoapp/opentodo-homeassistant` (amd64 and aarch64) is the Home Assistant base image with the OpenTodo binary copied from the released image `ghcr.io/opentodoapp/opentodo:<version>` (`ghcr.io/pixari/opentodo` for releases up to 0.14.2, from before the move to the OpenTodoApp organization), plus a short start script that turns the add-on options into OpenTodo's `OPENTODO_*` settings. The **Build** workflow builds it with Home Assistant's builder actions and publishes a version only once: a tag that already exists is never rebuilt.
 
 The add-on's version is the OpenTodo release it runs. The **Follow OpenTodo** workflow checks for a new OpenTodo release every day. When there is one, it runs `scripts/bump.sh <version>` (the OpenTodo version in the `Dockerfile`, `version` in `config.yaml`, a changelog entry), builds and publishes the images from that change, and only then moves `main`, so Home Assistant never offers an update whose image is missing. A change to the add-on alone gets a fourth number, such as `0.12.0.1`.
 
