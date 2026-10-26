@@ -12,7 +12,7 @@ import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
 import { openTask, selectTask } from '../signals'
 import { isTypingTarget } from '../shortcuts'
-import type { RowActions } from './ListRow'
+import type { RowActions } from './TaskListRow'
 import type { ListRoute } from './useListModel'
 import type { ListUi } from './useListShortcuts'
 

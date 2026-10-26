@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Button, ConfirmDialog, Field, HUES, hueFor, Icon, Input, ListRow, MenuItem, Notice, Select, SettingRow, SettingsSection, Switch, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { api, isNetworkError } from '../lib/api'
 import { refreshAfterChange } from '../lib/calendarFeeds'
+import { ago } from '../lib/dates'
 import { cachedCalendarSubscriptions } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
@@ -50,15 +51,6 @@ export interface CalendarFeedsViewProps {
   onRotateFeed: () => Promise<void> | void
   onRevokeFeed: () => Promise<void> | void
   onDismissUrl: () => void
-}
-
-export function ago(ms: number, now = Date.now()): string {
-  const m = Math.max(0, Math.round((now - ms) / 60000))
-  if (m < 1) return t('just now')
-  if (m < 60) return t('{m} min ago', { m })
-  const h = Math.round(m / 60)
-  if (h < 24) return t('{h} h ago', { h })
-  return t('{d} d ago', { d: Math.round(h / 24) })
 }
 
 /** One line of status for a subscription row. */

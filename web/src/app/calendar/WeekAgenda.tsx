@@ -1,6 +1,6 @@
 import { dayLoad, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
-import { dateLocaleOf } from '../../lib/dates'
+import { formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { Project, Task } from '../../lib/types'
@@ -41,8 +41,8 @@ export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, sel
   return (
     <div className="space-y-3 px-1 py-2" data-week-agenda>
       {days.map((d) => {
-        const [y, m, dd] = d.date.split('-').map(Number)
-        const name = new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long' }).format(new Date(y, m - 1, dd))
+        const dd = Number(d.date.slice(8))
+        const name = formatDateParts(d.date, { weekday: 'long' })
         const load = dayLoad(tasks, d.date, prefs.dayLength)
         const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
         return (

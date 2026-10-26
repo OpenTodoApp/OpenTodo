@@ -5,11 +5,10 @@ import { cachedIssueConnections, cacheIssueConnections, useProjects } from '../l
 import { useEncryption } from '../lib/e2ee'
 import { useServerList } from '../lib/useServerList'
 import { fieldErrorOf } from '../lib/errorText'
-import { formatClock } from '../lib/dates'
+import { formatClock, ago } from '../lib/dates'
 import type { IssueConnection, Project } from '../lib/types'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
-import { ago } from './CalendarFeedsPanel'
 import { draftBody, draftError, draftOf, IssueEditor, intervalLabel, newDraft, type FieldErrorState, type IssueDraft } from './IssueEditor'
 import { useSettingsPending } from './settingsPending'
 

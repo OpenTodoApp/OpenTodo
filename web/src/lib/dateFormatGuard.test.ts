@@ -1,7 +1,7 @@
 // Guard (OpenSpec date-time-preferences, design D3): every user-facing date and
 // time goes through lib/dates.ts so it follows the user's preferences. A direct
-// toLocaleDateString / toLocaleString / toLocaleTimeString call anywhere else in
-// web/src fails this test. The project has no ESLint, so a grep does the job.
+// toLocaleDateString / toLocaleString / toLocaleTimeString call, or a new
+// Intl.DateTimeFormat (wave 4, W3), anywhere else in web/src fails this test.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -20,6 +20,22 @@ const ALLOWED_FILES = new Set([
  * is not a date and has nothing to follow.
  */
 const ALLOWED_CALLS = [/\.toLocaleString\('en'\)/g]
+
+/**
+ * Files that build an Intl.DateTimeFormat for a machine format, not for display
+ * in the user's locale: fixed English or ISO text and time-zone arithmetic.
+ */
+const INTL_ALLOWED_FILES = new Set([
+  'lib/dates.ts',
+  'lib/assistant.ts', // due dates in English for the model's prompt
+  'lib/assistantDevice/args.ts', // checks that a time-zone name is valid
+  'lib/assistantDevice/prompt.ts', // today in ISO and English for the model's prompt
+  'lib/assistantDevice/read.ts', // today in ISO in a zone
+  'lib/stats.ts', // wall-clock parts in a zone
+  'lib/time.ts', // wall-clock parts and hours in a zone
+  'app/task-detail/ZoneControl.tsx', // the zone's UTC offset ("UTC+2") read from en-US parts
+])
+const INTL = /new Intl\.DateTimeFormat\(/g
 
 /** Direct calls in `source` that the guard reports. */
 export function offendingCalls(source: string): number {
@@ -43,6 +59,16 @@ describe('date formatting guard', () => {
     expect(offendingCalls("d.toLocaleDateString(undefined, { weekday: 'long' }); d.toLocaleTimeString()")).toBe(2)
     expect(offendingCalls("`${n.toLocaleString('en')} tokens`")).toBe(0)
     expect(offendingCalls("n.toLocaleString('de')")).toBe(1)
+  })
+
+  it('finds no Intl.DateTimeFormat for display outside lib/dates.ts', () => {
+    const found: string[] = []
+    for (const file of sourceFiles(SRC)) {
+      const rel = relative(SRC, file).split('\\').join('/')
+      if (INTL_ALLOWED_FILES.has(rel)) continue
+      if ((readFileSync(file, 'utf8').match(INTL) ?? []).length > 0) found.push(rel)
+    }
+    expect(found, 'use formatDateParts / weekdayName / monthName / formatDateRange from lib/dates.ts instead').toEqual([])
   })
 
   it('finds no direct toLocale*String call outside lib/dates.ts', () => {

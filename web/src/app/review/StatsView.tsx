@@ -7,7 +7,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, Menu, MenuItem, PageBody, PageHeader } from '../../ui'
 import { NO_TASK_ROWS, useAllLabels, useAllProjects, useAllTaskRows, useMemberships } from '../../lib/localData'
-import { currentDayStart, dateLocaleOf, formatDate } from '../../lib/dates'
+import { currentDayStart, formatDate, monthName, weekdayName } from '../../lib/dates'
 import { currentUserId } from '../../lib/sharing'
 import { comparisonOf, PERIOD_KINDS, PERIOD_LABELS, periodFor, sharedIds, type DashboardPeriod, type Period } from '../../lib/stats'
 import { buildModel, dashboardOf, type Dashboard, type HourGrid } from '../../lib/dashboard'
@@ -87,10 +87,6 @@ function change(value: number, previous: number, vs: string, unit: 'percent' | '
   return { text: `${sign}${Math.round((Math.abs(diff) / previous) * 100)} % ${vs}`, direction }
 }
 
-const weekdayName = (wd: number, style: 'short' | 'long') =>
-  new Intl.DateTimeFormat(dateLocaleOf(), { weekday: style, timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + wd)))
-const monthName = (iso: string, style: 'short' | 'long', year = false) =>
-  new Intl.DateTimeFormat(dateLocaleOf(), { month: style, ...(year ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(`${iso.slice(0, 7)}-15T12:00:00Z`))
 const hourText = (h: number) => `${String(h).padStart(2, '0')}:00`
 
 // ---------------------------------------------------------------- the dashboard
