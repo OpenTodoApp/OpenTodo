@@ -111,6 +111,8 @@ type Server struct {
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
 	hooks *webhook.Service
+	// webhookSendLimiter bounds hand-started test sends and redeliveries per user.
+	webhookSendLimiter *rateLimiter
 
 	// backups is nil when the server runs without the backup service (tests).
 	backups *backup.Service

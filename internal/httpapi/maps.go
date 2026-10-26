@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -29,10 +30,7 @@ func WithMaps(m *maps.Service) Option { return func(s *Server) { s.maps = m } }
 
 func (s *Server) registerMapRoutes(mux *routes) {
 	if s.maps == nil {
-		// Providers are chosen by the owner, never typed by a user, so a self-hosted
-		// Photon or tile server on the local network is allowed. The outbound client
-		// still gives timeouts and checks every redirect hop.
-		client := ob.NewClient(&ob.Dialer{AllowPrivate: func(context.Context) bool { return true }}, 10*time.Second, ob.FollowRedirects(3))
+		client := ob.NewClient(&ob.Dialer{AllowPrivateHost: s.mapsPrivateHost}, 10*time.Second, ob.FollowRedirects(3))
 		s.maps = maps.New(settings.New(s.sync.DB()), s.cfg.Maps, s.cfg.Demo, client,
 			maps.NewCache(filepath.Join(s.cfg.DataDir, "cache", "maps"), maps.DefaultCacheBytes), s.version)
 	}
@@ -49,6 +47,29 @@ func (s *Server) registerMapRoutes(mux *routes) {
 	// Saved locations, read only, so `ot` can set a task's location by name
 	// (agent-planning-fields D6); they are written through sync like the app does.
 	mux.handle("GET /api/v1/places", signedIn, s.handleListPlaces)
+}
+
+// mapsPrivateHost decides which map hosts may be on a private network. On a
+// self-hosted server the owner may run the tile server or Photon on the local
+// network, so the two hosts the owner typed are allowed; addresses the
+// provider's style hands out (tiles, fonts, sprites) and redirects to other
+// hosts go through the normal deny list, so a provider cannot point the server
+// at the local network. A hosted tenant's owner is not the operator: nothing
+// on the host's network is reachable (private-network-reach D1).
+func (s *Server) mapsPrivateHost(ctx context.Context, host string) bool {
+	if s.hosted || s.maps == nil {
+		return false
+	}
+	e, err := s.maps.Effective(ctx)
+	if err != nil {
+		return false
+	}
+	for _, raw := range []string{e.TilesURL, e.GeocoderURL} {
+		if u, err := url.Parse(raw); err == nil && strings.EqualFold(u.Hostname(), host) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) handleListPlaces(w http.ResponseWriter, r *http.Request) {

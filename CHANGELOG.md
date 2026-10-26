@@ -14,6 +14,12 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))
 
+### Security
+
+- **Hosted services: the map proxy no longer reaches the operator's network.** On a server that hosts several tenants, a tenant's owner could choose a map provider that made the server fetch addresses on the operator's private network or a cloud metadata service. The map proxy of a hosted tenant now reaches only public addresses. Found in an internal audit. ([Host mode](docs/self-hosting/host-mode.md))
+- **The map provider can no longer point your server at your local network.** A self-hosted tile or search server on your network keeps working, but only the two hosts you typed may be local: tile, font and sprite addresses that a provider's style names, and redirects, follow the same rules as a webhook. Found in an internal audit. ([Maps](docs/self-hosting/maps.md))
+- **"Allow private network targets" no longer opens cloud metadata and link-local addresses.** With the switch on, webhooks, notification channels, calendar subscriptions, issue connections and AI providers still reach your LAN and this machine, but never `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8` or a cloud metadata address. Webhook test sends and redeliveries are limited to 30 per account per hour. Found in an internal audit. ([Webhooks](docs/webhooks.md#private-network-protection))
+
 ### Fixed
 
 - **A long task in the side panel no longer scrolls the whole page.** With a long note, the window got a second scroll bar and the page moved instead of the panel, pushing the comment box out of view. Only the panel scrolls now. ([The task panel](docs/task-panel.md))
