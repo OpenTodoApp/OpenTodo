@@ -5,8 +5,8 @@
   "exposable": true,
   "dynamic_config": true,
   "port": 8400,
-  "tipi_version": 12,
-  "version": "0.14.0",
+  "tipi_version": 13,
+  "version": "0.14.1",
   "categories": [
     "utilities"
   ],
