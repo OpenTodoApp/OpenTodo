@@ -11,7 +11,7 @@ import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
-import { api, ApiError, OIDC_START_URL } from '../lib/api'
+import { api, ApiError, OIDC_START_URL, promptReauth } from '../lib/api'
 import { useOnline } from '../lib/online'
 import type { LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult } from '../lib/types'
 import { relativeTime } from './SecurityPanel'
@@ -250,6 +250,16 @@ export function LinkedAccountsPanel() {
   })
   const [callbackError] = useState(() => takeQueryParam('error'))
   const [confirmId, setConfirmId] = useState<string | null>(null)
+
+  // Linking a new identity needs a recent sign-in (credential-freshness). The
+  // server refuses a link from an older session and sends the browser back
+  // here; ask for the password or a code, then start the link again.
+  useEffect(() => {
+    if (callbackError !== 'reauth_required') return
+    void promptReauth().then((ok) => {
+      if (ok) location.assign(OIDC_START_URL)
+    })
+  }, [callbackError])
 
   const load = useCallback(async () => {
     try {

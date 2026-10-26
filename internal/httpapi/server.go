@@ -184,6 +184,10 @@ type Server struct {
 	// inbox changes and rotations per account (30/hour).
 	email        *email.Service
 	emailLimiter *rateLimiter
+	// memberAddLimiter counts adding people to a project or workspace by email,
+	// per actor (memberAddsPerHour): an add answers whether an account exists
+	// and needs no consent, so it must not be usable to list accounts or spam.
+	memberAddLimiter *rateLimiter
 	// demo is set on a demo instance (OpenSpec `demo-mode`); see demo.go.
 	demo *demo.Service
 	// assistant is the in-app assistant (OpenSpec `in-app-assistant`); see
@@ -243,8 +247,8 @@ func newServer(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
 		emailChangeLimiter: newRateLimiter(5, time.Hour), avatarLimiter: newRateLimiter(30, time.Hour), sttLimiter: newRateLimiter(30, time.Minute),
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
-		emailLimiter: newRateLimiter(30, time.Hour),
-		importer:     importer.New(syncSvc.DB(), syncSvc, log)}
+		emailLimiter: newRateLimiter(30, time.Hour), memberAddLimiter: newRateLimiter(memberAddsPerHour, time.Hour),
+		importer: importer.New(syncSvc.DB(), syncSvc, log)}
 	// Imports: unpacked archives are bounded by the upload limit, and an uploaded
 	// database is read from a private copy under the data directory (OpenSpec
 	// change named-importers).

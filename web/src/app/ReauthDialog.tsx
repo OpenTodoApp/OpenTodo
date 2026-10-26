@@ -1,13 +1,16 @@
 import { Dialog } from '../ui'
 import { type FormEvent, useEffect, useRef, useState } from 'react'
-import { api, ApiError, setReauthHandler } from '../lib/api'
+import { api, ApiError, OIDC_START_URL, setReauthHandler } from '../lib/api'
 import { t } from '../lib/i18n'
 
 // Step-up re-authentication (OpenSpec `mfa-totp`). Sensitive actions answer
 // `reauth_required` when the session has not proved its identity in the last
 // ten minutes; the API client then calls the handler registered here, which
 // opens this dialog. After a successful password or code the original request
-// is repeated once by the client.
+// is repeated once by the client. When single sign-on is on, the dialog also
+// offers the provider: an account that signs in only with it has no password
+// to type, and completing the provider flow again re-authenticates the session
+// (credential-freshness). That leaves the page, so the action is repeated by hand.
 
 export interface ReauthDialogViewProps {
   mode: 'password' | 'code'
@@ -18,6 +21,8 @@ export interface ReauthDialogViewProps {
   onValue: (v: string) => void
   onSubmit: () => void
   onCancel: () => void
+  /** The single sign-on provider's name, when the server has one. */
+  provider?: string
 }
 
 /** Presentational dialog, rendered without effects so it can be tested directly. */
@@ -48,6 +53,11 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
             </button>
           </div>
         </form>
+        {p.provider && (
+          <p className="mt-3 text-meta text-muted">
+            <a className="text-accent underline" href={OIDC_START_URL}>{t('Confirm with {provider} instead', { provider: p.provider })}</a>
+          </p>
+        )}
     </Dialog>
   )
 }
@@ -75,6 +85,7 @@ export function ReauthHost() {
   const [value, setValue] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [provider, setProvider] = useState<string | undefined>(undefined)
   const resolver = useRef<((ok: boolean) => void) | null>(null)
 
   useEffect(() => setReauthHandler(() => new Promise<boolean>((resolve) => {
@@ -82,6 +93,8 @@ export function ReauthHost() {
     setValue('')
     setError(null)
     setOpen(true)
+    // Best effort: without the status the dialog offers password and code only.
+    api.authStatus().then((st) => setProvider(st.oidc?.enabled ? st.oidc.displayName || 'SSO' : undefined), () => setProvider(undefined))
   })), [])
 
   function finish(ok: boolean) {
@@ -107,7 +120,7 @@ export function ReauthHost() {
   if (!open) return null
   return (
     <ReauthDialogView
-      mode={mode} value={value} busy={busy} error={error}
+      mode={mode} value={value} busy={busy} error={error} provider={provider}
       onMode={(m) => { setMode(m); setValue(''); setError(null) }}
       onValue={setValue} onSubmit={() => void submit()} onCancel={() => finish(false)}
     />

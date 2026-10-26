@@ -281,7 +281,7 @@ func (d *davRequest) load() (*davView, error) {
 	if v.modified, err = d.s.sync.Modified(ctx, uid, "task"); err != nil {
 		return nil, err
 	}
-	rows, err := d.s.sync.DB().QueryContext(ctx, `SELECT task_id, name, uid FROM caldav_resources`)
+	rows, err := d.s.sync.DB().QueryContext(ctx, `SELECT task_id, name, uid FROM caldav_resources WHERE user_id = ?`, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -925,7 +925,7 @@ func (d *davRequest) syncCollection(v *davView, body *caldav.Node, names []calda
 // live ("" when it used the default name).
 func (d *davRequest) storedName(id string) (string, error) {
 	var name string
-	err := d.s.sync.DB().QueryRowContext(d.ctx(), `SELECT name FROM caldav_resources WHERE task_id = ?`, id).Scan(&name)
+	err := d.s.sync.DB().QueryRowContext(d.ctx(), `SELECT name FROM caldav_resources WHERE user_id = ? AND task_id = ?`, d.user.ID, id).Scan(&name)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return "", err
 	}

@@ -64,50 +64,16 @@ func (r *resolver) noteAttachment(op Op) {
 	}
 }
 
-// attachment looks an attachment up among the author's personal scope and every
-// project scope (once per batch).
+// attachment looks an attachment up in every scope (once per batch,
+// entity-id-ownership).
 func (r *resolver) attachment(id string) (*attachmentState, error) {
 	if st, ok := r.attachments[id]; ok {
 		return st, nil
 	}
-	rows, err := r.tx.QueryContext(r.ctx, `SELECT scope_id, field, value FROM scope_fields
-		WHERE entity = 'attachment' AND entity_id = ? AND field IN ('task_id','author_id') AND (scope_id = ? OR scope_id LIKE 'project:%')`,
-		id, r.acc.personal)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	type vals struct{ task, author string }
-	byScope := map[string]*vals{}
-	for rows.Next() {
-		var sc, field, value string
-		if err := rows.Scan(&sc, &field, &value); err != nil {
-			return nil, err
-		}
-		v := byScope[sc]
-		if v == nil {
-			v = &vals{}
-			byScope[sc] = v
-		}
-		if field == "task_id" {
-			v.task = idValue(json.RawMessage(value))
-		} else {
-			v.author = idValue(json.RawMessage(value))
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
 	st := &attachmentState{}
-	best := 99
-	for sc, v := range byScope {
-		if rk := r.acc.rank(sc); rk < best {
-			best = rk
-			st.found, st.scope, st.task, st.author = true, sc, v.task, v.author
-		}
-	}
-	if st.found && !r.acc.canSee(st.scope) {
-		st.scope = ""
+	var err error
+	if st.found, st.scope, st.task, st.author, err = r.pairHome("attachment", id, "task_id", "author_id"); err != nil {
+		return nil, err
 	}
 	r.attachments[id] = st
 	return st, nil

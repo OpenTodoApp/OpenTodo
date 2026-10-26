@@ -15,7 +15,7 @@ The feature is **optional and off by default**. The server operator turns it on 
 ## How it works
 
 1. The operator creates (or reuses) one mailbox at any provider that supports **plus addressing** (`todo+anything@example.com` lands in `todo@example.com`) or a catch-all domain, and gives OpenTodo its IMAP login.
-2. Each user opens **Settings → Capture → Email to task** and gets a secret address such as `todo+k3f9w2…@example.com`.
+2. Each user opens **Settings → Capture → Email to task**, turns it on and gets a secret address such as `todo+k3f9w2…@example.com`. Opening the page creates nothing; read-only and assistant tokens cannot see or create the address.
 3. Mail sent to that address is delivered into the shared mailbox. OpenTodo checks the mailbox every minute over IMAP (TLS only), finds the secret in the recipient (`Delivered-To`, `X-Original-To`, `To`, then `Cc`) and creates the task in that user's account.
 4. The message is then marked read and moved to `OpenTodo/Processed` (or deleted, if the operator prefers). Messages that match no user are moved or deleted the same way, so the mailbox does not fill up.
    Removing a message from the inbox needs the IMAP `MOVE` or `UIDPLUS` extension (almost every current server has both). On a server with neither, OpenTodo never sends a plain `EXPUNGE`, which would also remove messages another mail client marked for deletion: it copies the message to the folder (when moving) and leaves the original in the inbox flagged as read and deleted. OpenTodo does not handle it again; the mail server or your mail client removes it on its next expunge (often called "compact" or "empty deleted messages").

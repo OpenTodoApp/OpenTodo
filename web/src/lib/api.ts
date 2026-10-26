@@ -84,6 +84,16 @@ export function onEnrolmentRequired(fn: () => void): () => void {
   return () => enrolmentListeners.delete(fn)
 }
 
+/**
+ * Opens the registered re-authentication prompt without a refused request, for
+ * flows that leave the app (linking a provider account starts with a
+ * navigation, so the prompt has to come first). Resolves false when nobody is
+ * listening or the user cancelled.
+ */
+export function promptReauth(): Promise<boolean> {
+  return reauthenticate()
+}
+
 function reauthenticate(): Promise<boolean> {
   if (!reauthHandler) return Promise.resolve(false)
   // Concurrent requests share one prompt.

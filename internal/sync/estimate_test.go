@@ -29,11 +29,12 @@ func TestValidateEstimateMinutes(t *testing.T) {
 // any delivery order (time-blocking, "Concurrent estimate and due edits").
 func TestEstimateAndDueConvergeIndependently(t *testing.T) {
 	ctx := context.Background()
-	s := newTestService(t)
 	base := op("c1", "task", "t1", "title", `"Plan"`, 100, "A")
 	a := op("a1", "task", "t1", "estimate_minutes", `45`, 200, "A")
 	b := op("b1", "task", "t1", "due", `{"date":"2026-10-13","time":"14:30"}`, 150, "B")
 	for user, order := range map[string][]Op{"u1": {base, a, b}, "u2": {b, a, base}} {
+		// Separate servers: an id names one entity per server (entity-id-ownership).
+		s := newTestService(t)
 		if _, err := s.Apply(ctx, user, order); err != nil {
 			t.Fatal(err)
 		}

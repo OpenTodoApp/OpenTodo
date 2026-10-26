@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MAX_FUTURE_SKEW_MS, hlcClockRefused, hlcLast, hlcNow, hlcObserveServerTime, hlcReset, hlcSeed, wins } from './hlc'
+import { MAX_FUTURE_SKEW_MS, hlcClockRefused, hlcReceive, hlcLast, hlcNow, hlcObserveServerTime, hlcReset, hlcSeed, wins } from './hlc'
 
 // Unit tests of the hybrid logical clock (test-integrity); the sync behaviour
 // around it (clock_skew refusals, restamping) is in clockSkew.test.ts.
@@ -13,6 +13,22 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+describe('hlcReceive', () => {
+  it('moves the clock past a received timestamp, never back', () => {
+    hlcReceive(T + 5000)
+    expect(hlcNow()).toBe(T + 5001)
+    hlcReceive(T)
+    expect(hlcNow()).toBe(T + 5002)
+    hlcReceive(Number.NaN)
+    expect(hlcNow()).toBe(T + 5003)
+  })
+
+  it('breaks a tie with the received op by moving one past it', () => {
+    hlcReceive(T)
+    expect(hlcNow()).toBe(T + 1)
+  })
 })
 
 describe('hlcNow', () => {

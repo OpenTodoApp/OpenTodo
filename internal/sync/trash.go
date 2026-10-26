@@ -216,17 +216,25 @@ func locate(ctx context.Context, q querier, acc *access, entity, id string) (sco
 		return "", false, false, err
 	}
 	defer rows.Close()
-	bestRank := 99
+	deletedIn := map[string]bool{}
+	var holders []string
 	for rows.Next() {
 		var sc, del string
 		if err := rows.Scan(&sc, &del); err != nil {
 			return "", false, false, err
 		}
-		if r := acc.rank(sc); r < bestRank {
-			scope, deleted, bestRank = sc, del != "null", r
-		}
+		deletedIn[sc] = del != "null"
+		holders = append(holders, sc)
 	}
-	return scope, deleted, bestRank != 99, rows.Err()
+	if err := rows.Err(); err != nil || len(holders) == 0 {
+		return "", false, false, err
+	}
+	rows.Close()
+	// One holder is the rule; several visible ones predate entity-id-ownership.
+	if scope, err = homeScope(ctx, q, acc, entity, id, holders); err != nil {
+		return "", false, false, err
+	}
+	return scope, deletedIn[scope], true, nil
 }
 
 // Purge permanently removes trashed tasks or projects the user may delete
@@ -630,8 +638,11 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		}
 	}
 	for _, t := range tasks {
-		rows, err := tx.QueryContext(ctx, `SELECT scope_id, entity_id FROM scope_fields WHERE entity = 'reminder' AND field = 'task_id' AND value = ?`,
-			QuoteJSON(t.id))
+		// A reminder belongs to the purged task unless its own scope holds
+		// another task with that id (a copy that predates entity-id-ownership).
+		rows, err := tx.QueryContext(ctx, `SELECT r.scope_id, r.entity_id FROM scope_fields r WHERE r.entity = 'reminder' AND r.field = 'task_id' AND r.value = ?
+			AND (r.scope_id = ? OR NOT EXISTS (SELECT 1 FROM scope_fields o WHERE o.scope_id = r.scope_id AND o.entity = 'task' AND o.entity_id = ?))`,
+			QuoteJSON(t.id), t.scope, t.id)
 		if err != nil {
 			return nil, err
 		}
