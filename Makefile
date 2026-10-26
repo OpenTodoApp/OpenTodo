@@ -245,7 +245,7 @@ fmt-check:
 ## decrypting MCP bridge) against a throwaway server on :18081 each. Expects `make build`
 ## (it builds bin/ot itself); needs Playwright with Chromium.
 e2e: cli
-	@for s in e2e-smoke e2e-views e2e-mcp-decrypt; do \
+	@for s in e2e-smoke e2e-views e2e-offline e2e-mcp-decrypt; do \
 	  d=$$(mktemp -d); OPENTODO_DATA_DIR=$$d OPENTODO_ADDR=127.0.0.1:18081 ./bin/opentodo >$$d/server.log 2>&1 & pid=$$!; \
 	  for i in $$(seq 1 30); do curl -fsS 127.0.0.1:18081/healthz >/dev/null 2>&1 && break; sleep 0.3; done; \
 	  echo "== $$s"; OPENTODO_URL=http://127.0.0.1:18081 node scripts/$$s.mjs; st=$$?; kill $$pid; wait $$pid 2>/dev/null; \

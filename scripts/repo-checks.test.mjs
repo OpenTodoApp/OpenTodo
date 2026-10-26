@@ -277,7 +277,10 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
   assert.match(jobs.layout, /run: make e2e$/m, 'the layout job runs make e2e')
   const e2e = read('Makefile').match(/^e2e:[^\n]*\n((?:\t.*\n)+)/m)?.[1] ?? ''
-  assert.match(e2e, /e2e-smoke e2e-views/, 'make e2e runs the two-device and saved-view scripts')
+  assert.match(e2e, /e2e-smoke e2e-views e2e-offline/, 'make e2e runs the two-device, saved-view and offline-start scripts')
+  // The built service worker and manifest tests run after the build, where they cannot skip.
+  const web = jobsOf(read('.github/workflows/ci.yml')).web ?? ''
+  assert.ok(web.indexOf('run: npm run test:built') > web.indexOf('run: npm run build'), 'the web job runs npm run test:built after npm run build')
   const nightly = read('.github/workflows/nightly.yml')
   assert.match(nightly, /^ {2}schedule:\n {4}- cron: /m)
   assert.match(nightly, /go test -race /)
