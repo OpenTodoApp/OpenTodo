@@ -49,7 +49,9 @@ const LANG = process.env.OPENTODO_LANG ?? ''
 // language (the German leg, ux-audit-three-widths F4) every screen is checked once a
 // heading, a task row or an alert shows, without its overlays or layout switches.
 const OTHER_LANG = !!LANG && LANG !== 'en'
-const anyReady = (p) => p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').first().waitFor({ timeout: 15000 })
+// The first *visible* match: a hidden or zero-width candidate earlier in the page (a
+// phone bar title squeezed by long action labels, F7 of the test audit) never shows.
+const anyReady = (p) => p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').filter({ visible: true }).first().waitFor({ timeout: 15000 })
 const MIN_TARGET = 44
 mkdirSync(outDir, { recursive: true })
 
