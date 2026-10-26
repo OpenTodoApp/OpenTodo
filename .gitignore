@@ -9,6 +9,9 @@
 # Dependencies
 /web/node_modules/
 /web/node_modules
+# A test runner started from the repository root writes its cache here.
+/node_modules/
+__pycache__/
 
 # Runtime data
 /data/
