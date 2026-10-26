@@ -185,7 +185,7 @@ Phone and desktop apps as thin shells around the same web app, loaded from your 
 | # | Shell | Change | Notes |
 | --- | --- | --- | --- |
 | 1 | **Built; waiting for the owner.** Android app: first-run server screen, reminders scheduled on the phone without a push service, the share menu, Today and quick-add widgets, fingerprint unlock of an encrypted account | `native-shells` | Hand-written Kotlin around a `WebView`, AndroidX only (APK about 1 MB), in `mobile/android` since 0.10. Waits for the owner: Play and F-Droid listings and the signing key, then instrumented emulator tests, a real-device smoke test |
-| 2 | iOS app with the same bridge | `ios-shell` | Open: App Store review of a server-URL app, a Mac runner in CI, whether reminders can be refreshed in the background often enough without push |
+| 2 | **Built; waiting for the owner.** iOS app with the same bridge: first-run server screen, reminders scheduled on the phone without a push service, the share sheet, a Today widget, Face ID unlock, and an opt-in build setting that adds the installed web app's offline start | `ios-shell` | Hand-written Swift around a `WKWebView`, no third-party code, in `mobile/ios`. Not on the App Store (AGPL), so whoever wants it builds and signs it; waits for the owner to decide on distribution, and for a real-device run |
 | 3 | Desktop app for macOS and Windows: the embedded server plus a window, a tray icon and native notifications | `desktop-shell` | Open: Wails v3 or the `webview/webview` binding (D2), code signing and notarisation, where the data directory lives |
 
 ## Future ideas
