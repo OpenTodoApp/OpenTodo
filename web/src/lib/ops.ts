@@ -710,7 +710,21 @@ export async function createTask(input: NewTaskInput, now = new Date()): Promise
  */
 async function nextTaskPosition(now: number): Promise<number> {
   const last = await db.tasks.orderBy('position').last()
-  return last && Number.isFinite(last.position) && last.position >= now ? last.position + GAP : now
+  const top = last && Number.isFinite(last.position) ? last.position : -Infinity
+  let position = top >= now ? top + GAP : now
+  // Two tasks created at once (a paste of several lines, a quick double Enter) both
+  // read the table before either is written: the second goes just past the first.
+  // Only a position handed out moments ago and not yet in the table counts.
+  const issued = issuedPositions.get(db)
+  if (issued !== undefined && issued > top && position <= issued && issued - position < GAP) position = issued + 1
+  return remember(position)
+}
+
+/** The last position handed out per database, not yet necessarily written. */
+const issuedPositions = new WeakMap<object, number>()
+function remember(position: number): number {
+  issuedPositions.set(db, position)
+  return position
 }
 
 /** A new subtask lives in its parent's project, with default priority and no due date. */

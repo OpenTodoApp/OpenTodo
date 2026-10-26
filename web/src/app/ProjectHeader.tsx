@@ -34,7 +34,7 @@ import { act } from './actionError'
 import { setFavourite } from '../lib/favourites'
 import { useIsFavourite } from './useFavourites'
 import { pinItem } from './menus/pinItem'
-import { useOpenTaskCount } from '../lib/liveTasks'
+import { openTaskCount, useOpenTaskCount } from '../lib/liveTasks'
 import { useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
 
@@ -88,8 +88,12 @@ function ColourSwatches({ project }: { project: Project }) {
  * "Pin to sidebar" (sidebar-favourites) is offered to every role: it changes the
  * user's own preferences, never the project.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; workspaces?: { id: string; name: string }[] }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[] }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
+  // A consequence naming the open tasks: from the count the caller holds, or, while
+  // that has not loaded yet, read when the confirmation opens (never "0 open tasks").
+  const withCount = (text: (n: number) => string) =>
+    openTasks === undefined ? async () => text(await openTaskCount(project.id)) : text(openTasks)
   const pin: ActionGroup[] = a.pin ? [{ items: [pinItem(!!o.pinned, a.pin)] }] : []
   const subsText = subCount ? ` ${t('{n, plural, one {Its sub-project moves up one level.} other {Its # sub-projects move up one level.}}', { n: subCount })}` : ''
   // Copies only read the project, so every role may make them (project-templates D6).
@@ -132,17 +136,17 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
       } },
       { kind: 'confirm', id: 'archive', label: subCount ? t('Archive with sub-projects') : t('Archive'), icon: 'archive', confirm: {
         title: t('Archive “{name}”?', { name: project.name }), tone: 'default', confirmLabel: t('Archive'),
-        body: subCount
-          ? t('{tasks, plural, one {It leaves the sidebar with # open task} other {It leaves the sidebar with # open tasks}} {subs, plural, one {and its sub-project} other {and its # sub-projects}}. You can unarchive it from Settings → Data.', { tasks: openTasks, subs: subCount })
-          : t('{tasks, plural, one {It leaves the sidebar with # open task.} other {It leaves the sidebar with # open tasks.}} You can unarchive it from Settings → Data.', { tasks: openTasks }),
+        body: withCount((tasks) => subCount
+          ? t('{tasks, plural, one {It leaves the sidebar with # open task} other {It leaves the sidebar with # open tasks}} {subs, plural, one {and its sub-project} other {and its # sub-projects}}. You can unarchive it from Settings → Data.', { tasks, subs: subCount })
+          : t('{tasks, plural, one {It leaves the sidebar with # open task.} other {It leaves the sidebar with # open tasks.}} You can unarchive it from Settings → Data.', { tasks })),
         onConfirm: () => archiveProject(project.id).then(() => navigate({ view: 'inbox' })),
       } },
     ] },
     ...(canDeleteProject(role) ? [{ items: [{ kind: 'confirm' as const, id: 'delete', label: t('Delete project'), icon: 'trash-2' as const, tone: 'danger' as const, confirm: {
       title: t('Delete “{name}”?', { name: project.name }), confirmLabel: t('Delete project'),
-      body: o.shared
-        ? t('{n, plural, one {It is deleted for every member. A copy of its # open task goes to your Inbox.} other {It is deleted for every member. Copies of its # open tasks go to your Inbox.}}', { n: openTasks }) + subsText
-        : t('{n, plural, one {It moves to the Trash with # open task. You can restore it from the Trash.} other {It moves to the Trash with # open tasks. You can restore it from the Trash.}}', { n: openTasks }) + subsText,
+      body: withCount((n) => o.shared
+        ? t('{n, plural, one {It is deleted for every member. A copy of its # open task goes to your Inbox.} other {It is deleted for every member. Copies of its # open tasks go to your Inbox.}}', { n }) + subsText
+        : t('{n, plural, one {It moves to the Trash with # open task. You can restore it from the Trash.} other {It moves to the Trash with # open tasks. You can restore it from the Trash.}}', { n }) + subsText),
       onConfirm: () => deleteProject(project.id).then(() => navigate({ view: 'inbox' })),
     } }] }] : []),
   ]
