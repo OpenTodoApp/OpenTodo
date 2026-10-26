@@ -2,11 +2,10 @@
 // Sidebar counts and markers (OpenSpec change quiet-sidebar, design D1 and D4): a count
 // is always in the row's accessible name; it is visible always, on hover or focus, or
 // never, and revealing it never changes the row's box.
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { render, spokenText, visibleText } from '../test-utils'
 import { SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot } from './Sidebar'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 const row = (mode?: 'always' | 'hover' | 'hidden', count?: number) =>
   <SidebarItem label="Website launch" count={count} countMode={mode} countLabel={count ? `${count} open tasks` : undefined} />

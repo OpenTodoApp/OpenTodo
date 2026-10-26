@@ -18,7 +18,7 @@ beforeEach(async () => {
   // Offline: every request fails, the page reads local data only.
   vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('offline') }))
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllGlobals() })
 
 const names = (root: ParentNode) => [...root.querySelectorAll('[data-project-open] .truncate')].map((e) => e.textContent)
 

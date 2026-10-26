@@ -31,7 +31,6 @@ afterEach(async () => {
   resetPanel()
   // A case that opened a task page leaves its address; the next list starts from the Inbox's.
   history.replaceState(null, '', '/')
-  document.body.innerHTML = ''
 })
 
 async function waitFor(ok: () => boolean, ms = 2000) {

@@ -29,7 +29,6 @@ beforeEach(async () => {
 afterEach(() => {
   vi.useRealTimers()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
-  document.body.innerHTML = ''
   document.documentElement.removeAttribute('data-contrast')
   document.documentElement.removeAttribute('data-motion')
 })

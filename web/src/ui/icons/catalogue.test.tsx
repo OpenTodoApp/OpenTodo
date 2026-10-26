@@ -2,7 +2,7 @@
 // The icon catalogue (OpenSpec change icons-and-section-style, design-system "Icon
 // catalogue"): its shape, the names list in the main bundle, the search order shared
 // with the server (internal/iconset), and <CatalogueIcon>'s fallback.
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { flush, render } from '../test-utils'
 import { CatalogueIcon } from '../CatalogueIcon'
 import catalogue from './catalogue.json'
@@ -18,7 +18,6 @@ const FORMER_PROJECT_ICONS = [
   'music', 'coffee', 'leaf', 'dumbbell', 'wallet', 'shopping-cart', 'camera', 'wrench', 'lightbulb', 'flame', 'anchor', 'globe', 'palette', 'folder',
 ]
 
-afterEach(() => { document.body.innerHTML = '' })
 
 describe('catalogue.json', () => {
   it('has at least 300 well-formed, unique entries in known categories', () => {

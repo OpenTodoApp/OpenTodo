@@ -21,7 +21,6 @@ beforeEach(async () => {
 })
 afterEach(() => {
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 const button = (text: string) => [...document.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)!

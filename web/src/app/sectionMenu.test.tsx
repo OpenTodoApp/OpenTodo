@@ -2,7 +2,7 @@
 // Section menu (labels-and-menus 3.1): the delete confirmation names the open tasks
 // that move to "No section", and Cancel changes nothing.
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
 import { createSection, setSectionStyle } from '../lib/sections'
 import { loadCatalogue } from '../ui'
@@ -10,7 +10,6 @@ import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { SectionHeader, sectionMenuGroups } from './Sections'
 
 beforeEach(async () => { await db.delete(); await db.open() })
-afterEach(() => { document.body.innerHTML = '' })
 
 describe('section menu', () => {
   it('disables moves at the edges with a reason and keeps delete last', () => {

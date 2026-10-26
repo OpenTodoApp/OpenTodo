@@ -28,7 +28,7 @@ beforeEach(async () => {
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
 })
-afterEach(() => { window.matchMedia = original; document.body.innerHTML = '' })
+afterEach(() => { window.matchMedia = original })
 
 
 const badgesOf = (c: HTMLElement, taskId: string) =>

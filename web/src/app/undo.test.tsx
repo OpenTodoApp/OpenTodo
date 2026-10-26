@@ -25,7 +25,7 @@ beforeEach(async () => {
   // Offline throughout: nothing reaches a server, everything lands in the outbox.
   vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
 })
-afterEach(() => { vi.unstubAllGlobals(); hideBulkToast(); resetPanel(); document.body.innerHTML = '' })
+afterEach(() => { vi.unstubAllGlobals(); hideBulkToast(); resetPanel() })
 
 const toast = () => document.querySelector('[data-bulk-toast]')
 const opsFor = (id: string, field: string) => db.outbox.toArray().then((ops) => ops.filter((o) => o.entityId === id && o.field === field))

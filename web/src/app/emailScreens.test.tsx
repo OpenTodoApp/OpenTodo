@@ -29,7 +29,6 @@ beforeEach(() => { calls = [] })
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
-  document.body.innerHTML = ''
 })
 
 describe('Forgot password', () => {

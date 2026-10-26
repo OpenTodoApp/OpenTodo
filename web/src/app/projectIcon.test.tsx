@@ -25,7 +25,6 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
 })
 afterEach(() => {
-  document.body.innerHTML = ''
   vi.unstubAllGlobals()
 })
 

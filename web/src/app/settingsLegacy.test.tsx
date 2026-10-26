@@ -12,7 +12,7 @@ import { parseRoute } from './router'
 vi.mock('./SsoPanel', async (orig) => ({ ...(await orig<typeof import('./SsoPanel')>()), SsoPanel: () => <div /> }))
 
 const member: User = { id: 'u1', email: 'sam@example.com', name: 'Sam', role: 'member', createdAt: 1 }
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); document.body.innerHTML = '' })
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 async function open(path: string) {
   history.replaceState(null, '', path)

@@ -2,7 +2,7 @@
 // Device relay screens (OpenSpec change mcp-device-relay): the settings card
 // and the confirmation sheet of a relayed write.
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { encryptValue, generateAccountKey } from '../lib/crypto'
 import { click, flush, mockFetch, render, waitFor } from '../ui/test-utils'
@@ -19,9 +19,6 @@ beforeEach(async () => {
   await db.open()
   key.current = await generateAccountKey()
   mockFetch(() => ({ devices: [] }))
-})
-afterEach(() => {
-  document.body.innerHTML = ''
 })
 
 const write = (title: string) => ({ op: 'encrypt' as const, items: [{ entity: 'task', id: 't1', field: 'title', value: title }], call: { tool: 'create_tasks', token: 'Claude.ai', write: true }, deadline: Date.now() + 10_000 })

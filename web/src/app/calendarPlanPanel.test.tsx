@@ -43,7 +43,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
   resetPanel()
   navigate({ view: 'inbox' }, { replace: true })
-  document.body.innerHTML = ''
 })
 
 const planList = () => document.querySelector('[data-panel-frame="calendar-plan"]')

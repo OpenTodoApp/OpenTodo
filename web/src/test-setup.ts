@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { afterAll, afterEach, beforeEach } from 'vitest'
 import { hlcReset } from './lib/hlc'
+import { teardown } from './test/teardown'
 
 // Each test starts with a fresh clock: received ops move it forward (the
 // clock's receive rule), so a test that applies ops stamped in the future would
@@ -34,5 +35,10 @@ function report(): void {
   throw new Error(`Unexpected network request(s) in a test; mock fetch explicitly:\n  ${list.join('\n  ')}`)
 }
 
+// First after every test, while the file's mocks still answer (vite.config.ts runs
+// after-hooks in the order they are declared, `sequence.hooks: 'list'`, so these two
+// come before the file's own): unmount every render, real timers, stop background
+// work, close and delete the local databases (test/teardown.ts); then the network check.
+afterEach(teardown)
 afterEach(report)
 afterAll(report)

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { beginDrag, TOUCH_HOLD_MS } from './dnd'
 
 beforeEach(() => { vi.useFakeTimers() })
-afterEach(() => { vi.useRealTimers(); document.body.innerHTML = '' })
+afterEach(() => { vi.useRealTimers() })
 
 const press = { pointerId: 9, pointerType: 'touch', button: 0, clientX: 50, clientY: 50 }
 const move = (x: number, y = 50) => window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, pointerType: 'touch', clientX: x, clientY: y }))

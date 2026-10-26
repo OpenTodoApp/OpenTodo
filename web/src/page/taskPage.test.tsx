@@ -37,7 +37,6 @@ beforeEach(() => {
 })
 afterEach(() => {
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 const live = (rights: string, extra: Partial<TaskPageContent> = {}) => ({ status: 200, body: { mode: 'live', rights, serverTime: Date.now(), label: null, ...content, ...extra } })

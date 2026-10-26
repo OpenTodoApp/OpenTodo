@@ -3,14 +3,13 @@
 // and marks unread notifications quietly (quiet-sidebar 2.2, app-shell "Notification
 // bell marker"): a dot for one, a small accent count above one, never red.
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { click, render, waitFor } from '../ui/test-utils'
 import { NotificationBell } from './NotificationBell'
 
 let n = 0
 beforeEach(() => { useDatabase(`bell-${Date.now()}-${n++}`) })
-afterEach(() => { document.body.innerHTML = '' })
 
 describe('NotificationBell', () => {
   it('words an unblocked notification with the blocker and the task', async () => {

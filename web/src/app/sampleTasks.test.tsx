@@ -28,7 +28,6 @@ afterEach(() => {
   vi.useRealTimers()
   hideBulkToast()
   resetPanel()
-  document.body.innerHTML = ''
 })
 
 const q = (sel: string) => document.querySelector<HTMLElement>(sel)

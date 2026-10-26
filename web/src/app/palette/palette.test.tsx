@@ -27,7 +27,7 @@ beforeEach(async () => {
   resetDeviceId()
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllGlobals() })
 
 async function waitFor(ok: () => boolean, ms = 2000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)

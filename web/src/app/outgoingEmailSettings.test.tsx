@@ -44,7 +44,6 @@ beforeEach(() => { calls = []; setOutgoingEmail(false) })
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
-  document.body.innerHTML = ''
 })
 
 describe('Outgoing email panel', () => {

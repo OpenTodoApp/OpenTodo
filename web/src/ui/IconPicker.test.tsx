@@ -11,7 +11,6 @@ import { flush, key, render, type, waitFor } from './test-utils'
 
 afterEach(() => {
   applyCatalog('en', 'en', {})
-  document.body.innerHTML = ''
 })
 
 const field = () => document.querySelector<HTMLInputElement>('[data-icon-picker] input[role="combobox"]')!

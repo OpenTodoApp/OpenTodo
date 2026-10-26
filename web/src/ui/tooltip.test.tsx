@@ -14,7 +14,7 @@ function mockPointer(coarse: boolean) {
 }
 
 beforeEach(() => { vi.useFakeTimers(); mockPointer(false) })
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); document.body.innerHTML = '' })
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
 // React derives onPointerEnter/Leave from pointerover/pointerout and onFocus/onBlur from focusin/focusout.
 async function pointer(el: Element, type: 'pointerenter' | 'pointerleave', pointerType = 'mouse') {

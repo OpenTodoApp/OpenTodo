@@ -30,7 +30,6 @@ afterEach(async () => {
   vi.restoreAllMocks()
   hideBulkToast()
   setDemo(null)
-  document.body.innerHTML = ''
 })
 
 async function waitFor(ok: () => boolean, ms = 2000) {

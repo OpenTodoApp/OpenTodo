@@ -140,7 +140,7 @@ describe('SidebarGroup', () => {
 })
 
 describe('EmptyState (lean-chrome D7, task-list-presentation "Empty views")', () => {
-  afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = '' })
+  afterEach(() => { vi.unstubAllGlobals() })
   function pointer(kind: 'fine' | 'coarse') {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes(kind), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false }))
   }

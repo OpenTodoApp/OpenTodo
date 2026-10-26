@@ -3,7 +3,7 @@
 // chips, the display panel writing to the view, the board layout, hidden properties,
 // completed tasks, Save as view in place and the addresses.
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
 import { createView } from '../../lib/views'
@@ -19,9 +19,6 @@ beforeEach(() => {
   resetDeviceId()
   localStorage.clear()
   history.replaceState(null, '', '/')
-})
-afterEach(() => {
-  document.body.innerHTML = ''
 })
 
 const button = (root: ParentNode, text: string) =>

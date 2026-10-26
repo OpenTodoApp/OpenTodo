@@ -18,7 +18,6 @@ afterEach(() => {
   delete (document as { getAnimations?: unknown }).getAnimations
   delete document.documentElement.dataset.motion
   vi.restoreAllMocks()
-  document.body.innerHTML = ''
 })
 
 function Harness({ motion }: { motion?: 'dialog' | 'fade' }) {

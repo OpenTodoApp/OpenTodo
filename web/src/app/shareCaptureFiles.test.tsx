@@ -25,7 +25,6 @@ afterEach(async () => {
   for (const r of mounted.splice(0)) await r.unmount()
   setPendingShare(null)
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 

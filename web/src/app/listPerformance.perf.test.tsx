@@ -32,7 +32,6 @@ beforeEach(() => {
 afterEach(() => {
   publishEncryption({ enabled: false })
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 /** `count` open tasks in one project (or the Inbox), seeded as remote ops in one transaction. */

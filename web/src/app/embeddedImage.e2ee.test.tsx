@@ -31,7 +31,6 @@ afterEach(() => {
   key.current = null
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
-  document.body.innerHTML = ''
 })
 
 

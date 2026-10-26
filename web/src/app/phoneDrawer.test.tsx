@@ -31,7 +31,7 @@ beforeEach(async () => {
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
 })
-afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
 const primary = () => [...document.querySelectorAll('nav[data-sidebar-primary] [data-sidebar-item]')].map((b) => b.textContent ?? '')
 

@@ -49,7 +49,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 const rows = () => [...document.querySelectorAll<HTMLElement>('[data-rule-row]')]

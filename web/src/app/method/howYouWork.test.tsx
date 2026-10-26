@@ -20,7 +20,7 @@ beforeEach(() => {
   useDatabase(`how-you-work-${Date.now()}-${n++}`)
   resetDeviceId()
 })
-afterEach(() => { closeHelp(); closeStartGuide(); document.body.innerHTML = '' })
+afterEach(() => { closeHelp(); closeStartGuide() })
 
 async function waitFor(ok: () => boolean, ms = 2000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)

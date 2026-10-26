@@ -2,7 +2,7 @@
 // Settings → Server → Speech to text (OpenSpec change settings-refresh, design
 // D7 and D8): Test shows the text or the failed stage; fields set by a variable
 // are read-only and name it; the key is never shown.
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { click, render, type, waitFor } from '../ui/test-utils'
 import type { SpeechSettings } from '../lib/types'
 import { SpeechServerView } from './SpeechServerPanel'
@@ -10,7 +10,6 @@ import { SpeechServerView } from './SpeechServerPanel'
 const base: SpeechSettings = { url: '', model: '', keySet: false, locked: [], connected: false }
 const field = (f: string) => document.querySelector<HTMLInputElement>(`[data-speech-field="${f}"]`)!
 
-afterEach(() => { document.body.innerHTML = '' })
 
 describe('SpeechServerView', () => {
   it('tests the draft address and shows the text, then the failed stage', async () => {

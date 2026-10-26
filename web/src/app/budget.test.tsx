@@ -52,7 +52,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
   resetPanel()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
-  document.body.innerHTML = ''
 })
 
 /** Elements that scroll vertically on their own, outside designated regions and overlays. */

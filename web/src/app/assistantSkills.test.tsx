@@ -40,7 +40,7 @@ beforeEach(async () => {
     return new Response('{}', { status: 404 })
   }))
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllGlobals() })
 
 const panel = () => render(<AssistantPanel onClose={() => {}} context={() => ({ view: 'today' })} onApplied={() => {}} />)
 
