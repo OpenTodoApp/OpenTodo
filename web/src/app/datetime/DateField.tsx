@@ -5,7 +5,7 @@
 // move by day and week, Page Up/Down by month, Home/End to the week's edges, Enter
 // picks and Escape closes.
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { addDaysISO, formatDate, logicalToday, weekStartOf, type ResolvedDateTime, dateLocaleOf } from '../../lib/dates'
+import { addDaysISO, formatDate, logicalToday, weekStartOf, type ResolvedDateTime, formatDateParts, monthName } from '../../lib/dates'
 import { addMonths } from '../../lib/nlp/dates'
 import { loadQuickAddSettings, resolveLanguages } from '../../lib/nlp/settings'
 import { IconButton, Popover } from '../../ui'
@@ -100,10 +100,7 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
 }
 
 const firstOfMonth = (iso: string) => `${iso.slice(0, 7)}-01`
-const dateOf = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d) }
-const monthName = () => new Intl.DateTimeFormat(dateLocaleOf(), { month: 'long', year: 'numeric' })
-const fullDate = () => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-const shortDay = () => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short' })
+const fullDate = (iso: string) => formatDateParts(iso, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
 /** The month grid: six weeks starting on the preferred first day, one focusable day at a time. */
 export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), compact = false, marked }: {
@@ -162,7 +159,7 @@ export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), com
     <div>
       <div className="mb-2 flex items-center gap-1">
         <IconButton icon="chevron-left" label={t('Previous month')} size="sm" onClick={() => shiftMonth(-1)} />
-        <h3 id={headingId} className="flex-1 text-center text-body font-semibold text-default" aria-live="polite">{monthName().format(dateOf(month))}</h3>
+        <h3 id={headingId} className="flex-1 text-center text-body font-semibold text-default" aria-live="polite">{monthName(month, 'long', true)}</h3>
         <IconButton icon="chevron-right" label={t('Next month')} size="sm" onClick={() => shiftMonth(1)} />
       </div>
       {/* On touch no gap around the 44 px days, so seven fit a phone with a large text size (precision-polish-2). */}
@@ -170,8 +167,8 @@ export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), com
         <thead>
           <tr>
             {days.slice(0, 7).map((d) => (
-              <th key={d} scope="col" className="pb-1 text-meta font-medium text-muted" abbr={new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long' }).format(dateOf(d))}>
-                {shortDay().format(dateOf(d))}
+              <th key={d} scope="col" className="pb-1 text-meta font-medium text-muted" abbr={formatDateParts(d, { weekday: 'long' })}>
+                {formatDateParts(d, { weekday: 'short' })}
               </th>
             ))}
           </tr>
@@ -187,7 +184,7 @@ export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), com
                 return (
                   <td key={d} role="gridcell" aria-selected={selected} className="p-0.5 pointer-coarse:p-0">
                     <button type="button" data-date={d} tabIndex={d === cursor ? 0 : -1} data-autofocus={d === cursor ? '' : undefined}
-                      aria-label={isMarked ? `${fullDate().format(dateOf(d))}, ${marked.label}` : fullDate().format(dateOf(d))} aria-current={isToday ? 'date' : undefined}
+                      aria-label={isMarked ? `${fullDate(d)}, ${marked.label}` : fullDate(d)} aria-current={isToday ? 'date' : undefined}
                       data-marked={isMarked || undefined}
                       onClick={() => onPick(d)}
                       className={[

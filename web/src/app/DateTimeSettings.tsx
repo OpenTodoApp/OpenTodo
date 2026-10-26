@@ -3,7 +3,7 @@
 // user's personal `user_prefs` row, so it applies at once, offline too, and
 // reaches the user's other devices with the next sync.
 import { useMemo } from 'react'
-import { addDaysISO, formatDate, formatInstant, formatTime, resolveDateTime, systemDateTime, logicalToday, weekDays, type ResolvedDateTime, dateLocaleOf } from '../lib/dates'
+import { addDaysISO, formatDate, formatInstant, formatTime, resolveDateTime, systemDateTime, logicalToday, weekDays, type ResolvedDateTime, formatDateParts, weekdayName } from '../lib/dates'
 import { DATE_FORMATS, DAY_STARTS, setUserPref, TIME_FORMATS, WEEK_STARTS, type DateTimePrefs, type DayStartPref } from '../lib/userPrefs'
 import type { DateFormatPref, TimeFormatPref, WeekStartPref } from '../lib/types'
 import { Select } from '../ui'
@@ -48,7 +48,6 @@ export function DateTimeView({ prefs, resolved, onChange, today = logicalToday()
   const sys = systemDateTime()
   // Each option shows what it looks like with today's date (or a sample time).
   const sample = (p: Partial<DateTimePrefs>) => resolveDateTime({ ...DEFAULTS, ...p }, sys)
-  const weekdayName = (start: number) => new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long' }).format(new Date(2026, 9, 11 + start))
   const preview = useMemo(() => {
     const at3pm = new Date(`${today}T15:00:00`).getTime()
     return {
@@ -121,7 +120,7 @@ function SampleBox({ preview, today }: { preview: SampleValues; today: string })
         {preview.week.map((iso) => (
           <li key={iso} aria-current={iso === today ? 'date' : undefined}
             className={`flex w-9 flex-col items-center rounded-control py-1 text-meta ${iso === today ? 'bg-accent text-on-accent' : 'bg-surface text-default'}`}>
-            <span className="text-hint uppercase">{new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'narrow' }).format(new Date(`${iso}T12:00:00`))}</span>
+            <span className="text-hint uppercase">{formatDateParts(iso, { weekday: 'narrow' })}</span>
             <span className="font-medium">{Number(iso.slice(8))}</span>
           </li>
         ))}

@@ -2,7 +2,7 @@
 // listed vertically, each with its date, capacity bar, event rows, task rows and
 // projected rows; no columns and no drag. Tapping a selected row opens the detail
 // panel as a sheet, where the date is changed, as in the Week's agenda.
-import { dateLocaleOf } from '../../lib/dates'
+import { formatDateParts } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { Button } from '../../ui'
 import type { PlanRowProps } from '../PlanView'
@@ -19,8 +19,7 @@ export function PlanAgenda({ days, today, dayLength, eventHue, onAdd, rowProps }
   return (
     <div className="space-y-3 py-2" data-plan-agenda>
       {days.map((day) => {
-        const [y, m, d] = day.date.split('-').map(Number)
-        const name = new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date(y, m - 1, d))
+        const name = formatDateParts(day.date, { weekday: 'long', day: 'numeric', month: 'short' })
         const empty = day.entries.length === 0 && day.events.length === 0 && day.allDay.length === 0
         return (
           <section key={day.date} data-agenda-day={day.date} aria-labelledby={`plan-${day.date}`}>
