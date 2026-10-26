@@ -1872,6 +1872,7 @@
   "Permanently delete “{title}”? This cannot be undone.": "Eliminare definitivamente «{title}»? L’operazione non si può annullare.",
   "Permission: {label}": "Autorizzazione: {label}",
   "Person": "Persona",
+  "Person added to a project": "Persona aggiunta a un progetto",
   "Pick a date and time.": "Scegli data e ora.",
   "Pick a date…": "Scegli una data…",
   "Pick a template file: one you saved, or a download from open-todo.app. It becomes a new project with fresh ids; nothing in the file is changed.": "Scegli un file modello: uno che hai salvato o un download da open-todo.app. Diventa un nuovo progetto con id nuovi; il file non viene modificato.",

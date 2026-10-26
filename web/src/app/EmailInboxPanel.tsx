@@ -43,6 +43,11 @@ export function EmailInboxView(p: EmailInboxViewProps) {
         !p.error && <Notice>{noticeCopy('email-inbox', 'offline')}</Notice>
       ) : !inbox.enabledByOperator ? (
         <Notice>{noticeCopy('email-inbox', 'operatorOff')}</Notice>
+      ) : inbox.address === null ? (
+        // No inbox yet: reading the settings never creates one, so the address
+        // appears once the person turns capture on (email-inbox-explicit).
+        <SettingRow {...rowCopy('email-inbox', 'create')}
+          control={<Switch checked={false} onChange={(on) => { if (!p.busy && on) p.onToggle(true) }} label={t('Create tasks from email sent to this address')} hideLabel />} />
       ) : (
         <>
           <SettingRow {...rowCopy('email-inbox', 'address')} status={

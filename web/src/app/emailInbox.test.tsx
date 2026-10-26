@@ -41,6 +41,15 @@ describe('EmailInboxView', () => {
     expect(html).not.toContain('role="switch"')
   })
 
+  it('without an inbox yet, offers only the switch that creates it', () => {
+    const html = render({ inbox: inbox({ address: null, enabled: false }) })
+    expect(html).toContain('role="switch"')
+    expect(html).toContain('aria-checked="false"')
+    expect(html).not.toContain('Copy address')
+    expect(html).not.toContain('New address')
+    expect(html).not.toContain('<textarea')
+  })
+
   it('needs a connection to load', () => {
     expect(render({ inbox: null })).toContain('available when you are online')
   })

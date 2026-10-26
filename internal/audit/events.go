@@ -128,12 +128,14 @@ const (
 	WorkspaceGroupDeletedName       Name = "workspace.group_deleted"
 	WorkspaceGroupMemberAddedName   Name = "workspace.group_member_added"
 	WorkspaceGroupMemberRemovedName Name = "workspace.group_member_removed"
-	ProjectGrantAddedName           Name = "project.grant_added"
-	ProjectGrantChangedName         Name = "project.grant_changed"
-	ProjectGrantRemovedName         Name = "project.grant_removed"
-	WorkspaceInviteCreatedName      Name = "workspace_invite.created"
-	WorkspaceInviteAcceptedName     Name = "workspace_invite.accepted"
-	WorkspaceInviteRevokedName      Name = "workspace_invite.revoked"
+	// A person added to a shared project by its owner or an admin (ids only).
+	ProjectMemberAddedName      Name = "project.member_added"
+	ProjectGrantAddedName       Name = "project.grant_added"
+	ProjectGrantChangedName     Name = "project.grant_changed"
+	ProjectGrantRemovedName     Name = "project.grant_removed"
+	WorkspaceInviteCreatedName  Name = "workspace_invite.created"
+	WorkspaceInviteAcceptedName Name = "workspace_invite.accepted"
+	WorkspaceInviteRevokedName  Name = "workspace_invite.revoked"
 )
 
 // Names lists the whole catalogue in a stable order (used by the API docs, the
@@ -170,6 +172,7 @@ var Names = []Name{
 	WorkspaceCreatedName, WorkspaceRenamedName, WorkspaceDeletedName, WorkspaceTransferredName,
 	WorkspaceMemberAddedName, WorkspaceMemberRoleChangedName, WorkspaceMemberRemovedName,
 	WorkspaceGroupCreatedName, WorkspaceGroupDeletedName, WorkspaceGroupMemberAddedName, WorkspaceGroupMemberRemovedName,
+	ProjectMemberAddedName,
 	ProjectGrantAddedName, ProjectGrantChangedName, ProjectGrantRemovedName,
 	WorkspaceInviteCreatedName, WorkspaceInviteAcceptedName, WorkspaceInviteRevokedName,
 }
@@ -795,6 +798,11 @@ func WorkspaceGroupMemberAdded(actorID, targetID, workspaceID, groupID string) E
 // WorkspaceGroupMemberRemoved records an account removed from a group.
 func WorkspaceGroupMemberRemoved(actorID, targetID, workspaceID, groupID string) Event {
 	return ev(WorkspaceGroupMemberRemovedName, Success, actorID, targetID, "workspace", workspaceID, "group", groupID)
+}
+
+// ProjectMemberAdded records an account added to a project with role.
+func ProjectMemberAdded(actorID, targetID, projectID, role string) Event {
+	return ev(ProjectMemberAddedName, Success, actorID, targetID, "shared_project_id", projectID, "project_role", role)
 }
 
 // ProjectGrantAdded records a group granted a role on a project.

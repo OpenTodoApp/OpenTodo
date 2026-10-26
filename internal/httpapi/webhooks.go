@@ -30,7 +30,7 @@ func (s *Server) registerWebhookRoutes(mux *routes) {
 	mux.handle("GET /api/v1/webhooks/{id}/deliveries", signedIn, s.withHooks(s.handleListDeliveries))
 	mux.handle("POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver", signedIn.demoDenied(), s.withHooks(s.handleRedeliver))
 	mux.handle("GET /api/v1/settings/webhooks", ownerOnly("manage the webhook policy"), s.withHooks(s.handleGetWebhookPolicy))
-	mux.handle("PUT /api/v1/settings/webhooks", ownerOnly("manage the webhook policy").demoDenied(), s.withHooks(s.handlePutWebhookPolicy))
+	mux.handle("PUT /api/v1/settings/webhooks", ownerOnly("manage the webhook policy").credential().demoDenied(), s.withHooks(s.handlePutWebhookPolicy))
 }
 
 func (s *Server) withHooks(next http.HandlerFunc) http.HandlerFunc {

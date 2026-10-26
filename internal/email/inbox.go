@@ -112,6 +112,20 @@ func scanInbox(r rowScanner) (Inbox, error) {
 	return in, nil
 }
 
+// Find returns the account's inbox without creating one; ok is false when the
+// account has none yet. Reading never creates or enables an inbox: that only
+// happens on an explicit write (Update, Rotate).
+func (s *Store) Find(ctx context.Context, userID string) (in Inbox, ok bool, err error) {
+	in, err = scanInbox(s.db.QueryRowContext(ctx, `SELECT `+inboxCols+` FROM email_inboxes WHERE user_id = ?`, userID))
+	if errors.Is(err, sql.ErrNoRows) {
+		return Inbox{}, false, nil
+	}
+	if err != nil {
+		return in, false, fmt.Errorf("email: load inbox: %w", err)
+	}
+	return in, true, nil
+}
+
 // Get returns the account's inbox, creating it (enabled, with a fresh secret)
 // on first use. Creation is recorded as email_inbox.created.
 func (s *Store) Get(ctx context.Context, userID string) (Inbox, error) {

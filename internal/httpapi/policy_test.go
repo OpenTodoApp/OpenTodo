@@ -206,8 +206,10 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"PUT /api/v1/encryption/keys":      "auth admin-token demo",
 		"DELETE /api/v1/encryption/keys":   "auth admin-token fresh demo",
 		"GET /api/v1/settings/webhooks":    "auth owner",
-		"PUT /api/v1/settings/webhooks":    "auth owner demo",
-		"PUT /api/v1/settings/mcp":         "auth owner demo",
+		"PUT /api/v1/settings/webhooks":    "auth owner admin-token demo",
+		"PUT /api/v1/settings/mcp":         "auth owner admin-token demo",
+		"PUT /api/v1/settings/maps":        "auth owner admin-token demo",
+		"PUT /api/v1/settings/audit":       "auth owner admin-token demo",
 		"PUT /api/v1/settings/caldav":      "auth owner demo",
 		"PUT /api/v1/settings/attachments": "auth owner demo",
 		// Calendar sync (calendar-two-way D14): the Google client holds a secret,
@@ -228,10 +230,14 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"DELETE /api/v1/backups/restore/safety-copies/{name}": "auth owner session-only fresh demo",
 		"GET /api/v1/export/archive":                          "auth owner admin-token fresh demo",
 		// Switches only a person flips.
-		"GET /api/v1/me/agent-access":    "auth full-tokens",
-		"PUT /api/v1/me/agent-access":    "auth full-tokens demo",
-		"POST /api/v1/assistant/turn":    "auth session-only demo",
-		"POST /api/v1/me/assistant/test": "auth session-only demo",
+		"GET /api/v1/me/agent-access": "auth full-tokens",
+		"PUT /api/v1/me/agent-access": "auth full-tokens demo",
+		// The email-inbox address creates tasks: not for read or agent tokens.
+		"GET /api/v1/email-inbox":         "auth full-tokens",
+		"PATCH /api/v1/email-inbox":       "auth full-tokens demo",
+		"POST /api/v1/email-inbox/rotate": "auth full-tokens demo",
+		"POST /api/v1/assistant/turn":     "auth session-only demo",
+		"POST /api/v1/me/assistant/test":  "auth session-only demo",
 		// Regular content routes.
 		"POST /api/v1/sync":                       "auth",
 		"POST /api/v1/{collection}":               "auth",
@@ -344,6 +350,11 @@ func TestCredentialRoutesNeedAdminToken(t *testing.T) {
 		{"DELETE", "/api/v1/encryption/keys", nil},
 		{"PUT", "/api/v1/backups/settings", map[string]any{}},
 		{"PUT", "/api/v1/settings/assistant", map[string]any{}},
+		// Security-relevant owner settings (L4 of the 2026-10 audit).
+		{"PUT", "/api/v1/settings/webhooks", map[string]any{"allowPrivate": false}},
+		{"PUT", "/api/v1/settings/maps", map[string]any{}},
+		{"PUT", "/api/v1/settings/mcp", map[string]any{"enabled": false}},
+		{"PUT", "/api/v1/settings/audit", map[string]any{"retentionDays": 90}},
 	}
 	for _, r := range routes {
 		resp, out := p.as(p.full, r.method, r.path, r.body)
