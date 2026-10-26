@@ -2,7 +2,7 @@
 // colour; it needs a connection (workspaces are server data) and switches the
 // device to the new workspace on success. Opened from the switcher, the
 // palette and Settings → Workspaces through requestNewWorkspace().
-import { type FormEvent, useState, useSyncExternalStore } from 'react'
+import { type FormEvent, useState } from 'react'
 import { Dialog, Field, HUES, hueFor } from '../ui'
 import { actionErrorMessage } from './actionError'
 import { hueName } from '../lib/colourNames'
@@ -12,19 +12,13 @@ import { workspaceApi } from '../lib/workspaceApi'
 import { switchTo } from '../lib/workspaces'
 import { navigate, type Route } from './router'
 import { useWorkspaceFollow } from './workspaceNav'
+import { createStore } from '../lib/store'
 
-let open = false
-const listeners = new Set<() => void>()
-const emit = () => listeners.forEach((fn) => fn())
+const requested = createStore('newWorkspaceDialog', false)
 
 /** Opens the dialog (rendered once by the shell). */
 export function requestNewWorkspace(): void {
-  open = true
-  emit()
-}
-
-function useRequested(): boolean {
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => listeners.delete(fn) }, () => open, () => false)
+  requested.set(true)
 }
 
 /** The palette's colours as radio buttons, plus "No colour". */
@@ -90,9 +84,8 @@ export function NewWorkspaceForm({ onDone }: { onDone: () => void }) {
 
 /** Mounted once by the shell; shows the form while requested. */
 export function NewWorkspaceDialog() {
-  const requested = useRequested()
-  if (!requested) return null
-  return <NewWorkspaceForm onDone={() => { open = false; emit() }} />
+  if (!requested.use()) return null
+  return <NewWorkspaceForm onDone={() => requested.set(false)} />
 }
 
 /** The shell's workspace plumbing in one element: following entities across workspaces and the New workspace dialog. */

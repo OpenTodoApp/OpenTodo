@@ -22,6 +22,7 @@ import type {
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
   AutomationsSetting, RuleRun, RulesStatus,
 } from './types'
+import { createSignal } from './store'
 
 export { fetchWithTimeout, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
 
@@ -68,7 +69,7 @@ export interface MapsSetting {
 }
 let reauthHandler: ReauthHandler | null = null
 let reauthInFlight: Promise<boolean> | null = null
-const enrolmentListeners = new Set<() => void>()
+const enrolment = createSignal()
 
 /** Registers the re-authentication prompt; returns an unregister function. */
 export function setReauthHandler(h: ReauthHandler): () => void {
@@ -79,10 +80,7 @@ export function setReauthHandler(h: ReauthHandler): () => void {
 }
 
 /** Subscribes to "this session must enrol a second factor"; returns an unsubscribe function. */
-export function onEnrolmentRequired(fn: () => void): () => void {
-  enrolmentListeners.add(fn)
-  return () => enrolmentListeners.delete(fn)
-}
+export const onEnrolmentRequired = enrolment.subscribe
 
 /**
  * Opens the registered re-authentication prompt without a refused request, for
@@ -117,7 +115,7 @@ export async function request<T>(method: string, path: string, body?: unknown, r
       if (err.code === 'reauth_required' && !retried && (await reauthenticate())) {
         return request<T>(method, path, body, true, opts)
       }
-      if (err.code === 'mfa_enrolment_required') enrolmentListeners.forEach((fn) => fn())
+      if (err.code === 'mfa_enrolment_required') enrolment.notify()
     }
     throw err
   }

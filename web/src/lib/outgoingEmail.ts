@@ -2,28 +2,15 @@
 // reported to clients"): read from the authentication status on every refresh, so
 // the email actions in Settings and the share dialog appear and disappear with it.
 // Memory only: offline, the actions need a connection anyway.
-import { useSyncExternalStore } from 'react'
+import { createStore } from './store'
 
-const listeners = new Set<() => void>()
-let enabled = false
+const store = createStore('outgoingEmail', false)
 
 export function setOutgoingEmail(on: boolean | undefined): void {
-  const next = on === true
-  if (next === enabled) return
-  enabled = next
-  for (const l of listeners) l()
+  store.set(on === true)
 }
 
-export function outgoingEmailEnabled(): boolean {
-  return enabled
-}
-
-function subscribe(l: () => void): () => void {
-  listeners.add(l)
-  return () => { listeners.delete(l) }
-}
+export const outgoingEmailEnabled = store.get
 
 /** True when the server reported outgoing email as configured. */
-export function useOutgoingEmail(): boolean {
-  return useSyncExternalStore(subscribe, outgoingEmailEnabled, outgoingEmailEnabled)
-}
+export const useOutgoingEmail = store.use
