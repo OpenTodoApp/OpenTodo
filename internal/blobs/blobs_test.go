@@ -64,6 +64,33 @@ func TestRoundTrip(t *testing.T) {
 	}
 }
 
+func TestMatches(t *testing.T) {
+	s, err := New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := []byte("hello attachment")
+	if err := s.Write("m1", bytes.NewReader(body), spec(body)); err != nil {
+		t.Fatal(err)
+	}
+	other := spec([]byte("hello attachmenT"))
+	for _, c := range []struct {
+		want Spec
+		ok   bool
+	}{
+		{spec(body), true},
+		{other, false}, // same size, other digest
+		{Spec{Size: 3, SHA256: spec(body).SHA256}, false}, // other size
+	} {
+		if ok, err := s.Matches("m1", c.want); ok != c.ok || err != nil {
+			t.Errorf("%+v: %v %v", c.want, ok, err)
+		}
+	}
+	if _, err := s.Matches("missing", spec(body)); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing file: %v", err)
+	}
+}
+
 func TestMismatchLeavesNoFile(t *testing.T) {
 	s, _ := New(t.TempDir())
 	body := []byte("twelve bytes")
