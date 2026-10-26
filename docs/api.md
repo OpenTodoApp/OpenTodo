@@ -136,6 +136,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels, see [Label fields](#label-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
+| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders` and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
+| GET/PATCH/DELETE | `/api/v1/{collection}/{id}` | yes | read, partial update, soft delete one item of those collections |
 | GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
 | DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
 | POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{…}}` |
@@ -170,7 +172,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/pages/{secret}` | none | the page: `mode` `live` (the task's shown fields) or `encrypted` (`snapshot`) |
 | POST | `/api/v1/pages/{secret}/replies` | none (`reply` or `tick` page) | `{name, body}`, or `{ciphertext}` on an encrypted page → 201 |
 | POST | `/api/v1/pages/{secret}/tick` | none (a `tick` page) | `{taskId, completed, name}` → `{taskId, completed_at}` |
-| GET | `/api/v1/pages/{secret}/files/{fileId}`, `…/maps/…` | none | a file of the task, as a download; the page's map style, tiles, fonts and sprites |
+| GET | `/api/v1/pages/{secret}/files/{fileId}` | none | a file of the task, as a download |
+| GET | `/api/v1/pages/{secret}/maps/…` | none | the page's map style, tiles, fonts and sprites, see [Maps](#maps) |
 | GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
@@ -1202,7 +1205,7 @@ Members carry names, never emails. Limits are 409 `limit_reached` naming the lim
 
 **Group grants** — `POST /api/v1/projects/{id}/grants` `{groupId, role}` → 201 member list; `PATCH …/grants/{groupId}` `{role}`; `DELETE …/grants/{groupId}` → 204. The project's member rules apply (an admin grants viewer and editor), and only groups of the project's workspace (404 otherwise). A member's role is the highest of their direct grant and their groups'; the member list adds `via` (the groups a role comes from, `[]` for a direct grant) and `grants`. Changing a group changes every project it is on in the same request, without writing an op.
 
-**Invite links** — `POST /api/v1/workspaces/{id}/invites` `{role: member|admin, email?, expiresInHours?, send?}` (owner or admin; `admin` links only by the owner) → 201 `{invite, link, newAccounts}` with a `/invite/w/otw_…` link, as [project invite links](#project-invite-links): 20 per hour, `GET` lists pending links, `DELETE …/invites/{inviteId}` revokes. `GET /api/v1/workspace-invites/{token}` (no authentication; 404 `invitation_invalid` on a demo) → `{inviterName, workspaceName, role, email, expiresAt, canCreateAccount, alreadyMember?}`; `POST …/accept` → `{workspaceId, role}` (409 `already_member`); `POST /api/v1/auth/register` with `workspaceInvite` creates the account under the project-link rule.
+**Invite links** — `POST /api/v1/workspaces/{id}/invites` `{role: member|admin, email?, expiresInHours?, send?}` (owner or admin; `admin` links only by the owner) → 201 `{invite, link, newAccounts}` with a `/invite/w/otw_…` link, as [project invite links](#project-invite-links): 20 per hour, `GET …/invites` lists pending links, `DELETE …/invites/{inviteId}` revokes. `GET /api/v1/workspace-invites/{token}` (no authentication; 404 `invitation_invalid` on a demo) → `{inviterName, workspaceName, role, email, expiresAt, canCreateAccount, alreadyMember?}`; `POST …/accept` → `{workspaceId, role}` (409 `already_member`); `POST /api/v1/auth/register` with `workspaceInvite` creates the account under the project-link rule.
 
 ### Public links
 
@@ -1302,7 +1305,7 @@ The owner gives the server a name and a logo (**Settings → Server → Branding
 | `GET` / `PUT /api/v1/settings/branding` | Owner. `PUT {"name": "…"}`: up to 40 characters after trimming, no control characters, empty for OpenTodo's own name (400 `invalid_input` otherwise). Answers `{name, logoVersion}`; recorded as `settings.changed` (`branding.name`) |
 | `PUT /api/v1/settings/branding/logo` | Owner. The raw bytes of a PNG or JPEG, at most 2 MB (413 `too_large`), at least 192 and at most 4096 pixels a side (400 `invalid_input`). The server crops the centre square and renders 32, 180, 192 and 512 px PNGs plus a maskable 512 px icon under `<data>/branding/`, bumps `logoVersion` and answers `{name, logoVersion}`; recorded as `settings.changed` (`branding.logo`) |
 | `DELETE /api/v1/settings/branding/logo` | Owner. Removes the rendered files; `logoVersion` becomes 0 and the app's own icons return |
-| `GET /branding/logo-{32,180,192,512}.png`, `GET /branding/logo-maskable-512.png` | Public, like the app's own icons. With `?v=<logoVersion>` cached for a year (`immutable`); without the current version `no-cache`. 404 without a logo |
+| `GET /branding/{file}`: `logo-{32,180,192,512}.png`, `logo-maskable-512.png` | Public, like the app's own icons. With `?v=<logoVersion>` cached for a year (`immutable`); without the current version `no-cache`. 404 without a logo |
 
 Branding is refused on a demo instance like every server setting.
 
@@ -1316,6 +1319,35 @@ Errors: `400 attachment_mismatch` (bytes do not match the size or digest), `413 
 curl -sS -X POST "$OT/api/v1/tasks/$TASK/attachments" -H "Authorization: Bearer $TOKEN" -F file=@receipt.pdf
 # 201 {"id":"…","name":"receipt.pdf","mime":"application/pdf","size":48213,"uploaded":true,…}
 ```
+
+### Maps
+
+The server proxies the map provider for the web app's maps and place search (guide: [locations and places](locations-and-places.md)), so a browser never contacts a third party. The routes need a session or a `full` or `admin` token; with maps off they answer `404 maps_disabled`, and when the provider does not answer `502 maps_unavailable`. A demo instance has maps off unless `OPENTODO_MAPS=on`.
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/maps/style` | yes | the provider's style, rewritten to point at the routes below (cached for an hour) |
+| GET | `/api/v1/maps/tiles/{z}/{x}/{y}` | yes | one vector tile (`.pbf` optional), cached on the server under `<data>/cache/maps` and in the browser for a day |
+| GET | `/api/v1/maps/fonts/{fontstack}/{range}` | yes | the glyphs of a font range (`.pbf` optional) |
+| GET | `/api/v1/maps/sprites/{file}` | yes | the style's sprite sheet (`.png`) or its index (`.json`) |
+| GET | `/api/v1/maps/search` | yes | `?q=…&lang=en&limit=5` (1–10) → `{results: [{name, address, lat, lon}]}`; 30 searches a minute per account with `/reverse` (`429 rate_limited`) |
+| GET | `/api/v1/maps/reverse` | yes | `?lat=…&lon=…&lang=en` → `{result: {name, address, lat, lon}}` |
+| GET, PUT | `/api/v1/settings/maps` | owner (`PUT`: credential) | `{enabled, tiles_url, geocoder_url, locked, defaults: {tiles_url, geocoder_url}}`; `PUT {enabled, tiles_url?, geocoder_url?}` (empty URLs use the defaults). A value set by `OPENTODO_MAPS*` is listed in `locked` and cannot be changed. Changes are audited as `settings.changed` (`maps.enabled`, `maps.tiles_url`, `maps.geocoder_url`); refused on a demo |
+
+A [task page](#task-pages) with its map shared serves the same map without a sign-in: `GET /api/v1/pages/{secret}/maps/style`, `…/maps/tiles/{z}/{x}/{y}`, `…/maps/fonts/{fontstack}/{range}` and `…/maps/sprites/{file}` (`404 page_invalid` when the page does not include its map or maps are off; rate limited per address and per page).
+
+### Speech to text
+
+Voice capture sends a recorded phrase through the server to the owner's OpenAI-compatible transcription service (guides: [speech to text](self-hosting/speech-to-text.md), [quick add](quick-add.md)). The audio and the text stay in memory for the request: never stored, logged or audited. `GET /api/v1/me` carries `speech: {connected, host?}` for every user.
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/settings/stt` | owner, credential | `{url, model, keySet, locked, connected}`; the key is write-only. A value set by `OPENTODO_STT_URL`, `OPENTODO_STT_MODEL` or `OPENTODO_STT_KEY_FILE` is listed in `locked` |
+| PUT | `/api/v1/settings/stt` | owner, credential | any of `{url, model, key}` (`""` clears; a model is needed while a URL is set) → the same shape; `400 invalid_input` names a bad field; connecting or disconnecting is audited as `settings.changed` (`stt.connected`) |
+| POST | `/api/v1/settings/stt/test` | owner, credential | optional draft `{url, model, key}`: sends a built-in sample with the draft or the stored values → `{ok: true, text}` or `{ok: false, error}`; `409 stt_not_configured` without a service |
+| POST | `/api/v1/voice/transcribe` | session or `full` token | the raw audio (`Content-Type` `audio/webm`, `audio/ogg`, `audio/mp4` or `audio/wav`; at most 5 MB and 60 seconds, `?seconds=` as recorded), optional `?language=de` → `{text}`; 30 phrases a minute per account (`429 rate_limited`), `409 stt_not_configured`, `502 stt_unavailable` |
+
+The settings routes and the transcription are refused on a demo instance.
 
 ### Comments and activity
 
@@ -1723,7 +1755,7 @@ The [in-app assistant](assistant.md) (OpenSpec `in-app-assistant`). Every route 
 
 `cap_member_keys` (default `false`): whether turns on a member's own key count toward `monthly_token_cap_per_user`; off, they are recorded but neither counted nor blocked. `member_providers` lists what members may choose for their own key (never `compatible`); `own_key_members` counts accounts whose turns use their own provider and key right now.
 
-Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user, cap_member_keys}`. `PUT` (owner only, 403 `forbidden` otherwise; a session or an `admin` token, since it holds provider keys) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
+Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user, cap_member_keys}`. `PUT /api/v1/settings/assistant` (owner only, 403 `forbidden` otherwise; a session or an `admin` token, since it holds provider keys) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
 
 ```bash
 curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
