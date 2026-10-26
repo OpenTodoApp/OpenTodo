@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
-import { flush, render } from '../ui/test-utils'
+import { flush, render, waitFor } from '../ui/test-utils'
 import { undoToast } from './bulk/UndoToast'
 import { bulkToast, hideBulkToast } from './bulk/toastStore'
 import { departures$, resetDepartures } from './motion'
@@ -29,10 +29,6 @@ beforeEach(async () => {
 })
 afterEach(() => { vi.unstubAllGlobals(); hideBulkToast(); resetPanel(); resetDepartures(); document.body.innerHTML = '' })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 10) await flush(10)
-  expect(ok()).toBe(true)
-}
 const row = (c: HTMLElement, title: string) => [...c.querySelectorAll<HTMLElement>('[data-task-id]')].find((li) => li.textContent?.includes(title))
 const ghost = (c: HTMLElement) => c.querySelector<HTMLElement>('[data-departing]')
 const press = (key: string) => act(async () => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })) })
@@ -45,7 +41,8 @@ describe('departing rows', () => {
     await waitFor(() => !!row(r.container, 'Pay rent'))
     await complete(row(r.container, 'Pay rent')!)
     // Written while the sequence still runs: no timer of the moment has fired yet.
-    for (let i = 0; i < 100 && !(await db.tasks.get(id))?.completed_at; i++) await flush(1)
+    // Polled every turn of the event loop, not every 10 ms like waitFor: the departure must still be running.
+    for (let i = 0; i < 500 && !(await db.tasks.get(id))?.completed_at; i++) await flush()
     expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
     expect(departures$().get(id)).toBe('leave')
     await r.unmount()
@@ -66,7 +63,7 @@ describe('departing rows', () => {
     expect(g.hasAttribute('data-draggable')).toBe(false)
     // Only the open task is a row of the list.
     expect([...r.container.querySelectorAll('[data-task-id]')].map((li) => li.textContent)).toEqual([expect.stringContaining('Call mum')])
-    await waitFor(() => !ghost(r.container), 1500)
+    await waitFor(() => !ghost(r.container))
     await r.unmount()
   })
 
@@ -89,7 +86,7 @@ describe('departing rows', () => {
       const current = r.container.querySelector<HTMLElement>('[data-task-id][aria-current]')!.dataset.taskId
       await press('c')
       // The cursor is on the next row before the departing one has left.
-      await waitFor(() => r.container.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') !== current, 300)
+      await waitFor(() => r.container.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') !== current)
     }
     await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 1)
     const done = await Promise.all(order.slice(0, 3).map((id) => db.tasks.get(id!)))

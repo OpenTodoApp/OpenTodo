@@ -10,7 +10,7 @@ import { db } from '../lib/db'
 import { setListDisplay } from '../lib/listDisplay'
 import { createLabel } from '../lib/labels'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
+import { click, key, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 
 beforeEach(() => mockFetch(noPublicLinks))
@@ -31,7 +31,6 @@ async function choose(label: string, value: string) {
     select.value = value
     select.dispatchEvent(new Event('change', { bubbles: true }))
   })
-  await flush(30)
 }
 
 describe('Display options on a project page', () => {
@@ -52,7 +51,8 @@ describe('Display options on a project page', () => {
     await choose('Group by', 'priority')
     await choose('Order by', 'title')
     await waitFor(() => headings().join() === 'Priority 1,Priority 2', 'priority groups')
-    expect(titles()).toEqual(['Call plumber', 'Buy bulbs', 'Wash car'])
+    await waitFor(() => titles().join() === 'Call plumber,Buy bulbs,Wash car', 'title order in the groups')
+    await waitFor(async () => (await db.prefs.get(pid))?.sort_by === 'title', 'the choice stored')
     expect(await db.prefs.get(pid)).toMatchObject({ group_by: 'priority', sort_by: 'title' })
     await r.unmount()
   })
@@ -85,6 +85,7 @@ describe('Display options on a label page', () => {
     await choose('Order by', 'priority')
     await click(document.querySelector('[data-display-more]')!)
     await choose('Sort direction', 'desc')
+    await waitFor(async () => (await db.labels.get(lid))?.sort_dir === 'desc', 'the direction stored')
     expect(await db.labels.get(lid)).toMatchObject({ sort_by: 'priority', sort_dir: 'desc', name: 'errand' })
     await waitFor(() => titles().join() === 'Bank,Stamps', 'priority 1 first')
     await r.unmount()

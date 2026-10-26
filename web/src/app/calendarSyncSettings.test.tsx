@@ -7,7 +7,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import type { CalendarConnection } from '../lib/types'
-import { click, flush, render, type } from '../ui/test-utils'
+import { click, render, type, waitFor } from '../ui/test-utils'
 import { CalendarSyncPanel, googleResultText, syncStateLine } from './CalendarSyncPanel'
 
 const NOW = new Date(2026, 9, 26, 12, 0).getTime()
@@ -37,10 +37,6 @@ function serve(routes: Record<string, unknown>) {
 
 const keys = () => calls.map((c) => c.key)
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 const button = (root: ParentNode, text: string) => [...root.querySelectorAll('button')].find((b) => b.textContent === text)
 
@@ -88,7 +84,7 @@ describe('calendar sync panel', () => {
     expect(button(r.container, 'Connect Google')).toBeDefined()
 
     await click(r.container.querySelector('button[aria-label="Actions for Fastmail"]')!)
-    await flush(20)
+    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((e) => e.textContent?.includes('Delete')), 'the actions menu')
     await click([...document.querySelectorAll('[role="menuitem"]')].find((e) => e.textContent?.includes('Delete'))!)
     await waitFor(() => document.body.textContent!.includes('12 events already written stay in the calendar'))
     expect(keys()).not.toContain('DELETE /api/v1/calendar-sync/connections/c1')

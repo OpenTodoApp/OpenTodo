@@ -59,7 +59,7 @@ async function inbox() {
   const b = await createTask({ title: 'Re: offer for the attic', origin: { kind: 'email', id: '<m1@example.org>' } })
   const r = await render(<><TaskListView route={{ view: 'inbox' }} /><PanelHost user={{ id: 'me' }} /></>)
   await waitFor(() => document.querySelectorAll('li[data-task-id]').length === 2, 'two rows')
-  await flush(20)
+  await flush()
   return { a, b, r }
 }
 
@@ -129,7 +129,7 @@ describe('Inbox split', () => {
     const { a, b, r } = await inbox()
     expect(pane()).toBeNull()
     await key(document.body, 'j')
-    await flush(40)
+    await waitFor(() => !!document.querySelector('li[aria-current="true"]'), 'the cursor row')
     expect(docked()).toBeNull()
     const id = document.querySelector<HTMLElement>('li[aria-current="true"]')!.dataset.taskId!
     expect([a, b]).toContain(id)

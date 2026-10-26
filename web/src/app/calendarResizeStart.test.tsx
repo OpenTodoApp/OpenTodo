@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { getTask } from '../lib/localData'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { flush, key, render } from '../ui/test-utils'
+import { key, render, waitFor } from '../ui/test-utils'
 import { useBulkToast } from './bulk/toastStore'
 import { CalendarView } from './CalendarView'
 import { PX_PER_MIN } from './calendar/grid'
@@ -35,10 +35,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 
 /** The day column starts at y 0; the block sits where its minutes put it. */
 function layout(start: number, length: number) {
@@ -73,11 +69,12 @@ describe('the upper edge of a block', () => {
     const block = r.container.querySelector(`[data-block="${id}"]`)!
     expect(block.querySelector('[data-resize-start-handle]')).toBeTruthy()
     await drag(block, y(10 * 60) + 1, y(9 * 60 + 30))
-    await waitFor(async () => (await getTask(id))?.due?.time === '09:30')
+    await waitFor(async () => (await getTask(id))?.due?.time === '09:30', 'the new start')
     const task = await getTask(id)
     expect(task?.due).toEqual({ date: DAY, time: '09:30' })
     expect(task?.estimate_minutes).toBe(90)
-    expect(document.querySelector('[data-test-toast]')!.textContent).toBe('Rescheduled')
+    // The toast follows the write's commit.
+    await waitFor(() => document.querySelector('[data-test-toast]')!.textContent === 'Rescheduled', 'the Undo toast')
     await r.unmount()
   })
 

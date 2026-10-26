@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // settings-redesign: unlinking confirms first; the link flow confirms on /settings/security.
 import { describe, expect, it, vi } from 'vitest'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { LinkedAccountsPanel } from './SsoPanel'
 
 const api = vi.hoisted(() => ({
@@ -18,16 +18,16 @@ describe('LinkedAccountsPanel', () => {
   it('shows the ?linked confirmation and unlinks only after confirming', async () => {
     history.replaceState(null, '', '/settings/security?linked=1')
     const { container, unmount } = await render(<LinkedAccountsPanel />)
-    await flush(30)
+    await waitFor(() => !!container.querySelector('[aria-label="Actions for me@example.com"]'), 'the linked account')
     expect(container.textContent).toContain('Linked. You can now sign in with the provider.')
     await click(container.querySelector('[aria-label="Actions for me@example.com"]')!)
-    await flush(30)
+    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((i) => i.textContent?.includes('Unlink')), 'the actions menu')
     await click([...document.querySelectorAll('[role="menuitem"]')].find((i) => i.textContent?.includes('Unlink'))!)
-    await flush(30)
+    await waitFor(() => !!document.querySelector('[data-testid="confirm-dialog"]'), 'the confirmation')
     expect(api.unlinkIdentity).not.toHaveBeenCalled()
     const dialog = document.querySelector('[data-testid="confirm-dialog"]')!
     await click([...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Unlink')!)
-    await flush(30)
+    await waitFor(() => api.unlinkIdentity.mock.calls.length > 0, 'the unlink request')
     expect(api.unlinkIdentity).toHaveBeenCalledWith('i1')
     await unmount()
   })
@@ -35,7 +35,7 @@ describe('LinkedAccountsPanel', () => {
   it('shows the error from the link flow', async () => {
     history.replaceState(null, '', '/settings/security?error=identity_taken')
     const { container, unmount } = await render(<LinkedAccountsPanel />)
-    await flush(30)
+    await waitFor(() => !!container.querySelector('[role="alert"]'), 'the error')
     expect(container.querySelector('[role="alert"]')?.textContent).toMatch(/already linked/)
     await unmount()
   })

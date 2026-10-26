@@ -10,7 +10,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { hideBulkToast } from './bulk/toastStore'
 import { UndoToast } from './bulk/UndoToast'
 import { resetCollapsedGroups } from './collapsedGroups'
@@ -38,10 +38,6 @@ afterEach(async () => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const toast = () => document.querySelector('[data-bulk-toast]')?.textContent ?? ''
 const earlierSection = () => document.querySelector('[data-group="earlier"]')
 const rowsIn = (el: Element | null) => (el ? [...el.querySelectorAll('[data-task-id]')].map((r) => (r as HTMLElement).dataset.taskId) : [])

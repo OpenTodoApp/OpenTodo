@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readCalendarMode } from '../lib/calendarMode'
 import { db, setMeta } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render, minWidthPx } from '../ui/test-utils'
+import { click, flush, key, render, minWidthPx, waitFor } from '../ui/test-utils'
 import { CalendarView } from './CalendarView'
 import { panelOccupant, resetPanel } from './panel'
 import { PanelHost } from './PanelHost'
@@ -30,15 +30,11 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('one Calendar destination', () => {
   it('remembers Day or Week for /calendar and renders the range controls in the page header', async () => {
     const r = await render(<CalendarView mode="week" />)
-    await flush(50)
+    await waitFor(() => localStorage.getItem('ot.calendar.mode') === 'week', 'the mode remembered')
     expect(localStorage.getItem('ot.calendar.mode')).toBe('week')
     expect(readCalendarMode()).toBe('week')
     expect(parseRoute('/calendar')).toEqual({ view: 'week' })
@@ -52,7 +48,7 @@ describe('one Calendar destination', () => {
     expect(header.querySelector('[data-help-screen="calendar"]')).toBeTruthy()
 
     await r.rerender(<CalendarView mode="day" />)
-    await flush(20)
+    await waitFor(() => readCalendarMode() === 'day', 'Day remembered')
     expect(readCalendarMode()).toBe('day')
     expect(parseRoute('/calendar')).toEqual({ view: 'day' })
     await r.unmount()
@@ -63,15 +59,15 @@ describe('one Calendar destination', () => {
     const home = await createProject({ name: 'Home' })
     await createTask({ title: 'Paint the fence', project_id: home })
     const r = await render(<><CalendarView mode="day" /><PanelHost /></>)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-page-header] button[aria-label="More actions"]'), 'the page header')
     expect(document.querySelector('[data-panel-frame]')).toBeNull()
 
     await click(r.container.querySelector('[data-page-header] button[aria-label="More actions"]')!)
-    await flush(30)
+    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((e) => e.textContent?.includes('Plan from a list')), 'the actions menu')
     const plan = [...document.querySelectorAll('[role="menuitem"]')].find((e) => e.textContent?.includes('Plan from a list'))!
     expect(plan).toBeTruthy()
     await click(plan)
-    await flush(30)
+    await waitFor(() => { const o = panelOccupant(); return o?.kind === 'custom' && o.key === 'calendar-plan' }, 'the planning list in the panel')
     expect(panelOccupant()).toMatchObject({ kind: 'custom', key: 'calendar-plan' })
     await waitFor(() => document.querySelector('[data-panel-frame="calendar-plan"] [data-tray-task]') !== null)
     const frame = document.querySelector('[data-panel-frame="calendar-plan"]')!
@@ -80,7 +76,6 @@ describe('one Calendar destination', () => {
     const source = frame.querySelector('button[aria-label="Plan from"]')!
     expect(source.textContent).toContain('Inbox')
     await click(source)
-    await flush(30)
     await waitFor(() => document.querySelector('[role="option"]') !== null)
     await click([...document.querySelectorAll('[role="option"]')].find((e) => e.textContent?.trim() === 'Home')!)
     await waitFor(() => [...frame.querySelectorAll('[data-tray-task]')].map((b) => b.textContent).join() === 'Paint the fence')
@@ -132,6 +127,7 @@ describe('calendar events', () => {
     ev.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientY: 10 }))
     window.dispatchEvent(new PointerEvent('pointermove', { clientY: 200 }))
     window.dispatchEvent(new PointerEvent('pointerup', { clientY: 200 }))
+    // A fixed wait on purpose: it proves that nothing is written, and no event marks "no write".
     await flush(30)
     expect(await db.outbox.count()).toBe(before)
     expect(ev.tabIndex).toBe(0)
@@ -230,7 +226,7 @@ describe('surfaces (surfaces-v2, time-blocking "Filled blocks")', () => {
     // Dimmed is not disabled: the selected past block moves fifteen minutes with Down.
     await click(block)
     await key(document.body, 'ArrowDown')
-    for (let i = 0; i < 50 && (await db.tasks.get(past))!.due?.time !== '10:15'; i++) await flush(20)
+    await waitFor(async () => (await db.tasks.get(past))?.due?.time === '10:15', 'moved fifteen minutes')
     expect((await db.tasks.get(past))!.due).toEqual({ date: '2026-10-13', time: '10:15' })
     await r.unmount()
   })
