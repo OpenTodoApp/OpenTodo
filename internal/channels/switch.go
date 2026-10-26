@@ -11,7 +11,9 @@ import (
 // the owner turned it off.
 const SettingKey = "notifications.channels"
 
-func newSwitch(db *sql.DB, log *slog.Logger) *settings.Switch {
+// NewSwitch is the owner switch over db. A Service holds its own (Switch); a
+// server without the service (a demo instance) still serves the setting's routes.
+func NewSwitch(db *sql.DB, log *slog.Logger) *settings.Switch {
 	return settings.NewSwitch(db, SettingKey, settings.SwitchOptions{Default: true, Log: log})
 }
 

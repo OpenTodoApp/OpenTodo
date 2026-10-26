@@ -46,54 +46,9 @@ func inlineType(mt string) bool {
 	return inlineTypes[mt] || strings.HasPrefix(mt, "audio/") || strings.HasPrefix(mt, "video/")
 }
 
-// registerAttachmentRoutes mounts the routes and wires the blob store into sync.
+// registerAttachmentRoutes mounts the routes (services.Build wires the blob
+// store into sync and imports).
 func (s *Server) registerAttachmentRoutes(mux *routes) {
-	if s.blobs == nil && s.cfg.DataDir != "" {
-		b, err := blobs.New(s.cfg.DataDir)
-		if err != nil {
-			s.log.Error("attachments: file store unavailable", "err", err)
-		} else {
-			s.blobs = b
-		}
-	}
-	if s.blobs != nil {
-		s.sync.SetBlobStore(s.blobs)
-		s.importer.SetBlobs(s.blobs, func(ctx context.Context, uid string) (int64, int64, error) {
-			a, err := s.attachmentSettings(ctx)
-			if err != nil || !a.Enabled {
-				return 0, 0, err
-			}
-			left := int64(-1)
-			if q := a.QuotaBytes(); q > 0 {
-				used, err := s.attachmentUsage(ctx, uid)
-				if err != nil {
-					return 0, 0, err
-				}
-				left = max(0, q-used)
-			}
-			return a.MaxFileBytes(), left, nil
-		})
-	}
-	s.sync.SetAttachmentLimit(func() int64 {
-		a, err := s.attachmentSettings(context.Background())
-		if err != nil {
-			return 0
-		}
-		return a.MaxFileBytes()
-	})
-	s.sync.SetAttachmentQuota(func() int64 {
-		a, err := s.attachmentSettings(context.Background())
-		if err != nil {
-			return 0
-		}
-		return a.QuotaBytes()
-	})
-	if err := s.settings.SeedAttachments(context.Background(), s.cfg.AttachmentsMaxFileMB, s.cfg.AttachmentsQuotaMB); err != nil {
-		s.log.Error("attachments: presets", "err", err)
-	}
-	if s.attachmentLimiter == nil {
-		s.attachmentLimiter = newRateLimiter(120, time.Hour)
-	}
 	mux.handle("GET /api/v1/settings/attachments", signedIn.demoDenied(), s.handleGetAttachmentSettings)
 	mux.handle("PUT /api/v1/settings/attachments", ownerOnly("manage the attachment settings").demoDenied(), s.handlePutAttachmentSettings)
 	mux.handle("GET /api/v1/tasks/{id}/attachments", signedIn.demoDenied(), s.handleListAttachments)
@@ -110,31 +65,12 @@ func WithAttachmentRateLimit(n int, window time.Duration) Option {
 }
 
 func (s *Server) attachmentSettings(ctx context.Context) (settings.Attachments, error) {
-	a, err := s.settings.Attachments(ctx)
-	if s.demo != nil {
-		// The demo instance refuses every attachment route (design D15).
-		a.Enabled = false
-	}
-	return a, err
+	return s.set.AttachmentSettings(ctx)
 }
 
-// attachmentUsage is the bytes an account's live, uploaded attachments take
-// (design D5: the quota counts what the account authored). A removal frees its
-// bytes at once; restoring is checked against the quota again by sync
-// (attachment-client-hardening D1).
+// attachmentUsage is the bytes an account's attachments take (services.Set.AttachmentUsage).
 func (s *Server) attachmentUsage(ctx context.Context, uid string) (int64, error) {
-	rows, err := s.sync.List(ctx, uid, "attachment", false)
-	if err != nil {
-		return 0, err
-	}
-	var total int64
-	for _, a := range rows {
-		if idOf(a["author_id"]) != uid || isNullish(a["uploaded_at"]) {
-			continue
-		}
-		total += int64(numberOf(a["size"]))
-	}
-	return total, nil
+	return s.set.AttachmentUsage(ctx, uid)
 }
 
 // attachmentInfo is the /me block and the GET settings body for a member.

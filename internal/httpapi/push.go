@@ -20,10 +20,6 @@ import (
 // the client's reported zone offset and the server-side recomputation of
 // relative reminders when a REST write moves a task's due date.
 
-// WithPush enables the /api/v1/push routes. Without it, or with OPENTODO_PUSH=off,
-// the routes are not registered and answer 404 not_found like any unknown route.
-func WithPush(p *push.Service) Option { return func(s *Server) { s.push = p } }
-
 func (s *Server) pushEnabled() bool { return s.push != nil && !s.cfg.PushDisabled }
 
 func (s *Server) registerPushRoutes(mux *routes) {

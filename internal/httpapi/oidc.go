@@ -25,10 +25,6 @@ const oidcStateCookie = "ot_oidc"
 
 const oidcCallbackPath = "/api/v1/auth/oidc/callback"
 
-// WithOIDC (an Option) supplies the single sign-on service; New builds a
-// default one from the configuration when it is absent.
-func WithOIDC(svc *oidc.Service) Option { return func(s *Server) { s.oidc = svc } }
-
 func (s *Server) registerOIDCRoutes(mux *routes) {
 	mux.handle("GET /api/v1/auth/oidc/start", public("single sign-on starts before there is a session").demoDenied(), s.handleOIDCStart)
 	mux.handle("GET "+oidcCallbackPath, public("the provider redirects the browser back here").demoDenied(), s.handleOIDCCallback)

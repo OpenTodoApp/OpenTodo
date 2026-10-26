@@ -12,10 +12,6 @@ import (
 	"github.com/pixari/opentodo/internal/mail"
 )
 
-// WithMail (an Option) supplies outgoing email (OpenSpec `outgoing-email`). A
-// nil service, as on a demo instance, means "not configured" everywhere.
-func WithMail(m *mail.Service) Option { return func(s *Server) { s.mail = m } }
-
 // Test messages per account (design D7, as the push test).
 const (
 	smtpTestLimit  = 5

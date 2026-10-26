@@ -7,12 +7,6 @@ import (
 	"github.com/pixari/opentodo/internal/audit"
 )
 
-// WithHosted marks a tenant served by a host (OpenSpec `multi-tenant-host`,
-// design D4, D7): the operator-level settings in hostRules answer 403
-// host_managed, auth/status says hosted, and the owner can download the
-// tenant as a backup archive.
-func WithHosted() Option { return func(s *Server) { s.hosted = true } }
-
 // hostRules are the settings a host's operator owns (design D4). writes
 // limits a rule to methods other than GET and HEAD, where reading the current
 // value is harmless and the app needs it (whether MCP or the assistant is on).
@@ -73,10 +67,6 @@ func (s *Server) registerHostedRoutes(mux *routes) {
 // token: the archive holds every account's credentials (route policy,
 // route-authorization-policy).
 func (s *Server) handleArchiveDownload(w http.ResponseWriter, r *http.Request) {
-	if s.backups == nil {
-		writeError(w, http.StatusServiceUnavailable, "unavailable", "archives are not available on this server")
-		return
-	}
 	ctx := r.Context()
 	name, err := s.backups.ExportName(ctx)
 	if err != nil {

@@ -25,14 +25,7 @@ import (
 // mcpMaxBody caps an MCP request body (spec "Limits and no outbound calls").
 const mcpMaxBody = 1 << 20
 
-// WithMCPSettings shares the owner's MCP toggle with the caller (main seeds the
-// OPENTODO_MCP preset through it). Without it New builds its own.
-func WithMCPSettings(m *mcp.Settings) Option { return func(s *Server) { s.mcpSettings = m } }
-
 func (s *Server) registerMCPRoutes(mux *routes) {
-	if s.mcpSettings == nil {
-		s.mcpSettings = mcp.NewSettings(s.sync.DB())
-	}
 	s.agentAccess = agenttools.NewAccess(s.sync.DB())
 	s.agentExclusions = agenttools.NewExclusions(s.sync.DB())
 	s.agentTools = agenttools.New(s.sync, agenttools.Options{

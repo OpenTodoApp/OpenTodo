@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -15,11 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // restoreEnv is backupEnv with a settable free-space probe and a restart hook.
@@ -39,17 +37,16 @@ func newRestoreEnv(t *testing.T) *restoreEnv {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	re.bk = backup.New(db, re.dir, backup.Options{Version: "test", Log: log, FreeSpace: func(string) (int64, bool) {
+	set := testSet(t, config.Config{SessionTTL: time.Hour}, db, services.Options{})
+	syncSvc := set.Sync
+	re.bk = backup.New(db, re.dir, backup.Options{Version: "test", Log: set.Log, FreeSpace: func(string) (int64, bool) {
 		return re.free, re.free >= 0
 	}})
 	re.bk.SetRestartFunc(func() { re.restarted = true })
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, false), syncSvc, nil, log, "test", WithBackups(re.bk))
+	set.Backups = re.bk
+	h := New(set, nil)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
 	re.env = &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}
 	resp, out := re.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})

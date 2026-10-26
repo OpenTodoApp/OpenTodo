@@ -4,15 +4,12 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"net/url"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/maps"
-	ob "github.com/pixari/opentodo/internal/outbound"
 )
 
 // Maps (OpenSpec change task-locations, design D4, D6): the server proxies the
@@ -24,15 +21,7 @@ import (
 // mapSearchesPerMinute is the per-user search limit (design D4).
 const mapSearchesPerMinute = 30
 
-// WithMaps hands the server a map proxy (tests use a fake provider).
-func WithMaps(m *maps.Service) Option { return func(s *Server) { s.maps = m } }
-
 func (s *Server) registerMapRoutes(mux *routes) {
-	if s.maps == nil {
-		client := ob.NewClient(&ob.Dialer{AllowPrivateHost: s.mapsPrivateHost}, 10*time.Second, ob.FollowRedirects(3))
-		s.maps = maps.New(s.settings, s.cfg.Maps, s.cfg.Demo, client,
-			maps.NewCache(filepath.Join(s.cfg.DataDir, "cache", "maps"), maps.DefaultCacheBytes), s.version)
-	}
 	s.mapsLimiter = newRateLimiter(mapSearchesPerMinute, time.Minute)
 	read := signedIn.fullTokens()
 	mux.handle("GET /api/v1/maps/style", read, s.handleMapStyle)
@@ -48,29 +37,6 @@ func (s *Server) registerMapRoutes(mux *routes) {
 	mux.handle("GET /api/v1/places", signedIn, s.handleListPlaces)
 }
 
-// mapsPrivateHost decides which map hosts may be on a private network. On a
-// self-hosted server the owner may run the tile server or Photon on the local
-// network, so the two hosts the owner typed are allowed; addresses the
-// provider's style hands out (tiles, fonts, sprites) and redirects to other
-// hosts go through the normal deny list, so a provider cannot point the server
-// at the local network. A hosted tenant's owner is not the operator: nothing
-// on the host's network is reachable (private-network-reach D1).
-func (s *Server) mapsPrivateHost(ctx context.Context, host string) bool {
-	if s.hosted || s.maps == nil {
-		return false
-	}
-	e, err := s.maps.Effective(ctx)
-	if err != nil {
-		return false
-	}
-	for _, raw := range []string{e.TilesURL, e.GeocoderURL} {
-		if u, err := url.Parse(raw); err == nil && strings.EqualFold(u.Hostname(), host) {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *Server) handleListPlaces(w http.ResponseWriter, r *http.Request) {
 	list, err := s.sync.List(r.Context(), userFrom(r.Context()).ID, "place", false)
 	if err != nil {
@@ -82,9 +48,6 @@ func (s *Server) handleListPlaces(w http.ResponseWriter, r *http.Request) {
 
 // mapsAvailable is what /api/v1/me tells clients: whether maps are on for the server.
 func (s *Server) mapsAvailable(ctx context.Context) bool {
-	if s.maps == nil {
-		return false
-	}
 	e, err := s.maps.Effective(ctx)
 	if err != nil {
 		s.log.Error("read maps setting", "err", err)

@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"net/http"
 )
 
@@ -120,7 +119,6 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Trash and history (OpenSpec `trash-and-history`).
 	s.registerTrashRoutes(mux)
 	// CalDAV (OpenSpec `caldav`): app passwords, the owner toggle and /dav/.
-	s.seedCaldav(context.Background())
 	s.registerCaldavRoutes(mux)
 	s.registerCalendarFeedRoutes(mux)
 	// Issue import (OpenSpec `issue-connections`); before MCP, whose resource reads it.

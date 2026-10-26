@@ -26,8 +26,6 @@ import (
 // calendars shown in Day and Week, and the user's tasks as a calendar feed. One
 // owner switch, off by default, governs both (design D1).
 
-const calendarFeedsSettingKey = "calendar_feeds.enabled"
-
 // Request limits (design D5, D7).
 const (
 	maxEventDays      = 92
@@ -37,23 +35,9 @@ const (
 	maxSubscriptionNm = 200
 )
 
-// WithCalendarFeeds hands the server the worker that fetches subscriptions, so
-// inline fetches and the background job share one store and policy.
-func WithCalendarFeeds(w *calfeed.Worker) Option { return func(s *Server) { s.calWorker = w } }
-
 func (s *Server) registerCalendarFeedRoutes(mux *routes) {
-	if s.calWorker == nil {
-		allow := func(context.Context) bool { return false }
-		if s.hooks != nil {
-			allow = s.hooks.AllowPrivate
-		}
-		s.calWorker = &calfeed.Worker{Store: calfeed.NewStore(s.sync.DB()), Fetcher: calfeed.NewFetcher(allow, s.version), Log: s.log}
-	}
-	s.calWorker.Enabled = s.calFeedsOn.On
-	s.calWorker.Notify = s.sync.Notifier().NotifyCalendar
 	s.calFetchLimiter = newRateLimiter(handFetchesPerHr, time.Hour)
 	s.feedLimiter = newRateLimiter(feedFetchesPerHr, time.Hour)
-	s.seedCalendarFeeds(context.Background())
 
 	s.switchRoutes(mux, "/api/v1/settings/calendar-feeds", switchRoute{sw: s.calFeedsOn,
 		get: signedIn.demoDenied(), put: ownerOnly("manage the calendar feeds setting").demoDenied()})
@@ -67,16 +51,6 @@ func (s *Server) registerCalendarFeedRoutes(mux *routes) {
 	mux.handle("POST /api/v1/calendar-feeds/feed", signedIn.recent().demoDenied(), s.feedsGate(s.handleRotateFeed))
 	mux.handle("DELETE /api/v1/calendar-feeds/feed", signedIn.demoDenied(), s.feedsGate(s.handleRevokeFeed))
 	mux.handle("GET /feeds/{secret}/tasks.ics", public("calendar apps authenticate with the secret in the address").demoDenied(), s.handleTaskFeed)
-}
-
-// CalendarWorker is the background fetcher, run by the jobs leader.
-func (s *Server) CalendarWorker() *calfeed.Worker { return s.calWorker }
-
-// seedCalendarFeeds applies the OPENTODO_CALENDAR_FEEDS preset on first start only.
-func (s *Server) seedCalendarFeeds(ctx context.Context) {
-	if _, err := s.calFeedsOn.Seed(ctx, s.cfg.CalendarFeeds); err != nil {
-		s.log.Error("seed calendar feeds setting", "err", err)
-	}
 }
 
 // eventsGate lets the events route answer while calendar feeds or calendar
