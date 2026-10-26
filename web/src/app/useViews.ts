@@ -1,12 +1,11 @@
 // Live data shared by the saved-view screens (OpenSpec `custom-views`): every
 // non-deleted view, task, project and label as live queries, plus the evaluation
 // context for lib/views. Local edits and synced ops re-render without a reload.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useAllLabels, useProjects, useViewRows } from '../lib/localData'
 import { logicalToday, onViewerZoneChange, viewerZone } from '../lib/dates'
 import type { Label, Project, Task, View } from '../lib/types'
-import { activeViews, getStartView, type StartView, type ViewContext } from '../lib/views'
+import { activeViews, type ViewContext } from '../lib/views'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { useTrackedTotals } from '../lib/timeEntries'
 import { useFieldDefs } from './useFields'
@@ -47,9 +46,7 @@ export function useViews(): View[] {
 }
 
 /** This device's start view (local meta, never synced). */
-export function useStartView(): StartView {
-  return useLiveQuery(() => getStartView(), [], 'inbox' as StartView)
-}
+export { useStartView } from '../lib/views'
 
 export interface ViewData {
   views: View[]

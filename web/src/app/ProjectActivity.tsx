@@ -1,13 +1,12 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { Tooltip } from '../ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { describeEvent, fetchActivity, guestActorLabel, isPending, KIND_FILTERS, mergeOlder, pendingOpIds, projectActivity } from '../lib/activity'
+import { describeEvent, fetchActivity, guestActorLabel, isPending, KIND_FILTERS, mergeOlder, usePendingOpIds, useProjectActivity } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
-import { useAllProjects, useProjectTaskRows } from '../lib/localData'
+import { useAllProjects, useProjectTaskRows, useMembershipMap } from '../lib/localData'
 import { markSeen } from '../lib/feed'
 import { useOnline } from '../lib/online'
-import { currentUserId, memberName, membershipMap } from '../lib/sharing'
-import type { ActivityEvent, Membership, Project } from '../lib/types'
+import { memberName, useMe } from '../lib/sharing'
+import type { ActivityEvent, Project } from '../lib/types'
 import { openTask } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useFieldDefs } from './useFields'
@@ -28,10 +27,10 @@ export function ProjectActivity({ project }: { project: Project }) {
 function ActivityList({ project }: { project: Project }) {
   const dt = useDateTimeFormat()
   const online = useOnline()
-  const me = useLiveQuery(() => currentUserId(), [], null)
-  const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
-  const local = useLiveQuery(() => projectActivity(project.id), [project.id], [] as ActivityEvent[])
-  const pending = useLiveQuery(() => pendingOpIds(), [], new Set<string>())
+  const me = useMe()
+  const memberships = useMembershipMap()
+  const local = useProjectActivity(project.id)
+  const pending = usePendingOpIds()
   const tasks = useProjectTaskRows(project.id)
   const projects = useAllProjects()
   const [older, setOlder] = useState<ActivityEvent[]>([])

@@ -7,6 +7,7 @@
 // `activity` table (author, old value, project), so the history works offline;
 // events are derived from those rows when a view reads them. Each project keeps
 // at most LOCAL_RETENTION events; older ones come from the server on demand.
+import { useLiveQuery } from 'dexie-react-hooks'
 import Dexie from 'dexie'
 import { api } from './api'
 import { decryptActivityPage } from './e2ee'
@@ -369,3 +370,18 @@ export const KIND_FILTERS: KindFilter[] = translatedList<KindFilter, 'label'>([
   { value: 'deleted', label: msg('Deleted / restored'), kinds: ['deleted', 'restored'] },
   { value: 'edited', label: msg('Other edits'), kinds: ['edited', 'archived', 'unarchived'] },
 ], 'label')
+
+/** The ids of this device's ops not yet sent, live (none until read). */
+export function usePendingOpIds(): Set<string> {
+  return useLiveQuery(() => pendingOpIds(), [], new Set<string>())
+}
+
+/** A project's activity from local data, live (none until read). */
+export function useProjectActivity(projectId: string): ActivityEvent[] {
+  return useLiveQuery(() => projectActivity(projectId), [projectId], [] as ActivityEvent[])
+}
+
+/** A task's activity from local data, live (none until read). */
+export function useTaskActivity(taskId: string): ActivityEvent[] {
+  return useLiveQuery(() => taskActivity(taskId), [taskId], [] as ActivityEvent[])
+}

@@ -4,13 +4,12 @@
 // open). Each decision is the same operation the list writes, with its Undo
 // toast, so it applies locally first, works offline and converges like any edit.
 import { useWithMethod } from './help/MethodLink'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, ComboboxPanel, EmptyState, Notice, PageBody, PageHeader, Dialog } from '../ui'
 import { formatDate, formatDueLong, logicalToday } from '../lib/dates'
 import { useAllLabels, useMemberships, useProjects, useReminderRows } from '../lib/localData'
 import { moveTaskAcrossScopes } from '../lib/ops'
-import { currentUserId } from '../lib/sharing'
+import { useMe } from '../lib/sharing'
 import { advance, advanceQueue, back, current, positionText, progress, startTriage, type TriageState } from '../lib/triage'
 import { useLiveTasks } from '../lib/liveTasks'
 import type { Membership, Project, Task } from '../lib/types'
@@ -62,7 +61,7 @@ export function TriageView() {
   const projects = useProjects()
   const labels = useAllLabels()
   const memberships = useMemberships()
-  const me = useLiveQuery(() => currentUserId(), [], null)
+  const me = useMe()
   const openId = usePanelTaskId()
   // The card keeps the opened task beside it from 1024 px instead of leaving for the task page (task-full-page D3).
   useEffect(() => setTaskSplit(true), [])
