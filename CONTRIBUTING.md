@@ -36,6 +36,10 @@ make build          # production binary in bin/opentodo with the web app embedde
 
 Tests live next to the code: `internal/**/*_test.go` and `web/src/**/*.test.ts`. Web tests never reach the network: `web/src/test-setup.ts` fails a test that calls `fetch` without mocking it (`mockFetch` in `web/src/ui/test-utils.tsx`, or `vi.stubGlobal('fetch', ...)`), and interaction tests wait for what they assert with `waitFor` from the same file rather than a fixed sleep. `make web-lint` (in `make check`) runs ESLint with the Rules of Hooks and effect dependencies as errors; a suppression needs its reason after `--`. It also fails on a component, hook or helper longer than 250 lines (tests and stories excepted): split it into hooks, pure functions in `web/src/lib` and smaller bodies, as `web/src/app/task-list/` does for the task list; the few older long functions are listed in `web/eslint.config.js` with a ceiling that must not go up. The sync engine has order-independence and idempotency tests on both sides; keep them passing and extend them when touching merge logic.
 
+## CI tiers
+
+A pull request runs a fast tier picked by the paths it changes (`scripts/ci-changes.sh`): the checks always; for code the web, server and image jobs and one linux/amd64 binary; one Chromium layout and end-to-end job when the app, the server or their scripts change; the Storybook accessibility and visual checks when `web/src` or the workbench change; Android, extension and skill jobs only for their own directories; docs alone run the checks and the docs website. A push to `main` or a release tag runs every job and leg (WebKit, German and French layouts, all six binaries) before anything is published. The report-only interface audit runs nightly, or on demand from the Actions tab (`ux-audit.yml`); the race detector and the upgrade check run nightly too (`nightly.yml`).
+
 ## Code style
 
 - Go: `gofmt`, `go vet`, standard library first. Errors are wrapped with context. Handlers return the JSON error envelope `{ "error": { "code", "message" } }`.
