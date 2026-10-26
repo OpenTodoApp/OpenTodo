@@ -14,10 +14,10 @@
 ## 2. A check that keeps it fixed
 
 - [x] 2.1 Add `tabRowOverflow()` to `scripts/ux-audit/measure.mjs`: zero tolerance, it reports every `[role="tablist"]` with `scrollHeight > clientHeight` or a computed `overflow-y` other than `hidden` (design D4). Call it in `scripts/e2e-layout.mjs` next to `verticalScrollers` for screens and overlays. Verify: on a checkout of `main` before 1.1 the layout check fails, naming the task panel's tab row; after 1.1 it passes (`make layout-check`).
-- [ ] 2.2 Update the visual baselines that moved, if any (`make ui-baselines` locally, or the CI artifact flow), after inspecting each diff. Verify: `make ui-check` passes, and every changed baseline shows only the tab row.
+- [x] 2.2 Update the visual baselines that moved, if any (`make ui-baselines` locally, or the CI artifact flow), after inspecting each diff. Verify: `make ui-check` passes, and every changed baseline shows only the tab row.
 
 ## 3. Release
 
 - [x] 3.1 Add a CHANGELOG.md entry under Unreleased ("Tab rows no longer show a stray vertical scrollbar", Fixes #445). Verify: `npm run docs:check`.
-- [ ] 3.2 Run `make check` and `make openspec-validate`. Verify: both pass.
-- [ ] 3.3 After the PR is merged, reply on issue #445 with a short, friendly note: what caused the scrollbar, what changed, and which release it lands in. Then close the issue. Verify: `gh issue view 445 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
+- [x] 3.2 Run `make check` and `make openspec-validate`. Verify: both pass.
+- [x] 3.3 After the PR is merged, reply on issue #445 with a short, friendly note: what caused the scrollbar, what changed, and which release it lands in. Then close the issue. Verify: `gh issue view 445 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
