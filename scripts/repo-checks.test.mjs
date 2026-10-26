@@ -353,6 +353,14 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   assert.match(nightly, /^ {2}schedule:\n {4}- cron: /m)
   assert.match(nightly, /go test -race /)
   assert.match(nightly, /run: scripts\/fuzz\.sh /, 'the fuzz targets run nightly')
+  // A red night opens or updates the ci-nightly issue; a green one closes it.
+  const alert = jobsOf(nightly).alert ?? ''
+  assert.match(alert, /^ {4}if: \$\{\{ always\(\) /m, 'the nightly alert runs whatever the other jobs did')
+  assert.match(alert, /^ {6}issues: write$/m, 'the nightly alert may write issues')
+  assert.match(alert, /run: \.\/scripts\/nightly-alert\.sh$/m)
+  for (const id of Object.keys(jobsOf(nightly))) {
+    if (id !== 'alert') assert.ok(needsOf(alert).includes(id), `the nightly alert must need ${id}`)
+  }
 })
 
 test('Dependabot keeps every pinned ecosystem current', () => {
