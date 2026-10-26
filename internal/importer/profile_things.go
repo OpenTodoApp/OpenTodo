@@ -108,11 +108,17 @@ func (t *thingsReader) check() error {
 	}
 	for rows.Next() {
 		var n string
-		if rows.Scan(&n) == nil {
-			have[n] = true
+		if err := rows.Scan(&n); err != nil {
+			rows.Close()
+			return &FileError{fmt.Sprintf("cannot read the database: %v", err)}
 		}
+		have[n] = true
 	}
+	err = rows.Err()
 	rows.Close()
+	if err != nil {
+		return &FileError{fmt.Sprintf("cannot read the database: %v", err)}
+	}
 	for _, want := range []string{"TMTask", "TMArea", "TMTag", "TMTaskTag", "TMChecklistItem", "Meta"} {
 		if !have[want] {
 			return &FileError{"not a Things database (the Things tables are missing)"}
@@ -218,7 +224,11 @@ func (t *thingsReader) readTags() (map[string][]string, error) {
 		}
 		tagName[id], tagParent[id] = strings.TrimSpace(title), parent
 	}
+	err = rows.Err()
 	rows.Close()
+	if err != nil {
+		return nil, err
+	}
 	fullTag := func(id string) string {
 		name, seen := tagName[id], map[string]bool{id: true}
 		for p := tagParent[id]; p != "" && !seen[p]; p = tagParent[p] {
@@ -242,8 +252,9 @@ func (t *thingsReader) readTags() (map[string][]string, error) {
 			tagsOf[task] = append(tagsOf[task], n)
 		}
 	}
+	err = rows.Err()
 	rows.Close()
-	return tagsOf, nil
+	return tagsOf, err
 }
 
 // readAreas adds the areas as parent projects and returns the last line number.
@@ -266,7 +277,7 @@ func (t *thingsReader) readAreas() (int, error) {
 		}
 		t.out.Rows = append(t.out.Rows, row)
 	}
-	return line, nil
+	return line, rows.Err()
 }
 
 // thingsTask is one TMTask row: a to-do (type 0), a project (1) or a heading (2).
@@ -297,7 +308,7 @@ func (t *thingsReader) readTasks() ([]thingsTask, error) {
 		}
 		tasks = append(tasks, k)
 	}
-	return tasks, nil
+	return tasks, rows.Err()
 }
 
 // thingsTrashed reports whether k, its heading or its project is in the trash.
@@ -344,7 +355,7 @@ func (t *thingsReader) readChecklist() (map[string][]Row, error) {
 		}
 		checklist[owner] = append(checklist[owner], r)
 	}
-	return checklist, nil
+	return checklist, rows.Err()
 }
 
 // todoRow is the task row of a to-do.

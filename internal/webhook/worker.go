@@ -121,7 +121,12 @@ func (s *Service) ProcessDue(ctx context.Context) int {
 		q.payload = []byte(payload)
 		batch = append(batch, q)
 	}
+	err = rows.Err()
 	rows.Close()
+	if err != nil {
+		s.log.Error("webhooks: poll failed", "err", err)
+		return 0
+	}
 	if len(batch) == 0 {
 		return 0
 	}
