@@ -123,24 +123,30 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
       {readOnly && <ReadOnlyNote />}
       {isSample(task) && !readOnly && <SampleNotice />}
       <div className="grid min-w-0 gap-x-10 gap-y-6 pb-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0 space-y-3 lg:col-start-1 lg:pt-4" data-task-content>
+        {/* The facts sit between the title and the notes in reading order, so below 1024 px the
+            card shows above a long note; from 1024 px they are the sticky column beside all
+            three blocks (task-panel-notes-below D3, GitHub issue 444). */}
+        <div className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-1 lg:pt-4" data-task-content>
           <div className="flex min-w-0 items-start gap-2">
             <TaskHead m={m} readOnly={readOnly} projects={projects} size="page" />
           </div>
           <TaskRelations m={m} onOpen={onOpen} />
-          <TaskNotes task={task} readOnly={readOnly} clamp={false} />
+        </div>
+        <aside aria-label={t('Facts')} className="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:sticky lg:top-(--panel-header-h) lg:self-start lg:border-l lg:border-soft lg:pl-8 lg:pt-4 max-lg:rounded-card max-lg:border max-lg:border-default md:max-lg:p-3 max-md:overflow-hidden" data-task-facts>
+          {/* Below 768 px the facts are one stacked card of 44 px rows (precision-phone D4). */}
+          <TaskFacts stacked={!desktop} task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
+            parent={m.parent ?? undefined} childCount={m.children.length} onOpen={onOpen} />
+        </aside>
+        {/* From 1024 px the notes follow the title as one block, as before: the grid's row gap is taken back. */}
+        <div className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-2 lg:-mt-3" data-task-notes-block>
+          <TaskNotes task={task} readOnly={readOnly} />
           {!readOnly && (
             <div className="flex items-center gap-1" data-content-tools>
               <AttachMenu taskId={task.id} />
             </div>
           )}
         </div>
-        <aside aria-label={t('Facts')} className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-(--panel-header-h) lg:self-start lg:border-l lg:border-soft lg:pl-8 lg:pt-4 max-lg:rounded-card max-lg:border max-lg:border-default md:max-lg:p-3 max-md:overflow-hidden" data-task-facts>
-          {/* Below 768 px the facts are one stacked card of 44 px rows (precision-phone D4). */}
-          <TaskFacts stacked={!desktop} task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
-            parent={m.parent ?? undefined} childCount={m.children.length} onOpen={onOpen} />
-        </aside>
-        <div className="min-w-0 space-y-4 lg:col-start-1" data-task-rest>
+        <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-3" data-task-rest>
           {/* Custom field values of the task's project (custom-fields). */}
           <FieldsGroup task={task} readOnly={readOnly} />
           <Subtasks task={task} items={m.children} progress={m.progress} readOnly={readOnly} boxed onToggle={m.toggle} onOpen={onOpen} />

@@ -11307,9 +11307,6 @@
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
   ],
-  "Show all": [
-    "web/src/app/task-detail/TaskNotes.tsx"
-  ],
   "Show all ({n})": [
     "web/src/app/ActivityPanel.tsx"
   ],
