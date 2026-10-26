@@ -98,7 +98,10 @@ func (s *Service) execute(ctx context.Context, kind, actorID string) Run {
 	if ierr := s.insertRun(ctx, &r); ierr != nil {
 		s.log.Error("backup: record run", "err", ierr)
 	}
-	s.setRunning(&r)
+	// The status route reads the run in progress while this goroutine keeps
+	// filling r in: publish a copy, never r itself (found by the nightly race run).
+	snapshot := r
+	s.setRunning(&snapshot)
 	defer s.setRunning(nil)
 
 	var warn error
