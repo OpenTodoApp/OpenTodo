@@ -23,6 +23,7 @@ const errorCodesFixture = "../../web/src/lib/i18n/server-error-codes.json"
 // oidcError and oidcFail, and the codes checkSubscriptionURL returns, and
 // compares them with the fixture. UPDATE_ERROR_CODES=1 rewrites the fixture.
 func TestErrorCodesFixture(t *testing.T) {
+	t.Parallel()
 	files, err := filepath.Glob("*.go")
 	if err != nil {
 		t.Fatal(err)

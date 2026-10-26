@@ -33,6 +33,7 @@ func (e *env) create(path string, body map[string]any) string {
 }
 
 func TestRulesRoutes(t *testing.T) {
+	t.Parallel()
 	e := rulesEnv(t, nil)
 	label := e.create("/api/v1/labels", map[string]any{"name": "waiting"})
 	project := e.create("/api/v1/projects", map[string]any{"name": "Work"})
@@ -101,6 +102,7 @@ func TestRulesRoutes(t *testing.T) {
 }
 
 func TestRulesLimit(t *testing.T) {
+	t.Parallel()
 	e := rulesEnv(t, nil)
 	for i := range rules.MaxRules {
 		e.create("/api/v1/rules", map[string]any{"name": "r" + string(rune('a'+i%26)), "trigger": map[string]any{"kind": "task.created"}, "actions": map[string]any{"priority": 1}})
@@ -113,6 +115,7 @@ func TestRulesLimit(t *testing.T) {
 }
 
 func TestAutomationsVariableWins(t *testing.T) {
+	t.Parallel()
 	off := false
 	e := rulesEnv(t, &off)
 	resp, out := e.do("GET", "/api/v1/settings/automations", nil)
@@ -130,6 +133,7 @@ func TestAutomationsVariableWins(t *testing.T) {
 // trash-and-history: a rule's batch reads "Rule (<name>)" for its author while
 // the rule exists, "Rule" once it is deleted.
 func TestHistoryLabelsRuleBatches(t *testing.T) {
+	t.Parallel()
 	e := rulesEnv(t, nil)
 	uid := e.userID()
 	rule := e.create("/api/v1/rules", map[string]any{"name": "Sunday sweep", "trigger": map[string]any{"kind": "task.created"}, "actions": map[string]any{"priority": 1}})

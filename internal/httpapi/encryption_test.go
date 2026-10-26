@@ -36,6 +36,7 @@ func ct(tag string) string {
 }
 
 func TestEncryptionKeysRoutesAuthAndConflict(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientAt(e, "10.9.9.9")
 	anon.client = &http.Client{}
@@ -142,6 +143,7 @@ func TestEncryptionKeysRoutesAuthAndConflict(t *testing.T) {
 }
 
 func TestPurgeHistoryKeepsWinnersOnly(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/encryption/purge-history", nil)
 	e.mustStatus(resp, 409, out)
@@ -253,6 +255,7 @@ func dbPath(t *testing.T, e *env) string {
 }
 
 func TestExportIncludesKeyRecord(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/export", nil)
 	e.mustStatus(resp, 200, out)
@@ -278,6 +281,7 @@ func TestExportIncludesKeyRecord(t *testing.T) {
 }
 
 func TestSharingRefusedForEncryptedAccount(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.alice.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
 	se.alice.mustStatus(resp, 201, out)
@@ -294,6 +298,7 @@ func TestSharingRefusedForEncryptedAccount(t *testing.T) {
 }
 
 func TestCaldavRefusedForEncryptedAccount(t *testing.T) {
+	t.Parallel()
 	e, dav := davSetup(t)
 	dav.must("PROPFIND", "/dav/", "", 207, "Depth", "0")
 	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
@@ -318,6 +323,7 @@ func TestCaldavRefusedForEncryptedAccount(t *testing.T) {
 // is accepted for an encrypted account (an unlocked device re-writes it later),
 // and a REST read returns whatever is current, ciphertext included.
 func TestRESTPlaintextWriteThenCiphertext(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
 	e.mustStatus(resp, 201, out)

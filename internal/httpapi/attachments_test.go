@@ -75,6 +75,7 @@ func attachmentSetup(t *testing.T) (*env, string, string) {
 }
 
 func TestAttachmentUploadAndDownload(t *testing.T) {
+	t.Parallel()
 	e, uid, task := attachmentSetup(t)
 	png := append([]byte("\x89PNG\r\n\x1a\n"), bytes.Repeat([]byte{7}, 100)...)
 	queueRow(e, "laptop", "a1", task, uid, "photo.png", "image/png", png)
@@ -134,6 +135,7 @@ func TestAttachmentUploadAndDownload(t *testing.T) {
 // TestAttachmentUploadWithDeviceClockAhead: a phone whose clock runs ahead
 // created the row; the server's uploaded_at still wins (issue #246).
 func TestAttachmentUploadWithDeviceClockAhead(t *testing.T) {
+	t.Parallel()
 	e, uid, task := attachmentSetup(t)
 	content := []byte("receipt bytes")
 	queueRowAt(e, time.Now().UnixMilli()+90_000, "phone", "a2", task, uid, "receipt.txt", "text/plain", content)
@@ -159,6 +161,7 @@ func TestAttachmentUploadWithDeviceClockAhead(t *testing.T) {
 }
 
 func TestAttachmentDangerousTypesAreDownloads(t *testing.T) {
+	t.Parallel()
 	e, uid, task := attachmentSetup(t)
 	for id, mt := range map[string]string{"h1": "text/html", "s1": "image/svg+xml"} {
 		content := []byte("<script>alert(1)</script>")
@@ -174,6 +177,7 @@ func TestAttachmentDangerousTypesAreDownloads(t *testing.T) {
 }
 
 func TestAttachmentLimitsAndAuth(t *testing.T) {
+	t.Parallel()
 	e, uid, task := attachmentSetup(t)
 	// Anonymous requests are refused.
 	anon := newClientAt(e, "10.9.9.9")
@@ -225,6 +229,7 @@ func TestAttachmentLimitsAndAuth(t *testing.T) {
 }
 
 func TestAttachmentNonAuthorUploadAndMemberSettings(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	content := []byte("receipt")
@@ -245,6 +250,7 @@ func TestAttachmentNonAuthorUploadAndMemberSettings(t *testing.T) {
 }
 
 func TestAttachmentCreateOverAPI(t *testing.T) {
+	t.Parallel()
 	e, _, task := attachmentSetup(t)
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
@@ -299,6 +305,7 @@ func TestAttachmentCreateOverAPI(t *testing.T) {
 }
 
 func TestAttachmentReadTokenAndRateLimit(t *testing.T) {
+	t.Parallel()
 	e := newEnvWith(t, false, WithAttachmentRateLimit(2, time.Hour))
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -327,6 +334,7 @@ func TestAttachmentReadTokenAndRateLimit(t *testing.T) {
 }
 
 func TestAttachmentExport(t *testing.T) {
+	t.Parallel()
 	e, uid, task := attachmentSetup(t)
 	content := []byte("export me")
 	queueRow(e, "laptop", "x1", task, uid, "notes.txt", "text/plain", content)
@@ -375,6 +383,7 @@ func TestAttachmentExport(t *testing.T) {
 // An encrypted file (design D8) is an opaque envelope: always a download, never
 // rendered, whatever its (ciphertext) type says.
 func TestEncryptedAttachmentServedAsOctetStream(t *testing.T) {
+	t.Parallel()
 	e, uid, task := attachmentSetup(t)
 	envelope := append([]byte("OTAT1"), bytes.Repeat([]byte{9}, 64)...)
 	queueRow(e, "laptop", "a-enc", task, uid, "enc:v1:bmFtZQ", "enc:v1:bWltZQ", envelope, true)

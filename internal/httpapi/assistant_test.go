@@ -215,6 +215,7 @@ func named(events []turnEvent, name string) []turnEvent {
 }
 
 func TestAssistantSettingsRoute(t *testing.T) {
+	t.Parallel()
 	e, _, svc := assistantEnv(t)
 	anon := newClientFor(e)
 	resp, out := anon.do("GET", "/api/v1/settings/assistant", nil)
@@ -356,6 +357,7 @@ func dbContains(t *testing.T, e *env, needle string) string {
 }
 
 func TestAssistantConsentRoute(t *testing.T) {
+	t.Parallel()
 	e, llm, _ := assistantEnv(t)
 	anon := newClientFor(e)
 	resp, out := anon.do("PUT", "/api/v1/me/assistant", map[string]any{"consent": true, "provider": "anthropic"})
@@ -415,6 +417,7 @@ func TestAssistantConsentRoute(t *testing.T) {
 }
 
 func TestUserDeletionRemovesOwnKeys(t *testing.T) {
+	t.Parallel()
 	e, llm, svc := assistantEnv(t)
 	e.enableAssistant(map[string]any{"allow_member_keys": true})
 	resp, out := e.do("PUT", "/api/v1/me/assistant", map[string]any{"own_key": "sk-ant-OWN-KEY-777"})
@@ -447,6 +450,7 @@ func TestUserDeletionRemovesOwnKeys(t *testing.T) {
 }
 
 func TestAssistantUsageRoute(t *testing.T) {
+	t.Parallel()
 	e, _, _ := assistantEnv(t)
 	resp, out := newClientFor(e).do("GET", "/api/v1/me/assistant/usage", nil)
 	if resp.StatusCode != 401 {
@@ -472,6 +476,7 @@ func TestAssistantUsageRoute(t *testing.T) {
 }
 
 func TestDemoRefusesAssistant(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	v, _ := d.visitor()
 	for _, r := range [][2]string{{"POST", "/api/v1/assistant/turn"}, {"PUT", "/api/v1/me/assistant"}, {"GET", "/api/v1/me/assistant"}, {"GET", "/api/v1/me/assistant/usage"}, {"PUT", "/api/v1/settings/assistant"}, {"POST", "/api/v1/settings/assistant/test"}} {
@@ -490,6 +495,7 @@ func TestDemoRefusesAssistant(t *testing.T) {
 // TestNoProviderTrafficWhenDisabled: the whole everyday flow, with keys even
 // configured but the assistant off, makes no outbound request at all.
 func TestNoProviderTrafficWhenDisabled(t *testing.T) {
+	t.Parallel()
 	rec := &outbound{}
 	var dials atomic.Int32
 	e := newEnvWith(t, true, WithAssistantSetup(func(s *assistant.Service) {
@@ -525,6 +531,7 @@ func TestNoProviderTrafficWhenDisabled(t *testing.T) {
 }
 
 func TestTurnRouteGuards(t *testing.T) {
+	t.Parallel()
 	e, llm, svc := assistantEnv(t)
 	if code, body, _ := e.turn(ask("hi")); code != 404 || errCode(body) != "not_found" {
 		t.Fatalf("disabled: %d %v", code, body)
@@ -616,6 +623,7 @@ func waitFor(t *testing.T, cond func() bool) {
 // TestTurnStreamsEvents: status, text, a change set, usage and done stream
 // back; the change set is not applied on the server.
 func TestTurnStreamsEvents(t *testing.T) {
+	t.Parallel()
 	e, llm, _ := assistantEnv(t)
 	e.enableAssistant(nil)
 	e.consentAssistant("anthropic")
@@ -678,6 +686,7 @@ func TestTurnStreamsEvents(t *testing.T) {
 }
 
 func TestTurnProviderErrorsAndRefusal(t *testing.T) {
+	t.Parallel()
 	e, llm, _ := assistantEnv(t)
 	e.enableAssistant(nil)
 	e.consentAssistant("anthropic")
@@ -710,6 +719,7 @@ func TestTurnProviderErrorsAndRefusal(t *testing.T) {
 // written, no forbidden tool is offered or runs, and what remains is a
 // proposal the user must confirm, with the shared item marked.
 func TestPromptInjectionNeedsConfirmation(t *testing.T) {
+	t.Parallel()
 	llm := newFakeLLM(t)
 	se := newShareEnvWith(t, WithAssistantSetup(func(s *assistant.Service) { s.AnthropicBaseURL = llm.srv.URL; s.Fixed = llm.srv.Client() }))
 	se.share(se.alice, "bob@example.com", "editor")
@@ -800,6 +810,7 @@ func newShareEnvWith(t *testing.T, opts ...Option) *shareEnv {
 // sees it labelled "Assistant" with the applying user as author, and a
 // restore is an ordinary op.
 func TestSyncAcceptsAssistantPrefix(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	op := map[string]any{"id": ids.New(), "entity": "task", "entityId": se.task, "field": "priority", "value": 1, "ts": time.Now().UnixMilli() + 1000, "device": "assistant:laptop-1"}
@@ -838,6 +849,7 @@ func TestSyncAcceptsAssistantPrefix(t *testing.T) {
 }
 
 func TestTestConnectionRoute(t *testing.T) {
+	t.Parallel()
 	e, llm, _ := assistantEnv(t)
 	e.enableAssistant(nil)
 	llm.set(reply([]fakeBlock{{text: "OK"}}, "end_turn"))

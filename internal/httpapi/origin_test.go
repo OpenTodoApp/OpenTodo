@@ -24,6 +24,7 @@ func sameOrigin(got any, want map[string]any) bool {
 }
 
 func TestTaskOriginOnTheAPI(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	secret := e.token("full")
 	c := e.bearerClient()
@@ -70,6 +71,7 @@ func TestTaskOriginOnTheAPI(t *testing.T) {
 }
 
 func TestAgentTokenSetsOrigin(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	resp, out := c.do("POST", "/api/v1/tasks", map[string]any{"title": "Filed by the assistant", "origin": issueOrigin}, bearer(secret)...)
 	c.mustStatus(resp, 201, out)
@@ -89,6 +91,7 @@ func TestAgentTokenSetsOrigin(t *testing.T) {
 }
 
 func TestExportCarriesOrigin(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	email := map[string]any{"kind": "email", "id": "<a1@mail.example>"}
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "From email", "origin": email})

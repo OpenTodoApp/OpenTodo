@@ -17,6 +17,7 @@ func rop(id, entity, entityID, field string, value any, ts int64) map[string]any
 }
 
 func TestExportIncludesReminders(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.syncOps("devA",
 		rop("o1", "task", "t1", "title", "Call the dentist", 1),
@@ -46,6 +47,7 @@ func TestExportIncludesReminders(t *testing.T) {
 // TestExportIncludesUserPrefs (date-time-preferences D1): the export carries the
 // caller's own date and time preferences row, and only theirs.
 func TestExportIncludesUserPrefs(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.syncOps("devA",
 		rop("p1", "user_prefs", "me", "date_format", "iso", 1),
@@ -68,6 +70,7 @@ func TestExportIncludesUserPrefs(t *testing.T) {
 // TestExportIncludesReview (stats-and-review D4): the export carries the
 // caller's own "last weekly review" row beside the collections.
 func TestExportIncludesReview(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.syncOps("devA", rop("rv1", "review", "me", "completed_at", 1760600000000, 1))
 	resp, out := e.do("GET", "/api/v1/export", nil)
@@ -85,6 +88,7 @@ func TestExportIncludesReview(t *testing.T) {
 // carries the method preference, the rhythm fields and the per-project review
 // stamps.
 func TestExportIncludesOpenLoopsFields(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.syncOps("devA",
 		rop("m1", "user_prefs", "me", "method_mode", "first", 1),

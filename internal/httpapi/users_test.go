@@ -47,6 +47,7 @@ func (e *env) expect(method, path string, body any, status int, code string) map
 }
 
 func TestUserAdminRoutes(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	owner := e.ownerID()
 	admin, adminID := e.joinAs("admin@example.com")
@@ -161,6 +162,7 @@ func TestUserAdminRoutes(t *testing.T) {
 }
 
 func TestResetRoutesPublicAndUniform404(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	member, memberID := e.joinAs("m@example.com")
 	out := e.expect("POST", "/api/v1/users/"+memberID+"/password-reset", nil, 201, "")
@@ -198,6 +200,7 @@ func TestResetRoutesPublicAndUniform404(t *testing.T) {
 }
 
 func TestResetRoutesRateLimited(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientAt(e, "10.2.2.2")
 	for i := 0; i < 10; i++ {
@@ -208,6 +211,7 @@ func TestResetRoutesRateLimited(t *testing.T) {
 }
 
 func TestMePasswordRoute(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	member, _ := e.joinAs("m@example.com")
 	second := newClientAt(e, "10.3.3.3")
@@ -224,6 +228,7 @@ func TestMePasswordRoute(t *testing.T) {
 }
 
 func TestAdminRateLimit(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	_, memberID := e.joinAs("m@example.com")
 	for i := 0; i < 60; i++ {
@@ -236,6 +241,7 @@ func TestAdminRateLimit(t *testing.T) {
 }
 
 func TestPasswordChangeRateLimit(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	for i := 0; i < 10; i++ {
 		e.expect("POST", "/api/v1/me/password", map[string]string{"currentPassword": "wrong password!", "newPassword": "another long password"}, 403, "invalid_credentials")
@@ -244,6 +250,7 @@ func TestPasswordChangeRateLimit(t *testing.T) {
 }
 
 func TestLoginDeactivatedRoute(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	_, memberID := e.joinAs("m@example.com")
 	e.expect("POST", "/api/v1/users/"+memberID+"/deactivate", nil, 200, "")
@@ -265,6 +272,7 @@ func TestLoginDeactivatedRoute(t *testing.T) {
 }
 
 func TestDeactivationClosesEventStream(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	member, memberID := e.joinAs("m@example.com")
 	resp, out := member.do("POST", "/api/v1/tokens", map[string]string{"name": "script"})
@@ -294,6 +302,7 @@ func TestDeactivationClosesEventStream(t *testing.T) {
 // (mfa-totp section 8 carried over); admin tokens are never challenged and full
 // tokens are refused (route-authorization-policy).
 func TestPasswordChangeRequiresFreshSession(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	_, secret, _ := m.invite(map[string]any{})
 	c := newClientAt(m.env, "10.6.6.6")

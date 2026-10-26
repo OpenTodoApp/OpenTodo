@@ -8,6 +8,7 @@ import (
 
 // absolute-datetimes: REST create and patch accept and echo a zoned due.
 func TestRestZonedDueRoundTrip(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	zonedDue := map[string]any{"date": "2026-10-11", "time": "09:00", "tz": "Europe/Berlin"}
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Stand-up", "due": zonedDue})
@@ -47,6 +48,7 @@ func TestRestZonedDueRoundTrip(t *testing.T) {
 }
 
 func TestRestZonedDueWithoutTimeRejected(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Call", "due": map[string]any{"date": "2026-10-11", "time": "09:00"}})
 	e.mustStatus(resp, 201, out)
@@ -76,6 +78,7 @@ func TestRestZonedDueWithoutTimeRejected(t *testing.T) {
 // A relative reminder on a zoned task fires relative to the zoned instant, not
 // the device's reported offset; a recurring zoned series keeps its tz.
 func TestRestZonedDueRemindersAndRecurrence(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, false)
 	e.do("POST", "/api/v1/sync", map[string]any{"device": "devA", "cursor": 0, "ops": []any{}, "tzOffset": -420})
 	resp, task := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Stand-up", "due": map[string]any{"date": "2026-10-11", "time": "09:00", "tz": "Europe/Berlin"}})

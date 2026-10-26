@@ -21,6 +21,7 @@ func dueOf(t *testing.T, v any) map[string]any {
 }
 
 func TestRestCompleteRecurringRollsForward(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	today := dayOffset(0)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Stand-up", "recurrence": "Every  Day", "due": map[string]any{"date": today, "time": "09:00"}})
@@ -79,6 +80,7 @@ func countRecords(t *testing.T, e *env, seriesID string) int {
 }
 
 func TestRestRecurringEndConditionsAndCompletionRelative(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	// for 2 times: the first completion rolls, the second completes the series.
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Twice", "recurrence": "every day for 2 times", "due": map[string]any{"date": dayOffset(0)}})
@@ -119,6 +121,7 @@ func TestRestRecurringEndConditionsAndCompletionRelative(t *testing.T) {
 }
 
 func TestRestRecurrenceValidation(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Bad", "recurrence": "every blursday"})
 	e.mustStatus(resp, 400, out)
@@ -144,6 +147,7 @@ func TestRestRecurrenceValidation(t *testing.T) {
 }
 
 func TestRestCompletionOfDeletedSeriesIsPlain(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Gone", "recurrence": "every day", "due": map[string]any{"date": dayOffset(0)}})
 	e.mustStatus(resp, 201, out)

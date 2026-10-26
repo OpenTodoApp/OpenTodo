@@ -23,6 +23,7 @@ import (
 // X-Forwarded-For is honoured from loopback and private peers only; a public
 // peer is the client whatever it claims.
 func TestForwardedForOnlyFromTrustedPeers(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	t.Cleanup(func() { setTrustedProxies(nil, false) })
 	setTrustedProxies(nil, false)
 	ip := func(peer, xff string) string {
@@ -60,6 +61,7 @@ func TestForwardedForOnlyFromTrustedPeers(t *testing.T) {
 // TestLoginLimitCountsFailuresOnly: successful sign-ins never use up the
 // address's window.
 func TestLoginLimitCountsFailuresOnly(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	e := newEnv(t, false)
 	registerOwner(e)
 	c := newClientAt(e, "203.0.113.30")
@@ -84,6 +86,7 @@ func TestLoginLimitCountsFailuresOnly(t *testing.T) {
 // TestLimitersPerPurpose: guessing reset links does not lock the same address
 // out of signing in.
 func TestLimitersPerPurpose(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	e := newEnv(t, false)
 	registerOwner(e)
 	c := newClientAt(e, "203.0.113.40")
@@ -98,6 +101,7 @@ func TestLimitersPerPurpose(t *testing.T) {
 // TestAccountLockout: ten failed passwords for one account within the window
 // lock it for every address, with account_locked and Retry-After.
 func TestAccountLockout(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	e := newEnv(t, false)
 	registerOwner(e)
 	for i := 0; i < 10; i++ {
@@ -118,6 +122,7 @@ func TestAccountLockout(t *testing.T) {
 
 // TestAccountFailuresResetOnSuccess: a successful sign-in clears the count.
 func TestAccountFailuresResetOnSuccess(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	e := newEnv(t, false)
 	registerOwner(e)
 	n := 0
@@ -139,6 +144,7 @@ func TestAccountFailuresResetOnSuccess(t *testing.T) {
 // TestReauthAccountLockout: wrong re-authentication passwords count against the
 // account too.
 func TestReauthAccountLockout(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	m := newMFAEnv(t)
 	for i := 0; i < 10; i++ {
 		m.ip = "203.0.113." + strconv.Itoa(150+i)
@@ -157,6 +163,7 @@ func TestReauthAccountLockout(t *testing.T) {
 // registration from a public address needs the setup code; from the local
 // network it does not.
 func TestSetupFromPublicAddressNeedsCode(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	e := newEnv(t, false)
 	remote := newClientAt(e, "203.0.113.9")
 	_, out := remote.do("GET", "/api/v1/auth/status", nil)
@@ -180,6 +187,7 @@ func TestSetupFromPublicAddressNeedsCode(t *testing.T) {
 // TestOriginMustMatchBaseURL: with OPENTODO_BASE_URL set, a page served under
 // another host name (DNS rebinding) is cross-site even when Origin equals Host.
 func TestOriginMustMatchBaseURL(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	base, _ := url.Parse("https://todo.example.com")
 	check := func(cfg config.Config, host, origin string) bool {
 		s := &Server{cfg: cfg}
@@ -205,6 +213,7 @@ func TestOriginMustMatchBaseURL(t *testing.T) {
 // TestSecureCookieOverTLS: the session cookie is Secure when the request came
 // over TLS or a trusted proxy says https, even without an https base URL.
 func TestSecureCookieOverTLS(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	e := newEnv(t, false)
 	registerOwner(e)
 	body, _ := json.Marshal(map[string]string{"email": "owner@example.com", "password": "correct horse battery"})
@@ -237,6 +246,7 @@ func TestSecureCookieOverTLS(t *testing.T) {
 
 // TestHSTSWithHTTPSBaseURL: an https base URL sends Strict-Transport-Security.
 func TestHSTSWithHTTPSBaseURL(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	base, _ := url.Parse("https://todo.example.com")
 	e := newEnvWith(t, false, func(s *Server) { s.cfg.BaseURL = base })
 	resp, _ := e.do("GET", "/healthz", nil)
@@ -257,6 +267,7 @@ func TestHSTSWithHTTPSBaseURL(t *testing.T) {
 // is refused and the server says why in its log, once per host, so a stale
 // OPENTODO_BASE_URL after a domain move is easy to spot (issue #125).
 func TestWrongHostIsLoggedOnce(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	base, _ := url.Parse("https://opentodo-demo.example.dev")
 	var buf bytes.Buffer
 	s := &Server{cfg: config.Config{BaseURL: base}, log: slog.New(slog.NewTextHandler(&buf, nil))}

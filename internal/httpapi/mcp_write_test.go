@@ -117,6 +117,7 @@ func devicesOf(t *testing.T, e *env, entityID string) map[string]int {
 }
 
 func TestCreateAgentToken(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	id, _ := e.namedToken("Desk assistant", "agent")
 	resp, out := e.do("GET", "/api/v1/tokens", nil)
@@ -139,6 +140,7 @@ func TestCreateAgentToken(t *testing.T) {
 }
 
 func TestInvalidScope400(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/tokens", map[string]any{"name": "x", "scope": "superuser"})
 	if resp.StatusCode != 400 || errCode(out) != "invalid_input" || !strings.Contains(out["error"].(map[string]any)["message"].(string), "agent") {
@@ -155,6 +157,7 @@ func TestInvalidScope400(t *testing.T) {
 // token cannot write through REST: no sync, no tokens, no settings, no
 // switches, no sharing.
 func TestAgentTokenRefusedOnRestWrites(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Existing"})
 	e.mustStatus(resp, 201, out)
@@ -213,6 +216,7 @@ func TestAgentTokenRefusedOnRestWrites(t *testing.T) {
 // sees) an agent token is a plain read token: read-only tools on MCP, refused
 // on writes.
 func TestAgentTokenDowngradeSafe(t *testing.T) {
+	t.Parallel()
 	e, tokenID, secret, c := agentReady(t)
 	if _, err := e.db.Exec(`DELETE FROM api_token_agent WHERE token_id = ?`, tokenID); err != nil {
 		t.Fatal(err)
@@ -230,6 +234,7 @@ func TestAgentTokenDowngradeSafe(t *testing.T) {
 }
 
 func TestAgentAccessRoute(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/me/agent-access", nil)
 	e.mustStatus(resp, 200, out)
@@ -268,6 +273,7 @@ func TestAgentAccessRoute(t *testing.T) {
 }
 
 func TestMcpWritesOwnerOnly(t *testing.T) {
+	t.Parallel()
 	owner, member := memberEnv(t)
 	owner.enableMCP(true)
 	resp, out := member.do("PUT", "/api/v1/settings/mcp", map[string]any{"writes_enabled": true})
@@ -302,6 +308,7 @@ func TestMcpWritesOwnerOnly(t *testing.T) {
 // TestToolsListByToken: the write tools appear only for an agent token with
 // both switches on; read and full tokens never see or run them.
 func TestToolsListByToken(t *testing.T) {
+	t.Parallel()
 	e, _, agentSecret, c := agentReady(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Open"})
 	e.mustStatus(resp, 201, out)
@@ -350,6 +357,7 @@ func TestToolsListByToken(t *testing.T) {
 // TestAgentWriteAppliesThroughOpLog: ops land in the log with device
 // agent:<token-id> and every connected device is woken.
 func TestAgentWriteAppliesThroughOpLog(t *testing.T) {
+	t.Parallel()
 	e, tokenID, secret, c := agentReady(t)
 	var uid string
 	_ = e.db.QueryRow(`SELECT id FROM users LIMIT 1`).Scan(&uid)
@@ -392,6 +400,7 @@ func TestAgentWriteAppliesThroughOpLog(t *testing.T) {
 // in the shared project, the whole batch is refused, and it cannot see
 // projects the user is not in.
 func TestAgentWriteBatchRefusedOnViewerScope(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.alice.allowWrites(true)
 	se.share(se.alice, "bob@example.com", "viewer")
@@ -455,6 +464,7 @@ func TestAgentWriteBatchRefusedOnViewerScope(t *testing.T) {
 // TestAgentWriteConvergesWithOfflineEdit: an assistant's priority change and
 // a laptop's offline title change both survive.
 func TestAgentWriteConvergesWithOfflineEdit(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	e.now.Freeze(time.Now())
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Draft"})
@@ -472,6 +482,7 @@ func TestAgentWriteConvergesWithOfflineEdit(t *testing.T) {
 // TestAgentCompleteRecurringConvergesWithDevice: an assistant completion and a
 // phone completing the same occurrence offline give one record.
 func TestAgentCompleteRecurringConvergesWithDevice(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	// Due today, so the next occurrence is a week later whatever day the test runs.
 	now := time.Now()
@@ -506,6 +517,7 @@ func TestAgentCompleteRecurringConvergesWithDevice(t *testing.T) {
 }
 
 func TestWriteLimitsOverHTTP(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	items := []any{}
 	for i := 0; i < 51; i++ {
@@ -538,6 +550,7 @@ func TestWriteLimitsOverHTTP(t *testing.T) {
 }
 
 func TestEncryptedAccountWriteRules(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
 	e.mustStatus(resp, 201, out)
@@ -591,6 +604,7 @@ func TestEncryptedAccountWriteRules(t *testing.T) {
 }
 
 func TestSyncRefusesReservedDevicePrefixes(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	op := func(device string) map[string]any {
 		return map[string]any{"id": ids.New(), "entity": "task", "entityId": "t1", "field": "title", "value": "Forged", "ts": time.Now().UnixMilli(), "device": device}
@@ -620,6 +634,7 @@ func TestSyncRefusesReservedDevicePrefixes(t *testing.T) {
 }
 
 func TestAgentWriteAudited(t *testing.T) {
+	t.Parallel()
 	e, tokenID, secret, c := agentReady(t)
 	var created []string
 	for _, title := range []string{"Secret plan A", "Secret plan B", "Secret plan C"} {
@@ -664,6 +679,7 @@ func TestAgentWriteAudited(t *testing.T) {
 }
 
 func TestHistoryAgentLabel(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.alice.allowWrites(true)
 	se.alice.allowMyAssistants(true)
@@ -707,6 +723,7 @@ func TestHistoryAgentLabel(t *testing.T) {
 }
 
 func TestTrashOnlyOwnCreationsOverHTTP(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	mine := firstID(c.mustTool(secret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "Draft"}}}))
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Taxes"})
@@ -738,6 +755,7 @@ func (m *mentionRecorder) Mentioned(_ context.Context, ev notify.Mentioned) {
 }
 
 func TestAgentCommentNoMention(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	rec := &mentionRecorder{}
 	se.alice.sync.AddSink(rec)
@@ -771,6 +789,7 @@ func TestAgentCommentNoMention(t *testing.T) {
 // TestUntrustedTextInSharedProject: another member's injected comment reaches
 // the assistant as marked data with provenance, and reading changes nothing.
 func TestUntrustedTextInSharedProject(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.alice.enableMCP(true)
 	se.share(se.alice, "bob@example.com", "editor")

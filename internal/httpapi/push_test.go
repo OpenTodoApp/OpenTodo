@@ -15,15 +15,15 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/push"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // pushEnv is newEnv with the push service wired, registered as the owner.
 func pushEnv(t *testing.T, disabled bool) (*env, *push.Service) {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := testenv.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,6 +56,7 @@ func subscriptionBody(device string) map[string]any {
 }
 
 func TestPushRoutesRequireAuth(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, false)
 	anon := newClientFor(e)
 	for _, c := range []struct{ method, path string }{
@@ -105,6 +106,7 @@ func TestPushRoutesRequireAuth(t *testing.T) {
 }
 
 func TestPushSubscribeRejectsMissingKeys(t *testing.T) {
+	t.Parallel()
 	e, p := pushEnv(t, false)
 	for name, mutate := range map[string]func(map[string]any){
 		"no endpoint":  func(b map[string]any) { delete(b, "endpoint") },
@@ -131,6 +133,7 @@ func TestPushSubscribeRejectsMissingKeys(t *testing.T) {
 }
 
 func TestPushDisabledReturnsNotFound(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, true)
 	for _, c := range []struct{ method, path string }{
 		{"GET", "/api/v1/push/vapid-key"},
@@ -146,6 +149,7 @@ func TestPushDisabledReturnsNotFound(t *testing.T) {
 }
 
 func TestSignOutRemovesPushSubscription(t *testing.T) {
+	t.Parallel()
 	e, p := pushEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/push/subscriptions", subscriptionBody("phone"))
 	e.mustStatus(resp, 201, out)
@@ -185,6 +189,7 @@ func TestSignOutRemovesPushSubscription(t *testing.T) {
 }
 
 func TestRestDueChangeMovesRelativeReminders(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, false)
 	// The device reports UTC+2; REST writes then compute in that zone.
 	e.do("POST", "/api/v1/sync", map[string]any{"device": "devA", "cursor": 0, "ops": []any{}, "tzOffset": 120})

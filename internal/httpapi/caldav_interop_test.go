@@ -17,6 +17,7 @@ import (
 // reminders over CalDAV.
 
 func TestCaldavBoundsMatchSchema(t *testing.T) {
+	t.Parallel()
 	if caldav.MaxEstimateMinutes != opsync.MaxPositiveInt || caldav.MaxAlarmOffset != opsync.MaxReminderOffset {
 		t.Fatalf("caldav bounds %d/%d differ from the op schema %d/%d", caldav.MaxEstimateMinutes, caldav.MaxAlarmOffset, opsync.MaxPositiveInt, opsync.MaxReminderOffset)
 	}
@@ -30,6 +31,7 @@ func laterOp(id, entity, entityID, field string, value any) map[string]any {
 }
 
 func TestPutEstimate(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Plan", "ESTIMATED-DURATION:PT2H"), 201)
 	if got := e.task("t1")["estimate_minutes"]; got != float64(120) || e.caldavOps("t1")["estimate_minutes"] != 1 {
@@ -75,6 +77,7 @@ func TestPutEstimate(t *testing.T) {
 // TestInboundDateShapes runs every row of the "Inbound date shapes" table
 // against every state a task can be in.
 func TestInboundDateShapes(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	type state struct {
 		name string
@@ -151,6 +154,7 @@ func TestInboundDateShapes(t *testing.T) {
 }
 
 func TestNoDueNeverClearsDeadline(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Slides", "due": map[string]any{"date": "2026-10-13"}, "deadline": "2026-10-17"})
 	e.mustStatus(resp, 201, out)
@@ -177,6 +181,7 @@ func TestNoDueNeverClearsDeadline(t *testing.T) {
 }
 
 func TestRecurringMovedWithoutDue(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Sync", "due": map[string]any{"date": "2026-10-13", "time": "09:00"}, "recurrence": "every week"})
 	e.mustStatus(resp, 201, out)
@@ -196,6 +201,7 @@ func TestRecurringMovedWithoutDue(t *testing.T) {
 
 // TestMitraScheduledUndated: the issue's undated task scheduled in Mitra.
 func TestMitraScheduledUndated(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	raw, err := os.ReadFile("../caldav/testdata/mitra/scheduled-undated.ics")
 	if err != nil {
@@ -223,6 +229,7 @@ func TestMitraScheduledUndated(t *testing.T) {
 // sending the new DTSTART with the DUE it was served (issue #248). The echo is a
 // move, not a deadline; a DUE the client changed is still one.
 func TestMitraEchoedDue(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	mitra := func(name string) string {
 		raw, err := os.ReadFile("../caldav/testdata/mitra/" + name)
@@ -277,6 +284,7 @@ func TestMitraEchoedDue(t *testing.T) {
 var alarmUIDRe = regexp.MustCompile(`\r\nUID:([^\r]+)\r\nX-WR-ALARMUID`)
 
 func TestAlarmBecomesReminder(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Call", "DUE:20261013T093000", "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-PT15M", "END:VALARM"), 201)
 	rems := e.reminders("t1")
@@ -314,6 +322,7 @@ func TestAlarmBecomesReminder(t *testing.T) {
 }
 
 func TestAlarmOnUndatedTask(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Someday", "BEGIN:VALARM", "TRIGGER:-PT1H", "END:VALARM"), 201)
 	rems := e.reminders("t1")
@@ -326,6 +335,7 @@ func TestAlarmOnUndatedTask(t *testing.T) {
 }
 
 func TestAlarmEditedKeepsIdentity(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Call", "DUE:20261013T093000"), 201)
 	resp, rem := e.do("POST", "/api/v1/reminders", map[string]any{"task_id": "t1", "kind": "relative", "offset_minutes": -30})
@@ -344,6 +354,7 @@ func TestAlarmEditedKeepsIdentity(t *testing.T) {
 }
 
 func TestAlarmRemovedTombstones(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Call", "DUE:20261013T093000"), 201)
 	var ids []string
@@ -372,6 +383,7 @@ func TestAlarmRemovedTombstones(t *testing.T) {
 }
 
 func TestClientWithoutAlarmsLeavesReminders(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Call", "DUE:20261013T093000"), 201)
 	resp, rem := e.do("POST", "/api/v1/reminders", map[string]any{"task_id": "t1", "kind": "relative", "offset_minutes": -30})
@@ -384,6 +396,7 @@ func TestClientWithoutAlarmsLeavesReminders(t *testing.T) {
 }
 
 func TestTooManyAlarms(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	lines := []string{"SUMMARY:Busy", "DUE:20261013T093000"}
 	for i := 1; i <= 25; i++ {
@@ -403,6 +416,7 @@ func TestTooManyAlarms(t *testing.T) {
 }
 
 func TestUnmappedAlarmSurvivesTitleEdit(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:A", "BEGIN:VALARM", "ACTION:AUDIO", "TRIGGER:-PT15M", "REPEAT:3", "DURATION:PT5M", "END:VALARM"), 201)
 	if rems := e.reminders("t1"); len(rems) != 0 {
@@ -417,6 +431,7 @@ func TestUnmappedAlarmSurvivesTitleEdit(t *testing.T) {
 }
 
 func TestDeadlineReminderRoundTrip(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Taxes", "deadline": "2026-11-06"})
 	e.mustStatus(resp, 201, out)
@@ -444,6 +459,7 @@ func TestDeadlineReminderRoundTrip(t *testing.T) {
 }
 
 func TestEtagChangesOnReminderEdit(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Call", "DUE:20261013T093000"), 201)
 	_, ms := c.must("REPORT", c.cal("inbox"), `<?xml version="1.0"?><d:sync-collection xmlns:d="DAV:"><d:sync-token/><d:prop><d:getetag/></d:prop></d:sync-collection>`, 207)
@@ -473,6 +489,7 @@ func TestEtagChangesOnReminderEdit(t *testing.T) {
 }
 
 func TestDismissalStaysLocal(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Call", "DUE:20261013T093000", "BEGIN:VALARM", "TRIGGER:-PT15M", "END:VALARM"), 201)
 	rid := e.reminders("t1")[0]["id"].(string)
@@ -491,6 +508,7 @@ func TestDismissalStaysLocal(t *testing.T) {
 }
 
 func TestLaterReminderDeleteWins(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Call", "DUE:20261013T093000", "BEGIN:VALARM", "TRIGGER:-PT15M", "END:VALARM"), 201)
 	rid := e.reminders("t1")[0]["id"].(string)
@@ -507,6 +525,7 @@ func TestLaterReminderDeleteWins(t *testing.T) {
 }
 
 func TestAlarmWriteRequiresAuth(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	anon := &davClient{e: e, email: c.email, secret: "wrong password entirely", uid: c.uid}
 	resp, _ := anon.req("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Call", "BEGIN:VALARM", "TRIGGER:-PT15M", "END:VALARM"))

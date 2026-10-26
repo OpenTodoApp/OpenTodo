@@ -132,6 +132,7 @@ func (e *env) reminders(taskID string) []map[string]any {
 var etagRe = regexp.MustCompile(`<d:getetag>([^<]*)</d:getetag>`)
 
 func TestAppPasswordRoutesRequireAuth(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, true)
 	for _, m := range []string{"GET", "POST"} {
 		resp, out := e.do(m, "/api/v1/app-passwords", map[string]any{"name": "x"})
@@ -144,6 +145,7 @@ func TestAppPasswordRoutesRequireAuth(t *testing.T) {
 }
 
 func TestAppPasswordRoutes(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	if !strings.HasPrefix(c.secret, "otap_") {
 		t.Fatalf("secret %q", c.secret)
@@ -170,6 +172,7 @@ func TestAppPasswordRoutes(t *testing.T) {
 }
 
 func TestCaldavSettingForbidsMembers(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.bob.do("PUT", "/api/v1/settings/caldav", map[string]any{"enabled": true})
 	se.bob.mustStatus(resp, 403, out)
@@ -184,6 +187,7 @@ func TestCaldavSettingForbidsMembers(t *testing.T) {
 }
 
 func TestCaldavSettingInvalid400(t *testing.T) {
+	t.Parallel()
 	e, _ := davSetup(t)
 	for _, body := range []any{map[string]any{}, map[string]any{"enabled": "yes"}, "x"} {
 		resp, out := e.do("PUT", "/api/v1/settings/caldav", body)
@@ -192,6 +196,7 @@ func TestCaldavSettingInvalid400(t *testing.T) {
 }
 
 func TestDavDisabledIs404(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("PUT", "/api/v1/settings/caldav", map[string]any{"enabled": false})
 	e.mustStatus(resp, 200, out)
@@ -214,6 +219,7 @@ func TestDavDisabledIs404(t *testing.T) {
 // #249). Without CalDAV the root answers as the web app did and /principals/
 // is unknown, so nothing reveals the endpoint.
 func TestDavRootDiscovery(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	// A redirect carries the absolute address the client asked for.
 	resp, _ := c.req("PROPFIND", "/", "")
@@ -253,6 +259,7 @@ func TestDavRootDiscovery(t *testing.T) {
 // TestDavWellKnownUsesBaseURL: with OPENTODO_BASE_URL the redirect names the
 // public address, whatever host the request carried.
 func TestDavWellKnownUsesBaseURL(t *testing.T) {
+	t.Parallel()
 	e := newEnvWithBase(t, "https://tasks.example.com", true)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": davPassword})
 	e.mustStatus(resp, 201, out)
@@ -267,6 +274,7 @@ func TestDavWellKnownUsesBaseURL(t *testing.T) {
 }
 
 func TestDavRejectsAccountPasswordAndTokens(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/tokens", map[string]any{"name": "cli"})
 	e.mustStatus(resp, 201, out)
@@ -307,6 +315,7 @@ func TestDavRejectsAccountPasswordAndTokens(t *testing.T) {
 }
 
 func TestDavRateLimit(t *testing.T) {
+	t.Parallel()
 	_, c := davSetup(t)
 	c.ip = "10.9.9.9"
 	bad := *c
@@ -325,6 +334,7 @@ func TestDavRateLimit(t *testing.T) {
 }
 
 func TestDiscoveryListsOwnCalendarsOnly(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.alice.do("PUT", "/api/v1/settings/caldav", map[string]any{"enabled": true})
 	se.alice.mustStatus(resp, 200, out)
@@ -370,6 +380,7 @@ func TestDiscoveryListsOwnCalendarsOnly(t *testing.T) {
 }
 
 func TestArchivedProjectHidden(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Old"})
 	e.mustStatus(resp, 201, out)
@@ -388,6 +399,7 @@ func TestArchivedProjectHidden(t *testing.T) {
 }
 
 func TestPutCreatesTaskViaOps(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Garden"})
 	e.mustStatus(resp, 201, out)
@@ -437,6 +449,7 @@ func TestPutCreatesTaskViaOps(t *testing.T) {
 }
 
 func TestPutWithForeignNameAndUID(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	uid := "040000008200E00074C5B7101A82E008@example.com:very-long-uid-that-does-not-fit-into-an-id-at-all"
 	c.must("PUT", c.cal("inbox")+"client-name.ics", vtodoBody(uid, "SUMMARY:Odd"), 201)
@@ -453,6 +466,7 @@ func TestPutWithForeignNameAndUID(t *testing.T) {
 }
 
 func TestPutEmitsOnlyChangedFields(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:A", "DESCRIPTION:notes", "PRIORITY:1"), 201)
 	before := e.caldavOps("t1")
@@ -482,6 +496,7 @@ func TestPutEmitsOnlyChangedFields(t *testing.T) {
 }
 
 func TestStaleIfMatch412(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, _ := c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:A"), 201)
 	etag := resp.Header.Get("ETag")
@@ -501,6 +516,7 @@ func TestStaleIfMatch412(t *testing.T) {
 }
 
 func TestConcurrentFieldEditsConverge(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:A", "DUE;VALUE=DATE:20261011", "PRIORITY:9"), 201)
 	_, cursor, _ := syncAll(e, "laptop", 0)
@@ -522,6 +538,7 @@ func TestConcurrentFieldEditsConverge(t *testing.T) {
 }
 
 func TestDeleteIsTombstone(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:A"), 201)
 	c.must("DELETE", c.cal("inbox")+"t1.ics", "", 204)
@@ -544,6 +561,7 @@ func TestDeleteIsTombstone(t *testing.T) {
 }
 
 func TestLaterReopenWinsOverCaldavComplete(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:A"), 201)
 	_, cursor, _ := syncAll(e, "laptop", 0)
@@ -576,6 +594,7 @@ func TestLaterReopenWinsOverCaldavComplete(t *testing.T) {
 }
 
 func TestRecurringCompletionMovesSeries(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"r1.ics", vtodoBody("r1", "SUMMARY:Water", "DUE;VALUE=DATE:20261012", "RRULE:FREQ=WEEKLY"), 201)
 	task := e.task("r1")
@@ -611,6 +630,7 @@ func TestRecurringCompletionMovesSeries(t *testing.T) {
 }
 
 func TestInvalidCalendarData(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"x.ics", "BEGIN:VCALENDAR\r\nnot really", 415)
 	c.must("PUT", c.cal("inbox")+"x.ics", "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n", 403)
@@ -627,6 +647,7 @@ func TestInvalidCalendarData(t *testing.T) {
 }
 
 func TestMovingBetweenCalendars(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Garden"})
 	e.mustStatus(resp, 201, out)
@@ -641,6 +662,7 @@ func TestMovingBetweenCalendars(t *testing.T) {
 }
 
 func TestMoveIntoSharedProjectCopies(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.alice.do("PUT", "/api/v1/settings/caldav", map[string]any{"enabled": true})
 	se.share(se.alice, "bob@example.com", "editor")
@@ -663,6 +685,7 @@ func TestMoveIntoSharedProjectCopies(t *testing.T) {
 }
 
 func TestEtagChangesOnDeviceEdit(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, _ := c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:A"), 201)
 	first := resp.Header.Get("ETag")
@@ -684,6 +707,7 @@ const syncReport = `<?xml version="1.0" encoding="utf-8"?>
 var tokenRe = regexp.MustCompile(`<d:sync-token>([^<]*)</d:sync-token>`)
 
 func TestSyncCollectionReportsRemoved(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	for _, id := range []string{"a", "b", "c", "d"} {
 		c.must("PUT", c.cal("inbox")+id+".ics", vtodoBody(id, "SUMMARY:"+id), 201)
@@ -730,6 +754,7 @@ func TestSyncCollectionReportsRemoved(t *testing.T) {
 }
 
 func TestCalendarQueryTimeRange(t *testing.T) {
+	t.Parallel()
 	_, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"oct.ics", vtodoBody("oct", "SUMMARY:Oct", "DUE;VALUE=DATE:20261015"), 201)
 	c.must("PUT", c.cal("inbox")+"dec.ics", vtodoBody("dec", "SUMMARY:Dec", "DUE:20261215T100000"), 201)
@@ -749,6 +774,7 @@ func TestCalendarQueryTimeRange(t *testing.T) {
 }
 
 func TestMkcalendarCreatesProject(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	mk := `<?xml version="1.0" encoding="utf-8"?><c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:ic="http://apple.com/ns/ical/">
 <d:set><d:prop><d:displayname>Garden</d:displayname><ic:calendar-color>#34C759FF</ic:calendar-color>
@@ -776,6 +802,7 @@ func TestMkcalendarCreatesProject(t *testing.T) {
 }
 
 func TestDeleteCalendarMovesTasksToInbox(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Garden"})
 	e.mustStatus(resp, 201, out)
@@ -793,6 +820,7 @@ func TestDeleteCalendarMovesTasksToInbox(t *testing.T) {
 }
 
 func TestInboxProtected(t *testing.T) {
+	t.Parallel()
 	_, c := davSetup(t)
 	c.must("DELETE", c.cal("inbox"), "", 403)
 	pp := `<?xml version="1.0"?><d:propertyupdate xmlns:d="DAV:"><d:set><d:prop><d:displayname>Mine</d:displayname></d:prop></d:set></d:propertyupdate>`
@@ -807,6 +835,7 @@ func TestInboxProtected(t *testing.T) {
 }
 
 func TestOptionsAdvertisesCalendarAccess(t *testing.T) {
+	t.Parallel()
 	_, c := davSetup(t)
 	resp, _ := c.must("OPTIONS", "/dav/", "", 200)
 	if !strings.Contains(resp.Header.Get("DAV"), "calendar-access") || !strings.Contains(resp.Header.Get("Allow"), "REPORT") {
@@ -815,6 +844,7 @@ func TestOptionsAdvertisesCalendarAccess(t *testing.T) {
 }
 
 func TestDeactivatedAccountLosesCaldav(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.alice.do("PUT", "/api/v1/settings/caldav", map[string]any{"enabled": true})
 	bc := newDavClient(se.bob, "bob@example.com", se.ids["bob"])

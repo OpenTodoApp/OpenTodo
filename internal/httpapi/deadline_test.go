@@ -14,6 +14,7 @@ import (
 // path independently of due, invalid values are refused with invalid_input and
 // leave it unchanged, and it is part of the export.
 func TestTaskDeadlineREST(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -64,6 +65,7 @@ func TestTaskDeadlineREST(t *testing.T) {
 // with the same timestamp, ignores due edits, and has no firing time once the
 // deadline is cleared (OpenSpec change deadlines, design D5).
 func TestRestDeadlineMovesDeadlineReminders(t *testing.T) {
+	t.Parallel()
 	e, _ := pushEnv(t, false)
 	e.do("POST", "/api/v1/sync", map[string]any{"device": "devA", "cursor": 0, "ops": []any{}, "tzOffset": 120})
 	zone := time.FixedZone("", 7200)
@@ -113,6 +115,7 @@ func TestRestDeadlineMovesDeadlineReminders(t *testing.T) {
 // round trip writes nothing, and a deadline-only task survives a client edit
 // (OpenSpec change deadlines, design D6).
 func TestCaldavDeadlineRoundTrip(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Report", "DTSTART:20261013T090000", "DUE:20261017T170000"), 201)
 	task := e.task("t1")
@@ -161,6 +164,7 @@ func TestCaldavDeadlineRoundTrip(t *testing.T) {
 // REST moves the series' deadline by the due delta and the record keeps the
 // old one (OpenSpec change deadlines, design D8).
 func TestRestRecurringCompletionShiftsDeadline(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)

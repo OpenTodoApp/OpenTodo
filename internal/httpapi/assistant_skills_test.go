@@ -8,6 +8,7 @@ import (
 
 // assistant-skills 1.2: the skill list follows the assistant's availability.
 func TestAssistantSkillsRoute(t *testing.T) {
+	t.Parallel()
 	e, _, _ := assistantEnv(t)
 	list := func(c *env) []any {
 		t.Helper()
@@ -49,6 +50,7 @@ func TestAssistantSkillsRoute(t *testing.T) {
 // assistant-skills 2.1: an unknown skill or a bad workday is refused before
 // any provider request; a bearer token is refused as for any turn.
 func TestTurnSkillValidation(t *testing.T) {
+	t.Parallel()
 	e, llm, _ := assistantEnv(t)
 	e.enableAssistant(nil)
 	e.consentAssistant("anthropic")
@@ -83,6 +85,7 @@ func TestTurnSkillValidation(t *testing.T) {
 // assistant-skills 2.2: the skill runs, its id is counted for the month, and
 // the provider saw the skill section and only the skill's tools.
 func TestTurnRunsSkill(t *testing.T) {
+	t.Parallel()
 	e, llm, svc := assistantEnv(t)
 	e.enableAssistant(nil)
 	e.consentAssistant("anthropic")

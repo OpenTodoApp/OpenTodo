@@ -10,6 +10,7 @@ import (
 // Custom fields API (OpenSpec change `custom-fields`).
 
 func TestFieldsCrud(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Kitchen"})
 	e.mustStatus(resp, 201, out)
@@ -77,6 +78,7 @@ func TestFieldsCrud(t *testing.T) {
 }
 
 func TestFieldsLimit(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Kitchen"})
 	e.mustStatus(resp, 201, out)
@@ -93,6 +95,7 @@ func TestFieldsLimit(t *testing.T) {
 }
 
 func TestFieldsRequireAuth(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientFor(e)
 	resp, out := anon.do("GET", "/api/v1/fields", nil)
@@ -105,6 +108,7 @@ func TestFieldsRequireAuth(t *testing.T) {
 }
 
 func TestTaskFieldValues(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Kitchen"})
 	e.mustStatus(resp, 201, out)
@@ -221,6 +225,7 @@ func TestTaskFieldValues(t *testing.T) {
 }
 
 func TestExportIncludesFields(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Kitchen"})
 	e.mustStatus(resp, 201, out)
@@ -261,6 +266,7 @@ func TestExportIncludesFields(t *testing.T) {
 
 // The history reader shows a value change under its op field name.
 func TestHistoryShowsFieldValues(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.syncOps("laptop", map[string]any{"id": "o1", "entity": "task", "entityId": "t1", "field": "title", "value": "Tiles", "ts": 100, "device": "laptop"})
 	e.syncOps("laptop", map[string]any{"id": "o2", "entity": "task", "entityId": "t1", "field": "fields.f1", "value": 120, "ts": 200, "device": "laptop"})

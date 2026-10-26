@@ -9,6 +9,7 @@ import (
 // auth service and the sync service read one clock, so a test moves time instead
 // of sleeping or backdating rows (improvement plan T2, G9).
 func TestServerClockDrivesTimestampsAndExpiry(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	start := time.Date(2031, 3, 30, 1, 30, 0, 0, time.UTC)
 	e.now.Freeze(start)

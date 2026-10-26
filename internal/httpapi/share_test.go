@@ -12,6 +12,7 @@ import (
 // The fallback for the share sheet's POST before the service worker is active
 // (attachments D9): text is carried over, files are reported as lost.
 func TestSharePostFallback(t *testing.T) {
+	t.Parallel()
 	var body bytes.Buffer
 	mw := multipart.NewWriter(&body)
 	mw.WriteField("title", "Receipt")

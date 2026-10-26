@@ -75,6 +75,7 @@ func connOf(out map[string]any) map[string]any {
 }
 
 func TestIssuesSwitch(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, out := e.do("GET", "/api/v1/settings/issues", nil)
 	e.mustStatus(resp, 200, out)
@@ -109,6 +110,7 @@ func TestIssuesSwitch(t *testing.T) {
 }
 
 func TestIssueConnectionLifecycle(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	issuesOn(t, e)
 	gh := newFakeGitHub(t)
@@ -221,6 +223,7 @@ func (e *env) issuesResource(t *testing.T) string {
 }
 
 func TestIssueConnectionValidation(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	issuesOn(t, e)
 	allowPrivateTargets(t, e)
@@ -295,6 +298,7 @@ func TestIssueConnectionValidation(t *testing.T) {
 }
 
 func TestIssueConnectionCredentials(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	issuesOn(t, e)
 	allowPrivateTargets(t, e)
@@ -344,6 +348,7 @@ func TestIssueConnectionCredentials(t *testing.T) {
 }
 
 func TestIssueConnectionsAndEncryption(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	issuesOn(t, e)
 	allowPrivateTargets(t, e)
@@ -372,6 +377,7 @@ func TestIssueConnectionsAndEncryption(t *testing.T) {
 }
 
 func TestIssueConnectionsRefusedOnDemoBeforeAuth(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	anon := d.anonymous()
 	for _, c := range []struct{ method, path string }{

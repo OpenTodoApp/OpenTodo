@@ -9,6 +9,7 @@ import (
 
 // TestEventsPerAccountCap (SEC-6): an account holds at most ten streams.
 func TestEventsPerAccountCap(t *testing.T) {
+	t.Parallel()
 	if opsync.MaxStreamsPerUser != 10 {
 		t.Fatalf("MaxStreamsPerUser = %d, want 10", opsync.MaxStreamsPerUser)
 	}
@@ -17,6 +18,7 @@ func TestEventsPerAccountCap(t *testing.T) {
 // TestEventsCapPerAddress (SEC-6): one client address holds at most
 // 20 streams, whatever the accounts; another address is unaffected.
 func TestEventsCapPerAddress(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, true)
 	e.register("o@example.com")
 	const ip = "203.0.113.7"
@@ -55,6 +57,7 @@ func TestEventsCapPerAddress(t *testing.T) {
 // TestEventsGlobalCap (SEC-6): the server holds at most maxLiveStreams
 // streams; a slot freed by a closed stream is reused.
 func TestEventsGlobalCap(t *testing.T) {
+	// Not parallel: it changes a package-level limit (maxLiveStreams, heartbeatInterval or resetMinDuration) that every server reads.
 	prev := maxLiveStreams
 	maxLiveStreams = 2
 	t.Cleanup(func() { maxLiveStreams = prev })

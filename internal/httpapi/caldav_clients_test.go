@@ -51,6 +51,7 @@ func occurrenceRecords(e *env, seriesID string) int {
 // occurrences of a repeating task and completes the one clicked as an override
 // (RECURRENCE-ID with STATUS:COMPLETED) next to the unchanged series.
 func TestThunderbirdCompletesOccurrence(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "TB daily", "due": map[string]any{"date": "2026-11-02"}, "recurrence": "every day"})
 	e.mustStatus(resp, 201, out)
@@ -73,6 +74,7 @@ func TestThunderbirdCompletesOccurrence(t *testing.T) {
 // TestCompletedOverrideOfAnotherDay: an override completed for a day that is
 // not the current occurrence is not modelled and completes nothing.
 func TestCompletedOverrideOfAnotherDay(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "TB daily", "due": map[string]any{"date": "2026-11-02"}, "recurrence": "every day"})
 	e.mustStatus(resp, 201, out)
@@ -87,6 +89,7 @@ func TestCompletedOverrideOfAnotherDay(t *testing.T) {
 // TestThunderbirdDatesAndAlarms: a new task with Start and Due, an alarm added
 // and then changed in the task dialog, and Due cleared while the served Start stays.
 func TestThunderbirdDatesAndAlarms(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"tb-start-due.ics", clientFixture(t, "thunderbird-158", "new-start-due", "tb-start-due"), 201)
 	got := e.task("tb-start-due")
@@ -122,6 +125,7 @@ func TestThunderbirdDatesAndAlarms(t *testing.T) {
 // only the due is edited, and completes a repeating task by finishing it
 // without its rule and creating the next occurrence as a new task.
 func TestTodomanWrites(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"tm-due-only.ics", clientFixture(t, "todoman-4.7", "new-due-utc", "tm-due-only"), 201)
 	if d := e.task("tm-due-only")["due"].(map[string]any); d["date"] != "2026-11-19" || d["time"] != "08:00" || d["tz"] != "UTC" {

@@ -31,6 +31,7 @@ func workspaceLink(by *env, ws string, body map[string]any) (string, map[string]
 }
 
 func TestWorkspaceRoutesAuthAndScopes(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	anon := newClientAt(se.alice, "10.0.7.9")
 	ws := createWorkspace(se.alice, "Family")
@@ -115,6 +116,7 @@ func TestWorkspaceRoutesAuthAndScopes(t *testing.T) {
 }
 
 func TestWorkspaceDirectoryInSyncAndWake(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	ws := createWorkspace(se.alice, "Family")
 	sub := se.alice.sync.Notifier().Subscribe(se.ids["bob"], "bob-phone")
@@ -148,6 +150,7 @@ func TestWorkspaceDirectoryInSyncAndWake(t *testing.T) {
 }
 
 func TestProjectGroupGrants(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	ws := createWorkspace(se.alice, "Family")
 	for _, u := range []string{"bob", "carol"} {
@@ -238,6 +241,7 @@ func TestProjectGroupGrants(t *testing.T) {
 }
 
 func TestWorkspaceInviteLinks(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	ws := createWorkspace(se.alice, "Family")
 	secret, created := workspaceLink(se.alice, ws, map[string]any{"role": "member"})
@@ -302,6 +306,7 @@ func TestWorkspaceInviteLinks(t *testing.T) {
 }
 
 func TestWorkspacesForEncryptedAccount(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.alice.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
 	se.alice.mustStatus(resp, 201, out)
@@ -324,6 +329,7 @@ func TestWorkspacesForEncryptedAccount(t *testing.T) {
 }
 
 func TestWorkspacesOnDemo(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	visitor := d.anonymous()
 	resp, out := createSandbox(visitor, token(visitor))
@@ -344,6 +350,7 @@ func TestWorkspacesOnDemo(t *testing.T) {
 }
 
 func TestWorkspacesInTheExport(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	work := createWorkspace(se.alice, "Work")
 	fam := createWorkspace(se.bob, "Family")

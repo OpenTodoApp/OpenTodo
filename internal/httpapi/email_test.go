@@ -17,8 +17,8 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/email"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 )
 
 // testMailbox is an in-memory email.Source for the HTTP tests.
@@ -71,7 +71,7 @@ const (
 // emailEnv is newEnv with email capture configured and an in-memory mailbox.
 func emailEnv(t *testing.T) (*env, *email.Service, *testMailbox) {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := testenv.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,6 +101,7 @@ func registerOwner(e *env) {
 }
 
 func TestEmailInboxRoutes(t *testing.T) {
+	t.Parallel()
 	e, _, _ := emailEnv(t)
 	anon := newClientFor(e)
 	for _, r := range []struct{ method, path string }{
@@ -165,6 +166,7 @@ func TestEmailInboxRoutes(t *testing.T) {
 }
 
 func TestEmailInboxDisabledByOperator(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, true)
 	registerOwner(e)
 	resp, out := e.do("GET", "/api/v1/email-inbox", nil)
@@ -187,6 +189,7 @@ func TestEmailInboxDisabledByOperator(t *testing.T) {
 }
 
 func TestEmailToTaskEndToEnd(t *testing.T) {
+	t.Parallel()
 	e, svc, box := emailEnv(t)
 	registerOwner(e)
 	resp, out := e.do("GET", "/api/v1/email-inbox", nil)

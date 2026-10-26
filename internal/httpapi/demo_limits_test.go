@@ -12,6 +12,7 @@ import (
 )
 
 func TestSandboxByteBudget(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e, uid := d.visitor()
 	// Close to the byte budget: a batch whose values would cross it is refused
@@ -40,6 +41,7 @@ func TestSandboxByteBudget(t *testing.T) {
 }
 
 func TestDemoSizeGuardRefusesWrites(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	e, _ := d.visitor()
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "before"})
@@ -71,6 +73,7 @@ func TestDemoSizeGuardRefusesWrites(t *testing.T) {
 // last X-Forwarded-For hop (added by the nearest proxy), so a client that puts
 // a different address in front each time is still counted as itself.
 func TestClientAddressIgnoresSpoofedForwardedFor(t *testing.T) {
+	t.Parallel()
 	r := httptest.NewRequest("GET", "/", nil)
 	r.RemoteAddr = "10.0.0.9:5555"
 	if got := clientIP(r); got != "10.0.0.9" {

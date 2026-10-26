@@ -29,6 +29,7 @@ func countTitled(t *testing.T, e *env, title string) int {
 }
 
 func TestIdempotentCreateReplay(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, first := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Buy milk"}, keyHeader("k1")...)
 	e.mustStatus(resp, 201, first)
@@ -73,6 +74,7 @@ func TestIdempotentCreateReplay(t *testing.T) {
 }
 
 func TestIdempotentCreateConflict(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, first := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Buy milk", "description": "2 litres"}, keyHeader("k1")...)
 	e.mustStatus(resp, 201, first)
@@ -102,6 +104,7 @@ func TestIdempotentCreateConflict(t *testing.T) {
 }
 
 func TestIdempotencyKeyInvalid400(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	for _, k := range []string{strings.Repeat("a", 200), "has space", "", "ünï", "a/b"} {
 		resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "x"}, keyHeader(k)...)
@@ -131,6 +134,7 @@ func TestIdempotencyKeyInvalid400(t *testing.T) {
 }
 
 func TestIdempotentCreateConvergesAcrossDevices(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	resp, first := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Buy milk"}, keyHeader("run42-milk")...)
 	e.mustStatus(resp, 201, first)
@@ -169,6 +173,7 @@ func TestIdempotentCreateConvergesAcrossDevices(t *testing.T) {
 // entities; one user's key never returns, overwrites or collides with another
 // user's entity, even one planted under the derived id in a shared project.
 func TestIdempotencyKeysScopedPerUser(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	resp, a := se.alice.do("POST", "/api/v1/tasks", map[string]any{"title": "Same"}, keyHeader("k1")...)

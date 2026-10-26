@@ -7,6 +7,7 @@ import (
 
 // CalDAV mapping of task dependencies (OpenSpec change task-dependencies, task 7.1).
 func TestCalDAVDependsOn(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	inbox := c.cal(inboxCalendar)
 	c.must("PUT", inbox+"confirm.ics", vtodoBody("confirm", "SUMMARY:Confirm dates"), 201, "If-None-Match", "*")

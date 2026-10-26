@@ -24,6 +24,7 @@ func errMessage(out map[string]any) string {
 }
 
 func TestViewsRequireAuth(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	for _, c := range []struct {
 		method, path string
@@ -54,6 +55,7 @@ func TestViewsRequireAuth(t *testing.T) {
 }
 
 func TestViewsCrud(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting", "pinned": true})
@@ -127,6 +129,7 @@ func TestViewsCrud(t *testing.T) {
 }
 
 func TestViewsRejectInvalidOption(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "List", "query": "p1"})
 	e.mustStatus(resp, 201, out)
@@ -207,6 +210,7 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 }
 
 func TestViewDisplayOptions(t *testing.T) {
+	t.Parallel()
 	// The display options of views-and-display: absent on create, written by a patch.
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting"})
@@ -225,6 +229,7 @@ func TestViewDisplayOptions(t *testing.T) {
 }
 
 func TestViewsSyncAcceptsUnknownOptionValues(t *testing.T) {
+	t.Parallel()
 	// Sync is never refused for an enumeration value (additive, design D1); only REST is.
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/sync", map[string]any{"device": "newer", "cursor": 0, "ops": []map[string]any{
@@ -246,6 +251,7 @@ func userIDOf(t *testing.T, e *env) string {
 }
 
 func TestExportIncludesViews(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting", "on_drop": map[string]any{"priority": 2}})
 	e.mustStatus(resp, 201, out)
@@ -293,6 +299,7 @@ func TestExportIncludesViews(t *testing.T) {
 // rule-boards): the null default, a valid patch replacing the rule whole, every
 // case of the spec's "Invalid rule" and authentication.
 func TestViewsOnDrop(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting", "pinned": true})
 	e.mustStatus(resp, 201, out)
@@ -379,6 +386,7 @@ func TestViewsOnDrop(t *testing.T) {
 // matrix template (spec "Template parses on the server"); the web test of
 // boardTemplates.ts uses the same literal strings.
 func TestViewsAcceptEisenhowerQueries(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	for _, c := range []struct {
 		name, query string
@@ -396,6 +404,7 @@ func TestViewsAcceptEisenhowerQueries(t *testing.T) {
 
 // A saved view may name a workspace (OpenSpec change group-mentions, D6).
 func TestViewsAcceptWorkspaceTerm(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Both", "query": `(workspace: Home | workspace: "Side projects") & due = this week`})
 	e.mustStatus(resp, 201, out)

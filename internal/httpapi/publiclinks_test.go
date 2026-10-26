@@ -20,6 +20,7 @@ func publicLink(t *testing.T, by *env, projectID string, body map[string]any) (s
 }
 
 func TestPublicLinkManagement(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	p := "/api/v1/projects/" + se.project
 	anon := newClientAt(se.alice, "10.9.0.1")
@@ -82,6 +83,7 @@ func TestPublicLinkManagement(t *testing.T) {
 }
 
 func TestPublicListRead(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.alice.do("POST", "/api/v1/tasks", map[string]any{"title": "Bread https://example.com", "project_id": se.project, "description": "secret notes", "priority": 2})
 	se.alice.mustStatus(resp, 201, out)
@@ -164,6 +166,7 @@ func TestPublicListRead(t *testing.T) {
 }
 
 func TestPublicTick(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "admin")
 	tick, _ := publicLink(t, se.bob, se.project, map[string]any{"rights": "tick", "name": "Fridge"})
@@ -220,6 +223,7 @@ func TestPublicTick(t *testing.T) {
 }
 
 func TestPublicLinkEncryptedCreator(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	resp, out := se.alice.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 7))
 	se.alice.mustStatus(resp, 201, out)
@@ -229,6 +233,7 @@ func TestPublicLinkEncryptedCreator(t *testing.T) {
 }
 
 func TestPublicLinkLimits(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	for i := 0; i < 20; i++ {
 		publicLink(t, se.alice, se.project, map[string]any{"rights": "view"})
@@ -250,6 +255,7 @@ func TestPublicLinkLimits(t *testing.T) {
 }
 
 func TestPublicTickAttribution(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	tick, _ := publicLink(t, se.alice, se.project, map[string]any{"rights": "tick", "name": "Grandma"})

@@ -12,6 +12,7 @@ import (
 // 1.4): both fields go through the schema path, invalid values are refused
 // with invalid_input, and the export carries them.
 func TestTaskStartEveningREST(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -45,6 +46,7 @@ func TestTaskStartEveningREST(t *testing.T) {
 // served back, invalid values stay client data, and a client that omits the
 // properties leaves a parked task parked (someday-and-evening D7).
 func TestCaldavStartEvening(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Passport", "X-OPENTODO-START:20261021", "X-OPENTODO-EVENING:TRUE"), 201)
 	if task := e.task("t1"); task["start"] != "2026-10-21" || task["evening"] != true {
@@ -75,6 +77,7 @@ func TestCaldavStartEvening(t *testing.T) {
 
 // TestRestRecurringCompletionShiftsStart (someday-and-evening D8).
 func TestRestRecurringCompletionShiftsStart(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)

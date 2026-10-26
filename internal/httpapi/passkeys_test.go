@@ -12,8 +12,8 @@ import (
 
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 	"github.com/pixari/opentodo/internal/webauthn"
 	"github.com/pixari/opentodo/internal/webauthn/testauth"
 )
@@ -29,7 +29,7 @@ const (
 
 func newEnvWithBase(t *testing.T, base string, allowSignup bool) *env {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := testenv.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,6 +98,7 @@ func (e *env) loginWithPasskey(a *testauth.Authenticator) (*http.Response, map[s
 }
 
 func TestPasskeyRegisterLoginRevoke(t *testing.T) {
+	t.Parallel()
 	e := newEnvWithBase(t, testBase, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -218,6 +219,7 @@ func TestPasskeyRegisterLoginRevoke(t *testing.T) {
 }
 
 func TestPasskeyCounterRegressionOverHTTP(t *testing.T) {
+	t.Parallel()
 	e := newEnvWithBase(t, testBase, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -240,6 +242,7 @@ func TestPasskeyCounterRegressionOverHTTP(t *testing.T) {
 }
 
 func TestPasskeyRoutesAuth(t *testing.T) {
+	t.Parallel()
 	e := newEnvWithBase(t, testBase, true)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
@@ -318,6 +321,7 @@ func TestPasskeyRoutesAuth(t *testing.T) {
 }
 
 func TestPasskeyLoginRateLimit(t *testing.T) {
+	t.Parallel()
 	e := newEnvWithBase(t, testBase, false)
 	var last int
 	for i := 0; i < 12; i++ {

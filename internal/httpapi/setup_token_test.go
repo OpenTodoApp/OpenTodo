@@ -15,6 +15,7 @@ func newSetupTokenEnv(t *testing.T, allowSignup bool) *env {
 }
 
 func TestRegisterSetupTokenStatus(t *testing.T) {
+	t.Parallel()
 	e := newSetupTokenEnv(t, false)
 	_, out := e.do("GET", "/api/v1/auth/status", nil)
 	if out["setupRequired"] != true || out["setupTokenRequired"] != true {
@@ -29,6 +30,7 @@ func TestRegisterSetupTokenStatus(t *testing.T) {
 }
 
 func TestRegisterSetupTokenMissingOrWrong(t *testing.T) {
+	t.Parallel()
 	e := newSetupTokenEnv(t, false)
 	for name, body := range map[string]map[string]string{
 		"missing": {"email": "owner@example.com", "password": "correct horse battery"},
@@ -46,6 +48,7 @@ func TestRegisterSetupTokenMissingOrWrong(t *testing.T) {
 }
 
 func TestRegisterSetupTokenCountsAgainstLimiter(t *testing.T) {
+	t.Parallel()
 	e := newSetupTokenEnv(t, false)
 	body := map[string]string{"email": "owner@example.com", "password": "correct horse battery", "setupToken": "guess-guess-guess"}
 	var last int
@@ -59,6 +62,7 @@ func TestRegisterSetupTokenCountsAgainstLimiter(t *testing.T) {
 }
 
 func TestRegisterSetupTokenCorrect(t *testing.T) {
+	t.Parallel()
 	e := newSetupTokenEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{
 		"email": "owner@example.com", "name": "Owner", "password": "correct horse battery", "setupToken": "  " + testSetupToken + " ",
@@ -76,6 +80,7 @@ func TestRegisterSetupTokenCorrect(t *testing.T) {
 }
 
 func TestRegisterSetupTokenIgnoredAfterSetup(t *testing.T) {
+	t.Parallel()
 	e := newSetupTokenEnv(t, true)
 	if resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{
 		"email": "owner@example.com", "password": "correct horse battery", "setupToken": testSetupToken,

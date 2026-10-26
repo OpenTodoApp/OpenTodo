@@ -18,6 +18,7 @@ func passkeyOwner(t *testing.T) (*env, string) {
 }
 
 func TestPasskeyRegisteredRecorded(t *testing.T) {
+	t.Parallel()
 	e, ownerID := passkeyOwner(t)
 	resp, out := e.registerPasskey(testauth.New(t, webauthn.AlgES256), "Phone")
 	e.mustStatus(resp, 201, out)
@@ -29,6 +30,7 @@ func TestPasskeyRegisteredRecorded(t *testing.T) {
 }
 
 func TestPasskeyDeletedRecorded(t *testing.T) {
+	t.Parallel()
 	e, ownerID := passkeyOwner(t)
 	resp, out := e.registerPasskey(testauth.New(t, webauthn.AlgES256), "Laptop")
 	e.mustStatus(resp, 201, out)
@@ -45,6 +47,7 @@ func TestPasskeyDeletedRecorded(t *testing.T) {
 }
 
 func TestPasskeyLoginRecorded(t *testing.T) {
+	t.Parallel()
 	e, ownerID := passkeyOwner(t)
 	key := testauth.New(t, webauthn.AlgES256)
 	resp, out := e.registerPasskey(key, "Phone")
@@ -67,6 +70,7 @@ func TestPasskeyLoginRecorded(t *testing.T) {
 }
 
 func TestPasskeyLoginFailureRecorded(t *testing.T) {
+	t.Parallel()
 	e, ownerID := passkeyOwner(t)
 	// Unknown credential: no target.
 	resp, out := newClientFor(e).loginWithPasskey(testauth.New(t, webauthn.AlgES256))
@@ -99,6 +103,7 @@ func TestPasskeyLoginFailureRecorded(t *testing.T) {
 }
 
 func TestPasskeyLoginRateLimitRecordsOneEvent(t *testing.T) {
+	t.Parallel()
 	e := newEnvWithBase(t, testBase, false)
 	for i := 0; i < 25; i++ {
 		e.do("POST", "/api/v1/auth/passkey", map[string]any{"credential": map[string]any{"rawId": "AAAA"}})

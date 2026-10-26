@@ -151,6 +151,7 @@ func (me *ownProviderEnv) setOwner(t *testing.T, body map[string]any) {
 // provider only while member keys are allowed and the key is set; otherwise
 // the owner's provider; the choice is kept while the owner disallows it.
 func TestMemberProviderResolution(t *testing.T) {
+	t.Parallel()
 	me := newOwnProviderEnv(t, nil)
 	// Before any choice: the server's assistant.
 	resp, out := me.member.do("GET", "/api/v1/me/assistant", nil)
@@ -272,6 +273,7 @@ func TestMemberProviderResolution(t *testing.T) {
 // TestMemberProviderValidation: the compatible endpoint, unknown providers,
 // bad model ids and a missing key are refused and store nothing.
 func TestMemberProviderValidation(t *testing.T) {
+	t.Parallel()
 	me := newOwnProviderEnv(t, nil)
 	long := strings.Repeat("a", 101)
 	for _, c := range []struct {
@@ -337,6 +339,7 @@ func TestMemberProviderValidation(t *testing.T) {
 // TestMemberKeyCap: turns on a member's own key are outside the monthly cap
 // unless the owner turns on cap_member_keys; concurrency limits still apply.
 func TestMemberKeyCap(t *testing.T) {
+	t.Parallel()
 	me := newOwnProviderEnv(t, map[string]any{"monthly_token_cap_per_user": 1000})
 	me.chooseOpenAI(t)
 	me.member.consentAssistant("openai")
@@ -397,6 +400,7 @@ func TestMemberKeyCap(t *testing.T) {
 // this change (no provider choice) is still used, and counts as the member's
 // own key for the cap.
 func TestLegacyOwnKeyStillWorks(t *testing.T) {
+	t.Parallel()
 	me := newOwnProviderEnv(t, map[string]any{"monthly_token_cap_per_user": 100})
 	resp, out := me.member.do("PUT", "/api/v1/me/assistant", map[string]any{"own_key": "sk-ant-LEGACY-OWN"})
 	me.member.mustStatus(resp, 200, out)
@@ -418,6 +422,7 @@ func TestLegacyOwnKeyStillWorks(t *testing.T) {
 // chosen on screen or saved, rate limited; a rejected key names the member's
 // own key.
 func TestMemberConnectionTest(t *testing.T) {
+	t.Parallel()
 	me := newOwnProviderEnv(t, nil)
 	resp, out := me.member.do("POST", "/api/v1/me/assistant/test", nil)
 	if resp.StatusCode != 400 || errCode(out) != "invalid_input" {
@@ -470,6 +475,7 @@ func TestMemberConnectionTest(t *testing.T) {
 // TestMemberKeysNotInBackupsOrExport: the DB snapshot and the export never
 // hold a member's key; the secrets file does (0600).
 func TestMemberKeysNotInExport(t *testing.T) {
+	t.Parallel()
 	me := newOwnProviderEnv(t, nil)
 	me.chooseOpenAI(t)
 	req, _ := http.NewRequest("GET", me.member.srv.URL+"/api/v1/export", nil)

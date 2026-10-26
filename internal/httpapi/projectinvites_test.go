@@ -57,6 +57,7 @@ func inviteRows(t *testing.T, e *env, q string, args ...any) int {
 }
 
 func TestProjectInviteRoutesAuthAndRoles(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	p := "/api/v1/projects/" + se.project
 	anon := newClientAt(se.alice, "10.0.0.9")
@@ -142,6 +143,7 @@ func TestProjectInviteRoutesAuthAndRoles(t *testing.T) {
 }
 
 func TestProjectInvitePreviewAndJoin(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	_, secret, _ := projectLink(se.alice, se.project, map[string]any{"role": "editor"})
 
@@ -223,6 +225,7 @@ func TestProjectInvitePreviewAndJoin(t *testing.T) {
 }
 
 func TestProjectInviteEmailBinding(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	_, secret, _ := projectLink(se.alice, se.project, map[string]any{"role": "viewer", "email": "CAROL@example.com"})
 	resp, out := acceptLink(se.bob, secret)
@@ -240,6 +243,7 @@ func TestProjectInviteEmailBinding(t *testing.T) {
 }
 
 func TestProjectInviteCreatorLostRights(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "admin")
 	_, secret, _ := projectLink(se.bob, se.project, map[string]any{"role": "editor"})
@@ -275,6 +279,7 @@ func TestProjectInviteCreatorLostRights(t *testing.T) {
 }
 
 func TestProjectInviteRevocationAndDeletedProject(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	p := "/api/v1/projects/" + se.project
 	id, secret, _ := projectLink(se.alice, se.project, map[string]any{"role": "viewer"})
@@ -343,6 +348,7 @@ func newClosedEnv(t *testing.T) *closedEnv {
 }
 
 func TestProjectInviteRegisterNewAccount(t *testing.T) {
+	t.Parallel()
 	ce := newClosedEnv(t)
 	_, secret, created := projectLink(ce.alice, ce.project, map[string]any{"role": "editor", "email": "dora@example.com"})
 	if created["newAccounts"] != true {
@@ -395,6 +401,7 @@ func TestProjectInviteRegisterNewAccount(t *testing.T) {
 }
 
 func TestProjectInviteOwnerSwitch(t *testing.T) {
+	t.Parallel()
 	ce := newClosedEnv(t)
 	_, secret, created := projectLink(ce.bob, ce.project, map[string]any{"role": "viewer"})
 	if created["newAccounts"] != false {
@@ -446,6 +453,7 @@ func TestProjectInviteOwnerSwitch(t *testing.T) {
 }
 
 func TestProjectInviteConcurrentAcceptance(t *testing.T) {
+	t.Parallel()
 	ce := newClosedEnv(t)
 	_, secret, _ := projectLink(ce.alice, ce.project, map[string]any{"role": "editor"})
 	const n = 8
@@ -515,6 +523,7 @@ func TestProjectInviteConcurrentAcceptance(t *testing.T) {
 }
 
 func TestProjectInviteCreationRateLimit(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	for i := 0; i < 20; i++ {
 		projectLink(se.alice, se.project, map[string]any{"role": "viewer"})
@@ -526,6 +535,7 @@ func TestProjectInviteCreationRateLimit(t *testing.T) {
 }
 
 func TestProjectInvitePreviewRateLimit(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	anon := newClientAt(se.alice, "10.0.4.1")
 	var last int
@@ -539,6 +549,7 @@ func TestProjectInvitePreviewRateLimit(t *testing.T) {
 }
 
 func TestProjectInviteTokenScopes(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	_, secret, _ := projectLink(se.alice, se.project, map[string]any{"role": "viewer"})
 	for _, scope := range []string{"read", "agent"} {
@@ -563,6 +574,7 @@ func TestProjectInviteTokenScopes(t *testing.T) {
 }
 
 func TestProjectInviteSSOOnly(t *testing.T) {
+	t.Parallel()
 	o := newOIDCEnv(t, false)
 	resp, out := o.do("POST", "/api/v1/projects", map[string]any{"name": "Team"})
 	o.mustStatus(resp, 201, out)
@@ -581,6 +593,7 @@ func TestProjectInviteSSOOnly(t *testing.T) {
 }
 
 func TestProjectInviteDeactivatedCreator(t *testing.T) {
+	t.Parallel()
 	ce := newClosedEnv(t)
 	_, secret, _ := projectLink(ce.bob, ce.project, map[string]any{"role": "viewer"})
 	_, out := ce.bob.do("GET", "/api/v1/me", nil)
@@ -597,6 +610,7 @@ func TestProjectInviteDeactivatedCreator(t *testing.T) {
 }
 
 func TestRedactPath(t *testing.T) {
+	t.Parallel()
 	for in, want := range map[string]string{
 		"/api/v1/project-invites/otp_abc/accept": "/api/v1/project-invites/[redacted]/accept",
 		"/api/v1/invitations/oti_xyz":            "/api/v1/invitations/[redacted]",

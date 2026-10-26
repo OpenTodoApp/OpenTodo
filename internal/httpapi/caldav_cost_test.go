@@ -14,6 +14,7 @@ import (
 // loaded once per request and indexed, so each href of a multiget costs the
 // same however many tasks the account has.
 func TestCalDAVMultigetCostPerHrefDoesNotGrowWithTasks(t *testing.T) {
+	// Not parallel: it measures allocations or time, which tests running beside it would distort.
 	e, c := davSetup(t)
 	const tasks, hrefs = 2000, 200
 	for start := 0; start < tasks; start += 200 {

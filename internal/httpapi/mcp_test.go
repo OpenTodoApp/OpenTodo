@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -43,13 +44,14 @@ func (e *env) mcpPost(secret string, body string, headers ...string) (*http.Resp
 	return resp, raw
 }
 
-var rpcSeq int
+// rpcSeq numbers JSON-RPC requests; tests run in parallel, so it is atomic.
+var rpcSeq atomic.Int64
 
 // rpc sends one request and returns the decoded JSON-RPC response (status 200).
 func (e *env) rpc(secret, method string, params any) map[string]any {
 	e.t.Helper()
-	rpcSeq++
-	b, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": rpcSeq, "method": method, "params": params})
+	id := rpcSeq.Add(1)
+	b, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": id, "method": method, "params": params})
 	resp, raw := e.mcpPost(secret, string(b))
 	if resp.StatusCode != 200 || !strings.HasPrefix(resp.Header.Get("Content-Type"), "application/json") {
 		e.t.Fatalf("%s: status %d %s: %s", method, resp.StatusCode, resp.Header.Get("Content-Type"), raw)
@@ -58,7 +60,7 @@ func (e *env) rpc(secret, method string, params any) map[string]any {
 	if err := json.Unmarshal(raw, &out); err != nil {
 		e.t.Fatalf("%s: %s", method, raw)
 	}
-	if out["id"].(float64) != float64(rpcSeq) || out["jsonrpc"] != "2.0" {
+	if out["id"].(float64) != float64(id) || out["jsonrpc"] != "2.0" {
 		e.t.Fatalf("%s: envelope %v", method, out)
 	}
 	return out
@@ -109,6 +111,7 @@ func taskTitles(list any) []string {
 }
 
 func TestMcpDisabled404(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	secret := e.token("read")
 	for _, method := range []string{"POST", "GET", "DELETE"} {
@@ -139,6 +142,7 @@ func TestMcpDisabled404(t *testing.T) {
 }
 
 func TestMcpSettingForbidsMembers(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	m, _ := e.member("member@example.com", "198.51.100.7")
 	resp, out := m.do("PUT", "/api/v1/settings/mcp", map[string]any{"enabled": true})
@@ -173,6 +177,7 @@ func TestMcpSettingForbidsMembers(t *testing.T) {
 }
 
 func TestMcpCookieRejected401(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	// e carries the owner's session cookie and no bearer token.
@@ -191,6 +196,7 @@ func TestMcpCookieRejected401(t *testing.T) {
 }
 
 func TestMcpRevokedTokenRateLimited(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	secret := e.token("read")
@@ -216,6 +222,7 @@ func TestMcpRevokedTokenRateLimited(t *testing.T) {
 }
 
 func TestMcpDeactivatedAccountRefused(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	m, mid := e.member("member@example.com", "198.51.100.8")
@@ -231,6 +238,7 @@ func TestMcpDeactivatedAccountRefused(t *testing.T) {
 }
 
 func TestMcpBadOrigin403(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	secret := e.token("read")
@@ -246,6 +254,7 @@ func TestMcpBadOrigin403(t *testing.T) {
 }
 
 func TestMcpBodyTooLarge413(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	secret := e.token("read")
@@ -257,6 +266,7 @@ func TestMcpBodyTooLarge413(t *testing.T) {
 }
 
 func TestMcpGet405(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	secret := e.token("read")
@@ -276,6 +286,7 @@ func TestMcpGet405(t *testing.T) {
 }
 
 func TestMcpTransportNegotiation(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	secret := e.token("full") // MCP accepts full tokens too
@@ -325,6 +336,7 @@ func seedOps(t *testing.T, e *env, uid, entity, id string, fields map[string]any
 }
 
 func TestMcpSession(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Garden"})
@@ -383,6 +395,7 @@ func TestMcpSession(t *testing.T) {
 }
 
 func TestListTasksPaging450(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	uid := e.userID()
@@ -465,6 +478,7 @@ func dump(t *testing.T, e *env) string {
 }
 
 func TestMcpIsReadOnlyAndIsolated(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	_ = e.userID()
@@ -572,6 +586,7 @@ func TestMcpIsReadOnlyAndIsolated(t *testing.T) {
 }
 
 func TestReadForeignTask32002SameAsDeleted(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Owner only"})
@@ -601,6 +616,7 @@ func TestReadForeignTask32002SameAsDeleted(t *testing.T) {
 // The fixtures are written from the clients' documented message shapes; see
 // tasks.md 3.6 for why they are not live recordings.
 func TestClientFixtures(t *testing.T) {
+	t.Parallel()
 	files, _ := filepath.Glob(filepath.Join("testdata", "mcp", "*.json"))
 	if len(files) < 2 {
 		t.Fatalf("fixtures = %v", files)
@@ -689,6 +705,7 @@ func subset(want, got any, path string) (string, bool) {
 // assistant-skills 4.1: prompts need a valid token like every MCP request, and
 // a read token can get them (running them is still bound by tools/call).
 func TestMcpPromptsAuth(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.enableMCP(true)
 	resp, raw := e.mcpPost("", `{"jsonrpc":"2.0","id":1,"method":"prompts/list"}`)

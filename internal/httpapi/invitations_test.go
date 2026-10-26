@@ -38,6 +38,7 @@ func errCode(out map[string]any) string {
 }
 
 func TestInvitationRoutesRequireOwner(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 
 	// Anonymous: 401 on every management route.
@@ -97,6 +98,7 @@ func TestInvitationRoutesRequireOwner(t *testing.T) {
 }
 
 func TestInvitationPreviewAndAccept(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	id, secret, inv := e.invite(map[string]any{"email": "Friend@Example.com", "expiresInHours": 48})
 	if inv["email"] != "friend@example.com" {
@@ -226,6 +228,7 @@ func TestInvitationPreviewAndAccept(t *testing.T) {
 }
 
 func TestInvitationLinkUsesRequestOrigin(t *testing.T) {
+	// Not parallel: it changes or depends on the process-wide trusted proxy list (setTrustedProxies).
 	e := ownerEnv(t)
 	resp, out := e.do("POST", "/api/v1/invitations", map[string]any{})
 	e.mustStatus(resp, 201, out)
@@ -250,6 +253,7 @@ func TestInvitationLinkUsesRequestOrigin(t *testing.T) {
 }
 
 func TestInvitationPreviewRateLimited(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientFor(e)
 	var last int
@@ -278,6 +282,7 @@ func TestInvitationPreviewRateLimited(t *testing.T) {
 }
 
 func TestInvitationCreationRateLimit(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	for i := 0; i < 20; i++ {
 		resp, out := e.do("POST", "/api/v1/invitations", map[string]any{})
@@ -297,6 +302,7 @@ func TestInvitationCreationRateLimit(t *testing.T) {
 }
 
 func TestInvitationInvalidInput(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	cases := []map[string]any{
 		{"expiresInHours": 0},

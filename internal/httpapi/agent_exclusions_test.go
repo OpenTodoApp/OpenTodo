@@ -25,6 +25,7 @@ func (e *env) keepAway(pid string, keep bool) map[string]any {
 }
 
 func TestAgentExclusionHidesProject(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	client := e.newProject(map[string]any{"name": "Client X"})
 	invoices := e.newProject(map[string]any{"name": "Invoices", "parent_id": client})
@@ -116,6 +117,7 @@ func anyStrings(v any) []string {
 }
 
 func TestAgentAccessRoutePolicy(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	pid := e.newProject(map[string]any{"name": "Client X"})
 	path := "/api/v1/projects/" + pid + "/agent-access"

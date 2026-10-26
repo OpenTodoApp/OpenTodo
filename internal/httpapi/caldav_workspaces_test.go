@@ -7,6 +7,7 @@ import (
 
 // CalDAV and workspaces (OpenSpec change workspaces, task 4.1).
 func TestCalDAVTwoWorkspaces(t *testing.T) {
+	t.Parallel()
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/workspaces", map[string]any{"name": "Work"})
 	e.mustStatus(resp, 201, out)

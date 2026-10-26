@@ -19,6 +19,7 @@ func meID(t *testing.T, e *env) string {
 }
 
 func TestRestCompletionStampsCompletedBy(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	me := meID(t, e)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Report"})
@@ -57,6 +58,7 @@ func TestRestCompletionStampsCompletedBy(t *testing.T) {
 }
 
 func TestRestRecurringCompletionRecordCarriesCompletedBy(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	me := meID(t, e)
 	today := dayOffset(0)
@@ -76,6 +78,7 @@ func TestRestRecurringCompletionRecordCarriesCompletedBy(t *testing.T) {
 }
 
 func TestPublicTickRecordsNoCompleter(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	tick, _ := publicLink(t, se.alice, se.project, map[string]any{"rights": "tick"})
 	anon := newClientAt(se.alice, "10.9.2.1")
@@ -101,6 +104,7 @@ func listIDs(t *testing.T, e *env, query string) []string {
 }
 
 func TestRestTaskListCompletionRange(t *testing.T) {
+	t.Parallel()
 	e := registeredEnv(t)
 	zurich, _ := time.LoadLocation("Europe/Zurich")
 	at := func(day string, hour int) int64 {

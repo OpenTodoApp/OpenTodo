@@ -101,6 +101,7 @@ func (e *env) phrase(body []byte, contentType, query string) (*http.Response, st
 }
 
 func TestSTTSettingsOwnerOnly(t *testing.T) {
+	t.Parallel()
 	e, _, _ := sttEnv(t)
 	fake := newFakeSTT(t)
 	resp, out := e.do("PUT", "/api/v1/settings/stt", map[string]any{"url": "ftp://stt.home.lan"})
@@ -142,6 +143,7 @@ func TestSTTSettingsOwnerOnly(t *testing.T) {
 }
 
 func TestTranscribe(t *testing.T) {
+	t.Parallel()
 	e, srv, logs := sttEnv(t)
 	fake := newFakeSTT(t)
 	resp, raw := e.phrase([]byte("webm-bytes"), "audio/webm;codecs=opus", "?language=it")

@@ -52,6 +52,7 @@ func eventKey(e activity.Event) string {
 }
 
 func TestFeedPagesMatchWholeHistory(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	ctx := context.Background()
@@ -183,6 +184,7 @@ func TestFeedPagesMatchWholeHistory(t *testing.T) {
 // A first page of a project with a long history reads a few entities, not the
 // whole log, and never the opaque document fields.
 func TestFeedFirstPageCostDoesNotGrowWithHistory(t *testing.T) {
+	// Not parallel: it measures allocations or time, which tests running beside it would distort.
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	ctx := context.Background()

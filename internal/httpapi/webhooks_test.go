@@ -79,6 +79,7 @@ func (e *env) createHook(body map[string]any) map[string]any {
 }
 
 func TestWebhookRoutesRequireAuth(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	anon := newClientFor(e)
 	routes := [][2]string{
@@ -113,6 +114,7 @@ func TestWebhookRoutesRequireAuth(t *testing.T) {
 }
 
 func TestWebhookValidation400(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	cases := []struct {
 		body  map[string]any
@@ -158,6 +160,7 @@ func TestWebhookValidation400(t *testing.T) {
 }
 
 func TestPrivateTargetRefused400(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	for _, u := range []string{"http://192.168.1.10:8123/api/webhook/plants", "http://127.0.0.1:9/x", "http://[::1]/x", "http://169.254.169.254/latest/meta-data", "http://[::ffff:10.0.0.1]/x", "http://100.100.1.1/x"} {
 		resp, out := e.do("POST", "/api/v1/webhooks", map[string]any{"url": u, "events": []string{"task.completed"}})
@@ -179,6 +182,7 @@ func TestPrivateTargetRefused400(t *testing.T) {
 }
 
 func TestForeignWebhook404(t *testing.T) {
+	t.Parallel()
 	owner, member := memberEnv(t)
 	hook := owner.createHook(map[string]any{"url": "https://93.184.216.34/h", "events": []string{"task.created"}})
 	id := hook["id"].(string)
@@ -208,6 +212,7 @@ func TestForeignWebhook404(t *testing.T) {
 }
 
 func TestRedeliverUnknown404(t *testing.T) {
+	t.Parallel()
 	owner, member := memberEnv(t)
 	owner.allowPrivate(true)
 	rcv := newHookReceiver(t, 200)
@@ -237,6 +242,7 @@ func TestRedeliverUnknown404(t *testing.T) {
 }
 
 func TestSecretNotInReads(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	hook := e.createHook(map[string]any{"url": "https://93.184.216.34/h", "events": []string{"task.completed", "task.created"}})
 	secret, _ := hook["secret"].(string)
@@ -287,6 +293,7 @@ func (e *env) rawDo(method, path string, body any) (*http.Response, string) {
 }
 
 func TestWebhookPolicyForbidsMembers(t *testing.T) {
+	t.Parallel()
 	owner, member := memberEnv(t)
 	resp, out := member.do("PUT", "/api/v1/settings/webhooks", map[string]any{"allowPrivate": true})
 	member.mustStatus(resp, 403, out)
@@ -313,6 +320,7 @@ func TestWebhookPolicyForbidsMembers(t *testing.T) {
 }
 
 func TestWebhookPolicyPresetSeedsOnce(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	ctx := context.Background()
 	yes := true
@@ -342,6 +350,7 @@ func TestWebhookPolicyPresetSeedsOnce(t *testing.T) {
 // the in-process receiver gets one signed task.completed delivery; then a
 // receiver outage (503) is retried on schedule and succeeds.
 func TestWebhookEndToEnd(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.allowPrivate(true) // the receiver listens on loopback
 	rcv := newHookReceiver(t, 200, 200, 503, 200)

@@ -9,6 +9,7 @@ import (
 // The router comment (router.go) relies on Go's ServeMux choosing the most
 // specific pattern whatever the registration order (server-code-structure).
 func TestMuxPrefersSpecificPatternInAnyOrder(t *testing.T) {
+	t.Parallel()
 	for _, literalFirst := range []bool{true, false} {
 		mux := http.NewServeMux()
 		hit := ""

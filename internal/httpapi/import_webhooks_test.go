@@ -48,6 +48,7 @@ func (e *env) waitDeliveries(event string, n int) map[string]int {
 // import.undone; an ordinary REST create still emits task.created
 // (harden-server-edges).
 func TestImportSendsOneWebhookSummary(t *testing.T) {
+	t.Parallel()
 	e := ownerEnv(t)
 	e.allowPrivate(true)
 	rcv := newHookReceiver(t)

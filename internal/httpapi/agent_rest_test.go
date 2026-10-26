@@ -96,6 +96,7 @@ func conditional(p string) bool {
 }
 
 func TestAgentRestAllowList(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "User's task"})
 	e.mustStatus(resp, 201, out)
@@ -228,6 +229,7 @@ func TestAgentRestAllowList(t *testing.T) {
 }
 
 func TestAgentRestSwitchOff(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	e.allowMyAssistants(false)
 	resp, out := c.do("POST", "/api/v1/tasks", map[string]any{"title": "Water plants"}, bearer(secret)...)
@@ -255,6 +257,7 @@ func TestAgentRestSwitchOff(t *testing.T) {
 }
 
 func TestAgentRestEncrypted409(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
 	e.mustStatus(resp, 201, out)
@@ -289,6 +292,7 @@ func TestAgentRestEncrypted409(t *testing.T) {
 }
 
 func TestAgentRestSharesLimitsWithMcp(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Target"})
 	e.mustStatus(resp, 201, out)
@@ -312,6 +316,7 @@ func TestAgentRestSharesLimitsWithMcp(t *testing.T) {
 }
 
 func TestAgentRestAttributionAuditAndSync(t *testing.T) {
+	t.Parallel()
 	e, tokenID, secret, c := agentReady(t)
 	resp, out := c.do("POST", "/api/v1/tasks", map[string]any{"title": "Water plants"}, bearer(secret)...)
 	c.mustStatus(resp, 201, out)
@@ -354,6 +359,7 @@ func TestAgentRestAttributionAuditAndSync(t *testing.T) {
 }
 
 func TestAgentRestCommentNoMention(t *testing.T) {
+	t.Parallel()
 	se := newShareEnv(t)
 	se.share(se.alice, "bob@example.com", "editor")
 	se.alice.allowWrites(true)
@@ -379,6 +385,7 @@ func TestAgentRestCommentNoMention(t *testing.T) {
 }
 
 func TestAgentRestIdempotency(t *testing.T) {
+	t.Parallel()
 	e, _, secret, c := agentReady(t)
 	h := keyHeader("run42-milk", bearer(secret)...)
 	resp, first := c.do("POST", "/api/v1/tasks", map[string]any{"title": "Buy milk"}, h...)
@@ -418,6 +425,7 @@ func TestAgentRestIdempotency(t *testing.T) {
 }
 
 func TestMeAuthIntrospection(t *testing.T) {
+	t.Parallel()
 	e, tokenID, secret, c := agentReady(t)
 	resp, out := e.do("GET", "/api/v1/me", nil)
 	e.mustStatus(resp, 200, out)

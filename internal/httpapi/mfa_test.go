@@ -15,8 +15,8 @@ import (
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/testenv"
 	"github.com/pixari/opentodo/internal/webauthn"
 	"github.com/pixari/opentodo/internal/webauthn/testauth"
 )
@@ -44,7 +44,7 @@ type mfaEnv struct {
 // a controllable clock, and registers the owner.
 func newMFAEnv(t *testing.T) *mfaEnv {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := testenv.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,6 +118,7 @@ func hasCookie(resp *http.Response, name string) bool {
 }
 
 func TestTwoStepLogin(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	secret, codes := m.enrol(m.env)
 
@@ -208,6 +209,7 @@ func TestTwoStepLogin(t *testing.T) {
 }
 
 func TestChallengeExhausted(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	secret, _ := m.enrol(m.env)
 	c := m.client("203.0.113.10")
@@ -259,6 +261,7 @@ func TestChallengeExhausted(t *testing.T) {
 }
 
 func TestTrustedDeviceSkipsSecondStep(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	secret, _ := m.enrol(m.env)
 	c := m.client("203.0.113.20")
@@ -330,6 +333,7 @@ func TestTrustedDeviceSkipsSecondStep(t *testing.T) {
 }
 
 func TestPasskeyUVSatisfiesMFA(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	phone := testauth.New(t, webauthn.AlgES256) // reports user verification
 	resp, out := m.registerPasskey(phone, "Phone")
@@ -373,6 +377,7 @@ func TestPasskeyUVSatisfiesMFA(t *testing.T) {
 }
 
 func TestReauthRequiredOnStaleSession(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	// A fresh session (just signed in) creates a token without a prompt.
 	resp, out := m.do("POST", "/api/v1/tokens", map[string]string{"name": "fresh"})
@@ -438,6 +443,7 @@ func TestReauthRequiredOnStaleSession(t *testing.T) {
 }
 
 func TestBearerTokenNeverChallenged(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	// Minting tokens is a credential route: a script needs an admin token
 	// (route-authorization-policy), which is never challenged either.
@@ -487,6 +493,7 @@ func TestBearerTokenNeverChallenged(t *testing.T) {
 }
 
 func TestReauthRateLimited(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	m.ip = "203.0.113.60"
 	for i := 0; i < 10; i++ {
@@ -509,6 +516,7 @@ func TestReauthRateLimited(t *testing.T) {
 }
 
 func TestPolicyRestrictsUnenrolledSessions(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	m.enrol(m.env)
 	mc, _ := m.member("member@example.com", "203.0.113.70")
@@ -567,6 +575,7 @@ func TestPolicyRestrictsUnenrolledSessions(t *testing.T) {
 }
 
 func TestPolicyRequiresOwner(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	mc, _ := m.member("member@example.com", "203.0.113.80")
 	for _, method := range []string{"GET", "PUT"} {
@@ -598,6 +607,7 @@ func TestPolicyRequiresOwner(t *testing.T) {
 }
 
 func TestEnrolConfirmDisable(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	// Anonymous requests.
 	anon := m.client("203.0.113.90")
@@ -669,6 +679,7 @@ func countRows(t *testing.T, m *mfaEnv, q string) int {
 }
 
 func TestDisableRefusedByPolicy(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	m.enrol(m.env)
 	resp, out := m.do("PUT", "/api/v1/settings/mfa", map[string]string{"required": "owner"})
@@ -684,6 +695,7 @@ func TestDisableRefusedByPolicy(t *testing.T) {
 }
 
 func TestOwnerResetClearsEverything(t *testing.T) {
+	t.Parallel()
 	m := newMFAEnv(t)
 	mc, memberID := m.member("member@example.com", "203.0.113.100")
 	secret, _ := m.enrol(mc)

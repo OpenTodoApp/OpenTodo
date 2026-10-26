@@ -39,6 +39,7 @@ func connectSrc(csp string) string {
 }
 
 func TestDeviceAssistantSettings(t *testing.T) {
+	t.Parallel()
 	e, llm, _ := assistantEnv(t)
 	// Bad origins and a model server without origins name device.origins.
 	for _, bad := range []map[string]any{
@@ -141,6 +142,7 @@ func TestDeviceAssistantSettings(t *testing.T) {
 }
 
 func TestDeviceAssistantNeverOnDemo(t *testing.T) {
+	t.Parallel()
 	d := newDemoServer(t)
 	set := assistant.Defaults()
 	set.Enabled = true
@@ -154,6 +156,7 @@ func TestDeviceAssistantNeverOnDemo(t *testing.T) {
 }
 
 func TestDeviceOriginCheck(t *testing.T) {
+	t.Parallel()
 	for o, ok := range map[string]bool{
 		"https://api.example.com": true, "https://api.example.com:8443": true, "http://localhost:11434": true, "http://127.0.0.1:1234": true, "http://[::1]:8080": true,
 		"http://example.com": false, "http://10.0.0.5:11434": false, "ftp://example.com": false, "https://example.com/v1": false, "https://example.com?x=1": false,
