@@ -123,7 +123,11 @@ func (s *Service) failInterrupted(ctx context.Context) error {
 		}
 		list = append(list, st)
 	}
+	err = rows.Err()
 	rows.Close()
+	if err != nil {
+		return err
+	}
 	for _, st := range list {
 		var je jobErrors
 		_ = json.Unmarshal([]byte(st.errs), &je)

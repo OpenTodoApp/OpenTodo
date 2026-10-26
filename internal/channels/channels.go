@@ -636,7 +636,13 @@ func (s *Service) SweepSecrets(ctx context.Context) (int, error) {
 		}
 		live[id] = true
 	}
+	// Fail closed: a read cut short would make live channels look deleted
+	// and wipe their tokens.
+	err = rows.Err()
 	rows.Close()
+	if err != nil {
+		return 0, err
+	}
 	sec, err := s.secrets.Load()
 	if err != nil {
 		return 0, err
