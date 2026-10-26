@@ -75,10 +75,16 @@ describe('external links in a shell', () => {
     a.href = href
     if (target) a.target = target
     document.body.append(a)
+    // Record whether the shell handled the click, then stop the default: a link left to
+    // happy-dom would really load the address, and its network error lands after the test.
+    let handled = false
+    const settle = (ev: Event) => { handled = ev.defaultPrevented; ev.preventDefault() }
+    window.addEventListener('click', settle)
     const e = new MouseEvent('click', { bubbles: true, cancelable: true })
     a.dispatchEvent(e)
+    window.removeEventListener('click', settle)
     a.remove()
-    return e.defaultPrevented
+    return handled
   }
 
   it('a browser keeps its links: nothing is intercepted', () => {
