@@ -4,13 +4,12 @@
 // the signed-in account, from its profile. Without a version the Avatar draws
 // the initials. The own version is remembered on this device so the account menu
 // shows the picture offline (the browser keeps the image in its cache).
-import { useSyncExternalStore } from 'react'
 import { useMemberships } from './localData'
+import { createStore } from './store'
 
 const OWN_KEY = 'opentodo.avatar'
 
-let own: { id: string; version: number } | null = readOwn()
-const listeners = new Set<() => void>()
+const own = createStore<{ id: string; version: number } | null>('ownAvatar', readOwn())
 
 function readOwn(): { id: string; version: number } | null {
   try {
@@ -25,16 +24,15 @@ function readOwn(): { id: string; version: number } | null {
 
 /** Records the signed-in account's picture version (from its profile). */
 export function setOwnAvatar(id: string, version: number): void {
-  own = { id, version }
-  try { localStorage.setItem(OWN_KEY, JSON.stringify(own)) } catch { /* storage unavailable: memory only */ }
-  listeners.forEach((fn) => fn())
+  const next = { id, version }
+  try { localStorage.setItem(OWN_KEY, JSON.stringify(next)) } catch { /* storage unavailable: memory only */ }
+  own.set(next)
 }
 
 /** Forgets the own version (sign-out). */
 export function clearOwnAvatar(): void {
-  own = null
   try { localStorage.removeItem(OWN_KEY) } catch { /* storage unavailable */ }
-  listeners.forEach((fn) => fn())
+  own.set(null)
 }
 
 /** The address of a picture at a version. */
@@ -43,7 +41,7 @@ export function avatarUrl(id: string, version: number): string {
 }
 
 /** The picture version of an account as this device knows it, 0 without one. */
-export function avatarVersionOf(id: string, memberships: readonly { members: readonly { userId: string; avatarVersion?: number }[] }[], self = own): number {
+export function avatarVersionOf(id: string, memberships: readonly { members: readonly { userId: string; avatarVersion?: number }[] }[], self = own.get()): number {
   if (self && self.id === id) return self.version
   for (const m of memberships) {
     for (const p of m.members) if (p.userId === id && p.avatarVersion) return p.avatarVersion
@@ -53,7 +51,7 @@ export function avatarVersionOf(id: string, memberships: readonly { members: rea
 
 /** The picture address for an account, or undefined when it has none. */
 export function useAvatarSrc(id: string): string | undefined {
-  const self = useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn) } }, () => own, () => null)
+  const self = own.use()
   const memberships = useMemberships()
   const version = avatarVersionOf(id, memberships, self)
   return version > 0 ? avatarUrl(id, version) : undefined
