@@ -313,16 +313,12 @@ func (s *Server) handlePublicTick(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	ops = append(ops, deviceOps("task", in.TaskID, body, ts, device)...)
-	res, err := s.sync.ApplyStrict(ctx, l.CreatedBy, ops)
-	if err != nil {
+	if _, err := s.applyAs(ctx, l.CreatedBy, device, ops); err != nil {
 		// The checks above guarantee the creator may write; a refusal means
 		// they and the resolver disagree.
 		s.log.Error("public tick refused", "link", l.ID, "err", err)
 		s.internal(w, err)
 		return
-	}
-	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, device)
 	}
 	got, err := s.sync.Get(ctx, l.CreatedBy, "task", in.TaskID)
 	if err != nil {

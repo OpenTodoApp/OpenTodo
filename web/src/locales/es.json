@@ -5425,5 +5425,6 @@
   "Show calendar events": "Mostrar los eventos del calendario",
   "Hide calendar events": "Ocultar los eventos del calendario",
   "Calendar events today": "Eventos del calendario de hoy",
-  "Ended": "Terminado"
+  "Ended": "Terminado",
+  "You have used this month’s assistant allowance.": "Has agotado la cuota del asistente de este mes."
 }

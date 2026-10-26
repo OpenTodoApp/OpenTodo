@@ -577,9 +577,9 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	// counts them (cap_member_keys).
 	capped := set.MonthlyTokenCap > 0 && (!route.Own || set.CapMemberKeys)
 	if capped && usage.Counted(set.CapMemberKeys) >= set.MonthlyTokenCap {
-		writeJSON(w, http.StatusTooManyRequests, map[string]any{"error": map[string]any{"code": "assistant_quota",
-			"message":   fmt.Sprintf("you have used this month's assistant allowance of %d tokens; it resets on %s", set.MonthlyTokenCap, usage.ResetsAt),
-			"resets_at": usage.ResetsAt}})
+		writeErrorWith(w, http.StatusTooManyRequests, "assistant_quota",
+			fmt.Sprintf("you have used this month's assistant allowance of %d tokens; it resets on %s", set.MonthlyTokenCap, usage.ResetsAt),
+			map[string]any{"resets_at": usage.ResetsAt})
 		return
 	}
 	release, err := s.assistant.Acquire(u.ID)

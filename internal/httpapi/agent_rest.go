@@ -429,11 +429,7 @@ func (s *Server) writeAgentError(w http.ResponseWriter, err error) {
 				w.Header().Set("Retry-After", strconv.Itoa(n))
 			}
 		}
-		e := map[string]any{"code": code, "message": te.Message}
-		for k, v := range te.Data {
-			e[k] = v
-		}
-		writeJSON(w, status, map[string]any{"error": e})
+		writeErrorWith(w, status, code, te.Message, te.Data)
 	default:
 		s.internal(w, err)
 	}

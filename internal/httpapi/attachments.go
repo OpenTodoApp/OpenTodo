@@ -333,7 +333,7 @@ func (s *Server) markUploaded(ctx context.Context, uid, id string) error {
 	if err != nil {
 		return err
 	}
-	res, err := s.sync.ApplyStrict(ctx, uid, []opsync.Op{{ID: ids.New(), Entity: "attachment", EntityID: id, Field: "uploaded_at",
+	res, err := s.applyAs(ctx, uid, serverDevice, []opsync.Op{{ID: ids.New(), Entity: "attachment", EntityID: id, Field: "uploaded_at",
 		Value: json.RawMessage(strconv.FormatInt(now, 10)), TS: s.sync.ServerTSAt(max(now, fieldTS+1)), Device: serverDevice}})
 	if err != nil {
 		return err
@@ -341,7 +341,6 @@ func (s *Server) markUploaded(ctx context.Context, uid, id string) error {
 	if res.Applied == 0 {
 		return fmt.Errorf("attachment %s: uploaded_at was not applied", id)
 	}
-	s.sync.NotifyApplied(res, serverDevice)
 	return nil
 }
 
@@ -460,24 +459,10 @@ func (s *Server) handleRemoveAttachment(w http.ResponseWriter, r *http.Request) 
 func (s *Server) writeAttachment(w http.ResponseWriter, r *http.Request, id string, body map[string]json.RawMessage, status int) {
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
-	res, err := s.sync.ApplyStrict(ctx, uid, fieldOps("attachment", id, body, s.opTS()))
-	if err != nil {
-		var rej *opsync.RejectedError
-		switch {
-		case writeLimited(w, err):
-		case errors.Is(err, opsync.ErrInvalidOp):
-			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
-		case errors.As(err, &rej) && rej.Reason == opsync.ReasonTooLarge:
-			writeError(w, http.StatusRequestEntityTooLarge, "attachment_too_large", "the file is larger than this server allows")
-		case errors.As(err, &rej):
-			writeError(w, http.StatusForbidden, "forbidden", "only the author can change an attachment; the author, project admins and the owner can remove it")
-		default:
-			s.internal(w, err)
-		}
+	if _, ok := s.applyREST(w, ctx, uid, fieldOps("attachment", id, body, s.opTS()),
+		"only the author can change an attachment; the author, project admins and the owner can remove it",
+		refusals{opsync.ReasonTooLarge: refuse(http.StatusRequestEntityTooLarge, "attachment_too_large", "the file is larger than this server allows")}); !ok {
 		return
-	}
-	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, serverDevice)
 	}
 	if status == http.StatusNoContent {
 		w.WriteHeader(status)
@@ -575,27 +560,13 @@ func (s *Server) handleCreateAttachment(w http.ResponseWriter, r *http.Request) 
 			ops[i].ID = idemOpID(id, ops[i].Field)
 		}
 	}
-	res, err := s.sync.ApplyStrict(ctx, uid, ops)
-	if err != nil {
+	if _, ok := s.applyREST(w, ctx, uid, ops, "you cannot attach files to this task or comment",
+		refusals{opsync.ReasonTooLarge: refuse(http.StatusRequestEntityTooLarge, "attachment_too_large",
+			fmt.Sprintf("files may be at most %d MB on this server", cfg.MaxFileMB))}); !ok {
 		if stored {
 			_ = s.blobs.Remove(id)
 		}
-		var rej *opsync.RejectedError
-		switch {
-		case writeLimited(w, err):
-		case errors.Is(err, opsync.ErrInvalidOp):
-			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
-		case errors.As(err, &rej) && rej.Reason == opsync.ReasonTooLarge:
-			writeError(w, http.StatusRequestEntityTooLarge, "attachment_too_large", fmt.Sprintf("files may be at most %d MB on this server", cfg.MaxFileMB))
-		case errors.As(err, &rej):
-			writeError(w, http.StatusForbidden, "forbidden", "you cannot attach files to this task or comment")
-		default:
-			s.internal(w, err)
-		}
 		return
-	}
-	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, serverDevice)
 	}
 	a, err := s.sync.Get(ctx, uid, "attachment", id)
 	if err != nil || a == nil {
