@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Menu } from './overlay/Menu'
 import { MenuGroup, MenuItem, MenuSeparator, nextIndex } from './Menu'
-import { click, flush, key, render } from './test-utils'
+import { click, key, render, waitFor } from './test-utils'
 
 function ViewMenu({ calls }: { calls: string[] }) {
   return (
@@ -24,7 +24,7 @@ async function open(calls: string[]) {
   const trigger = r.container.querySelector('button')!
   trigger.focus()
   await click(trigger)
-  await flush(20)
+  await waitFor(() => !!document.querySelector('[role="menu"]'), 'the open menu')
   return { ...r, trigger, menu: document.querySelector('[role="menu"]')! }
 }
 
@@ -39,7 +39,7 @@ describe('Menu kind="menu"', () => {
     expect(document.activeElement?.textContent).toContain('Pin to sidebar')
     await key(document.activeElement!, 'Enter')
     await click(document.activeElement!) // Enter on a native button activates it
-    await flush(20)
+    await waitFor(() => !document.querySelector('[role="menu"]'), 'the menu closed')
     expect(calls).toEqual(['pin'])
     expect(document.querySelector('[role="menu"]')).toBeNull()
     expect(document.activeElement).toBe(trigger)
@@ -52,7 +52,8 @@ describe('Menu kind="menu"', () => {
     const { unmount } = await open(calls)
     await key(document.activeElement!, 'd')
     expect(document.activeElement?.textContent).toContain('Delete view')
-    await new Promise((r) => setTimeout(r, 550)) // type-ahead buffer resets after 500 ms
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- the type-ahead buffer resets after 500 ms of real time
+    await new Promise((r) => setTimeout(r, 550))
     await key(document.activeElement!, 'm') // wraps; "Move up" is disabled and skipped
     expect(document.activeElement?.textContent).toContain('Move down')
     await key(document.activeElement!, 'Home')

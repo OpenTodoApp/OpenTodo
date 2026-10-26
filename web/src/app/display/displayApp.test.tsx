@@ -5,15 +5,11 @@
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { flush, render } from '../../ui/test-utils'
+import { render, waitFor } from '../../ui/test-utils'
 
 const me = { id: 'u1', email: 'me@example.com', name: 'Me', role: 'owner', createdAt: 1 }
 let signedIn = true
 
-async function waitFor(ok: () => boolean, ms = 10000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 async function boot(path: string) {
   vi.resetModules()

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { findTopic, helpSections, loadHelp, searchHelp } from '../../lib/help'
 import { SHORTCUTS } from '../../lib/shortcuts'
 import { PageHeader } from '../../ui'
-import { flush, render } from '../../ui/test-utils'
+import { render, waitFor } from '../../ui/test-utils'
 import { parseRoute, routePath } from '../router'
 import { HelpContent } from './HelpContent'
 import { HelpHeading, HelpLink } from './HelpLink'
@@ -13,10 +13,6 @@ import { closeHelp, openHelp } from '../../lib/helpRequest'
 import { applyLanguagePreference } from '../../lib/i18n'
 
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('Help routes', () => {
   it('parses and builds /help, /help/<guide> and /help?q=', () => {

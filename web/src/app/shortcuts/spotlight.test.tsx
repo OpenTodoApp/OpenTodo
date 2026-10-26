@@ -6,7 +6,7 @@
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { click, flush, render } from '../../ui/test-utils'
+import { click, flush, render, waitFor } from '../../ui/test-utils'
 import { installShortcutDispatcher, isPrefixPending, registerShortcutScope, resetShortcutScopes } from './dispatch'
 import { Keys } from './Kbd'
 import { Spotlight, SPOTLIGHT_DELAY_MS } from './Spotlight'
@@ -33,7 +33,7 @@ describe('showing', () => {
   it('opens after a hesitation with the key pressed and what can follow, grouped', async () => {
     const r = await render(<Spotlight />)
     await press('g')
-    await flush(SPOTLIGHT_DELAY_MS + 50)
+    await waitFor(() => !!card(), 'the spotlight card')
     expect(card()).toBeTruthy()
     expect(card()!.textContent).toContain('Press a key')
     expect(card()!.querySelector('kbd')!.textContent).toBe('g')
@@ -45,6 +45,7 @@ describe('showing', () => {
   it('never shows for a second key within the delay', async () => {
     const r = await render(<Spotlight />)
     await press('g')
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- the second key comes 100 ms later, inside the delay
     await flush(100)
     await press('t')
     await flush(SPOTLIGHT_DELAY_MS + 50)

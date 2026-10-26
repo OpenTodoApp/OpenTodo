@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from './db'
 import { flushSeen, markSeen } from './feed'
 import { applyOps, resetDeviceId } from './ops'
@@ -48,10 +48,12 @@ describe('project_prefs seen marker', () => {
 
   it('repeated marks do not postpone the write', async () => {
     // A view re-rendering every 100 ms keeps calling markSeen; the first mark's timer still fires.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     for (let i = 1; i <= 8; i++) {
       markSeen('p', 1000 + i)
-      await new Promise((r) => setTimeout(r, 100))
+      await vi.advanceTimersByTimeAsync(100)
     }
+    vi.useRealTimers()
     await flushSeen()
     const values = (await db.outbox.toArray()).map((o) => o.value as number)
     expect(values.length).toBeGreaterThanOrEqual(2)

@@ -47,7 +47,7 @@ const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement
 async function advance(ms: number) {
   vi.setSystemTime(Date.now() + ms)
   window.dispatchEvent(new Event('focus'))
-  await flush(30)
+  await flush()
 }
 async function focusList(...titles: string[]) {
   const ids: string[] = []
@@ -131,7 +131,7 @@ describe('task selection', () => {
     await waitFor(() => shownTask() === 'A')
     await key(document.body, 'c')
     await key(document.body, 'j')
-    await flush(30)
+    await flush()
     expect(shownTask()).toBe('A')
     expect((await db.tasks.get(a))!.completed_at).toBeNull()
     expect(await readFocus()).toBeNull()
@@ -202,7 +202,7 @@ describe('a running session', () => {
     const input = q<HTMLInputElement>('[data-add-subtask] input')!
     input.focus()
     await key(input, ' ')
-    await flush(20)
+    await flush()
     expect(q('[data-focus-timer]')?.dataset.focusTimer).toBe('idle')
     expect(await readFocus()).toBeNull()
     await r.unmount()

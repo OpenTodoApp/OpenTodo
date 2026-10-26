@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
-import { flush, mockFetch, noPublicLinks, render } from '../../ui/test-utils'
+import { mockFetch, noPublicLinks, render, waitFor } from '../../ui/test-utils'
 import { openedTask, resetTaskPage } from '../taskPage.testkit'
 import { setRowClick } from '../rowClick'
 import { TaskListView } from '../TaskListView'
@@ -33,10 +33,6 @@ afterEach(() => {
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 2000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 /** A mouse click on a row's title (a keyboard Enter has detail 0). */
 const clickTitle = (root: ParentNode, title: string) => act(async () => {
   const btn = [...root.querySelectorAll<HTMLButtonElement>('[data-row-open]')].find((b) => b.textContent?.includes(title))!

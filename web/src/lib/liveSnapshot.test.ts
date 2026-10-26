@@ -3,12 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { derived, liveSnapshot } from './liveSnapshot'
 import { createProject } from './ops'
+import { waitFor } from '../ui/test-utils'
 
 let n = 0
-const until = async (ok: () => boolean) => {
-  for (let i = 0; i < 200 && !ok(); i++) await new Promise((r) => setTimeout(r, 10))
-  expect(ok()).toBe(true)
-}
+const until = (ok: () => boolean) => waitFor(ok, 'the snapshot')
 
 describe('liveSnapshot', () => {
   it('one query serves every subscriber and follows writes', async () => {

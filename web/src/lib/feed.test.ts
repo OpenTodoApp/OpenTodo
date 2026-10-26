@@ -9,6 +9,7 @@ import {
 import { applyOps, resetDeviceId } from './ops'
 import { setCurrentUserId } from './sharing'
 import type { ActivityEvent, Membership, Op } from './types'
+import { waitFor } from '../ui/test-utils'
 
 let n = 0
 let seq = 0
@@ -71,15 +72,14 @@ describe('unread', () => {
     await applyOps([...created('p1', 'bob', 2000), ...created('p2', 'bob', 3000)])
     const totals: number[] = []
     const sub = liveQuery(() => unreadCounts()).subscribe((v) => totals.push(v.total))
-    const settle = () => new Promise((r) => setTimeout(r, 150))
-    await settle()
+    await waitFor(() => totals.at(-1) === 2, 'the first count')
     // A sync delivering another member's change in the second project.
     await applyOps(created('p2', 'carol', 4000))
-    await settle()
+    await waitFor(() => totals.at(-1) === 3, 'the count after the sync')
     // Opening the feed.
     markEventsSeen(await feedEvents())
     await flushSeen()
-    await settle()
+    await waitFor(() => totals.at(-1) === 0, 'the count after the marks')
     sub.unsubscribe()
     expect(totals).toEqual([2, 3, 0])
   })

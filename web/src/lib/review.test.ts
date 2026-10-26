@@ -9,6 +9,7 @@ import { compute, periodFor } from './stats'
 import { undoBatch } from './undo'
 import { applyCarryOver, areasOf, carryOverLabel, carryOverOf, closeDay, closedDayOf, reopenDay, dailyDue, dayClosed, daySummary, planCarryOver, yesterdaysNote, type CarryDecision, type CarryTask, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewAgo, reviewDue, reviewSteps, toggleFocus, walkProjects, type ReviewInput } from './review'
 import type { Membership, Project, Task } from './types'
+import { nextMillisecond } from '../test/clock'
 
 let n = 0
 beforeEach(() => {
@@ -304,7 +305,7 @@ describe('Close the day (close-the-day 2.1–2.4)', () => {
     const { entry, label, count } = await applyCarryOver(new Map(), carry(rows), TODAY)
     expect([label, count, (await db.assistantUndo.count()) - before]).toEqual(['3 tasks rescheduled', 3, 1])
     expect(((await db.tasks.bulkGet(ids)) as Task[]).map((x) => x.due?.date)).toEqual(['2026-10-15', '2026-10-15', '2026-10-15'])
-    await new Promise((r) => setTimeout(r, 2))
+    await nextMillisecond()
     await updateTask(ids[1], { due: { date: '2026-10-20' } })
     const result = await undoBatch(entry!.id)
     expect(result.skipped).toEqual(['Two'])

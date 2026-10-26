@@ -6,7 +6,7 @@ import { closeHelp, useHelpRequest } from '../../lib/helpRequest'
 import { setMethodMode } from '../../lib/method/mode'
 import { resetDeviceId } from '../../lib/ops'
 import { PageHeader } from '../../ui'
-import { click, flush, render } from '../../ui/test-utils'
+import { click, flush, render, waitFor } from '../../ui/test-utils'
 import type { ReactNode } from 'react'
 import type { MoveId } from '../../lib/method'
 import { METHOD_HELP_SCREENS, useWithMethod } from './MethodLink'
@@ -25,10 +25,6 @@ beforeEach(() => {
 })
 afterEach(() => { closeHelp() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 let opened: string | null = null
 function HelpSpy() {
@@ -62,6 +58,7 @@ describe('References to the method (open-loops)', () => {
     const before = plain.container.innerHTML
     await plain.unmount()
     const r = await render(<Header />)
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts the link stays away once the mode is read
     await flush(50)
     expect(r.container.querySelector('[data-method-link]')).toBeNull()
     expect(r.container.innerHTML).toBe(before)

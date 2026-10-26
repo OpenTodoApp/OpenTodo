@@ -40,7 +40,7 @@ async function typeText(v: EditorView, text: string) {
     const handled = v.someProp('handleTextInput', (f) => f(v, from, to, ch, () => v.state.tr.insertText(ch, from, to)))
     if (!handled) v.dispatch(v.state.tr.insertText(ch, from, to))
   }
-  await flush(10)
+  await flush()
 }
 
 async function typeArea(el: HTMLTextAreaElement, text: string) {
@@ -53,7 +53,7 @@ async function typeArea(el: HTMLTextAreaElement, text: string) {
 async function press(v: EditorView, k: string, mods: KeyboardEventInit = {}) {
   const ev = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...mods })
   v.someProp('handleKeyDown', (f) => f(v, ev))
-  await flush(20)
+  await flush()
 }
 
 beforeEach(() => {
@@ -62,7 +62,7 @@ beforeEach(() => {
 })
 afterEach(async () => {
   for (const r of mounted.splice(0)) await r.unmount()
-  await flush(20)
+  await flush()
   setRichComposer(true)
 })
 

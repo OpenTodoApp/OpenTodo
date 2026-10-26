@@ -29,6 +29,7 @@ import { db, setMeta, useDatabase } from './db'
 import { applyOps, createTask, resetDeviceId } from './ops'
 import { removeLocally } from './trash'
 import type { Op } from './types'
+import { nextMillisecond } from '../test/clock'
 
 let n = 0
 beforeEach(async () => {
@@ -72,7 +73,7 @@ describe('attachment data layer', () => {
     const ids: string[] = []
     for (const name of ['1.txt', '2.txt', '3.txt']) {
       ids.push(...(await queueFiles(task, [file(name)])))
-      await new Promise((r) => setTimeout(r, 2))
+      await nextMillisecond()
     }
     await runUploader()
     expect(uploads).toEqual([])

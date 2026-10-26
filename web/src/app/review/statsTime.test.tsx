@@ -10,7 +10,7 @@ import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { logTime } from '../../lib/timeEntries'
 import { BOM } from '../../lib/time'
-import { click, flush, render } from '../../ui/test-utils'
+import { click, render, waitFor } from '../../ui/test-utils'
 import { StatsView } from './StatsView'
 
 const NOW = new Date(2026, 9, 14, 12, 0) // Wednesday 14 October 2026
@@ -33,10 +33,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const rowsOf = (fig: Element) => [...fig.querySelectorAll('table tbody tr')].map((tr) => [tr.querySelector('th')!.textContent, tr.querySelector('td')!.textContent])
 const tracked = (root: ParentNode) => root.querySelector('[data-tile="tracked"] [data-tile-value]')?.textContent
 

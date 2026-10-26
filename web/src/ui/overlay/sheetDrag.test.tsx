@@ -4,7 +4,7 @@
 // row; and the toast lifted above the phone's tab bar and add button.
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { click, flush, render, minWidthPx } from '../test-utils'
+import { click, render, minWidthPx, waitFor } from '../test-utils'
 import { MenuItem } from '../Menu'
 import { Menu } from './Menu'
 
@@ -46,7 +46,7 @@ describe('a menu below 640 px', () => {
     touch(top, 'touchstart', 100, 10); touch(top, 'touchend', 100, 50)
     expect(document.querySelector('[data-overlay="sheet"]')).toBeTruthy()
     touch(top, 'touchstart', 100, 10); touch(top, 'touchend', 104, 140)
-    await flush(20)
+    await waitFor(() => !document.querySelector('[data-overlay="sheet"]'), 'the sheet closed')
     expect(document.querySelector('[data-overlay="sheet"]')).toBeNull()
     await r.unmount()
   })

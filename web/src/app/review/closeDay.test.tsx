@@ -12,7 +12,7 @@ import { applyCarryOver, canReopenDay, carryOverOf, closeDay, reopenDay } from '
 import { SHORTCUTS } from '../../lib/shortcuts'
 import { undoBatch } from '../../lib/undo'
 import type { Task, User } from '../../lib/types'
-import { click, flush, key, render, type } from '../../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../../ui/test-utils'
 import { hideBulkToast } from '../bulk/toastStore'
 import { resetPanel } from '../panel'
 import { navigate } from '../router'
@@ -41,10 +41,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const shell = async (route: Parameters<typeof navigate>[0]) => { navigate(route); return render(<Shell user={user} onLogout={() => {}} />) }
 const stepOf = () => document.querySelector('[data-review-step]')?.getAttribute('data-review-step')
 const titleEl = () => document.getElementById('review-step-title')
@@ -81,7 +77,7 @@ describe('Close the day is reachable', () => {
 
   it('Keyboard path: g then Shift+D opens the screen; the cheat sheet lists it under Go to a view', async () => {
     const r = await shell({ view: 'inbox' })
-    await flush(50)
+    await waitFor(() => !!document.querySelector('main h1'), 'the Inbox')
     await key(document.body, 'g')
     await key(document.body, 'D', { shiftKey: true })
     await waitFor(() => location.pathname === '/review/close')
@@ -269,6 +265,8 @@ describe('Carry over', () => {
     const queued = await db.outbox.count()
     await click(card()!.querySelector('[data-carry-title]')!)
     await click(line('Careful').querySelector('button')!)
+    // Nothing to wait for: the check is that no write happens; give one to land.
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts the absence of a write
     await flush(60)
     expect(card()!.querySelector('[role="checkbox"], [data-check]')).toBeNull()
     expect([await db.outbox.count(), (await task(id)).completed_at, (await task(id)).due]).toEqual([queued, null, { date: TODAY }])
@@ -330,6 +328,7 @@ describe('Closing the day', () => {
     expect(document.querySelector('[data-review-step]')).toBeNull()
     expect(doneState()!.textContent).not.toMatch(/streak|score/i)
     expect(doneState()!.querySelector('[data-reopen-day]')).not.toBeNull()
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts the absence of a write
     await flush(60)
     expect(await db.outbox.count()).toBe(outbox)
     // Escape goes back to Today as well.
@@ -381,6 +380,7 @@ describe('Closing the day', () => {
     // Midnight passes while the screen is open; the app's minute tick runs.
     vi.setSystemTime(new Date(2026, 9, 15, 0, 2))
     await act(async () => { vi.advanceTimersByTime(60_000) })
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts the figures do not change after the tick
     await flush(60)
     expect([figure('planned'), figure('done')]).toEqual(['4', '1'])
     await key(document.body, ']')
@@ -433,6 +433,7 @@ describe('the morning note', () => {
     await waitFor(() => !!document.querySelector('[data-daily-inbox]'))
     expect(document.querySelector('[data-daily-note]')).toBeNull()
     await act(async () => { await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', closed_at: NOW.getTime(), tomorrow_note: '', _clock: {} }) })
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts the note stays away after the write
     await flush(100)
     expect(document.querySelector('[data-daily-note]')).toBeNull()
     await r.unmount()

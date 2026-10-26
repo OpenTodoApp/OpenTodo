@@ -8,7 +8,7 @@ import { createLabel } from '../../lib/labels'
 import { readMethodMode, setMethodMode } from '../../lib/method/mode'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { getStartView } from '../../lib/views'
-import { click, flush, render } from '../../ui/test-utils'
+import { click, flush, render, waitFor } from '../../ui/test-utils'
 import { HowYouWorkSection } from './HowYouWorkSection'
 import { FirstRunGuide } from '../FirstRun'
 import { parseRoute } from '../router'
@@ -22,10 +22,6 @@ beforeEach(() => {
 })
 afterEach(() => { closeHelp(); closeStartGuide() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 let opened: string | null = null
 function Spy() { opened = useHelpRequest()?.screen ?? null; return null }
 const radio = (mode: string) => document.querySelector<HTMLButtonElement>(`[data-method-mode="${mode}"]`)!
@@ -72,6 +68,7 @@ describe('Choosing how you work', () => {
     await createLabel({ name: '@office' })
     const r = await render(<HowYouWorkSection />)
     await waitFor(() => !!radio('first'))
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- the label read has no visible sign before the choice
     await flush(50)
     await click(radio('first'))
     await waitFor(() => !!document.querySelector('[data-offer="start"]'))

@@ -2,14 +2,13 @@
 // History tab (task-detail-redesign 8.1–8.3): versions with summaries, grouped
 // bursts, readable values, lost changes, restoring a whole version, offline and 404.
 import 'fake-indexeddb/auto'
-import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { toVersions } from '../../lib/historyVersions'
 import { createTask, resetDeviceId } from '../../lib/ops'
 import { setCurrentUserId } from '../../lib/sharing'
 import type { ChangeSet, HistoryPage } from '../../lib/types'
-import { click, flush, render } from '../../ui/test-utils'
+import { click, render, waitFor } from '../../ui/test-utils'
 import { HistoryTab, HistoryView, type HistoryViewProps } from './HistoryTab'
 
 const fetchHistory = vi.fn<(entity: string, id: string, before?: number) => Promise<HistoryPage>>()
@@ -22,7 +21,6 @@ let n = 0
 const set = (ts: number, changes: { field: string; from?: unknown; to?: unknown; lost?: boolean }[], device = 'phone', userId = 'me'): ChangeSet =>
   ({ ts, device, userId, changes: changes.map((c) => ({ opId: `op${++n}`, from: null, to: null, ...c })) })
 const page = (changeSets: ChangeSet[]): HistoryPage => ({ entity: 'task', id: 't1', changeSets, more: false })
-const settle = () => act(async () => { for (let i = 0; i < 6; i++) await flush(20) })
 
 function view(sets: ChangeSet[], over: Partial<HistoryViewProps> = {}): HistoryViewProps {
   return {
@@ -100,7 +98,7 @@ describe('HistoryTab', () => {
   it('groups a burst on one phone into one version', async () => {
     fetchHistory.mockResolvedValue(page([set(NOW - 3 * MIN, [{ field: 'title', from: 'a', to: 'b' }]), set(NOW - MIN, [{ field: 'priority', from: 4, to: 2 }])]))
     const v = await render(<HistoryTab taskId="t1" readOnly={false} />)
-    await settle()
+    await waitFor(() => !!v.container.querySelector('[data-version]'), 'the versions')
     expect(v.container.querySelectorAll('[data-version]')).toHaveLength(1)
     expect(v.container.querySelector('[data-version] button[aria-expanded]')!.textContent).toBe('Renamed and reprioritised')
     await v.unmount()
@@ -110,7 +108,7 @@ describe('HistoryTab', () => {
     const tick = { ...set(NOW - MIN, [{ field: 'completed_at', from: null, to: NOW - MIN }], 'public:l1', 'me'), device_label: 'Public link (Grandma)' }
     fetchHistory.mockResolvedValue(page([tick]))
     const v = await render(<HistoryTab taskId="t1" readOnly={false} />)
-    await settle()
+    await waitFor(() => !!v.container.querySelector('[data-version]'), 'the versions')
     const meta = [...v.container.querySelectorAll('[data-version] div.text-meta')].pop()!.textContent!
     expect(meta).toMatch(/^Public link \(Grandma\) · /)
     expect(meta).not.toContain('You')
@@ -120,7 +118,7 @@ describe('HistoryTab', () => {
   it('says offline without asking the server and lists no versions', async () => {
     vi.stubGlobal('navigator', { ...navigator, onLine: false })
     const v = await render(<HistoryTab taskId="t1" readOnly={false} />)
-    await settle()
+    await waitFor(() => v.container.textContent!.includes('History needs a connection'), 'the offline note')
     expect(fetchHistory).not.toHaveBeenCalled()
     expect(v.container.textContent).toContain('History needs a connection to the server')
     await v.unmount()
@@ -129,7 +127,7 @@ describe('HistoryTab', () => {
   it('shows the 404 empty state', async () => {
     fetchHistory.mockRejectedValue(Object.assign(new Error('not found'), { status: 404 }))
     const v = await render(<HistoryTab taskId="t1" readOnly={false} />)
-    await settle()
+    await waitFor(() => v.container.textContent!.includes('No history on the server yet'), 'the empty state')
     expect(v.container.textContent).toContain('No history on the server yet')
     await v.unmount()
   })
@@ -140,7 +138,7 @@ describe('HistoryTab', () => {
     const old = set(NOW - 60 * MIN, [{ field: 'title', from: 'Was', to: 'Then' }, { field: 'due', from: null, to: { date: '2026-10-20' } }])
     fetchHistory.mockResolvedValueOnce(page([old]))
     const v = await render(<HistoryTab taskId={id} readOnly={false} />)
-    await settle()
+    await waitFor(() => !!v.container.querySelector('[data-version] button[aria-expanded]'), 'the versions')
     await click(v.container.querySelector('[data-version] button[aria-expanded]')!)
     await click(button(v.container, 'Restore this version'))
     const dialog = document.querySelector('[data-testid="confirm-dialog"]')!
@@ -149,7 +147,7 @@ describe('HistoryTab', () => {
     const restoredSet = set(NOW, [{ field: 'title', from: 'Now', to: 'Then' }, { field: 'due', from: { date: '2026-10-30' }, to: { date: '2026-10-20' } }], 'laptop')
     fetchHistory.mockResolvedValueOnce(page([old, restoredSet]))
     await click(button(dialog, 'Restore'))
-    await settle()
+    await waitFor(() => v.container.querySelectorAll('[data-version]').length === 2, 'the restored version listed')
     const task = (await db.tasks.get(id))!
     expect(task.title).toBe('Then')
     expect(task.due).toEqual({ date: '2026-10-20' })
