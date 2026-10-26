@@ -1,6 +1,9 @@
 # Dependency updates (OpenSpec ci-release-gates): weekly, one grouped pull request per
 # ecosystem, so pinned versions, action SHAs and base-image digests do not go stale.
 # Every update is a normal pull request: CI runs in full and the maintainer merges.
+# Cooldown (supply-chain hardening): a version is proposed only once it has been
+# public for 7 days (30 for a new major), so a hijacked release that is yanked
+# within days never reaches a pull request. Security updates are not delayed.
 # Not covered: deploy/*/upstream (copies of third-party store files), extension/ (no
 # dependencies), Playwright 1.56.1 (pinned in the workflows, the Makefile and the UI
 # baselines, bumped together with new baselines) and the OpenSpec CLI (Makefile).
@@ -10,6 +13,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
     groups:
       go:
         patterns: ["*"]
@@ -18,6 +24,9 @@ updates:
     directory: /web
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
     open-pull-requests-limit: 5
     groups:
       web-minor-and-patch:
@@ -28,6 +37,9 @@ updates:
     directory: /mobile/android
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
     groups:
       android:
         patterns: ["*"]
@@ -36,6 +48,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]
@@ -44,6 +58,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       base-images:
         patterns: ["*"]
