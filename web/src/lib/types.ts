@@ -652,6 +652,8 @@ export interface UserPrefs {
   task_open?: string
   /** The account's task row layout (row-layouts D1): 'line' or 'detailed'; '' and anything else read as 'line'. */
   row_layout?: string
+  /** Today's agenda of calendar events (today-agenda D1): 'shown' shows it; '' and anything else read as hidden. */
+  today_events?: string
   _clock: Clock
 }
 
