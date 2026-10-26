@@ -370,7 +370,7 @@ CI SHALL open every screen and every overlay at 360, 390 and 768 px wide, in lig
 - **THEN** the layout job fails for WebKit
 
 ### Requirement: Task panel layout
-The task page SHALL show, top to bottom: a compact header with the breadcrumb (the list the task was opened from as a link back to it, the task's project, its parent task when it has one, and the task), the task's place in the list it was opened from ("4 / 12") with the next and previous task, a menu holding Delete, Copy link, Attach and the less frequent actions, and Close; then the content column with the task's checkbox and editable title, the notes (never clamped), an Attach control, the project's custom fields, the subtasks as one bordered block with their count and progress, the attachments list only when there are attachments, and the tabbed area with Comments, Activity, History and Time, the comment composer pinned to the bottom; and the facts column beside the content from 1024 px, under the notes below that. The docked panel of a page that keeps a split SHALL keep the earlier panel layout: the sticky header with the checkbox, the title, the menu (with Expand) and Close, the clamped notes, the facet lines with Add, the subtasks, the attachments and the tabs.
+The task page SHALL show, top to bottom: a compact header with the breadcrumb (the list the task was opened from as a link back to it, the task's project, its parent task when it has one, and the task), the task's place in the list it was opened from ("4 / 12") with the next and previous task, a menu holding Delete, Copy link, Attach and the less frequent actions, and Close; then the content column with the task's checkbox and editable title, the notes (never clamped), an Attach control, the project's custom fields, the subtasks as one bordered block with their count and progress, the attachments list only when there are attachments, and the tabbed area with Comments, Activity, History and Time, the comment composer pinned to the bottom; and the facts column beside the content from 1024 px, above the notes below that. The docked panel of a page that keeps a split SHALL keep the earlier panel layout: the sticky header with the checkbox, the title, the menu (with Expand) and Close, the facet lines with Add, the custom fields, the subtasks, the attachments, the notes in full and the tabs.
 
 #### Scenario: Delete from the header menu
 - **WHEN** the user opens the header menu on the task page and chooses Delete
@@ -395,6 +395,14 @@ The task page SHALL show, top to bottom: a compact header with the breadcrumb (t
 #### Scenario: No list to return to
 - **WHEN** the user opens a link to a task that has no project
 - **THEN** the breadcrumb starts with "Inbox" as a link, which opens the Inbox with the task selected
+
+#### Scenario: Properties first in the panel
+- **WHEN** the user opens, in the docked panel, a task with a forty-line note, two subtasks and an attachment
+- **THEN** the panel body shows, top to bottom, the facet lines, the subtasks, the attachments, the whole note and the tabs, and the facet lines are at the same height as for a task without notes
+
+#### Scenario: Facts above the notes on a narrow task page
+- **WHEN** the user opens a task as a page at 768 px wide
+- **THEN** the facts card is shown between the title and the notes
 
 ### Requirement: Task panel tabs
 The tabbed area SHALL offer Comments (with the comment count), Activity, History and Time (with the tracked total when there is one) as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity. The Time tab SHALL hold the task's time entries as the time-tracking capability defines them.
@@ -641,17 +649,6 @@ Each part SHALL be in the tab order; Enter or Space SHALL open its editor; `1` t
 #### Scenario: Move between parts
 - **WHEN** the user tabs to the first part of the When line and presses Tab, then Enter
 - **THEN** focus moves to the next part of the same line and its editor opens; Escape closes it with focus back on that part
-
-### Requirement: Task panel notes clamp
-In the panel, notes that are not focused SHALL be clamped to about eight lines with a "Show all" control when they are longer; focusing the notes or choosing Show all SHALL expand them for the rest of the time the task is open. The task page SHALL never clamp.
-
-#### Scenario: Long note in the panel
-- **WHEN** the user opens a task whose notes are forty lines long on a 1280×800 screen
-- **THEN** the panel shows the first lines of the notes, a "Show all" line, and the facet lines below it without scrolling
-
-#### Scenario: Editing expands
-- **WHEN** the user clicks into the clamped notes
-- **THEN** the whole note is shown and stays shown after the editor loses focus, until another task is opened
 
 ### Requirement: Popover triggers toggle
 Activating the control that opened an anchored popover (a facet part, a picker trigger, a menu button) while that popover is open SHALL close it in one step, and it SHALL NOT reopen. Activating it while closed SHALL open it. A click on the trigger SHALL never count as a click outside the popover.
@@ -1032,3 +1029,18 @@ When the open panel shows "No task selected" and a task is chosen, the panel SHA
 #### Scenario: A task that does not exist
 - **WHEN** the panel reads "No task selected" and a link to a task that was deleted is opened
 - **THEN** the empty pane stays in place and no task panel appears
+
+### Requirement: Task panel notes in full
+In the docked panel the notes SHALL be shown in full at rest, with no clamp, fade or "Show all" control, as on the task page. Long notes SHALL grow inside the panel's one scrolling body and SHALL NOT get a scroll region of their own, so the screen keeps its scroll-region budget. Opening another task SHALL show its notes in full too; nothing about the notes is remembered per task.
+
+#### Scenario: Long note in the panel
+- **WHEN** the user opens a task whose notes are forty lines long on a 1280×800 screen
+- **THEN** the facet lines are in view at the top of the panel body, the whole note follows the attachments without a "Show all" control, and scrolling the panel body reaches the end of the note and then the tabs
+
+#### Scenario: No extra scroll region
+- **WHEN** the project screen shows the list with the panel open on a task with a two-hundred-line note
+- **THEN** the screen has at most three vertical scroll regions (the sidebar, the list and the panel body) and the note itself does not scroll
+
+#### Scenario: Next task
+- **WHEN** the user reads a long note in the panel and presses `j`
+- **THEN** the next task's facet lines are at the top of the panel body and its note is shown in full
