@@ -12,7 +12,6 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/push"
-	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/zoned"
 )
@@ -185,7 +184,7 @@ func (s *Server) recordTZOffset(ctx context.Context, uid string, offset *int) {
 	if v, ok := s.tzOffsets.Load(uid); ok && v.(int) == *offset {
 		return
 	}
-	if err := settings.New(s.sync.DB()).Set(ctx, tzKey(uid), *offset); err != nil {
+	if err := s.settings.Set(ctx, tzKey(uid), *offset); err != nil {
 		s.log.Warn("store zone offset", "err", err)
 		return
 	}
@@ -196,7 +195,7 @@ func (s *Server) tzLocation(ctx context.Context, uid string) *time.Location {
 	offset := 0
 	if v, ok := s.tzOffsets.Load(uid); ok {
 		offset = v.(int)
-	} else if found, err := settings.New(s.sync.DB()).Get(ctx, tzKey(uid), &offset); err == nil && found {
+	} else if found, err := s.settings.Get(ctx, tzKey(uid), &offset); err == nil && found {
 		s.tzOffsets.Store(uid, offset)
 	}
 	return time.FixedZone("", offset*60)

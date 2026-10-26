@@ -20,7 +20,7 @@ import (
 const errorCodesFixture = "../../web/src/lib/i18n/server-error-codes.json"
 
 // TestErrorCodesFixture collects the literal codes passed to writeError,
-// oidcError and oidcFail, and the codes checkSubscriptionURL returns, and
+// oidcError, oidcFail and switchGate, and the codes checkSubscriptionURL returns, and
 // compares them with the fixture. UPDATE_ERROR_CODES=1 rewrites the fixture.
 func TestErrorCodesFixture(t *testing.T) {
 	files, err := filepath.Glob("*.go")
@@ -55,23 +55,11 @@ func TestErrorCodesFixture(t *testing.T) {
 				case *ast.SelectorExpr:
 					name = fn.Sel.Name
 				}
-				idx := map[string]int{"writeError": 2, "oidcError": 3, "oidcFail": 3}[name]
+				// An owner switch's gate answers with its code (switch.go).
+				idx := map[string]int{"writeError": 2, "oidcError": 3, "oidcFail": 3, "switchGate": 1}[name]
 				if idx > 0 && len(n.Args) > idx {
 					if s, ok := lit(n.Args[idx]); ok {
 						set[s] = true
-					}
-				}
-			case *ast.CompositeLit:
-				// An owner switch's gate answers with its code (switch.go).
-				if id, ok := n.Type.(*ast.Ident); ok && id.Name == "ownerSwitch" {
-					for _, el := range n.Elts {
-						if kv, ok := el.(*ast.KeyValueExpr); ok {
-							if k, ok := kv.Key.(*ast.Ident); ok && k.Name == "code" {
-								if s, ok := lit(kv.Value); ok {
-									set[s] = true
-								}
-							}
-						}
 					}
 				}
 			case *ast.FuncDecl:

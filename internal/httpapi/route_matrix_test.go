@@ -19,7 +19,6 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/rules"
-	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -64,7 +63,7 @@ func newMatrixEnv(t *testing.T) *matrixEnv {
 	authSvc := auth.NewService(db, cfg.SessionTTL, false)
 	authSvc.SetClock(func() time.Time { return time.Now().Add(time.Duration(m.clockOffset.Load())) })
 	h := New(cfg, authSvc, syncSvc, nil, log, "test",
-		WithRules(nil, rules.NewSwitch(settings.New(db), nil)), func(s *Server) { m.srv = s })
+		WithRules(nil, rules.NewSwitch(db, nil)), func(s *Server) { m.srv = s })
 	ts := httptest.NewServer(h)
 	t.Cleanup(ts.Close)
 	t.Cleanup(syncSvc.Notifier().CloseAll)
