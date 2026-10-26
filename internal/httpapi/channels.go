@@ -33,14 +33,6 @@ func (s *Server) registerChannelRoutes(mux *routes) {
 	mux.handle("GET /api/v1/notification-channels/{id}/deliveries", signedIn.demoDenied(), s.channelsGate(s.handleChannelDeliveries))
 }
 
-// baseOrigin is OPENTODO_BASE_URL's origin, "" when not configured.
-func (s *Server) baseOrigin() string {
-	if s.cfg.BaseURL == nil {
-		return ""
-	}
-	return s.cfg.BaseURL.Scheme + "://" + s.cfg.BaseURL.Host
-}
-
 // channelsGate answers 404 channels_disabled while the owner switch is off.
 func (s *Server) channelsGate(next http.HandlerFunc) http.HandlerFunc {
 	return switchGate(s.set.ChannelsOn, "channels_disabled", "the server owner has turned notification channels off")(next)
