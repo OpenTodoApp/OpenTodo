@@ -23,7 +23,7 @@ android {
     defaultConfig {
         applicationId = "app.opentodo"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = (versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2]).coerceAtLeast(1)
         versionName = appVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -1,5 +1,5 @@
 {
-  "about": "The op schema contract between the server and the web client (OpenSpec change test-integrity). internal/sync/schema_fixture_test.go checks it against sync.Schema and e2ee.ContentFields/ContentPrefixes; web/src/lib/schemaFixture.test.ts against ENTITIES, the row defaults in ops.ts and CONTENT_FIELDS/CONTENT_PREFIXES in e2ee.ts. Adding a field: add it here, in both implementations, and (for user-written text) to content_fields.",
+  "about": "The op schema contract between the server and the web client (OpenSpec change test-integrity), generated from sync.Schema by internal/sync TestGeneratedOpSchema. internal/sync/schema_fixture_test.go checks it against sync.Schema and e2ee; web/src/lib/schemaFixture.test.ts against ENTITIES, the row defaults in ops.ts and CONTENT_FIELDS/CONTENT_PREFIXES in e2ee.ts.",
   "entities": {
     "attachment": [
       "author_id",
@@ -212,11 +212,11 @@
     ]
   },
   "field_prefixes": {
-    "task": [
-      "fields."
-    ],
     "comment": [
       "reactions."
+    ],
+    "task": [
+      "fields."
     ]
   },
   "content_fields": {
@@ -237,9 +237,9 @@
       "name"
     ],
     "place": [
-      "name",
       "address",
-      "geo"
+      "geo",
+      "name"
     ],
     "project": [
       "description",
@@ -258,10 +258,10 @@
     "task": [
       "description",
       "ical_extra",
+      "location",
       "notes_doc",
       "origin",
-      "title",
-      "location"
+      "title"
     ],
     "time_entry": [
       "note"

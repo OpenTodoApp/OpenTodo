@@ -3,12 +3,14 @@ package httpapi
 import (
 	"strings"
 	"testing"
+
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/davroutes"
 )
 
 // CalDAV mapping of task dependencies (OpenSpec change task-dependencies, task 7.1).
 func TestCalDAVDependsOn(t *testing.T) {
 	e, c := davSetup(t)
-	inbox := c.cal(inboxCalendar)
+	inbox := c.cal(davroutes.InboxCalendar)
 	c.must("PUT", inbox+"confirm.ics", vtodoBody("confirm", "SUMMARY:Confirm dates"), 201, "If-None-Match", "*")
 	// A blocker in the same calendar becomes blocked_by; an unknown UID stays client data.
 	c.must("PUT", inbox+"flights.ics", vtodoBody("flights", "SUMMARY:Book flights", "RELATED-TO;RELTYPE=DEPENDS-ON:confirm", "RELATED-TO;RELTYPE=DEPENDS-ON:not-yet"), 201, "If-None-Match", "*")

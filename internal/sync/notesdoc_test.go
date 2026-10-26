@@ -122,7 +122,7 @@ func TestDocFieldsMatchActivityOpaque(t *testing.T) {
 			t.Fatalf("%s missing from activity.Opaque", k)
 		}
 		entity, field, _ := strings.Cut(k, ".")
-		if Schema[entity][field] != kDoc {
+		if Schema[entity][field].Kind != kDoc {
 			t.Fatalf("%s is not a kDoc field", k)
 		}
 	}

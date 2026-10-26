@@ -40,6 +40,8 @@ import (
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 	"github.com/OpenTodoApp/opentodo/internal/webhook"
+
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/davroutes"
 )
 
 const sessionCookie = "opentodo_session"
@@ -107,6 +109,8 @@ type Server struct {
 	// emailChangeLimiter caps email change requests per account (5/hour) and
 	// avatarLimiter picture uploads per account (30/hour) (settings-refresh D10).
 	emailChangeLimiter, avatarLimiter *rateLimiter
+	// dav is the CalDAV endpoint (internal/httpapi/davroutes).
+	dav *davroutes.Server
 	// speech serves speech to text (internal/httpapi/speech); its limiter caps
 	// phrases per account (30/minute).
 	speech *speech.Routes
@@ -292,6 +296,11 @@ func (s *Server) wireServices() {
 	}
 	// Calendar sync writes the user's tasks as events with the task feed's selection.
 	s.calsync.Tasks = s.feedTasksFor
+	davLimiter := s.davLimiter
+	s.dav = davroutes.New(davroutes.Deps{Sync: s.sync, Auth: s.auth, Log: s.log, On: s.caldavOn, Now: s.now, ApplyAs: s.applyAs,
+		ClientIP: clientIP, PublicOrigin: s.publicOrigin, AuthBlocked: davLimiter.blocked, AuthFailed: davLimiter.allow,
+		TZLocation: s.tzLocation, ReminderOps: s.reminderOpsForTaskAs, RecurringCompletion: s.recurringCompletion,
+		EncryptionEnabled: s.encryptionEnabled})
 	s.speech = &speech.Routes{STT: s.stt, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo, Allow: newRateLimiter(30, time.Minute).allow}
 	s.mapRoutes = &maproutes.Routes{Maps: s.maps, Settings: s.settings, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo,
 		Allow: newRateLimiter(maproutes.SearchesPerMinute, time.Minute).allow}
