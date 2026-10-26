@@ -72,7 +72,7 @@ describe('FilterBuilder', () => {
     await click(one.container.querySelector('[data-add-condition]') as HTMLButtonElement)
     await waitFor(() => !!editor(), 'the condition dialog')
     expect([...(editor()!.querySelector('select') as HTMLSelectElement).options].map((o) => o.value)).not.toContain('workspace')
-    document.body.innerHTML = ''
+    await one.unmount()
     const r = await render(<Harness initial="" workspaces={[{ id: 'w1', name: 'Personal' }, { id: 'w2', name: 'Side projects' }]} />)
     await click(r.container.querySelector('[data-add-condition]') as HTMLButtonElement)
     await waitFor(() => !!editor(), 'the condition dialog')
