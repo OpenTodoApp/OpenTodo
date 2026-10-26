@@ -1,0 +1,7 @@
+{
+  "description": "Sign-out: the schedule is emptied.",
+  "method": "scheduleReminders",
+  "payload": "[]",
+  "now": 1792670400000,
+  "expect": []
+}

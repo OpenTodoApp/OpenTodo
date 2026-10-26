@@ -48,4 +48,7 @@ object ReminderSchedule {
         "/?reminder=" + java.net.URLEncoder.encode(id, "UTF-8") + "&action=" + action
 
     fun taskPath(taskId: String): String = "/?task=" + java.net.URLEncoder.encode(taskId, "UTF-8")
+
+    /** The address the quick-add widget opens (the web app's `?add=`; shared fixture bridge/actions.json). */
+    const val QUICK_ADD_PATH = "/?add="
 }
