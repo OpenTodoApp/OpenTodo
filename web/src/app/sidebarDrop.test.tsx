@@ -14,7 +14,7 @@ import { saveViewMode } from '../lib/sections'
 import type { Task, User } from '../lib/types'
 import { addLabelUndoable, moveManyUndoable } from '../lib/undoActions'
 import { undoBatch } from '../lib/undo'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { hideBulkToast } from './bulk/toastStore'
 import { resetPanel } from './panel'
 import { navigate } from './router'
@@ -42,10 +42,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const shell = async (route: Parameters<typeof navigate>[0]) => { navigate(route); return render(<Shell user={user} onLogout={() => {}} />) }
 const row = (id: string) => document.querySelector<HTMLElement>(`[data-task-id="${id}"]`)!
 const target = (value: string) => document.querySelector<HTMLElement>(`[data-task-drop="${value}"]`)!
@@ -88,7 +84,7 @@ describe('drop a task on a project', () => {
     const r = await shell({ view: 'inbox' })
     await waitFor(() => !!row(id) && !!target(`project:${home}`))
     await drag(row(id), target(`project:${home}`), { escape: true })
-    await flush(50)
+    await waitFor(() => !document.querySelector('[data-drag-ghost]'), 'the drag ended')
     expect((await task(id)).project_id ?? null).toBeNull()
     await r.unmount()
   })
@@ -117,7 +113,7 @@ describe('drop a task on a project', () => {
     expect(viewerRow.hasAttribute('data-task-drop')).toBe(false)
     const { active } = await drag(row(id), viewerRow)
     expect(active).toBe(false)
-    await flush(50)
+    await waitFor(() => !document.querySelector('[data-drag-ghost]'), 'the drag ended')
     expect((await task(id)).project_id ?? null).toBeNull()
     await r.unmount()
   })

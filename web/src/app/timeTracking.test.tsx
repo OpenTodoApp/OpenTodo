@@ -10,7 +10,7 @@ import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { logTime, startTracking } from '../lib/timeEntries'
 import type { Task } from '../lib/types'
-import { click, flush, key, render, spokenText, visibleText, minWidthPx } from '../ui/test-utils'
+import { click, flush, key, render, spokenText, visibleText, minWidthPx, waitFor } from '../ui/test-utils'
 import { resetTaskPage, TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
@@ -44,10 +44,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 const task = (over: Partial<Task>): Task => ({
   id: 't', title: 'Task', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0,
@@ -115,7 +111,7 @@ describe('the y key in Today (time-tracking "Start and stop from the web app")',
     await waitFor(() => r.container.textContent!.includes('Inbox thing'))
     await key(document.body, 'y')
     await waitFor(() => r.container.textContent!.includes('Inbox') && true)
-    await flush(60)
+    await waitFor(async () => (await db.tasks.get(id))!.start === 'someday', 'parked in Someday')
     expect((await db.tasks.get(id))!.start).toBe('someday')
     expect(await db.timeEntries.count()).toBe(0)
   })
@@ -154,6 +150,7 @@ describe('the running indicator', () => {
 
   it('Nothing running: no tracking control', async () => {
     const r = await render(<><TrackingIndicator /><TrackingPill /></>)
+    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): nothing running renders nothing before and after the read; give a wrong control time to show
     await flush(60)
     expect(r.container.querySelector('[data-tracking-indicator], [data-tracking-pill]')).toBeNull()
   })

@@ -5,7 +5,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '../lib/types'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { SettingsView } from './SettingsView'
 import { parseRoute } from './router'
 
@@ -23,7 +23,7 @@ async function open(path: string) {
   const push = vi.spyOn(history, 'pushState')
   const route = parseRoute(location.pathname)
   const r = await render(<SettingsView user={member} onLogout={() => {}} section={route.view === 'settings' ? route.section : undefined} page={route.view === 'settings' ? route.page : undefined} anchor={route.view === 'settings' ? route.anchor : undefined} />)
-  await flush(30)
+  await waitFor(() => !!r.container.querySelector('[data-settings-section], [data-settings-overview]'), 'Settings open')
   return { r, replace, push }
 }
 
@@ -61,7 +61,7 @@ describe('legacy settings address', () => {
     await r.unmount()
     // The page that now opens focuses the card the anchor named.
     const page = await render(<SettingsView user={member} onLogout={() => {}} section="language" page="date-time" />)
-    await flush(30)
+    await waitFor(() => document.activeElement?.id === 'date-time-heading', 'focus on the card the anchor named')
     expect(document.activeElement?.id).toBe('date-time-heading')
     await page.unmount()
   })

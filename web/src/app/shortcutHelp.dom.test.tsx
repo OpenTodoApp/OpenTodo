@@ -2,7 +2,7 @@
 // The cheat sheet (OpenSpec change ux-overhaul, keyboard-shortcuts "Cheat sheet"):
 // context first, searchable, capped height with its own scroller.
 import { afterEach, describe, expect, it } from 'vitest'
-import { flush, render, type } from '../ui/test-utils'
+import { flush, render, type, waitFor } from '../ui/test-utils'
 import { contextSections, orderedSections, ShortcutHelp } from './ShortcutHelp'
 
 afterEach(() => { document.body.innerHTML = '' })
@@ -33,12 +33,12 @@ describe('search and size', () => {
     const input = document.querySelector<HTMLInputElement>('[data-shortcut-search]')!
     expect(document.activeElement).toBe(input)
     await type(input, 'dead')
-    await flush(20)
+    await waitFor(() => { const rows = [...document.querySelectorAll('[data-help-section] [data-sheet-row]')]; return rows.length > 0 && rows.every((tr) => (tr.textContent ?? '').toLowerCase().includes('dead')) }, 'the rows for "dead"')
     const rows = [...document.querySelectorAll('[data-help-section] [data-sheet-row]')].map((tr) => tr.textContent ?? '')
     expect(rows.length).toBeGreaterThan(0)
     for (const row of rows) expect(row.toLowerCase()).toContain('dead')
     await type(input, 'zzzz')
-    await flush(20)
+    await waitFor(() => document.body.textContent!.includes('No shortcut matches'), 'no match')
     expect(document.body.textContent).toContain('No shortcut matches')
     await r.unmount()
   })

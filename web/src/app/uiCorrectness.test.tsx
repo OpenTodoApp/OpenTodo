@@ -65,6 +65,7 @@ describe('a viewer of a shared project (UI-10)', () => {
     await key(document.body, 'O', { shiftKey: true })
     await key(document.body, 's')
     await key(document.body, 'e')
+    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a viewer's keys write and open nothing, so there is no signal to wait for
     await flush(100)
     expect((await db.tasks.get(id))!.due).toEqual(before!.due)
     expect(await db.tasks.count()).toBe(1)
@@ -85,7 +86,6 @@ describe('midnight while the app is open (UI-17)', () => {
     </>)
     const today = () => [...r.container.querySelectorAll('a, button')].find((a) => a.textContent?.startsWith('Today')) as HTMLElement | undefined
     await waitFor(() => !!r.container.querySelector('[data-list-page]') && !!today(), 'the list and sidebar')
-    await flush(50)
     expect(textWithoutBriefing(r.container.querySelector('[data-list-page]')!)).not.toContain('Tomorrow thing')
     vi.setSystemTime(new Date(2026, 9, 15, 0, 0, 30))
     await act(async () => { vi.advanceTimersByTime(60_000) })

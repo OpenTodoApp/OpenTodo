@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, flush, key, render, minWidthPx } from '../ui/test-utils'
+import { click, flush, key, render, minWidthPx, waitFor } from '../ui/test-utils'
 import { openTaskPanel, resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -32,17 +32,13 @@ beforeEach(async () => {
 })
 afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const bar = () => document.querySelector('[data-tab-bar]')
 const tab = (id: string) => document.querySelector<HTMLButtonElement>(`[data-tab="${id}"]`)!
 
 describe('the tab bar', () => {
   it('offers Inbox, Today, Upcoming and Search, marks the current view in the strong tone and is at least 44 px tall', async () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => document.querySelectorAll('[data-tab]').length === 4, 'the tab bar')
     expect([...document.querySelectorAll('[data-tab]')].map((t) => t.textContent)).toEqual(['Inbox', 'Today', 'Upcoming', 'Search'])
     expect(tab('inbox').getAttribute('aria-current')).toBe('page')
     expect(tab('inbox').className).toContain('text-strong')
@@ -58,19 +54,19 @@ describe('the tab bar', () => {
 
   it('Today opens Today without the drawer; the bar\'s menu button opens the sidebar as a drawer; Search opens the palette', async () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!bar(), 'the tab bar')
     await click(tab('today'))
-    await flush(30)
+    await waitFor(() => location.pathname === '/today' && tab('today').getAttribute('aria-current') === 'page', 'Today open')
     expect(location.pathname).toBe('/today')
     expect(tab('today').getAttribute('aria-current')).toBe('page')
     const aside = document.querySelector('aside[data-sidebar]')!
     expect(aside.className).toContain('-translate-x-full')
     expect(tab('more' as string)).toBeNull()
     await click(document.querySelector<HTMLButtonElement>('[data-phone-bar] button[aria-label="Open menu"]')!)
-    await flush(30)
+    await waitFor(() => document.querySelector('aside[data-sidebar]')!.className.includes('translate-x-0'), 'the drawer open')
     expect(document.querySelector('aside[data-sidebar]')!.className).toContain('translate-x-0')
     await click(document.querySelector<HTMLElement>('.bg-scrim')!)
-    await flush(30)
+    await waitFor(() => document.querySelector('aside[data-sidebar]')!.className.includes('-translate-x-full'), 'the drawer closed')
     await click(tab('search'))
     await waitFor(() => !!document.querySelector('[data-testid="command-palette"]'))
     // A sheet is open: the bar and the add button are gone.
@@ -84,7 +80,7 @@ describe('the tab bar', () => {
   it('hides on the task page and comes back on the list (task-full-page)', async () => {
     const id = await createTask({ title: 'Open me' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!bar(), 'the tab bar')
     expect(bar()).toBeTruthy()
     await act(async () => { openTaskPanel(id) })
     await waitFor(() => !bar() && location.pathname === `/task/${id}`)
@@ -97,7 +93,7 @@ describe('the tab bar', () => {
   it('is not rendered from 768 px', async () => {
     width = 1024
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('main'), 'the shell')
     // Rendered for the stylesheet to hide (md:hidden); the shell adds no bottom padding there.
     expect(document.querySelector('main')!.className).toContain('md:!pb-0')
     await r.unmount()
@@ -122,13 +118,13 @@ describe('the tab bar while the list scrolls', () => {
     Object.defineProperty(el, 'clientHeight', { value: 600, configurable: true })
     el.scrollTop = y
     el.dispatchEvent(new Event('scroll'))
-    await flush(10)
+    await flush()
   }
   const add = () => document.querySelector('[data-add-button]')!
 
   it('scrolling down more than 24 px drops the labels and slides the add button out; scrolling up restores both', async () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
     await scrollTo(10)
     expect(bar()!.hasAttribute('data-minimised')).toBe(false)
     await scrollTo(60)
@@ -147,10 +143,11 @@ describe('the tab bar while the list scrolls', () => {
 
   it('comes back 600 ms after the scroll stops, and at the end of the list', async () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
     await scrollTo(100)
     expect(bar()!.getAttribute('data-minimised')).toBe('true')
-    await flush(700)
+    // Restored by the quiet timer (600 ms), with no further scroll.
+    await waitFor(() => !bar()!.hasAttribute('data-minimised'), 'the bar back after the scroll stopped')
     expect(bar()!.hasAttribute('data-minimised')).toBe(false)
     await scrollTo(200)
     expect(bar()!.getAttribute('data-minimised')).toBe('true')
@@ -162,7 +159,7 @@ describe('the tab bar while the list scrolls', () => {
   it('never minimises under reduced motion', async () => {
     reduce = true
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
     await scrollTo(100)
     await scrollTo(300)
     expect(bar()!.hasAttribute('data-minimised')).toBe(false)
@@ -173,9 +170,9 @@ describe('the tab bar while the list scrolls', () => {
   it('the task page keeps both hidden, as a sheet did', async () => {
     const id = await createTask({ title: 'Read' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!bar(), 'the tab bar')
     await act(async () => { openTaskPanel(id) })
-    await flush(50)
+    await waitFor(() => bar() === null && location.pathname === `/task/${id}`, 'the task page')
     expect(bar()).toBeNull()
     expect(document.querySelector('[data-add-button]')).toBeNull()
     await r.unmount()

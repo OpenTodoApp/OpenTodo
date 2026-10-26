@@ -11,7 +11,7 @@ import { formatTime, localDueOf, setDateTime } from '../lib/dates'
 import { isInboxTask } from '../lib/inbox'
 import { createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
 import { listState } from './listActions'
 import { panelTaskId, resetPanel, setPanelTaskId } from './panel'
 import { parseRoute } from './router'
@@ -37,10 +37,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const cardTitle = () => document.querySelector('[data-triage-card] h2')?.textContent
 const progressText = () => document.querySelector('[data-triage-progress]')?.textContent
 async function inbox(...titles: string[]) {
@@ -117,7 +113,7 @@ describe('the triage mode', () => {
     await key(document.body, 'Enter')
     expect(panelTaskId()).toBe(a)
     await act(async () => { setPanelTaskId(null) })
-    await flush(20)
+    await waitFor(() => !document.querySelector('[data-detail-for]'), 'the panel closed')
     await key(document.body, 'y')
     await waitFor(() => cardTitle() === 'Other')
     expect((await db.tasks.get(a))!.start).toBe('someday')
@@ -130,7 +126,7 @@ describe('the triage mode', () => {
     await waitFor(() => cardTitle() === 'Fix the gate')
     expect(document.querySelector<HTMLButtonElement>('[data-decision="delegate"]')!.disabled).toBe(true)
     await key(document.body, 'a')
-    await flush(20)
+    await flush()
     expect(document.querySelector('[role="dialog"]')).toBeNull()
     await r.unmount()
 
@@ -298,6 +294,7 @@ describe('the scheduling sheet (inbox-means-unplaced)', () => {
     await key(document.body, 's')
     await waitFor(() => !!document.querySelector('[data-date-words]'))
     await key(document.querySelector('[data-date-words]')!, '4')
+    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a digit typed in the field must not act as a shortcut; nothing happening leaves no signal
     await flush(40)
     expect(sheet()).not.toBeNull()
     expect((await db.tasks.get(id))!.due).toBeNull()

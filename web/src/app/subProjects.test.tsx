@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, render, mockFetch, noPublicLinks, visibleText } from '../ui/test-utils'
+import { click, render, mockFetch, noPublicLinks, visibleText, waitFor } from '../ui/test-utils'
 import { SubProjects } from './SubProjects'
 import { TaskListView } from './TaskListView'
 
@@ -22,10 +22,6 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = '' })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('sub-projects group', () => {
   it('lists direct sub-projects with subtree counts above the first task, collapses per device, and is absent on a leaf', async () => {
@@ -50,7 +46,7 @@ describe('sub-projects group', () => {
     expect(order[1].hasAttribute('data-sub-projects')).toBe(true)
 
     await click(group.querySelector('[data-group-toggle]')!)
-    await flush(20)
+    await waitFor(() => group.querySelectorAll('[data-sub-project]').length === 0, 'the group folded')
     expect(group.querySelectorAll('[data-sub-project]')).toHaveLength(0)
     expect(group.querySelector('[data-group-toggle]')?.getAttribute('aria-expanded')).toBe('false')
     expect(JSON.parse(localStorage.getItem('ot.subprojects.collapsed')!)).toEqual([home])
@@ -67,7 +63,10 @@ describe('sub-projects group', () => {
     await again.unmount()
 
     const leaf = await render(<SubProjects projectId={garden} />)
-    await flush(50)
+    // The parent beside it lists its children: the projects are read.
+    const parent = await render(<SubProjects projectId={home} />)
+    await waitFor(() => parent.container.querySelectorAll('[data-sub-project]').length > 0, 'the projects read')
+    await parent.unmount()
     expect(leaf.container.innerHTML).toBe('')
     await leaf.unmount()
   })

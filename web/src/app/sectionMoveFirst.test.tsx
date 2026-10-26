@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { createSection, projectSections } from '../lib/sections'
-import { click, flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks, waitFor } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 
 beforeEach(() => mockFetch(noPublicLinks))
@@ -18,16 +18,12 @@ beforeEach(async () => {
   resetDeviceId()
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 
 const item = (label: string) => [...document.querySelectorAll<HTMLElement>('[data-menu-label]')].findLast((e) => e.getAttribute('data-menu-label') === label)
 
 async function openMenu(c: HTMLElement, name: string) {
   await click(c.querySelector(`button[aria-label="Section menu for ${name}"]`)!)
-  await flush(20)
+  await waitFor(() => !!item('Move up'), 'the section menu')
 }
 
 describe('section order without "No section"', () => {
@@ -43,7 +39,7 @@ describe('section order without "No section"', () => {
     await openMenu(r.container, 'Later')
     expect((item('Move up') as HTMLButtonElement).disabled).toBe(true)
     await click(document.body)
-    await flush(20)
+    await flush()
 
     await openMenu(r.container, 'Now')
     const up = item('Move up')!

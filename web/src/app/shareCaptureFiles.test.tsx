@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, setMeta, useDatabase } from '../lib/db'
 import { resetDeviceId } from '../lib/ops'
 import { getInboxEntry, putInboxEntry, type SharedFile } from '../lib/shareInbox'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, render, waitFor } from '../ui/test-utils'
 import { setPendingShare, ShareCapture } from './ShareCapture'
 
 let n = 0
@@ -28,10 +28,6 @@ afterEach(async () => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 2000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 
 // Node's Blob: it survives the structured clone into fake IndexedDB, like a real browser's.
 const shared = (name: string, type: string, body = 'bytes'): SharedFile => ({ name, type, blob: new NodeBlob([body], { type }) as unknown as Blob })
@@ -140,6 +136,7 @@ describe('extension screenshot hand-over', () => {
     await act(async () => {
       window.dispatchEvent(new MessageEvent('message', { data: { type: 'opentodo-files', files: [{ name: 'x.png', type: 'image/png', data: png }] }, origin: location.origin, source: window }))
     })
+    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): an ignored message leaves nothing to wait for; give a wrongly accepted one time to show
     await flush(50)
     expect(listedFiles()).toEqual([])
   })
