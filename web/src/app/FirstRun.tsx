@@ -26,6 +26,7 @@ import { closeStartGuide, useStartGuideRequest } from '../lib/startGuide'
 import { useSyncStatus } from '../lib/sync'
 import type { ThemeModePref, User } from '../lib/types'
 import { firstRunDone, setFirstRunDone } from '../lib/userPrefs'
+import { METHOD_NAME } from '../lib/method'
 import { setMethodMode, type MethodMode } from '../lib/method/mode'
 import { FirstDayView } from './FirstDay'
 import { MethodModeChooser } from './method/MethodModeChooser'
@@ -179,6 +180,8 @@ function WorkStep({ method, onMethod }: { method: MethodMode; onMethod: (m: Meth
   const mode = readAppearance(row ?? null).mode
   return (
     <>
+      {/* What the choice is about, before the choice (onboarding-plain-language D1). */}
+      <p className="mt-1 text-body text-muted" data-first-run-method-intro>{t('{method} is an optional way to clear your head: write everything down, decide what each thing needs, and look back weekly. Choose how much of it you want; you can change this in Settings.', { method: METHOD_NAME })}</p>
       <div className="mt-2"><MethodModeChooser value={method} onChosen={onMethod} writeOnChoose={false} offerPreselected /></div>
       <p className="mt-3 text-meta text-muted" id="first-run-appearance">{t('Choose light or dark')}</p>
       <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-labelledby="first-run-appearance">
