@@ -40,6 +40,7 @@ const table = [
   [['docker-compose.yml'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/coolify-template-check.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/e2e-views.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
+  [['scripts/e2e-offline.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['.github/dependabot.yml'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['.dockerignore'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['templates/trip-planning/template.yaml'], { code: 'true', docs: 'false', mobile: 'false' }],
