@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/digest"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/digest"
 )
 
 // The weekly email digest settings (OpenSpec change `stats-and-review`, design

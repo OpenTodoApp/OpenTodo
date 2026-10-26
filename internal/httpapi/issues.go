@@ -12,9 +12,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/issues"
-	ob "github.com/pixari/opentodo/internal/outbound"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/issues"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Issue import (OpenSpec change issue-import): per-user connections to GitHub

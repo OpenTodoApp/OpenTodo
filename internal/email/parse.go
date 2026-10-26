@@ -19,8 +19,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Message limits (design D5, Risks).

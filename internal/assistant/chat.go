@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // ChatProvider is the Chat Completions wire format on the standard library

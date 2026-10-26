@@ -8,7 +8,7 @@ order: 35
 ---
 # Running OpenTodo on Fly.io
 
-OpenTodo runs on Fly.io as one machine with one volume, served over https at `https://<app>.fly.dev`. The repository has a ready [`fly.toml`](https://github.com/pixari/opentodo/blob/main/deploy/fly/fly.toml); you need a Fly account and [`flyctl`](https://fly.io/docs/flyctl/install/), signed in with `fly auth login`.
+OpenTodo runs on Fly.io as one machine with one volume, served over https at `https://<app>.fly.dev`. The repository has a ready [`fly.toml`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/fly/fly.toml); you need a Fly account and [`flyctl`](https://fly.io/docs/flyctl/install/), signed in with `fly auth login`.
 
 ## Install
 
@@ -16,7 +16,7 @@ OpenTodo runs on Fly.io as one machine with one volume, served over https at `ht
 
    ```bash
    mkdir opentodo && cd opentodo
-   curl -fsSLO https://raw.githubusercontent.com/pixari/opentodo/main/deploy/fly/fly.toml
+   curl -fsSLO https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/fly/fly.toml
    ```
 
 2. Create the app from it. Pick a name (it becomes `<app>.fly.dev`) and a region near you (`fly platform regions` lists them):
@@ -65,7 +65,7 @@ Fly serves the app over https only, so installing the app on a phone, working of
 | `OPENTODO_ALLOW_SIGNUP` | `false` | `true` lets anyone who can reach the server create an account. |
 | `OPENTODO_TRUSTED_PROXIES` | empty | Fly's proxy needs nothing here. Set it to `cloudflare` only if you put Cloudflare's proxy in front of your own domain. |
 
-Other `OPENTODO_*` variables from the [configuration table](https://github.com/pixari/opentodo#configuration) go under `[env]`, or `fly secrets set` for passwords (for example `OPENTODO_EMAIL_IMAP_PASSWORD`). Run `fly deploy` after editing `fly.toml`; `fly secrets set` restarts the machine by itself.
+Other `OPENTODO_*` variables from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration) go under `[env]`, or `fly secrets set` for passwords (for example `OPENTODO_EMAIL_IMAP_PASSWORD`). Run `fly deploy` after editing `fly.toml`; `fly secrets set` restarts the machine by itself.
 
 ## One machine, always on
 
@@ -85,7 +85,7 @@ When `fly certs show todo.example.com` reports the certificate as issued, set `O
 
 ## Updates and backups
 
-`fly.toml` uses the `stable` image, which every release moves. Fly does not update a running app by itself: run `fly deploy` in the folder with `fly.toml`, and it fetches the release `stable` points at then. Migrations run on start. There are no down-migrations, so back up first. To stay on one release line, set `image = "ghcr.io/pixari/opentodo:0.6"` under `[build]` (or pin one version, `0.6.1`).
+`fly.toml` uses the `stable` image, which every release moves. Fly does not update a running app by itself: run `fly deploy` in the folder with `fly.toml`, and it fetches the release `stable` points at then. Migrations run on start. There are no down-migrations, so back up first. To stay on one release line, set `image = "ghcr.io/opentodoapp/opentodo:0.6"` under `[build]` (or pin one version, `0.6.1`).
 
 Fly takes daily snapshots of the volume and keeps them for a few days (`fly volumes snapshots list <volume id>`; `fly volumes list` shows the id). For backups you control, turn on scheduled backups in OpenTodo's **Settings → Server** and send them to S3 or WebDAV; the local `backups/` folder is in the same volume, so it does not protect against losing the volume. See [Backups](../backups.md).
 
@@ -93,4 +93,4 @@ Fly takes daily snapshots of the volume and keeps them for a few days (`fly volu
 
 - **`fly deploy` asks which app to use, or deploys a new one**: run it in the folder where `fly launch` wrote the app name into `fly.toml`.
 - **The setup screen says the token is wrong**: set a new one with `fly secrets set OPENTODO_SETUP_TOKEN=...` and try again after the machine restarts.
-- **The machine stops right after starting and `fly logs` says "permission denied" on `/data`**: Fly gives the volume to the image's user (65532) when it mounts it, so this should not happen. If it does, [open an issue](https://github.com/pixari/opentodo/issues) with the log.
+- **The machine stops right after starting and `fly logs` says "permission denied" on `/data`**: Fly gives the volume to the image's user (65532) when it mounts it, so this should not happen. If it does, [open an issue](https://github.com/OpenTodoApp/OpenTodo/issues) with the log.

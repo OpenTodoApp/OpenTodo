@@ -1,19 +1,19 @@
 # Home Assistant add-on
 
-Home Assistant OS and Supervised installations run add-ons (Home Assistant now calls them apps) from add-on repositories that anyone can add by URL. OpenTodo has its own: **[`pixari/opentodo-homeassistant-addons`](https://github.com/pixari/opentodo-homeassistant-addons)**, with one add-on, `opentodo`. Home Assistant Container and Core have no add-ons; those users run the Docker image next to Home Assistant ([docs/self-hosting/docker.md](../../docs/self-hosting/docker.md)).
+Home Assistant OS and Supervised installations run add-ons (Home Assistant now calls them apps) from add-on repositories that anyone can add by URL. OpenTodo has its own: **[`OpenTodoApp/opentodo-homeassistant-addons`](https://github.com/OpenTodoApp/opentodo-homeassistant-addons)**, with one add-on, `opentodo`. Home Assistant Container and Core have no add-ons; those users run the Docker image next to Home Assistant ([docs/self-hosting/docker.md](../../docs/self-hosting/docker.md)).
 
 [`upstream/`](upstream/) is the repository's whole content, file for file:
 
 | Path | What it is |
 | --- | --- |
 | `repository.yaml` | The repository's name, URL and maintainer |
-| `opentodo/config.yaml` | The add-on: slug `opentodo`, `version` = the OpenTodo release, `image: ghcr.io/pixari/opentodo-homeassistant` (the Supervisor pulls the tag named `version`), `arch` amd64 and aarch64, port 8080 with `webui`, `backup: cold`, and five options: `base_url`, `setup_token` (a password field), `allow_signup`, `trusted_proxies`, `log_level` |
-| `opentodo/Dockerfile` | `FROM ghcr.io/home-assistant/base` (Alpine with s6 and bashio), the binary copied from `ghcr.io/pixari/opentodo:<OPENTODO_VERSION>`, `OPENTODO_DATA_DIR=/data`, the health check |
+| `opentodo/config.yaml` | The add-on: slug `opentodo`, `version` = the OpenTodo release, `image: ghcr.io/opentodoapp/opentodo-homeassistant` (the Supervisor pulls the tag named `version`), `arch` amd64 and aarch64, port 8080 with `webui`, `backup: cold`, and five options: `base_url`, `setup_token` (a password field), `allow_signup`, `trusted_proxies`, `log_level` |
+| `opentodo/Dockerfile` | `FROM ghcr.io/home-assistant/base` (Alpine with s6 and bashio), the binary copied from `ghcr.io/opentodoapp/opentodo:<OPENTODO_VERSION>`, `OPENTODO_DATA_DIR=/data`, the health check |
 | `opentodo/run.sh` | Reads `/data/options.json` (written by the Supervisor before every start) and exports the matching `OPENTODO_*` variables, then runs OpenTodo |
 | `opentodo/translations/en.yaml` | The option names, with the catalogue's descriptions from `deploy/deploy.json` |
 | `opentodo/apparmor.txt` | OpenTodo runs in its own AppArmor profile: its binary, `/data`, the network and a few system files |
 | `opentodo/DOCS.md`, `README.md`, `CHANGELOG.md`, `icon.png` (128×128), `logo.png` | What Home Assistant shows on the add-on's tabs |
-| `.github/workflows/build.yaml` | Builds amd64 and aarch64 images with Home Assistant's builder actions and publishes `ghcr.io/pixari/{amd64,aarch64}-opentodo-homeassistant` and the multi-arch `ghcr.io/pixari/opentodo-homeassistant`; an existing tag is never rebuilt (`skip-existing`) |
+| `.github/workflows/build.yaml` | Builds amd64 and aarch64 images with Home Assistant's builder actions and publishes `ghcr.io/opentodoapp/{amd64,aarch64}-opentodo-homeassistant` and the multi-arch `ghcr.io/opentodoapp/opentodo-homeassistant`; an existing tag is never rebuilt (`skip-existing`) |
 | `.github/workflows/test.yaml` | Home Assistant's add-on linter, ShellCheck, and a start of the image with an `options.json` that checks the options reach OpenTodo |
 | `.github/workflows/follow.yaml`, `scripts/bump.sh` | Follows OpenTodo's releases (below) |
 | `.github/dependabot.yml` | GitHub Actions and the base image |
@@ -39,7 +39,7 @@ Then bring the same change back here, because `make check` requires the latest r
 Edit the add-on here, never in the add-on repository, then copy `upstream/` over a clone and push:
 
 ```bash
-git clone https://github.com/pixari/opentodo-homeassistant-addons /tmp/opentodo-ha
+git clone https://github.com/OpenTodoApp/opentodo-homeassistant-addons /tmp/opentodo-ha
 cp -R deploy/homeassistant/upstream/. /tmp/opentodo-ha/
 cd /tmp/opentodo-ha && git add -A && git commit -m "OpenTodo add-on: <what changed>" && git push
 ```

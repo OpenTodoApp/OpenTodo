@@ -11,8 +11,8 @@ Add OpenTodo 0.11.0
 **New app:** OpenTodo, an open-source (AGPL-3.0), self-hosted, local-first task manager: projects, labels, due dates, reminders and sharing in the browser and as an installable app, with offline changes synced across devices.
 
 - Website: https://open-todo.app
-- Source: https://github.com/pixari/opentodo
-- Image: `ghcr.io/pixari/opentodo:0.11.0` (amd64, arm64; published by the project's release workflow)
+- Source: https://github.com/OpenTodoApp/OpenTodo
+- Image: `ghcr.io/opentodoapp/opentodo:0.11.0` (amd64, arm64; published by the project's release workflow)
 
 **What changed:** adds `Apps/OpenTodo/` only: `docker-compose.yml`, `icon.svg`, `icon.png`, `thumbnail.png` and two screenshots.
 

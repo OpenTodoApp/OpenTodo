@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // SecretPrefix marks webhook signing secrets so they are recognisable in logs and

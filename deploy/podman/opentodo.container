@@ -11,7 +11,7 @@ After=network-online.target
 
 [Container]
 ContainerName=opentodo
-Image=ghcr.io/pixari/opentodo:stable
+Image=ghcr.io/opentodoapp/opentodo:stable
 # podman auto-update pulls the stable tag again and restarts the container when a release moved it.
 AutoUpdate=registry
 PublishPort=8080:8080

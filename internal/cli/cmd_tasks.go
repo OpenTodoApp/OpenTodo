@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/inbox"
-	"github.com/pixari/opentodo/internal/origin"
-	"github.com/pixari/opentodo/internal/quickadd"
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/inbox"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
+	"github.com/OpenTodoApp/opentodo/internal/quickadd"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 // stringList is a repeatable string flag.

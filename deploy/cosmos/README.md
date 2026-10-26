@@ -23,7 +23,7 @@ In Cosmos: **ServApps → Import Compose File**, paste `cosmos-compose.json`, ch
 
 ## Submitting (maintainer)
 
-The store's validator checks that the image exists in its registry. It fails on `ghcr.io/pixari/opentodo:stable` until the release job has published the `stable` tag (the first release after the stable-image-tag change), so submit after that.
+The store's validator checks that the image exists in its registry. It fails on `ghcr.io/opentodoapp/opentodo:stable` until the release job has published the `stable` tag (the first release after the stable-image-tag change), so submit after that.
 
 1. Test first in a Cosmos instance (0.22.23 or newer): **ServApps → Import Compose File** with `cosmos-compose.json`, pick a hostname, install, note the setup token from the post-install message, open the address, create the owner with it, add a task, restart the container and check the task is still there.
 2. Fork [azukaar/cosmos-servapps-official](https://github.com/azukaar/cosmos-servapps-official) and clone the fork.
@@ -40,4 +40,4 @@ The store's validator checks that the image exists in its registry. It fails on 
 
 ## After a release
 
-Nothing to do. The servapp names `ghcr.io/pixari/opentodo:stable`, which every release moves, and sets `cosmos-auto-update`, so Cosmos installs each release by itself. Send a pull request to the store only when the template itself changes.
+Nothing to do. The servapp names `ghcr.io/opentodoapp/opentodo:stable`, which every release moves, and sets `cosmos-auto-update`, so Cosmos installs each release by itself. Send a pull request to the store only when the template itself changes.

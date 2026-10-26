@@ -7,10 +7,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/calfeed"
-	"github.com/pixari/opentodo/internal/ids"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Snapshot is an event in task terms (design D6): the due it stands for, its

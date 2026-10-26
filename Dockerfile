@@ -50,7 +50,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 LABEL org.opencontainers.image.title="OpenTodo" \
       org.opencontainers.image.description="Your tasks, your server. Open-source, local-first task manager." \
-      org.opencontainers.image.source="https://github.com/pixari/opentodo" \
+      org.opencontainers.image.source="https://github.com/OpenTodoApp/OpenTodo" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 COPY --from=build /out/opentodo /opentodo
 COPY --from=build --chown=65532:65532 /out/data /data

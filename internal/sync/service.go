@@ -13,8 +13,8 @@ import (
 	gosync "sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
 )
 
 // Service persists ops and materializes current field values.

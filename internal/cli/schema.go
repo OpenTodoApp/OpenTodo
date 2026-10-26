@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pixari/opentodo/skills"
+	"github.com/OpenTodoApp/opentodo/skills"
 )
 
 // JSON Schemas of every --json output (agent-ready-cli design D1), embedded so

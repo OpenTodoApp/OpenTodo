@@ -26,7 +26,7 @@ OpenTodo is an open-source (AGPL-3.0), self-hosted, local-first task manager: on
 
 ## App Information
 
-- **Upstream**: https://github.com/pixari/opentodo
+- **Upstream**: https://github.com/OpenTodoApp/OpenTodo
 - **Documentation**: https://open-todo.app/docs/self-hosting/
 - **App Version**: 0.11.0
 
@@ -43,14 +43,14 @@ All tests passed successfully: `./.github/scripts/ci.py --app opentodo --train c
 
 Please upload the following to the CDN:
 
-- Icon: https://raw.githubusercontent.com/pixari/opentodo/main/deploy/coolify/opentodo.svg (PNG, 512x512: https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png)
-- Screenshot 1 (optional): https://raw.githubusercontent.com/pixari/opentodo/main/deploy/easypanel/assets/screenshot.png
+- Icon: https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/coolify/opentodo.svg (PNG, 512x512: https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/web/public/pwa-512.png)
+- Screenshot 1 (optional): https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/easypanel/assets/screenshot.png
 
 `app.yaml` names `https://media.sys.truenas.net/apps/opentodo/icons/icon.svg` as a placeholder; I will replace it and `screenshots` with the URLs you give.
 
 ## Special Notes
 
-- The image (ghcr.io/pixari/opentodo, amd64 and arm64) is distroless: no shell, no wget or curl. The health check runs the binary's own `/opentodo healthcheck`, which reads OPENTODO_ADDR, so it follows the chosen port.
+- The image (ghcr.io/opentodoapp/opentodo, amd64 and arm64) is distroless: no shell, no wget or curl. The health check runs the binary's own `/opentodo healthcheck`, which reads OPENTODO_ADDR, so it follows the chosen port.
 - The template sets OPENTODO_ADDR=":<port>" so the app listens on the chosen port (host network works) and OPENTODO_DATA_DIR=/data for the single data mount.
 - The image defaults to uid 65532, but the static binary runs as any user that can write /data; 568:568 works with the permissions container.
 - No variable is required. The first visitor creates the owner account; sign-up is closed afterwards. Setup Token (optional, 16+ characters) protects that first step on a server reachable from the internet; without it, a visitor from outside the private network needs a one-time setup code that OpenTodo prints to the app's log.

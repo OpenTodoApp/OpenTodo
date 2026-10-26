@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/assistant"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/assistant"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // The on-device assistant for encrypted accounts (OpenSpec change

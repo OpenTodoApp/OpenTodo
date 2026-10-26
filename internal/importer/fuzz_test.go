@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 // Fuzz targets for imports (wave 2 of the 2026-10 audit, Z1): any signed-in

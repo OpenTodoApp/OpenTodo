@@ -9,8 +9,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ruleval"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // PlanContext is what planning one task needs besides the task row.

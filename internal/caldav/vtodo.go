@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Errors returned by Decode besides ErrInvalid (unparseable data).

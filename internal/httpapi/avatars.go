@@ -14,7 +14,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/pixari/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
 )
 
 // Profile pictures (OpenSpec change settings-refresh, design D10). The client

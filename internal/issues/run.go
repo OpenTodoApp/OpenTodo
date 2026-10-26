@@ -3,7 +3,7 @@ package issues
 import (
 	"context"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // run is one poll of one connection in progress.

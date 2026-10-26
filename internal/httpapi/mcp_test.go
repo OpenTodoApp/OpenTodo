@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/mcp"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/mcp"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // mcpPost sends a raw JSON-RPC body to /mcp with the usual client headers.

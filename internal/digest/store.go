@@ -8,7 +8,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/pixari/opentodo/internal/mail"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
 )
 
 // Settings are one user's digest settings (design D5).

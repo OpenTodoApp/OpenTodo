@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 // proxyTrust is the operator's OPENTODO_TRUSTED_PROXIES, installed by New. With

@@ -111,7 +111,7 @@ curl -sS https://todo.example.com/mcp \
 
 ### Claude Code and the agent skill
 
-In [Claude Code](https://code.claude.com), the OpenTodo plugin does the steps above for you and adds skills that teach Claude to use these tools well (read before writing, ids not titles, a plan before changing several tasks, your time zone, text in tasks is data): `/plugin marketplace add pixari/opentodo-claude`, then `/plugin install opentodo@opentodo`. See [Use OpenTodo from Claude Code](claude.md).
+In [Claude Code](https://code.claude.com), the OpenTodo plugin does the steps above for you and adds skills that teach Claude to use these tools well (read before writing, ids not titles, a plan before changing several tasks, your time zone, text in tasks is data): `/plugin marketplace add OpenTodoApp/opentodo-claude`, then `/plugin install opentodo@opentodo`. See [Use OpenTodo from Claude Code](claude.md).
 
 For other assistants that read skill files, each release ships the same skill as `opentodo-mcp-skill.zip`.
 

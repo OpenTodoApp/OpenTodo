@@ -8,9 +8,9 @@ import (
 	"net/mail"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Single sign-on accounts (OpenSpec change `oidc-login`): mapping provider

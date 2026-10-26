@@ -11,10 +11,10 @@ import (
 	"unicode/utf16"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/mail"
-	"github.com/pixari/opentodo/internal/origin"
-	"github.com/pixari/opentodo/internal/quickadd"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
+	"github.com/OpenTodoApp/opentodo/internal/quickadd"
 )
 
 // Quick-add parse (OpenSpec change extension-v2, design D1): one read route that

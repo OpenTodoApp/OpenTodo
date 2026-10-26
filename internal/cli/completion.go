@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Shell completion (OpenSpec change ot-completion). `ot completion <shell>`

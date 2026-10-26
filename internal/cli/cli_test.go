@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"context"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/httpapi"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant/services"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
 // fixedNow is "today" for every test: Saturday 2026-10-10, local time.

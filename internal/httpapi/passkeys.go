@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/webauthn"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn"
 )
 
 // ---- handlers: passkeys (OpenSpec change `passkeys`) ----

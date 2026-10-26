@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // MaxFieldText bounds a text or link value in characters (spec "Typed values

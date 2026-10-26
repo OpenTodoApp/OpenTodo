@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // Resource payloads for the MCP server (mcp-server design D4): built from the

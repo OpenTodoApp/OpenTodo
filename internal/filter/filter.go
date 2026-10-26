@@ -16,7 +16,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/timetrack"
+	"github.com/OpenTodoApp/opentodo/internal/timetrack"
 )
 
 // The limits on a query (OpenSpec change filter-limits), the same as

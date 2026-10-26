@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 // member registers a member through an invitation and returns their client and id.

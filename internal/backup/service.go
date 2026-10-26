@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // Service owns backup settings, runs and the scheduler.

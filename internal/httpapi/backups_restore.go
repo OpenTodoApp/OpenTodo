@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/backup"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // Web restore (OpenSpec backup-restore-web, design D8). Every route is owner

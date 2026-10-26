@@ -1,5 +1,5 @@
 // Claude Code plugin marketplace (deploy/claude-plugin/), OpenSpec change claude-plugin.
-// deploy/claude-plugin/upstream/ is the repository pixari/opentodo-claude file for file: a
+// deploy/claude-plugin/upstream/ is the repository OpenTodoApp/opentodo-claude file for file: a
 // marketplace "opentodo" listing one plugin, plugins/opentodo/, with copies of the agent skills
 // under skills/, two task skills and the MCP connection (userConfig asks for the server address
 // and a sensitive token). The checks keep it honest against the code: copies equal their source,

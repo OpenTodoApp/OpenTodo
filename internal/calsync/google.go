@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // Google's OAuth endpoints and the scope calendar sync asks for (design D13).

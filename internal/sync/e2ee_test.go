@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
 )
 
 // envelope builds a ciphertext envelope of n payload bytes (nonce + ciphertext +

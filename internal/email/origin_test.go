@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/origin"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // The Message-ID becomes the task's origin (OpenSpec change task-origin,

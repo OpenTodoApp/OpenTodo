@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // backup-restore-web 1.2: a wrong passphrase is told apart from corruption

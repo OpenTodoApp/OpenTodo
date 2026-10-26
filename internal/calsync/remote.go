@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/caldav"
-	"github.com/pixari/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 )
 
 // Requests a cycle sends to one calendar (design D7).

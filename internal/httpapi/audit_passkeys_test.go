@@ -3,9 +3,9 @@ package httpapi
 import (
 	"testing"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/webauthn"
-	"github.com/pixari/opentodo/internal/webauthn/testauth"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn/testauth"
 )
 
 // passkeyOwner returns a signed-in owner on a passkey-capable server and the owner id.

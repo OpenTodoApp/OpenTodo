@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Workspaces restored from an own export (OpenSpec change workspaces, task 3.5).

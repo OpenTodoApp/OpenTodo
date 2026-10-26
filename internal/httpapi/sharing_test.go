@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // shareEnv: alice (server owner) owns project "Home" with a task; bob and carol

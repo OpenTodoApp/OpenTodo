@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Imports and undo go through sync.Apply, so the post-commit observer (which

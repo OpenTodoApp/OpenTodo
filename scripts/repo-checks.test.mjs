@@ -383,7 +383,7 @@ test('sensitive paths have a code owner and SECURITY.md names private reporting'
   for (const p of ['/.github/', '/Dockerfile', '/internal/auth/', '/internal/httpapi/', '/internal/e2ee/', '/internal/store/migrations/']) {
     assert.match(owners, new RegExp(`^${p.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}\\s+@pixari$`, 'm'), `CODEOWNERS covers ${p}`)
   }
-  assert.match(read('SECURITY.md'), /https:\/\/github\.com\/pixari\/opentodo\/security\/advisories\/new/)
+  assert.match(read('SECURITY.md'), /https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/security\/advisories\/new/)
 })
 
 /** Paths the .dockerignore excludes (the subset of its syntax we use: names, dir/, *.ext at the root, !negation). */

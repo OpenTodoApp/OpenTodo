@@ -226,7 +226,7 @@ coolify-check:
 	node --test scripts/coolify-template-check.test.mjs scripts/site-bundle.test.mjs
 	node scripts/coolify-template-check.mjs
 
-## Also starts the template's image with Docker and probes it (pulls ghcr.io/pixari/opentodo).
+## Also starts the template's image with Docker and probes it (pulls ghcr.io/opentodoapp/opentodo).
 coolify-smoke:
 	node scripts/coolify-template-check.mjs --smoke
 

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // ChallengeTTL is how long an issued challenge stays valid.

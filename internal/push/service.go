@@ -16,11 +16,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/ids"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/textutil"
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
 // Defaults of the scheduler and the sender.
@@ -44,7 +44,7 @@ const (
 	// rest wait for the next tick.
 	UserSendBudget = 20 * time.Second
 	// DefaultSubject is the VAPID contact when no base URL is configured.
-	DefaultSubject = "https://github.com/pixari/opentodo"
+	DefaultSubject = "https://github.com/OpenTodoApp/OpenTodo"
 )
 
 // Options configure a Service.

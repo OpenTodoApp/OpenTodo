@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/settings"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // Archive format identifiers (see docs/backups.md).

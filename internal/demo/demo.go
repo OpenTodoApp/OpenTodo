@@ -16,10 +16,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/settings"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 const (

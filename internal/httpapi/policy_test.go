@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/httpapi/httpx"
-	"github.com/pixari/opentodo/internal/push"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant/services"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
+	"github.com/OpenTodoApp/opentodo/internal/push"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
 // Route authorization policy (OpenSpec change `route-authorization-policy`).

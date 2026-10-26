@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant/services"
-	"github.com/pixari/opentodo/internal/webauthn"
-	"github.com/pixari/opentodo/internal/webauthn/testauth"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn/testauth"
 )
 
 // mfaClock is the auth service's time source in these tests, so codes for

@@ -6,10 +6,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/e2ee/crypt"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/timetrack"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee/crypt"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/timetrack"
 )
 
 // The decrypting bridge (OpenSpec change mcp-projects, design D5): `ot mcp

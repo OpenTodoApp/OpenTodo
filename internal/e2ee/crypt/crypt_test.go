@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // The known-answer vectors the browser checks too (web/src/lib/crypto.test.ts),

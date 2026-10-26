@@ -28,14 +28,14 @@ test('casaos: the YAML subset parser is strict', () => {
 
 test('casaos: image policy and x-casaos.version', () => {
   // The store refuses moving tags: the latest release, never stable or latest.
-  has(checkTemplate(compose.replace('opentodo:0.14.2', 'opentodo:stable'), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.14\.2/)
-  has(checkTemplate(compose.replace('opentodo:0.14.2', 'opentodo:latest'), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.14\.2/)
+  has(checkTemplate(compose.replace('opentodo:0.14.2', 'opentodo:stable'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
+  has(checkTemplate(compose.replace('opentodo:0.14.2', 'opentodo:latest'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
   // Installs only see an update when the version changes, so it must follow the image.
   has(checkTemplate(compose.replace('version: "0.14.2"', 'version: "0.6.0"'), ctx), /x-casaos\.version must equal the image tag/)
   has(checkTemplate(compose.replace('version: "0.14.2"', 'version: 0.6'), ctx), /x-casaos\.version must be a quoted string/)
   // A new release in the changelog makes the pinned template stale.
   const next = { ...ctx, changelog: '## [0.15.1] - 2026-12-20\n' + ctx.changelog }
-  has(checkTemplate(compose, next), /image must be ghcr\.io\/pixari\/opentodo:0\.15\.1/)
+  has(checkTemplate(compose, next), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.15\.1/)
 })
 
 test('casaos: port, data path and the init service', () => {

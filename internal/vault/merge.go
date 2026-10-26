@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // place is where a task line sits in a parsed file.

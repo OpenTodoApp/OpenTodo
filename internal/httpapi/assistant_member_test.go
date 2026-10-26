@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/assistant"
+	"github.com/OpenTodoApp/opentodo/internal/assistant"
 )
 
 // Tests of the member's own provider (OpenSpec change

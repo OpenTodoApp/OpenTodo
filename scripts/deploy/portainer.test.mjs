@@ -29,8 +29,8 @@ test('portainer: list format', () => {
 })
 
 test('portainer: image policy, port and data path', () => {
-  has(edit((t) => { t.image = 'ghcr.io/pixari/opentodo:latest' }), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(edit((t) => { t.image = 'ghcr.io/pixari/opentodo:0.14.2' }), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(edit((t) => { t.image = 'ghcr.io/opentodoapp/opentodo:latest' }), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(edit((t) => { t.image = 'ghcr.io/opentodoapp/opentodo:0.14.2' }), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(edit((t) => { t.ports = ['3000:3000/tcp'] }), /port must be 8080/)
   has(edit((t) => { t.ports = ['8080:8080'] }), /host:container\/tcp/)
   has(edit((t) => { t.ports = ['127.0.0.1:8080:8080/tcp'] }), /without a host IP/)
@@ -51,7 +51,7 @@ test('portainer: variables', () => {
 })
 
 test('portainer: description, categories, logo, note', () => {
-  has(edit((t) => { t.description = facts.summary }), /followed by "Source: https:\/\/github\.com\/pixari\/opentodo"/)
+  has(edit((t) => { t.description = facts.summary }), /followed by "Source: https:\/\/github\.com\/OpenTodoApp\/OpenTodo"/)
   has(edit((t) => { t.categories = ['Todo'] }), /categories/)
   has(edit((t) => { t.logo = 'https://example.com/logo.png' }), /logo must be/)
   has(edit((t) => { t.restart_policy = 'always' }), /unless-stopped/)

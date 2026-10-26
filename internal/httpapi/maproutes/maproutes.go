@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/httpapi/httpx"
-	"github.com/pixari/opentodo/internal/maps"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
+	"github.com/OpenTodoApp/opentodo/internal/maps"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // SearchesPerMinute is the per-user search limit (design D4).

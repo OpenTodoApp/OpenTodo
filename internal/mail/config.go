@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 // Settings keys (design D1). The password is not among them: it lives in

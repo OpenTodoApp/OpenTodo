@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pixari/opentodo/internal/caldav"
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // FeedTask is one task as the feed renders it.

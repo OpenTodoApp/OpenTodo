@@ -14,12 +14,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/calfeed"
-	ob "github.com/pixari/opentodo/internal/outbound"
-	"github.com/pixari/opentodo/internal/recurrence"
-	"github.com/pixari/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Calendar feeds (OpenSpec change calendar-feeds): subscriptions to other

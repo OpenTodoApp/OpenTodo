@@ -15,13 +15,13 @@ OpenTodo is one container with one volume. The Helm chart runs it as a single po
 From 0.7.0, the first release that ships it, the chart is published as an OCI artifact on GitHub's registry:
 
 ```bash
-helm install opentodo oci://ghcr.io/pixari/charts/opentodo \
+helm install opentodo oci://ghcr.io/opentodoapp/charts/opentodo \
   --namespace opentodo --create-namespace
 ```
 
 Until then, install it from a clone of the repository: `helm install opentodo ./deploy/helm/opentodo --namespace opentodo --create-namespace`.
 
-The chart's version is the OpenTodo release it installs: chart `0.7.0` runs `ghcr.io/pixari/opentodo:0.7.0`. Pick a version with `--version`.
+The chart's version is the OpenTodo release it installs: chart `0.7.0` runs `ghcr.io/opentodoapp/opentodo:0.7.0`. Pick a version with `--version`.
 
 ## First visit
 
@@ -49,7 +49,7 @@ Put your settings in a values file and pass it with `-f my-values.yaml` on insta
 | `env.OPENTODO_BASE_URL` | empty | The https address people open, for example `https://todo.example.com`. Leave it empty on plain http. With an Ingress that has `tls`, an empty value becomes `https://<ingress.host>`. |
 | `env.OPENTODO_ALLOW_SIGNUP` | `"false"` | `"true"` lets anyone who can reach the server create an account. |
 | `env.OPENTODO_TRUSTED_PROXIES` | empty | The ingress controller's hop is trusted without it. Set it when more proxies sit in front of the controller, for example `cloudflare`. |
-| `env.*` | | Any other variable from the [configuration table](https://github.com/pixari/opentodo#configuration), as a string. |
+| `env.*` | | Any other variable from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration), as a string. |
 | `extraEnv` | `[]` | More variables in Kubernetes form, for example a password from your own Secret with `valueFrom.secretKeyRef`. |
 | `setupToken.generate` | `true` | Generates the setup token into a Secret, kept across upgrades. |
 | `setupToken.existingSecret` | empty | Use your own Secret instead (key `setupToken.secretKey`, default `setup-token`). Use this with Argo CD or Flux: they cannot read the old Secret, so a generated token would change on every sync. |
@@ -93,7 +93,7 @@ The pod runs as user and group 65532, with `fsGroup: 65532` so the volume is wri
 Each OpenTodo release publishes a chart of the same version. To update:
 
 ```bash
-helm upgrade opentodo oci://ghcr.io/pixari/charts/opentodo \
+helm upgrade opentodo oci://ghcr.io/opentodoapp/charts/opentodo \
   --namespace opentodo -f my-values.yaml
 ```
 

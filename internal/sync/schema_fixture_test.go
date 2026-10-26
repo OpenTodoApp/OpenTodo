@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // schemaFixture is the op schema contract shared with the web client

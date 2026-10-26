@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 func newRecorder(t *testing.T) (*Recorder, *sql.DB) {

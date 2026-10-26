@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Imported custom fields (OpenSpec change more-importers, design D3): typed values

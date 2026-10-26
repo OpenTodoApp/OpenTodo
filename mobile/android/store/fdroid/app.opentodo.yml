@@ -3,10 +3,10 @@ Categories:
   - Time
 License: AGPL-3.0-only
 AuthorName: OpenTodo contributors
-WebSite: https://github.com/pixari/OpenTodo
-SourceCode: https://github.com/pixari/OpenTodo
-IssueTracker: https://github.com/pixari/OpenTodo/issues
-Changelog: https://github.com/pixari/OpenTodo/blob/main/CHANGELOG.md
+WebSite: https://github.com/OpenTodoApp/OpenTodo
+SourceCode: https://github.com/OpenTodoApp/OpenTodo
+IssueTracker: https://github.com/OpenTodoApp/OpenTodo/issues
+Changelog: https://github.com/OpenTodoApp/OpenTodo/blob/main/CHANGELOG.md
 
 AutoName: OpenTodo
 Summary: The app for your own OpenTodo server
@@ -17,7 +17,7 @@ Description: |-
   encrypted account. It has no trackers, no analytics and talks only to your server.
 
 RepoType: git
-Repo: https://github.com/pixari/OpenTodo.git
+Repo: https://github.com/OpenTodoApp/OpenTodo.git
 
 Builds:
   - versionName: 0.10.0

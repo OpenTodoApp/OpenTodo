@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/settings"
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // seed creates an owner, an API token and two tasks; it returns the owner id.

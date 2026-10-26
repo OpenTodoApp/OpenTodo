@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	ob "github.com/pixari/opentodo/internal/outbound"
-	"github.com/pixari/opentodo/internal/poll"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/poll"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Worker pacing and bounds (design D9, spec "Connection limits per server").

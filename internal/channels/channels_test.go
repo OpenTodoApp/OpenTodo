@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/notify"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
 type fakeClock struct {

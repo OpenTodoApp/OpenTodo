@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 // TestIssuePollInClosedTenant (multi-tenant-host x issue-import): a poll due in
