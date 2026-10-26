@@ -4,6 +4,16 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-26
+
+OpenTodo 0.14.0 brings your calendar and your tasks together. **Calendar sync** connects the calendar you already use, Google Calendar or any CalDAV service such as iCloud, Fastmail or Nextcloud: your dated tasks appear there as events, and moving or deleting an event changes the task. **Today can show the day's calendar events** above your tasks, so one page gives the whole day. Also: the Calendar remembers the planning list, and fixes for oversized subtask checkboxes on phones, a flicker when switching tasks in the side panel, and the task page's breadcrumb.
+
+### Upgrade notes
+
+- **One migration** (`0047_calendar_sync`: connections, calendars and the links between tasks and events) and a secrets file, `<data>/secrets/calendar-sync.json`, that backups leave out like the other secrets: after a restore, people reconnect their calendars. Replace the image or the binary and restart. Upgrade the server before the devices, as for every release.
+- **Calendar sync is off until the owner turns it on** in Settings → Integrations → Calendar sync. Google Calendar also needs the owner's own Google OAuth client; the optional `OPENTODO_GOOGLE_CLIENT_ID` and `OPENTODO_GOOGLE_CLIENT_SECRET` (or `OPENTODO_GOOGLE_CLIENT_SECRET_FILE`) set it from the environment. No variable is required. ([Calendar sync](docs/calendar-sync.md))
+- **Calendar events in Today is a new user preference field.** Devices still on 0.13 ignore it until they update. ([Sync protocol](docs/sync.md))
+
 ### Added
 
 - **Calendar sync, both ways.** Connect the calendar you already use, iCloud, Fastmail, Nextcloud, Synology, Radicale or any CalDAV service with an app password, or Google Calendar, and your dated tasks appear there as events in a calendar you choose. Drag an event to another time, stretch it, rename it or delete it, and the task follows; change the task and the event follows. When both changed, the newer change wins. Other calendars of the same account can be shown in Day and Week. The server owner turns it on under **Settings → Integrations → Calendar sync** and, for Google, sets up an OAuth client there or with the optional `OPENTODO_GOOGLE_CLIENT_ID` and `OPENTODO_GOOGLE_CLIENT_SECRET`. Outlook and Microsoft 365 are not supported yet. ([Calendar sync](docs/calendar-sync.md))
@@ -17,7 +27,6 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **Subtask checkboxes are the right size on phones and tablets.** On a touch screen the circle beside each subtask grew to the size of the finger target and looked huge. The circle now stays small and only the area you can tap is larger.
 - **The side panel no longer flickers when you switch tasks.** With tasks opening in a side panel, moving to another task emptied the panel for a moment while the next one loaded, so the list beside it widened and narrowed again. The panel now keeps the previous task until the next one is ready. ([The task panel](docs/task-panel.md))
-
 - **The task page's breadcrumb leads back.** Opened from Today, Upcoming, a label or a view, a task's page now starts its breadcrumb with that list's name as a link, which returns to the list with the task selected, like <kbd>Esc</kbd>. Before, it started with the task's project, or with the list's name as plain text when the task had no project. ([The task page](docs/task-panel.md))
 
 ## [0.13.0] - 2026-10-25
@@ -856,7 +865,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/pixari/opentodo/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/pixari/opentodo/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/pixari/opentodo/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/pixari/opentodo/compare/v0.10.1...v0.11.0
