@@ -43,8 +43,10 @@ export default function AssistantPage({ name }: { name: string }) {
       <PageHeader title={t('Assistant')} help="ask" barActions
         actions={usable ? (
           <>
-            <Button variant="ghost" size="sm" icon="history" onClick={() => void c.toggleThreads()} aria-expanded={!!c.threads}>{t('History')}</Button>
-            <Button variant="secondary" size="sm" icon="plus" onClick={c.startNew}>{t('New chat')}</Button>
+            {/* In the phone bar (below 768 px) the two actions show their icons only, so the
+                title keeps its room in every language; the names stay for assistive tech. */}
+            <Button variant="ghost" size="sm" icon="history" className="touch-target" onClick={() => void c.toggleThreads()} aria-expanded={!!c.threads}><span className="max-md:sr-only">{t('History')}</span></Button>
+            <Button variant="secondary" size="sm" icon="plus" className="touch-target" onClick={c.startNew}><span className="max-md:sr-only">{t('New chat')}</span></Button>
           </>
         ) : undefined} />
       <div className="mx-auto w-full max-w-[46rem] flex-1 py-4">
