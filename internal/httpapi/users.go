@@ -405,13 +405,27 @@ func (s *Server) handleRequestPasswordReset(w http.ResponseWriter, r *http.Reque
 	if s.auth.SSOOnly(r.Context()) {
 		return
 	}
+	// The lookup and the mail delivery run after the answer: a send to an
+	// existing account takes longer than the padding, so doing it in line
+	// told which addresses have accounts (password-reset-timing).
 	ctx := context.WithoutCancel(r.Context())
 	msg := mail.Message{Kind: mail.KindPasswordReset, To: strings.ToLower(addr.Address), Lang: mail.LangFrom(r.Header.Get("Accept-Language")),
 		Origin: origin, Vars: mail.Vars{Expiry: auth.DefaultResetTTL}}
+	s.background.Add(1)
+	go func() {
+		defer s.background.Done()
+		s.sendPasswordReset(ctx, msg, addr.Address, origin)
+	}()
+}
+
+// sendPasswordReset issues and mails a self-service reset link, revoking it
+// when the message cannot be sent. Nothing happens for an unknown, inactive or
+// rate-limited address.
+func (s *Server) sendPasswordReset(ctx context.Context, msg mail.Message, address, origin string) {
 	if s.mail.Limited(ctx, msg) {
 		return
 	}
-	u, pr, secret, err := s.auth.RequestPasswordReset(ctx, addr.Address)
+	u, pr, secret, err := s.auth.RequestPasswordReset(ctx, address)
 	if err != nil {
 		s.log.Error("password reset request", "err", err)
 		return

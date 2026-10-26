@@ -211,7 +211,10 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateWorkspaces(ctx, db); err != nil {
 		return err
 	}
-	return migrateProfileColumns(ctx, db)
+	if err := migrateProfileColumns(ctx, db); err != nil {
+		return err
+	}
+	return migrateEmailVerified(ctx, db)
 }
 
 type migration struct {

@@ -130,6 +130,10 @@ func (s *Service) CompleteSignup(ctx context.Context, secret string) (*User, err
 		}
 		return nil, err
 	}
+	// The link went to this address: it is confirmed (sso-email-verified).
+	if _, err := tx.ExecContext(ctx, "UPDATE users SET email_verified_at = ? WHERE id = ?", u.CreatedAt, u.ID); err != nil {
+		return nil, err
+	}
 	return u, tx.Commit()
 }
 

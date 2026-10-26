@@ -17,18 +17,18 @@ cp .env.example .env        # optional
 docker compose up -d
 ```
 
-Open <http://localhost:8080>. The first visitor creates the owner account. From this machine or your local network (loopback and private addresses) that is all.
+Open <http://localhost:8080>. The first visitor creates the owner account. From a browser on the same machine, connecting directly, that is all; from any other machine, including one on your local network, the setup screen also asks for the setup code below.
 
 ### The setup code
 
-Opened from a public address while no owner exists, the setup screen asks for a **setup code**, so nobody on the internet can claim a fresh server before you do. The server generates the code when it starts without an owner and prints it once in its log:
+Opened from another machine, or through a reverse proxy, while no owner exists, the setup screen asks for a **setup code**, so nobody can claim a fresh server before you do. Your local network is not exempt: behind Docker's port publishing, a NAT or a rootless container, a visitor from the internet can look like a local address. The server generates the code when it starts without an owner and prints it once in its log:
 
 ```bash
 docker logs opentodo            # or: docker compose logs opentodo
 ```
 
 ```text
-level=WARN msg="No owner account exists yet. To create it from outside this server's local network, enter this setup code on the setup screen: ABCD-EFGH-IJKL-MNOP (from this machine or a private network no code is needed)." setup_code=ABCD-EFGH-IJKL-MNOP
+level=WARN msg="No owner account exists yet. To create it from another machine, enter this setup code on the setup screen: ABCD-EFGH-IJKL-MNOP (only a browser on this machine itself, without a proxy, needs no code)." setup_code=ABCD-EFGH-IJKL-MNOP
 ```
 
 Type it into the **Setup code** field (case and dashes do not matter). It works once: as soon as the owner exists it is discarded, and a restart without an owner prints a new one. Attempts count against the registration rate limit. On a platform without a terminal, open the container's logs in its panel.

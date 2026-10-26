@@ -13,7 +13,7 @@ OpenTodo can let people sign in with an identity provider you already run: Authe
 What it does:
 
 - Adds **Sign in with &lt;name&gt;** to the sign-in screen, next to the password form.
-- Signs in the account linked to that identity. On the first sign-in, an identity whose provider says the email is **verified** is linked to the member account with that email. The owner, admins and accounts with two-factor authentication or a passkey are never linked by email alone: they sign in as usual and link the provider in **Settings → Account → Security → Linked accounts**.
+- Signs in the account linked to that identity. On the first sign-in, an identity whose provider says the email is **verified** is linked to the member account with that email, if that account's address was confirmed: through the emailed link of a sign-up or an email change, or by an earlier sign-on with the same verified address. The owner, admins, accounts with two-factor authentication or a passkey, and accounts whose address was never confirmed are never linked by email alone: they sign in as usual and link the provider in **Settings → Account → Security → Linked accounts**.
 - Optionally creates a `member` account for someone who has no account yet (**Allow new accounts via SSO**), or when open sign-up is on.
 - Optionally requires single sign-on for everyone except the owner (**SSO only**).
 - Optionally signs people out of the provider when they sign out of OpenTodo.
@@ -91,7 +91,7 @@ Leave the switch off if the provider's picture addresses point to a host you do 
 ## Accounts and linking
 
 - An identity is recognised by its issuer and subject (`sub`), never by email once linked. Changing your email at the provider keeps you on the same OpenTodo account, and a changed email cannot take over another account.
-- A first-time identity with a verified email that matches a member account is linked to it. The owner, admins and accounts with two-factor authentication or a passkey are refused (`oidc_link_required`) and link only from Settings while signed in, so the provider can never stand in for their own second factor. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created.
+- A first-time identity with a verified email that matches a member account whose address was confirmed is linked to it. The owner, admins, accounts with two-factor authentication or a passkey, and accounts whose address nobody confirmed (sign-up or email change without outgoing email) are refused (`oidc_link_required`) and link only from Settings while signed in, so the provider can never stand in for their own second factor. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created.
 - When nothing matches, a `member` account is created only if **Allow new accounts via SSO** is on or `OPENTODO_ALLOW_SIGNUP=true`. Otherwise the person sees "There is no account for this identity yet" and you can invite them.
 - Accounts created this way have no password. They can add a passkey in **Settings → Account**.
 - Everyone can link or unlink the provider in **Settings → Account → Security → Linked accounts**. Linking a new identity needs a sign-in in the last ten minutes; from an older session the app asks for your password or a code first, then sends you to the provider again. Unlinking is refused when it would leave the account with no way to sign in.

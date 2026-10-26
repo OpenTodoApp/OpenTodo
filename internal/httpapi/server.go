@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pixari/opentodo/internal/agenttools"
@@ -111,6 +112,12 @@ type Server struct {
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
 	hooks *webhook.Service
+	// unforwardedWarned: the one log warning about a trusted peer sending no
+	// X-Forwarded-For has been written (see warnUnforwarded).
+	unforwardedWarned atomic.Bool
+	// background tracks work a handler leaves running after its answer (the
+	// self-service password reset mail); tests wait for it.
+	background sync.WaitGroup
 
 	// backups is nil when the server runs without the backup service (tests).
 	backups *backup.Service
