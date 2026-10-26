@@ -54,11 +54,14 @@ export const parseManifest = (text) => parseYaml(text, YAML_UMBREL_MANIFEST)
 /** The top-level keys of a YAML text, in order. */
 const topKeys = (text) => [...text.matchAll(/^([A-Za-z][\w-]*):/gm)].map((m) => m[1])
 
-/** Every route pattern registered in internal/httpapi (tests excluded), without the method. */
+/**
+ * Every route pattern registered in internal/httpapi and its route packages
+ * (internal/httpapi/**, tests excluded), without the method.
+ */
 export function routes(root = ROOT) {
   const dir = join(root, 'internal/httpapi')
   const out = new Set()
-  for (const f of readdirSync(dir)) {
+  for (const f of readdirSync(dir, { recursive: true })) {
     if (!f.endsWith('.go') || f.endsWith('_test.go')) continue
     for (const m of readFileSync(join(dir, f), 'utf8').matchAll(/\.(?:Handle(?:Func)?|handle)\("(?:[A-Z]+ )?(\/[^"]*)"/g)) out.add(m[1])
   }

@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { render, waitFor } from '../ui/test-utils'
-import { closePanel, openTaskPanel, resetPanel, setTaskSplit } from './panel'
+import { closePanel, openTaskPanel, panelOccupant, resetPanel, setTaskSplit } from './panel'
 import { PanelHost } from './PanelHost'
 
 beforeEach(async () => {
@@ -42,5 +42,43 @@ describe('panel motion', () => {
     await waitFor(() => !!aside(b))
     expect(aside(b)!.className).toContain('panel-enter')
     await r.unmount()
+  })
+
+  describe('beside a split page with an empty pane (GitHub issue 442)', () => {
+    const original = window.matchMedia
+    beforeEach(() => {
+      window.matchMedia = ((q: string) => ({
+        matches: !/pointer:\s*coarse/.test(q), media: q, onchange: null,
+        addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+      })) as typeof window.matchMedia
+      setTaskSplit(true, () => <p data-empty-text>No task selected</p>)
+    })
+    afterEach(() => { window.matchMedia = original })
+    const emptyPane = () => document.querySelector('[data-split-empty]')
+
+    it('filling the empty pane does not slide in', async () => {
+      const a = await createTask({ title: 'Pay rent' })
+      const r = await render(<PanelHost user={{ id: 'me' }} />)
+      await waitFor(() => !!emptyPane(), 'the empty pane')
+      await act(async () => { openTaskPanel(a) })
+      await waitFor(() => !!aside(a))
+      expect(aside(a)!.className).not.toContain('panel-enter')
+      await r.unmount()
+    })
+
+    it('an id that does not exist leaves the empty pane in place', async () => {
+      const r = await render(<PanelHost user={{ id: 'me' }} />)
+      await waitFor(() => !!emptyPane(), 'the empty pane')
+      let gone = 0
+      const watch = new MutationObserver(() => { if (!emptyPane()) gone++ })
+      watch.observe(document.body, { childList: true, subtree: true })
+      await act(async () => { openTaskPanel('no-such-task') })
+      // The unknown id leaves the slot (PanelHost's effect closes it); the pane stood throughout.
+      await waitFor(() => panelOccupant() === null && !!emptyPane(), 'the unknown task left')
+      watch.disconnect()
+      expect(gone).toBe(0)
+      expect(document.querySelector('[data-detail-for]')).toBeNull()
+      await r.unmount()
+    })
   })
 })
