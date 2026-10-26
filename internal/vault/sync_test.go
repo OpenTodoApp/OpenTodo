@@ -611,6 +611,25 @@ func TestVaultClockAhead(t *testing.T) {
 	lineOf(t, v.read(t, "Inbox.md"), "Renew the passport")
 }
 
+// A clock behind the server's, within the two seconds no offset corrects: the
+// vault's edit is still stamped after the value it pulled (the clock's receive
+// rule) and wins, instead of being silently dropped by last-writer-wins.
+func TestVaultClockBehindKeepsLaterEdit(t *testing.T) {
+	s := newServer(t)
+	id := s.create("tasks", map[string]any{"title": "Renew passport"})
+	v := s.vault(t)
+	v.now = func() time.Time { return time.Now().Add(-1500 * time.Millisecond) }
+	v.sync(t)
+	s.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"title": "Renew the passport"})
+	v.sync(t)
+	v.edit(t, "Inbox.md", "Renew the passport", "Renew both passports")
+	v.sync(t)
+	if got := s.get("tasks", id)["title"]; got != "Renew both passports" {
+		t.Errorf("title = %v", got)
+	}
+	lineOf(t, v.read(t, "Inbox.md"), "Renew both passports")
+}
+
 func TestLimitsStopBeforeAnything(t *testing.T) {
 	s := newServer(t)
 	s.create("tasks", map[string]any{"title": "Keep"})

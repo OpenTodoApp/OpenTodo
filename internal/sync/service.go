@@ -43,7 +43,8 @@ type Service struct {
 	// wsLimits bounds workspaces, members and groups (workspaces "Limits");
 	// the zero value means DefaultWorkspaceLimits.
 	wsLimits WorkspaceLimits
-	// clockMu guards lastTS, the last timestamp ServerTS issued (sync-convergence).
+	// clockMu guards lastTS, the last timestamp ServerTS issued or a stored op
+	// carried (sync-convergence; observeTS).
 	clockMu gosync.Mutex
 	lastTS  int64
 }
@@ -152,6 +153,7 @@ func (s *Service) SetAttachmentLimit(limit func() int64) { s.attachmentLimit = l
 func NewService(db *sql.DB) *Service {
 	s := &Service{db: db, now: time.Now, notifier: NewNotifier()}
 	s.SetCommentRateLimit(CommentRateLimit, CommentRateWindow)
+	s.seedClock()
 	return s
 }
 

@@ -69,6 +69,7 @@ func (d *propDevice) observeServerTime(now, serverTime int64) {
 }
 
 func (d *propDevice) apply(o Op) {
+	d.last = max(d.last, o.TS) // hlcReceive in applyOps
 	k := propKey(o.Entity, o.EntityID, o.Field)
 	c, ok := d.cells[k]
 	if !ok || Wins(o.TS, o.Device, c.ts, c.dev) {

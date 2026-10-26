@@ -16,6 +16,8 @@ const SKEW_TOLERANCE_MS = 2000
  * with the same corrected clock (web-lint-and-test-hygiene).
  */
 export const CLOCK_OFFSET_META = 'hlc_offset'
+/** The meta row holding the newest timestamp this device stamped or received. */
+export const HLC_META = 'hlc'
 
 export function hlcNow(): number {
   const now = Date.now() + offset
@@ -26,6 +28,18 @@ export function hlcNow(): number {
 /** Called with the last timestamp persisted by this device so a reload never reuses one. */
 export function hlcSeed(ts: number): void {
   if (ts > last) last = ts
+}
+
+/**
+ * The receive rule of a hybrid logical clock: called with the newest timestamp
+ * of the ops this device received (sync pull, which the live stream and the
+ * relay only trigger). The clock moves past it, so the next local edit is
+ * stamped after every op this device has seen and wins last-writer-wins even
+ * when the local wall clock runs behind the writer's. Without it a re-encrypt
+ * on sight (e2ee) could tie with, and lose to, the plaintext op it replaces.
+ */
+export function hlcReceive(ts: number): void {
+  if (Number.isFinite(ts) && ts > last) last = ts
 }
 
 /**

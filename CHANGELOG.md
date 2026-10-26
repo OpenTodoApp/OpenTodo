@@ -8,6 +8,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))
 
+### Security
+
+- **A change made on a device whose clock runs slightly behind no longer loses to the older value it replaces.** Devices, `ot vault` and the server now move their clock past every change they receive, so the next edit is always stamped after the value it overwrites. Before, an edit made shortly after receiving a value from a device or server whose clock was a little ahead (less than two seconds, which no correction caught) could be silently undone by that older value. With end-to-end encryption this could leave a value, such as a task's origin written by the email inbox, in plaintext on the server, because the device's encrypted rewrite lost to it and was never retried. Found in an internal audit. ([Sync protocol](docs/sync.md#clocks))
+
 ## [0.14.0] - 2026-10-26
 
 OpenTodo 0.14.0 brings your calendar and your tasks together. **Calendar sync** connects the calendar you already use, Google Calendar or any CalDAV service such as iCloud, Fastmail or Nextcloud: your dated tasks appear there as events, and moving or deleting an event changes the task. **Today can show the day's calendar events** above your tasks, so one page gives the whole day. Also: the Calendar remembers the planning list, and fixes for oversized subtask checkboxes on phones, a flicker when switching tasks in the side panel, and the task page's breadcrumb.
