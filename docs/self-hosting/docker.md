@@ -79,6 +79,10 @@ The owner also sees a **Server configuration warning** at the top of **Settings*
 
 [Email to task](../email.md) needs no port, proxy rule or DNS record: OpenTodo makes one outbound IMAP connection (TLS, port 993 by default) to the mailbox you configure with `OPENTODO_EMAIL_*`. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point `OPENTODO_EMAIL_IMAP_PASSWORD_FILE` at it (example in the guide).
 
+### Behind a login wall (Pangolin, Authelia, Authentik, Cloudflare Access, oauth2-proxy)
+
+OpenTodo has its own sign-in (password, passkeys, two-factor, [single sign-on](sso.md)), so a login wall in front of it is optional. If you keep one, browsers and the installed web app pass it like any other site, and the [Android app](../android-app.md#behind-a-login-page-pangolin-authelia-and-others) signs in to it inside the app. Give the wall a long session, or let it bypass the paths the app fetches without a page (`/healthz`, `/api/*`, the service worker and manifest files); the Android guide lists them. Calendar apps, AI assistants and calendar feeds can't pass a login page at all: bypass `/dav/`, `/.well-known/caldav`, `/mcp` and `/feeds/*` if you use them.
+
 ### Calendar apps (CalDAV) through the proxy
 
 When the owner enables [CalDAV](../caldav.md), calendar apps use `/dav/` and `/.well-known/caldav` with WebDAV methods (`PROPFIND`, `REPORT`, `MKCALENDAR`, `PROPPATCH`). Most proxies (Caddy, Traefik, nginx) forward them unchanged; make sure no rule limits methods to GET/POST or blocks `/.well-known/`, and that the `Authorization` header is passed through. App passwords travel in every request, so serve CalDAV over https only.

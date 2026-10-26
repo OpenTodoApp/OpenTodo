@@ -40,4 +40,10 @@
     <string name="widget_untitled">Task</string>
     <string name="widget_more">+ %1$d more</string>
     <string name="setup_old_webview">This phone\'s Android System WebView is old (version %1$s). Update it from your app store so OpenTodo works fully.</string>
+    <string name="site_bar_host">Signing in on %1$s</string>
+    <string name="site_bar_close">Back to OpenTodo</string>
+    <string name="setup_login_wall">This server is behind a login page. Sign in to it here; the app connects as soon as you\'re through.</string>
+    <string name="setup_web_page">This address answers with a web page, not like an OpenTodo server. If your server is behind a login page, sign in to it here; otherwise check the address.</string>
+    <string name="setup_sign_in">Sign in here</string>
+    <string name="error_sign_in">Your server is behind a login page, and signing in didn\'t continue in the app. Sign in again here.</string>
 </resources>

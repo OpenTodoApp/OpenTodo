@@ -34,9 +34,11 @@ class HiddenRunWorker(context: Context, params: WorkerParameters) : CoroutineWor
             web.settings.javaScriptEnabled = true
             web.settings.domStorageEnabled = true
             web.webViewClient = object : WebViewClient() {
-                // The hidden run never leaves the server's origin.
+                // The hidden run never leaves the server's origin and never opens anything: when a
+                // login wall's session has expired, its redirect is dropped and the run ends quietly
+                // (the next time the app is opened, the wall asks in the app).
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-                    Bridge.originOf(request.url) != origin
+                    !SignInFlow.hiddenRunStays(request.url.toString(), origin)
             }
             Bridge(applicationContext, origin, null).install(web)
             web.loadUrl(origin + path)

@@ -1,14 +1,17 @@
 package app.opentodo
 
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.webkit.CookieManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -26,6 +29,12 @@ class SetupActivity : AppCompatActivity() {
     private val io = Executors.newSingleThreadExecutor()
     private var confirmedInsecure: String? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var signInOrigin: String? = null
+    private val signIn = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        // Through the wall: the check again, now with the web view's cookies.
+        val origin = signInOrigin
+        if (r.resultCode == RESULT_OK && origin != null) check(origin)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +52,7 @@ class SetupActivity : AppCompatActivity() {
         connect.setOnClickListener { submit() }
         address.setOnEditorActionListener { _, id, _ -> if (id == EditorInfo.IME_ACTION_GO) { submit(); true } else false }
         Prefs(this).server?.let { address.setText(it) }
+        signInOrigin = savedInstanceState?.getString(STATE_SIGN_IN)
         oldWebView()?.let { say(getString(R.string.setup_old_webview, it)) }
     }
 
@@ -53,6 +63,11 @@ class SetupActivity : AppCompatActivity() {
         val features = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER) &&
             WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
         return if (major < MIN_WEBVIEW_MAJOR || !features) version else null
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        signInOrigin?.let { outState.putString(STATE_SIGN_IN, it) }
     }
 
     override fun onDestroy() {
@@ -88,12 +103,23 @@ class SetupActivity : AppCompatActivity() {
         }
     }
 
+    /** Behind a login wall: the explanation and "Sign in here", which opens the server in the sign-in screen. */
+    private fun offerSignIn(text: Int, origin: String) {
+        say(getString(text))
+        alternative.visibility = View.VISIBLE
+        alternative.setText(R.string.setup_sign_in)
+        alternative.setOnClickListener { signIn.launch(Intent(this, SignInActivity::class.java).putExtra(SignInActivity.EXTRA_ORIGIN, origin)) }
+        signInOrigin = origin
+    }
+
     private fun check(origin: String) {
         say(null)
         progress.visibility = View.VISIBLE
         connect.isEnabled = false
+        // The web view's cookies: after signing in through a login wall, the check gets through too.
+        val cookies = try { CookieManager.getInstance().getCookie("$origin/healthz") } catch (e: Exception) { null }
         io.execute {
-            val answer = HealthCheck.check(origin)
+            val answer = HealthCheck.check(origin, cookies)
             runOnUiThread {
                 progress.visibility = View.GONE
                 connect.isEnabled = true
@@ -107,6 +133,8 @@ class SetupActivity : AppCompatActivity() {
                     HealthCheck.Outcome.NO_NETWORK -> { say(getString(R.string.setup_no_network)); retryWhenOnline(origin) }
                     HealthCheck.Outcome.NOT_OPENTODO -> say(getString(R.string.setup_not_opentodo))
                     HealthCheck.Outcome.UNTRUSTED -> say(getString(R.string.setup_untrusted))
+                    HealthCheck.Outcome.LOGIN_WALL -> offerSignIn(R.string.setup_login_wall, origin)
+                    HealthCheck.Outcome.WEB_PAGE -> offerSignIn(R.string.setup_web_page, origin)
                 }
             }
         }
@@ -135,5 +163,6 @@ class SetupActivity : AppCompatActivity() {
     companion object {
         /** The oldest WebView (Chromium) major version the shell is tested with. */
         const val MIN_WEBVIEW_MAJOR = 100
+        private const val STATE_SIGN_IN = "signInOrigin"
     }
 }

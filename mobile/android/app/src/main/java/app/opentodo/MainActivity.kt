@@ -43,6 +43,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private lateinit var web: WebView
     private lateinit var errorView: View
     private lateinit var errorText: TextView
+    private lateinit var siteBar: View
+    private lateinit var siteHost: TextView
+    private var flow: SignInFlow? = null
+    private var cameFromSignIn = false
     private var origin: String? = null
     private var started = false
     private var pendingShare: Intent? = null
@@ -69,8 +73,12 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         web = findViewById(R.id.web)
         errorView = findViewById(R.id.error)
         errorText = findViewById(R.id.error_text)
-        findViewById<Button>(R.id.retry).setOnClickListener { errorView.visibility = View.GONE; web.reload() }
+        findViewById<Button>(R.id.retry).setOnClickListener { errorView.visibility = View.GONE; web.url?.let { flow?.started(it) }; web.reload() }
+        findViewById<Button>(R.id.sign_in).setOnClickListener { errorView.visibility = View.GONE; backToServer() }
         findViewById<Button>(R.id.change_server).setOnClickListener { confirmChangeServer() }
+        siteBar = findViewById(R.id.site_bar)
+        siteHost = findViewById(R.id.site_host)
+        findViewById<View>(R.id.site_close).setOnClickListener { backToServer() }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
@@ -78,7 +86,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (web.canGoBack()) web.goBack() else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+                when {
+                    // On a sign-in page reached from the app: back to the server. Reached at start
+                    // (the wall answered the first page), back leaves the app as usual.
+                    siteBar.visibility == View.VISIBLE && serverInHistory() -> backToServer()
+                    siteBar.visibility != View.VISIBLE && web.canGoBack() -> web.goBack()
+                    else -> { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+                }
             }
         })
         if (Prefs(this).server == null) {
@@ -95,6 +109,12 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         if (started) handle(intent) else if (isShare(intent)) pendingShare = intent
     }
 
+    override fun onPause() {
+        // A login wall's or provider's session cookie survives the app being closed.
+        CookieManager.getInstance().flush()
+        super.onPause()
+    }
+
     override fun onDestroy() {
         io.shutdown()
         if (::web.isInitialized) web.destroy()
@@ -109,6 +129,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         if (!started || origin != server) {
             origin = server
             started = true
+            flow = SignInFlow(server)
             WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
             web.settings.apply {
                 javaScriptEnabled = true
@@ -131,13 +152,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private fun handle(intent: Intent?) {
         val base = origin ?: return
         when {
-            intent?.action == ACTION_CHANGE_SERVER -> { if (web.url == null) web.loadUrl("$base/"); confirmChangeServer() }
+            intent?.action == ACTION_CHANGE_SERVER -> { if (web.url == null) load("$base/"); confirmChangeServer() }
             isShare(intent) -> share(intent!!)
             intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == "opentodo-open" -> {
                 val path = intent.data?.schemeSpecificPart.orEmpty()
-                web.loadUrl(base + if (path.startsWith("/") && !path.startsWith("//")) path else "/")
+                load(base + if (path.startsWith("/") && !path.startsWith("//")) path else "/")
             }
-            web.url == null -> web.loadUrl("$base/")
+            web.url == null -> load("$base/")
         }
     }
 
@@ -150,12 +171,12 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
         val subject = intent.getStringExtra(Intent.EXTRA_SUBJECT)
         val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
-        if (uris.isEmpty()) { pendingFilesScript = null; web.loadUrl(base + ShareMapper.path(subject, text, false)); return }
+        if (uris.isEmpty()) { pendingFilesScript = null; load(base + ShareMapper.path(subject, text, false)); return }
         io.execute {
             val script = filesMessage(uris)
             runOnUiThread {
                 pendingFilesScript = script
-                web.loadUrl(base + ShareMapper.path(subject, text, script != null))
+                load(base + ShareMapper.path(subject, text, script != null))
             }
         }
     }
@@ -201,18 +222,37 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private inner class Client : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             val url = request.url
-            if (Bridge.originOf(url) == origin) return false
+            // The main frame stays on the server, and on another origin only inside a sign-in
+            // flow (a login wall, single sign-on: SignInFlow); everything else opens outside.
+            val f = flow
+            val stays = if (request.isForMainFrame && f != null) f.decide(url.toString(), request.isRedirect, request.hasGesture()) == SignInFlow.Decision.STAY
+            else Bridge.originOf(url) == origin
+            if (stays) return false
+            if (request.isForMainFrame && request.isRedirect) {
+                // A redirect the flow refuses (a sign-in that timed out or was left): never the
+                // browser, where the session would land outside the app, and never a blank screen.
+                showError(getString(R.string.error_sign_in), signIn = true)
+                return true
+            }
             openExternal(url.toString())
             return true
         }
 
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
             errorView.visibility = View.GONE
+            if (url == null) return
+            flow?.started(url)
+            showSite(url)
         }
 
         override fun onPageFinished(view: WebView, url: String?) {
+            if (url == null || SignInFlow.originOf(url) != origin) return
+            // Back on the server, perhaps through a login wall: keep its cookies now, and keep the
+            // sign-in pages out of the back history.
+            CookieManager.getInstance().flush()
+            if (cameFromSignIn) { cameFromSignIn = false; view.clearHistory() }
             val script = pendingFilesScript ?: return
-            if (url != null && Uri.parse(url).path == "/share") {
+            if (Uri.parse(url).path == "/share") {
                 pendingFilesScript = null
                 view.evaluateJavascript(script, null)
             }
@@ -237,8 +277,39 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
     }
 
-    private fun showError(message: String) {
+    /** The site bar: the host of a page of another origin (a sign-in page), since the web view has no address bar. */
+    private fun showSite(url: String) {
+        val o = SignInFlow.originOf(url)
+        val foreign = o != null && o != origin
+        if (foreign) cameFromSignIn = true
+        siteBar.visibility = if (foreign) View.VISIBLE else View.GONE
+        if (foreign) siteHost.text = getString(R.string.site_bar_host, SignInFlow.hostOf(url))
+    }
+
+    /** Opens a page of the server; its wall's redirect then starts a sign-in flow, whatever page showed before. */
+    private fun load(url: String) {
+        flow?.started(url)
+        web.loadUrl(url)
+    }
+
+    private fun serverInHistory(): Boolean {
+        val list = web.copyBackForwardList()
+        return (0 until list.currentIndex).any { i -> list.getItemAtIndex(i)?.url?.let { SignInFlow.originOf(it) } == origin }
+    }
+
+    /** Leaves a sign-in page: the flow ends and the server opens again (its wall may ask again). */
+    private fun backToServer() {
+        val base = origin ?: return
+        flow?.end()
+        siteBar.visibility = View.GONE
+        load("$base/")
+    }
+
+    /** [signIn]: offer "Sign in here" (a fresh sign-in flow from the server's address) instead of "Try again". */
+    private fun showError(message: String, signIn: Boolean = false) {
         errorText.text = message
+        findViewById<View>(R.id.sign_in).visibility = if (signIn) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.retry).visibility = if (signIn) View.GONE else View.VISIBLE
         errorView.visibility = View.VISIBLE
     }
 
