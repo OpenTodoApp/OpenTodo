@@ -8,7 +8,7 @@ import { db } from '../lib/db'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { User, Workspace, WorkspaceEntry } from '../lib/types'
 import { storeWorkspaces, switchTo } from '../lib/workspaces'
-import { click, flush, render, type, visibleText, minWidthPx } from '../ui/test-utils'
+import { click, flush, render, type, visibleText, minWidthPx, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { WorkspacesSettings } from './WorkspacesSettings'
 
@@ -58,10 +58,6 @@ beforeEach(async () => {
 })
 afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 const tab = (root: HTMLElement, name: string) => [...root.querySelectorAll('[role="tab"]')].find((b) => b.textContent!.startsWith(name))
 
@@ -198,7 +194,7 @@ describe('Settings → Workspaces', () => {
     const expiry = r.container.querySelector<HTMLSelectElement>('[data-invite-expiry]')!
     expiry.value = '24'
     expiry.dispatchEvent(new Event('change', { bubbles: true }))
-    await flush(20)
+    await flush()
     await click(r.container.querySelector('[data-create-workspace-link]')!)
     await waitFor(() => calls.some(([m, u]) => m === 'POST' && u.endsWith('/invites')))
     expect(calls.find(([m, u]) => m === 'POST' && u.endsWith('/invites'))![2]).toMatchObject({ role: 'admin', expiresInHours: 24 })

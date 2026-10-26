@@ -9,7 +9,7 @@ import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { startTracking } from '../lib/timeEntries'
 import type { User } from '../lib/types'
-import { click, flush, key, render, spokenText, type, waitFor } from '../ui/test-utils'
+import { click, key, render, spokenText, type, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -36,7 +36,7 @@ const items = () => [...document.querySelectorAll<HTMLElement>('[role="menu"] [r
 describe('one footer row', () => {
   it('Footer names: the account menu button is the name; each icon has its name; the menu items carry their shortcuts', async () => {
     const r = await render(<SidebarFooter route={{ view: 'inbox' }} user={user} collapsed={false} onShortcuts={() => {}} onAssistant={() => {}} onToggleCollapse={() => {}} onSignOut={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-footer-icons]'), 'the footer')
     const row = r.container.querySelector('[data-footer-icons]')!
     expect(r.container.querySelectorAll('[data-footer-icons]')).toHaveLength(1)
     expect(account(row).getAttribute('aria-label')).toBeNull()
@@ -68,7 +68,7 @@ describe('one footer row', () => {
 
   it('Narrow sidebar: a long name truncates, every icon button stays at least 32 px, nothing wraps', async () => {
     const r = await render(<div style={{ width: '15rem' }}><SidebarFooter route={{ view: 'inbox' }} user={long} collapsed={false} onAssistant={() => {}} onToggleCollapse={() => {}} /></div>)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-footer-icons]'), 'the footer')
     const row = r.container.querySelector('[data-footer-icons]')!
     expect(row.className).not.toContain('flex-wrap')
     expect(row.className).not.toContain('flex-col')
@@ -80,7 +80,7 @@ describe('one footer row', () => {
 
   it('the icon rail stacks the avatar, the bell, the sync dot, Search and collapse; the name is the tooltip', async () => {
     const r = await render(<SidebarFooter route={{ view: 'inbox' }} user={user} collapsed onSearch={() => {}} onToggleCollapse={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-footer-icons] [data-palette-button]'), 'the rail footer')
     const row = r.container.querySelector('[data-footer-icons]')!
     expect(row.className).toContain('flex-col')
     expect(account(row).getAttribute('aria-label')).toBe('Account menu for Ada')
@@ -102,7 +102,7 @@ describe('Help and sign out from the account menu', () => {
     expect(account().getAttribute('aria-current')).toBe('page')
     navigate({ view: 'inbox' })
     await waitFor(() => location.pathname !== '/help')
-    await flush(50)
+    await waitFor(() => account().getAttribute('aria-current') === null, 'the Inbox, Help no longer current')
     ;(document.activeElement as HTMLElement | null)?.blur()
     await key(document.body, 'g')
     await key(document.body, '?', { shiftKey: true })
@@ -112,7 +112,7 @@ describe('Help and sign out from the account menu', () => {
     await click(document.querySelector<HTMLElement>('[data-palette-button]')!)
     const input = await (async () => { await waitFor(() => !!document.querySelector('[role="dialog"] input')); return document.querySelector<HTMLInputElement>('[role="dialog"] input')! })()
     await type(input, 'Open Help')
-    await flush(50)
+    await waitFor(() => !!document.querySelector('[role="dialog"] [role="option"][aria-selected="true"]')?.textContent?.includes('Help'), 'Open Help first in the palette')
     await key(input, 'Enter')
     await waitFor(() => location.pathname === '/help')
     await r.unmount()
@@ -121,7 +121,7 @@ describe('Help and sign out from the account menu', () => {
   it('Sign out from the sidebar: the confirmation opens on Cancel, Escape returns to the account control, confirming signs out', async () => {
     const out = vi.fn()
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSignOut={out} />)
-    await flush(50)
+    await waitFor(() => !!account(r.container), 'the account control')
     await click(account(r.container))
     await waitFor(() => items().length > 0)
     await click(document.querySelector<HTMLElement>('[data-sign-out-button]')!)
@@ -154,7 +154,7 @@ describe('the running pill', () => {
 
   it('Pill in the row: one row in both states, "Tracking 1:05 · Write the report" and "Stop", the menu named by the person', async () => {
     const r = await render(<SidebarFooter route={{ view: 'inbox' }} user={user} collapsed={false} onToggleCollapse={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-footer-icons]'), 'the footer')
     expect(rows(r.container)).toHaveLength(1)
     const height = account(r.container).className.match(/\bmin-h-\S+/g)
     await start()

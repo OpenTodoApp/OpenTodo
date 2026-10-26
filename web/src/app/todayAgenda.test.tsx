@@ -72,11 +72,12 @@ describe('the option', () => {
   it('is off by default; Show calendar events writes one user_prefs op and shows the agenda before the list', async () => {
     await seed([standup])
     const r = await openToday()
-    await flush(10)
     expect(agenda()).toBeNull()
     await click(menu())
     await waitFor(() => !!toggle())
     expect(toggle()!.textContent).toContain('Show calendar events')
+    // The option is read by now (the menu offers to show), and the agenda is still away.
+    expect(agenda()).toBeNull()
     await click(toggle()!)
     await waitFor(() => !!agenda())
     expect((await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs').map((o) => [o.field, o.value])).toEqual([['today_events', 'shown']])
@@ -102,6 +103,7 @@ describe('the option', () => {
     expect(agenda()).toBeNull()
     await r.unmount()
     r = await openToday()
+    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a request not made leaves no signal; give a wrong second request time to go out
     await flush(10)
     expect(fetchMock).toHaveBeenCalledTimes(1)
     await r.unmount()
@@ -109,6 +111,7 @@ describe('the option', () => {
 
   it('asks nothing of the server while the option is off and no calendar is known', async () => {
     const r = await openToday()
+    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a request not made leaves no signal; give a wrong request time to go out
     await flush(10)
     expect(fetchMock).not.toHaveBeenCalled()
     await r.unmount()
@@ -182,7 +185,8 @@ describe('the agenda', () => {
     await seed([{ ...review, id: 'tomorrow', start: { date: '2026-10-23', time: '11:00' }, end: { date: '2026-10-23', time: '12:00' } }])
     await setTodayEventsShown(true)
     const r = await openToday()
-    await flush(10)
+    await click(menu())
+    await waitFor(() => toggle()?.textContent?.includes('Hide calendar events') === true, 'the option read as on')
     expect(agenda()).toBeNull()
     await r.unmount()
   })

@@ -11,7 +11,7 @@ vi.mock('../lib/api', async (orig) => {
   const real = await orig<typeof import('../lib/api')>()
   return { ...real, api: { ...real.api, me: async () => ({ speech: me.speech }) } }
 })
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { setSpeechService } from '../lib/voice/speechService'
 import { startServerRecognition } from '../lib/voice/serverRecognition'
 import { createDictation } from '../lib/voice/dictation'
@@ -61,10 +61,10 @@ describe('the server recogniser', () => {
       setValue: (v) => { value = v }, normalize: (x) => x, lang: () => 'it-IT', update: (v) => updates.push(v.status),
     }, (opts) => startServerRecognition(opts, win(), transcribe))
     d.start()
-    await flush(10)
+    await waitFor(() => d.status === 'listening', 'listening')
     expect(d.status).toBe('listening')
     d.stop()
-    await flush(10)
+    await waitFor(() => transcribe.mock.calls.length > 0 && d.status === 'idle', 'the phrase transcribed')
     expect(transcribe).toHaveBeenCalledTimes(1)
     const [blob, lang] = transcribe.mock.calls[0] as unknown as [Blob, string]
     expect(blob.type).toBe('audio/webm')
@@ -84,9 +84,9 @@ describe('the server recogniser', () => {
       normalize: (x) => x, lang: () => 'en-US', update: (v) => { message = v.message },
     }, (opts) => startServerRecognition(opts, win(), transcribe))
     d.start()
-    await flush(10)
+    await waitFor(() => d.status === 'listening', 'listening')
     d.stop()
-    await flush(10)
+    await waitFor(() => message !== null, 'the message')
     expect(value).toBe('Buy milk')
     expect(message).toBe('The speech service did not answer. Try again, or keep typing.')
   })
@@ -96,7 +96,7 @@ describe('the server recogniser', () => {
     const onError = vi.fn()
     const onEnd = vi.fn()
     startServerRecognition({ onResult: vi.fn(), onError, onEnd }, w, vi.fn())
-    await flush(10)
+    await waitFor(() => onEnd.mock.calls.length > 0, 'the end')
     expect(onError).toHaveBeenCalledWith('denied', 'NotAllowedError')
     expect(onEnd).toHaveBeenCalledTimes(1)
   })
@@ -117,7 +117,7 @@ describe('Voice capture card', () => {
     expect([...select.options].map((o) => o.textContent)).toEqual(['This browser', 'This server’s speech service (stt.home.lan)'])
     select.value = 'server'
     select.dispatchEvent(new Event('change', { bubbles: true }))
-    await flush(10)
+    await waitFor(() => !!statement(), 'the server statement')
     expect(statement()?.textContent).toContain('stt.home.lan')
     expect(statement()?.textContent).toContain('Neither the server nor the app keeps the audio or the text.')
     expect(loadVoiceSettings().recognizer).toBe('browser')

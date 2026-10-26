@@ -6,7 +6,7 @@ import { db, getMeta } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User, Workspace, WorkspaceEntry } from '../lib/types'
 import { CURRENT_WORKSPACE_KEY, storeWorkspaces, switchTo } from '../lib/workspaces'
-import { click, flush, render, visibleText } from '../ui/test-utils'
+import { click, render, visibleText, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { routeAfterSwitch } from './workspaceNav'
 import { Sidebar } from './Sidebar'
@@ -26,10 +26,6 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('the workspace control', () => {
   it('One workspace: the header reads OpenTodo · Personal', async () => {

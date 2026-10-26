@@ -8,7 +8,7 @@ import { createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { startTracking } from '../lib/timeEntries'
 import { createView } from '../lib/views'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { SavedViewRoute } from './SavedViewView'
 
 // 59 minutes and 59.99 seconds into the entry, 10 ms before a minute boundary.
@@ -26,10 +26,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('Running entry counts live', () => {
   it('a task crosses tracked >= 1h on the minute tick, without a reload', async () => {
@@ -39,7 +35,7 @@ describe('Running entry counts live', () => {
     const view = await createView({ name: 'Long ones', query: 'tracked >= 1h' })
     const r = await render(<SavedViewRoute id={view} />)
     await waitFor(() => r.container.textContent!.includes('Long ones'))
-    await flush(100)
+    await waitFor(() => !!r.container.querySelector('[data-empty-state]'), 'the view read, nothing matching yet')
     expect(r.container.textContent).not.toContain('Write the report')
     // The minute turns: the shared totals recompute on their one timer.
     vi.setSystemTime(new Date(2026, 9, 14, 12, 1, 5))

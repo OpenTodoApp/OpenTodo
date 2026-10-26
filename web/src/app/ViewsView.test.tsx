@@ -7,7 +7,7 @@ import { db } from '../lib/db'
 import { favouritesOf } from '../lib/favourites'
 import { resetDeviceId } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
-import { click, flush, render, type } from '../ui/test-utils'
+import { click, render, type, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { ViewsView } from './ViewsView'
 
@@ -24,10 +24,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 const button = (text: string) => [...document.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)!
 const nameInput = () => document.querySelector<HTMLInputElement>('input[aria-label="Board name"]')
 

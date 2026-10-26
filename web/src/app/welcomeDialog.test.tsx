@@ -13,10 +13,11 @@ vi.mock('../lib/sync', async (importOriginal) => ({
 }))
 import { db } from '../lib/db'
 import { setDemo } from '../lib/demo'
+import { useHasTask, useUserPrefsRow } from '../lib/localData'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { setWelcomeSeen, USER_PREFS_ID } from '../lib/userPrefs'
 import type { User } from '../lib/types'
-import { click, flush, mockFetch, render } from '../ui/test-utils'
+import { click, flush, mockFetch, render, waitFor } from '../ui/test-utils'
 import { AboutSection, DOCS_URL, WEBSITE_URL } from './AboutSection'
 import { COFFEE_URL, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeDialog } from './WelcomeDialog'
 
@@ -31,11 +32,22 @@ beforeEach(async () => {
 })
 afterEach(() => { setDemo(null); document.body.innerHTML = '' })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const dialog = () => document.querySelector('[data-testid="welcome"]')
+
+/** Shows once the preferences and the task check are read: the note's last inputs. */
+function InputsRead() {
+  const row = useUserPrefsRow()
+  const hasTask = useHasTask()
+  return row !== undefined && hasTask !== undefined ? <i data-inputs-read /> : null
+}
+
+/** The note, rendered beside the probe; resolves once the note has decided (it stays away or shows). */
+async function renderDecided(user: User) {
+  const r = await render(<><WelcomeDialog user={user} /><InputsRead /></>)
+  await waitFor(() => !!document.querySelector('[data-inputs-read]'), "the note's inputs")
+  await flush()
+  return r
+}
 
 describe('welcome note', () => {
   it('thanks the owner of a fresh account with the issue, Discord, star and coffee links, all opening a new tab', async () => {
@@ -59,55 +71,48 @@ describe('welcome note', () => {
     expect((await db.userPrefs.get(USER_PREFS_ID))?.welcome).toBe('seen')
     expect(await db.outbox.filter((o) => o.entity === 'user_prefs' && o.field === 'welcome').count()).toBe(1)
     await r.unmount()
-    const again = await render(<WelcomeDialog user={owner} />)
-    await flush(100)
+    const again = await renderDecided(owner)
     expect(dialog()).toBeNull()
     await again.unmount()
   })
 
   it('stays away when another device already closed it', async () => {
     await setWelcomeSeen()
-    const r = await render(<WelcomeDialog user={owner} />)
-    await flush(100)
+    const r = await renderDecided(owner)
     expect(dialog()).toBeNull()
     await r.unmount()
   })
 
   it('waits for the first sync of this device', async () => {
     syncState.lastSyncedAt = null
-    const r = await render(<WelcomeDialog user={owner} />)
-    await flush(100)
+    const r = await renderDecided(owner)
     expect(dialog()).toBeNull()
     await r.unmount()
     syncState.lastSyncedAt = 1
   })
 
   it('is never shown to members', async () => {
-    const m = await render(<WelcomeDialog user={member} />)
-    await flush(100)
+    const m = await renderDecided(member)
     expect(dialog()).toBeNull()
     await m.unmount()
   })
 
   it('is never shown on the demo', async () => {
     setDemo({ resetsAt: 0 } as unknown as Parameters<typeof setDemo>[0])
-    const d = await render(<WelcomeDialog user={owner} />)
-    await flush(100)
+    const d = await renderDecided(owner)
     expect(dialog()).toBeNull()
     await d.unmount()
   })
 
   it('is not shown to an owner account older than a week', async () => {
-    const r = await render(<WelcomeDialog user={{ ...owner, createdAt: Date.now() - 8 * 24 * 60 * 60 * 1000 }} />)
-    await flush(100)
+    const r = await renderDecided({ ...owner, createdAt: Date.now() - 8 * 24 * 60 * 60 * 1000 })
     expect(dialog()).toBeNull()
     await r.unmount()
   })
 
   it('is not shown on an account already in use', async () => {
     await createTask({ title: 'Existing work' })
-    const used = await render(<WelcomeDialog user={owner} />)
-    await flush(100)
+    const used = await renderDecided(owner)
     expect(dialog()).toBeNull()
     await used.unmount()
   })
@@ -120,7 +125,7 @@ describe('Settings → About', () => {
 
   it('lists Help, the docs, the website, issues, Discord, the source and the coffee button for everyone; no welcome row for a member', async () => {
     const r = await render(<AboutSection user={member} />)
-    await flush(30)
+    await waitFor(() => document.querySelectorAll('[data-about-link]').length > 0, 'the links')
     expect(links()).toEqual({ docs: DOCS_URL, website: WEBSITE_URL, issues: ISSUES_URL, discord: DISCORD_URL, source: REPO_URL })
     for (const a of document.querySelectorAll('[data-about-link]')) expect(a.getAttribute('target')).toBe('_blank')
     expect(document.querySelector('[data-welcome-coffee]')!.getAttribute('href')).toBe(COFFEE_URL)
@@ -133,7 +138,7 @@ describe('Settings → About', () => {
   it('lets the owner show the welcome note again, without changing the stored choice', async () => {
     await setWelcomeSeen()
     const r = await render(<AboutSection user={owner} />)
-    await flush(30)
+    await waitFor(() => !!document.querySelector('[data-about-welcome]'), 'the welcome row')
     await click(document.querySelector<HTMLElement>('[data-about-welcome]')!)
     await waitFor(() => dialog() !== null)
     await click(document.querySelector<HTMLElement>('[data-welcome-close]')!)

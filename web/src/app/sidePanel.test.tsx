@@ -42,6 +42,7 @@ beforeEach(async () => {
 })
 afterEach(async () => {
   // Reads a page left scheduled (the task page's trail) finish before the next case deletes the database.
+  // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): the task page's trail schedules reads with no signal; they must finish before the next case deletes the database
   await new Promise((r) => setTimeout(r, 50))
   window.matchMedia = original
   resetPanel()
@@ -70,7 +71,7 @@ async function list(route: ListRoute, panel = true) {
   const b = await createTask({ title: 'Call the plumber', project_id: project, ...due })
   const r = await render(<><TaskListView route={route} /><PanelHost user={{ id: 'me' }} /></>)
   await waitFor(() => document.querySelectorAll('li[data-task-id]').length === 2, 'two rows')
-  await flush(20)
+  await flush()
   return { a, b, r }
 }
 
@@ -154,7 +155,7 @@ describe('the side panel', () => {
     await waitFor(() => docked() !== null, 'a docked task')
     const shown = docked()
     await key(here(), 'Escape')
-    await flush(5)
+    await waitFor(() => document.querySelector('li[aria-current="true"]') === null, 'Escape took the cursor off the list')
     expect(document.querySelector('li[aria-current="true"]')).toBeNull()
     expect(docked()).toBe(shown)
     await r.unmount()
@@ -169,7 +170,7 @@ describe('the side panel', () => {
     expect(localStorage.getItem(SIDE_PANEL_CLOSED_KEY)).toBe('1')
     await key(here(), 'j')
     await key(here(), 'k')
-    await flush(5)
+    await waitFor(() => document.querySelector('li[aria-current="true"]') !== null, 'the cursor on the list')
     expect(docked()).toBeNull()
     expect(emptyPane()).toBeNull()
     const cursor = document.querySelector('li[aria-current="true"]')!.getAttribute('data-task-id')
@@ -185,7 +186,7 @@ describe('the side panel', () => {
     localStorage.setItem(SIDE_PANEL_CLOSED_KEY, '1')
     const { r } = await list({ view: 'today' })
     await key(document.body, 'j')
-    await flush(5)
+    await waitFor(() => document.querySelector('li[aria-current="true"]') !== null, 'the cursor on the list')
     expect(docked()).toBeNull()
     expect(emptyPane()).toBeNull()
     await r.unmount()
@@ -229,7 +230,7 @@ describe('the side panel', () => {
     await waitFor(() => docked() !== null, 'a docked task')
     const shown = docked()
     await key(here(), 'Escape')
-    await flush(5)
+    await waitFor(() => document.querySelector('li[aria-current="true"]') === null, 'Escape took the cursor off the list')
     expect(docked()).toBe(shown)
     await r.unmount()
   })

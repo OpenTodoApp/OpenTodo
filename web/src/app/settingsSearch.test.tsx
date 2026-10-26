@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '../lib/types'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
 import { buildEntries } from './palette'
 import { routePath } from './router'
 import { SETTINGS_INDEX, searchSettings, takeSettingsFocus, visibleEntries } from './settingsIndex'
@@ -62,21 +62,21 @@ describe('search field', () => {
     const r = await render(<SettingsList user={member} />)
     const field = r.container.querySelector<HTMLInputElement>('input[aria-label="Search settings"]')!
     await type(field, 'week')
-    await flush(20)
+    await waitFor(() => !!r.container.querySelector('[data-settings-result="language:date-time-heading"]'), 'the week result')
     const results = r.container.querySelector('[data-settings-results]')!
     expect(results.textContent).toContain('Language and region')
     expect(results.querySelector('[data-settings-result="language:date-time-heading"]')?.textContent).toContain('First day of the week')
     await key(field, 'Enter')
     // Enter submits the search form.
-    await flush(10)
+    await flush()
     field.form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
-    await flush(20)
+    await waitFor(() => location.pathname === '/settings/language/date-time', 'the result opened')
     expect(location.pathname).toBe('/settings/language/date-time')
     await r.unmount()
 
     // The section page focuses the row the search asked for and tints its card.
     const page = await render(<SettingsView user={member} onLogout={() => {}} section="language" page="date-time" />)
-    await flush(30)
+    await waitFor(() => document.activeElement?.id === 'date-time-heading', 'focus on the row the search asked for')
     expect(document.activeElement?.id).toBe('date-time-heading')
     expect(document.activeElement?.closest('[data-settings-card]')?.getAttribute('data-settings-highlight')).toBe('on')
     await page.unmount()
@@ -85,7 +85,7 @@ describe('search field', () => {
   it('a result on a sub-page opens that sub-page', async () => {
     const r = await render(<SettingsList user={member} />)
     await type(r.container.querySelector<HTMLInputElement>('input[aria-label="Search settings"]')!, 'webhook')
-    await flush(20)
+    await waitFor(() => !!r.container.querySelector('[data-settings-result="integrations:webhooks-heading"]'), 'the webhook result')
     const link = r.container.querySelector<HTMLAnchorElement>('[data-settings-result="integrations:webhooks-heading"]')!
     expect(link.getAttribute('href')).toBe('/settings/integrations/webhooks')
     await click(link)
@@ -97,7 +97,7 @@ describe('search field', () => {
   it('a result link opens its section by click too', async () => {
     const r = await render(<SettingsList user={member} />)
     await type(r.container.querySelector<HTMLInputElement>('input[aria-label="Search settings"]')!, 'vim')
-    await flush(20)
+    await waitFor(() => !!r.container.querySelector('[data-settings-result="general:keyboard-heading"]'), 'the vim result')
     await click(r.container.querySelector('[data-settings-result="general:keyboard-heading"]')!)
     expect(location.pathname).toBe('/settings/general/keyboard')
     expect(takeSettingsFocus()).toBe('keyboard-heading')

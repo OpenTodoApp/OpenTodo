@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { Label, Project, Task } from '../lib/types'
-import { flush, render, mockFetch, noPublicLinks, spokenText, visibleText } from '../ui/test-utils'
+import { render, mockFetch, noPublicLinks, spokenText, visibleText, waitFor } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 import { TaskRow, type TaskRowProps } from './TaskRow'
 
@@ -23,10 +23,6 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = '' })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 const task = (over: Partial<Task>): Task => ({
   id: 't', title: 'Task', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0,
@@ -464,7 +460,7 @@ describe('revealed row actions (rows-v2 D7)', () => {
     await click(r.container.querySelector('[data-row-action="priority"]')!)
     const p1 = [...document.querySelectorAll('[role^="menuitem"]')].find((el) => el.textContent?.includes('P1'))!
     await click(p1)
-    await flush(50)
+    await waitFor(async () => (await db.tasks.get(id))!.priority === 1, 'P1 written')
     expect((await db.tasks.get(id))!.priority).toBe(1)
     expect(await db.outbox.count()).toBeGreaterThan(0)
     await r.unmount()

@@ -8,7 +8,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '../lib/types'
 import { SettingRow, SettingsSection } from '../ui'
-import { flush, render, minWidthPx } from '../ui/test-utils'
+import { flush, render, minWidthPx, waitFor } from '../ui/test-utils'
 import { SETTINGS_SECTION_IDS, type SettingsSectionId } from './router'
 import { resolveSection, visiblePages } from './settingsSections'
 import { SettingsView } from './SettingsView'
@@ -103,7 +103,8 @@ describe('flat settings pages (precision-settings D3)', () => {
     })
     for (const [section, page] of pages) {
       const r = await render(<SettingsView user={owner} onLogout={() => {}} section={section} page={page} />)
-      await flush(40)
+      await waitFor(() => !!r.container.querySelector('[data-settings-section], [data-settings-page]'), `${page ? `${section}/${page}` : section} open`)
+      await flush()
       offenders.push(...cardOffenders(page ? `${section}/${page}` : section, r.container))
       sections += r.container.querySelectorAll('[data-settings-card]').length
       await r.unmount()
