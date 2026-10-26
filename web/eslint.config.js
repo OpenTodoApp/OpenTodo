@@ -7,6 +7,8 @@
 import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import noGenericAriaLabel from './eslint/no-generic-aria-label.js'
+import noFixedWait from './eslint/no-fixed-wait.js'
+import fixedWaitAllowlist from './eslint/fixed-wait-allowlist.js'
 
 export default [
   { ignores: ['node_modules/**', 'storybook-static/**', 'public/**', 'scripts/**'] },
@@ -51,6 +53,18 @@ export default [
     files: ['src/**/*.test.ts', 'src/**/*.testkit.tsx'],
     rules: { 'react-hooks/rules-of-hooks': 'off' },
   },
+  {
+    // Tests wait for a condition, never for a fixed time (test audit F2): `await
+    // flush(40)` before an assertion passes on an idle laptop and fails on a loaded
+    // CI runner. Use waitFor from ui/test-utils. A wait that is itself the behaviour
+    // under test keeps a reasoned `eslint-disable-next-line test-hygiene/no-fixed-wait -- why`.
+    files: ['src/**/*.test.{ts,tsx}', 'src/**/*.testkit.{ts,tsx}'],
+    plugins: { 'test-hygiene': { rules: { 'no-fixed-wait': noFixedWait } } },
+    rules: { 'test-hygiene/no-fixed-wait': 'error' },
+  },
+  // Files that still had fixed waits when the rule came in (eslint/fixed-wait-allowlist.js).
+  // Drop a file from the list once its waits are conditions; never add one.
+  ...(fixedWaitAllowlist.length ? [{ files: fixedWaitAllowlist, rules: { 'test-hygiene/no-fixed-wait': 'off' } }] : []),
   {
     // The design system stands alone (web-layering): primitives are tested and shown
     // in the workbench without the screens, so nothing under src/ui imports src/app.
