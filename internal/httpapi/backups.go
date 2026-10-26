@@ -8,15 +8,9 @@ import (
 	"github.com/pixari/opentodo/internal/backup"
 )
 
-// backupsReady answers 503 when the backup service is not wired and otherwise
-// returns the signed-in user (the route policy admits only the owner).
+// backupsReady returns the signed-in user (the route policy admits only the owner).
 func (s *Server) backupsReady(w http.ResponseWriter, r *http.Request) *auth.User {
-	u := userFrom(r.Context())
-	if s.backups == nil {
-		writeError(w, http.StatusServiceUnavailable, "unavailable", "backups are not available on this server")
-		return nil
-	}
-	return u
+	return userFrom(r.Context())
 }
 
 type backupSettingsResponse struct {

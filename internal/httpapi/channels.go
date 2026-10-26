@@ -16,23 +16,12 @@ import (
 // ntfy, Pushover, Gotify and webhook channels and the owner switch. Every route
 // is refused on a demo instance (outbound requests, secrets).
 
-// WithChannels hands the server the channel service the tenant also
-// registers as a sink and runs as a worker.
-func WithChannels(svc *channels.Service) Option { return func(s *Server) { s.channels = svc } }
-
-// Channels is the delivery channel service (the tenant runs its worker).
-func (s *Server) Channels() *channels.Service { return s.channels }
-
 func (s *Server) registerChannelRoutes(mux *routes) {
-	if s.channels == nil {
-		s.channels = channels.New(s.sync.DB(), s.cfg.DataDir, channels.Options{Version: s.version, Log: s.log,
-			AllowPrivate: s.allowPrivate(), Encrypted: s.keys().Enabled, BaseOrigin: s.baseOrigin()})
-	}
 	s.channelLimiter = newRateLimiter(channels.TestsPerHour, time.Hour)
-	s.switchRoutes(mux, "/api/v1/settings/notification-channels", switchRoute{sw: s.channels.Switch(),
+	s.switchRoutes(mux, "/api/v1/settings/notification-channels", switchRoute{sw: s.set.ChannelsOn,
 		get: signedIn.demoDenied(), put: ownerOnly("manage notification channels on this server").demoDenied(),
 		after: func(_ context.Context, _, on bool) {
-			if on {
+			if on && s.channels != nil {
 				s.channels.Wake()
 			}
 		}})
@@ -44,17 +33,9 @@ func (s *Server) registerChannelRoutes(mux *routes) {
 	mux.handle("GET /api/v1/notification-channels/{id}/deliveries", signedIn.demoDenied(), s.channelsGate(s.handleChannelDeliveries))
 }
 
-// baseOrigin is OPENTODO_BASE_URL's origin, "" when not configured.
-func (s *Server) baseOrigin() string {
-	if s.cfg.BaseURL == nil {
-		return ""
-	}
-	return s.cfg.BaseURL.Scheme + "://" + s.cfg.BaseURL.Host
-}
-
 // channelsGate answers 404 channels_disabled while the owner switch is off.
 func (s *Server) channelsGate(next http.HandlerFunc) http.HandlerFunc {
-	return switchGate(s.channels.Switch(), "channels_disabled", "the server owner has turned notification channels off")(next)
+	return switchGate(s.set.ChannelsOn, "channels_disabled", "the server owner has turned notification channels off")(next)
 }
 
 // channelError maps service errors onto the JSON error envelope.

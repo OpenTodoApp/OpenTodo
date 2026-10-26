@@ -225,8 +225,11 @@ func TestSMTPManagedByEnvironment(t *testing.T) {
 }
 
 func TestOutgoingEmailOffOnDemoAndUnwired(t *testing.T) {
-	e := ownerEnv(t)
-	resp, out := e.do("GET", "/api/v1/auth/status", nil)
+	// services.Build leaves outgoing email unwired on a demo instance only.
+	e := newEnvWith(t, false, func(s *Server) { s.mail = nil })
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("GET", "/api/v1/auth/status", nil)
 	e.mustStatus(resp, 200, out)
 	if out["outgoingEmail"].(map[string]any)["enabled"] != false {
 		t.Fatalf("unwired status = %v", out)
@@ -455,6 +458,7 @@ func TestPasswordResetSSOOnlySendsNothing(t *testing.T) {
 	srv := smtptest.New(t, smtptest.Options{User: "todo", Pass: "hunter2"})
 	e := newEnvWith(t, false, withTestMail(srv), withBaseURL(testBaseURL), func(s *Server) {
 		s.oidc = oidc.New(settings.New(s.sync.DB()), s.cfg.DataDir, oidc.Options{Env: oidc.Env{Issuer: "https://idp.example", ClientID: "c", SSOOnly: &ssoOnly}})
+		s.auth.SetSSOOnly(s.oidc.SSOOnly)
 	})
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)

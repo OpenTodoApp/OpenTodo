@@ -194,7 +194,7 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 	} else if s.dialer.Resolver == nil {
 		s.dialer.Resolver = netResolver()
 	}
-	s.sw = newSwitch(db, s.log)
+	s.sw = NewSwitch(db, s.log)
 	if s.enabled == nil {
 		s.enabled = s.sw.On
 	}

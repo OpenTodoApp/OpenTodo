@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"image"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -16,13 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/oidc"
 	"github.com/pixari/opentodo/internal/oidc/oidctest"
 	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // oidcEnv is a server wired to an in-process provider, with the controllable
@@ -47,17 +44,17 @@ func newOIDCEnvWith(t *testing.T, allowSignup bool, opts ...Option) *oidcEnv {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: 24 * time.Hour, AllowSignup: allowSignup, DataDir: dir}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	authSvc := auth.NewService(db, cfg.SessionTTL, allowSignup)
+	set := testSet(t, config.Config{SessionTTL: 24 * time.Hour, AllowSignup: allowSignup, DataDir: dir}, db, services.Options{})
+	syncSvc, authSvc := set.Sync, set.Auth
 	clk := &mfaClock{t: time.Now().Truncate(30 * time.Second)}
 	authSvc.SetClock(clk.now)
 	svc := oidc.New(settings.New(db), dir, oidc.Options{Client: idp.HTTPClient()})
-	h := New(cfg, authSvc, syncSvc, nil, log, "test", append([]Option{WithOIDC(svc)}, opts...)...)
+	// The test identity provider's client; SSO-only mode follows this service.
+	set.OIDC = svc
+	authSvc.SetSSOOnly(svc.SSOOnly)
+	h := New(set, nil, opts...)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
 	e := &oidcEnv{mfaEnv: &mfaEnv{env: &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}, clock: clk}, idp: idp}
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})

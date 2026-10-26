@@ -14,36 +14,20 @@ import (
 // Option customises the Server built by New.
 type Option func(*Server)
 
-// WithWebhooks enables the /api/v1/webhooks routes and the owner policy route
-// (OpenSpec change `webhooks`). Without it those routes answer 503.
-func WithWebhooks(svc *webhook.Service) Option {
-	return func(s *Server) { s.hooks = svc }
-}
-
 // registerWebhookRoutes adds the webhook routes. Every route requires
 // authentication and is scoped to the caller; the policy route is owner-only.
 func (s *Server) registerWebhookRoutes(mux *routes) {
 	s.webhookSendLimiter = newRateLimiter(webhookSendsPerHour, time.Hour)
-	mux.handle("GET /api/v1/webhooks", signedIn, s.withHooks(s.handleListWebhooks))
-	mux.handle("POST /api/v1/webhooks", signedIn.demoDenied(), s.withHooks(s.handleCreateWebhook))
-	mux.handle("GET /api/v1/webhooks/{id}", signedIn, s.withHooks(s.handleGetWebhook))
-	mux.handle("PATCH /api/v1/webhooks/{id}", signedIn.demoDenied(), s.withHooks(s.handlePatchWebhook))
-	mux.handle("DELETE /api/v1/webhooks/{id}", signedIn.demoDenied(), s.withHooks(s.handleDeleteWebhook))
-	mux.handle("POST /api/v1/webhooks/{id}/test", signedIn.demoDenied(), s.withHooks(s.handleTestWebhook))
-	mux.handle("GET /api/v1/webhooks/{id}/deliveries", signedIn, s.withHooks(s.handleListDeliveries))
-	mux.handle("POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver", signedIn.demoDenied(), s.withHooks(s.handleRedeliver))
-	mux.handle("GET /api/v1/settings/webhooks", ownerOnly("manage the webhook policy"), s.withHooks(s.handleGetWebhookPolicy))
-	mux.handle("PUT /api/v1/settings/webhooks", ownerOnly("manage the webhook policy").credential().demoDenied(), s.withHooks(s.handlePutWebhookPolicy))
-}
-
-func (s *Server) withHooks(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if s.hooks == nil {
-			writeError(w, http.StatusServiceUnavailable, "unavailable", "webhooks are not enabled on this server")
-			return
-		}
-		next(w, r)
-	}
+	mux.handle("GET /api/v1/webhooks", signedIn, s.handleListWebhooks)
+	mux.handle("POST /api/v1/webhooks", signedIn.demoDenied(), s.handleCreateWebhook)
+	mux.handle("GET /api/v1/webhooks/{id}", signedIn, s.handleGetWebhook)
+	mux.handle("PATCH /api/v1/webhooks/{id}", signedIn.demoDenied(), s.handlePatchWebhook)
+	mux.handle("DELETE /api/v1/webhooks/{id}", signedIn.demoDenied(), s.handleDeleteWebhook)
+	mux.handle("POST /api/v1/webhooks/{id}/test", signedIn.demoDenied(), s.handleTestWebhook)
+	mux.handle("GET /api/v1/webhooks/{id}/deliveries", signedIn, s.handleListDeliveries)
+	mux.handle("POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver", signedIn.demoDenied(), s.handleRedeliver)
+	mux.handle("GET /api/v1/settings/webhooks", ownerOnly("manage the webhook policy"), s.handleGetWebhookPolicy)
+	mux.handle("PUT /api/v1/settings/webhooks", ownerOnly("manage the webhook policy").credential().demoDenied(), s.handlePutWebhookPolicy)
 }
 
 // webhookError maps service errors onto the JSON error envelope.

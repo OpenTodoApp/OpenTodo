@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
+	"context"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/httpapi"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // fixedNow is "today" for every test: Saturday 2026-10-10, local time.
@@ -74,9 +74,14 @@ func newHarness(t *testing.T) *harness {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour}
+	cfg := config.Config{SessionTTL: time.Hour, DataDir: t.TempDir()}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	h := httpapi.New(cfg, auth.NewService(db, cfg.SessionTTL, false), opsync.NewService(db), nil, log, "test")
+	set, err := services.Build(context.Background(), cfg, db, nil, services.Options{Version: "test", Log: log})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(set.Sync.Notifier().CloseAll)
+	h := httpapi.New(set, nil)
 	hs := &harness{t: t, db: db, configPath: filepath.Join(t.TempDir(), "cfg", "config.json"), env: map[string]string{}}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hs.reqMu.Lock()

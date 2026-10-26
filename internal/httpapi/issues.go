@@ -21,21 +21,12 @@ import (
 // or GitLab whose open issues become tasks. One owner switch, off by default,
 // governs every route and the poller (design D10).
 
-const issuesSettingKey = "integrations.issues"
-
 // Hand-triggered token checks and syncs share one window per user (spec
 // "Token check", "Sync now").
 const (
 	issueChecksPerHr = 12
 	maxIssueToken    = 4096
 )
-
-// WithIssues hands the server the worker that polls connections, so the
-// routes and the background job share one store, tokens file and policy.
-func WithIssues(w *issues.Worker) Option { return func(s *Server) { s.issueWorker = w } }
-
-// IssueWorker is the background poller, run by the jobs leader.
-func (s *Server) IssueWorker() *issues.Worker { return s.issueWorker }
 
 func (s *Server) allowPrivate() func(context.Context) bool {
 	if s.hooks != nil {
@@ -45,10 +36,6 @@ func (s *Server) allowPrivate() func(context.Context) bool {
 }
 
 func (s *Server) registerIssueRoutes(mux *routes) {
-	if s.issueWorker == nil {
-		s.issueWorker = issues.NewWorker(s.sync.DB(), s.cfg.DataDir, s.sync, s.allowPrivate(), s.version, s.log)
-	}
-	s.issueWorker.Enabled = s.issuesOn.On
 	s.issueLimiter = newRateLimiter(issueChecksPerHr, time.Hour)
 
 	s.switchRoutes(mux, "/api/v1/settings/issues", switchRoute{sw: s.issuesOn,
