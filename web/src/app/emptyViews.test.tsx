@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TrashView } from './TrashView'
@@ -31,10 +31,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 function expectDrawing(root: Element, name: string, heading: string) {
   const svg = root.querySelector(`[data-illustration="${name}"]`)!

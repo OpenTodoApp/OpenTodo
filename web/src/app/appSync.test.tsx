@@ -4,14 +4,10 @@
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { flush, render } from '../ui/test-utils'
+import { flush, render, waitFor } from '../ui/test-utils'
 
 const me = { id: 'u1', email: 'me@example.com', name: 'Me', role: 'owner', createdAt: 1 }
 
-async function waitFor(ok: () => boolean, ms = 10000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 afterEach(() => {
   vi.doUnmock('../lib/sync')
@@ -41,7 +37,7 @@ describe('sync across navigation', { timeout: 30000 }, () => {
     const stops = stopSync.mock.calls.length
     for (const view of ['today', 'upcoming', 'labels', 'inbox'] as const) {
       await act(async () => navigate({ view }))
-      await flush(20)
+      await flush()
     }
     expect(startSync).toHaveBeenCalledTimes(starts)
     expect(stopSync).toHaveBeenCalledTimes(stops)

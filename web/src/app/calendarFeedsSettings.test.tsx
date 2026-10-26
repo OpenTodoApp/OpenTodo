@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import type { CalendarSubscription } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { CalendarFeedsPanel, subscriptionStatus } from './CalendarFeedsPanel'
 
 const NOW = new Date(2026, 9, 14, 12, 0).getTime()
@@ -28,10 +28,6 @@ function serve(routes: Record<string, unknown>) {
   }))
 }
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -68,7 +64,7 @@ describe('calendar feeds panel', () => {
     expect(r.container.querySelector('[data-subscription-status="s1"]')!.textContent).toBe('Failed: timed out · last success 2 h ago')
 
     await click(r.container.querySelector('button[aria-label="Actions for Work"]')!)
-    await flush(20)
+    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((e) => e.textContent?.includes('Delete')), 'the actions menu')
     await click([...document.querySelectorAll('[role="menuitem"]')].find((e) => e.textContent?.includes('Delete'))!)
     await waitFor(() => document.querySelector('[role="alertdialog"], [role="dialog"]') !== null)
     expect(document.body.textContent).toContain('disappear from Day and Week on every device')

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { resolveDateTime, setDateTime, setDayStart } from '../lib/dates'
 import { resetDeviceId } from '../lib/ops'
-import { render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { DateTimeSection, DateTimeView } from './DateTimeSettings'
 import { DateTimePrefsProvider, useDateTimeFormat } from './DateTimePrefsProvider'
 import { useToday } from './useViews'
@@ -18,7 +18,6 @@ const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-
 
 const SYSTEM = { date_format: 'system', time_format: 'system', week_start: 'system' } as const
 const sys = { order: 'MD' as const, hour12: false, weekStart: 1 }
-const settle = () => act(async () => { for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 20)) })
 
 /** Another screen showing a due time, to prove open views follow without a reload. */
 function OpenList() {
@@ -91,9 +90,9 @@ describe('day start control (day-boundary D7)', () => {
     vi.setSystemTime(new Date(2026, 9, 15, 1, 30))
     try {
       const view = await render(<DateTimePrefsProvider><DateTimeSection /><TodayProbe /></DateTimePrefsProvider>)
-      await settle()
-      const preview = () => view.container.querySelector('[data-testid="preview-today"]')!.textContent
-      const probe = () => view.container.querySelector('[data-testid="today-probe"]')!.textContent
+      const preview = () => view.container.querySelector('[data-testid="preview-today"]')?.textContent
+      const probe = () => view.container.querySelector('[data-testid="today-probe"]')?.textContent
+      await waitFor(() => !!preview() && probe() === '2026-10-15', 'the preview and the probe')
       expect(preview()).toMatch(/15/)
       expect(probe()).toBe('2026-10-15')
       const select = view.container.querySelector('#day-start-select') as HTMLSelectElement
@@ -101,14 +100,14 @@ describe('day start control (day-boundary D7)', () => {
       expect(select.tabIndex).toBe(0)
       expect(view.container.querySelector('label[for="day-start-select"]')!.textContent).toBe('My day starts at')
       await choose(select, '04:00')
-      await settle()
+      await waitFor(() => probe() === '2026-10-14', 'the open view on the new day')
       expect(preview()).toMatch(/14/)
       expect(probe()).toBe('2026-10-14')
       expect((await db.userPrefs.get('me'))?.day_start).toBe('04:00')
       const ops = (await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs').map((o) => [o.field, o.value])
       expect(ops).toEqual([['day_start', '04:00']])
       await choose(select, '03:00')
-      await settle()
+      await waitFor(async () => (await db.userPrefs.get('me'))?.day_start === '03:00' && select.value === '03:00', 'the second choice stored and shown')
       expect(select.value).toBe('03:00')
       expect(probe()).toBe('2026-10-14')
       const axe = (await import('axe-core')).default
@@ -124,27 +123,23 @@ describe('day start control (day-boundary D7)', () => {
 describe('DateTimeSection', () => {
   it('switching to 12h updates the preview and an open view without a reload, and writes one op', async () => {
     const view = await render(<DateTimePrefsProvider><DateTimeSection /><OpenList /></DateTimePrefsProvider>)
-    await settle()
-    const time = () => view.container.querySelector('[data-testid="preview-time"]')!.textContent
-    const list = () => view.container.querySelector('[data-testid="open-list"]')!.textContent
+    const time = () => view.container.querySelector('[data-testid="preview-time"]')?.textContent
+    const list = () => view.container.querySelector('[data-testid="open-list"]')?.textContent
+    await waitFor(() => !!view.container.querySelector('#time-format-select'), 'the section')
     await choose(view.container.querySelector('#time-format-select') as HTMLSelectElement, '24h')
-    await settle()
-    expect(time()).toBe('15:00')
+    await waitFor(() => time() === '15:00', 'the 24-hour preview')
     await choose(view.container.querySelector('#time-format-select') as HTMLSelectElement, '12h')
-    await settle()
-    expect(time()).toBe('3:00 PM')
-    expect(list()).toBe('Due 3:00 PM')
+    await waitFor(() => time() === '3:00 PM' && list() === 'Due 3:00 PM', 'the 12-hour preview and the open view')
     expect((await db.userPrefs.get('me'))?.time_format).toBe('12h')
     const ops = (await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs').map((o) => o.value)
     expect(ops).toEqual(['24h', '12h'])
 
     const full = () => view.container.querySelector('[data-testid="preview-full"]')!.textContent
     await choose(view.container.querySelector('#date-format-select') as HTMLSelectElement, 'month-day')
-    await settle()
+    await waitFor(async () => (await db.userPrefs.get('me'))?.date_format === 'month-day', 'month-day stored')
     const monthDay = full()
     await choose(view.container.querySelector('#date-format-select') as HTMLSelectElement, 'day-month')
-    await settle()
-    expect(full()).not.toBe(monthDay)
+    await waitFor(() => full() !== monthDay, 'the day-month preview')
     await view.unmount()
   })
 })

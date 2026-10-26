@@ -36,7 +36,7 @@ describe('Today action (ux-overhaul, in-app-assistant "Ask composer")', () => {
   it('shows one Ask action in the header when the assistant is available, and it opens the panel', async () => {
     setAssistantStatus(base)
     const r = await render(<TodayAskAction role="member" />)
-    await flush(10)
+    await waitFor(() => !!document.querySelector('[data-today-ask]'), 'the Ask action')
     const button = document.querySelector<HTMLButtonElement>('[data-today-ask]')!
     expect(button.textContent).toBe('Ask')
     expect(document.querySelector('[data-ask-composer]')).toBeNull()
@@ -49,12 +49,12 @@ describe('Today action (ux-overhaul, in-app-assistant "Ask composer")', () => {
   it('off: neither the owner nor a member sees a hint or a composer', async () => {
     setAssistantStatus(off)
     let r = await render(<TodayAskAction role="owner" />)
-    await flush(20)
+    await flush()
     expect(document.body.textContent).toBe('')
     expect(document.querySelector('[data-ask-hint]')).toBeNull()
     await r.unmount()
     r = await render(<TodayAskAction role="member" />)
-    await flush(20)
+    await flush()
     expect(document.body.textContent).toBe('')
     await r.unmount()
   })
@@ -62,7 +62,7 @@ describe('Today action (ux-overhaul, in-app-assistant "Ask composer")', () => {
   it('an encrypted account gets no Ask action on Today', async () => {
     setAssistantStatus(encrypted)
     const r = await render(<TodayAskAction role="owner" />)
-    await flush(20)
+    await flush()
     expect(document.querySelector('[data-today-ask]')).toBeNull()
     expect(document.querySelector('[data-ask-composer]')).toBeNull()
     await r.unmount()
@@ -94,7 +94,7 @@ describe('Ask screen (3.4)', () => {
   it('explains an encrypted account and shows no composer', async () => {
     setAssistantStatus(encrypted)
     const r = await render(<AskScreen role="member" />)
-    await flush(10)
+    await waitFor(() => !!document.querySelector('[data-ask-unavailable]'), 'the explanation')
     expect(document.querySelector('[data-ask-unavailable]')!.textContent).toContain('can’t read end-to-end encrypted tasks')
     expect(document.querySelector('[data-ask-composer]')).toBeNull()
     await r.unmount()
@@ -107,13 +107,12 @@ describe('Ask screen (3.4)', () => {
     const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'member', created_at: 0 } as unknown as User
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(30)
+    await waitFor(() => !!document.querySelector('[data-sidebar-more-menu] button[aria-haspopup="menu"]'), 'the sidebar More menu')
     // The sidebar's More menu lists the Assistant while it is available (ux-overhaul, sidebar-compact-desktop, assistant-surface).
     await click(document.querySelector('[data-sidebar-more-menu] button[aria-haspopup="menu"]')!)
-    await flush(10)
-    expect(document.querySelector('[role="menu"] [data-menu-label="Assistant"]')).not.toBeNull()
+    await waitFor(() => !!document.querySelector('[role="menu"] [data-menu-label="Assistant"]'), 'the Assistant in the More menu')
     await key(document.body, 'Escape')
-    await flush(10)
+    await waitFor(() => !document.querySelector('[role="menu"]'), 'the menu closed')
     await key(document.body, 'g')
     await key(document.body, 'k')
     await waitFor(() => !!document.activeElement?.hasAttribute('data-assistant-composer'), 'focus in the page composer')
@@ -121,7 +120,7 @@ describe('Ask screen (3.4)', () => {
     // On the page, opening the assistant (Shift+I, Ask) opens no sheet: the page is the conversation.
     openAssistantWith({ text: 'What is due?' })
     await waitFor(() => document.querySelector<HTMLTextAreaElement>('[data-assistant-page] [data-assistant-composer]')?.value === 'What is due?', 'the request in the page composer')
-    await flush(40)
+    await flush()
     expect(document.querySelector('[data-assistant-panel]')).toBeNull()
     await r.unmount()
   })

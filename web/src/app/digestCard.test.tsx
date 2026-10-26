@@ -6,7 +6,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setDateTime } from '../lib/dates'
 import type { EmailDigest } from '../lib/types'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { browserDigestLanguage, DigestCard, digestSummary } from './DigestCard'
 
 const base: EmailDigest = {
@@ -42,10 +42,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const summary = (root: ParentNode) => root.querySelector('[data-testid="digest-summary"]')?.textContent ?? ''
 const buttonNamed = (root: ParentNode, name: string) => [...root.querySelectorAll('button')].find((b) => b.textContent === name)!
 

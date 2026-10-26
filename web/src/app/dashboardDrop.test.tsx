@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { OnDropRule } from '../lib/types'
 import { createView, setOnDrop, setPanels } from '../lib/views'
-import { flush, key, render } from '../ui/test-utils'
+import { flush, key, render, waitFor } from '../ui/test-utils'
 import { bulkToast, hideBulkToast } from './bulk/toastStore'
 import { DashboardView } from './DashboardView'
 import { resetPanel } from './panel'
@@ -33,10 +33,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 
 function Board({ id }: { id: string }) {
   const data = useViewData()
@@ -83,6 +79,7 @@ describe('drop targets and drops', () => {
     expect(desc?.textContent).toBe('On drop: Priority 1, due today')
     const before = await db.outbox.count()
     await drag(card(id)!, panel('Backlog'))
+    // A fixed wait on purpose: it proves that nothing is written, and no event marks "no write".
     await flush(30)
     expect(await db.outbox.count()).toBe(before)
   })
@@ -117,9 +114,10 @@ describe('drop targets and drops', () => {
     // Leaving the board (or another device) shows the task only where filters match it.
     await r.unmount()
     document.body.innerHTML = ''
+    // A task that does match the column: once it shows, the column has its tasks.
+    const control = await createTask({ title: 'Call the accountant', priority: 2 })
     await render(<Board id={dash} />)
-    await waitFor(() => !!panel('Important, not urgent'))
-    await flush(50)
+    await waitFor(() => !!card(control, panel('Important, not urgent')), 'the column loaded')
     expect(card(id, panel('Important, not urgent'))).toBeNull()
     expect(document.querySelector('[data-held]')).toBeNull()
   })
@@ -143,6 +141,7 @@ describe('keyboard moves', () => {
     await waitFor(() => card(id, panel('Next'))?.getAttribute('aria-current') === 'true')
     const before = await db.outbox.count()
     await key(document.activeElement!, 'ArrowLeft', { shiftKey: true })
+    // A fixed wait on purpose: it proves that nothing is written, and no event marks "no write".
     await flush(50)
     expect(await db.outbox.count()).toBe(before)
     expect((await db.tasks.get(id))!.priority).toBe(2)

@@ -52,11 +52,11 @@ describe('AppearanceProvider', () => {
   it('a synced change from another device updates the root, and the cache never writes an op', async () => {
     localStorage.setItem('ot.appearance', JSON.stringify({ mode: 'dark', accent: 'rose', bar: '#be123c' }))
     const r = await render(<AppearanceProvider><p>app</p></AppearanceProvider>)
-    await flush(30)
+    await waitFor(() => !root().hasAttribute('data-accent'), 'the defaults')
     // No row yet: the defaults apply, whatever the cache said.
     expect(root().hasAttribute('data-accent')).toBe(false)
     await applyOps([{ id: 'x1', entity: 'user_prefs', entityId: 'me', field: 'theme_accent', value: 'violet', ts: Date.now(), device: 'phone' }] as never)
-    await flush(40)
+    await waitFor(() => root().getAttribute('data-accent') === 'violet', 'the synced accent')
     expect(root().getAttribute('data-accent')).toBe('violet')
     expect(JSON.parse(localStorage.getItem('ot.appearance')!).accent).toBe('violet')
     expect(await db.outbox.count()).toBe(0)
@@ -67,20 +67,20 @@ describe('AppearanceProvider', () => {
 describe('Appearance → Sidebar', () => {
   it('one switch per destination of the More group, each written as the synced list', async () => {
     const r = await render(<SidebarSection />)
-    await flush(30)
+    await waitFor(() => document.querySelectorAll('[data-setting-row^="sidebar-"]').length === 10, 'the switches')
     const ids = [...document.querySelectorAll('[data-setting-row^="sidebar-"]')].map((e) => e.getAttribute('data-setting-row'))
     expect(ids).toEqual(['sidebar-loop', 'sidebar-next', 'sidebar-waiting', 'sidebar-anytime', 'sidebar-someday', 'sidebar-assigned', 'sidebar-completed', 'sidebar-feed', 'sidebar-trash', 'sidebar-filter'])
     const someday = document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!
     expect(someday.getAttribute('aria-checked')).toBe('false')
     await click(someday)
-    await flush(40)
+    await waitFor(async () => (await db.userPrefs.get('me'))?.sidebar_destinations === 'someday', 'someday stored')
     expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('someday')
     await click(document.querySelector<HTMLButtonElement>('#sidebar-switch-trash')!)
-    await flush(40)
+    await waitFor(async () => (await db.userPrefs.get('me'))?.sidebar_destinations === 'someday,trash' && document.querySelector('#sidebar-switch-someday')?.getAttribute('aria-checked') === 'true', 'trash stored')
     expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('someday,trash')
     expect(document.querySelector('#sidebar-switch-someday')?.getAttribute('aria-checked')).toBe('true')
     await click(document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!)
-    await flush(40)
+    await waitFor(async () => (await db.userPrefs.get('me'))?.sidebar_destinations === 'trash', 'someday removed')
     expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('trash')
     await r.unmount()
   })
@@ -91,7 +91,7 @@ describe('Appearance → Sidebar in Open Loops first (open-loops-method 6.2)', (
     await setPromoted(null, 'someday', true)
     await setMethodMode('first')
     const r = await render(<SidebarSection />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')?.disabled, 'the switches disabled')
     const someday = document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!
     expect(someday.disabled).toBe(true)
     expect(someday.getAttribute('aria-checked')).toBe('true')
@@ -110,7 +110,8 @@ describe('Appearance → Haptic feedback (motion-v2 4.4)', () => {
   it('is hidden on a device that cannot vibrate, and nothing is written', async () => {
     setVibrate(undefined)
     const r = await render(<AppearanceSection />)
-    await flush(30)
+    await waitFor(() => r.container.textContent !== '', 'the section')
+    await flush()
     expect(document.querySelector('#appearance-haptics-switch')).toBeNull()
     expect((await db.userPrefs.get('me'))?.haptics).toBeUndefined()
     await r.unmount()
@@ -119,11 +120,11 @@ describe('Appearance → Haptic feedback (motion-v2 4.4)', () => {
   it('on a device that can vibrate it is on by default and turning it off writes the synced preference', async () => {
     setVibrate(() => true)
     const r = await render(<AppearanceSection />)
-    await flush(30)
+    await waitFor(() => !!document.querySelector('#appearance-haptics-switch'), 'the haptics switch')
     const sw = document.querySelector<HTMLButtonElement>('#appearance-haptics-switch')!
     expect(sw.getAttribute('aria-checked')).toBe('true')
     await click(sw)
-    for (let i = 0; i < 50 && (await db.userPrefs.get('me'))?.haptics !== 'off'; i++) await flush(10)
+    await waitFor(async () => (await db.userPrefs.get('me'))?.haptics === 'off', 'haptics off stored')
     expect((await db.userPrefs.get('me'))?.haptics).toBe('off')
     expect((await db.outbox.toArray()).some((o) => o.entity === 'user_prefs' && o.field === 'haptics' && o.value === 'off')).toBe(true)
     await r.unmount()

@@ -12,7 +12,7 @@ import { publishEncryption } from '../lib/e2ee'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { DEVICE_SETUP_KEY } from '../lib/assistantDevice/settings'
-import { click, flush, render, type, waitFor } from '../ui/test-utils'
+import { click, render, type, waitFor } from '../ui/test-utils'
 import { AssistantPanel } from './assistant/AssistantPanel'
 
 const allowance = { available: true, providers: ['anthropic'], origins: [], consented_provider: '', anthropic_models: ['claude-opus-5-5', 'claude-sonnet-5-5'], default_model: 'claude-opus-5-5' }
@@ -101,7 +101,6 @@ describe('on-device assistant in the panel', () => {
     const ops = await db.outbox.toArray()
     expect(ops.some((o) => o.field === 'due' && String(o.device).startsWith('assistant:'))).toBe(true)
     await waitFor(() => !!document.querySelector('[data-assistant-result]'), 'applied summary')
-    await flush(100)
     await r.unmount()
   })
 

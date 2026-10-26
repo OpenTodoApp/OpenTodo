@@ -13,7 +13,7 @@ vi.mock('../lib/crypto', async (orig) => ({ ...(await orig<typeof import('../lib
 
 const { setMeta, useDatabase } = await import('../lib/db')
 const { applyOps, createTask, resetDeviceId } = await import('../lib/ops')
-const { flush, render } = await import('../ui/test-utils')
+const { render, waitFor } = await import('../ui/test-utils')
 const { Markdown } = await import('./Markdown')
 
 let n = 0
@@ -34,10 +34,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean) {
-  for (let i = 0; i < 100 && !ok(); i++) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('embedded images under encryption', () => {
   it('Encrypted account: the ciphertext comes from the app route and is decrypted on the device', async () => {

@@ -7,7 +7,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { flush, key, render, spokenText, textWithoutBriefing, type, visibleText } from '../ui/test-utils'
+import { flush, key, render, spokenText, textWithoutBriefing, type, visibleText, waitFor } from '../ui/test-utils'
 import { TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
@@ -29,10 +29,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 const task = (over: Partial<Task>): Task => ({
   id: 't', title: 'Report', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0,
@@ -114,8 +110,7 @@ describe('d on a list row (3.2)', () => {
     const input = document.activeElement as HTMLInputElement
     await type(input, '2026-11-06')
     await key(input, 'Enter')
-    await flush(40)
-    expect((await db.tasks.get(id))!.deadline).toBe('2026-11-06')
+    await waitFor(async () => (await db.tasks.get(id))?.deadline === '2026-11-06', 'the deadline stored')
   })
 
   it('d typed into a text field is a letter, not the shortcut', async () => {
@@ -126,7 +121,7 @@ describe('d on a list row (3.2)', () => {
     const other = r.container.querySelector('input[aria-label="Elsewhere"]') as HTMLInputElement
     other.focus()
     await key(other, 'd')
-    await flush(40)
+    await flush()
     expect(document.querySelector('[data-part="deadline"]')).toBeNull()
     expect(document.activeElement).toBe(other)
   })
