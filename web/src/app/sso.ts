@@ -38,6 +38,8 @@ export function oidcErrorMessage(code: string | null, provider = t('the provider
       return t('That sign-in took too long or was started in another tab. Please try again.')
     case 'identity_taken':
       return t('That identity is already linked to another account on this server.')
+    case 'reauth_required':
+      return t('Linking {provider} needs a recent sign-in. Confirm your password or a code, then link it again.', { provider })
     case 'sso_required':
       return t('This server requires signing in with {provider}.', { provider })
     default:

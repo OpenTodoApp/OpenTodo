@@ -69,7 +69,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
 | POST | `/api/v1/auth/logout` | cookie | 204, or 200 `{redirect}` (provider sign-out, see [Single sign-on](#single-sign-on)) |
 | POST | `/api/v1/demo/sandbox` | none | [demo instance](self-hosting/demo.md) only (absent otherwise): `{token}` from `auth/status` → 201 `{user}` + cookie for a new private sandbox. Requires a same-origin `Origin` header; 403 `demo_token` (missing, forged, expired or used token), 403 `bad_origin`, 429 `rate_limited` (5 per address per hour), 503 `demo_busy` |
-| GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in) |
+| GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in; linking a new identity needs a fresh session) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
 | GET | `/api/v1/project-invites/{token}` | none | preview `{inviterName, projectName, role, email, expiresAt, canCreateAccount, alreadyMember?}` or 404 `invitation_invalid`, see [Project invite links](#project-invite-links) |
@@ -96,14 +96,14 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/tokens` | credential, fresh | `{name, scope?}` (`full` default, `read`, `agent` or `admin`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input`; `admin` only from a session (a token gets 403 `session_required`) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
 | POST | `/api/v1/me/sign-out-everywhere` | cookie, fresh | → 204 and the session cookie cleared: ends every session of the account (this one too), forgets its remembered browsers and revokes its API tokens and app passwords; recorded as `sessions.revoked`; a token gets 403 `session_required` |
-| POST | `/api/v1/passkeys/register/options` | credential | → `{publicKey}` creation options |
-| POST | `/api/v1/passkeys/register` | credential | `{name, credential}` → 201 `{passkey}` |
+| POST | `/api/v1/passkeys/register/options` | credential, fresh | → `{publicKey}` creation options |
+| POST | `/api/v1/passkeys/register` | credential, fresh | `{name, credential}` → 201 `{passkey}` |
 | GET | `/api/v1/passkeys` | yes | `{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}` |
 | PATCH | `/api/v1/passkeys/{id}` | credential | `{name}` → `{passkey}` |
 | DELETE | `/api/v1/passkeys/{id}` | credential | 204 |
 | GET | `/api/v1/mfa` | yes | `{mfa}`, see [Two-factor authentication](#two-factor-authentication) |
-| POST | `/api/v1/mfa/totp/enroll` | credential | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
-| POST | `/api/v1/mfa/totp/confirm` | credential | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
+| POST | `/api/v1/mfa/totp/enroll` | credential, fresh | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
+| POST | `/api/v1/mfa/totp/confirm` | credential, fresh | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
 | DELETE | `/api/v1/mfa/totp` | credential, fresh | turn the second factor off → 204 |
 | POST | `/api/v1/mfa/recovery-codes/regenerate` | credential, fresh | → `{recoveryCodes:[10]}`; every earlier code stops working |
 | GET | `/api/v1/mfa/trusted-devices` | yes | `{devices:[{id,userAgent,createdAt,expiresAt,lastUsedAt}]}` |
@@ -302,7 +302,7 @@ Accounts can add a time-based one-time password (TOTP, RFC 6238: HMAC-SHA1, 6 di
 
 `required` means the owner's policy covers this account. `restricted` means the session may only enrol, because the account is required to have a second factor and has none yet. Bearer-token requests are never restricted.
 
-**Enrolment.** `POST /mfa/totp/enroll` returns a fresh `secret` (base32) and its provisioning `uri` (`otpauth://totp/OpenTodo:<email>?secret=…&issuer=OpenTodo&algorithm=SHA1&digits=6&period=30`). The web app renders the QR code locally. Confirm within ten minutes with `POST /mfa/totp/confirm {"code":"123456"}`. The answer contains ten recovery codes such as `ABCDE-FGH23`, shown only this once and stored as SHA-256 hashes. A recovery code can stand in for an app code at sign-in (dash and case optional) and is used up by that sign-in.
+**Enrolment.** `POST /mfa/totp/enroll` returns a fresh `secret` (base32) and its provisioning `uri` (`otpauth://totp/OpenTodo:<email>?secret=…&issuer=OpenTodo&algorithm=SHA1&digits=6&period=30`). The web app renders the QR code locally. Confirm within ten minutes with `POST /mfa/totp/confirm {"code":"123456"}`. Both steps are *fresh* routes: a cookie session needs a sign-in or re-authentication within the last ten minutes. Confirming marks the session's second factor as satisfied but does not count as a re-authentication. The answer contains ten recovery codes such as `ABCDE-FGH23`, shown only this once and stored as SHA-256 hashes. A recovery code can stand in for an app code at sign-in (dash and case optional) and is used up by that sign-in.
 
 **Two-step sign-in.** For an enrolled account, a correct password answers 200 with no cookie:
 
@@ -317,7 +317,7 @@ curl -sS -c jar -X POST "$OT/api/v1/auth/mfa" -H 'Content-Type: application/json
 
 A challenge lasts five minutes and allows five wrong codes. Each wrong code gets `401 mfa_code_invalid`; after the fifth, the challenge is gone and the next attempt gets `401 mfa_challenge_invalid`, which means "enter the password again". `remember: true` sets `ot_trust`, an `HttpOnly`, `SameSite=Lax` cookie (`Secure` on https) limited to `/api/v1/auth` and valid for a fixed 30 days. While that cookie is present, the password step starts the session directly for that account on that browser. A passkey sign-in whose authenticator reports user verification (biometric or PIN) counts as two factors and is never asked for a code. A passkey without user verification answers with the same challenge as a password.
 
-**Step-up.** For cookie sessions, the routes marked *fresh* in the table require a proof of identity within the last ten minutes. A sign-in counts, and so does `POST /auth/reauth` with `{"password":"…"}` or `{"code":"123456"}`. Otherwise they answer `403 reauth_required` and change nothing. The web app then shows a re-authentication dialog and repeats the request once. Bearer-token requests are never challenged, but on *credential* routes only an `admin` token is accepted (see [token scopes](#token-scopes)).
+**Step-up.** For cookie sessions, the routes marked *fresh* in the table require a proof of identity within the last ten minutes. A sign-in counts, and so does `POST /auth/reauth` with `{"password":"…"}` or `{"code":"123456"}`, or completing the provider flow with an identity the account already has (see [Single sign-on](#single-sign-on)). Adding a passkey, an authenticator app or a new linked identity is itself a *fresh* step and never counts as one. Otherwise they answer `403 reauth_required` and change nothing. The web app then shows a re-authentication dialog and repeats the request once. Bearer-token requests are never challenged, but on *credential* routes only an `admin` token is accepted (see [token scopes](#token-scopes)).
 
 **Owner policy.** `PUT /settings/mfa {"required":"none"|"owner"|"all"}`. When the policy covers an account that has no second factor, sign-in still works. Every route except `GET /me`, `/mfa/*`, `/auth/reauth` and `/auth/logout` then answers `403 mfa_enrolment_required` until the account enrols. That includes `/sync`, so a device keeps its changes queued and uploads them after enrolment. An account the policy covers cannot turn its second factor off (`403 mfa_required_by_policy`).
 
@@ -379,7 +379,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 
 **SSO-only mode** (`ssoOnly: true`, effective only while a provider is configured): password and passkey sign-in, and registration through the password form, answer `403 sso_required` for every account except the owner (recorded as `login.failed` with reason `sso_required`). The owner keeps local sign-in as break-glass (the sign-in screen shows the password form at `/?owner=1`). Bearer tokens keep working.
 
-**Linked identities.** `GET /api/v1/me/identities` → `{identities:[{id, issuer, email, createdAt, lastLoginAt}], provider:{enabled, displayName, ssoOnly}}`. `DELETE /api/v1/me/identities/{id}` → 204, or `409 last_credential` when the account would have no way left to sign in under the current mode (another identity counts while a provider is configured; a password or passkey counts unless SSO-only mode refuses it for this account). Linking and unlinking are recorded as `identity.linked` / `identity.unlinked`; a provider sign-in as `login.succeeded` with method `oidc`.
+**Linked identities.** `GET /api/v1/me/identities` → `{identities:[{id, issuer, email, createdAt, lastLoginAt}], provider:{enabled, displayName, ssoOnly}}`. `DELETE /api/v1/me/identities/{id}` → 204, or `409 last_credential` when the account would have no way left to sign in under the current mode (another identity counts while a provider is configured; a password or passkey counts unless SSO-only mode refuses it for this account). Linking a new identity (`GET /api/v1/auth/oidc/start` while signed in) needs a session that signed in or re-authenticated within the last ten minutes; from an older session the callback links nothing and answers `403 reauth_required` (a browser is sent to `/settings/account/security?error=reauth_required`). Completing the flow with an identity already linked to the account re-authenticates the session (`?reauthenticated=1`), which is how an account without a password confirms *fresh* routes. Linking and unlinking are recorded as `identity.linked` / `identity.unlinked`; a provider sign-in as `login.succeeded` with method `oidc`.
 
 **Sign-out.** `POST /auth/logout` always deletes the local session. When `providerLogout` is on and the session started through the provider, it answers `200 {"redirect":"https://sso…/end-session?client_id=…&id_token_hint=…&post_logout_redirect_uri=https://todo.example.com/"}` instead of 204, and the web app follows it after clearing local data.
 
@@ -388,6 +388,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `oidc_disabled` | 404 | `auth/oidc/start` or `callback` while no provider is configured |
 | `oidc_state_invalid` | 400 | callback with a missing, forged, expired or reused state |
 | `identity_taken` | 409 | linking an identity that is linked to another account |
+| `reauth_required` | 403 | linking a new identity from a session that has not signed in or re-authenticated in the last ten minutes |
 | `last_credential` | 409 | unlinking the account's last way to sign in |
 | `sso_required` | 403 | password or passkey sign-in, or password registration, by a non-owner in SSO-only mode |
 | `invalid_input` | 400 | issuer not https, discovery failed or names another issuer, client id missing, scopes without `openid`, changing an environment-managed field |

@@ -248,7 +248,19 @@ func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.C
 		s.oidcError(w, r, http.StatusBadRequest, "oidc_state_invalid", "sign in again before linking an account", "/settings/account/security")
 		return
 	}
-	already, err := s.auth.LinkIdentity(ctx, sess.User.ID, id, c.Name())
+	// Adding a new way to sign in needs a recent proof of identity, like every
+	// other credential (credential-freshness); a stale session may only confirm
+	// an identity it already has.
+	var already bool
+	if sess.FreshWithin(FreshWindow, s.auth.Now()) {
+		already, err = s.auth.LinkIdentity(ctx, sess.User.ID, id, c.Name())
+	} else {
+		already, err = s.auth.ConfirmLinkedIdentity(ctx, sess.User.ID, id)
+		if err == nil && !already {
+			s.oidcError(w, r, http.StatusForbidden, "reauth_required", "confirm your password or a code, then link the account again", "/settings/account/security")
+			return
+		}
+	}
 	switch {
 	case errors.Is(err, auth.ErrIdentityTaken):
 		s.oidcError(w, r, http.StatusConflict, "identity_taken", err.Error(), "/settings/account/security")
@@ -257,11 +269,14 @@ func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.C
 		s.internal(w, err)
 		return
 	}
-	// Completing the provider flow again is a fresh proof of identity for this
-	// session, which lets provider-only accounts pass step-up checks.
-	if err := s.auth.MarkReauthenticated(ctx, sess.TokenHash, true); err != nil {
-		s.internal(w, err)
-		return
+	// Completing the provider flow again with an identity the account already
+	// has is a fresh proof of identity for this session, which lets
+	// provider-only accounts pass step-up checks. Linking a new identity is not.
+	if already {
+		if err := s.auth.MarkReauthenticated(ctx, sess.TokenHash, true); err != nil {
+			s.internal(w, err)
+			return
+		}
 	}
 	s.syncProviderPicture(ctx, sess.User, c, picture)
 	v := url.Values{"linked": {"1"}}
