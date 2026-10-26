@@ -2,7 +2,6 @@ package oidc
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -134,15 +133,6 @@ func hostOf(u string) string {
 func HostOf(u string) string { return hostOf(u) }
 
 // ---- PKCE and random values ----
-
-// RandomString returns n random bytes as base64url.
-func RandomString(n int) string {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		panic(err) // crypto/rand never fails on supported platforms
-	}
-	return base64.RawURLEncoding.EncodeToString(b)
-}
 
 // PKCEChallenge returns the S256 code challenge of verifier (RFC 7636).
 func PKCEChallenge(verifier string) string {

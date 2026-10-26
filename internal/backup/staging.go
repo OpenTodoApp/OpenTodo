@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/store"
 )
 
@@ -231,7 +232,7 @@ func (s *Service) newStaging() (string, string, error) {
 	if prev != "" {
 		os.RemoveAll(s.stagingDir(prev))
 	}
-	id := randomHex(16)
+	id := ids.Hex(16)
 	dir := s.stagingDir(id)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", "", err

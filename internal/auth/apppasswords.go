@@ -8,6 +8,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // App passwords (OpenSpec change `caldav`, design D2) are CalDAV-only
@@ -36,7 +37,7 @@ func (s *Service) CreateAppPassword(ctx context.Context, userID, name string) (*
 		name = "Calendar app"
 	}
 	plain := AppPasswordPrefix + ids.Secret(32)
-	p := &AppPassword{ID: ids.New(), Name: truncate(name, 100), CreatedAt: s.clock().UnixMilli()}
+	p := &AppPassword{ID: ids.New(), Name: textutil.Truncate(name, 100), CreatedAt: s.clock().UnixMilli()}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, "", err

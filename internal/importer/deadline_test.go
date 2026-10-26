@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // OpenSpec change deadlines, design D9: every importer writes the task's
@@ -105,7 +107,7 @@ func TestDeadlineImportAndOwnRoundTrip(t *testing.T) {
 	for _, task := range h.list("task", false) {
 		if str(task, "title") == "Report" {
 			withDeadline = str(task, "deadline")
-		} else if !isNull(task["deadline"]) {
+		} else if !opsync.IsNull(task["deadline"]) {
 			t.Fatalf("plain task got a deadline: %v", task)
 		}
 	}

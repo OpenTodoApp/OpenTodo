@@ -111,7 +111,7 @@ func TestRecurringCompletionIgnoresSkippedRecords(t *testing.T) {
 		t.Fatal("second completion rolled; the skipped record was counted or the end was missed")
 	}
 	e, _ := s.Get(ctx, "u1", "task", series)
-	if nullish(e["completed_at"]) {
+	if IsNull(e["completed_at"]) {
 		t.Fatal("series not completed after its second completion")
 	}
 }

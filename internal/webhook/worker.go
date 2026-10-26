@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/pixari/opentodo/internal/outbound"
 )
 
 // Queue tuning from the design (D2).
@@ -167,10 +169,10 @@ func (s *Service) send(ctx context.Context, q queued) result {
 		switch {
 		case errors.Is(err, ErrPrivateTarget):
 			return result{errMsg: "private_target", duration: elapsed, terminal: true}
-		case errors.Is(err, context.DeadlineExceeded) || isTimeout(err):
+		case errors.Is(err, context.DeadlineExceeded) || outbound.IsTimeout(err):
 			return result{errMsg: "timeout", duration: elapsed}
 		default:
-			return result{errMsg: "connection failed: " + rootCause(err), duration: elapsed}
+			return result{errMsg: "connection failed: " + outbound.RootCause(err), duration: elapsed}
 		}
 	}
 	defer resp.Body.Close()
@@ -180,21 +182,6 @@ func (s *Service) send(ctx context.Context, q queued) result {
 		res.errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode)
 	}
 	return res
-}
-
-func isTimeout(err error) bool {
-	var ne net.Error
-	return errors.As(err, &ne) && ne.Timeout()
-}
-
-func rootCause(err error) string {
-	for {
-		u := errors.Unwrap(err)
-		if u == nil {
-			return err.Error()
-		}
-		err = u
-	}
 }
 
 // record stores an attempt's outcome, schedules a retry or finalises the

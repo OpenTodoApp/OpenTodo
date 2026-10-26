@@ -122,7 +122,7 @@ func (e *Engine) loadRules(ctx context.Context, uid string) ([]rule, error) {
 		if r.Trigger, perr = ruleval.ParseTrigger(row["trigger"]); perr != nil {
 			continue
 		}
-		if !isNull(row["condition"]) {
+		if !opsync.IsNull(row["condition"]) {
 			if r.Condition, perr = ruleval.ParseCondition(row["condition"]); perr != nil {
 				continue
 			}
@@ -264,7 +264,7 @@ func (e *Engine) trackedMinutes(ctx context.Context, w *world) map[string]int {
 
 func (w *world) open(id string) bool {
 	t, ok := w.tasks[id]
-	return ok && isNull(t["completed_at"]) && isNull(t["deleted_at"])
+	return ok && opsync.IsNull(t["completed_at"]) && opsync.IsNull(t["deleted_at"])
 }
 
 // matchTask reads a task row for the matcher.
@@ -280,7 +280,7 @@ func (w *world) matchTask(t opsync.Entity) ruleval.Task {
 		}
 	}
 	var est int
-	if json.Unmarshal(t["estimate_minutes"], &est) == nil && !isNull(t["estimate_minutes"]) {
+	if json.Unmarshal(t["estimate_minutes"], &est) == nil && !opsync.IsNull(t["estimate_minutes"]) {
 		mt.Estimate = &est
 	}
 	return mt

@@ -2,12 +2,12 @@ package relay
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/pixari/opentodo/internal/ids"
 )
 
 // Limits of the relay (design D4-D6). Tests may lower the deadlines.
@@ -136,16 +136,10 @@ func NewHub() *Hub {
 	return &Hub{now: time.Now, streams: map[string][]*Stream{}, pending: map[string]*pending{}, queued: map[string]int{}, calls: map[string][]time.Time{}}
 }
 
-func newID() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
-}
-
 // Open registers a device's stream; a stream already open for the same device
 // is replaced and the account's oldest is closed beyond MaxStreamsPerAccount.
 func (h *Hub) Open(userID, deviceID, sessionHash string, devicePub []byte) (*Stream, error) {
-	id := newID()
+	id := ids.Hex(16)
 	key, err := newStreamKey(devicePub, id)
 	if err != nil {
 		return nil, err
@@ -297,7 +291,7 @@ func (h *Hub) Do(ctx context.Context, userID string, op Op, items []Item, call C
 		h.mu.Unlock()
 		return nil, err
 	}
-	p := &pending{id: newID(), stream: s, n: len(items), answer: make(chan answer, 1)}
+	p := &pending{id: ids.Hex(16), stream: s, n: len(items), answer: make(chan answer, 1)}
 	h.pending[p.id] = p
 	h.mu.Unlock()
 	defer func() {

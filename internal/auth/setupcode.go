@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base32"
@@ -10,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/pixari/opentodo/internal/ids"
 )
 
 // ErrSetupCodeInvalid refuses a first registration from a public address
@@ -28,9 +29,7 @@ type setupCode struct {
 
 // newSetupCode is four groups of four base32 characters (80 random bits).
 func newSetupCode() string {
-	b := make([]byte, 10)
-	_, _ = rand.Read(b) // crypto/rand.Read never fails
-	return base32.StdEncoding.EncodeToString(b)
+	return base32.StdEncoding.EncodeToString(ids.Bytes(10))
 }
 
 // normalizeSetupCode accepts the code in any case, with or without the dashes

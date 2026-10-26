@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -104,7 +105,7 @@ func issuesList(a *App, ctx context.Context, g *globalFlags, args []string) erro
 		var ic issueConn
 		_ = json.Unmarshal(raw, &ic)
 		state := ic.State
-		if reason := firstNonEmpty(ic.StoppedReason, ic.LastError); reason != "" {
+		if reason := cmp.Or(ic.StoppedReason, ic.LastError); reason != "" {
 			state += " (" + reason + ")"
 		}
 		last := "never"
@@ -120,15 +121,6 @@ func issuesList(a *App, ctx context.Context, g *globalFlags, args []string) erro
 	}
 	tbl.render(a.Stdout, a.color())
 	return nil
-}
-
-func firstNonEmpty(v ...string) string {
-	for _, s := range v {
-		if s != "" {
-			return s
-		}
-	}
-	return ""
 }
 
 // resolveIssueConn finds a connection by id or unique id prefix.

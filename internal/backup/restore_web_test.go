@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -142,7 +143,7 @@ func TestStagingLifecycle(t *testing.T) {
 		t.Fatal("expired staged files kept")
 	}
 	// Leftovers are removed when the server starts.
-	stray := e.svc.stagingDir(randomHex(16))
+	stray := e.svc.stagingDir(ids.Hex(16))
 	os.MkdirAll(stray, 0o700)
 	e.svc.sweepStaging("", true)
 	if _, err := os.Stat(stray); !os.IsNotExist(err) {

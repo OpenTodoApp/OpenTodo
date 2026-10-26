@@ -1,10 +1,11 @@
 package webauthn
 
 import (
-	"crypto/rand"
 	"encoding/hex"
 	"sync"
 	"time"
+
+	"github.com/pixari/opentodo/internal/ids"
 )
 
 // ChallengeTTL is how long an issued challenge stays valid.
@@ -33,10 +34,7 @@ func NewChallenges(ttl time.Duration) *Challenges {
 // Issue creates a 32-byte random challenge bound to userID ("" for sign-in)
 // and sweeps expired entries.
 func (c *Challenges) Issue(userID string) []byte {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		panic("webauthn: crypto/rand failed: " + err.Error())
-	}
+	b := ids.Bytes(32)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	now := c.now()

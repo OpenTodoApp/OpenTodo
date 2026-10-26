@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
 )
@@ -405,7 +406,7 @@ func stampRestored(path, marker string) (string, error) {
 		return "", err
 	}
 	defer db.Close()
-	gen := randomHex(16)
+	gen := ids.Hex(16)
 	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL DEFAULT 0)`); err != nil {
 		return "", err
 	}

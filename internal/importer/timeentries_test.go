@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // ownExportWithEntries is an own export holding 40 entries of the exporting
@@ -63,10 +65,10 @@ func TestRoundTripKeepsTimeEntries(t *testing.T) {
 		if who != h.uid {
 			t.Fatalf("entry under %q, want the importing account", who)
 		}
-		if !isNull(e["deleted_at"]) {
+		if !opsync.IsNull(e["deleted_at"]) {
 			deleted++
 		}
-		if isNull(e["ended_at"]) {
+		if opsync.IsNull(e["ended_at"]) {
 			running++
 		}
 	}

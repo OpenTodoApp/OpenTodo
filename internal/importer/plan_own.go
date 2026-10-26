@@ -126,7 +126,7 @@ func (pl *planner) planOwn(rows []Row) []change {
 // comment link is dropped), uploaded_at is the server's to write once the file is
 // stored, and a file attachment needs its file from the ZIP export.
 func (pl *planner) ownAttachment(row Row, fields []field, res *RowResult) ([]field, bool) {
-	isLink := !isNull(row.Entity["url"])
+	isLink := !opsync.IsNull(row.Entity["url"])
 	if !isLink && len(row.Entity["url"]) == 0 {
 		isLink = false
 	}
@@ -212,7 +212,7 @@ func setField(fields []field, name string, v json.RawMessage) []field {
 
 func jsonEqual(a, b json.RawMessage) bool {
 	if len(a) == 0 {
-		return isNull(b) && len(b) == 0
+		return opsync.IsNull(b) && len(b) == 0
 	}
 	if bytes.Equal(a, b) {
 		return true

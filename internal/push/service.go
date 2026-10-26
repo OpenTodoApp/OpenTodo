@@ -378,7 +378,7 @@ func (s *Service) eligible(ctx context.Context, d *dueReminder, trashed map[stri
 		// brings the reminder back (OpenSpec `reminders`).
 		return false, false, nil
 	}
-	if !isNull(t["completed_at"]) {
+	if !opsync.IsNull(t["completed_at"]) {
 		return false, true, nil
 	}
 	inTrash, err := s.projectTrashed(ctx, d.UserID, jsonString(t["project_id"]), trashed)
@@ -458,8 +458,6 @@ func (s *Service) projectTrashed(ctx context.Context, userID, id string, cache m
 	}
 	return result, nil
 }
-
-func isNull(raw json.RawMessage) bool { return len(raw) == 0 || string(raw) == "null" }
 
 func jsonString(raw json.RawMessage) string {
 	var v string

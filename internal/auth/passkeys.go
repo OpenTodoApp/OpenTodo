@@ -8,6 +8,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/textutil"
 	"github.com/pixari/opentodo/internal/webauthn"
 )
 
@@ -141,7 +142,7 @@ func (s *Service) FinishPasskeyRegistration(ctx context.Context, userID, name st
 	now := s.clock().UnixMilli()
 	// Registering proves possession, so it counts as the first use; Settings
 	// shows the new passkey as used "just now".
-	p := &Passkey{ID: ids.New(), Name: truncate(name, 100), CreatedAt: now, LastUsedAt: &now, BackedUp: cred.BackedUp}
+	p := &Passkey{ID: ids.New(), Name: textutil.Truncate(name, 100), CreatedAt: now, LastUsedAt: &now, BackedUp: cred.BackedUp}
 	// The passkey and its passkey.registered audit event commit together.
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -150,7 +151,7 @@ func (s *Service) FinishPasskeyRegistration(ctx context.Context, userID, name st
 	defer tx.Rollback()
 	_, err = tx.ExecContext(ctx, `INSERT INTO passkeys(id,user_id,name,credential_id,public_key,alg,sign_count,transports,backup_eligible,backed_up,created_at,last_used_at)
 		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
-		p.ID, userID, p.Name, cred.ID, cred.PublicKey, cred.Alg, cred.SignCount, strings.Join(cred.Transports, ","), boolInt(cred.BackupEligible), boolInt(cred.BackedUp), p.CreatedAt, now)
+		p.ID, userID, p.Name, cred.ID, cred.PublicKey, cred.Alg, cred.SignCount, strings.Join(cred.Transports, ","), cred.BackupEligible, cred.BackedUp, p.CreatedAt, now)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, errors.Join(ErrInvalidInput, errors.New("this passkey is already registered"))
@@ -192,7 +193,7 @@ func (s *Service) RenamePasskey(ctx context.Context, userID, passkeyID, name str
 	if name == "" {
 		return nil, errors.Join(ErrInvalidInput, errors.New("name is required"))
 	}
-	res, err := s.db.ExecContext(ctx, "UPDATE passkeys SET name = ? WHERE id = ? AND user_id = ?", truncate(name, 100), passkeyID, userID)
+	res, err := s.db.ExecContext(ctx, "UPDATE passkeys SET name = ? WHERE id = ? AND user_id = ?", textutil.Truncate(name, 100), passkeyID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +298,7 @@ func (s *Service) finishPasskeyLogin(ctx context.Context, credentialID []byte, r
 		return nil, nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonPasskeyCounter}
 	}
 	if _, err := s.db.ExecContext(ctx, "UPDATE passkeys SET sign_count = ?, last_used_at = ?, backed_up = ? WHERE id = ?",
-		int64(res.Counter), now, boolInt(res.BackedUp), pkID); err != nil {
+		int64(res.Counter), now, res.BackedUp, pkID); err != nil {
 		return nil, nil, err
 	}
 	return &u, res, nil
@@ -332,11 +333,4 @@ func (s *Service) passkeyByID(ctx context.Context, userID, id string) (*Passkey,
 	}
 	p.BackedUp = backedUp != 0
 	return &p, nil
-}
-
-func boolInt(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
 }

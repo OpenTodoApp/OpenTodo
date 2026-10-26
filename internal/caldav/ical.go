@@ -163,7 +163,7 @@ func ParseLine(line string) (Prop, error) {
 	}
 	p.Name = strings.ToUpper(line[:i])
 	if !validName(p.Name) {
-		return p, fmt.Errorf("%w: bad property name %q", ErrInvalid, truncate(p.Name, 40))
+		return p, fmt.Errorf("%w: bad property name %q", ErrInvalid, textutil.Truncate(p.Name, 40))
 	}
 	for line[i] == ';' {
 		i++
@@ -283,7 +283,7 @@ func ParseWithLimits(data []byte, lim Limits) (*Component, error) {
 		case "END":
 			name := strings.ToUpper(strings.TrimSpace(p.Value))
 			if len(stack) == 0 || stack[len(stack)-1].Name != name {
-				return nil, fmt.Errorf("%w: unbalanced END:%s", ErrInvalid, truncate(name, 40))
+				return nil, fmt.Errorf("%w: unbalanced END:%s", ErrInvalid, textutil.Truncate(name, 40))
 			}
 			stack = stack[:len(stack)-1]
 		default:
@@ -298,7 +298,7 @@ func ParseWithLimits(data []byte, lim Limits) (*Component, error) {
 		return nil, fmt.Errorf("%w: incomplete calendar object", ErrInvalid)
 	}
 	if root.Name != "VCALENDAR" {
-		return nil, fmt.Errorf("%w: expected VCALENDAR, got %s", ErrInvalid, truncate(root.Name, 40))
+		return nil, fmt.Errorf("%w: expected VCALENDAR, got %s", ErrInvalid, textutil.Truncate(root.Name, 40))
 	}
 	return root, nil
 }
@@ -417,6 +417,3 @@ func SplitText(s string) []string {
 	}
 	return append(out, UnescapeText(cur.String()))
 }
-
-// truncate cuts s to at most n bytes without splitting a character.
-func truncate(s string, n int) string { return textutil.Truncate(s, n) }
