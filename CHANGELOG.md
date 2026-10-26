@@ -4,8 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-10-26
+
+OpenTodo 0.14.1 is a **security release**; please upgrade. It fixes the findings of an internal security audit: a shared project could take over another person's private task if its id was known, a saved view or a crafted email or calendar could slow down or crash the server, and an old session could add a new way to sign in without signing in again. It also makes the sync clock follow newer edits, so a device whose clock runs behind no longer loses its own changes, and fixes a long task scrolling the whole page in the side panel.
+
 ### Upgrade notes
 
+- **Replace the image or the binary and restart.** Upgrade the server before the devices, as for every release.
+- **Scripts and API clients may need a different token:** changing the owner's webhook, maps, MCP and audit settings now needs an `admin` token, the email-to-task routes refuse `read` and `agent` tokens, and adding a passkey, two-factor authentication or a single sign-on link needs a recent sign-in. ([HTTP API](docs/api.md))
 - **One migration** (`0048_caldav_resources_per_account`): the names calendar apps chose for tasks are now kept per account; each existing name is kept for every account that can see its task. No data is rewritten otherwise and no environment variable changes. Replace the image or the binary and restart; there are no down-migrations, so back up first.
 - **Ids that two accounts already share stay as they are.** Earlier versions could store one id in two places (through the problem fixed below, or when two accounts imported the same export file). The server now reads and writes the oldest copy each person can see, so nothing is lost and nothing needs repair. To check whether your database has such ids, run `SELECT entity, entity_id, group_concat(DISTINCT scope_id) FROM scope_fields WHERE entity IN ('project','task','section','field','comment','attachment','time_entry','rule') GROUP BY entity, entity_id HAVING COUNT(DISTINCT scope_id) > 1;` with `sqlite3` on a copy of `<data>/opentodo.db`.
 
@@ -897,7 +903,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/pixari/opentodo/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/pixari/opentodo/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/pixari/opentodo/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/pixari/opentodo/compare/v0.11.0...v0.12.0
