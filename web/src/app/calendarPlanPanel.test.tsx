@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { getTask } from '../lib/localData'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, minWidthPx, render } from '../ui/test-utils'
+import { click, flush, key, minWidthPx, render, waitFor } from '../ui/test-utils'
 import { CalendarView } from './CalendarView'
 import { MonthView } from './MonthView'
 import { PlanView } from './PlanView'
@@ -46,18 +46,15 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const planList = () => document.querySelector('[data-panel-frame="calendar-plan"]')
 const header = () => document.querySelector('[data-page-header]')!
 const button = (label: string) => header().querySelector<HTMLElement>(`button[aria-label="${label}"]`)!
 const rangeButton = (label: string) => [...header().querySelectorAll<HTMLElement>('[aria-label="Calendar range"] button')].find((b) => b.textContent === label)!
 
 async function openPlanList() {
+  await waitFor(() => !!document.querySelector('[data-page-header] button[aria-label="More actions"]'), 'the page header')
   await click(button('More actions'))
-  await flush(30)
+  await waitFor(() => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].some((e) => e.textContent?.includes('Plan from a list')), 'the actions menu')
   await click([...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((e) => e.textContent?.includes('Plan from a list'))!)
   await waitFor(() => planList() !== null)
 }
@@ -66,7 +63,6 @@ describe('the planning list across the Calendar', () => {
   it('stays open through day, week and month navigation and range switches, and closes on Escape', async () => {
     await createTask({ title: 'Renew passport' })
     const r = await render(<><Calendar /><PanelHost /></>)
-    await flush(50)
     await openPlanList()
 
     for (const step of [
@@ -80,7 +76,7 @@ describe('the planning list across the Calendar', () => {
       () => click(rangeButton('Day')),
     ]) {
       await step()
-      await flush(40)
+      await flush()
       expect(panelOccupant()).toMatchObject({ kind: 'custom', key: 'calendar-plan' })
       expect(planList()).toBeTruthy()
     }
@@ -92,7 +88,6 @@ describe('the planning list across the Calendar', () => {
 
   it('closes when the user leaves the Calendar', async () => {
     const r = await render(<><Calendar /><PanelHost /></>)
-    await flush(50)
     await openPlanList()
     navigate({ view: 'today' })
     await waitFor(() => panelOccupant() === null)
@@ -102,17 +97,12 @@ describe('the planning list across the Calendar', () => {
   it('places a task with the view on screen after a switch to Month', async () => {
     const id = await createTask({ title: 'Renew passport' })
     const r = await render(<><Calendar /><PanelHost /></>)
-    await flush(50)
     await openPlanList()
     await click(rangeButton('Month'))
-    await flush(50)
-    expect(document.querySelector('[data-calendar-page="month"]')).toBeTruthy()
+    await waitFor(() => !!document.querySelector('[data-calendar-page="month"]'), 'the month')
     await waitFor(() => planList()?.querySelector('[data-tray-task]') !== null)
     await key(planList()!.querySelector<HTMLElement>('[data-tray-task]')!, 's')
-    for (let t = 0; t < 2000; t += 20) {
-      if ((await getTask(id))?.due?.date === '2026-10-14') break
-      await flush(20)
-    }
+    await waitFor(async () => (await getTask(id))?.due?.date === '2026-10-14', 'the task placed')
     expect((await getTask(id))?.due).toEqual({ date: '2026-10-14' })
     await r.unmount()
   })
@@ -124,24 +114,23 @@ describe('the planning list across the Calendar', () => {
       const id = await createTask({ title: 'Renew passport' })
       await createTask({ title: 'Call the plumber' })
       const r = await render(<><Calendar /><PanelHost /></>)
-      await flush(50)
       await openPlanList()
       await waitFor(() => planList()!.querySelectorAll('[data-tray-task]').length === 2)
       const item = planList()!.querySelector<HTMLElement>(`[data-tray-task="${id}"]`)!
       item.focus()
       await key(item, 's')
-      await flush(30)
       const at = () => header().textContent!.match(/at (\d\d:\d\d)/)?.[1]
+      await waitFor(() => !!at() && !planList()!.contains(document.activeElement), 'placing, focus on the grid')
       const start = at()!
       expect(start).toBeTruthy()
       expect(planList()!.contains(document.activeElement)).toBe(false)
-      for (const k of ['ArrowDown', 'ArrowDown', 'ArrowUp', 'ArrowDown']) { await key(document.activeElement!, k); await flush(10) }
+      for (const k of ['ArrowDown', 'ArrowDown', 'ArrowUp', 'ArrowDown']) { await key(document.activeElement!, k); await flush() }
       const [h, m] = start.split(':').map(Number)
       const moved = h * 60 + m + 30
       const time = `${String(Math.floor(moved / 60)).padStart(2, '0')}:${String(moved % 60).padStart(2, '0')}`
-      expect(at()).toBe(time)
+      await waitFor(() => at() === time, 'thirty minutes later')
       await key(document.activeElement!, 'Enter')
-      for (let t = 0; t < 2000 && !(await getTask(id))?.due; t += 20) await flush(20)
+      await waitFor(async () => !!(await getTask(id))?.due, 'the task placed')
       expect((await getTask(id))?.due).toEqual({ date: '2026-10-14', time })
       expect(at()).toBeUndefined()
       expect(panelOccupant()).toMatchObject({ key: 'calendar-plan' })
@@ -155,18 +144,15 @@ describe('the planning list across the Calendar', () => {
     navigate({ view: 'week' }, { replace: true })
     const id = await createTask({ title: 'Renew passport' })
     const r = await render(<><Calendar /><PanelHost /></>)
-    await flush(50)
     await openPlanList()
     await waitFor(() => planList()?.querySelector('[data-tray-task]') !== null)
     const item = planList()!.querySelector<HTMLElement>('[data-tray-task]')!
     item.focus()
     await key(item, 's')
-    await flush(30)
-    expect(header().textContent).toContain('Placing')
+    await waitFor(() => header().textContent!.includes('Placing'), 'placing')
     await key(document.activeElement!, 'ArrowDown')
     await key(document.activeElement!, 'Escape')
-    await flush(30)
-    expect(header().textContent).not.toContain('Placing')
+    await waitFor(() => !header().textContent!.includes('Placing') && (document.activeElement as HTMLElement).dataset.trayTask === id, 'placing cancelled, focus back')
     expect(panelOccupant()).toMatchObject({ key: 'calendar-plan' })
     expect((document.activeElement as HTMLElement).dataset.trayTask).toBe(id)
     expect((await getTask(id))?.due).toBeFalsy()
@@ -190,12 +176,12 @@ describe('the planning list is remembered', () => {
     navigate({ view: 'today' })
     await waitFor(() => panelOccupant() === null)
     navigate({ view })
-    await flush(60)
+    await waitFor(() => !!document.querySelector(`[data-calendar-page="${view}"]`), 'the Calendar again')
+    await flush()
   }
 
   it('opens again on return, and stays closed once closed', async () => {
     const r = await render(<><Calendar /><PanelHost /></>)
-    await flush(50)
     await openPlanList()
     await leaveAndReturn()
     await waitFor(() => planList() !== null)
@@ -212,7 +198,6 @@ describe('the planning list is remembered', () => {
   it('Escape remembers it closed; a task opened from the Calendar does not', async () => {
     const id = await createTask({ title: 'Renew passport' })
     const r = await render(<><Calendar /><PanelHost /></>)
-    await flush(50)
     await openPlanList()
     // Opening a task from the Calendar takes the slot or the page, not the user's choice about the list.
     setPanelTaskId(id)
@@ -229,7 +214,6 @@ describe('the planning list is remembered', () => {
 
   it('does not open by itself on a phone', async () => {
     const r = await render(<><Calendar /><PanelHost /></>)
-    await flush(50)
     await openPlanList()
     viewport(390)
     await leaveAndReturn()

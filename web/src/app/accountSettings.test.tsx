@@ -3,7 +3,7 @@
 // Profile card (settings-refresh, account-profile "Profile in Settings").
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { SessionPanel } from './AccountSettings'
 import type { Profile, User } from '../lib/types'
 
@@ -24,12 +24,12 @@ describe('SessionPanel', () => {
     const onLogout = vi.fn()
     const { unmount } = await render(<SessionPanel onLogout={onLogout} />)
     await click(button('Sign out'))
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="confirm-dialog"]'), 'the confirmation')
     expect(onLogout).not.toHaveBeenCalled()
     expect(document.querySelector('[data-testid="confirm-dialog"]')?.textContent).toContain('local copy of your tasks is cleared')
     const confirm = [...document.querySelectorAll('[data-testid="confirm-dialog"] button')].find((b) => b.textContent === 'Sign out')!
     await click(confirm)
-    await flush(20)
+    await waitFor(() => onLogout.mock.calls.length > 0, 'signed out')
     expect(onLogout).toHaveBeenCalledTimes(1)
     await unmount()
   })
@@ -39,12 +39,12 @@ describe('SessionPanel', () => {
     const everywhere = vi.fn(async () => {})
     const { unmount } = await render(<SessionPanel onLogout={onLogout} onSignOutEverywhere={everywhere} />)
     await click(button('Sign out everywhere'))
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="confirm-dialog"]'), 'the confirmation')
     expect(everywhere).not.toHaveBeenCalled()
     expect(document.querySelector('[data-testid="confirm-dialog"]')?.textContent).toContain('API tokens and app passwords stop working')
     const confirm = [...document.querySelectorAll('[data-testid="confirm-dialog"] button')].find((b) => b.textContent === 'Sign out everywhere')!
     await click(confirm)
-    await flush(20)
+    await waitFor(() => onLogout.mock.calls.length > 0, 'signed out everywhere')
     expect(everywhere).toHaveBeenCalledTimes(1)
     expect(onLogout).toHaveBeenCalledTimes(1)
     await unmount()
@@ -55,12 +55,11 @@ describe('SessionPanel', () => {
     const everywhere = vi.fn(async () => { throw new Error('You are offline.') })
     const { unmount } = await render(<SessionPanel onLogout={onLogout} onSignOutEverywhere={everywhere} />)
     await click(button('Sign out everywhere'))
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="confirm-dialog"]'), 'the confirmation')
     const confirm = [...document.querySelectorAll('[data-testid="confirm-dialog"] button')].find((b) => b.textContent === 'Sign out everywhere')!
     await click(confirm)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="confirm-dialog"]')?.textContent?.includes('You are offline.'), 'the error in the dialog')
     expect(onLogout).not.toHaveBeenCalled()
-    expect(document.querySelector('[data-testid="confirm-dialog"]')?.textContent).toContain('You are offline.')
     await unmount()
   })
 
@@ -70,10 +69,9 @@ describe('SessionPanel', () => {
     const signOut = button('Sign out')
     signOut.focus()
     await click(signOut)
-    await flush(20)
-    expect(document.activeElement?.textContent).toBe('Cancel')
+    await waitFor(() => document.activeElement?.textContent === 'Cancel', 'focus on Cancel')
     await key(document.activeElement!, 'Escape')
-    await flush(20)
+    await waitFor(() => !document.querySelector('[data-testid="confirm-dialog"]') && document.activeElement === signOut, 'the dialog closed, focus back')
     expect(onLogout).not.toHaveBeenCalled()
     expect(document.querySelector('[data-testid="confirm-dialog"]')).toBeNull()
     expect(document.activeElement).toBe(signOut)
@@ -100,14 +98,14 @@ describe('ProfileSection', () => {
     const changed = vi.fn()
     window.addEventListener('opentodo:account-changed', changed)
     const r = await render(<ProfileSection user={me} />)
-    await flush(20)
+    await waitFor(() => calls.profile.mock.calls.length > 0 && !!edit('name'), 'the profile loaded')
     expect(value('name')).toBe('Raffa')
     await click(edit('name')!)
     const input = document.querySelector<HTMLInputElement>('[data-testid="profile-field-dialog"] input')!
     input.select()
     await type(input, 'Raffaele')
     await click(document.querySelector('[data-profile-save]')!)
-    await flush(20)
+    await waitFor(() => value('name') === 'Raffaele', 'the new name')
     expect(calls.renameProfile).toHaveBeenCalledWith('Raffaele')
     expect(value('name')).toBe('Raffaele')
     expect(changed).toHaveBeenCalled()
@@ -121,30 +119,26 @@ describe('ProfileSection', () => {
     calls.changeEmail.mockResolvedValueOnce(prof({ pendingEmail: 'new@example.com' }))
     calls.cancelEmailChange.mockResolvedValue(prof())
     const r = await render(<ProfileSection user={me} />)
-    await flush(20)
+    await waitFor(() => calls.profile.mock.calls.length > 0 && !!edit('email'), 'the profile loaded')
     await click(edit('email')!)
     const input = document.querySelector<HTMLInputElement>('[data-testid="profile-field-dialog"] input')!
     input.select()
     await type(input, 'new@example.com')
     await click(document.querySelector('[data-profile-save]')!)
-    await flush(20)
-    expect(document.querySelector('[data-testid="profile-field-dialog"]')?.textContent).toContain('another account uses this email')
+    await waitFor(() => !!document.querySelector('[data-testid="profile-field-dialog"]')?.textContent?.includes('another account uses this email'), 'the refusal')
     await click(document.querySelector('[data-profile-save]')!)
-    await flush(20)
-    expect(document.querySelector('[data-testid="profile-field-dialog"]')).toBeNull()
+    await waitFor(() => !document.querySelector('[data-testid="profile-field-dialog"]'), 'the dialog closed')
     expect(document.querySelector('[data-profile-pending]')?.textContent).toBe('Waiting for confirmation: new@example.com')
     expect(value('email')).toBe('raffa@example.com')
     await click(document.querySelector('[data-profile-cancel-email]')!)
-    await flush(20)
-    expect(document.querySelector('[data-profile-pending]')).toBeNull()
+    await waitFor(() => !document.querySelector('[data-profile-pending]'), 'the pending change cancelled')
     await r.unmount()
   })
 
   it('Email confirmed elsewhere: the card reads the new address on the next load', async () => {
     calls.profile.mockResolvedValue(prof({}, { email: 'new@example.com' }))
     const r = await render(<ProfileSection user={me} />)
-    await flush(20)
-    expect(value('email')).toBe('new@example.com')
+    await waitFor(() => value('email') === 'new@example.com', 'the loaded address')
     expect(document.querySelector('[data-profile-pending]')).toBeNull()
     await r.unmount()
   })
@@ -152,7 +146,7 @@ describe('ProfileSection', () => {
   it('Single sign-on only: the email is read-only and names the provider', async () => {
     calls.profile.mockResolvedValue(prof({ emailManagedBy: 'https://id.example.com' }))
     const r = await render(<ProfileSection user={me} />)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-setting-row="profile-email"]')?.textContent?.includes('Your sign-in provider manages it'), 'the provider named')
     expect(edit('email')).toBeNull()
     expect(document.querySelector('[data-setting-row="profile-email"]')?.textContent).toContain('Your sign-in provider manages it: https://id.example.com.')
     await r.unmount()
@@ -162,7 +156,7 @@ describe('ProfileSection', () => {
     localStorage.setItem('opentodo.profile', JSON.stringify(prof({}, { name: 'Raffaele' })))
     net.online = false
     const r = await render(<ProfileSection user={me} />)
-    await flush(20)
+    await waitFor(() => value('name') === 'Raffaele' && !!document.querySelector('[data-testid="profile-card"]')?.textContent?.includes('needs a connection'), 'the cached profile')
     expect(calls.profile).not.toHaveBeenCalled()
     expect(value('name')).toBe('Raffaele')
     expect(['picture', 'name', 'email'].every((k) => edit(k)!.disabled)).toBe(true)

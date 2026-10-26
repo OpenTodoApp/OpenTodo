@@ -8,7 +8,7 @@ import { resolveDateTime, setDayStart } from '../lib/dates'
 import { LOGBOOK_PAGE, logbookGroups, logbookHeading } from '../lib/logbook'
 import { mutateMany, resetDeviceId, setTaskCompleted, type Change } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { resetCollapsedGroups } from './collapsedGroups'
 import { TaskListView } from './TaskListView'
 
@@ -93,10 +93,6 @@ describe('Completed view', () => {
     document.body.innerHTML = ''
   })
 
-  async function waitFor(ok: () => boolean, ms = 10_000) {
-    for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-    expect(ok()).toBe(true)
-  }
   const headings = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-group-header] h2')].map((h) => h.textContent)
   const rows = (root: ParentNode) => root.querySelectorAll('[data-task-id]').length
 

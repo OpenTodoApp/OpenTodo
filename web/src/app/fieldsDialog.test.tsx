@@ -9,7 +9,7 @@ import { db, useDatabase } from '../lib/db'
 import { liveFields, setFieldValue } from '../lib/fields'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { Project } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, key, render, waitFor } from '../ui/test-utils'
 import { FieldsDialog, renamedOptions, valuesText } from './FieldsDialog'
 import { projectMenuGroups } from './ProjectHeader'
 
@@ -20,11 +20,6 @@ beforeEach(() => {
   document.body.innerHTML = ''
 })
 
-const settle = () => flush(40)
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 async function setValue(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, value: string) {
   await act(async () => {
     const proto = el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
@@ -37,17 +32,20 @@ async function openDialog() {
   const pid = await createProject({ name: 'Kitchen' })
   const project = (await db.projects.get(pid)) as Project
   const r = await render(<FieldsDialog project={project} onClose={() => {}} />)
-  await settle()
   const dialog = () => document.querySelector('[data-testid="fields-dialog"]') as HTMLElement
+  await waitFor(() => !!dialog()?.querySelector('form[aria-label="Add a field"] input'), 'the dialog')
   const form = () => dialog().querySelector('form[aria-label="Add a field"]') as HTMLFormElement
   const nameInput = () => form().querySelector('input') as HTMLInputElement
   const add = async (name: string, type = 'text', options?: string) => {
     await setValue(nameInput(), name)
     await setValue(form().querySelector('select')!, type)
-    await settle()
-    if (options !== undefined) await setValue(form().querySelector('textarea')!, options)
+    if (options !== undefined) {
+      await waitFor(() => !!form().querySelector('textarea'), 'the options field')
+      await setValue(form().querySelector('textarea')!, options)
+    }
     await act(async () => { form().requestSubmit() })
-    await settle()
+    // Added (the name is cleared) or refused (the dialog says why).
+    await waitFor(() => nameInput().value === '' || /already has a field named/.test(dialog().textContent ?? ''), 'the field added or refused')
   }
   return { pid, r, dialog, form, nameInput, add }
 }
@@ -82,7 +80,6 @@ describe('Fields dialog', () => {
     const handle = dialog().querySelector('[data-field-handle]') as HTMLButtonElement
     handle.focus()
     await key(handle, 'ArrowDown', { altKey: true })
-    await settle()
     await waitFor(() => [...dialog().querySelectorAll('[data-field-def]')].map((e) => e.textContent?.includes('B')).at(0) === true)
     expect(liveFields(pid, await db.fields.toArray()).map((d) => d.name)).toEqual(['B', 'A'])
     await r.unmount()
@@ -96,14 +93,12 @@ describe('Fields dialog', () => {
     const t2 = await createTask({ title: 'b', project_id: pid })
     await setFieldValue(t1, def.id, 1)
     await setFieldValue(t2, def.id, 2)
-    await settle()
     await click(dialog().querySelector('button[aria-label="Delete Cost"]')!)
-    await settle()
+    await waitFor(() => !!document.querySelector('[data-testid="confirm-dialog"]')?.textContent?.includes('Values on 2 tasks'), 'the confirmation with the count')
     const confirm = document.querySelector('[data-testid="confirm-dialog"]') as HTMLElement
     expect(confirm.textContent).toContain('Values on 2 tasks are kept but hidden.')
     await click([...confirm.querySelectorAll('button')].find((b) => b.textContent?.includes('Delete field'))!)
-    await settle()
-    expect(liveFields(pid, await db.fields.toArray())).toHaveLength(0)
+    await waitFor(async () => liveFields(pid, await db.fields.toArray()).length === 0, 'the field deleted')
     expect((await db.tasks.get(t1))!.fields).toEqual({ [def.id]: 1 })
     expect(valuesText(1)).toBe('Values on 1 task are kept but hidden.')
     await r.unmount()

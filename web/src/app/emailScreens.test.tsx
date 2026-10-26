@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AuthStatus } from '../lib/types'
-import { click, flush, render, type } from '../ui/test-utils'
+import { click, flush, render, type, waitFor } from '../ui/test-utils'
 import { AuthScreen } from './AuthScreen'
 import { ForgotScreen, VerifyScreen } from './EmailScreens'
 
@@ -23,10 +23,6 @@ function serve(routes: Record<string, [number, unknown]>) {
   }))
 }
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const button = (root: ParentNode, text: string) => [...root.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)!
 
 beforeEach(() => { calls = [] })
@@ -89,7 +85,7 @@ describe('Verified sign-up', () => {
     const done = vi.fn()
     const r = await render(<VerifyScreen token="tok1" user={null} onDone={done} onLogout={() => {}} />)
     await waitFor(() => r.container.textContent!.includes('new@example.com'))
-    await flush(50)
+    await flush()
     expect(calls.map((c) => c.key)).toEqual(['GET /api/v1/auth/verify/tok1'])
     await click(r.container.querySelector('[data-verify-create]')!)
     await waitFor(() => done.mock.calls.length === 1)

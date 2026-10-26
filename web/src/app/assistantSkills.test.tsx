@@ -8,7 +8,7 @@ import { openAssistantWith, resetAssistantStatus, setAssistantStatus, takeAssist
 import { GRID_PREFS_META_KEY } from '../lib/calendar'
 import { db, setMeta } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { AssistantPanel } from './assistant/AssistantPanel'
 import { TaskDetail } from './task-detail/TaskDetail'
 
@@ -49,7 +49,7 @@ describe('skills in the panel', () => {
     await setMeta(GRID_PREFS_META_KEY, { startHour: 9, endHour: 17, dayLength: 420 })
     openAssistantWith({ text: 'my week', skill: 'plan-week', send: true })
     const r = await panel()
-    for (let i = 0; i < 40 && turns.length === 0; i++) await flush(25)
+    await waitFor(() => turns.length > 0, 'the turn sent')
     expect(turns).toHaveLength(1)
     expect(turns[0]).toMatchObject({ skill: 'plan-week', workday: { startHour: 9, endHour: 17, dayLength: 420 }, view: 'today' })
     expect((turns[0].messages as { text: string }[]).at(-1)!.text).toBe('my week')
@@ -58,12 +58,12 @@ describe('skills in the panel', () => {
 
   it('choosing a skill from the menu shows its description before sending', async () => {
     const r = await panel()
-    await flush(40)
+    await waitFor(() => !!document.querySelector('[data-assistant-panel] button[aria-label="Skills"]'), 'the Skills button')
     await click(document.querySelector('[data-assistant-panel] button[aria-label="Skills"]')!)
-    await flush(20)
+    await waitFor(() => [...document.querySelectorAll('[role^="menuitem"]')].some((b) => b.textContent?.includes('Plan my week')), 'the skills menu')
     const item = [...document.querySelectorAll('[role^="menuitem"]')].find((b) => b.textContent?.includes('Plan my week'))!
     await click(item)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-assistant-chosen]'), 'the chosen skill')
     const chosen = document.querySelector('[data-assistant-chosen]')!
     expect(chosen.textContent).toContain('Skill: Plan my week.')
     expect(chosen.textContent).toContain('Proposes due dates within your working hours.')
@@ -74,7 +74,7 @@ describe('skills in the panel', () => {
   it('pasted material is sent as an untrusted message before the question', async () => {
     openAssistantWith({ text: 'turn this into a project', pasted: 'Notes\n- soil', send: true })
     const r = await panel()
-    for (let i = 0; i < 40 && turns.length === 0; i++) await flush(25)
+    await waitFor(() => turns.length > 0, 'the turn sent')
     const msgs = turns[0].messages as { text: string; untrusted?: boolean }[]
     expect(msgs.slice(-2)).toEqual([{ role: 'user', text: 'Notes\n- soil', untrusted: true }, { role: 'user', text: 'turn this into a project' }])
     await r.unmount()
@@ -85,16 +85,16 @@ describe('Break this down from a task', () => {
   it('opens the panel with the skill and the task selected', async () => {
     const id = await createTask({ title: 'Plan the offsite' })
     const r = await render(<TaskDetail taskId={id} projects={[]} labelMap={new Map()} onClose={() => {}} />)
-    await flush(40)
+    await waitFor(() => !!document.querySelector('button[aria-label="Task actions"]'), 'the task actions')
     await click(document.querySelector('button[aria-label="Task actions"]')!)
-    await flush(20)
+    await waitFor(() => [...document.querySelectorAll('[role^="menuitem"]')].some((b) => b.textContent?.includes('Break this down')), 'the actions menu')
     await click([...document.querySelectorAll('[role^="menuitem"]')].find((b) => b.textContent?.includes('Break this down'))!)
     const p = takeAssistantPrefill()
     expect(p).toMatchObject({ skill: 'break-down', selected: [id] })
     await r.unmount()
     openAssistantWith({ ...p!, send: true })
     const r2 = await panel()
-    for (let i = 0; i < 40 && turns.length === 0; i++) await flush(25)
+    await waitFor(() => turns.length > 0, 'the turn sent')
     expect(turns[0]).toMatchObject({ skill: 'break-down', selected: [id] })
     await r2.unmount()
   })
