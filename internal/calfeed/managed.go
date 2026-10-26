@@ -39,8 +39,10 @@ type ManagedCalendar struct {
 }
 
 // Managed lists the user's managed subscriptions (the events route names them).
+// One sync cycle creates several in the same millisecond, so the name breaks the
+// tie before the random id and the order is the same on every server.
 func (s *Store) Managed(ctx context.Context, userID string) ([]Subscription, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT `+subColumns+` FROM calendar_subscriptions WHERE user_id = ?`+kindFilter("", false, true)+` ORDER BY created_at, id`, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT `+subColumns+` FROM calendar_subscriptions WHERE user_id = ?`+kindFilter("", false, true)+` ORDER BY created_at, name, id`, userID)
 	if err != nil {
 		return nil, err
 	}
