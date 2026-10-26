@@ -313,7 +313,7 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
               <button type="button" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : ev.id)}
                 className="flex w-full min-w-0 items-center gap-2 px-2 py-1.5 text-left text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus">
                 <Icon name={failed ? 'x' : 'history'} size="sm" className={failed ? 'text-danger' : 'text-muted'} />
-                <span className={`shrink-0 ${failed ? 'text-danger' : 'text-default'}`}>{AUDIT_LABELS[ev.name] ?? ev.name}</span>
+                <span className={`min-w-0 truncate ${failed ? 'text-danger' : 'text-default'}`}>{AUDIT_LABELS[ev.name] ?? ev.name}</span>
                 <span className="min-w-0 truncate text-muted">{eventAccount(ev)}</span>
                 <span className="ml-auto hidden shrink-0 truncate text-meta text-muted sm:inline">{shortAgent(ev.userAgent)}</span>
                 <time dateTime={new Date(ev.ts).toISOString()} className="shrink-0 text-meta tabular-nums text-muted">
