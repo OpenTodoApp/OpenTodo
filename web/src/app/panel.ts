@@ -11,6 +11,7 @@ import { type ReactNode, useSyncExternalStore } from 'react'
 import type { Task } from '../lib/types'
 import { openTaskPage } from './taskTrail'
 import { resettable } from '../lib/moduleState'
+import { readString, writeString } from '../lib/deviceStorage'
 
 export type PanelOccupant =
   | { kind: 'task'; id: string; path: string }
@@ -79,10 +80,6 @@ export function setTaskSplit(on: boolean, empty?: () => ReactNode, kind: SplitKi
   }
 }
 
-function storage(): Storage | null {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
-}
-
 /**
  * The side panel's open state (task-side-panel D4): kept on this device, open at first.
  * Only its Close (or Escape inside it) closes it; only an explicit open reopens it.
@@ -91,19 +88,14 @@ export const SIDE_PANEL_CLOSED_KEY = 'opentodo.taskPanel.closed'
 let sideOpen: boolean | null = null
 export function sidePanelOpen(): boolean {
   if (sideOpen === null) {
-    try { sideOpen = storage()?.getItem(SIDE_PANEL_CLOSED_KEY) !== '1' } catch { sideOpen = true }
+    sideOpen = readString(SIDE_PANEL_CLOSED_KEY) !== '1'
   }
   return sideOpen
 }
 function setSidePanelOpen(open: boolean): void {
   if (sidePanelOpen() === open) return
   sideOpen = open
-  try {
-    if (open) storage()?.removeItem(SIDE_PANEL_CLOSED_KEY)
-    else storage()?.setItem(SIDE_PANEL_CLOSED_KEY, '1')
-  } catch {
-    // Storage refused: the state holds for this session only.
-  }
+  writeString(SIDE_PANEL_CLOSED_KEY, open ? null : '1') // storage refused: the state holds for this session only
   emit()
 }
 
@@ -113,10 +105,8 @@ function setSidePanelOpen(open: boolean): void {
  */
 export const PANEL_WIDTH_KEY = 'opentodo.taskPanel.width'
 export function storedPanelWidth(): number | null {
-  try {
-    const n = Number(storage()?.getItem(PANEL_WIDTH_KEY))
-    return Number.isFinite(n) && n > 0 ? n : null
-  } catch { return null }
+  const n = Number(readString(PANEL_WIDTH_KEY))
+  return Number.isFinite(n) && n > 0 ? n : null
 }
 function applyPanelWidth(): void {
   setPanelWidth(storedPanelWidth(), false)
@@ -127,12 +117,7 @@ export function setPanelWidth(px: number | null, persist = true): void {
   if (px) document.documentElement.style.setProperty('--task-panel-w', `${Math.round(px)}px`)
   else document.documentElement.style.removeProperty('--task-panel-w')
   if (!persist) return
-  try {
-    if (px) storage()?.setItem(PANEL_WIDTH_KEY, String(Math.round(px)))
-    else storage()?.removeItem(PANEL_WIDTH_KEY)
-  } catch {
-    // Storage refused: the width holds until the next split.
-  }
+  writeString(PANEL_WIDTH_KEY, px ? String(Math.round(px)) : null) // storage refused: the width holds until the next split
 }
 
 export const SPLIT_QUERY = '(min-width: 64rem)'

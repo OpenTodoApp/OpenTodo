@@ -2,6 +2,7 @@
 // server to come back after its restart, and the note on the sign-in screen.
 import { ApiError } from './api'
 import { t, msg } from './i18n'
+import { readString, removeItem, writeString } from './deviceStorage'
 
 /** What a failed restore step means, in the owner's words. */
 export function restoreErrorMessage(err: unknown): string {
@@ -31,18 +32,14 @@ const RESTORED_KEY = 'opentodo.restored'
 
 /** Remembered across the reload, so a signed-out owner learns why. */
 export function markRestoring(): void {
-  try { sessionStorage.setItem(RESTORED_KEY, '1') } catch { /* private mode */ }
+  writeString(RESTORED_KEY, '1', 'session') // private mode: dropped
 }
 
 /** True once after a restore in this tab; clears the flag. */
 export function consumeRestored(): boolean {
-  try {
-    const v = sessionStorage.getItem(RESTORED_KEY)
-    sessionStorage.removeItem(RESTORED_KEY)
-    return v === '1'
-  } catch {
-    return false
-  }
+  const v = readString(RESTORED_KEY, 'session')
+  removeItem(RESTORED_KEY, 'session')
+  return v === '1'
 }
 
 export const RESTORED_NOTICE = msg('This server was restored from a backup. Sign in again; sessions started after the backup ended.')

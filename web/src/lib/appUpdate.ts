@@ -8,6 +8,7 @@
 import { useSyncExternalStore } from 'react'
 import { databaseOutdated, onDatabaseOutdated } from './db'
 import { createStore } from './store'
+import { readString, writeString } from './deviceStorage'
 
 /** Why this tab should reload: a newer release is installed, or it took over the database. */
 export type UpdateReason = 'release' | 'database'
@@ -33,19 +34,11 @@ const RELOAD_GUARD_MS = 10_000
 const RELOAD_KEY = 'opentodo.chunkReloadAt'
 
 function readReloadedAt(): number {
-  try {
-    return Number(sessionStorage.getItem(RELOAD_KEY) ?? 0) || 0
-  } catch {
-    return 0
-  }
+  return Number(readString(RELOAD_KEY, 'session') ?? 0) || 0
 }
 
 function markReload(now: number): void {
-  try {
-    sessionStorage.setItem(RELOAD_KEY, String(now))
-  } catch {
-    // Storage unavailable: the guard below still holds within this page.
-  }
+  writeString(RELOAD_KEY, String(now), 'session') // storage unavailable: the guard below still holds within this page
 }
 
 interface UpdateTarget {

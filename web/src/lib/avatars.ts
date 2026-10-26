@@ -6,32 +6,29 @@
 // shows the picture offline (the browser keeps the image in its cache).
 import { useMemberships } from './localData'
 import { createStore } from './store'
+import { readJSON, removeItem, writeJSON } from './deviceStorage'
 
 const OWN_KEY = 'opentodo.avatar'
 
 const own = createStore<{ id: string; version: number } | null>('ownAvatar', readOwn())
 
 function readOwn(): { id: string; version: number } | null {
-  try {
-    const raw = localStorage.getItem(OWN_KEY)
-    if (!raw) return null
-    const v = JSON.parse(raw) as { id?: unknown; version?: unknown }
+  return readJSON<{ id: string; version: number } | null>(OWN_KEY, null, (raw) => {
+    const v = (raw ?? {}) as { id?: unknown; version?: unknown }
     return typeof v.id === 'string' && typeof v.version === 'number' ? { id: v.id, version: v.version } : null
-  } catch {
-    return null
-  }
+  })
 }
 
 /** Records the signed-in account's picture version (from its profile). */
 export function setOwnAvatar(id: string, version: number): void {
   const next = { id, version }
-  try { localStorage.setItem(OWN_KEY, JSON.stringify(next)) } catch { /* storage unavailable: memory only */ }
+  writeJSON(OWN_KEY, next) // storage unavailable: memory only
   own.set(next)
 }
 
 /** Forgets the own version (sign-out). */
 export function clearOwnAvatar(): void {
-  try { localStorage.removeItem(OWN_KEY) } catch { /* storage unavailable */ }
+  removeItem(OWN_KEY)
   own.set(null)
 }
 

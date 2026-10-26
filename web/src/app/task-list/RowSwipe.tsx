@@ -16,6 +16,7 @@ import { prefersReducedMotion } from '../motion'
 import { beginSwipe, revealed, SWIPE, type SwipeDir } from '../rowSwipe'
 import { showBulkToast } from '../bulk/toastStore'
 import { createStore } from '../../lib/store'
+import { readString, writeString } from '../../lib/deviceStorage'
 
 const EDGE = 'data-swipe-edge'
 
@@ -176,9 +177,7 @@ export function useSwipeCue(root: React.RefObject<HTMLElement | null>, enabled: 
   const shown = useRef(false)
   useEffect(() => {
     if (!enabled || rowCount === 0 || shown.current) return
-    let seen = false
-    try { seen = localStorage.getItem(CUE_KEY) === '1' } catch { /* private mode: show it */ }
-    if (seen) return
+    if (readString(CUE_KEY) === '1') return // private mode: show it
     // The rows may land a frame after the count (large lists render in steps): look a few times.
     let tries = 0
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -186,7 +185,7 @@ export function useSwipeCue(root: React.RefObject<HTMLElement | null>, enabled: 
       const first = root.current?.querySelector<HTMLElement>('[data-swipeable]')
       if (!first) { if (++tries < 10) timer = setTimeout(look, 50); return }
       shown.current = true
-      try { localStorage.setItem(CUE_KEY, '1') } catch { /* nothing to remember with */ }
+      writeString(CUE_KEY, '1')
       if (!prefersReducedMotion()) {
         for (const c of movable(first)) c.animate?.([{ transform: 'translateX(0)' }, { transform: 'translateX(40px)' }, { transform: 'translateX(0)' }], { duration: 400, easing: 'ease-in-out' })
       }

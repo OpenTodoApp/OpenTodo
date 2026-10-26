@@ -46,6 +46,7 @@ import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { countInbox } from '../lib/inbox'
 import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
+import { readString, writeString } from '../lib/deviceStorage'
 
 
 /**
@@ -88,13 +89,11 @@ const MORE_KEY = 'ot.sidebar.more'
 type GroupId = 'filters' | 'projects' | 'labels'
 const groupKey = (id: GroupId) => `ot.sidebar.group.${id}`
 function readOpen(key: string, fallback: boolean): boolean {
-  try {
-    const v = localStorage.getItem(key)
-    return v === null ? fallback : v === '1'
-  } catch { return fallback }
+  const v = readString(key)
+  return v === null ? fallback : v === '1'
 }
 function writeOpen(key: string, open: boolean): void {
-  try { localStorage.setItem(key, open ? '1' : '0') } catch { /* device state only */ }
+  writeString(key, open ? '1' : '0') // device state only
 }
 
 /**

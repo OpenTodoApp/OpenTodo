@@ -22,19 +22,15 @@ import { formatMinutes } from '../../lib/duration'
 import { useLiveEntries, useMinuteNow } from '../../lib/timeEntries'
 import { useTimeExport } from './timeExport'
 import { t } from '../../lib/i18n'
+import { readEnum, writeString } from '../../lib/deviceStorage'
 
 const PERIOD_KEY = 'ot.stats.period'
 /** The stored period; a value this version no longer offers (the 4 and 12 weeks) opens on this week. */
 export function readPeriod(): DashboardPeriod {
-  try {
-    const v = localStorage.getItem(PERIOD_KEY)
-    return (PERIOD_KINDS as readonly string[]).includes(v ?? '') ? (v as DashboardPeriod) : 'this-week'
-  } catch {
-    return 'this-week'
-  }
+  return readEnum(PERIOD_KEY, PERIOD_KINDS, 'this-week')
 }
 function writePeriod(p: DashboardPeriod): void {
-  try { localStorage.setItem(PERIOD_KEY, p) } catch { /* device convenience only */ }
+  writeString(PERIOD_KEY, p) // device convenience only
 }
 
 /** The period chooser: a radio group with roving focus; the arrow keys change the period. */
