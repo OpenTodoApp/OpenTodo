@@ -10,7 +10,7 @@ import { todayISO } from '../lib/dates'
 import { resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { act } from 'react'
-import { click, flush, key, render, type, minWidthPx } from '../ui/test-utils'
+import { click, key, render, type, minWidthPx, waitFor } from '../ui/test-utils'
 import { navigate } from './router'
 import { Shell } from './Shell'
 
@@ -30,10 +30,6 @@ beforeEach(async () => {
 })
 afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const sheet = () => document.querySelector('[data-overlay="sheet"]')
 const field = () => document.querySelector<HTMLInputElement>('[data-quick-add-sheet] input[aria-label="Add a task"]')
 
@@ -41,13 +37,12 @@ describe('the add button', () => {
   it('opens quick add as a bottom sheet with the field focused, and the Upcoming default date applied', async () => {
     navigate({ view: 'upcoming' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button')
     const button = document.querySelector<HTMLButtonElement>('[data-add-button]')!
     expect(button.getAttribute('aria-expanded')).toBe('false')
     await click(button)
     await waitFor(() => !!sheet() && !!field())
-    await flush(50)
-    expect(document.activeElement).toBe(field())
+    await waitFor(() => document.activeElement === field(), 'the field focused')
     // Keyboard-safe: the sheet is bottom-anchored on the visual viewport, and the list stays behind it.
     expect((sheet() as HTMLElement).style.bottom).toContain('--vv-bottom')
     expect(document.querySelector('[data-list-page]')).toBeTruthy()
@@ -69,7 +64,7 @@ describe('the add button', () => {
     const pid = await createProject({ name: 'Garden' })
     navigate({ view: 'project', id: pid })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button')
     await click(document.querySelector<HTMLButtonElement>('[data-add-button]')!)
     await waitFor(() => !!field())
     await type(field()!, 'Mow the lawn')
@@ -89,7 +84,7 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
   async function openSheet() {
     navigate({ view: 'today' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button')
     await click(document.querySelector<HTMLButtonElement>('[data-add-button]')!)
     await waitFor(() => !!field())
     return r
@@ -105,8 +100,7 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     document.querySelector('[data-sheet-tool="project"]')!.dispatchEvent(down)
     expect(down.defaultPrevented).toBe(true)
     await click(document.querySelector('[data-sheet-tool="project"]')!)
-    await flush(40)
-    expect(field()!.value).toBe('Buy primer #')
+    await waitFor(() => field()!.value === 'Buy primer #', 'the # token')
     expect(document.activeElement).toBe(field())
     await waitFor(() => !!document.querySelector('[data-token-suggestions="project"]'))
     await r.unmount()

@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GRID_PREFS_META_KEY } from '../lib/calendar'
 import { db, setMeta } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render, type, minWidthPx } from '../ui/test-utils'
+import { click, flush, key, render, type, minWidthPx, waitFor } from '../ui/test-utils'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { resetPanel } from './panel'
 import { openedTask, resetTaskPage } from './taskPage.testkit'
@@ -38,10 +38,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 const day = (root: ParentNode, d: string) => root.querySelector<HTMLElement>(`[data-plan-day="${d}"]`)!
 const row = (root: ParentNode, id: string) => root.querySelector<HTMLElement>(`[data-plan-task="${id}"]`)!
 // The days appear once the local tasks are read; the skeleton stands in before (motion-polish D2).
@@ -78,7 +74,7 @@ describe('plan route and mode', () => {
 
   it('Range switch keeps the date, and /calendar opens the Plan after it was used last', async () => {
     const r = await plan('2026-11-05')
-    await flush(30)
+    await waitFor(() => localStorage.getItem('ot.calendar.mode') === 'plan', 'the remembered mode')
     expect(localStorage.getItem('ot.calendar.mode')).toBe('plan')
     expect(parseRoute('/calendar')).toEqual({ view: 'plan' })
     const sw = r.container.querySelector('[role="group"][aria-label="Calendar range"]')!
@@ -204,11 +200,11 @@ describe('events in the plan', () => {
     expect(ev.tabIndex).toBe(0)
     const before = await db.outbox.count()
     await drag(ev, day(r.container, '2026-10-15'))
-    await flush(30)
-    expect(await db.outbox.count()).toBe(before)
     ev.focus()
     await click(ev)
     await waitFor(() => document.querySelector('[data-event-details]') !== null)
+    // Checked once the click after the drag was handled: the drag queued nothing.
+    expect(await db.outbox.count()).toBe(before)
     expect(document.querySelector('[data-event-details]')!.textContent).toContain('Room 4')
     await key(document.activeElement ?? document.body, 'Escape')
     await waitFor(() => document.querySelector('[data-event-details]') === null)
@@ -283,6 +279,7 @@ describe('rescheduling in the plan', () => {
     await drag(row(r.container, id), day(r.container, '2026-10-16'))
     await click(row(r.container, id))
     await key(document.body, 'ArrowRight')
+    // A fixed wait on purpose: nothing may be written, and a refused move shows no signal to wait for.
     await flush(50)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
     await r.unmount()
@@ -311,12 +308,12 @@ describe('rescheduling in the plan', () => {
     await waitFor(() => r.container.querySelectorAll('[data-plan-projected]').length === 2)
     const before = await db.outbox.count()
     await drag(r.container.querySelector('[data-plan-projected]')!, day(r.container, '2026-10-20'))
-    await flush(30)
-    expect(await db.outbox.count()).toBe(before)
     await key(document.body, 'j')
     expect(row(r.container, series).getAttribute('aria-pressed')).toBe('true')
     await key(document.body, 'j')
     expect(row(r.container, other).getAttribute('aria-pressed')).toBe('true')
+    // Checked once the keys after the drag were handled: the drag queued nothing.
+    expect(await db.outbox.count()).toBe(before)
     await r.unmount()
   })
 
@@ -343,6 +340,7 @@ describe('rescheduling in the plan', () => {
     await drag(row(r.container, a), day(r.container, '2026-10-14'))
     await click(row(r.container, a))
     await key(document.body, 'ArrowUp', { altKey: true })
+    // A fixed wait on purpose: nothing may be queued, and a refused reorder shows no signal to wait for.
     await flush(50)
     expect(await db.outbox.count()).toBe(before)
     expect((await db.tasks.get(a))!.due).toEqual({ date: '2026-10-14' })
@@ -376,7 +374,7 @@ describe('keyboard in the plan', () => {
 
   it('Week back with [, and t brings the span back to today', async () => {
     const r = await plan()
-    await flush(30)
+    await waitFor(() => r.container.querySelectorAll('[role="gridcell"]').length > 0, 'the plan grid')
     await key(document.body, '[')
     expect(location.pathname).toBe('/plan/2026-10-05')
     await key(document.body, 't')
@@ -405,8 +403,9 @@ describe('span and phone', () => {
     let r = await plan()
     await waitFor(() => r.container.querySelectorAll('[role="gridcell"]').length === 14)
     await click(r.container.querySelector('[data-page-header] button[aria-label="More actions"]')!)
-    await flush(30)
-    const item = [...document.querySelectorAll('[role="menuitemradio"], [role="menuitemcheckbox"], [role="menuitem"]')].find((e) => e.textContent?.includes('21 days'))!
+    const find21 = () => [...document.querySelectorAll('[role="menuitemradio"], [role="menuitemcheckbox"], [role="menuitem"]')].find((e) => e.textContent?.includes('21 days'))
+    await waitFor(() => !!find21(), 'the 21 days item')
+    const item = find21()!
     await click(item)
     await waitFor(() => r.container.querySelectorAll('[role="gridcell"]').length === 21)
     await r.unmount()

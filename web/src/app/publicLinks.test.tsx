@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { Project, PublicLink } from '../lib/types'
-import { click, flush, render, type } from '../ui/test-utils'
+import { click, flush, render, type, waitFor } from '../ui/test-utils'
 import { ProjectHeader } from './ProjectHeader'
 import { ShareDialog } from './ShareDialog'
 
@@ -50,10 +50,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const button = (root: ParentNode, text: string) => [...root.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)
 
 describe('public links in the share dialog', () => {
@@ -84,7 +80,9 @@ describe('public links in the share dialog', () => {
   it('shows no section to a viewer or editor, and disables it offline', async () => {
     myRole = 'editor'
     let r = await render(<ShareDialog project={project} userId="u1" cached={{ projectId: project.id, role: 'editor', ownerId: 'u2', members: [] }} onClose={() => {}} />)
-    await flush(50)
+    // The dialog has asked the server for the membership and applied the answer.
+    await waitFor(() => calls.some((c) => c.endsWith('/members')), 'the membership request')
+    await flush()
     expect(document.querySelector('[data-testid="public-links"]')).toBeNull()
     await r.unmount()
     document.body.innerHTML = ''
@@ -112,9 +110,12 @@ describe('the Public badge', () => {
     await r.unmount()
 
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    const callsBefore = calls.filter((c) => c.endsWith('/public-links') && c.startsWith('GET')).length
     links = [{ id: 'l2', projectId: project.id, rights: 'view', name: null, createdBy: 'u1', createdAt: 1, expiresAt: null, lastUsedAt: null }]
     const off = await render(<ProjectHeader project={project} userId="u1" />)
-    await flush(80)
+    await waitFor(() => !!off.container.querySelector('button[aria-label="Project menu"]'), 'the header')
+    await flush()
+    expect(calls.filter((c) => c.endsWith('/public-links') && c.startsWith('GET'))).toHaveLength(callsBefore)
     expect(off.container.querySelector('[data-public-badge]')).toBeNull()
     await off.unmount()
   })

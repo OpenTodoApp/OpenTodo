@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { closePanel, openTaskPanel, resetPanel, setTaskSplit } from './panel'
 import { PanelHost } from './PanelHost'
 
@@ -24,10 +24,6 @@ beforeEach(async () => {
 afterEach(() => { vi.unstubAllGlobals(); resetPanel(); document.body.innerHTML = '' })
 
 const aside = (id: string) => document.querySelector<HTMLElement>(`[data-detail-for="${id}"]`)
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('panel motion', () => {
   it('slides in from closed, not when the shown task changes, and again after closing', async () => {

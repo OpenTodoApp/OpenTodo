@@ -5,7 +5,7 @@
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { flush, render, type } from '../ui/test-utils'
+import { flush, render, type, waitFor } from '../ui/test-utils'
 import { QuickAdd } from './QuickAdd'
 
 beforeEach(() => localStorage.clear())
@@ -23,7 +23,7 @@ describe('no help under the field', () => {
     for (let i = 1; i <= 4; i++) {
       await type(input, `Task ${i}`)
       await submit()
-      await flush(20)
+      await waitFor(() => added.length === i, `add ${i}`)
       expect(link()).toBeNull()
     }
     expect(added).toHaveLength(4)
@@ -38,12 +38,12 @@ describe('spent and estimate (OpenSpec time-tracking 8.2)', () => {
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
     const input = r.container.querySelector('input')!
     await type(input, 'Draft the offer 30m/2h')
-    await flush(20)
+    await waitFor(() => !!r.container.querySelector('[data-chip="spent"]'), 'the Spent chip')
     const chips = [...r.container.querySelectorAll('[data-chip]')].map((c) => [c.getAttribute('data-chip'), c.textContent])
     expect(chips.map((c) => c[0])).toEqual(['estimate', 'spent'])
     expect(chips[1][1]).toContain('Spent 30 min')
     await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
-    await flush(20)
+    await waitFor(() => added.length === 1, 'the add')
     expect(added[0]).toMatchObject({ title: 'Draft the offer', estimate_minutes: 120, spent_minutes: 30 })
     await r.unmount()
   })
@@ -53,7 +53,7 @@ describe('spent and estimate (OpenSpec time-tracking 8.2)', () => {
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
     await type(r.container.querySelector('input')!, 'Draft the offer +30m')
     await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
-    await flush(20)
+    await waitFor(() => added.length === 1, 'the add')
     expect(added[0]).toMatchObject({ title: 'Draft the offer', estimate_minutes: 30 })
     expect(added[0].spent_minutes).toBeUndefined()
     await r.unmount()
@@ -82,12 +82,12 @@ describe('# and @ suggestions', () => {
     expect(input.getAttribute('aria-expanded')).toBe('true')
     expect(options()[0]).toContain('Home renovation')
     await key(input, 'Enter')
-    await flush(30)
+    await waitFor(() => !!r.container.querySelector('[data-chip="project"]'), 'the project chip')
     expect(input.value).toBe('Paint the hall #Homerenovation ')
     expect(r.container.querySelector('[data-chip="project"]')!.textContent).toContain('Home renovation')
     // Enter now submits: the list is closed.
     await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
-    await flush(30)
+    await waitFor(() => added.length === 1, 'the add')
     expect(added[0]).toMatchObject({ title: 'Paint the hall', project_id: 'p-reno' })
     await r.unmount()
   })
@@ -137,13 +137,13 @@ describe('inline tints (moments-and-onboarding 6.1)', () => {
   it('Chips appear as tokens are typed, and the field tints the same spans in their hue', async () => {
     const { r, input } = await setup()
     await type(input, 'Buy milk tomorrow p2')
-    await flush(20)
+    await waitFor(() => tints(r.container).length === 2, 'two tints')
     expect(tints(r.container)).toEqual([['due', 'tomorrow'], ['priority', 'p2']])
     const layer = r.container.querySelector('[data-quick-add-tints]')!
     expect(layer.textContent).toBe('Buy milk tomorrow p2')
     expect(layer.querySelector('[data-tint="priority"]')!.getAttribute('data-hue')).toBe(r.container.querySelector('[data-chip="priority"]')!.getAttribute('data-hue'))
     await type(input, 'Buy milk tomorrow')
-    await flush(20)
+    await waitFor(() => tints(r.container).length === 1, 'one tint')
     expect(tints(r.container)).toEqual([['due', 'tomorrow']])
     await r.unmount()
   })
@@ -151,10 +151,10 @@ describe('inline tints (moments-and-onboarding 6.1)', () => {
   it('Dismissing the recurrence chip removes its tint', async () => {
     const { r, input } = await setup()
     await type(input, 'Water plants every Monday')
-    await flush(20)
+    await waitFor(() => tints(r.container).some((x) => x[0] === 'recurrence'), 'the recurrence tint')
     expect(tints(r.container).map((x) => x[0])).toContain('recurrence')
     await act(async () => { r.container.querySelector<HTMLButtonElement>('[data-chip="recurrence"] button')!.click() })
-    await flush(20)
+    await waitFor(() => !r.container.querySelector('[data-chip="recurrence"]'), 'the chip dismissed')
     expect(tints(r.container).map((x) => x[0])).not.toContain('recurrence')
     await r.unmount()
   })
@@ -162,7 +162,8 @@ describe('inline tints (moments-and-onboarding 6.1)', () => {
   it('Quoted phrase: no reminder and no tint for the quoted span', async () => {
     const { r, input } = await setup()
     await type(input, 'Read "remind me at 9" essay')
-    await flush(20)
+    // The layer mirrors the text once the parse has run.
+    await waitFor(() => r.container.querySelector('[data-quick-add-tints]')?.textContent === 'Read "remind me at 9" essay', 'the parsed text')
     expect(tints(r.container)).toEqual([])
     await r.unmount()
   })
@@ -170,7 +171,7 @@ describe('inline tints (moments-and-onboarding 6.1)', () => {
   it('Screen reader: the layer is hidden; the field and the chips are what is read', async () => {
     const { r, input } = await setup()
     await type(input, 'Call Ana friday')
-    await flush(20)
+    await waitFor(() => !!r.container.querySelector('[data-chip="due"]'), 'the due chip')
     expect(r.container.querySelector('[data-quick-add-tints]')!.getAttribute('aria-hidden')).toBe('true')
     expect(input.value).toBe('Call Ana friday')
     expect(r.container.querySelector('[data-chip="due"]')).not.toBeNull()
@@ -182,7 +183,7 @@ describe('inline tints (moments-and-onboarding 6.1)', () => {
     expect(css).toMatch(/\[data-contrast="high"\] \.quick-add-tint \{[^}]*underline 1px var\(--hue-solid\)/)
     const { r, input } = await setup()
     await type(input, 'Pay rent p1')
-    await flush(20)
+    await waitFor(() => !!r.container.querySelector('[data-tint="priority"]'), 'the priority tint')
     expect(r.container.querySelector('[data-tint="priority"]')!.className).toBe('quick-add-tint')
     await r.unmount()
   })

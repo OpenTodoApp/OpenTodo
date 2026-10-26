@@ -7,7 +7,7 @@ import { db } from '../lib/db'
 import { createLabel, deleteLabel } from '../lib/labels'
 import { resetDeviceId } from '../lib/ops'
 import { createView, setOnDrop, setPanels } from '../lib/views'
-import { click, flush, render, type } from '../ui/test-utils'
+import { click, render, type, waitFor } from '../ui/test-utils'
 import { DashboardView } from './DashboardView'
 import { resetPanel } from './panel'
 import { useViewData } from './useViews'
@@ -27,10 +27,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 function Board({ id }: { id: string }) {
   const data = useViewData()
   const dash = data.views.find((v) => v.id === id)

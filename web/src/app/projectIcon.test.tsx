@@ -9,9 +9,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { ProjectHeader } from './ProjectHeader'
 import { ProjectMark, Sidebar } from './Sidebar'
+
+const iconItem = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((b) => b.textContent?.includes('Icon…'))
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 
@@ -27,10 +29,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 3000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 
 describe('project mark', () => {
   it('is the colour dot by default, the icon in the project colour once set, and the dot again for a name this client does not know', () => {
@@ -56,18 +54,18 @@ describe('icon picker', () => {
     expect(side.container.querySelector(`[data-project-id="${id}"] svg`)).toBeNull()
 
     const r = await render(<ProjectHeader project={project} />)
-    await flush(40)
+    await waitFor(() => !!r.container.querySelector('button[aria-label="Project menu"]'), 'the project menu')
     await click(r.container.querySelector('button[aria-label="Project menu"]')!)
-    await flush(30)
+    await waitFor(() => !!iconItem(), 'the Icon… item')
     // The 24-icon grid is gone: "Icon…" opens the searchable picker in the same overlay.
     expect(document.querySelector('[data-project-icons]')).toBeNull()
-    await click([...document.querySelectorAll('[role="menuitem"]')].find((b) => b.textContent?.includes('Icon…'))!)
+    await click(iconItem()!)
     await waitFor(() => document.querySelector('[data-icon-picker]') !== null && document.querySelector('[data-icon-option="briefcase"]') !== null)
     expect(document.querySelector('[data-icon-option="none"]')?.getAttribute('aria-selected')).toBe('true')
 
     const input = document.querySelector<HTMLInputElement>('[data-icon-picker] input[role="combobox"]')!
     await type(input, 'brief')
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-icon-option="briefcase"]'), 'the briefcase option')
     await key(input, 'Enter')
     await waitFor(async () => (await db.projects.get(id))?.icon === 'briefcase')
     const ops = (await db.outbox.toArray()).filter((o) => o.entityId === id && o.field === 'icon')
@@ -80,8 +78,8 @@ describe('icon picker', () => {
     // An icon outside the interface set loads with the catalogue and is drawn too.
     await r.rerender(<ProjectHeader project={(await db.projects.get(id))!} />)
     await click(r.container.querySelector('button[aria-label="Project menu"]')!)
-    await flush(30)
-    await click([...document.querySelectorAll('[role="menuitem"]')].find((b) => b.textContent?.includes('Icon…'))!)
+    await waitFor(() => !!iconItem(), 'the Icon… item')
+    await click(iconItem()!)
     await waitFor(() => document.querySelector('[data-icon-option="briefcase"]')?.getAttribute('aria-selected') === 'true')
     await click(document.querySelector('[data-icon-option="paw-print"]')!)
     await waitFor(async () => (await db.projects.get(id))?.icon === 'paw-print')
@@ -90,8 +88,8 @@ describe('icon picker', () => {
     // "No icon" brings the dot back.
     await r.rerender(<ProjectHeader project={(await db.projects.get(id))!} />)
     await click(r.container.querySelector('button[aria-label="Project menu"]')!)
-    await flush(30)
-    await click([...document.querySelectorAll('[role="menuitem"]')].find((b) => b.textContent?.includes('Icon…'))!)
+    await waitFor(() => !!iconItem(), 'the Icon… item')
+    await click(iconItem()!)
     await waitFor(() => document.querySelector('[data-icon-option="none"]') !== null)
     await click(document.querySelector('[data-icon-option="none"]')!)
     await waitFor(async () => (await db.projects.get(id))?.icon === null)

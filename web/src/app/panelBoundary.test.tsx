@@ -7,7 +7,7 @@ import { act as runAction } from './actionError'
 import { PanelBoundary } from './PanelBoundary'
 import { useDatabase } from '../lib/db'
 import { createTask, resetDeviceId, setTaskParent } from '../lib/ops'
-import { flush, render } from '../ui/test-utils'
+import { flush, render, waitFor } from '../ui/test-utils'
 
 function Broken(): never {
   throw new Error('chunk gone')
@@ -38,7 +38,7 @@ describe('failed actions', () => {
     const id = await createTask({ title: 'Plan' })
     // Before: `void setTaskParent(...).catch(() => undefined)` showed nothing.
     runAction(setTaskParent(id, id))
-    await flush(20)
+    await waitFor(() => !!bulkToast(), 'the toast')
     expect(bulkToast()?.label).toBe('a task cannot be its own parent')
     expect(bulkToast()?.undoId).toBeNull()
     err.mockRestore()
