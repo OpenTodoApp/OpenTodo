@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react'
+import { createStore } from './store'
 
 /**
  * Hosted service (OpenSpec `multi-tenant-host`): set from `auth/status` on every
@@ -7,27 +7,14 @@ import { useSyncExternalStore } from 'react'
  * hidden, and the owner gets a download of the whole server instead.
  */
 
-const listeners = new Set<() => void>()
-let current = false
+const store = createStore('hosted', false)
 
 /** Record whether this server is hosted (absent on a self-hosted server). */
 export function setHosted(hosted: boolean | undefined): void {
-  const next = hosted === true
-  if (next === current) return
-  current = next
-  for (const l of listeners) l()
+  store.set(hosted === true)
 }
 
-export function getHosted(): boolean {
-  return current
-}
-
-function subscribe(l: () => void): () => void {
-  listeners.add(l)
-  return () => listeners.delete(l)
-}
+export const getHosted = store.get
 
 /** Whether this server is hosted, re-rendering when it changes. */
-export function useHosted(): boolean {
-  return useSyncExternalStore(subscribe, getHosted, getHosted)
-}
+export const useHosted = store.use

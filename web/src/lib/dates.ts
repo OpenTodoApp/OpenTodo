@@ -1,6 +1,7 @@
 import { t } from './i18n/catalog'
 import type { Due } from './types'
 import type { DateTimePrefs } from './userPrefs'
+import { createSignal } from './store'
 
 /** Local calendar date as YYYY-MM-DD. */
 export function todayISO(now = new Date()): string {
@@ -76,7 +77,7 @@ function resolveZone(): string {
 }
 
 let currentZone = resolveZone()
-const zoneListeners = new Set<() => void>()
+const zone = createSignal()
 
 /** The viewer's IANA zone, as last resolved. */
 export function viewerZone(): string {
@@ -92,15 +93,12 @@ export function refreshViewerZone(): boolean {
   if (z === currentZone) return false
   currentZone = z
   localCache.clear()
-  for (const fn of zoneListeners) fn()
+  zone.notify()
   return true
 }
 
 /** Subscribe to viewer-zone changes; returns the unsubscribe function. */
-export function onViewerZoneChange(fn: () => void): () => void {
-  zoneListeners.add(fn)
-  return () => zoneListeners.delete(fn)
-}
+export const onViewerZoneChange = zone.subscribe
 
 /** Re-resolve the zone whenever the page becomes visible again (design D5). */
 export function watchViewerZone(doc: Document = document): () => void {

@@ -2,7 +2,7 @@
 // logo for this server, read from `auth/status` on every profile read and
 // mirrored on this device so the first paint and offline use show them too.
 // Without branding the app shows its own mark and the name OpenTodo.
-import { useSyncExternalStore } from 'react'
+import { createStore } from './store'
 
 export interface Branding {
   /** The instance name shown in place of "OpenTodo"; empty for the default. */
@@ -14,8 +14,7 @@ export interface Branding {
 const KEY = 'opentodo.branding'
 const NONE: Branding = { name: '', logoVersion: 0 }
 
-const listeners = new Set<() => void>()
-let current: Branding = read()
+const store = createStore<Branding>('branding', read())
 
 function read(): Branding {
   try {
@@ -31,35 +30,26 @@ function read(): Branding {
 /** Records the server's branding (absent on older servers: none). */
 export function setBranding(b: Partial<Branding> | undefined): void {
   const next: Branding = { name: b?.name ?? '', logoVersion: b?.logoVersion ?? 0 }
+  const current = store.get()
   if (next.name === current.name && next.logoVersion === current.logoVersion) return
-  current = next
   try {
     if (next.name || next.logoVersion) localStorage.setItem(KEY, JSON.stringify(next))
     else localStorage.removeItem(KEY)
   } catch { /* storage unavailable: memory only */ }
-  for (const l of listeners) l()
+  store.set(next)
 }
 
-export function getBranding(): Branding {
-  return current
-}
-
-function subscribe(l: () => void): () => void {
-  listeners.add(l)
-  return () => { listeners.delete(l) }
-}
+export const getBranding = store.get
 
 /** The branding, re-rendering when it changes. */
-export function useBranding(): Branding {
-  return useSyncExternalStore(subscribe, getBranding, () => NONE)
-}
+export const useBranding = store.use
 
 /** The instance name: the owner's, or OpenTodo. */
-export function instanceName(b: Branding = current): string {
+export function instanceName(b: Branding = store.get()): string {
   return b.name || 'OpenTodo'
 }
 
 /** The address of the logo at one rendered size, or undefined without a logo. */
-export function logoUrl(size: 32 | 180 | 192 | 512, b: Branding = current): string | undefined {
+export function logoUrl(size: 32 | 180 | 192 | 512, b: Branding = store.get()): string | undefined {
   return b.logoVersion > 0 ? `/branding/logo-${size}.png?v=${b.logoVersion}` : undefined
 }

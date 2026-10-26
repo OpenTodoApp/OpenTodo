@@ -12,6 +12,7 @@ import { currentKey, isContentField, onEncryptionChange, encryptionSnapshot } fr
 import { getDeviceId } from './ops'
 import { onLeadership } from './sync'
 import type { Entity } from './types'
+import { createStore } from './store'
 
 export const EVENTS_PATH = '/api/v1/relay/events'
 export const HKDF_INFO = 'opentodo relay v1'
@@ -68,22 +69,15 @@ export interface RelaySnapshot {
   pending: PendingConfirmation | null
 }
 
-let snapshot: RelaySnapshot = { optedIn: false, connected: false, busy: false, confirmWrites: false, recent: [], pending: null }
-const listeners = new Set<() => void>()
+const snapshot = createStore<RelaySnapshot>('relay', { optedIn: false, connected: false, busy: false, confirmWrites: false, recent: [], pending: null })
 
 function publish(patch: Partial<RelaySnapshot>): void {
-  snapshot = { ...snapshot, ...patch }
-  for (const fn of listeners) fn()
+  snapshot.update((cur) => ({ ...cur, ...patch }))
 }
 
-export function relaySnapshot(): RelaySnapshot {
-  return snapshot
-}
+export const relaySnapshot = snapshot.get
 
-export function onRelayChange(fn: () => void): () => void {
-  listeners.add(fn)
-  return () => listeners.delete(fn)
-}
+export const onRelayChange = snapshot.subscribe
 
 // ---- stream crypto (review R1) ----
 
@@ -216,12 +210,12 @@ function disconnect(): void {
 }
 
 async function connect(): Promise<void> {
-  if (source || !started || !leading || !snapshot.optedIn || !encryptionSnapshot().unlocked) return
+  if (source || !started || !leading || !snapshot.get().optedIn || !encryptionSnapshot().unlocked) return
   if (typeof EventSource === 'undefined' || !crypto?.subtle) return
   const pair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']) as CryptoKeyPair
   const pub = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey))
   const device = await getDeviceId()
-  if (source || !leading || !snapshot.optedIn) return
+  if (source || !leading || !snapshot.get().optedIn) return
   const es = new EventSource(`${EVENTS_PATH}?device=${encodeURIComponent(device)}&key=${b64url(pub)}`)
   source = es
   let key: CryptoKey | null = null
@@ -323,7 +317,7 @@ export function startRelay(): () => void {
     }
     // Locking (an unlocked device becoming locked) ends the opt-in (design D3);
     // other changes of the encryption state while locked do not.
-    if (locked && snapshot.optedIn) {
+    if (locked && snapshot.get().optedIn) {
       disconnect()
       void getDeviceId().then((d) => api.relayOptOut(d, 'locked')).catch(() => undefined).finally(() => void setOptedIn(false))
     }
