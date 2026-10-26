@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Limits on parsed input; anything beyond them is refused as invalid data.
@@ -416,9 +418,5 @@ func SplitText(s string) []string {
 	return append(out, UnescapeText(cur.String()))
 }
 
-func truncate(s string, n int) string {
-	if len(s) > n {
-		return s[:n]
-	}
-	return s
-}
+// truncate cuts s to at most n bytes without splitting a character.
+func truncate(s string, n int) string { return textutil.Truncate(s, n) }

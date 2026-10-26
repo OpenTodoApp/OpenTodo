@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Shell completion (OpenSpec change ot-completion). `ot completion <shell>`
@@ -83,7 +85,7 @@ func (a *App) runComplete(ctx context.Context, args []string) {
 		}
 		desc := strings.Join(strings.Fields(it.desc), " ")
 		if len(desc) > 80 {
-			desc = strings.TrimSpace(desc[:77]) + "..."
+			desc = strings.TrimSpace(textutil.Truncate(desc, 77)) + "..."
 		}
 		b.WriteString(it.value + "\t" + desc + "\n")
 	}

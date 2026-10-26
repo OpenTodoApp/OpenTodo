@@ -14,6 +14,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/textutil"
 	"github.com/pixari/opentodo/internal/webauthn"
 )
 
@@ -640,9 +641,5 @@ func hashToken(secret string) string {
 
 func normalizeEmail(e string) string { return strings.ToLower(strings.TrimSpace(e)) }
 
-func truncate(s string, n int) string {
-	if len(s) > n {
-		return s[:n]
-	}
-	return s
-}
+// truncate cuts s to at most n bytes without splitting a character.
+func truncate(s string, n int) string { return textutil.Truncate(s, n) }

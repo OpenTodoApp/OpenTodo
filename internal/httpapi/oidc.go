@@ -10,6 +10,7 @@ import (
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/oidc"
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // ---- single sign-on (OpenSpec change `oidc-login`) ----
@@ -270,12 +271,7 @@ func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.C
 	redirectTo(w, r, "/settings/account/security", v)
 }
 
-func truncateLog(s string) string {
-	if len(s) > 100 {
-		return s[:100]
-	}
-	return s
-}
+func truncateLog(s string) string { return textutil.Truncate(s, 100) }
 
 // providerLogoutURL returns where to send the browser after a local sign-out
 // of a session that started through the provider, or "" (design D7).
