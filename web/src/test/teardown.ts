@@ -35,28 +35,71 @@ interface DexieStatic {
 
 const macrotask = () => new Promise<void>((r) => setTimeout(r, 0))
 
+/** Every error is a removeChild of a node that is no longer in the document. */
+function onlyDetached(err: unknown): boolean {
+  const list = err instanceof AggregateError ? err.errors : [err]
+  return list.every((e) => (e instanceof Error && e.name === 'NotFoundError') || /not a child of this node/.test(String((e as Error)?.message)))
+}
+
 async function unmountAll(): Promise<void> {
   for (const unmount of [...roots].reverse()) {
     roots.delete(unmount)
     try {
       await unmount()
     } catch (err) {
+      // A test that emptied document.body itself left React nodes (portals) to
+      // remove that are gone already: nothing is left to clean up.
+      if (onlyDetached(err)) continue
       // A root whose tree throws while unmounting must not stop the others.
       console.error('teardown: unmount failed', err)
     }
   }
-  if (typeof document !== 'undefined') document.body.innerHTML = ''
+  // A test may stub document with a bare EventTarget (lib/sync.test.ts).
+  if (typeof document !== 'undefined' && document.body) document.body.innerHTML = ''
+}
+
+// Every IndexedDB transaction started, counted at the IDBDatabase prototype, so the
+// teardown can tell when the app has stopped starting new ones.
+let started = 0
+type TransactionProto = { transaction: (...args: unknown[]) => unknown; __counted?: boolean }
+function countTransactions(): void {
+  const proto = (globalThis as { IDBDatabase?: { prototype: TransactionProto } }).IDBDatabase?.prototype
+  if (!proto || proto.__counted) return
+  const original = proto.transaction
+  proto.transaction = function (this: unknown, ...args: unknown[]) {
+    started++
+    return original.apply(this, args)
+  }
+  proto.__counted = true
+}
+countTransactions()
+
+/** At most this many rounds of waiting for the app's own writes before closing. */
+const SETTLE_ROUNDS = 20
+
+const dexie = () => (globalThis as Record<symbol, unknown>)[Symbol.for('Dexie')] as DexieStatic | undefined
+
+async function settle(): Promise<void> {
+  const Dexie = dexie()
+  if (!Dexie) return
+  // Work the test started but did not await (a reload after a mocked request, a
+  // write after a click) finishes first: wait until a round of the event loop
+  // starts no transaction but ours, each round queueing a read-write transaction
+  // over every table behind the ones in flight. Closing under a pending write
+  // would reject it with "Database has been closed".
+  for (let round = 0; round < SETTLE_ROUNDS; round++) {
+    const before = started
+    await new Promise<void>((r) => setTimeout(r, 5))
+    const live = Dexie.connections.filter((d) => d.isOpen())
+    for (const d of live) await d.transaction('rw', d.tables, () => {}).catch(() => {})
+    if (started - before <= live.length) break
+  }
 }
 
 async function closeDatabases(): Promise<void> {
-  const Dexie = (globalThis as Record<symbol, unknown>)[Symbol.for('Dexie')] as DexieStatic | undefined
+  const Dexie = dexie()
   if (!Dexie) return
   const open = [...Dexie.connections]
-  for (const d of open) {
-    // A write the test started but did not await finishes first: a read-write
-    // transaction over every table queues behind the ones in flight.
-    if (d.isOpen()) await d.transaction('rw', d.tables, () => {}).catch(() => {})
-  }
   const names = new Set(open.map((d) => d.name))
   // Close every connection first, so deleting is never blocked and no database
   // sees a version change; the instance reopens itself if the next test uses it.
@@ -68,9 +111,14 @@ async function closeDatabases(): Promise<void> {
 export async function teardown(): Promise<void> {
   await unmountAll()
   if (vi.isFakeTimers()) vi.useRealTimers()
-  // Background work modules scheduled themselves (a debounced sync) stops.
+  // Background work modules scheduled themselves (a debounced sync) stops; local
+  // writes from here on schedule none.
   await runTestTeardown()
-  // Effects scheduled by the unmount (a write on blur, a debounced save) start now.
+  // Effects scheduled by the unmount (a write on blur, a debounced save) start now,
+  // and work the test left in flight finishes.
   await macrotask()
+  await settle()
+  // Once more: that work may have asked for an exchange itself.
+  await runTestTeardown()
   await closeDatabases()
 }

@@ -35,8 +35,10 @@ function report(): void {
   throw new Error(`Unexpected network request(s) in a test; mock fetch explicitly:\n  ${list.join('\n  ')}`)
 }
 
-afterEach(report)
-// After the file's own hooks (vitest runs after-hooks in reverse order): unmount
-// every render, real timers, close and delete the local databases (test/teardown.ts).
+// First after every test, while the file's mocks still answer (vite.config.ts runs
+// after-hooks in the order they are declared, `sequence.hooks: 'list'`, so these two
+// come before the file's own): unmount every render, real timers, stop background
+// work, close and delete the local databases (test/teardown.ts); then the network check.
 afterEach(teardown)
+afterEach(report)
 afterAll(report)

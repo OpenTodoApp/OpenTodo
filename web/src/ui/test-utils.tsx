@@ -21,7 +21,11 @@ export async function render(ui: ReactNode): Promise<Rendered> {
     root = createRoot(container)
     root.render(ui)
   })
+  let mounted = true
   const unmount = async () => {
+    // Twice is harmless: the shared teardown may have unmounted it already.
+    if (!mounted) return
+    mounted = false
     untrack()
     await act(async () => root!.unmount())
     container.remove()
