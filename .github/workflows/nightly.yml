@@ -3,6 +3,8 @@ name: Nightly
 # Checks too slow for every pull request (OpenSpec ci-release-gates): the Go tests
 # under the race detector, which watches the background schedulers (backups,
 # reminders, digests, email polling, webhooks) and the sync hub. Also runs on demand.
+# A failed night opens (or comments on) one issue labelled ci-nightly; the next
+# green night closes it, so a red nightly never goes unnoticed.
 on:
   schedule:
     - cron: "23 3 * * *"
@@ -34,3 +36,23 @@ jobs:
       - run: npm ci --no-audit --no-fund && npm run build
         working-directory: web
       - run: go test -race -timeout 45m ./...
+
+  # Opens or updates the ci-nightly issue when a nightly job fails, and closes it
+  # when every job passes again. Only GITHUB_TOKEN, only on the default branch.
+  alert:
+    name: Report the nightly result
+    needs: [race]
+    if: ${{ always() && github.ref_name == github.event.repository.default_branch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Open, update or close the ci-nightly issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESULTS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: ./scripts/nightly-alert.sh

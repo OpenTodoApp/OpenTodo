@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -387,7 +388,8 @@ func TestMCPBridgeStaleKey(t *testing.T) {
 	h.encrypted(1, dek)
 	h.mustRun("encryption", "unlock", "--passphrase-file", h.passphraseFile())
 	pr, pw := io.Pipe()
-	var out, errb bytes.Buffer
+	// The test polls stdout while the bridge goroutine writes to it.
+	var out, errb lockedBuffer
 	a := &App{Stdin: pr, Stdout: &out, Stderr: &errb, ConfigPath: h.configPath, Getenv: func(k string) string { return h.env[k] }, Now: func() time.Time { return fixedNow }}
 	done := make(chan int)
 	go func() { done <- a.Main([]string{"mcp", "--decrypt"}) }()
@@ -414,4 +416,23 @@ func TestMCPBridgeStaleKey(t *testing.T) {
 			t.Fatalf("forwarded after the key changed: %v", r)
 		}
 	}
+}
+
+// lockedBuffer is a bytes.Buffer safe for one writer goroutine and a polling
+// reader, so tests that watch a running command stay clean under -race.
+type lockedBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *lockedBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *lockedBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
 }
