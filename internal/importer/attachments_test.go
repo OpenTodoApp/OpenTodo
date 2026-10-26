@@ -1,9 +1,12 @@
 package importer
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -108,6 +111,105 @@ func TestOwnZipExportRestoresFiles(t *testing.T) {
 	h.svc.Wait()
 	if live := h.list("attachment", false); len(live) != 0 {
 		t.Fatalf("after undo = %v", live)
+	}
+}
+
+// applyAs writes one entity's fields as uid from device.
+func (h *harness) applyAs(uid, device string, ts int64, entity, id string, fields map[string]any) {
+	h.t.Helper()
+	var ops []opsync.Op
+	for f, v := range fields {
+		b, _ := json.Marshal(v)
+		ops = append(ops, opsync.Op{ID: fmt.Sprintf("%s-%s-%s-%d", uid, id, f, ts), Entity: entity, EntityID: id, Field: f, Value: b, TS: ts, Device: device})
+	}
+	res, err := h.sync.Apply(context.Background(), uid, ops)
+	if err != nil || len(res.Rejected) > 0 {
+		h.t.Fatalf("apply as %s: %+v %v", uid, res.Rejected, err)
+	}
+}
+
+// An export ZIP naming another account's attachment id must not link the file
+// stored under that id (security audit M2): before, blobs.ErrExists counted as
+// stored, the row was marked uploaded and its content route served the other
+// account's bytes.
+func TestOwnZipExportCannotAdoptAnotherAccountsFile(t *testing.T) {
+	h := newHarness(t)
+	store, err := blobs.New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.svc.SetBlobs(store, nil)
+	secret := []byte("secret")
+	sum := sha256.Sum256(secret)
+	secretDigest := hex.EncodeToString(sum[:])
+
+	// The victim's private task with an uploaded file "a-file".
+	h.addUser("victim")
+	h.applyAs("victim", "victim-phone", 1, "task", "t-victim", map[string]any{"title": "Private", "priority": 4, "created_at": 1})
+	h.applyAs("victim", "victim-phone", 2, "attachment", "a-file", map[string]any{"task_id": "t-victim", "author_id": "victim", "name": "secret.txt",
+		"mime": "text/plain", "size": len(secret), "sha256": secretDigest, "encrypted": false, "created_at": 2, "uploaded_at": nil})
+	if err := store.Write("a-file", bytes.NewReader(secret), blobs.Spec{Size: int64(len(secret)), SHA256: secretDigest}); err != nil {
+		t.Fatal(err)
+	}
+	h.applyAs("victim", opsync.ServerDevice, 3, "attachment", "a-file", map[string]any{"uploaded_at": 3})
+
+	// u1 imports an "own" export naming that id, with any bytes, and then with the
+	// victim's size and digest (as if they were known).
+	for _, file := range []string{"hello", "secret"} {
+		sum := sha256.Sum256([]byte(file))
+		data := zipOf(t, map[string]string{"export.json": ownAttachmentExport(hex.EncodeToString(sum[:])), "attachments/a-file/report.txt": file})
+		job := h.run(string(data), Options{TimeZone: "UTC"})
+		if job.Status != StatusDone || len(job.Errors) != 1 || !strings.Contains(job.Errors[0].Reason, "another file with this id") {
+			t.Fatalf("%s: job = %+v", file, job)
+		}
+		if a, err := h.sync.Get(context.Background(), h.uid, "attachment", "a-file"); err != nil || a != nil {
+			t.Fatalf("%s: the importer sees attachment a-file: %v %v", file, a, err)
+		}
+	}
+	if ok, err := store.Matches("a-file", blobs.Spec{Size: int64(len(secret)), SHA256: secretDigest}); !ok || err != nil {
+		t.Fatalf("the victim's file changed: %v %v", ok, err)
+	}
+}
+
+// ownStoredFile accepts only the importing account's own uploaded attachment
+// with the same bytes as the file stored under its id.
+func TestOwnStoredFile(t *testing.T) {
+	h := newHarness(t)
+	store, err := blobs.New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.svc.SetBlobs(store, nil)
+	sum := sha256.Sum256([]byte("hello"))
+	hello := blobs.Spec{Size: 5, SHA256: hex.EncodeToString(sum[:])}
+	data := zipOf(t, map[string]string{"export.json": ownAttachmentExport(hello.SHA256), "attachments/a-file/report.txt": "hello"})
+	if job := h.run(string(data), Options{TimeZone: "UTC"}); job.Status != StatusDone || len(job.Errors) != 0 {
+		t.Fatalf("job = %+v", job)
+	}
+	h.addUser("u2")
+	other := sha256.Sum256([]byte("world"))
+	for _, c := range []struct {
+		uid  string
+		want blobs.Spec
+		ok   bool
+	}{
+		{h.uid, hello, true},
+		{h.uid, blobs.Spec{Size: 5, SHA256: hex.EncodeToString(other[:])}, false}, // not the row's digest
+		{"u2", hello, false}, // a row u2 cannot see
+	} {
+		if ok, err := h.svc.ownStoredFile(context.Background(), c.uid, "a-file", c.want); ok != c.ok || err != nil {
+			t.Errorf("%s %s: %v %v, want %v", c.uid, c.want.SHA256[:8], ok, err, c.ok)
+		}
+	}
+	// The row and the metadata agree, but the stored bytes do not.
+	if err := store.Remove("a-file"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Write("a-file", strings.NewReader("world"), blobs.Spec{Size: 5, SHA256: hex.EncodeToString(other[:])}); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := h.svc.ownStoredFile(context.Background(), h.uid, "a-file", hello); ok || err != nil {
+		t.Errorf("different stored bytes: %v %v", ok, err)
 	}
 }
 
