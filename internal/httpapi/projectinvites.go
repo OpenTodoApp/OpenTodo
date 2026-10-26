@@ -24,13 +24,13 @@ import (
 
 func (s *Server) registerProjectInviteRoutes(mux *routes) {
 	s.projectInviteLimiter = newRateLimiter(20, time.Hour)
-	mux.handle("GET /api/v1/projects/{id}/invites", signedIn.demoDenied(), s.handleListProjectInvites)
-	mux.handle("POST /api/v1/projects/{id}/invites", signedIn.recent().demoDenied(), s.handleCreateProjectInvite)
-	mux.handle("DELETE /api/v1/projects/{id}/invites/{inviteId}", signedIn.demoDenied(), s.handleRevokeProjectInvite)
-	mux.handle("GET /api/v1/project-invites/{token}", public("someone with an invite link previews the project before joining").demoDenied(), s.handlePreviewProjectInvite)
-	mux.handle("POST /api/v1/project-invites/{token}/accept", signedIn.demoDenied(), s.handleAcceptProjectInvite)
+	mux.handle("GET /api/v1/projects/{id}/invites", signedIn.DemoDenied(), s.handleListProjectInvites)
+	mux.handle("POST /api/v1/projects/{id}/invites", signedIn.Recent().DemoDenied(), s.handleCreateProjectInvite)
+	mux.handle("DELETE /api/v1/projects/{id}/invites/{inviteId}", signedIn.DemoDenied(), s.handleRevokeProjectInvite)
+	mux.handle("GET /api/v1/project-invites/{token}", public("someone with an invite link previews the project before joining").DemoDenied(), s.handlePreviewProjectInvite)
+	mux.handle("POST /api/v1/project-invites/{token}/accept", signedIn.DemoDenied(), s.handleAcceptProjectInvite)
 	s.switchRoutes(mux, "/api/v1/settings/project-invites", switchRoute{sw: s.membersInviteOn, field: "membersCanInviteNewPeople",
-		get: signedIn, put: ownerOnly("manage the project invite setting").demoDenied()})
+		get: signedIn, put: ownerOnly("manage the project invite setting").DemoDenied()})
 }
 
 // membersMayInvite reads the owner switch; an unreadable setting counts as off.

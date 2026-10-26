@@ -4,8 +4,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -24,6 +22,9 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/email"
+	"github.com/pixari/opentodo/internal/httpapi/httpx"
+	"github.com/pixari/opentodo/internal/httpapi/maproutes"
+	"github.com/pixari/opentodo/internal/httpapi/speech"
 	"github.com/pixari/opentodo/internal/importer"
 	"github.com/pixari/opentodo/internal/issues"
 	"github.com/pixari/opentodo/internal/mail"
@@ -106,8 +107,9 @@ type Server struct {
 	// emailChangeLimiter caps email change requests per account (5/hour) and
 	// avatarLimiter picture uploads per account (30/hour) (settings-refresh D10).
 	emailChangeLimiter, avatarLimiter *rateLimiter
-	// sttLimiter caps phrases sent to the speech service per account (30/minute).
-	sttLimiter *rateLimiter
+	// speech serves speech to text (internal/httpapi/speech); its limiter caps
+	// phrases per account (30/minute).
+	speech *speech.Routes
 	// pushTestLimiter caps test pushes per account (5 per 10 minutes; OpenSpec
 	// `push-test-delivery` D3), see push.go.
 	pushTestLimiter *rateLimiter
@@ -177,8 +179,8 @@ type Server struct {
 	issueLimiter *rateLimiter
 	// maps is the map proxy and mapsLimiter the per-user search limit (OpenSpec
 	// `task-locations`); see maps.go.
-	maps        *maps.Service
-	mapsLimiter *rateLimiter
+	maps      *maps.Service
+	mapRoutes *maproutes.Routes
 	// parseLimiter is the per-account quick-add parse limit (OpenSpec change
 	// extension-v2, design D1).
 	parseLimiter *rateLimiter
@@ -264,7 +266,7 @@ func newServer(set *services.Set, web http.Handler) *Server {
 		passkeyOptions: newRateLimiter(10, time.Minute),
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
-		emailChangeLimiter: newRateLimiter(5, time.Hour), avatarLimiter: newRateLimiter(30, time.Hour), sttLimiter: newRateLimiter(30, time.Minute),
+		emailChangeLimiter: newRateLimiter(5, time.Hour), avatarLimiter: newRateLimiter(30, time.Hour),
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
 		emailLimiter: newRateLimiter(30, time.Hour), memberAddLimiter: newRateLimiter(memberAddsPerHour, time.Hour),
 		settings: set.Settings, importer: set.Importer, hooks: set.Hooks, inbox: set.Inbox, backups: set.Backups,
@@ -290,6 +292,9 @@ func (s *Server) wireServices() {
 	}
 	// Calendar sync writes the user's tasks as events with the task feed's selection.
 	s.calsync.Tasks = s.feedTasksFor
+	s.speech = &speech.Routes{STT: s.stt, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo, Allow: newRateLimiter(30, time.Minute).allow}
+	s.mapRoutes = &maproutes.Routes{Maps: s.maps, Settings: s.settings, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo,
+		Allow: newRateLimiter(maproutes.SearchesPerMinute, time.Minute).allow}
 	if s.attachmentLimiter == nil {
 		s.attachmentLimiter = newRateLimiter(120, time.Hour)
 	}
@@ -297,45 +302,4 @@ func (s *Server) wireServices() {
 
 // internal answers 500 (or 503 while every password-hashing slot is busy) and
 // logs the cause.
-func (s *Server) internal(w http.ResponseWriter, err error) {
-	if errors.Is(err, auth.ErrBusy) {
-		// Every password-hashing slot is taken (SEC-5): a retry soon succeeds.
-		w.Header().Set("Retry-After", "1")
-		writeError(w, http.StatusServiceUnavailable, "busy", "the server is busy, try again in a moment")
-		return
-	}
-	s.log.Error("request failed", "err", err)
-	writeError(w, http.StatusInternalServerError, "internal", "internal error")
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})
-}
-
-// writeErrorWith is writeError with more fields in the error object (the
-// field a message is about, when a quota resets, ...).
-func writeErrorWith(w http.ResponseWriter, status int, code, message string, more map[string]any) {
-	e := map[string]any{"code": code, "message": message}
-	for k, v := range more {
-		e[k] = v
-	}
-	writeJSON(w, status, map[string]any{"error": e})
-}
-
-// writeFieldError answers 400 invalid_input naming the field it is about, so
-// the editor shows the message beside it.
-func writeFieldError(w http.ResponseWriter, field, msg string) {
-	invalidField(w, field, field+": "+msg)
-}
-
-// invalidField is writeFieldError with a message that already names the field.
-func invalidField(w http.ResponseWriter, field, msg string) {
-	writeErrorWith(w, http.StatusBadRequest, "invalid_input", msg, map[string]any{"field": field})
-}
+func (s *Server) internal(w http.ResponseWriter, err error) { httpx.Internal(w, s.log, err) }

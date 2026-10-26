@@ -26,13 +26,13 @@ const oidcStateCookie = "ot_oidc"
 const oidcCallbackPath = "/api/v1/auth/oidc/callback"
 
 func (s *Server) registerOIDCRoutes(mux *routes) {
-	mux.handle("GET /api/v1/auth/oidc/start", public("single sign-on starts before there is a session").demoDenied(), s.handleOIDCStart)
-	mux.handle("GET "+oidcCallbackPath, public("the provider redirects the browser back here").demoDenied(), s.handleOIDCCallback)
+	mux.handle("GET /api/v1/auth/oidc/start", public("single sign-on starts before there is a session").DemoDenied(), s.handleOIDCStart)
+	mux.handle("GET "+oidcCallbackPath, public("the provider redirects the browser back here").DemoDenied(), s.handleOIDCCallback)
 	mux.handle("GET /api/v1/settings/oidc", ownerOnly("manage single sign-on"), s.handleGetOIDCSettings)
-	mux.handle("PUT /api/v1/settings/oidc", ownerOnly("manage single sign-on").sensitive().demoDenied(), s.handlePutOIDCSettings)
-	mux.handle("POST /api/v1/settings/oidc/test", ownerOnly("manage single sign-on").demoDenied(), s.handleTestOIDC)
+	mux.handle("PUT /api/v1/settings/oidc", ownerOnly("manage single sign-on").Sensitive().DemoDenied(), s.handlePutOIDCSettings)
+	mux.handle("POST /api/v1/settings/oidc/test", ownerOnly("manage single sign-on").DemoDenied(), s.handleTestOIDC)
 	mux.handle("GET /api/v1/me/identities", signedIn, s.handleListIdentities)
-	mux.handle("DELETE /api/v1/me/identities/{id}", signedIn.credential().demoDenied(), s.handleUnlinkIdentity)
+	mux.handle("DELETE /api/v1/me/identities/{id}", signedIn.Credential().DemoDenied(), s.handleUnlinkIdentity)
 }
 
 // oidcRedirectURI is the callback URL registered at the provider (design D5):

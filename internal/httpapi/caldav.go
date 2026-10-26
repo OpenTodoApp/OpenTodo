@@ -19,12 +19,12 @@ const davRealm = "OpenTodo CalDAV"
 
 func (s *Server) registerCaldavRoutes(mux *routes) {
 	mux.handle("GET /api/v1/app-passwords", signedIn, s.handleListAppPasswords)
-	mux.handle("POST /api/v1/app-passwords", signedIn.sensitive().demoDenied(), s.handleCreateAppPassword)
-	mux.handle("DELETE /api/v1/app-passwords/{id}", signedIn.demoDenied(), s.handleRevokeAppPassword)
+	mux.handle("POST /api/v1/app-passwords", signedIn.Sensitive().DemoDenied(), s.handleCreateAppPassword)
+	mux.handle("DELETE /api/v1/app-passwords/{id}", signedIn.DemoDenied(), s.handleRevokeAppPassword)
 	// Every signed-in user learns whether the endpoint is on and where it is, so
 	// the Settings screen can show setup instructions; only the owner may change it.
 	s.switchRoutes(mux, "/api/v1/settings/caldav", switchRoute{sw: s.caldavOn,
-		get: signedIn, put: ownerOnly("manage the CalDAV setting").demoDenied(),
+		get: signedIn, put: ownerOnly("manage the CalDAV setting").DemoDenied(),
 		more: func(r *http.Request) map[string]any {
 			body := s.caldavSettingBody(r)
 			// Tells the Settings screen why the endpoint refuses this account (OpenSpec `e2ee`).
@@ -32,17 +32,17 @@ func (s *Server) registerCaldavRoutes(mux *routes) {
 			return body
 		},
 		putMore: s.caldavSettingBody})
-	mux.handle("/dav/", public("CalDAV clients authenticate with an app password in the handler").demoDenied(), s.handleDAV)
-	mux.handle("/dav", public("CalDAV clients authenticate with an app password in the handler").demoDenied(), s.handleDAV)
-	mux.handle("/.well-known/caldav", public("CalDAV discovery; the handler authenticates with an app password").demoDenied(), s.handleDAV)
-	mux.handle("/.well-known/caldav/", public("CalDAV discovery; the handler authenticates with an app password").demoDenied(), s.handleDAV)
+	mux.handle("/dav/", public("CalDAV clients authenticate with an app password in the handler").DemoDenied(), s.handleDAV)
+	mux.handle("/dav", public("CalDAV clients authenticate with an app password in the handler").DemoDenied(), s.handleDAV)
+	mux.handle("/.well-known/caldav", public("CalDAV discovery; the handler authenticates with an app password").DemoDenied(), s.handleDAV)
+	mux.handle("/.well-known/caldav/", public("CalDAV discovery; the handler authenticates with an app password").DemoDenied(), s.handleDAV)
 	// Discovery from the host root (issue #249): Apple's clients probe the root
 	// and /principals/ with WebDAV methods when the well-known address does not
 	// lead them; without CalDAV these answer as the web app did (405, 404).
-	mux.handle("PROPFIND /{$}", public("CalDAV discovery from the host root; redirects to /dav/").demoDenied(), s.handleDAVRoot)
-	mux.handle("OPTIONS /{$}", public("CalDAV discovery from the host root; reports the DAV capabilities").demoDenied(), s.handleDAVRoot)
-	mux.handle("/principals", public("CalDAV discovery; redirects to the principal under /dav/").demoDenied(), s.handleDAVRoot)
-	mux.handle("/principals/", public("CalDAV discovery; redirects to the principal under /dav/").demoDenied(), s.handleDAVRoot)
+	mux.handle("PROPFIND /{$}", public("CalDAV discovery from the host root; redirects to /dav/").DemoDenied(), s.handleDAVRoot)
+	mux.handle("OPTIONS /{$}", public("CalDAV discovery from the host root; reports the DAV capabilities").DemoDenied(), s.handleDAVRoot)
+	mux.handle("/principals", public("CalDAV discovery; redirects to the principal under /dav/").DemoDenied(), s.handleDAVRoot)
+	mux.handle("/principals/", public("CalDAV discovery; redirects to the principal under /dav/").DemoDenied(), s.handleDAVRoot)
 }
 
 // caldavURL is the address clients are configured with.

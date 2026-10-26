@@ -22,8 +22,8 @@ import (
 
 func (s *Server) registerWorkspaceInviteRoutes(mux *routes) {
 	s.workspaceInviteLimiter = newRateLimiter(20, time.Hour)
-	write := signedIn.fullTokens().demoDenied()
-	mux.handle("GET /api/v1/workspaces/{id}/invites", signedIn.fullTokens(), s.handleListWorkspaceInvites)
+	write := signedIn.FullTokens().DemoDenied()
+	mux.handle("GET /api/v1/workspaces/{id}/invites", signedIn.FullTokens(), s.handleListWorkspaceInvites)
 	mux.handle("POST /api/v1/workspaces/{id}/invites", write, s.handleCreateWorkspaceInvite)
 	mux.handle("DELETE /api/v1/workspaces/{id}/invites/{inviteId}", write, s.handleRevokeWorkspaceInvite)
 	mux.handle("GET /api/v1/workspace-invites/{token}", public("workspace invite preview"), s.handlePreviewWorkspaceInvite)

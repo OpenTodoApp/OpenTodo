@@ -64,9 +64,9 @@ type brandingState struct {
 
 func (s *Server) registerBrandingRoutes(mux *routes) {
 	mux.handle("GET /api/v1/settings/branding", ownerOnly("see the branding"), s.handleGetBranding)
-	mux.handle("PUT /api/v1/settings/branding", ownerOnly("change the branding").demoDenied(), s.handlePutBranding)
-	mux.handle("PUT /api/v1/settings/branding/logo", ownerOnly("change the logo").demoDenied(), s.handlePutBrandingLogo)
-	mux.handle("DELETE /api/v1/settings/branding/logo", ownerOnly("remove the logo").demoDenied(), s.handleDeleteBrandingLogo)
+	mux.handle("PUT /api/v1/settings/branding", ownerOnly("change the branding").DemoDenied(), s.handlePutBranding)
+	mux.handle("PUT /api/v1/settings/branding/logo", ownerOnly("change the logo").DemoDenied(), s.handlePutBrandingLogo)
+	mux.handle("DELETE /api/v1/settings/branding/logo", ownerOnly("remove the logo").DemoDenied(), s.handleDeleteBrandingLogo)
 	// The logo is part of the page every visitor sees, like the app's own icons.
 	mux.handle("GET /branding/{file}", public("the instance logo, part of the page like the app's icons"), s.handleBrandingLogo)
 }

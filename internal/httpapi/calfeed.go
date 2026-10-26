@@ -40,17 +40,17 @@ func (s *Server) registerCalendarFeedRoutes(mux *routes) {
 	s.feedLimiter = newRateLimiter(feedFetchesPerHr, time.Hour)
 
 	s.switchRoutes(mux, "/api/v1/settings/calendar-feeds", switchRoute{sw: s.calFeedsOn,
-		get: signedIn.demoDenied(), put: ownerOnly("manage the calendar feeds setting").demoDenied()})
-	mux.handle("GET /api/v1/calendar-feeds/subscriptions", signedIn.demoDenied(), s.feedsGate(s.handleListSubscriptions))
-	mux.handle("POST /api/v1/calendar-feeds/subscriptions", signedIn.demoDenied(), s.feedsGate(s.handleCreateSubscription))
-	mux.handle("PATCH /api/v1/calendar-feeds/subscriptions/{id}", signedIn.demoDenied(), s.feedsGate(s.handlePatchSubscription))
-	mux.handle("DELETE /api/v1/calendar-feeds/subscriptions/{id}", signedIn.demoDenied(), s.feedsGate(s.handleDeleteSubscription))
-	mux.handle("POST /api/v1/calendar-feeds/subscriptions/{id}/refresh", signedIn.demoDenied(), s.feedsGate(s.handleRefreshSubscription))
-	mux.handle("GET /api/v1/calendar-feeds/events", signedIn.demoDenied(), s.eventsGate(s.handleCalendarEvents))
-	mux.handle("GET /api/v1/calendar-feeds/feed", signedIn.demoDenied(), s.feedsGate(s.handleGetFeed))
-	mux.handle("POST /api/v1/calendar-feeds/feed", signedIn.recent().demoDenied(), s.feedsGate(s.handleRotateFeed))
-	mux.handle("DELETE /api/v1/calendar-feeds/feed", signedIn.demoDenied(), s.feedsGate(s.handleRevokeFeed))
-	mux.handle("GET /feeds/{secret}/tasks.ics", public("calendar apps authenticate with the secret in the address").demoDenied(), s.handleTaskFeed)
+		get: signedIn.DemoDenied(), put: ownerOnly("manage the calendar feeds setting").DemoDenied()})
+	mux.handle("GET /api/v1/calendar-feeds/subscriptions", signedIn.DemoDenied(), s.feedsGate(s.handleListSubscriptions))
+	mux.handle("POST /api/v1/calendar-feeds/subscriptions", signedIn.DemoDenied(), s.feedsGate(s.handleCreateSubscription))
+	mux.handle("PATCH /api/v1/calendar-feeds/subscriptions/{id}", signedIn.DemoDenied(), s.feedsGate(s.handlePatchSubscription))
+	mux.handle("DELETE /api/v1/calendar-feeds/subscriptions/{id}", signedIn.DemoDenied(), s.feedsGate(s.handleDeleteSubscription))
+	mux.handle("POST /api/v1/calendar-feeds/subscriptions/{id}/refresh", signedIn.DemoDenied(), s.feedsGate(s.handleRefreshSubscription))
+	mux.handle("GET /api/v1/calendar-feeds/events", signedIn.DemoDenied(), s.eventsGate(s.handleCalendarEvents))
+	mux.handle("GET /api/v1/calendar-feeds/feed", signedIn.DemoDenied(), s.feedsGate(s.handleGetFeed))
+	mux.handle("POST /api/v1/calendar-feeds/feed", signedIn.Recent().DemoDenied(), s.feedsGate(s.handleRotateFeed))
+	mux.handle("DELETE /api/v1/calendar-feeds/feed", signedIn.DemoDenied(), s.feedsGate(s.handleRevokeFeed))
+	mux.handle("GET /feeds/{secret}/tasks.ics", public("calendar apps authenticate with the secret in the address").DemoDenied(), s.handleTaskFeed)
 }
 
 // eventsGate lets the events route answer while calendar feeds or calendar

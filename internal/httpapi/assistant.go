@@ -46,14 +46,14 @@ func (s *Server) registerAssistantRoutes(mux *routes) {
 		s.assistantSetup(s.assistant)
 	}
 	mux.handle("GET /api/v1/settings/assistant", signedIn, s.handleGetAssistantSettings)
-	mux.handle("PUT /api/v1/settings/assistant", ownerOnly("manage the assistant settings").credential().demoDenied(), s.handlePutAssistantSettings)
-	mux.handle("POST /api/v1/settings/assistant/test", ownerOnly("manage the assistant settings").demoDenied(), s.handleTestAssistant)
-	mux.handle("GET /api/v1/me/assistant", signedIn.demoDenied(), s.handleGetMyAssistant)
-	mux.handle("PUT /api/v1/me/assistant", signedIn.fullTokens().demoDenied(), s.handlePutMyAssistant)
-	mux.handle("GET /api/v1/me/assistant/usage", signedIn.demoDenied(), s.handleMyAssistantUsage)
-	mux.handle("POST /api/v1/me/assistant/test", signedIn.sessionOnly().demoDenied(), s.handleTestMyAssistant)
-	mux.handle("POST /api/v1/assistant/turn", signedIn.sessionOnly().demoDenied(), s.handleAssistantTurn)
-	mux.handle("GET /api/v1/assistant/skills", signedIn.demoDenied(), s.handleAssistantSkills)
+	mux.handle("PUT /api/v1/settings/assistant", ownerOnly("manage the assistant settings").Credential().DemoDenied(), s.handlePutAssistantSettings)
+	mux.handle("POST /api/v1/settings/assistant/test", ownerOnly("manage the assistant settings").DemoDenied(), s.handleTestAssistant)
+	mux.handle("GET /api/v1/me/assistant", signedIn.DemoDenied(), s.handleGetMyAssistant)
+	mux.handle("PUT /api/v1/me/assistant", signedIn.FullTokens().DemoDenied(), s.handlePutMyAssistant)
+	mux.handle("GET /api/v1/me/assistant/usage", signedIn.DemoDenied(), s.handleMyAssistantUsage)
+	mux.handle("POST /api/v1/me/assistant/test", signedIn.SessionOnly().DemoDenied(), s.handleTestMyAssistant)
+	mux.handle("POST /api/v1/assistant/turn", signedIn.SessionOnly().DemoDenied(), s.handleAssistantTurn)
+	mux.handle("GET /api/v1/assistant/skills", signedIn.DemoDenied(), s.handleAssistantSkills)
 }
 
 // handleAssistantSkills lists the built-in skills (assistant-skills), or an
