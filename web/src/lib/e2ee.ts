@@ -7,6 +7,7 @@
 // The device is the trust boundary (design D4): local tables hold plaintext, and
 // nothing leaves the device for an encrypted account except ciphertext for the
 // content fields below and wrapped key material.
+import { OP_CONTENT_FIELDS } from '../generated/opSchema'
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import {
@@ -27,29 +28,7 @@ export const CLIENT_VERSION = 1
  * task.labels holds label ids, so label names are encrypted instead of the
  * array (design.md, implementation notes).
  */
-export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
-  // A task's origin is an object, serialised and encrypted whole (task-origin D2).
-  // A task's location is an object too (task-locations D1).
-  task: ['title', 'description', 'ical_extra', 'notes_doc', 'origin', 'location'],
-  project: ['name', 'description', 'notes_doc'],
-  label: ['name'],
-  section: ['name'],
-  view: ['name', 'query'],
-  // A guest's typed name on a task page reply (task-pages D6).
-  comment: ['body', 'guest_name'],
-  // Attachments (OpenSpec attachments D8): the file bytes are an OTAT1 envelope too.
-  attachment: ['name', 'mime', 'url'],
-  // Custom field definitions (OpenSpec custom-fields, design D4).
-  field: ['name', 'options'],
-  // A time entry's note (OpenSpec time-tracking, design D1); its times stay plaintext.
-  time_entry: ['note'],
-  // The review record's line for tomorrow (OpenSpec close-the-day, design D5); its times and focus stay plaintext.
-  review: ['tomorrow_note'],
-  // A place (task-locations D1): its coordinates are one object; position and times stay plaintext.
-  place: ['name', 'address', 'geo'],
-  // An automation rule (automation-rules D1): its name; the rest is structural.
-  rule: ['name'],
-}
+export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = OP_CONTENT_FIELDS
 
 /**
  * Families of content fields named by a prefix: a task's custom field values
