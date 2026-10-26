@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/blobs"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/blobs"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // OpenSpec change attachments, design D12: link attachments from foreign files.

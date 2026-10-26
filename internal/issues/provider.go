@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	ob "github.com/pixari/opentodo/internal/outbound"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // Issue is one provider issue, normalised (design D1). Times are Unix ms.

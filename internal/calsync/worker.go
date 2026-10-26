@@ -11,11 +11,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pixari/opentodo/internal/calfeed"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/settings"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Worker runs cycles in the background under the jobs leader, and the

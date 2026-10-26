@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/calfeed"
-	"github.com/pixari/opentodo/internal/calsync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/calsync"
 )
 
 // Calendar sync (OpenSpec change calendar-two-way): a user's own calendar

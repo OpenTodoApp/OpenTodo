@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 )
 
 // Calendars shown in Day and Week (design D10): the target and the chosen

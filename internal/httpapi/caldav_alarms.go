@@ -5,9 +5,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/pixari/opentodo/internal/caldav"
-	"github.com/pixari/opentodo/internal/ids"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Alarms as reminders (OpenSpec change caldav-interop, "Alarms as reminders",

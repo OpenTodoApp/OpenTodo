@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee/crypt"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee/crypt"
 )
 
 func readFile(t *testing.T, p string) string {

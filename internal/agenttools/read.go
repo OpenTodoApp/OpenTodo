@@ -3,14 +3,14 @@ package agenttools
 import (
 	"context"
 	"errors"
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/inbox"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/inbox"
 	"sort"
 	"strings"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/zoned"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // ---- read tools (always offered) ----

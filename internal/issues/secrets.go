@@ -3,7 +3,7 @@ package issues
 import (
 	"context"
 
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // SecretsName is the secrets file of issue connections: <data>/secrets/issues.json,

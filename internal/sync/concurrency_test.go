@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // List, Get and Pull read from the reader pool, so they answer while a slow

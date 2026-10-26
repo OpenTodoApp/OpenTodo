@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and ideas
-    url: https://github.com/pixari/opentodo/discussions
+    url: https://github.com/OpenTodoApp/OpenTodo/discussions
     about: Ask how to set something up, share how you use OpenTodo, or discuss an idea before opening an issue.
   - name: Security vulnerability
-    url: https://github.com/pixari/opentodo/blob/main/SECURITY.md
+    url: https://github.com/OpenTodoApp/OpenTodo/blob/main/SECURITY.md
     about: Please report vulnerabilities privately as described in SECURITY.md, not in a public issue.

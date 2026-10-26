@@ -10,10 +10,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/calsync"
-	"github.com/pixari/opentodo/internal/ids"
-	ob "github.com/pixari/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/calsync"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // remoteError answers a failed discovery with a code the form explains.

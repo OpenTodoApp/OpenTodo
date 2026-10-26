@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/rules"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/rules"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // rulesEnv is a signed-in owner on a server with the rules engine; env is

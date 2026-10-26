@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 func rejected(out map[string]any) map[string]string {

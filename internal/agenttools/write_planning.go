@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/location"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/location"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Planning fields in the write tools (OpenSpec change agent-planning-fields,

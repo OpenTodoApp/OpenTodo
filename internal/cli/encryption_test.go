@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/e2ee/crypt"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee/crypt"
 )
 
 // `ot encryption` and `ot mcp --decrypt` (OpenSpec change mcp-projects).

@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/rules"
-	"github.com/pixari/opentodo/internal/ruleval"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/rules"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Automation rules (OpenSpec change automation-rules, design D10): the rule

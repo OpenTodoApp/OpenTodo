@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Second factor (OpenSpec change `mfa-totp`): enrolment, recovery codes, the

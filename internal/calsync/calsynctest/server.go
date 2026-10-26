@@ -19,7 +19,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/pixari/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
 )
 
 // Object is one stored calendar object.

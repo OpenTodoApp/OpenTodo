@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // TestRouting (3.1): two tenants by host name, an unknown name and the bare

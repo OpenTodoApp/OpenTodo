@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
 )
 
 func sp(s string) *string { return &s }

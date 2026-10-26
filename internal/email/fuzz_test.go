@@ -8,8 +8,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Fuzz targets for email to task (wave 2 of the 2026-10 audit, Z1). Every

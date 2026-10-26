@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pixari/opentodo/internal/digest"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/timetrack"
+	"github.com/OpenTodoApp/opentodo/internal/digest"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/timetrack"
 )
 
 // ---- list_time_entries (OpenSpec change time-tracking, design D11) ----

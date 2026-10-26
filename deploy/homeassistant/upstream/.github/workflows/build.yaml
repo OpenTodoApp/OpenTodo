@@ -1,5 +1,5 @@
 # Builds the add-on image for amd64 and aarch64 with Home Assistant's builder actions and
-# publishes ghcr.io/pixari/opentodo-homeassistant:<version> (per-architecture images plus one
+# publishes ghcr.io/opentodoapp/opentodo-homeassistant:<version> (per-architecture images plus one
 # multi-arch image). A version is published once: skip-existing leaves an existing tag alone,
 # so a change to main without a new version only checks that the image still builds.
 name: Build

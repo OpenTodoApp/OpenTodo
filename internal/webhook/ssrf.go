@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // The outbound policy lives in internal/outbound (shared with calendar

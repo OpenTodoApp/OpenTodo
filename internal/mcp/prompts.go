@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 )
 
 // Prompts (OpenSpec change assistant-skills, design D5): the built-in skills,

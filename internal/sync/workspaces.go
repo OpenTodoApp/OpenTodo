@@ -11,9 +11,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/iconset"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/iconset"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // The workspace directory (OpenSpec change workspaces, design D1, D3, D4, D8).

@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/deliveryq"
-	"github.com/pixari/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/deliveryq"
+	"github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // Queue tuning from the design (D2); the shared values live in deliveryq.

@@ -4,7 +4,7 @@
 # guide shows how to check yours). Guide: https://open-todo.app/docs/self-hosting/synology/
 services:
   opentodo:
-    image: ghcr.io/pixari/opentodo:stable
+    image: ghcr.io/opentodoapp/opentodo:stable
     container_name: opentodo
     pull_policy: always
     user: "1026:100"

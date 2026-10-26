@@ -2,7 +2,7 @@ app_version: 0.14.2
 capabilities: []
 categories:
 - productivity
-changelog_url: https://github.com/pixari/opentodo/releases
+changelog_url: https://github.com/OpenTodoApp/OpenTodo/releases
 date_added: '2026-10-24'
 description: OpenTodo is a self-hosted, local-first task manager with offline sync
   across devices.
@@ -29,8 +29,8 @@ run_as_context:
 screenshots: []
 sources:
 - https://apps.truenas.com/catalog/opentodo_community/
-- https://github.com/pixari/opentodo
-- https://github.com/pixari/opentodo/pkgs/container/opentodo
+- https://github.com/OpenTodoApp/OpenTodo
+- https://github.com/OpenTodoApp/OpenTodo/pkgs/container/opentodo
 title: OpenTodo
 train: community
 version: 1.0.0

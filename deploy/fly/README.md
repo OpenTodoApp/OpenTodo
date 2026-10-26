@@ -4,7 +4,7 @@ A [Fly.io](https://fly.io) app configuration, [`fly.toml`](fly.toml), for `flyct
 
 What the file sets:
 
-- `[build] image = "ghcr.io/pixari/opentodo:stable"`: Fly deploys the published image, no Dockerfile or build.
+- `[build] image = "ghcr.io/opentodoapp/opentodo:stable"`: Fly deploys the published image, no Dockerfile or build.
 - `[env]`: `OPENTODO_BASE_URL = ""` (the guide says to set `OPENTODO_BASE_URL = "https://<app>.fly.dev"` once the name is chosen), `OPENTODO_ALLOW_SIGNUP = "false"`, `OPENTODO_TRUSTED_PROXIES = ""`. The setup token is not in the file: it is a secret, set with `fly secrets set OPENTODO_SETUP_TOKEN=...` before the first deploy.
 - `[mounts]`: the volume `opentodo_data` on `/data` (`initial_size = "1gb"`).
 - `[http_service]`: `internal_port = 8080`, `force_https = true`, `auto_stop_machines = "off"`, `auto_start_machines = true`, `min_machines_running = 1`, and one HTTP check on `/healthz`.

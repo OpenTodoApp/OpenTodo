@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
 // Option customises the Server built by New.

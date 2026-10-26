@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/pixari/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
 )
 
 type ctxKey int

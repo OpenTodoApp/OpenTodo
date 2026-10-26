@@ -177,8 +177,8 @@ On a check-list line in a task's notes the editor SHALL offer Make subtask (slas
 A link in a note or comment whose address is a GitHub, GitLab, Jira or Linear issue, recognised on the device the way a task's origin is, SHALL render as an inline issue chip (`o/r#7`, `ENG-123`) that opens the issue in a new tab; recognition SHALL use the address alone and SHALL make no request. Every other link renders as a link.
 
 #### Scenario: Issue chip
-- **WHEN** a note contains `https://github.com/pixari/opentodo/issues/198`
-- **THEN** it renders as a chip reading `pixari/opentodo#198`, no request leaves the device, and the projection keeps the plain address
+- **WHEN** a note contains `https://github.com/OpenTodoApp/OpenTodo/issues/198`
+- **THEN** it renders as a chip reading `OpenTodoApp/OpenTodo#198`, no request leaves the device, and the projection keeps the plain address
 
 ### Requirement: Mentions in notes
 A task's notes MAY mention project members as `@name`; the editor SHALL offer completion from the local membership cache, and the device SHALL write the mentioned account ids to an additive `note_mentions` list on the task in the same mutation as the note. The server SHALL keep only mentions of current members of the task's shared project (none on a personal task) and SHALL notify each account newly listed, naming the actor, the task and that the mention is in its notes; an account already listed SHALL NOT be notified again by later edits. Mentions converge like any other node of the document, and the id list converges by last-writer-wins.

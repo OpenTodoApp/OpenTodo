@@ -26,7 +26,7 @@ test('fly: the committed file passes', () => {
 
 test('fly: TOML subset parser', () => {
   const t = parseToml(toml)
-  assert.equal(t.build.image, 'ghcr.io/pixari/opentodo:stable')
+  assert.equal(t.build.image, 'ghcr.io/opentodoapp/opentodo:stable')
   assert.deepEqual(t.mounts, { source: 'opentodo_data', destination: '/data', initial_size: '1gb' })
   assert.equal(t.http_service.internal_port, 8080)
   assert.equal(t.http_service.force_https, true)
@@ -47,10 +47,10 @@ test('fly: TOML subset parser', () => {
 })
 
 test('fly: image policy', () => {
-  has(withToml('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(withToml('opentodo:stable', 'opentodo:0.14.2'), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(withToml('[build]\n  image = "ghcr.io/pixari/opentodo:stable"\n', ''), /\[build\] with image is required/)
-  has(withToml('  image = "ghcr.io/pixari/opentodo:stable"\n', '  image = "ghcr.io/pixari/opentodo:stable"\n  dockerfile = "Dockerfile"\n'), /\[build\] "dockerfile" is not allowed/)
+  has(withToml('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(withToml('opentodo:stable', 'opentodo:0.14.2'), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(withToml('[build]\n  image = "ghcr.io/opentodoapp/opentodo:stable"\n', ''), /\[build\] with image is required/)
+  has(withToml('  image = "ghcr.io/opentodoapp/opentodo:stable"\n', '  image = "ghcr.io/opentodoapp/opentodo:stable"\n  dockerfile = "Dockerfile"\n'), /\[build\] "dockerfile" is not allowed/)
 })
 
 test('fly: port, volume and one machine', () => {

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/origin"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
 )
 
 // Exit codes form the contract scripts rely on.

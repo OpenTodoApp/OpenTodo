@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // The target workspace of an import (OpenSpec change import-workspace): every

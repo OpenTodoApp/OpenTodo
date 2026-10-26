@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Changed
 
+- **OpenTodo moved to the OpenTodoApp organization, and the image to `ghcr.io/opentodoapp/opentodo`.** The repository is now [github.com/OpenTodoApp/OpenTodo](https://github.com/OpenTodoApp/OpenTodo) (old links redirect), the image `ghcr.io/opentodoapp/opentodo` with the same tags, and the Helm chart `oci://ghcr.io/opentodoapp/charts/opentodo`. The old image `ghcr.io/pixari/opentodo` and chart `oci://ghcr.io/pixari/charts/opentodo` keep getting every release through 0.16.x and stop being updated with 0.17.0: replace `ghcr.io/pixari/opentodo` with `ghcr.io/opentodoapp/opentodo` where you run OpenTodo, nothing else changes. The Go module is now `github.com/OpenTodoApp/opentodo` (`go install github.com/OpenTodoApp/opentodo/cmd/ot@latest`). ([Docker](docs/self-hosting/docker.md#the-move-to-opentodoapp))
 - **The Android app targets Android 16 (API level 36),** as Google Play now requires. Nothing changes for users: back navigation already used the system's predictive back, and the app already drew edge to edge.
 
 ### Fixed
@@ -943,24 +944,24 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.14.2...HEAD
-[0.14.2]: https://github.com/pixari/opentodo/compare/v0.14.1...v0.14.2
-[0.14.1]: https://github.com/pixari/opentodo/compare/v0.14.0...v0.14.1
-[0.14.0]: https://github.com/pixari/opentodo/compare/v0.13.0...v0.14.0
-[0.13.0]: https://github.com/pixari/opentodo/compare/v0.12.0...v0.13.0
-[0.12.0]: https://github.com/pixari/opentodo/compare/v0.11.0...v0.12.0
-[0.11.0]: https://github.com/pixari/opentodo/compare/v0.10.1...v0.11.0
-[0.10.1]: https://github.com/pixari/opentodo/compare/v0.10.0...v0.10.1
-[0.10.0]: https://github.com/pixari/opentodo/compare/v0.9.0...v0.10.0
-[0.9.0]: https://github.com/pixari/opentodo/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/pixari/opentodo/compare/v0.7.1...v0.8.0
-[0.7.2]: https://github.com/pixari/opentodo/compare/v0.7.1...01b1fe0
-[0.7.1]: https://github.com/pixari/opentodo/compare/v0.7.0...v0.7.1
-[0.7.0]: https://github.com/pixari/opentodo/compare/v0.6.1...v0.7.0
-[0.6.1]: https://github.com/pixari/opentodo/compare/v0.6.0...v0.6.1
-[0.6.0]: https://github.com/pixari/opentodo/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/pixari/opentodo/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/pixari/opentodo/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/pixari/opentodo/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/pixari/opentodo/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/pixari/opentodo/releases/tag/v0.1.0
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.2...HEAD
+[0.14.2]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.1...v0.14.2
+[0.14.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.0...v0.14.1
+[0.14.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.13.0...v0.14.0
+[0.13.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.10.1...v0.11.0
+[0.10.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.7.1...v0.8.0
+[0.7.2]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.7.1...01b1fe0
+[0.7.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.6.1...v0.7.0
+[0.6.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.1.0

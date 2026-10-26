@@ -15,12 +15,12 @@ New app
 ## App
 
 App ID: `opentodo`
-Upstream project: https://github.com/pixari/opentodo (website https://open-todo.app, AGPL-3.0)
+Upstream project: https://github.com/OpenTodoApp/OpenTodo (website https://open-todo.app, AGPL-3.0)
 Version: 0.11.0
 
 ## Summary
 
-Adds OpenTodo, an open-source, local-first task manager: projects, labels, due dates, reminders, boards, sharing, CalDAV, calendar feeds and an API, as a web app that can be installed on a phone. One container (`ghcr.io/pixari/opentodo`, multi-arch amd64 and arm64, a static Go binary with SQLite) with all its data in `${APP_DATA_DIR}/data`.
+Adds OpenTodo, an open-source, local-first task manager: projects, labels, due dates, reminders, boards, sharing, CalDAV, calendar feeds and an API, as a web app that can be installed on a phone. One container (`ghcr.io/opentodoapp/opentodo`, multi-arch amd64 and arm64, a static Go binary with SQLite) with all its data in `${APP_DATA_DIR}/data`.
 
 - `web` runs the image pinned by tag and index digest (checked with `docker buildx imagetools inspect`: linux/amd64 and linux/arm64), as `1000:1000` (the image's default user is 65532, but the binary runs as any user that can write `/data`, so the Umbrel-owned data folder needs no permission fix), `restart: on-failure`, no ports and no networks.
 - `app_proxy` routes port 8418 to `opentodo_web_1:8080` with Umbrel login kept on.
@@ -62,15 +62,15 @@ Permissions, dependencies, migrations, default credentials, or caveats:
 - Installing the web app on a phone, offline use, push notifications, passkeys and end-to-end encryption need an https address the browser trusts; everything else works over Umbrel's http address.
 - Updates: each OpenTodo release will come as an "Update OpenTodo to x.y.z" pull request with the new tag, digest and release notes.
 
-Logo: https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png (512×512 PNG; SVG: https://raw.githubusercontent.com/pixari/opentodo/main/deploy/coolify/opentodo.svg)
+Logo: https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/web/public/pwa-512.png (512×512 PNG; SVG: https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/coolify/opentodo.svg)
 
-<img src="https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png" width="128" alt="OpenTodo logo">
+<img src="https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/web/public/pwa-512.png" width="128" alt="OpenTodo logo">
 
 Screenshots (light and dark):
 
-![Today, light](https://raw.githubusercontent.com/pixari/opentodo/main/docs/images/today-light.webp)
-![Board, light](https://raw.githubusercontent.com/pixari/opentodo/main/docs/images/board-light.webp)
-![Today, dark](https://raw.githubusercontent.com/pixari/opentodo/main/docs/images/today-dark.webp)
-![Board, dark](https://raw.githubusercontent.com/pixari/opentodo/main/docs/images/board-dark.webp)
+![Today, light](https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/docs/images/today-light.webp)
+![Board, light](https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/docs/images/board-light.webp)
+![Today, dark](https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/docs/images/today-dark.webp)
+![Board, dark](https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/docs/images/board-dark.webp)
 
 AI use: this package was prepared and tested with an AI coding agent (Claude Code), following this repository's `.agents/skills`, and is submitted by the OpenTodo maintainer.

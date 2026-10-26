@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 // Member's own provider (OpenSpec change `assistant-member-provider`): while

@@ -170,7 +170,7 @@ The repository SHALL include a Coolify one-click service template, with an upstr
 - **THEN** the same `/data` volume is mounted and no data is lost
 
 ### Requirement: Template conformance check
-An automated check run by `make check` SHALL fail when any platform template breaks its platform's conventions or the shared deployment facts, when its image does not follow its platform's image policy (by default `ghcr.io/pixari/opentodo:stable`), when it names an `OPENTODO_*` variable the server does not read, when an upstream copy differs from its template, or when the release job no longer publishes the `stable` tag.
+An automated check run by `make check` SHALL fail when any platform template breaks its platform's conventions or the shared deployment facts, when its image does not follow its platform's image policy (by default `ghcr.io/opentodoapp/opentodo:stable`), when it names an `OPENTODO_*` variable the server does not read, when an upstream copy differs from its template, or when the release job no longer publishes the `stable` tag.
 
 #### Scenario: Template drifts from the release or the server
 - **WHEN** a template's image breaks its platform's image policy, the health check or the `/data` volume is missing, a `build:` key appears, or it names an `OPENTODO_*` variable the server does not read
@@ -270,7 +270,7 @@ The repository SHALL include an Unraid Community Applications template, publishe
 - **THEN** the same appdata path is mounted, migrations run on start, and all accounts and tasks are still present
 
 ### Requirement: Stable image tag
-Every release that is not a pre-release SHALL also publish the image as `ghcr.io/pixari/opentodo:stable`, pointing at the same image as its version tags. Pre-releases SHALL NOT move `stable`. A manual workflow SHALL point `stable` at an already published version without rebuilding it.
+Every release that is not a pre-release SHALL also publish the image as `ghcr.io/opentodoapp/opentodo:stable`, pointing at the same image as its version tags. Pre-releases SHALL NOT move `stable`. A manual workflow SHALL point `stable` at an already published version without rebuilding it.
 
 #### Scenario: A release moves stable
 - **WHEN** the tag `v0.7.0` is pushed and the release job succeeds
@@ -283,6 +283,10 @@ Every release that is not a pre-release SHALL also publish the image as `ghcr.io
 #### Scenario: Roll back
 - **WHEN** the maintainer runs the promote workflow with version `0.7.0` after `0.7.1` was released
 - **THEN** `stable` resolves to the `0.7.0` image and no image is rebuilt
+
+#### Scenario: Releases before the move are promoted to the new name
+- **WHEN** the manual workflow points `stable` at `0.14.2`, which was published only as `ghcr.io/pixari/opentodo:0.14.2`
+- **THEN** it first copies that release to `ghcr.io/opentodoapp/opentodo:0.14.2` with the same digest and its signatures, then moves `stable` under both names
 
 ### Requirement: Platform catalog templates
 The repository SHALL include a template, in the platform's own format, for CasaOS, Umbrel, TrueNAS Community Edition, Runtipi, Dokploy, Easypanel, Portainer and Cosmos Cloud, each in `deploy/<platform>/` with a checker, a guide in `docs/self-hosting/` and, where a store repository receives it, an `upstream/` copy laid out as that repository expects. Each SHALL run the image with the shared deployment facts, closed sign-up and no required setting.
@@ -300,7 +304,7 @@ The repository SHALL include a template, in the platform's own format, for CasaO
 - **THEN** `make check` fails and names the file
 
 ### Requirement: Image policy per platform
-Each platform checker SHALL declare an image policy: `stable` (the image `ghcr.io/pixari/opentodo:stable`), `release` (the latest release in `CHANGELOG.md`) or `release-digest` (that release plus a `sha256` index digest). Templates SHALL use `stable` unless the platform's store rejects moving tags or offers updates only when a version changes.
+Each platform checker SHALL declare an image policy: `stable` (the image `ghcr.io/opentodoapp/opentodo:stable`), `release` (the latest release in `CHANGELOG.md`) or `release-digest` (that release plus a `sha256` index digest). Templates SHALL use `stable` unless the platform's store rejects moving tags or offers updates only when a version changes.
 
 #### Scenario: A release bumps the pinned templates
 - **WHEN** a release is prepared and a template with the `release` or `release-digest` policy still names the previous version
@@ -309,6 +313,10 @@ Each platform checker SHALL declare an image policy: `stable` (the image `ghcr.i
 #### Scenario: Digest refreshed after the release
 - **WHEN** the release image is published and the maintainer runs `node scripts/deploy/pin.mjs`
 - **THEN** every pinned digest under `deploy/` is replaced by the registry's multi-arch index digest for that version, and `--check` reports any that still differ
+
+#### Scenario: A digest pinned before the move
+- **WHEN** a `release-digest` template pins a release up to the last one published before the move (`0.14.2`)
+- **THEN** the check requires the legacy name `ghcr.io/pixari/opentodo` for it, and after the next release it requires `ghcr.io/opentodoapp/opentodo`, which `scripts/deploy/pin.mjs` writes with the new digest
 
 ### Requirement: Client address from trusted proxies only
 The server SHALL believe `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Proto` and `CF-Connecting-IP` only from a trusted proxy peer: loopback, private and link-local networks when `OPENTODO_TRUSTED_PROXIES` is unset, otherwise the configured list. From any other peer, the peer is the client. From a trusted peer, the client SHALL be the nearest untrusted `X-Forwarded-For` hop read from the right (or `CF-Connecting-IP` at a trusted Cloudflare edge hop). Every limit and the audit log use it.
@@ -427,11 +435,11 @@ The repository SHALL include a checked template and a guide for Kubernetes (a He
 - **THEN** the template runs exactly one instance and replaces it by stopping the old one first, because SQLite has one writer
 
 ### Requirement: Helm chart publishing
-Every release that is not a pre-release SHALL publish the Helm chart as an OCI artifact under `oci://ghcr.io/pixari/charts`, and pull requests that change the chart SHALL lint it.
+Every release that is not a pre-release SHALL publish the Helm chart as an OCI artifact under `oci://ghcr.io/opentodoapp/charts`, and pull requests that change the chart SHALL lint it.
 
 #### Scenario: A release publishes the chart
 - **WHEN** the tag `v0.7.0` is pushed
-- **THEN** a chart version for that release can be installed with `helm install` from `oci://ghcr.io/pixari/charts/opentodo`
+- **THEN** a chart version for that release can be installed with `helm install` from `oci://ghcr.io/opentodoapp/charts/opentodo`
 
 #### Scenario: A broken chart is caught
 - **WHEN** a pull request changes `deploy/helm/` so that the chart no longer lints or renders
@@ -577,7 +585,7 @@ CI SHALL run every part of `make check` (including the gofmt gate, the design-sy
 - **THEN** the repository checks fail and name the target
 
 ### Requirement: Home Assistant add-on
-The repository SHALL include a Home Assistant add-on repository in `deploy/homeassistant/upstream/`, published as `pixari/opentodo-homeassistant-addons`, whose add-on runs the OpenTodo binary of the latest release on Home Assistant OS and Supervised installations for amd64 and aarch64, keeps its data in the add-on's `/data`, offers the essential variables of the deployment facts as options with the catalogue's defaults and descriptions, requires none, and is opened on a published port rather than through Ingress. A checker SHALL verify the add-on against the deployment facts and the latest release.
+The repository SHALL include a Home Assistant add-on repository in `deploy/homeassistant/upstream/`, published as `OpenTodoApp/opentodo-homeassistant-addons`, whose add-on runs the OpenTodo binary of the latest release on Home Assistant OS and Supervised installations for amd64 and aarch64, keeps its data in the add-on's `/data`, offers the essential variables of the deployment facts as options with the catalogue's defaults and descriptions, requires none, and is opened on a published port rather than through Ingress. A checker SHALL verify the add-on against the deployment facts and the latest release.
 
 #### Scenario: Install and open
 - **WHEN** a user adds the repository URL in Home Assistant, installs the OpenTodo add-on, starts it and clicks Open Web UI
@@ -598,3 +606,18 @@ The repository SHALL include a Home Assistant add-on repository in `deploy/homea
 #### Scenario: A stale add-on fails the check
 - **WHEN** `CHANGELOG.md` names a newer release than the add-on's `version` or the OpenTodo version in its `Dockerfile`, or an option is missing or has a default that differs from the catalogue
 - **THEN** `make check` fails and names the problem
+
+### Requirement: Legacy image name after the move
+After the repository moved from the user `pixari` to the organization `OpenTodoApp`, CI SHALL keep publishing every image it publishes (its tags and a cosign signature of its digest) also as `ghcr.io/pixari/opentodo`, every Helm chart also under `oci://ghcr.io/pixari/charts`, and the manual `stable` promotion also for the legacy name, for every release up to and including the 0.16 releases and for builds of the main branch until a later release exists. The legacy push SHALL use the repository secret `GHCR_LEGACY_TOKEN` when it is set and the workflow's own token otherwise, and SHALL NOT fail the workflow when the registry refuses it: it SHALL print a warning naming the secret instead. Self-hosting documentation SHALL state the new name and the last release the legacy name receives. The move changes no data, route or configuration, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A release in the transition window
+- **WHEN** the tag `v0.15.0` is released
+- **THEN** `ghcr.io/opentodoapp/opentodo:0.15.0` and `ghcr.io/pixari/opentodo:0.15.0` name the same digest, both signed, and `stable` moves under both names
+
+#### Scenario: After the window
+- **WHEN** the tag `v0.17.0` is released
+- **THEN** only `ghcr.io/opentodoapp/opentodo` gets it, and `ghcr.io/pixari/opentodo:stable` stays on the last 0.16 release
+
+#### Scenario: The legacy push is refused
+- **WHEN** the registry refuses the push to `ghcr.io/pixari/opentodo` because neither token may write that package
+- **THEN** the release still succeeds and the run shows a warning that names `GHCR_LEGACY_TOKEN`

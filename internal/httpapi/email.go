@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/pixari/opentodo/internal/email"
+	"github.com/OpenTodoApp/opentodo/internal/email"
 )
 
 // Email to task (OpenSpec change `email-to-task`): each account's secret inbox

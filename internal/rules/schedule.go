@@ -5,7 +5,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ruleval"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 )
 
 // TickInterval is the scheduler's pace (design D5).

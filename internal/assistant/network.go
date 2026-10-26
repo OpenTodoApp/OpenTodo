@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
 // Network policy (design D4). The server connects only to the hosts of enabled

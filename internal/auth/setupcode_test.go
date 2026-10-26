@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // TestSetupCode (trusted-client-identity): a fresh server without a setup token

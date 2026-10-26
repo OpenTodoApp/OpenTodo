@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/importer"
+	"github.com/OpenTodoApp/opentodo/internal/importer"
 )
 
 // site-bundle 2.2: the manifest's importFormats come from this output.

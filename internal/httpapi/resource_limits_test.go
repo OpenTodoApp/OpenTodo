@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/httpapi/httpx"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 func bareServer(t *testing.T) (*Server, *sql.DB) {

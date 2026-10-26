@@ -13,16 +13,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/backup"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/demo"
-	"github.com/pixari/opentodo/internal/httpapi"
-	"github.com/pixari/opentodo/internal/notify"
-	"github.com/pixari/opentodo/internal/push"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant/services"
-	"github.com/pixari/opentodo/internal/web"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/demo"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/push"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
+	"github.com/OpenTodoApp/opentodo/internal/web"
 )
 
 // Options configure Open.

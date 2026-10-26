@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"strconv"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // SettingKey is the owner setting that switches the endpoint on (design D5).

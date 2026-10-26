@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/host"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/host"
 )
 
 // runHost serves many tenants from this process (OpenSpec `multi-tenant-host`):

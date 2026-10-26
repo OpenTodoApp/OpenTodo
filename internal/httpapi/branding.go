@@ -17,9 +17,9 @@ import (
 	"sync/atomic"
 	"unicode"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/imgfit"
-	"github.com/pixari/opentodo/internal/web"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/imgfit"
+	"github.com/OpenTodoApp/opentodo/internal/web"
 )
 
 // Instance branding (OpenSpec change instance-branding, issue #234): the owner

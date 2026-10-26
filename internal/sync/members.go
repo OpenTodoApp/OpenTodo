@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Membership management (OpenSpec change `project-sharing`, design D5).

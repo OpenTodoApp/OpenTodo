@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/assistant"
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/assistant"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Security and behaviour tests of the in-app assistant (OpenSpec change

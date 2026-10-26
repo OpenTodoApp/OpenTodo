@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Recurrence and reminders from other formats (OpenSpec change

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Task write tools: create, update, complete and reopen, move, schedule and

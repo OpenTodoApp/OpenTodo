@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // Fetch limits (design D2).

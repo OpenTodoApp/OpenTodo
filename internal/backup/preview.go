@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // restoreMargin is kept free on top of what a restore or a backup needs.

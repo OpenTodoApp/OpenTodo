@@ -109,9 +109,9 @@ describe('editor-everywhere additions', () => {
   })
 
   it('Issue chip: a recognised issue address reads as its id', () => {
-    const out = html('see https://github.com/pixari/opentodo/issues/198 now')
+    const out = html('see https://github.com/OpenTodoApp/OpenTodo/issues/198 now')
     expect(out).toContain('class="issue-chip"')
-    expect(out).toContain('pixari/opentodo#198</a>')
+    expect(out).toContain('OpenTodoApp/OpenTodo#198</a>')
     expect(html('see https://example.org/issues/1')).not.toContain('issue-chip')
   })
 

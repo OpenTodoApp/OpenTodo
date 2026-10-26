@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // The poller against a fake provider (tasks 3.1–3.3): what becomes a task, how

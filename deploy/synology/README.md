@@ -2,7 +2,7 @@
 
 [`docker-compose.yml`](docker-compose.yml) is a Docker Compose file shaped for a **Project** in Synology's Container Manager (DSM 7.2 and later): project path `/volume1/docker/opentodo`, one service `opentodo` with
 
-- `ghcr.io/pixari/opentodo:stable` and `pull_policy: always`, so **Action → Build** on the project pulls the tag again;
+- `ghcr.io/opentodoapp/opentodo:stable` and `pull_policy: always`, so **Action → Build** on the project pulls the tag again;
 - `user: "1026:100"`, the DSM account that owns the data folder (1026 is the first account DSM creates, 100 the `users` group; the guide shows how to read yours without SSH);
 - port `8080:8080`, `restart: unless-stopped`, the image's own health check (`/opentodo healthcheck`, no shell);
 - the bind mount `./data:/data`, which Container Manager resolves against the project path to `/volume1/docker/opentodo/data`;

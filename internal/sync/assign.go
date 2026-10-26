@@ -7,8 +7,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
 )
 
 // Assignment events (OpenSpec change `task-assignment`, design D4).

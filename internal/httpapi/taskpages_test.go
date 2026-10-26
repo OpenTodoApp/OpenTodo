@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // publishPage publishes taskID as by and returns the page's secret and response.

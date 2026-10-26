@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // Store, filter validation and tokens (tasks 1.2, 1.3).
