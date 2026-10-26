@@ -8,7 +8,7 @@ import { db, useDatabase } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
 import { createProject, createTask, resetDeviceId, updateTask } from '../../lib/ops'
-import { flush, key, render } from '../../ui/test-utils'
+import { key, render, waitFor } from '../../ui/test-utils'
 import { PanelHost } from '../PanelHost'
 import { resetPanel } from '../panel'
 import { TaskListView } from '../TaskListView'
@@ -33,10 +33,6 @@ afterEach(async () => {
   history.replaceState(null, '', '/')
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const tickedTitles = () => [...document.querySelectorAll('[data-ticked] [data-tick]')].map((e) => e.getAttribute('aria-label')!.replace('Select ', ''))
 const option = (name: string) => [...document.querySelectorAll('[data-picker-step] [role="option"]')].find((o) => o.textContent?.includes(name)) as HTMLElement | undefined
 const errandOption = () => option('errand')
@@ -176,15 +172,11 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await waitFor(() => !!document.querySelector('[data-picker-step]'))
     // Picked at once, before the menu's own read lands: the click reads the tasks itself.
     await act(async () => { ([...document.querySelectorAll('[data-picker-step] [role="option"]')].find((o) => o.textContent?.includes('errand')) as HTMLElement).click() })
-    await waitFor(() => !!document.querySelector('[data-bulk-toast]'))
-    // The toast can show before the batch's last row is read back; poll the store.
-    let labels: string[][] = []
-    for (let t = 0; t < 2000; t += 20) {
-      labels = await Promise.all(ids.map(async (id) => (await db.tasks.get(id))!.labels))
-      if (labels.every((ls) => ls.length === 1)) break
-      await flush(20)
-    }
-    expect(labels).toEqual(ids.map(() => [l]))
+    await waitFor(() => !!document.querySelector('[data-bulk-toast]'), 'the undo offer')
+    // The toast can show before the batch's last row is read back; wait for the store.
+    const labels = () => Promise.all(ids.map(async (id) => (await db.tasks.get(id))!.labels))
+    await waitFor(async () => (await labels()).every((ls) => ls.length === 1), 'the label on every task')
+    expect(await labels()).toEqual(ids.map(() => [l]))
     expect(document.querySelector('[data-picker-step]')).not.toBeNull()
     // The open picker follows the stored tasks: the label now on every task is marked.
     await waitFor(() => errandOption()?.getAttribute('aria-selected') === 'true')
@@ -220,28 +212,31 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await key(document.body, 'L', { shiftKey: true })
     await waitFor(() => !!document.querySelector('[data-picker-step]'))
     await act(async () => { ([...document.querySelectorAll('[data-picker-step] [role="option"]')].find((o) => o.textContent?.includes('errand')) as HTMLElement).click() })
-    let labels: string[][] = []
-    for (let t = 0; t < 2000; t += 20) {
-      labels = await Promise.all(ids.map(async (id) => (await db.tasks.get(id))!.labels))
-      if (labels.every((ls) => ls.length === 0)) break
-      await flush(20)
-    }
-    expect(labels).toEqual(ids.map(() => []))
+    const labels = () => Promise.all(ids.map(async (id) => (await db.tasks.get(id))!.labels))
+    await waitFor(async () => (await labels()).every((ls) => ls.length === 0), 'the label off every task')
+    expect(await labels()).toEqual(ids.map(() => []))
+    // Let the pick's toast land here: shown after the write, it would otherwise
+    // appear in the next case and pass for that case's own offer.
+    await waitFor(() => !!document.querySelector('[data-bulk-toast]'), 'the undo offer')
   })
 
   it('Ctrl+Z undoes outside text fields, never inside a textarea', async () => {
     const { ids } = await inbox('One', 'Two')
+    const priority = async () => (await db.tasks.get(ids[0]))!.priority
     await key(document.body, 'j'); await key(document.body, 'x')
+    await waitFor(() => bar() === '1 selected', 'one row ticked')
     await key(document.body, '1')
-    await waitFor(() => !!document.querySelector('[data-bulk-toast]'))
+    // This case's own offer and write, not a toast an earlier case left behind.
+    await waitFor(async () => (await priority()) === 1, 'priority 1 stored')
+    await waitFor(() => !!document.querySelector('[data-bulk-toast]')?.textContent?.includes('Priority'), 'the undo offer for the priority')
     const ta = document.createElement('textarea')
     document.body.append(ta)
     const inField = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true })
     await act(async () => { ta.dispatchEvent(inField) })
     expect(inField.defaultPrevented).toBe(false)
-    expect((await db.tasks.get(ids[0]))!.priority).toBe(1)
+    expect(await priority()).toBe(1)
     await key(document.body, 'z', { ctrlKey: true })
-    await waitFor(() => document.querySelector('[data-bulk-toast]')!.textContent!.includes('Undone'))
-    expect((await db.tasks.get(ids[0]))!.priority).toBe(4)
+    await waitFor(() => document.querySelector('[data-bulk-toast]')!.textContent!.includes('Undone'), 'Undone in the toast')
+    await waitFor(async () => (await priority()) === 4, 'priority 4 back')
   })
 })
