@@ -13,7 +13,7 @@ import { setCurrentUserId } from '../lib/sharing'
 import { readTaskOpen, setTaskOpen } from '../lib/userPrefs'
 import { click, flush, key, minWidthPx, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
 import { FilterView } from './FilterView'
-import { PANEL_WIDTH_KEY, resetPanel, SIDE_PANEL_CLOSED_KEY } from './panel'
+import { closePanelIfStale, PANEL_WIDTH_KEY, resetPanel, SIDE_PANEL_CLOSED_KEY } from './panel'
 import { PanelHost } from './PanelHost'
 import { TaskListView } from './TaskListView'
 import type { ListRoute } from './task-list/useListModel'
@@ -121,6 +121,32 @@ describe('the side panel', () => {
     await waitFor(() => docked() === a, 'back to the first')
     watch.disconnect()
     expect(gone).toBe(0)
+    await r.unmount()
+  })
+
+  it('the first task after changing lists never empties the slot (GitHub issue 442)', async () => {
+    const home = 'p1', work = 'p2'
+    await db.projects.bulkPut([
+      { id: home, name: 'House', color: '#808080', parent_id: null, order: 0, created_at: 1, deleted_at: null },
+      { id: work, name: 'Work', color: '#808080', parent_id: null, order: 1, created_at: 1, deleted_at: null },
+    ] as never)
+    const { a, r } = await list({ view: 'project', id: home })
+    await click(row('Order the tiles').querySelector('[data-row-open]')!)
+    await waitFor(() => docked() === a, 'docked in the first project')
+    // Another list: the shell closes the stale occupant on navigation, so the slot shows its empty pane.
+    const c = await createTask({ title: 'Book the venue', project_id: work })
+    history.replaceState(null, '', `/project/${work}`)
+    await r.rerender(<><TaskListView route={{ view: 'project', id: work }} /><PanelHost user={{ id: 'me' }} /></>)
+    await act(async () => { closePanelIfStale(location.pathname) })
+    await waitFor(() => !!emptyPane() && !!row('Book the venue'), 'the empty pane beside the other list')
+    let gone = 0
+    const watch = new MutationObserver(() => { if (!emptyPane() && !document.querySelector('[data-detail-for]')) gone++ })
+    watch.observe(document.body, { childList: true, subtree: true })
+    await click(row('Book the venue').querySelector('[data-row-open]')!)
+    await waitFor(() => docked() === c, 'the task docked')
+    watch.disconnect()
+    expect(gone).toBe(0)
+    expect(document.querySelector('[data-detail-variant="panel"]')!.className).not.toContain('panel-enter')
     await r.unmount()
   })
 

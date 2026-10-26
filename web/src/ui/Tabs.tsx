@@ -69,7 +69,7 @@ export function Tabs({ tabs, value, onChange, label, children, rowClassName = ''
   }, [value, group])
   return (
     <div>
-      <div ref={(el) => { row.current = el; rowRef?.(el) }} role="tablist" aria-label={label} onKeyDown={move} className={`ui-scroller flex gap-1 overflow-x-auto overscroll-x-contain border-b border-default ${rowClassName}`.trim()} data-tabs-row>
+      <div ref={(el) => { row.current = el; rowRef?.(el) }} role="tablist" aria-label={label} onKeyDown={move} className={`ui-scroller ui-tab-row flex gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain ${rowClassName}`.trim()} data-tabs-row>
         {tabs.map((t, i) => {
           const selected = t.id === value
           const startsGroup = !!t.group && t.group !== tabs[i - 1]?.group
@@ -87,7 +87,7 @@ export function Tabs({ tabs, value, onChange, label, children, rowClassName = ''
               aria-controls={`${base}-panel`}
               tabIndex={selected ? 0 : -1}
               onClick={() => onChange(t.id)}
-              className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-2 text-body sm:px-3 font-medium transition duration-(--duration-ui)
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-2 text-body sm:px-3 font-medium transition duration-(--duration-ui)
                 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus
                 ${selected ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-default'}`}
             >

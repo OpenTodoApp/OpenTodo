@@ -8,11 +8,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **OpenTodo moved to the OpenTodoApp organization, and the image to `ghcr.io/opentodoapp/opentodo`.** The repository is now [github.com/OpenTodoApp/OpenTodo](https://github.com/OpenTodoApp/OpenTodo) (old links redirect), the image `ghcr.io/opentodoapp/opentodo` with the same tags, and the Helm chart `oci://ghcr.io/opentodoapp/charts/opentodo`. The old image `ghcr.io/pixari/opentodo` and chart `oci://ghcr.io/pixari/charts/opentodo` keep getting every release through 0.16.x and stop being updated with 0.17.0: replace `ghcr.io/pixari/opentodo` with `ghcr.io/opentodoapp/opentodo` where you run OpenTodo, nothing else changes. The Go module is now `github.com/OpenTodoApp/opentodo` (`go install github.com/OpenTodoApp/opentodo/cmd/ot@latest`). ([Docker](docs/self-hosting/docker.md#the-move-to-opentodoapp))
 - **The task panel shows a task's properties first and its notes in full below them, without Show all.** Long notes no longer push the project, dates, priority and labels out of view: the panel lists them, the subtasks and the attachments first, then the whole note, which grows with the panel's scrolling. On a task page narrower than 1024 px the facts card now sits above the notes too. ([#444](https://github.com/OpenTodoApp/OpenTodo/issues/444), [The task page](docs/task-panel.md))
+- **The Android app targets Android 16 (API level 36),** as Google Play now requires. Nothing changes for users: back navigation already used the system's predictive back, and the app already drew edge to edge.
 
 ### Fixed
 
 - **Deleting or archiving a project names the right number of open tasks.** Opened right after the project, before its tasks had loaded, the confirmation could say "0 open tasks". The number is now counted when the confirmation opens.
 - **The drop highlight no longer stays on a shared project you can only view.** Dragging a task over such a project in the sidebar left its ring on after the drag ended.
+- **Tab rows no longer show a stray vertical scrollbar.** The task panel's Comments, Activity, History and Time row, and every other tab row, drew a small scrollbar at its right end because the selected tab's underline overflowed the row by one pixel. Tab rows now scroll only sideways. ([#445](https://github.com/OpenTodoApp/OpenTodo/issues/445))
+- **The side panel no longer flickers when you pick the first task after changing lists** ([#442](https://github.com/OpenTodoApp/OpenTodo/issues/442)). After going to another project, the panel showing "No task selected" vanished for a moment and slid in again when you chose a task; it now stays in place and the task simply replaces the empty pane.
 - **Tasks added at the same moment keep their order.** Tasks created in the same instant could share one position and then show in any order in a manually ordered list; each now goes after the one before it.
 
 ## [0.14.2] - 2026-10-26

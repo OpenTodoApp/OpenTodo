@@ -31,7 +31,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, axeProblems, pageOverflow, rowMisalignment, settled, smallTargets, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, axeProblems, pageOverflow, rowMisalignment, settled, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
 import { seed as seedAccount } from './ux-audit/seed.mjs'
 import { OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
 
@@ -202,6 +202,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       for (const m of await p.evaluate(pageOverflow)) await fail(p, s.name, null, m)
       const scrollers = await p.evaluate(verticalScrollers)
       if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
+      for (const m of await p.evaluate(tabRowOverflow)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
       for (const m of await p.evaluate(rowMisalignment)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(addButtonCovers)) await fail(p, s.name, null, m)
@@ -289,6 +290,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   const geo = await p.evaluate(overlayGeometry, handle)
   for (const m of geo.problems) await fail(p, screen, name, m)
   for (const m of await p.evaluate(pageOverflow)) await fail(p, screen, name, m)
+  for (const m of await p.evaluate(tabRowOverflow)) await fail(p, screen, name, m)
   const tagged = await overlay.evaluate((el) => (el.hasAttribute('data-overlay') ? el : el.closest('[data-overlay]')) ? true : false)
   const sel = await overlay.evaluate((el) => { el.setAttribute('data-layout-check', ''); return '[data-layout-check]' })
   for (const m of await p.evaluate(smallTargets, [sel, MIN_TARGET])) await fail(p, screen, name, `touch target: ${m}`)
