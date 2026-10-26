@@ -13,6 +13,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **Deleting or archiving a project names the right number of open tasks.** Opened right after the project, before its tasks had loaded, the confirmation could say "0 open tasks". The number is now counted when the confirmation opens.
 - **The drop highlight no longer stays on a shared project you can only view.** Dragging a task over such a project in the sidebar left its ring on after the drag ended.
+- **Tab rows no longer show a stray vertical scrollbar.** The task panel's Comments, Activity, History and Time row, and every other tab row, drew a small scrollbar at its right end because the selected tab's underline overflowed the row by one pixel. Tab rows now scroll only sideways. ([#445](https://github.com/OpenTodoApp/OpenTodo/issues/445))
 - **The side panel no longer flickers when you pick the first task after changing lists** ([#442](https://github.com/OpenTodoApp/OpenTodo/issues/442)). After going to another project, the panel showing "No task selected" vanished for a moment and slid in again when you chose a task; it now stays in place and the task simply replaces the empty pane.
 - **Tasks added at the same moment keep their order.** Tasks created in the same instant could share one position and then show in any order in a manually ordered list; each now goes after the one before it.
 
