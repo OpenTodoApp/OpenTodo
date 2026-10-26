@@ -1,16 +1,16 @@
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 // The built service worker and manifest (OpenSpec change attachments, tasks 9.1
 // and 9.2). Skipped when the web app has not been built yet (`npm run build`),
 // except with REQUIRE_BUILT=1: CI runs these after its build step and a missing
-// build must fail there, not skip.
-const built = import.meta.glob<string>(['../../../internal/web/dist/sw.js', '../../../internal/web/dist/manifest.webmanifest'], {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-})
-const sw = Object.entries(built).find(([p]) => p.endsWith('sw.js'))?.[1]
-const manifest = Object.entries(built).find(([p]) => p.endsWith('manifest.webmanifest'))?.[1]
+// build must fail there, not skip. Read from disk at run time: an import.meta.glob
+// is cached with the transformed file, so a run before the build would hide it.
+const dist = path.resolve(process.cwd(), '../internal/web/dist')
+const read = (name: string) => (existsSync(path.join(dist, name)) ? readFileSync(path.join(dist, name), 'utf8') : undefined)
+const sw = read('sw.js')
+const manifest = read('manifest.webmanifest')
 
 describe('built service worker', () => {
   it.runIf(process.env.REQUIRE_BUILT === '1')('the build exists (REQUIRE_BUILT=1)', () => {
