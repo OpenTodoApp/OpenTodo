@@ -4,11 +4,13 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText, ROOT } from './common.mjs'
+import { configVariables, loadFacts, readText, releaseVersion, ROOT } from './common.mjs'
 import { check, checkCompose, checkDescription, checkUpstream, COMPOSE, DESCRIPTION, UPSTREAM_DIR } from './cosmos.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
 const compose = readText(COMPOSE)
 const description = readText(DESCRIPTION)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
@@ -25,7 +27,7 @@ test('cosmos: strict JSON', () => {
 })
 
 test('cosmos: image policy stable', () => {
-  has(checkCompose(compose.replace('opentodo:stable', 'opentodo:0.14.2'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(checkCompose(compose.replace('opentodo:stable', `opentodo:${V}`), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(checkCompose(compose.replace('opentodo:stable', 'opentodo:latest'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(checkDescription(description.replace('opentodo:stable', 'opentodo:latest'), ctx), /description\.json: image must be/)
 })

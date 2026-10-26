@@ -1,12 +1,15 @@
 // node --test scripts/deploy/truenas.test.mjs  (OpenSpec change platform-catalogs)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText } from './common.mjs'
+import { configVariables, escapeRegExp, loadFacts, readText, releaseVersion } from './common.mjs'
 import { APP, check, checkApp, checkUpstream, FILES } from './truenas.mjs'
 import { parseYaml } from './yaml.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
+const VR = escapeRegExp(V)
 const files = Object.fromEntries(FILES.map((f) => [f, readText(`${APP}/${f}`)]))
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
 /** The app with one file changed by `fn`; the replaced text must exist. */
@@ -24,10 +27,10 @@ test('truenas: the committed app passes', () => {
 })
 
 test('truenas: image policy release, app_version follows the tag', () => {
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: "stable"'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: "latest"'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: "0.6.0"'), ctx), /app_version \(0\.14\.2\) must equal the image tag/)
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: 0.6'), ctx), /must be a quoted string/)
+  has(checkApp(edit('ix_values.yaml', `tag: "${V}"`, 'tag: "stable"'), ctx), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${VR}`))
+  has(checkApp(edit('ix_values.yaml', `tag: "${V}"`, 'tag: "latest"'), ctx), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${VR}`))
+  has(checkApp(edit('ix_values.yaml', `tag: "${V}"`, 'tag: "0.6.0"'), ctx), new RegExp(String.raw`app_version \(${VR}\) must equal the image tag`))
+  has(checkApp(edit('ix_values.yaml', `tag: "${V}"`, 'tag: 0.6'), ctx), /must be a quoted string/)
   has(checkApp(edit('ix_values.yaml', 'repository: ghcr.io/opentodoapp/opentodo', 'repository: opentodoapp/opentodo'), ctx), /image must be/)
 })
 

@@ -4,11 +4,16 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText, ROOT } from './common.mjs'
+import { configVariables, escapeRegExp, laterRelease, loadFacts, readText, releaseVersion, ROOT } from './common.mjs'
 import { check, checkTemplate, checkUpstream, parseYaml, TEMPLATE, UPSTREAM_DIR } from './casaos.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
+const VR = escapeRegExp(V)
+const LATER = laterRelease(V)
+const LATER_R = escapeRegExp(LATER)
 const compose = readText(TEMPLATE)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
 
@@ -28,14 +33,14 @@ test('casaos: the YAML subset parser is strict', () => {
 
 test('casaos: image policy and x-casaos.version', () => {
   // The store refuses moving tags: the latest release, never stable or latest.
-  has(checkTemplate(compose.replace('opentodo:0.14.2', 'opentodo:stable'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
-  has(checkTemplate(compose.replace('opentodo:0.14.2', 'opentodo:latest'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
+  has(checkTemplate(compose.replace(`opentodo:${V}`, 'opentodo:stable'), ctx), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${VR}`))
+  has(checkTemplate(compose.replace(`opentodo:${V}`, 'opentodo:latest'), ctx), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${VR}`))
   // Installs only see an update when the version changes, so it must follow the image.
-  has(checkTemplate(compose.replace('version: "0.14.2"', 'version: "0.6.0"'), ctx), /x-casaos\.version must equal the image tag/)
-  has(checkTemplate(compose.replace('version: "0.14.2"', 'version: 0.6'), ctx), /x-casaos\.version must be a quoted string/)
+  has(checkTemplate(compose.replace(`version: "${V}"`, 'version: "0.6.0"'), ctx), /x-casaos\.version must equal the image tag/)
+  has(checkTemplate(compose.replace(`version: "${V}"`, 'version: 0.6'), ctx), /x-casaos\.version must be a quoted string/)
   // A new release in the changelog makes the pinned template stale.
-  const next = { ...ctx, changelog: '## [0.15.1] - 2026-12-20\n' + ctx.changelog }
-  has(checkTemplate(compose, next), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.15\.1/)
+  const next = { ...ctx, changelog: `## [${LATER}] - 2026-12-20\n` + ctx.changelog }
+  has(checkTemplate(compose, next), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${LATER_R}`))
 })
 
 test('casaos: port, data path and the init service', () => {
