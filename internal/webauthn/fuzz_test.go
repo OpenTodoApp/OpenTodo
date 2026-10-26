@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"errors"
 	"testing"
@@ -131,8 +132,12 @@ func FuzzParseCOSEKey(f *testing.F) {
 		// The key type matches the algorithm the verifier will dispatch on.
 		switch k := pub.(type) {
 		case *ecdsa.PublicKey:
-			if alg != webauthn.AlgES256 || !k.Curve.IsOnCurve(k.X, k.Y) { //nolint:staticcheck // the check under test
-				t.Fatalf("ECDSA key with alg %d or off the curve", alg)
+			b, err := k.Bytes()
+			if alg != webauthn.AlgES256 || err != nil {
+				t.Fatalf("ECDSA key with alg %d: %v", alg, err)
+			}
+			if _, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), b); err != nil {
+				t.Fatalf("accepted a P-256 key that does not parse back: %v", err)
 			}
 		case ed25519.PublicKey:
 			if alg != webauthn.AlgEdDSA || len(k) != ed25519.PublicKeySize {
