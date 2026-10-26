@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/httpapi/maproutes"
 	"github.com/pixari/opentodo/internal/maps"
 	"github.com/pixari/opentodo/internal/settings"
 )
@@ -107,7 +108,7 @@ func TestMapProxyRoutes(t *testing.T) {
 
 	// Search rate limit: per user, other users unaffected.
 	// Three searches were sent above (one empty, one bad reverse): they count too.
-	for i := 3; i < mapSearchesPerMinute; i++ {
+	for i := 3; i < maproutes.SearchesPerMinute; i++ {
 		resp, out = e.do("GET", "/api/v1/maps/search?q=Duomo", nil)
 		e.mustStatus(resp, 200, out)
 	}

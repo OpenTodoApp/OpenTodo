@@ -22,11 +22,11 @@ import (
 func (s *Server) registerRelayRoutes(mux *routes) {
 	s.relayStore = relay.NewStore(s.sync.DB())
 	s.relayHub = relay.NewHub()
-	mux.handle("GET /api/v1/relay/devices", signedIn.sessionOnly().demoDenied(), s.handleListRelayDevices)
-	mux.handle("PUT /api/v1/relay/devices/{device}", signedIn.sessionOnly().recent().demoDenied(), s.handlePutRelayDevice)
-	mux.handle("DELETE /api/v1/relay/devices/{device}", signedIn.sessionOnly().demoDenied(), s.handleDeleteRelayDevice)
-	mux.handle("GET /api/v1/relay/events", signedIn.sessionOnly().demoDenied(), s.handleRelayEvents)
-	mux.handle("POST /api/v1/relay/answers/{id}", signedIn.sessionOnly().demoDenied(), s.handleRelayAnswer)
+	mux.handle("GET /api/v1/relay/devices", signedIn.SessionOnly().DemoDenied(), s.handleListRelayDevices)
+	mux.handle("PUT /api/v1/relay/devices/{device}", signedIn.SessionOnly().Recent().DemoDenied(), s.handlePutRelayDevice)
+	mux.handle("DELETE /api/v1/relay/devices/{device}", signedIn.SessionOnly().DemoDenied(), s.handleDeleteRelayDevice)
+	mux.handle("GET /api/v1/relay/events", signedIn.SessionOnly().DemoDenied(), s.handleRelayEvents)
+	mux.handle("POST /api/v1/relay/answers/{id}", signedIn.SessionOnly().DemoDenied(), s.handleRelayAnswer)
 }
 
 // relayFor is the agenttools.Relay of one account.

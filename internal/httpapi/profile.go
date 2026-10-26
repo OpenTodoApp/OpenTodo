@@ -17,12 +17,12 @@ import (
 // a link sent to the new address, otherwise it applies at once.
 func (s *Server) registerProfileRoutes(mux *routes) {
 	mux.handle("GET /api/v1/me/profile", signedIn, s.handleGetProfile)
-	mux.handle("PATCH /api/v1/me/profile", signedIn.fullTokens().demoDenied(), s.handlePatchProfile)
-	mux.handle("POST /api/v1/me/email", signedIn.sessionOnly().recent().demoDenied(), s.handleChangeEmail)
-	mux.handle("DELETE /api/v1/me/email", signedIn.sessionOnly().demoDenied(), s.handleCancelEmailChange)
-	mux.handle("POST /api/v1/me/email/confirm", signedIn.sessionOnly().demoDenied(), s.handleConfirmEmail)
-	mux.handle("PUT /api/v1/me/avatar", signedIn.fullTokens().demoDenied(), s.handlePutAvatar)
-	mux.handle("DELETE /api/v1/me/avatar", signedIn.fullTokens().demoDenied(), s.handleDeleteAvatar)
+	mux.handle("PATCH /api/v1/me/profile", signedIn.FullTokens().DemoDenied(), s.handlePatchProfile)
+	mux.handle("POST /api/v1/me/email", signedIn.SessionOnly().Recent().DemoDenied(), s.handleChangeEmail)
+	mux.handle("DELETE /api/v1/me/email", signedIn.SessionOnly().DemoDenied(), s.handleCancelEmailChange)
+	mux.handle("POST /api/v1/me/email/confirm", signedIn.SessionOnly().DemoDenied(), s.handleConfirmEmail)
+	mux.handle("PUT /api/v1/me/avatar", signedIn.FullTokens().DemoDenied(), s.handlePutAvatar)
+	mux.handle("DELETE /api/v1/me/avatar", signedIn.FullTokens().DemoDenied(), s.handleDeleteAvatar)
 	mux.handle("GET /api/v1/users/{id}/avatar", signedIn, s.handleGetAvatar)
 }
 

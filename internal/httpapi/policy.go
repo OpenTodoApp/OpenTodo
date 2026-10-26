@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/pixari/opentodo/internal/auth"
+	"github.com/pixari/opentodo/internal/httpapi/httpx"
 )
 
 // ---- route authorization policy (OpenSpec change `route-authorization-policy`) ----
@@ -16,88 +17,6 @@ import (
 // instance refuses it. The router records the table; policy_test.go fails for a
 // route registered any other way and checks the table of the security-relevant
 // routes and the demo deny list against it.
-
-type policyKind uint8
-
-const (
-	kindUnset  policyKind = iota // never valid: registration panics
-	kindPublic                   // anonymous by design; the reason says why
-	kindAuth                     // a session or an API token (requireAuth)
-)
-
-// roleRule limits a route to account roles.
-type roleRule uint8
-
-const (
-	anyRole   roleRule = iota
-	ownerRole          // the server owner
-	adminRole          // the owner and admins
-)
-
-// tokenRule says which API tokens a route accepts. Sessions are not affected.
-type tokenRule uint8
-
-const (
-	// tokensByMethod: read and agent tokens are refused on writes (requireAuth,
-	// mcp-server D2); full and admin tokens are accepted.
-	tokensByMethod tokenRule = iota
-	// tokensFull: read and agent tokens are refused even on reads.
-	tokensFull
-	// tokensAdmin: only admin tokens (credential and administration routes).
-	tokensAdmin
-	// tokensNone: sessions only.
-	tokensNone
-)
-
-// routePolicy is the declared access policy of one route.
-type routePolicy struct {
-	kind   policyKind
-	reason string // why a public route needs no sign-in
-	role   roleRule
-	what   string // completes "only the owner can …" for role refusals
-	tokens tokenRule
-	// fresh: a session must have proved its identity within FreshWindow
-	// (mfa-totp D4); tokens are governed by tokens alone.
-	fresh bool
-	// demo: a demo instance refuses the route (demoRules in demo.go, checked
-	// against this flag by TestDemoDenyListMatchesPolicy).
-	demo bool
-}
-
-// public is a route that needs no sign-in, with the reason it is safe.
-func public(reason string) routePolicy { return routePolicy{kind: kindPublic, reason: reason} }
-
-// signedIn is any session or API token (read and agent tokens only on reads).
-var signedIn = routePolicy{kind: kindAuth}
-
-// ownerOnly is the server owner; what completes "only the owner can …".
-func ownerOnly(what string) routePolicy {
-	return routePolicy{kind: kindAuth, role: ownerRole, what: what}
-}
-
-// adminsOnly is the owner and admins; what completes "only the owner and admins can …".
-func adminsOnly(what string) routePolicy {
-	return routePolicy{kind: kindAuth, role: adminRole, what: what}
-}
-
-// credential marks a credential or administration route (SEC-3): API tokens
-// need the admin scope; sessions are accepted as the other flags say.
-func (p routePolicy) credential() routePolicy { p.tokens = tokensAdmin; return p }
-
-// recent requires a session to have re-authenticated within FreshWindow.
-func (p routePolicy) recent() routePolicy { p.fresh = true; return p }
-
-// sensitive is credential plus recent: a recently confirmed session or an admin token.
-func (p routePolicy) sensitive() routePolicy { return p.credential().recent() }
-
-// sessionOnly refuses every API token.
-func (p routePolicy) sessionOnly() routePolicy { p.tokens = tokensNone; return p }
-
-// fullTokens refuses read and agent tokens on every method.
-func (p routePolicy) fullTokens() routePolicy { p.tokens = tokensFull; return p }
-
-// demoDenied marks a route a demo instance refuses.
-func (p routePolicy) demoDenied() routePolicy { p.demo = true; return p }
 
 // routeEntry is one registration: its pattern and policy.
 type routeEntry struct {
@@ -117,18 +36,23 @@ func (rt *routes) handle(pattern string, p routePolicy, h http.HandlerFunc) {
 	rt.handler(pattern, p, h)
 }
 
+// Handle is handle for the route packages (httpx.Router).
+func (rt *routes) Handle(pattern string, p httpx.Policy, h http.HandlerFunc) {
+	rt.handler(pattern, p, h)
+}
+
 // handler is handle for an http.Handler (the web app, sub-handlers).
 func (rt *routes) handler(pattern string, p routePolicy, h http.Handler) {
 	switch {
-	case p.kind == kindUnset:
+	case p.Kind == httpx.KindUnset:
 		panic(fmt.Sprintf("route %q registered without a policy", pattern))
-	case p.kind == kindPublic && p.reason == "":
+	case p.Kind == httpx.KindPublic && p.Reason == "":
 		panic(fmt.Sprintf("public route %q registered without a reason", pattern))
-	case p.role != anyRole && p.what == "":
+	case p.Role != httpx.AnyRole && p.What == "":
 		panic(fmt.Sprintf("route %q limited to a role without a refusal message", pattern))
 	}
 	rt.table = append(rt.table, routeEntry{pattern: pattern, policy: p})
-	if p.kind == kindPublic {
+	if p.Kind == httpx.KindPublic {
 		rt.mux.Handle(pattern, h)
 		return
 	}
@@ -145,15 +69,15 @@ func (rt *routes) handler(pattern string, p routePolicy, h http.Handler) {
 // re-authenticate or to use another credential.
 func (s *Server) admits(w http.ResponseWriter, r *http.Request, p routePolicy) bool {
 	u := userFrom(r.Context())
-	switch p.role {
-	case ownerRole:
+	switch p.Role {
+	case httpx.OwnerRole:
 		if u == nil || u.Role != auth.RoleOwner {
-			writeError(w, http.StatusForbidden, "forbidden", "only the owner can "+p.what)
+			writeError(w, http.StatusForbidden, "forbidden", "only the owner can "+p.What)
 			return false
 		}
-	case adminRole:
+	case httpx.AdminRole:
 		if u == nil || (u.Role != auth.RoleOwner && u.Role != auth.RoleAdmin) {
-			writeError(w, http.StatusForbidden, "forbidden", "only the owner and admins can "+p.what)
+			writeError(w, http.StatusForbidden, "forbidden", "only the owner and admins can "+p.What)
 			return false
 		}
 	}
@@ -161,19 +85,19 @@ func (s *Server) admits(w http.ResponseWriter, r *http.Request, p routePolicy) b
 	if sess == nil {
 		scope := tokenFrom(r.Context()).Scope
 		switch {
-		case p.tokens == tokensNone:
+		case p.Tokens == httpx.TokensNone:
 			writeError(w, http.StatusForbidden, "session_required", "this needs a signed-in browser session, not an API token")
 			return false
-		case p.tokens == tokensAdmin && scope != auth.ScopeAdmin:
+		case p.Tokens == httpx.TokensAdmin && scope != auth.ScopeAdmin:
 			writeError(w, http.StatusForbidden, "insufficient_scope", "credential and administration routes need a signed-in session or an admin API token (see docs/api.md#token-scopes)")
 			return false
-		case p.tokens == tokensFull && !auth.FullAccess(scope):
+		case p.Tokens == httpx.TokensFull && !auth.FullAccess(scope):
 			writeError(w, http.StatusForbidden, "insufficient_scope", "this needs a signed-in session or a full-access API token")
 			return false
 		}
 		return true
 	}
-	if p.fresh && !sess.FreshWithin(FreshWindow, s.auth.Now()) {
+	if p.Fresh && !sess.FreshWithin(FreshWindow, s.auth.Now()) {
 		writeError(w, http.StatusForbidden, "reauth_required", "confirm your password or a code to continue")
 		return false
 	}

@@ -32,23 +32,23 @@ func (s *Server) registerCalendarSyncRoutes(mux *routes) {
 	gate := switchGate(s.calsyncOn, "calendar_sync_disabled", "the server owner has not enabled calendar sync")
 
 	s.switchRoutes(mux, "/api/v1/settings/calendar-sync", switchRoute{sw: s.calsyncOn,
-		get: signedIn.demoDenied(), put: ownerOnly("manage the calendar sync setting").demoDenied(),
+		get: signedIn.DemoDenied(), put: ownerOnly("manage the calendar sync setting").DemoDenied(),
 		more: s.calsyncSettingExtra,
 		after: func(_ context.Context, before, on bool) {
 			if before != on {
 				w.Changed()
 			}
 		}})
-	mux.handle("GET /api/v1/settings/calendar-sync/google", ownerOnly("manage the Google client of calendar sync").demoDenied(), s.handleGetGoogleClient)
-	mux.handle("PUT /api/v1/settings/calendar-sync/google", ownerOnly("manage the Google client of calendar sync").credential().demoDenied(), s.handlePutGoogleClient)
-	mux.handle("GET /api/v1/calendar-sync/connections", signedIn.demoDenied(), gate(s.handleListCalendarConnections))
-	mux.handle("POST /api/v1/calendar-sync/connections", signedIn.recent().demoDenied(), gate(s.handleCreateCalendarConnection))
+	mux.handle("GET /api/v1/settings/calendar-sync/google", ownerOnly("manage the Google client of calendar sync").DemoDenied(), s.handleGetGoogleClient)
+	mux.handle("PUT /api/v1/settings/calendar-sync/google", ownerOnly("manage the Google client of calendar sync").Credential().DemoDenied(), s.handlePutGoogleClient)
+	mux.handle("GET /api/v1/calendar-sync/connections", signedIn.DemoDenied(), gate(s.handleListCalendarConnections))
+	mux.handle("POST /api/v1/calendar-sync/connections", signedIn.Recent().DemoDenied(), gate(s.handleCreateCalendarConnection))
 	// One route, one policy: the handler asks for a fresh session when the body carries a password.
-	mux.handle("PATCH /api/v1/calendar-sync/connections/{id}", signedIn.demoDenied(), gate(s.handlePatchCalendarConnection))
-	mux.handle("DELETE /api/v1/calendar-sync/connections/{id}", signedIn.demoDenied(), gate(s.handleDeleteCalendarConnection))
-	mux.handle("POST /api/v1/calendar-sync/connections/{id}/sync", signedIn.demoDenied(), gate(s.handleSyncCalendarConnection))
-	mux.handle("POST /api/v1/calendar-sync/google/start", signedIn.recent().demoDenied(), gate(s.handleGoogleStart))
-	mux.handle("GET "+calsyncCallback, signedIn.sessionOnly().demoDenied(), gate(s.handleGoogleCallback))
+	mux.handle("PATCH /api/v1/calendar-sync/connections/{id}", signedIn.DemoDenied(), gate(s.handlePatchCalendarConnection))
+	mux.handle("DELETE /api/v1/calendar-sync/connections/{id}", signedIn.DemoDenied(), gate(s.handleDeleteCalendarConnection))
+	mux.handle("POST /api/v1/calendar-sync/connections/{id}/sync", signedIn.DemoDenied(), gate(s.handleSyncCalendarConnection))
+	mux.handle("POST /api/v1/calendar-sync/google/start", signedIn.Recent().DemoDenied(), gate(s.handleGoogleStart))
+	mux.handle("GET "+calsyncCallback, signedIn.SessionOnly().DemoDenied(), gate(s.handleGoogleCallback))
 }
 
 // calsyncSettingExtra tells every user whether Google can be connected.

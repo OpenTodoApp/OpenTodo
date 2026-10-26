@@ -18,10 +18,10 @@ import (
 // here, never through the op log.
 func (s *Server) registerSharingRoutes(mux *routes) {
 	mux.handle("GET /api/v1/projects/{id}/members", signedIn, s.handleListMembers)
-	mux.handle("POST /api/v1/projects/{id}/members", signedIn.demoDenied(), s.handleAddMember)
-	mux.handle("PATCH /api/v1/projects/{id}/members/{userId}", signedIn.demoDenied(), s.handleSetMemberRole)
-	mux.handle("DELETE /api/v1/projects/{id}/members/{userId}", signedIn.demoDenied(), s.handleRemoveMember)
-	mux.handle("POST /api/v1/projects/{id}/transfer", signedIn.demoDenied(), s.handleTransferProject)
+	mux.handle("POST /api/v1/projects/{id}/members", signedIn.DemoDenied(), s.handleAddMember)
+	mux.handle("PATCH /api/v1/projects/{id}/members/{userId}", signedIn.DemoDenied(), s.handleSetMemberRole)
+	mux.handle("DELETE /api/v1/projects/{id}/members/{userId}", signedIn.DemoDenied(), s.handleRemoveMember)
+	mux.handle("POST /api/v1/projects/{id}/transfer", signedIn.DemoDenied(), s.handleTransferProject)
 }
 
 // memberError maps the sync package's membership errors onto the API envelope.

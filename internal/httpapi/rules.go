@@ -46,7 +46,7 @@ func (s *Server) registerRuleRoutes(mux *routes) {
 		// A due or deadline a rule moves carries its reminders along, as a REST PATCH does.
 		s.rules.Reminder = s.reminderOpsForTaskAs
 	}
-	user := signedIn.demoDenied()
+	user := signedIn.DemoDenied()
 	asRules := func(h http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			r.SetPathValue("collection", "rules")
@@ -63,7 +63,7 @@ func (s *Server) registerRuleRoutes(mux *routes) {
 	mux.handle("GET /api/v1/me/rules", user, s.handleMyRules)
 	mux.handle("PUT /api/v1/me/rules/paused", user, s.handleRulesPaused)
 	s.switchRoutes(mux, "/api/v1/settings/automations", switchRoute{sw: s.ruleSwitch,
-		get: ownerOnly("see the automations setting").demoDenied(), put: ownerOnly("manage the automations setting").demoDenied(),
+		get: ownerOnly("see the automations setting").DemoDenied(), put: ownerOnly("manage the automations setting").DemoDenied(),
 		more: s.automationsLock, putMore: s.automationsLock})
 }
 
