@@ -236,6 +236,29 @@ func TestRedeliverUnknown404(t *testing.T) {
 	}
 }
 
+// private-network-reach: test sends and redeliveries share a per-user
+// hourly budget; other users keep theirs.
+func TestWebhookHandSendsAreLimited(t *testing.T) {
+	owner, member := memberEnv(t)
+	owner.allowPrivate(true)
+	rcv := newHookReceiver(t, 200)
+	a := owner.createHook(map[string]any{"url": rcv.srv.URL, "events": []string{"task.created"}})
+	path := "/api/v1/webhooks/" + a["id"].(string) + "/test"
+	for i := 0; i < webhookSendsPerHour-1; i++ {
+		resp, out := owner.do("POST", path, nil)
+		owner.mustStatus(resp, 200, out)
+	}
+	resp, out := owner.do("POST", "/api/v1/webhooks/"+a["id"].(string)+"/deliveries/nope/redeliver", nil)
+	owner.mustStatus(resp, 404, out)
+	resp, out = owner.do("POST", path, nil)
+	owner.mustStatus(resp, 429, out)
+	if errCode(out) != "rate_limited" {
+		t.Fatalf("error = %v", out)
+	}
+	resp, out = member.do("POST", "/api/v1/webhooks/x/test", nil)
+	member.mustStatus(resp, 404, out)
+}
+
 func TestSecretNotInReads(t *testing.T) {
 	e := ownerEnv(t)
 	hook := e.createHook(map[string]any{"url": "https://93.184.216.34/h", "events": []string{"task.completed", "task.created"}})

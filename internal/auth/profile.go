@@ -225,7 +225,7 @@ func (s *Service) ConfirmEmailChange(ctx context.Context, u *User, secret string
 	if _, err := s.checkNewEmail(ctx, tx, u, email); err != nil {
 		return nil, err
 	}
-	out, err := s.applyEmailTx(ctx, tx, u.ID, email)
+	out, err := s.applyEmailTx(ctx, tx, u.ID, email, true)
 	if err != nil {
 		return nil, err
 	}
@@ -249,15 +249,22 @@ func (s *Service) ChangeEmailNow(ctx context.Context, u *User, email string) (*U
 	if err != nil {
 		return nil, err
 	}
-	out, err := s.applyEmailTx(ctx, tx, u.ID, email)
+	out, err := s.applyEmailTx(ctx, tx, u.ID, email, false)
 	if err != nil {
 		return nil, err
 	}
 	return out, tx.Commit()
 }
 
-func (s *Service) applyEmailTx(ctx context.Context, tx *sql.Tx, userID, email string) (*User, error) {
-	if _, err := tx.ExecContext(ctx, "UPDATE users SET email = ? WHERE id = ?", email, userID); err != nil {
+// applyEmailTx sets the account's email. confirmed records that the holder
+// opened a link sent to it; an unconfirmed change clears the verification, so
+// single sign-on no longer links to the account by email (sso-email-verified).
+func (s *Service) applyEmailTx(ctx context.Context, tx *sql.Tx, userID, email string, confirmed bool) (*User, error) {
+	var verifiedAt any
+	if confirmed {
+		verifiedAt = s.clock().UnixMilli()
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE users SET email = ?, email_verified_at = ? WHERE id = ?", email, verifiedAt, userID); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrEmailTaken
 		}

@@ -51,7 +51,7 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	// Without a token, a client outside the local network needs the setup code
 	// from the server log (trusted-client-identity).
-	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeRequired() && !isLocalAddr(clientIP(r))
+	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeRequired() && !isLocalSetup(r)
 	if s.hosted {
 		// A hosted tenant (multi-tenant-host D4): the app hides the operator's panels.
 		out["hosted"] = true
@@ -139,7 +139,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	// Without a setup token, a first registration from a public address needs
 	// the setup code from the server log (trusted-client-identity).
-	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, isLocalAddr(clientIP(r)))
+	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, isLocalSetup(r))
 	switch {
 	case errors.Is(err, auth.ErrSetupTokenInvalid):
 		writeError(w, http.StatusForbidden, "setup_token_invalid", err.Error())
@@ -291,6 +291,10 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.secureCookie(r), SameSite: http.SameSiteLaxMode})
+	// The browser drops its HTTP cache (attachments, profile pictures) for
+	// this site; browsers honour it on https and localhost
+	// (attachment-client-hardening D2).
+	w.Header().Set("Clear-Site-Data", `"cache"`)
 	// Provider sign-out (oidc-login D7): the local session is already gone; the
 	// client follows the redirect to the provider's end-session endpoint.
 	if redirect != "" {

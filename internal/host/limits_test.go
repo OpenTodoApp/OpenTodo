@@ -119,6 +119,35 @@ func TestRequestLimit(t *testing.T) {
 	}
 }
 
+// TestRequestLimitPerClient (hosted-demo-limits): one client over the rate,
+// signed in or not, does not lock out the tenant's other clients.
+func TestRequestLimitPerClient(t *testing.T) {
+	f := newFixture(t, nil)
+	f.create("busy", config.Limits{RequestsPerMinute: 3})
+	c := f.client("busy")
+	from := func(addr string) int {
+		req := c.request("GET", "/healthz", nil)
+		req.Header.Set("X-Forwarded-For", addr)
+		resp, err := c.send(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	for i := 0; i < 3; i++ {
+		if code := from("198.51.100.7"); code != http.StatusOK {
+			t.Fatalf("request %d: %d", i, code)
+		}
+	}
+	if code := from("198.51.100.7"); code != http.StatusTooManyRequests {
+		t.Fatalf("flooding client: %d", code)
+	}
+	if code := from("203.0.113.20"); code != http.StatusOK {
+		t.Fatalf("another client of the same tenant: %d", code)
+	}
+}
+
 // TestImportLimit (5.1): an import above the tenant's size answers 413
 // limit_import.
 func TestImportLimit(t *testing.T) {

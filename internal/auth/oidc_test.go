@@ -34,7 +34,7 @@ func TestOIDCSubjectFirstMatching(t *testing.T) {
 	}
 	// The email changes at the provider (even to another account's email, even
 	// unverified): the subject still signs in to the same account.
-	if _, err := db.Exec("INSERT INTO users(id,email,password_hash,created_at) VALUES('v1','victim@example.com','x',1)"); err != nil {
+	if _, err := db.Exec("INSERT INTO users(id,email,password_hash,created_at,email_verified_at) VALUES('v1','victim@example.com','x',1,1)"); err != nil {
 		t.Fatal(err)
 	}
 	u, _, linked, err = s.MatchOrProvision(ctx, ext("sub-owner", "victim@example.com", false), false, "Home SSO")
@@ -91,7 +91,19 @@ func TestOIDCEmailNeverLinksGuardedAccounts(t *testing.T) {
 	if n := countRows(t, db, "SELECT COUNT(*) FROM identities"); n != 0 {
 		t.Fatalf("identities written for guarded accounts: %d", n)
 	}
-	u, created, linked, err := s.MatchOrProvision(ctx, ext("sub-plain", "plain@example.com", true), false, "SSO")
+	// sso-email-verified: a typed address nobody confirmed never links; once
+	// the holder confirms it through an emailed link, it does.
+	if _, _, _, err := s.MatchOrProvision(ctx, ext("sub-plain", "plain@example.com", true), false, "SSO"); !errors.Is(err, ErrLinkRequiresSession) {
+		t.Fatalf("unconfirmed address linked by email: %v", err)
+	}
+	secret, _, err := s.RequestEmailChange(ctx, plain, "plain2@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ConfirmEmailChange(ctx, plain, secret); err != nil {
+		t.Fatal(err)
+	}
+	u, created, linked, err := s.MatchOrProvision(ctx, ext("sub-plain", "plain2@example.com", true), false, "SSO")
 	if err != nil || u.ID != plain.ID || created || !linked {
 		t.Fatalf("plain member = %+v %v %v %v", u, created, linked, err)
 	}
@@ -100,6 +112,30 @@ func TestOIDCEmailNeverLinksGuardedAccounts(t *testing.T) {
 	}
 	if has, err := s.HasLocalMFA(ctx, pk.ID); err != nil || !has {
 		t.Fatalf("passkey member local factors = %v %v", has, err)
+	}
+}
+
+// sso-email-verified "Address typed by someone else": a member who sets their
+// address to somebody else's, without confirming it, does not catch that
+// person's first sign-on; an account the provider created is confirmed.
+func TestOIDCTypedEmailDoesNotCatchSignOn(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newService(t, true)
+	owner := mustOwner(t, s)
+	squatter := invited(t, s, owner, "squatter@example.com")
+	if _, err := s.ChangeEmailNow(ctx, squatter, "victim@example.com"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := s.MatchOrProvision(ctx, ext("sub-victim", "victim@example.com", true), true, "SSO"); !errors.Is(err, ErrLinkRequiresSession) {
+		t.Fatalf("typed address caught the sign-on: %v", err)
+	}
+	fresh, created, _, err := s.MatchOrProvision(ctx, ext("sub-new", "new@example.com", true), true, "SSO")
+	if err != nil || !created {
+		t.Fatalf("provision: %v %v", created, err)
+	}
+	u, _, linked, err := s.MatchOrProvision(ctx, ext("sub-new-2", "new@example.com", true), true, "SSO")
+	if err != nil || u.ID != fresh.ID || !linked {
+		t.Fatalf("second identity of a provisioned account = %+v %v %v", u, linked, err)
 	}
 }
 

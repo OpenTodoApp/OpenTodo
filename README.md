@@ -171,7 +171,7 @@ docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
   ghcr.io/pixari/opentodo:stable
 ```
 
-Open <http://localhost:8080> and create the owner account. Opened from outside your local network, the setup screen asks for a one-time setup code: find it with `docker logs opentodo` ([details](docs/self-hosting/docker.md#the-setup-code)). Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.6` follows the 0.6 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
+Open <http://localhost:8080> and create the owner account. On a server reachable from the internet, finish setup right after starting it, or set `OPENTODO_SETUP_CODE=required`. ([details](docs/self-hosting/docker.md#the-setup-code)). Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.6` follows the 0.6 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
 
 ### Docker Compose
 
@@ -182,7 +182,7 @@ cp .env.example .env          # optional, every value has a default
 docker compose up -d
 ```
 
-Data is kept in the `opentodo-data` volume. Setting up from outside your local network needs the setup code from `docker compose logs opentodo`.
+Data is kept in the `opentodo-data` volume. On a server reachable from the internet, finish setup right after starting it, or set `OPENTODO_SETUP_CODE=required`.
 
 ### Coolify
 
@@ -235,7 +235,8 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_ADDR` | `:8080` | Listen address |
 | `OPENTODO_DATA_DIR` | `./data` (binary), `/data` (image) | Directory for the SQLite database, secrets, the VAPID key and local backups |
 | `OPENTODO_BASE_URL` | unset (inferred from requests) | Public URL. With https: `Secure` cookies, `Strict-Transport-Security`, passkeys and web push; also used for strict origin checks (the request must be addressed to its host) and in invitation, reset and CalDAV links |
-| `OPENTODO_SETUP_TOKEN` | unset | When set (16+ characters), creating the first account requires this token from every address, so a fresh public server cannot be claimed by a stranger. Unset, setup from a public address needs the one-time [setup code](docs/self-hosting/docker.md#the-setup-code) printed in the server log instead. No effect once the owner exists. The Coolify template generates one |
+| `OPENTODO_SETUP_TOKEN` | unset | When set (16+ characters), creating the first account requires this token from every address, so a fresh public server cannot be claimed by a stranger. No effect once the owner exists. The Coolify template generates one |
+| `OPENTODO_SETUP_CODE` | `off` | `required` makes a first registration from another machine, while no owner and no setup token exist, carry the one-time [setup code](docs/self-hosting/docker.md#the-setup-code) printed in the server log. Off, the first visitor becomes the owner: finish setup right after starting a public server |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime in days |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. The startup line shows the level in use (`log_level=`); `debug` adds one line per API request (method, path, status, duration) |
