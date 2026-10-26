@@ -266,7 +266,7 @@ Update baselines only for intended visual changes, in the same pull request as t
 
 ## The interface audit
 
-The workbench checks stories; the audit checks the built app. `make ux-audit` starts a throwaway server, seeds it the way the layout check does, and opens every entry of the screen inventory (`scripts/ux-audit/screens.json`: every route, settings section, signed-out screen, display route and the main overlays) at 360, 768 (both with touch) and 1280 px, light and dark, in English and German. It writes `ux-audit-report/index.html`, a contact sheet with a screenshot of each capture and the findings ranked, and `report.json`. CI runs it on every code change as the "Interface audit" job and uploads the report; it does not block a pull request.
+The workbench checks stories; the audit checks the built app. `make ux-audit` starts a throwaway server, seeds it the way the layout check does, and opens every entry of the screen inventory (`scripts/ux-audit/screens.json`: every route, settings section, signed-out screen, display route and the main overlays) at 360, 768 (both with touch) and 1280 px, light and dark, in English and German. It writes `ux-audit-report/index.html`, a contact sheet with a screenshot of each capture and the findings ranked, and `report.json`. CI runs it nightly on `main`, and on demand on any branch (Actions → Interface audit → Run workflow), in its own workflow (`.github/workflows/ux-audit.yml`) and uploads the report; it never blocks a pull request or delays publishing an image.
 
 | Id | Measures | Limit |
 | --- | --- | --- |

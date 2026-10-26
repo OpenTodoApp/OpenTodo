@@ -59,9 +59,29 @@ const table = [
   [['mobile/android/store/permissions.txt', 'internal/httpapi/router.go'], { code: 'true', docs: 'false', mobile: 'true' }],
 ]
 
-for (const [files, want] of table) {
-  test(`ci-changes: ${files.join(' + ')}`, () => {
-    assert.deepEqual(changes(files), want)
+// The tier outputs (ci-speed): which pull request jobs a change runs.
+const tiers = [
+  [['web/src/app/App.tsx'], { ui: 'true', layout: 'true', extension: 'false', skill: 'false' }],
+  [['web/src/ui/Button.stories.tsx'], { ui: 'true', layout: 'true' }],
+  [['web/src/lib/sync.ts'], { ui: 'true', layout: 'true' }],
+  [['web/vitest.contract.config.ts'], { ui: 'false', layout: 'true' }],
+  [['internal/sync/ops.go'], { ui: 'false', layout: 'true', extension: 'false', skill: 'false' }],
+  [['internal/store/migrations/0099_x.sql'], { ui: 'false', layout: 'true' }],
+  [['scripts/ui-check/a11y.mjs'], { ui: 'true', layout: 'false' }],
+  [['scripts/e2e-smoke.mjs'], { ui: 'false', layout: 'true' }],
+  [['deploy/coolify/opentodo.yaml'], { ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
+  [['extension/popup.js'], { ui: 'false', layout: 'false', extension: 'true', skill: 'false' }],
+  [['skills/opentodo-cli/SKILL.md'], { ui: 'false', layout: 'false', extension: 'false', skill: 'true' }],
+  [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
+  [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
+  [['web/src/generated/help.json'], { code: 'false', ui: 'false', layout: 'false' }],
+  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', extension: 'true', skill: 'true', mobile: 'true' }],
+]
+
+const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]))
+for (const [files, want] of [...table, ...tiers]) {
+  test(`ci-changes: ${files.join(' + ')} → ${Object.keys(want).join(',')}`, () => {
+    assert.deepEqual(pick(changes(files), Object.keys(want)), want)
   })
 }
 
@@ -200,7 +220,10 @@ test('the image, stable tag and release are published only after every gate', ()
     assert.ok(needsOf(jobs.release).includes(g), `the release job must need ${g}`)
   }
   assert.ok(needsOf(jobs.release).includes('docker'), 'the release waits for the image')
-  assert.match(jobs.docker, /^ {4}if: github\.event_name != 'pull_request'$/m, 'pull requests never publish')
+  // Pull requests never publish; a gate skipped by the pull request tier never blocks
+  // publishing, a failed or cancelled one always does (ci-speed).
+  assert.match(jobs.docker, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && github\.event_name != 'pull_request' \}\}$/m, 'pull requests never publish, and a failed gate stops publishing')
+  assert.match(jobs.release, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) \}\}$/m, 'a failed gate stops the release')
   assert.match(jobs.docker, /type=raw,value=stable,/, 'stable moves only in the gated publish job')
 })
 
@@ -280,8 +303,14 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   const e2e = read('Makefile').match(/^e2e:[^\n]*\n((?:\t.*\n)+)/m)?.[1] ?? ''
   assert.match(e2e, /e2e-smoke e2e-views e2e-offline/, 'make e2e runs the two-device, saved-view and offline-start scripts')
   // The built service worker and manifest tests run after the build, where they cannot skip.
-  const web = jobsOf(read('.github/workflows/ci.yml')).web ?? ''
-  assert.ok(web.indexOf('run: npm run test:built') > web.indexOf('run: npm run build'), 'the web job runs npm run test:built after npm run build')
+  const build = jobsOf(read('.github/workflows/ci.yml'))['web-build'] ?? ''
+  assert.ok(build.indexOf('run: npm run test:built') > build.indexOf('run: npm run build'), 'the web-build job runs npm run test:built after npm run build')
+  // The report-only interface audit runs nightly and on demand, off every critical path (ci-speed).
+  const audit = read('.github/workflows/ux-audit.yml')
+  assert.match(audit, /^ {2}schedule:\n {4}- cron: /m, 'the interface audit runs nightly')
+  assert.match(audit, /^ {2}workflow_dispatch:$/m, 'the interface audit runs on demand')
+  assert.match(audit, /run: node scripts\/ux-audit\/tour\.mjs$/m)
+  assert.ok(!jobsOf(read('.github/workflows/ci.yml'))['ux-audit'], 'the push run does not wait for the interface audit')
   const nightly = read('.github/workflows/nightly.yml')
   assert.match(nightly, /^ {2}schedule:\n {4}- cron: /m)
   assert.match(nightly, /go test -race /)
