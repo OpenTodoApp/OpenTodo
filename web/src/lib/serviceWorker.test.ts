@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 // The built service worker and manifest (OpenSpec change attachments, tasks 9.1
-// and 9.2). Skipped when the web app has not been built yet (`npm run build`).
+// and 9.2). Skipped when the web app has not been built yet (`npm run build`),
+// except with REQUIRE_BUILT=1: CI runs these after its build step and a missing
+// build must fail there, not skip.
 const built = import.meta.glob<string>(['../../../internal/web/dist/sw.js', '../../../internal/web/dist/manifest.webmanifest'], {
   query: '?raw',
   import: 'default',
@@ -11,6 +13,10 @@ const sw = Object.entries(built).find(([p]) => p.endsWith('sw.js'))?.[1]
 const manifest = Object.entries(built).find(([p]) => p.endsWith('manifest.webmanifest'))?.[1]
 
 describe('built service worker', () => {
+  it.runIf(process.env.REQUIRE_BUILT === '1')('the build exists (REQUIRE_BUILT=1)', () => {
+    expect(sw, 'internal/web/dist/sw.js: run npm run build first').toBeTruthy()
+    expect(manifest, 'internal/web/dist/manifest.webmanifest: run npm run build first').toBeTruthy()
+  })
   it.skipIf(!sw)('precaches the build, keeps the deny list and push, and handles the share POST', () => {
     expect(sw).toMatch(/"revision":"[0-9a-f]+"/)
     expect(sw).not.toContain('self.__WB_MANIFEST')
