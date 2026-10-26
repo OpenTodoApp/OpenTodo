@@ -16,6 +16,7 @@ import { applyBatch } from './undo'
 import type { Attachment, AttachmentLimits } from './types'
 import { t } from './i18n'
 import { sha256, uuid } from './ids'
+import { safeUrl } from './share'
 
 /** The longest attachment name the server accepts. */
 export const MAX_NAME = 255
@@ -255,7 +256,10 @@ export function isImage(mime: string): boolean {
  */
 export async function openAttachment(a: Attachment, opts: { download?: boolean } = {}): Promise<void> {
   if (a.url) {
-    window.open(a.url, '_blank', 'noopener,noreferrer')
+    // A decrypted link never passed the server's URL check: only http(s) opens
+    // (attachment-client-hardening D3).
+    const href = safeUrl(a.url)
+    if (href) window.open(href, '_blank', 'noopener,noreferrer')
     return
   }
   const local = await db.attachmentBlobs.get(a.id)

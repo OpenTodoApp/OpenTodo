@@ -31,6 +31,8 @@ type Service struct {
 	commentLimiter *fixedWindow
 	// attachmentLimit is the per-file attachment size limit in bytes (attachments D5).
 	attachmentLimit func() int64
+	// attachmentQuota is the per-account attachment quota in bytes (attachment_quota.go).
+	attachmentQuota func() int64
 	// blobs removes attachment files after purges (attachments D13); nil in tests without files.
 	blobs BlobStore
 	// pullBudget overrides MaxPullBytes in tests; 0 means MaxPullBytes.

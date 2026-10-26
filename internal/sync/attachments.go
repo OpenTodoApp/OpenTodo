@@ -135,6 +135,9 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 			if st.author != r.acc.userID && role != RoleOwner && role != RoleAdmin {
 				return "", ReasonForbidden, nil
 			}
+			if over, err := r.restoreOverQuota(op, st); err != nil || over {
+				return "", ReasonQuotaExceeded, err
+			}
 		case op.Field == "name":
 			if st.author != r.acc.userID {
 				return "", ReasonForbidden, nil

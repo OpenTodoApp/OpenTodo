@@ -201,6 +201,24 @@ describe('attachment data layer', () => {
   })
 })
 
+// attachment-client-hardening D3: a link attachment's address, decrypted on the
+// device, never passed the server's URL check; only http(s) opens.
+describe('opening a link attachment', () => {
+  it('opens http(s) and nothing else', async () => {
+    const opened: string[] = []
+    vi.stubGlobal('window', { open: (u: string) => { opened.push(u) } })
+    try {
+      const link = (url: string) => ({ id: 'l', url } as unknown as Parameters<typeof openAttachment>[0])
+      await openAttachment(link('https://example.com/a'))
+      await openAttachment(link('javascript:alert(1)'))
+      await openAttachment(link('data:text/html,x'))
+      expect(opened).toEqual(['https://example.com/a'])
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+})
+
 describe('file phase of the encryption migration', () => {
   /** Plaintext files already on the server (no local bytes), served by a mocked content route. */
   async function serverFiles(task: string, names: string[]) {

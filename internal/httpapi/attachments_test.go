@@ -112,8 +112,22 @@ func TestAttachmentUploadAndDownload(t *testing.T) {
 	h := resp.Header
 	if h.Get("Content-Type") != "image/png" || !strings.HasPrefix(h.Get("Content-Disposition"), "inline;") ||
 		h.Get("Content-Security-Policy") != "default-src 'none'; sandbox" || h.Get("X-Content-Type-Options") != "nosniff" ||
-		h.Get("ETag") != `"`+digestOf(png)+`"` || !strings.Contains(h.Get("Cache-Control"), "immutable") {
+		h.Get("ETag") != `"`+digestOf(png)+`"` || h.Get("Cache-Control") != "private, no-cache" {
 		t.Fatalf("headers %v", h)
+	}
+	// attachment-client-hardening D2: revalidation is cheap while signed in,
+	// and impossible without a session.
+	resp, _ = e.raw("GET", "/api/v1/attachments/a1/content", nil, "If-None-Match", `"`+digestOf(png)+`"`)
+	if resp.StatusCode != http.StatusNotModified {
+		t.Fatalf("revalidation: %d", resp.StatusCode)
+	}
+	if resp, _ := newClientFor(e).raw("GET", "/api/v1/attachments/a1/content", nil, "If-None-Match", `"`+digestOf(png)+`"`); resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("revalidation without a session: %d", resp.StatusCode)
+	}
+	// Signing out drops the browser's cache of the site.
+	resp, _ = newClientFor(e).raw("POST", "/api/v1/auth/logout", nil, "Origin", e.srv.URL)
+	if resp.Header.Get("Clear-Site-Data") != `"cache"` {
+		t.Fatalf("logout headers %v", resp.Header)
 	}
 	resp, _ = e.raw("GET", "/api/v1/attachments/a1/content?download=1", nil)
 	if !strings.HasPrefix(resp.Header.Get("Content-Disposition"), "attachment;") {
@@ -170,6 +184,82 @@ func TestAttachmentDangerousTypesAreDownloads(t *testing.T) {
 		if resp.Header.Get("Content-Type") != "application/octet-stream" || !strings.HasPrefix(resp.Header.Get("Content-Disposition"), "attachment;") {
 			t.Fatalf("%s served as %v", mt, resp.Header)
 		}
+	}
+}
+
+// attachment-client-hardening "Quota holds": restoring a removed attachment is
+// checked against the quota, and an upload in progress holds its size, so
+// neither a remove-upload-restore cycle nor parallel uploads go over it.
+func TestAttachmentQuotaHoldsOnRestoreAndUploadsInProgress(t *testing.T) {
+	e, uid, task := attachmentSetup(t)
+	resp, out := e.do("PUT", "/api/v1/settings/attachments", map[string]any{"enabled": true, "max_file_mb": 1, "quota_mb": 2})
+	e.mustStatus(resp, 200, out)
+	file := func(i int) []byte { return append([]byte{byte(i)}, bytes.Repeat([]byte{3}, 1<<20-1)...) }
+	for i := 0; i < 2; i++ {
+		id := "t" + strconv.Itoa(i)
+		queueRow(e, "laptop", id, task, uid, id+".bin", "application/octet-stream", file(i))
+		if resp, body := e.raw("PUT", "/api/v1/attachments/"+id+"/content", file(i)); resp.StatusCode != 204 {
+			t.Fatalf("%s: %d %s", id, resp.StatusCode, body)
+		}
+	}
+	// Removing t1 frees its space; t2 fills it; restoring t1 no longer fits.
+	setDeleted := func(id string, v any) []any {
+		now := time.Now().UnixMilli()
+		out := syncOnce(e, "laptop", 0, []map[string]any{{"id": ids.New(), "entity": "attachment", "entityId": id, "field": "deleted_at",
+			"value": v, "ts": now, "device": "laptop"}})
+		rej, _ := out["rejected"].([]any)
+		return rej
+	}
+	if rej := setDeleted("t1", time.Now().UnixMilli()); len(rej) > 0 {
+		t.Fatalf("remove: %v", rej)
+	}
+	queueRow(e, "laptop", "t2", task, uid, "t2.bin", "application/octet-stream", file(2))
+	if resp, body := e.raw("PUT", "/api/v1/attachments/t2/content", file(2)); resp.StatusCode != 204 {
+		t.Fatalf("upload into the freed space: %d %s", resp.StatusCode, body)
+	}
+	rej := setDeleted("t1", nil)
+	if len(rej) != 1 || rej[0].(map[string]any)["reason"] != "quota_exceeded" {
+		t.Fatalf("restore over the quota: %v", rej)
+	}
+	// With room again, the restore goes through.
+	if rej := setDeleted("t2", time.Now().UnixMilli()); len(rej) > 0 {
+		t.Fatalf("remove t2: %v", rej)
+	}
+	if rej := setDeleted("t1", nil); len(rej) > 0 {
+		t.Fatalf("restore with room: %v", rej)
+	}
+
+	// Two uploads in parallel into one free slot: the second waits for none.
+	resp, out = e.do("PUT", "/api/v1/settings/attachments", map[string]any{"enabled": true, "max_file_mb": 1, "quota_mb": 3})
+	e.mustStatus(resp, 200, out)
+	queueRow(e, "laptop", "p1", task, uid, "p1.bin", "application/octet-stream", file(4))
+	queueRow(e, "laptop", "p2", task, uid, "p2.bin", "application/octet-stream", file(5))
+	pr, pw := io.Pipe()
+	first := make(chan int, 1)
+	go func() {
+		req, _ := http.NewRequest("PUT", e.srv.URL+"/api/v1/attachments/p1/content", pr)
+		req.ContentLength = 1 << 20
+		resp, err := e.client.Do(req)
+		if err != nil {
+			first <- 0
+			return
+		}
+		resp.Body.Close()
+		first <- resp.StatusCode
+	}()
+	// The first upload has started sending: its size is held.
+	if _, err := pw.Write(file(4)[:1024]); err != nil {
+		t.Fatal(err)
+	}
+	if resp, body := e.raw("PUT", "/api/v1/attachments/p2/content", file(5)); resp.StatusCode != 403 {
+		t.Fatalf("parallel upload into the same space: %d %s", resp.StatusCode, body)
+	}
+	if _, err := pw.Write(file(4)[1024:]); err != nil {
+		t.Fatal(err)
+	}
+	pw.Close()
+	if code := <-first; code != 204 {
+		t.Fatalf("first upload: %d", code)
 	}
 }
 
