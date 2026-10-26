@@ -7,7 +7,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { flush, key, render, type } from '../ui/test-utils'
+import { key, render, type, waitFor } from '../ui/test-utils'
 import { DueField } from './DueField'
 
 let n = 0
@@ -33,7 +33,7 @@ describe('DueField', () => {
     expect(time.disabled).toBe(true)
     await type(date, '2026-11-03')
     await key(date, 'Enter')
-    await flush(20)
+    await waitFor(async () => (await db.tasks.get(t.id))?.due?.date === '2026-11-03', 'the due date stored')
     expect((await db.tasks.get(t.id))!.due).toEqual({ date: '2026-11-03' })
     await unmount()
   })
@@ -46,7 +46,8 @@ describe('DueField', () => {
     expect(time.value).toMatch(/^\d{2}:\d{2}$/)
     await type(time, '3pm')
     await key(time, 'Enter')
-    await flush(20)
+    await waitFor(async () => !!(await db.tasks.get(t.id))?.due?.tz, 'the zoned time stored')
+    await waitFor(() => !!container.querySelector('button[aria-haspopup="dialog"][aria-label^="Time zone"]'), 'the zone button')
     const due = (await db.tasks.get(t.id))!.due!
     expect(due.tz).toBe('UTC')
     expect(container.querySelector('button[aria-haspopup="dialog"][aria-label^="Time zone"]')?.getAttribute('aria-label')).toBe('Time zone: UTC')
@@ -57,8 +58,7 @@ describe('DueField', () => {
     const t = await task({ date: '2026-11-03', time: '09:00' })
     const { unmount } = await render(<DueField task={t} />)
     await key(document.body, 'z')
-    await flush(20)
-    expect((await db.tasks.get(t.id))!.due?.tz).toBeTruthy()
+    await waitFor(async () => !!(await db.tasks.get(t.id))?.due?.tz, 'the zone toggled')
     await unmount()
   })
 })

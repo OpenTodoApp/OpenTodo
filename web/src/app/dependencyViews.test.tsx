@@ -7,7 +7,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { setBlockedBy } from '../lib/dependencies'
 import { createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
-import { click, flush, key, render, spokenText, visibleText } from '../ui/test-utils'
+import { click, key, render, spokenText, visibleText, waitFor } from '../ui/test-utils'
 import { TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
 import { PanelHost } from './PanelHost'
@@ -32,10 +32,6 @@ afterEach(async () => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean | Promise<boolean>, ms = 2000) {
-  for (let t = 0; t < ms && !(await ok()); t += 20) await flush(20)
-  expect(await ok()).toBe(true)
-}
 const row = (title: string) => [...document.querySelectorAll<HTMLElement>('[data-task-id]')].find((r) => r.textContent?.includes(title))
 
 describe('rows (3.1)', () => {
@@ -99,7 +95,6 @@ describe('task panel (3.3)', () => {
     await key(document.body, 'j')
     await key(document.body, 'b')
     await waitFor(() => !!document.querySelector('[data-detail-for]'))
-    await flush(50)
     await waitFor(() => !!document.querySelector('[data-facet-editor] [role="listbox"]'))
     const options = () => [...document.querySelectorAll('[data-facet-editor] [role="option"]')].map((o) => o.textContent ?? '')
     const panelTask = document.querySelector('[data-detail-for]')!.getAttribute('data-detail-for')
@@ -124,7 +119,7 @@ describe('task panel (3.3)', () => {
     // The Who line counts the dependents; opening the part lists them.
     expect(document.querySelector('[data-part="blocks"]')!.textContent).toContain('blocks 1')
     await click(document.querySelector<HTMLButtonElement>('[data-part="blocks"]')!)
-    await flush(40)
+    await waitFor(() => [...document.querySelectorAll<HTMLElement>('[data-facet-editor] button')].some((b) => b.textContent === 'Book flights'), 'the dependents listed')
     const link = [...document.querySelectorAll<HTMLElement>('[data-facet-editor] button')].find((b) => b.textContent === 'Book flights')!
     await click(link)
     expect(onOpen).toHaveBeenCalledWith(flights)

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { flush, key, mockFetch, noPublicLinks, render, spokenText, waitFor } from '../ui/test-utils'
+import { key, mockFetch, noPublicLinks, render, spokenText, waitFor } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 
@@ -63,24 +63,22 @@ describe('list semantics', () => {
     const pid = await project()
     const r = await render(<><TaskListView route={{ view: 'project', id: pid }} /><aside data-detail-for="x"><button type="button" data-elsewhere>Panel</button></aside></>)
     await waitFor(() => r.container.querySelectorAll('li[data-task-id]').length === 4, 'four rows')
-    await flush(20)
     await key(document.body, 'j')
-    await flush(20)
     const first = rowOf(r.container, 'Plan trip')
+    await waitFor(() => first.getAttribute('aria-current') === 'true' && document.activeElement === first.querySelector('[data-row-open]'), 'the cursor on the first row')
     expect(first.getAttribute('aria-current')).toBe('true')
     expect(document.activeElement).toBe(first.querySelector('[data-row-open]'))
     // From the focused row, j moves on and focus follows.
     await key(document.activeElement!, 'j')
-    await flush(20)
     const second = rowOf(r.container, 'Book flights')
+    await waitFor(() => document.activeElement === second.querySelector('[data-row-open]'), 'focus on the second row')
     expect(document.activeElement).toBe(second.querySelector('[data-row-open]'))
     expect(first.hasAttribute('aria-current')).toBe(false)
     // Focus in the panel stays there while the cursor moves.
     const panel = r.container.querySelector<HTMLButtonElement>('[data-elsewhere]')!
     panel.focus()
     await key(panel, 'j')
-    await flush(20)
-    expect(rowOf(r.container, 'Pack').getAttribute('aria-current')).toBe('true')
+    await waitFor(() => rowOf(r.container, 'Pack').getAttribute('aria-current') === 'true', 'the cursor on the third row')
     expect(document.activeElement).toBe(panel)
     await r.unmount()
   })

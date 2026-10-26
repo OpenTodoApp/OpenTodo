@@ -8,7 +8,7 @@ import { db } from '../lib/db'
 import { occurrenceId } from '../lib/ids'
 import { completeTask, createTask, resetDeviceId, skipOccurrence, updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { click, flush, key, render, spokenText, visibleText } from '../ui/test-utils'
+import { click, key, render, spokenText, visibleText, waitFor } from '../ui/test-utils'
 import { HabitHistory } from './HabitHistory'
 import { RecurrenceField } from './RecurrenceField'
 import { TaskListView } from './TaskListView'
@@ -29,10 +29,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 function task(over: Partial<Task>): Task {
   return {
@@ -118,7 +114,7 @@ describe('RecurrenceField habit switch', () => {
     expect(sw.closest('label')!.textContent).toContain('Track as a habit')
     expect(sw.getAttribute('aria-checked')).toBe('false')
     await click(sw)
-    await flush(20)
+    await waitFor(async () => (await db.outbox.count()) > before, 'the habit op')
     const ops = (await db.outbox.toArray()).slice(before)
     expect(ops.map((o) => [o.field, o.value])).toEqual([['habit', true]])
     await r.unmount()

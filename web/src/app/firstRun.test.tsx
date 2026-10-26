@@ -20,7 +20,7 @@ import { setDemo } from '../lib/demo'
 import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { USER_PREFS_ID } from '../lib/userPrefs'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
 import { FirstRunGuide } from './FirstRun'
 import { navigate, parseRoute, useRoute } from './router'
 import { HowYouWorkSection } from './method/HowYouWorkSection'
@@ -52,13 +52,15 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const q = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)
 /** The guide, inside its dialog (never inside the list page). */
 const guide = () => q('[data-overlay="dialog"] [data-first-run]')
+/**
+ * The guide decides from live reads (preferences, the sync state) that announce no
+ * "decided": a fixed wait on purpose, so a guide that would open (or move on) late
+ * has the time to, then the caller checks it did not.
+ */
+const guideSettled = () => flush(150)
 const stepOf = () => guide()?.getAttribute('data-first-run-step')
 let lastHelp: string | null = null
 const helpScreen = () => lastHelp
@@ -115,7 +117,7 @@ describe('three-step first run', () => {
     await applyOps(ops.map(({ local: _local, ...op }) => op))
     const r2 = await inbox()
     await waitFor(() => r2.container.textContent!.includes('Call the dentist'))
-    await flush(100)
+    await guideSettled()
     expect(guide()).toBeNull()
     await r2.unmount()
   })
@@ -166,7 +168,7 @@ describe('three-step first run', () => {
     await r.unmount()
     // It never returns on this account.
     const r2 = await inbox()
-    await flush(100)
+    await guideSettled()
     expect(guide()).toBeNull()
     await r2.unmount()
   })
@@ -182,7 +184,7 @@ describe('three-step first run', () => {
     expect((await db.userPrefs.get(USER_PREFS_ID))?.method_mode).toBe('')
     await r.unmount()
     const r2 = await inbox()
-    await flush(100)
+    await guideSettled()
     expect(guide()).toBeNull()
     await r2.unmount()
   })
@@ -205,7 +207,7 @@ describe('three-step first run', () => {
     await r.unmount()
     navigate({ view: 'today' })
     const r2 = await render(<><TaskListView route={{ view: 'today' }} /><FirstRunGuide user={member} /></>)
-    await flush(100)
+    await guideSettled()
     expect(guide()).toBeNull()
     await r2.unmount()
   })
@@ -213,7 +215,7 @@ describe('three-step first run', () => {
   it('never opens on a demo instance', async () => {
     setDemo({ token: '', sandboxHours: { idle: 2, max: 24 }, resetsAt: 0 })
     const r = await inbox()
-    await flush(150)
+    await guideSettled()
     expect(guide()).toBeNull()
     await r.unmount()
   })
@@ -221,7 +223,7 @@ describe('three-step first run', () => {
   it('waits for this device\'s first sync', async () => {
     syncState.lastSyncedAt = null
     const r = await inbox()
-    await flush(150)
+    await guideSettled()
     expect(guide()).toBeNull()
     await r.unmount()
   })
@@ -230,7 +232,7 @@ describe('three-step first run', () => {
     const owner: User = { ...member, role: 'owner', createdAt: Date.now() - 60_000 }
     const r = await render(<><TaskListView route={{ view: 'inbox' }} /><WelcomeDialog user={owner} /><FirstRunGuide user={owner} /></>)
     await waitFor(() => q('[data-testid="welcome"]') !== null)
-    await flush(50)
+    await guideSettled()
     expect(guide()).toBeNull()
     await click(q('[data-welcome-close]')!)
     await waitFor(() => q('[data-testid="welcome"]') === null && guide() !== null)
@@ -320,7 +322,7 @@ describe('sample tasks (moments-and-onboarding D2)', () => {
     openStartGuide()
     const r = await inbox()
     await waitFor(() => guide() !== null)
-    await flush(100)
+    await guideSettled()
     expect(stepOf()).toBe('task')
     expect(q('[data-first-run-sample]')).toBeNull()
     closeStartGuide()

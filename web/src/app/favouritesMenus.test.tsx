@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { resetDeviceId } from '../lib/ops'
 import type { Label, Project, View } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { LabelMenu, LabelsView } from './LabelsView'
 import { ProjectHeader } from './ProjectHeader'
 import { resetPanel } from './panel'
@@ -29,16 +29,12 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const pinItem = () => document.querySelector<HTMLElement>('[data-menu-label="Pin to sidebar"]')
 const ops = async () => (await db.outbox.toArray()).map((o) => `${o.entity}.${o.field}=${JSON.stringify(o.value)}`).sort()
 
 async function openMenu(root: ParentNode, name: string) {
   document.body.click()
-  await flush(20)
+  await waitFor(() => pinItem() === null && !!root.querySelector(`button[aria-label="${name}"]`), 'the menu button, no menu open')
   await click(root.querySelector(`button[aria-label="${name}"]`)!)
   await waitFor(() => pinItem() !== null)
 }
@@ -46,11 +42,10 @@ async function openMenu(root: ParentNode, name: string) {
 describe('Pin to sidebar', () => {
   it('Pin from the header: one preference op, checked in every menu of the project', async () => {
     const r = await render(<ProjectHeader project={project} />)
-    await flush(40)
     await openMenu(r.container, 'Project menu')
     expect(pinItem()!.getAttribute('aria-checked')).toBe('false')
     await click(pinItem()!)
-    await flush(40)
+    await waitFor(async () => (await db.outbox.count()) > 0, 'the pin written')
     expect(await ops()).toEqual(['user_prefs.favourites="project:home"'])
     await openMenu(r.container, 'Project menu')
     expect(pinItem()!.getAttribute('aria-checked')).toBe('true')
@@ -60,10 +55,9 @@ describe('Pin to sidebar', () => {
   it('Shared project pinned by one member: no project op is written', async () => {
     await db.memberships.put({ projectId: 'home', role: 'editor', ownerId: 'bob', members: [] } as never)
     const r = await render(<ProjectHeader project={project} />)
-    await flush(40)
     await openMenu(r.container, 'Project menu')
     await click(pinItem()!)
-    await flush(60)
+    await waitFor(async () => (await db.outbox.count()) > 0, 'the pin written')
     expect(await ops()).toEqual(['user_prefs.favourites="project:home"'])
     expect((await db.outbox.toArray()).some((o) => o.entity === 'project')).toBe(false)
     await r.unmount()
@@ -74,23 +68,22 @@ describe('Pin to sidebar', () => {
     await waitFor(() => r.container.querySelector('[data-label-row]') !== null)
     await openMenu(r.container, 'Menu for label errand')
     await click(pinItem()!)
-    await flush(60)
+    await waitFor(async () => (await db.outbox.count()) > 0, 'the pin written')
     expect(await ops()).toEqual(['user_prefs.favourites="label:errand"'])
     await r.unmount()
     const header = await render(<LabelMenu label={label} />)
-    await flush(40)
     await openMenu(header.container, 'Label menu')
-    expect(pinItem()!.getAttribute('aria-checked')).toBe('true')
+    // The header reads the favourites from its own live query.
+    await waitFor(() => pinItem()?.getAttribute('aria-checked') === 'true', 'the pin checked in the header menu')
     await header.unmount()
   })
 
   it('a saved filter pins with its flag and its entry in one batch, and unpins both', async () => {
     const r = await render(<ViewMenu view={view} />)
-    await flush(40)
     await openMenu(r.container, 'Menu for view Waiting')
     expect(pinItem()!.getAttribute('aria-checked')).toBe('false')
     await click(pinItem()!)
-    await flush(60)
+    await waitFor(async () => (await db.outbox.count()) > 0, 'the pin written')
     expect(await ops()).toEqual(['user_prefs.favourites="view:v1"', 'view.pinned=true'])
     const batch = new Set((await db.outbox.toArray()).map((o) => o.ts))
     expect(batch.size).toBe(1)
@@ -99,7 +92,7 @@ describe('Pin to sidebar', () => {
     await openMenu(r.container, 'Menu for view Waiting')
     expect(pinItem()!.getAttribute('aria-checked')).toBe('true')
     await click(pinItem()!)
-    await flush(60)
+    await waitFor(async () => (await db.outbox.count()) > 0, 'the pin written')
     expect(await ops()).toEqual(['user_prefs.favourites=""', 'view.pinned=false'])
     await r.unmount()
   })

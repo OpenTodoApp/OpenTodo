@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { completeTask, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { createLabel } from '../lib/labels'
 import { createSection } from '../lib/sections'
-import { click, flush, render, mockFetch, noPublicLinks, spokenText, textWithoutBriefing, visibleText } from '../ui/test-utils'
+import { click, render, mockFetch, noPublicLinks, spokenText, textWithoutBriefing, visibleText, waitFor } from '../ui/test-utils'
 import { isGroupCollapsed, resetCollapsedGroups } from './collapsedGroups'
 import { TaskListView } from './TaskListView'
 
@@ -32,10 +32,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const headers = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-group-header]')]
 
 describe('generated groups', () => {
@@ -51,7 +47,7 @@ describe('generated groups', () => {
     expect(headers(r.container).every((h) => h.querySelector('h2'))).toBe(true)
 
     await click(headers(r.container)[0].querySelector('[data-group-toggle]')!)
-    await flush(20)
+    await waitFor(() => headers(r.container)[0].getAttribute('data-collapsed') === 'true' && !textWithoutBriefing(r.container).includes('Dentist'), 'the group collapsed')
     expect(textWithoutBriefing(r.container)).not.toContain('Dentist')
     expect(r.container.textContent).toContain('Taxes')
     expect(headers(r.container)[0].getAttribute('data-collapsed')).toBe('true')

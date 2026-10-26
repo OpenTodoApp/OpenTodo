@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, setMeta, useDatabase } from '../lib/db'
 import { applyOps, createTask, mutate, resetDeviceId } from '../lib/ops'
 import type { Op } from '../lib/types'
-import { flush, render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { Markdown } from './Markdown'
 
 let n = 0
@@ -27,10 +27,6 @@ afterEach(async () => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 async function file(id: string, taskId: string, opts: { uploaded?: boolean; mime?: string } = {}) {
   let ts = 100
@@ -101,8 +97,9 @@ describe('task links', () => {
   })
 
   it('an unknown task shows the stored text', async () => {
-    const v = await mount('[Book hotel](?task=nope)')
-    await flush(50)
+    // A known task beside it: once its live title shows, the unknown one has been looked up too.
+    const v = await mount(`[Book hotel](?task=nope) [x](?task=${other})`)
+    await waitFor(() => v.container.querySelectorAll('.task-ref')[1]?.textContent === 'Other', 'the lookups')
     expect(v.container.querySelector('.task-ref')!.textContent).toBe('Book hotel')
   })
 })

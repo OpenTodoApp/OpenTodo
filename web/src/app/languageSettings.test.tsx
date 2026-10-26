@@ -10,7 +10,7 @@ import { db, useDatabase } from '../lib/db'
 import { applyLanguagePreference, currentLanguage, useLanguageVersion } from '../lib/i18n'
 import { applyOps, resetDeviceId } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
-import { render } from '../ui/test-utils'
+import { render, waitFor } from '../ui/test-utils'
 import { LanguageProvider } from './LanguageProvider'
 import { LanguageSection, LanguageView } from './PreferencesPanels'
 import { t } from '../lib/i18n'
@@ -20,11 +20,10 @@ function Tree() {
   return <><h1>{t('Inbox')}</h1><LanguageSection /></>
 }
 
-const settle = () => act(async () => { for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 20)) })
-/** Waits (inside act) until a catalog chunk has loaded and the tree re-rendered. */
-async function until(check: () => boolean) {
-  for (let i = 0; i < 100 && !check(); i++) await act(async () => { await new Promise((r) => setTimeout(r, 30)) })
-}
+/** The language panel has rendered. */
+const panelShown = (view: { container: HTMLElement }) => waitFor(() => !!view.container.querySelector('#language-select'), 'the language panel')
+/** A catalog chunk has loaded and the tree re-rendered. */
+const translated = (view: { container: HTMLElement }) => waitFor(() => view.container.querySelector('h1')?.textContent !== 'Inbox', 'the catalog loaded')
 
 async function choose(select: HTMLSelectElement, value: string) {
   await act(async () => {
@@ -43,12 +42,11 @@ afterEach(async () => { await applyLanguagePreference('en', ['en-US']) })
 describe('Language panel', () => {
   it('picking Deutsch writes the synced preference and the app re-renders in German', async () => {
     const view = await render(<LanguageProvider><Tree /></LanguageProvider>)
-    await settle()
+    await panelShown(view)
     expect(view.container.querySelector('h1')?.textContent).toBe('Inbox')
     await choose(view.container.querySelector('#language-select') as HTMLSelectElement, 'de')
-    await settle()
-    expect((await db.userPrefs.get(USER_PREFS_ID))?.language).toBe('de')
-    await until(() => view.container.querySelector('h1')?.textContent !== 'Inbox')
+    await waitFor(async () => (await db.userPrefs.get(USER_PREFS_ID))?.language === 'de', 'the preference stored')
+    await translated(view)
     expect(currentLanguage()).toBe('de')
     expect(view.container.querySelector('h1')?.textContent).toBe('Eingang')
     expect(view.container.querySelector('#language-heading')?.textContent).toBe('Sprache')
@@ -57,11 +55,11 @@ describe('Language panel', () => {
 
   it('a language chosen on another device arrives by sync and applies', async () => {
     const view = await render(<LanguageProvider><Tree /></LanguageProvider>)
-    await settle()
+    await panelShown(view)
     await act(async () => {
       await applyOps([{ id: 'l1', entity: 'user_prefs', entityId: 'me', field: 'language', value: 'fr', ts: Date.now() + 10_000, device: 'phone' }])
     })
-    await until(() => view.container.querySelector('h1')?.textContent !== 'Inbox')
+    await translated(view)
     expect(view.container.querySelector('h1')?.textContent).toBe('Boîte de réception')
     await view.unmount()
   })
@@ -69,7 +67,7 @@ describe('Language panel', () => {
   it('without a synced row the language applied at first paint stays', async () => {
     await applyLanguagePreference('it', ['en-US'])
     const view = await render(<LanguageProvider><Tree /></LanguageProvider>)
-    await settle()
+    await panelShown(view)
     expect(currentLanguage()).toBe('it')
     expect(view.container.querySelector('h1')?.textContent).toBe('In arrivo')
     await view.unmount()

@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { reloadBannerDismissed, setDemo } from '../lib/demo'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import type { DemoInfo } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { DemoBanner } from './DemoBanner'
 
 const info: DemoInfo = { token: '', sandboxHours: { idle: 3, max: 24 }, resetsAt: 0 }
@@ -60,7 +60,7 @@ describe('demo banner', () => {
   it('Details shows the full text in a dialog', async () => {
     const r = await render(<DemoBanner />)
     await click(banner()!.querySelector('[data-demo-details]')!)
-    await flush(10)
+    await waitFor(() => !!document.querySelector('[data-testid="demo-details"]'), 'the details dialog')
     const dialog = document.querySelector('[data-testid="demo-details"]')!
     expect(dialog.textContent).toContain('3 hours of inactivity')
     expect(dialog.textContent).toContain('24 hours after it was created')
@@ -82,8 +82,7 @@ describe('demo banner', () => {
     // A new browser session: the session storage is empty again.
     sessionStorage.clear()
     reloadBannerDismissed()
-    await flush(10)
-    expect(banner()).not.toBeNull()
+    await waitFor(() => banner() !== null, 'the banner back')
     await again.unmount()
     expect(await db.outbox.count()).toBe(0)
     expect(localStorage.getItem('opentodo.demoBannerDismissed')).toBeNull()

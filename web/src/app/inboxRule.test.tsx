@@ -10,7 +10,7 @@ import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import type { User } from '../lib/types'
-import { click, flush, render, spokenText, type } from '../ui/test-utils'
+import { click, flush, render, spokenText, type, waitFor } from '../ui/test-utils'
 import { bulkToast, hideBulkToast } from './bulk/toastStore'
 import { resetPanel } from './panel'
 import { ProjectPickerField } from './ProjectPickerField'
@@ -42,10 +42,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 // The title alone: an Inbox row also carries its source line (inbox-split D4).
 const rowTitles = (root: ParentNode) => [...root.querySelectorAll('[data-task-id]')].map((r) => r.querySelector('[data-row-title]')?.textContent?.trim() ?? r.textContent?.trim())
 
@@ -102,7 +98,7 @@ describe('the Inbox view', () => {
     await createTask({ title: 'Undated' })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 1)
-    await flush(40)
+    await flush()
     expect(r.container.querySelector('[data-group="planned"]')).toBeNull()
     await r.unmount()
   })
@@ -189,7 +185,7 @@ describe('project pickers', () => {
     await click(r.container.querySelector('button')!)
     await waitFor(() => !!document.querySelector('[role="dialog"] input'))
     await type(document.querySelector<HTMLInputElement>('[role="dialog"] input')!, 'inb')
-    await flush(40)
+    await waitFor(() => !!document.querySelector('[role="option"]')?.textContent?.includes('No project'), 'No project ranked first')
     const options = [...document.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim())
     expect(options[0]).toContain('No project')
     await r.unmount()
