@@ -18,6 +18,7 @@ import type {
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
+  CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, GoogleClientSetting,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
   AutomationsSetting, RuleRun, RulesStatus,
 } from './types'
@@ -492,6 +493,21 @@ export const api = {
   calendarFeed: () => request<{ feed: CalendarFeed | null }>('GET', '/api/v1/calendar-feeds/feed'),
   rotateCalendarFeed: () => request<{ feed: CalendarFeed; url: string }>('POST', '/api/v1/calendar-feeds/feed'),
   revokeCalendarFeed: () => request<void>('DELETE', '/api/v1/calendar-feeds/feed'),
+  // Calendar sync (OpenSpec change calendar-two-way): connections are server data, never ops.
+  getCalendarSyncSetting: () => request<{ enabled: boolean; google: boolean; max_connections: number }>('GET', '/api/v1/settings/calendar-sync'),
+  putCalendarSyncSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/calendar-sync', { enabled }),
+  getGoogleClient: () => request<GoogleClientSetting>('GET', '/api/v1/settings/calendar-sync/google'),
+  putGoogleClient: (body: { client_id: string; client_secret?: string }) => request<GoogleClientSetting>('PUT', '/api/v1/settings/calendar-sync/google', body),
+  listCalendarConnections: () => request<{ connections: CalendarConnection[] }>('GET', '/api/v1/calendar-sync/connections'),
+  createCalendarConnection: (body: { server_url: string; username: string; password: string; name?: string }) =>
+    request<{ connection: CalendarConnection }>('POST', '/api/v1/calendar-sync/connections', body),
+  patchCalendarConnection: (id: string, body: CalendarConnectionPatch) =>
+    request<{ connection: CalendarConnection }>('PATCH', `/api/v1/calendar-sync/connections/${encodeURIComponent(id)}`, body),
+  deleteCalendarConnection: (id: string) => request<void>('DELETE', `/api/v1/calendar-sync/connections/${encodeURIComponent(id)}`),
+  syncCalendarConnection: (id: string) =>
+    request<{ ok: boolean; reason?: string; run?: CalendarSyncRun; connection: CalendarConnection }>('POST', `/api/v1/calendar-sync/connections/${encodeURIComponent(id)}/sync`),
+  startGoogleCalendar: (connectionId?: string) =>
+    request<{ url: string }>('POST', '/api/v1/calendar-sync/google/start', connectionId ? { connection_id: connectionId } : {}),
   // Issue import (OpenSpec issue-connections): connections are server data, never ops.
   /** Maps (task-locations): address search and reverse search through the server's map proxy. */
   mapSearch: (q: string, lang: string) =>

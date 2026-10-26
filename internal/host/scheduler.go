@@ -95,6 +95,17 @@ func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]tim
 			due[KindCalendars] = at
 		}
 	}
+	// Calendar sync rides on the calendars entry (calendar-two-way): only while
+	// its owner switch is on and a connection is due.
+	if t.CalSync != nil {
+		at, ok, err := t.CalSync.NextDue(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if cur, has := due[KindCalendars]; ok && (!has || at.Before(cur)) {
+			due[KindCalendars] = at
+		}
+	}
 	if t.Issues != nil && t.Issues.Enabled != nil && t.Issues.Enabled(ctx) {
 		// Only while the owner switch is on: a tenant with it off is never opened for it.
 		at, ok, err := t.Issues.Store.NextPoll(ctx)
@@ -191,6 +202,9 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 			}
 		case KindCalendars:
 			t.Calendar.RunOnce(ctx)
+			if t.CalSync != nil {
+				t.CalSync.RunOnce(ctx)
+			}
 		case KindIssues:
 			if t.Issues != nil {
 				t.Issues.RunOnce(ctx)
@@ -237,6 +251,11 @@ func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds 
 			if t.Issues != nil {
 				if _, err := t.Issues.Tokens.Sweep(ctx, t.Issues.Store); err != nil {
 					log.Error("issue connections: sweep tokens", "err", err)
+				}
+			}
+			if t.CalSync != nil {
+				if _, err := t.CalSync.Secrets.Sweep(ctx, t.CalSync.Store); err != nil {
+					log.Error("calendar sync: sweep secrets", "err", err)
 				}
 			}
 			if _, err := t.Inbox.Sweep(ctx); err != nil {

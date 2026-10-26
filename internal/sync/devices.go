@@ -20,6 +20,11 @@ const (
 // (issue-import): issues:<connection-id>. Reserved like agent: and caldav:.
 const IssuesDevicePrefix = "issues:"
 
+// CalsyncDevicePrefix marks the ops a calendar sync connection writes from
+// changes made in the user's calendar (OpenSpec change calendar-two-way):
+// calsync:<connection-id>. Reserved like issues:.
+const CalsyncDevicePrefix = "calsync:"
+
 // RuleDevicePrefix marks the batches an automation rule writes (OpenSpec change
 // automation-rules, design D5): rule:<rule-id>, applied by the server as the
 // rule's author. Reserved like agent: and caldav:.
@@ -65,7 +70,8 @@ func IsAgentDevice(device string) bool { return strings.HasPrefix(device, AgentD
 func ReservedDevice(device string) bool {
 	return IsServerDevice(device) || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix) ||
 		strings.HasPrefix(device, PublicDevicePrefix) || strings.HasPrefix(device, IssuesDevicePrefix) ||
-		strings.HasPrefix(device, PageDevicePrefix) || strings.HasPrefix(device, RuleDevicePrefix)
+		strings.HasPrefix(device, PageDevicePrefix) || strings.HasPrefix(device, RuleDevicePrefix) ||
+		strings.HasPrefix(device, CalsyncDevicePrefix)
 }
 
 // CreatedBy returns the device of the first stored created_at op of an entity

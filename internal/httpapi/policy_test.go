@@ -210,6 +210,18 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"PUT /api/v1/settings/mcp":         "auth owner demo",
 		"PUT /api/v1/settings/caldav":      "auth owner demo",
 		"PUT /api/v1/settings/attachments": "auth owner demo",
+		// Calendar sync (calendar-two-way D14): the Google client holds a secret,
+		// connections carry passwords, the Google callback is a browser's.
+		"PUT /api/v1/settings/calendar-sync":               "auth owner demo",
+		"GET /api/v1/settings/calendar-sync/google":        "auth owner demo",
+		"PUT /api/v1/settings/calendar-sync/google":        "auth owner admin-token demo",
+		"POST /api/v1/calendar-sync/connections":           "auth fresh demo",
+		"PATCH /api/v1/calendar-sync/connections/{id}":     "auth demo",
+		"POST /api/v1/calendar-sync/google/start":          "auth fresh demo",
+		"GET /api/v1/calendar-sync/google/callback":        "auth session-only demo",
+		"GET /api/v1/calendar-sync/connections":            "auth demo",
+		"POST /api/v1/calendar-sync/connections/{id}/sync": "auth demo",
+		"DELETE /api/v1/calendar-sync/connections/{id}":    "auth demo",
 		// Owner data and restore.
 		"GET /api/v1/backups":                                 "auth owner",
 		"POST /api/v1/backups/restore":                        "auth owner session-only fresh demo",

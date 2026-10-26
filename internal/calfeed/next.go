@@ -11,7 +11,7 @@ import (
 func (s *Store) NextFetch(ctx context.Context) (time.Time, bool, error) {
 	var at sql.NullInt64
 	err := s.db.QueryRowContext(ctx, `SELECT MIN(next_fetch_at) FROM calendar_subscriptions
-		WHERE enabled = 1 AND stopped_reason IS NULL`).Scan(&at)
+		WHERE enabled = 1 AND stopped_reason IS NULL AND id NOT IN (SELECT subscription_id FROM calsync_calendars)`).Scan(&at)
 	if err != nil || !at.Valid {
 		return time.Time{}, false, err
 	}
