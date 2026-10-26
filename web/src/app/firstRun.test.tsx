@@ -59,6 +59,7 @@ const guide = () => q('[data-overlay="dialog"] [data-first-run]')
  * "decided": a fixed wait on purpose, so a guide that would open (or move on) late
  * has the time to, then the caller checks it did not.
  */
+// eslint-disable-next-line test-hygiene/no-fixed-wait -- the guide's reads announce no "decided" (see above)
 const guideSettled = () => flush(150)
 const stepOf = () => guide()?.getAttribute('data-first-run-step')
 let lastHelp: string | null = null

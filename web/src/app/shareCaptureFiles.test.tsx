@@ -135,7 +135,7 @@ describe('extension screenshot hand-over', () => {
     await act(async () => {
       window.dispatchEvent(new MessageEvent('message', { data: { type: 'opentodo-files', files: [{ name: 'x.png', type: 'image/png', data: png }] }, origin: location.origin, source: window }))
     })
-    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): an ignored message leaves nothing to wait for; give a wrongly accepted one time to show
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- an ignored message leaves nothing to wait for; give a wrongly accepted one time to show
     await flush(50)
     expect(listedFiles()).toEqual([])
   })

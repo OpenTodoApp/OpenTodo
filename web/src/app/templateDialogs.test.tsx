@@ -254,7 +254,7 @@ describe('Shift+D', () => {
     const before = await db.outbox.count()
     await key(document.body, 'j')
     await key(document.body, 'D', { shiftKey: true })
-    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a refused key writes nothing, so there is no signal to wait for; give a wrong write time to land
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- a refused key writes nothing, so there is no signal to wait for; give a wrong write time to land
     await flush(100)
     expect(await db.outbox.count()).toBe(before)
     expect(await db.tasks.count()).toBe(1)

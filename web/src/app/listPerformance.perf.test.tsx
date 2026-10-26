@@ -2,6 +2,9 @@
 // Large lists (OpenSpec change large-list-performance): moving the cursor with j/k
 // re-renders only the two rows whose selection changed, and one write reads the
 // tasks table once for every list, count and badge on screen, not once per component.
+// Its fixed waits are the measurement windows of the render and read budgets: they
+// count what happens within a time, which no condition can stand in for.
+/* eslint-disable test-hygiene/no-fixed-wait -- measurement windows of the scale budgets */
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'

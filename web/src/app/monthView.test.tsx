@@ -126,7 +126,7 @@ describe('month grid', () => {
     expect(r.container.querySelector(`[data-month-task="${id}"]`)!.textContent).toContain('read-only')
     await click(r.container.querySelector(`[data-month-task="${id}"]`)!)
     await key(document.body, 'ArrowRight')
-    // A fixed wait on purpose: nothing may be written, and a refused move shows no signal to wait for.
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- nothing may be written, and a refused move shows no signal to wait for
     await flush(50)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-20' })
     await r.unmount()
