@@ -141,6 +141,35 @@ describe('three-step first run', () => {
     await r.unmount()
   })
 
+  // Plain words (onboarding-plain-language D3, first-run "Plain words in the start guide"):
+  // step 2 explains the method before the choice, uses no internal mode name or method
+  // jargon as a label, and explains "Loop home" and "context" where they first show.
+  it('Plain words in step 2: the method explained first, no jargon labels, terms explained where they show', async () => {
+    const r = await inbox()
+    await waitFor(() => guide() !== null)
+    await createTask({ title: 'Buy stamps' })
+    await waitFor(() => stepOf() === 'work')
+    await click(q('[data-method-mode="first"]')!)
+    await waitFor(() => q('[data-offer="start"]') !== null && q('[data-offer="contexts"]') !== null)
+    const intro = q('[data-first-run-method-intro]')!
+    expect(intro.textContent).toMatch(/^Open Loops is an optional way to clear your head/)
+    // The intro comes before the choice.
+    expect(intro.compareDocumentPosition(q('[data-method-chooser]')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // Text outside the link to the method page.
+    const walker = document.createTreeWalker(guide()!, NodeFilter.SHOW_TEXT)
+    const parts: string[] = []
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) if (!n.parentElement?.closest('[data-learn-method]')) parts.push(n.textContent ?? '')
+    const text = parts.join(' ')
+    for (const jargon of ['Lists only', 'Companion', 'Open Loops first', 'Places', 'the move they serve', 'Learn the method']) expect(text).not.toContain(jargon)
+    if (text.includes('Loop home')) expect(text).toContain('It shows what needs your attention today.')
+    if (/\bcontexts?\b/.test(text)) expect(text).toContain('A context is where or how you can do a task')
+    const labels = [...document.querySelectorAll('[data-method-mode] span:first-child')].map((el) => el.textContent)
+    expect(labels).toEqual(['Simple lists', 'Lists with method hints', 'Full Open Loops method'])
+    for (const label of labels) expect(['lists', 'companion', 'first']).not.toContain(label!.toLowerCase())
+    expect(q('[data-learn-method]')!.textContent).toBe('What is Open Loops?')
+    await r.unmount()
+  })
+
   it('Learn before choosing opens the method overview and keeps the step and the task', async () => {
     const r = await render(<><TaskListView route={{ view: 'inbox' }} /><FirstRunGuide user={member} /><HelpSpy /></>)
     await waitFor(() => guide() !== null)

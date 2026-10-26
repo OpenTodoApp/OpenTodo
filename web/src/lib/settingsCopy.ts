@@ -62,11 +62,11 @@ export const SETTINGS_COPY = {
   'how-you-work': {
     title: msg('How you work'),
     icon: 'compass',
-    description: msg('How much the app shows its method, Open Loops. Synced; never changes a task.'),
+    description: msg('How much of the Open Loops method the app shows. Synced; never changes a task.'),
     options: {
-      lists: { label: msg('Lists only'), description: msg('OpenTodo as a plain task app, with no method words.') },
-      companion: { label: msg('Companion'), description: msg('Your sidebar as it is; screens name the move they serve.') },
-      first: { label: msg('Open Loops first'), description: msg('The Loop home first, a sidebar by the Places, a daily check.') },
+      lists: { label: msg('Simple lists'), description: msg('Just your tasks and lists, nothing else.') },
+      companion: { label: msg('Lists with method hints'), description: msg("Same sidebar, plus a hint on each screen's purpose.") },
+      first: { label: msg('Full Open Loops method'), description: msg('A home page for the method and a daily check-in.') },
     },
     rows: {
       guide: { label: msg('Start guide'), description: msg('Add a first task, choose how you work, install the app.') },
@@ -177,7 +177,7 @@ export const SETTINGS_COPY = {
     icon: 'panel-left-open',
     description: {
       standard: msg('Pick which More destinations sit next to Inbox, Today, Upcoming and Calendar.'),
-      arranged: msg('Open Loops first arranges the sidebar; these choices apply in the other modes.'),
+      arranged: msg('The full Open Loops method arranges the sidebar; these choices apply in the other modes.'),
     },
     learnMore: 'settings/appearance',
   },
