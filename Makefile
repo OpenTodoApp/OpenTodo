@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
 
 all: build
 
@@ -152,6 +152,20 @@ lint:
 STATICCHECK_VERSION := v0.8.2
 staticcheck:
 	GOTOOLCHAIN=$$(go env GOVERSION) go run honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION) ./...
+
+## gosec, security static analysis of the Go code, pinned like staticcheck. Two rule
+## classes are left out as false positives for this code base (2026-10 audit): G101
+## (constants named like secrets, such as KeyClientSecret, that hold no credential)
+## and G304 (files opened from the operator's configuration and the data directory).
+## `make gosec` prints the rest; CI (.github/workflows/security.yml) runs gosec-sarif
+## and sends the findings to code scanning, where those on main are the baseline and a
+## pull request that adds one is flagged.
+GOSEC_VERSION := v2.29.0
+GOSEC := GOTOOLCHAIN=$$(go env GOVERSION) go run github.com/securego/gosec/v2/cmd/gosec@$(GOSEC_VERSION) -exclude=G101,G304 -exclude-generated
+gosec:
+	$(GOSEC) -quiet ./...
+gosec-sarif:
+	$(GOSEC) -quiet -no-fail -fmt sarif -out gosec.sarif ./...
 
 ## The OpenSpec CLI at an exact version (CI runs it through this target; Dependabot does not
 ## see npx, so bump it by hand).
