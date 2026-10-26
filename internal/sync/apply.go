@@ -78,6 +78,7 @@ type applyBatch struct {
 	// with a changed value the author's device must adopt.
 	refused, rewritten []Op
 	storedBytes        int64 // value bytes of the stored ops, for the write guard
+	newestTS           int64 // the newest stored timestamp, for the server clock
 	res                ApplyResult
 }
 
@@ -201,6 +202,7 @@ func (b *applyBatch) store(op Op, scope string) error {
 		b.rewritten = append(b.rewritten, op)
 	}
 	b.storedBytes += int64(len(op.Value))
+	b.newestTS = max(b.newestTS, op.TS)
 	b.touched[scope] = true
 	b.res.Applied++
 	return nil
@@ -230,6 +232,7 @@ func (b *applyBatch) finish(guard WriteGuard) (ApplyResult, error) {
 	if err := tx.Commit(); err != nil {
 		return res, err
 	}
+	s.observeTS(b.newestTS)
 	if s.quota != nil && res.Applied > 0 {
 		s.quota.Stored(res.Applied)
 	}

@@ -3,7 +3,7 @@
 import { db, entityTables, getMeta, localEpoch, setMeta, tableOf, type EntityRow } from './db'
 import { dueToInstant, logicalToday, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
-import { CLOCK_OFFSET_META, hlcNow, hlcSeed, hlcSeedOffset, wins } from './hlc'
+import { CLOCK_OFFSET_META, HLC_META, hlcLast, hlcNow, hlcReceive, hlcSeed, hlcSeedOffset, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
@@ -38,7 +38,7 @@ export function getDeviceId(): Promise<string> {
         id = uuid()
         await setMeta('device', id)
       }
-      hlcSeed(await getMeta<number>('hlc', 0))
+      hlcSeed(await getMeta<number>(HLC_META, 0))
       hlcSeedOffset(await getMeta<number>(CLOCK_OFFSET_META, 0))
       return id
     })()
@@ -127,6 +127,9 @@ export async function applyOps(
   ops: Op[], opts: { actor?: string; local?: boolean; wire?: Map<string, { kind: 'p' | 'c' | 'x'; raw?: string }> } = {},
 ): Promise<void> {
   if (ops.length === 0) return
+  // The clock's receive rule (hlcReceive): a later local edit, including an
+  // encrypt-on-sight rewrite of these very values, is stamped after them.
+  if (!opts.local) hlcReceive(ops.reduce((m, o) => Math.max(m, o.ts), 0))
   // Remote document ops are merged, not just replaced (collaborative-rich-text):
   // load the document code before the transaction, which must not await imports.
   const rt = !opts.local && ops.some((o) => isDocField(o.entity, o.field)) ? await loadRichText() : null
@@ -217,6 +220,8 @@ export async function applyOps(
     }
     await recordActivity(recorded)
   })
+  // Stored, so a reload (and the service worker) keeps stamping after them.
+  if (!opts.local && hlcLast() > (await getMeta<number>(HLC_META, 0))) await setMeta(HLC_META, hlcLast())
   // Merge-and-republish (design D1): only when the merge grew the winning value.
   if (republish.length) await mutateMany(republish)
 }
@@ -395,7 +400,7 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
       if (stale.length) await db.outbox.bulkDelete(stale)
     }
     await db.outbox.bulkAdd(ops)
-    await db.meta.put({ key: 'hlc', value: ts })
+    await db.meta.put({ key: HLC_META, value: ts })
   })
   for (const fn of mutationListeners) fn()
 }
