@@ -1,7 +1,7 @@
 # today-agenda Specification
 
 ## Purpose
-TBD - created by archiving change today-agenda. Update Purpose after archive.
+Lets a person see the day's events from their subscribed and synced calendars at the top of Today, behind an option that is off by default and follows them to every device, so one page gives the overall look at their day without opening the Calendar.
 
 ## Requirements
 
