@@ -28,7 +28,7 @@ Attachments belong to their task: everyone who can see the task can see its atta
 
 ## Limits
 
-The server owner sets a size limit per file (25 MB unless changed) and a total per account (1 GB unless changed) in **Settings → Server → Attachments**, and can turn attachments off. **Settings → Data** shows how much of your total you use. Removing an attachment frees your total at once; the file itself stays on the server for the Trash retention period (30 days unless changed), so a removal can be undone from any device, and is then deleted for good. Undoing a removal needs room in your total again: when the space was used for other files in the meantime, the attachment stays removed and the app says why. Purging a task from the Trash deletes its files immediately.
+The server owner sets a size limit per file (25 MB unless changed) and a total per account (1 GB unless changed) in **Settings → Server → Attachments**, and can turn attachments off. **Settings → Data** shows how much of your total you use. Removing an attachment frees your total at once; the file stays on the server for the Trash retention period (30 days unless changed), then is deleted. Until then any device can undo the removal, if your total still has room. Purging a task from the Trash deletes its files immediately.
 
 ## Encryption
 
