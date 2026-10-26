@@ -134,7 +134,7 @@ func (s *Server) handleAuditExport(w http.ResponseWriter, r *http.Request) {
 	h := w.Header()
 	h.Set("Content-Type", "application/x-ndjson; charset=utf-8")
 	h.Set("Cache-Control", "no-store")
-	h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="opentodo-audit-%s.ndjson"`, time.Now().UTC().Format("20060102")))
+	h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="opentodo-audit-%s.ndjson"`, s.now().UTC().Format("20060102")))
 	w.WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(w)
 	count := 0

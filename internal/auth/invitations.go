@@ -81,7 +81,7 @@ func (s *Service) CreateInvitation(ctx context.Context, creator *User, email str
 		bound = &e
 	}
 	secret := "oti_" + ids.Secret(32)
-	now := time.Now()
+	now := s.clock()
 	inv := &Invitation{
 		ID: ids.New(), Status: InvitationPending, Email: bound, Role: "member",
 		CreatedBy: creator.ID, CreatedByName: creator.Name,
@@ -123,7 +123,7 @@ func (s *Service) ListInvitations(ctx context.Context) ([]Invitation, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	now := time.Now().UnixMilli()
+	now := s.clock().UnixMilli()
 	out := []Invitation{}
 	for rows.Next() {
 		var inv Invitation
@@ -166,7 +166,7 @@ func (s *Service) RevokeInvitation(ctx context.Context, actorID, id string) erro
 		return nil
 	}
 	if _, err := tx.ExecContext(ctx, "UPDATE invitations SET revoked_at = ? WHERE id = ? AND accepted_at IS NULL AND revoked_at IS NULL",
-		time.Now().UnixMilli(), id); err != nil {
+		s.clock().UnixMilli(), id); err != nil {
 		return err
 	}
 	if err := s.audit.RecordTx(ctx, tx, audit.InvitationRevoked(actorID, id)); err != nil {
@@ -183,7 +183,7 @@ func (s *Service) PreviewInvitation(ctx context.Context, secret string) (*Invita
 	err := s.db.QueryRowContext(ctx, `SELECT c.name, i.email, i.expires_at FROM invitations i
 		JOIN users c ON c.id = i.created_by
 		WHERE i.token_hash = ? AND i.accepted_at IS NULL AND i.revoked_at IS NULL AND i.expires_at > ?`,
-		hashToken(secret), time.Now().UnixMilli()).Scan(&inviterName, &p.Email, &p.ExpiresAt)
+		hashToken(secret), s.clock().UnixMilli()).Scan(&inviterName, &p.Email, &p.ExpiresAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrInvitationInvalid
 	}

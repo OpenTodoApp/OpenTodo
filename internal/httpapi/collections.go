@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/ids"
@@ -102,7 +101,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	uid := userFrom(r.Context()).ID
-	now := time.Now().UnixMilli()
+	now := s.now().UnixMilli()
 	id := ids.New()
 	if keyed {
 		id = s.idemEntityID(uid, r.PathValue("collection"), key)
@@ -483,7 +482,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	if entity == "task" {
 		canonicalizeRecurrence(body)
 		// Completing a recurring task records the occurrence and moves the series.
-		recordID, record, ok, err := s.recurringCompletion(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing, localToday(time.Now()))
+		recordID, record, ok, err := s.recurringCompletion(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing, localToday(s.now()))
 		if err != nil {
 			s.internal(w, err)
 			return
@@ -518,7 +517,7 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 		return
 	}
-	body := map[string]json.RawMessage{"deleted_at": json.RawMessage(fmt.Sprint(time.Now().UnixMilli()))}
+	body := map[string]json.RawMessage{"deleted_at": json.RawMessage(fmt.Sprint(s.now().UnixMilli()))}
 	ts := s.opTS()
 	var extra []opsync.Op
 	if entity == "section" {

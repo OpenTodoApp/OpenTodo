@@ -157,7 +157,7 @@ func (s *Server) usablePublicLink(ctx context.Context, l *auth.ResolvedPublicLin
 			return opsync.PublicProject{}, false, err
 		}
 	}
-	pp, ok, err := s.sync.PublicProject(ctx, l.CreatedBy, l.ProjectID, time.Now())
+	pp, ok, err := s.sync.PublicProject(ctx, l.CreatedBy, l.ProjectID, s.now())
 	if err != nil || !ok {
 		return opsync.PublicProject{}, false, err
 	}
@@ -256,7 +256,7 @@ func (s *Server) handlePublicList(w http.ResponseWriter, r *http.Request) {
 	_ = json.Unmarshal(pp.Project["name"], &name)
 	_ = json.Unmarshal(pp.Project["color"], &color)
 	writeJSON(w, http.StatusOK, map[string]any{"projectName": name, "projectColor": color, "rights": l.Rights,
-		"sections": sections, "tasks": tasks, "serverTime": time.Now().UnixMilli()})
+		"sections": sections, "tasks": tasks, "serverTime": s.now().UnixMilli()})
 }
 
 // handlePublicTick completes or reopens one task of a tick link's project, as
@@ -291,7 +291,7 @@ func (s *Server) handlePublicTick(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	now := time.Now()
+	now := s.now()
 	// An anonymous visitor completed it: completed_by stays null
 	// (completed-date-filters D5), instead of naming the link's creator.
 	body := map[string]json.RawMessage{"completed_at": json.RawMessage("null"), "completed_by": json.RawMessage("null")}
