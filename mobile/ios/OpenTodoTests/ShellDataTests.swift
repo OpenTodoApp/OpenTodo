@@ -52,6 +52,14 @@ final class ShareMapTests: XCTestCase {
         XCTAssertEqual(ShareMap.path(title: "", text: "  ", withFiles: false), "/share")
     }
 
+    func testASeparateUrlIsCarriedAndBeatsTheText() {
+        // What Safari shares: a URL attachment plus a page title, no text.
+        XCTAssertEqual(ShareMap.path(title: "Example", text: nil, url: "https://example.com/a?b=1", withFiles: false),
+                       "/share?title=Example&url=https%3A%2F%2Fexample.com%2Fa%3Fb%3D1")
+        XCTAssertEqual(ShareMap.path(title: nil, text: "see https://example.com", url: "https://example.com", withFiles: false),
+                       "/share?text=see%20https%3A%2F%2Fexample.com&url=https%3A%2F%2Fexample.com")
+    }
+
     func testAcceptKeepsCountAndSizeLimits() {
         XCTAssertEqual(ShareMap.accept([Int64](repeating: 1, count: 12)), Array(0..<10))
         XCTAssertEqual(ShareMap.accept([1, Int64(ShareMap.maxFileBytes) + 1, 2]), [0, 2])
@@ -111,7 +119,7 @@ final class ShareInboxTests: XCTestCase {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data("hello".utf8).write(to: url)
         defer { ShareInbox.clear() }
-        let entry = ShareInbox.Entry(title: "T", text: nil, files: [.init(name: "one.txt", type: "text/plain", path: path)])
+        let entry = ShareInbox.Entry(title: "T", text: nil, url: nil, files: [.init(name: "one.txt", type: "text/plain", path: path)])
         let message = try XCTUnwrap(ShareInbox.message(entry))
         // JSONSerialization escapes the slash inside the data URL; JSON.parse in the page undoes that.
         XCTAssertTrue(message.contains("base64,aGVsbG8="))
@@ -119,7 +127,7 @@ final class ShareInboxTests: XCTestCase {
     }
 
     func testMissingFilesAreNothingToHandOver() {
-        XCTAssertNil(ShareInbox.message(ShareInbox.Entry(title: nil, text: "t", files: [.init(name: "gone.txt", type: "text/plain", path: "share/gone.txt")])))
+        XCTAssertNil(ShareInbox.message(ShareInbox.Entry(title: nil, text: "t", url: nil, files: [.init(name: "gone.txt", type: "text/plain", path: "share/gone.txt")])))
     }
 }
 
@@ -185,5 +193,62 @@ final class BiometricKeyStoreTests: XCTestCase {
     func testCapabilitiesWithoutABiometricOnThisMachine() {
         let caps = Bridge.capabilities(biometric: BiometricKeyStore.available, share: true)
         XCTAssertEqual(caps.contains("biometric"), BiometricKeyStore.available)
+    }
+}
+
+final class JSONTests: XCTestCase {
+    func testAStringBecomesASafeLiteral() {
+        XCTAssertEqual(JSON.jsString("plain"), "\"plain\"")
+        XCTAssertEqual(JSON.jsString("a\"b"), "\"a\\\"b\"")
+        XCTAssertEqual(JSON.jsString("a\\b"), "\"a\\\\b\"")
+        XCTAssertEqual(JSON.jsString("#</script>"), "\"#\\u003c/script\\u003e\"")
+        XCTAssertEqual(JSON.jsArray(["reminders", "widgets"]), "[\"reminders\", \"widgets\"]")
+    }
+}
+
+@MainActor
+final class AppModelTests: XCTestCase {
+    func testATaskLinkOpensTheTask() {
+        let model = AppModel()
+        model.handle(url: URL(string: "opentodo://task/abc")!)
+        XCTAssertEqual(model.pendingPath, "/?task=abc")
+    }
+
+    func testAReminderLinkKeepsOnlyTheTwoActions() {
+        let model = AppModel()
+        model.handle(url: URL(string: "opentodo://reminder/r1?action=snooze")!)
+        XCTAssertEqual(model.pendingPath, "/?reminder=r1&action=snooze")
+        model.handle(url: URL(string: "opentodo://reminder/r1?action=dismiss")!)
+        XCTAssertEqual(model.pendingPath, "/?reminder=r1&action=dismiss")
+        // Any other value is dropped: it would otherwise add a parameter of its own.
+        model.handle(url: URL(string: "opentodo://reminder/r1?action=snooze%26add%3Dhello")!)
+        XCTAssertEqual(model.pendingPath, "/?reminder=r1")
+    }
+
+    func testSharedTextIsPercentEncodedAsOneValue() {
+        let model = AppModel()
+        model.handle(url: URL(string: "opentodo://add?text=a%2Bb%26c%3Dd%20%C3%A4")!)
+        XCTAssertEqual(model.pendingPath, "/?add=a%2Bb%26c%3Dd%20%C3%A4")
+    }
+
+    func testAnotherSchemeIsIgnored() {
+        let model = AppModel()
+        model.handle(url: URL(string: "https://todo.example.com/task/x")!)
+        XCTAssertNil(model.pendingPath)
+    }
+
+    func testAShareWithoutFilesOpensTheCaptureScreen() {
+        ShareInbox.clear()
+        addTeardownBlock { ShareInbox.clear() }
+        let entry = ShareInbox.Entry(title: nil, text: nil, url: "https://example.com/x", files: [])
+        Store.write(try! JSONEncoder().encode(entry), ShareInbox.fileName)
+        let model = AppModel()
+        model.handle(url: URL(string: "opentodo://share")!)
+        XCTAssertEqual(model.pendingPath, "/share?url=https%3A%2F%2Fexample.com%2Fx")
+    }
+
+    func testTheChangeServerShortcutDoesNotResetWithoutConfirmation() {
+        let model = AppModel()
+        XCTAssertFalse(model.changeServerRequested)
     }
 }

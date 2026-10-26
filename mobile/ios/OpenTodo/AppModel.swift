@@ -11,6 +11,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var origin: URL?
     /// A path the web app should open once it is loaded (`/?task=…` from a notification).
     @Published var pendingPath: String?
+    /// The home-screen shortcut's "Change server", which wipes data and therefore asks first.
+    @Published var changeServerRequested = false
 
     private let prefs = Prefs.shared
 
@@ -47,29 +49,54 @@ final class AppModel: ObservableObject {
     }
 
     /// `opentodo://task/<id>`, `opentodo://reminder/<id>?action=snooze`,
-    /// `opentodo://share?files=1` from the share extension.
+    /// `opentodo://share?files=1` from the share extension. Any app may open these, so the
+    /// values are treated as data and never pasted into a path.
     func handle(url: URL) {
         guard url.scheme?.lowercased() == "opentodo" else { return }
         let id = url.lastPathComponent
+        let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
         switch url.host?.lowercased() {
         case "task" where !id.isEmpty:
-            pendingPath = "/?task=\(id)"
+            show(task: id)
         case "reminder" where !id.isEmpty:
-            let action = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-                .queryItems?.first { $0.name == "action" }?.value
-            pendingPath = "/?reminder=\(id)" + (action.map { "&action=\($0)" } ?? "")
+            show(reminder: id, action: query.first { $0.name == "action" }?.value)
         case "share":
-            pendingPath = ShareInbox.read().map { ShareMap.path(title: $0.title, text: $0.text, withFiles: !$0.files.isEmpty) } ?? "/share"
+            pendingPath = ShareInbox.read().map { ShareMap.path(title: $0.title, text: $0.text, url: $0.url, withFiles: !$0.files.isEmpty) } ?? "/share"
         case "add":
-            let text = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-                .queryItems?.first { $0.name == "text" }?.value ?? ""
-            pendingPath = "/?add=\(text.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? text)"
+            show(add: query.first { $0.name == "text" }?.value ?? "")
         default:
             break
         }
     }
 
-    /// Only the shell's own cookie and website data, not the whole app's storage.
+    /// `/?task=<id>`: a reminder tap opens the task it belongs to.
+    func show(task id: String) { pendingPath = path([URLQueryItem(name: "task", value: id)]) }
+
+    /// `/?reminder=<id>&action=snooze|dismiss`: the web app's own reminder operations.
+    func show(reminder id: String, action: String?) {
+        var items = [URLQueryItem(name: "reminder", value: id)]
+        if let action = action?.lowercased(), action == "snooze" || action == "dismiss" {
+            items.append(URLQueryItem(name: "action", value: action))
+        }
+        pendingPath = path(items)
+    }
+
+    /// `/?add=<text>`: quick capture from another app.
+    func show(add text: String) { pendingPath = path([URLQueryItem(name: "add", value: text)]) }
+
+    /// Values are percent-encoded to unreserved characters only, so a `+`, an `&` or a
+    /// non-ASCII letter cannot turn into a separator or a space on the other side.
+    private static let unreserved = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+
+    private func path(_ items: [URLQueryItem]) -> String {
+        let query = items.map { item in
+            let value = (item.value ?? "").addingPercentEncoding(withAllowedCharacters: Self.unreserved) ?? ""
+            return "\(item.name)=\(value)"
+        }
+        return "/?" + query.joined(separator: "&")
+    }
+
+    /// The app's own web storage: sessions, the cached web app and its IndexedDB.
     private func webDataCleanup() {
         let store = WKWebsiteDataStore.default()
         store.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {}

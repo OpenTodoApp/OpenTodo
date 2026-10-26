@@ -1,12 +1,13 @@
 import SwiftUI
 import UIKit
 
-/// The two things SwiftUI does not cover: the notification category and the background
-/// refresh registration, both needed before the first scene appears.
+/// The things SwiftUI does not cover: the notification category and its delegate, and the
+/// background refresh registration, both needed before the first scene appears.
 @MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         Reminders.shared.registerCategory()
+        Notifications.shared.start()
         BackgroundRefresh.register()
         return true
     }
@@ -15,13 +16,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         BackgroundRefresh.scheduleNext()
     }
 
-    /// The home-screen shortcut on the app icon: "Change server" forgets the current
-    /// one and shows the first-run screen again (`UIApplicationShortcutItemType` in
-    /// Info.plist).
+    /// The home-screen shortcut on the app icon: "Change server" asks first, because the
+    /// reset discards the web app's storage, and that can hold ops which have not synced yet.
     func application(_ application: UIApplication,
                      performActionFor shortcut: UIApplicationShortcutItem,
                      completionHandler: @escaping (Bool) -> Void) {
-        if shortcut.type == "change-server" { AppModel.shared.forgetServer() }
+        if shortcut.type == "change-server" { AppModel.shared.changeServerRequested = true }
         completionHandler(true)
     }
 }

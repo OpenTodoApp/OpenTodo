@@ -35,6 +35,7 @@
 		90227290A98E893447F9F5B9 /* AppBoundDomains.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFD246A16B3958BB2712D921 /* AppBoundDomains.swift */; };
 		9513C75F8A86142FD4F82915 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B456379220DDE28EA687B65F /* AppDelegate.swift */; };
 		9CC1ED807AF7798D89018403 /* Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EBB2043E1AE8A8B6CCC2163 /* Version.swift */; };
+		A1D5DEAFEAAE605447031B36 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132F5C96551EA51999C089B /* Notifications.swift */; };
 		A1EA5598620CDF91C0650358 /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CE229050EA41875E276E76B /* Prefs.swift */; };
 		CB2FC72B3B03060926024AA5 /* ServerAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AFC10C15329891DCF7BF3C8 /* ServerAddress.swift */; };
 		D02A9017D75C70840990A6F9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C7D944907B9AC239B781669B /* PrivacyInfo.xcprivacy */; };
@@ -110,6 +111,7 @@
 		30808D5A379DF00A50741685 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthCheck.swift; sourceTree = "<group>"; };
 		40389A7CBF63E93B78B6D95B /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		5132F5C96551EA51999C089B /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		54FD68501123AE1BE87BC42B /* OpenTodoWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = OpenTodoWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5CE229050EA41875E276E76B /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		659E1258F5B9ECE88757F519 /* BackgroundRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefresh.swift; sourceTree = "<group>"; };
@@ -224,6 +226,7 @@
 				361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */,
 				219379B0310AFB0EB86C6A8D /* Info.plist */,
 				8D81052402DC912DF25E566D /* JSON.swift */,
+				5132F5C96551EA51999C089B /* Notifications.swift */,
 				F44BDB908FFA6D9D6BFDEFF7 /* OpenTodo.entitlements */,
 				10E9CB49DE30DDBDD4134946 /* OpenTodoApp.swift */,
 				8407A0F4AD2F032D414F19A2 /* Origin.swift */,
@@ -448,6 +451,7 @@
 				1AF4F45D1A7A4F8E955EC260 /* BridgeHost.swift in Sources */,
 				D49CB798F6CA86EB222544EE /* HealthCheck.swift in Sources */,
 				129207436EC529C5267F6E59 /* JSON.swift in Sources */,
+				A1D5DEAFEAAE605447031B36 /* Notifications.swift in Sources */,
 				12E06B7CA8F6B63FB7795774 /* OpenTodoApp.swift in Sources */,
 				3BC19BDB6D1E9CE0B9CDCAAA /* Origin.swift in Sources */,
 				A1EA5598620CDF91C0650358 /* Prefs.swift in Sources */,

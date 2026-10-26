@@ -42,13 +42,18 @@ final class ShareViewController: UIViewController {
         } else {
             let type = provider.registeredTypeIdentifiers.first(where: { UTType($0)?.conforms(to: .item) == true }) ?? UTType.data.identifier
             provider.loadFileRepresentation(forTypeIdentifier: type) { temp, _ in
-                self.done { if let saved = self.save(temp, provider: provider, type: type) { self.files.append(saved) } }
+                // The temporary file is deleted when this handler returns, so the copy has to
+                // happen here; only the bookkeeping hops to the main queue.
+                let saved = self.save(temp, provider: provider, type: type)
+                self.done { if let saved { self.files.append(saved) } }
             }
         }
     }
 
     private func save(_ temp: URL?, provider: NSItemProvider, type: String) -> ShareInbox.File? {
         guard let temp else { return nil }
+        let size = (try? FileManager.default.attributesOfItem(atPath: temp.path)[.size]) as? NSNumber
+        guard (size?.intValue ?? 0) <= ShareMap.maxFileBytes else { return nil }
         let name = provider.suggestedName ?? temp.lastPathComponent
         let path = "\(ShareInbox.directory)/\(UUID().uuidString)-\(name.replacingOccurrences(of: "/", with: "-"))"
         let target = Store.url(path)
@@ -66,13 +71,13 @@ final class ShareViewController: UIViewController {
     }
 
     private func finish() {
-        let entry = ShareInbox.Entry(title: title_, text: text, files: files)
-        if let data = try? JSONEncoder().encode(entry) { Store.write(data, ShareInbox.fileName) }
         // A link alone is the URL; everything else goes as text, as the web share target does.
         if url == nil, let text, text.range(of: "^https?://\\S+$", options: .regularExpression) != nil {
             url = text
             self.text = nil
         }
+        let entry = ShareInbox.Entry(title: title_, text: text, url: url, files: files)
+        if let data = try? JSONEncoder().encode(entry) { Store.write(data, ShareInbox.fileName) }
         open(URL(string: "opentodo://share")!) { [weak self] in
             self?.extensionContext?.completeRequest(returningItems: nil)
         }

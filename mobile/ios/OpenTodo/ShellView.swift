@@ -112,21 +112,13 @@ extension ShellController: WKNavigationDelegate {
         guard let url = action.request.url else { return decisionHandler(.cancel) }
         let scheme = (url.scheme ?? "").lowercased()
         if scheme == "about" || scheme == "data" || scheme == "blob" { return decisionHandler(.allow) }
-        // A new window (target="_blank") and any other origin belong in the system browser.
+        // A new window (target="_blank") and any other origin belong in the system browser,
+        // with the same schemes the bridge allows — the page shows other people's content.
         if action.targetFrame == nil || !allowed(url) {
-            if ["https", "http", "mailto", "tel"].contains(scheme) { UIApplication.shared.open(url) }
+            if Bridge.safeExternal(url.absoluteString) { UIApplication.shared.open(url) }
             return decisionHandler(.cancel)
         }
         decisionHandler(.allow)
-    }
-
-    func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge,
-                 completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        // Server trust is the system's alone: a certificate the device does not trust is refused.
-        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
-            return completionHandler(.cancelAuthenticationChallenge, nil)
-        }
-        completionHandler(.performDefaultHandling, nil)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -150,7 +142,7 @@ extension ShellController: WKNavigationDelegate {
 extension ShellController: WKUIDelegate {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                  for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        if let url = action.request.url { UIApplication.shared.open(url) }
+        if let url = action.request.url, Bridge.safeExternal(url.absoluteString) { UIApplication.shared.open(url) }
         return nil
     }
 }

@@ -40,10 +40,6 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
         return caps
     }
 
-    static func available() -> Bool {
-        NSClassFromString("WKScriptMessageHandlerWithReply") != nil
-    }
-
     func install(into controller: WKUserContentController, app: String, capabilities: [String]) {
         controller.addScriptMessageHandler(self, contentWorld: .page, name: Self.handlerName)
         controller.addUserScript(WKUserScript(source: Self.script(origin: origin, app: app, capabilities: capabilities),
@@ -107,16 +103,19 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// The page side. The origin guard is repeated here because user scripts reach every
     /// page the web view opens; the message handler checks the origin again.
     static func script(origin: URL, app: String, capabilities: [String]) -> String {
-        let caps = capabilities.map { "\"\($0)\"" }.joined(separator: ", ")
+        // Escaped as JavaScript literals, so a host or an app name cannot break out of its literal.
+        let pageOrigin = JSON.jsString(Origin.pageOrigin(origin))
+        let appLiteral = JSON.jsString(app)
+        let caps = JSON.jsArray(capabilities)
         return """
         (function () {
-          if (location.origin !== "\(Origin.pageOrigin(origin))") return;
+          if (location.origin !== \(pageOrigin)) return;
           var h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.\(handlerName);
           if (!h || window.opentodoShell) return;
           function call(m, a) { return h.postMessage({ m: m, a: a || [] }) }
           window.opentodoShell = Object.freeze({
-            bridge: \(version), platform: 'ios', app: "\(app)",
-            capabilities: Object.freeze([\(caps)]),
+            bridge: \(version), platform: 'ios', app: \(appLiteral),
+            capabilities: Object.freeze(\(caps)),
             scheduleReminders: function (json) { return call('scheduleReminders', [String(json)]) },
             testNotification: function () { return call('testNotification') },
             publishWidget: function (json) { call('publishWidget', [String(json)]) },

@@ -46,7 +46,6 @@ enum BiometricKeyStore {
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
             kSecUseAuthenticationContext as String: context,
-            kSecUseOperationPrompt as String: String(localized: "Unlock your OpenTodo account"),
         ]
         var item: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,

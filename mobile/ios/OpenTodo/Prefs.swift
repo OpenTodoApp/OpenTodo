@@ -22,9 +22,13 @@ final class Prefs {
         set { defaults.set(newValue, forKey: "server.insecure") }
     }
 
-    /// Set by the first-run screen, deep links and the tests: `-OPENTODO_SERVER http://…`
-    /// (a launch argument, so it also arrives through `UserDefaults`) or `OPENTODO_SERVER`.
+    /// A debug build only: `-OPENTODO_SERVER http://…` as a launch argument (which also
+    /// arrives through `UserDefaults`), used to open a server without typing it.
     var addressOverride: String? {
-        defaults.string(forKey: "OPENTODO_SERVER") ?? ProcessInfo.processInfo.environment["OPENTODO_SERVER"]
+        #if DEBUG
+        return defaults.string(forKey: "OPENTODO_SERVER") ?? ProcessInfo.processInfo.environment["OPENTODO_SERVER"]
+        #else
+        return nil
+        #endif
     }
 }

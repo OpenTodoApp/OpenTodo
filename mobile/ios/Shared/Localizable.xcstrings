@@ -1,282 +1,177 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Server address": {
+    "%lld today": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Serveradresse"
+            "value": "%lld heute"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dirección del servidor"
+            "value": "%lld hoy"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adresse du serveur"
+            "value": "%lld aujourd’hui"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Indirizzo del server"
+            "value": "%lld oggi"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Endereço do servidor"
+            "value": "%lld hoje"
           }
         }
       }
     },
-    "OpenTodo runs on your own server. Enter the address you use in the browser.": {
+    "%lld today · %lld overdue": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenTodo läuft auf deinem eigenen Server. Gib die Adresse ein, die du im Browser verwendest."
+            "value": "%lld heute · %lld überfällig"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenTodo funciona en tu propio servidor. Introduce la dirección que usas en el navegador."
+            "value": "%lld hoy · %lld atrasadas"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenTodo tourne sur votre propre serveur. Saisissez l’adresse que vous utilisez dans le navigateur."
+            "value": "%lld aujourd’hui · %lld en retard"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenTodo gira sul tuo server. Inserisci l’indirizzo che usi nel browser."
+            "value": "%lld oggi · %lld in ritardo"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "O OpenTodo corre no seu próprio servidor. Introduza o endereço que usa no navegador."
+            "value": "%lld hoje · %lld atrasadas"
           }
         }
       }
     },
-    "That is not a usable address.": {
+    "Cancel": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Das ist keine brauchbare Adresse."
+            "value": "Abbrechen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esa dirección no sirve."
+            "value": "Cancelar"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cette adresse n’est pas utilisable."
+            "value": "Annuler"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questo indirizzo non è utilizzabile."
+            "value": "Annulla"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esse endereço não serve."
+            "value": "Cancelar"
           }
         }
       }
     },
-    "This server must be reached over https.": {
+    "Change server?": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dieser Server ist nur über https erreichbar."
+            "value": "Server wechseln?"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hay que llegar a este servidor por https."
+            "value": "¿Cambiar de servidor?"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ce serveur doit être joint en https."
+            "value": "Changer de serveur ?"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questo server va raggiunto in https."
+            "value": "Cambiare server?"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Este servidor tem de ser alcançado por https."
+            "value": "Mudar de servidor?"
           }
         }
       }
     },
-    "Use %@": {
+    "Changes that have not reached the server are lost. Your tasks stay on the server.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ verwenden"
+            "value": "Änderungen, die den Server noch nicht erreicht haben, gehen verloren. Deine Aufgaben bleiben auf dem Server."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Usar %@"
+            "value": "Los cambios que aún no han llegado al servidor se pierden. Tus tareas siguen en el servidor."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Utiliser %@"
+            "value": "Les modifications qui n’ont pas encore atteint le serveur sont perdues. Vos tâches restent sur le serveur."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Usa %@"
+            "value": "Le modifiche che non hanno ancora raggiunto il server vanno perse. Le tue attività restano sul server."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Usar %@"
-          }
-        }
-      }
-    },
-    "No answer from that address. Check the address and your connection.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Antwort von dieser Adresse. Prüfe Adresse und Verbindung."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay respuesta en esa dirección. Comprueba la dirección y la conexión."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucune réponse à cette adresse. Vérifiez l’adresse et votre connexion."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nessuna risposta da questo indirizzo. Controlla l’indirizzo e la connessione."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sem resposta nesse endereço. Verifique o endereço e a ligação."
-          }
-        }
-      }
-    },
-    "That address does not answer like an OpenTodo server.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Adresse antwortet nicht wie ein OpenTodo-Server."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esa dirección no responde como un servidor OpenTodo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cette adresse ne répond pas comme un serveur OpenTodo."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questo indirizzo non risponde come un server OpenTodo."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esse endereço não responde como um servidor OpenTodo."
-          }
-        }
-      }
-    },
-    "The certificate of that server is not trusted by this device.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Das Zertifikat dieses Servers ist auf diesem Gerät nicht vertrauenswürdig."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este dispositivo no confía en el certificado de ese servidor."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le certificat de ce serveur n’est pas reconnu par cet appareil."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questo dispositivo non si fida del certificato di quel server."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este dispositivo não confia no certificado desse servidor."
+            "value": "As alterações que ainda não chegaram ao servidor perdem-se. As suas tarefas ficam no servidor."
           }
         }
       }
@@ -316,6 +211,111 @@
         }
       }
     },
+    "Dismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwerfen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignora"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispensar"
+          }
+        }
+      }
+    },
+    "Locked. Open OpenTodo to see your tasks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesperrt. Öffne OpenTodo, um deine Aufgaben zu sehen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloqueado. Abre OpenTodo para ver tus tareas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verrouillé. Ouvrez OpenTodo pour voir vos tâches."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloccato. Apri OpenTodo per vedere le tue attività."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloqueado. Abra o OpenTodo para ver as suas tarefas."
+          }
+        }
+      }
+    },
+    "No answer from that address. Check the address and your connection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Antwort von dieser Adresse. Prüfe Adresse und Verbindung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay respuesta en esa dirección. Comprueba la dirección y la conexión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune réponse à cette adresse. Vérifiez l’adresse et votre connexion."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna risposta da questo indirizzo. Controlla l’indirizzo e la connessione."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sem resposta nesse endereço. Verifique o endereço e a ligação."
+          }
+        }
+      }
+    },
     "No connection to your server.": {
       "extractionState": "manual",
       "localizations": {
@@ -347,6 +347,356 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sem ligação ao seu servidor."
+          }
+        }
+      }
+    },
+    "Nothing left for today.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für heute ist nichts mehr offen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No queda nada para hoy."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus rien pour aujourd’hui."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non resta nulla per oggi."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não resta nada para hoje."
+          }
+        }
+      }
+    },
+    "Open OpenTodo to fill this widget.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne OpenTodo, um dieses Widget zu füllen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre OpenTodo para llenar este widget."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrez OpenTodo pour remplir ce widget."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri OpenTodo per riempire questo widget."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o OpenTodo para preencher este widget."
+          }
+        }
+      }
+    },
+    "OpenTodo reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo-Erinnerung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recordatorio de OpenTodo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rappel OpenTodo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promemoria OpenTodo"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lembrete do OpenTodo"
+          }
+        }
+      }
+    },
+    "OpenTodo runs on your own server. Enter the address you use in the browser.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo läuft auf deinem eigenen Server. Gib die Adresse ein, die du im Browser verwendest."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo funciona en tu propio servidor. Introduce la dirección que usas en el navegador."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo tourne sur votre propre serveur. Saisissez l’adresse que vous utilisez dans le navigateur."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo gira sul tuo server. Inserisci l’indirizzo che usi nel browser."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O OpenTodo corre no seu próprio servidor. Introduza o endereço que usa no navegador."
+          }
+        }
+      }
+    },
+    "Remove the server and its data": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server und Daten entfernen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar el servidor y sus datos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer le serveur et ses données"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi il server e i suoi dati"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remover o servidor e os seus dados"
+          }
+        }
+      }
+    },
+    "Server address": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serveradresse"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirección del servidor"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresse du serveur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indirizzo del server"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endereço do servidor"
+          }
+        }
+      }
+    },
+    "Snooze 10 min": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 Min. später"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posponer 10 min"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reporter de 10 min"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posticipa di 10 min"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adiar 10 min"
+          }
+        }
+      }
+    },
+    "Task": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgabe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarea"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tâche"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attività"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarefa"
+          }
+        }
+      }
+    },
+    "That address does not answer like an OpenTodo server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Adresse antwortet nicht wie ein OpenTodo-Server."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esa dirección no responde como un servidor OpenTodo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette adresse ne répond pas comme un serveur OpenTodo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo indirizzo non risponde come un server OpenTodo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esse endereço não responde como um servidor OpenTodo."
+          }
+        }
+      }
+    },
+    "That is not a usable address.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das ist keine brauchbare Adresse."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esa dirección no sirve."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette adresse n’est pas utilisable."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo indirizzo non è utilizzabile."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esse endereço não serve."
           }
         }
       }
@@ -421,37 +771,107 @@
         }
       }
     },
-    "Try again": {
+    "The certificate of that server is not trusted by this device.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Erneut versuchen"
+            "value": "Das Zertifikat dieses Servers ist auf diesem Gerät nicht vertrauenswürdig."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Volver a intentarlo"
+            "value": "Este dispositivo no confía en el certificado de ese servidor."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Réessayer"
+            "value": "Le certificat de ce serveur n’est pas reconnu par cet appareil."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Riprova"
+            "value": "Questo dispositivo non si fida del certificato di quel server."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tentar de novo"
+            "value": "Este dispositivo não confia no certificado desse servidor."
+          }
+        }
+      }
+    },
+    "This is what a reminder looks like.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So sieht eine Erinnerung aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Así se ve un recordatorio."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voici à quoi ressemble un rappel."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ecco come appare un promemoria."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "É assim que um lembrete aparece."
+          }
+        }
+      }
+    },
+    "This server must be reached over https.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Server ist nur über https erreichbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay que llegar a este servidor por https."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce serveur doit être joint en https."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo server va raggiunto in https."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor tem de ser alcançado por https."
           }
         }
       }
@@ -491,142 +911,72 @@
         }
       }
     },
-    "Open OpenTodo to fill this widget.": {
+    "Today's and overdue tasks from your own server.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Öffne OpenTodo, um dieses Widget zu füllen."
+            "value": "Heutige und überfällige Aufgaben von deinem eigenen Server."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Abre OpenTodo para llenar este widget."
+            "value": "Tareas de hoy y atrasadas de tu propio servidor."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ouvrez OpenTodo pour remplir ce widget."
+            "value": "Tâches du jour et en retard de votre propre serveur."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apri OpenTodo per riempire questo widget."
+            "value": "Attività di oggi e in ritardo dal tuo server."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Abra o OpenTodo para preencher este widget."
+            "value": "Tarefas de hoje e atrasadas do seu próprio servidor."
           }
         }
       }
     },
-    "Nothing left for today.": {
+    "Try again": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Für heute ist nichts mehr offen."
+            "value": "Erneut versuchen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No queda nada para hoy."
+            "value": "Volver a intentarlo"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Plus rien pour aujourd’hui."
+            "value": "Réessayer"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Non resta nulla per oggi."
+            "value": "Riprova"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não resta nada para hoje."
-          }
-        }
-      }
-    },
-    "Locked. Open OpenTodo to see your tasks.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gesperrt. Öffne OpenTodo, um deine Aufgaben zu sehen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bloqueado. Abre OpenTodo para ver tus tareas."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verrouillé. Ouvrez OpenTodo pour voir vos tâches."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bloccato. Apri OpenTodo per vedere le tue attività."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bloqueado. Abra o OpenTodo para ver as suas tarefas."
-          }
-        }
-      }
-    },
-    "Task": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarea"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tâche"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Attività"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarefa"
+            "value": "Tentar de novo"
           }
         }
       }
@@ -666,247 +1016,37 @@
         }
       }
     },
-    "%lld today": {
+    "Use %@": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld heute"
+            "value": "%@ verwenden"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld hoy"
+            "value": "Usar %@"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld aujourd’hui"
+            "value": "Utiliser %@"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld oggi"
+            "value": "Usa %@"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld hoje"
-          }
-        }
-      }
-    },
-    "%lld today · %lld overdue": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld heute · %lld überfällig"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld hoy · %lld atrasadas"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld aujourd’hui · %lld en retard"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld oggi · %lld in ritardo"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld hoje · %lld atrasadas"
-          }
-        }
-      }
-    },
-    "Today's and overdue tasks from your own server.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heutige und überfällige Aufgaben von deinem eigenen Server."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tareas de hoy y atrasadas de tu propio servidor."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tâches du jour et en retard de votre propre serveur."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Attività di oggi e in ritardo dal tuo server."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarefas de hoje e atrasadas do seu próprio servidor."
-          }
-        }
-      }
-    },
-    "Snooze 10 min": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10 Min. später"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Posponer 10 min"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reporter de 10 min"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Posticipa di 10 min"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adiar 10 min"
-          }
-        }
-      }
-    },
-    "Dismiss": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verwerfen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Descartar"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ignorer"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ignora"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dispensar"
-          }
-        }
-      }
-    },
-    "OpenTodo reminder": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "OpenTodo-Erinnerung"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recordatorio de OpenTodo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rappel OpenTodo"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Promemoria OpenTodo"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lembrete do OpenTodo"
-          }
-        }
-      }
-    },
-    "This is what a reminder looks like.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "So sieht eine Erinnerung aus."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Así se ve un recordatorio."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voici à quoi ressemble un rappel."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ecco come appare un promemoria."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "É assim que um lembrete aparece."
+            "value": "Usar %@"
           }
         }
       }

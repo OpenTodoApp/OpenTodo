@@ -16,6 +16,7 @@ enum ShareInbox {
     struct Entry: Codable, Equatable {
         let title: String?
         let text: String?
+        let url: String?
         let files: [File]
     }
 
