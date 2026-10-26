@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **The Android app targets Android 16 (API level 36),** as Google Play now requires. Nothing changes for users: back navigation already used the system's predictive back, and the app already drew edge to edge.
+
 ### Fixed
 
 - **Deleting or archiving a project names the right number of open tasks.** Opened right after the project, before its tasks had loaded, the confirmation could say "0 open tasks". The number is now counted when the confirmation opens.
