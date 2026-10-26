@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, getMeta, useDatabase } from './db'
 import {
   applyOps, archiveProject, createProject, createSubtask, createTask, deleteProject, deleteTask, getDeviceId, moveProject, mutate,
@@ -209,6 +209,22 @@ describe('mutate', () => {
     expect(row).toMatchObject({ title: 'Water the plants', ical_extra: extra })
     expect(row?.completed_at).not.toBeNull()
     expect((await db.outbox.toArray()).some((o) => o.field === 'ical_extra')).toBe(false)
+  })
+})
+
+describe('task positions', () => {
+  beforeEach(() => { useDatabase(`positions-${Date.now()}-${Math.random()}`) })
+
+  it('tasks created at the same moment, before either is written, get distinct positions in order', async () => {
+    // One millisecond for all three, as a paste of three lines can be.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 26, 9, 0))
+    const ids = await Promise.all(['A', 'B', 'C'].map((title) => createTask({ title })))
+    const positions = await Promise.all(ids.map(async (id) => (await db.tasks.get(id))!.position))
+    expect(new Set(positions).size).toBe(3)
+    // One more after they are written still goes last.
+    const d = await createTask({ title: 'D' })
+    expect((await db.tasks.get(d))!.position).toBeGreaterThan(Math.max(...positions))
   })
 })
 

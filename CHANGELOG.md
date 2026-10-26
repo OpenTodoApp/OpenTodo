@@ -4,6 +4,12 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Deleting or archiving a project names the right number of open tasks.** Opened right after the project, before its tasks had loaded, the confirmation could say "0 open tasks". The number is now counted when the confirmation opens.
+- **The drop highlight no longer stays on a shared project you can only view.** Dragging a task over such a project in the sidebar left its ring on after the drag ended.
+- **Tasks added at the same moment keep their order.** Tasks created in the same instant could share one position and then show in any order in a manually ordered list; each now goes after the one before it.
+
 ## [0.14.2] - 2026-10-26
 
 OpenTodo 0.14.2 is the second **security release** of the internal audit; please upgrade. It narrows what the server can reach on its own network (map proxy, private-target switch), keeps one client from using up a hosted tenant's or the demo's limits, tightens single sign-on linking and password reset, and closes attachment quota and cache gaps. **The first-run setup code is now off by default**: a fresh server can be set up without reading its log; set `OPENTODO_SETUP_CODE=required` to keep the code.

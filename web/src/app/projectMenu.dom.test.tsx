@@ -6,13 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import type { Project } from '../lib/types'
 import { click, key, render, mockFetch, noPublicLinks, waitFor } from '../ui/test-utils'
-import { ProjectHeader } from './ProjectHeader'
-import { useOpenTaskCount } from '../lib/liveTasks'
-
-/** Shows the shared open-task count the header's menu reads (one live snapshot). */
-function OpenCount({ id }: { id: string }) {
-  return <span data-open-count={useOpenTaskCount(id)} />
-}
+import { ProjectHeader, projectMenuGroups } from './ProjectHeader'
 
 // The project header asks the server for its public links.
 beforeEach(() => mockFetch(noPublicLinks))
@@ -44,9 +38,7 @@ describe('project menu', () => {
   })
 
   it('shows colours as radio items and counts open tasks in the delete confirmation', async () => {
-    const r = await render(<><ProjectHeader project={p('home', 'Home')} /><OpenCount id="home" /></>)
-    // The confirmation's text is fixed when it opens: the count has arrived first.
-    await waitFor(() => !!r.container.querySelector('[data-open-count="1"]'), 'the open task count')
+    const r = await render(<ProjectHeader project={p('home', 'Home')} />)
     await click(r.container.querySelector('button[aria-label="Project menu"]')!)
     await waitFor(() => document.querySelectorAll('[role="group"][aria-label="Colour"] [role="menuitemradio"]').length > 0, 'the project menu')
     const radios = document.querySelectorAll('[role="group"][aria-label="Colour"] [role="menuitemradio"]')
@@ -54,7 +46,14 @@ describe('project menu', () => {
     expect([...radios].filter((b) => b.getAttribute('aria-checked') === 'true').map((b) => b.getAttribute('aria-label'))).toEqual(['Colour green'])
     await click([...document.querySelectorAll('[data-menu-label]')].find((e) => e.getAttribute('data-menu-label') === 'Delete project…') as HTMLElement)
     await waitFor(() => !!document.querySelector('[role="alertdialog"]'), 'the delete confirmation')
-    expect(document.querySelector('[role="alertdialog"]')?.textContent).toContain('1 open task')
+    await waitFor(() => !!document.querySelector('[role="alertdialog"]')?.textContent?.includes('1 open task'), 'the count in the confirmation')
     await r.unmount()
+  })
+
+  it('opened before the live count has loaded, the delete confirmation still counts the open tasks', async () => {
+    const groups = projectMenuGroups(p('home', 'Home'), { role: 'owner', shared: false, targets: [], subCount: 0, openTasks: undefined }, { rename: () => {} })
+    const item = groups.flatMap((g) => g.items).find((i) => i.id === 'delete')
+    if (!item || item.kind !== 'confirm' || typeof item.confirm.body !== 'function') throw new Error('the delete confirmation reads its count on open')
+    expect(await item.confirm.body()).toContain('1 open task')
   })
 })
