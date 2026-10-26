@@ -5,8 +5,10 @@
 # itself counts as code (skills/ is embedded in the binary, scripts/deploy*
 # generate and check the deploy/ templates); docs/, the in-app help and the
 # changelog count as docs. templates/ is compiled into the web app (template-library).
-# mobile/ is the Android app (native-shells D9): only the android job, which also
-# runs when the workflow or this filter changes. Tiered CI (ci-speed): on a pull
+# mobile/ is the Android app (native-shells D9) and mobile/ios the iOS app
+# (ios-shell D7): only the android and ios jobs, which also run when the workflow
+# or this filter changes; iOS gets its own answer because a macOS runner costs ten
+# times an Ubuntu one. Tiered CI (ci-speed): on a pull
 # request `ui` gates the workbench checks (Storybook a11y and visual), `layout` the
 # one browser layout and end-to-end job, `extension` and `skill` their packages;
 # every one of them is true when the workflow or this filter changes.
@@ -34,6 +36,7 @@ ui=$(match 'web/src/|web/public/|web/\.storybook/|web/index\.html$|web/package(-
 layout=$(match 'web/|internal/|cmd/opentodo/|templates/|go\.(mod|sum)$|Makefile$|scripts/(e2e-|ux-audit/)')
 extension=$(match 'extension/|Makefile$')
 skill=$(match 'skills/|Makefile$')
+ios=$(match 'mobile/ios/')
 echo "code=$code"
 echo "docs=$docs"
 echo "mobile=$mobile"
@@ -41,3 +44,4 @@ echo "ui=$ui"
 echo "layout=$layout"
 echo "extension=$extension"
 echo "skill=$skill"
+echo "ios=$ios"

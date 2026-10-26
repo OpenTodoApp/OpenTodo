@@ -43,6 +43,7 @@ jobs:
       layout: ${{ steps.filter.outputs.layout }}
       extension: ${{ steps.filter.outputs.extension }}
       skill: ${{ steps.filter.outputs.skill }}
+      ios: ${{ steps.filter.outputs.ios }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -59,7 +60,7 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then
-            for k in code docs mobile ui layout extension skill; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
+            for k in code docs mobile ui layout extension skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
             exit 0
           fi
           git diff --name-only "$BASE"...HEAD > changed.txt
@@ -591,6 +592,25 @@ jobs:
           path: dist/opentodo-android-*
           if-no-files-found: warn
 
+  # The iOS app (ios-shell D7). A macOS runner, because the shell is built and
+  # tested with Xcode against a simulator; it starts only for iOS changes, since a
+  # macOS minute costs ten Ubuntu ones. No Apple Developer account is involved:
+  # the build is unsigned, and whoever distributes the app signs it themselves.
+  ios:
+    name: iOS (build and test)
+    runs-on: macos-15
+    timeout-minutes: 40
+    needs: [changes]
+    if: needs.changes.outputs.ios == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Xcode and simulator runtimes
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes
+      - name: Unit tests, device build and the dependency check (make ios)
+        run: make ios
+
   # The agent skills (OpenSpec changes agent-ready-cli and claude-plugin): the CLI
   # skill that `ot skill` prints and the MCP skill, zipped as release assets.
   skill:
@@ -691,7 +711,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image]
+    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, ios, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -771,7 +791,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image, docker]
+    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, ios, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
