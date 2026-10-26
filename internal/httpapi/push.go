@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/push"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
-	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Reminders and web push (OpenSpec change `reminders`): the /api/v1/push routes,
@@ -198,50 +196,6 @@ func (s *Server) tzLocation(ctx context.Context, uid string) *time.Location {
 }
 
 // ---- relative reminders follow REST due changes ----
-
-// dueInstantMs is the Unix ms a due denotes: a zoned due is its wall time in its
-// own zone (absolute-datetimes); a floating one is read in loc, 09:00 when
-// date-only.
-func dueInstantMs(d *due, loc *time.Location) (int64, bool) {
-	clock := "09:00"
-	if d.Time != nil {
-		clock = *d.Time
-	}
-	if d.TZ != nil && d.Time != nil {
-		if zl, err := zoned.Load(*d.TZ); err == nil {
-			loc = zl
-		}
-	}
-	at, err := zoned.Instant(d.Date, clock, loc)
-	if err != nil {
-		return 0, false
-	}
-	return at.UnixMilli(), true
-}
-
-func relativeFireAt(d *due, offset json.RawMessage, loc *time.Location) json.RawMessage {
-	if d == nil {
-		return json.RawMessage("null")
-	}
-	at, ok := dueInstantMs(d, loc)
-	if !ok {
-		return json.RawMessage("null")
-	}
-	var minutes int64
-	_ = json.Unmarshal(offset, &minutes)
-	return json.RawMessage(fmt.Sprint(at + minutes*60_000))
-}
-
-// deadlineFireAt is the firing instant of a deadline reminder (OpenSpec change
-// deadlines, design D5): 09:00 in loc on the deadline day plus the offset, null
-// without a deadline.
-func deadlineFireAt(deadlineRaw, offset json.RawMessage, loc *time.Location) json.RawMessage {
-	var date string
-	if json.Unmarshal(deadlineRaw, &date) != nil || date == "" {
-		return json.RawMessage("null")
-	}
-	return relativeFireAt(&due{Date: date}, offset, loc)
-}
 
 // reminderOpsForTask recomputes fire_at for the reminders that follow a task
 // field the patch sets: relative reminders follow `due`, deadline reminders
