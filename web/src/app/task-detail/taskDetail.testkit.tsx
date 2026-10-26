@@ -30,7 +30,6 @@ export function setupTaskDetailTests() {
   })
 }
 
-export const settle = () => flush(40)
 /** Live queries resolve in steps (task → project → sections); wait for the condition. */
 export { waitFor } from '../../ui/test-utils'
 
@@ -39,7 +38,7 @@ export async function open(taskId: string, opts: { readOnly?: boolean; onClose?:
   const labels = new Map(((await db.labels.toArray()) as Label[]).map((l) => [l.id, l]))
   const r = await render(<TaskDetail taskId={taskId} userId={ME} projects={projects} labelMap={labels} onClose={opts.onClose ?? (() => {})} onOpen={opts.onOpen} readOnly={opts.readOnly} />)
   await waitFor(() => !!r.container.querySelector('[data-facets]'), 'the task panel')
-  await settle()
+  await flush()
   /** The property's part on its facet line (null while it is not shown). */
   const row = (name: string) => r.container.querySelector(`[data-part="${name}"]`) as HTMLElement
   /** The part's button, which opens its editor. */
@@ -48,13 +47,15 @@ export async function open(taskId: string, opts: { readOnly?: boolean; onClose?:
   const editor = () => document.querySelector('[data-facet-editor]') as HTMLElement | null
   const options = (_name?: string) => [...(editor()?.querySelectorAll('[role="option"]') ?? [])].map((o) => o.textContent ?? '')
   const pick = async (_name: string, text: string) => {
-    await click([...editor()!.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes(text))!)
-    await settle()
+    const option = () => [...(editor()?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])].find((o) => o.textContent?.includes(text))
+    await waitFor(() => !!option(), `the option ${text}`)
+    await click(option()!)
+    await flush()
   }
   const addButton = () => r.container.querySelector('button[aria-label="Add a property"]') as HTMLButtonElement
   const addItems = async () => {
     await click(addButton())
-    await settle()
+    await waitFor(() => document.querySelectorAll('[role="menu"] [role="menuitem"]').length > 0, 'the Add menu')
     return [...document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitem"]')]
   }
   /** Picks `label` from the Add menu: the part appears with its editor open. */
@@ -62,7 +63,7 @@ export async function open(taskId: string, opts: { readOnly?: boolean; onClose?:
     const item = (await addItems()).find((i) => i.textContent?.includes(label))
     expect(item, `Add menu offers ${label}`).toBeTruthy()
     await click(item!)
-    await settle()
+    await waitFor(() => !document.querySelector('[role="menu"] [role="menuitem"]'), 'the Add menu closed')
   }
   return { ...r, row, valueButton, editor, options, pick, addButton, addItems, add }
 }

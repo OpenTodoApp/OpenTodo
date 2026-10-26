@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useDatabase } from '../../lib/db'
 import { recordPick } from '../../lib/pickRank'
-import { flush, key, render, type } from '../test-utils'
+import { flush, key, render, type, waitFor } from '../test-utils'
 import { ComboboxPanel } from './Combobox'
 
 type Item = { id: string; name: string; email?: string; path?: string[] }
@@ -48,7 +48,7 @@ describe('ComboboxPanel', () => {
     useDatabase(`cb-${Date.now()}-3`)
     const { container, unmount } = await render(<ComboboxPanel {...base} source={PEOPLE} onPick={() => {}} />)
     await type(input(container), 'wo')
-    await flush(350)
+    await waitFor(() => container.querySelector('[role="status"]')?.textContent !== '', 'the result count announced')
     expect(container.querySelector('[role="status"]')!.textContent).toBe('3 results available')
     await unmount()
   })
@@ -59,9 +59,9 @@ describe('ComboboxPanel', () => {
     const source = (q: string) => new Promise<{ items: Item[] }>((r) => { resolvers[q] = r })
     const { container, unmount } = await render(<ComboboxPanel {...base} source={source} onPick={() => {}} />)
     await type(input(container), 'ab')
-    await flush(150)
+    await waitFor(() => 'ab' in resolvers, 'the search for ab')
     await type(input(container), 'abc')
-    await flush(150)
+    await waitFor(() => 'abc' in resolvers, 'the search for abc')
     resolvers.abc({ items: [{ id: 'c', name: 'abc result' }] })
     await flush()
     resolvers.ab?.({ items: [{ id: 'b', name: 'ab result' }] })
@@ -92,7 +92,7 @@ describe('ComboboxPanel', () => {
     const { container, unmount } = await render(
       <ComboboxPanel {...base} source={PEOPLE} pinned={['u5']} rankContext="assignee:p1" onPick={() => {}} />,
     )
-    await flush(20)
+    await waitFor(() => labels(container)[0] === 'Work', 'the ranked list')
     expect(labels(container).slice(0, 3)).toEqual(['Work', 'Bob Okaforbob@example.com', 'Ada Lovelace'])
     await unmount()
   })
@@ -105,7 +105,7 @@ describe('ComboboxPanel', () => {
     const { container, unmount } = await render(
       <ComboboxPanel {...base} label="Project" source={tree} getPath={(i) => i.path ?? []} rankContext="import.target" onPick={() => {}} />,
     )
-    await flush(20)
+    await waitFor(() => labels(container)[0] === 'RV', 'the ranked list')
     expect(labels(container)).toEqual(['RV', 'Gardening', 'Reno', 'Shopping'])
     expect(container.textContent).not.toContain('Recent')
     await unmount()
@@ -118,7 +118,7 @@ describe('ComboboxPanel', () => {
     const { container, unmount } = await render(
       <ComboboxPanel {...base} label="Project" source={tree} getPath={(i) => i.path ?? []} rankContext="import.target" onPick={() => {}} />,
     )
-    await flush(20)
+    await waitFor(() => container.querySelectorAll('li[role="presentation"]').length === 2, 'the Recent and All headings')
     const headings = [...container.querySelectorAll('li[role="presentation"]')].map((h) => h.textContent)
     expect(headings).toEqual(['Recent', 'All'])
     expect(labels(container)[0]).toBe('Project 7')

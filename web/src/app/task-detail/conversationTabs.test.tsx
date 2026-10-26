@@ -2,14 +2,13 @@
 // Comments · Activity · History tabs (task-detail-redesign 6.1): the remembered
 // tab and Shift+C switching to Comments with the composer focused.
 import 'fake-indexeddb/auto'
-import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createComment } from '../../lib/comments'
 import { db, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId } from '../../lib/ops'
 import { setCurrentUserId } from '../../lib/sharing'
 import type { HistoryPage, Task } from '../../lib/types'
-import { click, flush, key, render } from '../../ui/test-utils'
+import { click, key, render, waitFor } from '../../ui/test-utils'
 import { ConversationTabs, readTaskTab, TASK_TAB_KEY } from './ConversationTabs'
 import { setRichComposer } from './Composer'
 
@@ -19,7 +18,6 @@ setRichComposer(false)
 const fetchHistory = vi.fn<(entity: string, id: string) => Promise<HistoryPage>>()
 vi.mock('../../lib/history', async (orig) => ({ ...(await orig<typeof import('../../lib/history')>()), fetchHistory: (...a: [string, string]) => fetchHistory(...a) }))
 
-const settle = () => act(async () => { for (let i = 0; i < 6; i++) await flush(20) })
 const tab = (c: HTMLElement, name: string) => [...c.querySelectorAll('[role="tab"]')].find((t) => t.textContent?.startsWith(name)) as HTMLElement
 const selected = (c: HTMLElement) => c.querySelector('[role="tab"][aria-selected="true"]')?.textContent
 
@@ -42,7 +40,7 @@ describe('ConversationTabs', () => {
     await createComment({ taskId: a.id, body: 'one' })
     await createComment({ taskId: a.id, body: 'two' })
     const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
-    await settle()
+    await waitFor(() => selected(v.container) === 'Comments2', 'the comment count')
     expect(selected(v.container)).toBe('Comments2')
     expect(v.container.querySelector('[role="tablist"]')!.getAttribute('aria-label')).toBe('Task conversation')
     await v.unmount()
@@ -50,12 +48,12 @@ describe('ConversationTabs', () => {
 
   it('remembers the last tab on this device for the next task', async () => {
     const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
-    await settle()
+    await waitFor(() => !!tab(v.container, 'Activity'), 'the tabs')
     await click(tab(v.container, 'Activity'))
     expect(localStorage.getItem(TASK_TAB_KEY)).toBe('activity')
     await v.unmount()
     const next = await render(<ConversationTabs task={b} userId="me" readOnly={false} />)
-    await settle()
+    await waitFor(() => selected(next.container) === 'Activity', 'the remembered tab')
     expect(selected(next.container)).toBe('Activity')
     await next.unmount()
   })
@@ -70,10 +68,10 @@ describe('ConversationTabs', () => {
   it('Shift+C from the History tab shows Comments and focuses the composer', async () => {
     localStorage.setItem(TASK_TAB_KEY, 'history')
     const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
-    await settle()
+    await waitFor(() => selected(v.container) === 'History', 'the History tab')
     expect(selected(v.container)).toBe('History')
     await key(document.body, 'C', { shiftKey: true })
-    await settle()
+    await waitFor(() => document.activeElement?.id === 'comment-composer', 'the composer focused')
     expect(selected(v.container)).toMatch(/^Comments/)
     expect(document.activeElement?.id).toBe('comment-composer')
     await v.unmount()
@@ -82,7 +80,7 @@ describe('ConversationTabs', () => {
   it('ignores Shift+C typed into a text field', async () => {
     localStorage.setItem(TASK_TAB_KEY, 'activity')
     const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
-    await settle()
+    await waitFor(() => selected(v.container) === 'Activity', 'the Activity tab')
     const input = document.createElement('input')
     document.body.append(input)
     await key(input, 'C', { shiftKey: true })
@@ -99,11 +97,11 @@ describe('a calm conversation', () => {
   it('pins the tab bar and keeps the panel still when switching tabs', async () => {
     const spy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {})
     const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
-    await settle()
+    await waitFor(() => !!v.container.querySelector('[data-conversation] [role="tablist"]'), 'the tabs')
     const bar = v.container.querySelector('[data-conversation] [role="tablist"]')!
     expect(bar.className).toContain('sticky')
     await click(tab(v.container, 'Activity'))
-    await settle()
+    await waitFor(() => !!selected(v.container)?.includes('Activity'), 'the Activity tab')
     expect(selected(v.container)).toContain('Activity')
     expect(spy).not.toHaveBeenCalled()
     spy.mockRestore()
@@ -120,7 +118,7 @@ describe('a calm conversation', () => {
     document.body.append(scroller)
     const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
     scroller.append(v.container)
-    await settle()
+    await waitFor(() => !!v.container.querySelector('[data-conversation] [role="tablist"]'), 'the tabs')
     const section = v.container.querySelector<HTMLElement>('[data-conversation]')!
     const bar = section.querySelector<HTMLElement>('[role="tablist"]')!
     section.getBoundingClientRect = () => ({ top: -500, left: 0, right: 400, bottom: 100, width: 400, height: 600, x: 0, y: -500, toJSON() {} })
@@ -128,7 +126,7 @@ describe('a calm conversation', () => {
     Object.defineProperty(bar, 'offsetHeight', { configurable: true, get: () => 40 })
     scroller.scrollTop = 800
     await click(tab(v.container, 'Activity'))
-    await settle()
+    await waitFor(() => section.querySelector<HTMLElement>('[role="tabpanel"]')?.style.minHeight === '560px', 'the panel held')
     const panel = section.querySelector<HTMLElement>('[role="tabpanel"]')!
     expect(panel.style.minHeight).toBe('560px')
     await v.unmount()

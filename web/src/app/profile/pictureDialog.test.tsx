@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useEffect, useRef } from 'react'
 import { act } from 'react'
-import { click, flush, key, render } from '../../ui/test-utils'
+import { click, key, render, waitFor } from '../../ui/test-utils'
 import { Avatar } from '../../ui'
 import type { Profile } from '../../lib/types'
 
@@ -38,7 +38,7 @@ async function choose(file: File) {
   const input = document.querySelector<HTMLInputElement>('[data-picture-file]')!
   Object.defineProperty(input, 'files', { value: [file], configurable: true })
   await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })) })
-  for (let i = 0; i < 50 && !document.querySelector('[data-picture-cropper]'); i++) await flush(20)
+  await waitFor(() => !!document.querySelector('[data-picture-cropper]'), 'the cropper')
 }
 const profile: Profile = { user: { id: 'u1', email: 'a@example.com', name: 'A', role: 'member', createdAt: 1 }, avatarVersion: 1, emailByLink: false }
 
@@ -56,7 +56,7 @@ describe('PictureDialog', () => {
     await key(frame, '+')
     expect(document.querySelector('[data-mock-cropper]')!.getAttribute('data-mock-cropper')).toBe('10,10@1.2')
     await click(document.querySelector('[data-picture-save]')!)
-    for (let i = 0; i < 20 && !onSave.mock.calls.length; i++) await flush(20)
+    await waitFor(() => onSave.mock.calls.length > 0, 'the picture saved')
     const blob = onSave.mock.calls[0][0]
     expect(blob.type).toBe('image/jpeg')
     expect(drawn[0].slice(1)).toEqual([100, 50, 800, 800, 0, 0, 256, 256])

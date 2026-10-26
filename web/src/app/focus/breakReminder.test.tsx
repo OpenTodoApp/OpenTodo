@@ -44,7 +44,7 @@ const notice = () => document.querySelector<HTMLElement>('[data-break-reminder]'
 async function at(minutes: number) {
   vi.setSystemTime(T0 + minutes * MIN)
   window.dispatchEvent(new Event('focus'))
-  await flush(40)
+  await flush()
 }
 async function working(reminder?: number) {
   if (reminder !== undefined) await mutate('user_prefs', 'me', { focus_mode: 'flowtime', focus_break_after_minutes: reminder })

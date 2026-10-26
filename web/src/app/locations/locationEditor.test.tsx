@@ -70,6 +70,7 @@ describe('LocationEditor', () => {
     await click(document.querySelector('[role="option"]')!)
     await waitFor(async () => !!(await db.tasks.get(id))?.location, 'the location')
     expect((await db.tasks.get(id))!.location).toEqual({ lat: 45.4642, lon: 9.19 })
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts that no map request follows
     await flush(50)
     expect(requests.filter((p) => p.includes('/api/v1/maps/'))).toEqual([])
   })

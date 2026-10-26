@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { commonSharedProject, reviewMove } from '../../lib/bulk'
 import { db, useDatabase } from '../../lib/db'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
-import { flush, key, render } from '../../ui/test-utils'
+import { key, render, waitFor } from '../../ui/test-utils'
 import { BulkReview } from './BulkReview'
 import { bulkToast, hideBulkToast } from './toastStore'
 
@@ -14,10 +14,6 @@ let n = 0
 beforeEach(() => { useDatabase(`bulk-review-${Date.now()}-${n++}`); resetDeviceId() })
 afterEach(() => { hideBulkToast() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 async function sixIntoShared() {
   const home = await createProject({ name: 'Home' })

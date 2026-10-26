@@ -8,7 +8,7 @@ import { setDateTime } from '../../lib/dates'
 import { createTask, resetDeviceId } from '../../lib/ops'
 import { recordPick } from '../../lib/pickRank'
 import type { Task } from '../../lib/types'
-import { click, flush, key, render, type } from '../../ui/test-utils'
+import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { offsetLabel, ZONE_RANK_CONTEXT, ZoneControl, zoneChipText, zoneOffset } from './ZoneControl'
 
 const BERLIN = 'Europe/Berlin'
@@ -47,17 +47,17 @@ describe('ZoneControl', () => {
     const t = await task({ date: '2026-11-02', time: '15:00' })
     const view = await render(<ZoneControl task={t} viewerZone={BERLIN} />)
     await click(chipOf(view.container))
-    await flush(10)
+    await waitFor(() => !!panel()?.querySelector('input[role="combobox"]'), 'the zone panel')
     const search = panel().querySelector('input[role="combobox"]') as HTMLInputElement
     await type(search, 'New York')
     await key(search, 'Enter')
-    await flush(10)
+    await waitFor(() => !!panel().querySelector('[data-testid="zone-preview"]'), 'the preview')
     expect(panel().querySelector('[data-testid="zone-preview"]')?.textContent).toBe('15:00 in New York = 21:00 your time (Berlin)')
     const fix = [...panel().querySelectorAll('button')].find((b) => b.textContent === 'Fix to New York')!
     await click(fix)
-    await flush(20)
+    await waitFor(async () => !!(await db.tasks.get(t.id))!.due?.tz, 'the zone stored')
     expect((await db.tasks.get(t.id))!.due).toEqual({ date: '2026-11-02', time: '15:00', tz: 'America/New_York' })
-    expect(panel()).toBeNull()
+    await waitFor(() => !panel(), 'the panel closed')
     await view.unmount()
   })
 
@@ -75,7 +75,7 @@ describe('ZoneControl', () => {
     const t = await task({ date: '2026-11-02', time: '15:00' })
     const view = await render(<ZoneControl task={t} viewerZone={BERLIN} />)
     await click(chipOf(view.container))
-    await flush(30)
+    await waitFor(() => options().length > 1 && /^Tokyo/.test(options()[1]), 'the ranked zones')
     const [first, second] = options()
     expect(first).toMatch(/^Berlin/)
     expect(second).toMatch(/^Tokyo/)
@@ -86,12 +86,12 @@ describe('ZoneControl', () => {
     const t = await task({ date: '2026-11-02', time: '09:00' })
     const view = await render(<ZoneControl task={t} viewerZone={BERLIN} />)
     await key(document.body, 'z')
-    await flush(20)
+    await waitFor(async () => !!(await db.tasks.get(t.id))!.due?.tz, 'the zone stored')
     const fixed = (await db.tasks.get(t.id))!
     expect(fixed.due).toEqual({ date: '2026-11-02', time: '09:00', tz: BERLIN })
     await view.rerender(<ZoneControl task={fixed} viewerZone={BERLIN} />)
     await key(document.body, 'z')
-    await flush(20)
+    await waitFor(async () => !(await db.tasks.get(t.id))!.due?.tz, 'the zone released')
     expect((await db.tasks.get(t.id))!.due).toEqual({ date: '2026-11-02', time: '09:00' })
     await view.unmount()
   })

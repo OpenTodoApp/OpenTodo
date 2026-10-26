@@ -8,7 +8,7 @@ import { createLabel } from '../../lib/labels'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
 import type { Label, Project, Task, View } from '../../lib/types'
 import { createView } from '../../lib/views'
-import { click, flush, render, type } from '../../ui/test-utils'
+import { click, render, type, waitFor } from '../../ui/test-utils'
 import { PanelHost } from '../PanelHost'
 import { openPanel, resetPanel } from '../panel'
 import { PLAN_PANEL, PlanPanel } from './PlanPanel'
@@ -30,10 +30,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 const task = (p: Partial<Task>): Task => ({
   id: p.id ?? 't', title: 'T', description: '', project_id: null, parent_id: null, section_id: null, priority: 4, due: null, labels: [], position: 0,
@@ -88,7 +84,7 @@ describe('the picker in the planning list', () => {
       await type(document.querySelector<HTMLInputElement>('[data-combobox] input[role="combobox"]')!, query)
       await waitFor(() => [...document.querySelectorAll('[role="option"]')].some((o) => o.textContent?.trim() === name))
       await click([...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.trim() === name)!)
-      await flush(30)
+      await waitFor(() => !document.querySelector('[data-combobox] input[role="combobox"]'), 'the picker closed')
     }
 
     await pick('wee', 'week')

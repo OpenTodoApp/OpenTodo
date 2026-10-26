@@ -2,9 +2,8 @@
 // Ask composer (OpenSpec change assistant-skills, task 3.1).
 import { act } from 'react'
 import { describe, expect, it } from 'vitest'
-import { click, flush, key, render } from '../test-utils'
+import { click, key, render, waitFor } from '../test-utils'
 import { AskComposer, type AskRequest, type AskSkill } from './AskComposer'
-
 
 async function type(el: HTMLTextAreaElement, text: string) {
   await act(async () => {
@@ -41,7 +40,7 @@ describe('AskComposer', () => {
     const trigger = document.querySelector('button[aria-label="Skills"]') as HTMLButtonElement
     trigger.focus()
     await click(trigger)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[role="menu"]'), 'the skills menu')
     const menu = document.querySelector('[role="menu"]')!
     expect(menu).toBeTruthy()
     // Move to "Break this down" and choose it.
@@ -49,7 +48,7 @@ describe('AskComposer', () => {
     expect(document.activeElement?.textContent).toContain('Break this down')
     await key(document.activeElement!, 'Enter')
     await click(document.activeElement!) // Enter on a native button activates it
-    await flush(20)
+    await waitFor(() => asks.length > 0, 'the skill chosen')
     expect(asks).toEqual([{ text: '', skill: 'break-down', send: false }])
     await r.unmount()
   })

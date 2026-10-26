@@ -100,7 +100,7 @@ describe('disable with a note document (issue #96)', () => {
     // Settings opened after a reload: the note code is not in memory and the
     // decrypt job is the first thing that needs it.
     // Its fetch takes a real macrotask, as a network load does.
-    resetRichTextForTests(async () => { await new Promise((r) => setTimeout(r, 20)); return import('./richtext') })
+    resetRichTextForTests(async () => { await new Promise((r) => setTimeout(r, 0)); return import('./richtext') })
     await disableEncryption()
     await startMigration('decrypt')
     expect(await runMigration()).toBe(false) // nothing left to resume

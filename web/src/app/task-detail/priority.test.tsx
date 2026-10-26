@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { createTask } from '../../lib/ops'
 import { click, key, visibleText } from '../../ui/test-utils'
-import { open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
+import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
 
@@ -18,12 +18,12 @@ describe('priority part', () => {
     expect(visibleText(row('priority'))).toBe('P2')
     expect(editor()).toBeNull()
     await click(valueButton('priority'))
-    await settle()
+    await waitFor(() => !!editor()?.querySelector('[role="group"] button'), 'the priority editor')
     const options = [...editor()!.querySelectorAll<HTMLButtonElement>('[role="group"] button')]
     expect(options.map((b) => b.textContent)).toEqual(['P1', 'P2', 'P3', 'P4'])
     expect(options.find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent).toBe('P2')
     await click(options[0])
-    await settle()
+    await waitFor(async () => (await db.tasks.get(id))!.priority === 1 && !editor(), 'the priority written')
     expect((await db.tasks.get(id))!.priority).toBe(1)
     expect(editor()).toBeNull()
     await waitFor(() => visibleText(row('priority')) === 'P1', 'the part reads P1')

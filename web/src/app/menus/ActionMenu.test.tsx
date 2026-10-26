@@ -2,9 +2,8 @@
 // Action menus as data (OpenSpec change labels-and-menus, tasks 1.2–1.4).
 import { act } from 'react'
 import { describe, expect, it } from 'vitest'
-import { click, flush, key, render } from '../../ui/test-utils'
+import { click, key, render, waitFor } from '../../ui/test-utils'
 import { ActionMenu, orderGroups, useConfirm, type ActionGroup } from './ActionMenu'
-
 
 const targets = [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }, { id: 'c', name: 'Current' }]
 
@@ -31,7 +30,7 @@ async function openMenu(calls: string[]) {
   const trigger = r.container.querySelector('button')!
   trigger.focus()
   await click(trigger)
-  await flush(20)
+  await waitFor(() => items().length > 0, 'the open menu')
   return { ...r, trigger }
 }
 
@@ -63,17 +62,17 @@ describe('ActionMenu', () => {
     const calls: string[] = []
     const { unmount } = await openMenu(calls)
     await click(items()[3])
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-picker-step]'), 'the picker step')
     expect(document.querySelector('[data-picker-step]')).toBeTruthy()
     const options = [...document.querySelectorAll('[role="option"]')].map((o) => o.textContent)
     expect(options.join(' ')).toContain('Alpha')
     expect(options.join(' ')).not.toContain('Current')
     await key(document, 'Escape')
-    await flush(20)
+    await waitFor(() => !document.querySelector('[data-picker-step]'), 'back from the picker')
     expect(document.querySelector('[data-picker-step]')).toBeNull()
     expect(items().length).toBe(5)
     await key(document, 'Escape')
-    await flush(20)
+    await waitFor(() => !document.querySelector('[role="menu"]'), 'the menu closed')
     expect(document.querySelector('[role="menu"]')).toBeNull()
     expect(calls).toEqual([])
     await unmount()
@@ -83,10 +82,10 @@ describe('ActionMenu', () => {
     const calls: string[] = []
     const { unmount } = await openMenu(calls)
     await click(items()[3])
-    await flush(20)
+    await waitFor(() => document.querySelectorAll('[role="option"]').length > 0, 'the picker options')
     const beta = [...document.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes('Beta')) as HTMLElement
     await act(async () => { beta.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); beta.click() })
-    await flush(20)
+    await waitFor(() => calls.length > 0, 'the pick applied')
     expect(calls).toEqual(['move:b'])
     expect(document.querySelector('[data-picker-step]')).toBeNull()
     await unmount()
@@ -96,7 +95,7 @@ describe('ActionMenu', () => {
     const calls: string[] = []
     const { unmount } = await openMenu(calls)
     await click(items()[4])
-    await flush(30)
+    await waitFor(() => !!document.querySelector('[role="alertdialog"]'), 'the confirm dialog')
     expect(document.querySelector('[role="menu"]')).toBeNull()
     const dialog = document.querySelector('[role="alertdialog"]')!
     expect(dialog.textContent).toContain('3 open tasks are affected.')
@@ -104,7 +103,7 @@ describe('ActionMenu', () => {
     const confirm = [...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Delete thing')
     expect(confirm).toBeTruthy()
     await click(document.activeElement!)
-    await flush(20)
+    await waitFor(() => !document.querySelector('[role="alertdialog"]'), 'the dialog closed')
     expect(document.querySelector('[role="alertdialog"]')).toBeNull()
     expect(calls).toEqual([])
     await unmount()
@@ -114,10 +113,10 @@ describe('ActionMenu', () => {
     const calls: string[] = []
     const { unmount } = await openMenu(calls)
     await click(items()[4])
-    await flush(30)
+    await waitFor(() => !!document.querySelector('[role="alertdialog"]'), 'the confirm dialog')
     const confirm = [...document.querySelectorAll('[role="alertdialog"] button')].find((b) => b.textContent === 'Delete thing')!
     await click(confirm)
-    await flush(20)
+    await waitFor(() => calls.length > 0, 'the action run')
     expect(calls).toEqual(['deleted'])
     await unmount()
   })
@@ -132,10 +131,10 @@ describe('useConfirm', () => {
     }
     const r = await render(<Host />)
     await click(r.container.querySelector('button')!)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[role="alertdialog"]'), 'the confirm dialog')
     expect(document.querySelector('[role="alertdialog"]')?.textContent).toContain('Two labels become one.')
     await key(document, 'Escape')
-    await flush(20)
+    await waitFor(() => !document.querySelector('[role="alertdialog"]'), 'the dialog closed')
     expect(document.querySelector('[role="alertdialog"]')).toBeNull()
     expect(calls).toEqual([])
     await r.unmount()

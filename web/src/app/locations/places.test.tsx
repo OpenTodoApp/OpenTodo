@@ -81,6 +81,7 @@ describe('Locations page', () => {
     await waitFor(() => rows().length === 1, 'the row')
     expect(rows()[0].textContent).toContain('Encrypted')
     expect(rows()[0].textContent).not.toContain('Via Roma')
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts that no map or request follows
     await act(async () => { await new Promise((ok) => setTimeout(ok, 50)) })
     expect(document.querySelector('.h-56')).toBeNull() // no map: nothing to pin
     expect(mapRequests()).toEqual([])

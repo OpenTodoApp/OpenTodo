@@ -4,6 +4,7 @@
 // Each "tab" is a fresh copy of the modules sharing one IndexedDB, one lock
 // manager and one BroadcastChannel name, as tabs do.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { waitFor as until } from '../ui/test-utils'
 
 type Sync = typeof import('./sync')
 
@@ -46,13 +47,6 @@ async function tab(): Promise<Sync> {
   return import('./sync')
 }
 
-async function until(cond: () => boolean, what: string): Promise<void> {
-  for (let i = 0; i < 200; i++) {
-    if (cond()) return
-    await new Promise((r) => setTimeout(r, 10))
-  }
-  throw new Error(`timed out waiting for ${what}`)
-}
 
 const tabs: Sync[] = []
 
@@ -84,8 +78,6 @@ describe('one tab syncs', () => {
     const b = await tab()
     tabs.push(b)
     b.startSync()
-    await new Promise((r) => setTimeout(r, 50))
-    expect(b.isSyncLeader()).toBe(false)
 
     // B's "sync now" runs on A and resolves once A is done.
     const before = syncRequests.count
@@ -93,6 +85,8 @@ describe('one tab syncs', () => {
     expect(syncRequests.count).toBeGreaterThan(before)
     // B shows the status A broadcasts.
     await until(() => b.syncSnapshot().state === 'idle' && b.syncSnapshot().lastSyncedAt !== null, 'the leader status in B')
+    // B settled as a follower while A leads.
+    expect(b.isSyncLeader()).toBe(false)
 
     // A stops (its tab closes or signs out): B takes the lock and syncs itself.
     a.stopSync()

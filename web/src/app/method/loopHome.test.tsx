@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { applyOps, createProject, createTask, resetDeviceId, REVIEW_DEFAULTS } from '../../lib/ops'
 import type { Op, User } from '../../lib/types'
-import { click, flush, key, render, spokenText, type } from '../../ui/test-utils'
+import { click, key, render, spokenText, type, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { navigate } from '../router'
 import { Shell } from '../Shell'
@@ -33,10 +33,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const tile = (move: string) => document.querySelector<HTMLElement>(`[data-loop-tile="${move}"]`)!
 /** The move's full sentence, as assistive technology reads it. */
 const says = (move: string) => { const a = tile(move)?.querySelector('a'); return a ? spokenText(a) : '' }
@@ -123,7 +119,7 @@ describe('Loop home', () => {
   it('Keyboard path: g Shift+L opens it, and the Do move is a link that opens Next', async () => {
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('main h1'), 'the Inbox')
     await key(document.body, 'g')
     await key(document.body, 'L', { shiftKey: true })
     await waitFor(() => location.pathname === '/loop' && !!tile('do'))

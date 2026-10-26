@@ -10,7 +10,7 @@ import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { compute, periodFor, PERIOD_LABELS } from '../../lib/stats'
 import type { ActivityEntry } from '../../lib/types'
-import { click, flush, key, render } from '../../ui/test-utils'
+import { click, key, render, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { openedTask, resetTaskPage } from '../taskPage.testkit'
 import { StatsContent, StatsView } from './StatsView'
@@ -39,10 +39,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const tile = (root: ParentNode, k: string) => root.querySelector(`[data-tile="${k}"] [data-tile-value]`)?.textContent ?? ''
 
 async function seedWeek(): Promise<string> {
