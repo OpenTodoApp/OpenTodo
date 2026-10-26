@@ -41,4 +41,4 @@
 
 ## 6. On archive
 
-- [ ] 6.1 Add `calendar-sync` to `specs` in the front matter of `docs/calendar-sync.md` once `openspec/specs/calendar-sync/` exists; docs-check refuses spec names that are not there yet (verify: `make docs-check`)
+- [x] 6.1 Add `calendar-sync` to `specs` in the front matter of `docs/calendar-sync.md` once `openspec/specs/calendar-sync/` exists; docs-check refuses spec names that are not there yet (verify: `make docs-check`)
