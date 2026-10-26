@@ -28,10 +28,11 @@ func TestValidateStart(t *testing.T) {
 // Concurrent date and Someday writes converge to one value, whatever the order.
 func TestStartConverges(t *testing.T) {
 	ctx := context.Background()
-	s := newTestService(t)
 	a := op("a", "task", "t1", "start", `"2026-11-03"`, 200, "A")
 	b := op("b", "task", "t1", "start", `"someday"`, 300, "B")
 	for user, order := range map[string][]Op{"u1": {a, b}, "u2": {b, a}} {
+		// Separate servers: an id names one entity per server (entity-id-ownership).
+		s := newTestService(t)
 		if _, err := s.Apply(ctx, user, order); err != nil {
 			t.Fatal(err)
 		}

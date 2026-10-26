@@ -51,7 +51,6 @@ func TestValidateAcceptsSectionOps(t *testing.T) {
 // delivery order (sections-and-boards "Colour and rename at the same time").
 func TestSectionColourAndRenameConverge(t *testing.T) {
 	ctx := context.Background()
-	s := newTestService(t)
 	base := []Op{
 		op("c1", "section", "s1", "name", `"Doing"`, 100, "A"),
 		op("c2", "section", "s1", "project_id", `"p1"`, 100, "A"),
@@ -63,6 +62,8 @@ func TestSectionColourAndRenameConverge(t *testing.T) {
 		"u1": append(append([]Op{}, base...), rename, colour, icon),
 		"u2": append([]Op{icon, colour, rename}, base...),
 	} {
+		// Separate servers: an id names one entity per server (entity-id-ownership).
+		s := newTestService(t)
 		if _, err := s.Apply(ctx, user, order); err != nil {
 			t.Fatal(err)
 		}

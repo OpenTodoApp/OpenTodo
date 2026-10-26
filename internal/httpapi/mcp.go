@@ -55,7 +55,7 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 	// Status for every signed-in user (the AI assistants section shows it to
 	// members too); changing it is owner only.
 	mux.handle("GET /api/v1/settings/mcp", signedIn, s.handleGetMCPSettings)
-	mux.handle("PUT /api/v1/settings/mcp", ownerOnly("manage the AI assistants (MCP) setting").demoDenied(), s.handlePutMCPSettings)
+	mux.handle("PUT /api/v1/settings/mcp", ownerOnly("manage the AI assistants (MCP) setting").credential().demoDenied(), s.handlePutMCPSettings)
 	// The user's own "Allow AI assistants to make changes" switch: sessions and
 	// full tokens only, so an assistant can never flip it (mcp-write-tools D3).
 	mux.handle("GET /api/v1/me/agent-access", signedIn.fullTokens(), s.handleGetAgentAccess)

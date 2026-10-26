@@ -20,6 +20,7 @@ import (
 	ob "github.com/pixari/opentodo/internal/outbound"
 	"github.com/pixari/opentodo/internal/recurrence"
 	"github.com/pixari/opentodo/internal/settings"
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Calendar feeds (OpenSpec change calendar-feeds): subscriptions to other
@@ -236,11 +237,7 @@ func trimTo(p *string, n int) string {
 	if p == nil {
 		return ""
 	}
-	v := strings.TrimSpace(*p)
-	if len(v) > n {
-		v = v[:n]
-	}
-	return v
+	return textutil.Truncate(strings.TrimSpace(*p), n)
 }
 
 func (s *Server) handlePatchSubscription(w http.ResponseWriter, r *http.Request) {

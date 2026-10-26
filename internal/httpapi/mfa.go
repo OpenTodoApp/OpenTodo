@@ -25,8 +25,8 @@ func (s *Server) registerMFARoutes(mux *routes) {
 	mux.handle("POST /api/v1/auth/reauth", signedIn, s.handleReauth)
 
 	mux.handle("GET /api/v1/mfa", signedIn, s.handleMFAStatus)
-	mux.handle("POST /api/v1/mfa/totp/enroll", signedIn.credential().demoDenied(), s.handleMFAEnroll)
-	mux.handle("POST /api/v1/mfa/totp/confirm", signedIn.credential().demoDenied(), s.handleMFAConfirm)
+	mux.handle("POST /api/v1/mfa/totp/enroll", signedIn.sensitive().demoDenied(), s.handleMFAEnroll)
+	mux.handle("POST /api/v1/mfa/totp/confirm", signedIn.sensitive().demoDenied(), s.handleMFAConfirm)
 	mux.handle("DELETE /api/v1/mfa/totp", signedIn.sensitive().demoDenied(), s.handleMFADisable)
 	mux.handle("POST /api/v1/mfa/recovery-codes/regenerate", signedIn.sensitive().demoDenied(), s.handleMFARegenerate)
 	mux.handle("GET /api/v1/mfa/trusted-devices", signedIn, s.handleListTrustedDevices)

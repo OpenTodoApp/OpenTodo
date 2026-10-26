@@ -778,6 +778,19 @@ describe('task origins (task-origin 1.3)', () => {
     expect(notYetEncrypted((await db.tasks.get('t1')) as never, 'task')).toBe(false)
   })
 
+  it('re-encrypts on sight a plaintext value stamped ahead of this device\'s clock', async () => {
+    // The writer's clock runs a second ahead (within the skew tolerance, so no
+    // offset corrects it): the rewrite must still be stamped after it, or the
+    // plaintext keeps winning on the server (clock receive rule).
+    await enableOnA()
+    const mail = { kind: 'email', id: '<a2@mail.example>' }
+    server.log.push({ id: 'mail2', entity: 'task', entityId: 't1', field: 'origin', value: mail, ts: Date.now() + 1000, device: 'server', seq: ++server.seq })
+    await syncNow()
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.origin).toEqual(mail)
+    expect(isEnvelope(current('task', 't1', 'origin'))).toBe(true)
+  })
+
   it('enabling encrypts an existing origin and disabling decrypts it again', async () => {
     await on('A')
     await seedTasks()

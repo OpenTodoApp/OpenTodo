@@ -69,7 +69,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
 | POST | `/api/v1/auth/logout` | cookie | 204, or 200 `{redirect}` (provider sign-out, see [Single sign-on](#single-sign-on)) |
 | POST | `/api/v1/demo/sandbox` | none | [demo instance](self-hosting/demo.md) only (absent otherwise): `{token}` from `auth/status` → 201 `{user}` + cookie for a new private sandbox. Requires a same-origin `Origin` header; 403 `demo_token` (missing, forged, expired or used token), 403 `bad_origin`, 429 `rate_limited` (5 per address per hour), 503 `demo_busy` |
-| GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in) |
+| GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in; linking a new identity needs a fresh session) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
 | GET | `/api/v1/project-invites/{token}` | none | preview `{inviterName, projectName, role, email, expiresAt, canCreateAccount, alreadyMember?}` or 404 `invitation_invalid`, see [Project invite links](#project-invite-links) |
@@ -96,14 +96,14 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/tokens` | credential, fresh | `{name, scope?}` (`full` default, `read`, `agent` or `admin`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input`; `admin` only from a session (a token gets 403 `session_required`) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
 | POST | `/api/v1/me/sign-out-everywhere` | cookie, fresh | → 204 and the session cookie cleared: ends every session of the account (this one too), forgets its remembered browsers and revokes its API tokens and app passwords; recorded as `sessions.revoked`; a token gets 403 `session_required` |
-| POST | `/api/v1/passkeys/register/options` | credential | → `{publicKey}` creation options |
-| POST | `/api/v1/passkeys/register` | credential | `{name, credential}` → 201 `{passkey}` |
+| POST | `/api/v1/passkeys/register/options` | credential, fresh | → `{publicKey}` creation options |
+| POST | `/api/v1/passkeys/register` | credential, fresh | `{name, credential}` → 201 `{passkey}` |
 | GET | `/api/v1/passkeys` | yes | `{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}` |
 | PATCH | `/api/v1/passkeys/{id}` | credential | `{name}` → `{passkey}` |
 | DELETE | `/api/v1/passkeys/{id}` | credential | 204 |
 | GET | `/api/v1/mfa` | yes | `{mfa}`, see [Two-factor authentication](#two-factor-authentication) |
-| POST | `/api/v1/mfa/totp/enroll` | credential | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
-| POST | `/api/v1/mfa/totp/confirm` | credential | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
+| POST | `/api/v1/mfa/totp/enroll` | credential, fresh | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
+| POST | `/api/v1/mfa/totp/confirm` | credential, fresh | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
 | DELETE | `/api/v1/mfa/totp` | credential, fresh | turn the second factor off → 204 |
 | POST | `/api/v1/mfa/recovery-codes/regenerate` | credential, fresh | → `{recoveryCodes:[10]}`; every earlier code stops working |
 | GET | `/api/v1/mfa/trusted-devices` | yes | `{devices:[{id,userAgent,createdAt,expiresAt,lastUsedAt}]}` |
@@ -147,7 +147,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
 | GET | `/api/v1/activity` | yes | the activity feed across every shared project you are a member of; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
 | GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}]}`, see [Sharing](#sharing) |
-| POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use) |
+| POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use); recorded as `project.member_added`; adding by email is limited to 30 attempts per account per hour, together with workspace members (429 `rate_limited`) |
 | PATCH | `/api/v1/projects/{id}/members/{userId}` | owner, admin of the project | `{role}` → membership |
 | DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
 | POST | `/api/v1/projects/{id}/transfer` | owner of the project | `{userId}` → membership; the previous owner becomes an admin |
@@ -203,9 +203,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/app-passwords` | yes | `{appPasswords:[…]}`, see [CalDAV and app passwords](#caldav-and-app-passwords) |
 | POST | `/api/v1/app-passwords` | credential, fresh | `{name}` → 201 `{appPassword, secret}` (secret shown once) |
 | DELETE | `/api/v1/app-passwords/{id}` | yes | revoke → 204 |
-| GET | `/api/v1/email-inbox` | yes | your email-to-task address and settings, see [Email to task](#email-to-task) |
-| PATCH | `/api/v1/email-inbox` | yes | `{enabled?, allowlist?}` → the same shape |
-| POST | `/api/v1/email-inbox/rotate` | yes | new address; the old one stops working |
+| GET | `/api/v1/email-inbox` | session or `full` token | your email-to-task address and settings, see [Email to task](#email-to-task) |
+| PATCH | `/api/v1/email-inbox` | session or `full` token | `{enabled?, allowlist?}` → the same shape; creates the inbox when there is none |
+| POST | `/api/v1/email-inbox/rotate` | session or `full` token | new address; the old one stops working |
 | * | `/dav/`, `/.well-known/caldav` | HTTP Basic with an app password | CalDAV (WebDAV methods), 404 while disabled; see [caldav.md](caldav.md) |
 | POST | `/mcp` | bearer token only | Model Context Protocol endpoint, 404 while disabled; write tools only for `agent` tokens with both switches on; see [mcp.md](mcp.md) |
 
@@ -233,15 +233,15 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/settings/oidc` | owner, credential, fresh | change the provider configuration |
 | POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
 | GET | `/api/v1/settings/mcp` | yes | `{enabled, writes_enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on, whether assistants may make changes, and its URL |
-| PUT | `/api/v1/settings/mcp` | owner | `{enabled?, writes_enabled?}` (at least one) → `{enabled, writes_enabled, endpoint}`; each change is recorded as `settings.changed` (`mcp.enabled`, `mcp.writes`) |
+| PUT | `/api/v1/settings/mcp` | owner, credential | `{enabled?, writes_enabled?}` (at least one) → `{enabled, writes_enabled, endpoint}`; each change is recorded as `settings.changed` (`mcp.enabled`, `mcp.writes`) |
 | GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
-| PUT | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` → `{allowPrivate}` |
+| PUT | `/api/v1/settings/webhooks` | owner, credential | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
 | GET | `/api/v1/audit/export` | owner | the filtered log as `application/x-ndjson` download; records `audit.exported` |
 | GET | `/api/v1/settings/audit` | owner | `{retentionDays, logIp}` |
-| PUT | `/api/v1/settings/audit` | owner | `{retentionDays?: 7–3650, logIp?}` → settings; disabling `logIp` erases stored addresses |
+| PUT | `/api/v1/settings/audit` | owner, credential | `{retentionDays?: 7–3650, logIp?}` → settings; disabling `logIp` erases stored addresses |
 | GET | `/api/v1/backups` | owner | backup status, see [Backups](#backups) |
 | GET | `/api/v1/backups/settings` | owner | `{settings, secrets}` (secret presence flags only) |
 | PUT | `/api/v1/backups/settings` | owner, credential | `{settings, secrets?}` → `{settings, secrets}` |
@@ -302,7 +302,7 @@ Accounts can add a time-based one-time password (TOTP, RFC 6238: HMAC-SHA1, 6 di
 
 `required` means the owner's policy covers this account. `restricted` means the session may only enrol, because the account is required to have a second factor and has none yet. Bearer-token requests are never restricted.
 
-**Enrolment.** `POST /mfa/totp/enroll` returns a fresh `secret` (base32) and its provisioning `uri` (`otpauth://totp/OpenTodo:<email>?secret=…&issuer=OpenTodo&algorithm=SHA1&digits=6&period=30`). The web app renders the QR code locally. Confirm within ten minutes with `POST /mfa/totp/confirm {"code":"123456"}`. The answer contains ten recovery codes such as `ABCDE-FGH23`, shown only this once and stored as SHA-256 hashes. A recovery code can stand in for an app code at sign-in (dash and case optional) and is used up by that sign-in.
+**Enrolment.** `POST /mfa/totp/enroll` returns a fresh `secret` (base32) and its provisioning `uri` (`otpauth://totp/OpenTodo:<email>?secret=…&issuer=OpenTodo&algorithm=SHA1&digits=6&period=30`). The web app renders the QR code locally. Confirm within ten minutes with `POST /mfa/totp/confirm {"code":"123456"}`. Both steps are *fresh* routes: a cookie session needs a sign-in or re-authentication within the last ten minutes. Confirming marks the session's second factor as satisfied but does not count as a re-authentication. The answer contains ten recovery codes such as `ABCDE-FGH23`, shown only this once and stored as SHA-256 hashes. A recovery code can stand in for an app code at sign-in (dash and case optional) and is used up by that sign-in.
 
 **Two-step sign-in.** For an enrolled account, a correct password answers 200 with no cookie:
 
@@ -317,7 +317,7 @@ curl -sS -c jar -X POST "$OT/api/v1/auth/mfa" -H 'Content-Type: application/json
 
 A challenge lasts five minutes and allows five wrong codes. Each wrong code gets `401 mfa_code_invalid`; after the fifth, the challenge is gone and the next attempt gets `401 mfa_challenge_invalid`, which means "enter the password again". `remember: true` sets `ot_trust`, an `HttpOnly`, `SameSite=Lax` cookie (`Secure` on https) limited to `/api/v1/auth` and valid for a fixed 30 days. While that cookie is present, the password step starts the session directly for that account on that browser. A passkey sign-in whose authenticator reports user verification (biometric or PIN) counts as two factors and is never asked for a code. A passkey without user verification answers with the same challenge as a password.
 
-**Step-up.** For cookie sessions, the routes marked *fresh* in the table require a proof of identity within the last ten minutes. A sign-in counts, and so does `POST /auth/reauth` with `{"password":"…"}` or `{"code":"123456"}`. Otherwise they answer `403 reauth_required` and change nothing. The web app then shows a re-authentication dialog and repeats the request once. Bearer-token requests are never challenged, but on *credential* routes only an `admin` token is accepted (see [token scopes](#token-scopes)).
+**Step-up.** For cookie sessions, the routes marked *fresh* in the table require a proof of identity within the last ten minutes. A sign-in counts, and so does `POST /auth/reauth` with `{"password":"…"}` or `{"code":"123456"}`, or completing the provider flow with an identity the account already has (see [Single sign-on](#single-sign-on)). Adding a passkey, an authenticator app or a new linked identity is itself a *fresh* step and never counts as one. Otherwise they answer `403 reauth_required` and change nothing. The web app then shows a re-authentication dialog and repeats the request once. Bearer-token requests are never challenged, but on *credential* routes only an `admin` token is accepted (see [token scopes](#token-scopes)).
 
 **Owner policy.** `PUT /settings/mfa {"required":"none"|"owner"|"all"}`. When the policy covers an account that has no second factor, sign-in still works. Every route except `GET /me`, `/mfa/*`, `/auth/reauth` and `/auth/logout` then answers `403 mfa_enrolment_required` until the account enrols. That includes `/sync`, so a device keeps its changes queued and uploads them after enrolment. An account the policy covers cannot turn its second factor off (`403 mfa_required_by_policy`).
 
@@ -379,7 +379,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 
 **SSO-only mode** (`ssoOnly: true`, effective only while a provider is configured): password and passkey sign-in, and registration through the password form, answer `403 sso_required` for every account except the owner (recorded as `login.failed` with reason `sso_required`). The owner keeps local sign-in as break-glass (the sign-in screen shows the password form at `/?owner=1`). Bearer tokens keep working.
 
-**Linked identities.** `GET /api/v1/me/identities` → `{identities:[{id, issuer, email, createdAt, lastLoginAt}], provider:{enabled, displayName, ssoOnly}}`. `DELETE /api/v1/me/identities/{id}` → 204, or `409 last_credential` when the account would have no way left to sign in under the current mode (another identity counts while a provider is configured; a password or passkey counts unless SSO-only mode refuses it for this account). Linking and unlinking are recorded as `identity.linked` / `identity.unlinked`; a provider sign-in as `login.succeeded` with method `oidc`.
+**Linked identities.** `GET /api/v1/me/identities` → `{identities:[{id, issuer, email, createdAt, lastLoginAt}], provider:{enabled, displayName, ssoOnly}}`. `DELETE /api/v1/me/identities/{id}` → 204, or `409 last_credential` when the account would have no way left to sign in under the current mode (another identity counts while a provider is configured; a password or passkey counts unless SSO-only mode refuses it for this account). Linking a new identity (`GET /api/v1/auth/oidc/start` while signed in) needs a session that signed in or re-authenticated within the last ten minutes; from an older session the callback links nothing and answers `403 reauth_required` (a browser is sent to `/settings/account/security?error=reauth_required`). Completing the flow with an identity already linked to the account re-authenticates the session (`?reauthenticated=1`), which is how an account without a password confirms *fresh* routes. Linking and unlinking are recorded as `identity.linked` / `identity.unlinked`; a provider sign-in as `login.succeeded` with method `oidc`.
 
 **Sign-out.** `POST /auth/logout` always deletes the local session. When `providerLogout` is on and the session started through the provider, it answers `200 {"redirect":"https://sso…/end-session?client_id=…&id_token_hint=…&post_logout_redirect_uri=https://todo.example.com/"}` instead of 204, and the web app follows it after clearing local data.
 
@@ -388,6 +388,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `oidc_disabled` | 404 | `auth/oidc/start` or `callback` while no provider is configured |
 | `oidc_state_invalid` | 400 | callback with a missing, forged, expired or reused state |
 | `identity_taken` | 409 | linking an identity that is linked to another account |
+| `reauth_required` | 403 | linking a new identity from a session that has not signed in or re-authenticated in the last ten minutes |
 | `last_credential` | 409 | unlinking the account's last way to sign in |
 | `sso_required` | 403 | password or passkey sign-in, or password registration, by a non-owner in SSO-only mode |
 | `invalid_input` | 400 | issuer not https, discovery failed or names another issuer, client id missing, scopes without `openid`, changing an environment-managed field |
@@ -1025,6 +1026,7 @@ The server records security-relevant events in its own database (never synced to
 | `workspace.member_added`, `workspace.member_role_changed`, `workspace.member_removed` | success | actor = owner or admin (the member when leaving), target = member | `workspace`, `workspace_role` or `from`, `to` |
 | `workspace.group_created`, `workspace.group_deleted` | success | actor = owner or admin | `workspace`, `group` (ids, never names) |
 | `workspace.group_member_added`, `workspace.group_member_removed` | success | actor = owner or admin, target = member | `workspace`, `group` |
+| `project.member_added` | success | actor = project owner or admin, target = the added account | `shared_project_id`, `project_role` |
 | `project.grant_added`, `project.grant_changed`, `project.grant_removed` | success | actor = project owner or admin | `shared_project_id`, `group`, `project_role` or `from`, `to` |
 | `workspace_invite.created`, `workspace_invite.revoked` | success | actor = workspace owner or admin | `workspace_invite_id`, `workspace`, `workspace_role`, `invited_email` (bound email, if any) |
 | `workspace_invite.accepted` | success | actor = the account that joined, target = the link's creator | `workspace_invite_id`, `workspace`, `workspace_role` |
@@ -1575,9 +1577,9 @@ Each account can have a secret inbox address; mail sent to it becomes an Inbox t
 
 | Method | Path | Who | Body / result |
 | --- | --- | --- | --- |
-| `GET` | `/api/v1/email-inbox` | any user | `{"enabledByOperator":true,"address":"todo+k3f9…@example.com","enabled":true,"allowlist":[],"hourlyLimit":60}`. The first call creates the address (enabled). With no operator configuration: `{"enabledByOperator":false,"address":null,"enabled":false,"allowlist":[],"hourlyLimit":60}` and nothing is created. |
-| `PATCH` | `/api/v1/email-inbox` | any user | `{"enabled":false}` and/or `{"allowlist":["me@example.org"]}` → the same shape. `allowlist` must be an array of at most 50 bare email addresses (stored lowercased, duplicates dropped; `[]` clears it), otherwise `400 invalid_input` and nothing changes. `409 email_disabled` when the operator has not configured email capture. |
-| `POST` | `/api/v1/email-inbox/rotate` | any user | → the same shape with a new address; the old one stops working at once. `409 email_disabled` as above. |
+| `GET` | `/api/v1/email-inbox` | session or `full` token | `{"enabledByOperator":true,"address":"todo+k3f9…@example.com","enabled":true,"allowlist":[],"hourlyLimit":60}`. Reading never creates an inbox: until the account turns capture on, the answer is `{"enabledByOperator":true,"address":null,"enabled":false,…}`, and the first `PATCH` (or `rotate`) creates the address. `read` and `agent` tokens get `403 insufficient_scope` on all three routes, since the address can create tasks. With no operator configuration: `{"enabledByOperator":false,"address":null,"enabled":false,"allowlist":[],"hourlyLimit":60}` and nothing is created. |
+| `PATCH` | `/api/v1/email-inbox` | session or `full` token | `{"enabled":false}` and/or `{"allowlist":["me@example.org"]}` → the same shape. `allowlist` must be an array of at most 50 bare email addresses (stored lowercased, duplicates dropped; `[]` clears it), otherwise `400 invalid_input` and nothing changes. `409 email_disabled` when the operator has not configured email capture. |
+| `POST` | `/api/v1/email-inbox/rotate` | session or `full` token | → the same shape with a new address; the old one stops working at once. `409 email_disabled` as above. |
 
 Changes and rotations are limited to 30 per account per hour (`429 rate_limited`). They are recorded as `email_inbox.created`, `email_inbox.rotated` and `email_inbox.updated` in the audit log.
 
@@ -1953,7 +1955,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB); some routes set a smaller limit. A larger body is refused with 413 `too_large`.
 - A JSON body is exactly one JSON value: anything after it but white space is refused with 400 `bad_request`. A field the route does not define is refused with 400 `bad_request` naming it (`invalid JSON body: unknown field "x"`), except on `POST /api/v1/sync` (ops may carry properties a newer client knows), the push subscription (the browser's `PushSubscription.toJSON()`) and the passkey `credential` (the browser's `PublicKeyCredential.toJSON()`). The entity routes (`/tasks`, `/projects`, …) check their fields themselves and answer 400 `invalid_input` for an unknown one. Error messages describe the problem in plain words, never the server's internal types.
 - Password checks are limited to twice the server's CPU count at a time (at least 2). A sign-in, registration or password change that waits more than a second for one is answered 503 `busy` with `Retry-After`.
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes, the password-reset routes, `auth/password-reset` and `auth/verify` share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes, the password-reset routes, `auth/password-reset` and `auth/verify` share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour, adding people to projects and workspaces by email 30 per hour.
 
 ### Error codes
 

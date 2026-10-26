@@ -76,6 +76,7 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'workspace.group_deleted': msg('Group deleted'),
   'workspace.group_member_added': msg('Added to a group'),
   'workspace.group_member_removed': msg('Removed from a group'),
+  'project.member_added': msg('Person added to a project'),
   'project.grant_added': msg('Project shared with a group'),
   'project.grant_changed': msg('Group role on a project changed'),
   'project.grant_removed': msg('Group removed from a project'),

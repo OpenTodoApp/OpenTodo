@@ -75,6 +75,15 @@ func (c clock) next() int64 {
 	return t
 }
 
+// receive is the hybrid clock's receive rule: the clock moves past every
+// pulled op, so the vault's next edit is stamped after the values it saw and
+// wins last-writer-wins even when this machine's clock runs behind the writer's.
+func (c clock) receive(ts int64) {
+	if ts > c.st.Clock {
+		c.st.Clock = ts
+	}
+}
+
 // observe adopts the server's clock after an exchange: an offset when the skew
 // is over two seconds, and a stored clock more than five minutes ahead is
 // brought back.
@@ -151,6 +160,7 @@ func (e *engine) generation(rep Reply) bool {
 func (e *engine) absorb(rep Reply) {
 	for _, op := range rep.Ops {
 		e.app.Apply(op)
+		e.clk.receive(op.TS)
 	}
 	for _, p := range rep.Purged {
 		e.app.Purge(p.Entity, p.EntityID)

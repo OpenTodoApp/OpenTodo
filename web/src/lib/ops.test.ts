@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { db, useDatabase } from './db'
+import { db, getMeta, useDatabase } from './db'
 import {
   applyOps, archiveProject, createProject, createSubtask, createTask, deleteProject, deleteTask, getDeviceId, moveProject, mutate,
   resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
 } from './ops'
-import { wins } from './hlc'
+import { HLC_META, hlcLast, wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
 import type { Comment, Op } from './types'
 import { viewOptions } from './views'
@@ -43,6 +43,21 @@ describe('applyOps', () => {
     }
     expect(new Set(states).size).toBe(1)
     expect(states[0]).toBe(JSON.stringify({ title: 'new', priority: 2 }))
+  })
+
+  it('stamps a local edit after a received op even when this device\'s clock runs behind', async () => {
+    // Another device's clock is a minute ahead of this one. Without the clock's
+    // receive rule the local edit would carry an older timestamp and lose to
+    // the value it replaces, here and on the server.
+    const db = useDatabase(`receive-${Date.now()}`)
+    const ahead = Date.now() + 60_000
+    await applyOps([op({ field: 'title', value: 'theirs', ts: ahead, device: 'ffffffff' })])
+    expect(hlcLast()).toBeGreaterThanOrEqual(ahead)
+    expect(await getMeta<number>(HLC_META, 0)).toBeGreaterThanOrEqual(ahead)
+    await mutate('task', 't1', { title: 'mine' })
+    expect((await db.tasks.get('t1'))?.title).toBe('mine')
+    const sent = (await db.outbox.toArray()).find((o) => o.field === 'title')
+    expect(sent!.ts).toBeGreaterThan(ahead)
   })
 
   it('is idempotent', async () => {

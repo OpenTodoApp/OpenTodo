@@ -472,7 +472,11 @@ func (s *scrubber) scrubColumn(db *sql.DB, table, column, kind string) error {
 		}
 		ups = append(ups, upd{id, s.text(kind, v)})
 	}
+	err = rows.Err()
 	rows.Close()
+	if err != nil {
+		return err
+	}
 	for _, u := range ups {
 		if _, err := db.Exec(fmt.Sprintf(`UPDATE "%s" SET "%s" = ? WHERE rowid = ?`, table, column), u.v, u.id); err != nil {
 			return err

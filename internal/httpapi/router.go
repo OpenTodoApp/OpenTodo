@@ -55,8 +55,8 @@ func (s *Server) registerAccountRoutes(mux *routes) {
 	mux.handle("GET /api/v1/tokens", signedIn, s.handleListTokens)
 	mux.handle("POST /api/v1/tokens", signedIn.sensitive().demoDenied(), s.handleCreateToken)
 	mux.handle("DELETE /api/v1/tokens/{id}", signedIn.demoDenied(), s.handleDeleteToken)
-	mux.handle("POST /api/v1/passkeys/register/options", signedIn.credential().demoDenied(), s.handlePasskeyRegisterOptions)
-	mux.handle("POST /api/v1/passkeys/register", signedIn.credential().demoDenied(), s.handlePasskeyRegister)
+	mux.handle("POST /api/v1/passkeys/register/options", signedIn.sensitive().demoDenied(), s.handlePasskeyRegisterOptions)
+	mux.handle("POST /api/v1/passkeys/register", signedIn.sensitive().demoDenied(), s.handlePasskeyRegister)
 	mux.handle("GET /api/v1/passkeys", signedIn, s.handleListPasskeys)
 	mux.handle("PATCH /api/v1/passkeys/{id}", signedIn.credential().demoDenied(), s.handleRenamePasskey)
 	mux.handle("DELETE /api/v1/passkeys/{id}", signedIn.credential().demoDenied(), s.handleDeletePasskey)
@@ -79,7 +79,7 @@ func (s *Server) registerAdminRoutes(mux *routes) {
 	mux.handle("GET /api/v1/audit", ownerOnly("access the audit log"), s.handleAuditList)
 	mux.handle("GET /api/v1/audit/export", ownerOnly("access the audit log"), s.handleAuditExport)
 	mux.handle("GET /api/v1/settings/audit", ownerOnly("access the audit log"), s.handleGetAuditSettings)
-	mux.handle("PUT /api/v1/settings/audit", ownerOnly("access the audit log").demoDenied(), s.handlePutAuditSettings)
+	mux.handle("PUT /api/v1/settings/audit", ownerOnly("access the audit log").credential().demoDenied(), s.handlePutAuditSettings)
 	mux.handle("GET /api/v1/me/activity", signedIn, s.handleMyActivity)
 	// Webhooks (OpenSpec `webhooks`): /api/v1/webhooks* and /api/v1/settings/webhooks,
 	// all behind requireAuth.

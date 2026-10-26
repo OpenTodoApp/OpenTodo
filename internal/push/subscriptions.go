@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Subscription is one device's push subscription. Endpoint and keys never leave
@@ -271,9 +272,7 @@ func (s *Service) recordOK(ctx context.Context, id string) error {
 
 // RecordFailure counts one failed send (not 404/410, which delete the row).
 func (s *Service) RecordFailure(ctx context.Context, id, msg string) error {
-	if len(msg) > 200 {
-		msg = msg[:200]
-	}
+	msg = textutil.Truncate(msg, 200)
 	_, err := s.db.ExecContext(ctx, `UPDATE push_subscriptions SET failures=failures+1, last_error=? WHERE id=?`, msg, id)
 	return err
 }

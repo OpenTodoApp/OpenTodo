@@ -1,5 +1,11 @@
 import 'fake-indexeddb/auto'
-import { afterAll, afterEach } from 'vitest'
+import { afterAll, afterEach, beforeEach } from 'vitest'
+import { hlcReset } from './lib/hlc'
+
+// Each test starts with a fresh clock: received ops move it forward (the
+// clock's receive rule), so a test that applies ops stamped in the future would
+// otherwise push the next test's local edits past the timestamps it chose.
+beforeEach(() => hlcReset())
 
 // No test reaches the network (OpenSpec web-lint-and-test-hygiene). Unless a test
 // mocks fetch itself (vi.stubGlobal('fetch', ...), vi.spyOn(globalThis, 'fetch')),

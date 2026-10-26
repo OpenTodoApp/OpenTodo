@@ -168,6 +168,8 @@ describe('the running indicator', () => {
     expect(announcer()).toBe('Tracking time on Write the report')
     await applyOps([{ id: 'remote-stop', entity: 'time_entry', entityId: entry, field: 'ended_at', value: NOW.getTime(), ts: Date.now() + 10_000_000, device: 'phone' }])
     await waitFor(() => !r.container.querySelector('[data-tracking-indicator]'))
+    // The announcement follows the render that removes the indicator (an effect).
+    await waitFor(() => announcer() !== 'Tracking time on Write the report')
     expect(announcer()).toBe('Tracking stopped')
   })
 })
