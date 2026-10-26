@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))
+
 ## [0.14.0] - 2026-10-26
 
 OpenTodo 0.14.0 brings your calendar and your tasks together. **Calendar sync** connects the calendar you already use, Google Calendar or any CalDAV service such as iCloud, Fastmail or Nextcloud: your dated tasks appear there as events, and moving or deleting an event changes the task. **Today can show the day's calendar events** above your tasks, so one page gives the whole day. Also: the Calendar remembers the planning list, and fixes for oversized subtask checkboxes on phones, a flicker when switching tasks in the side panel, and the task page's breadcrumb.
