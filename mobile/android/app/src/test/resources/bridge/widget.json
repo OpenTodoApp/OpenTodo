@@ -1,0 +1,36 @@
+{
+  "description": "The widgets' Today list: overdue first, titles and times while readable.",
+  "method": "publishWidget",
+  "payload": "{\"updatedAt\":1792670400000,\"locked\":false,\"count\":3,\"overdue\":1,\"tasks\":[{\"id\":\"late\",\"title\":\"Überweisung «Miete»\",\"priority\":2,\"overdue\":true},{\"id\":\"call\",\"title\":\"Call the plumber ☎\",\"time\":\"09:30\",\"priority\":1,\"overdue\":false},{\"id\":\"plain\",\"title\":\"Water the plants\",\"priority\":4,\"overdue\":false}]}",
+  "now": 1792670400000,
+  "expect": {
+    "updatedAt": 1792670400000,
+    "locked": false,
+    "count": 3,
+    "overdue": 1,
+    "rows": [
+      {
+        "id": "late",
+        "title": "Überweisung «Miete»",
+        "time": null,
+        "priority": 2,
+        "overdue": true
+      },
+      {
+        "id": "call",
+        "title": "Call the plumber ☎",
+        "time": "09:30",
+        "priority": 1,
+        "overdue": false
+      },
+      {
+        "id": "plain",
+        "title": "Water the plants",
+        "time": null,
+        "priority": 4,
+        "overdue": false
+      }
+    ],
+    "more": 0
+  }
+}
