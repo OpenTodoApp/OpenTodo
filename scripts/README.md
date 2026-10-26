@@ -39,6 +39,18 @@ node scripts/e2e-views.mjs [screenshot-dir]
 CHROMIUM_PATH=/path/to/chrome node scripts/e2e-views.mjs
 ```
 
+## `e2e-offline.mjs`
+
+Offline start of the built app, run by `make e2e`: it sets up the owner on a **fresh** server, adds a task, waits until the built service worker controls the page and checks the web app manifest, then turns the network off and reloads. The app must open from the precache with the task from IndexedDB, a request to `/api/*` must fail rather than be answered from a cache, and a task added offline must reach the server once the network is back.
+
+```bash
+make build
+OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
+node scripts/e2e-offline.mjs
+```
+
+The unit tests of the built service worker and manifest (`web/src/lib/serviceWorker.test.ts`, `web/src/ui/workbench.test.ts`) skip without a build; `npm run test:built` (in `web/`, after `npm run build`) runs them with `REQUIRE_BUILT=1`, which fails instead of skipping. CI runs it after the web build.
+
 ## `e2e-network.mjs`
 
 Network audit for locations and maps (OpenSpec change `task-locations`, task 7.1), run by `make e2e`. It starts a fake tile and Photon provider on localhost and two fresh servers of its own (`OPENTODO_BIN`, default `bin/opentodo`), one with `OPENTODO_MAPS=off` and one with maps on, both pointed at the fake with `OPENTODO_MAPS_TILES_URL` and `OPENTODO_MAPS_GEOCODER_URL`, so nothing reaches OpenFreeMap or Photon. In each it opens a task with a location, its location editor (searching an address when maps are on) and the Locations page, and fails when the browser contacts any origin but the server's, when the server contacts the provider with maps off, or when a provider request with maps on lacks OpenTodo's User-Agent or carries the viewer's cookie, token or address. The map draws through SwiftShader WebGL, so tiles are really requested.
