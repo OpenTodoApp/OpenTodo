@@ -39,6 +39,10 @@ describe('subtasks', () => {
     await waitFor(() => section(container).querySelectorAll('li').length === 1)
     const box = section(container).querySelector<HTMLButtonElement>('button[aria-label="Complete Paint"]')!
     expect(box.getAttribute('aria-pressed')).toBe('false')
+    // The circle is drawn inside the button, so a touch screen's 44 px minimum enlarges
+    // the tap area and not the circle (a giant checkbox on an iPhone).
+    expect(box.className).not.toContain('border-2')
+    expect(box.querySelector('[data-check-mark]')!.className).toContain('h-4 w-4')
     await click(box)
     await waitFor(() => !!(section(container).querySelector('button[aria-label="Reopen Paint"]')))
     expect((await db.tasks.get(sub))!.completed_at).not.toBeNull()
