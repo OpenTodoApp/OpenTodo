@@ -142,6 +142,26 @@ func (s *Store) Open(id string) (*os.File, os.FileInfo, error) {
 	return f, info, nil
 }
 
+// Matches reports whether the file stored for id is exactly want: its size and
+// SHA-256 digest. A missing file is ErrNotFound. Callers that meet ErrExists from
+// Write use it before treating the stored file as the one they meant to write:
+// an id alone says nothing about whose bytes are stored under it.
+func (s *Store) Matches(id string, want Spec) (bool, error) {
+	f, info, err := s.Open(id)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	if info.Size() != want.Size {
+		return false, nil
+	}
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return false, fmt.Errorf("blobs: read: %w", err)
+	}
+	return hex.EncodeToString(h.Sum(nil)) == want.SHA256, nil
+}
+
 // Exists reports whether a file is stored for id.
 func (s *Store) Exists(id string) bool {
 	p, err := s.Path(id)

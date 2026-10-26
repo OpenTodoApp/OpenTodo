@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import filtersDoc from '../../../../docs/filters.md?raw'
 import type { Label, Project, Task } from '../types'
-import { compile, mentionsState, runFilter, type FilterContext } from './evaluate'
-import { FilterSyntaxError, parse, printQuery, resolveDate, tokenize, type Node } from './parse'
+import { compile, mentionsState, runFilter, withCompletedTasks, type FilterContext } from './evaluate'
+import { FilterSyntaxError, MAX_NESTING, MAX_QUERY_LENGTH, parse, printQuery, resolveDate, tokenize, type Node } from './parse'
+import limits from '../../../../internal/filter/testdata/limits.json'
 import { originSuggestions } from './suggest'
 
 /** Canonical, fully parenthesised form of a query. */
@@ -207,6 +208,27 @@ describe('parse: errors', () => {
     expect(errorOf('due > 7').message).toBe('Expected "days", "weeks" or "months" after "7" at position 7')
     expect(errorOf('due > 7 day').message).toBe('Expected "days", "weeks" or "months" after "7" at position 7')
     expect(errorOf('due > 7 days ago ago').message).toBe('Expected "&" or "|" before "ago" at position 18')
+  })
+})
+
+describe('parse: limits (OpenSpec filter-limits)', () => {
+  const query = (v: (typeof limits.vectors)[number]) => v.prefix + v.repeat.repeat(v.times) + v.suffix + v.close.repeat(v.closeTimes)
+
+  it('uses the limits of the server parser', () => {
+    expect([MAX_QUERY_LENGTH, MAX_NESTING]).toEqual([limits.maxQueryLength, limits.maxNesting])
+  })
+
+  it('accepts and refuses the shared vectors with the server messages', () => {
+    for (const v of limits.vectors) {
+      const q = query(v)
+      if (v.error === null) expect(() => parse(q), q.slice(0, 40)).not.toThrow()
+      else expect(errorOf(q).message, q.slice(0, 40)).toBe(v.error)
+    }
+  })
+
+  it('shows completed tasks for a query at the nesting limit', () => {
+    const ast = parse('('.repeat(MAX_NESTING) + 'p1' + ')'.repeat(MAX_NESTING))!
+    expect(printQuery(withCompletedTasks(ast))).toBe(printQuery(parse('p1 & (open | completed)')!))
   })
 })
 

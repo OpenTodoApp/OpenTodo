@@ -67,6 +67,15 @@ function nameKey(name: string): string {
  * True when the query mentions `completed` or `open`, or compares the completion
  * date (completed-date-filters D3); otherwise only open tasks match (design D5).
  */
+/**
+ * `(query) & (open | completed)`, the reading of a query with completed tasks shown
+ * (views-and-display D4), built on the parsed query rather than parsed again from
+ * text, so a query at the nesting or length limit (filter-limits) still works.
+ */
+export function withCompletedTasks(ast: Node): Node {
+  return { kind: 'and', items: [ast, parse('open | completed')!] }
+}
+
 export function mentionsState(n: Node): boolean {
   switch (n.kind) {
     case 'or':

@@ -1,0 +1,20 @@
+{
+  "comment": "Query limits (OpenSpec change filter-limits), shared by internal/filter/filter_test.go and web/src/lib/filter/filter.test.ts. Lengths count characters (code points), not bytes. A query is prefix + repeat × times + suffix + close × closeTimes; error is the message, or null when the query is valid.",
+  "maxQueryLength": 4096,
+  "maxNesting": 64,
+  "vectors": [
+    { "prefix": "", "repeat": "(", "times": 64, "suffix": "p1", "close": ")", "closeTimes": 64, "error": null },
+    { "prefix": "", "repeat": "!", "times": 64, "suffix": "p1", "close": "", "closeTimes": 0, "error": null },
+    { "prefix": "", "repeat": "!(", "times": 32, "suffix": "p1", "close": ")", "closeTimes": 32, "error": null },
+    { "prefix": "", "repeat": "(p1) & ", "times": 500, "suffix": "p1", "close": "", "closeTimes": 0, "error": null },
+    { "prefix": "", "repeat": "p1 & ", "times": 818, "suffix": "p1", "close": "", "closeTimes": 0, "error": null },
+    { "prefix": "search:", "repeat": "é", "times": 4089, "suffix": "", "close": "", "closeTimes": 0, "error": null },
+    { "prefix": "", "repeat": "(", "times": 65, "suffix": "p1", "close": ")", "closeTimes": 65, "error": "Too deeply nested at position 65; use at most 64 levels of \"(\" and \"!\"" },
+    { "prefix": "", "repeat": "!", "times": 65, "suffix": "p1", "close": "", "closeTimes": 0, "error": "Too deeply nested at position 65; use at most 64 levels of \"(\" and \"!\"" },
+    { "prefix": "p1 & ", "repeat": "(", "times": 65, "suffix": "p1", "close": ")", "closeTimes": 65, "error": "Too deeply nested at position 70; use at most 64 levels of \"(\" and \"!\"" },
+    { "prefix": "", "repeat": "(", "times": 4000, "suffix": "", "close": "", "closeTimes": 0, "error": "Too deeply nested at position 65; use at most 64 levels of \"(\" and \"!\"" },
+    { "prefix": "", "repeat": "p", "times": 4097, "suffix": "", "close": "", "closeTimes": 0, "error": "Query is too long: 4097 characters, at most 4096" },
+    { "prefix": "search:", "repeat": "é", "times": 4090, "suffix": "", "close": "", "closeTimes": 0, "error": "Query is too long: 4097 characters, at most 4096" },
+    { "prefix": "", "repeat": "(", "times": 3000000, "suffix": "", "close": "", "closeTimes": 0, "error": "Query is too long: 3000000 characters, at most 4096" }
+  ]
+}
