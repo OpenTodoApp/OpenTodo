@@ -52,6 +52,7 @@ Shell tasks are verified with `make ios` (31 unit tests and 2 UI tests in `mobil
 - [x] 8.1 `docs/ios-app.md` (what the app adds, first run, the offline limitation of the portable build and how to build the one-server variant, sharing, reminders and their limits, the widget, Face ID, changing the server), linked from `docs/install-phone.md` and `docs/capture.md`. Verified by `npm run docs:check`.
 - [x] 8.2 `mobile/README.md` gains the iOS sections with the file map, the bridge notes and the build steps. Verified by `npm run docs:check`.
 - [x] 8.3 CHANGELOG entry under Unreleased, and `ROADMAP.md:188` row 2 updated to say what shipped and what stayed open. Verified by `make check`.
+- [x] 8.4 Both ways of signing for a device are written down, because the App Groups capability the widget and the share extension share data through is paid-only: a free Apple ID signs the app once the two extensions and the App Group are removed, a paid membership keeps them. Verified by `npm run docs:check`; the steps themselves belong to the runs in section 9, which have not been performed here.
 
 ## 9. Runs that need a device
 
