@@ -54,11 +54,27 @@ The web app records voice notes and can attach a photo taken with the camera. iO
 
 ## Building it
 
-Needs a Mac with Xcode 16 or newer and an iOS simulator runtime:
+The app is not in the App Store, because the store's terms and the licence do not fit. So you build and sign it yourself. Needs a Mac with Xcode 16 or newer and an iOS simulator runtime:
 
 ```sh
-make ios                     # unit tests on a simulator, an unsigned device build, the dependency check
+make ios                             # unit tests on a simulator, an unsigned device build, the dependency check
 open mobile/ios/OpenTodo.xcodeproj   # then Run, with your team selected for signing
 ```
+
+Running it in the simulator needs nothing more than Xcode. For your own iPhone you need a team in Xcode, and that is where the one paid part sits.
+
+### On your own iPhone
+
+**Everything but the widget and the share sheet: a free Apple ID is enough.** Those two are app extensions, and they share their data with the app through an App Group, which is a paid capability, so a personal team cannot sign them. Remove them for a local build — these edits stay on your Mac, do not commit them:
+
+1. Select the `OpenTodo` target ▸ **General** ▸ *Frameworks, Libraries, and Embedded Content*, select `OpenTodoWidget.appex` and `OpenTodoShare.appex` and remove them with −.
+2. Delete the `OpenTodoWidget` and `OpenTodoShare` targets in the project navigator.
+3. On `OpenTodo` ▸ **Signing & Capabilities**, remove **App Groups** with −, then pick your personal team.
+
+Reminders, Face ID, the certificate and local-network behaviour and the background refresh all work in that build. A free build stops launching after seven days; run it again from Xcode to renew it.
+
+**Widget and share sheet included: a paid Apple Developer Program membership.** Add your account in Xcode ▸ Settings ▸ Accounts, select the team on all three targets, and keep **App Groups** on each of them with one group name — `group.app.opentodo`, or your own if the name is taken. Xcode registers it in the developer portal on the first signing attempt.
+
+Either way the first run on a device needs **Developer Mode** on (iPhone ▸ Settings ▸ Privacy & Security) and, for a free team, trusting the developer under Settings ▸ General ▸ VPN & Device Management. If Xcode reports that the bundle identifier is taken, change the `app.opentodo` prefix in `mobile/ios/project.yml` for all three targets and run `xcodegen generate`.
 
 `mobile/README.md` describes the files, the bridge and the build settings; `openspec/changes/ios-shell` records the decisions and what was measured on the platform.

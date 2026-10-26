@@ -44,6 +44,10 @@ cd mobile/ios && open OpenTodo.xcodeproj   # Run, with your team selected for si
 
 `make ios` is not part of `make check` (it needs macOS). CI's `ios` job runs it on a macOS runner, only when `mobile/ios` or the workflow changes.
 
+### Signing for a device
+
+Pick a team for the three targets and Run. A free Apple ID can sign the app but not the App Groups capability the two extensions share data through, so an app-only build means removing `OpenTodoWidget.appex` and `OpenTodoShare.appex` from the app target's embedded content, deleting the two targets and dropping **App Groups** from `OpenTodo` — locally, never committed. Everything except the widget and the share sheet then works, and the app needs renewing from Xcode after seven days. The widget and the share sheet need a paid membership with one App Group on all three targets. `docs/ios-app.md` has the steps for both.
+
 Two build settings matter:
 
 | Setting | Effect |
