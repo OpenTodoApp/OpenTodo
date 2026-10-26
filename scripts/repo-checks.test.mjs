@@ -281,6 +281,7 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   const nightly = read('.github/workflows/nightly.yml')
   assert.match(nightly, /^ {2}schedule:\n {4}- cron: /m)
   assert.match(nightly, /go test -race /)
+  assert.match(nightly, /run: scripts\/fuzz\.sh /, 'the fuzz targets run nightly')
 })
 
 test('Dependabot keeps every pinned ecosystem current', () => {

@@ -40,7 +40,11 @@ func ParseDuration(v string) (int64, error) {
 		c := s[i]
 		switch {
 		case c >= '0' && c <= '9':
-			num += string(c)
+			if num += string(c); len(num) > 9 {
+				// Bounded early: a long digit run is refused below anyway, and
+				// growing num by one byte at a time would be quadratic.
+				return 0, fmt.Errorf("%w: bad duration %q", ErrInvalid, v)
+			}
 			continue
 		case c == 'T':
 			if inTime || num != "" {

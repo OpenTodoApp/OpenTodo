@@ -80,6 +80,9 @@ func ParseXMLLimit(r io.Reader, max int) (*Node, error) {
 	dec.Strict = true
 	var root *Node
 	var stack []*Node
+	// The text of each open element, joined once when it closes: text comes in
+	// pieces between comments and CDATA, and += per piece is quadratic.
+	var texts []*strings.Builder
 	for {
 		tok, err := dec.Token()
 		if err == io.EOF {
@@ -104,11 +107,13 @@ func ParseXMLLimit(r io.Reader, max int) (*Node, error) {
 				p.Children = append(p.Children, n)
 			}
 			stack = append(stack, n)
+			texts = append(texts, &strings.Builder{})
 		case xml.EndElement:
-			stack = stack[:len(stack)-1]
+			stack[len(stack)-1].Text = texts[len(texts)-1].String()
+			stack, texts = stack[:len(stack)-1], texts[:len(texts)-1]
 		case xml.CharData:
-			if len(stack) > 0 {
-				stack[len(stack)-1].Text += string(t)
+			if len(texts) > 0 {
+				texts[len(texts)-1].Write(t)
 			}
 		}
 	}
