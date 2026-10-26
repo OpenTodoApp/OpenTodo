@@ -2,6 +2,7 @@ import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } 
 import { Skeleton, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
+import { errorText } from '../lib/errorText'
 import { useOnline } from '../lib/online'
 import { useOutgoingEmail } from '../lib/outgoingEmail'
 import type { Invitation, InvitationStatus } from '../lib/types'
@@ -268,12 +269,14 @@ export function NewInvitationDialog({ busy, offline, error, mail = false, sentTo
 }
 
 function describe(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (err.code === 'rate_limited') return t('Too many invitations created recently. Try again later.')
-    if (err.code === 'invitation_spent') return t('This invitation was already accepted and cannot be revoked.')
-    if (err.code === 'email_failed') return t('The email could not be sent, so no invitation was created ({reason}). Turn off “Send by email” to create a link to share yourself.', { reason: err.message })
-    if (err.code === 'smtp_disabled') return t('This server no longer sends email. Turn off “Send by email” to create a link to share yourself.')
-    return err.message
-  }
-  return t('The server is unreachable. Invitations need a connection.')
+  return errorText(err, {
+    capitalise: false,
+    offline: t('The server is unreachable. Invitations need a connection.'),
+    codes: {
+      rate_limited: t('Too many invitations created recently. Try again later.'),
+      invitation_spent: t('This invitation was already accepted and cannot be revoked.'),
+      email_failed: (e) => t('The email could not be sent, so no invitation was created ({reason}). Turn off “Send by email” to create a link to share yourself.', { reason: e.message }),
+      smtp_disabled: t('This server no longer sends email. Turn off “Send by email” to create a link to share yourself.'),
+    },
+  })
 }

@@ -27,6 +27,8 @@ import { Composer, readDraft, type ComposedExtras } from './Composer'
 import { ReactionBar, ReactionMenuItems } from './ReactionBar'
 import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
+import { messageOf } from '../../lib/errorText'
+import { useAction } from '../../lib/useAction'
 
 /** True on touch screens: comment actions are always shown there instead of on hover. */
 export function useCoarsePointer(): boolean {
@@ -280,21 +282,13 @@ export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(func
   const attachments = useCommentAttachments(task.id)
   const demo = useDemo()
   const limits = useAttachmentLimits()
-  const [error, setError] = useState<string | null>(null)
-  useEffect(() => setError(null), [task.id])
+  const { error, setError, run: attempt } = useAction({ describe: messageOf })
+  useEffect(() => setError(null), [task.id, setError])
 
   const name = useCallback((id: string) => (id && id === me ? t('You') : memberName(id, memberships) ?? t('Someone')), [me, memberships])
   const targets = useMentionTargets(task.project_id, me)
-  const run = async (fn: () => Promise<unknown>) => {
-    setError(null)
-    try {
-      await fn()
-      return true
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-      return false
-    }
-  }
+  // Resolves whether the change was made, so an editor closes only on success.
+  const run = async (fn: () => Promise<unknown>) => (await attempt(async () => { await fn(); return true })) ?? false
 
   return (
     <CommentsView ref={composerRef} taskId={task.id} threads={threadOrder(comments).filter(threadVisible)} me={me}

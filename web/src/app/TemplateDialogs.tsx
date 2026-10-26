@@ -3,7 +3,7 @@
 // the sidebar, which opens on the template library (template-library). Everything happens on the device: a copy is one batch of ops, a
 // template file is built from local data and downloaded.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { lazy, Suspense, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { logicalToday } from '../lib/dates'
 import { projectsAndLabels, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
@@ -23,25 +23,18 @@ const LibraryDetail = lazy(() => import('./templates/TemplateLibrary').then((m) 
 import { ProjectPickerField } from './ProjectPickerField'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
+import { createStore } from '../lib/store'
 
 // "From a template…" can be opened from elsewhere (the Import screen's hint).
-let templateRequested = 0
-const listeners = new Set<() => void>()
+const templateRequested = createStore('templateRequests', 0)
 /** Ask the sidebar to open the From a template dialog. */
 export function requestTemplateDialog(): void {
-  templateRequested++
-  listeners.forEach((fn) => fn())
+  templateRequested.update((n) => n + 1)
 }
 /** How many times the dialog was asked for (tests). */
-export const templateRequests = (): number => templateRequested
-export function useTemplateRequests(): number {
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => listeners.delete(fn) }, () => templateRequested)
-}
-
-function errorText(err: unknown): string {
-  if (err instanceof TemplateTooLargeError || err instanceof TemplateFileError) return err.message
-  return err instanceof Error ? err.message : String(err)
-}
+export const templateRequests = templateRequested.get
+export const useTemplateRequests = templateRequested.use
 
 function Summary({ tree }: { tree: TemplateTree }) {
   const s = summarise(tree)
@@ -72,7 +65,7 @@ export function DuplicateProjectDialog({ project, shared, onClose }: { project: 
       onClose()
       navigate({ view: 'project', id })
     } catch (err) {
-      setError(errorText(err))
+      setError(messageOf(err))
     }
   }
   return (
@@ -144,7 +137,7 @@ export function TemplateDialog({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   useEffect(() => {
     let live = true
-    loadLibrary().then((l) => { if (live) setLibrary(l.templates) }, (err: unknown) => { if (live) { setLibrary([]); setError(errorText(err)) } })
+    loadLibrary().then((l) => { if (live) setLibrary(l.templates) }, (err: unknown) => { if (live) { setLibrary([]); setError(messageOf(err)) } })
     return () => { live = false }
   }, [])
   const back = () => { setError(null); setView({ kind: 'library' }) }
@@ -156,7 +149,7 @@ export function TemplateDialog({ onClose }: { onClose: () => void }) {
       onClose()
       if (plan.projectIds[0]) navigate({ view: 'project', id: plan.projectIds[0] })
     } catch (err) {
-      setError(errorText(err))
+      setError(messageOf(err))
       setBusy(false)
     }
   }
@@ -201,7 +194,7 @@ function TemplateFileForm({ projects, onBack, onClose }: { projects: Project[]; 
       if (total > 1000) throw new TemplateTooLargeError(total)
       setTree(template)
     } catch (err) {
-      const base = errorText(err)
+      const base = messageOf(err)
       setError(err instanceof TemplateFileError ? `${base} ${t('CSV files and other apps’ exports go through Settings → Data → Import.')}` : base)
     }
   }
@@ -216,7 +209,7 @@ function TemplateFileForm({ projects, onBack, onClose }: { projects: Project[]; 
       if (plan.projectIds[0]) navigate({ view: 'project', id: plan.projectIds[0] })
       else navigate({ view: 'inbox' })
     } catch (err) {
-      setError(errorText(err))
+      setError(messageOf(err))
       setBusy(false)
     }
   }

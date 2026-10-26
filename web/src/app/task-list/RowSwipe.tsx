@@ -3,7 +3,7 @@
 // (left), the tinted edge it uncovers, the Schedule sheet, and the one-time cue.
 // Moves are applied to the row's children directly, so a gesture re-renders the
 // row once (when it locks a direction), not on every pixel.
-import { type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTask } from '../../lib/localData'
 import { addDaysISO, logicalToday, quickChoices } from '../../lib/dates'
 import { t } from '../../lib/i18n'
@@ -15,6 +15,7 @@ import { DateField } from '../datetime/DateField'
 import { prefersReducedMotion } from '../motion'
 import { beginSwipe, revealed, SWIPE, type SwipeDir } from '../rowSwipe'
 import { showBulkToast } from '../bulk/toastStore'
+import { createStore } from '../../lib/store'
 
 const EDGE = 'data-swipe-edge'
 
@@ -102,16 +103,12 @@ export function useRowSwipe({ task, enabled, onComplete, force, rowEl }: {
 
 // The Schedule sheet lives outside the row and the menu that ask for it (both may unmount
 // as it opens: a menu closes, a row departs); the list renders its host once.
-let scheduleId: string | null = null
-const scheduleSubs = new Set<() => void>()
-export function openRowSchedule(id: string | null): void {
-  scheduleId = id
-  scheduleSubs.forEach((fn) => fn())
-}
+const scheduleId = createStore<string | null>('rowSchedule', null)
+export const openRowSchedule = scheduleId.set
 
 /** The Schedule sheet of the task a swipe or the touch menu asked for. */
 export function RowScheduleHost() {
-  const id = useSyncExternalStore((fn) => { scheduleSubs.add(fn); return () => { scheduleSubs.delete(fn) } }, () => scheduleId, () => null)
+  const id = scheduleId.use()
   const task = useTask(id)
   if (!id || !task) return null
   return <RowScheduleSheet task={task} onClose={() => openRowSchedule(null)} />

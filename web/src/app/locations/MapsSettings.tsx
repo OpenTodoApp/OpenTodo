@@ -9,6 +9,7 @@ import { cardCopy } from '../../lib/settingsCopy'
 import { Button, Field, Input, Notice, SettingsSection, Switch } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
+import { messageOf } from '../../lib/errorText'
 
 /** Settings → Server → Maps (owner only). */
 export function MapsServerPanel() {
@@ -23,7 +24,7 @@ export function MapsServerPanel() {
       setTiles(v.tiles_url)
       setGeocoder(v.geocoder_url)
     } catch (err) {
-      setError(isNetworkError(err) ? t('Connect to change the map settings.') : err instanceof Error ? err.message : String(err))
+      setError(isNetworkError(err) ? t('Connect to change the map settings.') : messageOf(err))
     }
   }
   useEffect(() => { void load() }, [])
@@ -36,7 +37,7 @@ export function MapsServerPanel() {
       setGeocoder(v.geocoder_url)
       await refreshMapsAvailable()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(messageOf(err))
     }
   }
   const locked = (f: string) => !!s?.locked.includes(f)

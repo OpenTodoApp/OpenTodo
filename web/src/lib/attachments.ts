@@ -17,6 +17,7 @@ import type { Attachment, AttachmentLimits } from './types'
 import { t } from './i18n'
 import { sha256, uuid } from './ids'
 import { safeUrl } from './share'
+import { createSignal } from './store'
 
 /** The longest attachment name the server accepts. */
 export const MAX_NAME = 255
@@ -303,24 +304,18 @@ export function isInlineType(mime: string): boolean {
 // ---- uploading ----
 
 const progress = new Map<string, number>()
-const progressListeners = new Set<() => void>()
+const progressChanged = createSignal()
 let progressVersion = 0
 function setProgress(id: string, fraction: number | null) {
   if (fraction === null) progress.delete(id)
   else progress.set(id, fraction)
   progressVersion++
-  progressListeners.forEach((fn) => fn())
+  progressChanged.notify()
 }
 
 /** Upload progress of an attachment on this device (0–1), or null when it is not uploading. */
 export function useUploadProgress(id: string): number | null {
-  useSyncExternalStore(
-    (fn) => {
-      progressListeners.add(fn)
-      return () => progressListeners.delete(fn)
-    },
-    () => progressVersion,
-  )
+  useSyncExternalStore(progressChanged.subscribe, () => progressVersion)
   return progress.get(id) ?? null
 }
 

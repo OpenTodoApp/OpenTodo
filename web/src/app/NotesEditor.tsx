@@ -25,6 +25,7 @@ import { Markdown } from './Markdown'
 import { useMentionTargets } from './useMentionTargets'
 import { filesFrom } from './task-detail/AttachmentsRow'
 import { t } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
 
 /** Debounce between the last keystroke and saving the note (design D3). */
 const SAVE_MS = 400
@@ -208,7 +209,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     dirty.current = false
     mutate(entity, taskId, notePatch()).then(
       () => setError(null),
-      (err) => setError(err instanceof DocTooLargeError ? err.message : t('Could not save the note: {reason}', { reason: err instanceof Error ? err.message : String(err) })),
+      (err) => setError(err instanceof DocTooLargeError ? err.message : t('Could not save the note: {reason}', { reason: messageOf(err) })),
     )
   }
 

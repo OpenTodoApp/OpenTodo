@@ -4,11 +4,16 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText, ROOT } from './common.mjs'
+import { configVariables, escapeRegExp, laterRelease, loadFacts, readText, releaseVersion, ROOT } from './common.mjs'
 import { check, DIR, jpegSize, UPSTREAM } from './runtipi.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
+const VR = escapeRegExp(V)
+const LATER = laterRelease(V)
+const LATER_R = escapeRegExp(LATER)
 const config = readText(`${DIR}/config.json`)
 const compose = readText(`${DIR}/docker-compose.yml`)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
@@ -41,11 +46,11 @@ test('runtipi: the committed app and store pass', () => {
 })
 
 test('runtipi: the release tag, equal to the config version', () => {
-  has(comp('opentodo:0.14.2', 'opentodo:stable'), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
-  has(comp('opentodo:0.14.2', 'opentodo:latest'), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
-  has(variant(cfg((c) => { c.version = '0.6.0' })), /version must be 0\.14\.2|tag must contain the config\.json version/)
-  const next = { ...ctx, changelog: '## [0.15.1] - 2026-12-20\n' + ctx.changelog }
-  has(variant({}, next), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.15\.1/)
+  has(comp(`opentodo:${V}`, 'opentodo:stable'), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${VR}`))
+  has(comp(`opentodo:${V}`, 'opentodo:latest'), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${VR}`))
+  has(variant(cfg((c) => { c.version = '0.6.0' })), new RegExp(String.raw`version must be ${VR}|tag must contain the config\.json version`))
+  const next = { ...ctx, changelog: `## [${LATER}] - 2026-12-20\n` + ctx.changelog }
+  has(variant({}, next), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${LATER_R}`))
 })
 
 test('runtipi: config.json rules', () => {

@@ -33,6 +33,8 @@ One folder per platform, each with its template in that platform's own format. T
 
 A folder without a checker fails the run. Tests: `node --test scripts/deploy/*.test.mjs`.
 
+The byte-identical copies in `upstream/` (and the shared logo and `LICENSE` copies) are generated: edit the template, then run `node scripts/deploy/mirror.mjs`, which copies every source listed in its `COPIES` table; `make deploy-check` runs it with `--check`. A new copy goes into that table.
+
 ## Adding a platform
 
 1. Add the variable to `deploy.json` first if the platform should offer one that is not catalogued yet (the check refuses it otherwise).
@@ -44,7 +46,7 @@ A folder without a checker fails the run. Tests: `node --test scripts/deploy/*.t
 
 Templates on `stable` need no change: the release job moves the tag to the new version (release candidates leave it alone), so those installs get the release through their platform's update button.
 
-Templates on `release` or `release-digest` are for stores that refuse moving tags or offer updates only when a version changes. Preparing a release fails `make check` until they name the new version; after the release job has published the image, `node scripts/deploy/pin.mjs` writes the new digests (`--check` lists stale ones).
+Templates on `release` or `release-digest` are for stores that refuse moving tags or offer updates only when a version changes. `make release-prepare VERSION=x.y.z` moves them, their copies and the docs to the new version ([RELEASING.md](../RELEASING.md)), and `make check` fails while one names another; after the release job has published the image, `node scripts/deploy/pin.mjs` writes the new digests (`--check` lists stale ones).
 
 Then, once the release is published, open an update pull request in each store that pins the version (release candidates are never submitted). Each folder's README has the exact steps:
 
@@ -59,4 +61,4 @@ Then, once the release is published, open an update pull request in each store t
 | Home Assistant ([`homeassistant/`](homeassistant/README.md#on-a-release)) | Our own repository: its **Follow OpenTodo** workflow publishes the add-on for the release within a day; check it ran, then run `deploy/homeassistant/upstream/scripts/bump.sh <version>` here if release preparation did not already. |
 | CapRover ([`caprover/`](caprover/README.md#on-a-release)) | Once submitted: the version field, as a pull request to `caprover/one-click-apps` or a push to `OpenTodoApp/opentodo-caprover`. |
 
-No pull request after a release for Unraid, Cosmos and Portainer: they name `stable` (a store pull request only when the template itself changes). The Claude plugin is published by the CI job `claude-plugin`. The Helm chart (`helm/opentodo/Chart.yaml`) also names the release: bump `version`, `appVersion` and the `artifacthub.io/images` tag; the release tag publishes it. The **Promote stable** workflow (Actions → Promote stable → Run workflow, with a version such as `0.6.1`) points `stable` at an older release to roll back, without rebuilding.
+No pull request after a release for Unraid, Cosmos and Portainer: they name `stable` (a store pull request only when the template itself changes). The Claude plugin is published by the CI job `claude-plugin`. The Helm chart (`helm/opentodo/Chart.yaml`) also names the release (`version`, `appVersion` and the `artifacthub.io/images` tag, which release preparation moves); the release tag publishes it. The **Promote stable** workflow (Actions → Promote stable → Run workflow, with a version such as `0.6.1`) points `stable` at an older release to roll back, without rebuilding.

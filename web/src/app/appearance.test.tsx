@@ -94,7 +94,7 @@ describe('Appearance → Sidebar in Open Loops first (open-loops-method 6.2)', (
     const someday = document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!
     expect(someday.disabled).toBe(true)
     expect(someday.getAttribute('aria-checked')).toBe('true')
-    expect(r.container.textContent).toContain('Open Loops first arranges the sidebar')
+    expect(r.container.textContent).toContain('The full Open Loops method arranges the sidebar')
     await r.unmount()
   })
 })
