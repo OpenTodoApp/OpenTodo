@@ -2,7 +2,7 @@
 // Webhook rows keep their actions in a menu; offline they are disabled, and Delete confirms.
 import { describe, expect, it, vi } from 'vitest'
 import type { Webhook } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { WebhooksView, type WebhooksViewProps } from './WebhooksPanel'
 
 const noop = () => {}
@@ -21,7 +21,7 @@ describe('webhook row menu', () => {
   it('disables Send test, Edit, Disable and Delete offline; the delivery log stays available', async () => {
     const r = await render(<WebhooksView {...props({ connected: false })} />)
     await click(r.container.querySelector('[aria-label^="Actions for webhook"]')!)
-    await flush(20)
+    await waitFor(() => !!items()['Delete'], 'the row menu')
     const m = items()
     for (const label of ['Send test', 'Edit', 'Disable', 'Delete']) expect(m[label].disabled, label).toBe(true)
     expect(m['Delivery log'].disabled).toBe(false)
@@ -32,7 +32,7 @@ describe('webhook row menu', () => {
     const onDelete = vi.fn()
     const r = await render(<WebhooksView {...props({ onDelete })} />)
     await click(r.container.querySelector('[aria-label^="Actions for webhook"]')!)
-    await flush(20)
+    await waitFor(() => !!items()['Delete'], 'the row menu')
     await click(items()['Delete'])
     expect(onDelete).toHaveBeenCalledWith(hook)
     await r.unmount()

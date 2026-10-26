@@ -8,7 +8,7 @@ import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { todayISO } from '../lib/dates'
 import type { User } from '../lib/types'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, key, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -27,10 +27,6 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel(); resetTaskTrail() })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const page = () => document.querySelector<HTMLElement>('[data-detail-variant="page"]')
 const rowOpen = (title: string) => [...document.querySelectorAll<HTMLElement>('[data-task-id] button.min-w-0')].find((b) => b.textContent?.includes(title))!
 const position = () => document.querySelector('[data-task-position] [aria-hidden]')?.textContent
@@ -79,7 +75,6 @@ describe('the task page', () => {
     expect(document.querySelector<HTMLButtonElement>('[data-task-next]')!.disabled).toBe(true)
     // At the end of the list j does nothing.
     await key(document.body, 'j')
-    await flush(50)
     expect(location.pathname).toBe(`/task/${ids[2]}`)
     await key(document.body, 'k')
     await waitFor(() => location.pathname === `/task/${ids[1]}` && position() === '2 / 3')

@@ -5,7 +5,7 @@ import { act, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { saveQuickAddSettings } from '../lib/nlp'
 import type { EditPlan } from '../lib/nlp/edit'
-import { flush, render, type } from '../ui/test-utils'
+import { flush, render, type, waitFor } from '../ui/test-utils'
 import { TitleField } from './TitleField'
 
 beforeEach(() => {
@@ -65,7 +65,7 @@ describe('TitleField', () => {
     // The first Enter picks "Work" from the suggestions, the second commits.
     expect(document.querySelector('[role="listbox"]')).toBeTruthy()
     await commit(field)
-    await flush(30)
+    await waitFor(() => field.value === 'Plan #Work ', 'the suggestion picked')
     expect(field.value).toBe('Plan #Work ')
     await commit(field)
     await flush()

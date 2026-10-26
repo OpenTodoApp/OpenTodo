@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
 import type { View } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, render, waitFor } from '../ui/test-utils'
 import { ViewMenu } from './ViewsView'
 
 const view = { id: 'v1', name: 'Deep work', kind: 'list', query: 'p1', panels: [], pinned: true, position: 1, created_at: 0, deleted_at: null, _clock: {} } as unknown as View
@@ -14,9 +14,9 @@ afterEach(() => { document.body.innerHTML = '' })
 
 async function itemsFrom(ui: React.ReactNode): Promise<string[]> {
   const r = await render(ui)
-  await flush(30)
+  await waitFor(() => !!r.container.querySelector('button[aria-label="Menu for view Deep work"]'), 'the view menu button')
   await click(r.container.querySelector('button[aria-label="Menu for view Deep work"]')!)
-  await flush(30)
+  await waitFor(() => document.querySelectorAll('[data-menu-label]').length > 0, 'the menu')
   const labels = [...document.querySelectorAll('[data-menu-label]')].map((e) => e.getAttribute('data-menu-label')!)
   await r.unmount()
   document.body.innerHTML = ''

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, render, mockFetch, noPublicLinks } from '../ui/test-utils'
+import { click, flush, render, mockFetch, noPublicLinks, waitFor } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 
 // The project header asks the server for its public links.
@@ -29,10 +29,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 /** The page's children before the one holding the first task row. */
 function chromeBeforeFirstTask(container: HTMLElement): Element[] {

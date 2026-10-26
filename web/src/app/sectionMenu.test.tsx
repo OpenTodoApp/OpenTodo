@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
 import { createSection, setSectionStyle } from '../lib/sections'
 import { loadCatalogue } from '../ui'
-import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
+import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { SectionHeader, sectionMenuGroups } from './Sections'
 
 beforeEach(async () => { await db.delete(); await db.open() })
@@ -25,14 +25,14 @@ describe('section menu', () => {
     const section = (await db.sections.get(id))!
     const r = await render(<SectionHeader section={section} count={2} layout="list" editable first last={false} />)
     await click(r.container.querySelector('button[aria-label="Section menu for Doing"]')!)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-menu-label="Delete section…"]'), 'the section menu')
     const del = [...document.querySelectorAll('[data-menu-label]')].find((e) => e.getAttribute('data-menu-label') === 'Delete section…') as HTMLElement
     await click(del)
-    await flush(30)
+    await waitFor(() => !!document.querySelector('[role="alertdialog"]'), 'the confirmation')
     const dialog = document.querySelector('[role="alertdialog"]')!
     expect(dialog.textContent).toContain('Its 2 open tasks move to “No section”')
     await click([...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Cancel')!)
-    await flush(20)
+    await waitFor(() => document.querySelector('[role="alertdialog"]') === null, 'the confirmation closed')
     expect((await db.sections.get(id))?.deleted_at ?? null).toBeNull()
     await r.unmount()
   })
@@ -53,24 +53,24 @@ describe('section style', () => {
     const r = await render(<SectionHeader section={(await db.sections.get(id))!} count={0} layout="list" editable first last={false} />)
     const trigger = r.container.querySelector<HTMLButtonElement>('button[aria-label="Section menu for Doing"]')!
     await click(trigger)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-menu-label="Icon…"]'), 'the section menu')
     await click([...document.querySelectorAll('[data-menu-label]')].find((e) => e.getAttribute('data-menu-label') === 'Icon…') as HTMLElement)
     await waitFor(() => document.querySelector('[data-icon-option="rocket"]') !== null, 'icon picker')
     const input = document.querySelector<HTMLInputElement>('[data-icon-picker] input[role="combobox"]')!
     await type(input, 'rocket')
-    await flush(10)
+    await waitFor(() => !!document.querySelector('[data-icon-option="rocket"][data-active]'), 'rocket active')
     await key(input, 'Enter')
     await waitFor(async () => (await db.sections.get(id))?.icon === 'rocket', 'icon written')
-    await flush(30)
+    await waitFor(() => document.activeElement === trigger, 'focus back on the trigger')
     expect(document.activeElement).toBe(trigger)
 
     // The heading shows the icon before the title, and a colour tints it.
     await r.rerender(<SectionHeader section={(await db.sections.get(id))!} count={0} layout="list" editable first last={false} />)
     expect(r.container.querySelector('[data-section-mark="icon"] svg[data-icon="rocket"]')).not.toBeNull()
     await click(trigger)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-menu-label="Colour…"]'), 'the section menu')
     await click([...document.querySelectorAll('[data-menu-label]')].find((e) => e.getAttribute('data-menu-label') === 'Colour…') as HTMLElement)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-section-colours]'), 'the colours')
     await click(document.querySelector('[data-section-colours] [aria-label="Colour amber"], [data-section-colours] [aria-label="Colour orange"]')!)
     await waitFor(async () => (await db.sections.get(id))?.color === '#f97316', 'colour written')
     await r.rerender(<SectionHeader section={(await db.sections.get(id))!} count={0} layout="list" editable first last={false} />)

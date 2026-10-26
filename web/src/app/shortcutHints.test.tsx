@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { User } from '../lib/types'
-import { flush, render } from '../ui/test-utils'
+import { flush, render, waitFor } from '../ui/test-utils'
 import { QuickAdd } from './QuickAdd'
 import { Kbd } from './shortcuts/Kbd'
 import { HINTS_KEY, setShortcutHints, shortcutHintsOn } from './shortcuts/hints'
@@ -31,7 +31,7 @@ describe('hints off (the default)', () => {
 
   it('the sidebar destinations carry no key badges', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await flush(50)
+    await waitFor(() => !!r.container.querySelector('[data-destination="inbox"]'), 'the destinations')
     expect(r.container.querySelector('[data-go-hint]')).toBeNull()
     expect(r.container.querySelector('nav .ui-kbd, nav kbd')).toBeNull()
     await r.unmount()
@@ -42,7 +42,7 @@ describe('hints on', () => {
   it('quick add shows its q again and the destinations show their g keys', async () => {
     setShortcutHints(true)
     const r = await render(<><QuickAdd placeholder="Add a task" onAdd={async () => {}} /><Sidebar route={{ view: 'inbox' }} user={user} /></>)
-    await flush(50)
+    await waitFor(() => r.container.querySelectorAll('[data-go-hint]').length > 0 && r.container.querySelector('[data-quick-add-hint]')?.textContent === 'q', 'the hints')
     expect(r.container.querySelector('[data-quick-add-hint]')?.textContent).toBe('q')
     const hints = [...r.container.querySelectorAll('[data-go-hint]')].map((k) => k.textContent)
     expect(hints).toContain('g i')

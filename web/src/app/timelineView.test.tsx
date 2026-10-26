@@ -8,6 +8,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { completeTask, createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
+import type { Task } from '../lib/types'
 import { loadViewMode, nextViewMode, saveViewMode } from '../lib/sections'
 import { flush, key, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
@@ -51,7 +52,7 @@ describe('layout cycle', () => {
     const p = await createProject({ name: 'P' })
     await saveViewMode(p, 'board')
     const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
-    await flush(80)
+    await waitFor(() => r.container.querySelector('[role="group"][aria-label="Project layout"] [aria-pressed="true"]')?.textContent === 'Board', 'the board')
     await key(document.body, 'v')
     await waitFor(() => r.container.querySelector('[data-timeline]') !== null)
     await key(document.body, 'v')
@@ -154,23 +155,23 @@ describe('timeline', () => {
     const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
     await waitFor(() => r.container.querySelector(`[data-bar="${id}"]`) !== null)
     const col = (d: string) => r.container.querySelector(`[data-drop-target="tl:${d}"]`)!
-    const drag = async (el: Element, to: string, fromX: number) => {
+    const drag = async (el: Element, to: string, fromX: number, done: (t: Task) => boolean) => {
       document.elementFromPoint = () => col(to)
       await act(async () => {
         el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: fromX, clientY: 5 }))
         window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: fromX + 80, clientY: 5 }))
         window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType: 'mouse', clientX: fromX + 80, clientY: 5 }))
       })
-      await flush(50)
+      await waitFor(async () => done((await db.tasks.get(id))!), 'the drop written')
     }
     // happy-dom lays nothing out: the axis starts at x = 0, so x = 32 * n is day n of the axis.
     const axisStart = '2026-10-04'
     const dayX = (d: string) => (Math.round((Date.parse(d) - Date.parse(axisStart)) / 86400000)) * 32 + 1
-    await drag(r.container.querySelector(`[data-bar="${id}"]`)!, '2026-11-12', dayX('2026-11-10'))
+    await drag(r.container.querySelector(`[data-bar="${id}"]`)!, '2026-11-12', dayX('2026-11-10'), (t) => t.due?.date === '2026-11-12')
     let t = (await db.tasks.get(id))!
     expect(t.start).toBe('2026-11-05')
     expect(t.due).toEqual({ date: '2026-11-12', time: '09:00' })
-    await drag(r.container.querySelector(`[data-bar="${id}"] [data-bar-edge="end"]`)!, '2026-11-16', dayX('2026-11-12'))
+    await drag(r.container.querySelector(`[data-bar="${id}"] [data-bar-edge="end"]`)!, '2026-11-16', dayX('2026-11-12'), (t) => t.deadline === '2026-11-16')
     t = (await db.tasks.get(id))!
     expect(t.deadline).toBe('2026-11-16')
     expect(t.due).toEqual({ date: '2026-11-12', time: '09:00' })
@@ -201,6 +202,7 @@ describe('timeline', () => {
     expect(r.container.textContent).toContain('You can view this project but not change dates.')
     await key(document.body, 'j')
     await key(document.body, 'ArrowRight')
+    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a viewer's key writes nothing, so there is no signal to wait for; give a wrong write time to land
     await flush(50)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-10' })
     await r.unmount()
