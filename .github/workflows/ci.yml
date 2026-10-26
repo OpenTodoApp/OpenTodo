@@ -221,9 +221,12 @@ jobs:
       - run: npm ci --no-audit --no-fund
         working-directory: web
       - name: Install Playwright with ${{ matrix.name }}
+        env:
+          BROWSERS: ${{ matrix.browsers }}
         run: |
           npm i -g playwright@1.56.1
-          playwright install --with-deps ${{ matrix.browsers }}
+          # Word splitting on purpose: one argument per browser.
+          playwright install --with-deps $BROWSERS
       - name: Run the layout check against a fresh server
         if: ${{ matrix.widths }}
         env:
@@ -309,12 +312,15 @@ jobs:
           path: bin-linux
       - name: Build the bundle
         id: bundle
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           case "$GITHUB_REF" in
             refs/tags/v*) version="$GITHUB_REF_NAME" ;;
             *) version="main-$(git rev-parse --short HEAD)" ;;
           esac
-          [ "$GITHUB_EVENT_NAME" = pull_request ] && version="pr${{ github.event.pull_request.number }}-$(git rev-parse --short ${{ github.event.pull_request.head.sha }})"
+          [ "$GITHUB_EVENT_NAME" = pull_request ] && version="pr${PR_NUMBER}-$(git rev-parse --short "$PR_HEAD_SHA")"
           bin=""
           if [ -f bin-linux/opentodo-linux-amd64 ]; then chmod +x bin-linux/opentodo-linux-amd64; bin="--bin bin-linux/opentodo-linux-amd64"; fi
           node scripts/site-bundle.mjs --version "$version" $bin
@@ -382,7 +388,9 @@ jobs:
         working-directory: web
       - name: Visual regression
         working-directory: scripts/ui-check
-        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --shard=${{ matrix.shard }}/3
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --shard="$SHARD/3"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
@@ -416,8 +424,11 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
+          EXT: ${{ matrix.ext }}
           CGO_ENABLED: "0"
-        run: go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o dist/ot-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/ot
+        # The version comes from the environment (GITHUB_REF_NAME), never from an
+        # expression pasted into the script: a branch or tag name is not trusted text.
+        run: go build -trimpath -ldflags="-s -w -X main.version=${GITHUB_REF_NAME}" -o "dist/ot-${GOOS}-${GOARCH}${EXT}" ./cmd/ot
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: web-dist
@@ -426,8 +437,9 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
+          EXT: ${{ matrix.ext }}
           CGO_ENABLED: "0"
-        run: go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o dist/opentodo-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/opentodo
+        run: go build -trimpath -ldflags="-s -w -X main.version=${GITHUB_REF_NAME}" -o "dist/opentodo-${GOOS}-${GOARCH}${EXT}" ./cmd/opentodo
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: bin-${{ matrix.goos }}-${{ matrix.goarch }}
