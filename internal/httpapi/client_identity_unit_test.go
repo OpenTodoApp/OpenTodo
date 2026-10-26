@@ -57,7 +57,7 @@ func TestLimiterSweepsOutsideHit(t *testing.T) {
 func TestSetupCodeFromLog(t *testing.T) {
 	var buf bytes.Buffer
 	var srv *Server
-	e := newEnvWith(t, false, func(s *Server) {
+	e := newEnvWith(t, false, withSetupCode, func(s *Server) {
 		s.log = slog.New(slog.NewTextHandler(&buf, nil))
 		srv = s
 	})
@@ -79,10 +79,11 @@ func TestSetupCodeFromLog(t *testing.T) {
 	}
 }
 
-// TestNoSetupCodeWithToken: a configured setup token replaces the code.
+// TestNoSetupCodeWithToken: a configured setup token replaces the code, even
+// with OPENTODO_SETUP_CODE=required.
 func TestNoSetupCodeWithToken(t *testing.T) {
 	var buf bytes.Buffer
-	e := newEnvWith(t, false, func(s *Server) {
+	e := newEnvWith(t, false, withSetupCode, func(s *Server) {
 		s.auth.SetSetupToken(testSetupToken)
 		s.log = slog.New(slog.NewTextHandler(&buf, nil))
 	})
@@ -93,4 +94,25 @@ func TestNoSetupCodeWithToken(t *testing.T) {
 	if out["setupCodeRequired"] != false || out["setupTokenRequired"] != true {
 		t.Fatalf("status: %v", out)
 	}
+}
+
+// withSetupCode is OPENTODO_SETUP_CODE=required (auth-hardening D6).
+func withSetupCode(s *Server) { s.auth.SetSetupCodeRequired(true) }
+
+// TestSetupCodeOffByDefault (auth-hardening D6): without OPENTODO_SETUP_CODE
+// no code is printed, the status asks for none, a first registration from a
+// public address needs nothing, and the log says once who becomes the owner.
+func TestSetupCodeOffByDefault(t *testing.T) {
+	var buf bytes.Buffer
+	e := newEnvWith(t, false, func(s *Server) { s.log = slog.New(slog.NewTextHandler(&buf, nil)) })
+	if strings.Contains(buf.String(), "setup code on the setup screen") || strings.Count(buf.String(), "the first person to open this server becomes its owner") != 1 {
+		t.Fatalf("log: %s", buf.String())
+	}
+	remote := newClientAt(e, "203.0.113.9")
+	_, out := remote.do("GET", "/api/v1/auth/status", nil)
+	if out["setupRequired"] != true || out["setupCodeRequired"] != false || out["setupTokenRequired"] != false {
+		t.Fatalf("status: %v", out)
+	}
+	resp, out := remote.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "password": "correct horse battery"})
+	remote.mustStatus(resp, http.StatusCreated, out)
 }

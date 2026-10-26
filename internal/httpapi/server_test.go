@@ -34,6 +34,9 @@ type env struct {
 	// hooks and clock drive the webhook worker deterministically.
 	hooks *webhook.Service
 	clock *testClock
+	// server is the Server behind handler, when the env was built by newEnvWith;
+	// do waits for the work its handlers leave running.
+	server *Server
 	// now is the server's own clock (WithClock): real time until a test freezes it.
 	now *stepClock
 }
@@ -59,6 +62,8 @@ func newEnvWith(t *testing.T, allowSignup bool, opts ...Option) *env {
 	clock := &testClock{t: time.UnixMilli(1_760_000_000_000)}
 	hooks := webhook.New(db, syncSvc, webhook.Options{Version: "test", Log: log, Now: clock.Now, Rand: func() float64 { return 0.5 }})
 	syncSvc.SetObserver(hooks.Observe)
+	var server *Server
+	opts = append(opts, func(s *Server) { server = s })
 	now := &stepClock{}
 	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), syncSvc, nil, log, "test", append([]Option{WithWebhooks(hooks), WithClock(now.Now)}, opts...)...)
 	srv := httptest.NewServer(h)
@@ -66,7 +71,7 @@ func newEnvWith(t *testing.T, allowSignup bool, opts ...Option) *env {
 	// Open event streams would otherwise hold srv.Close; mirror main.go's shutdown hook.
 	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
-	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc, hooks: hooks, clock: clock, now: now}
+	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc, hooks: hooks, clock: clock, server: server, now: now}
 }
 
 // stepClock is the server's clock in tests: time.Now until Freeze, then a fixed
@@ -140,6 +145,9 @@ func (e *env) do(method, path string, body any, headers ...string) (*http.Respon
 		e.t.Fatal(err)
 	}
 	defer resp.Body.Close()
+	if e.server != nil {
+		e.server.background.Wait()
+	}
 	var out map[string]any
 	raw, _ := io.ReadAll(resp.Body)
 	if len(raw) > 0 {
@@ -204,7 +212,7 @@ func TestFirstRunSetupThenSignupClosed(t *testing.T) {
 
 func newClientFor(e *env) *env {
 	jar, _ := cookiejar.New(nil)
-	return &env{t: e.t, srv: e.srv, client: &http.Client{Jar: jar}, db: e.db}
+	return &env{t: e.t, srv: e.srv, client: &http.Client{Jar: jar}, db: e.db, server: e.server}
 }
 
 // newClientAt is newClientFor with its own client address for rate limiting.

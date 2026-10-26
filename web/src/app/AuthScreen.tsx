@@ -34,7 +34,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   // First-run setup guarded by OPENTODO_SETUP_TOKEN (OpenSpec `owner-bootstrap`).
-  // Without a token, setup from outside the local network asks for the code the
+  // Without a token, setup from another machine asks for the code the
   // server printed in its log, in the same field (trusted-client-identity).
   const needsSetupCode = !!status.setupRequired && !status.setupTokenRequired && !!status.setupCodeRequired && !invite
   const needsSetupToken = (!!status.setupRequired && !!status.setupTokenRequired && !invite) || needsSetupCode
@@ -289,7 +289,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
                 autoComplete="off" spellCheck={false} aria-describedby="setup-token-help" />
               <span id="setup-token-help" className="mt-1 block text-meta text-muted">
                 {needsSetupCode
-                  ? t.rich('You are setting up this server from outside its local network, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.', { command: <code>docker logs opentodo</code> })
+                  ? t.rich('You are setting up this server from another machine, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.', { command: <code>docker logs opentodo</code> })
                   : status.hosted
                   ? t('Your provider sent this token with the address of your new server.')
                   : t.rich('This server asks for the token its operator configured. Find it in your hosting panel, for example Coolify, this service, Environment Variables, {variable}.', { variable: <code>OPENTODO_SETUP_TOKEN</code> })}

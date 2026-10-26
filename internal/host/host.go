@@ -136,6 +136,9 @@ func (h *Host) tenantConfig(rec Record) (config.Config, config.Limits) {
 	c.DataDir = h.TenantDir(rec.Name)
 	c.BaseURL = h.hc.TenantURL(rec.Name)
 	c.SetupToken = rec.setupToken
+	// A tenant's first account needs its setup token; the code stays on as the
+	// fallback for a record without one, whatever the process says.
+	c.SetupCodeRequired = true
 	c.Warnings = nil
 	lim := h.hc.Limits.Merge(rec.Limits)
 	if lim.ImportMB > 0 {
