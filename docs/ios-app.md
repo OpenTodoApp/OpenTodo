@@ -19,14 +19,14 @@ On first start the app asks for your server's address, the one you open in the b
 
 - **No answer**: the first start needs the network. Check the address and the connection.
 - **Not an OpenTodo server**: the address answers, but not like OpenTodo. Check for typos.
-- **Certificate not trusted**: the phone doesn't trust the server's certificate, and the app does not offer to ignore that.
+- **Certificate not trusted**: the phone doesn't trust the server's certificate. The app uses iOS's own check and does not offer to skip it; a private authority you installed on the phone is fine.
 - **Must be reached over https**: the app suggests the `https` address; tap it and try again.
 
-To point the app at another server later, long-press its icon and choose **Change server**; that also forgets the cached web app and its data.
+To point the app at another server later, long-press its icon and choose **Change server**. It asks first, because it also forgets the cached web app and its data, including changes that have not reached the server yet.
 
 ## Reminders
 
-Your server's reminders arrive as notifications, scheduled on the phone from the web app's own data: the next seven days, with **Snooze 10 min** and **Dismiss** on the notification. No push service is involved and nothing leaves the phone.
+Your server's reminders arrive as notifications, scheduled on the phone from the web app's own data: the next seven days, with **Snooze 10 min** and **Dismiss** on the notification. Both open the app, which then moves the reminder, because a local notification cannot change your tasks by itself. No push service is involved and nothing leaves the phone.
 
 Two limits come from iOS. A WKWebView cannot receive web push, so unlike the [installed web app](push-notifications.md) the app has no immediate push; it refreshes the schedule whenever you open it, and iOS lets it refresh in the background about hourly when it decides to. Reminders that change while the app is closed can therefore arrive late, and notifications further away than seven days are not scheduled at all. If you want push per reminder, use the installed web app on iOS 16.4 or later; both can be on the same phone, and they share the same account.
 
