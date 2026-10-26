@@ -78,16 +78,17 @@ Certificates: `res/xml/network_security_config.xml` trusts the system and the us
 | File | What it does |
 | --- | --- |
 | `OpenTodo/SetupView`, `ServerAddress`, `HealthCheck` | first-run screen with the same address rules as Android (`https`, or `http` only for local addresses); `GET /healthz` names the failure (no answer, not OpenTodo, untrusted certificate, must be https) |
-| `OpenTodo/ShellView` | the `WKWebView` on the configured origin, origin-locked navigation, other origins and `mailto:`/`tel:` in the system browser, server-trust challenges cancelled (never bypassed), reload after a WebContent crash, an offline screen until the first page loads |
+| `OpenTodo/ShellView` | the `WKWebView` on the configured origin, origin-locked navigation, other origins and `mailto:`/`tel:` in the system browser (only the schemes the bridge allows), the system's own certificate check (no bypass, and a private authority the user installed works), reload after a WebContent crash, pull to refresh, an offline screen until the first page loads |
 | `OpenTodo/Bridge` | the bridge: a document-start `WKUserScript` that defines `window.opentodoShell` on the configured origin, and one `WKScriptMessageHandlerWithReply` that checks the frame's origin and main-frame flag again |
-| `OpenTodo/Reminders` | the handed-over schedule: `UNUserNotificationCenter`, at most 64 pending notifications, Snooze 10 min and Dismiss, `opentodo://reminder/…` back into the web app |
+| `OpenTodo/Reminders`, `OpenTodo/Notifications` | the handed-over schedule: `UNUserNotificationCenter`, at most 64 pending notifications, Snooze 10 min and Dismiss as foreground actions, a tap or an action carrying `opentodo://task/…` or `opentodo://reminder/…?action=` into the web app; notifications are shown while the app is in front |
+| `OpenTodo/Version` | the app version from `CFBundleShortVersionString`, short form `major·10000 + minor·100 + patch` for the store metadata |
 | `OpenTodo/BackgroundRefresh` | a `BGAppRefreshTask` (about hourly, at iOS's discretion) that runs the web app in an offscreen `WKWebView` for at most 30 seconds to refresh the schedule |
 | `OpenTodo/WidgetPublication`, `OpenTodoWidget/TodayWidget` | the Today widget (WidgetKit, medium): rows from the last publication, counts only while locked, no request of its own |
 | `OpenTodoShare/ShareViewController` | the share sheet: text, links and files (10 files, 20 MB each, 25 MB in all) through the App Group, then `opentodo://share?files=1` and the `opentodo-files` message into the capture screen |
 | `OpenTodo/BiometricKeyStore` | the account key in the Keychain under `kSecAccessControlBiometryCurrentSet`, so an added face or finger invalidates it |
 | `OpenTodo/AppBoundDomains` | reads `WKAppBoundDomains` and turns `limitsNavigationsToAppBoundDomains` on only for those origins |
 
-Storage, the schedule, the widget data and the key are in the app's container and the App Group; nothing is backed up to iCloud unless the phone's own backup is on, and `Change server` (long-press the icon) deletes all of it.
+Storage, the schedule, the widget data and the key are in the app's container and the App Group; nothing is backed up to iCloud unless the phone's own backup is on, and `Change server` (long-press the icon) asks once and then deletes all of it.
 
 ## The bridge, version 1
 
@@ -111,7 +112,7 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 
 The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders` answers `"granted"` or `"denied"` (iOS has no exact-alarm permission, so never `"exact-denied"`), `widgets`, `share`, `links` and — with Face ID or Touch ID enrolled — `biometric`.
 
-Addresses the shell opens in the web app: `/?task=<id>` (a notification tap), `/?reminder=<id>&action=snooze|dismiss` (notification actions, in the hidden web view), `/?add=` (the quick-add widget), `/today` (the Today widget's header) and `/share?title=…&text=…&url=…[&files=1]` (shares; files follow as the `opentodo-files` message, the same one the browser extension posts, at most 10 files, 20 MB each, 25 MB in all).
+Addresses the shell opens in the web app: `/?task=<id>` (a notification tap or the widget's row), `/?reminder=<id>&action=snooze|dismiss` (a notification action), `/?add=<text>`, `/today` and `/share?title=…&text=…&url=…[&files=1]` (shares; files follow as the `opentodo-files` message, the same one the browser extension posts — the extension's own per-file check is `ShareMap`, at most 10 files, 20 MB each, 25 MB in all). The same addresses arrive as links: `opentodo://task/<id>`, `opentodo://reminder/<id>?action=snooze|dismiss`, `opentodo://add?text=…` and `opentodo://share`. Every value is percent-encoded when it goes into the path, and only `snooze` and `dismiss` survive as actions.
 
 ## Testing
 
