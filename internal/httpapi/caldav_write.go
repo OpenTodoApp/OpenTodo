@@ -35,11 +35,7 @@ func (d *davRequest) op(entity, id, field string, value json.RawMessage, ts int6
 // apply runs a batch and wakes every device; it maps refusals to responses and
 // reports whether the caller may continue.
 func (d *davRequest) apply(ops []opsync.Op) (opsync.ApplyResult, error) {
-	res, err := d.s.sync.ApplyStrict(d.ctx(), d.user.ID, ops)
-	if err == nil && res.Applied > 0 {
-		d.s.sync.NotifyApplied(res, d.device)
-	}
-	return res, err
+	return d.s.applyAs(d.ctx(), d.user.ID, d.device, ops)
 }
 
 // writeError answers a failed apply: a refused op is a 403 need-privileges.

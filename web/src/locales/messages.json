@@ -15289,6 +15289,9 @@
   "You have reached the limit: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "You have used this month’s assistant allowance.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "You lose access to the projects shared with you here.": [
     "web/src/lib/settingsCopy.ts"
   ],

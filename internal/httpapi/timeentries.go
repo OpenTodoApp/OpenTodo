@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -501,26 +500,11 @@ func (s *Server) handleDeleteTimeEntry(w http.ResponseWriter, r *http.Request) {
 func (s *Server) writeTimeEntry(w http.ResponseWriter, r *http.Request, id string, ops []opsync.Op, status int) {
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
-	var res opsync.ApplyResult
-	var err error
 	if len(ops) > 0 { // nil: an idempotent replay answers with the stored entry
-		res, err = s.sync.ApplyStrict(ctx, uid, ops)
-	}
-	if err != nil {
-		var rej *opsync.RejectedError
-		switch {
-		case writeLimited(w, err):
-		case errors.Is(err, opsync.ErrInvalidOp):
-			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
-		case errors.As(err, &rej):
-			writeError(w, http.StatusForbidden, "forbidden", "viewers cannot track time; only the person who tracked an entry can change it, and they, project admins and the owner can delete it")
-		default:
-			s.internal(w, err)
+		if _, ok := s.applyREST(w, ctx, uid, ops,
+			"viewers cannot track time; only the person who tracked an entry can change it, and they, project admins and the owner can delete it", nil); !ok {
+			return
 		}
-		return
-	}
-	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, serverDevice)
 	}
 	if status == http.StatusNoContent {
 		w.WriteHeader(status)

@@ -65,8 +65,9 @@ func (s *Server) channelError(w http.ResponseWriter, err error) {
 	case errors.Is(err, channels.ErrLimit):
 		writeError(w, http.StatusConflict, "limit_reached", fmt.Sprintf("at most %d notification channels per account", channels.MaxPerUser))
 	case errors.Is(err, channels.ErrPrivateTarget):
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": map[string]string{"code": "private_target", "field": "url",
-			"message": "url: the address resolves to a private, loopback or link-local address; the server owner can allow private network targets in Settings → Integrations → Webhooks"}})
+		writeErrorWith(w, http.StatusBadRequest, "private_target",
+			"url: the address resolves to a private, loopback or link-local address; the server owner can allow private network targets in Settings → Integrations → Webhooks",
+			map[string]any{"field": "url"})
 	case errors.Is(err, channels.ErrInvalid):
 		msg := strings.TrimPrefix(err.Error(), channels.ErrInvalid.Error()+": ")
 		field, text, _ := strings.Cut(msg, ": ")

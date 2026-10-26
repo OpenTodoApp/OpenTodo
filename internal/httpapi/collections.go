@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"strings"
 
@@ -555,6 +556,33 @@ func (s *Server) writeFieldsAt(w http.ResponseWriter, r *http.Request, entity, i
 	s.writeOps(w, r, entity, id, append(fieldOps(entity, id, body, ts), extra...), status, nil)
 }
 
+// collectionRefusals explain a refused collection write.
+var collectionRefusals = refusals{
+	opsync.ReasonScopeChange: refuse(http.StatusBadRequest, "scope_change",
+		"task.project_id: the target project is shared differently; create a copy there and delete this task instead"),
+	opsync.ReasonCycle: func(w http.ResponseWriter, rej *opsync.RejectedError) {
+		writeError(w, http.StatusBadRequest, "invalid_input",
+			fmt.Sprintf("task.blocked_by: %q already waits for this task, so this would make it wait for itself", rej.Detail))
+	},
+	opsync.ReasonNotInScope: func(w http.ResponseWriter, rej *opsync.RejectedError) {
+		writeError(w, http.StatusBadRequest, "invalid_input",
+			fmt.Sprintf("task.blocked_by: %q is not in the same project sharing as this task (blockers must be shared the same way)", rej.Detail))
+	},
+	opsync.ReasonNotAMember: refuse(http.StatusBadRequest, "not_a_member",
+		"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)"),
+	otherRefusal: func(w http.ResponseWriter, rej *opsync.RejectedError) {
+		writeError(w, http.StatusForbidden, "forbidden", "your role on this project does not allow changing "+rej.Op.Entity+"."+rej.Op.Field)
+	},
+}
+
+// keyedRefusals are collectionRefusals for an Idempotency-Key create: the
+// derived id is taken by an entity this user may not write.
+var keyedRefusals = func() refusals {
+	r := maps.Clone(collectionRefusals)
+	r[opsync.ReasonForbidden] = func(w http.ResponseWriter, _ *opsync.RejectedError) { writeIdempotencyConflict(w, "") }
+	return r
+}()
+
 // writeOps applies a REST write's ops and answers with entity/id. keyedBody is
 // the planned body of an Idempotency-Key create (nil otherwise): a concurrent
 // duplicate that applied nothing new answers as a replay or a conflict, and a
@@ -563,39 +591,15 @@ func (s *Server) writeOps(w http.ResponseWriter, r *http.Request, entity, id str
 	uid := userFrom(r.Context()).ID
 	keyed := keyedBody != nil
 	// REST writes are all or nothing: one refused field refuses the request.
-	res, err := s.sync.ApplyStrict(r.Context(), uid, ops)
-	if err != nil {
-		var rej *opsync.RejectedError
-		switch {
-		case keyed && errors.As(err, &rej) && rej.Reason == opsync.ReasonForbidden:
-			// The derived id is taken by an entity this user may not write.
-			writeIdempotencyConflict(w, "")
-		case writeLimited(w, err):
-		case errors.Is(err, opsync.ErrInvalidOp):
-			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
-		case errors.As(err, &rej) && rej.Reason == opsync.ReasonScopeChange:
-			writeError(w, http.StatusBadRequest, "scope_change",
-				"task.project_id: the target project is shared differently; create a copy there and delete this task instead")
-		case errors.As(err, &rej) && rej.Reason == opsync.ReasonCycle:
-			writeError(w, http.StatusBadRequest, "invalid_input",
-				fmt.Sprintf("task.blocked_by: %q already waits for this task, so this would make it wait for itself", rej.Detail))
-		case errors.As(err, &rej) && rej.Reason == opsync.ReasonNotInScope:
-			writeError(w, http.StatusBadRequest, "invalid_input",
-				fmt.Sprintf("task.blocked_by: %q is not in the same project sharing as this task (blockers must be shared the same way)", rej.Detail))
-		case errors.As(err, &rej) && rej.Reason == opsync.ReasonNotAMember:
-			writeError(w, http.StatusBadRequest, "not_a_member",
-				"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)")
-		case errors.As(err, &rej):
-			writeError(w, http.StatusForbidden, "forbidden", "your role on this project does not allow changing "+rej.Op.Entity+"."+rej.Op.Field)
-		default:
-			s.internal(w, err)
-		}
+	reasons := collectionRefusals
+	if keyed {
+		reasons = keyedRefusals
+	}
+	res, ok := s.applyREST(w, r.Context(), uid, ops, "", reasons)
+	if !ok {
 		return
 	}
-	if res.Applied > 0 {
-		// REST writes come from no browser device, so every connected device is woken.
-		s.sync.NotifyApplied(res, serverDevice)
-	} else if keyed {
+	if res.Applied == 0 && keyed {
 		// A concurrent request with the same key applied first.
 		state, err := s.replayState(r.Context(), uid, entity, id, keyedBody, func(f string) string { return idemOpID(id, f) })
 		if err != nil {
