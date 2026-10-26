@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.view.View
 import android.webkit.WebView
@@ -11,14 +12,11 @@ import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.espresso.intent.Intents
-import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import org.hamcrest.Matchers.allOf
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -92,9 +90,24 @@ class BridgeTest {
         try {
             intending(hasAction(Intent.ACTION_VIEW)).respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
             val (_, web) = open()
-            web.js("document.getElementById('out').click(); 0")
-            waitUntil("the browser intent") {
-                try { intended(allOf(hasAction(Intent.ACTION_VIEW), hasData("https://example.org/outside"))); true } catch (e: Throwable) { false }
+            val outside = Uri.parse("https://example.org/outside")
+            fun browserOpened(): Boolean {
+                var seen = false
+                InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                    seen = Intents.getIntents().any { it.action == Intent.ACTION_VIEW && it.data == outside }
+                }
+                return seen
+            }
+            // A scripted click can be lost while a slow emulator still settles the page (a main run
+            // timed out here once), and intended() fails when the intent was recorded twice: click
+            // again every 5 seconds until one browser intent is there, however many there are.
+            var clickedAt = 0L
+            waitUntil("the browser intent", timeoutMs = 30_000) {
+                if (System.currentTimeMillis() - clickedAt > 5_000) {
+                    web.js("document.getElementById('out').click(); 0")
+                    clickedAt = System.currentTimeMillis()
+                }
+                browserOpened()
             }
             assertEquals("\"/\"", web.js("location.pathname"))
         } finally {
