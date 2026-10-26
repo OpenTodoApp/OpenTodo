@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/subtle"
 	"database/sql"
 	"errors"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Second factor (OpenSpec change `mfa-totp`): enrolment, recovery codes, the
@@ -200,7 +200,7 @@ func (s *Service) CreateSessionMFA(ctx context.Context, userID, userAgent string
 	}
 	h := hashToken(secret)
 	if _, err := tx.ExecContext(ctx, "INSERT INTO sessions(token_hash,user_id,created_at,expires_at,user_agent) VALUES(?,?,?,?,?)",
-		h, userID, now.UnixMilli(), exp.UnixMilli(), truncate(userAgent, 200)); err != nil {
+		h, userID, now.UnixMilli(), exp.UnixMilli(), textutil.Truncate(userAgent, 200)); err != nil {
 		return "", time.Time{}, err
 	}
 	var mfaAt any
@@ -560,11 +560,7 @@ func (s *Service) replaceRecoveryCodes(ctx context.Context, tx *sql.Tx, userID s
 
 // newRecoveryCode returns RecoveryCodeLength random base32 characters (50 bits).
 func newRecoveryCode() string {
-	b := make([]byte, 8)
-	if _, err := rand.Read(b); err != nil {
-		panic("auth: crypto/rand failed: " + err.Error())
-	}
-	return b32.EncodeToString(b)[:RecoveryCodeLength]
+	return b32.EncodeToString(ids.Bytes(8))[:RecoveryCodeLength]
 }
 
 func normalizeRecoveryCode(c string) string { return strings.ToUpper(normalizeCode(c)) }
@@ -746,7 +742,7 @@ func (s *Service) CreateTrustedDevice(ctx context.Context, userID, userAgent str
 	now := s.clock()
 	exp := now.Add(TrustedDeviceTTL)
 	_, err := s.db.ExecContext(ctx, "INSERT INTO trusted_devices(id,user_id,token_hash,user_agent,created_at,expires_at) VALUES(?,?,?,?,?,?)",
-		ids.New(), userID, hashToken(secret), truncate(userAgent, 200), now.UnixMilli(), exp.UnixMilli())
+		ids.New(), userID, hashToken(secret), textutil.Truncate(userAgent, 200), now.UnixMilli(), exp.UnixMilli())
 	return secret, exp, err
 }
 

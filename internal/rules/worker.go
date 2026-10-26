@@ -108,10 +108,10 @@ func (e *Engine) process(ctx context.Context, ev Event) error {
 			continue
 		}
 		t, ok := w.tasks[ev.TaskID]
-		if !ok || !isNull(t["deleted_at"]) {
+		if !ok || !opsync.IsNull(t["deleted_at"]) {
 			continue
 		}
-		if ev.Kind != ruleval.TaskCompleted && !isNull(t["completed_at"]) {
+		if ev.Kind != ruleval.TaskCompleted && !opsync.IsNull(t["completed_at"]) {
 			continue
 		}
 		if ev.Kind == ruleval.TaskMoved && !movedInto(r.Trigger, t) {
@@ -162,7 +162,7 @@ func movedInto(tr ruleval.Trigger, t map[string]json.RawMessage) bool {
 func (e *Engine) sweep(ctx context.Context, w *world, r *rule, ev Event) {
 	var due []map[string]json.RawMessage
 	for _, t := range w.tasks {
-		if isNull(t["deleted_at"]) && isNull(t["completed_at"]) && e.matches(ctx, w, r, t) {
+		if opsync.IsNull(t["deleted_at"]) && opsync.IsNull(t["completed_at"]) && e.matches(ctx, w, r, t) {
 			due = append(due, t)
 		}
 	}

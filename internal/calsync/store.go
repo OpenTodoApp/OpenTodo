@@ -66,13 +66,6 @@ func jsonText(v any) string {
 	return string(b)
 }
 
-func boolInt(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
-}
-
 func (s *Store) many(ctx context.Context, q string, args ...any) ([]Connection, error) {
 	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
@@ -237,11 +230,11 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Connec
 		due = true
 	}
 	if p.IncludeDateOnly != nil {
-		set, args = append(set, "include_date_only = ?"), append(args, boolInt(*p.IncludeDateOnly))
+		set, args = append(set, "include_date_only = ?"), append(args, *p.IncludeDateOnly)
 		due = true
 	}
 	if p.Enabled != nil {
-		set, args = append(set, "enabled = ?"), append(args, boolInt(*p.Enabled))
+		set, args = append(set, "enabled = ?"), append(args, *p.Enabled)
 		if *p.Enabled && !cur.Enabled {
 			due = true
 			if cur.StoppedReason != "" && cur.StoppedReason != ReasonUnauthorized && cur.StoppedReason != ReasonSecretMissing {

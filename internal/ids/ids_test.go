@@ -40,3 +40,15 @@ func TestNameIDDeterministic(t *testing.T) {
 		t.Fatal("completion and detach ids must differ")
 	}
 }
+
+func TestRandomShapes(t *testing.T) {
+	if b := Bytes(32); len(b) != 32 || string(b) == string(Bytes(32)) {
+		t.Fatal("Bytes")
+	}
+	if h := Hex(12); !regexp.MustCompile(`^[0-9a-f]{24}$`).MatchString(h) || h == Hex(12) {
+		t.Fatalf("Hex(12) = %q", h)
+	}
+	if s := Secret(24); !regexp.MustCompile(`^[A-Za-z0-9_-]{32}$`).MatchString(s) || s == Secret(24) {
+		t.Fatalf("Secret(24) = %q", s)
+	}
+}

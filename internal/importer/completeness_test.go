@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // Tests for OpenSpec change import-completeness: sections, recurrence and
@@ -281,7 +283,7 @@ func TestUndoRemovesSectionsAndReminders(t *testing.T) {
 		t.Fatalf("undone sections are tombstones: %d", n)
 	}
 	mine := byTitle(h.list("task", false))["Mine"]
-	if !isNull(mine["section_id"]) {
+	if !opsync.IsNull(mine["section_id"]) {
 		t.Fatalf("own task still in an undone section: %v", mine)
 	}
 	// The file can be imported again after the undo.
@@ -397,19 +399,19 @@ func TestOwnExportRecurrenceAssigneeReminders(t *testing.T) {
 	if occ := get("task", "t1-occ"); str(occ, "series_id") != "t1" {
 		t.Fatalf("occurrence = %v", occ)
 	}
-	if t2 := get("task", "t2"); !isNull(t2["assignee_id"]) {
+	if t2 := get("task", "t2"); !opsync.IsNull(t2["assignee_id"]) {
 		t.Fatalf("t2 assignee = %s", t2["assignee_id"])
 	}
-	if s2 := get("section", "s2"); isNull(s2["deleted_at"]) {
+	if s2 := get("section", "s2"); opsync.IsNull(s2["deleted_at"]) {
 		t.Fatalf("section tombstone lost: %v", s2)
 	}
 	if r := get("reminder", "r-stale"); string(r["dismissed_at"]) != fmt.Sprint(now.UnixMilli()) {
 		t.Fatalf("stale reminder = %v", r)
 	}
-	if r := get("reminder", "r-delivered"); !isNull(r["dismissed_at"]) || string(r["delivered_at"]) != "1600000001000" {
+	if r := get("reminder", "r-delivered"); !opsync.IsNull(r["dismissed_at"]) || string(r["delivered_at"]) != "1600000001000" {
 		t.Fatalf("delivered reminder = %v", r)
 	}
-	if r := get("reminder", "r-relative"); string(r["offset_minutes"]) != "-15" || string(r["fire_at"]) != "1792390500000" || !isNull(r["dismissed_at"]) {
+	if r := get("reminder", "r-relative"); string(r["offset_minutes"]) != "-15" || string(r["fire_at"]) != "1792390500000" || !opsync.IsNull(r["dismissed_at"]) {
 		t.Fatalf("relative reminder = %v", r)
 	}
 	if v := get("view", "v2"); string(v["panels"]) != `["v1"]` {

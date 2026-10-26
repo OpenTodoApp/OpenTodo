@@ -437,7 +437,7 @@ func (s *Service) ownStoredFile(ctx context.Context, uid, id string, want blobs.
 	if err != nil {
 		return false, err
 	}
-	if row == nil || isNull(row["uploaded_at"]) || str(row, "sha256") != want.SHA256 {
+	if row == nil || opsync.IsNull(row["uploaded_at"]) || str(row, "sha256") != want.SHA256 {
 		return false, nil
 	}
 	var size int64
@@ -640,10 +640,10 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 			if kind != KindTask {
 				continue
 			}
-			if pid := str(e, "project_id"); pid != "" && created[KindProject][pid] && isNull(e["completed_at"]) {
+			if pid := str(e, "project_id"); pid != "" && created[KindProject][pid] && opsync.IsNull(e["completed_at"]) {
 				writes = append(writes, write{kind, eid, "project_id", json.RawMessage("null")})
 			}
-			if sid := str(e, "section_id"); sid != "" && created[KindSection][sid] && isNull(e["completed_at"]) {
+			if sid := str(e, "section_id"); sid != "" && created[KindSection][sid] && opsync.IsNull(e["completed_at"]) {
 				writes = append(writes, write{kind, eid, "section_id", json.RawMessage("null")})
 			}
 			var labels []string

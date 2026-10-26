@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/ruleval"
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // PlanContext is what planning one task needs besides the task row.
@@ -51,8 +52,6 @@ func raw(v any) json.RawMessage {
 
 var nullJSON = json.RawMessage("null")
 
-func isNull(r json.RawMessage) bool { return len(r) == 0 || string(r) == "null" }
-
 func strOf(r json.RawMessage) string {
 	var s string
 	_ = json.Unmarshal(r, &s)
@@ -72,7 +71,7 @@ type dueValue struct {
 }
 
 func dueOf(r json.RawMessage) *dueValue {
-	if isNull(r) {
+	if opsync.IsNull(r) {
 		return nil
 	}
 	var d dueValue
@@ -122,12 +121,12 @@ func Plan(a ruleval.Actions, task map[string]json.RawMessage, ctx PlanContext) P
 	planDue(a, cur, ctx, set)
 	if a.Start != nil {
 		if *a.Start == "someday" {
-			if strOf(cur["start"]) != "someday" || !isNull(cur["due"]) || string(cur["evening"]) == "true" {
+			if strOf(cur["start"]) != "someday" || !opsync.IsNull(cur["due"]) || string(cur["evening"]) == "true" {
 				set("start", raw("someday"))
 				set("due", nullJSON)
 				set("evening", raw(false))
 			}
-		} else if !isNull(cur["start"]) {
+		} else if !opsync.IsNull(cur["start"]) {
 			set("start", nullJSON)
 		}
 	}
@@ -146,10 +145,10 @@ func Plan(a ruleval.Actions, task map[string]json.RawMessage, ctx PlanContext) P
 		}
 	}
 	if a.State != nil {
-		if *a.State == "complete" && isNull(cur["completed_at"]) {
+		if *a.State == "complete" && opsync.IsNull(cur["completed_at"]) {
 			set("completed_at", raw(ctx.NowMs))
 			out.Completing = true
-		} else if *a.State == "reopen" && !isNull(cur["completed_at"]) {
+		} else if *a.State == "reopen" && !opsync.IsNull(cur["completed_at"]) {
 			set("completed_at", nullJSON)
 		}
 	}
@@ -209,9 +208,9 @@ func planDue(a ruleval.Actions, cur map[string]json.RawMessage, ctx PlanContext,
 		return
 	}
 	if a.Due.Word == "clear" {
-		if !isNull(cur["due"]) {
+		if !opsync.IsNull(cur["due"]) {
 			set("due", nullJSON)
-			if !isNull(cur["recurrence"]) {
+			if !opsync.IsNull(cur["recurrence"]) {
 				set("recurrence", nullJSON)
 			}
 		}
@@ -248,7 +247,7 @@ func planSection(s *ruleval.SectionAction, cur map[string]json.RawMessage, ctx P
 
 // sameJSON compares two values as JSON (key order and spacing ignored).
 func sameJSON(a, b json.RawMessage) bool {
-	if isNull(a) && isNull(b) {
+	if opsync.IsNull(a) && opsync.IsNull(b) {
 		return true
 	}
 	var x, y any

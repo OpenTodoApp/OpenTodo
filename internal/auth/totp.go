@@ -2,7 +2,6 @@ package auth
 
 import (
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha1"
 	"crypto/subtle"
 	"encoding/base32"
@@ -12,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/pixari/opentodo/internal/ids"
 )
 
 // Time-based one-time passwords (RFC 6238) with the standard library only
@@ -29,13 +30,7 @@ const (
 var b32 = base32.StdEncoding.WithPadding(base32.NoPadding)
 
 // newTOTPSecret returns a fresh random secret.
-func newTOTPSecret() []byte {
-	b := make([]byte, totpSecretSize)
-	if _, err := rand.Read(b); err != nil {
-		panic(fmt.Sprintf("auth: crypto/rand failed: %v", err))
-	}
-	return b
-}
+func newTOTPSecret() []byte { return ids.Bytes(totpSecretSize) }
 
 // encodeTOTPSecret renders a secret the way authenticator apps expect it:
 // unpadded upper-case base32.

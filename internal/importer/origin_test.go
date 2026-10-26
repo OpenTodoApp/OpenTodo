@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/origin"
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // Imported origins (OpenSpec change task-origin, data-import "Linear attributes"
@@ -111,7 +112,7 @@ func TestOwnExportRoundTripKeepsOrigins(t *testing.T) {
 			t.Fatalf("%s origin = %s (%v), want %s", id, e["origin"], err, want)
 		}
 	}
-	if e, _ := h.sync.Get(context.Background(), h.uid, "task", "t-plain"); e == nil || !isNull(e["origin"]) && e["origin"] != nil {
+	if e, _ := h.sync.Get(context.Background(), h.uid, "task", "t-plain"); e == nil || !opsync.IsNull(e["origin"]) && e["origin"] != nil {
 		t.Fatalf("plain origin = %s", e["origin"])
 	}
 }

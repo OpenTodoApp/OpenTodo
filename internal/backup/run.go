@@ -184,7 +184,7 @@ func (s *Service) backupTo(ctx context.Context, dest Destination, set Settings, 
 		}
 		f, err = os.CreateTemp(stageDir, localTempPrefix+name+"-*")
 	} else {
-		f, err = os.OpenFile(filepath.Join(stageDir, name+"."+randomHex(4)), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
+		f, err = os.OpenFile(filepath.Join(stageDir, name+"."+ids.Hex(4)), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("create archive: %w", err)

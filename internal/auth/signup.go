@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Verified open sign-up (OpenSpec `outgoing-email` D4): the account is created
@@ -61,7 +62,7 @@ func (s *Service) BeginSignup(ctx context.Context, email, name, password, lang s
 		return "", false, err
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO signup_verifications(id,token_hash,email,name,password_hash,lang,created_at,expires_at) VALUES(?,?,?,?,?,?,?,?)`,
-		ids.New(), hashToken(secret), email, truncate(strings.TrimSpace(name), 200), hash, lang, now.UnixMilli(), now.Add(SignupTTL).UnixMilli()); err != nil {
+		ids.New(), hashToken(secret), email, textutil.Truncate(strings.TrimSpace(name), 200), hash, lang, now.UnixMilli(), now.Add(SignupTTL).UnixMilli()); err != nil {
 		return "", false, err
 	}
 	return secret, false, tx.Commit()

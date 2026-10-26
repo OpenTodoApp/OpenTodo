@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // Custom fields (OpenSpec change custom-fields): an own export restores the
@@ -53,10 +55,10 @@ func TestOwnExportRoundTripKeepsFields(t *testing.T) {
 		}
 		return e
 	}
-	if f := get("field", "f-cost"); str(f, "name") != "Cost" || str(f, "type") != "number" || !isNull(f["deleted_at"]) {
+	if f := get("field", "f-cost"); str(f, "name") != "Cost" || str(f, "type") != "number" || !opsync.IsNull(f["deleted_at"]) {
 		t.Fatalf("cost = %v", f)
 	}
-	if f := get("field", "f-old"); isNull(f["deleted_at"]) || str(f, "options") != "Acme\nGlobex" {
+	if f := get("field", "f-old"); opsync.IsNull(f["deleted_at"]) || str(f, "options") != "Acme\nGlobex" {
 		t.Fatalf("deleted definition = %v", f)
 	}
 	t1 := get("task", "t1")
@@ -70,7 +72,7 @@ func TestOwnExportRoundTripKeepsFields(t *testing.T) {
 	if _, err := h.svc.Undo(context.Background(), h.uid, job.ID); err != nil {
 		t.Fatal(err)
 	}
-	if f := get("field", "f-cost"); isNull(f["deleted_at"]) {
+	if f := get("field", "f-cost"); opsync.IsNull(f["deleted_at"]) {
 		t.Fatalf("undo kept field %v", f)
 	}
 }

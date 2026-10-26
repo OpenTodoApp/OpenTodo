@@ -3,7 +3,6 @@ package demo
 import (
 	"context"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/auth"
+	"github.com/pixari/opentodo/internal/ids"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -26,10 +26,8 @@ const tokenKeySetting = "demo.token_key"
 // lets two processes starting together agree on the first key written.
 func (s *Service) loadTokenKey(ctx context.Context) error {
 	db := s.sync.DB()
-	b := make([]byte, 32)
-	_, _ = rand.Read(b)
 	if _, err := db.ExecContext(ctx, `INSERT OR IGNORE INTO settings(key, value, updated_at) VALUES(?, ?, ?)`,
-		tokenKeySetting, `"`+hex.EncodeToString(b)+`"`, s.now().UnixMilli()); err != nil {
+		tokenKeySetting, `"`+ids.Hex(32)+`"`, s.now().UnixMilli()); err != nil {
 		return fmt.Errorf("demo token key: %w", err)
 	}
 	var raw string
@@ -56,8 +54,7 @@ func (s *Service) issueToken() string {
 	if s.tokenKey == nil {
 		return ""
 	}
-	payload := make([]byte, 24)
-	_, _ = rand.Read(payload[:16])
+	payload := append(ids.Bytes(16), make([]byte, 8)...)
 	binary.BigEndian.PutUint64(payload[16:], uint64(s.now().Add(TokenTTL).UnixMilli()))
 	enc := base64.RawURLEncoding
 	return enc.EncodeToString(payload) + "." + enc.EncodeToString(s.sign(payload))
@@ -260,11 +257,7 @@ func (s *Service) makeRoom(ctx context.Context) error {
 	return err
 }
 
-func randomTag() string {
-	b := make([]byte, 10)
-	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
-}
+func randomTag() string { return ids.Hex(10) }
 
 // ---- activity and the write budget (demo-sandboxes D3, D4, D7) ----
 
