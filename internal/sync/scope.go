@@ -172,10 +172,18 @@ type resolver struct {
 	detail string
 	// graphs caches each scope's dependency graph for the batch (dependencies.go).
 	graphs map[string]*depGraph
+	// Entity id ownership (idhome.go): claims caches whether the author may use
+	// an id of uniqueIDs; misplaced marks a stored project child (key: entity
+	// NUL id) that the batch's project_id puts in another scope; workspaces
+	// caches whether the author belongs to a workspace.
+	claims     map[string]bool
+	misplaced  map[string]bool
+	workspaces map[string]bool
 }
 
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {
 	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, childScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{},
+		claims: map[string]bool{}, misplaced: map[string]bool{}, workspaces: map[string]bool{},
 		batchTasks: map[string]bool{}, batchComment: map[string]*batchComment{}, comments: map[string]*commentState{},
 		batchAttachment: map[string]*batchAttachment{}, attachments: map[string]*attachmentState{},
 		batchTimeEntry: map[string]*batchTimeEntry{}, timeEntries: map[string]*timeEntryState{}}
@@ -229,41 +237,21 @@ func (r *resolver) scopeOfProject(raw json.RawMessage) (string, error) {
 	return ProjectScope(pid), nil
 }
 
-// existingTaskScope finds a stored task among the author's personal scope and
-// every project scope. ok is false when the task is unknown; scope is "" when it
-// only exists in a project scope the author is not a member of.
+// existingTaskScope finds where a stored task lives. ok is false when the task
+// is unknown; scope is "" when it lives where the author may not use it.
 func (r *resolver) existingTaskScope(id string) (scope string, ok bool, err error) {
 	return r.existingChildScope("task", id)
 }
 
-// existingChildScope is existingTaskScope for any project child (task, section).
+// existingChildScope is existingTaskScope for any project child (task, section,
+// field). It looks in every scope, not only the author's (entity-id-ownership):
+// an id that exists anywhere is never created a second time.
 func (r *resolver) existingChildScope(entity, id string) (scope string, ok bool, err error) {
-	rows, err := r.tx.QueryContext(r.ctx, `SELECT DISTINCT scope_id FROM scope_fields
-		WHERE entity = ? AND entity_id = ? AND (scope_id = ? OR scope_id LIKE 'project:%')`, entity, id, r.acc.personal)
+	holders, err := scopesHolding(r.ctx, r.tx, entity, id)
 	if err != nil {
 		return "", false, err
 	}
-	defer rows.Close()
-	best, bestRank := "", 99
-	for rows.Next() {
-		var sc string
-		if err := rows.Scan(&sc); err != nil {
-			return "", false, err
-		}
-		if rk := r.acc.rank(sc); rk < bestRank {
-			best, bestRank = sc, rk
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return "", false, err
-	}
-	if bestRank == 99 {
-		return "", false, nil
-	}
-	if !r.acc.canSee(best) {
-		return "", true, nil
-	}
-	return best, true, nil
+	return r.holderHome(entity, id, holders)
 }
 
 // scopeOfChild returns the scope of a task or section: where it is stored, or
@@ -281,6 +269,16 @@ func (r *resolver) scopeOfChild(entity, id string) (string, error) {
 		if sc, err = r.scopeOfProject(r.batchProject[key].Value); err != nil {
 			return "", err
 		}
+	} else if p, ok := r.batchProject[key]; ok && sc != "" {
+		// The batch places a stored entity in another scope: the device
+		// believes it is somewhere else (an id it derived, such as a recurring
+		// occurrence's, that already names an entity elsewhere), so none of
+		// its ops for it may land here (entity-id-ownership).
+		target, err := r.scopeOfProject(p.Value)
+		if err != nil {
+			return "", err
+		}
+		r.misplaced[key] = target != sc
 	}
 	r.childScope[key] = sc
 	return sc, nil
@@ -297,6 +295,11 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		scope = r.acc.personal
 		if shared {
 			scope = ProjectScope(op.EntityID)
+		} else if ok, err := r.claimable(op.Entity, op.EntityID); err != nil || !ok {
+			return "", ReasonForbidden, err
+		}
+		if reason, err := r.checkWorkspace(op); err != nil || reason != "" {
+			return "", reason, err
 		}
 	case "task", "section", "field":
 		if scope, err = r.scopeOfChild(op.Entity, op.EntityID); err != nil {
@@ -304,6 +307,9 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		}
 		if scope == "" {
 			return "", ReasonForbidden, nil
+		}
+		if r.misplaced[op.Entity+"\x00"+op.EntityID] {
+			return "", ReasonScopeChange, nil
 		}
 	case "comment":
 		// Comments follow their task's scope and have their own authorship rules
@@ -320,7 +326,13 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		// Labels, saved views and reminders are personal: a reminder on a task in a
 		// shared project still belongs to its creator only (OpenSpec `reminders`).
 		// So are project_prefs (activity-feed D1): keyed by a project id, even a
-		// shared one, they never leave the author's personal scope.
+		// shared one, they never leave the author's personal scope. Automation
+		// rules are personal too, but their ids are unique (entity-id-ownership).
+		if uniqueIDs[op.Entity] {
+			if ok, err := r.claimable(op.Entity, op.EntityID); err != nil || !ok {
+				return "", ReasonForbidden, err
+			}
+		}
 		return r.acc.personal, "", nil
 	}
 	if !CanWrite(r.acc.roleIn(scope), op.Entity, op.Field) {

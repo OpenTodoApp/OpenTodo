@@ -52,7 +52,7 @@ func TestMigrationAppPasswords(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `INSERT INTO app_passwords(id,user_id,name,hash,created_at) VALUES('p1','u1','phone','h',1)`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO caldav_resources(task_id,name,uid) VALUES('t1','x.ics','X')`); err != nil {
+	if _, err := db.ExecContext(ctx, `INSERT INTO caldav_resources(user_id,task_id,name,uid) VALUES('u1','t1','x.ics','X')`); err != nil {
 		t.Fatal(err)
 	}
 	var v string
