@@ -12,6 +12,7 @@
 import { Icon, NeutralChip, ReadAs, Tooltip } from '../ui'
 import type { ReactElement } from 'react'
 import { t } from '../lib/i18n'
+import { safeUrl } from '../lib/share'
 import { originIcon, originLabel } from '../lib/taskOrigin'
 import type { Origin } from '../lib/types'
 
@@ -32,9 +33,12 @@ export function OriginChip({ origin, quiet = false }: { origin: Origin; quiet?: 
   const face = quiet
     ? <span className={QUIET}><Icon name={icon} size="xs" /><span className="truncate">{text}</span></span>
     : <NeutralChip icon={icon}>{text}</NeutralChip>
-  if (origin.url) {
+  // Decrypted values never passed the server's URL check: only http(s) is a link
+  // (attachment-client-hardening D3).
+  const href = safeUrl(origin.url)
+  if (href) {
     return withTip(
-      <a href={origin.url} target="_blank" rel="noopener noreferrer" data-origin={origin.kind}
+      <a href={href} target="_blank" rel="noopener noreferrer" data-origin={origin.kind}
         aria-label={t('Opens the source {text}', { text })} className={`mt-0.5 shrink-0 ${LINK}`}
         // Activating the chip opens the source only: the row neither opens nor starts a drag.
         onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
