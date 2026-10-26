@@ -3,6 +3,7 @@
 // PageHeader shows the toggle as its first control, so the design system stays free of
 // app code. Nothing registered (the workbench, a page outside the shell): no toggle.
 import { useSyncExternalStore } from 'react'
+import { resettable } from '../../lib/moduleState'
 
 export interface SidebarToggleState {
   /** The sidebar is the icon rail. */
@@ -14,6 +15,8 @@ export interface SidebarToggleState {
 
 let current: SidebarToggleState | null = null
 const listeners = new Set<() => void>()
+// Tests: no shell left registered by an earlier test (moduleState).
+resettable('sidebarToggle', () => { current = null })
 
 export function setSidebarToggle(state: SidebarToggleState | null): void {
   current = state
