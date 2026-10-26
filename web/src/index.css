@@ -853,6 +853,12 @@ select.ui-input:not([multiple]) {
   color: var(--ot-muted);
 }
 .ui-block-dot { @apply inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-hue-solid; }
+/* An event of Today's agenda that already ended (OpenSpec change today-agenda, D6): dimmed by mixing, never by opacity. */
+.ui-event-past {
+  color: var(--ot-faint);
+  border-color: color-mix(in oklab, var(--hue-solid) 60%, var(--ot-surface));
+}
+.ui-event-past .ui-block-dot { background: color-mix(in oklab, var(--hue-solid) 60%, var(--ot-surface)); }
 .ui-column { @apply rounded-card bg-sunken p-1.5 dark:border dark:border-default; }
 /* The board's "Add a section" column (precision-boards-timeline D4): a dashed outline the height of a column. */
 .ui-column-add { @apply flex h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col items-stretch gap-2 rounded-card border border-dashed border-input p-1.5 text-meta text-muted sm:w-72; }

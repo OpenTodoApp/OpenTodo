@@ -1006,7 +1006,8 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "All day": [
-    "web/src/app/CalendarEvents.tsx"
+    "web/src/app/CalendarEvents.tsx",
+    "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "All done for today.": [
     "web/src/app/Briefing.tsx"
@@ -1854,7 +1855,8 @@
   ],
   "Busy": [
     "web/src/app/CalendarEvents.tsx",
-    "web/src/app/calendar/DayColumn.tsx"
+    "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Button label": [
     "web/src/app/SsoPanel.tsx"
@@ -1905,6 +1907,9 @@
   ],
   "Calendar colour": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Calendar events today": [
+    "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Calendar feed URL created": [
     "web/src/app/auditFormat.ts"
@@ -4143,6 +4148,9 @@
   "End-to-end encryption is not enabled for this account.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "Ended": [
+    "web/src/app/calendar/TodayAgenda.tsx"
+  ],
   "Endpoint": [
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
@@ -4263,7 +4271,8 @@
   ],
   "Event": [
     "web/src/app/AuditPanel.tsx",
-    "web/src/app/CalendarEvents.tsx"
+    "web/src/app/CalendarEvents.tsx",
+    "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Events": [
     "web/src/app/WebhooksPanel.tsx"
@@ -5314,6 +5323,9 @@
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "Hide briefing": [
+    "web/src/app/TaskListView.tsx"
+  ],
+  "Hide calendar events": [
     "web/src/app/TaskListView.tsx"
   ],
   "Hide delivery log": [
@@ -11147,6 +11159,9 @@
   "Show briefing": [
     "web/src/app/TaskListView.tsx"
   ],
+  "Show calendar events": [
+    "web/src/app/TaskListView.tsx"
+  ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -11240,7 +11255,8 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "Shown as free": [
-    "web/src/app/CalendarEvents.tsx"
+    "web/src/app/CalendarEvents.tsx",
+    "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Shown as {current}, the nearest palette colour. Pick one to store it.": [
     "web/src/app/LabelsView.tsx"

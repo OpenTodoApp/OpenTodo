@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Calendar events in Today.** With a subscribed calendar, **Show calendar events** in Today's menu lists the day's appointments above your tasks: all-day events first, then timed ones in order with their time, calendar colour and location. Free events are an outline, finished ones are dimmed, and a click shows the details as in Day and Week. Off until you turn it on; the choice follows you to your other devices. ([Calendar events in Today](docs/calendar-events-in-today.md))
+
 ### Changed
 
 - **The Calendar remembers the planning list.** Left open, **Plan from a list** opens again the next time you come to Day, Week, Month or Plan on a wide screen, until you close it. ([Place tasks on the calendar](docs/place-tasks-on-the-calendar.md))

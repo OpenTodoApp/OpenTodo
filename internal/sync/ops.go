@@ -684,6 +684,10 @@ var Schema = map[string]map[string]kind{
 		// D1): "line" or "detailed", the layout of every list without its own
 		// choice; clients read an empty or unknown value as "line".
 		"row_layout": kString,
+		// Today's agenda of calendar events (OpenSpec change today-agenda,
+		// design D1): "shown" or "hidden"; clients read an empty or unknown
+		// value as hidden and keep the stored value.
+		"today_events": kString,
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

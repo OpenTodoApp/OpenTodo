@@ -11,7 +11,7 @@ import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { getTask } from '../lib/liveData'
 import { useMembership, useUserPrefsRow } from '../lib/localData'
-import { briefingHidden, setBriefingShown } from '../lib/userPrefs'
+import { briefingHidden, setBriefingShown, setTodayEventsShown } from '../lib/userPrefs'
 import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
@@ -60,6 +60,7 @@ import { useListModel, type ListRoute } from './task-list/useListModel'
 import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
 import { noteTodayOpened } from '../lib/firstDay'
 import { InboxMenu } from './SampleNotice'
+import { TodayAgenda, useTodayAgenda } from './calendar/TodayAgenda'
 
 export { BLOCKED_OPEN_KEY } from '../lib/listGroups'
 
@@ -297,10 +298,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const todayMeta = [m.dt.formatDate(today, 'heading'), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
   const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : route.view === 'inbox' ? inbox.meta : undefined)
   const methodSubtitle = useWithMethod(methodMove, undefined)
-  const title = {
-    inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: currentProject?.name ?? t('Project'), label: currentLabel?.name ?? t('Label'), place: currentPlace?.name ?? t('Location'),
-  }[route.view]
+  const title = listTitle(route.view, currentProject?.name, currentLabel?.name, currentPlace?.name)
 
+  const agenda = useTodayAgenda(route.view === 'today', today, m.zone)
   const frame = useListFrame(route.view === 'project', board || timeline, m.fieldColumns)
   const ready = useListReady(route, m.loaded, !!currentProject)
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
@@ -317,7 +317,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
           ) : (
-            <ListHeader route={route} title={title} label={currentLabel} meta={meta} subtitle={methodSubtitle} actions={pageActions} phone={phone ? phoneActions : null} />
+            <ListHeader route={route} title={title} label={currentLabel} meta={meta} subtitle={methodSubtitle} actions={pageActions} phone={phone ? phoneActions : null} agenda={agenda.toggle} />
           )}
 
           {route.view !== 'completed' && (
@@ -327,6 +327,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               )}
             </div>
           )}
+          {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}
 
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
             onMenuOpenChange={onActionsOpen} startPicker={actionsPicker} onDone={selectMode ? () => setSelectMode(false) : undefined} />
@@ -378,12 +379,19 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   )
 }
 
+/** The page title of a list. */
+function listTitle(view: ListRoute['view'], project?: string, label?: string, place?: string): string {
+  return {
+    inbox: t('Inbox'), today: t('Today'), upcoming: t('Upcoming'), someday: t('Someday'), anytime: t('Anytime'), completed: t('Completed'), assigned: t('Assigned to me'), project: project ?? t('Project'), label: label ?? t('Label'), place: place ?? t('Location'),
+  }[view]
+}
+
 /**
  * The page header of a list that is not a project (ux-overhaul, app-shell "Page template";
  * task-list-presentation "Nothing between the header and the list"): title, meta, actions,
  * Help. On a phone the actions are the bar's slots and the rest joins its menu (phone-v2 D1).
  */
-function ListHeader({ route, title, label, meta, subtitle, actions, phone }: {
+function ListHeader({ route, title, label, meta, subtitle, actions, phone, agenda }: {
   route: ListRoute
   title: string
   label?: Label
@@ -391,6 +399,8 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone }: {
   subtitle: ReactNode
   actions: ReactNode
   phone: { slots: ReactNode; items: PhoneItem[] } | null
+  /** Today's calendar events option (today-agenda D2): undefined when not offered, else whether it is on. */
+  agenda?: boolean
 }) {
   const items = phone?.items ?? []
   // The briefing under a day page's title (OpenSpec change briefing), unless the account hid it (briefing-links D4).
@@ -403,10 +413,14 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone }: {
     <MenuItem icon={hidden ? 'eye' : 'eye-off'} label={hidden ? t('Show briefing') : t('Hide briefing')} data-briefing-toggle
       onSelect={() => act(setBriefingShown(hidden))} />
   )
+  const agendaItem = agenda !== undefined && (
+    <MenuItem icon="calendar-range" label={agenda ? t('Hide calendar events') : t('Show calendar events')} data-today-events-toggle
+      onSelect={() => act(setTodayEventsShown(!agenda))} />
+  )
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}</> : undefined}
+      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{agendaItem}</> : undefined}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />

@@ -27,7 +27,7 @@ export function eventLabel(ev: CalendarEvent, sub: CalendarSubscription | undefi
   return [ev.summary || t('Busy'), eventTimeText(ev, zone), ev.location, sub?.name].filter(Boolean).join(', ')
 }
 
-function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubscription; zone?: string }) {
+export function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubscription; zone?: string }) {
   return (
     <div className="space-y-1 text-body" data-event-details>
       <p className="font-medium text-strong">{ev.summary || t('Busy')}</p>

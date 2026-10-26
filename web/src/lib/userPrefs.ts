@@ -100,6 +100,16 @@ export function setBriefingShown(shown: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { briefing: shown ? 'shown' : 'hidden' })
 }
 
+/** Today's agenda of calendar events (OpenSpec change today-agenda, D1): off unless the account chose "shown". */
+export function todayEventsShown(row: Partial<UserPrefs> | null | undefined): boolean {
+  return row?.today_events === 'shown'
+}
+
+/** Shows or hides the calendar events on Today; an ordinary op, so it works offline and syncs to the account's other devices. */
+export function setTodayEventsShown(shown: boolean): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { today_events: shown ? 'shown' : 'hidden' })
+}
+
 /** How a task opens from a list (OpenSpec change task-side-panel, D1): its page, or a side panel beside the list. */
 export type TaskOpenPref = 'page' | 'panel'
 
