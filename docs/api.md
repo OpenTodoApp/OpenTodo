@@ -1308,7 +1308,7 @@ Branding is refused on a demo instance like every server setting.
 
 `GET /api/v1/me` includes `attachments: {enabled, max_file_bytes, quota_bytes, used_bytes}`.
 
-**Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, max-age=31536000, immutable` and the digest as `ETag`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.
+**Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, no-cache` and the digest as `ETag`, so a browser revalidates its copy (304 while signed in) and shows nothing without a session; signing out answers `Clear-Site-Data: "cache"`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.
 
 Errors: `400 attachment_mismatch` (bytes do not match the size or digest), `413 attachment_too_large`, `403 quota_exceeded`, `403 attachments_disabled`, `409 already_uploaded`, `507 insufficient_storage`.
 

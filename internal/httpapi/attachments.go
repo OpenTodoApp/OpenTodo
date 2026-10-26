@@ -81,6 +81,13 @@ func (s *Server) registerAttachmentRoutes(mux *routes) {
 		}
 		return a.MaxFileBytes()
 	})
+	s.sync.SetAttachmentQuota(func() int64 {
+		a, err := s.attachmentSettings(context.Background())
+		if err != nil {
+			return 0
+		}
+		return a.QuotaBytes()
+	})
 	if err := settings.New(s.sync.DB()).SeedAttachments(context.Background(), s.cfg.AttachmentsMaxFileMB, s.cfg.AttachmentsQuotaMB); err != nil {
 		s.log.Error("attachments: presets", "err", err)
 	}
@@ -112,7 +119,9 @@ func (s *Server) attachmentSettings(ctx context.Context) (settings.Attachments, 
 }
 
 // attachmentUsage is the bytes an account's live, uploaded attachments take
-// (design D5: the quota counts what the account authored).
+// (design D5: the quota counts what the account authored). A removal frees its
+// bytes at once; restoring is checked against the quota again by sync
+// (attachment-client-hardening D1).
 func (s *Server) attachmentUsage(ctx context.Context, uid string) (int64, error) {
 	rows, err := s.sync.List(ctx, uid, "attachment", false)
 	if err != nil {
@@ -263,15 +272,32 @@ func (s *Server) checkRoom(w http.ResponseWriter, r *http.Request, a settings.At
 		return false
 	}
 	if q := a.QuotaBytes(); q > 0 {
-		used, err := s.attachmentUsage(r.Context(), userFrom(r.Context()).ID)
+		uid := userFrom(r.Context()).ID
+		// Uploads in progress hold their size until the request ends, so
+		// parallel uploads cannot each fit into the same free space
+		// (attachment-client-hardening D1).
+		s.uploadsMu.Lock()
+		defer s.uploadsMu.Unlock()
+		used, err := s.attachmentUsage(r.Context(), uid)
 		if err != nil {
 			s.internal(w, err)
 			return false
 		}
-		if used+size > q {
+		if used+s.uploading[uid]+size > q {
 			writeError(w, http.StatusForbidden, "quota_exceeded", fmt.Sprintf("this upload would go over your %d MB of attachments", a.QuotaMB))
 			return false
 		}
+		if s.uploading == nil {
+			s.uploading = map[string]int64{}
+		}
+		s.uploading[uid] += size
+		context.AfterFunc(r.Context(), func() {
+			s.uploadsMu.Lock()
+			defer s.uploadsMu.Unlock()
+			if s.uploading[uid] -= size; s.uploading[uid] <= 0 {
+				delete(s.uploading, uid)
+			}
+		})
 	}
 	return true
 }
@@ -397,7 +423,9 @@ func (s *Server) handleAttachmentContent(w http.ResponseWriter, r *http.Request)
 	h.Set("Content-Disposition", disposition+"; filename*=UTF-8''"+url.PathEscape(name))
 	h.Set("Content-Security-Policy", "default-src 'none'; sandbox")
 	h.Set("X-Content-Type-Options", "nosniff")
-	h.Set("Cache-Control", "private, max-age=31536000, immutable")
+	// Revalidated on every use (a 304 while the ETag matches), so a file is
+	// never shown from the cache without a session (attachment-client-hardening D2).
+	h.Set("Cache-Control", "private, no-cache")
 	h.Set("ETag", `"`+idOf(a["sha256"])+`"`)
 	http.ServeContent(w, r, "", info.ModTime(), f)
 }
