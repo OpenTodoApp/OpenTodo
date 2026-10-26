@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Workspaces in tools (OpenSpec change workspaces, task 4.3).

@@ -12,7 +12,7 @@ import { checkShared, readText, ROOT } from './common.mjs'
 
 export const TEMPLATE = 'deploy/portainer/portainer-template.json'
 export const ROW = 'deploy/portainer/upstream/sources.csv.row'
-const RAW = 'https://raw.githubusercontent.com/pixari/opentodo/main/'
+const RAW = 'https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/'
 export const TEMPLATE_URL = RAW + TEMPLATE
 const DOCS = 'https://open-todo.app/docs/self-hosting/portainer/'
 // Categories already used in Lissy93/portainer-templates, so the app lands in an existing group.

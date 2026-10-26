@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/caldav"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // inboxCalendar is the path segment of the Inbox calendar (tasks without a project).

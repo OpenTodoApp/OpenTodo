@@ -25,8 +25,8 @@ test('cosmos: strict JSON', () => {
 })
 
 test('cosmos: image policy stable', () => {
-  has(checkCompose(compose.replace('opentodo:stable', 'opentodo:0.14.2'), ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(checkCompose(compose.replace('opentodo:stable', 'opentodo:latest'), ctx), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(checkCompose(compose.replace('opentodo:stable', 'opentodo:0.14.2'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(checkCompose(compose.replace('opentodo:stable', 'opentodo:latest'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(checkDescription(description.replace('opentodo:stable', 'opentodo:latest'), ctx), /description\.json: image must be/)
 })
 

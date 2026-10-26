@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/e2ee/crypt"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee/crypt"
 )
 
 // The account key on the user's machine (OpenSpec change mcp-projects, design

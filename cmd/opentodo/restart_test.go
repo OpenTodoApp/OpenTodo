@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
 )
 
 // lockedBuffer collects the server's output, written by os/exec's copier

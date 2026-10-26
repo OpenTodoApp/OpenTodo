@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/mcp"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/mcp"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // MCP endpoint (OpenSpec changes `mcp-server` and `mcp-write-tools`):

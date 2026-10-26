@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Planning an import of a foreign format: every profile other than the own

@@ -13,13 +13,13 @@
     },
     {
       "name": "github pull request with a tab",
-      "url": "https://github.com/pixari/opentodo/pull/123/files",
+      "url": "https://github.com/OpenTodoApp/OpenTodo/pull/123/files",
       "title": "Add origin",
       "want": {
         "kind": "issue",
         "provider": "github",
-        "id": "pixari/opentodo#123",
-        "url": "https://github.com/pixari/opentodo/pull/123/files",
+        "id": "OpenTodoApp/OpenTodo#123",
+        "url": "https://github.com/OpenTodoApp/OpenTodo/pull/123/files",
         "title": "Add origin"
       }
     },

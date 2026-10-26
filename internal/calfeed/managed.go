@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Managed subscriptions (OpenSpec change calendar-two-way, design D10): the

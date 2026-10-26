@@ -61,7 +61,7 @@ Without email set up, the owner can get a reset link from the command line: with
 ## Help and source
 
 - Documentation: <https://open-todo.app/docs/self-hosting/home-assistant-addon/>
-- Questions and bugs: <https://github.com/pixari/opentodo/issues>
-- The add-on's source: <https://github.com/pixari/opentodo-homeassistant-addons>
+- Questions and bugs: <https://github.com/OpenTodoApp/OpenTodo/issues>
+- The add-on's source: <https://github.com/OpenTodoApp/opentodo-homeassistant-addons>
 
 OpenTodo and this add-on are licensed under the GNU Affero General Public License v3.0.

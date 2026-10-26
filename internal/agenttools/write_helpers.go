@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/recurrence"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Shared planning helpers of the write tools (see write.go).

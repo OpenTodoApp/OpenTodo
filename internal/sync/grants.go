@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // Grants and effective membership (OpenSpec change workspaces, design D3).

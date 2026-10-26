@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pixari/opentodo/internal/iconset"
+	"github.com/OpenTodoApp/opentodo/internal/iconset"
 )
 
 // ---- list_icons (OpenSpec change mcp-projects, design D1, D2) ----

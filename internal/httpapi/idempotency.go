@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/ids"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Idempotency keys on create (OpenSpec change `agent-ready-cli`, design D5).

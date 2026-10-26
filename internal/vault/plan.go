@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // build turns the pending values into ops, one timestamp per entity. Op ids

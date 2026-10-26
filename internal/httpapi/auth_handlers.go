@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 // Health, sign-in, sign-out, the current user and API tokens.

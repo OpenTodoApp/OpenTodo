@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Decode reads a client's VCALENDAR body and maps its VTODO onto task fields.

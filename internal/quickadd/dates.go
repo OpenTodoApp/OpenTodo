@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 // dateCtx mirrors DateContext in web/src/lib/nlp/dates.ts.

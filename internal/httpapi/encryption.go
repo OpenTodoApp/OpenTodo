@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // End-to-end encryption (OpenSpec change `e2ee`, design D8). The server stores

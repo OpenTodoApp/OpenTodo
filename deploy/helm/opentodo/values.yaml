@@ -2,7 +2,7 @@
 # The chart always runs one replica with the Recreate strategy: SQLite has one writer.
 
 image:
-  repository: ghcr.io/pixari/opentodo
+  repository: ghcr.io/opentodoapp/opentodo
   # Empty: the chart's appVersion, the release this chart version was published with.
   # helm upgrade to a newer chart version moves to the newer release.
   tag: ""
@@ -11,7 +11,7 @@ image:
 imagePullSecrets: []
 
 # OPENTODO_* variables, as strings. Every variable of the configuration table can be added here:
-# https://github.com/pixari/opentodo#configuration
+# https://github.com/OpenTodoApp/OpenTodo#configuration
 env:
   # The https address people open, for example https://todo.example.com. Leave empty on plain http.
   # Empty with an Ingress that has tls: the chart sets https://<ingress.host>.

@@ -10,9 +10,9 @@ Add OpenTodo
 
 ## Body
 
-[OpenTodo](https://github.com/pixari/opentodo) is an open-source (AGPL-3.0), self-hosted, local-first task manager: one Go binary with SQLite and an embedded web app that works offline and syncs every device. This adds `public/v4/apps/opentodo.yml` and its logo.
+[OpenTodo](https://github.com/OpenTodoApp/OpenTodo) is an open-source (AGPL-3.0), self-hosted, local-first task manager: one Go binary with SQLite and an embedded web app that works offline and syncs every device. This adds `public/v4/apps/opentodo.yml` and its logo.
 
-- One service from `ghcr.io/pixari/opentodo:$$cap_opentodo_version` (multi-arch amd64 and arm64), defaulting to the latest release. `containerHttpPort: '8080'`, one named volume on `/data`. The image runs as a non-root user (65532) and Docker copies its `/data` ownership into the new named volume, so no extra step is needed.
+- One service from `ghcr.io/opentodoapp/opentodo:$$cap_opentodo_version` (multi-arch amd64 and arm64), defaulting to the latest release. `containerHttpPort: '8080'`, one named volume on `/data`. The image runs as a non-root user (65532) and Docker copies its `/data` ownership into the new named volume, so no extra step is needed.
 - No database or other service. No field is required.
 - Form fields: version, base URL (empty, because a new app is served over plain http and an https base URL there breaks sign-in), a setup token generated with `$$cap_gen_random_hex(32)` (asked when the first account, the owner, is created, so a fresh instance cannot be claimed by a stranger), open sign-up (`false`), trusted proxies.
 - `instructions.end` shows the setup token and says to enable HTTPS and then set `OPENTODO_BASE_URL` to `https://$$cap_appname.$$cap_root_domain`.

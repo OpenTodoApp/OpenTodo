@@ -21,7 +21,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // Kinds of origin. The list is closed: the schema refuses any other kind.

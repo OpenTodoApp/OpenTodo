@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 // Projects kept away from AI assistants (OpenSpec change agent-planning-fields,

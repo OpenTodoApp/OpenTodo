@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Flow state (design D4): state, nonce, PKCE verifier and mode travel in one

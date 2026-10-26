@@ -21,8 +21,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // ProtocolVersions are the MCP revisions this server implements, newest first.

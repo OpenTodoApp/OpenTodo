@@ -12,4 +12,5 @@ updates:
     schedule:
       interval: weekly
     ignore:
+      - dependency-name: ghcr.io/opentodoapp/opentodo
       - dependency-name: ghcr.io/pixari/opentodo

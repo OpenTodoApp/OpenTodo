@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/skills"
+	"github.com/OpenTodoApp/opentodo/skills"
 )
 
 // Tests of the agent-ready CLI contract (OpenSpec change `agent-ready-cli`).

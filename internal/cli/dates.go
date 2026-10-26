@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // localDate formats t's calendar date in its own location as YYYY-MM-DD.

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 )
 
 // The on-device assistant's shared files (assistant-on-device D8): the

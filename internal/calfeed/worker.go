@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/pixari/opentodo/internal/poll"
+	"github.com/OpenTodoApp/opentodo/internal/poll"
 )
 
 // Worker pacing (design D3).

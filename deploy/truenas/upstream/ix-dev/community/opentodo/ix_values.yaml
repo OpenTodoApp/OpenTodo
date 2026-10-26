@@ -1,6 +1,6 @@
 images:
   image:
-    repository: ghcr.io/pixari/opentodo
+    repository: ghcr.io/opentodoapp/opentodo
     tag: "0.14.2"
   container_utils_image:
     repository: ixsystems/container-utils

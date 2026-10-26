@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // SettingKey is the owner switch in the settings table (design D9): on unless

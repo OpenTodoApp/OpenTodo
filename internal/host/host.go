@@ -15,12 +15,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/httpapi"
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/tenant"
-	"github.com/pixari/opentodo/internal/web"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/tenant"
+	"github.com/OpenTodoApp/opentodo/internal/web"
 )
 
 // Options configure Open.

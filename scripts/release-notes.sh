@@ -16,16 +16,16 @@ if [ -z "$(printf '%s' "$section" | tr -d '[:space:]')" ]; then
 fi
 # Relative links (docs/…, ROADMAP.md) do not resolve in a release body: point
 # them at the tagged tree instead. Absolute URLs, anchors and mailto stay.
-printf '%s\n' "$section" | sed -E "s#\]\((\./)?([A-Za-z0-9_][^):]*)\)#](https://github.com/pixari/opentodo/blob/v$version/\2)#g"
+printf '%s\n' "$section" | sed -E "s#\]\((\./)?([A-Za-z0-9_][^):]*)\)#](https://github.com/OpenTodoApp/OpenTodo/blob/v$version/\2)#g"
 cat <<NOTES
 
 ---
 
 **Install**
 
-- Docker: \`docker run -d -p 8080:8080 -v opentodo:/data ghcr.io/pixari/opentodo:$version\`
+- Docker: \`docker run -d -p 8080:8080 -v opentodo:/data ghcr.io/opentodoapp/opentodo:$version\`
 - Binary: download \`opentodo-<os>-<arch>\` below, then run it (data goes to \`./data\`).
 - Command-line client: \`ot-<os>-<arch>\`. Browser extension: \`opentodo-browser-extension-chrome.zip\` and \`opentodo-browser-extension-firefox.zip\`.
 
-Verify downloads with \`sha256sum -c SHA256SUMS\`. Self-hosting guides: [docs/self-hosting](https://github.com/pixari/opentodo/tree/v$version/docs/self-hosting).
+Verify downloads with \`sha256sum -c SHA256SUMS\`. Self-hosting guides: [docs/self-hosting](https://github.com/OpenTodoApp/OpenTodo/tree/v$version/docs/self-hosting).
 NOTES

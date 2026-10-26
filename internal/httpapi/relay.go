@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/relay"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/relay"
 )
 
 // Device relay (OpenSpec change mcp-device-relay): an encrypted account's

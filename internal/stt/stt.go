@@ -22,9 +22,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/outbound"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 const (

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/pixari/opentodo/internal/location"
+	"github.com/OpenTodoApp/opentodo/internal/location"
 )
 
 // Result is one address found by search or reverse search, the shape the

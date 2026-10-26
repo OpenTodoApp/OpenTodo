@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // CalDAV and workspaces (OpenSpec change workspaces, caldav-sync "Discovery and

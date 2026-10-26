@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Trash and history routes (OpenSpec change `trash-and-history`). All require

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // Header is the fixed part of the CSV header; custom field columns follow.

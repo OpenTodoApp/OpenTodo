@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/blobs"
+	"github.com/OpenTodoApp/opentodo/internal/blobs"
 )
 
 func putBlob(t *testing.T, dir, id string, body []byte) {

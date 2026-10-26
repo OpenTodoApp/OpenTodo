@@ -1,6 +1,6 @@
 // Unraid Community Applications template (deploy/unraid/opentodo.xml), OpenSpec
 // change unraid-template. CA reads it from the template repository
-// pixari/opentodo-unraid, published from deploy/unraid/upstream/: that folder must
+// OpenTodoApp/opentodo-unraid, published from deploy/unraid/upstream/: that folder must
 // hold an identical copy of the template and a ca_profile.xml. A strict parser for the XML subset CA templates use:
 // one <Container version="2"> with child elements that hold text or are empty,
 // and <Config> elements with attributes and an optional text value.
@@ -12,8 +12,8 @@ import { checkShared, readText, ROOT } from './common.mjs'
 export const TEMPLATE = 'deploy/unraid/opentodo.xml'
 export const UPSTREAM_TEMPLATE = 'deploy/unraid/upstream/templates/opentodo.xml'
 export const PROFILE = 'deploy/unraid/upstream/ca_profile.xml'
-const RAW = 'https://raw.githubusercontent.com/pixari/opentodo/main/'
-export const TEMPLATE_URL = 'https://raw.githubusercontent.com/pixari/opentodo-unraid/main/templates/opentodo.xml'
+const RAW = 'https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/'
+export const TEMPLATE_URL = 'https://raw.githubusercontent.com/OpenTodoApp/opentodo-unraid/main/templates/opentodo.xml'
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
 const unescape = (s) => s.replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => ENTITIES[e])
 

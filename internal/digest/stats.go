@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // This file is the Go port of web/src/lib/stats.ts (design D1). Both evaluate

@@ -7,9 +7,9 @@ version: 0.14.2
 appVersion: "0.14.2"
 kubeVersion: ">=1.23.0-0"
 home: https://open-todo.app
-icon: https://raw.githubusercontent.com/pixari/opentodo/main/web/public/pwa-512.png
+icon: https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/web/public/pwa-512.png
 sources:
-  - https://github.com/pixari/opentodo
+  - https://github.com/OpenTodoApp/OpenTodo
 keywords:
   - todo
   - tasks
@@ -25,10 +25,10 @@ annotations:
     - name: Documentation
       url: https://open-todo.app/docs/self-hosting/kubernetes/
     - name: support
-      url: https://github.com/pixari/opentodo/issues
+      url: https://github.com/OpenTodoApp/OpenTodo/issues
   artifacthub.io/images: |
     - name: opentodo
-      image: ghcr.io/pixari/opentodo:0.14.2
+      image: ghcr.io/opentodoapp/opentodo:0.14.2
       platforms:
         - linux/amd64
         - linux/arm64

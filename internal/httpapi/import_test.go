@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant/services"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
 // newEnvConfig is newEnv with a caller-supplied configuration.

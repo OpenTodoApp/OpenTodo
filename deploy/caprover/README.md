@@ -4,7 +4,7 @@ A [CapRover](https://caprover.com) one-click app in the v4 format of [`caprover/
 
 | Path | What |
 | --- | --- |
-| [`opentodo.yml`](opentodo.yml) | The app. One service, `$$cap_appname`, from `ghcr.io/pixari/opentodo:$$cap_opentodo_version` (the version field defaults to the latest release, `0.14.2`). `containerHttpPort: '8080'` (CapRover's nginx proxies to it; no published port). The named volume `$$cap_appname-data` on `/data`. Four form fields passed as `OPENTODO_*`: base URL (empty), setup token (generated, `$$cap_gen_random_hex(32)`), open sign-up (`false`), trusted proxies (empty). The message after the install shows the setup token and says how to turn on https and then set the base URL. |
+| [`opentodo.yml`](opentodo.yml) | The app. One service, `$$cap_appname`, from `ghcr.io/opentodoapp/opentodo:$$cap_opentodo_version` (the version field defaults to the latest release, `0.14.2`). `containerHttpPort: '8080'` (CapRover's nginx proxies to it; no published port). The named volume `$$cap_appname-data` on `/data`. Four form fields passed as `OPENTODO_*`: base URL (empty), setup token (generated, `$$cap_gen_random_hex(32)`), open sign-up (`false`), trusted proxies (empty). The message after the install shows the setup token and says how to turn on https and then set the base URL. |
 | `upstream/public/v4/apps/opentodo.yml`, `upstream/public/v4/logos/opentodo.png` | Byte-identical copies at the paths they take in `caprover/one-click-apps`. The logo is `web/public/pwa-512.png` (their validator wants a png named like the app). |
 | [`upstream/PR.md`](upstream/PR.md) | Pull request title and body, with their checklist. |
 
@@ -22,7 +22,7 @@ A [CapRover](https://caprover.com) one-click app in the v4 format of [`caprover/
 
 ## Install it now, before it is listed
 
-In the CapRover dashboard: **Apps → One-Click Apps/Databases**, choose **>> TEMPLATE <<** at the end of the list, paste the content of [`opentodo.yml`](opentodo.yml) (raw: `https://raw.githubusercontent.com/pixari/opentodo/main/deploy/caprover/opentodo.yml`) and click **Next**. The rest is as for a listed app (`docs/self-hosting/caprover.md`).
+In the CapRover dashboard: **Apps → One-Click Apps/Databases**, choose **>> TEMPLATE <<** at the end of the list, paste the content of [`opentodo.yml`](opentodo.yml) (raw: `https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/caprover/opentodo.yml`) and click **Next**. The rest is as for a listed app (`docs/self-hosting/caprover.md`).
 
 ## Submit
 
@@ -40,18 +40,18 @@ Read this first: the checklist of `caprover/one-click-apps` starts with "the off
 
 CapRover can add other one-click repositories (**One-Click Apps/Databases → 3rd party repositories → Connect New Repository**). Their README describes how to make one from a fork, published with their GitHub Pages workflow:
 
-1. Fork `caprover/one-click-apps` as **`pixari/opentodo-caprover`** (rename the fork in its settings).
+1. Fork `caprover/one-click-apps` as **`OpenTodoApp/opentodo-caprover`** (rename the fork in its settings).
 2. Delete every app and logo in `public/v4/apps/` and `public/v4/logos/` (their README: "Delete all existing apps (to avoid duplicate apps)"), then copy `deploy/caprover/upstream/public/` over `public/`.
-3. In the repository's **Settings → Pages**, set **Source** to **GitHub Actions**. Push to `master`: their `deploy.yml` validates, builds and publishes to `https://pixari.github.io/opentodo-caprover`.
-4. Check `https://pixari.github.io/opentodo-caprover/v4/list` lists OpenTodo, then connect that URL in a CapRover instance and install from it.
+3. In the repository's **Settings → Pages**, set **Source** to **GitHub Actions**. Push to `master`: their `deploy.yml` validates, builds and publishes to `https://opentodoapp.github.io/opentodo-caprover`.
+4. Check `https://opentodoapp.github.io/opentodo-caprover/v4/list` lists OpenTodo, then connect that URL in a CapRover instance and install from it.
 5. Add the repository URL to `docs/self-hosting/caprover.md` (Install) and to the platform table in `deploy/README.md`.
 
 ## On a release
 
-`make check` fails until the version field names the new release. Change `defaultValue` of `$$cap_opentodo_version` in `opentodo.yml`, copy it to `upstream/public/v4/apps/opentodo.yml`, and then bring it to the store: a pull request to `caprover/one-click-apps` (A) or a push to `pixari/opentodo-caprover` (B). That changes only new installs. Existing installs update themselves: the guide tells owners to deploy the new image (**Deployment → Deploy via ImageName**, `ghcr.io/pixari/opentodo:<version>`); CapRover pulls an explicitly named image on every deploy (`ImageMaker.ts`), so `ghcr.io/pixari/opentodo:stable` there also works and fetches the current release each time.
+`make check` fails until the version field names the new release. Change `defaultValue` of `$$cap_opentodo_version` in `opentodo.yml`, copy it to `upstream/public/v4/apps/opentodo.yml`, and then bring it to the store: a pull request to `caprover/one-click-apps` (A) or a push to `OpenTodoApp/opentodo-caprover` (B). That changes only new installs. Existing installs update themselves: the guide tells owners to deploy the new image (**Deployment → Deploy via ImageName**, `ghcr.io/opentodoapp/opentodo:<version>`); CapRover pulls an explicitly named image on every deploy (`ImageMaker.ts`), so `ghcr.io/opentodoapp/opentodo:stable` there also works and fetches the current release each time.
 
 ## Tested
 
 - Their validator, formatter and build on a copy of `caprover/one-click-apps` with this app added: `npm run validate_apps` (prints "Validated opentodo"), `npm run formatter` ("All matched files use Prettier code style!"), `npm run build` (writes `dist/v4/apps/opentodo` and the list entry).
-- The built JSON rendered the way CapRover does (random hex, form defaults, split/join of every id after `$$cap_appname`), then run with Docker in CapRover's order: the placeholder image with the named volume first, then `ghcr.io/pixari/opentodo:0.14.2` with the rendered environment on the same volume. `/data` became 65532-owned, `/healthz` answered ok, the container turned healthy, creating the owner failed without the token and worked with the one from the end message, and the owner survived a restart and a replaced container.
+- The built JSON rendered the way CapRover does (random hex, form defaults, split/join of every id after `$$cap_appname`), then run with Docker in CapRover's order: the placeholder image with the named volume first, then `ghcr.io/opentodoapp/opentodo:0.14.2` with the rendered environment on the same volume. `/data` became 65532-owned, `/healthz` answered ok, the container turned healthy, creating the owner failed without the token and worked with the one from the end message, and the owner survived a restart and a replaced container.
 - Not tested: a real CapRover instance (Swarm, its nginx, Let's Encrypt). Before submitting, run step A.4.

@@ -12,9 +12,9 @@ feat: add OpenTodo template
 
 New PR of OpenTodo
 
-[OpenTodo](https://github.com/pixari/opentodo) is an open-source (AGPL-3.0), self-hosted, local-first task manager: one Go binary with SQLite and an embedded web app that works offline and syncs every device. The template adds `blueprints/opentodo/`:
+[OpenTodo](https://github.com/OpenTodoApp/OpenTodo) is an open-source (AGPL-3.0), self-hosted, local-first task manager: one Go binary with SQLite and an embedded web app that works offline and syncs every device. The template adds `blueprints/opentodo/`:
 
-- `docker-compose.yml`: one `opentodo` service from `ghcr.io/pixari/opentodo:0.11.0` (public, multi-arch amd64/arm64, pinned; `meta.json` version matches), `expose: 8080`, one named volume on `/data`, and the image's own health check (`/opentodo healthcheck`; the image has no shell). No `ports`, `container_name` or networks.
+- `docker-compose.yml`: one `opentodo` service from `ghcr.io/opentodoapp/opentodo:0.11.0` (public, multi-arch amd64/arm64, pinned; `meta.json` version matches), `expose: 8080`, one named volume on `/data`, and the image's own health check (`/opentodo healthcheck`; the image has no shell). No `ports`, `container_name` or networks.
 - `template.toml`: the generated domain on port 8080, and a generated setup token (`${password:32}`) that OpenTodo asks for when the first account (the owner) is created, so a freshly deployed instance cannot be claimed by a stranger. Sign-up is closed after that. `OPENTODO_BASE_URL` starts empty because the generated domain is plain http (OpenTodo then takes the address from the request); the comment says to set it once the domain has HTTPS.
 - `meta.json` and `opentodo.svg`.
 

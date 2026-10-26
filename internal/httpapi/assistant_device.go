@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/assistant"
+	"github.com/OpenTodoApp/opentodo/internal/assistant"
 )
 
 // The on-device assistant for encrypted accounts (OpenSpec change

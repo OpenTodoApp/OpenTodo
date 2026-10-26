@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // The reader pool opens and closes with the tenant, so a database file

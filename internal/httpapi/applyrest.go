@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // The REST write path (non-negotiable 2): every REST write applies its ops as

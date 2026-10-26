@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/calsync/calsynctest"
+	"github.com/OpenTodoApp/opentodo/internal/calsync/calsynctest"
 )
 
 // Both kinds of server: with sync-collection and with ETag listings only.

@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // ApplyPendingRestore applies a restore confirmed in the web app (design D1).

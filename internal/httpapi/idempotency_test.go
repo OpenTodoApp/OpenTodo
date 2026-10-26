@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Idempotency-Key on POST /api/v1/{collection} (OpenSpec change

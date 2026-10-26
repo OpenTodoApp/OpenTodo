@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
 )
 
 // backupsReady returns the signed-in user (the route policy admits only the owner).

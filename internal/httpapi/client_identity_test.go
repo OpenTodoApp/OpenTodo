@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 // OpenSpec change trusted-client-identity: who the client is (X-Forwarded-For

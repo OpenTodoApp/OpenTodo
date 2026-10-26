@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Resolve finds the time zone a TZID names: an IANA name, a vendor path that

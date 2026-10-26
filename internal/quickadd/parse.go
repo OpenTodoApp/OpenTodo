@@ -3,7 +3,7 @@ package quickadd
 import (
 	"sort"
 
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 // Context is the reference state of one parse (ParseContext in parse.ts).

@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee/crypt"
-	"github.com/pixari/opentodo/internal/vault"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee/crypt"
+	"github.com/OpenTodoApp/opentodo/internal/vault"
 )
 
 // The Markdown vault (OpenSpec change markdown-vault): a folder of project

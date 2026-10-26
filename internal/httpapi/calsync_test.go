@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/calsync"
-	"github.com/pixari/opentodo/internal/calsync/calsynctest"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/calsync"
+	"github.com/OpenTodoApp/opentodo/internal/calsync/calsynctest"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Calendar sync over HTTP (OpenSpec change calendar-two-way, tasks 3.1–3.3).

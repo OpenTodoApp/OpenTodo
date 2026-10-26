@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/webauthn"
-	"github.com/pixari/opentodo/internal/webauthn/testauth"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn/testauth"
 )
 
 const (

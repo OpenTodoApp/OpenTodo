@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Transport budget (design D2).

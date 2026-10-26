@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/backup"
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 // OperatorHandler is the operator interface (design D7) a control plane

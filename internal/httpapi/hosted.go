@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 // hostRules are the settings a host's operator owns (design D4). writes

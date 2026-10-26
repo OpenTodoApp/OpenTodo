@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/tenant"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/tenant"
 )
 
 const testToken = "operator-token-0123456789abcdef0123456789"

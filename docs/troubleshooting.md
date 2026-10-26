@@ -12,7 +12,7 @@ card: signin
 
 <picture><source srcset="images/sync-status-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/sync-status-light.webp" alt="The status at the top right reads Offline · 12 pending, above an Inbox with the duration filter chips."></picture>
 
-Most problems have a quick fix. Start with the section that matches what you see; each links to the full steps. If nothing helps, whoever runs your server can look at its logs, or you can [open an issue](https://github.com/pixari/opentodo/issues) on GitHub.
+Most problems have a quick fix. Start with the section that matches what you see; each links to the full steps. If nothing helps, whoever runs your server can look at its logs, or you can [open an issue](https://github.com/OpenTodoApp/OpenTodo/issues) on GitHub.
 
 ## A task seems to be missing
 

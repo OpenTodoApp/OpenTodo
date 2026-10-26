@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // Object is one file at a destination.

@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // quota is one open tenant's write limits (design D5), installed as the sync

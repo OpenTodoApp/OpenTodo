@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/agenttools"
-	"github.com/pixari/opentodo/internal/ids"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // REST collections: every write goes through the op log (ApplyStrict), like a

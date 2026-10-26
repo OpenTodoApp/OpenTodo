@@ -33,7 +33,7 @@ The downloads on [open-todo.app/templates](https://open-todo.app/templates) are 
 
 ## Contribute a template
 
-The library lives in the `templates/` folder of the [OpenTodo repository](https://github.com/pixari/opentodo/tree/main/templates): one folder per template, written by hand in a short YAML format, with optional translations. Propose a new one with a pull request; [the format and the bar for the library](https://github.com/pixari/opentodo/blob/main/templates/README.md) are on GitHub. Templates are shared under CC BY 4.0.
+The library lives in the `templates/` folder of the [OpenTodo repository](https://github.com/OpenTodoApp/OpenTodo/tree/main/templates): one folder per template, written by hand in a short YAML format, with optional translations. Propose a new one with a pull request; [the format and the bar for the library](https://github.com/OpenTodoApp/OpenTodo/blob/main/templates/README.md) are on GitHub. Templates are shared under CC BY 4.0.
 
 ## From a template or Import?
 
