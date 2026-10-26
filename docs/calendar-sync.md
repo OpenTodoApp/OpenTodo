@@ -3,7 +3,7 @@ title: Calendar sync
 summary: Two-way sync with the calendar you already use: your dated tasks become events in iCloud, Fastmail, Nextcloud, Google Calendar or any CalDAV calendar, and moving an event moves the task.
 audience: user
 section: Integrations
-specs: [calendar-feeds, end-to-end-encryption]
+specs: [calendar-sync, calendar-feeds, end-to-end-encryption]
 screens: [settings/calendar-sync]
 order: 33
 ---
