@@ -1,0 +1,6 @@
+# Build outputs of `make ios` and Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+

@@ -1,0 +1,180 @@
+name: OpenTodo
+options:
+  bundleIdPrefix: app.opentodo
+  deploymentTarget:
+    iOS: "16.4"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_STRICT_CONCURRENCY: minimal
+    DEVELOPMENT_LANGUAGE: en
+    OPENTODO_VERSION: 0.0.0
+    MARKETING_VERSION: $(OPENTODO_VERSION)
+    CURRENT_PROJECT_VERSION: 1
+
+targets:
+  OpenTodo:
+    type: application
+    platform: iOS
+    sources:
+      - path: OpenTodo
+      - path: Shared
+    info:
+      path: OpenTodo/Info.plist
+      properties:
+        CFBundleDisplayName: OpenTodo
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        ITSAppUsesNonExemptEncryption: false
+        NSLocalNetworkUsageDescription: OpenTodo connects to the server you enter so it can sync your tasks on this network.
+        # The web app records a voice note and can take a photo through a file
+        # input; without these two the system kills the app on the first request.
+        NSMicrophoneUsageDescription: Record a voice note and send it to the server for transcription.
+        NSCameraUsageDescription: Take a photo to attach to a task or a note.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UIApplicationShortcutItems:
+          - UIApplicationShortcutItemType: change-server
+            UIApplicationShortcutItemTitle: Change server
+            UIApplicationShortcutItemIconSymbolName: server.rack
+        CFBundleURLTypes:
+          - CFBundleURLName: app.opentodo
+            CFBundleURLSchemes: [opentodo]
+        BGTaskSchedulerPermittedIdentifiers: [app.opentodo.refresh]
+        UIBackgroundModes: [fetch]
+        # App-Bound Domains (ios-shell design D2). A portable build carries the
+        # placeholder and has no service worker; a build for one known server passes
+        # OPENTODO_APP_BOUND_HOST and gets the installed web app's offline start.
+        WKAppBoundDomains:
+          - $(OPENTODO_APP_BOUND_HOST)
+    entitlements:
+      path: OpenTodo/OpenTodo.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.opentodo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo
+        INFOPLIST_FILE: OpenTodo/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        OPENTODO_APP_BOUND_HOST: none.invalid
+    dependencies:
+      - target: OpenTodoWidget
+      - target: OpenTodoShare
+    scheme:
+      testTargets:
+        - OpenTodoTests
+        - OpenTodoUITests
+      gatherCoverageData: false
+
+  OpenTodoWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: OpenTodoWidget
+      - path: Shared/Localizable.xcstrings
+      - path: OpenTodo/WidgetPublication.swift
+      - path: OpenTodo/Store.swift
+      - path: OpenTodo/JSON.swift
+    info:
+      path: OpenTodoWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Today
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: OpenTodoWidget/OpenTodoWidget.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.opentodo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo.widget
+        INFOPLIST_FILE: OpenTodoWidget/Info.plist
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+
+  OpenTodoShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: OpenTodoShare
+      - path: OpenTodo/ShareInbox.swift
+      - path: OpenTodo/ShareMap.swift
+      - path: OpenTodo/Store.swift
+      - path: OpenTodo/JSON.swift
+    info:
+      path: OpenTodoShare/Info.plist
+      properties:
+        CFBundleDisplayName: OpenTodo
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsFileWithMaxCount: 10
+              NSExtensionActivationSupportsImageWithMaxCount: 10
+    entitlements:
+      path: OpenTodoShare/OpenTodoShare.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.opentodo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo.share
+        INFOPLIST_FILE: OpenTodoShare/Info.plist
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+
+  OpenTodoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: OpenTodoTests
+    dependencies:
+      - target: OpenTodo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/OpenTodo.app/OpenTodo
+        BUNDLE_LOADER: $(TEST_HOST)
+        GENERATE_INFOPLIST_FILE: YES
+
+  OpenTodoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: OpenTodoUITests
+    dependencies:
+      - target: OpenTodo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo.uitests
+        TEST_TARGET_NAME: OpenTodo
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  OpenTodo:
+    build:
+      targets:
+        OpenTodo: all
+        OpenTodoTests: [test]
+        OpenTodoUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [OpenTodoTests, OpenTodoUITests]
