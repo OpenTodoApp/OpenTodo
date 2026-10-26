@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/deliveryq"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/webhook"
@@ -16,11 +16,11 @@ import (
 
 // Worker tuning, the webhooks' (design D8).
 const (
-	Concurrency      = 4
-	AutoDisableAfter = 20
-	PollInterval     = time.Second
-	PruneInterval    = time.Hour
-	LogRetention     = 30 * 24 * time.Hour
+	Concurrency      = deliveryq.Concurrency
+	AutoDisableAfter = deliveryq.AutoDisableAfter
+	PollInterval     = deliveryq.PollInterval
+	PruneInterval    = deliveryq.PruneInterval
+	LogRetention     = deliveryq.LogRetention
 	LogLimit         = 50
 	limitWindow      = time.Hour
 	statusPending    = "pending"
@@ -30,6 +30,10 @@ const (
 	statusSkipped    = "skipped"
 	errRateLimited   = "rate_limited"
 )
+
+// table is the message queue and log (deliveryq).
+var table = deliveryq.Table{Items: "notification_deliveries", Targets: "notification_channels", TargetCol: "channel_id",
+	Finished: "'delivered','failed','skipped'", LogLimit: LogLimit, Noun: "message", Nouns: "messages"}
 
 // ---- producers ----
 
@@ -165,37 +169,15 @@ func (s *Service) origin(c Channel) string {
 // ---- worker ----
 
 // Wake nudges the worker to look at the queue now.
-func (s *Service) Wake() {
-	select {
-	case s.wake <- struct{}{}:
-	default:
-	}
-}
+func (s *Service) Wake() { deliveryq.Nudge(s.wake) }
 
 // Run is the single worker loop; it returns when ctx is cancelled, after the
-// pass in progress (each send is bounded by SendTimeout).
+// pass in progress (each send is bounded by SendTimeout). It sends nothing
+// while the owner switch is off.
 func (s *Service) Run(ctx context.Context) {
-	var lastPrune time.Time
-	for {
-		if ctx.Err() != nil {
-			return
-		}
-		if now := s.now(); now.Sub(lastPrune) >= PruneInterval {
-			if err := s.Prune(ctx); err != nil && ctx.Err() == nil {
-				s.log.Error("notification channels: prune failed", "err", err)
-			}
-			lastPrune = now
-		}
-		if s.enabled(ctx) && s.ProcessDue(ctx) > 0 {
-			continue
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-s.wake:
-		case <-s.after(PollInterval):
-		}
-	}
+	l := deliveryq.Loop{Name: "notification channels", Log: s.log, Now: s.now, After: s.after, Wake: s.wake,
+		Enabled: s.enabled, Prune: s.Prune, Process: s.ProcessDue}
+	l.Run(ctx)
 }
 
 type queued struct {
@@ -245,20 +227,15 @@ func (s *Service) ProcessDue(ctx context.Context) int {
 		s.log.Error("notification channels: read secrets", "err", err)
 		return 0
 	}
-	sendCtx := context.WithoutCancel(ctx)
-	var wg sync.WaitGroup
-	for _, q := range batch {
-		q.t.token, q.t.userKey = sec.Value(q.channelID), sec.Value(q.channelID+".user")
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			res := s.send(sendCtx, q.t, q.id, q.msg)
-			if err := s.record(sendCtx, q, res); err != nil {
-				s.log.Error("notification channels: record failed", "delivery", q.id, "err", err)
-			}
-		}()
+	for i := range batch {
+		batch[i].t.token, batch[i].t.userKey = sec.Value(batch[i].channelID), sec.Value(batch[i].channelID+".user")
 	}
-	wg.Wait()
+	deliveryq.Fanout(ctx, batch, func(ctx context.Context, q queued) {
+		res := s.send(ctx, q.t, q.id, q.msg)
+		if err := s.record(ctx, q, res); err != nil {
+			s.log.Error("notification channels: record failed", "delivery", q.id, "err", err)
+		}
+	})
 	return len(batch)
 }
 
@@ -315,21 +292,7 @@ func (s *Service) record(ctx context.Context, q queued, res outcome) error {
 
 // Prune drops log entries older than LogRetention and finished entries beyond
 // the newest LogLimit per channel.
-func (s *Service) Prune(ctx context.Context) error {
-	cutoff := s.now().Add(-LogRetention).UnixMilli()
-	if _, err := s.db.ExecContext(ctx, `DELETE FROM notification_deliveries WHERE created_at < ?`, cutoff); err != nil {
-		return fmt.Errorf("prune old messages: %w", err)
-	}
-	_, err := s.db.ExecContext(ctx, `DELETE FROM notification_deliveries WHERE id IN (
-		SELECT id FROM (
-			SELECT id, status, ROW_NUMBER() OVER (PARTITION BY channel_id ORDER BY created_at DESC, rowid DESC) AS rn
-			FROM notification_deliveries
-		) WHERE rn > ? AND status IN ('delivered','failed','skipped'))`, LogLimit)
-	if err != nil {
-		return fmt.Errorf("prune message log: %w", err)
-	}
-	return nil
-}
+func (s *Service) Prune(ctx context.Context) error { return deliveryq.Prune(ctx, s.db, table, s.now()) }
 
 // ---- log and test ----
 

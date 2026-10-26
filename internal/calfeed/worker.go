@@ -5,8 +5,9 @@ import (
 	"errors"
 	"log/slog"
 	"net/url"
-	"sync"
 	"time"
+
+	"github.com/pixari/opentodo/internal/poll"
 )
 
 // Worker pacing (design D3).
@@ -27,18 +28,7 @@ type Worker struct {
 }
 
 // Run polls until ctx ends.
-func (w *Worker) Run(ctx context.Context) {
-	t := time.NewTicker(PollInterval)
-	defer t.Stop()
-	for {
-		w.RunOnce(ctx)
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
-	}
-}
+func (w *Worker) Run(ctx context.Context) { poll.Every(ctx, PollInterval, w.RunOnce) }
 
 // RunOnce fetches the subscriptions due now, at most InFlight at a time, and
 // waits for them.
@@ -51,18 +41,7 @@ func (w *Worker) RunOnce(ctx context.Context) {
 		w.log().Error("calendar feeds: due", "err", err)
 		return
 	}
-	sem := make(chan struct{}, InFlight)
-	var wg sync.WaitGroup
-	for i := range due {
-		sub := due[i]
-		sem <- struct{}{}
-		wg.Add(1)
-		go func() {
-			defer func() { <-sem; wg.Done() }()
-			_, _ = w.Refresh(ctx, &sub)
-		}()
-	}
-	wg.Wait()
+	poll.Each(due, InFlight, func(sub *Subscription) { _, _ = w.Refresh(ctx, sub) })
 }
 
 // Refresh fetches one subscription now and records the outcome (also used by
