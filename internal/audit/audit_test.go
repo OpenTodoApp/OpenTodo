@@ -45,7 +45,7 @@ func allConstructors() []Event {
 		WorkspaceMemberAdded("u", "v", "w", "member"), WorkspaceMemberRoleChanged("u", "v", "w", "member", "admin"), WorkspaceMemberRemoved("u", "v", "w"),
 		WorkspaceGroupCreated("u", "w", "g"), WorkspaceGroupDeleted("u", "w", "g"),
 		WorkspaceGroupMemberAdded("u", "v", "w", "g"), WorkspaceGroupMemberRemoved("u", "v", "w", "g"),
-		ProjectGrantAdded("u", "p", "g", "editor"), ProjectGrantChanged("u", "p", "g", "editor", "viewer"), ProjectGrantRemoved("u", "p", "g"),
+		ProjectMemberAdded("u", "v", "p", "editor"), ProjectGrantAdded("u", "p", "g", "editor"), ProjectGrantChanged("u", "p", "g", "editor", "viewer"), ProjectGrantRemoved("u", "p", "g"),
 		WorkspaceInviteCreated("u", "i", "w", "member", "x@example.com"), WorkspaceInviteAccepted("v", "u", "i", "w", "member"), WorkspaceInviteRevoked("u", "i", "w"),
 		MFAEnrolled("u", "totp"),
 		MFADisabled("o", "u", "totp"),

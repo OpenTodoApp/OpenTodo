@@ -4,6 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+Found in an internal audit:
+
+- **Reading your email-to-task settings no longer creates an address.** Before, simply opening the settings (or any token, even a read-only one, reading them) created an active address that accepts mail from anyone. Now the address is created when you turn email to task on, and read-only and assistant tokens can neither see nor create it. Addresses that already exist keep working. ([Email to task](docs/email.md))
+- **The owner's security settings need an admin token.** Changing whether webhooks may reach private networks, the map providers, the AI assistant (MCP) switches or audit log retention now takes a signed-in session or an `admin` API token; a `full` token is refused, as for the other security settings. ([API](docs/api.md#token-scopes))
+- **Adding people to projects and workspaces by email is limited** to 30 attempts per account per hour, so the share dialog cannot be used to find out which accounts exist on the server or to push projects at many people, and each person added to a project is recorded in the audit log as `project.member_added`. ([Sharing](docs/api.md#sharing))
+
 ### Added
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))
