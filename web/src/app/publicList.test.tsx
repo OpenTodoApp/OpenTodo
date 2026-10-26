@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PublicList } from '../lib/types'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, render, waitFor } from '../ui/test-utils'
 import { publicGroups, PublicListScreen } from './PublicListScreen'
 import { parseRoute, routePath } from './router'
 
@@ -45,10 +45,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('public page', () => {
   it('parses /public/<secret> and groups sections with subtasks under their parent', () => {
@@ -169,7 +165,9 @@ describe('public route in the app', () => {
     const { App } = await import('./App')
     const r = await render(<App />)
     await waitFor(() => r.container.querySelectorAll('[data-public-task]').length === 4)
-    await flush(100)
+    // Signed in by now: the app has its auth answer, the moment sync would start.
+    await waitFor(() => vi.mocked(fetch).mock.calls.some((c) => String(c[0]).includes('/api/v1/auth/status')), 'the auth status')
+    await flush()
     expect(startSync).not.toHaveBeenCalled()
     await r.unmount()
     vi.doUnmock('../lib/sync')

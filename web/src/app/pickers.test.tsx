@@ -6,7 +6,7 @@ import { db, useDatabase } from '../lib/db'
 import { createLabel } from '../lib/labels'
 import { createProject, createTask } from '../lib/ops'
 import { recordPick } from '../lib/pickRank'
-import { flush, key, render } from '../ui/test-utils'
+import { key, render, waitFor } from '../ui/test-utils'
 import { AssigneePicker } from './AssigneePicker'
 import { LabelPicker } from './LabelPicker'
 
@@ -22,7 +22,7 @@ describe('LabelPicker', () => {
     const task = await createTask({ title: 'Buy milk' })
     await recordPick('label', errands)
     const { unmount } = await render(<LabelPicker taskId={task} onClose={() => {}} />)
-    await flush(30)
+    await waitFor(() => options().length === 3, 'the three labels')
     expect(options()[0]).toBe('errands')
     expect(options()).toEqual(['errands', 'alpha', 'zulu'])
     await unmount()
@@ -34,9 +34,9 @@ describe('LabelPicker', () => {
     const task = await createTask({ title: 'Buy milk' })
     const before = (await db.outbox.toArray()).filter((o) => o.entityId === task && o.field === 'labels').length
     const { unmount } = await render(<LabelPicker taskId={task} onClose={() => {}} />)
-    await flush(30)
+    await waitFor(() => options().includes('errands'), 'the label list')
     await key(field(), 'Enter')
-    await flush(30)
+    await waitFor(async () => (await db.tasks.get(task))?.labels.length === 1, 'the label set')
     expect((await db.tasks.get(task))?.labels).toEqual([errands])
     const ops = (await db.outbox.toArray()).filter((o) => o.entityId === task && o.field === 'labels')
     expect(ops.length - before).toBe(1)
@@ -59,7 +59,7 @@ describe('AssigneePicker', () => {
     for (let i = 0; i < 3; i++) await recordPick(`assignee:${project}`, 'u-sam')
     const task = await createTask({ title: 'Paint', project_id: project })
     const { unmount } = await render(<AssigneePicker taskId={task} userId="me" onClose={() => {}} />)
-    await flush(30)
+    await waitFor(() => document.querySelectorAll('[role="option"] span.block.truncate').length >= 3, 'the people')
     const names = [...document.querySelectorAll('[role="option"] span.block.truncate')].map((s) => s.textContent)
     expect(names.slice(0, 3)).toEqual(['Unassigned', 'You', 'Sam'])
     await unmount()

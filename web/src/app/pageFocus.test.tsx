@@ -3,8 +3,8 @@
 // names the page, a navigation moves focus to the page heading unless something
 // else owns focus, and the skip link jumps to the heading.
 import { afterEach, describe, expect, it } from 'vitest'
-import { useEffect, useRef } from 'react'
-import { click, flush, render, waitFor } from '../ui/test-utils'
+import { act, useEffect, useRef } from 'react'
+import { click, render, waitFor } from '../ui/test-utils'
 import { pageTitle, SkipLink, usePageFocus } from './pageFocus'
 
 afterEach(() => {
@@ -38,7 +38,11 @@ function Harness({ page, heading = page, self = false }: { page: string; heading
   )
 }
 
-const settle = () => flush(40)
+/**
+ * The focus move runs one animation frame after the route changes (usePageFocus):
+ * a frame requested now fires after it, so the decision has been made by then.
+ */
+const settle = () => act(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))))
 
 describe('page focus and title', () => {
   it('formats the tab title', () => {

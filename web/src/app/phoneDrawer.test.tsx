@@ -10,7 +10,7 @@ import { db } from '../lib/db'
 import { setMethodMode } from '../lib/method/mode'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, flush, render, minWidthPx } from '../ui/test-utils'
+import { click, render, minWidthPx, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -33,10 +33,6 @@ beforeEach(async () => {
 })
 afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const primary = () => [...document.querySelectorAll('nav[data-sidebar-primary] [data-sidebar-item]')].map((b) => b.textContent ?? '')
 
 describe('the phone drawer at 390 px', () => {
@@ -72,7 +68,7 @@ describe('the phone drawer at 390 px', () => {
   it('rows are 48 px in the drawer, at most 20 rem and 85 vw wide; Settings from the footer closes it', async () => {
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('aside[data-sidebar]') && !!document.querySelector('[data-phone-bar] button[aria-label="Open menu"]'), 'the shell')
     const aside = document.querySelector('aside[data-sidebar]')!
     expect(aside.className).toContain('w-80')
     expect(aside.className).toContain('max-w-[85vw]')

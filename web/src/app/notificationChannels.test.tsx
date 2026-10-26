@@ -7,7 +7,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { cacheChannels, type NotificationChannel } from '../lib/notificationChannels'
-import { click, flush, render } from '../ui/test-utils'
+import { click, flush, render, waitFor } from '../ui/test-utils'
 import { channelDraftBody, channelDraftError, channelDraftOf, newChannelDraft } from './NotificationChannelEditor'
 import { ChannelsView, channelStatus, NotificationChannelsCard, type ChannelsViewProps } from './NotificationChannels'
 
@@ -32,10 +32,6 @@ function serve(routes: Record<string, unknown>) {
   }))
 }
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 const noop = () => undefined
 function view(p: Partial<ChannelsViewProps>): ChannelsViewProps {

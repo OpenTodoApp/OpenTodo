@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setReauthHandler } from '../lib/api'
 import type { RestoreState, StagedRestore } from '../lib/types'
-import { click, flush, render, type } from '../ui/test-utils'
+import { click, render, type, waitFor } from '../ui/test-utils'
 import { RestoreSection, RestoreSectionView, type RestoreSectionViewProps } from './RestoreSection'
 
 const ARCHIVE = 'opentodo-20261013-030000-4f1c0a9e.tar.gz.enc'
@@ -61,7 +61,7 @@ describe('restore section view (5.2, 5.5)', () => {
   it('lists the archives of the destination with an encrypted marker', async () => {
     fakeServer(base)
     const r = await render(<RestoreSection offline={false} />)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[aria-label="Archives in the destination"]')?.textContent?.includes(ARCHIVE), 'the archive list')
     const list = document.querySelector('[aria-label="Archives in the destination"]')!
     expect(list.textContent).toContain(ARCHIVE)
     expect(list.textContent).toContain('encrypted')
@@ -72,8 +72,7 @@ describe('restore section view (5.2, 5.5)', () => {
   it('names an unreachable destination and keeps upload possible', async () => {
     fakeServer({ ...base, 'GET /api/v1/backups/archives': () => [502, err('destination_error', 'http://nas.local/dav/: connection refused')] })
     const r = await render(<RestoreSection offline={false} />)
-    await flush(20)
-    expect(document.querySelector('[data-testid="restore-archives"]')!.textContent).toContain('nas.local/dav')
+    await waitFor(() => !!document.querySelector('[data-testid="restore-archives"]')?.textContent?.includes('nas.local/dav'), 'the destination error')
     expect(document.querySelector('[data-testid="restore-archives"]')!.textContent).toContain('You can still upload')
     await r.unmount()
   })
@@ -119,14 +118,15 @@ describe('restore section view (5.2, 5.5)', () => {
       [`DELETE /api/v1/backups/restore/safety-copies/${copy.name}`]: () => { state = emptyState(); return [204, null] },
     })
     const r = await render(<RestoreSection offline={false} />)
-    await flush(20)
-    await click(document.querySelector(`button[aria-label="Delete safety copy ${copy.name}"]`)!)
-    await flush(10)
+    const del = () => document.querySelector(`button[aria-label="Delete safety copy ${copy.name}"]`)
+    await waitFor(() => !!del(), 'the safety copy')
+    await click(del()!)
+    await waitFor(() => !!document.querySelector('[role="alertdialog"]'), 'the confirmation')
     const dialog = document.querySelector('[role="alertdialog"]')!
     expect(dialog.textContent).toContain(copy.name)
     expect(calls.some((c) => c.method === 'DELETE')).toBe(false)
     await click([...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Delete safety copy')!)
-    await flush(30)
+    await waitFor(() => !document.querySelector('[data-testid="restore-safety-copies"]'), 'the list without the copy')
     expect(calls.some((c) => c.method === 'DELETE')).toBe(true)
     expect(document.querySelector('[data-testid="restore-safety-copies"]')).toBeNull()
     await r.unmount()
@@ -144,18 +144,17 @@ describe('preview and confirmation (5.3)', () => {
       },
     })
     const r = await render(<RestoreSection offline={false} />)
-    await flush(20)
+    await waitFor(() => !!byText('Preview'), 'the archive list')
     await click(byText('Preview')!)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('input[name="restore-passphrase"]'), 'the passphrase field')
     const pass = document.querySelector('input[name="restore-passphrase"]') as HTMLInputElement
-    expect(pass).toBeTruthy()
     await type(pass, 'wrong')
     await click(byText('Verify')!)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="restore-dialog"] [role="alert"]'), 'the passphrase error')
     expect(document.querySelector('[data-testid="restore-dialog"] [role="alert"]')!.textContent).toContain('does not open')
     await type(document.querySelector('input[name="restore-passphrase"]') as HTMLInputElement, 'right')
     await click(byText('Verify')!)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="restore-preview"]'), 'the preview')
     const preview = document.querySelector('[data-testid="restore-preview"]')!
     expect(preview.textContent).toContain('2 accounts, 7 projects, 214 tasks')
     expect(document.querySelector('[data-testid="restore-consequences"]')!.textContent).toContain('sends those newer changes back')
@@ -178,12 +177,12 @@ describe('preview and confirmation (5.3)', () => {
       'GET /healthz': () => [200, { status: 'ok' }],
     })
     const r = await render(<RestoreSection offline={false} />)
-    await flush(20)
+    await waitFor(() => !!byText('Preview'), 'the archive list')
     await click(byText('Preview')!)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('input[name="restore-confirm"]'), 'the preview')
     await type(document.querySelector('input[name="restore-confirm"]') as HTMLInputElement, 'RESTORE')
     await click(byText('Restore and restart')!)
-    await flush(30)
+    await waitFor(() => !!document.querySelector('[data-testid="restore-restarting"]'), 'the restart notice')
     expect(reauth).toHaveBeenCalledTimes(1)
     const confirms = calls.filter((c) => c.path === '/api/v1/backups/restore' && c.method === 'POST')
     expect(confirms).toHaveLength(2)
@@ -197,11 +196,12 @@ describe('preview and confirmation (5.3)', () => {
   it('cancel discards the prepared restore', async () => {
     const calls = fakeServer({ ...base, 'POST /api/v1/backups/restore/prepare': () => [200, staged], [`DELETE /api/v1/backups/restore/${staged.id}`]: () => [204, null] })
     const r = await render(<RestoreSection offline={false} />)
-    await flush(20)
+    await waitFor(() => !!byText('Preview'), 'the archive list')
     await click(byText('Preview')!)
-    await flush(20)
-    await click([...document.querySelectorAll('[data-testid="restore-dialog"] button')].find((b) => b.textContent === 'Cancel')!)
-    await flush(20)
+    const cancel = () => [...document.querySelectorAll('[data-testid="restore-dialog"] button')].find((b) => b.textContent === 'Cancel')
+    await waitFor(() => !!cancel(), 'the dialog')
+    await click(cancel()!)
+    await waitFor(() => calls.some((c) => c.method === 'DELETE' && c.path.endsWith(staged.id)), 'the discard request')
     expect(document.querySelector('[data-testid="restore-dialog"]')).toBeNull()
     expect(calls.some((c) => c.method === 'DELETE' && c.path.endsWith(staged.id))).toBe(true)
     await r.unmount()
@@ -212,13 +212,13 @@ describe('accessibility (5.6)', () => {
   it('every control is a native, labelled element and the dialog is modal', async () => {
     fakeServer({ ...base, 'POST /api/v1/backups/restore/prepare': () => [200, staged] })
     const r = await render(<RestoreSection offline={false} />)
-    await flush(20)
+    await waitFor(() => !!byText('Preview'), 'the archive list')
     for (const b of document.querySelectorAll('[data-testid="restore-section"] button')) {
       expect((b.textContent ?? '').trim() || b.getAttribute('aria-label')).toBeTruthy()
       expect((b as HTMLButtonElement).tabIndex).toBe(0)
     }
     await click(byText('Preview')!)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="restore-dialog"] input[name="restore-confirm"]'), 'the preview')
     const dialog = document.querySelector('[data-testid="restore-dialog"]')!
     expect(dialog.getAttribute('aria-modal')).toBe('true')
     expect(dialog.querySelector('input[name="restore-confirm"]')!.closest('label, div')!.textContent).toContain('Type RESTORE to confirm')

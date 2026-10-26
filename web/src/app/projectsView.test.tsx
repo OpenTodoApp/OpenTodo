@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { archiveProject, createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { AutoArchiveView } from './ProjectsSettings'
 import { ProjectsView } from './ProjectsView'
 import { navigate } from './router'
@@ -20,10 +20,6 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const names = (root: ParentNode) => [...root.querySelectorAll('[data-project-open] .truncate')].map((e) => e.textContent)
 
 describe('All projects page', () => {
@@ -69,7 +65,7 @@ describe('All projects page', () => {
     await click(r.container.querySelector('button[aria-label="Menu for project Home"]')!)
     await waitFor(() => !!document.querySelector('[data-menu-label="Pin to sidebar"]'))
     await click(document.querySelector<HTMLElement>('[data-menu-label="Pin to sidebar"]')!)
-    await flush(60)
+    await waitFor(async () => !!(await db.userPrefs.get('me'))?.favourites, 'the pinned favourite')
     expect((await db.userPrefs.get('me'))?.favourites).toMatch(/^project:/)
     await r.unmount()
   })
@@ -124,7 +120,7 @@ describe('Archived projects list', () => {
     expect(`${location.pathname}${location.hash}`).toBe('/projects#archived')
     await s.unmount()
     const r = await render(<ProjectsView archived />)
-    await flush(40)
+    await waitFor(() => !!archivedTab(r.container), 'the tabs')
     expect(archivedTab(r.container).getAttribute('aria-selected')).toBe('true')
     await r.unmount()
   })
@@ -132,7 +128,7 @@ describe('Archived projects list', () => {
   it('a link to #archived while the page is open selects the Archived tab', async () => {
     history.replaceState(null, '', '/projects')
     const r = await render(<ProjectsView />)
-    await flush(40)
+    await waitFor(() => !!archivedTab(r.container), 'the tabs')
     expect(archivedTab(r.container).getAttribute('aria-selected')).toBe('false')
     history.replaceState(null, '', '/projects#archived')
     window.dispatchEvent(new HashChangeEvent('hashchange'))
