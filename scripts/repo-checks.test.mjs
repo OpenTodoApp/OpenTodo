@@ -55,11 +55,11 @@ const table = [
   [['skill/README.md'], { code: 'false', docs: 'false', mobile: 'false' }],
   [['LICENSE'], { code: 'false', docs: 'false', mobile: 'false' }],
   [['mobile/android/app/src/main/java/app/opentodo/Bridge.kt'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
-  [['mobile/README.md', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true' }],
+  [['mobile/README.md', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/android/store/permissions.txt', 'internal/httpapi/router.go'], { code: 'true', docs: 'false', mobile: 'true' }],
-  [['mobile/ios/OpenTodo/Bridge.swift'], { code: 'false', docs: 'false', mobile: 'true', ios: 'true' }],
+  [['mobile/ios/OpenTodo/Bridge.swift'], { code: 'false', docs: 'false', mobile: 'false', ios: 'true' }],
   [['mobile/ios/project.yml', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'true' }],
-  [['mobile/README.md'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
+  [['mobile/README.md'], { code: 'false', docs: 'false', mobile: 'false', ios: 'false' }],
 ]
 
 // The tier outputs (ci-speed): which pull request jobs a change runs.
