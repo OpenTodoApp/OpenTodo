@@ -135,7 +135,7 @@ test-go:
 	go test ./...
 
 test-web:
-	cd web && npm test
+	cd web && npm test && npm run test:perf
 
 test-extension:
 	cd extension && npm test

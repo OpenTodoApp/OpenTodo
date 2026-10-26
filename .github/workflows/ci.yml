@@ -119,6 +119,25 @@ jobs:
       - run: npm test
         working-directory: web
 
+  web-scale:
+    # The 2,000-row scale tests (*.perf.test.tsx) on a runner of their own, beside the
+    # web job: in the parallel unit pool they raced every other file and timed out under
+    # load (test audit F4). They assert counts, not times.
+    name: Web scale tests (2,000 rows)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run test:perf
+        working-directory: web
+
   server:
     name: Server (vet, test, build)
     runs-on: ubuntu-latest
