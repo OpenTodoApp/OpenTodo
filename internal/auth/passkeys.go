@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
@@ -139,7 +138,7 @@ func (s *Service) FinishPasskeyRegistration(ctx context.Context, userID, name st
 	if name == "" {
 		name = "Passkey"
 	}
-	now := time.Now().UnixMilli()
+	now := s.clock().UnixMilli()
 	// Registering proves possession, so it counts as the first use; Settings
 	// shows the new passkey as used "just now".
 	p := &Passkey{ID: ids.New(), Name: truncate(name, 100), CreatedAt: now, LastUsedAt: &now, BackedUp: cred.BackedUp}
@@ -290,7 +289,7 @@ func (s *Service) finishPasskeyLogin(ctx context.Context, credentialID []byte, r
 	if err != nil {
 		return nil, nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonPasskeyRejected}
 	}
-	now := time.Now().UnixMilli()
+	now := s.clock().UnixMilli()
 	// Counter regression means a cloned authenticator (design D7). Synced
 	// passkeys report zero and are exempt.
 	if count > 0 && int64(res.Counter) <= count {

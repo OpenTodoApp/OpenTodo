@@ -672,7 +672,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	if len(res.Changes) > 0 {
 		send("changeset", map[string]any{"items": res.Changes, "limit": assistant.MaxEntities})
 	}
-	done := map[string]any{"stop_reason": string(res.Stop), "server_time": time.Now().UTC().Format(time.RFC3339)}
+	done := map[string]any{"stop_reason": string(res.Stop), "server_time": s.now().UTC().Format(time.RFC3339)}
 	if res.Message != "" {
 		done["message"] = res.Message
 	}

@@ -147,7 +147,7 @@ func (s *Server) handleTestSMTP(w http.ResponseWriter, r *http.Request) {
 	}
 	err := s.mail.SendTest(r.Context(), mail.Message{To: u.Email, Lang: mail.LangFrom(r.Header.Get("Accept-Language")),
 		Origin: s.publicOrigin(r), UserID: u.ID, ActorID: u.ID})
-	lt := smtpLastTest{At: time.Now().UnixMilli(), Outcome: "sent"}
+	lt := smtpLastTest{At: s.now().UnixMilli(), Outcome: "sent"}
 	var se *mail.SendError
 	switch {
 	case err == nil:

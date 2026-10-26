@@ -69,7 +69,7 @@ func (d *davRequest) alarmWrites(v *davView, in *caldav.Inbound, current opsync.
 	}
 	matched := map[string]bool{}
 	mapped := 0
-	now := time.Now().UnixMilli()
+	now := d.s.now().UnixMilli()
 	for _, a := range in.Alarms {
 		kind, offset, fire, ok := alarmTarget(a, hasDeadline, startIsDue, dueRaw, deadlineRaw, location)
 		if !ok || mapped >= caldav.MaxMappedAlarms {

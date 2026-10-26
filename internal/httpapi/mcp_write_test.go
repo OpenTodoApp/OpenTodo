@@ -456,12 +456,12 @@ func TestAgentWriteBatchRefusedOnViewerScope(t *testing.T) {
 // a laptop's offline title change both survive.
 func TestAgentWriteConvergesWithOfflineEdit(t *testing.T) {
 	e, _, secret, c := agentReady(t)
+	e.now.Freeze(time.Now())
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Draft"})
 	e.mustStatus(resp, 201, out)
 	id := out["id"].(string)
-	time.Sleep(5 * time.Millisecond)
-	offlineTS := time.Now().UnixMilli() // edited on the laptop, offline, before the assistant acted
-	time.Sleep(5 * time.Millisecond)
+	// Edited on the laptop, offline, after the task was created and before the assistant acted.
+	offlineTS := e.now.Now().UnixMilli()
 	c.mustTool(secret, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": id, "priority": 1}}})
 	syncOnce(e, "laptop", 0, []map[string]any{{"id": ids.New(), "entity": "task", "entityId": id, "field": "title", "value": "Final", "ts": offlineTS, "device": "laptop"}})
 	if e.taskField(id, "title") != "Final" || e.taskField(id, "priority").(float64) != 1 {

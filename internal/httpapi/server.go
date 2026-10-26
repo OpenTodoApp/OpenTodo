@@ -45,6 +45,8 @@ const sessionCookie = "opentodo_session"
 
 // Server holds the dependencies of the HTTP layer.
 type Server struct {
+	// clock is the request path's time source (clock.go): time.Now unless WithClock.
+	clock   func() time.Time
 	cfg     config.Config
 	auth    *auth.Service
 	audit   *audit.Recorder
@@ -236,7 +238,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 // newServer builds the Server with its rate limiters and the importer; the
 // options run after it.
 func newServer(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) *Server {
-	s := &Server{cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
+	s := &Server{clock: time.Now, cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
 		registerLimiter: newRateLimiter(10, time.Minute), resetLimiter: newRateLimiter(10, time.Minute),
 		invitePreviewLimiter: newRateLimiter(10, time.Minute), publicLinkLimiter: newRateLimiter(10, time.Minute),

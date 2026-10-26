@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
-	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
@@ -57,7 +56,7 @@ func (s *Server) seedCaldav(ctx context.Context) {
 		v = "true"
 	}
 	if _, err := s.sync.DB().ExecContext(ctx, `INSERT OR IGNORE INTO settings(key,value,updated_at) VALUES(?,?,?)`,
-		caldavSettingKey, v, time.Now().UnixMilli()); err != nil {
+		caldavSettingKey, v, s.now().UnixMilli()); err != nil {
 		s.log.Error("seed caldav setting", "err", err)
 	}
 }

@@ -111,7 +111,7 @@ func (s *Server) handleQuickAddParse(w http.ResponseWriter, r *http.Request) {
 	}
 	today, now := in.Today, in.Now
 	if today == "" || now == "" {
-		t := time.Now().In(acct.loc)
+		t := s.now().In(acct.loc)
 		if today == "" {
 			today = t.Format(time.DateOnly)
 		}

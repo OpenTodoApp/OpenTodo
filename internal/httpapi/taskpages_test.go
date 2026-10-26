@@ -451,13 +451,12 @@ func TestTaskPageModeSwitch(t *testing.T) {
 // changes the due date; both changes survive (last writer wins per field).
 func TestTaskPageConcurrentEdit(t *testing.T) {
 	se := newShareEnv(t)
+	se.alice.now.Freeze(time.Now())
 	task := personalTask(t, se.alice, map[string]any{"title": "Fix the gate", "due": map[string]any{"date": "2026-10-20"}})
 	secret, _ := publishPage(t, se.alice, task, map[string]any{"rights": "tick"})
 	// The owner's offline edit: after the task was created, before the guest's tick,
 	// and it reaches the server only after the tick.
-	time.Sleep(20 * time.Millisecond)
-	offlineTS := time.Now().UnixMilli()
-	time.Sleep(20 * time.Millisecond)
+	offlineTS := se.alice.now.Now().UnixMilli()
 	guest := newClientAt(se.alice, "10.7.6.1")
 	resp, out := guest.do("POST", "/api/v1/pages/"+secret+"/tick", map[string]any{"taskId": task, "completed": true, "name": "Marco"})
 	guest.mustStatus(resp, 200, out)
