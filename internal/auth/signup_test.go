@@ -44,6 +44,11 @@ func TestSignupVerification(t *testing.T) {
 	if err != nil || u.Role != "member" || u.Name != "New" {
 		t.Fatalf("complete = %+v %v", u, err)
 	}
+	// sso-email-verified: the address the link went to is confirmed.
+	db.QueryRow("SELECT COUNT(*) FROM users WHERE id = ? AND email_verified_at IS NOT NULL", u.ID).Scan(&n)
+	if n != 1 {
+		t.Fatal("verified sign-up left the address unconfirmed")
+	}
 	if _, err := s.Authenticate(ctx, "new@example.com", "another long password"); err != nil {
 		t.Fatalf("sign in with the stored password: %v", err)
 	}

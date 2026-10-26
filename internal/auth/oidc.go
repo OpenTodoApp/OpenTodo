@@ -129,6 +129,15 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 		if guarded {
 			return nil, false, false, ErrLinkRequiresSession
 		}
+		// An address nobody has confirmed may have been typed by someone else
+		// to catch the real holder's first sign-on (sso-email-verified D2).
+		var verifiedAt sql.NullInt64
+		if err := tx.QueryRowContext(ctx, "SELECT email_verified_at FROM users WHERE id = ?", existing.ID).Scan(&verifiedAt); err != nil {
+			return nil, false, false, err
+		}
+		if !verifiedAt.Valid {
+			return nil, false, false, ErrLinkRequiresSession
+		}
 		u = &existing
 	case errors.Is(err, sql.ErrNoRows):
 		if !s.allowSignup && !allowProvision {
@@ -190,6 +199,14 @@ func (s *Service) insertIdentity(ctx context.Context, tx *sql.Tx, userID string,
 			return ErrIdentityTaken
 		}
 		return err
+	}
+	// A provider's verified address equal to the account's confirms it
+	// (sso-email-verified D1).
+	if email := normalizeEmail(id.Email); id.EmailVerified && email != "" {
+		if _, err := tx.ExecContext(ctx, "UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ? AND email = ?",
+			now, userID, email); err != nil {
+			return err
+		}
 	}
 	return s.audit.RecordTx(ctx, tx, audit.IdentityLinked(userID, provider))
 }

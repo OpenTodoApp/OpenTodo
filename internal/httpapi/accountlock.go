@@ -78,6 +78,6 @@ func (s *Server) announceSetupCode() {
 	if code == "" {
 		return
 	}
-	s.log.Warn("No owner account exists yet. To create it from outside this server's local network, enter this setup code on the setup screen: "+code+
-		" (from this machine or a private network no code is needed).", "setup_code", code)
+	s.log.Warn("No owner account exists yet. To create it from another machine, enter this setup code on the setup screen: "+code+
+		" (only a browser on this machine itself, without a proxy, needs no code).", "setup_code", code)
 }

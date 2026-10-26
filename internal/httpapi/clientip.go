@@ -83,7 +83,7 @@ func peerAddr(r *http.Request) string {
 // and can be forged. With "cloudflare", a hop that is a Cloudflare edge and a
 // request carrying CF-Connecting-IP is attributed to that address, which covers
 // reverse proxies that drop the incoming X-Forwarded-For. When every hop is
-// trusted the client is the first one.
+// trusted the client is the one the nearest proxy appended.
 func clientIP(r *http.Request) string {
 	peer := peerAddr(r)
 	t := trusted()
@@ -109,7 +109,12 @@ func clientIP(r *http.Request) string {
 			}
 		}
 	}
-	return hops[0]
+	// Every hop is trusted: the address the nearest proxy appended, never the
+	// leftmost entry, which the client wrote itself (setup-and-forwarding D2).
+	if len(hops) >= 2 {
+		return hops[len(hops)-2]
+	}
+	return peer
 }
 
 // fromTrustedProxy reports whether the connection itself comes from a trusted
@@ -119,10 +124,45 @@ func fromTrustedProxy(r *http.Request) bool {
 	return within(peerAddr(r), trusted().prefixes)
 }
 
-// isLocalAddr reports whether a client address is loopback, private or
-// link-local: a first registration from there needs no setup code.
-// Unparseable addresses are not local.
-func isLocalAddr(ip string) bool { return within(ip, privatePrefixes) }
+// warnUnforwarded logs once per process when a request comes from a trusted
+// proxy address other than loopback without X-Forwarded-For
+// (setup-and-forwarding D3). Behind a NAT, a port forwarder or a proxy that
+// does not append the client, every client then shares that address in rate
+// limits and the audit log.
+func (s *Server) warnUnforwarded(r *http.Request) {
+	if s.unforwardedWarned.Load() || r.Header.Get("X-Forwarded-For") != "" || !fromTrustedProxy(r) {
+		return
+	}
+	peer := peerAddr(r)
+	if a, err := netip.ParseAddr(peer); err != nil || a.Unmap().IsLoopback() {
+		return
+	}
+	if s.unforwardedWarned.CompareAndSwap(false, true) {
+		s.log.Warn("a request came from a trusted proxy address without X-Forwarded-For: if a reverse proxy, NAT or port forwarder sits in front of OpenTodo, every client looks like this address in rate limits and the audit log; make the proxy append X-Forwarded-For, or set OPENTODO_TRUSTED_PROXIES to your proxy only",
+			"peer", peer)
+	}
+}
+
+// forwardingHeaders are the headers by which a proxy names another client.
+var forwardingHeaders = []string{"X-Forwarded-For", "Forwarded", "X-Real-Ip", "CF-Connecting-IP", "True-Client-Ip"}
+
+// isLocalSetup reports whether a first registration comes from this machine
+// itself: a loopback connection carrying no forwarding header. Only then is no
+// setup code needed (setup-and-forwarding D1). A private peer is not enough:
+// behind a NAT, a port forwarder or a rootless container every client,
+// including one on the internet, can arrive from a private address.
+func isLocalSetup(r *http.Request) bool {
+	a, err := netip.ParseAddr(peerAddr(r))
+	if err != nil || !a.Unmap().IsLoopback() {
+		return false
+	}
+	for _, h := range forwardingHeaders {
+		if r.Header.Get(h) != "" {
+			return false
+		}
+	}
+	return true
+}
 
 // addrKey is the rate-limit key for a client address: IPv6 addresses are
 // grouped by their /64 (one subscriber usually holds a whole /64), IPv4 and

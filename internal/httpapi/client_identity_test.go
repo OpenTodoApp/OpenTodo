@@ -177,6 +177,66 @@ func TestSetupFromPublicAddressNeedsCode(t *testing.T) {
 	e.mustStatus(resp, http.StatusCreated, out)
 }
 
+// setup-and-forwarding "Setup through a forwarder": a private or loopback
+// address named by a forwarding header no longer skips the setup code; only
+// a loopback connection without one does.
+func TestSetupCodeOnlySkippedOnThisMachine(t *testing.T) {
+	e := newEnv(t, false)
+	for _, ip := range []string{"192.168.1.5", "127.0.0.1", "10.0.2.2, 127.0.0.1"} {
+		lan := newClientAt(e, ip)
+		_, out := lan.do("GET", "/api/v1/auth/status", nil)
+		if out["setupCodeRequired"] != true {
+			t.Fatalf("status through a forwarder naming %s = %v", ip, out)
+		}
+		resp, out := lan.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "password": "correct horse battery"})
+		if resp.StatusCode != http.StatusForbidden || errCode(out) != "setup_code_invalid" {
+			t.Fatalf("register through a forwarder naming %s = %d %v", ip, resp.StatusCode, out)
+		}
+	}
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = "192.168.1.5:5000"
+	if isLocalSetup(r) {
+		t.Fatal("a private peer counted as this machine")
+	}
+	r.RemoteAddr = "[::1]:5000"
+	if !isLocalSetup(r) {
+		t.Fatal("a loopback peer without headers is this machine")
+	}
+	r.Header.Set("Forwarded", "for=198.51.100.7")
+	if isLocalSetup(r) {
+		t.Fatal("a loopback peer forwarding someone else counted as this machine")
+	}
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, http.StatusCreated, out)
+}
+
+// setup-and-forwarding D2: when every hop is trusted, a leading entry the
+// client wrote does not become its address.
+func TestForgedLeadingHopIgnoredWhenAllTrusted(t *testing.T) {
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = "172.18.0.2:4000"
+	r.Header.Set("X-Forwarded-For", "127.0.0.1, 192.168.1.20")
+	if got := clientIP(r); got != "192.168.1.20" {
+		t.Fatalf("client = %q, want the proxy's entry", got)
+	}
+}
+
+// setup-and-forwarding D3: one warning per process when a non-loopback trusted
+// peer sends no X-Forwarded-For.
+func TestWarnsOnceAboutUnforwardedPeer(t *testing.T) {
+	var buf bytes.Buffer
+	s := &Server{log: slog.New(slog.NewTextHandler(&buf, nil))}
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = "127.0.0.1:4000"
+	s.warnUnforwarded(r)
+	r.RemoteAddr = "172.18.0.1:4000"
+	s.warnUnforwarded(r)
+	s.warnUnforwarded(r)
+	if n := strings.Count(buf.String(), "without X-Forwarded-For"); n != 1 {
+		t.Fatalf("warnings = %d: %s", n, buf.String())
+	}
+}
+
 // TestOriginMustMatchBaseURL: with OPENTODO_BASE_URL set, a page served under
 // another host name (DNS rebinding) is cross-site even when Origin equals Host.
 func TestOriginMustMatchBaseURL(t *testing.T) {

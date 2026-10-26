@@ -15252,7 +15252,7 @@
   "You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
-  "You are setting up this server from outside its local network, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.": [
+  "You are setting up this server from another machine, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.": [
     "web/src/app/AuthScreen.tsx"
   ],
   "You are signed in": [

@@ -28,7 +28,7 @@ In the sandbox, one line at the top says so: **Details** shows the full text, **
 
 ### Set up your own server
 
-The first person to open a new OpenTodo server creates the owner account: enter your name, email and a password of at least 10 characters, then select **Create owner account**. From outside its network, the form also asks for the **Setup code** from `docker logs opentodo` ([details](self-hosting/docker.md#the-setup-code)). After that, sign-up is closed: other people join with an invitation from you (see [Sharing and comments](sharing.md#invite-someone-new)).
+The first person to open a new OpenTodo server creates the owner account: enter your name, email and a password of at least 10 characters, then select **Create owner account**. From any machine other than the server itself, the form also asks for the **Setup code** from `docker logs opentodo` ([details](self-hosting/docker.md#the-setup-code)). After that, sign-up is closed: other people join with an invitation from you (see [Sharing and comments](sharing.md#invite-someone-new)).
 
 <picture><source srcset="images/setup-owner-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/setup-owner-light.webp" alt="The Create the owner account form with Name, Email and Password fields."></picture>
 

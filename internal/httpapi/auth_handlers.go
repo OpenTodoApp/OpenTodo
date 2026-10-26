@@ -51,7 +51,7 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	// Without a token, a client outside the local network needs the setup code
 	// from the server log (trusted-client-identity).
-	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeRequired() && !isLocalAddr(clientIP(r))
+	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeRequired() && !isLocalSetup(r)
 	if s.hosted {
 		// A hosted tenant (multi-tenant-host D4): the app hides the operator's panels.
 		out["hosted"] = true
@@ -139,7 +139,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	// Without a setup token, a first registration from a public address needs
 	// the setup code from the server log (trusted-client-identity).
-	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, isLocalAddr(clientIP(r)))
+	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, isLocalSetup(r))
 	switch {
 	case errors.Is(err, auth.ErrSetupTokenInvalid):
 		writeError(w, http.StatusForbidden, "setup_token_invalid", err.Error())
