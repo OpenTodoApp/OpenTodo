@@ -1,11 +1,13 @@
 // node --test scripts/deploy/render.test.mjs  (OpenSpec change platform-catalogs)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText } from './common.mjs'
+import { configVariables, loadFacts, readText, releaseVersion } from './common.mjs'
 import { BLUEPRINT, BUTTON_URL, check, checkBlueprint, checkLinks, DOCS, README } from './render.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
 const text = readText(BLUEPRINT)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
 const sub = (a, b) => {
@@ -32,7 +34,7 @@ test('render: strict YAML and Blueprint fields', () => {
 
 test('render: image policy, port and data path', () => {
   has(sub('opentodo:stable', 'opentodo:latest'), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
-  has(sub('opentodo:stable', 'opentodo:0.14.2'), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(sub('opentodo:stable', `opentodo:${V}`), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(sub('value: "8080"', 'value: "10000"'), /port must be 8080/)
   has(sub('value: "8080"', 'value: 8080'), /PORT: value must be a quoted string/)
   has(sub('      - key: PORT\n        value: "8080"\n', ''), /PORT must be set/)
