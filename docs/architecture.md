@@ -163,7 +163,7 @@ Files in the data directory: `opentodo.db` (plus WAL files), `opentodo.lock`, `p
 | Module | Responsibility |
 | --- | --- |
 | `lib/db.ts` | Dexie database: `projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `prefs` (synced `project_prefs`), `outbox`, `meta` (device settings), plus caches (`memberships`, `notifications`) and the local `activity` log |
-| `lib/types.ts` | Entity types; field names mirror `internal/sync/ops.go` |
+| `lib/types.ts` | Entity types; each extends its op fields from `generated/opSchema.ts`, which `internal/sync` generates from `Schema` with the row defaults and content fields |
 | `lib/hlc.ts` | Hybrid logical clock and the shared `wins()` rule |
 | `lib/ops.ts` | `applyOps` (per-field LWW into IndexedDB, merge-and-republish of note documents), `mutate` (local apply + outbox + notify), entity helpers and defaults |
 | `lib/sync.ts` | Background push/pull loop, triggers, live-update channel (`EventSource` with backoff), status store (`useSyncStatus`) |

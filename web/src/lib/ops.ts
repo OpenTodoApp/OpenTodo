@@ -1,5 +1,6 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
+import { OP_DEFAULTS } from '../generated/opSchema'
 import { db, entityTables, getMeta, localEpoch, setMeta, tableOf, type EntityRow } from './db'
 import { dueToInstant, logicalToday, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
@@ -54,55 +55,30 @@ export function resetDeviceId(): void {
 }
 resettable('deviceId', resetDeviceId)
 
-const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
-  name: '', color: '#64748b', position: 0, archived: false, parent_id: null, icon: null, created_at: 0, deleted_at: null, description: '', notes_doc: '', workspace_id: null,
-}
-const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
-  title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, fields: {}, origin: null, location: null, note_mentions: [], sample: false, workspace_id: null,
-}
-const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
-  name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
-}
+const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = OP_DEFAULTS.project
+const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = OP_DEFAULTS.task
+const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = OP_DEFAULTS.label
 /** Defaults for a view row created from partial ops; also the read-time fallback for unknown option values. */
-export const VIEW_DEFAULTS: Omit<View, 'id' | '_clock'> = {
-  name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false,
-  position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null,
-}
-const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
-  task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null,
-  created_at: 0, deleted_at: null,
-}
-const SECTION_DEFAULTS: Omit<Section, 'id' | '_clock'> = {
-  name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null,
-}
+export const VIEW_DEFAULTS: Omit<View, 'id' | '_clock'> = OP_DEFAULTS.view
+const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = OP_DEFAULTS.reminder
+const SECTION_DEFAULTS: Omit<Section, 'id' | '_clock'> = OP_DEFAULTS.section
 /** field (custom-fields D1): project_id and type are fixed at creation. */
-const FIELD_DEFAULTS: Omit<FieldDef, 'id' | '_clock'> = {
-  name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
-}
-const COMMENT_DEFAULTS: Omit<Comment, 'id' | '_clock'> = {
-  task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null,
-  guest_name: null, page_id: null, reactions: {},
-}
+const FIELD_DEFAULTS: Omit<FieldDef, 'id' | '_clock'> = OP_DEFAULTS.field
+const COMMENT_DEFAULTS: Omit<Comment, 'id' | '_clock'> = OP_DEFAULTS.comment
 /** attachment (attachments D1): every field but name, uploaded_at and deleted_at is fixed at creation. */
-export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
-  task_id: '', comment_id: null, name: '', mime: 'application/octet-stream', size: 0, sha256: '', url: null, encrypted: false,
-  author_id: '', created_at: 0, uploaded_at: null, deleted_at: null,
-}
+export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = OP_DEFAULTS.attachment
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
-const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '' }
+const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = OP_DEFAULTS.project_prefs
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
-export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', language: 'system', welcome: '', method_mode: '', start_checklist: '',
-  focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '' }
+export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = OP_DEFAULTS.user_prefs
 /** review (stats-and-review D4, open-loops-method D5): 0 means "never finished", an empty focus date no focus. */
-export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, closed_day: '', tomorrow_note: '', carry_over: '' }
+export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = OP_DEFAULTS.review
 /** A time entry row before its ops arrive (time-tracking D1); `ended_at` null reads as running. */
-export const TIME_ENTRY_DEFAULTS: Omit<TimeEntry, 'id' | '_clock'> = { task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null }
+export const TIME_ENTRY_DEFAULTS: Omit<TimeEntry, 'id' | '_clock'> = OP_DEFAULTS.time_entry
 /** A place (task-locations D1): `geo` null until it has a position. */
-export const PLACE_DEFAULTS: Omit<Place, 'id' | '_clock'> = { name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null }
+export const PLACE_DEFAULTS: Omit<Place, 'id' | '_clock'> = OP_DEFAULTS.place
 /** An automation rule (automation-rules D1): off and without a trigger until its ops arrive. */
-export const RULE_DEFAULTS: Omit<Rule, 'id' | '_clock'> = { name: '', enabled: false, trigger: null, condition: null, actions: null, position: 0, created_at: 0, deleted_at: null }
+export const RULE_DEFAULTS: Omit<Rule, 'id' | '_clock'> = OP_DEFAULTS.rule
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
 export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
