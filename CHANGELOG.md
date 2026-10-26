@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+- **Adding a way to sign in needs a recent sign-in** (found in an internal audit). Adding a passkey, setting up an authenticator app or linking a single sign-on account now asks for your password or a code when you last signed in more than ten minutes ago, like creating an API token already did, and doing one of them no longer counts as a recent sign-in. Before, someone with access to a long-open session could add their own passkey, authenticator app or provider account and keep access after a password change. Scripts that enrol with an `admin` token are unaffected. ([Account security](docs/account-security.md#confirm-its-you))
+
 ### Added
 
 - **n8n nodes.** A separate package, installed from npm as `n8n-nodes-opentodo` once it is released (Settings → Community nodes in a self-hosted n8n), adds an **OpenTodo** node that creates, reads, changes, completes and deletes tasks, with quick-add syntax if you like, and manages projects, labels and comments, also as a tool for n8n's AI Agent. An **OpenTodo Trigger** starts a workflow when tasks or projects change: it sets up a webhook in your account, checks every delivery's signature and removes the webhook when the workflow is turned off. It needs an API token and no change on the server. ([n8n](docs/n8n.md))

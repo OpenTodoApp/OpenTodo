@@ -616,6 +616,10 @@ func TestEnrolConfirmDisable(t *testing.T) {
 		t.Fatalf("wrong confirm = %d %v", resp.StatusCode, out)
 	}
 	m.clock.advance(auth.EnrollmentTTL + time.Second)
+	// The sign-in is as old as the enrolment; confirming needs a recent one
+	// (credential-freshness), and the pending secret stays expired after it.
+	resp, out = m.do("POST", "/api/v1/auth/reauth", map[string]string{"password": "correct horse battery"})
+	m.mustStatus(resp, 200, out)
 	resp, out = m.do("POST", "/api/v1/mfa/totp/confirm", map[string]string{"code": m.code(secret)})
 	if resp.StatusCode != 400 || errCode(out) != "mfa_code_invalid" {
 		t.Fatalf("stale confirm = %d %v", resp.StatusCode, out)

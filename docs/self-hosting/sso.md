@@ -94,7 +94,8 @@ Leave the switch off if the provider's picture addresses point to a host you do 
 - A first-time identity with a verified email that matches a member account is linked to it. The owner, admins and accounts with two-factor authentication or a passkey are refused (`oidc_link_required`) and link only from Settings while signed in, so the provider can never stand in for their own second factor. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created.
 - When nothing matches, a `member` account is created only if **Allow new accounts via SSO** is on or `OPENTODO_ALLOW_SIGNUP=true`. Otherwise the person sees "There is no account for this identity yet" and you can invite them.
 - Accounts created this way have no password. They can add a passkey in **Settings → Account**.
-- Everyone can link or unlink the provider in **Settings → Account → Security → Linked accounts**. Unlinking is refused when it would leave the account with no way to sign in.
+- Everyone can link or unlink the provider in **Settings → Account → Security → Linked accounts**. Linking a new identity needs a sign-in in the last ten minutes; from an older session the app asks for your password or a code first, then sends you to the provider again. Unlinking is refused when it would leave the account with no way to sign in.
+- Going through the provider again with an identity that is already linked counts as confirming it's you, so accounts without a password can still make changes that ask for a recent sign-in (the dialog offers **Confirm with …**).
 - A provider sign-in counts as two-factor: someone with an authenticator app is not asked for a code, because the provider applies its own policy. If the owner requires two-factor for everyone (**Settings → People → Access policies → Two-factor policy**), accounts without an authenticator are still asked to enrol one.
 
 ## SSO only

@@ -83,6 +83,9 @@ export function SecurityPanel() {
       await load()
     } catch (err) {
       if (isCancellation(err)) return // user closed the browser prompt
+      // Adding a passkey needs a recent sign-in; the API client asked for it
+      // (ReauthDialog) and the user cancelled, so nothing changed.
+      if (err instanceof ApiError && err.code === 'reauth_required') return
       setError(err instanceof ApiError && err.code === 'passkey_challenge_invalid'
         ? t('That took too long. Please try again.')
         : err instanceof Error ? err.message : String(err))
