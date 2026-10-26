@@ -7,20 +7,10 @@ name: Interface audit
 # ux-audit-report. Non-blocking: the tour only reports, unless the repository
 # variable UX_AUDIT_STRICT is 1; its measurement tests fail it.
 #
-# Its own workflow, off the push critical path (ci-speed): it runs on every pull
-# request that changes code, nightly on main, and on demand; a push to main is the
-# merge of a pull request that already ran it, and publishing never waits for it.
+# Its own workflow, off every critical path (tiered CI, ci-speed): nightly on main
+# and on demand (Actions → Interface audit → Run workflow, on any branch); neither a
+# pull request nor publishing waits for it.
 on:
-  pull_request:
-    paths:
-      - web/**
-      - internal/**
-      - cmd/**
-      - scripts/ux-audit/**
-      - templates/**
-      - go.mod
-      - go.sum
-      - .github/workflows/ux-audit.yml
   schedule:
     - cron: "41 2 * * *"
   workflow_dispatch:
@@ -30,7 +20,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 
 jobs:
   ux-audit:

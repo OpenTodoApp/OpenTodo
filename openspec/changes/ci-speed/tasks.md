@@ -12,6 +12,12 @@
 - [x] 3.1 Chromium layout check per width, end-to-end checks as their own leg
 - [x] 3.2 `SHARD=i/n` in `scripts/ui-check/a11y.mjs`; `ui-a11y` runs two shards, motion in the first
 
-## 4. Verify
+## 4. Tiers
 
-- [x] 4.1 Compare wall time and per-job times of this pull request's CI run with earlier runs (see the pull request description)
+- [x] 4.1 `ui`, `layout`, `extension`, `skill` outputs in `scripts/ci-changes.sh`, with cases in `scripts/repo-checks.test.mjs`
+- [x] 4.2 Pull request legs from `fromJSON` matrices (one layout leg, one binary); job conditions per output; docs check in the checks job; `docker` and `release` with `!cancelled() && !failure()`, checked by the repository checks
+- [x] 4.3 The interface audit nightly and on demand only; `CONTRIBUTING.md` describes the tiers
+
+## 5. Verify
+
+- [x] 5.1 Compare wall time and per-job times of this pull request's CI run with earlier runs (see the pull request description)
