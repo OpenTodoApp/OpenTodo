@@ -50,12 +50,22 @@ export function dropTargetAt(x: number, y: number, doc: Document = document, tas
   return hit ? hit.getAttribute('data-drop-target') : null
 }
 
-/** The key an element answers to: its `data-drop-target`, or `drop:` and its `data-task-drop`. */
-const keysOf = (el: Element) => [el.getAttribute('data-drop-target'), el.hasAttribute('data-task-drop') ? `drop:${el.getAttribute('data-task-drop')}` : null]
+/**
+ * The keys an element answers to: its `data-drop-target`, and `drop:` and its
+ * `data-task-drop`. An attribute it lacks gives no key, so a row with only one of
+ * them (a viewer's project row has no task drop) never matches "no target".
+ */
+const keysOf = (el: Element): string[] => {
+  const keys: string[] = []
+  const target = el.getAttribute('data-drop-target')
+  if (target !== null) keys.push(target)
+  if (el.hasAttribute('data-task-drop')) keys.push(`drop:${el.getAttribute('data-task-drop')}`)
+  return keys
+}
 
 function markActive(key: string | null): void {
   for (const el of document.querySelectorAll(`[${ACTIVE}]`)) {
-    if (!keysOf(el).includes(key)) el.removeAttribute(ACTIVE)
+    if (key === null || !keysOf(el).includes(key)) el.removeAttribute(ACTIVE)
   }
   if (key === null) return
   for (const el of document.querySelectorAll('[data-drop-target], [data-task-drop]')) {
