@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"slices"
-	"time"
 
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -117,7 +116,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		"ops":        ops,
 		"cursor":     cursor,
 		"hasMore":    more,
-		"serverTime": time.Now().UnixMilli(),
+		"serverTime": s.now().UnixMilli(),
 		// generation changes only when the server is restored from a backup (additive field).
 		"generation": gen,
 		// Additive (project-sharing): refused ops and the caller's shared projects.

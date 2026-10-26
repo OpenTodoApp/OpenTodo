@@ -8,7 +8,6 @@ import (
 	"mime"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/auth"
@@ -38,7 +37,7 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 	s.agentExclusions = agenttools.NewExclusions(s.sync.DB())
 	s.agentTools = agenttools.New(s.sync, agenttools.Options{
 		Audit: s.audit, Log: s.log, Exclusions: s.agentExclusions,
-		LocalToday: func() string { return localToday(time.Now()) },
+		LocalToday: func() string { return localToday(s.now()) },
 		// Relative reminders follow a new due date (deadline reminders a new
 		// deadline), as for a REST write.
 		ExtraOps: func(ctx context.Context, uid string, c agenttools.Change, ts int64, device string) ([]opsync.Op, error) {

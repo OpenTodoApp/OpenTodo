@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pixari/opentodo/internal/activity"
 	"github.com/pixari/opentodo/internal/ids"
@@ -125,7 +124,7 @@ func (s *Server) handleCreateComment(w http.ResponseWriter, r *http.Request) {
 	m, _ := json.Marshal(mentions)
 	b, _ := json.Marshal(*in.Body)
 	id := ids.New()
-	now := time.Now().UnixMilli()
+	now := s.now().UnixMilli()
 	body := map[string]json.RawMessage{
 		"task_id": json.RawMessage(opsync.QuoteJSON(taskID)), "author_id": json.RawMessage(opsync.QuoteJSON(uid)),
 		"body": b, "parent_id": parent, "mentions": m, "created_at": json.RawMessage(strconv.FormatInt(now, 10)),
@@ -160,7 +159,7 @@ func (s *Server) handlePatchComment(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
 	}
-	body := map[string]json.RawMessage{"edited_at": json.RawMessage(strconv.FormatInt(time.Now().UnixMilli(), 10))}
+	body := map[string]json.RawMessage{"edited_at": json.RawMessage(strconv.FormatInt(s.now().UnixMilli(), 10))}
 	if in.Body != nil {
 		body["body"], _ = json.Marshal(*in.Body)
 	}
@@ -206,7 +205,7 @@ func (s *Server) handleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.existingComment(w, r); !ok {
 		return
 	}
-	body := map[string]json.RawMessage{"deleted_at": json.RawMessage(strconv.FormatInt(time.Now().UnixMilli(), 10))}
+	body := map[string]json.RawMessage{"deleted_at": json.RawMessage(strconv.FormatInt(s.now().UnixMilli(), 10))}
 	s.writeComment(w, r, r.PathValue("id"), body, http.StatusNoContent)
 }
 
