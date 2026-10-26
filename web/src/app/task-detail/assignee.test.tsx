@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { createProject, createTask } from '../../lib/ops'
 import { click } from '../../ui/test-utils'
-import { ME, membership, open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
+import { ME, membership, open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
 
@@ -28,9 +28,9 @@ describe('assignee in personal scopes', () => {
     // Assigned to me lists explicitly assigned tasks.
     expect((await db.tasks.where('assignee_id').equals(ME).toArray()).map((t) => t.id)).toEqual([id])
     await click(v.valueButton('assignee'))
-    await settle()
+    await waitFor(() => !!v.editor()?.querySelector('[data-facet-clear]'), 'the assignee editor')
     await click(v.editor()!.querySelector('[data-facet-clear]')!)
-    await settle()
+    await waitFor(async () => (await db.tasks.get(id))!.assignee_id === null, 'the assignee cleared')
     expect((await db.tasks.get(id))!.assignee_id).toBeNull()
     await waitFor(() => !v.row('assignee'))
 
@@ -49,9 +49,9 @@ describe('assignee in personal scopes', () => {
     await waitFor(() => !!v.row('assignee'))
     expect(v.row('assignee').textContent).toContain('Unassigned')
     await click(v.valueButton('assignee'))
-    await settle()
+    await waitFor(() => v.options('assignee').length > 0, 'the assignee picker')
     await v.pick('assignee', 'u-bob')
-    expect((await db.tasks.get(id))!.assignee_id).toBe('u-bob')
+    await waitFor(async () => (await db.tasks.get(id))!.assignee_id === 'u-bob', 'the assignee written')
     await waitFor(() => v.row('assignee').textContent!.includes('u-bob'))
     await v.unmount()
   })

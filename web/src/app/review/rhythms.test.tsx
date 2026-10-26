@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { createProject, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import type { User } from '../../lib/types'
-import { flush, key, render, type } from '../../ui/test-utils'
+import { key, render, type, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { navigate } from '../router'
 import { Shell } from '../Shell'
@@ -33,10 +33,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const rowOf = (title: string) => [...document.querySelectorAll<HTMLElement>('[data-task-id]')].find((r) => r.textContent?.includes(title))!
 
 describe('weekly review steps', () => {
@@ -49,7 +45,9 @@ describe('weekly review steps', () => {
     for (const title of ['Call the dentist', 'Fix the bike light', 'Thank Mara']) {
       await type(input, title)
       await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
-      await flush(30)
+      // Each capture is stored before the next is typed: two creates in flight at once
+      // can read the same last position (see the report of the test-audit F2 batch).
+      await waitFor(async () => input.value === '' && (await db.tasks.toArray()).some((x) => x.title === title), 'the capture stored')
     }
     await waitFor(() => r.container.textContent!.includes('3 caught into the Inbox.'))
     const inbox = (await db.tasks.toArray()).filter((x) => x.project_id === null).sort((a, b) => a.position - b.position).map((x) => x.title)
@@ -87,7 +85,7 @@ describe('Daily check', () => {
     for (let i = 0; i < 2; i++) {
       await key(document.body, 'j')
       await key(document.body, 'f')
-      await flush(30)
+      await waitFor(() => document.querySelectorAll('[data-group="focus"] [data-task-id]').length === i + 2, 'the task in focus')
     }
     await waitFor(() => document.querySelectorAll('[data-group="focus"] [data-task-id]').length === 3)
     await key(document.body, 'j')

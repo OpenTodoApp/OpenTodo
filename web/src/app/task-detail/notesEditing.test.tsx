@@ -26,7 +26,7 @@ async function editorOf(container: HTMLElement, filled = false): Promise<EditorV
   await waitFor(() => !!editorEl(container) && (!filled || !editorEl(container)!.classList.contains('is-empty')), 'the notes editor')
   const v = noteViewOf(editorEl(container)!)!
   v.focus()
-  await flush(10)
+  await flush()
   return v
 }
 
@@ -38,13 +38,13 @@ async function typeText(v: EditorView, text: string) {
     if (!handled) v.dispatch(v.state.tr.insertText(ch, from, to))
     await flush(0)
   }
-  await flush(10)
+  await flush()
 }
 
 async function press(v: EditorView, key: string, mods: KeyboardEventInit = {}) {
   const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...mods })
   const handled = v.someProp('handleKeyDown', (f) => f(v, ev))
-  await flush(10)
+  await flush()
   return !!handled
 }
 
@@ -290,7 +290,7 @@ describe('touch toolbar', () => {
     const id = await createTask({ title: 'Plan' })
     const { container, unmount } = await open(id)
     await editorOf(container)
-    await flush(20)
+    await flush()
     expect(container.querySelector('[role="toolbar"][data-editor-toolbar]')).toBeNull()
     await unmount()
   })

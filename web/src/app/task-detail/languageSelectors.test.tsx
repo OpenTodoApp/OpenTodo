@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
 import { applyCatalog, loadLanguage } from '../../lib/i18n/catalog'
 import { createTask } from '../../lib/ops'
-import { click, flush, key } from '../../ui/test-utils'
+import { click, key } from '../../ui/test-utils'
 import { focusTitle } from '../vim/VimLayer'
 import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
@@ -29,13 +29,13 @@ describe('language-independent lookups (UI-5)', () => {
     const { row, unmount, container } = await open(id)
     const addButton = () => container.querySelector('[data-add-property] button[aria-haspopup="menu"][aria-label^="Eine"]') as HTMLButtonElement
     await click(addButton())
-    await flush(40)
+    await waitFor(() => document.querySelectorAll('[role="menu"] [role="menuitem"]').length > 0, 'the property menu')
     await click([...document.querySelectorAll('[role="menu"] [role="menuitem"]')].find((i) => i.textContent?.includes('Schätzung'))!)
-    await flush(40)
+    await waitFor(() => !!row('estimate'), 'the estimate chip')
     expect(row('estimate')).toBeTruthy()
     await key(document.activeElement!, 'Escape')
     await waitFor(() => row('estimate') === null, 'the revealed chip leaving')
-    await flush(80)
+    await waitFor(() => document.activeElement === addButton(), 'focus back on Add')
     expect(document.activeElement).toBe(addButton())
     await unmount()
   })

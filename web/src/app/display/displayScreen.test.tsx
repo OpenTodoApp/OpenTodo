@@ -11,7 +11,7 @@ import { setDateTime, setDayStart } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { createSection } from '../../lib/sections'
 import { createView } from '../../lib/views'
-import { click, flush, key, render } from '../../ui/test-utils'
+import { click, flush, key, render, waitFor } from '../../ui/test-utils'
 import { DEFAULT_DISPLAY_OPTIONS, type DisplayOptions, type DisplayTarget } from './displayOptions'
 import { DisplayScreen, lastSyncedLabel } from './DisplayScreen'
 
@@ -33,10 +33,6 @@ afterEach(() => {
   document.documentElement.removeAttribute('data-motion')
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 function show(target: DisplayTarget, options: Partial<DisplayOptions> = {}) {
   return render(<DisplayScreen route={{ view: 'display', target, options: { ...DEFAULT_DISPLAY_OPTIONS, ...options } }} />)
@@ -253,6 +249,8 @@ describe('keyboard and toggling', () => {
     await key(document.body, 'j')
     await key(document.body, ' ')
     await key(document.body, 'Enter')
+    // Nothing shows a refused key: give a wrong write the time to land.
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts the absence of a write
     await flush(50)
     expect((await db.tasks.toArray()).every((t) => t.completed_at === null)).toBe(true)
     await r.unmount()

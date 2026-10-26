@@ -4,7 +4,7 @@
 // trigger before the exit ends, and the palette's fade closes at once.
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { click, flush, key, render } from '../test-utils'
+import { click, key, render, waitFor } from '../test-utils'
 import { Dialog } from './Dialog'
 
 // happy-dom runs no animations: pretend the browser does, with one running on every element.
@@ -38,10 +38,10 @@ describe('dialog exit', () => {
     const trigger = r.container.querySelector<HTMLButtonElement>('[data-trigger]')!
     trigger.focus()
     await click(trigger)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-overlay="dialog"]'), 'the dialog')
     expect(document.querySelector('[data-overlay="dialog"]')!.className).toContain('dialog-card')
     await key(document.querySelector('[data-overlay="dialog"] button')!, 'Escape')
-    await flush(10)
+    await waitFor(() => !document.querySelector('[data-overlay="dialog"]'), 'the dialog closed')
     expect(document.querySelector('[data-overlay="dialog"]')).toBeNull()
     const copy = exitCopy()!
     expect(copy).not.toBeNull()
@@ -50,7 +50,7 @@ describe('dialog exit', () => {
     expect(copy.querySelector('[role]')).toBeNull()
     expect(copy.querySelector('.dialog-card')!.hasAttribute('data-closing')).toBe(true)
     expect(document.activeElement).toBe(trigger)
-    await flush(320)
+    await waitFor(() => exitCopy() === null, 'the exit copy removed')
     expect(exitCopy()).toBeNull()
     await r.unmount()
   })
@@ -61,7 +61,7 @@ describe('dialog exit', () => {
     await click(trigger)
     await key(document.querySelector('[data-overlay="dialog"] button')!, 'Escape')
     await click(trigger)
-    await flush(10)
+    await waitFor(() => document.querySelectorAll('[data-overlay="dialog"]').length > 0, 'the new dialog')
     expect(document.querySelectorAll('[data-overlay="dialog"]')).toHaveLength(1)
     // The new dialog replaces the one still leaving.
     expect(document.querySelectorAll('[data-overlay-exit]')).toHaveLength(0)

@@ -88,6 +88,7 @@ import {
 import { decryptIncoming, LockedError, MIGRATION_BATCH, normalizeOnSight, prepareOutgoing, runMigration, startMigration } from './e2eeSync'
 import { applyOps, mutate, PlaintextTooLongError, resetDeviceId } from './ops'
 import { syncNow, syncSnapshot } from './sync'
+import { nextMillisecond } from '../test/clock'
 
 const PASS = 'correct horse battery staple'
 const FAST = { iterations: 1000 }
@@ -321,7 +322,7 @@ describe('two devices', () => {
     // Concurrent offline edits: A edits the title, B the title and the due date.
     await on('A')
     await mutate('task', 't1', { title: 'Dentist (A)' })
-    await new Promise((r) => setTimeout(r, 3))
+    await nextMillisecond()
     await on('B')
     await mutate('task', 't1', { title: 'Dentist (B)', due: { date: '2026-10-20' } })
     await syncNow()

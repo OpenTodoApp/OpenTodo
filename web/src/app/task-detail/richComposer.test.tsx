@@ -38,13 +38,13 @@ async function typeText(v: EditorView, text: string) {
     const handled = v.someProp('handleTextInput', (f) => f(v, from, to, ch, () => v.state.tr.insertText(ch, from, to)))
     if (!handled) v.dispatch(v.state.tr.insertText(ch, from, to))
   }
-  await flush(10)
+  await flush()
 }
 
 async function press(v: EditorView, k: string, mods: KeyboardEventInit = {}) {
   const ev = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...mods })
   const done = v.someProp('handleKeyDown', (f) => f(v, ev))
-  await flush(20)
+  await flush()
   return done
 }
 
@@ -122,7 +122,7 @@ describe('rich composer', () => {
     expect(isTypingTarget(v.dom)).toBe(true)
     const block = host.querySelector('[data-composer-block]')!
     block.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }))
-    await flush(20)
+    await waitFor(() => !!resting(), 'the resting composer')
     expect(resting()).toBeTruthy()
     await r.unmount()
     host.remove()

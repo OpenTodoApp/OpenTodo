@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId } from '../../lib/ops'
-import { flush, key, render } from '../../ui/test-utils'
+import { key, render, waitFor } from '../../ui/test-utils'
 import { FilterView } from '../FilterView'
 import { listState } from '../listActions'
 import { hideBulkToast } from './toastStore'
@@ -12,10 +12,6 @@ import { hideBulkToast } from './toastStore'
 let n = 0
 beforeEach(() => { useDatabase(`filter-bulk-${Date.now()}-${n++}`); resetDeviceId() })
 afterEach(() => { hideBulkToast() })
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('Filter view selection', () => {
   it('j, x, Shift+↓ tick two results; 1 sets their priority in one batch; the list state reports them', async () => {
@@ -31,7 +27,7 @@ describe('Filter view selection', () => {
     expect(listState()?.ticked?.()).toEqual([a, b])
     await db.outbox.clear()
     await key(document.body, '1')
-    await flush(100)
+    await waitFor(async () => (await db.tasks.get(a))!.priority === 1, 'the priority written')
     expect((await db.tasks.get(a))!.priority).toBe(1)
     expect(new Set((await db.outbox.toArray()).map((o) => o.ts)).size).toBe(1)
     await r.unmount()

@@ -3,7 +3,7 @@
 // catalogue"): its shape, the names list in the main bundle, the search order shared
 // with the server (internal/iconset), and <CatalogueIcon>'s fallback.
 import { describe, expect, it } from 'vitest'
-import { flush, render } from '../test-utils'
+import { flush, render, waitFor } from '../test-utils'
 import { CatalogueIcon } from '../CatalogueIcon'
 import catalogue from './catalogue.json'
 import { CATALOGUE_NAMES } from './catalogue.names'
@@ -78,7 +78,7 @@ describe('CatalogueIcon', () => {
     expect((ICONS as Record<string, string>)['paw-print']).toBeUndefined()
     const r = await render(<CatalogueIcon name="paw-print" fallback={<i data-fallback />} />)
     await loadCatalogue()
-    await flush(10)
+    await waitFor(() => !!r.container.querySelector('svg[data-icon="paw-print"]'), 'the icon')
     expect(r.container.querySelector('svg[data-icon="paw-print"]')).not.toBeNull()
     expect(r.container.querySelector('[data-fallback]')).toBeNull()
     await r.unmount()
@@ -87,7 +87,7 @@ describe('CatalogueIcon', () => {
   it('keeps the fallback for a name this device does not know', async () => {
     const r = await render(<CatalogueIcon name="from-a-newer-release" fallback={<i data-fallback />} />)
     await loadCatalogue()
-    await flush(10)
+    await flush()
     expect(r.container.querySelector('svg')).toBeNull()
     expect(r.container.querySelector('[data-fallback]')).not.toBeNull()
     await r.unmount()
