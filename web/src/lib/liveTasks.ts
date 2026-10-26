@@ -62,8 +62,14 @@ export function openCountsByProject(tasks: Task[]): Map<string, number> {
   return counts
 }
 
-/** Number of open tasks in a project, live (0 until loaded). */
-export function useOpenTaskCount(projectId: string): number {
+/** Number of open tasks in a project, live; undefined until the first snapshot arrives. */
+export function useOpenTaskCount(projectId: string): number | undefined {
   const all = useLiveTasks()
-  return all ? openCountsByProject(all).get(projectId) ?? 0 : 0
+  return all ? openCountsByProject(all).get(projectId) ?? 0 : undefined
+}
+
+/** Number of open tasks in a project now: the shared snapshot, or one read when nothing holds it yet. */
+export async function openTaskCount(projectId: string): Promise<number> {
+  const here = both.read()?.here ?? (await visibleTaskSets()).here
+  return openCountsByProject(here).get(projectId) ?? 0
 }
