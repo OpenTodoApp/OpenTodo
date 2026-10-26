@@ -31,12 +31,13 @@ describe('module state reset (T1)', () => {
 // Module-level `let` outside tests: each such file either registers a reset with
 // resettable() or is counted here. The count may only go down; a new stateful
 // module registers its reset instead (improvement plan T1).
-const UNREGISTERED_CEILING = 49
+const UNREGISTERED_CEILING = 48
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const file = path.join(dir, name)
-    if (statSync(file).isDirectory()) return sources(file)
+    // src/test holds test harnesses (teardown, the contract devices), not app modules.
+    if (statSync(file).isDirectory()) return file === path.resolve(process.cwd(), 'src/test') ? [] : sources(file)
     return /\.(ts|tsx)$/.test(name) && !/\.(test|stories|testkit)\.tsx?$/.test(name) && !name.endsWith('.d.ts') ? [file] : []
   })
 }
