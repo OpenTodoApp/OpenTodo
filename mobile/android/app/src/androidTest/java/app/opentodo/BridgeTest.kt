@@ -91,13 +91,8 @@ class BridgeTest {
             intending(hasAction(Intent.ACTION_VIEW)).respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
             val (_, web) = open()
             val outside = Uri.parse("https://example.org/outside")
-            fun browserOpened(): Boolean {
-                var seen = false
-                InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                    seen = Intents.getIntents().any { it.action == Intent.ACTION_VIEW && it.data == outside }
-                }
-                return seen
-            }
+            // On the test thread: Espresso refuses getIntents() on the main thread.
+            fun browserOpened() = Intents.getIntents().any { it.action == Intent.ACTION_VIEW && it.data == outside }
             // A scripted click can be lost while a slow emulator still settles the page (a main run
             // timed out here once), and intended() fails when the intent was recorded twice: click
             // again every 5 seconds until one browser intent is there, however many there are.
