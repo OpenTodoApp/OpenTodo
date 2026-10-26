@@ -3,6 +3,7 @@
 // last 90 days. It reads the local activity record (lib/activity), which is not
 // synced and is capped per project, so two devices can list different tasks; the
 // panel says so. Nothing is written or requested.
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { countedTasks, type StatsInput } from './stats'
 import type { ActivityEntry, Task } from './types'
@@ -50,4 +51,9 @@ export function slippingFrom<T extends Task>(rows: readonly Pick<ActivityEntry, 
 export async function slipRows(now: number): Promise<ActivityEntry[]> {
   const since = now - SLIP_WINDOW_DAYS * 86_400_000
   return db.activity.filter((r) => r.entity === 'task' && r.field === 'due' && r.ts >= since).toArray()
+}
+
+/** This device's due-date changes, read once per mount (live after); null until read. */
+export function useSlipRows() {
+  return useLiveQuery(() => slipRows(Date.now()), [], null)
 }

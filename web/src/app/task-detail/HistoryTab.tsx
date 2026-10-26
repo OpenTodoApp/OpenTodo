@@ -3,7 +3,6 @@
 // field changes"): change sets from the server's op log as versions with a summary,
 // readable diffs and restore. Read live from the server; offline it says so and
 // shows nothing stale. Loaded lazily with its tab.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { Skeleton } from '../../ui'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { isNetworkError } from '../../lib/api'
@@ -13,7 +12,7 @@ import { canRestoreField, deviceLabel, fetchHistory, fieldLabel, formatValue, pa
 import { summarizeVersion, toVersions, type Version, type VersionChange } from '../../lib/historyVersions'
 import { useOnline } from '../../lib/online'
 import { getDeviceId } from '../../lib/ops'
-import { currentUserId, memberName } from '../../lib/sharing'
+import { memberName, useMe } from '../../lib/sharing'
 import { syncNow } from '../../lib/sync'
 import type { ChangeSet, Label } from '../../lib/types'
 import { PersonAvatar } from '../PersonAvatar'
@@ -202,7 +201,7 @@ export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
   const [state, setState] = useState<HistoryViewProps['state']>('idle')
   const [device, setDevice] = useState('')
   const [message, setMessage] = useState<string | null>(null)
-  const me = useLiveQuery(() => currentUserId(), [], null)
+  const me = useMe()
   const memberships = useMemberships()
   const labelRows = useAllLabels()
   const labels = useMemo(() => new Map(labelRows.map((l) => [l.id, l])), [labelRows])
