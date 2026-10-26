@@ -58,3 +58,48 @@ func TestInvalidRecurrenceKeepsPreviousRule(t *testing.T) {
 		t.Fatalf("recurrence = %s, want the previous rule", e["recurrence"])
 	}
 }
+
+// TestRecurringCompletionPinnedToday: the next due date of a completed
+// occurrence depends on the due date and "today" only, never on the clock or
+// the zone, across a weekday boundary and the EU change to winter time
+// (2026-10-25). A series due before today skips past today: completing a weekly
+// task due Monday 2026-10-12 on Tuesday 2026-10-20 moves it to the first
+// occurrence from today on, Monday 2026-10-26: what the nightly run of
+// 2026-10-20 saw with a test that still had a fixed due date.
+func TestRecurringCompletionPinnedToday(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	cases := []struct {
+		rule, due, today, next string
+	}{
+		{"every week", "2026-10-20", "2026-10-20", "2026-10-27"},
+		{"every week", "2026-10-12", "2026-10-20", "2026-10-26"},
+		{"every week", "2026-10-24", "2026-10-24", "2026-10-31"},    // over the DST change
+		{"every day", "2026-10-24", "2026-10-25", "2026-10-25"},     // overdue: the first occurrence from today on
+		{"every weekday", "2026-10-23", "2026-10-23", "2026-10-26"}, // Friday to Monday
+		{"every week", "2099-01-06", "2026-10-20", "2099-01-13"},    // due ahead of today
+	}
+	for i, c := range cases {
+		id := "t" + string(rune('a'+i))
+		ops := []Op{
+			op(id+"1", "task", id, "title", `"Water plants"`, 100, "A"),
+			op(id+"2", "task", id, "recurrence", `"`+c.rule+`"`, 100, "A"),
+			op(id+"3", "task", id, "due", `{"date":"`+c.due+`"}`, 100, "A"),
+		}
+		if _, err := s.Apply(ctx, "u1", ops); err != nil {
+			t.Fatal(err)
+		}
+		existing, _ := s.Get(ctx, "u1", "task", id)
+		body := map[string]json.RawMessage{"completed_at": json.RawMessage("1000")}
+		_, _, ok, err := s.RecurringCompletion(ctx, "u1", id, body, existing, c.today)
+		if err != nil || !ok {
+			t.Fatalf("%v: ok=%v err=%v", c, ok, err)
+		}
+		var due struct {
+			Date string `json:"date"`
+		}
+		if err := json.Unmarshal(body["due"], &due); err != nil || due.Date != c.next {
+			t.Errorf("%s due %s completed %s: next = %s, want %s", c.rule, c.due, c.today, body["due"], c.next)
+		}
+	}
+}
