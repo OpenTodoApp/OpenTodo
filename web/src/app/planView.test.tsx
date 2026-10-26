@@ -278,7 +278,7 @@ describe('rescheduling in the plan', () => {
     await drag(row(r.container, id), day(r.container, '2026-10-16'))
     await click(row(r.container, id))
     await key(document.body, 'ArrowRight')
-    // A fixed wait on purpose: nothing may be written, and a refused move shows no signal to wait for.
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- nothing may be written, and a refused move shows no signal to wait for
     await flush(50)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
     await r.unmount()
@@ -339,7 +339,7 @@ describe('rescheduling in the plan', () => {
     await drag(row(r.container, a), day(r.container, '2026-10-14'))
     await click(row(r.container, a))
     await key(document.body, 'ArrowUp', { altKey: true })
-    // A fixed wait on purpose: nothing may be queued, and a refused reorder shows no signal to wait for.
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- nothing may be queued, and a refused reorder shows no signal to wait for
     await flush(50)
     expect(await db.outbox.count()).toBe(before)
     expect((await db.tasks.get(a))!.due).toEqual({ date: '2026-10-14' })

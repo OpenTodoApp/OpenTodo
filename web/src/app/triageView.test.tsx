@@ -293,7 +293,7 @@ describe('the scheduling sheet (inbox-means-unplaced)', () => {
     await key(document.body, 's')
     await waitFor(() => !!document.querySelector('[data-date-words]'))
     await key(document.querySelector('[data-date-words]')!, '4')
-    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a digit typed in the field must not act as a shortcut; nothing happening leaves no signal
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- a digit typed in the field must not act as a shortcut; nothing happening leaves no signal
     await flush(40)
     expect(sheet()).not.toBeNull()
     expect((await db.tasks.get(id))!.due).toBeNull()

@@ -126,7 +126,7 @@ describe('calendar events', () => {
     ev.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientY: 10 }))
     window.dispatchEvent(new PointerEvent('pointermove', { clientY: 200 }))
     window.dispatchEvent(new PointerEvent('pointerup', { clientY: 200 }))
-    // A fixed wait on purpose: it proves that nothing is written, and no event marks "no write".
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- it proves that nothing is written, and no event marks "no write"
     await flush(30)
     expect(await db.outbox.count()).toBe(before)
     expect(ev.tabIndex).toBe(0)

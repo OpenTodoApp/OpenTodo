@@ -102,7 +102,7 @@ describe('the option', () => {
     expect(agenda()).toBeNull()
     await r.unmount()
     r = await openToday()
-    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a request not made leaves no signal; give a wrong second request time to go out
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- a request not made leaves no signal; give a wrong second request time to go out
     await flush(10)
     expect(fetchMock).toHaveBeenCalledTimes(1)
     await r.unmount()
@@ -110,7 +110,7 @@ describe('the option', () => {
 
   it('asks nothing of the server while the option is off and no calendar is known', async () => {
     const r = await openToday()
-    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a request not made leaves no signal; give a wrong request time to go out
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- a request not made leaves no signal; give a wrong request time to go out
     await flush(10)
     expect(fetchMock).not.toHaveBeenCalled()
     await r.unmount()

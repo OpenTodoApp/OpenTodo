@@ -64,7 +64,7 @@ describe('a viewer of a shared project (UI-10)', () => {
     await key(document.body, 'O', { shiftKey: true })
     await key(document.body, 's')
     await key(document.body, 'e')
-    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a viewer's keys write and open nothing, so there is no signal to wait for
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- a viewer's keys write and open nothing, so there is no signal to wait for
     await flush(100)
     expect((await db.tasks.get(id))!.due).toEqual(before!.due)
     expect(await db.tasks.count()).toBe(1)

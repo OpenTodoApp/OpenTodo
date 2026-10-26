@@ -201,7 +201,7 @@ describe('timeline', () => {
     expect(r.container.textContent).toContain('You can view this project but not change dates.')
     await key(document.body, 'j')
     await key(document.body, 'ArrowRight')
-    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): a viewer's key writes nothing, so there is no signal to wait for; give a wrong write time to land
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- a viewer's key writes nothing, so there is no signal to wait for; give a wrong write time to land
     await flush(50)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-10' })
     await r.unmount()
