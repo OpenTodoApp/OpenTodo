@@ -15,7 +15,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 22, 12, 0)) // Thursday
 })
-afterEach(() => { vi.useRealTimers(); document.body.innerHTML = '' })
+afterEach(() => { vi.useRealTimers() })
 
 const q = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)
 const input = () => q<HTMLInputElement>('input[aria-label="Add a task"]')!

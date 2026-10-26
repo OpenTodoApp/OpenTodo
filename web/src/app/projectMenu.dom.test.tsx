@@ -26,7 +26,6 @@ beforeEach(async () => {
   await db.projects.bulkPut([p('home', 'Home'), p('kitchen', 'Kitchen', 'home'), p('work', 'Work')])
   await db.tasks.put({ id: 't1', title: 'Quotes', project_id: 'home', labels: [], priority: 4, position: 1, created_at: 0, completed_at: null, deleted_at: null, _clock: {} } as never)
 })
-afterEach(() => { document.body.innerHTML = '' })
 
 describe('project menu', () => {
   it('m opens the Move to picker without the project itself or its sub-project', async () => {

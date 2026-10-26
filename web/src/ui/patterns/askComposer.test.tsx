@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
 // Ask composer (OpenSpec change assistant-skills, task 3.1).
 import { act } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { click, flush, key, render } from '../test-utils'
 import { AskComposer, type AskRequest, type AskSkill } from './AskComposer'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 async function type(el: HTMLTextAreaElement, text: string) {
   await act(async () => {

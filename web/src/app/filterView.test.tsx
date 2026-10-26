@@ -2,7 +2,7 @@
 // Enter in the filter query moves focus to the results, also when it is pressed
 // before the view has read the tasks (the e2e saved-views check on a slow runner).
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDatabase } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
@@ -27,9 +27,6 @@ beforeEach(() => {
   useDatabase(`filter-view-${Date.now()}-${n++}`)
   resetDeviceId()
   gate.held = true
-})
-afterEach(() => {
-  document.body.innerHTML = ''
 })
 
 describe('filter query Enter', () => {

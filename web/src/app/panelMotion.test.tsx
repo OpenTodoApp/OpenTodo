@@ -21,7 +21,7 @@ beforeEach(async () => {
   setTaskSplit(true)
   vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
 })
-afterEach(() => { vi.unstubAllGlobals(); resetPanel(); document.body.innerHTML = '' })
+afterEach(() => { vi.unstubAllGlobals(); resetPanel() })
 
 const aside = (id: string) => document.querySelector<HTMLElement>(`[data-detail-for="${id}"]`)
 

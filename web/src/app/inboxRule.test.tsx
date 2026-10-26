@@ -39,7 +39,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
   hideBulkToast()
   resetPanel()
-  document.body.innerHTML = ''
 })
 
 // The title alone: an Inbox row also carries its source line (inbox-split D4).

@@ -13,7 +13,6 @@ afterEach(() => {
   vi.doUnmock('../lib/sync')
   vi.unstubAllGlobals()
   history.pushState(null, '', '/')
-  document.body.innerHTML = ''
 })
 
 describe('sync across navigation', { timeout: 30000 }, () => {

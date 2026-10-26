@@ -16,6 +16,7 @@ import { mutate } from './ops'
 import { currentUserId } from './sharing'
 import { decryptReply, encryptSnapshot, generateShareKey, shareKeyFragment, unwrapShareKey, wrapShareKey } from './taskPageCrypto'
 import { setKnownTaskPages } from './taskPageStore'
+import { onTestTeardown } from './testTeardown'
 import type { PublishTaskPageInput, Task, TaskPageContent, TaskPageCreated, TaskPageRights } from './types'
 
 /** Is the task served from a snapshot: an encrypted account's task outside every shared project? */
@@ -157,6 +158,15 @@ export function maintainTaskPages(opts: { force?: boolean } = {}): Promise<void>
   })
   return running
 }
+
+// The deferred pass never fires into the next test, and the next test starts unthrottled.
+onTestTeardown(async () => {
+  if (deferred) clearTimeout(deferred)
+  deferred = null
+  again = false
+  await running
+  lastRun = 0
+})
 
 async function maintain(): Promise<void> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return

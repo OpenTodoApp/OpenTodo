@@ -8,7 +8,6 @@ import { click, render, waitFor } from '../ui/test-utils'
 import { pageTitle, SkipLink, usePageFocus } from './pageFocus'
 
 afterEach(() => {
-  document.body.innerHTML = ''
   delete (navigator as { userActivation?: unknown }).userActivation
 })
 

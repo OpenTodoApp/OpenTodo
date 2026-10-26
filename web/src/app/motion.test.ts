@@ -58,7 +58,6 @@ afterEach(() => {
   window.matchMedia = original
   delete (document as { startViewTransition?: unknown }).startViewTransition
   delete document.documentElement.dataset.motion
-  document.body.innerHTML = ''
   hideBulkToast()
   vi.unstubAllGlobals()
 })

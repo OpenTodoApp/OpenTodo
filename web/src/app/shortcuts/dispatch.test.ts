@@ -28,7 +28,7 @@ function pressChord(seq: ReturnType<typeof chordsOf>[number]): KeyboardEvent[] {
 
 let release = () => {}
 beforeEach(() => { release = installShortcutDispatcher() })
-afterEach(() => { release(); resetShortcutScopes(); document.body.innerHTML = ''; vi.restoreAllMocks() })
+afterEach(() => { release(); resetShortcutScopes(); vi.restoreAllMocks() })
 
 const dispatched = SHORTCUTS.filter((s) => !s.note && !s.local)
 const scopes = [...new Set(dispatched.map((s) => s.scope))] as ShortcutScope[]

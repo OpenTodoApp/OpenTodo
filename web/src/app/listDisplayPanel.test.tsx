@@ -14,7 +14,7 @@ import { click, key, mockFetch, noPublicLinks, render, waitFor } from '../ui/tes
 import { TaskListView } from './TaskListView'
 
 beforeEach(() => mockFetch(noPublicLinks))
-afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = '' })
+afterEach(() => { vi.unstubAllGlobals() })
 beforeEach(async () => {
   await db.delete()
   await db.open()

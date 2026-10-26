@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // Every call site renders the same view menu (labels-and-menus 2.2).
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
 import type { View } from '../lib/types'
 import { click, render, waitFor } from '../ui/test-utils'
@@ -10,7 +10,6 @@ import { ViewMenu } from './ViewsView'
 const view = { id: 'v1', name: 'Deep work', kind: 'list', query: 'p1', panels: [], pinned: true, position: 1, created_at: 0, deleted_at: null, _clock: {} } as unknown as View
 
 beforeEach(async () => { await db.delete(); await db.open(); await db.views.put(view) })
-afterEach(() => { document.body.innerHTML = '' })
 
 async function itemsFrom(ui: React.ReactNode): Promise<string[]> {
   const r = await render(ui)

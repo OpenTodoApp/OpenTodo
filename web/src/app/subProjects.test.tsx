@@ -20,7 +20,6 @@ beforeEach(async () => {
   localStorage.clear()
   history.replaceState(null, '', '/')
 })
-afterEach(() => { document.body.innerHTML = '' })
 
 
 describe('sub-projects group', () => {

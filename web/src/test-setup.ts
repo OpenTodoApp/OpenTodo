@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { afterAll, afterEach, beforeEach } from 'vitest'
 import { hlcReset } from './lib/hlc'
+import { teardown } from './test/teardown'
 
 // Each test starts with a fresh clock: received ops move it forward (the
 // clock's receive rule), so a test that applies ops stamped in the future would
@@ -35,4 +36,7 @@ function report(): void {
 }
 
 afterEach(report)
+// After the file's own hooks (vitest runs after-hooks in reverse order): unmount
+// every render, real timers, close and delete the local databases (test/teardown.ts).
+afterEach(teardown)
 afterAll(report)

@@ -24,7 +24,6 @@ const mounted: { unmount: () => Promise<void> }[] = []
 afterEach(async () => {
   for (const r of mounted.splice(0)) await r.unmount()
   vi.restoreAllMocks()
-  document.body.innerHTML = ''
 })
 
 

@@ -64,7 +64,6 @@ afterEach(async () => {
   for (const r of mounted.splice(0)) await r.unmount()
   await flush(20)
   setRichComposer(true)
-  document.body.innerHTML = ''
 })
 
 describe('group mentions', () => {

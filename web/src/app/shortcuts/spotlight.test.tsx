@@ -27,7 +27,7 @@ beforeEach(() => {
     handlers: { 'go.today': () => { ran.push('today') }, 'go.inbox': () => { ran.push('inbox') }, 'go.upcoming': () => { ran.push('upcoming') }, 'go.week': () => { ran.push('week') } },
   })
 })
-afterEach(() => { release(); resetShortcutScopes(); document.body.innerHTML = '' })
+afterEach(() => { release(); resetShortcutScopes() })
 
 describe('showing', () => {
   it('opens after a hesitation with the key pressed and what can follow, grouped', async () => {

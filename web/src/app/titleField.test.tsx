@@ -13,7 +13,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 9, 10, 0))
 })
-afterEach(() => { vi.useRealTimers(); document.body.innerHTML = '' })
+afterEach(() => { vi.useRealTimers() })
 
 const projects = [{ id: 'p-work', name: 'Work' }]
 

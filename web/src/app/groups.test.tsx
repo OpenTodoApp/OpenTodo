@@ -29,7 +29,6 @@ beforeEach(async () => {
 afterEach(() => {
   vi.useRealTimers()
   resetCollapsedGroups()
-  document.body.innerHTML = ''
 })
 
 const headers = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-group-header]')]

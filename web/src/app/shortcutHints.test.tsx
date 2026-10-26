@@ -16,7 +16,7 @@ import { KeyboardView } from './PreferencesPanels'
 const user: User = { id: 'u1', email: 'sam@example.com', name: 'Sam', role: 'member', createdAt: 1 }
 
 beforeEach(() => { localStorage.removeItem(HINTS_KEY) })
-afterEach(() => { document.body.innerHTML = ''; localStorage.removeItem(HINTS_KEY) })
+afterEach(() => { localStorage.removeItem(HINTS_KEY) })
 
 describe('hints off (the default)', () => {
   it('quick add prints no key badge, and Kbd renders plain text or nothing', async () => {

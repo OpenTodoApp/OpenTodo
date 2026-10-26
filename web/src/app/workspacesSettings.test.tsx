@@ -56,7 +56,7 @@ beforeEach(async () => {
     return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
   }))
 })
-afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
 
 const tab = (root: HTMLElement, name: string) => [...root.querySelectorAll('[role="tab"]')].find((b) => b.textContent!.startsWith(name))

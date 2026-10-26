@@ -15,7 +15,7 @@ beforeEach(() => {
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
 })
-afterEach(() => { window.matchMedia = original; document.body.innerHTML = '' })
+afterEach(() => { window.matchMedia = original })
 
 function touch(el: Element, type: 'touchstart' | 'touchend', x: number, y: number) {
   const e = new Event(type, { bubbles: true, cancelable: true })

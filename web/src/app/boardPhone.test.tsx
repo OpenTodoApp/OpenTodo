@@ -15,7 +15,7 @@ beforeEach(() => {
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
 })
-afterEach(() => { window.matchMedia = original; document.body.innerHTML = '' })
+afterEach(() => { window.matchMedia = original })
 
 const project = { id: 'p1', name: 'Garden', color: '#0f0', parent_id: null, position: 0, archived: false, created_at: 0, deleted_at: null, _clock: {} } as unknown as Project
 const section = (id: string, name: string, position: number): Section => ({ id, project_id: 'p1', name, position, created_at: 0, deleted_at: null, _clock: {} } as unknown as Section)

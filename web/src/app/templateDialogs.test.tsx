@@ -30,7 +30,6 @@ afterEach(async () => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
-  document.body.innerHTML = ''
 })
 
 const button = (name: string | RegExp) => [...document.querySelectorAll<HTMLElement>('button, [role="menuitem"]')].find((b) => (typeof name === 'string' ? b.textContent?.trim() === name : name.test(b.textContent ?? '')))

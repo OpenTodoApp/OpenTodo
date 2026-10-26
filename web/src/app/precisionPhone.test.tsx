@@ -37,7 +37,7 @@ beforeEach(async () => {
   stubMedia(390)
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel(); resetTaskTrail() })
+afterEach(() => { vi.unstubAllGlobals(); resetPanel(); resetTaskTrail() })
 
 
 describe('the day head on a phone (D1)', () => {
