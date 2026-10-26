@@ -3,7 +3,6 @@ package httpapi
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	netmail "net/mail"
 	"strings"
@@ -24,19 +23,19 @@ import (
 // account data: never written to the op log, never synced.
 func (s *Server) registerUserRoutes(mux *routes) {
 	mux.handle("GET /api/v1/users", adminsOnly("list accounts"), s.handleListUsers)
-	mux.handle("PUT /api/v1/users/{id}/role", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleSetRole)
-	mux.handle("POST /api/v1/users/{id}/deactivate", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleDeactivate)
-	mux.handle("POST /api/v1/users/{id}/reactivate", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleReactivate)
-	mux.handle("DELETE /api/v1/users/{id}", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleDeleteUser)
-	mux.handle("POST /api/v1/users/{id}/password-reset", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleIssueReset)
-	mux.handle("POST /api/v1/users/{id}/transfer-ownership", adminsOnly("manage accounts").sensitive().demoDenied(), s.handleTransferOwnership)
-	mux.handle("POST /api/v1/me/password", signedIn.sensitive().demoDenied(), s.handleChangePassword)
+	mux.handle("PUT /api/v1/users/{id}/role", adminsOnly("manage accounts").Sensitive().DemoDenied(), s.handleSetRole)
+	mux.handle("POST /api/v1/users/{id}/deactivate", adminsOnly("manage accounts").Sensitive().DemoDenied(), s.handleDeactivate)
+	mux.handle("POST /api/v1/users/{id}/reactivate", adminsOnly("manage accounts").Sensitive().DemoDenied(), s.handleReactivate)
+	mux.handle("DELETE /api/v1/users/{id}", adminsOnly("manage accounts").Sensitive().DemoDenied(), s.handleDeleteUser)
+	mux.handle("POST /api/v1/users/{id}/password-reset", adminsOnly("manage accounts").Sensitive().DemoDenied(), s.handleIssueReset)
+	mux.handle("POST /api/v1/users/{id}/transfer-ownership", adminsOnly("manage accounts").Sensitive().DemoDenied(), s.handleTransferOwnership)
+	mux.handle("POST /api/v1/me/password", signedIn.Sensitive().DemoDenied(), s.handleChangePassword)
 	// Sign out everywhere (route-authorization-policy): a person's own decision,
 	// from a recently confirmed session; it revokes API tokens too.
-	mux.handle("POST /api/v1/me/sign-out-everywhere", signedIn.sessionOnly().recent().demoDenied(), s.handleSignOutEverywhere)
-	mux.handle("POST /api/v1/auth/password-reset", public("the forgotten-password request comes from someone signed out").demoDenied(), s.handleRequestPasswordReset)
-	mux.handle("GET /api/v1/password-resets/{token}", public("the holder of a reset link is signed out").demoDenied(), s.handlePreviewReset)
-	mux.handle("POST /api/v1/password-resets/{token}", public("the holder of a reset link is signed out").demoDenied(), s.handleUseReset)
+	mux.handle("POST /api/v1/me/sign-out-everywhere", signedIn.SessionOnly().Recent().DemoDenied(), s.handleSignOutEverywhere)
+	mux.handle("POST /api/v1/auth/password-reset", public("the forgotten-password request comes from someone signed out").DemoDenied(), s.handleRequestPasswordReset)
+	mux.handle("GET /api/v1/password-resets/{token}", public("the holder of a reset link is signed out").DemoDenied(), s.handlePreviewReset)
+	mux.handle("POST /api/v1/password-resets/{token}", public("the holder of a reset link is signed out").DemoDenied(), s.handleUseReset)
 }
 
 // userError maps the auth package's administration errors onto the envelope.
@@ -79,14 +78,6 @@ func (s *Server) adminActor(w http.ResponseWriter, r *http.Request) *auth.User {
 		return nil
 	}
 	return u
-}
-
-// readOptionalJSON decodes a body that may be empty.
-func readOptionalJSON(r *http.Request, dst any) error {
-	if err := readJSON(r, dst); err != nil && !errors.Is(err, io.EOF) {
-		return err
-	}
-	return nil
 }
 
 func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {

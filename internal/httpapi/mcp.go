@@ -43,15 +43,15 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log, Tools: s.agentTools, IssuesResource: s.issuesResource})
 	// Every method reaches the handler so a disabled endpoint is 404 for all of
 	// them and an enabled one can answer 405 for anything but POST.
-	mux.handle("/mcp", public("assistants authenticate with a bearer token in the handler").demoDenied(), s.handleMCP)
+	mux.handle("/mcp", public("assistants authenticate with a bearer token in the handler").DemoDenied(), s.handleMCP)
 	// Status for every signed-in user (the AI assistants section shows it to
 	// members too); changing it is owner only.
 	mux.handle("GET /api/v1/settings/mcp", signedIn, s.handleGetMCPSettings)
-	mux.handle("PUT /api/v1/settings/mcp", ownerOnly("manage the AI assistants (MCP) setting").credential().demoDenied(), s.handlePutMCPSettings)
+	mux.handle("PUT /api/v1/settings/mcp", ownerOnly("manage the AI assistants (MCP) setting").Credential().DemoDenied(), s.handlePutMCPSettings)
 	// The user's own "Allow AI assistants to make changes" switch: sessions and
 	// full tokens only, so an assistant can never flip it (mcp-write-tools D3).
-	mux.handle("GET /api/v1/me/agent-access", signedIn.fullTokens(), s.handleGetAgentAccess)
-	mux.handle("PUT /api/v1/me/agent-access", signedIn.fullTokens().demoDenied(), s.handlePutAgentAccess)
+	mux.handle("GET /api/v1/me/agent-access", signedIn.FullTokens(), s.handleGetAgentAccess)
+	mux.handle("PUT /api/v1/me/agent-access", signedIn.FullTokens().DemoDenied(), s.handlePutAgentAccess)
 	s.registerAgentExclusionRoutes(mux)
 }
 

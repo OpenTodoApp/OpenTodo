@@ -16,9 +16,9 @@ import (
 func (s *Server) registerEmailRoutes(mux *routes) {
 	// The address is a capability to create tasks, so read and agent tokens get
 	// none of these routes (email-inbox-explicit).
-	mux.handle("GET /api/v1/email-inbox", signedIn.fullTokens(), s.handleGetEmailInbox)
-	mux.handle("PATCH /api/v1/email-inbox", signedIn.fullTokens().demoDenied(), s.handlePatchEmailInbox)
-	mux.handle("POST /api/v1/email-inbox/rotate", signedIn.fullTokens().demoDenied(), s.handleRotateEmailInbox)
+	mux.handle("GET /api/v1/email-inbox", signedIn.FullTokens(), s.handleGetEmailInbox)
+	mux.handle("PATCH /api/v1/email-inbox", signedIn.FullTokens().DemoDenied(), s.handlePatchEmailInbox)
+	mux.handle("POST /api/v1/email-inbox/rotate", signedIn.FullTokens().DemoDenied(), s.handleRotateEmailInbox)
 }
 
 type emailInboxDTO struct {

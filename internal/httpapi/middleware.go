@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
+	"github.com/pixari/opentodo/internal/httpapi/httpx"
 )
 
 // Middleware: authentication, origin checks, security headers and request
@@ -22,33 +22,6 @@ func auditContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r.WithContext(audit.WithRequest(r.Context(), clientIP(r), r.UserAgent())))
 	})
-}
-
-type ctxKey int
-
-const (
-	userKey ctxKey = 1
-	// sessionKey holds the *auth.Session of cookie-authenticated requests; it is
-	// absent for bearer tokens, which step-up and policy never touch.
-	sessionKey ctxKey = 2
-	// tokenKey holds the auth.TokenInfo of the request: the API token's id,
-	// name and scope, or only scope full for a session (agent-ready-cli D7).
-	tokenKey ctxKey = 3
-)
-
-func tokenFrom(ctx context.Context) auth.TokenInfo {
-	t, _ := ctx.Value(tokenKey).(auth.TokenInfo)
-	return t
-}
-
-func userFrom(ctx context.Context) *auth.User {
-	u, _ := ctx.Value(userKey).(*auth.User)
-	return u
-}
-
-func sessionFrom(ctx context.Context) *auth.Session {
-	sess, _ := ctx.Value(sessionKey).(*auth.Session)
-	return sess
 }
 
 func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
@@ -70,8 +43,7 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required")
 			return
 		}
-		ctx := context.WithValue(r.Context(), userKey, u)
-		ctx = context.WithValue(ctx, tokenKey, tok)
+		ctx := httpx.WithUser(r.Context(), u, tok)
 		// Only sessions, full and admin tokens reach a handler that writes: read tokens
 		// (mcp-server D2) and agent tokens (mcp-write-tools D2) are refused, and
 		// so is any scope this binary does not know (fail closed). The one
@@ -108,7 +80,7 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			}
 		}
 		if sess != nil {
-			ctx = context.WithValue(ctx, sessionKey, sess)
+			ctx = httpx.WithSession(ctx, sess)
 		}
 		next(w, r.WithContext(ctx))
 	})

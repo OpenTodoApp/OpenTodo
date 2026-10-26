@@ -49,14 +49,14 @@ func inlineType(mt string) bool {
 // registerAttachmentRoutes mounts the routes (services.Build wires the blob
 // store into sync and imports).
 func (s *Server) registerAttachmentRoutes(mux *routes) {
-	mux.handle("GET /api/v1/settings/attachments", signedIn.demoDenied(), s.handleGetAttachmentSettings)
-	mux.handle("PUT /api/v1/settings/attachments", ownerOnly("manage the attachment settings").demoDenied(), s.handlePutAttachmentSettings)
-	mux.handle("GET /api/v1/tasks/{id}/attachments", signedIn.demoDenied(), s.handleListAttachments)
-	mux.handle("POST /api/v1/tasks/{id}/attachments", signedIn.demoDenied(), s.handleCreateAttachment)
-	mux.handle("PUT /api/v1/attachments/{id}/content", signedIn.demoDenied(), s.handleUploadAttachment)
-	mux.handle("GET /api/v1/attachments/{id}/content", signedIn.demoDenied(), s.handleAttachmentContent)
-	mux.handle("PATCH /api/v1/attachments/{id}", signedIn.demoDenied(), s.handleRenameAttachment)
-	mux.handle("DELETE /api/v1/attachments/{id}", signedIn.demoDenied(), s.handleRemoveAttachment)
+	mux.handle("GET /api/v1/settings/attachments", signedIn.DemoDenied(), s.handleGetAttachmentSettings)
+	mux.handle("PUT /api/v1/settings/attachments", ownerOnly("manage the attachment settings").DemoDenied(), s.handlePutAttachmentSettings)
+	mux.handle("GET /api/v1/tasks/{id}/attachments", signedIn.DemoDenied(), s.handleListAttachments)
+	mux.handle("POST /api/v1/tasks/{id}/attachments", signedIn.DemoDenied(), s.handleCreateAttachment)
+	mux.handle("PUT /api/v1/attachments/{id}/content", signedIn.DemoDenied(), s.handleUploadAttachment)
+	mux.handle("GET /api/v1/attachments/{id}/content", signedIn.DemoDenied(), s.handleAttachmentContent)
+	mux.handle("PATCH /api/v1/attachments/{id}", signedIn.DemoDenied(), s.handleRenameAttachment)
+	mux.handle("DELETE /api/v1/attachments/{id}", signedIn.DemoDenied(), s.handleRemoveAttachment)
 }
 
 // WithAttachmentRateLimit replaces the per-account upload limit (tests).

@@ -58,7 +58,7 @@ func (s *Server) registerHostedRoutes(mux *routes) {
 	if !s.hosted {
 		return
 	}
-	mux.handle("GET /api/v1/export/archive", ownerOnly("download the server archive").sensitive().demoDenied(), s.handleArchiveDownload)
+	mux.handle("GET /api/v1/export/archive", ownerOnly("download the server archive").Sensitive().DemoDenied(), s.handleArchiveDownload)
 }
 
 // handleArchiveDownload streams the whole tenant as a backup archive, the

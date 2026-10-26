@@ -19,15 +19,15 @@ type Option func(*Server)
 func (s *Server) registerWebhookRoutes(mux *routes) {
 	s.webhookSendLimiter = newRateLimiter(webhookSendsPerHour, time.Hour)
 	mux.handle("GET /api/v1/webhooks", signedIn, s.handleListWebhooks)
-	mux.handle("POST /api/v1/webhooks", signedIn.demoDenied(), s.handleCreateWebhook)
+	mux.handle("POST /api/v1/webhooks", signedIn.DemoDenied(), s.handleCreateWebhook)
 	mux.handle("GET /api/v1/webhooks/{id}", signedIn, s.handleGetWebhook)
-	mux.handle("PATCH /api/v1/webhooks/{id}", signedIn.demoDenied(), s.handlePatchWebhook)
-	mux.handle("DELETE /api/v1/webhooks/{id}", signedIn.demoDenied(), s.handleDeleteWebhook)
-	mux.handle("POST /api/v1/webhooks/{id}/test", signedIn.demoDenied(), s.handleTestWebhook)
+	mux.handle("PATCH /api/v1/webhooks/{id}", signedIn.DemoDenied(), s.handlePatchWebhook)
+	mux.handle("DELETE /api/v1/webhooks/{id}", signedIn.DemoDenied(), s.handleDeleteWebhook)
+	mux.handle("POST /api/v1/webhooks/{id}/test", signedIn.DemoDenied(), s.handleTestWebhook)
 	mux.handle("GET /api/v1/webhooks/{id}/deliveries", signedIn, s.handleListDeliveries)
-	mux.handle("POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver", signedIn.demoDenied(), s.handleRedeliver)
+	mux.handle("POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver", signedIn.DemoDenied(), s.handleRedeliver)
 	mux.handle("GET /api/v1/settings/webhooks", ownerOnly("manage the webhook policy"), s.handleGetWebhookPolicy)
-	mux.handle("PUT /api/v1/settings/webhooks", ownerOnly("manage the webhook policy").credential().demoDenied(), s.handlePutWebhookPolicy)
+	mux.handle("PUT /api/v1/settings/webhooks", ownerOnly("manage the webhook policy").Credential().DemoDenied(), s.handlePutWebhookPolicy)
 }
 
 // webhookError maps service errors onto the JSON error envelope.

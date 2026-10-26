@@ -30,9 +30,9 @@ type smtpLastTest struct {
 
 func (s *Server) registerMailRoutes(mux *routes) {
 	s.smtpTestLimiter = newRateLimiter(smtpTestLimit, smtpTestWindow)
-	mux.handle("GET /api/v1/settings/smtp", ownerOnly("manage outgoing email").credential().demoDenied(), s.handleGetSMTP)
-	mux.handle("PUT /api/v1/settings/smtp", ownerOnly("manage outgoing email").sensitive().demoDenied(), s.handlePutSMTP)
-	mux.handle("POST /api/v1/settings/smtp/test", ownerOnly("send a test message").demoDenied(), s.handleTestSMTP)
+	mux.handle("GET /api/v1/settings/smtp", ownerOnly("manage outgoing email").Credential().DemoDenied(), s.handleGetSMTP)
+	mux.handle("PUT /api/v1/settings/smtp", ownerOnly("manage outgoing email").Sensitive().DemoDenied(), s.handlePutSMTP)
+	mux.handle("POST /api/v1/settings/smtp/test", ownerOnly("send a test message").DemoDenied(), s.handleTestSMTP)
 }
 
 // mailEnabled reports whether outgoing email can be used right now.

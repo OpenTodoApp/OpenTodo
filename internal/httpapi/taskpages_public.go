@@ -152,7 +152,7 @@ func (s *Server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
 	}
 	out["links"], out["files"] = links, files
 	out["location"] = nil
-	if p.IncludeMap && !isNullish(t["location"]) && s.mapsAvailable(r.Context()) {
+	if p.IncludeMap && !isNullish(t["location"]) && s.mapRoutes.Available(r.Context()) {
 		out["location"] = t["location"]
 	}
 	out["comments"] = s.pageComments(r, rp)
@@ -426,7 +426,7 @@ func (s *Server) pageMap(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	p, err := s.auth.LookupTaskPage(r.Context(), r.PathValue("secret"))
-	if err != nil || !p.IncludeMap || p.PublisherDeactivated || !s.mapsAvailable(r.Context()) {
+	if err != nil || !p.IncludeMap || p.PublisherDeactivated || !s.mapRoutes.Available(r.Context()) {
 		writeError(w, http.StatusNotFound, "page_invalid", auth.ErrTaskPageInvalid.Error())
 		return false
 	}
@@ -449,7 +449,7 @@ func (s *Server) handleTaskPageMapStyle(w http.ResponseWriter, r *http.Request) 
 	}
 	body, err := s.maps.Style(r.Context())
 	if err != nil {
-		s.mapError(w, err)
+		s.mapRoutes.Error(w, err)
 		return
 	}
 	// The style points at the signed-in proxy; a guest uses the page's own.
@@ -470,7 +470,7 @@ func (s *Server) handleTaskPageMapTile(w http.ResponseWriter, r *http.Request) {
 	}
 	body, _, err := s.maps.Tile(r.Context(), z, x, y)
 	if err != nil {
-		s.mapError(w, err)
+		s.mapRoutes.Error(w, err)
 		return
 	}
 	pageMapBody(w, body, "application/x-protobuf")
@@ -482,7 +482,7 @@ func (s *Server) handleTaskPageMapGlyphs(w http.ResponseWriter, r *http.Request)
 	}
 	body, _, err := s.maps.Glyphs(r.Context(), r.PathValue("fontstack"), strings.TrimSuffix(r.PathValue("range"), ".pbf"))
 	if err != nil {
-		s.mapError(w, err)
+		s.mapRoutes.Error(w, err)
 		return
 	}
 	pageMapBody(w, body, "application/x-protobuf")
@@ -495,7 +495,7 @@ func (s *Server) handleTaskPageMapSprite(w http.ResponseWriter, r *http.Request)
 	file := r.PathValue("file")
 	body, _, err := s.maps.Sprite(r.Context(), file)
 	if err != nil {
-		s.mapError(w, err)
+		s.mapRoutes.Error(w, err)
 		return
 	}
 	ct := "application/json"
