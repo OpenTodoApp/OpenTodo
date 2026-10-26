@@ -149,7 +149,7 @@ describe('the running indicator', () => {
 
   it('Nothing running: no tracking control', async () => {
     const r = await render(<><TrackingIndicator /><TrackingPill /></>)
-    // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): nothing running renders nothing before and after the read; give a wrong control time to show
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- nothing running renders nothing before and after the read; give a wrong control time to show
     await flush(60)
     expect(r.container.querySelector('[data-tracking-indicator], [data-tracking-pill]')).toBeNull()
   })

@@ -40,10 +40,7 @@ beforeEach(async () => {
   document.documentElement.style.removeProperty('--task-panel-w')
   viewport(1280)
 })
-afterEach(async () => {
-  // Reads a page left scheduled (the task page's trail) finish before the next case deletes the database.
-  // A fixed wait on purpose (test-hygiene/no-fixed-wait; suppress it here once that rule is in): the task page's trail schedules reads with no signal; they must finish before the next case deletes the database
-  await new Promise((r) => setTimeout(r, 50))
+afterEach(() => {
   window.matchMedia = original
   resetPanel()
   vi.unstubAllGlobals()

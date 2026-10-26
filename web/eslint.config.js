@@ -8,7 +8,6 @@ import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import noGenericAriaLabel from './eslint/no-generic-aria-label.js'
 import noFixedWait from './eslint/no-fixed-wait.js'
-import fixedWaitAllowlist from './eslint/fixed-wait-allowlist.js'
 
 export default [
   { ignores: ['node_modules/**', 'storybook-static/**', 'public/**', 'scripts/**'] },
@@ -62,9 +61,6 @@ export default [
     plugins: { 'test-hygiene': { rules: { 'no-fixed-wait': noFixedWait } } },
     rules: { 'test-hygiene/no-fixed-wait': 'error' },
   },
-  // Files that still had fixed waits when the rule came in (eslint/fixed-wait-allowlist.js).
-  // Drop a file from the list once its waits are conditions; never add one.
-  ...(fixedWaitAllowlist.length ? [{ files: fixedWaitAllowlist, rules: { 'test-hygiene/no-fixed-wait': 'off' } }] : []),
   {
     // The design system stands alone (web-layering): primitives are tested and shown
     // in the workbench without the screens, so nothing under src/ui imports src/app.
