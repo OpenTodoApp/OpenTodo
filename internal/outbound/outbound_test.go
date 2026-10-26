@@ -157,3 +157,35 @@ func TestClientIgnoresEnvironmentProxy(t *testing.T) {
 		t.Fatal("an environment proxy would dial on our behalf and bypass the deny list")
 	}
 }
+
+// The owner's switch opens the local network, never the host's "this network",
+// link-local or cloud metadata addresses, also when carried in IPv6.
+func TestAllowPrivateKeepsMetadataDenied(t *testing.T) {
+	d := &Dialer{AllowPrivate: func(context.Context) bool { return true }}
+	for _, s := range []string{"169.254.169.254", "169.254.1.1", "fe80::1", "fd00:ec2::254", "100.100.100.200",
+		"0.0.0.0", "0.1.2.3", "::", "::ffff:169.254.169.254", "64:ff9b::a9fe:a9fe", "2002:a9fe:a9fe::1"} {
+		if _, err := d.Allowed(context.Background(), s); !errors.Is(err, ErrPrivateTarget) {
+			t.Errorf("%s with private targets allowed: err = %v, want private_target", s, err)
+		}
+	}
+	for _, s := range []string{"127.0.0.1", "::1", "10.0.0.1", "192.168.1.10", "fd00::1", "100.64.0.1"} {
+		if _, err := d.Allowed(context.Background(), s); err != nil {
+			t.Errorf("%s with private targets allowed: %v", s, err)
+		}
+	}
+}
+
+// AllowPrivateHost opens the local network for one host name only.
+func TestAllowPrivateHost(t *testing.T) {
+	res := mapResolver{"tiles.lan": "192.168.1.20", "elsewhere.lan": "192.168.1.21", "meta.lan": "169.254.169.254"}
+	d := &Dialer{Resolver: res, AllowPrivateHost: func(_ context.Context, host string) bool { return host == "tiles.lan" || host == "meta.lan" }}
+	if _, err := d.Allowed(context.Background(), "tiles.lan"); err != nil {
+		t.Fatalf("owner's host: %v", err)
+	}
+	if _, err := d.Allowed(context.Background(), "elsewhere.lan"); !errors.Is(err, ErrPrivateTarget) {
+		t.Fatalf("another private host: %v", err)
+	}
+	if _, err := d.Allowed(context.Background(), "meta.lan"); !errors.Is(err, ErrPrivateTarget) {
+		t.Fatalf("metadata behind the owner's host: %v", err)
+	}
+}

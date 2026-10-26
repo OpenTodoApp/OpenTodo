@@ -3,8 +3,10 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pixari/opentodo/internal/webhook"
 )
@@ -21,6 +23,7 @@ func WithWebhooks(svc *webhook.Service) Option {
 // registerWebhookRoutes adds the webhook routes. Every route requires
 // authentication and is scoped to the caller; the policy route is owner-only.
 func (s *Server) registerWebhookRoutes(mux *routes) {
+	s.webhookSendLimiter = newRateLimiter(webhookSendsPerHour, time.Hour)
 	mux.handle("GET /api/v1/webhooks", signedIn, s.withHooks(s.handleListWebhooks))
 	mux.handle("POST /api/v1/webhooks", signedIn.demoDenied(), s.withHooks(s.handleCreateWebhook))
 	mux.handle("GET /api/v1/webhooks/{id}", signedIn, s.withHooks(s.handleGetWebhook))
@@ -159,7 +162,24 @@ func (s *Server) handleDeleteWebhook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// webhookSendsPerHour bounds the test sends and redeliveries a user starts by
+// hand (private-network-reach D3): each one is a request to an address the
+// user chose, and with private targets allowed that can be on the local network.
+const webhookSendsPerHour = 30
+
+// allowHandSend answers 429 once the caller used up the hour's hand-started sends.
+func (s *Server) allowHandSend(w http.ResponseWriter, r *http.Request) bool {
+	if s.webhookSendLimiter.allow(userFrom(r.Context()).ID) {
+		return true
+	}
+	writeError(w, http.StatusTooManyRequests, "rate_limited", fmt.Sprintf("at most %d test sends and redeliveries per hour; try again later", webhookSendsPerHour))
+	return false
+}
+
 func (s *Server) handleTestWebhook(w http.ResponseWriter, r *http.Request) {
+	if !s.allowHandSend(w, r) {
+		return
+	}
 	d, err := s.hooks.Test(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"))
 	if err != nil {
 		s.webhookError(w, err)
@@ -178,6 +198,9 @@ func (s *Server) handleListDeliveries(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRedeliver(w http.ResponseWriter, r *http.Request) {
+	if !s.allowHandSend(w, r) {
+		return
+	}
 	d, err := s.hooks.Redeliver(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), r.PathValue("did"))
 	if errors.Is(err, webhook.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "delivery not found")

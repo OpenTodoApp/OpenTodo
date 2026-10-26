@@ -38,3 +38,5 @@ An invalid value stops the server at startup with a message naming the variable.
 ## Run your own providers
 
 Photon runs as one container next to OpenTodo ([komoot/photon](https://github.com/komoot/photon)); point `OPENTODO_MAPS_GEOCODER_URL` at it, private network addresses included. For tiles, any vector style with its sources works, such as your own OpenFreeMap or Protomaps instance. Please credit OpenStreetMap: the map shows the provider's attribution.
+
+On the local network, the server reaches only the two hosts you typed (the style's host and the search host). The tile, font and sprite addresses inside a local style must therefore be on the same host as the style; addresses on other local hosts, and redirects to them, are refused like a webhook to a private address, so a provider cannot point your server at the rest of your network. Link-local and cloud metadata addresses are always refused. On a [hosted service](host-mode.md) the map proxy reaches only public addresses.
