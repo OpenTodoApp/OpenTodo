@@ -1,6 +1,7 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { RestoreSection } from './RestoreSection'
-import { api, ApiError, isNetworkError } from '../lib/api'
+import { api, isNetworkError } from '../lib/api'
+import { errorText } from '../lib/errorText'
 import { cacheBackupStatus, cachedBackupStatus, defaultBackupSettings, formatBytes, runSummary, scheduleLabel, weekdayName, WEEKDAYS } from '../lib/backups'
 import { useOnline } from '../lib/online'
 import type { BackupDestination, BackupRun, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus } from '../lib/types'
@@ -278,11 +279,11 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
 }
 
 function describe(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (err.code === 'conflict') return t('A backup is already running.')
-    return err.message
-  }
-  return t('The server is unreachable. Backups need a connection.')
+  return errorText(err, {
+    capitalise: false,
+    offline: t('The server is unreachable. Backups need a connection.'),
+    codes: { conflict: t('A backup is already running.') },
+  })
 }
 
 function secretUpdate(s: SecretInputs, destination: BackupDestination): BackupSecretUpdate {

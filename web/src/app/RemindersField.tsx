@@ -10,6 +10,8 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { DateField } from './datetime/DateField'
 import { TimeField } from './datetime/TimeField'
 import { t } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 
 /** A local date and wall-clock time for an instant (the date and time fields edit these). */
 function toLocalParts(ms: number): { date: string; time: string } {
@@ -47,19 +49,14 @@ export function RemindersField({ task }: { task: Task }) {
   const reminders = useMemo(() => sortReminders(rows.filter((r) => !r.deleted_at)), [rows])
   const [adding, setAdding] = useState<'custom' | 'deadline' | 'absolute' | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const { formatInstant } = useDateTimeFormat()
-
-  const run = async (fn: () => Promise<unknown>) => {
-    setError(null)
-    try {
-      await fn()
-      setAdding(null)
-      setEditing(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    }
-  }
+  const { error, run: attempt } = useAction({ describe: messageOf })
+  // A change that succeeds also closes the editor it came from.
+  const run = (fn: () => Promise<unknown>) => attempt(async () => {
+    await fn()
+    setAdding(null)
+    setEditing(null)
+  })
 
   const now = Date.now()
   return (

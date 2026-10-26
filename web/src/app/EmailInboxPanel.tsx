@@ -4,7 +4,9 @@ import { ConfirmDialog } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
-import { api, ApiError } from '../lib/api'
+import { api } from '../lib/api'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import type { EmailInbox } from '../lib/types'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
@@ -83,14 +85,14 @@ export function EmailInboxView(p: EmailInboxViewProps) {
   )
 }
 
-const message = (err: unknown) => (err instanceof ApiError ? err.message : t('Offline: email to task is managed on the server.'))
+const message = (err: unknown) => errorText(err, { capitalise: false, offline: t('Offline: email to task is managed on the server.') })
 
 export function EmailInboxPanel() {
   const [inbox, setInbox] = useState<EmailInbox | null>(null)
   const [draft, setDraft] = useState('')
   const [copied, setCopied] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const action = useAction({ describe: message })
+  const { busy, error, setError } = action
 
   function show(next: EmailInbox) {
     setInbox(next)
@@ -99,20 +101,10 @@ export function EmailInboxPanel() {
 
   useEffect(() => {
     api.emailInbox().then(show, (err) => setError(message(err)))
-  }, [])
+  }, [setError])
 
-  async function run(fn: () => Promise<void>) {
-    if (busy) return
-    setBusy(true)
-    setError(null)
-    try {
-      await fn()
-    } catch (err) {
-      setError(message(err))
-    } finally {
-      setBusy(false)
-    }
-  }
+  // A second click while an action runs is ignored.
+  const run = (fn: () => Promise<void>) => (busy ? Promise.resolve(undefined) : action.run(fn))
 
   const [confirmRotate, setConfirmRotate] = useState(false)
   return (

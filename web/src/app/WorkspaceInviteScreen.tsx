@@ -16,6 +16,7 @@ import { InstanceMark, InstanceWordmark } from './InstanceBrand'
 import { AuthScreen } from './AuthScreen'
 import { rememberPendingInvite } from './ProjectInviteScreen'
 import { navigate } from './router'
+import { messageOf } from '../lib/errorText'
 
 export type WorkspaceInviteState =
   | { kind: 'loading' } | { kind: 'offline' } | { kind: 'invalid' } | { kind: 'error'; message: string }
@@ -24,7 +25,7 @@ export type WorkspaceInviteState =
 function errorState(err: unknown): WorkspaceInviteState {
   if (isNetworkError(err)) return { kind: 'offline' }
   if (err instanceof ApiError && err.code === 'invitation_invalid') return { kind: 'invalid' }
-  return { kind: 'error', message: err instanceof Error ? err.message : String(err) }
+  return { kind: 'error', message: messageOf(err) }
 }
 
 export function WorkspaceInviteScreen({ token, user, status, onAuthenticated }: { token: string; user: User | null; status: AuthStatus | null; onAuthenticated: () => void }) {
@@ -49,7 +50,7 @@ export function WorkspaceInviteScreen({ token, user, status, onAuthenticated }: 
       navigate({ view: 'inbox' }, { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.code === 'already_member') setJoinError(t('You are a member of this workspace already.'))
-      else setJoinError(err instanceof Error ? err.message : String(err))
+      else setJoinError(messageOf(err))
     }
   }
 
@@ -90,7 +91,7 @@ function RegisterForm({ token, preview, onDone }: { token: string; preview: Work
       await switchTo(res.workspaceId)
       onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(messageOf(err))
     }
   }
   return (

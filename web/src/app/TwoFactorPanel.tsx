@@ -8,6 +8,7 @@ import { Notice } from '../ui'
 import { navigate } from './router'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
+import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
 import { qrMatrix, qrPath } from '../lib/qr'
 import type { MfaPolicy, MfaStatus, TrustedDevice, User } from '../lib/types'
@@ -372,8 +373,10 @@ export function TwoFactorPanel({ user }: { user: User }) {
   const [devices, setDevices] = useState<TrustedDevice[] | null>(null)
   const [policy, setPolicy] = useState<MfaPolicy | null>(null)
   const [mode, setMode] = useState<'idle' | 'enrol' | { codes: string[] }>('idle')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // A cancelled re-authentication leaves reauth_required; nothing changed.
+  const { busy, error, setError, run: attempt } = useAction({
+    describe: (err) => (err instanceof ApiError && err.code === 'reauth_required' ? null : mfaMessage(err)),
+  })
 
   const load = useCallback(async () => {
     try {
@@ -385,24 +388,15 @@ export function TwoFactorPanel({ user }: { user: User }) {
     } catch (err) {
       if (!isNetworkError(err)) setError(mfaMessage(err))
     }
-  }, [isOwner])
+  }, [isOwner, setError])
   useEffect(() => {
     if (online) void load()
   }, [online, load])
 
-  const run = useCallback(async (fn: () => Promise<unknown>) => {
-    setBusy(true)
-    setError(null)
-    try {
-      await fn()
-      await load()
-    } catch (err) {
-      // A cancelled re-authentication leaves reauth_required; nothing changed.
-      if (!(err instanceof ApiError && err.code === 'reauth_required')) setError(mfaMessage(err))
-    } finally {
-      setBusy(false)
-    }
-  }, [load])
+  const run = useCallback((fn: () => Promise<unknown>) => attempt(async () => {
+    await fn()
+    await load()
+  }), [attempt, load])
 
   const [confirming, setConfirming] = useState<'disable' | 'regenerate' | null>(null)
   return (

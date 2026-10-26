@@ -17,6 +17,7 @@ import { t } from '../lib/i18n'
 import { useOnline } from '../lib/online'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { useSettingsPending } from './settingsPending'
+import { messageOf } from '../lib/errorText'
 
 /**
  * A secret shown once, with a copy action (API tokens, app passwords). The parent
@@ -208,7 +209,7 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
             setName('')
             await load()
           } catch (err) {
-            setError(err instanceof Error ? err.message : String(err))
+            setError(messageOf(err))
           } finally {
             setBusy(false)
           }
