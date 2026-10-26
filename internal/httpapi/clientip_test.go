@@ -51,7 +51,7 @@ func TestClientAddressBehindTrustedProxies(t *testing.T) {
 		{"edge vouches over a forged chain", "6.6.6.6, 172.70.1.1", "198.51.100.9", "198.51.100.9"},
 		{"header ignored without an edge hop", "203.0.113.4", "6.6.6.6", "203.0.113.4"},
 		{"no header", "", "6.6.6.6", "192.0.2.50"},
-		{"all trusted", "192.0.2.1, 192.0.2.2", "", "192.0.2.1"},
+		{"all trusted: the nearest proxy's entry", "192.0.2.1, 192.0.2.2", "", "192.0.2.2"},
 	}
 	for _, c := range cases {
 		if got := req(c.xff, c.cf); got != c.want {

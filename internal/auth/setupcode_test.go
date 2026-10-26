@@ -19,6 +19,7 @@ func TestSetupCode(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Close() })
 	s := NewService(db, time.Hour, false)
+	s.SetSetupCodeRequired(true) // OPENTODO_SETUP_CODE=required (auth-hardening D6)
 	code, err := s.PrepareSetupCode(t.Context())
 	if err != nil || !regexp.MustCompile(`^[A-Z2-7]{4}(-[A-Z2-7]{4}){3}$`).MatchString(code) {
 		t.Fatalf("code %q, %v", code, err)
@@ -65,5 +66,33 @@ func TestSetupCode(t *testing.T) {
 	}
 	if _, err := tok.RegisterFrom(t.Context(), "o@example.com", "", "correct horse battery", "", "0123456789abcdef-setup", false); err != nil {
 		t.Fatalf("token from a public address: %v", err)
+	}
+}
+
+// TestSetupCodeOffByDefault (auth-hardening D6): without OPENTODO_SETUP_CODE no
+// code is generated and a first registration from anywhere needs none; a
+// setup token is still required when set, whatever the code setting says.
+func TestSetupCodeOffByDefault(t *testing.T) {
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	s := NewService(db, time.Hour, false)
+	if code, err := s.PrepareSetupCode(t.Context()); err != nil || code != "" || s.SetupCodeRequired() {
+		t.Fatalf("code %q %v required=%v", code, err, s.SetupCodeRequired())
+	}
+	tok := NewService(db, time.Hour, false)
+	tok.SetSetupCodeRequired(true)
+	tok.SetSetupToken("a-setup-token-of-some-length")
+	if tok.SetupCodeRequired() {
+		t.Fatal("a token must replace the code")
+	}
+	if _, err := tok.RegisterFrom(t.Context(), "o@example.com", "", "correct horse battery", "", "", false); err != ErrSetupTokenInvalid {
+		t.Fatalf("token server without the token: %v", err)
+	}
+	u, err := s.RegisterFrom(t.Context(), "o@example.com", "", "correct horse battery", "", "", false)
+	if err != nil || u.Role != "owner" {
+		t.Fatalf("public without a code: %v %v", u, err)
 	}
 }

@@ -21,7 +21,7 @@ To see and change your tasks in Home Assistant itself (to-do lists, automations)
 3. Find **OpenTodo**, click **Install**, then **Start**.
 4. Click **Open Web UI**. OpenTodo opens on port 8080 of your Home Assistant machine, for example `http://homeassistant.local:8080`.
 
-There is no default password: the first person to open OpenTodo creates the owner account, so do it right after installing. After that, sign-up is closed and the owner invites people. Opened from outside your local network, the setup screen asks for a one-time setup code, printed on the add-on's **Log** tab.
+There is no default password: the first person to open OpenTodo creates the owner account, so do it right after installing. After that, sign-up is closed and the owner invites people. When the add-on can be reached from the internet, do it before exposing it.
 
 OpenTodo opens in its own tab, not as a panel in Home Assistant's sidebar. Sidebar panels (Ingress) serve an add-on under a changing address inside Home Assistant's own, and OpenTodo needs the root of its own address for its pages, its offline service worker, passkeys and the installed app. You can still add a sidebar link with a Webpage dashboard.
 

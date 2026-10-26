@@ -23,8 +23,13 @@ type Config struct {
 	// registration on a server without accounts (OpenSpec change owner-bootstrap).
 	// It has no effect once an owner exists.
 	SetupToken string
-	SessionTTL time.Duration
-	LogLevel   slog.Level
+	// SetupCodeRequired (OPENTODO_SETUP_CODE=required) makes a first
+	// registration without a setup token carry the one-time code the server
+	// prints in its log, unless it comes over a direct loopback connection
+	// (OpenSpec change auth-hardening, D6). Off by default.
+	SetupCodeRequired bool
+	SessionTTL        time.Duration
+	LogLevel          slog.Level
 	// ImportMaxMB caps the size of an uploaded import file (OPENTODO_IMPORT_MAX_MB).
 	ImportMaxMB int
 	// WebhooksAllowPrivate presets the owner's "allow private network targets"
@@ -325,6 +330,13 @@ func (c *Config) loadServerVars() error {
 			return fmt.Errorf("OPENTODO_SETUP_TOKEN must be at least %d characters when set", MinSetupTokenLen)
 		}
 		c.SetupToken = v
+	}
+	switch v := strings.ToLower(strings.TrimSpace(os.Getenv("OPENTODO_SETUP_CODE"))); v {
+	case "", "off":
+	case "required":
+		c.SetupCodeRequired = true
+	default:
+		return fmt.Errorf("OPENTODO_SETUP_CODE must be required or off, got %q", v)
 	}
 	if v := os.Getenv("OPENTODO_SESSION_DAYS"); v != "" {
 		d, err := strconv.Atoi(v)
