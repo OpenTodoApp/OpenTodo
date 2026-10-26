@@ -7,6 +7,7 @@ import { flushSync } from 'react-dom'
 import { useSyncExternalStore } from 'react'
 import { readHapticsPref, watchHapticsPref } from '../lib/haptics'
 import { resettable } from '../lib/moduleState'
+import { createSignal } from '../lib/store'
 
 /** A duration token in milliseconds, or the fallback when the stylesheet has none (tests). */
 function tokenMs(name: string, fallback: number): number {
@@ -45,7 +46,7 @@ export type Departure = 'leave' | 'restored'
 const RESTORE_MS = 120
 let departures: ReadonlyMap<string, Departure> = new Map()
 const timers = new Map<string, ReturnType<typeof setTimeout>>()
-const listeners = new Set<() => void>()
+const changes = createSignal()
 
 function setDeparture(id: string, kind: Departure | null, ms = 0): void {
   clearTimeout(timers.get(id))
@@ -55,7 +56,7 @@ function setDeparture(id: string, kind: Departure | null, ms = 0): void {
   else next.delete(id)
   departures = next
   if (kind) timers.set(id, setTimeout(() => setDeparture(id, null), ms))
-  for (const l of listeners) l()
+  changes.notify()
 }
 
 /**
@@ -84,14 +85,9 @@ export function departures$(): ReadonlyMap<string, Departure> {
   return departures
 }
 
-function subscribe(l: () => void): () => void {
-  listeners.add(l)
-  return () => { listeners.delete(l) }
-}
-
 /** The running departures, live. */
 export function useDepartures(): ReadonlyMap<string, Departure> {
-  return useSyncExternalStore(subscribe, departures$, departures$)
+  return useSyncExternalStore(changes.subscribe, departures$, departures$)
 }
 
 /** Tests: forget every departure at once. */
@@ -99,7 +95,7 @@ export function resetDepartures(): void {
   for (const t of timers.values()) clearTimeout(t)
   timers.clear()
   departures = new Map()
-  for (const l of listeners) l()
+  changes.notify()
 }
 resettable('departures', resetDepartures)
 

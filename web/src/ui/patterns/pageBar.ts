@@ -1,7 +1,8 @@
 // What the current page's header declares (OpenSpec change ux-overhaul, app-shell
 // "No desktop top bar", design D3): below 768 px the shell's bar shows the title and
 // the actions a view declared once in its PageHeader, so no view renders two headers.
-import { type ReactNode, useSyncExternalStore } from 'react'
+import type { ReactNode } from 'react'
+import { createStore } from '../../lib/store'
 
 export interface PageBar {
   title: ReactNode
@@ -17,19 +18,8 @@ export interface PageBar {
   day?: boolean
 }
 
-let current: PageBar | null = null
-const listeners = new Set<() => void>()
-const emit = () => listeners.forEach((fn) => fn())
+const store = createStore<PageBar | null>('pageBar', null)
 
-export function setPageBar(bar: PageBar | null): void {
-  current = bar
-  emit()
-}
-
-export function pageBar(): PageBar | null {
-  return current
-}
-
-export function usePageBar(): PageBar | null {
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn) } }, () => current, () => null)
-}
+export const setPageBar = store.set
+export const pageBar = store.get
+export const usePageBar = store.use

@@ -7,6 +7,7 @@
 // it with plain frames and synthetic events.
 import { type Chord, chordKey, chordsOf, matchesChord, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
 import { resettable } from '../../lib/moduleState'
+import { createSignal } from '../../lib/store'
 
 export type ShortcutHandler = (e: KeyboardEvent, s: Shortcut) => boolean | void
 
@@ -61,11 +62,8 @@ let pending: Chord[] = []
 let pendingTimer: ReturnType<typeof setTimeout> | undefined
 // While held (the sequence spotlight is open), the prefix does not expire.
 let held = false
-const prefixListeners = new Set<() => void>()
-
-function notifyPrefix(): void {
-  prefixListeners.forEach((fn) => fn())
-}
+const prefix = createSignal()
+const notifyPrefix = prefix.notify
 
 function armPrefix(seq: Chord[]): void {
   pending = seq
@@ -93,10 +91,7 @@ export function pendingPrefix(): Chord[] {
 }
 
 /** Calls `fn` whenever a sequence starts, extends or ends; returns the unsubscribe function. */
-export function subscribePrefix(fn: () => void): () => void {
-  prefixListeners.add(fn)
-  return () => { prefixListeners.delete(fn) }
-}
+export const subscribePrefix = prefix.subscribe
 
 /** Holds the pending prefix (no expiry) while the spotlight shows it; `false` restarts the expiry. */
 export function holdPrefix(on: boolean): void {

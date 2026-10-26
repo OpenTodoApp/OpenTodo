@@ -3,14 +3,15 @@
 // revoking here, read by the task panel's "Published" marker and the comment
 // composer's notice. Pages are server data: nothing is stored on the device.
 import type { TaskPageStatus } from './types'
+import { createSignal } from './store'
 
 const pages = new Map<string, TaskPageStatus>()
-const listeners = new Set<() => void>()
+const changes = createSignal()
 let version = 0
 
 function emit(): void {
   version++
-  listeners.forEach((fn) => fn())
+  changes.notify()
 }
 
 /** Replaces the known pages with the server's list. */
@@ -31,10 +32,7 @@ export function knownTaskPage(taskId: string): TaskPageStatus | null {
   return pages.get(taskId) ?? null
 }
 
-export function subscribeTaskPages(fn: () => void): () => void {
-  listeners.add(fn)
-  return () => { listeners.delete(fn) }
-}
+export const subscribeTaskPages = changes.subscribe
 
 /** Changes whenever the known pages change (for useSyncExternalStore). */
 export function taskPagesVersion(): number {

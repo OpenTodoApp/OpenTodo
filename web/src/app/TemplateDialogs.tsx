@@ -3,7 +3,7 @@
 // the sidebar, which opens on the template library (template-library). Everything happens on the device: a copy is one batch of ops, a
 // template file is built from local data and downloaded.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { lazy, Suspense, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { logicalToday } from '../lib/dates'
 import { projectsAndLabels, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
@@ -24,20 +24,17 @@ import { ProjectPickerField } from './ProjectPickerField'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
+import { createStore } from '../lib/store'
 
 // "From a template…" can be opened from elsewhere (the Import screen's hint).
-let templateRequested = 0
-const listeners = new Set<() => void>()
+const templateRequested = createStore('templateRequests', 0)
 /** Ask the sidebar to open the From a template dialog. */
 export function requestTemplateDialog(): void {
-  templateRequested++
-  listeners.forEach((fn) => fn())
+  templateRequested.update((n) => n + 1)
 }
 /** How many times the dialog was asked for (tests). */
-export const templateRequests = (): number => templateRequested
-export function useTemplateRequests(): number {
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => listeners.delete(fn) }, () => templateRequested)
-}
+export const templateRequests = templateRequested.get
+export const useTemplateRequests = templateRequested.use
 
 function Summary({ tree }: { tree: TemplateTree }) {
   const s = summarise(tree)
