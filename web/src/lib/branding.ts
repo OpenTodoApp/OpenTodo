@@ -3,6 +3,7 @@
 // mirrored on this device so the first paint and offline use show them too.
 // Without branding the app shows its own mark and the name OpenTodo.
 import { createStore } from './store'
+import { readJSON, writeString } from './deviceStorage'
 
 export interface Branding {
   /** The instance name shown in place of "OpenTodo"; empty for the default. */
@@ -17,14 +18,11 @@ const NONE: Branding = { name: '', logoVersion: 0 }
 const store = createStore<Branding>('branding', read())
 
 function read(): Branding {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return NONE
-    const v = JSON.parse(raw) as Partial<Branding>
+  return readJSON<Branding>(KEY, NONE, (raw) => {
+    if (raw === null || typeof raw !== 'object') return null
+    const v = raw as Partial<Branding>
     return { name: typeof v.name === 'string' ? v.name : '', logoVersion: typeof v.logoVersion === 'number' ? v.logoVersion : 0 }
-  } catch {
-    return NONE
-  }
+  })
 }
 
 /** Records the server's branding (absent on older servers: none). */
@@ -32,10 +30,8 @@ export function setBranding(b: Partial<Branding> | undefined): void {
   const next: Branding = { name: b?.name ?? '', logoVersion: b?.logoVersion ?? 0 }
   const current = store.get()
   if (next.name === current.name && next.logoVersion === current.logoVersion) return
-  try {
-    if (next.name || next.logoVersion) localStorage.setItem(KEY, JSON.stringify(next))
-    else localStorage.removeItem(KEY)
-  } catch { /* storage unavailable: memory only */ }
+  // Storage unavailable: memory only.
+  writeString(KEY, next.name || next.logoVersion ? JSON.stringify(next) : null)
   store.set(next)
 }
 

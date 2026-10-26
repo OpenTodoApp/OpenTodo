@@ -66,7 +66,7 @@ function sources(dir: string): string[] {
 describe('store names', () => {
   it('are unique across the app, so no reset replaces another', () => {
     const names = sources(path.resolve(process.cwd(), 'src')).flatMap((file) =>
-      [...readFileSync(file, 'utf8').matchAll(/\b(?:createStore(?:<[^(]*>)?|resettable)\('([^']+)'/g)].map((m) => m[1]))
+      [...readFileSync(file, 'utf8').matchAll(/\b(?:create(?:Persisted)?Store(?:<[^(]*>)?|resettable)\('([^']+)'/g)].map((m) => m[1]))
     const repeated = names.filter((n, i) => names.indexOf(n) !== i)
     expect(repeated).toEqual([])
     expect(names.length).toBeGreaterThan(20)

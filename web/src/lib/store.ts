@@ -35,10 +35,11 @@ export interface Store<T> extends Signal {
 
 /**
  * A store named `name` (one per module, as resettable requires) starting at
- * `initial`. Tests reset it to `initial` before every case, without notifying:
- * nothing from an earlier test is mounted then.
+ * `initial`. Tests reset it before every case, without notifying (nothing from
+ * an earlier test is mounted then): to `initial`, or to what `reset` returns
+ * (a store that also clears what it persisted).
  */
-export function createStore<T>(name: string, initial: T): Store<T> {
+export function createStore<T>(name: string, initial: T, reset?: () => T): Store<T> {
   let value = initial
   const signal = createSignal()
   const get = () => value
@@ -47,7 +48,7 @@ export function createStore<T>(name: string, initial: T): Store<T> {
     value = next
     signal.notify()
   }
-  resettable(name, () => { value = initial })
+  resettable(name, () => { value = reset ? reset() : initial })
   return {
     ...signal,
     get,

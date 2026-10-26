@@ -2,39 +2,17 @@
 // hints live in tooltips and menus"): a device-local switch in Settings → General →
 // Keyboard. Off, no key badge is printed in the chrome (quick add, section headers,
 // prompts); tooltips, menus, the palette and the cheat sheet show shortcuts always.
-import { useSyncExternalStore } from 'react'
+import { createStoredValue } from '../../lib/deviceStorage'
 
 export const HINTS_KEY = 'opentodo.shortcutHints'
-const listeners = new Set<() => void>()
 
-function storage(): Storage | null {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
-}
+// Another tab's choice applies here too (the storage event). Storage refused:
+// the preference just does not stick.
+const hints = createStoredValue<boolean>(HINTS_KEY, {
+  parse: (raw) => raw === '1',
+  serialize: (on) => (on ? '1' : null),
+}, { crossTab: true, server: false })
 
-export function shortcutHintsOn(): boolean {
-  try { return storage()?.getItem(HINTS_KEY) === '1' } catch { return false }
-}
-
-export function setShortcutHints(on: boolean): void {
-  try {
-    if (on) storage()?.setItem(HINTS_KEY, '1')
-    else storage()?.removeItem(HINTS_KEY)
-  } catch {
-    // Storage refused: the preference just does not stick.
-  }
-  listeners.forEach((fn) => fn())
-}
-
-function subscribe(fn: () => void): () => void {
-  listeners.add(fn)
-  const onStorage = (e: StorageEvent) => { if (e.key === HINTS_KEY || e.key === null) fn() }
-  if (typeof window !== 'undefined') window.addEventListener('storage', onStorage)
-  return () => {
-    listeners.delete(fn)
-    if (typeof window !== 'undefined') window.removeEventListener('storage', onStorage)
-  }
-}
-
-export function useShortcutHints(): boolean {
-  return useSyncExternalStore(subscribe, shortcutHintsOn, () => false)
-}
+export const shortcutHintsOn = hints.get
+export const setShortcutHints = hints.set
+export const useShortcutHints = hints.use
