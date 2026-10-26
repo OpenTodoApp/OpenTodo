@@ -43,7 +43,7 @@ All variables are optional; `OPENTODO_HOST_URL` turns host mode on.
 | `db_mb` | Database size in MB | New changes are refused with `limit_storage`; moving things to the Trash still works |
 | `ops_per_hour` | Changes stored per hour | Refused with `limit_ops_hour` until the hour has passed |
 | `ops_total` | Changes stored in total | Refused with `limit_ops_total` |
-| `requests_per_minute` | Requests per minute | `429 limit_requests` |
+| `requests_per_minute` | Requests per minute from one client address (an IPv6 `/64` counts as one), so one client cannot use up the tenant's budget for everyone | `429 limit_requests` |
 | `import_mb` | Size of an import file | `413 limit_import` |
 | `members` | Active accounts | New accounts are refused with `403 limit_members` |
 | `workspaces` | Workspaces one account owns (at most 20) | `409 limit_reached` |

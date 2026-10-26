@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/httpapi"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/tenant"
@@ -97,6 +98,7 @@ func Open(cfg config.Config, o Options) (*Host, error) {
 		unlock()
 		return nil, err
 	}
+	httpapi.ConfigureClientIdentity(cfg)
 	reg, err := OpenRegistry(root, now)
 	if err != nil {
 		unlock()
@@ -278,7 +280,9 @@ func (h *Host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lim := h.hc.Limits.Merge(rec.Limits)
-	if !h.reqs.allow(name, lim.RequestsPerMinute) {
+	// Counted per client address: one client, signed in or not, cannot use up
+	// the budget of every other user of the tenant (hosted-demo-limits D1).
+	if !h.reqs.allow(name+" "+httpapi.ClientKey(r), lim.RequestsPerMinute) {
 		w.Header().Set("Retry-After", "60")
 		writeError(w, http.StatusTooManyRequests, "limit_requests", "this server reached its limit of requests per minute: try again shortly")
 		return
