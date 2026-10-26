@@ -13,6 +13,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/e2ee"
 	ob "github.com/pixari/opentodo/internal/outbound"
+	"github.com/pixari/opentodo/internal/poll"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -109,10 +110,8 @@ func (w *Worker) lock(id string) *sync.Mutex {
 
 // Run polls until ctx ends and sweeps tokens without a connection hourly.
 func (w *Worker) Run(ctx context.Context) {
-	t := time.NewTicker(PollInterval)
-	defer t.Stop()
 	var swept time.Time
-	for {
+	poll.Every(ctx, PollInterval, func(ctx context.Context) {
 		if time.Since(swept) >= sweepEvery {
 			swept = time.Now()
 			if n, err := w.Tokens.Sweep(ctx, w.Store); err != nil {
@@ -122,16 +121,11 @@ func (w *Worker) Run(ctx context.Context) {
 			}
 		}
 		w.RunOnce(ctx)
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
-	}
+	})
 }
 
-// RunOnce polls the connections due now, at most InFlight at a time, and
-// waits for them.
+// RunOnce polls the connections due now, at most InFlight at a time (Poll also
+// shares its slots with hand-triggered syncs), and waits for them.
 func (w *Worker) RunOnce(ctx context.Context) {
 	if w.Enabled != nil && !w.Enabled(ctx) {
 		return
@@ -141,16 +135,7 @@ func (w *Worker) RunOnce(ctx context.Context) {
 		w.log().Error("issue connections: due", "err", err)
 		return
 	}
-	var wg sync.WaitGroup
-	for i := range due {
-		c := due[i]
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			_, _ = w.Poll(ctx, &c)
-		}()
-	}
-	wg.Wait()
+	poll.Each(due, InFlight, func(c *Connection) { _, _ = w.Poll(ctx, c) })
 }
 
 // Check asks the provider for the token's account and records the result on
