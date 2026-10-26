@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -9,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/pixari/opentodo/internal/ids"
 )
 
 // StateDir is the vault's own folder inside the vault.
@@ -59,9 +60,7 @@ type FileState struct {
 
 // NewState makes the state of a new vault with a fresh device id.
 func NewState(profile, server string) *State {
-	b := make([]byte, 12)
-	_, _ = rand.Read(b)
-	return &State{Version: StateVersion, Device: "vault:" + hex.EncodeToString(b), Profile: profile, Server: server,
+	return &State{Version: StateVersion, Device: "vault:" + ids.Hex(12), Profile: profile, Server: server,
 		Store: Store{}, Files: map[string]FileState{}, Printed: map[string]string{}, Extra: map[string]string{}}
 }
 

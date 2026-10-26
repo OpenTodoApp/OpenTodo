@@ -10,6 +10,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Single sign-on accounts (OpenSpec change `oidc-login`): mapping provider
@@ -106,7 +107,7 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 	}
 	email := normalizeEmail(id.Email)
 	if u != nil {
-		if _, err := tx.ExecContext(ctx, "UPDATE identities SET last_login_at = ?, email = ? WHERE id = ?", now, truncate(email, 320), identityID); err != nil {
+		if _, err := tx.ExecContext(ctx, "UPDATE identities SET last_login_at = ?, email = ? WHERE id = ?", now, textutil.Truncate(email, 320), identityID); err != nil {
 			return nil, false, false, err
 		}
 		return u, false, false, tx.Commit()
@@ -147,7 +148,7 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 			return nil, false, false, err
 		}
 		name := strings.TrimSpace(id.Name)
-		u = &User{ID: ids.New(), Email: email, Name: truncate(name, 100), Role: "member", CreatedAt: now}
+		u = &User{ID: ids.New(), Email: email, Name: textutil.Truncate(name, 100), Role: "member", CreatedAt: now}
 		// No password: the account signs in through the provider (an empty hash
 		// never verifies). It can add a passkey later.
 		if err := insertUser(ctx, tx, u, ""); err != nil {
@@ -194,7 +195,7 @@ func (s *Service) HasLocalMFA(ctx context.Context, userID string) (bool, error) 
 
 func (s *Service) insertIdentity(ctx context.Context, tx *sql.Tx, userID string, id ExternalIdentity, now int64, provider string) error {
 	if _, err := tx.ExecContext(ctx, `INSERT INTO identities(id,user_id,issuer,subject,email,created_at,last_login_at)
-		VALUES(?,?,?,?,?,?,?)`, ids.New(), userID, id.Issuer, id.Subject, truncate(normalizeEmail(id.Email), 320), now, now); err != nil {
+		VALUES(?,?,?,?,?,?,?)`, ids.New(), userID, id.Issuer, id.Subject, textutil.Truncate(normalizeEmail(id.Email), 320), now, now); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return ErrIdentityTaken
 		}

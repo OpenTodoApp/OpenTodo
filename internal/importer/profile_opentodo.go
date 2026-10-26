@@ -199,7 +199,7 @@ func plural(n int, one, many string) string {
 func countFileAttachments(list []map[string]json.RawMessage) int {
 	n := 0
 	for _, a := range list {
-		if isNull(a["url"]) && isNull(a["deleted_at"]) {
+		if opsync.IsNull(a["url"]) && opsync.IsNull(a["deleted_at"]) {
 			n++
 		}
 	}

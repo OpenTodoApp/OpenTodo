@@ -34,18 +34,18 @@ func KnownEvent(name string) bool { return slices.Contains(Events, name) }
 // precedence: created, deleted, completed, reopened, archived, updated.
 func EventFor(c opsync.Change) string {
 	f := c.Fields
-	if fc, ok := f["created_at"]; ok && isNull(fc.From) && !isNull(fc.To) {
+	if fc, ok := f["created_at"]; ok && opsync.IsNull(fc.From) && !opsync.IsNull(fc.To) {
 		return c.Entity + ".created"
 	}
-	if fc, ok := f["deleted_at"]; ok && isNull(fc.From) && !isNull(fc.To) {
+	if fc, ok := f["deleted_at"]; ok && opsync.IsNull(fc.From) && !opsync.IsNull(fc.To) {
 		return c.Entity + ".deleted"
 	}
 	if c.Entity == "task" {
 		if fc, ok := f["completed_at"]; ok {
 			switch {
-			case isNull(fc.From) && !isNull(fc.To):
+			case opsync.IsNull(fc.From) && !opsync.IsNull(fc.To):
 				return "task.completed"
-			case !isNull(fc.From) && isNull(fc.To):
+			case !opsync.IsNull(fc.From) && opsync.IsNull(fc.To):
 				return "task.reopened"
 			}
 		}
@@ -180,8 +180,6 @@ func WithDeliveryID(body []byte, id string) ([]byte, error) {
 	p.ID = id
 	return json.Marshal(p)
 }
-
-func isNull(v json.RawMessage) bool { return len(v) == 0 || string(v) == "null" }
 
 func isTrue(v json.RawMessage) bool {
 	var b bool

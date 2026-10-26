@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -19,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
 )
@@ -86,19 +86,13 @@ func archiveTime(name string) (time.Time, bool) {
 	return t, err == nil
 }
 
-func randomHex(n int) string {
-	b := make([]byte, n)
-	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
-}
-
 // snapshot writes a transactionally consistent, WAL-free copy of the live
 // database into the temp directory with VACUUM INTO and returns its path.
 func (s *Service) snapshot(ctx context.Context) (string, error) {
 	if err := os.MkdirAll(s.tmpDir(), 0o700); err != nil {
 		return "", fmt.Errorf("create temp dir: %w", err)
 	}
-	path := filepath.Join(s.tmpDir(), "snapshot-"+s.now().UTC().Format(archiveTimeLayout)+"-"+randomHex(4)+".db")
+	path := filepath.Join(s.tmpDir(), "snapshot-"+s.now().UTC().Format(archiveTimeLayout)+"-"+ids.Hex(4)+".db")
 	if _, err := s.db.ExecContext(ctx, `VACUUM INTO ?`, path); err != nil {
 		os.Remove(path)
 		return "", fmt.Errorf("snapshot database: %w", err)

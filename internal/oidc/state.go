@@ -2,7 +2,6 @@ package oidc
 
 import (
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -10,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pixari/opentodo/internal/ids"
 )
 
 // Flow state (design D4): state, nonce, PKCE verifier and mode travel in one
@@ -55,17 +56,13 @@ func NewStateCodec(now func() time.Time) *StateCodec {
 	if now == nil {
 		now = time.Now
 	}
-	key := make([]byte, 32)
-	if _, err := rand.Read(key); err != nil {
-		panic(err)
-	}
-	return &StateCodec{key: key, now: now, used: map[string]int64{}}
+	return &StateCodec{key: ids.Bytes(32), now: now, used: map[string]int64{}}
 }
 
 // New creates a flow state for mode with fresh random values.
 func (c *StateCodec) New(mode, userID, issuer string) FlowState {
 	return FlowState{
-		State: RandomString(24), Nonce: RandomString(24), Verifier: RandomString(48),
+		State: ids.Secret(24), Nonce: ids.Secret(24), Verifier: ids.Secret(48),
 		Mode: mode, UserID: userID, Issuer: issuer, Expires: c.now().Add(FlowTTL).UnixMilli(),
 	}
 }

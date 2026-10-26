@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
+
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Names stored under a byte limit are cut on a character boundary: a
@@ -27,7 +29,7 @@ func TestTokenNameCutKeepsUTF8(t *testing.T) {
 		t.Fatalf("name = %q", got)
 	}
 	cjk := strings.Repeat("日本語", 20) // 180 bytes, cut at 100: 33 characters
-	if got := truncate(cjk, 100); !utf8.ValidString(got) || got != strings.Repeat("日本語", 11) {
+	if got := textutil.Truncate(cjk, 100); !utf8.ValidString(got) || got != strings.Repeat("日本語", 11) {
 		t.Fatalf("truncate = %q", got)
 	}
 }

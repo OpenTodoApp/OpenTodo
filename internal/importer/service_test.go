@@ -236,7 +236,7 @@ func TestCommitWritesOnlyOps(t *testing.T) {
 	if str(beds, "project_id") != str(projects["Garden"], "id") || str(projects["Garden"], "parent_id") != str(projects["Home"], "id") {
 		t.Fatalf("projects not wired: %v %v", beds, projects)
 	}
-	if str(seeds, "parent_id") != str(beds, "id") || str(seeds, "project_id") != str(beds, "project_id") || isNull(seeds["completed_at"]) {
+	if str(seeds, "parent_id") != str(beds, "id") || str(seeds, "project_id") != str(beds, "project_id") || opsync.IsNull(seeds["completed_at"]) {
 		t.Fatalf("subtask = %v", seeds)
 	}
 	var lbl []string

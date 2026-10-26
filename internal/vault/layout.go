@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -273,7 +274,7 @@ func (v *view) readOnly(id string) map[string]string {
 		var s string
 		switch {
 		case json.Unmarshal(raw, &o) == nil && (o.URL != "" || o.ID != ""):
-			out["origin"] = firstNonEmpty(o.URL, o.ID)
+			out["origin"] = cmp.Or(o.URL, o.ID)
 		case json.Unmarshal(raw, &s) == nil && s != "":
 			out["origin"] = v.text("task", id, "origin")
 		}
@@ -287,7 +288,7 @@ func (v *view) readOnly(id string) map[string]string {
 		var s string
 		switch {
 		case json.Unmarshal(raw, &loc) == nil && (loc.Name != "" || loc.Address != ""):
-			out["location"] = firstNonEmpty(loc.Name, loc.Address)
+			out["location"] = cmp.Or(loc.Name, loc.Address)
 		case json.Unmarshal(raw, &s) == nil && s != "":
 			out["location"] = v.text("task", id, "location")
 		}
@@ -324,13 +325,6 @@ func (v *view) readOnly(id string) map[string]string {
 		}
 	}
 	return out
-}
-
-func firstNonEmpty(a, b string) string {
-	if a != "" {
-		return a
-	}
-	return b
 }
 
 // defaultColor is the colour `ot project add` derives from a name.

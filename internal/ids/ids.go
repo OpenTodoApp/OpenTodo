@@ -6,15 +6,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 )
 
 // New returns a random UUID v4 string.
 func New() string {
 	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		panic(fmt.Sprintf("ids: crypto/rand failed: %v", err))
-	}
+	_, _ = rand.Read(b[:]) // crypto/rand.Read never returns an error (Go 1.24+)
 	b[6] = (b[6] & 0x0f) | 0x40
 	b[8] = (b[8] & 0x3f) | 0x80
 	return formatUUID(b[:])
@@ -48,11 +45,16 @@ func formatUUID(b []byte) string {
 	return string(dst)
 }
 
-// Secret returns a URL-safe random string with n bytes of entropy.
-func Secret(n int) string {
+// Bytes returns n random bytes from crypto/rand, which never returns an error
+// (Go 1.24+: a broken source crashes the program instead).
+func Bytes(n int) []byte {
 	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		panic(fmt.Sprintf("ids: crypto/rand failed: %v", err))
-	}
-	return base64.RawURLEncoding.EncodeToString(b)
+	_, _ = rand.Read(b)
+	return b
 }
+
+// Secret returns a URL-safe random string with n bytes of entropy.
+func Secret(n int) string { return base64.RawURLEncoding.EncodeToString(Bytes(n)) }
+
+// Hex returns n random bytes as lower-case hex.
+func Hex(n int) string { return hex.EncodeToString(Bytes(n)) }

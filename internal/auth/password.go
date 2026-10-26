@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
@@ -11,6 +10,8 @@ import (
 	"time"
 
 	"golang.org/x/crypto/argon2"
+
+	"github.com/pixari/opentodo/internal/ids"
 )
 
 // Argon2id parameters following the OWASP minimum recommendation (19 MiB, t=2, p=1).
@@ -65,10 +66,7 @@ func withHashSlot(fn func()) error {
 
 // HashPassword returns a PHC-formatted argon2id hash.
 func HashPassword(password string) (string, error) {
-	salt := make([]byte, saltLen)
-	if _, err := rand.Read(salt); err != nil {
-		return "", err
-	}
+	salt := ids.Bytes(saltLen)
 	var key []byte
 	if err := withHashSlot(func() { key = argonKey([]byte(password), salt, argonTime, argonMemory, argonThreads, argonKeyLen) }); err != nil {
 		return "", err

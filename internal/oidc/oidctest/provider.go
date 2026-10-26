@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/oidc"
 )
 
@@ -155,7 +156,7 @@ func (p *Provider) authorize(w http.ResponseWriter, r *http.Request) {
 	if errCode != "" {
 		v.Set("error", errCode)
 	} else {
-		code := oidc.RandomString(16)
+		code := ids.Secret(16)
 		p.mu.Lock()
 		p.codes[code] = grant{clientID: q.Get("client_id"), redirectURI: q.Get("redirect_uri"), challenge: q.Get("code_challenge"), nonce: q.Get("nonce"), user: u}
 		p.mu.Unlock()

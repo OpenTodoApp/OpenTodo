@@ -494,7 +494,7 @@ func (s *Service) CreateTokenScoped(ctx context.Context, userID, name, scope str
 		name = "API token"
 	}
 	plain := "ot_" + ids.Secret(32)
-	t := &Token{ID: ids.New(), Name: truncate(name, 100), Scope: scope, CreatedAt: s.clock().UnixMilli()}
+	t := &Token{ID: ids.New(), Name: textutil.Truncate(name, 100), Scope: scope, CreatedAt: s.clock().UnixMilli()}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, "", err
@@ -642,6 +642,3 @@ func hashToken(secret string) string {
 }
 
 func normalizeEmail(e string) string { return strings.ToLower(strings.TrimSpace(e)) }
-
-// truncate cuts s to at most n bytes without splitting a character.
-func truncate(s string, n int) string { return textutil.Truncate(s, n) }
