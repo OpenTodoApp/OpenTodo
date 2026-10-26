@@ -15,5 +15,5 @@
 ## 3. Release
 
 - [x] 3.1 Add a CHANGELOG.md entry under Unreleased: "The side panel no longer flickers when the first task is chosen after changing lists" (Fixes #442). Verify: `npm run docs:check`.
-- [ ] 3.2 Run `make check` and `make openspec-validate`. Verify: both pass.
-- [ ] 3.3 After the PR is merged, reply on issue #442 with a short, friendly note: thank the reporter for the precise steps, explain that the panel had nothing to hold after a list change so it emptied for a moment and replayed its slide-in, and name the release that fixes it. Then close the issue. Verify: `gh issue view 442 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
+- [x] 3.2 Run `make check` and `make openspec-validate`. Verify: both pass. CI ran the full suite on #458, and every job passed.
+- [x] 3.3 After the PR is merged, reply on issue #442 with a short, friendly note: thank the reporter for the precise steps, explain that the panel had nothing to hold after a list change so it emptied for a moment and replayed its slide-in, and name the release that fixes it. Then close the issue. Verify: `gh issue view 442 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
