@@ -131,7 +131,7 @@ Linear exports a workspace's issues as CSV from its workspace settings (Import /
 
 Things 3 has no export, but its database can be copied, as Cultured Code's support article "Accessing the Things database" explains. Quit Things first. On a Mac, open `~/Library/Group Containers/JLMPQHK86H.com.culturedcode.ThingsMac/`, then the `ThingsData-…` folder, and copy `Things Database.thingsdatabase`. Upload its `main.sqlite` (right-click the folder and choose **Show Package Contents**), or a ZIP of the whole folder. On iPhone or iPad the article describes a diagnostics code that sends `Things Database.aar`; tap it to unpack it into the same folder.
 
-The file is read from a private copy on the server, read-only, using only Things' own tables, and deleted after the preview or import. A SQLite file that is not a Things database is refused with `400 invalid_file`.
+The file is read from a private copy on the server, read-only, using only Things' own tables, and deleted after the preview or import. A SQLite file that is not a Things database is refused with `400 invalid_file`, and so is one whose Things tables compute values while they are read (generated columns or virtual tables, which Things never uses) or hold a value over 1 MB. Reading the file stops after 30 seconds.
 
 | Things | Becomes |
 | --- | --- |

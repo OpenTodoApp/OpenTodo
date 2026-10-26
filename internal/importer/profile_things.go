@@ -16,7 +16,8 @@ import (
 	"strings"
 	"time"
 
-	_ "modernc.org/sqlite"
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
 // Things 3 has no export, but its database can be copied (Cultured Code's
@@ -31,6 +32,20 @@ const thingsFormat = "things-db"
 const thingsTested = 29
 
 var sqliteMagic = []byte("SQLite format 3\x00")
+
+// The uploaded file is someone's input, and SQLite runs expressions stored in a
+// schema while it reads (generated columns, virtual tables). So the tables read
+// must be plain tables of stored values (checkSchema), no value may be longer
+// than thingsMaxValue (SQLITE_LIMIT_LENGTH: a longer value, stored or computed,
+// fails with "string or blob too big"), and the whole read stops after
+// thingsTimeout.
+const (
+	thingsMaxValue = 1 << 20
+	thingsTimeout  = 30 * time.Second
+)
+
+// thingsTables are the tables the import reads.
+var thingsTables = []string{"TMTask", "TMArea", "TMTag", "TMTaskTag", "TMChecklistItem", "Meta"}
 
 type thingsDBProfile struct{}
 
@@ -71,12 +86,21 @@ func (thingsDBProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	}
 	defer db.Close()
 	db.SetMaxOpenConns(1)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), thingsTimeout)
 	defer cancel()
-	if _, err := db.ExecContext(ctx, "PRAGMA query_only = 1"); err != nil {
+	// One pinned connection: the pragma and the length limit belong to it.
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return nil, &FileError{fmt.Sprintf("cannot open the database: %v", err)}
+	}
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, "PRAGMA query_only = 1"); err != nil {
 		return nil, &FileError{fmt.Sprintf("cannot read the database: %v", err)}
 	}
-	t := &thingsReader{db: db, ctx: ctx, loc: opts.Location(), out: &Parsed{}}
+	if _, err := sqlite.Limit(conn, sqlite3.SQLITE_LIMIT_LENGTH, thingsMaxValue); err != nil {
+		return nil, fmt.Errorf("things: length limit: %w", err)
+	}
+	t := &thingsReader{db: conn, ctx: ctx, loc: opts.Location(), out: &Parsed{}}
 	if err := t.check(); err != nil {
 		return nil, err
 	}
@@ -91,7 +115,7 @@ func (thingsDBProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 }
 
 type thingsReader struct {
-	db  *sql.DB
+	db  *sql.Conn
 	ctx context.Context
 	loc *time.Location
 	out *Parsed
@@ -113,10 +137,13 @@ func (t *thingsReader) check() error {
 		}
 	}
 	rows.Close()
-	for _, want := range []string{"TMTask", "TMArea", "TMTag", "TMTaskTag", "TMChecklistItem", "Meta"} {
+	for _, want := range thingsTables {
 		if !have[want] {
 			return &FileError{"not a Things database (the Things tables are missing)"}
 		}
+	}
+	if err := t.checkSchema(); err != nil {
+		return err
 	}
 	var v string
 	if err := t.db.QueryRowContext(t.ctx, "SELECT value FROM Meta WHERE key = 'databaseVersion'").Scan(&v); err != nil {
@@ -132,6 +159,31 @@ func (t *thingsReader) check() error {
 		return &FileError{fmt.Sprintf("this Things database (version %d) is too old; update Things 3 and copy it again", version)}
 	case version != thingsTested:
 		t.out.Notes = append(t.out.Notes, fmt.Sprintf("Things database version %d; the import was verified with version %d. Check the preview carefully.", version, thingsTested))
+	}
+	return nil
+}
+
+// checkSchema refuses tables that would run the file's own expressions while
+// they are read: a virtual table (its module computes the rows) or a generated
+// column (its expression runs for every row read). Things' own tables have
+// neither. table_xinfo reports both as hidden columns (1 for a virtual table's
+// hidden column, 2 and 3 for generated ones).
+func (t *thingsReader) checkSchema() error {
+	for _, name := range thingsTables {
+		var ddl string
+		if err := t.db.QueryRowContext(t.ctx, "SELECT COALESCE(sql, '') FROM sqlite_master WHERE type = 'table' AND name = ?", name).Scan(&ddl); err != nil {
+			return &FileError{fmt.Sprintf("cannot read the database: %v", err)}
+		}
+		if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(ddl)), "CREATE VIRTUAL") {
+			return &FileError{fmt.Sprintf("not a Things database (%s is a virtual table)", name)}
+		}
+		var hidden int
+		if err := t.db.QueryRowContext(t.ctx, "SELECT COUNT(*) FROM pragma_table_xinfo(?) WHERE hidden != 0", name).Scan(&hidden); err != nil {
+			return &FileError{fmt.Sprintf("cannot read the database: %v", err)}
+		}
+		if hidden > 0 {
+			return &FileError{fmt.Sprintf("not a Things database (%s has generated columns)", name)}
+		}
 	}
 	return nil
 }

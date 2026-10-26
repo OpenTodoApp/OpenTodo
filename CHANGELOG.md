@@ -7,6 +7,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Security
 
 - **A saved view can no longer take the server down.** A signed-in person, including a visitor of a public demo, could save a view with a specially crafted filter query that crashed the server while checking it, stopping it for everyone (on a hosted server, for every tenant). Filter queries are now limited to 4,096 characters and 64 levels of parentheses and `!`, in the app and on the server; a longer or deeper query is refused with a message like any other mistake in a query. Queries people write, and every query the filter builder makes, are far below both limits. Found in an internal audit. ([Filters](docs/filters.md))
+- **Importing a Things database can no longer tie up the server.** A specially prepared file uploaded for a Things import could make the server compute values while reading it, keeping a processor busy or using a lot of memory for each preview. The importer now refuses a file whose Things tables compute their values (Things' own databases never do) and any value over 1 MB, before or while reading it; real Things databases import as before. Found in an internal audit. ([Import](docs/import.md#things-database-things-db))
 
 ### Added
 
