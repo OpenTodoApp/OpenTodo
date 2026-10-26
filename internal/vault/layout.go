@@ -319,7 +319,7 @@ func (v *view) readOnly(id string) map[string]string {
 			if _, ok := val.(string); ok {
 				s = v.text("task", id, key)
 			}
-			name := strings.NewReplacer("]", "", ":", "").Replace(v.text("field", fid, "name"))
+			name := strings.NewReplacer("[", "", "]", "", ":", "").Replace(v.text("field", fid, "name"))
 			out["field:"+name] = strings.ReplaceAll(s, "]", "")
 		}
 	}

@@ -37,6 +37,11 @@ var (
 // maxHrefLen drops links longer than this (their text stays).
 const maxHrefLen = 2048
 
+// maxNesting bounds open inline spans and list levels. Deeper links and marks
+// are ignored (their text stays) and deeper lists keep the last indent, so
+// closing them and indenting stay linear in a hostile message's size.
+const maxNesting = 32
+
 type mdSpan struct {
 	mark, href string
 	link       bool
@@ -62,6 +67,7 @@ type mdWriter struct {
 // HTMLToMarkdown turns an HTML mail body into notes Markdown.
 func HTMLToMarkdown(s string) string {
 	w := &mdWriter{spans: []*mdSpan{{}}}
+	quotes := true
 	for i := 0; i < len(s); {
 		lt := strings.IndexByte(s[i:], '<')
 		if lt < 0 {
@@ -78,11 +84,28 @@ func HTMLToMarkdown(s string) string {
 			i += 4 + end + 3
 			continue
 		}
-		end := tagEnd(s, i)
-		if end < 0 || i+1 >= len(s) || !(isLetter(s[i+1]) || s[i+1] == '/' || s[i+1] == '!' || s[i+1] == '?') {
+		if i+1 >= len(s) || !(isLetter(s[i+1]) || s[i+1] == '/' || s[i+1] == '!' || s[i+1] == '?') {
 			w.text("<")
 			i++
 			continue
+		}
+		end := -1
+		if quotes {
+			end = tagEnd(s, i)
+		}
+		if end < 0 {
+			// A quote that never closes made the scan reach the end. Scanning
+			// with quotes again from every later '<' would be quadratic (a
+			// hostile message of "<a" pairs takes hours), so from here on a tag
+			// ends at the next '>' whatever the quotes, as in a browser that
+			// gave up on the attribute.
+			quotes = false
+			end = strings.IndexByte(s[i:], '>')
+			if end < 0 {
+				w.text(s[i:]) // no tag can end any more: the rest is text
+				break
+			}
+			end += i
 		}
 		name, attrs, closing := parseTag(s[i+1 : end])
 		i = end + 1
@@ -269,7 +292,10 @@ func (w *mdWriter) start(name string, attrs map[string]string) {
 		indent := ""
 		if n := len(w.lists); n > 0 {
 			l := w.lists[n-1]
-			indent = l.indent + strings.Repeat(" ", len(marker(l))+1)
+			indent = l.indent
+			if n < maxNesting {
+				indent += strings.Repeat(" ", len(marker(l))+1)
+			}
 			w.line()
 			w.gap = 1
 		} else {
@@ -291,6 +317,7 @@ func (w *mdWriter) start(name string, attrs map[string]string) {
 		l.n++
 		w.gap = max(w.gap, 1)
 		w.prefix = l.indent + marker(*l) + " "
+	case (name == "a" || inlineMark[name] != "") && len(w.spans) > maxNesting:
 	case name == "a":
 		w.spans = append(w.spans, &mdSpan{link: true, href: attrs["href"]})
 	case inlineMark[name] != "":

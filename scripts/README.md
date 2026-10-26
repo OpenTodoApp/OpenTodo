@@ -9,6 +9,18 @@ make cli-smoke                 # builds bin/opentodo and bin/ot, then runs the s
 OPENTODO_SMOKE_PORT=18081 ./scripts/cli-smoke.sh
 ```
 
+## `fuzz.sh`
+
+Runs every Go fuzz target (`func FuzzXxx` in a `*_test.go` file) one after another, for 30 seconds each by default. The targets cover the parsers of untrusted input: quick add, recurrence, filters, passkey data (WebAuthn), email, calendar feeds, CalDAV and calendar sync XML, imports and the vault's Markdown. Their seed inputs, and any failing input committed under `<package>/testdata/fuzz/`, also run in every plain `go test`. The nightly workflow runs this script with a minute per target.
+
+```bash
+make web                                   # the Go tests need the web build
+scripts/fuzz.sh                            # 30s per target
+scripts/fuzz.sh 5m ./internal/email        # one package, longer
+```
+
+When a target fails, Go writes the input to `<package>/testdata/fuzz/<FuzzXxx>/`; commit it with the fix so it stays a regression test.
+
 ## `e2e-smoke.mjs`
 
 Drives the production binary in headless Chromium through the whole walking skeleton: owner setup, capture, natural-language quick add (preview chips, then the parsed date and priority checked on the server), projects, detail edits, keyboard shortcuts, views, sync verified through the REST API, a second device, an offline edit that uploads on reconnect, settings and tokens, mobile layout. Selectors are scoped by role and label (a task row is the button whose name starts with its title; detail fields are looked up inside the detail panel), so the Parent task picker and subtask lists never make them ambiguous. Pass a directory as the first argument to also save screenshots of the run.
