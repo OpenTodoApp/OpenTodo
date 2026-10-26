@@ -10,7 +10,12 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Security
 
-- **A change made on a device whose clock runs slightly behind no longer loses to the older value it replaces.** Devices, `ot vault` and the server now move their clock past every change they receive, so the next edit is always stamped after the value it overwrites. Before, an edit made shortly after receiving a value from a device or server whose clock was a little ahead (less than two seconds, which no correction caught) could be silently undone by that older value. With end-to-end encryption this could leave a value, such as a task's origin written by the email inbox, in plaintext on the server, because the device's encrypted rewrite lost to it and was never retried. Found in an internal audit. ([Sync protocol](docs/sync.md#clocks))
+- **A change made on a device whose clock runs slightly behind no longer loses to the older value it replaces.** Devices, `ot vault` and the server now move their clock past every change they receive, so the next edit is always stamped after the value it overwrites. Before, an edit made shortly after receiving a value from a device or server whose clock was a few seconds ahead (too little for the clock correction to catch) could be silently undone by that older value. With end-to-end encryption this could leave a value, such as a task's origin written by the email inbox, in plaintext on the server, because the device's encrypted rewrite lost to it and was never retried. Found in an internal audit. ([Sync protocol](docs/sync.md#clocks))
+
+### Fixed
+
+- **Names with accents or non-Latin letters are no longer cut in the middle of a character.** API token, passkey, app password and single sign-on names, sign-up names and the device names recorded for sessions are kept within their length limits by bytes; a limit falling inside a character such as "ë" or "日" stored half of it, which then showed as "�". They are now cut before that character, and the same applies to error messages from push services, mail servers and calendar feeds. Found in an internal audit.
+- **A database read that fails part way is no longer taken as complete.** The cleanup of notification channel secrets, at start and with the regular maintenance, could remove the tokens of channels that still exist when reading the channel list stopped early with an error; it now removes nothing then. A Things import that hits a read error stops with the error instead of importing part of the database, and the webhook and notification channel workers retry instead of sending a partial batch. Found in an internal audit.
 
 ## [0.14.0] - 2026-10-26
 
