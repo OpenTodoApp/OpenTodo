@@ -697,7 +697,7 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | Field | Type | Notes |
 | --- | --- | --- |
 | `name` | string | required on create, must not be blank |
-| `query` | string | required on create for list views; must parse under the grammar in [`docs/filters.md`](filters.md), otherwise 400 with the parser's message (`view.query: Unknown term "urgent" at position 6`); may be empty for dashboards |
+| `query` | string | required on create for list views; must parse under the grammar in [`docs/filters.md`](filters.md), at most 4,096 characters and 64 levels of `(` and `!`; otherwise 400 with the parser's message (`view.query: Unknown term "urgent" at position 6`); may be empty for dashboards |
 | `kind` | `"list"` or `"dashboard"` | default `list`; cannot be changed after creation |
 | `group_by` | `"project"`, `"due"`, `"priority"`, `"label"` or `"none"` | default `project` |
 | `sort_by` | `"due"`, `"priority"`, `"position"`, `"created"`, `"deadline"` or `"title"` | default `due` (undated tasks last; tasks without a deadline last under `deadline`) |

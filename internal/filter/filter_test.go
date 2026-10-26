@@ -1,11 +1,13 @@
 package filter
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // docs/filters.md is the examples file shared with web/src/lib/filter/filter.test.ts.
@@ -167,4 +169,76 @@ func TestFilterTrackedTerms(t *testing.T) {
 			t.Errorf("%q: got %v, want %q", q, err, want)
 		}
 	}
+}
+
+type limitVector struct {
+	Prefix, Repeat, Suffix, Close string
+	Times, CloseTimes             int
+	Error                         *string
+}
+
+func (v limitVector) query() string {
+	return v.Prefix + strings.Repeat(v.Repeat, v.Times) + v.Suffix + strings.Repeat(v.Close, v.CloseTimes)
+}
+
+func readLimits(t testing.TB) (maxLen, maxNest int, vectors []limitVector) {
+	b, err := os.ReadFile("testdata/limits.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		MaxQueryLength, MaxNesting int
+		Vectors                    []limitVector
+	}
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatal(err)
+	}
+	return doc.MaxQueryLength, doc.MaxNesting, doc.Vectors
+}
+
+// Limits (OpenSpec change filter-limits), vectors shared with the web parser. A
+// query of a few million "(" used to recurse until the goroutine stack overflowed,
+// which ends the whole process (recover cannot catch it); now it is an ordinary
+// syntax error.
+func TestFilterLimits(t *testing.T) {
+	maxLen, maxNest, vectors := readLimits(t)
+	if maxLen != MaxQueryLength || maxNest != MaxNesting {
+		t.Fatalf("testdata/limits.json says %d characters and %d levels, the parser %d and %d", maxLen, maxNest, MaxQueryLength, MaxNesting)
+	}
+	for _, v := range vectors {
+		q := v.query()
+		err := Parse(q)
+		if v.Error == nil {
+			if err != nil {
+				t.Errorf("%.40q… (%d characters): %v", q, utf8.RuneCountInString(q), err)
+			}
+			continue
+		}
+		var se *SyntaxError
+		if !errors.As(err, &se) || se.Message != *v.Error {
+			t.Errorf("%.40q…: got %v, want %q", q, err, *v.Error)
+		}
+	}
+}
+
+// FuzzParse: any input is accepted or refused with a *SyntaxError; it never
+// panics or overflows the stack. Run with: go test ./internal/filter -fuzz FuzzParse
+func FuzzParse(f *testing.F) {
+	for _, s := range []string{"", "@work & due <= tomorrow & p1", "((p1)", "!!!(p1 | #x)", `"a" > 3`, `search: "x`,
+		"tracked > 1h30", "no cost", "due = 3 weeks ago", "workspace: Home & !origin", strings.Repeat("(", 100) + "p1"} {
+		f.Add(s)
+	}
+	f.Fuzz(func(t *testing.T, q string) {
+		err := Parse(q)
+		if err == nil {
+			return
+		}
+		var se *SyntaxError
+		if !errors.As(err, &se) {
+			t.Fatalf("%q: %T %v", q, err, err)
+		}
+		if se.Offset < 0 || se.Offset > max(utf8.RuneCountInString(q), MaxQueryLength) {
+			t.Fatalf("%q: offset %d", q, se.Offset)
+		}
+	})
 }
