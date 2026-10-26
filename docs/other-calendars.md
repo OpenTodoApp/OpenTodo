@@ -13,6 +13,8 @@ order: 64
 
 With [calendar feeds](calendar-feeds.md) turned on by the server owner, you can subscribe to up to ten of your other calendars. Their events are read-only in OpenTodo and count toward a day's planned total only in the Plan; they're there so you can see your real free time while you plan.
 
+Calendars of an account connected through [calendar sync](calendar-sync.md) refresh within minutes.
+
 ## Subscribe to another calendar
 
 1. Copy the calendar's iCal address from its app:
@@ -35,7 +37,7 @@ Each calendar's row shows when it was last refreshed. When fetches fail, the row
 - Events never count toward the day's planned total here; only the [Plan](calendar-views.md#plan-the-next-two-weeks) counts busy ones, overlaps once.
 - Events can't be dragged, resized or completed. Tab onto an event and press Enter, or click it, to see its time, location and calendar.
 
-The **Calendars** button in the calendar's toolbar hides or shows events on this device only. Your choice is kept when you reload. Today can list the day's events too: see [Calendar events in Today](calendar-events-in-today.md).
+The **Calendars** button in the toolbar hides or shows events on this device. Today can list them too: [Calendar events in Today](calendar-events-in-today.md).
 
 Events are cached on each device, so Day and Week still show them offline, as of the last refresh. The toolbar then says **Calendars as of** and the time. Weeks your device has not loaded yet show no events while you're offline.
 

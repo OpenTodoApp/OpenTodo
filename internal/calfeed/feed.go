@@ -63,53 +63,82 @@ func WriteFeed(tasks []FeedTask, opts FeedOptions) []byte {
 		if t.Date == "" || t.Date < from || t.Date > to {
 			continue
 		}
-		ev := &caldav.Component{Name: "VEVENT"}
-		add(ev, "UID", t.ID)
-		stamp := time.UnixMilli(t.Modified).UTC().Format("20060102T150405Z")
-		if t.Modified <= 0 {
-			stamp = opts.Now.UTC().Format("20060102T150405Z")
-		}
-		add(ev, "DTSTAMP", stamp)
-		add(ev, "LAST-MODIFIED", stamp)
-		title := t.Title
-		if opts.Encrypted || e2ee.IsCiphertext(title) {
-			title = e2ee.Placeholder
-		}
-		add(ev, "SUMMARY", caldav.EscapeText(title))
-		if t.Description != "" && !opts.Encrypted && !e2ee.IsCiphertext(t.Description) {
-			add(ev, "DESCRIPTION", caldav.EscapeText(t.Description))
-		}
-		start, end := eventTimes(t)
-		ev.Props = append(ev.Props, start, end)
-		if t.TZ != nil && t.Time != nil && !zones[*t.TZ] {
-			if vt := caldav.VTimezone(*t.TZ, t.Date, *t.Time); vt != nil {
-				zones[*t.TZ] = true
-				cal.Children = append(cal.Children, vt)
-			}
-		}
-		if t.RRULE != "" {
-			add(ev, "RRULE", t.RRULE)
-		}
-		if len(t.Labels) > 0 && !opts.Encrypted {
-			esc := ""
-			for i, l := range t.Labels {
-				if i > 0 {
-					esc += ","
-				}
-				esc += caldav.EscapeText(l)
-			}
-			add(ev, "CATEGORIES", esc)
-		}
-		if t.Priority > 0 {
-			add(ev, "X-OPENTODO-PRIORITY", strconv.Itoa(t.Priority))
-		}
-		if opts.BaseURL != "" {
-			add(ev, "URL", opts.BaseURL+"/day/"+t.Date)
-		}
-		events = append(events, ev)
+		events = append(events, taskEvent(cal, zones, t, opts))
 	}
 	cal.Children = append(cal.Children, events...)
 	return cal.Encode()
+}
+
+// WriteEvent renders one task as a calendar object of its own: the event a
+// calendar sync connection writes into the user's calendar (OpenSpec change
+// calendar-two-way, design D5). It is the feed's event without RRULE (a
+// recurring task is its next occurrence), categories or priority, marked with
+// X-OPENTODO-TASK.
+func WriteEvent(t FeedTask, opts FeedOptions) []byte {
+	cal := &caldav.Component{Name: "VCALENDAR"}
+	cal.Props = append(cal.Props, caldav.Prop{Name: "VERSION", Value: "2.0"}, caldav.Prop{Name: "PRODID", Value: caldav.ProdID})
+	t.RRULE, t.Labels, t.Priority = "", nil, 0
+	ev := taskEvent(cal, map[string]bool{}, t, opts)
+	ev.Props = append(ev.Props, caldav.Prop{Name: "X-OPENTODO-TASK", Value: t.ID})
+	cal.Children = append(cal.Children, ev)
+	return cal.Encode()
+}
+
+// EventTitle is the SUMMARY of a task's event: its title, or the neutral
+// placeholder for an encrypted account or an encrypted title.
+func EventTitle(t FeedTask, encrypted bool) string {
+	if encrypted || e2ee.IsCiphertext(t.Title) {
+		return e2ee.Placeholder
+	}
+	return t.Title
+}
+
+// taskEvent builds one task's VEVENT and adds the VTIMEZONE of a zoned due to
+// cal once (zones remembers the ones already added).
+func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts FeedOptions) *caldav.Component {
+	add := func(c *caldav.Component, name, value string) {
+		c.Props = append(c.Props, caldav.Prop{Name: name, Value: value})
+	}
+	ev := &caldav.Component{Name: "VEVENT"}
+	add(ev, "UID", t.ID)
+	stamp := time.UnixMilli(t.Modified).UTC().Format("20060102T150405Z")
+	if t.Modified <= 0 {
+		stamp = opts.Now.UTC().Format("20060102T150405Z")
+	}
+	add(ev, "DTSTAMP", stamp)
+	add(ev, "LAST-MODIFIED", stamp)
+	add(ev, "SUMMARY", caldav.EscapeText(EventTitle(t, opts.Encrypted)))
+	if t.Description != "" && !opts.Encrypted && !e2ee.IsCiphertext(t.Description) {
+		add(ev, "DESCRIPTION", caldav.EscapeText(t.Description))
+	}
+	start, end := eventTimes(t)
+	ev.Props = append(ev.Props, start, end)
+	if t.TZ != nil && t.Time != nil && !zones[*t.TZ] {
+		if vt := caldav.VTimezone(*t.TZ, t.Date, *t.Time); vt != nil {
+			zones[*t.TZ] = true
+			cal.Children = append(cal.Children, vt)
+		}
+	}
+	if t.RRULE != "" {
+		add(ev, "RRULE", t.RRULE)
+	}
+	if len(t.Labels) > 0 && !opts.Encrypted {
+		esc := ""
+		for i, l := range t.Labels {
+			if i > 0 {
+				esc += ","
+			}
+			esc += caldav.EscapeText(l)
+		}
+		add(ev, "CATEGORIES", esc)
+	}
+	if t.Priority > 0 {
+		add(ev, "X-OPENTODO-PRIORITY", strconv.Itoa(t.Priority))
+	}
+	if opts.BaseURL != "" {
+		add(ev, "URL", opts.BaseURL+"/day/"+t.Date)
+	}
+	return ev
 }
 
 // eventTimes gives DTSTART and DTEND: a whole day for a date-only due, the

@@ -206,6 +206,10 @@ var demoRules = []demoRule{
 	// (issue-import D10): every method.
 	{"Issue connections", false, prefix("/api/v1/issues")},
 	{"Issue connections", false, exact("/api/v1/settings/issues")},
+	// Calendar sync would send a visitor's password to a visitor's server, or
+	// sign in to Google (calendar-two-way): every method.
+	{"Calendar sync", false, prefix("/api/v1/calendar-sync")},
+	{"Calendar sync", false, prefix("/api/v1/settings/calendar-sync")},
 	// Automation rules write on the server on a visitor's behalf and can send
 	// webhooks (automation-rules D9): every method; nothing runs on a demo.
 	{"Automations", false, prefix("/api/v1/rules")},

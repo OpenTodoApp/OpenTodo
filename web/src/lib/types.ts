@@ -949,6 +949,73 @@ export interface CalendarSubscription {
   stoppedReason?: string
   warnings?: string[]
   eventCount?: number
+  /** A calendar of a calendar sync connection (calendar-two-way), not one of the user's subscriptions. */
+  managed?: boolean
+}
+
+/** One calendar of a calendar sync account, as discovery found it. */
+export interface SyncCalendar {
+  url: string
+  name: string
+  color: string
+  time_zone?: string
+  read_only: boolean
+}
+
+/** What one calendar sync cycle did. */
+export interface CalendarSyncRun {
+  moved: number
+  renamed: number
+  unscheduled: number
+  written: number
+  removed: number
+  conflicts: number
+  refused: number
+  partial: boolean
+}
+
+/** A calendar sync connection (calendar-two-way) as the server reports it: never the password or token. */
+export interface CalendarConnection {
+  id: string
+  provider: 'caldav' | 'google'
+  name: string
+  server_url: string
+  username: string
+  calendars: SyncCalendar[]
+  target: string
+  read: string[]
+  include_date_only: boolean
+  enabled: boolean
+  state: 'off' | 'choose_calendar' | 'pending' | 'ok' | 'failed' | 'reconnect' | 'stopped'
+  next_sync_at: number
+  last_sync_at: number | null
+  last_success_at: number | null
+  last_error: string
+  last_error_at: number | null
+  stopped_reason: string
+  last_run: CalendarSyncRun | null
+  password_set: boolean
+  event_count: number
+  created_at: number
+  updated_at: number
+}
+
+/** The owner's Google client for calendar sync; never the secret. */
+export interface GoogleClientSetting {
+  client_id: string
+  secret_set: boolean
+  from_env: boolean
+  redirect_uri: string
+}
+
+/** The body of changing a calendar connection. */
+export interface CalendarConnectionPatch {
+  name?: string
+  target?: string
+  read?: string[]
+  include_date_only?: boolean
+  enabled?: boolean
+  password?: string
 }
 
 /** The filter of an issue connection (OpenSpec issue-connections "Filter"). */

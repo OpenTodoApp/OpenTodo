@@ -25,7 +25,7 @@ import { REVIEW_ID } from './review'
 import { USER_PREFS_ID } from './userPrefs'
 import { ownIn, projectsIn, readWorkspaceState, type WorkspaceState } from './workspaces'
 import type {
-  AppNotification, Attachment, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, Label, Membership, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
+  AppNotification, Attachment, CalendarConnection, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, Label, Membership, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
 } from './types'
 
 export type { AttachmentBlob }
@@ -400,8 +400,21 @@ export function useNotifications(limit = 50): AppNotification[] {
 }
 
 /** The calendar subscriptions cached with the last event refresh (for offline). */
-export function cachedCalendarSubscriptions(): Promise<CalendarSubscription[]> {
-  return db.calendarSubscriptions.toArray()
+export async function cachedCalendarSubscriptions(): Promise<CalendarSubscription[]> {
+  // Calendar sync's calendars come with the events but are not the user's subscriptions.
+  return (await db.calendarSubscriptions.toArray()).filter((s) => !s.managed)
+}
+
+const CALENDAR_CONNECTIONS_META_KEY = 'calendarConnections'
+
+/** The calendar sync connections of the last load (calendar-two-way): shown offline. Never a password: the server sends none. */
+export function cachedCalendarConnections(): Promise<CalendarConnection[]> {
+  return getMeta<CalendarConnection[]>(CALENDAR_CONNECTIONS_META_KEY, [])
+}
+
+/** Keeps the calendar sync connections of a load for the offline panel. */
+export function cacheCalendarConnections(list: CalendarConnection[]): Promise<void> {
+  return setMeta(CALENDAR_CONNECTIONS_META_KEY, list)
 }
 
 const ISSUE_CONNECTIONS_META_KEY = 'issueConnections'
