@@ -19,18 +19,18 @@ import (
 func (s *Server) registerChannelRoutes(mux *routes) {
 	s.channelLimiter = newRateLimiter(channels.TestsPerHour, time.Hour)
 	s.switchRoutes(mux, "/api/v1/settings/notification-channels", switchRoute{sw: s.set.ChannelsOn,
-		get: signedIn.demoDenied(), put: ownerOnly("manage notification channels on this server").demoDenied(),
+		get: signedIn.DemoDenied(), put: ownerOnly("manage notification channels on this server").DemoDenied(),
 		after: func(_ context.Context, _, on bool) {
 			if on && s.channels != nil {
 				s.channels.Wake()
 			}
 		}})
-	mux.handle("GET /api/v1/notification-channels", signedIn.demoDenied(), s.channelsGate(s.handleListChannels))
-	mux.handle("POST /api/v1/notification-channels", signedIn.demoDenied(), s.channelsGate(s.handleCreateChannel))
-	mux.handle("PATCH /api/v1/notification-channels/{id}", signedIn.demoDenied(), s.channelsGate(s.handlePatchChannel))
-	mux.handle("DELETE /api/v1/notification-channels/{id}", signedIn.demoDenied(), s.channelsGate(s.handleDeleteChannel))
-	mux.handle("POST /api/v1/notification-channels/{id}/test", signedIn.demoDenied(), s.channelsGate(s.handleTestChannel))
-	mux.handle("GET /api/v1/notification-channels/{id}/deliveries", signedIn.demoDenied(), s.channelsGate(s.handleChannelDeliveries))
+	mux.handle("GET /api/v1/notification-channels", signedIn.DemoDenied(), s.channelsGate(s.handleListChannels))
+	mux.handle("POST /api/v1/notification-channels", signedIn.DemoDenied(), s.channelsGate(s.handleCreateChannel))
+	mux.handle("PATCH /api/v1/notification-channels/{id}", signedIn.DemoDenied(), s.channelsGate(s.handlePatchChannel))
+	mux.handle("DELETE /api/v1/notification-channels/{id}", signedIn.DemoDenied(), s.channelsGate(s.handleDeleteChannel))
+	mux.handle("POST /api/v1/notification-channels/{id}/test", signedIn.DemoDenied(), s.channelsGate(s.handleTestChannel))
+	mux.handle("GET /api/v1/notification-channels/{id}/deliveries", signedIn.DemoDenied(), s.channelsGate(s.handleChannelDeliveries))
 }
 
 // channelsGate answers 404 channels_disabled while the owner switch is off.

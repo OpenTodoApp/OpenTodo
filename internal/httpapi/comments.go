@@ -25,7 +25,7 @@ func (s *Server) registerCommentRoutes(mux *routes) {
 	mux.handle("PATCH /api/v1/comments/{id}", signedIn, s.handlePatchComment)
 	mux.handle("DELETE /api/v1/comments/{id}", signedIn, s.handleDeleteComment)
 	// Reactions (editor-everywhere D8): the caller replaces their own list only.
-	mux.handle("PUT /api/v1/comments/{id}/reactions", signedIn.fullTokens(), s.handlePutReactions)
+	mux.handle("PUT /api/v1/comments/{id}/reactions", signedIn.FullTokens(), s.handlePutReactions)
 	mux.handle("GET /api/v1/tasks/{id}/activity", signedIn, s.activityHandler("task"))
 	mux.handle("GET /api/v1/projects/{id}/activity", signedIn, s.activityHandler("project"))
 	// Cross-project feed (OpenSpec change `activity-feed`).

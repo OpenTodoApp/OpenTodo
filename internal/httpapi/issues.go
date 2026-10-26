@@ -39,14 +39,14 @@ func (s *Server) registerIssueRoutes(mux *routes) {
 	s.issueLimiter = newRateLimiter(issueChecksPerHr, time.Hour)
 
 	s.switchRoutes(mux, "/api/v1/settings/issues", switchRoute{sw: s.issuesOn,
-		get: signedIn.demoDenied(), put: ownerOnly("manage the issue connections setting").demoDenied()})
-	mux.handle("GET /api/v1/issues/connections", signedIn.demoDenied(), s.issuesGate(s.handleListIssueConnections))
-	mux.handle("POST /api/v1/issues/connections", signedIn.recent().demoDenied(), s.issuesGate(s.handleCreateIssueConnection))
+		get: signedIn.DemoDenied(), put: ownerOnly("manage the issue connections setting").DemoDenied()})
+	mux.handle("GET /api/v1/issues/connections", signedIn.DemoDenied(), s.issuesGate(s.handleListIssueConnections))
+	mux.handle("POST /api/v1/issues/connections", signedIn.Recent().DemoDenied(), s.issuesGate(s.handleCreateIssueConnection))
 	// One route, one policy: the handler asks for a fresh session when the body carries a token.
-	mux.handle("PATCH /api/v1/issues/connections/{id}", signedIn.demoDenied(), s.issuesGate(s.handlePatchIssueConnection))
-	mux.handle("DELETE /api/v1/issues/connections/{id}", signedIn.demoDenied(), s.issuesGate(s.handleDeleteIssueConnection))
-	mux.handle("POST /api/v1/issues/connections/{id}/test", signedIn.demoDenied(), s.issuesGate(s.handleTestIssueConnection))
-	mux.handle("POST /api/v1/issues/connections/{id}/sync", signedIn.demoDenied(), s.issuesGate(s.handleSyncIssueConnection))
+	mux.handle("PATCH /api/v1/issues/connections/{id}", signedIn.DemoDenied(), s.issuesGate(s.handlePatchIssueConnection))
+	mux.handle("DELETE /api/v1/issues/connections/{id}", signedIn.DemoDenied(), s.issuesGate(s.handleDeleteIssueConnection))
+	mux.handle("POST /api/v1/issues/connections/{id}/test", signedIn.DemoDenied(), s.issuesGate(s.handleTestIssueConnection))
+	mux.handle("POST /api/v1/issues/connections/{id}/sync", signedIn.DemoDenied(), s.issuesGate(s.handleSyncIssueConnection))
 }
 
 // issuesGate answers 404 issues_disabled while the owner switch is off.

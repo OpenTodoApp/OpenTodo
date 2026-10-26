@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/httpapi/httpx"
 	"github.com/pixari/opentodo/internal/store"
 	"github.com/pixari/opentodo/internal/tenant/services"
 )
@@ -203,11 +204,11 @@ func TestRouteMatrix(t *testing.T) {
 		switch {
 		case limited && r.write():
 			return "insufficient_scope" // requireAuth, before the route's policy
-		case r.p.tokens == tokensNone:
+		case r.p.Tokens == httpx.TokensNone:
 			return "session_required"
-		case r.p.tokens == tokensAdmin && scope != "admin":
+		case r.p.Tokens == httpx.TokensAdmin && scope != "admin":
 			return "insufficient_scope"
-		case r.p.tokens == tokensFull && limited:
+		case r.p.Tokens == httpx.TokensFull && limited:
 			return "insufficient_scope"
 		}
 		return ""
@@ -217,7 +218,7 @@ func TestRouteMatrix(t *testing.T) {
 
 	// 1. Refusals: none of these reach a handler.
 	for _, r := range routes {
-		if r.p.kind == kindPublic {
+		if r.p.Kind == httpx.KindPublic {
 			continue
 		}
 		status, code := m.call(m.anon, r.method, r.path)
@@ -240,7 +241,7 @@ func TestRouteMatrix(t *testing.T) {
 				checked["token refusals"]++
 			}
 		}
-		if r.p.role != anyRole {
+		if r.p.Role != httpx.AnyRole {
 			status, code := m.call(m.member, r.method, r.path)
 			expect(r, "member", status, code, "forbidden")
 			checked["member refusals"]++
@@ -254,7 +255,7 @@ func TestRouteMatrix(t *testing.T) {
 
 	// 2. Admission on reads: every credential the policy allows gets past it.
 	for _, r := range routes {
-		if r.p.kind == kindPublic || r.write() {
+		if r.p.Kind == httpx.KindPublic || r.write() {
 			continue
 		}
 		status, code := m.call(m.env, r.method, r.path)
@@ -266,7 +267,7 @@ func TestRouteMatrix(t *testing.T) {
 				expectAdmitted(r, tok.scope+" token", status, code)
 			}
 		}
-		if r.p.role == anyRole {
+		if r.p.Role == httpx.AnyRole {
 			status, code := m.call(m.member, r.method, r.path)
 			expectAdmitted(r, "member", status, code)
 		}
@@ -274,7 +275,7 @@ func TestRouteMatrix(t *testing.T) {
 
 	// 3. A viewer of a shared project changes nothing in it.
 	for _, r := range routes {
-		if r.p.kind == kindPublic || !r.write() {
+		if r.p.Kind == httpx.KindPublic || !r.write() {
 			continue
 		}
 		var path string
@@ -301,7 +302,7 @@ func TestRouteMatrix(t *testing.T) {
 	// 4. Recent sign-in: a stale owner session is asked to confirm.
 	m.clockOffset.Store(int64(FreshWindow + time.Minute))
 	for _, r := range routes {
-		if r.p.kind == kindPublic || !r.p.fresh {
+		if r.p.Kind == httpx.KindPublic || !r.p.Fresh {
 			continue
 		}
 		status, code := m.call(m.env, r.method, r.path)

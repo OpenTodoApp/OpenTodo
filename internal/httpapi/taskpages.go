@@ -34,23 +34,23 @@ func (s *Server) registerTaskPageRoutes(mux *routes) {
 		maps: newRateLimiter(1200, time.Minute),
 		addr: newRateLimiter(120, time.Minute),
 	}
-	manage := signedIn.fullTokens().demoDenied()
+	manage := signedIn.FullTokens().DemoDenied()
 	mux.handle("GET /api/v1/task-pages", manage, s.handleListTaskPages)
-	mux.handle("POST /api/v1/tasks/{id}/page", manage.recent(), s.handlePublishTaskPage)
+	mux.handle("POST /api/v1/tasks/{id}/page", manage.Recent(), s.handlePublishTaskPage)
 	mux.handle("GET /api/v1/tasks/{id}/page", manage, s.handleTaskPageStatus)
 	mux.handle("DELETE /api/v1/tasks/{id}/page", manage, s.handleRevokeTaskPage)
 	mux.handle("PUT /api/v1/tasks/{id}/page/snapshot", manage, s.handleTaskPageSnapshot)
 	mux.handle("GET /api/v1/tasks/{id}/page/replies", manage, s.handleTaskPageReplies)
 	mux.handle("DELETE /api/v1/tasks/{id}/page/replies/{replyId}", manage, s.handleConfirmTaskPageReply)
 	const why = "task pages, OpenSpec task-pages: anyone with the link opens the page; the secret in the address is the credential"
-	mux.handle("GET /api/v1/pages/{secret}", public(why).demoDenied(), s.handleTaskPage)
-	mux.handle("POST /api/v1/pages/{secret}/replies", public(why).demoDenied(), s.handleTaskPageReply)
-	mux.handle("POST /api/v1/pages/{secret}/tick", public(why).demoDenied(), s.handleTaskPageTick)
-	mux.handle("GET /api/v1/pages/{secret}/files/{fileId}", public(why).demoDenied(), s.handleTaskPageFile)
-	mux.handle("GET /api/v1/pages/{secret}/maps/style", public(why).demoDenied(), s.handleTaskPageMapStyle)
-	mux.handle("GET /api/v1/pages/{secret}/maps/tiles/{z}/{x}/{y}", public(why).demoDenied(), s.handleTaskPageMapTile)
-	mux.handle("GET /api/v1/pages/{secret}/maps/fonts/{fontstack}/{range}", public(why).demoDenied(), s.handleTaskPageMapGlyphs)
-	mux.handle("GET /api/v1/pages/{secret}/maps/sprites/{file}", public(why).demoDenied(), s.handleTaskPageMapSprite)
+	mux.handle("GET /api/v1/pages/{secret}", public(why).DemoDenied(), s.handleTaskPage)
+	mux.handle("POST /api/v1/pages/{secret}/replies", public(why).DemoDenied(), s.handleTaskPageReply)
+	mux.handle("POST /api/v1/pages/{secret}/tick", public(why).DemoDenied(), s.handleTaskPageTick)
+	mux.handle("GET /api/v1/pages/{secret}/files/{fileId}", public(why).DemoDenied(), s.handleTaskPageFile)
+	mux.handle("GET /api/v1/pages/{secret}/maps/style", public(why).DemoDenied(), s.handleTaskPageMapStyle)
+	mux.handle("GET /api/v1/pages/{secret}/maps/tiles/{z}/{x}/{y}", public(why).DemoDenied(), s.handleTaskPageMapTile)
+	mux.handle("GET /api/v1/pages/{secret}/maps/fonts/{fontstack}/{range}", public(why).DemoDenied(), s.handleTaskPageMapGlyphs)
+	mux.handle("GET /api/v1/pages/{secret}/maps/sprites/{file}", public(why).DemoDenied(), s.handleTaskPageMapSprite)
 }
 
 // pageEncrypted reports whether a task is served from a snapshot: it lives in

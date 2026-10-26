@@ -27,9 +27,9 @@ const purgeNotice = "Superseded content operations were deleted from the server.
 
 func (s *Server) registerEncryptionRoutes(mux *routes) {
 	mux.handle("GET /api/v1/encryption/keys", signedIn, s.handleGetEncryptionKeys)
-	mux.handle("PUT /api/v1/encryption/keys", signedIn.credential().demoDenied(), s.handlePutEncryptionKeys)
-	mux.handle("DELETE /api/v1/encryption/keys", signedIn.sensitive().demoDenied(), s.handleDeleteEncryptionKeys)
-	mux.handle("POST /api/v1/encryption/purge-history", signedIn.demoDenied(), s.handlePurgeEncryptionHistory)
+	mux.handle("PUT /api/v1/encryption/keys", signedIn.Credential().DemoDenied(), s.handlePutEncryptionKeys)
+	mux.handle("DELETE /api/v1/encryption/keys", signedIn.Sensitive().DemoDenied(), s.handleDeleteEncryptionKeys)
+	mux.handle("POST /api/v1/encryption/purge-history", signedIn.DemoDenied(), s.handlePurgeEncryptionHistory)
 }
 
 func (s *Server) keys() *e2ee.Store { return e2ee.NewStore(s.sync.DB()) }

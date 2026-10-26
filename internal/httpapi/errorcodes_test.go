@@ -20,13 +20,20 @@ import (
 const errorCodesFixture = "../../web/src/lib/i18n/server-error-codes.json"
 
 // TestErrorCodesFixture collects the literal codes passed to writeError,
-// writeErrorWith, refuse, oidcError, oidcFail and switchGate, and the codes checkSubscriptionURL returns, and
-// compares them with the fixture. UPDATE_ERROR_CODES=1 rewrites the fixture.
+// writeErrorWith, refuse, oidcError, oidcFail and switchGate (and httpx's
+// WriteError and WriteErrorWith) in this package and its route packages, and
+// the codes checkSubscriptionURL returns, and compares them with the fixture.
+// UPDATE_ERROR_CODES=1 rewrites the fixture.
 func TestErrorCodesFixture(t *testing.T) {
 	files, err := filepath.Glob("*.go")
 	if err != nil {
 		t.Fatal(err)
 	}
+	sub, err := filepath.Glob("*/*.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	files = append(files, sub...)
 	set := map[string]bool{}
 	fset := gotoken.NewFileSet()
 	lit := func(e ast.Expr) (string, bool) {
@@ -56,7 +63,8 @@ func TestErrorCodesFixture(t *testing.T) {
 					name = fn.Sel.Name
 				}
 				// An owner switch's gate answers with its code (switch.go).
-				idx := map[string]int{"writeError": 2, "oidcError": 3, "oidcFail": 3, "switchGate": 1, "writeErrorWith": 2, "refuse": 1}[name]
+				idx := map[string]int{"writeError": 2, "oidcError": 3, "oidcFail": 3, "switchGate": 1, "writeErrorWith": 2, "refuse": 1,
+					"WriteError": 2, "WriteErrorWith": 2}[name]
 				if idx > 0 && len(n.Args) > idx {
 					if s, ok := lit(n.Args[idx]); ok {
 						set[s] = true

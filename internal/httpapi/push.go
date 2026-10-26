@@ -27,10 +27,10 @@ func (s *Server) registerPushRoutes(mux *routes) {
 		return
 	}
 	mux.handle("GET /api/v1/push/vapid-key", signedIn, s.handlePushKey)
-	mux.handle("POST /api/v1/push/subscriptions", signedIn.demoDenied(), s.handlePushSubscribe)
-	mux.handle("DELETE /api/v1/push/subscriptions/{id}", signedIn.demoDenied(), s.handlePushUnsubscribe)
+	mux.handle("POST /api/v1/push/subscriptions", signedIn.DemoDenied(), s.handlePushSubscribe)
+	mux.handle("DELETE /api/v1/push/subscriptions/{id}", signedIn.DemoDenied(), s.handlePushUnsubscribe)
 	s.pushTestLimiter = newRateLimiter(pushTestLimit, pushTestWindow)
-	mux.handle("POST /api/v1/push/test", signedIn.demoDenied(), s.handlePushTest)
+	mux.handle("POST /api/v1/push/test", signedIn.DemoDenied(), s.handlePushTest)
 }
 
 // Test pushes per account (OpenSpec `push-test-delivery` D3): enough for a

@@ -16,8 +16,8 @@ import (
 // assistant surfaces (agenttools) read it; nothing else changes.
 
 func (s *Server) registerAgentExclusionRoutes(mux *routes) {
-	mux.handle("GET /api/v1/projects/{id}/agent-access", signedIn.fullTokens(), s.handleGetProjectAgentAccess)
-	mux.handle("PUT /api/v1/projects/{id}/agent-access", signedIn.fullTokens().demoDenied(), s.handlePutProjectAgentAccess)
+	mux.handle("GET /api/v1/projects/{id}/agent-access", signedIn.FullTokens(), s.handleGetProjectAgentAccess)
+	mux.handle("PUT /api/v1/projects/{id}/agent-access", signedIn.FullTokens().DemoDenied(), s.handlePutProjectAgentAccess)
 }
 
 // projectAgentAccess answers the project's state for the caller.

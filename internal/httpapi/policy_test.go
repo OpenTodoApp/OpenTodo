@@ -15,6 +15,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/httpapi/httpx"
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/store"
 	"github.com/pixari/opentodo/internal/tenant/services"
@@ -57,11 +58,11 @@ func TestEveryRouteDeclaresAPolicy(t *testing.T) {
 		}
 		got[e.pattern] = e.policy
 		switch {
-		case e.policy.kind == kindUnset:
+		case e.policy.Kind == httpx.KindUnset:
 			t.Errorf("%s has no policy", e.pattern)
-		case e.policy.kind == kindPublic && e.policy.reason == "":
+		case e.policy.Kind == httpx.KindPublic && e.policy.Reason == "":
 			t.Errorf("public route %s has no reason", e.pattern)
-		case e.policy.kind == kindPublic && (e.policy.role != anyRole || e.policy.tokens != tokensByMethod || e.policy.fresh):
+		case e.policy.Kind == httpx.KindPublic && (e.policy.Role != httpx.AnyRole || e.policy.Tokens != httpx.TokensByMethod || e.policy.Fresh):
 			t.Errorf("public route %s declares sign-in rules it cannot enforce", e.pattern)
 		}
 	}
@@ -104,31 +105,31 @@ func TestEveryRouteDeclaresAPolicy(t *testing.T) {
 
 // describe renders a policy for the table below.
 func describe(p routePolicy) string {
-	if p.kind == kindPublic {
-		if p.demo {
+	if p.Kind == httpx.KindPublic {
+		if p.Demo {
 			return "public demo"
 		}
 		return "public"
 	}
 	parts := []string{"auth"}
-	switch p.role {
-	case ownerRole:
+	switch p.Role {
+	case httpx.OwnerRole:
 		parts = append(parts, "owner")
-	case adminRole:
+	case httpx.AdminRole:
 		parts = append(parts, "admins")
 	}
-	switch p.tokens {
-	case tokensFull:
+	switch p.Tokens {
+	case httpx.TokensFull:
 		parts = append(parts, "full-tokens")
-	case tokensAdmin:
+	case httpx.TokensAdmin:
 		parts = append(parts, "admin-token")
-	case tokensNone:
+	case httpx.TokensNone:
 		parts = append(parts, "session-only")
 	}
-	if p.fresh {
+	if p.Fresh {
 		parts = append(parts, "fresh")
 	}
-	if p.demo {
+	if p.Demo {
 		parts = append(parts, "demo")
 	}
 	return strings.Join(parts, " ")
@@ -267,12 +268,12 @@ func TestDemoDenyListMatchesPolicy(t *testing.T) {
 		for _, m := range methods {
 			denied = denied || demoRestricted(m, samplePath(path)) != ""
 		}
-		if denied != e.policy.demo {
-			t.Errorf("%s: demo deny list says %v, policy says %v", e.pattern, denied, e.policy.demo)
+		if denied != e.policy.Demo {
+			t.Errorf("%s: demo deny list says %v, policy says %v", e.pattern, denied, e.policy.Demo)
 		}
 		write := ok && method != "GET" && method != "HEAD"
-		privileged := e.policy.role != anyRole || e.policy.tokens == tokensAdmin || e.policy.tokens == tokensNone
-		if write && privileged && !e.policy.demo {
+		privileged := e.policy.Role != httpx.AnyRole || e.policy.Tokens == httpx.TokensAdmin || e.policy.Tokens == httpx.TokensNone
+		if write && privileged && !e.policy.Demo {
 			t.Errorf("%s changes credentials, administration or settings but is allowed on a demo", e.pattern)
 		}
 	}

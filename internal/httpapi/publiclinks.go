@@ -31,11 +31,11 @@ func (s *Server) registerPublicLinkRoutes(mux *routes) {
 		tick:   newRateLimiter(60, time.Minute),
 		addr:   newRateLimiter(120, time.Minute),
 	}
-	mux.handle("GET /api/v1/projects/{id}/public-links", signedIn.demoDenied(), s.handleListPublicLinks)
-	mux.handle("POST /api/v1/projects/{id}/public-links", signedIn.recent().demoDenied(), s.handleCreatePublicLink)
-	mux.handle("DELETE /api/v1/projects/{id}/public-links/{linkId}", signedIn.demoDenied(), s.handleRevokePublicLink)
-	mux.handle("GET /api/v1/public/{token}", public("anyone with the link reads the list; the secret in the address is the credential").demoDenied(), s.handlePublicList)
-	mux.handle("POST /api/v1/public/{token}/tick", public("anyone with a tick-enabled link may tick; the secret in the address is the credential").demoDenied(), s.handlePublicTick)
+	mux.handle("GET /api/v1/projects/{id}/public-links", signedIn.DemoDenied(), s.handleListPublicLinks)
+	mux.handle("POST /api/v1/projects/{id}/public-links", signedIn.Recent().DemoDenied(), s.handleCreatePublicLink)
+	mux.handle("DELETE /api/v1/projects/{id}/public-links/{linkId}", signedIn.DemoDenied(), s.handleRevokePublicLink)
+	mux.handle("GET /api/v1/public/{token}", public("anyone with the link reads the list; the secret in the address is the credential").DemoDenied(), s.handlePublicList)
+	mux.handle("POST /api/v1/public/{token}/tick", public("anyone with a tick-enabled link may tick; the secret in the address is the credential").DemoDenied(), s.handlePublicTick)
 }
 
 // publicHeaders keep a public list out of search engines, referrers and caches.
