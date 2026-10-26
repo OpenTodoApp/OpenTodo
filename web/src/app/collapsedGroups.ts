@@ -1,42 +1,34 @@
 // Which list groups are collapsed on this device (OpenSpec change ux-overhaul,
 // task-list-presentation "Group headers"): date, project and Later groups, keyed
 // by view and group. Device state, never synced; sections keep their own store.
-import { useSyncExternalStore } from 'react'
-import { resettable } from '../lib/moduleState'
+import { createPersistedStore } from '../lib/deviceStorage'
 
 const KEY = 'ot.groups.collapsed'
-let current: ReadonlySet<string> = read()
-const listeners = new Set<() => void>()
-
-function read(): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(KEY) ?? '[]') as string[]) } catch { return new Set() }
-}
+const collapsed = createPersistedStore<ReadonlySet<string>>('collapsedGroups', KEY, {
+  parse: (raw) => {
+    try { return new Set(JSON.parse(raw ?? '[]') as string[]) } catch { return new Set() }
+  },
+  serialize: (set) => JSON.stringify([...set]),
+})
 
 export function groupKey(view: string, key: string): string {
   return `${view}:${key}`
 }
 
 export function isGroupCollapsed(view: string, key: string): boolean {
-  return current.has(groupKey(view, key))
+  return collapsed.get().has(groupKey(view, key))
 }
 
-export function setGroupCollapsed(view: string, key: string, collapsed: boolean): void {
-  const next = new Set(current)
-  if (collapsed) next.add(groupKey(view, key))
+export function setGroupCollapsed(view: string, key: string, on: boolean): void {
+  const next = new Set(collapsed.get())
+  if (on) next.add(groupKey(view, key))
   else next.delete(groupKey(view, key))
-  current = next
-  try { localStorage.setItem(KEY, JSON.stringify([...next])) } catch { /* device state only */ }
-  listeners.forEach((fn) => fn())
+  collapsed.set(next)
 }
 
-export function useCollapsedGroups(): ReadonlySet<string> {
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn) } }, () => current, () => current)
-}
+export const useCollapsedGroups = collapsed.use
 
 /** Tests: forget every collapsed group. */
 export function resetCollapsedGroups(): void {
-  current = new Set()
-  try { localStorage.removeItem(KEY) } catch { /* ignore */ }
-  listeners.forEach((fn) => fn())
+  collapsed.set(new Set())
 }
-resettable('collapsedGroups', resetCollapsedGroups)

@@ -18,6 +18,7 @@ import {
 import { navigate } from './router'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { readJSON, writeJSON } from '../lib/deviceStorage'
 
 /** Last fetched job list, kept per device so past summaries stay readable offline. */
 const JOBS_CACHE_KEY = 'opentodo.importJobs'
@@ -69,20 +70,11 @@ function timeZones(): string[] {
 }
 
 function readCachedJobs(): ImportJob[] | null {
-  try {
-    const raw = localStorage.getItem(JOBS_CACHE_KEY)
-    return raw ? (JSON.parse(raw) as ImportJob[]) : null
-  } catch {
-    return null
-  }
+  return readJSON<ImportJob[] | null>(JOBS_CACHE_KEY, null)
 }
 
 function cacheJobs(jobs: ImportJob[]) {
-  try {
-    localStorage.setItem(JOBS_CACHE_KEY, JSON.stringify(jobs))
-  } catch {
-    // Storage may be unavailable (private mode); the list is only a convenience.
-  }
+  writeJSON(JOBS_CACHE_KEY, jobs) // storage may be unavailable (private mode); the list is only a convenience
 }
 
 export const DEFAULT_OPTIONS: Required<Omit<ImportOptions, 'format' | 'targetProject' | 'workspace'>> = {

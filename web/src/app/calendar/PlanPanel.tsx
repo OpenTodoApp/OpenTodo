@@ -7,6 +7,7 @@ import { closePanel, openPanel, panelOccupant, SPLIT_QUERY, usePanelOccupantKey 
 import { PanelFrame } from '../PanelFrame'
 import { useViewData } from '../useViews'
 import { planSources, planSourceTasks, readTray, resolveSource, saveTray, type PlanSource, type PlanSourceKind } from './planSource'
+import { readString, writeString } from '../../lib/deviceStorage'
 
 const KIND_ICON: Record<PlanSourceKind, IconName> = { list: 'inbox', project: 'folder', label: 'tag', view: 'filter' }
 const LIST_ICON: Record<string, IconName> = { inbox: 'inbox', nodate: 'calendar-days', overdue: 'hourglass' }
@@ -39,13 +40,10 @@ const current = (): PlanActions | null => mounted?.current ?? null
 /** Whether the planning list was left open on this device (plan-list-remembered D1). */
 export const PLAN_OPEN_KEY = 'opentodo.calendarPlan.open'
 function readPlanOpen(): boolean {
-  try { return localStorage.getItem(PLAN_OPEN_KEY) === '1' } catch { return false }
+  return readString(PLAN_OPEN_KEY) === '1'
 }
 function savePlanOpen(open: boolean): void {
-  try {
-    if (open) localStorage.setItem(PLAN_OPEN_KEY, '1')
-    else localStorage.removeItem(PLAN_OPEN_KEY)
-  } catch { /* storage unavailable: the list just is not remembered */ }
+  writeString(PLAN_OPEN_KEY, open ? '1' : null) // storage unavailable: the list just is not remembered
 }
 
 /** The user closed the list (its Close, Escape, the menu): remembered closed (D2). */

@@ -10,14 +10,15 @@ import { dailyDue } from '../../lib/review'
 import { Button, ToastRegion } from '../../ui'
 import { navigate, useRoute } from '../router'
 import { useToday } from '../useViews'
+import { readString, writeString } from '../../lib/deviceStorage'
 
 export const DAILY_OFFER_KEY = 'ot.daily.offered'
 
 function offeredOn(): string | null {
-  try { return localStorage.getItem(DAILY_OFFER_KEY) } catch { return null }
+  return readString(DAILY_OFFER_KEY)
 }
 function markOffered(day: string): void {
-  try { localStorage.setItem(DAILY_OFFER_KEY, day) } catch { /* private mode: offered again next launch */ }
+  writeString(DAILY_OFFER_KEY, day) // private mode: offered again next launch
 }
 
 export function DailyCheckToast() {

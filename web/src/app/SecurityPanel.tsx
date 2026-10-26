@@ -19,6 +19,7 @@ import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
+import { readString, writeString } from '../lib/deviceStorage'
 
 // Settings → Account → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
@@ -38,11 +39,7 @@ export function relativeTime(ts: number | null, now = Date.now()): string {
 }
 
 function readCachedAvailability(): boolean {
-  try {
-    return localStorage.getItem(AVAILABLE_KEY) === 'true'
-  } catch {
-    return false
-  }
+  return readString(AVAILABLE_KEY) === 'true'
 }
 
 /** The error for a failed passkey action; null when the user cancelled and nothing changed. */
@@ -71,11 +68,7 @@ export function SecurityPanel() {
       const ok = status.passkeysAvailable === true
       setAvailable(ok)
       setDomain(status.passkeyDomain || undefined)
-      try {
-        localStorage.setItem(AVAILABLE_KEY, String(ok))
-      } catch {
-        /* storage unavailable: availability is re-read next time */
-      }
+      writeString(AVAILABLE_KEY, String(ok)) // storage unavailable: availability is re-read next time
       if (ok) setPasskeys((await api.listPasskeys()).passkeys)
     } catch (err) {
       // Offline or server unreachable: keep whatever we had.

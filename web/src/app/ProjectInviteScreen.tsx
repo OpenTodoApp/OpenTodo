@@ -10,6 +10,7 @@ import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { InstanceMark, InstanceWordmark } from './InstanceBrand'
 import { roleName } from '../lib/roleNames'
+import { readString, removeItem, writeString } from '../lib/deviceStorage'
 
 // Screen behind /invite/p/<token> (OpenSpec `project-invite-links`): previews a
 // project invite link, lets a signed-in person join, and offers a visitor
@@ -20,18 +21,14 @@ import { roleName } from '../lib/roleNames'
 export const PENDING_PROJECT_INVITE = 'opentodo.pendingProjectInvite'
 
 export function rememberPendingInvite(token: string) {
-  try { sessionStorage.setItem(PENDING_PROJECT_INVITE, token) } catch { /* storage blocked: sign-in still works, the link must be opened again */ }
+  writeString(PENDING_PROJECT_INVITE, token, 'session') // storage blocked: sign-in still works, the link must be opened again
 }
 
 /** Reads and clears a remembered link. */
 export function takePendingInvite(): string | null {
-  try {
-    const item = sessionStorage.getItem(PENDING_PROJECT_INVITE)
-    if (item) sessionStorage.removeItem(PENDING_PROJECT_INVITE)
-    return item
-  } catch {
-    return null
-  }
+  const item = readString(PENDING_PROJECT_INVITE, 'session')
+  if (item) removeItem(PENDING_PROJECT_INVITE, 'session')
+  return item
 }
 
 export type ProjectInviteState =

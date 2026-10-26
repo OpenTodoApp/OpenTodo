@@ -3,6 +3,7 @@ import type { AuthStatus, DemoInfo, User } from './types'
 import { t, msg } from './i18n'
 import { formatClock } from './dates'
 import { createStore } from './store'
+import { readJSON, readString, writeString } from './deviceStorage'
 
 /**
  * Demo instance state (OpenSpec `demo-mode`, `demo-sandboxes`): set from
@@ -47,20 +48,12 @@ const DISMISS_KEY = 'opentodo.demoBannerDismissed'
 const dismissed = createStore('demoBannerDismissed', readDismissed())
 
 function readDismissed(): boolean {
-  try {
-    return sessionStorage.getItem(DISMISS_KEY) === '1'
-  } catch {
-    return false
-  }
+  return readString(DISMISS_KEY, 'session') === '1'
 }
 
 /** Hides the banner until the browser session ends. */
 export function dismissBanner(): void {
-  try {
-    sessionStorage.setItem(DISMISS_KEY, '1')
-  } catch {
-    // Storage unavailable: hidden for this page load only.
-  }
+  writeString(DISMISS_KEY, '1', 'session') // storage unavailable: hidden for this page load only
   dismissed.set(true)
 }
 
@@ -82,12 +75,7 @@ const KEY = 'opentodo.demo'
 const store = createStore<DemoInfo | null>('demo', read())
 
 function read(): DemoInfo | null {
-  try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? (JSON.parse(raw) as DemoInfo) : null
-  } catch {
-    return null
-  }
+  return readJSON<DemoInfo | null>(KEY, null)
 }
 
 /** Record the server's demo state (null when the instance is not a demo). */
@@ -95,12 +83,8 @@ export function setDemo(info: DemoInfo | null | undefined): void {
   // The creation token changes on every read; only the stable part is kept.
   const next = info ? { ...info, token: '' } : null
   if (JSON.stringify(next) === JSON.stringify(store.get())) return
-  try {
-    if (next) localStorage.setItem(KEY, JSON.stringify(next))
-    else localStorage.removeItem(KEY)
-  } catch {
-    // Storage unavailable (private mode): the state still lives in memory.
-  }
+  // Storage unavailable (private mode): the state still lives in memory.
+  writeString(KEY, next ? JSON.stringify(next) : null)
   store.set(next)
 }
 
