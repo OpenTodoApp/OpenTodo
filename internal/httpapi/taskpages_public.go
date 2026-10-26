@@ -256,8 +256,7 @@ func (s *Server) handleTaskPageReply(w http.ResponseWriter, r *http.Request) {
 		"guest_name": mustJSON(name), "page_id": mustJSON(p.ID),
 	}
 	device := opsync.PageDevice(p.ID)
-	res, err := s.sync.ApplyStrict(ctx, p.UserID, deviceOps("comment", id, fields, ts, device))
-	if err != nil {
+	if _, err := s.applyAs(ctx, p.UserID, device, deviceOps("comment", id, fields, ts, device)); err != nil {
 		var rej *opsync.RejectedError
 		if errors.As(err, &rej) && rej.Reason == opsync.ReasonRateLimited {
 			writeError(w, http.StatusTooManyRequests, "rate_limited", "too many comments on this task, try again in a minute")
@@ -266,9 +265,6 @@ func (s *Server) handleTaskPageReply(w http.ResponseWriter, r *http.Request) {
 		s.log.Error("task page reply refused", "page", p.ID, "err", err)
 		s.internal(w, err)
 		return
-	}
-	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, device)
 	}
 	if err := s.auth.RecordTaskPageAction(ctx, p.ID, ts, name, true); err != nil {
 		s.log.Warn("task page action", "err", err)
@@ -360,14 +356,10 @@ func (s *Server) applyPageTick(w http.ResponseWriter, r *http.Request, rp resolv
 		}
 	}
 	ops = append(ops, deviceOps("task", taskID, body, ts, device)...)
-	res, err := s.sync.ApplyStrict(ctx, p.UserID, ops)
-	if err != nil {
+	if _, err := s.applyAs(ctx, p.UserID, device, ops); err != nil {
 		s.log.Error("task page tick refused", "page", p.ID, "err", err)
 		s.internal(w, err)
 		return
-	}
-	if res.Applied > 0 {
-		s.sync.NotifyApplied(res, device)
 	}
 	if err := s.auth.RecordTaskPageAction(ctx, p.ID, ts, name, false); err != nil {
 		s.log.Warn("task page action", "err", err)
