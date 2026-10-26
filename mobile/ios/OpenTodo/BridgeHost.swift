@@ -21,7 +21,11 @@ final class BridgeHost: BridgeActions {
         return BiometricKeyStore.store(key)
     }
 
-    func bridgedBiometricRead() async -> String? { interactive ? BiometricKeyStore.read() : nil }
+    /// Off the main actor: `SecItemCopyMatching` blocks until the Face ID prompt is answered.
+    func bridgedBiometricRead() async -> String? {
+        guard interactive else { return nil }
+        return await Task.detached { BiometricKeyStore.read() }.value
+    }
 
     func bridgedBiometricForget() { if interactive { BiometricKeyStore.forget() } }
 

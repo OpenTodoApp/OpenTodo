@@ -16,6 +16,31 @@ enum JSON {
         return String(data: data, encoding: .utf8)
     }
 
+    /// A string as a JavaScript literal: escaped so no value can end the literal it sits in
+    /// (the bridge's injected script builds itself from a host name and an app version).
+    static func jsString(_ value: String) -> String {
+        var out = "\""
+        for scalar in value.unicodeScalars {
+            switch scalar {
+            case "\\": out += "\\\\"
+            case "\"": out += "\\\""
+            case "\n": out += "\\n"
+            case "\r": out += "\\r"
+            case "\t": out += "\\t"
+            case "<": out += "\\u003c"
+            case ">": out += "\\u003e"
+            case "&": out += "\\u0026"
+            default:
+                if scalar.value < 0x20 { out += String(format: "\\u%04x", scalar.value) } else { out.unicodeScalars.append(scalar) }
+            }
+        }
+        return out + "\""
+    }
+
+    static func jsArray(_ values: [String]) -> String {
+        "[" + values.map(jsString).joined(separator: ", ") + "]"
+    }
+
     static func number(_ value: Any?) -> Double? {
         if let n = value as? NSNumber { return n.doubleValue }
         if let n = value as? Double { return n }

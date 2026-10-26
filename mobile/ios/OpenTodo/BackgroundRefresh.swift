@@ -60,6 +60,8 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
     private let origin: URL
     private var webView: WKWebView?
     private var finish: ((Bool) -> Void)?
+    /// Identifies the run a timer belongs to, so a leftover timer cannot end the next run.
+    private var run: UUID?
 
     init(origin: URL) {
         self.origin = origin
@@ -72,16 +74,20 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
         guard finish == nil else { return false }
         let webView = self.webView ?? makeWebView()
         self.webView = webView
+        let token = UUID()
+        run = token
         return await withCheckedContinuation { continuation in
             finish = { ok in
                 guard let finish = self.finish else { return }
                 self.finish = nil
+                self.run = nil
                 continuation.resume(returning: ok)
                 _ = finish
             }
             webView.load(URLRequest(url: origin))
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: UInt64(budget * 1_000_000_000))
+                guard self.run == token else { return }
                 self.finish?(false)
             }
         }
@@ -105,8 +111,10 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // A few seconds for the app's effects to publish, then done; the budget caps it.
+        let token = run
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard self.run == token else { return }
             self.finish?(true)
         }
     }

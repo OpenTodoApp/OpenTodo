@@ -3,8 +3,10 @@ import Foundation
 /// The shell's version: the release version (`OPENTODO_VERSION`, set by CI from the tag,
 /// `0.0.0-dev` locally), the same rules as the Android app (native-shells D9).
 enum Version {
+    /// What the build baked in: `OPENTODO_VERSION` is a build setting, not a run-time
+    /// variable, so on a device only the bundle knows it.
     static var app: String {
-        let raw = ProcessInfo.processInfo.environment["OPENTODO_VERSION"] ?? "0.0.0-dev"
+        let raw = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0-dev"
         return raw.hasPrefix("v") ? String(raw.dropFirst()) : raw
     }
 

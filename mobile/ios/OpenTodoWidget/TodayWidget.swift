@@ -16,7 +16,7 @@ struct TodayProvider: TimelineProvider {
             tasks: [
                 .init(id: "1", title: "Call the plumber", time: "09:00", priority: 2, overdue: true),
                 .init(id: "2", title: "Send the invoice", time: "11:30", priority: 1, overdue: false),
-                .init(id: "3", title: "Water the plants", time: nil, priority: 0, overdue: false),
+                .init(id: "3", title: "Water the plants", time: nil, priority: 4, overdue: false),
             ]))
     }
 
@@ -64,7 +64,8 @@ struct TodayWidgetView: View {
                             Spacer(minLength: 4)
                             if task.overdue { Image(systemName: "exclamationmark.circle").font(.caption2) }
                             if let time = task.time { Text(time).font(.caption2).foregroundStyle(.secondary) }
-                            if task.priority > 0 { Image(systemName: "flag.fill").font(.caption2) }
+                            // Priorities run 1 (highest) to 4, which means "no priority".
+                            if task.priority < 4 { Image(systemName: "flag.fill").font(.caption2) }
                         }
                     }
                 }

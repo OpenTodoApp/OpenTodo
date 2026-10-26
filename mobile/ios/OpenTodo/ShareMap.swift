@@ -10,16 +10,20 @@ enum ShareMap {
     static let maxTitle = 500
 
     /// `/share?title=…&text=…&url=…`, with `files=1` when files follow as the `opentodo-files` message.
-    static func path(title: String?, text: String?, withFiles: Bool) -> String {
+    /// A lone link in the text is treated as the link when `url` is not given separately.
+    static func path(title: String?, text: String?, url: String? = nil, withFiles: Bool) -> String {
         var params: [String] = []
         let trimmedText = (text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedTitle = (title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedUrl = (url ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        var link = trimmedUrl.isEmpty ? nil : trimmedUrl
         if !trimmedTitle.isEmpty { params.append("title=" + enc(String(trimmedTitle.prefix(maxTitle)))) }
         if !trimmedText.isEmpty {
             let t = String(trimmedText.prefix(maxText))
             // A lone link is a link; otherwise text, whose links the capture screen finds itself.
-            if isLoneLink(t) { params.append("url=" + enc(t)) } else { params.append("text=" + enc(t)) }
+            if isLoneLink(t) && link == nil { link = t } else { params.append("text=" + enc(t)) }
         }
+        if let link { params.append("url=" + enc(link)) }
         if withFiles { params.append("files=1") }
         return "/share" + (params.isEmpty ? "" : "?" + params.joined(separator: "&"))
     }
