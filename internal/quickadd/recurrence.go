@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 type recMatch struct {

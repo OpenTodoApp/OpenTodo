@@ -1,5 +1,5 @@
 // Kubernetes Helm chart (deploy/helm/opentodo), published as an OCI artifact to
-// oci://ghcr.io/pixari/charts/opentodo by .github/workflows/helm.yml and listed on Artifact Hub.
+// oci://ghcr.io/opentodoapp/charts/opentodo by .github/workflows/helm.yml and listed on Artifact Hub.
 // Image policy 'release': the chart's version and appVersion are the latest release in
 // CHANGELOG.md and the image tag defaults to appVersion, so `helm upgrade` to a newer chart is
 // what moves an install to a newer release (a moving tag would never restart the pod).
@@ -22,8 +22,8 @@ export const SCHEMA = `${DIR}/values.schema.json`
 export const DEPLOYMENT = `${DIR}/templates/deployment.yaml`
 export const ARTIFACTHUB = 'deploy/helm/artifacthub-repo.yml'
 export const WORKFLOW = '.github/workflows/helm.yml'
-export const OCI = 'oci://ghcr.io/pixari/charts'
-const RAW = 'https://raw.githubusercontent.com/pixari/opentodo/main/'
+export const OCI = 'oci://ghcr.io/opentodoapp/charts'
+const RAW = 'https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/'
 const TEMPLATES = ['_helpers.tpl', 'deployment.yaml', 'service.yaml', 'pvc.yaml', 'secret.yaml', 'ingress.yaml', 'NOTES.txt']
 
 function parse(text, name, errors) {

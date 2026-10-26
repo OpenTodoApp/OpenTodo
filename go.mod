@@ -1,4 +1,4 @@
-module github.com/pixari/opentodo
+module github.com/OpenTodoApp/opentodo
 
 go 1.26.0
 

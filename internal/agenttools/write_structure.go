@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/iconset"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/iconset"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Project and section structure (OpenSpec change mcp-projects, design D1, D2,

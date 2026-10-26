@@ -11,7 +11,7 @@ package main
 import (
 	"os"
 
-	"github.com/pixari/opentodo/internal/cli"
+	"github.com/OpenTodoApp/opentodo/internal/cli"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".

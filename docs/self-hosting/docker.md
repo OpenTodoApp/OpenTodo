@@ -11,8 +11,8 @@ order: 10
 ## Docker Compose
 
 ```bash
-git clone https://github.com/pixari/opentodo.git
-cd opentodo
+git clone https://github.com/OpenTodoApp/OpenTodo.git
+cd OpenTodo
 cp .env.example .env        # optional
 docker compose up -d
 ```
@@ -40,8 +40,8 @@ To add more people, keep sign-up closed and create single-use invitation links i
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`, and the host address it is published on with `OPENTODO_BIND` (default `0.0.0.0`, every interface, so other devices on your network reach it). Behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice: only the proxy reaches the server.
 - Every variable in the [configuration table](../../README.md#configuration) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
-- The compose file pulls `ghcr.io/pixari/opentodo:stable`, which every release moves. To stay on one release line use `:0.13` (its fixes only), to pin one version `:0.14.2`; `:latest` follows the main branch and carries unreleased changes; it reports its version as `dev+<commit>`, the commit it was built from. The running version is shown in **Settings → About**, at the bottom of the sign-in screen, at `/healthz` and in the startup log line `opentodo listening`.
-- To build locally instead of pulling: replace `image: ghcr.io/pixari/opentodo:stable` with `build: .`.
+- The compose file pulls `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. To stay on one release line use `:0.13` (its fixes only), to pin one version `:0.14.2`; `:latest` follows the main branch and carries unreleased changes; it reports its version as `dev+<commit>`, the commit it was built from. The running version is shown in **Settings → About**, at the bottom of the sign-in screen, at `/healthz` and in the startup log line `opentodo listening`.
+- To build locally instead of pulling: replace `image: ghcr.io/opentodoapp/opentodo:stable` with `build: .`.
 
 ## Plain `docker run`
 
@@ -50,7 +50,7 @@ docker run -d --name opentodo \
   -p 8080:8080 \
   -v opentodo-data:/data \
   -e OPENTODO_BASE_URL=https://todo.example.com \
-  ghcr.io/pixari/opentodo:stable
+  ghcr.io/opentodoapp/opentodo:stable
 ```
 
 ## Behind a reverse proxy
@@ -224,27 +224,37 @@ The command needs only the data volume: shell access to the host is the proof of
 
 **Upgrading from 0.1.0 to 0.2.0:** 0.1.0 locked the data directory exclusively, so a 0.2.0 container cannot start beside it. Plain `docker compose up -d` already stops the old container first and needs nothing special. With an orchestrator that starts the new container first, stop the old one for this one upgrade (`docker compose down && docker compose up -d`, or **Stop** then **Deploy** in Coolify); from 0.2.0 on, updates roll without stopping. If you pinned a tag such as `ghcr.io/pixari/opentodo:0.1`, change it to `0.2` (or `0.2.0`).
 
+### The move to OpenTodoApp
+
+The project moved from the GitHub account `pixari` to the organization [OpenTodoApp](https://github.com/OpenTodoApp) after 0.14.2. The image is now **`ghcr.io/opentodoapp/opentodo`** (the Helm chart `oci://ghcr.io/opentodoapp/charts/opentodo`), with the same tags: `stable`, `<major>.<minor>`, `<version>` and `latest`. GitHub redirects the old repository addresses; the container registry does not.
+
+The old name `ghcr.io/pixari/opentodo` (and `oci://ghcr.io/pixari/charts/opentodo`) keeps getting every image and chart, with the same digests and signed, **through the 0.16 releases**. From 0.17.0 it is no longer updated, so switch before then: replace `ghcr.io/pixari/opentodo` with `ghcr.io/opentodoapp/opentodo` in your `docker-compose.yml`, `docker run` command, Quadlet file or platform template, then pull as usual. Nothing else changes: same tags, same data volume, same configuration. Releases up to 0.14.2 were published under the old name only; 0.14.2 was copied to the new one with the same digest, so a pin such as `ghcr.io/pixari/opentodo:0.14.2@sha256:…` can move to the new name unchanged.
+
+For maintainers: the CI jobs that publish the image (`docker` in `ci.yml`), the `Promote stable` workflow and the Helm chart publish also push to the old names with `scripts/legacy-image.sh`. Packages owned by the user `pixari` may refuse the organization's `GITHUB_TOKEN`; the repository secret `GHCR_LEGACY_TOKEN`, a classic personal access token of `pixari` with the `write:packages` scope, is used when it is set. A refused legacy push prints a warning and never fails a release. The window is `legacy.publishedThrough` in [`deploy/deploy.json`](../../deploy/deploy.json).
+
 ## Verifying the image and downloads
 
 From 0.7.0, releases are signed and carry their build record. The image is signed with [cosign](https://docs.sigstore.dev/) without a long-lived key: the signature names the GitHub workflow and tag that built it. Check it before you deploy a new version:
 
 ```bash
-cosign verify ghcr.io/pixari/opentodo:<version> \
+cosign verify ghcr.io/opentodoapp/opentodo:<version> \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github\.com/pixari/opentodo/\.github/workflows/ci\.yml@refs/(tags/v|heads/main)'
+  --certificate-identity-regexp '^https://github\.com/(?i:OpenTodoApp/OpenTodo|pixari/OpenTodo)/\.github/workflows/ci\.yml@refs/(tags/v|heads/main)'
 ```
+
+Releases up to 0.14.2 were built before [the move to OpenTodoApp](#the-move-to-opentodoapp) and their signatures name `pixari/OpenTodo`; the expression accepts both. The same command works on `ghcr.io/pixari/opentodo:<version>` while that name is still updated.
 
 The image also carries a software bill of materials (SBOM) and SLSA build provenance. To read them:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/pixari/opentodo:<version> --format '{{ json .SBOM }}'
-docker buildx imagetools inspect ghcr.io/pixari/opentodo:<version> --format '{{ json .Provenance }}'
+docker buildx imagetools inspect ghcr.io/opentodoapp/opentodo:<version> --format '{{ json .SBOM }}'
+docker buildx imagetools inspect ghcr.io/opentodoapp/opentodo:<version> --format '{{ json .Provenance }}'
 ```
 
 Every file on a GitHub release (server and `ot` binaries, the extension and agent skill zips, the site bundle) has a build provenance attestation. Verify a download with the GitHub CLI, and compare it with `SHA256SUMS`:
 
 ```bash
-gh attestation verify opentodo-linux-amd64 --repo pixari/opentodo
+gh attestation verify opentodo-linux-amd64 --repo OpenTodoApp/OpenTodo
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 

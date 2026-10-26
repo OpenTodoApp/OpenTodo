@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // insertUser writes a new account's users row and its default workspace

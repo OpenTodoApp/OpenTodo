@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/issues"
+	"github.com/OpenTodoApp/opentodo/internal/issues"
 )
 
 // Issue connections over HTTP (OpenSpec change issue-import, tasks 4.1–4.6).

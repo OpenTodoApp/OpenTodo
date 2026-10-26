@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 func anthropicOn() Settings {

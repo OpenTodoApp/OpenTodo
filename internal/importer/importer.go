@@ -19,7 +19,7 @@ import (
 	// ships no zoneinfo, so it is embedded (about 450 KB).
 	_ "time/tzdata"
 
-	"github.com/pixari/opentodo/internal/origin"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
 )
 
 // Device is the op device id of every imported field.

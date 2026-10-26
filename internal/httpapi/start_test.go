@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 )
 
 // TestTaskStartEveningREST covers the REST side of someday-and-evening (task

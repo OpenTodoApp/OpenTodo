@@ -10,8 +10,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/importer"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/importer"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // PayloadVersion is the version of the JSON body documented in docs/webhooks.md.

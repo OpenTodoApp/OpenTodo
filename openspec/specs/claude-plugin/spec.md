@@ -20,7 +20,7 @@ The repository SHALL contain an agent skill for the MCP server, `skills/opentodo
 The repository SHALL contain, under `deploy/claude-plugin/upstream/`, the whole content of a Claude Code plugin marketplace named `opentodo` with one plugin, `opentodo`. The plugin SHALL contain copies of the MCP and CLI skills, task skills for today and for planning the week, and an MCP server entry for the user's server over streamable HTTP. It SHALL ask for the server address and an `agent` token when the plugin is enabled, the token marked sensitive, and SHALL NOT contain any server address or token. Its version SHALL be the latest release in `CHANGELOG.md`. The plugin adds no route and no data: it reaches only the existing `/mcp` endpoint with the user's token, so offline behaviour and convergence are those of the MCP tools.
 
 #### Scenario: Install
-- **WHEN** a user runs `claude plugin marketplace add pixari/opentodo-claude` and `claude plugin install opentodo@opentodo`, and enters their server address and an agent token
+- **WHEN** a user runs `claude plugin marketplace add OpenTodoApp/opentodo-claude` and `claude plugin install opentodo@opentodo`, and enters their server address and an agent token
 - **THEN** Claude Code connects to `<address>/mcp` with that token, and `/opentodo:today` and the MCP skill are available
 
 #### Scenario: Copied skill drifts
@@ -40,11 +40,11 @@ The repository SHALL contain, under `deploy/claude-plugin/upstream/`, the whole 
 - **THEN** the assistant gets the read tools only, and the MCP skill tells it to say that changes need an agent token and the two switches
 
 ### Requirement: Publishing the plugin
-After a release is published, CI SHALL replace the content of the repository `pixari/opentodo-claude` with `deploy/claude-plugin/upstream/` of the released tag, commit it as that version and tag it, using a deploy key scoped to that repository. When the deploy key is not configured, the job SHALL succeed and print the manual steps; the release itself SHALL NOT depend on it.
+After a release is published, CI SHALL replace the content of the repository `OpenTodoApp/opentodo-claude` with `deploy/claude-plugin/upstream/` of the released tag, commit it as that version and tag it, using a deploy key scoped to that repository. When the deploy key is not configured, the job SHALL succeed and print the manual steps; the release itself SHALL NOT depend on it.
 
 #### Scenario: Release with the key
 - **WHEN** tag `v0.11.0` is released and the deploy key is configured
-- **THEN** `pixari/opentodo-claude` has a commit "OpenTodo 0.11.0" and a tag `v0.11.0` with the plugin at version 0.11.0
+- **THEN** `OpenTodoApp/opentodo-claude` has a commit "OpenTodo 0.11.0" and a tag `v0.11.0` with the plugin at version 0.11.0
 
 #### Scenario: Release without the key
 - **WHEN** a tag is released in a repository without the deploy key

@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/mail"
-	"github.com/pixari/opentodo/internal/mail/smtptest"
-	"github.com/pixari/opentodo/internal/oidc"
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
+	"github.com/OpenTodoApp/opentodo/internal/mail/smtptest"
+	"github.com/OpenTodoApp/opentodo/internal/oidc"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // withTestMail wires a mail service whose transport trusts srv's certificate.

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/activity"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/activity"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // The activity feed reads entities newest first instead of every project's

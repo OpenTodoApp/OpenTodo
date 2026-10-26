@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/recurrence"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // The demo data, a port of scripts/screenshots.mjs. It is declared as tables of

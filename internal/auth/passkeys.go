@@ -6,10 +6,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/textutil"
-	"github.com/pixari/opentodo/internal/webauthn"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
+	"github.com/OpenTodoApp/opentodo/internal/webauthn"
 )
 
 // Passkey is the public view of a registered WebAuthn credential.

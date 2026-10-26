@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/demo"
+	"github.com/OpenTodoApp/opentodo/internal/demo"
 )
 
 func TestSandboxByteBudget(t *testing.T) {

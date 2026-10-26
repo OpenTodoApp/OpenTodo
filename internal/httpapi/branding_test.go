@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/store"
-	"github.com/pixari/opentodo/internal/tenant/services"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
 // fakeWeb stands in for the built web app: the page and the manifest as Vite writes them.

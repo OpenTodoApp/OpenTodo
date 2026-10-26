@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 )
 
 // list_time_entries and tracked_minutes (OpenSpec change time-tracking, D11).

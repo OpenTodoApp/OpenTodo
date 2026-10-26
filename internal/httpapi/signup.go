@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/mail"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
 )
 
 // Verified open sign-up (OpenSpec `outgoing-email` D4): the registration is

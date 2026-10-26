@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/importer"
+	"github.com/OpenTodoApp/opentodo/internal/importer"
 )
 
 // shape replaces every string with a marker, so two documents compare equal when

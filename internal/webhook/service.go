@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/importer"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/importer"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Limits from the design (D5).

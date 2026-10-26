@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // sseEvent is one frame read from an event stream. Comment lines (": ping") are

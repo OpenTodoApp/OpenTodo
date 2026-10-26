@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 // TestConfigWarningsOwnerOnly (trusted-proxies-lenient): /api/v1/me carries

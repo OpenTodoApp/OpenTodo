@@ -18,8 +18,8 @@ test('the committed template passes', () => {
 })
 
 test('any image tag but stable fails', () => {
-  has(check((t) => t.replace('opentodo:stable', 'opentodo:latest')), /image must be ghcr\.io\/pixari\/opentodo:stable/)
-  has(check((t) => t.replace('opentodo:stable', 'opentodo:0.6')), /image must be ghcr\.io\/pixari\/opentodo:stable/)
+  has(check((t) => t.replace('opentodo:stable', 'opentodo:latest')), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(check((t) => t.replace('opentodo:stable', 'opentodo:0.6')), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
 })
 
 test('a missing or different health check fails', () => {

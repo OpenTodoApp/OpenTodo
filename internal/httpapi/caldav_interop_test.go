@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/caldav"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // OpenSpec change caldav-interop: estimates, inbound date shapes and alarms as

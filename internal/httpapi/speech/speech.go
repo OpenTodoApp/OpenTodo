@@ -16,9 +16,9 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/httpapi/httpx"
-	"github.com/pixari/opentodo/internal/stt"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
+	"github.com/OpenTodoApp/opentodo/internal/stt"
 )
 
 // Routes are the speech routes over the owner's transcription service.

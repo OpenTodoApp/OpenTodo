@@ -14,8 +14,8 @@ OpenTodo is one container with one named volume and no required settings. The Do
 
 OpenTodo's template is submitted to Dokploy's catalogue ([Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265)). Once it is listed, create a service from a **Template** and pick **OpenTodo**. Until then, use one of these two ways:
 
-- **Templates base URL.** In a project, create a service from a **Template**. Dokploy's template dialog accepts another base URL instead of `https://templates.dokploy.com`. Enter `https://raw.githubusercontent.com/pixari/opentodo/main/deploy/dokploy`, pick **OpenTodo** and create it.
-- **By hand.** Choose **Create Service → Compose** and paste [`docker-compose.yml`](https://github.com/pixari/opentodo/blob/main/deploy/dokploy/blueprints/opentodo/docker-compose.yml) as the compose file. Under **Environment**, add the variables from [`template.toml`](https://github.com/pixari/opentodo/blob/main/deploy/dokploy/blueprints/opentodo/template.toml), with at least 16 random letters and digits for `OPENTODO_SETUP_TOKEN`. Under **Domains**, add a domain for the service `opentodo` on port `8080`.
+- **Templates base URL.** In a project, create a service from a **Template**. Dokploy's template dialog accepts another base URL instead of `https://templates.dokploy.com`. Enter `https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/dokploy`, pick **OpenTodo** and create it.
+- **By hand.** Choose **Create Service → Compose** and paste [`docker-compose.yml`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/dokploy/blueprints/opentodo/docker-compose.yml) as the compose file. Under **Environment**, add the variables from [`template.toml`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/dokploy/blueprints/opentodo/template.toml), with at least 16 random letters and digits for `OPENTODO_SETUP_TOKEN`. Under **Domains**, add a domain for the service `opentodo` on port `8080`.
 
 Then click **Deploy**.
 
@@ -32,7 +32,7 @@ Open the domain from the service's **Domains** tab. The first visitor creates th
 | `OPENTODO_ALLOW_SIGNUP` | `false` | `true` lets anyone who can reach the server create an account. |
 | `OPENTODO_TRUSTED_PROXIES` | empty | Set it to `cloudflare` when the domain is proxied by Cloudflare. |
 
-Change them in the **Environment** tab and redeploy. Other `OPENTODO_*` variables from the [configuration table](https://github.com/pixari/opentodo#configuration) take effect when you add them there and to the `environment` list of the compose file.
+Change them in the **Environment** tab and redeploy. Other `OPENTODO_*` variables from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration) take effect when you add them there and to the `environment` list of the compose file.
 
 ## https and your own domain
 
@@ -44,7 +44,7 @@ For https, point your own domain at the server and edit the domain in the **Doma
 
 ## Updates and backups
 
-The template pins one release, such as `ghcr.io/pixari/opentodo:0.14.2`, because Dokploy's catalogue only accepts fixed versions. A service keeps the version it was created with. To update, change the image tag in the service's compose file to the [new release](https://github.com/pixari/opentodo/releases) and click **Deploy**; migrations run on start. There are no down-migrations, so back up first. To follow every release without editing, use `ghcr.io/pixari/opentodo:stable` (every release moves it) and add `pull_policy: always` under the image, so **Deploy** fetches the current one.
+The template pins one release, such as `ghcr.io/opentodoapp/opentodo:0.14.2`, because Dokploy's catalogue only accepts fixed versions. A service keeps the version it was created with. To update, change the image tag in the service's compose file to the [new release](https://github.com/OpenTodoApp/OpenTodo/releases) and click **Deploy**; migrations run on start. There are no down-migrations, so back up first. To follow every release without editing, use `ghcr.io/opentodoapp/opentodo:stable` (every release moves it) and add `pull_policy: always` under the image, so **Deploy** fetches the current one.
 
 Everything OpenTodo stores (the database, attachments and its own backups) is in the named volume `opentodo-data`. Back it up with Dokploy's **Volume Backups** to an S3 destination, or turn on scheduled backups in OpenTodo's **Settings → Server**. See [Backups](../backups.md).
 

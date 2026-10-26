@@ -26,5 +26,5 @@ Everything OpenTodo stores (the database, attachments and its own backups) is in
 ## Links
 
 - Website and documentation: https://open-todo.app
-- Source code: https://github.com/pixari/opentodo
-- Issues: https://github.com/pixari/opentodo/issues
+- Source code: https://github.com/OpenTodoApp/OpenTodo
+- Issues: https://github.com/OpenTodoApp/OpenTodo/issues

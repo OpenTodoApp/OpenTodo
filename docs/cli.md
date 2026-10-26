@@ -20,12 +20,12 @@ It is an **online** client: it keeps no local copy of your tasks and makes no ch
 Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`, with `SHA256SUMS`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.26+, no other dependency):
 
 ```bash
-go install github.com/pixari/opentodo/cmd/ot@latest   # into $(go env GOPATH)/bin; or @vX.Y.Z for a release
+go install github.com/OpenTodoApp/opentodo/cmd/ot@latest   # into $(go env GOPATH)/bin; or @vX.Y.Z for a release
 # or, from a checkout:
 make cli                                              # -> bin/ot
 ```
 
-`go install` works from a clean `GOPATH` with the module path as declared (`github.com/pixari/opentodo`, lower case); an older local Go downloads the required toolchain itself. There is no Homebrew tap or Scoop bucket yet: release assets and `go install` are the supported ways (package manager manifests may follow later).
+`go install` works from a clean `GOPATH` with the module path as declared (`github.com/OpenTodoApp/opentodo`, the repository name in lower case); an older local Go downloads the required toolchain itself. There is no Homebrew tap or Scoop bucket yet: release assets and `go install` are the supported ways (package manager manifests may follow later).
 
 The server container image does not include `ot`; it belongs on the machine you type on.
 

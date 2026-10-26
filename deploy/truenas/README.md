@@ -5,7 +5,7 @@
 | File | What it is |
 | --- | --- |
 | `app.yaml` | Catalogue metadata: version `1.0.0` of the app, `app_version` `0.14.2` (the image tag), category productivity, `run_as_context` 568:568, library `2.3.17` and its hash |
-| `ix_values.yaml` | The images: `ghcr.io/pixari/opentodo` tag `"0.14.2"`, and TrueNAS's `container-utils` for the permissions container |
+| `ix_values.yaml` | The images: `ghcr.io/opentodoapp/opentodo` tag `"0.14.2"`, and TrueNAS's `container-utils` for the permissions container |
 | `questions.yaml` | The install form: Base URL, Setup Token (private), Allow Sign-up, Trusted Proxies, additional variables, user and group (568), Web UI port (30536), storage, labels, resources |
 | `templates/docker-compose.yaml` | The Jinja template TrueNAS's library renders: user 568:568, health check `/opentodo healthcheck` (the image has no shell or wget), `OPENTODO_ADDR=:<chosen port>`, `OPENTODO_DATA_DIR=/data`, the data mount, and a permissions container that chowns it to the chosen user |
 | `templates/test_values/basic-values.yaml`, `hostnet-values.yaml` | What their CI renders and starts: a published port (30080), and host networking (30081) with every setting filled in |

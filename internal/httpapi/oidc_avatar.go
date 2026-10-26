@@ -13,10 +13,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/imgfit"
-	"github.com/pixari/opentodo/internal/oidc"
-	ob "github.com/pixari/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/imgfit"
+	"github.com/OpenTodoApp/opentodo/internal/oidc"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // Profile pictures from the sign-in provider (OpenSpec change

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/config"
 )
 
 // Calendar feeds over HTTP (OpenSpec change calendar-feeds, tasks 4.1–4.4).

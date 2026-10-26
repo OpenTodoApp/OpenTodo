@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/backup"
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/tenant"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/tenant"
 )
 
 // TestOperatorSettingsStayWithTheHost (3.3): a tenant owner cannot reach the

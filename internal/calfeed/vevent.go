@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
 )
 
 // Limits of one subscription (design D3, D4).

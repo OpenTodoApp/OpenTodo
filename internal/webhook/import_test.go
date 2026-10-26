@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/importer"
+	"github.com/OpenTodoApp/opentodo/internal/importer"
 )
 
 // Import summaries (harden-server-edges): import ops never fan out per entity;

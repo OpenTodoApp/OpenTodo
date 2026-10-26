@@ -9,7 +9,7 @@ order: 34
 ---
 # n8n
 
-The [OpenTodo nodes for n8n](https://github.com/pixari/n8n-nodes-opentodo) connect your tasks to the hundreds of services [n8n](https://n8n.io) works with. The **OpenTodo** node creates, reads, changes and completes tasks and manages projects, labels and comments. The **OpenTodo Trigger** starts a workflow when a task or project changes. Turn a new GitHub issue into a task, post to a chat when a task is completed, or send yourself a digest of what is due.
+The [OpenTodo nodes for n8n](https://github.com/OpenTodoApp/n8n-nodes-opentodo) connect your tasks to the hundreds of services [n8n](https://n8n.io) works with. The **OpenTodo** node creates, reads, changes and completes tasks and manages projects, labels and comments. The **OpenTodo Trigger** starts a workflow when a task or project changes. Turn a new GitHub issue into a task, post to a chat when a task is completed, or send yourself a digest of what is due.
 
 The nodes talk only to your own OpenTodo server, through the [HTTP API](api.md) with one token, and need no change on the server. They are tested with n8n 2.44 and OpenTodo 0.13.
 
@@ -98,4 +98,4 @@ For an assistant you talk to directly, OpenTodo's [MCP endpoint](mcp.md) and the
 - In a shared project where you are a viewer, changes are refused with OpenTodo's message.
 - The trigger needs a self-hosted n8n, or an n8n the OpenTodo server can reach, and an account has at most 20 webhooks.
 
-Problems with the nodes go to their [issue tracker](https://github.com/pixari/n8n-nodes-opentodo/issues).
+Problems with the nodes go to their [issue tracker](https://github.com/OpenTodoApp/n8n-nodes-opentodo/issues).

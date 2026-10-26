@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/mail/smtptest"
-	"github.com/pixari/opentodo/internal/notify"
-	"github.com/pixari/opentodo/internal/push"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/mail/smtptest"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/push"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 func testConfig(dir string) config.Config {

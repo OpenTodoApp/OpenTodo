@@ -8,7 +8,7 @@ order: 30
 ---
 # Running OpenTodo on Umbrel
 
-OpenTodo has a package for the official Umbrel App Store ([`deploy/umbrel/`](https://github.com/pixari/opentodo/tree/main/deploy/umbrel)). It has been submitted ([getumbrel/umbrel-apps#6251](https://github.com/getumbrel/umbrel-apps/pull/6251)) but is not listed yet. Until it is, umbrelOS cannot install it (umbrelOS installs only from app stores); run OpenTodo on another machine with [Docker](docker.md) instead. The rest of this page describes the package as it will be listed.
+OpenTodo has a package for the official Umbrel App Store ([`deploy/umbrel/`](https://github.com/OpenTodoApp/OpenTodo/tree/main/deploy/umbrel)). It has been submitted ([getumbrel/umbrel-apps#6251](https://github.com/getumbrel/umbrel-apps/pull/6251)) but is not listed yet. Until it is, umbrelOS cannot install it (umbrelOS installs only from app stores); run OpenTodo on another machine with [Docker](docker.md) instead. The rest of this page describes the package as it will be listed.
 
 ## Install
 

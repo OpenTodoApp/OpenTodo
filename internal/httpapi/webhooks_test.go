@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
 // memberEnv returns the owner env plus a signed-in member admitted by invitation.

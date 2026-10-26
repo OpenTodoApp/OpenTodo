@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/ids"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Public links (OpenSpec change `public-links`): owners and admins publish one

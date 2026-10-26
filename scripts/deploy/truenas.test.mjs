@@ -24,11 +24,11 @@ test('truenas: the committed app passes', () => {
 })
 
 test('truenas: image policy release, app_version follows the tag', () => {
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: "stable"'), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.14\.2/)
-  has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: "latest"'), ctx), /image must be ghcr\.io\/pixari\/opentodo:0\.14\.2/)
+  has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: "stable"'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
+  has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: "latest"'), ctx), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
   has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: "0.6.0"'), ctx), /app_version \(0\.14\.2\) must equal the image tag/)
   has(checkApp(edit('ix_values.yaml', 'tag: "0.14.2"', 'tag: 0.6'), ctx), /must be a quoted string/)
-  has(checkApp(edit('ix_values.yaml', 'repository: ghcr.io/pixari/opentodo', 'repository: pixari/opentodo'), ctx), /image must be/)
+  has(checkApp(edit('ix_values.yaml', 'repository: ghcr.io/opentodoapp/opentodo', 'repository: opentodoapp/opentodo'), ctx), /image must be/)
 })
 
 test('truenas: port, listen address and data path', () => {

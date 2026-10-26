@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 // ---- handlers: audit log (OpenSpec change `audit-log`) ----

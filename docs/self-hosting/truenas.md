@@ -21,7 +21,7 @@ OpenTodo is not in the TrueNAS **Apps** catalogue yet: the app has been submitte
    ```yaml
    services:
      opentodo:
-       image: ghcr.io/pixari/opentodo:0.14.2
+       image: ghcr.io/opentodoapp/opentodo:0.14.2
        user: "568:568"
        restart: unless-stopped
        ports:
@@ -47,7 +47,7 @@ Once OpenTodo is listed: **Apps → Discover Apps**, search for **OpenTodo**, cl
 | Setup Token | empty | Optional, 16+ characters. Set it when the server is reachable from the internet, so a stranger cannot create the owner account first. |
 | Allow Sign-up | off | On lets anyone who can reach the server create an account. |
 | Trusted Proxies | empty | The reverse proxies whose `X-Forwarded-For` is trusted, or `cloudflare`. Set it only when every request comes through them. |
-| Additional Environment Variables | none | Any other `OPENTODO_*` variable from the [configuration table](https://github.com/pixari/opentodo#configuration). |
+| Additional Environment Variables | none | Any other `OPENTODO_*` variable from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration). |
 | User ID / Group ID | 568 / 568 | The user OpenTodo runs as and that owns its files (`apps`). |
 | WebUI Port | 30536 | The port on your server. OpenTodo listens on it directly. |
 | Data Storage | ixVolume | Where the database, attachments and backups live, mounted on `/data`. Choose **Host Path** to use a dataset of your own. |

@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/settings"
+	"github.com/OpenTodoApp/opentodo/internal/settings"
 )
 
 // Settings keys in the shared settings table (design D2). The client secret is

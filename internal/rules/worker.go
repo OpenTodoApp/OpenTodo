@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/e2ee"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/notify"
-	"github.com/pixari/opentodo/internal/ruleval"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Worker pacing.

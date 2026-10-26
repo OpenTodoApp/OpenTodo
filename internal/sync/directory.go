@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Workspace members and groups (OpenSpec change workspaces, "Workspace

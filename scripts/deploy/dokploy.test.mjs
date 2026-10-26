@@ -38,7 +38,7 @@ test('dokploy: TOML subset parser', () => {
 })
 
 test('dokploy: image pinned to the latest release', () => {
-  const want = new RegExp(`image must be ghcr\\.io/pixari/opentodo:${esc(TAG)}`)
+  const want = new RegExp(`image must be ghcr\\.io/opentodoapp/opentodo:${esc(TAG)}`)
   has(withCompose(`opentodo:${TAG}`, 'opentodo:latest'), want)
   has(withCompose(`opentodo:${TAG}`, 'opentodo:stable'), want)
   has(withCompose(`opentodo:${TAG}`, 'opentodo:0.1.0'), want)

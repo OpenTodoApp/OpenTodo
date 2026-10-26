@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
 )
 
 // Per-account failure limit (OpenSpec change trusted-client-identity): failed

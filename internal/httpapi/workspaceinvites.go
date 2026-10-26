@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/mail"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Workspace invite links (OpenSpec change workspaces, "Workspace invite

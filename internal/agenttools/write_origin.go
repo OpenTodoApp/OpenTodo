@@ -3,7 +3,7 @@ package agenttools
 import (
 	"encoding/json"
 
-	"github.com/pixari/opentodo/internal/origin"
+	"github.com/OpenTodoApp/opentodo/internal/origin"
 )
 
 // Task origins in the write tools (OpenSpec change task-origin, design D4).

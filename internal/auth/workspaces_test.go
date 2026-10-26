@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 // hasDefaultWorkspace reports whether userID has exactly one default

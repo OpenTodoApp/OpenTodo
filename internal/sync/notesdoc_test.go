@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/activity"
+	"github.com/OpenTodoApp/opentodo/internal/activity"
 )
 
 // docValue builds a kDoc envelope whose total length is exactly n characters.

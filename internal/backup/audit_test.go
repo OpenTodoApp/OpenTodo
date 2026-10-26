@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 func auditRows(t *testing.T, db *sql.DB, name string) (n int, outcome string) {

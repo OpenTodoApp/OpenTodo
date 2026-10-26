@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 func dayOffset(n int) string { return time.Now().Local().AddDate(0, 0, n).Format("2006-01-02") }

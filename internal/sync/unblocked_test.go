@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pixari/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
 )
 
 // task-dependencies (task 6.2): the assignee of a task hears when its last open

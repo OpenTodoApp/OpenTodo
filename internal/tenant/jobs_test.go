@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/backup"
+	"github.com/OpenTodoApp/opentodo/internal/backup"
 )
 
 // lockedBuffer is a log sink safe for concurrent writers.

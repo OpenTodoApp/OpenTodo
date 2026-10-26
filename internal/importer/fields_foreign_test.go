@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	opsync "github.com/pixari/opentodo/internal/sync"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Imported custom fields (more-importers D3, data-import "Imported custom fields").

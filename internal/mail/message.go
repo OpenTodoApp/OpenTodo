@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // Kind is one of the closed set of messages the server sends (design D3).

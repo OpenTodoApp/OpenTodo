@@ -11,7 +11,7 @@ kill_signal = "SIGTERM"
 kill_timeout = "30s"
 
 [build]
-  image = "ghcr.io/pixari/opentodo:stable"
+  image = "ghcr.io/opentodoapp/opentodo:stable"
 
 [env]
   # Set to https://<app>.fly.dev (or your own domain) before the first deploy: passkeys,

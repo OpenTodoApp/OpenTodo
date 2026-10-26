@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/pixari/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // ErrSetupCodeInvalid refuses a first registration from a public address

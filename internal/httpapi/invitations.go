@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
-	"github.com/pixari/opentodo/internal/mail"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
 )
 
 // Owner-managed invitations and their public preview, plus the origin helpers

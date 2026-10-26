@@ -8,10 +8,10 @@ import (
 	"slices"
 	"time"
 
-	"github.com/pixari/opentodo/internal/deliveryq"
-	"github.com/pixari/opentodo/internal/ids"
-	"github.com/pixari/opentodo/internal/notify"
-	"github.com/pixari/opentodo/internal/webhook"
+	"github.com/OpenTodoApp/opentodo/internal/deliveryq"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
 // Worker tuning, the webhooks' (design D8).

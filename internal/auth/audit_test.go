@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 )
 
 func countRows(t *testing.T, db *sql.DB, q string, args ...any) int {

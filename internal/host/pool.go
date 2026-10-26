@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixari/opentodo/internal/tenant"
+	"github.com/OpenTodoApp/opentodo/internal/tenant"
 )
 
 // ErrBusy means every open tenant is in use and the cap of open tenants is

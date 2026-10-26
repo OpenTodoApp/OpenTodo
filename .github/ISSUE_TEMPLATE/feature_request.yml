@@ -20,4 +20,4 @@ body:
   - type: markdown
     attributes:
       value: |
-        Larger behaviour changes start as an OpenSpec change (`openspec/changes/<name>/`); see [CONTRIBUTING.md](https://github.com/pixari/opentodo/blob/main/CONTRIBUTING.md). Ideas already on the list are in [ROADMAP.md → Future ideas](https://github.com/pixari/opentodo/blob/main/ROADMAP.md).
+        Larger behaviour changes start as an OpenSpec change (`openspec/changes/<name>/`); see [CONTRIBUTING.md](https://github.com/OpenTodoApp/OpenTodo/blob/main/CONTRIBUTING.md). Ideas already on the list are in [ROADMAP.md → Future ideas](https://github.com/OpenTodoApp/OpenTodo/blob/main/ROADMAP.md).

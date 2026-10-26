@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/caldav"
-	"github.com/pixari/opentodo/internal/calfeed"
-	ob "github.com/pixari/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // Discovery is what discovery found for an account (design D4).

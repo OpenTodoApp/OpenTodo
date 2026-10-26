@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
 )
 
 // CalDAV (OpenSpec change `caldav`): app-password routes, the owner toggle and

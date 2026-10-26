@@ -8,9 +8,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/pixari/opentodo/internal/calfeed"
-	opsync "github.com/pixari/opentodo/internal/sync"
-	"github.com/pixari/opentodo/internal/zoned"
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // cycle is one sync of one connection in progress (design D7).

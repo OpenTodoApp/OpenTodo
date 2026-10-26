@@ -8,13 +8,13 @@ order: 27
 ---
 # Running OpenTodo on Cosmos Cloud
 
-OpenTodo is one container with one volume and no required settings. The servapp ([`cosmos-compose.json`](https://github.com/pixari/opentodo/blob/main/deploy/cosmos/cosmos-compose.json)) sets everything up behind Cosmos's own reverse proxy, with a generated setup token.
+OpenTodo is one container with one volume and no required settings. The servapp ([`cosmos-compose.json`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/cosmos/cosmos-compose.json)) sets everything up behind Cosmos's own reverse proxy, with a generated setup token.
 
 ## Install
 
 OpenTodo has been submitted to the official Cosmos market ([azukaar/cosmos-servapps-official#329](https://github.com/azukaar/cosmos-servapps-official/pull/329)) but is not listed there yet. Until it is, install it as a custom compose:
 
-1. Copy the contents of [`deploy/cosmos/cosmos-compose.json`](https://raw.githubusercontent.com/pixari/opentodo/main/deploy/cosmos/cosmos-compose.json).
+1. Copy the contents of [`deploy/cosmos/cosmos-compose.json`](https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/cosmos/cosmos-compose.json).
 2. In Cosmos open **ServApps**, click **Import Compose File**, paste it and click **Next**.
 3. Choose the service name (for example `opentodo`) and the hostname OpenTodo will answer on (for example `todo.example.com`), then install.
 
@@ -26,7 +26,7 @@ When the install finishes, Cosmos shows the address and a **setup token**. Keep 
 
 | Setting | Value | What it does |
 | --- | --- | --- |
-| Image | `ghcr.io/pixari/opentodo:stable` | The latest release; see [Updates](#updates-and-backups). |
+| Image | `ghcr.io/opentodoapp/opentodo:stable` | The latest release; see [Updates](#updates-and-backups). |
 | Data | volume `<service name>-data` on `/data` | The database, attachments and backups. Everything OpenTodo stores is here. |
 | Route | the hostname you chose, to port 8080 | Cosmos serves OpenTodo on that hostname with its certificate; no port is opened on the server. |
 | `OPENTODO_BASE_URL` | the route's address | Filled in by Cosmos, with `https` when Cosmos has certificates and `http` when they are turned off. |
@@ -34,7 +34,7 @@ When the install finishes, Cosmos shows the address and a **setup token**. Keep 
 | `OPENTODO_ALLOW_SIGNUP` | `false` | `true` lets anyone who can reach the server create an account. |
 | `OPENTODO_TRUSTED_PROXIES` | empty | Proxies in front of Cosmos; see below. |
 
-Change or add settings in the ServApp's **Docker** tab, under **Environment variables**; every `OPENTODO_*` variable from the [configuration table](https://github.com/pixari/opentodo#configuration) can be added there.
+Change or add settings in the ServApp's **Docker** tab, under **Environment variables**; every `OPENTODO_*` variable from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration) can be added there.
 
 Cosmos is the reverse proxy in front of OpenTodo, and OpenTodo already takes the visitor's address from it. Set `OPENTODO_TRUSTED_PROXIES` only when another proxy sits in front of Cosmos, for example `cloudflare` when Cloudflare's proxy is on for the hostname, so rate limits and the audit log see visitors rather than that proxy.
 
@@ -44,7 +44,7 @@ With Cosmos's certificates on (the default), OpenTodo is served over https and e
 
 ## Updates and backups
 
-The template uses the `stable` image, which every release moves, and turns on Cosmos's automatic updates for it: Cosmos installs each release by itself, and migrations run on start. There are no down-migrations, so keep backups (see below). To choose when to update, turn off **Auto-update** in the ServApp's settings and use **Update** when you are ready. To stay on one release line and take only its fixes, change the image to `ghcr.io/pixari/opentodo:0.6` (or pin one version, `0.6.1`).
+The template uses the `stable` image, which every release moves, and turns on Cosmos's automatic updates for it: Cosmos installs each release by itself, and migrations run on start. There are no down-migrations, so keep backups (see below). To choose when to update, turn off **Auto-update** in the ServApp's settings and use **Update** when you are ready. To stay on one release line and take only its fixes, change the image to `ghcr.io/opentodoapp/opentodo:0.6` (or pin one version, `0.6.1`).
 
 Back up the `<service name>-data` volume with Cosmos's backups, or turn on scheduled backups in **Settings → Server** (they are written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
 

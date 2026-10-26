@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pixari/opentodo/internal/caldav"
-	ob "github.com/pixari/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // NewHTTPClient builds the client of every calendar request: the outbound
