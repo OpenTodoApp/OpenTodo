@@ -2,8 +2,9 @@ package channels
 
 import (
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/pixari/opentodo/internal/deliveryq"
 )
 
 // NextDue is the earliest queued message of an enabled channel while the owner
@@ -13,20 +14,10 @@ func (s *Service) NextDue(ctx context.Context) (time.Time, bool, error) {
 	if !s.enabled(ctx) {
 		return time.Time{}, false, nil
 	}
-	var at sql.NullInt64
-	err := s.db.QueryRowContext(ctx, `SELECT MIN(d.next_attempt_at) FROM notification_deliveries d JOIN notification_channels c ON c.id = d.channel_id
-		WHERE d.status IN ('pending','retry') AND c.enabled = 1`).Scan(&at)
-	if err != nil || !at.Valid {
-		return time.Time{}, false, err
-	}
-	return time.UnixMilli(at.Int64), true, nil
+	return deliveryq.NextDue(ctx, s.db, table)
 }
 
 // NextPrune is when the oldest message leaves the log (LogRetention).
 func (s *Service) NextPrune(ctx context.Context) (time.Time, bool, error) {
-	var at sql.NullInt64
-	if err := s.db.QueryRowContext(ctx, `SELECT MIN(created_at) FROM notification_deliveries`).Scan(&at); err != nil || !at.Valid {
-		return time.Time{}, false, err
-	}
-	return time.UnixMilli(at.Int64).Add(LogRetention), true, nil
+	return deliveryq.NextPrune(ctx, s.db, table)
 }
