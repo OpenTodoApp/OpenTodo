@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:built": "REQUIRE_BUILT=1 vitest run src/lib/serviceWorker.test.ts src/ui/workbench.test.ts",
     "test:perf": "vitest run -c vitest.perf.config.ts",
+    "test:contract": "vitest run -c vitest.contract.config.ts",
     "nlp:vocab": "UPDATE_QUICKADD_VOCAB=1 vitest run src/lib/nlp/vocab.test.ts",
     "lint": "eslint --max-warnings 0 src",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json",

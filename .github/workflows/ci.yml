@@ -178,6 +178,18 @@ jobs:
         run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/ot ./cmd/ot
       - name: Smoke test the CLI against a local server
         run: ./scripts/cli-smoke.sh | tee /dev/stderr | grep -q '^CLI OK$'
+      # The web app's sync client (src/lib) against this server binary, no mocks
+      # (OpenSpec self-hosting "The sync client is tested against the server").
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - name: Sync client contract tests (against bin/opentodo)
+        run: npm run test:contract
+        working-directory: web
 
   # Opens every screen and overlay at 360/390/768 px, light and dark, in Chromium
   # and WebKit (Safari's engine) and fails on sideways scrolling, overlays or
