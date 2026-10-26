@@ -9,7 +9,9 @@
 //   cd web && npm run build-storybook && node ../scripts/ui-check/a11y.mjs
 //
 // Env: STORYBOOK_DIR (default web/storybook-static), ONLY (comma-separated story ids),
-// CONCURRENCY (pages checked at once, default 4; every story still gets its own page).
+// CONCURRENCY (pages checked at once, default 4; every story still gets its own page),
+// SHARD ("i/n": only every n-th story starting at the i-th, so n jobs share the work;
+// the Screens stories, which also get the focus walk, are spread over all of them).
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
@@ -24,7 +26,9 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
 const { chromium } = await loadPlaywright()
 const server = await serveStatic(root)
 const only = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
-const ids = (await storyIds(root)).filter((id) => !only || only.has(id))
+const [shard, shards] = (process.env.SHARD ?? '1/1').split('/').map(Number)
+if (!(shards >= 1 && shard >= 1 && shard <= shards)) throw new Error(`SHARD must be i/n with 1 <= i <= n, got ${process.env.SHARD}`)
+const ids = (await storyIds(root)).filter((id) => !only || only.has(id)).filter((_, i) => i % shards === shard - 1)
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
 const failures = []
 // Elements of the first focus run, each fixed by a follow-up that removes it from the list.
@@ -83,4 +87,4 @@ if (failures.length) {
   console.error(`UI a11y check: ${failures.length} problem(s)\n${failures.map((f) => `  - ${f}`).join('\n')}`)
   process.exit(1)
 }
-console.log(`UI a11y check: ${ids.length} stories × 2 themes, no serious or critical violations; focus ring on every element of the Screens stories (${exempted} listed in scripts/ux-audit/focus-exempt.json)`)
+console.log(`UI a11y check${shards > 1 ? ` (shard ${shard}/${shards})` : ''}: ${ids.length} stories × 2 themes, no serious or critical violations; focus ring on every element of the Screens stories (${exempted} listed in scripts/ux-audit/focus-exempt.json)`)

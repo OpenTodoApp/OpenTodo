@@ -100,7 +100,7 @@ test('a missing screenshot is reported (the docs check uses this)', () => {
 test('CI path filters: docs-only changes skip the code jobs (site-bundle D7)', async () => {
   const { execFileSync } = await import('node:child_process')
   const run = (files) => Object.fromEntries(execFileSync(join(repoRoot, 'scripts/ci-changes.sh'), { input: files.join('\n') + '\n', encoding: 'utf8' })
-    .trim().split('\n').map((l) => l.split('=')))
+    .trim().split('\n').map((l) => l.split('=')).filter(([k]) => ['code', 'docs', 'mobile'].includes(k)))
   assert.deepEqual(run(['docs/backups.md', 'web/src/generated/help.json', 'website/docs/backups/index.html']), { code: 'false', docs: 'true', mobile: 'false' })
   assert.deepEqual(run(['internal/backup/restore.go']), { code: 'true', docs: 'false', mobile: 'false' })
   assert.deepEqual(run(['web/src/app/App.tsx', 'web/src/generated/help.json']), { code: 'true', docs: 'true', mobile: 'false' })

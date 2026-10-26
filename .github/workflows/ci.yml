@@ -23,11 +23,14 @@ env:
 # ci-release-gates; scripts/repo-checks.test.mjs checks all three). Dependabot
 # (.github/dependabot.yml) proposes the updates.
 jobs:
-  # Path filters (OpenSpec site-bundle D7): which inputs a pull request touches,
-  # from a plain `git diff`, no third-party action. Pushes to main and tags run
-  # everything. `code` gates the Go, cross-compile, layout, UI and image jobs;
-  # docs-only changes still run the web job (docs check), the docs website check
-  # and the site bundle preview.
+  # Tiered CI (OpenSpec ci-speed; path filter from site-bundle D7, no third-party
+  # action). A pull request runs the fast tier: the checks, and for code the web,
+  # server and image jobs and one linux/amd64 binary; one Chromium layout and
+  # end-to-end job when `layout` paths changed; the workbench checks when `ui` paths
+  # changed; Android, extension and skill only for their own paths; a docs-only
+  # change runs the checks and the docs website. Pushes to main and tags run every
+  # job and every matrix leg (every output is true). The interface audit runs
+  # nightly (ux-audit.yml).
   changes:
     name: Changed paths
     runs-on: ubuntu-latest
@@ -36,6 +39,10 @@ jobs:
       code: ${{ steps.filter.outputs.code }}
       docs: ${{ steps.filter.outputs.docs }}
       mobile: ${{ steps.filter.outputs.mobile }}
+      ui: ${{ steps.filter.outputs.ui }}
+      layout: ${{ steps.filter.outputs.layout }}
+      extension: ${{ steps.filter.outputs.extension }}
+      skill: ${{ steps.filter.outputs.skill }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,19 +59,49 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then
-            echo "code=true" >> "$GITHUB_OUTPUT"
-            echo "docs=true" >> "$GITHUB_OUTPUT"
-            echo "mobile=true" >> "$GITHUB_OUTPUT"
+            for k in code docs mobile ui layout extension skill; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
             exit 0
           fi
           git diff --name-only "$BASE"...HEAD > changed.txt
           cat changed.txt
           ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
 
+  # The web app is built in its own job (ci-speed): the server, layout and binary
+  # jobs need only web-dist, so they start while the unit tests still run.
+  web-build:
+    name: Web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      # The built service worker and manifest (and no workbench code in the build):
+      # these skip before a build, and fail here if the build is missing.
+      - name: Tests of the built app (service worker, manifest)
+        run: npm run test:built
+        working-directory: web
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dist
+          path: internal/web/dist
+          include-hidden-files: true
+
   web:
-    name: Web (typecheck, test, build)
+    name: Web (typecheck, lint, test)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -81,27 +118,12 @@ jobs:
         working-directory: web
       - run: npm test
         working-directory: web
-      - name: Docs check (front matter, links, images, spec coverage, generated files current)
-        run: npm run docs:check
-        working-directory: web
-      - run: npm run build
-        working-directory: web
-      # The built service worker and manifest (and no workbench code in the build):
-      # these skip before a build, and fail here if the build is missing.
-      - name: Tests of the built app (service worker, manifest)
-        run: npm run test:built
-        working-directory: web
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: web-dist
-          path: internal/web/dist
-          include-hidden-files: true
 
   server:
     name: Server (vet, test, build)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: [changes, web]
+    needs: [changes, web-build]
     if: needs.changes.outputs.code == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -142,29 +164,23 @@ jobs:
   # under 44 px (OpenSpec change mobile-layout). Every screen and overlay, in
   # light and dark, and the docs website are also checked with axe-core
   # (serious and critical issues fail). Screenshots of failures are uploaded as the
-  # layout-report-<engine>-<n> artifact. Then, on the Chromium leg, the browser end-to-end
-  # checks: two devices, an offline edit converging, the PWA, an offline start, inbox
-  # triage and saved views (`make e2e`). One job for Chromium and one per width for WebKit, side by
+  # layout-report-<engine>-<n> artifact. The End-to-end leg runs the browser end-to-end
+  # checks instead: two devices, an offline edit converging, the PWA, an offline start,
+  # inbox triage and saved views (`make e2e`). One job per engine and width, side by
   # side; each builds its own server binary and only needs the web build.
   layout:
     name: Layout check (${{ matrix.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    needs: [changes, web]
-    if: needs.changes.outputs.code == 'true'
+    needs: [changes, web-build]
+    if: needs.changes.outputs.layout == 'true'
     strategy:
       fail-fast: false
+      # A pull request runs one leg (Chromium at every width in English, then the
+      # end-to-end checks); pushes and tags run one leg per engine, width and the
+      # German and French catalogs, and the end-to-end checks beside them.
       matrix:
-        include:
-          # The script seeds its data through Chromium, so every leg installs it.
-          # WebKit is about twice as slow on the runner, so it is split by width.
-          - { engine: chromium, name: Chromium, browsers: chromium, widths: '360,390,768' }
-          - { engine: webkit, name: WebKit 360 px, browsers: chromium webkit, widths: '360' }
-          - { engine: webkit, name: WebKit 390 px, browsers: chromium webkit, widths: '390' }
-          - { engine: webkit, name: WebKit 768 px, browsers: chromium webkit, widths: '768' }
-          # The longest catalogs on the narrowest phone (OpenSpec change phone-v2, design D9).
-          - { engine: chromium, name: Chromium 360 px German, browsers: chromium, widths: '360', lang: de }
-          - { engine: chromium, name: Chromium 360 px French, browsers: chromium, widths: '360', lang: fr }
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"engine":"chromium","name":"Chromium, all widths, end-to-end","browsers":"chromium","widths":"360,390,768","e2e":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","browsers":"chromium","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","browsers":"chromium","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","browsers":"chromium","widths":"768"},{"engine":"chromium","name":"End-to-end","browsers":"chromium","e2e":true},{"engine":"webkit","name":"WebKit 360 px","browsers":"chromium webkit","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","browsers":"chromium webkit","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","browsers":"chromium webkit","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","browsers":"chromium","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","browsers":"chromium","widths":"360","lang":"fr"}]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -188,6 +204,7 @@ jobs:
           npm i -g playwright@1.56.1
           playwright install --with-deps ${{ matrix.browsers }}
       - name: Run the layout check against a fresh server
+        if: ${{ matrix.widths }}
         env:
           ENGINES: ${{ matrix.engine }}
           WIDTHS: ${{ matrix.widths }}
@@ -197,7 +214,7 @@ jobs:
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
           node scripts/e2e-layout.mjs layout-report
       - name: End-to-end (two devices, offline sync, offline start, inbox triage, saved views)
-        if: matrix.engine == 'chromium' && !matrix.lang
+        if: ${{ matrix.e2e }}
         run: make e2e
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
@@ -205,55 +222,9 @@ jobs:
           name: layout-report-${{ matrix.engine }}-${{ strategy.job-index }}
           path: layout-report
 
-  # The interface audit (OpenSpec change ux-audit-three-widths): every screen of the
-  # inventory at 360/768/1280 px, light and dark, English and German, measured against
-  # the interface budget and the audited rules; the report (index.html, report.json,
-  # screenshots) is uploaded as ux-audit-report. Non-blocking: the tour only reports,
-  # unless the repository variable UX_AUDIT_STRICT is 1; its measurement tests fail it.
-  ux-audit:
-    name: Interface audit
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: [changes, web]
-    if: needs.changes.outputs.code == 'true'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: web-dist
-          path: internal/web/dist
-      - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
-      # axe-core for M1 (web devDependency).
-      - run: npm ci --no-audit --no-fund
-        working-directory: web
-      - name: Install Playwright with Chromium
-        run: |
-          npm i -g playwright@1.56.1
-          playwright install --with-deps chromium
-      - name: Measurement tests (fixtures in Chromium)
-        run: node --test scripts/ux-audit/measure.test.mjs
-      # Reports only, unless the maintainer sets the repository variable UX_AUDIT_STRICT to 1.
-      - name: Run the audit tour
-        continue-on-error: ${{ vars.UX_AUDIT_STRICT != '1' }}
-        # About 1,000 captures; a run that takes longer is stopped without failing the job.
-        timeout-minutes: 45
-        env:
-          UX_AUDIT_STRICT: ${{ vars.UX_AUDIT_STRICT }}
-          CONCURRENCY: 3
-        run: node scripts/ux-audit/tour.mjs
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: ux-audit-report
-          path: ux-audit-report
+  # The interface audit (OpenSpec web-app "Interface audit tour") runs in its own
+  # workflow, .github/workflows/ux-audit.yml: on pull requests and nightly, off the
+  # push critical path (ci-speed).
 
   # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
   # axe-core without serious or critical issues, search, and pages without JavaScript.
@@ -263,7 +234,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: changes
-    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.docs == 'true'
+    if: needs.changes.outputs.docs == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -295,7 +266,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, cli]
-    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.cli.result != 'failure' }}
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.cli.result != 'failure' && needs.changes.outputs.docs == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -341,11 +312,16 @@ jobs:
   # visual comparison is split into three shards (Playwright --shard) that run side
   # by side; every part must pass. Diffs are uploaded as ui-check-report-<shard>.
   ui-a11y:
-    name: UI check (workbench a11y)
+    name: UI check (workbench a11y ${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.ui == 'true'
+    # Split in two like the visual comparison (ci-speed); every part must pass.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -355,8 +331,11 @@ jobs:
       - run: npm run build-storybook
         working-directory: web
       - name: Accessibility (axe-core on every story, light and dark)
+        env:
+          SHARD: ${{ matrix.shard }}/2
         run: node scripts/ui-check/a11y.mjs
       - name: Motion (Foundations/Motion under reduced motion and no motion)
+        if: matrix.shard == 1
         run: node scripts/ui-check/motion.mjs
 
   ui-visual:
@@ -364,7 +343,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.ui == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -401,13 +380,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { goos: linux, goarch: amd64 }
-          - { goos: linux, goarch: arm64 }
-          - { goos: darwin, goarch: amd64 }
-          - { goos: darwin, goarch: arm64 }
-          - { goos: windows, goarch: amd64, ext: .exe }
-          - { goos: windows, goarch: arm64, ext: .exe }
+        # linux/amd64 on pull requests (the site bundle reads it); every platform on pushes and tags.
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"goos":"linux","goarch":"amd64"}]' || '[{"goos":"linux","goarch":"amd64"},{"goos":"linux","goarch":"arm64"},{"goos":"darwin","goarch":"amd64"},{"goos":"darwin","goarch":"arm64"},{"goos":"windows","goarch":"amd64","ext":".exe"},{"goos":"windows","goarch":"arm64","ext":".exe"}]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -442,6 +416,8 @@ jobs:
     name: Browser extension (test, package)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: changes
+    if: needs.changes.outputs.extension == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -576,6 +552,8 @@ jobs:
     name: Agent skill (package)
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.skill == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: make skill
@@ -611,6 +589,10 @@ jobs:
       - run: npm ci --no-audit --no-fund
         working-directory: web
       - run: make ci-checks
+      # Here rather than in the web job, so a docs-only pull request runs it too.
+      - name: Docs check (front matter, links, images, spec coverage, generated files current)
+        run: npm run docs:check
+        working-directory: web
 
   # The image under test (OpenSpec ci-release-gates): built for linux/amd64 into the
   # runner's Docker, scanned (a critical vulnerability with a fixed version fails),
@@ -661,10 +643,10 @@ jobs:
   # with cosign (Sigstore, GitHub OIDC). See docs/self-hosting/verify.md.
   docker:
     name: Docker image (publish, sign)
-    if: github.event_name != 'pull_request'
+    if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web, server, layout, ux-audit, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image]
+    needs: [changes, web-build, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -724,10 +706,10 @@ jobs:
   # the tag's section in CHANGELOG.md. A failed site bundle keeps the release unpublished.
   release:
     name: GitHub release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web, server, layout, ux-audit, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image, docker]
+    needs: [changes, web-build, web, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
