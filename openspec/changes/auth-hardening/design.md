@@ -21,6 +21,12 @@ Not set by invitation registration or password reset: an admin can hand both lin
 
 `isLocalSetup(r)`: the TCP peer is loopback and the request has none of `X-Forwarded-For`, `Forwarded`, `X-Real-IP`, `CF-Connecting-IP`, `True-Client-IP`. A private peer no longer counts: Docker's port publishing, NAT and rootless port forwarders make internet clients look private. The setup screen already asks for the code when the status says so; docs explain `docker logs`.
 
+## D6. The setup code is opt-in
+
+Owner decision after D3 shipped in review: a friend installing a fresh server behind Cloudflare was blocked by the setup-code screen. The code is now off by default and turned on with the optional `OPENTODO_SETUP_CODE=required` (`config.SetupCodeRequired`, `auth.Service.SetSetupCodeRequired`); any other non-empty value fails `config.Load`. Off, `PrepareSetupCode` generates nothing, `setupCodeRequired` is false, the first registration needs no code, and `announceSetupCode` logs one warning per start while no owner exists. `OPENTODO_SETUP_TOKEN` is unchanged and wins over the code. Hosted tenants always get a setup token from the operator; `host.tenantConfig` also forces the code on, so a record without a token is never open. The demo has a hidden owner and never reaches setup.
+
+The risk accepted: a server reachable from the internet with neither variable set can be claimed by whoever opens it first, until the owner finishes setup. The docs say so next to every install command.
+
 ## D4. All-trusted forwarding chain
 
 `clientIP` returns `hops[len-2]` (the last `X-Forwarded-For` entry, appended by the nearest proxy) instead of `hops[0]` when every hop is trusted, and the peer when there is no header. `warnUnforwarded` logs once per Server when a trusted, non-loopback peer sends no `X-Forwarded-For`.

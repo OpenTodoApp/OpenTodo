@@ -9,6 +9,8 @@
 - [x] 2.2 All-trusted chain uses the nearest proxy's entry; `TestForgedLeadingHopIgnoredWhenAllTrusted`, `TestClientAddressBehindTrustedProxies` updated
 - [x] 2.3 One warning for an unforwarded trusted peer; `TestWarnsOnceAboutUnforwardedPeer`
 
+- [x] 2.4 Setup code opt-in (`OPENTODO_SETUP_CODE`, D6): config validation `TestSetupCodeSetting`; default off `TestSetupCodeOffByDefault` (auth and httpapi); token wins `TestNoSetupCodeWithToken`; code tests opt in with `withSetupCode`; hosted tenants force it on
+
 ## 3. Reset timing (L8)
 
 - [x] 3.1 Lookup and send after the answer; `TestPasswordResetAnswersBeforeSending` fails before (15 s), `TestPasswordResetTiming` and the reset tests pass

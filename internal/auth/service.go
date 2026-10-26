@@ -128,6 +128,8 @@ type Service struct {
 	// setupCode is the one-time code a first registration from a public address
 	// must carry when no setup token is configured (setupcode.go).
 	setupCode setupCode
+	// setupCodeOn: OPENTODO_SETUP_CODE=required (auth-hardening D6).
+	setupCodeOn bool
 	// maxMembers caps active accounts on a hosted tenant (limits.go); 0: none.
 	maxMembers int
 }
@@ -275,7 +277,7 @@ func (s *Service) admitRegistration(ctx context.Context, tx *sql.Tx, email, invi
 		}
 		// Without a setup token, a first registration from a public address must
 		// carry the setup code the server printed in its log (SEC-9).
-		if s.setupToken == "" && !local && !s.setupCode.matches(setupToken) {
+		if s.SetupCodeRequired() && !local && !s.setupCode.matches(setupToken) {
 			return 0, "", "", ErrSetupCodeInvalid
 		}
 		return 0, "owner", "", nil
