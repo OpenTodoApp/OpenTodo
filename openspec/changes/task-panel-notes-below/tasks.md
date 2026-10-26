@@ -9,7 +9,7 @@
 ## 2. The task page below 1024 px
 
 - [x] 2.1 In `TaskPageView.tsx`, split the content block into the head (title and relations) and the notes block (notes and Attach), and place the facts `aside` between them in the DOM. Keep the `lg:` column-2 placement, sticky, now spanning one more row (design D3). Verify: a test in `web/src/app/shell.test.tsx` (where the page renders through the router) asserts the DOM order head → `[data-task-facts]` → notes block → rest.
-- [x] 2.2 Check the page stories and the layout check at 375, 768 and 1280 px: at 1280 px the facts column is still beside the notes and sticky; below 1024 px the facts card is above the notes. Verify: the task page Storybook baselines at 1280 px are unchanged, and only the 768 and 375 px ones change (inspected). `make layout-check` passes.
+- [x] 2.2 Check the page stories and the layout check at 375, 768 and 1280 px: at 1280 px the facts column is still beside the notes and sticky; below 1024 px the facts card is above the notes. Verify: the task page Storybook baselines at 375 px show the facts card above the notes, and at 1280 px the title and notes stay one block beside the sticky facts (the grid's last row takes the facts' extra height, which also removes the empty gap that used to sit above the subtasks); all inspected. `make layout-check` passes.
 
 ## 3. Budget and docs
 
