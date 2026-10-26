@@ -179,6 +179,44 @@ test('every action is pinned to a full commit SHA with its release in a comment'
   }
 })
 
+// Supply chain (2026-10 audit, wave 2): an expression pasted into a script is
+// shell code when it expands to attacker-chosen text (a branch name, a PR
+// title), so run steps read such values from env: instead.
+test('no ${{ }} expression inside a run step', () => {
+  for (const f of workflowFiles()) {
+    const lines = read(f).split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(/^(\s*)(- )?run:\s*(.*)$/)
+      if (!m) continue
+      const indent = m[1].length + (m[2] ? 2 : 0)
+      const block = [[i, m[3]]]
+      if (/^[|>]-?$/.test(m[3].trim())) {
+        for (let j = i + 1; j < lines.length && (lines[j].trim() === '' || lines[j].length - lines[j].trimStart().length > indent); j++) block.push([j, lines[j]])
+      }
+      for (const [n, text] of block) assert.ok(!text.includes('${{'), `${f}:${n + 1}: move the expression into env: (${text.trim()})`)
+    }
+  }
+})
+
+test('Dependabot waits a cooldown before proposing a release', () => {
+  const entries = read('.github/dependabot.yml').split(/\n(?=  - package-ecosystem: )/).slice(1)
+  assert.ok(entries.length >= 5)
+  for (const e of entries) {
+    const eco = e.match(/package-ecosystem: (\S+)/)[1]
+    assert.match(e, /\n {4}cooldown:\n {6}default-days: ([7-9]|[1-9]\d)\n/, `${eco}: cooldown of at least 7 days`)
+  }
+})
+
+test('CodeQL (Go and TypeScript) and a pinned gosec run on every pull request', () => {
+  const sec = read('.github/workflows/security.yml')
+  assert.match(sec, /^ {2}pull_request:/m)
+  assert.match(sec, /language: go\n/)
+  assert.match(sec, /language: javascript-typescript\n/)
+  assert.match(sec, /run: make gosec-sarif/)
+  assert.match(read('Makefile'), /^GOSEC_VERSION := v\d+\.\d+\.\d+$/m, 'gosec runs at one exact version')
+  assert.match(read('web/.npmrc'), /^min-release-age=\d+$/m, 'npm installs only releases older than a few days')
+})
+
 test('every workflow has a concurrency group and every job a timeout', () => {
   for (const f of workflowFiles()) {
     const text = read(f)
