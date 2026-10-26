@@ -223,8 +223,8 @@ func fieldKind(entity, field string) (kind, bool) {
 	if !ok {
 		return 0, false
 	}
-	if k, ok := fields[field]; ok {
-		return k, true
+	if f, ok := fields[field]; ok {
+		return f.Kind, true
 	}
 	if entity == "task" {
 		if _, ok := FieldValueID(field); ok {
@@ -295,119 +295,134 @@ const MaxReminderOffset = 525600
 // MaxPositiveInt bounds kPositiveInt fields; for estimate_minutes it is one week.
 const MaxPositiveInt = 10080
 
+// Field is one op field of Schema: its kind (what Validate accepts), the JSON
+// value a client's row holds before an op sets it, and whether it is
+// user-written text that an account with end-to-end encryption encrypts.
+type Field struct {
+	Kind    kind
+	Default string
+	Content bool
+}
+
 // Schema lists every entity and field a client may write. Adding a field is an
 // additive, backwards-compatible change; renaming or removing one is breaking.
-var Schema = map[string]map[string]kind{
+//
+// Schema is the one place a field is declared: the web client's field types,
+// row defaults and content-field list (web/src/generated/opSchema.ts), the
+// server's e2ee.ContentFields and the contract fixture are generated from it
+// (TestGeneratedOpSchema; UPDATE_OP_SCHEMA=1 rewrites them). A comment above
+// a field becomes its documentation in the web client.
+var Schema = map[string]map[string]Field{
 	"project": {
-		"name":       kString,
-		"color":      kString,
-		"position":   kNumber,
-		"archived":   kBool,
-		"parent_id":  kNullableString,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"name":       {Kind: kString, Default: `""`, Content: true},
+		"color":      {Kind: kString, Default: `"#64748b"`},
+		"position":   {Kind: kNumber, Default: `0`},
+		"archived":   {Kind: kBool, Default: `false`},
+		"parent_id":  {Kind: kNullableString, Default: `null`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// An icon name from the app's set, or null for the colour dot (OpenSpec
 		// change ux-overhaul, project-organization "Project icon"). Not user text,
 		// so it is not an encrypted content field.
-		"icon": kNullableString,
+		"icon": {Kind: kNullableString, Default: `null`},
 		// The project's note (OpenSpec change project-notes): Markdown in
 		// description, the mergeable document in notes_doc, as on tasks.
-		"description": kString,
-		"notes_doc":   kDoc,
+		"description": {Kind: kString, Default: `""`, Content: true},
+		"notes_doc":   {Kind: kDoc, Default: `""`, Content: true},
 		// The workspace the project belongs to, or null for the owner's default
 		// workspace (OpenSpec change workspaces, design D2). A partition key, not
 		// user text, so it is not an encrypted content field; on a shared project
 		// only the owner may write it (CanWrite).
-		"workspace_id": kNullableString,
+		"workspace_id": {Kind: kNullableString, Default: `null`},
 	},
 	"task": {
-		"title":        kString,
-		"description":  kString,
-		"project_id":   kNullableString,
-		"parent_id":    kNullableString,
-		"priority":     kPriority,
-		"due":          kDue,
-		"labels":       kStringList,
-		"position":     kNumber,
-		"created_at":   kNumber,
-		"completed_at": kNullableNumber,
-		"deleted_at":   kNullableNumber,
+		"title":        {Kind: kString, Default: `""`, Content: true},
+		"description":  {Kind: kString, Default: `""`, Content: true},
+		"project_id":   {Kind: kNullableString, Default: `null`},
+		"parent_id":    {Kind: kNullableString, Default: `null`},
+		"priority":     {Kind: kPriority, Default: `4`},
+		"due":          {Kind: kDue, Default: `null`},
+		"labels":       {Kind: kStringList, Default: `[]`},
+		"position":     {Kind: kNumber, Default: `0`},
+		"created_at":   {Kind: kNumber, Default: `0`},
+		"completed_at": {Kind: kNullableNumber, Default: `null`},
+		"deleted_at":   {Kind: kNullableNumber, Default: `null`},
 		// Duration estimate in minutes (OpenSpec change nlp-quick-add); additive.
-		"estimate_minutes": kPositiveInt,
+		"estimate_minutes": {Kind: kPositiveInt, Default: `null`},
 		// The day the task must be finished by, separate from the planned due
 		// date (OpenSpec change deadlines); additive.
-		"deadline": kDate,
+		"deadline": {Kind: kDate, Default: `null`},
 		// When the task becomes relevant: a start date that defers it, or
 		// "someday" (parked); and the This Evening flag (OpenSpec change
 		// someday-and-evening); additive.
-		"start":   kStart,
-		"evening": kBool,
+		"start":   {Kind: kStart, Default: `null`},
+		"evening": {Kind: kBool, Default: `false`},
 		// The tasks this one waits for, in its own sharing scope (OpenSpec change
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
-		"blocked_by": kIDList,
+		"blocked_by": {Kind: kIDList, Default: `[]`},
 		// The members an @mention in the notes names (OpenSpec change
 		// editor-everywhere, design D7): written with notes_doc, filtered to
 		// current members of the task's shared project at receipt, plaintext.
-		"note_mentions": kIDList,
+		"note_mentions": {Kind: kIDList, Default: `[]`},
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
-		"recurrence": kRecurrence,
-		"series_id":  kNullableString,
+		"recurrence": {Kind: kRecurrence, Default: `null`},
+		"series_id":  {Kind: kNullableString, Default: `null`},
 		// Account id of the assignee or null (OpenSpec change task-assignment);
 		// additive. Apply checks it against the task scope's membership at receipt.
-		"assignee_id": kNullableString,
+		"assignee_id": {Kind: kNullableString, Default: `null`},
 		// Section of the task's project or null (OpenSpec change board-view);
 		// additive. A reference to a deleted, foreign or unknown section is a
 		// display rule on clients ("No section"), never rejected on the sync path.
-		"section_id": kNullableString,
+		"section_id": {Kind: kNullableString, Default: `null`},
 		// Unmapped iCalendar content lines of the task's VTODO (OpenSpec change
 		// caldav, design D3): opaque text, stored and synced, never shown.
-		"ical_extra": kNullableText,
+		"ical_extra": {Kind: kNullableText, Default: `null`, Content: true},
 		// The note as a mergeable rich-text document (OpenSpec change
 		// collaborative-rich-text); additive. description stays its Markdown
 		// projection, written by clients in the same batch. Opaque here.
-		"notes_doc": kDoc,
+		"notes_doc": {Kind: kDoc, Default: `""`, Content: true},
 		// Habit tracking (OpenSpec change habits, design D1): habit flags a
 		// series as a habit; skipped marks an occurrence record written by a
 		// skip rather than a completion. Additive booleans, not content.
-		"habit":   kBool,
-		"skipped": kBool,
+		"habit":   {Kind: kBool, Default: `false`},
+		"skipped": {Kind: kBool, Default: `false`},
 		// Account id of whoever completed the task, or null (OpenSpec change
 		// completed-date-filters, design D5); additive. Written beside
 		// completed_at; ApplyStrict fills it in for server-side completions.
-		"completed_by": kNullableString,
+		"completed_by": {Kind: kNullableString, Default: `null`},
 		// Where the task came from (OpenSpec change task-origin): one whole-value
 		// register like due, so concurrent origins never mix; additive.
-		"origin": kOrigin,
+		"origin": {Kind: kOrigin, Default: `null`, Content: true},
 		// Where the task happens (OpenSpec change task-locations): one whole-value
 		// register like origin, so concurrent locations never mix; additive.
-		"location": kLocation,
+		"location": {Kind: kLocation, Default: `null`, Content: true},
 		// A start guide sample task (OpenSpec change moments-and-onboarding,
 		// design D3): excluded from Statistics, the Loop pulse and the digest,
 		// kept on completion. A whole boolean, not content; additive.
-		"sample": kBool,
+		"sample": {Kind: kBool, Default: `false`},
 		// The workspace of a task without a project, or null for the default
 		// (OpenSpec change workspaces, design D2); a task with a project follows
 		// its project and this value is ignored there.
-		"workspace_id": kNullableString,
+		"workspace_id": {Kind: kNullableString, Default: `null`},
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;
 	// project_id never changes after creation (Apply refuses a scope change, the
 	// REST API refuses any change).
 	"section": {
-		"name":       kString,
-		"project_id": kID,
-		"position":   kNumber,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"name":       {Kind: kString, Default: `""`, Content: true},
+		"project_id": {Kind: kID, Default: `""`},
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// A palette colour (#rrggbb) and a name from the icon catalogue, or null
 		// (OpenSpec change icons-and-section-style, design D4–D5). Not user text,
 		// so neither is an encrypted content field. Sync checks the kind only: a
 		// newer client may write an icon this server does not know yet.
-		"color": kNullableString,
-		"icon":  kNullableString,
+		"color": {Kind: kNullableString, Default: `null`},
+		"icon":  {Kind: kNullableString, Default: `null`},
 	},
 	// field: a custom field definition of one project (OpenSpec change
 	// custom-fields, design D1). Like a section it lives in its project's sharing
@@ -416,62 +431,62 @@ var Schema = map[string]map[string]kind{
 	// carried as a string so a later type is additive; options holds a choice
 	// field's options, one per line. Values live on the task as `fields.<id>`.
 	"field": {
-		"name":       kString,
-		"project_id": kID,
-		"type":       kString,
-		"options":    kString,
-		"position":   kNumber,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"name":       {Kind: kString, Default: `""`, Content: true},
+		"project_id": {Kind: kID, Default: `""`},
+		"type":       {Kind: kString, Default: `"text"`},
+		"options":    {Kind: kString, Default: `""`, Content: true},
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
-		"name":       kString,
-		"color":      kString,
-		"position":   kNumber,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"name":       {Kind: kString, Default: `""`, Content: true},
+		"color":      {Kind: kString, Default: `"#64748b"`},
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// Workspace of the label, null for the default (OpenSpec change workspaces).
-		"workspace_id": kNullableString,
+		"workspace_id": {Kind: kNullableString, Default: `null`},
 		// Display options of the label's page (OpenSpec change list-display-options,
 		// design D1): grouping, order and direction, enumerations carried as strings
 		// like a view's; "" or an unknown value reads as the default. Labels are
 		// personal, so the choice follows the user to their own devices only.
-		"group_by": kString,
-		"sort_by":  kString,
-		"sort_dir": kString,
+		"group_by": {Kind: kString, Default: `""`},
+		"sort_by":  {Kind: kString, Default: `""`},
+		"sort_dir": {Kind: kString, Default: `""`},
 		// The label page's row layout (row-layouts D1); "" follows the account's.
-		"row_layout": kString,
+		"row_layout": {Kind: kString, Default: `""`},
 	},
 	// view: a saved filter query with presentation options (OpenSpec `custom-views`).
 	// kind, group_by, sort_by and sort_dir are enumerations carried as plain strings so
 	// a future option value stays additive: clients map unknown values to defaults at
 	// read time and only the REST API rejects them. panels holds view ids (dashboards).
 	"view": {
-		"name":     kString,
-		"query":    kString,
-		"kind":     kString,
-		"group_by": kString,
-		"sort_by":  kString,
-		"sort_dir": kString,
-		"pinned":   kBool,
-		"position": kNumber,
-		"color":    kString,
-		"panels":   kStringList,
-		"on_drop":  kRule,
+		"name":     {Kind: kString, Default: `""`, Content: true},
+		"query":    {Kind: kString, Default: `""`, Content: true},
+		"kind":     {Kind: kString, Default: `"list"`},
+		"group_by": {Kind: kString, Default: `"project"`},
+		"sort_by":  {Kind: kString, Default: `"due"`},
+		"sort_dir": {Kind: kString, Default: `"asc"`},
+		"pinned":   {Kind: kBool, Default: `false`},
+		"position": {Kind: kNumber, Default: `0`},
+		"color":    {Kind: kString, Default: `"#64748b"`},
+		"panels":   {Kind: kStringList, Default: `[]`},
+		"on_drop":  {Kind: kRule, Default: `null`},
 		// Display options of a list view (OpenSpec change views-and-display): the layout
 		// (an enumeration carried as a string), whether completed matches are listed, and
 		// the row properties the view hides.
-		"layout":         kString,
-		"show_completed": kBool,
-		"hidden_props":   kStringList,
+		"layout":         {Kind: kString, Default: `"list"`},
+		"show_completed": {Kind: kBool, Default: `false`},
+		"hidden_props":   {Kind: kStringList, Default: `[]`},
 		// The view's row layout (row-layouts D1): "line" or "detailed"; "" follows
 		// the account's choice (user_prefs.row_layout).
-		"row_layout": kString,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"row_layout": {Kind: kString, Default: `""`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// Workspace of the view, null for the default (OpenSpec change workspaces).
-		"workspace_id": kNullableString,
+		"workspace_id": {Kind: kNullableString, Default: `null`},
 	},
 	// reminder: fires relative to its task's due time or at an absolute instant
 	// (OpenSpec change reminders, docs/sync.md). fire_at is always the resolved
@@ -479,14 +494,14 @@ var Schema = map[string]map[string]kind{
 	// scheduler only compares it with the clock. delivered_at is written by the
 	// server (device "server") when a push went out.
 	"reminder": {
-		"task_id":        kID,
-		"kind":           kReminderKind,
-		"offset_minutes": kOffsetMinutes,
-		"fire_at":        kInstant,
-		"delivered_at":   kNullableNumber,
-		"dismissed_at":   kNullableNumber,
-		"created_at":     kNumber,
-		"deleted_at":     kNullableNumber,
+		"task_id":        {Kind: kID, Default: `""`},
+		"kind":           {Kind: kReminderKind, Default: `"relative"`},
+		"offset_minutes": {Kind: kOffsetMinutes, Default: `null`},
+		"fire_at":        {Kind: kInstant, Default: `null`},
+		"delivered_at":   {Kind: kNullableNumber, Default: `null`},
+		"dismissed_at":   {Kind: kNullableNumber, Default: `null`},
+		"created_at":     {Kind: kNumber, Default: `0`},
+		"deleted_at":     {Kind: kNullableNumber, Default: `null`},
 	},
 	// comment: a threaded markdown comment on a task (OpenSpec change
 	// `comments-and-activity`, design D1). It lives in its task's scope; Apply
@@ -494,36 +509,36 @@ var Schema = map[string]map[string]kind{
 	// edits, the author, admins and the owner delete; viewers may comment) and
 	// keeps only mentions of current members. See docs/sync.md.
 	"comment": {
-		"task_id":    kID,
-		"parent_id":  kNullableString,
-		"body":       kString,
-		"author_id":  kID,
-		"mentions":   kStringList,
-		"created_at": kNumber,
-		"edited_at":  kNullableNumber,
-		"deleted_at": kNullableNumber,
+		"task_id":    {Kind: kID, Default: `""`},
+		"parent_id":  {Kind: kNullableString, Default: `null`},
+		"body":       {Kind: kString, Default: `""`, Content: true},
+		"author_id":  {Kind: kID, Default: `""`},
+		"mentions":   {Kind: kStringList, Default: `[]`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"edited_at":  {Kind: kNullableNumber, Default: `null`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// A reply a guest sent through a task page (OpenSpec task-pages, design D6):
 		// the name they typed (content, encrypted for encrypted accounts) and the page.
-		"guest_name": kNullableText,
-		"page_id":    kNullableString,
+		"guest_name": {Kind: kNullableText, Default: `null`, Content: true},
+		"page_id":    {Kind: kNullableString, Default: `null`},
 	},
 	// attachment: a file or link on a task or one of its comments (OpenSpec change
 	// attachments, design D1). Metadata only: the bytes live under
 	// <data>/attachments/ (internal/blobs). It lives in its task's scope and follows
 	// the comment authorship rules; uploaded_at is written by the server alone (D3).
 	"attachment": {
-		"task_id":     kID,
-		"comment_id":  kNullableString,
-		"name":        kString,
-		"mime":        kString,
-		"size":        kNumber,
-		"sha256":      kString,
-		"url":         kNullableText,
-		"encrypted":   kBool,
-		"author_id":   kID,
-		"created_at":  kNumber,
-		"uploaded_at": kNullableNumber,
-		"deleted_at":  kNullableNumber,
+		"task_id":     {Kind: kID, Default: `""`},
+		"comment_id":  {Kind: kNullableString, Default: `null`},
+		"name":        {Kind: kString, Default: `""`, Content: true},
+		"mime":        {Kind: kString, Default: `"application/octet-stream"`, Content: true},
+		"size":        {Kind: kNumber, Default: `0`},
+		"sha256":      {Kind: kString, Default: `""`},
+		"url":         {Kind: kNullableText, Default: `null`, Content: true},
+		"encrypted":   {Kind: kBool, Default: `false`},
+		"author_id":   {Kind: kID, Default: `""`},
+		"created_at":  {Kind: kNumber, Default: `0`},
+		"uploaded_at": {Kind: kNullableNumber, Default: `null`},
+		"deleted_at":  {Kind: kNullableNumber, Default: `null`},
 	},
 	// time_entry: one stretch of work on a task (OpenSpec change time-tracking,
 	// design D1). It lives in its task's scope; Apply checks authorship per op
@@ -533,14 +548,14 @@ var Schema = map[string]map[string]kind{
 	// running entry, a rule every device applies (internal/timetrack). note is
 	// user-written text, so it is an encrypted content field. See docs/sync.md.
 	"time_entry": {
-		"task_id":    kID,
-		"user_id":    kID,
-		"started_at": kInstant,
-		"ended_at":   kInstant,
-		"device_id":  kString,
-		"note":       kString,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"task_id":    {Kind: kID, Default: `""`},
+		"user_id":    {Kind: kID, Default: `""`},
+		"started_at": {Kind: kInstant, Default: `0`},
+		"ended_at":   {Kind: kInstant, Default: `null`},
+		"device_id":  {Kind: kString, Default: `""`},
+		"note":       {Kind: kString, Default: `""`, Content: true},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
 	// place: a location the user keeps for reuse (OpenSpec change task-locations,
 	// design D1). Like a label it is personal: it resolves to the author's
@@ -552,22 +567,22 @@ var Schema = map[string]map[string]kind{
 	// condition and actions are each one whole value; name is a content field.
 	// The server engine (internal/rules) runs enabled rules for their author.
 	"rule": {
-		"name":       kString,
-		"enabled":    kBool,
-		"trigger":    kRuleTrigger,
-		"condition":  kRuleCondition,
-		"actions":    kRuleActions,
-		"position":   kNumber,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"name":       {Kind: kString, Default: `""`, Content: true},
+		"enabled":    {Kind: kBool, Default: `false`},
+		"trigger":    {Kind: kRuleTrigger, Default: `null`},
+		"condition":  {Kind: kRuleCondition, Default: `null`},
+		"actions":    {Kind: kRuleActions, Default: `null`},
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
 	"place": {
-		"name":       kString,
-		"address":    kString,
-		"geo":        kGeo,
-		"position":   kNumber,
-		"created_at": kNumber,
-		"deleted_at": kNullableNumber,
+		"name":       {Kind: kString, Default: `""`, Content: true},
+		"address":    {Kind: kString, Default: `""`, Content: true},
+		"geo":        {Kind: kGeo, Default: `null`, Content: true},
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
 	// project_prefs: one user's personal preferences for a project, keyed by the
 	// project id (OpenSpec change `activity-feed`, design D1). It always resolves
@@ -577,19 +592,19 @@ var Schema = map[string]map[string]kind{
 	// activity; clients never write a smaller value than the one they hold. Later
 	// per-project preferences are additive fields here.
 	"project_prefs": {
-		"feed_seen_at": kNumber,
+		"feed_seen_at": {Kind: kNumber, Default: `0`},
 		// When this user last marked the project reviewed in the weekly review's
 		// project walk (open-loops-method D4), Unix ms. Personal like the row.
-		"reviewed_at": kNumber,
+		"reviewed_at": {Kind: kNumber, Default: `0`},
 		// Display options of the project's list (OpenSpec change
 		// list-display-options, design D1): grouping, order and direction as
 		// strings; "" or an unknown value reads as the default (by section, manual
 		// order). Personal like the row, also on a shared project.
-		"group_by": kString,
-		"sort_by":  kString,
-		"sort_dir": kString,
+		"group_by": {Kind: kString, Default: `""`},
+		"sort_by":  {Kind: kString, Default: `""`},
+		"sort_dir": {Kind: kString, Default: `""`},
 		// The project list's row layout (row-layouts D1); "" follows the account's.
-		"row_layout": kString,
+		"row_layout": {Kind: kString, Default: `""`},
 	},
 	// user_prefs: one user's date and time preferences (OpenSpec change
 	// `date-time-preferences`, design D1). Clients write a single row with the
@@ -599,55 +614,55 @@ var Schema = map[string]map[string]kind{
 	// time_format: system|12h|24h, week_start: system|mon|sun|sat); clients read
 	// an unknown value as "system", so new values stay additive.
 	"user_prefs": {
-		"date_format": kString,
-		"time_format": kString,
-		"week_start":  kString,
+		"date_format": {Kind: kString, Default: `"system"`},
+		"time_format": {Kind: kString, Default: `"system"`},
+		"week_start":  {Kind: kString, Default: `"system"`},
 		// Day start (OpenSpec change day-boundary, design D1): "HH:MM" from
 		// "00:00" to "06:00", the local time a new day begins for this person.
 		// Not restricted here; clients read an empty, malformed or out-of-range
 		// value as "00:00" (midnight) and keep the stored value unchanged.
-		"day_start": kString,
+		"day_start": {Kind: kString, Default: `""`},
 		// Appearance (OpenSpec change theming, design D1): theme_mode is
 		// system|light|dark and theme_accent one of emerald, blue, indigo,
 		// violet, rose, orange, teal, graphite. Like the date fields the values
 		// are not restricted here; clients read unknown values as the default.
-		"theme_mode":   kString,
-		"theme_accent": kString,
+		"theme_mode":   {Kind: kString, Default: `"system"`},
+		"theme_accent": {Kind: kString, Default: `"emerald"`},
 		// Promoted sidebar destinations (OpenSpec change ux-overhaul, design D8): a
 		// comma-separated list of view ids shown among the primary items; unknown
 		// entries are ignored by clients.
-		"sidebar_destinations": kString,
+		"sidebar_destinations": {Kind: kString, Default: `""`},
 		// Row density (ux-overhaul, design D8): "comfortable" or "compact"; an
 		// unknown or empty value reads as comfortable.
-		"density": kString,
+		"density": {Kind: kString, Default: `""`},
 		// Row detail (OpenSpec change calm-rows, design D1): "calm" or
 		// "detailed"; an unknown or empty value reads as calm.
-		"row_detail": kString,
+		"row_detail": {Kind: kString, Default: `""`},
 		// Favourites (OpenSpec change sidebar-favourites, design D1): an ordered,
 		// comma-separated list of kind:id entries (project:<id>, label:<id>,
 		// view:<id>) shown in the sidebar's Favourites group. Ids only, never
 		// content; one string so the order is one last-writer-wins value.
 		// Clients ignore entries of an unknown kind or whose item is missing.
-		"favourites": kString,
+		"favourites": {Kind: kString, Default: `""`},
 		// The first-run card (ux-overhaul, first-run): "done" once the account has
 		// finished or skipped it, so a second device does not show it again after sync.
-		"first_run": kString,
+		"first_run": {Kind: kString, Default: `""`},
 		// The owner's welcome note (OpenSpec change welcome-note): "seen" once it was
 		// closed on any device, so it is shown once per account.
-		"welcome": kString,
+		"welcome": {Kind: kString, Default: `""`},
 		// How you work (OpenSpec change open-loops-method, design D2): "lists",
 		// "companion" or "first"; clients read an unknown or empty value as
 		// "lists", so new modes stay additive.
-		"method_mode": kString,
+		"method_mode": {Kind: kString, Default: `""`},
 		// The first-day checklist (OpenSpec change moments-and-onboarding, design
 		// D5): "hidden" once its sidebar entry was hidden on any device; clients
 		// read an empty or unknown value as shown.
-		"start_checklist": kString,
+		"start_checklist": {Kind: kString, Default: `""`},
 		// Interface language (OpenSpec change app-localization, design D1):
 		// "system" or a shipped language code (en, de, fr, es, it, pt). Not
 		// restricted here; clients read an unknown code as "system" and keep the
 		// stored value, so a catalog added later stays additive.
-		"language": kString,
+		"language": {Kind: kString, Default: `"system"`},
 		// Focus timer preferences (OpenSpec change focus-mode, design D5): the
 		// timer mode (pomodoro|flowtime|countdown), which phases start on their
 		// own (none|breaks|work|both) and the sound (off|on), plus the work,
@@ -657,37 +672,37 @@ var Schema = map[string]map[string]kind{
 		// never content: not encrypted, no activity event. Clients check the
 		// bounds before writing and read an unknown or out-of-range value as the
 		// default without rewriting it; the server keeps the kind check only.
-		"focus_mode":                kString,
-		"focus_auto_start":          kString,
-		"focus_sound":               kString,
-		"focus_work_minutes":        kNumber,
-		"focus_short_break_minutes": kNumber,
-		"focus_long_break_minutes":  kNumber,
-		"focus_long_break_every":    kNumber,
-		"focus_break_after_minutes": kNumber,
+		"focus_mode":                {Kind: kString, Default: `""`},
+		"focus_auto_start":          {Kind: kString, Default: `""`},
+		"focus_sound":               {Kind: kString, Default: `""`},
+		"focus_work_minutes":        {Kind: kNumber, Default: `0`},
+		"focus_short_break_minutes": {Kind: kNumber, Default: `0`},
+		"focus_long_break_minutes":  {Kind: kNumber, Default: `0`},
+		"focus_long_break_every":    {Kind: kNumber, Default: `0`},
+		"focus_break_after_minutes": {Kind: kNumber, Default: `0`},
 		// Maps on this user's devices (OpenSpec change task-locations, design
 		// D6): "on" or "off"; clients read an empty or unknown value as "on".
-		"maps": kString,
+		"maps": {Kind: kString, Default: `""`},
 		// Haptic feedback on this user's devices (OpenSpec change motion-v2,
 		// design D6): "on" or "off"; clients read an empty or unknown value as
 		// "on" and keep the stored value, so the field stays additive.
-		"haptics": kString,
+		"haptics": {Kind: kString, Default: `""`},
 		// The day pages' briefing (OpenSpec change briefing-links, design D4):
 		// "hidden" hides it on Today and Upcoming; clients read an empty or
 		// unknown value as shown.
-		"briefing": kString,
+		"briefing": {Kind: kString, Default: `""`},
 		// How a task opens from a list (OpenSpec change task-side-panel,
 		// design D1): "page" or "panel"; clients read an empty or unknown
 		// value as "page" and keep the stored value.
-		"task_open": kString,
+		"task_open": {Kind: kString, Default: `""`},
 		// The account's task row layout (OpenSpec change row-layouts, design
 		// D1): "line" or "detailed", the layout of every list without its own
 		// choice; clients read an empty or unknown value as "line".
-		"row_layout": kString,
+		"row_layout": {Kind: kString, Default: `""`},
 		// Today's agenda of calendar events (OpenSpec change today-agenda,
 		// design D1): "shown" or "hidden"; clients read an empty or unknown
 		// value as hidden and keep the stored value.
-		"today_events": kString,
+		"today_events": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
@@ -697,27 +712,27 @@ var Schema = map[string]map[string]kind{
 	// are not user-written content and are never encrypted; it derives no
 	// activity event.
 	"review": {
-		"completed_at": kNumber,
+		"completed_at": {Kind: kNumber, Default: `0`},
 		// The other rhythms (open-loops-method D5): the last Daily check and
 		// Monthly look (Unix ms), and today's focus as the local date
 		// (YYYY-MM-DD) and up to three comma-separated task ids.
-		"daily_at":   kNumber,
-		"monthly_at": kNumber,
-		"focus_date": kString,
-		"focus":      kString,
+		"daily_at":   {Kind: kNumber, Default: `0`},
+		"monthly_at": {Kind: kNumber, Default: `0`},
+		"focus_date": {Kind: kString, Default: `""`},
+		"focus":      {Kind: kString, Default: `""`},
 		// Close the day (OpenSpec change close-the-day, design D5): the latest
 		// close (Unix ms; 0 = never) and the one-line note for tomorrow written
 		// with it. The note is user-written content (e2ee.ContentFields).
-		"closed_at":     kNumber,
-		"tomorrow_note": kString,
+		"closed_at":     {Kind: kNumber, Default: `0`},
+		"tomorrow_note": {Kind: kString, Default: `""`, Content: true},
 		// The logical date the latest close closed (close-the-day-v2 D1),
 		// YYYY-MM-DD; "" = the logical day of closed_at (closes written before
 		// the field existed). A date, never user-written text.
-		"closed_day": kString,
+		"closed_day": {Kind: kString, Default: `""`},
 		// The latest carry-over (ux-feedback-2 D1): JSON {date, items:[{id, field,
 		// before, after}]} so Reopen the day can put it back on any device; "" =
 		// none. Task ids, field names and dates only, never user-written text.
-		"carry_over": kString,
+		"carry_over": {Kind: kString, Default: `""`},
 	},
 }
 

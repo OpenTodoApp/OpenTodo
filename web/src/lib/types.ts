@@ -1,6 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
+import type { AttachmentFields, CommentFields, FieldDefFields, LabelFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+
 export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule'
 export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule']
 
@@ -36,7 +38,7 @@ export interface Due {
   tz?: string
 }
 
-export interface Project {
+export interface Project extends ProjectFields {
   id: string
   name: string
   color: string
@@ -58,7 +60,7 @@ export interface Project {
 
 export type Priority = 1 | 2 | 3 | 4
 
-export interface Task {
+export interface Task extends TaskFields {
   id: string
   title: string
   description: string
@@ -215,7 +217,7 @@ export interface Geo {
  * `geo` is one value, so an encrypted account encrypts it whole; a value this
  * device could not decrypt is the placeholder string.
  */
-export interface Place {
+export interface Place extends PlaceFields {
   id: string
   name: string
   address: string
@@ -253,7 +255,7 @@ export type FieldType = 'text' | 'number' | 'date' | 'choice' | 'link' | 'checkb
  * `project_id` and `type` never change after creation; `options` holds a choice
  * field's options, one per line, in display order (`""` otherwise).
  */
-export interface FieldDef {
+export interface FieldDef extends FieldDefFields {
   id: string
   name: string
   project_id: string
@@ -271,7 +273,7 @@ export interface FieldDef {
  * A named, ordered container inside one project (OpenSpec `board-view`): a heading
  * in the list view, a column on the board. `project_id` never changes after creation.
  */
-export interface Section {
+export interface Section extends SectionFields {
   id: string
   name: string
   project_id: string
@@ -285,7 +287,7 @@ export interface Section {
   _clock: Clock
 }
 
-export interface Label {
+export interface Label extends LabelFields {
   id: string
   name: string
   color: string
@@ -324,7 +326,7 @@ export const ROW_PROPERTIES: readonly RowProperty[] = ['date', 'project', 'label
  * a newer client) is kept in the row and mapped to the default when read, see
  * `viewOptions` in lib/views.ts. `panels` holds view ids and is only used by dashboards.
  */
-export interface View {
+export interface View extends ViewFields {
   id: string
   name: string
   query: string
@@ -452,7 +454,7 @@ export interface AutomationsSetting {
  * run by the server for its author. `trigger`, `condition` and `actions` are each
  * one whole value; a key this build does not know is kept in the row.
  */
-export interface Rule {
+export interface Rule extends RuleFields {
   id: string
   name: string
   enabled: boolean
@@ -477,7 +479,7 @@ export type ReminderKind = 'relative' | 'absolute' | 'deadline'
  * is written by the server when a push went out; a delivery older than `fire_at`
  * belongs to an earlier firing (a snooze or a moved due date).
  */
-export interface Reminder {
+export interface Reminder extends ReminderFields {
   id: string
   task_id: string
   kind: ReminderKind
@@ -497,7 +499,7 @@ export interface Reminder {
  * the author, project admins and the owner may set `deleted_at`, and `mentions`
  * keeps current members only (always empty on a personal task).
  */
-export interface Comment {
+export interface Comment extends CommentFields {
   id: string
   task_id: string
   parent_id: string | null
@@ -529,7 +531,7 @@ export interface Comment {
  * running entry, a rule every device applies (lib/time.ts `repairs`). `note` is
  * user-written text and encrypted for an encrypted account.
  */
-export interface TimeEntry {
+export interface TimeEntry extends TimeEntryFields {
   id: string
   task_id: string
   user_id: string
@@ -551,7 +553,7 @@ export interface TimeEntry {
  * keeps them in `attachmentBlobs` until the server stores them and says so with
  * `uploaded_at`. A non-null `url` makes it a link.
  */
-export interface Attachment {
+export interface Attachment extends AttachmentFields {
   id: string
   task_id: string
   comment_id: string | null
@@ -577,7 +579,7 @@ export interface Attachment {
  * server, also for shared projects, so it follows the user to their own devices
  * and never reaches other members. Stored locally in the `prefs` table.
  */
-export interface ProjectPrefs {
+export interface ProjectPrefs extends ProjectPrefsFields {
   id: string
   /** Activity of the project up to this event time (Unix ms) has been seen; 0 = never marked. */
   feed_seen_at: number
@@ -600,7 +602,7 @@ export type TimeFormatPref = 'system' | '12h' | '24h'
 export type WeekStartPref = 'system' | 'mon' | 'sun' | 'sat'
 
 /** The user's date and time preferences: the synced `user_prefs` entity, one row with id "me" in the personal scope. */
-export interface UserPrefs {
+export interface UserPrefs extends UserPrefsFields {
   id: string
   date_format: DateFormatPref
   time_format: TimeFormatPref
@@ -664,7 +666,7 @@ export type ThemeModePref = 'system' | 'light' | 'dark'
  * design D4): the synced personal `review` entity, one row with id "me". Not
  * content: never encrypted, and it derives no activity event.
  */
-export interface Review {
+export interface Review extends ReviewFields {
   id: string
   /** Unix ms of the latest finish; 0 = never. */
   completed_at: number
