@@ -1,0 +1,41 @@
+{
+  "tasksFolder": "Work/Tasks",
+  "taskTag": "todo",
+  "taskIdentificationMethod": "tag",
+  "defaultTaskPriority": "medium",
+  "defaultTaskStatus": "backlog",
+  "storeTitleInFilename": false,
+  "fieldMapping": {
+    "title": "name",
+    "status": "state",
+    "priority": "importance",
+    "due": "deadline",
+    "scheduled": "when",
+    "contexts": "where",
+    "projects": "area",
+    "timeEstimate": "estimate",
+    "completedDate": "finished",
+    "dateModified": "updated",
+    "recurrence": "repeat",
+    "recurrenceAnchor": "repeat_from",
+    "archiveTag": "shelved",
+    "timeEntries": "log",
+    "completeInstances": "done_dates",
+    "unknownFutureField": 7
+  },
+  "customStatuses": [
+    {"id": "backlog", "value": "backlog", "label": "Backlog", "color": "#999999", "isCompleted": false, "order": 0},
+    {"id": "doing", "value": "doing", "label": "Doing", "color": "#0066cc", "isCompleted": false, "order": 1},
+    {"id": "shipped", "value": "shipped", "label": "Shipped", "color": "#00aa00", "isCompleted": true, "order": 2},
+    {"id": "dropped", "value": "dropped", "label": "Dropped", "color": "#aa0000", "isCompleted": true, "order": 3}
+  ],
+  "customPriorities": [
+    {"id": "someday", "value": "someday", "label": "Someday", "color": "#cccccc", "weight": 0},
+    {"id": "medium", "value": "medium", "label": "Medium", "color": "#ffaa00", "weight": 5},
+    {"id": "urgent", "value": "urgent", "label": "Urgent", "color": "#ff0000", "weight": 9},
+    {"id": "important", "value": "important", "label": "Important", "color": "#ff6600", "weight": 7},
+    {"id": "nice", "value": "nice", "label": "Nice to have", "color": "#00aa00", "weight": 6},
+    {"id": "extra", "value": "extra", "label": "Extra", "color": "#00aaaa", "weight": 5.5}
+  ],
+  "customPrioritiesNote": "five levels above the default: the fourth and fifth both map to 3"
+}
