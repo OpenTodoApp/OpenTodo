@@ -39,6 +39,14 @@ node scripts/e2e-views.mjs [screenshot-dir]
 CHROMIUM_PATH=/path/to/chrome node scripts/e2e-views.mjs
 ```
 
+## `upgrade-check.mjs`
+
+Upgrade check from real data of released versions (`make upgrade-check`; the nightly workflow, and pull requests touching `internal/store`, `internal/sync` or `internal/auth`). For each release (default: the three newest and v0.6.1, the oldest with a server binary; or `UPGRADE_FROM="v0.9.0 v0.13.0"`, or versions as arguments) it downloads `opentodo-linux-amd64` from the GitHub release into `.cache/releases`, checks it against the release's `SHA256SUMS`, starts it on a fresh data directory and writes an account's data through its own API: the owner, a full API token, projects (one nested, non-ASCII name), a section, a label, tasks with due time, labels, estimate and deadline, a subtask, a completed and a deleted task, a comment and a saved view, all as sync ops. It keeps the export and the full op log the release returns, stops it, and starts the server under test (`OPENTODO_BIN`, default `bin/opentodo`) on the same directory. It fails unless the schema reaches this build's newest migration, the token and the password still work, every exported row and field and every op read back unchanged (fields the new build adds are allowed), and a new write is accepted.
+
+```bash
+make upgrade-check                      # or: node scripts/upgrade-check.mjs v0.13.0
+```
+
 ## `e2e-network.mjs`
 
 Network audit for locations and maps (OpenSpec change `task-locations`, task 7.1), run by `make e2e`. It starts a fake tile and Photon provider on localhost and two fresh servers of its own (`OPENTODO_BIN`, default `bin/opentodo`), one with `OPENTODO_MAPS=off` and one with maps on, both pointed at the fake with `OPENTODO_MAPS_TILES_URL` and `OPENTODO_MAPS_GEOCODER_URL`, so nothing reaches OpenFreeMap or Photon. In each it opens a task with a location, its location editor (searching an address when maps are on) and the Locations page, and fails when the browser contacts any origin but the server's, when the server contacts the provider with maps off, or when a provider request with maps on lacks OpenTodo's User-Agent or carries the viewer's cookie, token or address. The map draws through SwiftShader WebGL, so tiles are really requested.

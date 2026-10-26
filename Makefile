@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e upgrade-check
 
 all: build
 
@@ -68,6 +68,12 @@ android:
 	@echo "  mobile/android/app/build/outputs/apk/debug/app-debug.apk ($$(wc -c < mobile/android/app/build/outputs/apk/debug/app-debug.apk) bytes)"
 
 build: web server
+
+## Upgrade check: released server binaries (the three newest and v0.6.1, or the
+## versions in UPGRADE_FROM) write data through their API; this build must migrate
+## and read it back (scripts/upgrade-check.mjs). Downloads into .cache/releases.
+upgrade-check: server
+	node scripts/upgrade-check.mjs $(UPGRADE_FROM)
 
 ## Layout check (mobile-layout): every screen and overlay at 360/390/768 px in
 ## Chromium and WebKit against a throwaway server on :18080. Needs Playwright

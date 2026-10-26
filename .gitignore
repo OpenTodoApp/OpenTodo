@@ -38,3 +38,6 @@ coverage.out
 /tmp/
 # extension-v2: written from extension/manifest.src.json for loading the folder unpacked
 /extension/manifest.json
+
+# Release binaries downloaded by scripts/upgrade-check.mjs.
+/.cache/

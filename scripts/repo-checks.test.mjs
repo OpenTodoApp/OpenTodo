@@ -286,6 +286,8 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   assert.match(alert, /^ {4}if: \$\{\{ always\(\) /m, 'the nightly alert runs whatever the other jobs did')
   assert.match(alert, /^ {6}issues: write$/m, 'the nightly alert may write issues')
   assert.match(alert, /run: \.\/scripts\/nightly-alert\.sh$/m)
+  // Data written by released versions is migrated and read back (G2).
+  assert.match(jobsOf(nightly).upgrade ?? '', /run: node scripts\/upgrade-check\.mjs$/m, 'the nightly workflow runs the upgrade check')
   for (const id of Object.keys(jobsOf(nightly))) {
     if (id !== 'alert') assert.ok(needsOf(alert).includes(id), `the nightly alert must need ${id}`)
   }
