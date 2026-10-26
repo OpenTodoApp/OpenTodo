@@ -45,7 +45,7 @@ beforeEach(async () => {
   resetSidebarLayout()
   resetPanel()
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetSidebarLayout() })
+afterEach(() => { vi.unstubAllGlobals(); resetSidebarLayout() })
 
 /** Labels and Filters start folded on a new device (sidebar-favourites D5): open them as a device that stored it. */
 function openGroups(...ids: ('labels' | 'filters')[]) {

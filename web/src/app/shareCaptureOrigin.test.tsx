@@ -21,7 +21,6 @@ beforeEach(() => {
 afterEach(() => {
   setPendingShare(null)
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 async function saveShare(search: string) {

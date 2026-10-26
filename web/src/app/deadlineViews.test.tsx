@@ -26,7 +26,6 @@ afterEach(() => {
   vi.useRealTimers()
   resetPanel()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
-  document.body.innerHTML = ''
 })
 
 

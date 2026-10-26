@@ -20,7 +20,6 @@ beforeEach(async () => {
 })
 afterEach(() => {
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 const rowOf = (root: Element, title: string) =>

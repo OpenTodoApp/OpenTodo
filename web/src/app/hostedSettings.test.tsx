@@ -19,7 +19,6 @@ beforeEach(() => {
 })
 afterEach(() => {
   setHosted(false)
-  document.body.innerHTML = ''
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })

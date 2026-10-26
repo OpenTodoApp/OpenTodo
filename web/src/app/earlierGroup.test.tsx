@@ -35,7 +35,6 @@ afterEach(async () => {
   hideBulkToast()
   resetPanel()
   resetCollapsedGroups()
-  document.body.innerHTML = ''
 })
 
 const toast = () => document.querySelector('[data-bulk-toast]')?.textContent ?? ''

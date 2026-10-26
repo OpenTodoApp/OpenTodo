@@ -37,7 +37,6 @@ afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
   resetPanel()
-  document.body.innerHTML = ''
 })
 
 const q = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)

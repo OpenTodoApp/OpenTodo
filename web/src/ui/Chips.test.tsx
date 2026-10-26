@@ -3,12 +3,11 @@
 // phrase is visually hidden text inside the chip, never an aria-label on a span,
 // which has no role and whose name assistive technology ignores.
 import { act } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { LabelChips, NeutralChip, ReadAs, ToneText } from './Chips'
 import { ListGroupHeader } from './patterns/ListGroupHeader'
 import { render, spokenText, visibleText } from './test-utils'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 describe('chips for assistive technology', () => {
   it('a count chip shows the number and is read as the full phrase', async () => {

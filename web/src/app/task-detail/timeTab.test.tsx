@@ -33,7 +33,6 @@ beforeEach(async () => {
 afterEach(() => {
   vi.useRealTimers()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
-  document.body.innerHTML = ''
 })
 
 const rows = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('[data-time-entry]')]

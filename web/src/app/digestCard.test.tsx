@@ -39,7 +39,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 const summary = (root: ParentNode) => root.querySelector('[data-testid="digest-summary"]')?.textContent ?? ''

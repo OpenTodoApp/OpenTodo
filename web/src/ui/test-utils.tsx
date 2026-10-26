@@ -3,6 +3,7 @@
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { vi } from 'vitest'
+import { trackRoot } from '../test/teardown'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -20,13 +21,17 @@ export async function render(ui: ReactNode): Promise<Rendered> {
     root = createRoot(container)
     root.render(ui)
   })
+  const unmount = async () => {
+    untrack()
+    await act(async () => root!.unmount())
+    container.remove()
+  }
+  // The shared teardown (test-setup.ts) unmounts whatever a test leaves mounted.
+  const untrack = trackRoot(unmount)
   return {
     container,
     rerender: (next) => act(async () => root!.render(next)),
-    unmount: async () => {
-      await act(async () => root!.unmount())
-      container.remove()
-    },
+    unmount,
   }
 }
 

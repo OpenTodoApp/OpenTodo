@@ -28,7 +28,7 @@ beforeEach(async () => {
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
 })
-afterEach(() => { window.matchMedia = original; document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
 const sheet = () => document.querySelector('[data-overlay="sheet"]')
 const field = () => document.querySelector<HTMLInputElement>('[data-quick-add-sheet] input[aria-label="Add a task"]')

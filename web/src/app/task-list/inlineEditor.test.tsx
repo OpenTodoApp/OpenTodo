@@ -31,7 +31,6 @@ afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
-  document.body.innerHTML = ''
 })
 
 async function waitFor(ok: () => boolean | Promise<boolean>, ms = 2000) {

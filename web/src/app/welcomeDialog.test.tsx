@@ -30,7 +30,7 @@ beforeEach(async () => {
   resetDeviceId()
   setDemo(null)
 })
-afterEach(() => { setDemo(null); document.body.innerHTML = '' })
+afterEach(() => { setDemo(null) })
 
 const dialog = () => document.querySelector('[data-testid="welcome"]')
 

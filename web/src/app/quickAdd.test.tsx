@@ -4,12 +4,11 @@
 // first add or any later one, and nothing about its uses is stored on the device.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { flush, render, type, waitFor } from '../ui/test-utils'
 import { QuickAdd } from './QuickAdd'
 
 beforeEach(() => localStorage.clear())
-afterEach(() => { document.body.innerHTML = '' })
 
 describe('no help under the field', () => {
   it('renders no help link before, during or after adds, and writes nothing to the device', async () => {

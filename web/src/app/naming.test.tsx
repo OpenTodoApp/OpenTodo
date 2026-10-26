@@ -30,7 +30,6 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
 })
 afterEach(() => {
-  document.body.innerHTML = ''
   vi.unstubAllGlobals()
   history.replaceState(null, '', '/')
 })

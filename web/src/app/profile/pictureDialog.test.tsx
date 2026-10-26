@@ -32,7 +32,7 @@ beforeEach(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(() => ({ drawImage: (...a: unknown[]) => drawn.push(a) })) as never
   HTMLCanvasElement.prototype.toBlob = function (cb: BlobCallback, type?: string) { cb(new Blob(['jpeg'], { type })) }
 })
-afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = '' })
+afterEach(() => { vi.unstubAllGlobals() })
 
 async function choose(file: File) {
   const input = document.querySelector<HTMLInputElement>('[data-picture-file]')!

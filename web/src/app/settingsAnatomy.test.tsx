@@ -69,7 +69,7 @@ describe('flat settings pages (precision-settings D3)', () => {
     })) as typeof window.matchMedia
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
   })
-  afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = '' })
+  afterEach(() => { vi.unstubAllGlobals() })
 
   it('a section is a label-size heading, its line and rows between hairlines, with no icon', async () => {
     const r = await render(

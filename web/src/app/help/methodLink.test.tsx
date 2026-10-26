@@ -23,7 +23,7 @@ beforeEach(() => {
   useDatabase(`method-link-${Date.now()}-${n++}`)
   resetDeviceId()
 })
-afterEach(() => { closeHelp(); document.body.innerHTML = '' })
+afterEach(() => { closeHelp() })
 
 async function waitFor(ok: () => boolean, ms = 2000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)

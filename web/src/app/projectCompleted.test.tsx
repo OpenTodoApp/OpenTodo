@@ -12,7 +12,7 @@ import { TaskListView } from './TaskListView'
 
 // The project header asks the server for its public links.
 beforeEach(() => mockFetch(noPublicLinks))
-afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = '' })
+afterEach(() => { vi.unstubAllGlobals() })
 beforeEach(async () => {
   await db.delete()
   await db.open()

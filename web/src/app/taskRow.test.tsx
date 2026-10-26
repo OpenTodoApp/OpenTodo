@@ -21,7 +21,6 @@ beforeEach(async () => {
   await db.open()
   resetDeviceId()
 })
-afterEach(() => { document.body.innerHTML = '' })
 
 
 const task = (over: Partial<Task>): Task => ({

@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
 // Action menus as data (OpenSpec change labels-and-menus, tasks 1.2–1.4).
 import { act } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { click, flush, key, render } from '../../ui/test-utils'
 import { ActionMenu, orderGroups, useConfirm, type ActionGroup } from './ActionMenu'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 const targets = [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }, { id: 'c', name: 'Current' }]
 

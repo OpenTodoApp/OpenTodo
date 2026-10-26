@@ -19,7 +19,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers()
   localStorage.clear()
-  document.body.innerHTML = ''
 })
 
 describe('repeat and remind chips', () => {

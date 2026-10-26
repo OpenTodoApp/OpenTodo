@@ -2,7 +2,7 @@
 // Labels page, menu and edit panel (OpenSpec change labels-and-menus, tasks 5.1–5.4).
 import 'fake-indexeddb/auto'
 import { act } from 'react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
 import { addLabel, createLabel } from '../lib/labels'
 import { createTask, resetDeviceId } from '../lib/ops'
@@ -11,7 +11,6 @@ import { click, flush, key, render, spokenText, visibleText, waitFor } from '../
 import { LabelEditPanel, LabelsView, duplicatePair, labelDropAt, labelMenuGroups } from './LabelsView'
 
 beforeEach(async () => { await db.delete(); await db.open(); resetDeviceId() })
-afterEach(() => { document.body.innerHTML = '' })
 
 const route = { view: 'labels' } as const
 const labelOps = async () => (await db.outbox.toArray()).filter((o) => o.entity === 'label')

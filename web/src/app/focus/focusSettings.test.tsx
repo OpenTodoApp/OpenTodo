@@ -22,7 +22,7 @@ beforeEach(async () => {
   resetDeviceId()
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllGlobals() })
 
 async function typeInto(input: HTMLInputElement, value: string) {
   await act(async () => {

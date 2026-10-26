@@ -12,7 +12,6 @@ beforeEach(() => { vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Da
 afterEach(() => {
   act(() => hideBulkToast())
   vi.useRealTimers()
-  document.body.innerHTML = ''
 })
 
 const toastEl = () => document.querySelector<HTMLElement>('[data-bulk-toast]')

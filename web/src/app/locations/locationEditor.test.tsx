@@ -25,7 +25,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true })
-  document.body.innerHTML = ''
 })
 
 async function editorFor(title: string) {

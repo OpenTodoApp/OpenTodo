@@ -30,7 +30,7 @@ beforeEach(async () => {
   resetAssistantStatus()
   resetSkills(SKILLS)
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllGlobals() })
 
 describe('Today action (ux-overhaul, in-app-assistant "Ask composer")', () => {
   it('shows one Ask action in the header when the assistant is available, and it opens the panel', async () => {

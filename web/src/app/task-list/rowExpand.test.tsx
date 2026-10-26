@@ -48,7 +48,6 @@ afterEach(() => {
   window.matchMedia = original
   resetPanel()
   vi.unstubAllGlobals()
-  document.body.innerHTML = ''
 })
 
 const row = (title: string) => [...document.querySelectorAll<HTMLElement>('li[data-task-id]')].find((li) => li.querySelector('[data-row-title]')?.textContent === title)!

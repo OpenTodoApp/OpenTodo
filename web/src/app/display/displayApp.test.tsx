@@ -37,7 +37,6 @@ afterEach(() => {
   vi.doUnmock('../../lib/sync')
   vi.unstubAllGlobals()
   history.pushState(null, '', '/')
-  document.body.innerHTML = ''
   document.documentElement.removeAttribute('data-contrast')
   document.documentElement.removeAttribute('data-motion')
 })

@@ -28,7 +28,7 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
   history.replaceState(null, '', '/')
 })
-afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel() })
+afterEach(() => { vi.unstubAllGlobals(); resetPanel() })
 
 const account = (root: ParentNode = document) => root.querySelector<HTMLButtonElement>('[data-account-menu]')!
 const items = () => [...document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitem"]')]

@@ -24,7 +24,6 @@ beforeEach(async () => {
   history.replaceState(null, '', '/')
 })
 afterEach(() => {
-  document.body.innerHTML = ''
   vi.unstubAllGlobals()
   resetPanel()
 })

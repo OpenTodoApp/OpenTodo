@@ -2,11 +2,10 @@
 // Dialog placement="sheet" (OpenSpec change lean-chrome D3): the bottom sheet is an
 // ordinary dialog of the overlay stack, so Escape and a tap on the scrim close it.
 import { useState } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { click, flush, key, render } from '../test-utils'
 import { Dialog } from './Dialog'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 function Harness() {
   const [open, setOpen] = useState(true)

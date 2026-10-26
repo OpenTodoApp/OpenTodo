@@ -2,12 +2,11 @@
 // The board's "Add a section" column (OpenSpec change precision-boards-timeline D4,
 // sections-and-boards "Board view"): a dashed column at the end of an editable board
 // that turns into the section name field; a read-only board has none.
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { Project, Section, Task } from '../lib/types'
 import { click, flush, render } from '../ui/test-utils'
 import { BoardView, type BoardColumn } from './BoardView'
 
-afterEach(() => { document.body.innerHTML = '' })
 
 const project = { id: 'p1', name: 'Home', color: '#0f0', parent_id: null, position: 0, archived: false, created_at: 0, deleted_at: null, _clock: {} } as unknown as Project
 const section = { id: 's1', project_id: 'p1', name: 'Kitchen', position: 0, created_at: 0, deleted_at: null, _clock: {} } as unknown as Section
