@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	gosync "sync"
@@ -774,6 +775,7 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 	defer rows.Close()
 	byID := map[string]Entity{}
 	scopeOf := map[string]string{}
+	dups := map[string][]string{}
 	order := []string{}
 	for rows.Next() {
 		var scope, id, field, value string
@@ -787,19 +789,33 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 			scopeOf[id] = scope
 			order = append(order, id)
 		} else if scopeOf[id] != scope {
-			// The same id in two visible scopes (only possible with forged ids):
-			// keep the preferred scope's record, never a mix of both.
-			if acc.rank(scope) >= acc.rank(scopeOf[id]) {
-				continue
+			// The same id in two visible scopes (only possible with data
+			// written before entity-id-ownership): keep one scope's record,
+			// never a mix of both, and pick the right one below.
+			if !slices.Contains(dups[id], scopeOf[id]) {
+				dups[id] = append(dups[id], scopeOf[id])
 			}
-			e = Entity{"id": e["id"]}
-			byID[id] = e
-			scopeOf[id] = scope
+			if !slices.Contains(dups[id], scope) {
+				dups[id] = append(dups[id], scope)
+			}
+			continue
 		}
 		e[field] = json.RawMessage(value)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	rows.Close()
+	for id, holders := range dups {
+		home, err := homeScope(ctx, s.reader(), acc, entity, id, holders)
+		if err != nil {
+			return nil, err
+		}
+		if home != scopeOf[id] {
+			if byID[id], err = s.entityIn(ctx, home, entity, id); err != nil {
+				return nil, err
+			}
+		}
 	}
 	sort.Strings(order)
 	out := make([]Entity, 0, len(order))
@@ -879,14 +895,23 @@ func (s *Service) Get(ctx context.Context, userID, entity, id string) (Entity, e
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	var best Entity
-	bestRank := 0
-	for scope, e := range byScope {
-		if r := acc.rank(scope); best == nil || r < bestRank {
-			best, bestRank = e, r
+	if len(byScope) <= 1 {
+		for _, e := range byScope {
+			return e, nil
 		}
+		return nil, nil
 	}
-	return best, nil
+	// The id is in several visible scopes (data written before
+	// entity-id-ownership): show the copy writes go to.
+	holders := make([]string, 0, len(byScope))
+	for scope := range byScope {
+		holders = append(holders, scope)
+	}
+	home, err := homeScope(ctx, s.reader(), acc, entity, id, holders)
+	if err != nil {
+		return nil, err
+	}
+	return byScope[home], nil
 }
 
 // Generation returns the op-log generation. It changes only when the database is

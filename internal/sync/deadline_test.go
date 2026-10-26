@@ -34,11 +34,12 @@ func TestValidateDeadline(t *testing.T) {
 // whatever order they arrive in, and leave due untouched.
 func TestDeadlineConverges(t *testing.T) {
 	ctx := context.Background()
-	s := newTestService(t)
 	due := op("d", "task", "t1", "due", `{"date":"2026-11-03"}`, 100, "A")
 	a := op("a", "task", "t1", "deadline", `"2026-11-06"`, 200, "A")
 	b := op("b", "task", "t1", "deadline", `"2026-11-07"`, 300, "B")
 	for user, order := range map[string][]Op{"u1": {due, a, b}, "u2": {b, a, due}} {
+		// Separate servers: an id names one entity per server (entity-id-ownership).
+		s := newTestService(t)
 		if _, err := s.Apply(ctx, user, order); err != nil {
 			t.Fatal(err)
 		}

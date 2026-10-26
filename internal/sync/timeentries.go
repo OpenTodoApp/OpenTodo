@@ -2,7 +2,6 @@ package sync
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 )
 
@@ -51,50 +50,16 @@ func (r *resolver) noteTimeEntry(op Op) {
 	}
 }
 
-// timeEntry looks an entry up among the submitter's personal scope and every
-// project scope (once per batch).
+// timeEntry looks an entry up in every scope (once per batch,
+// entity-id-ownership).
 func (r *resolver) timeEntry(id string) (*timeEntryState, error) {
 	if st, ok := r.timeEntries[id]; ok {
 		return st, nil
 	}
-	rows, err := r.tx.QueryContext(r.ctx, `SELECT scope_id, field, value FROM scope_fields
-		WHERE entity = 'time_entry' AND entity_id = ? AND field IN ('task_id','user_id') AND (scope_id = ? OR scope_id LIKE 'project:%')`,
-		id, r.acc.personal)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	type vals struct{ task, user string }
-	byScope := map[string]*vals{}
-	for rows.Next() {
-		var sc, field, value string
-		if err := rows.Scan(&sc, &field, &value); err != nil {
-			return nil, err
-		}
-		v := byScope[sc]
-		if v == nil {
-			v = &vals{}
-			byScope[sc] = v
-		}
-		if field == "task_id" {
-			v.task = idValue(json.RawMessage(value))
-		} else {
-			v.user = idValue(json.RawMessage(value))
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
 	st := &timeEntryState{}
-	best := 99
-	for sc, v := range byScope {
-		if rk := r.acc.rank(sc); rk < best {
-			best = rk
-			st.found, st.scope, st.task, st.user = true, sc, v.task, v.user
-		}
-	}
-	if st.found && !r.acc.canSee(st.scope) {
-		st.scope = ""
+	var err error
+	if st.found, st.scope, st.task, st.user, err = r.pairHome("time_entry", id, "task_id", "user_id"); err != nil {
+		return nil, err
 	}
 	r.timeEntries[id] = st
 	return st, nil

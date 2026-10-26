@@ -38,6 +38,7 @@ func TestAdminCannotMoveSharedProject(t *testing.T) {
 	t.Parallel()
 	f := newSharing(t)
 	f.add("alice", "carol", RoleAdmin)
+	joinWorkspace(t, f.s.db, "w-family", "alice", "carol")
 	move := f.op("project", "p", "workspace_id", `"w-family"`)
 	res := f.apply("carol", "C", move)
 	if !slices.Equal(rejectedIDs(res), []string{move.ID + ":forbidden"}) {

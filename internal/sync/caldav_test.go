@@ -81,8 +81,11 @@ func TestPurgeRemovesCaldavResources(t *testing.T) {
 		op("4", "task", "Old", "deleted_at", jsonNum(old), old, "A"),
 		op("5", "task", "Live", "title", `"stays"`, 5, "A"),
 	)
+	if _, err := s.db.Exec(`INSERT INTO users(id,email,name,password_hash,created_at) VALUES('u1','u1@example.com','u1','h',1)`); err != nil {
+		t.Fatal(err)
+	}
 	for _, id := range []string{"Single", "InP", "Old", "Live"} {
-		if _, err := s.db.Exec(`INSERT INTO caldav_resources(task_id,name,uid) VALUES(?,?,?)`, id, id+"-client.ics", "uid-"+id); err != nil {
+		if _, err := s.db.Exec(`INSERT INTO caldav_resources(user_id,task_id,name,uid) VALUES('u1',?,?,?)`, id, id+"-client.ics", "uid-"+id); err != nil {
 			t.Fatal(err)
 		}
 	}

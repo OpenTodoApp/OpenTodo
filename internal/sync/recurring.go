@@ -126,6 +126,12 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 			record[f] = v
 		}
 	}
+	// The record's id is derived from the series id, so it always names its
+	// project: a record id someone created first elsewhere is then refused as a
+	// whole (entity-id-ownership), never filled with the series' fields.
+	if _, has := record["project_id"]; !has {
+		record["project_id"] = json.RawMessage("null")
+	}
 	// Custom field values (custom-fields): every `fields.<id>` the series holds,
 	// null included, so both sides write the same record.
 	for f, v := range merged {

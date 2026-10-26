@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/pixari/opentodo/internal/store"
 )
 
 // Grants and effective membership (OpenSpec change workspaces, design D3).
@@ -197,10 +199,21 @@ func userGrant(ctx context.Context, q querier, projectID, userID string) (string
 	return role, err
 }
 
+// ownWorkspaceRecord is the condition on scope_fields row f (a project's
+// workspace_id) that it is the project's own record (security finding L10):
+// the shared project's scope, or for an unshared project a personal copy whose
+// account belongs to the workspace it names. A value written elsewhere, by
+// someone who reused the id, never puts the project in a workspace.
+const ownWorkspaceRecord = `(f.scope_id = 'project:' || f.entity_id
+	OR (NOT EXISTS (SELECT 1 FROM project_scopes ps WHERE ps.project_id = f.entity_id)
+		AND json_valid(f.value) AND EXISTS (SELECT 1 FROM workspace_members m
+			WHERE 'user:' || m.user_id = f.scope_id AND m.workspace_id = json_extract(f.value, '$'))))`
+
 // projectWorkspace is the workspace_id a project's owner wrote, "" for the default.
 func projectWorkspace(ctx context.Context, q querier, projectID string) (string, error) {
 	var raw string
-	err := q.QueryRowContext(ctx, `SELECT value FROM scope_fields WHERE entity = 'project' AND entity_id = ? AND field = 'workspace_id' LIMIT 1`, projectID).Scan(&raw)
+	err := q.QueryRowContext(ctx, `SELECT f.value FROM scope_fields f WHERE f.entity = 'project' AND f.entity_id = ? AND f.field = 'workspace_id'
+		AND `+ownWorkspaceRecord+` ORDER BY f.scope_id LIMIT 1`, projectID).Scan(&raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -210,6 +223,29 @@ func projectWorkspace(ctx context.Context, q querier, projectID string) (string,
 	var id string
 	_ = json.Unmarshal([]byte(raw), &id)
 	return id, nil
+}
+
+// checkWorkspace refuses a project's workspace_id naming a workspace the author
+// does not belong to (security finding L10): otherwise anyone could attach a
+// project to a foreign workspace, block its deletion and change what its
+// directory admits. The author's default workspace is always theirs.
+func (r *resolver) checkWorkspace(op Op) (string, error) {
+	ws := idValue(op.Value)
+	if op.Field != "workspace_id" || ws == "" || ws == store.DefaultWorkspaceID(r.acc.userID) {
+		return "", nil
+	}
+	member, ok := r.workspaces[ws]
+	if !ok {
+		var err error
+		if member, err = isWorkspaceMember(r.ctx, r.tx, ws, r.acc.userID); err != nil {
+			return "", err
+		}
+		r.workspaces[ws] = member
+	}
+	if !member {
+		return ReasonForbidden, nil
+	}
+	return "", nil
 }
 
 // closedWorkspace returns the created workspace a project belongs to, or ""
