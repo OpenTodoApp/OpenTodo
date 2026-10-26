@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // ChatProvider is the Chat Completions wire format on the standard library
@@ -314,14 +316,13 @@ func errorType(r io.Reader) string {
 	return ""
 }
 
+// clip keeps a provider's error code or type short and on one line, cut
+// without splitting a character.
 func clip(s string) string {
-	if len(s) > 64 {
-		s = s[:64]
-	}
 	return strings.Map(func(r rune) rune {
 		if r < 0x20 || r == 0x7f {
 			return -1
 		}
 		return r
-	}, s)
+	}, textutil.Truncate(s, 64))
 }

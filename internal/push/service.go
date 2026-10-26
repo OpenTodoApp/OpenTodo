@@ -19,6 +19,7 @@ import (
 	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/ids"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/textutil"
 	"github.com/pixari/opentodo/internal/webhook"
 )
 
@@ -151,13 +152,8 @@ func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
 	}
-	for n > 0 && !utf8Start(s[n]) {
-		n--
-	}
-	return s[:n] + "…"
+	return textutil.Truncate(s, n) + "…"
 }
-
-func utf8Start(b byte) bool { return b&0xC0 != 0x80 }
 
 // SendResult classifies one send.
 type SendResult int

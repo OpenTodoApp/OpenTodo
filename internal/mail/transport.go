@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/textutil"
 )
 
 // Transport budget (design D2).
@@ -63,9 +64,7 @@ func stageErr(stage string, err error) *SendError {
 	default:
 		reply = err.Error()
 	}
-	if len(reply) > 300 {
-		reply = reply[:300]
-	}
+	reply = textutil.Truncate(reply, 300)
 	return &SendError{Stage: stage, Reply: strings.TrimSpace(reply)}
 }
 
