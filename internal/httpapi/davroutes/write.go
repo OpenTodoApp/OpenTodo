@@ -1,4 +1,4 @@
-package httpapi
+package davroutes
 
 import (
 	"encoding/json"

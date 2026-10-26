@@ -1,4 +1,4 @@
-package httpapi
+package davroutes
 
 import (
 	"context"
@@ -19,8 +19,8 @@ import (
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
-// inboxCalendar is the path segment of the Inbox calendar (tasks without a project).
-const inboxCalendar = "inbox"
+// InboxCalendar is the path segment of the Inbox calendar (tasks without a project).
+const InboxCalendar = "inbox"
 
 // davPath is a parsed /dav/ path.
 type davPath struct {
@@ -356,12 +356,6 @@ func (v *davView) calendarIDs() []string {
 		out = append(out, idOf(p["id"]))
 	}
 	return out
-}
-
-func numberOf(raw json.RawMessage) float64 {
-	var f float64
-	_ = json.Unmarshal(raw, &f)
-	return f
 }
 
 // role is the user's role on a calendar: owner for the Inbox and personal
