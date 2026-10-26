@@ -85,6 +85,9 @@ jobs:
         working-directory: web
       - run: npm run build
         working-directory: web
+      # The first load's gzip size against web/bundle-budget.json (raise it only on purpose).
+      - name: Bundle budget
+        run: node scripts/bundle-budget.mjs
       # The built service worker and manifest (and no workbench code in the build):
       # these skip before a build, and fail here if the build is missing.
       - name: Tests of the built app (service worker, manifest)
