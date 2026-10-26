@@ -11,6 +11,7 @@ import type { ChangeSet } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
 
 /**
  * Revision history of a project (OpenSpec `trash-and-history`; tasks use the task
@@ -85,7 +86,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
       await syncNow()
       await load()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : String(err))
+      setMessage(messageOf(err))
     }
   }
 

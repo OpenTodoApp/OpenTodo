@@ -14,6 +14,7 @@ import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea
 import { HelpLink } from './help/HelpLink'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { messageOf } from '../lib/errorText'
 
 const typeLabel = (item: string) => FIELD_TYPES.find((x) => x.type === item)?.label ?? item
 
@@ -191,7 +192,7 @@ function AddField({ projectId, disabled }: { projectId: string; disabled: boolea
       nameRef.current?.focus()
     } catch (err) {
       const f = err instanceof FieldError ? err.field : 'name'
-      setError({ message: err instanceof Error ? err.message : String(err), field: f })
+      setError({ message: messageOf(err), field: f })
       // Keep focus on the input that needs fixing (spec "Duplicate name").
       ;(f === 'options' ? optionsRef.current : nameRef.current)?.focus()
     }

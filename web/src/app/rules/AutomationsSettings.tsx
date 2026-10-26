@@ -8,13 +8,14 @@ import { cardCopy } from '../../lib/settingsCopy'
 import type { AutomationsSetting } from '../../lib/types'
 import { Notice, SettingsSection, Switch } from '../../ui'
 import { act } from '../actionError'
+import { messageOf } from '../../lib/errorText'
 
 export function AutomationsServerPanel() {
   const [s, setS] = useState<AutomationsSetting | null>(null)
   const [error, setError] = useState('')
   useEffect(() => {
     api.getAutomationsSetting().then(setS, (err: unknown) =>
-      setError(isNetworkError(err) ? t('Connect to change this setting.') : err instanceof Error ? err.message : String(err)))
+      setError(isNetworkError(err) ? t('Connect to change this setting.') : messageOf(err)))
   }, [])
   const save = (enabled: boolean) => act(api.putAutomationsSetting(enabled).then(setS))
   return (

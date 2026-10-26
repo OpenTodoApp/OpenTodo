@@ -3,7 +3,9 @@ import { Skeleton } from '../ui'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { api, ApiError, isNetworkError } from '../lib/api'
+import { api, isNetworkError } from '../lib/api'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
 import { visibleProjects } from '../lib/projects'
 import { projectsIn } from '../lib/workspaces'
@@ -331,6 +333,10 @@ export function ImportView(p: ImportViewProps) {
   )
 }
 
+function describe(err: unknown): string {
+  return errorText(err, { capitalise: false, offline: t('The server could not be reached. Import needs a connection.') })
+}
+
 /** Settings → Import: owns the state, talks to the server and polls the running job. */
 export function ImportScreen() {
   const online = useOnline()
@@ -351,8 +357,7 @@ export function ImportScreen() {
   }, [every, wsState, workspace])
   const [options, setOptions] = useState<ImportViewProps['options']>({ ...DEFAULT_OPTIONS, timeZone: browserTimeZone(), targetProject: '' })
   const [preview, setPreview] = useState<ImportPreview | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, setError, run } = useAction({ describe })
   const [job, setJob] = useState<ImportJob | null>(null)
   const [jobs, setJobs] = useState<ImportJob[] | null>(() => readCachedJobs())
   const [zones] = useState(timeZones)
@@ -364,9 +369,9 @@ export function ImportScreen() {
       setJobs(res.jobs)
       cacheJobs(res.jobs)
     } catch (err) {
-      if (!isNetworkError(err)) setError((err as ApiError).message)
+      if (!isNetworkError(err)) setError(describe(err))
     }
-  }, [])
+  }, [setError])
 
   useEffect(() => {
     if (!offline) void loadJobs()
@@ -383,32 +388,25 @@ export function ImportScreen() {
     return out
   }
 
-  function describe(err: unknown): string {
-    if (isNetworkError(err)) return t('The server could not be reached. Import needs a connection.')
-    return (err as ApiError).message
-  }
-
   async function runPreview(f: File | null = file) {
     if (!f) return
-    setBusy(true)
-    setError(null)
     // A new file's format is not known yet: the user's choice, else the
     // current workspace unless the format was set to an own export.
     const ws = workspaceChoice ?? (format === 'opentodo' ? '' : wsState.current)
-    try {
-      let res = await api.previewImport(f, f.name, requestOptions(ws))
-      if (res.format === 'opentodo' && workspaceChoice === null && ws) {
-        // An own export detected on the way: its default is "As in the export".
-        res = await api.previewImport(f, f.name, requestOptions(''))
+    await run(async () => {
+      try {
+        let res = await api.previewImport(f, f.name, requestOptions(ws))
+        if (res.format === 'opentodo' && workspaceChoice === null && ws) {
+          // An own export detected on the way: its default is "As in the export".
+          res = await api.previewImport(f, f.name, requestOptions(''))
+        }
+        setDetected(res.format)
+        setPreview(res)
+      } catch (err) {
+        setPreview(null)
+        throw err
       }
-      setDetected(res.format)
-      setPreview(res)
-    } catch (err) {
-      setPreview(null)
-      setError(describe(err))
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
   function poll(id: string) {
@@ -433,35 +431,23 @@ export function ImportScreen() {
 
   async function start() {
     if (!file) return
-    setBusy(true)
-    setError(null)
-    try {
+    await run(async () => {
       const { job: j } = await api.startImport(file, file.name, requestOptions())
       await applyImportViewHints(j.viewHints)
       setJob(j)
       poll(j.id)
       void loadJobs()
-    } catch (err) {
-      setError(describe(err))
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
   const [undoing, setUndoing] = useState<ImportJob | null>(null)
   async function undo(j: ImportJob) {
-    setBusy(true)
-    setError(null)
-    try {
+    await run(async () => {
       const res = await api.undoImport(j.id)
       if (job?.id === j.id) setJob(res.job)
       void syncNow()
       await loadJobs()
-    } catch (err) {
-      setError(describe(err))
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
   const created = undoing ? undoing.totals.create + undoing.totals.newProjects + undoing.totals.newLabels : 0

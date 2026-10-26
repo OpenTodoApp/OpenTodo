@@ -24,6 +24,8 @@ import type { ViewData } from './useViews'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { messageOf } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 
 export function DashboardView({ dashboard, data }: { dashboard: View; data: ViewData }) {
   const { views, projects, labels, ctx } = data
@@ -49,7 +51,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
 
   const [editing, setEditing] = useState(false)
   const [ruleFor, setRuleFor] = useState<View | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const { error, run: attempt } = useAction({ describe: messageOf })
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
   // The selection is a task id within a panel, so a card moved by a rule stays selected.
   const [selected, setSelected] = useState<{ panel: number; id: string } | null>(null)
@@ -57,10 +59,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   const setOpenId = setPanelTaskId
   const gridRef = useRef<HTMLDivElement>(null)
 
-  const run = (fn: () => Promise<void>) => {
-    setError(null)
-    fn().catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
-  }
+  const run = (fn: () => Promise<void>) => void attempt(fn)
   const focusPanel = (i: number) => gridRef.current?.querySelector<HTMLElement>(`[data-panel-index="${i}"]`)?.focus()
 
   // The dashboard's `view` scope: Tab moves between panels, j / k inside the focused

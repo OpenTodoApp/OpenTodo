@@ -20,6 +20,7 @@ import { navigate, type Route } from './router'
 import { useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { t } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
 
 /** How files come with this share: the hand-over store, the extension's message, or lost on the way. */
 export type ShareFiles = { inbox?: string | null; mode?: 'extension' | 'denied' | 'lost' | null }
@@ -159,7 +160,7 @@ export function ShareCapture() {
       leave(project ? { view: 'project', id: project } : { view: 'inbox' })
     } catch (err) {
       setSaving(false)
-      setError(err instanceof Error ? err.message : String(err))
+      setError(messageOf(err))
     }
   }
 

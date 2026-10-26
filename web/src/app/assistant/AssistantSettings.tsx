@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { api, ApiError } from '../../lib/api'
+import { api } from '../../lib/api'
+import { errorText } from '../../lib/errorText'
 import { clearThreads, getAutoApply, setAutoApply } from '../../lib/assistant'
 import { refreshAssistantStatus, setAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
 import {
@@ -517,8 +518,7 @@ export function UserAssistantSettings(p: UserViewProps) {
 }
 
 function message(err: unknown): string {
-  if (err instanceof ApiError) return err.message.charAt(0).toUpperCase() + err.message.slice(1)
-  return t('The server is unreachable. These settings live on the server and need a connection.')
+  return errorText(err, { offline: t('The server is unreachable. These settings live on the server and need a connection.') })
 }
 
 /** Settings → Assistant (lazy chunk). */
