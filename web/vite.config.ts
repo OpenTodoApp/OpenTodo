@@ -2,6 +2,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
+import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -126,6 +127,10 @@ export default defineConfig({
     // the "Calendars as of" time): a developer's own zone must not change results.
     env: { TZ: 'UTC' },
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
+    // Scale tests (2,000 rows) run alone in their own run, `npm run test:perf`
+    // (vitest.perf.config.ts): inside the parallel pool they raced every other file
+    // for the CPU and timed out under load (test audit F4).
+    exclude: [...configDefaults.exclude, 'src/**/*.perf.test.{ts,tsx}'],
     // Token tests read index.css as text (src/ui/tokens); other CSS stays stubbed.
     css: { include: [/index\.css/] },
   },
