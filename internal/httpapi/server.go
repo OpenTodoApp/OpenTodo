@@ -85,6 +85,10 @@ type Server struct {
 	// projectInviteLimiter caps project invite link creation per account
 	// (20/hour; OpenSpec `project-invite-links`), see projectinvites.go.
 	projectInviteLimiter *rateLimiter
+	// membersInviteOn is the owner's "members may invite new people" switch.
+	membersInviteOn *settings.Switch
+	// settings is the owner settings table (see also the switches, switch.go).
+	settings *settings.Store
 	// workspaceInviteLimiter caps workspace invite link creation per account
 	// (20/hour; OpenSpec change workspaces), see workspaceinvites.go.
 	workspaceInviteLimiter *rateLimiter
@@ -144,22 +148,22 @@ type Server struct {
 	// brand caches the instance branding (instance-branding).
 	brand       brandingState
 	oidcLimiter *rateLimiter
-	// caldav caches the CalDAV toggle and davLimiter counts failed Basic
+	// caldavOn is the CalDAV toggle and davLimiter counts failed Basic
 	// authentications per client address (10/min; OpenSpec `caldav`).
-	caldav caldavState
-	// Calendar feeds (calendar-feeds): the switch cache, the fetch worker and limiters.
-	calFeeds        caldavState
+	caldavOn *settings.Switch
+	// Calendar feeds (calendar-feeds): the switch, the fetch worker and limiters.
+	calFeedsOn      *settings.Switch
 	calWorker       *calfeed.Worker
 	calFetchLimiter *rateLimiter
 	feedLimiter     *rateLimiter
 	davLimiter      *rateLimiter
-	// Issue import (issue-import): the switch cache, the poller and the
+	// Issue import (issue-import): the switch, the poller and the
 	// shared limit of hand-triggered checks and syncs.
-	issuesOn    *ownerSwitch
+	issuesOn    *settings.Switch
 	issueWorker *issues.Worker
 	// Calendar sync (calendar-two-way): the switch, the worker and the shared
 	// limit of hand-triggered checks and syncs; see calsync.go.
-	calsyncOn      *ownerSwitch
+	calsyncOn      *settings.Switch
 	calsync        *calsync.Worker
 	calsyncLimiter *rateLimiter
 	// Notification channels (notification-channels): the service and the
@@ -182,7 +186,7 @@ type Server struct {
 	// rules is the automation rules engine and ruleSwitch its owner switch
 	// (automation-rules); rules is nil on a demo instance.
 	rules      *rules.Engine
-	ruleSwitch *rules.Switch
+	ruleSwitch *settings.Switch
 	mcp        *mcp.Server
 	// agentTools is the AI agent tool registry behind /mcp and agentAccess the
 	// users' "Allow AI assistants to make changes" switches (mcp-write-tools).
@@ -263,7 +267,7 @@ func newServer(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service
 		emailChangeLimiter: newRateLimiter(5, time.Hour), avatarLimiter: newRateLimiter(30, time.Hour), sttLimiter: newRateLimiter(30, time.Minute),
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
 		emailLimiter: newRateLimiter(30, time.Hour), memberAddLimiter: newRateLimiter(memberAddsPerHour, time.Hour),
-		importer: importer.New(syncSvc.DB(), syncSvc, log)}
+		importer: importer.New(syncSvc.DB(), syncSvc, log), settings: settings.New(syncSvc.DB())}
 	// Imports: unpacked archives are bounded by the upload limit, and an uploaded
 	// database is read from a private copy under the data directory (OpenSpec
 	// change named-importers).
@@ -286,6 +290,7 @@ func newServer(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service
 // fields an option may have replaced.
 func (s *Server) wireServices(cfg config.Config, log *slog.Logger) {
 	authSvc, syncSvc := s.auth, s.sync
+	s.openSwitches()
 	setTrustedProxies(cfg.TrustedProxies, cfg.TrustCloudflare)
 	s.announceSetupCode()
 	if err := s.loadIdempotencySalt(context.Background()); err != nil {
@@ -302,7 +307,7 @@ func (s *Server) wireServices(cfg config.Config, log *slog.Logger) {
 		s.importer.SetSummaryObserver(s.hooks.ObserveImport)
 	}
 	if s.oidc == nil {
-		s.oidc = oidc.New(settings.New(syncSvc.DB()), cfg.DataDir, oidc.Options{Env: oidc.Env(cfg.OIDC)})
+		s.oidc = oidc.New(s.settings, cfg.DataDir, oidc.Options{Env: oidc.Env(cfg.OIDC)})
 	}
 	// SSO-only mode refuses local sign-in for members (oidc-login D6).
 	authSvc.SetSSOOnly(s.oidc.SSOOnly)

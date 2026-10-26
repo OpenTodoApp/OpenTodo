@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/rules"
 	"github.com/pixari/opentodo/internal/ruleval"
+	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -20,7 +20,7 @@ import (
 // refused on a demo instance.
 
 // WithRules hands the server the rules engine (nil on a demo) and its switch.
-func WithRules(e *rules.Engine, sw *rules.Switch) Option {
+func WithRules(e *rules.Engine, sw *settings.Switch) Option {
 	return func(s *Server) { s.rules, s.ruleSwitch = e, sw }
 }
 
@@ -68,8 +68,9 @@ func (s *Server) registerRuleRoutes(mux *routes) {
 	mux.handle("POST /api/v1/rules/{id}/test", user, s.handleRuleTest)
 	mux.handle("GET /api/v1/me/rules", user, s.handleMyRules)
 	mux.handle("PUT /api/v1/me/rules/paused", user, s.handleRulesPaused)
-	mux.handle("GET /api/v1/settings/automations", ownerOnly("see the automations setting").demoDenied(), s.handleGetAutomations)
-	mux.handle("PUT /api/v1/settings/automations", ownerOnly("manage the automations setting").demoDenied(), s.handlePutAutomations)
+	s.switchRoutes(mux, "/api/v1/settings/automations", switchRoute{sw: s.ruleSwitch,
+		get: ownerOnly("see the automations setting").demoDenied(), put: ownerOnly("manage the automations setting").demoDenied(),
+		more: s.automationsLock, putMore: s.automationsLock})
 }
 
 // ruleError answers a checkRule refusal.
@@ -350,41 +351,7 @@ func (s *Server) handleRulesPaused(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.automationsStatus(r.Context(), uid))
 }
 
-func (s *Server) handleGetAutomations(w http.ResponseWriter, r *http.Request) {
-	on, locked, err := s.ruleSwitch.Effective(r.Context())
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	lockedBy := ""
-	if locked {
-		lockedBy = "OPENTODO_AUTOMATIONS"
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"enabled": on, "locked": locked, "locked_by": lockedBy})
-}
-
-func (s *Server) handlePutAutomations(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Enabled *bool `json:"enabled"`
-	}
-	if err := readJSON(r, &in); err != nil || in.Enabled == nil {
-		badBodyWith(w, err, "invalid_input", `body must be {"enabled": true|false}`)
-		return
-	}
-	before, _, err := s.ruleSwitch.Effective(r.Context())
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	if err := s.ruleSwitch.Set(r.Context(), *in.Enabled); errors.Is(err, rules.ErrSetByEnvironment) {
-		writeError(w, http.StatusConflict, "set_by_environment", "OPENTODO_AUTOMATIONS sets this on the server")
-		return
-	} else if err != nil {
-		s.internal(w, err)
-		return
-	}
-	if before != *in.Enabled {
-		s.audit.Record(r.Context(), audit.SettingsChanged(userFrom(r.Context()).ID, rules.SettingKey, boolText(before), boolText(*in.Enabled)))
-	}
-	s.handleGetAutomations(w, r)
+// automationsLock tells the Settings screen whether OPENTODO_AUTOMATIONS fixes the switch.
+func (s *Server) automationsLock(*http.Request) map[string]any {
+	return map[string]any{"locked": s.ruleSwitch.Locked(), "locked_by": s.ruleSwitch.FixedBy()}
 }

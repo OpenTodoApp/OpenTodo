@@ -155,7 +155,7 @@ type Service struct {
 	baseOrigin  string
 	pushoverURL string
 	wake        chan struct{}
-	sw          ownerSwitch
+	sw          *settings.Switch
 }
 
 // PushoverAPI is Pushover's message endpoint; NtfyDefault is the public ntfy
@@ -194,8 +194,9 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 	} else if s.dialer.Resolver == nil {
 		s.dialer.Resolver = netResolver()
 	}
+	s.sw = newSwitch(db, s.log)
 	if s.enabled == nil {
-		s.enabled = s.switchOn
+		s.enabled = s.sw.On
 	}
 	if s.encrypted == nil {
 		s.encrypted = func(context.Context, string) (bool, error) { return false, nil }

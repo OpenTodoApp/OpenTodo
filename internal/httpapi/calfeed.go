@@ -19,7 +19,6 @@ import (
 	"github.com/pixari/opentodo/internal/calfeed"
 	ob "github.com/pixari/opentodo/internal/outbound"
 	"github.com/pixari/opentodo/internal/recurrence"
-	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/textutil"
 )
 
@@ -50,14 +49,14 @@ func (s *Server) registerCalendarFeedRoutes(mux *routes) {
 		}
 		s.calWorker = &calfeed.Worker{Store: calfeed.NewStore(s.sync.DB()), Fetcher: calfeed.NewFetcher(allow, s.version), Log: s.log}
 	}
-	s.calWorker.Enabled = s.calendarFeedsEnabled
+	s.calWorker.Enabled = s.calFeedsOn.On
 	s.calWorker.Notify = s.sync.Notifier().NotifyCalendar
 	s.calFetchLimiter = newRateLimiter(handFetchesPerHr, time.Hour)
 	s.feedLimiter = newRateLimiter(feedFetchesPerHr, time.Hour)
 	s.seedCalendarFeeds(context.Background())
 
-	mux.handle("GET /api/v1/settings/calendar-feeds", signedIn.demoDenied(), s.handleGetCalendarFeedsSetting)
-	mux.handle("PUT /api/v1/settings/calendar-feeds", ownerOnly("manage the calendar feeds setting").demoDenied(), s.handlePutCalendarFeedsSetting)
+	s.switchRoutes(mux, "/api/v1/settings/calendar-feeds", switchRoute{sw: s.calFeedsOn,
+		get: signedIn.demoDenied(), put: ownerOnly("manage the calendar feeds setting").demoDenied()})
 	mux.handle("GET /api/v1/calendar-feeds/subscriptions", signedIn.demoDenied(), s.feedsGate(s.handleListSubscriptions))
 	mux.handle("POST /api/v1/calendar-feeds/subscriptions", signedIn.demoDenied(), s.feedsGate(s.handleCreateSubscription))
 	mux.handle("PATCH /api/v1/calendar-feeds/subscriptions/{id}", signedIn.demoDenied(), s.feedsGate(s.handlePatchSubscription))
@@ -75,72 +74,16 @@ func (s *Server) CalendarWorker() *calfeed.Worker { return s.calWorker }
 
 // seedCalendarFeeds applies the OPENTODO_CALENDAR_FEEDS preset on first start only.
 func (s *Server) seedCalendarFeeds(ctx context.Context) {
-	if s.cfg.CalendarFeeds == nil {
-		return
-	}
-	if _, err := s.sync.DB().ExecContext(ctx, `INSERT OR IGNORE INTO settings(key,value,updated_at) VALUES(?,?,?)`,
-		calendarFeedsSettingKey, boolText(*s.cfg.CalendarFeeds), s.now().UnixMilli()); err != nil {
+	if _, err := s.calFeedsOn.Seed(ctx, s.cfg.CalendarFeeds); err != nil {
 		s.log.Error("seed calendar feeds setting", "err", err)
 	}
-}
-
-// calendarFeedsEnabled reads the owner switch through the cache (never on a demo instance).
-func (s *Server) calendarFeedsEnabled(ctx context.Context) bool {
-	if s.demo != nil {
-		return false
-	}
-	switch s.calFeeds.v.Load() {
-	case 1:
-		return false
-	case 2:
-		return true
-	}
-	var on bool
-	if _, err := settings.New(s.sync.DB()).Get(ctx, calendarFeedsSettingKey, &on); err != nil {
-		s.log.Error("read calendar feeds setting", "err", err)
-		return false
-	}
-	s.setCalendarFeedsCache(on)
-	return on
-}
-
-func (s *Server) setCalendarFeedsCache(on bool) {
-	if on {
-		s.calFeeds.v.Store(2)
-	} else {
-		s.calFeeds.v.Store(1)
-	}
-}
-
-func (s *Server) handleGetCalendarFeedsSetting(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"enabled": s.calendarFeedsEnabled(r.Context())})
-}
-
-func (s *Server) handlePutCalendarFeedsSetting(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Enabled *bool `json:"enabled"`
-	}
-	if err := readJSON(r, &in); err != nil || in.Enabled == nil {
-		badBodyWith(w, err, "invalid_input", `body must be {"enabled": true|false}`)
-		return
-	}
-	before := s.calendarFeedsEnabled(r.Context())
-	if err := settings.New(s.sync.DB()).Set(r.Context(), calendarFeedsSettingKey, *in.Enabled); err != nil {
-		s.internal(w, err)
-		return
-	}
-	s.setCalendarFeedsCache(*in.Enabled)
-	if before != *in.Enabled {
-		s.audit.Record(r.Context(), audit.SettingsChanged(userFrom(r.Context()).ID, calendarFeedsSettingKey, boolText(before), boolText(*in.Enabled)))
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"enabled": *in.Enabled})
 }
 
 // eventsGate lets the events route answer while calendar feeds or calendar
 // sync is on (calendar-two-way D10), else 404 feeds_disabled.
 func (s *Server) eventsGate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.calendarFeedsEnabled(r.Context()) && !s.calendarSyncEnabled(r.Context()) {
+		if !s.calFeedsOn.On(r.Context()) && !s.calsyncOn.On(r.Context()) {
 			writeError(w, http.StatusNotFound, "feeds_disabled", "calendar feeds are not enabled")
 			return
 		}
@@ -150,13 +93,7 @@ func (s *Server) eventsGate(next http.HandlerFunc) http.HandlerFunc {
 
 // feedsGate answers 404 feeds_disabled while the owner switch is off.
 func (s *Server) feedsGate(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.calendarFeedsEnabled(r.Context()) {
-			writeError(w, http.StatusNotFound, "feeds_disabled", "calendar feeds are not enabled")
-			return
-		}
-		next(w, r)
-	}
+	return switchGate(s.calFeedsOn, "feeds_disabled", "calendar feeds are not enabled")(next)
 }
 
 func (s *Server) handleListSubscriptions(w http.ResponseWriter, r *http.Request) {
@@ -329,7 +266,7 @@ func (s *Server) handleCalendarEvents(w http.ResponseWriter, r *http.Request) {
 	uid := userFrom(r.Context()).ID
 	// Connected calendars (calendar-two-way D10) are served while calendar sync
 	// is on, the user's subscriptions while calendar feeds are.
-	feeds, managed := s.calendarFeedsEnabled(r.Context()), s.calendarSyncEnabled(r.Context())
+	feeds, managed := s.calFeedsOn.On(r.Context()), s.calsyncOn.On(r.Context())
 	events, err := s.calWorker.Store.EventsOf(r.Context(), uid, from, to, feeds, managed)
 	if err != nil {
 		s.internal(w, err)
@@ -425,7 +362,7 @@ func (s *Server) handleTaskFeed(w http.ResponseWriter, r *http.Request) {
 		s.davLimiter.allow("feed:" + ip)
 		writeError(w, http.StatusNotFound, "not_found", "no such feed")
 	}
-	if !s.calendarFeedsEnabled(r.Context()) {
+	if !s.calFeedsOn.On(r.Context()) {
 		notFound()
 		return
 	}

@@ -13,7 +13,6 @@ import (
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/maps"
 	ob "github.com/pixari/opentodo/internal/outbound"
-	"github.com/pixari/opentodo/internal/settings"
 )
 
 // Maps (OpenSpec change task-locations, design D4, D6): the server proxies the
@@ -31,7 +30,7 @@ func WithMaps(m *maps.Service) Option { return func(s *Server) { s.maps = m } }
 func (s *Server) registerMapRoutes(mux *routes) {
 	if s.maps == nil {
 		client := ob.NewClient(&ob.Dialer{AllowPrivateHost: s.mapsPrivateHost}, 10*time.Second, ob.FollowRedirects(3))
-		s.maps = maps.New(settings.New(s.sync.DB()), s.cfg.Maps, s.cfg.Demo, client,
+		s.maps = maps.New(s.settings, s.cfg.Maps, s.cfg.Demo, client,
 			maps.NewCache(filepath.Join(s.cfg.DataDir, "cache", "maps"), maps.DefaultCacheBytes), s.version)
 	}
 	s.mapsLimiter = newRateLimiter(mapSearchesPerMinute, time.Minute)
@@ -235,7 +234,7 @@ func (s *Server) handlePutMapsSetting(w http.ResponseWriter, r *http.Request) {
 	}
 	var cur maps.Settings
 	cur.Enabled = !s.cfg.Demo
-	if _, err := settings.New(s.sync.DB()).Get(r.Context(), maps.SettingKey, &cur); err != nil {
+	if _, err := s.settings.Get(r.Context(), maps.SettingKey, &cur); err != nil {
 		s.internal(w, err)
 		return
 	}

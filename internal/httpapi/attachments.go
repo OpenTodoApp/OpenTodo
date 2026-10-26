@@ -88,7 +88,7 @@ func (s *Server) registerAttachmentRoutes(mux *routes) {
 		}
 		return a.QuotaBytes()
 	})
-	if err := settings.New(s.sync.DB()).SeedAttachments(context.Background(), s.cfg.AttachmentsMaxFileMB, s.cfg.AttachmentsQuotaMB); err != nil {
+	if err := s.settings.SeedAttachments(context.Background(), s.cfg.AttachmentsMaxFileMB, s.cfg.AttachmentsQuotaMB); err != nil {
 		s.log.Error("attachments: presets", "err", err)
 	}
 	if s.attachmentLimiter == nil {
@@ -110,7 +110,7 @@ func WithAttachmentRateLimit(n int, window time.Duration) Option {
 }
 
 func (s *Server) attachmentSettings(ctx context.Context) (settings.Attachments, error) {
-	a, err := settings.New(s.sync.DB()).Attachments(ctx)
+	a, err := s.settings.Attachments(ctx)
 	if s.demo != nil {
 		// The demo instance refuses every attachment route (design D15).
 		a.Enabled = false
@@ -160,7 +160,7 @@ func (s *Server) handleGetAttachmentSettings(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *Server) handlePutAttachmentSettings(w http.ResponseWriter, r *http.Request) {
-	store := settings.New(s.sync.DB())
+	store := s.settings
 	before, err := store.Attachments(r.Context())
 	if err != nil {
 		s.internal(w, err)

@@ -297,8 +297,8 @@ func wireObserver(syncSvc *opsync.Service, hooks *webhook.Service, engine *rules
 // openRules builds the automation rules engine (automation-rules): the owner
 // switch with its OPENTODO_AUTOMATIONS override, in-app notifications and the
 // rule.fired webhook. Nothing runs on a demo instance.
-func openRules(cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service, inbox *notify.InApp, hooks *webhook.Service, log *slog.Logger) (*rules.Engine, *rules.Switch) {
-	sw := rules.NewSwitch(settings.New(db), cfg.Automations)
+func openRules(cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service, inbox *notify.InApp, hooks *webhook.Service, log *slog.Logger) (*rules.Engine, *settings.Switch) {
+	sw := rules.NewSwitch(db, cfg.Automations)
 	if cfg.Demo {
 		return nil, sw
 	}
