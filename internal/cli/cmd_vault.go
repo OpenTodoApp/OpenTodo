@@ -28,6 +28,10 @@ import (
 // account (design D10).
 const VaultPlaintextNotice = "This account uses end-to-end encryption: the vault folder holds your tasks in plain text on this machine. Run `ot encryption lock` to remove the key when you stop syncing."
 
+// TaskNotesHint is printed by `ot vault init` inside an Obsidian vault with
+// TaskNotes installed (OpenSpec change vault-tasknotes).
+const TaskNotesHint = "This folder is inside an Obsidian vault with TaskNotes. To sync your task notes too, run `ot vault tasknotes <folder>` with the folder TaskNotes keeps them in."
+
 // Timings of `ot vault watch` (design D9); tests shorten them.
 var (
 	watchPoll     = 2 * time.Second
@@ -38,7 +42,7 @@ var (
 
 func cmdVault(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if len(args) == 0 {
-		return usageErr("usage: ot vault init|sync|status|watch")
+		return usageErr("usage: ot vault init|sync|status|watch|tasknotes")
 	}
 	switch args[0] {
 	case "init":
@@ -49,8 +53,10 @@ func cmdVault(a *App, ctx context.Context, g *globalFlags, args []string) error 
 		return vaultStatus(a, ctx, g, args[1:])
 	case "watch":
 		return vaultWatch(a, ctx, g, args[1:])
+	case "tasknotes":
+		return vaultTaskNotes(a, ctx, g, args[1:])
 	}
-	return usageErr("unknown vault command %q (expected init, sync, status or watch)", args[0])
+	return usageErr("unknown vault command %q (expected init, sync, status, watch or tasknotes)", args[0])
 }
 
 // vaultParse parses a vault command's arguments without the shared write
@@ -135,11 +141,18 @@ func vaultErr(dir string, err error) error {
 	var le *vault.LimitError
 	var ue *vault.UnreachableError
 	var he *vault.HTTPError
+	var se *vault.SettingsError
 	switch {
 	case err == nil:
 		return nil
 	case errors.As(err, &le):
 		return &exitError{code: ExitUsage, jsonCode: "vault_limit", msg: le.Msg + "; nothing was written or sent"}
+	case errors.As(err, &se):
+		return &exitError{code: ExitUsage, jsonCode: "tasknotes_settings", msg: se.Error() + "; nothing was written or sent"}
+	case vault.IsNoFolder(err):
+		return &exitError{code: ExitUsage, jsonCode: "tasknotes_folder", msg: err.Error() + "; nothing was written or sent"}
+	case errors.Is(err, vault.ErrNewerState):
+		return usageErr("%s: %v", dir, err)
 	case errors.Is(err, vault.ErrNotVault):
 		return usageErr("%s is not a vault; run `ot vault init %s` first", dir, dir)
 	case errors.As(err, &ue):
@@ -196,6 +209,9 @@ func vaultInit(a *App, ctx context.Context, g *globalFlags, args []string) error
 	}
 	if s.locked && !g.json {
 		fmt.Fprintln(a.Stderr, VaultPlaintextNotice)
+	}
+	if !g.json && vault.HasTaskNotes(dir) {
+		fmt.Fprintln(a.Stderr, TaskNotesHint)
 	}
 	if g.json {
 		return a.printJSON(rep)
@@ -293,9 +309,18 @@ func vaultStatus(a *App, _ context.Context, g *globalFlags, args []string) error
 	return nil
 }
 
-// snapshot is the modification time and size of every vault file.
+// snapshot is the modification time and size of every vault file and of
+// every note of a linked TaskNotes folder.
 func snapshot(dir string) map[string]string {
 	out := map[string]string{}
+	walkSnapshot(dir, out)
+	if st, err := vault.LoadState(dir); err == nil && st.TaskNotes != nil {
+		walkSnapshot(st.TaskNotes.Dir(dir), out)
+	}
+	return out
+}
+
+func walkSnapshot(dir string, out map[string]string) {
 	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
@@ -311,7 +336,6 @@ func snapshot(dir string) map[string]string {
 		}
 		return nil
 	})
-	return out
 }
 
 func sameSnapshot(a, b map[string]string) bool {
@@ -451,4 +475,87 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, wake <-
 			}
 		}
 	}
+}
+
+// vaultTaskNotes links or unlinks a TaskNotes folder (OpenSpec change
+// vault-tasknotes, design D1). Linking only writes the vault's state; the next
+// sync reads the notes. It needs a full token, like every vault command that
+// leads to writes.
+func vaultTaskNotes(a *App, ctx context.Context, g *globalFlags, args []string) error {
+	set := a.flagSet("vault tasknotes", g)
+	vdir := set.String("vault", ".", "the vault folder")
+	off := set.Bool("off", false, "unlink the TaskNotes folder")
+	inside := set.Bool("inside", false, "accept a folder inside the vault folder")
+	pos, err := parseArgs(set, "vault tasknotes", args)
+	if err != nil {
+		return a.helpOr("vault", err)
+	}
+	if *off && len(pos) > 0 || !*off && len(pos) != 1 {
+		return a.helpOr("vault", usageErr("usage: ot vault tasknotes <folder> [--vault <dir>] [--inside], or ot vault tasknotes --off"))
+	}
+	st, err := vault.LoadState(*vdir)
+	if err != nil {
+		return vaultErr(*vdir, err)
+	}
+	if !*off {
+		if fi, err := os.Stat(pos[0]); err != nil || !fi.IsDir() {
+			return usageErr("%s is not a folder; nothing was changed", pos[0])
+		}
+	}
+	if g.profile == "" {
+		g.profile = st.Profile
+	}
+	c, _, err := a.connect(g)
+	if err != nil {
+		return err
+	}
+	_, cred, err := c.meAuth(ctx)
+	if err != nil {
+		return err
+	}
+	if cred.Scope == "read" || cred.Scope == "agent" {
+		return &exitError{code: ExitNotPermitted, jsonCode: "insufficient_scope",
+			msg: fmt.Sprintf("the vault needs a full token; this one has scope %s. Nothing was changed.", cred.Scope)}
+	}
+	if g.dryRun {
+		if g.json {
+			return a.printJSON(map[string]any{"vault": *vdir, "folder": strings.Join(pos, ""), "linked": !*off})
+		}
+		fmt.Fprintln(a.Stdout, "Dry run: nothing was changed.")
+		return nil
+	}
+	if *off {
+		was, err := vault.UnlinkTaskNotes(*vdir)
+		if err != nil {
+			return vaultErr(*vdir, err)
+		}
+		if g.json {
+			return a.printJSON(map[string]any{"vault": *vdir, "folder": "", "linked": false})
+		}
+		if was {
+			fmt.Fprintln(a.Stdout, "The TaskNotes folder is unlinked. The notes keep their opentodo-id and their tasks stay in the account.")
+		} else {
+			fmt.Fprintln(a.Stdout, "No TaskNotes folder was linked.")
+		}
+		return nil
+	}
+	stored, err := vault.LinkTaskNotes(*vdir, pos[0], *inside)
+	switch {
+	case errors.Is(err, vault.ErrNotFolder):
+		return usageErr("%s is not a folder; nothing was changed", pos[0])
+	case errors.Is(err, vault.ErrIsVault):
+		return usageErr("%s is the vault folder itself; link the folder TaskNotes keeps its task notes in", pos[0])
+	case errors.Is(err, vault.ErrInsideVault):
+		return usageErr("%s is inside the vault folder. Older ot versions would read its notes as project files; use a folder next to the vault, or --inside when every machine syncing this vault runs this ot", pos[0])
+	case err != nil:
+		return vaultErr(*vdir, err)
+	}
+	if g.json {
+		return a.printJSON(map[string]any{"vault": *vdir, "folder": stored, "linked": true})
+	}
+	fmt.Fprintf(a.Stdout, "Linked the TaskNotes folder %s. Run `ot vault sync` to sync its task notes.\n", stored)
+	if vault.FindTNSettings(pos[0]) == "" {
+		fmt.Fprintf(a.Stderr, "ot: no TaskNotes settings (.obsidian/plugins/tasknotes/data.json) were found above %s; TaskNotes' default field names will be used\n", pos[0])
+	}
+	return nil
 }

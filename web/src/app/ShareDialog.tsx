@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ConfirmDialog, Tooltip, TruncatedText, Dialog } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { HelpLink } from './help/HelpLink'
-import { api, ApiError } from '../lib/api'
+import { api } from '../lib/api'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import { canManage, grantableRoles } from '../lib/sharing'
 import { requestSync } from '../lib/sync'
 import type { Membership, Project, ProjectRole } from '../lib/types'
@@ -48,8 +50,9 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
   const locked = useDemo() !== null
   const roles = locked ? [] : grantableRoles(myRole)
   const [role, setRole] = useState<ProjectRole>('editor')
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { busy, error, run: attempt } = useAction({
+    describe: (err) => errorText(err, { capitalise: false, offline: t('The server could not be reached; sharing needs a connection.') }),
+  })
   // Handing over the project and leaving it are confirmed in the app's own dialog.
   const [asking, setAsking] = useState<{ kind: 'transfer'; userId: string; name: string } | { kind: 'leave' } | null>(null)
   const emailRef = useRef<HTMLInputElement>(null)
@@ -66,18 +69,12 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
   }, [project.id])
 
   async function run(action: () => Promise<Membership | void>, after?: () => void) {
-    setError(null)
-    setBusy(true)
-    try {
+    await attempt(async () => {
       const m = await action()
       if (m) setMembership(m)
       after?.()
       requestSync(0)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('The server could not be reached; sharing needs a connection.'))
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
   function share(e: FormEvent) {

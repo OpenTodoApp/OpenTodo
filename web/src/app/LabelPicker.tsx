@@ -1,9 +1,10 @@
-import { useState } from 'react'
 import { useLabels, useTask } from '../lib/localData'
 import { addLabel, createLabel, toggleLabel } from '../lib/labels'
 import type { Label } from '../lib/types'
 import { Combobox, ComboboxPanel, LabelChip as UiLabelChip } from '../ui'
 import { t } from '../lib/i18n'
+import { messageOf } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 
 /** A label as a chip (the design-system LabelChip), with a remove control when `onRemove` is given. */
 export function LabelChip({ label, onRemove }: { label: Label; onRemove?: () => void }) {
@@ -20,16 +21,7 @@ export function LabelChip({ label, onRemove }: { label: Label; onRemove?: () => 
 export function LabelPicker({ taskId, onClose, inline = false }: { taskId: string; onClose?: () => void; inline?: boolean }) {
   const task = useTask(taskId)
   const labels = useLabels()
-  const [error, setError] = useState<string | null>(null)
-
-  const run = async (fn: () => Promise<unknown>) => {
-    setError(null)
-    try {
-      await fn()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    }
-  }
+  const { error, run } = useAction({ describe: messageOf })
   const props = {
     label: t('Label'),
     source: labels,

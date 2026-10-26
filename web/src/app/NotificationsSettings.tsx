@@ -17,6 +17,7 @@ import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { has as shellHas } from '../lib/shell'
 import { ShellNotifications } from './ShellNotifications'
 import { useSettingsPending } from './settingsPending'
+import { messageOf } from '../lib/errorText'
 
 /**
  * Settings → Notifications (OpenSpec change `reminders`): per device, enable or
@@ -72,7 +73,7 @@ function PushNotificationsSettings() {
     } catch (err) {
       const text = err instanceof PushPermissionError
         ? t('Notifications are blocked for this site in your browser settings, so this device cannot receive pushes. Reminders still appear inside the app while it is open.')
-        : err instanceof Error ? err.message : String(err)
+        : messageOf(err)
       setMessage({ kind: 'error', text })
       setState(await loadPushState())
     } finally {

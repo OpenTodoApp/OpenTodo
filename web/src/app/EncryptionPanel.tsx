@@ -16,6 +16,8 @@ import { FileMigrationPaused, runFileMigration, waitForUploads } from '../lib/at
 import { requestSync } from '../lib/sync'
 import { t, msg } from '../lib/i18n'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
+import { messageOf } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 
 // Settings → End-to-end encryption (OpenSpec `e2ee`, task 4.1). The pure
 // EncryptionView renders every state from props (tested with static markup);
@@ -31,7 +33,7 @@ export function encryptionMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message
   // fetch() rejects with TypeError when the server is unreachable.
   if (err instanceof TypeError && isNetworkError(err)) return t('You are offline. This needs a connection to your server.')
-  return err instanceof Error ? err.message : String(err)
+  return messageOf(err)
 }
 
 export type Mode =
@@ -267,23 +269,10 @@ function download(text: string) {
 export function EncryptionPanel() {
   const state = useEncryption()
   const [mode, setMode] = useState<Mode>({ kind: 'idle' })
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const { busy, error, setError, run } = useAction({ describe: encryptionMessage, onStart: () => setNotice(null) })
   const [prepared, setPrepared] = useState<PreparedEnable | null>(null)
 
-  const run = async (fn: () => Promise<void>) => {
-    setBusy(true)
-    setError(null)
-    setNotice(null)
-    try {
-      await fn()
-    } catch (err) {
-      setError(encryptionMessage(err))
-    } finally {
-      setBusy(false)
-    }
-  }
   const checkNew = (next: string, confirm: string) => {
     if (next.length < MIN_PASSPHRASE_LENGTH) throw new Error(t('The passphrase needs at least {n} characters.', { n: MIN_PASSPHRASE_LENGTH }))
     if (next !== confirm) throw new Error(t('The two passphrases do not match.'))

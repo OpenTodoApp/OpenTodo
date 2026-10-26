@@ -4,11 +4,14 @@ import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
-import { checkShared, configVariables, loadFacts, readText, ROOT } from './common.mjs'
+import { checkShared, configVariables, escapeRegExp, loadFacts, readText, releaseVersion, ROOT } from './common.mjs'
 import { capRegex, check, checkTemplate, TEMPLATE, UPSTREAM, UPSTREAM_APP, UPSTREAM_LOGO } from './caprover.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
+const VR = escapeRegExp(V)
 const yml = readText(TEMPLATE)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
 const all = (text) => {
@@ -23,7 +26,7 @@ const withYml = (from, to) => {
 test('caprover: the committed app passes', () => {
   assert.deepEqual(check(ctx), [])
   const t = checkTemplate(yml, ctx)
-  assert.equal(t.image, 'ghcr.io/opentodoapp/opentodo:0.14.2')
+  assert.equal(t.image, `ghcr.io/opentodoapp/opentodo:${V}`)
   assert.equal(t.port, '8080')
   assert.equal(t.dataTarget, '/data')
   assert.deepEqual([...t.variables.keys()], ['OPENTODO_BASE_URL', 'OPENTODO_SETUP_TOKEN', 'OPENTODO_ALLOW_SIGNUP', 'OPENTODO_TRUSTED_PROXIES'])
@@ -37,10 +40,10 @@ test('caprover: validRegex is evaluated like CapRover', () => {
 })
 
 test('caprover: image policy and the version field', () => {
-  has(withYml("defaultValue: '0.14.2'", "defaultValue: '0.6.0'"), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
+  has(withYml(`defaultValue: '${V}'`, "defaultValue: '0.6.0'"), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${VR}`))
   has(withYml('opentodo:$$cap_opentodo_version', 'opentodo:stable'), /image must be ghcr\.io\/opentodoapp\/opentodo:\$\$cap_opentodo_version/)
   has(withYml('/^[0-9]+\\.[0-9]+(\\.[0-9]+)?$/', '/.{1,}/'), /must refuse "latest"/)
-  has(withYml("defaultValue: '0.14.2'", 'defaultValue: 0.6'), /defaultValue must be a string/)
+  has(withYml(`defaultValue: '${V}'`, 'defaultValue: 0.6'), /defaultValue must be a string/)
 })
 
 test('caprover: port, volume and service keys', () => {

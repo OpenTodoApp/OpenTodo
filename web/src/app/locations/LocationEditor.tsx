@@ -14,6 +14,7 @@ import { Button, ComboboxPanel, Icon, Input, type AsyncSource } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
 import { LocationMap } from './LocationMap'
+import { messageOf } from '../../lib/errorText'
 
 /** The live places in their order. */
 export function usePlaces(): Place[] {
@@ -108,7 +109,7 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
     try {
       await fromPoint(await currentPosition())
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : String(err))
+      setMessage(messageOf(err))
     }
   }
 

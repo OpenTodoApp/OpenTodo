@@ -7,6 +7,7 @@ import { getDeviceId } from './ops'
 import type { PushSubscriptionStatus } from './types'
 import { formatInstant } from './dates'
 import { t, msg, translatedMap } from './i18n'
+import { messageOf } from './errorText'
 
 const META_ENABLED = 'push:enabled'
 const META_INCLUDE = 'push:includeContent'
@@ -106,7 +107,7 @@ export async function enablePush(includeContent: boolean): Promise<PushState> {
     try {
       sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: want })
     } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err)
+      const detail = messageOf(err)
       throw new Error(t('This browser refused the push subscription ({detail}). Private windows and some browsers cannot receive push; reminders still appear inside the app.', { detail }))
     }
   }

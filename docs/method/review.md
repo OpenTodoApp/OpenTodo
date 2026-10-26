@@ -29,4 +29,4 @@ The project walk is the heart of it: one card per project, with its outcome, its
 
 ## Keep the rhythm
 
-The sidebar's Review entry shows **Due** when a review is late. In Open Loops first, the app offers the Daily check once a day. A skipped review is not a failure: the next one simply takes a little longer.
+The sidebar's Review entry shows **Due** when a review is late. With the full Open Loops method, the app offers the Daily check once a day. A skipped review is not a failure: the next one simply takes a little longer.

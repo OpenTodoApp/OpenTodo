@@ -2,6 +2,7 @@ import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEff
 import { Skeleton, Dialog as OverlayDialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
+import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
 import { useOutgoingEmail } from '../lib/outgoingEmail'
 import { hasAnyAction, isAdministrator, rowActions, type RowActions } from '../lib/roles'
@@ -67,9 +68,8 @@ export function UsersPanel({ user }: { user: User }) {
   const online = useOnline()
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [unreachable, setUnreachable] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { busy, error, setError, run: attempt } = useAction({ describe: describeUserError, onStart: () => setNotice(null) })
   const [resetLink, setResetLink] = useState<UsersViewProps['resetLink']>(null)
   const [copied, setCopied] = useState(false)
   const [dialog, setDialog] = useState<UsersDialog>(null)
@@ -82,7 +82,7 @@ export function UsersPanel({ user }: { user: User }) {
       if (isNetworkError(err)) setUnreachable(true)
       else setError(describeUserError(err))
     }
-  }, [])
+  }, [setError])
 
   useEffect(() => {
     if (online) void load()
@@ -90,21 +90,15 @@ export function UsersPanel({ user }: { user: User }) {
     else setUsers(null)
   }, [online, load])
 
+  /** Runs an administrative action; resolves whether it worked. */
   async function run(action: () => Promise<unknown>, done: string) {
-    setBusy(true)
-    setError(null)
-    setNotice(null)
-    try {
+    const ok = await attempt(async () => {
       await action()
       setNotice(done)
       await load()
       return true
-    } catch (err) {
-      setError(describeUserError(err))
-      return false
-    } finally {
-      setBusy(false)
-    }
+    })
+    return ok ?? false
   }
 
   const name = (u: AdminUser) => u.name || u.email

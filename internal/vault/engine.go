@@ -106,6 +106,9 @@ type engine struct {
 	fresh   map[string]bool
 	conf    map[string][]string // conflict file → lines to append
 	ops     []Op
+	tn      *notesState // the linked TaskNotes folder, nil when none
+	// retouch are projects whose file is printed again whatever changed.
+	retouch map[string]bool
 }
 
 // Sync runs one sync of the vault in o.Dir.
@@ -126,14 +129,21 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 	e := &engine{o: o, st: st, t: o.Transport, rep: &Report{Warnings: []string{}, Events: []Event{}},
 		base: st.Store, app: st.Store.Clone(), startCursor: st.Cursor,
 		refused: map[string]bool{}, stamped: map[string]int64{}, conf: map[string][]string{},
-		bodies: map[string]map[string]map[string]any{}, fresh: map[string]bool{}}
+		bodies: map[string]map[string]map[string]any{}, fresh: map[string]bool{}, retouch: map[string]bool{}}
 	e.clk = clock{st: st, now: o.Now}
+	if err := e.loadNotes(); err != nil {
+		return nil, err
+	}
 	if err := e.scan(); err != nil {
+		return nil, err
+	}
+	if err := e.scanNotes(); err != nil {
 		return nil, err
 	}
 	if err := e.pull(ctx); err != nil {
 		return nil, err
 	}
+	e.matchNotes()
 	if !o.ReadOnly {
 		if err := e.merge(); err != nil {
 			return nil, err
@@ -151,6 +161,9 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 	if o.DryRun {
 		e.rep.Planned = e.ops
 		e.app = trial
+		if err := e.planNotes(true); err != nil {
+			return nil, err
+		}
 		e.plan(true)
 		e.rep.Cursor = e.startCursor
 		return e.rep, nil
@@ -168,6 +181,9 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 			op.TS = ts
 		}
 		e.app.Apply(op)
+	}
+	if err := e.planNotes(false); err != nil {
+		return nil, err
 	}
 	if err := e.plan(false); err != nil {
 		return nil, err
@@ -216,8 +232,9 @@ func vaultFile(rel string) bool {
 	return true
 }
 
-// scanFiles reads every vault file of dir.
-func scanFiles(dir string) (map[string][]byte, error) {
+// scanFiles reads every vault file of dir. fence is the slash path of a
+// linked TaskNotes folder below dir, never read as project files ("" none).
+func scanFiles(dir, fence string) (map[string][]byte, error) {
 	out := map[string][]byte{}
 	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -226,7 +243,7 @@ func scanFiles(dir string) (map[string][]byte, error) {
 		rel, _ := filepath.Rel(dir, p)
 		rel = filepath.ToSlash(rel)
 		if d.IsDir() {
-			if rel != "." && strings.HasPrefix(d.Name(), ".") {
+			if rel != "." && (strings.HasPrefix(d.Name(), ".") || fence != "" && rel == fence) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -247,7 +264,11 @@ func scanFiles(dir string) (map[string][]byte, error) {
 // scan reads the folder, finds the files changed since the last write and
 // checks the file limits.
 func (e *engine) scan() error {
-	disk, err := scanFiles(e.o.Dir)
+	fence := ""
+	if e.tn != nil {
+		fence = e.tn.fence
+	}
+	disk, err := scanFiles(e.o.Dir, fence)
 	if err != nil {
 		return err
 	}
@@ -308,6 +329,13 @@ func (e *engine) saveBase() {
 				keep("project", fs.Project)
 			}
 		}
+		if e.tn != nil {
+			for p := range e.tn.changed {
+				if id := e.tn.taskOf[p]; id != "" {
+					keep("task", id)
+				}
+			}
+		}
 	}
 	e.st.Store = next
 }
@@ -330,7 +358,16 @@ func ReadStatus(dir string) (*Status, error) {
 	if err != nil {
 		return nil, err
 	}
-	disk, err := scanFiles(dir)
+	var tnDir, fence string
+	if st.TaskNotes != nil {
+		tnDir = st.TaskNotes.Dir(dir)
+		vabs, _ := filepath.Abs(dir)
+		nabs, _ := filepath.Abs(tnDir)
+		if rel, err := filepath.Rel(vabs, nabs); err == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+			fence = filepath.ToSlash(rel)
+		}
+	}
+	disk, err := scanFiles(dir, fence)
 	if err != nil {
 		return nil, err
 	}
@@ -358,10 +395,68 @@ func ReadStatus(dir string) (*Status, error) {
 		}
 		return nil
 	})
+	if st.TaskNotes != nil {
+		notesStatus(dir, tnDir, fence, st.TaskNotes, out)
+	}
 	sort.Strings(out.Changed)
 	sort.Strings(out.Missing)
 	sort.Strings(out.Conflicts)
 	return out, nil
+}
+
+// notesStatus adds the task notes changed or missing since the last sync,
+// named as the sync names them.
+func notesStatus(dir, tnDir, fence string, tn *TaskNotesState, out *Status) {
+	name := func(p string) string {
+		if fence != "" {
+			return fence + "/" + p
+		}
+		return filepath.ToSlash(filepath.Join(tnDir, filepath.FromSlash(p)))
+	}
+	set, _, err := LoadTNSettings(tnDir)
+	if err != nil {
+		set = DefaultTNSettings()
+	}
+	tracked := map[string]bool{}
+	for _, p := range tn.Notes {
+		tracked[p] = true
+	}
+	onDisk := map[string]bool{}
+	vabs, _ := filepath.Abs(dir)
+	root, _ := filepath.Abs(tnDir)
+	_ = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			if p != root && (strings.HasPrefix(d.Name(), ".") || p == vabs) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(d.Name(), ".md") || strings.HasSuffix(d.Name(), ".conflict.md") {
+			return nil
+		}
+		rel, _ := filepath.Rel(root, p)
+		rel = filepath.ToSlash(rel)
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return nil
+		}
+		onDisk[rel] = true
+		if tn.Hashes[rel] == hashOf(b) {
+			return nil
+		}
+		if tracked[rel] || set.isTaskNote(ParseFront(string(b))) {
+			out.Changed = append(out.Changed, name(rel))
+		}
+		return nil
+	})
+	for p := range tracked {
+		if !onDisk[p] {
+			out.Missing = append(out.Missing, name(p))
+		}
+	}
 }
 
 // ErrAlreadyVault and ErrHasNotes are init refusals (exit 2).
@@ -379,7 +474,7 @@ func CheckInit(dir string, adopt bool) error {
 	if adopt {
 		return nil
 	}
-	disk, err := scanFiles(dir)
+	disk, err := scanFiles(dir, "")
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}

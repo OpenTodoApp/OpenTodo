@@ -8,6 +8,8 @@ import { Badge, Button, ConfirmDialog, Icon, Input, Menu, MenuItem, Notice, Sett
 import { ApiError, isNetworkError } from '../lib/api'
 import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
+import { errorText } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { cacheChannels, cachedChannels, channelsApi, MAX_CHANNELS, type NotificationChannel } from '../lib/notificationChannels'
@@ -139,12 +141,6 @@ export function ChannelsView(p: ChannelsViewProps) {
   )
 }
 
-function describe(err: unknown): string {
-  if (err instanceof ApiError) return err.message.charAt(0).toUpperCase() + err.message.slice(1)
-  if (isNetworkError(err)) return t('The server could not be reached.')
-  return t('Something went wrong.')
-}
-
 function fieldErrorOf(err: unknown): ChannelFieldError | null {
   if (!(err instanceof ApiError)) return null
   if (err.field) return { field: err.field, message: err.serverMessage.replace(new RegExp(`^${err.field}: `), '') }
@@ -164,9 +160,14 @@ export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
   const [channels, setChannels] = useState<NotificationChannel[] | null>(null)
   useSettingsPending(enabled === null && online)
   const [unreachable, setUnreachable] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [fieldError, setFieldError] = useState<ChannelFieldError | null>(null)
+  const { busy, error, setError, run, act } = useAction({
+    onStart: () => setFieldError(null),
+    onError: (err) => {
+      if (isNetworkError(err)) setUnreachable(true)
+      setFieldError(fieldErrorOf(err))
+    },
+  })
   const [draft, setDraft] = useState<ChannelDraft | null>(null)
   const [secret, setSecret] = useState<{ name: string; value: string } | null>(null)
   const [tests, setTests] = useState<Record<string, string>>({})
@@ -183,9 +184,9 @@ export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
       if (on) keep((await channelsApi.list()).channels)
     } catch (err) {
       if (isNetworkError(err)) setUnreachable(true)
-      else setError(describe(err))
+      else setError(errorText(err))
     }
-  }, [keep])
+  }, [keep, setError])
   useEffect(() => {
     void cachedChannels().then((cached) => {
       if (cached.length) {
@@ -203,27 +204,11 @@ export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
     const list = channels ?? []
     keep(list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c])
   }
-  async function act(action: () => Promise<void>) {
-    setError(null)
-    setFieldError(null)
-    setBusy(true)
-    try {
-      await action()
-    } catch (err) {
-      if (isNetworkError(err)) setUnreachable(true)
-      setError(describe(err))
-      setFieldError(fieldErrorOf(err))
-      throw err
-    } finally {
-      setBusy(false)
-    }
-  }
-  const quiet = (action: () => Promise<void>) => act(action).catch(() => undefined)
 
   return (
     <ChannelsView isOwner={isOwner} enabled={enabled} connected={connected} encrypted={encrypted} channels={channels} busy={busy} error={error}
       draft={draft} fieldError={fieldError} secret={secret} tests={tests}
-      onToggle={(on) => void quiet(async () => {
+      onToggle={(on) => void run(async () => {
         await channelsApi.putSetting(on)
         setEnabled(on)
         if (on) await load()
@@ -237,7 +222,7 @@ export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
           setError(local.message)
           return
         }
-        void quiet(async () => {
+        void run(async () => {
           const body = channelDraftBody(draft)
           const res = draft.id ? await channelsApi.update(draft.id, body) : await channelsApi.create(body)
           upsert(res.channel)
@@ -245,13 +230,13 @@ export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
           setDraft(null)
         })
       }}
-      onSetEnabled={(c, on) => void quiet(async () => { upsert((await channelsApi.update(c.id, { enabled: on })).channel) })}
-      onTest={(c) => void quiet(async () => {
+      onSetEnabled={(c, on) => void run(async () => { upsert((await channelsApi.update(c.id, { enabled: on })).channel) })}
+      onTest={(c) => void run(async () => {
         const res = await channelsApi.test(c.id)
         setTests((cur) => ({ ...cur, [c.id]: testText(res) }))
         keep((await channelsApi.list()).channels)
       })}
-      onRotate={(c) => void quiet(async () => {
+      onRotate={(c) => void run(async () => {
         const res = await channelsApi.update(c.id, { rotateSecret: true })
         upsert(res.channel)
         if (res.secret) setSecret({ name: res.channel.name, value: res.secret })

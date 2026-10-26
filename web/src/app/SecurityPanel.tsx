@@ -17,6 +17,8 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
+import { messageOf } from '../lib/errorText'
+import { useAction } from '../lib/useAction'
 
 // Settings → Account → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
@@ -43,13 +45,23 @@ function readCachedAvailability(): boolean {
   }
 }
 
+/** The error for a failed passkey action; null when the user cancelled and nothing changed. */
+function passkeyError(err: unknown): string | null {
+  if (isCancellation(err)) return null // user closed the browser prompt
+  // Adding a passkey needs a recent sign-in; the API client asked for it
+  // (ReauthDialog) and the user cancelled, so nothing changed.
+  if (err instanceof ApiError && err.code === 'reauth_required') return null
+  return err instanceof ApiError && err.code === 'passkey_challenge_invalid'
+    ? t('That took too long. Please try again.')
+    : messageOf(err)
+}
+
 /** Container: learns availability from auth/status, loads and mutates the list. */
 export function SecurityPanel() {
   const [available, setAvailable] = useState<boolean>(readCachedAvailability)
   const [passkeys, setPasskeys] = useState<Passkey[] | null>(null)
   const [domain, setDomain] = useState<string | undefined>(undefined)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { busy, error, setError, run: attempt } = useAction({ describe: passkeyError })
   const online = useOnline()
   const [removing, setRemoving] = useState<Passkey | null>(null)
 
@@ -69,30 +81,16 @@ export function SecurityPanel() {
       // Offline or server unreachable: keep whatever we had.
       if (err instanceof ApiError) setError(err.message)
     }
-  }, [])
+  }, [setError])
 
   useEffect(() => {
     if (online) void load()
   }, [online, load])
 
-  const run = useCallback(async (fn: () => Promise<unknown>) => {
-    setBusy(true)
-    setError(null)
-    try {
-      await fn()
-      await load()
-    } catch (err) {
-      if (isCancellation(err)) return // user closed the browser prompt
-      // Adding a passkey needs a recent sign-in; the API client asked for it
-      // (ReauthDialog) and the user cancelled, so nothing changed.
-      if (err instanceof ApiError && err.code === 'reauth_required') return
-      setError(err instanceof ApiError && err.code === 'passkey_challenge_invalid'
-        ? t('That took too long. Please try again.')
-        : err instanceof Error ? err.message : String(err))
-    } finally {
-      setBusy(false)
-    }
-  }, [load])
+  const run = useCallback((fn: () => Promise<unknown>) => attempt(async () => {
+    await fn()
+    await load()
+  }), [attempt, load])
 
   return (
     <>

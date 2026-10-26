@@ -5,6 +5,7 @@ import { FileMigrationPaused, runFileMigration } from '../lib/attachments'
 import { requestSync } from '../lib/sync'
 import { encryptionMessage, LostKeysConfirm } from './EncryptionPanel'
 import { t } from '../lib/i18n'
+import { useAction } from '../lib/useAction'
 
 // The unlock screen (OpenSpec `e2ee`, design D5, task 4.2): shown instead of the
 // app while the account encrypts and this device holds no key (a new device
@@ -72,10 +73,19 @@ export function UnlockView(p: UnlockViewProps) {
   )
 }
 
+/** An unlock step: busy and the encryption error, then a pull once it worked. */
+function useUnlockAction() {
+  const action = useAction({ describe: encryptionMessage })
+  const act = (fn: () => Promise<void>) => action.run(async () => {
+    await fn()
+    requestSync(0)
+  })
+  return { ...action, act }
+}
+
 export function UnlockScreen({ onLogout }: { onLogout: () => void }) {
   const [kind, setKind] = useState<'passphrase' | 'recovery'>('passphrase')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, setError, act } = useUnlockAction()
   const [lost, setLost] = useState(false)
   const [biometric, setBiometric] = useState<{ available: boolean; enabled: boolean }>({ available: false, enabled: false })
   const [remember, setRemember] = useState(true)
@@ -90,18 +100,6 @@ export function UnlockScreen({ onLogout }: { onLogout: () => void }) {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on mount
   }, [])
-  const act = async (fn: () => Promise<void>) => {
-    setBusy(true)
-    setError(null)
-    try {
-      await fn()
-      requestSync(0)
-    } catch (err) {
-      setError(encryptionMessage(err))
-    } finally {
-      setBusy(false)
-    }
-  }
   return (
     <UnlockView
       kind={kind} busy={busy} error={error} lost={lost} onKind={(k) => { setKind(k); setError(null) }} onLost={setLost} onLogout={onLogout}
@@ -180,21 +178,8 @@ export function RecordMissingView(p: RecordMissingViewProps) {
 }
 
 export function RecordMissingScreen({ unlocked, onLogout }: { unlocked: boolean; onLogout: () => void }) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { busy, error, act } = useUnlockAction()
   const [confirmOff, setConfirmOff] = useState(false)
-  const act = async (fn: () => Promise<void>) => {
-    setBusy(true)
-    setError(null)
-    try {
-      await fn()
-      requestSync(0)
-    } catch (err) {
-      setError(encryptionMessage(err))
-    } finally {
-      setBusy(false)
-    }
-  }
   return (
     <RecordMissingView
       unlocked={unlocked} busy={busy} error={error} confirmOff={confirmOff} onConfirmOff={setConfirmOff} onLogout={onLogout}
