@@ -6,7 +6,7 @@ The nightly race-detector run has failed four nights in a row on a data race ins
 
 ## What Changes
 
-- The test reads the bridge's output through a mutex-guarded buffer, so the race-detector run is green again.
+- The test reads the bridge's output through a mutex-guarded buffer. With that race gone, the race detector found a real one: the backup service published its in-progress run as a pointer to the struct the backup goroutine keeps filling in, while the backup status route copied it; it now publishes a copy.
 - The nightly workflow gets an `alert` job that runs after every other nightly job: on a failure it opens one issue labelled `ci-nightly` (or comments on the open one) with the run link and the failed jobs; on a green night it closes that issue. It uses only `GITHUB_TOKEN`, with `issues: write` on that job alone.
 - The repository checks require the alert job to need every other nightly job.
 
