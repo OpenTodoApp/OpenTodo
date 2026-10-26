@@ -1,0 +1,20 @@
+{
+  "description": "The next reminders with titles (titles on, account readable), earliest first.",
+  "method": "scheduleReminders",
+  "payload": "[{\"id\":\"r-soon\",\"taskId\":\"call\",\"fireAt\":1792674000000,\"title\":\"Call the plumber ☎\"},{\"id\":\"r-late\",\"taskId\":\"plain\",\"fireAt\":1792681200000,\"title\":\"Water the plants\"}]",
+  "now": 1792670400000,
+  "expect": [
+    {
+      "id": "r-soon",
+      "taskId": "call",
+      "fireAt": 1792674000000,
+      "title": "Call the plumber ☎"
+    },
+    {
+      "id": "r-late",
+      "taskId": "plain",
+      "fireAt": 1792681200000,
+      "title": "Water the plants"
+    }
+  ]
+}

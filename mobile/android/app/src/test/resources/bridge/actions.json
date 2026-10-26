@@ -1,0 +1,33 @@
+{
+  "description": "Notification buttons and the quick-add widget: the address the shell opens, and the action the web app reads.",
+  "reminderActions": [
+    {
+      "id": "abc",
+      "action": "snooze",
+      "path": "/?reminder=abc&action=snooze"
+    },
+    {
+      "id": "abc",
+      "action": "dismiss",
+      "path": "/?reminder=abc&action=dismiss"
+    },
+    {
+      "id": "r 1/ü",
+      "action": "snooze",
+      "path": "/?reminder=r+1%2F%C3%BC&action=snooze"
+    }
+  ],
+  "taskPaths": [
+    {
+      "taskId": "t1",
+      "path": "/?task=t1"
+    },
+    {
+      "taskId": "t/1",
+      "path": "/?task=t%2F1"
+    }
+  ],
+  "quickAdd": {
+    "path": "/?add="
+  }
+}

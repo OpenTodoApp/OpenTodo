@@ -1,0 +1,14 @@
+{
+  "description": "Sign-out: an empty, locked widget.",
+  "method": "publishWidget",
+  "payload": "{\"updatedAt\":1792670400000,\"locked\":true,\"count\":0,\"overdue\":0,\"tasks\":[]}",
+  "now": 1792670400000,
+  "expect": {
+    "updatedAt": 1792670400000,
+    "locked": true,
+    "count": 0,
+    "overdue": 0,
+    "rows": [],
+    "more": 0
+  }
+}
