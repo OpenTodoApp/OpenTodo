@@ -73,7 +73,10 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
       </div>
       {readOnly && <ReadOnlyNote />}
       {isSample(task) && !readOnly && <SampleNotice />}
-      <div className="min-w-0 flex-1 overflow-y-auto" data-panel-body>
+      {/* Relative, so absolutely placed descendants (screen-reader labels) scroll and clip
+          with the body instead of hanging below the window and scrolling the whole page
+          (GitHub issue 395). */}
+      <div className="relative min-w-0 flex-1 overflow-y-auto" data-panel-body>
         <div className="min-w-0 space-y-4 p-4">
           <TaskRelations m={m} onOpen={onOpen} />
           <TaskNotes task={task} readOnly={readOnly} clamp />
