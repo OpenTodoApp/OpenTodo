@@ -7,6 +7,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Added
 
 - **Calendar sync, both ways.** Connect the calendar you already use, iCloud, Fastmail, Nextcloud, Synology, Radicale or any CalDAV service with an app password, or Google Calendar, and your dated tasks appear there as events in a calendar you choose. Drag an event to another time, stretch it, rename it or delete it, and the task follows; change the task and the event follows. When both changed, the newer change wins. Other calendars of the same account can be shown in Day and Week. The server owner turns it on under **Settings → Integrations → Calendar sync** and, for Google, sets up an OAuth client there or with the optional `OPENTODO_GOOGLE_CLIENT_ID` and `OPENTODO_GOOGLE_CLIENT_SECRET`. Outlook and Microsoft 365 are not supported yet. ([Calendar sync](docs/calendar-sync.md))
+- **Calendar events in Today.** With a subscribed calendar, **Show calendar events** in Today's menu lists the day's appointments above your tasks: all-day events first, then timed ones in order with their time, calendar colour and location. Free events are an outline, finished ones are dimmed, and a click shows the details as in Day and Week. Off until you turn it on; the choice follows you to your other devices. ([Calendar events in Today](docs/calendar-events-in-today.md))
 
 ### Changed
 

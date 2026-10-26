@@ -104,6 +104,27 @@ async function openProject(p, name) {
   if (!(await link.isVisible())) for (const b of await sidebar(p).getByRole('button', { name: /^Expand / }).all()) await b.click()
   await link.click(); await p.getByRole('heading', { level: 1, name }).waitFor(); await settle(p)
 }
+/** One subscribed calendar's events for today (UTC, the contexts' zone), as the events route answers. */
+function agendaDay() {
+  const day = new Date().toISOString().slice(0, 10)
+  const next = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+  const ev = (id, summary, start, end, more = {}) => ({ id, subscriptionId: 'work', uid: id, summary, location: '', allDay: false, free: false, start: { date: day, time: start }, end: { date: day, time: end }, ...more })
+  return {
+    subscriptions: [{ id: 'work', name: 'Work', color: '#2563eb', enabled: true, lastSuccessAt: Date.now() }],
+    events: [
+      ev('birthday', 'Mia’s birthday', '', '', { allDay: true, free: true, start: { date: day }, end: { date: next } }),
+      ev('standup', 'Standup', '09:00', '09:15'),
+      ev('dentist', 'Dentist', '11:30', '12:15', { location: 'Via Roma 4' }),
+      ev('review', 'Design review', '15:00', '16:00', { location: 'Room 4' }),
+      ev('focus', 'Focus time', '16:30', '18:00', { free: true }),
+    ],
+  }
+}
+/** Today's menu item that shows or hides the agenda. */
+async function toggleTodayEvents(p) {
+  await p.locator('[data-page-header] button[aria-label="More actions"]').first().click()
+  await p.locator('[data-today-events-toggle]').click(); await settle(p, 300)
+}
 async function openTask(p, title) { await row(p, title).click(); await detail(p).waitFor(); await settle(p, 500) }
 /** Clip around one element, with padding, clamped to the viewport. */
 async function clipOf(p, locator, pad = 12, extra = {}) {
@@ -232,6 +253,16 @@ const shots = [
     return clipOf(p, p.locator('div[class*="rounded"]').filter({ has: p.locator('form') }).first(), 32)
   } },
   { name: 'today', server: D, card: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()) } },
+  // Today's agenda of calendar events (today-agenda): the demo has no calendar feeds, so the
+  // events route is answered in the browser with one subscribed calendar's day.
+  { name: 'today-agenda', server: D, async run(p) {
+    await p.route('**/api/v1/calendar-feeds/events**', (r) => r.fulfill({ json: agendaDay() }))
+    // The Day view fills the device's cache of calendars, as it would after subscribing.
+    await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor())
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
+    if (!(await p.locator('[data-today-agenda]').count())) await toggleTodayEvents(p)
+    await p.locator('[data-today-agenda]').waitFor(); await settle(p, 400)
+  }, async after(p) { await toggleTodayEvents(p) } },
   { name: 'quick-add', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     const qa = p.getByRole('combobox', { name: 'Add a task' }); await qa.click()

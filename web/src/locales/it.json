@@ -5416,5 +5416,9 @@
   "Write tasks into": "Scrivi le attività in",
   "You already have the most calendar accounts allowed.": "Hai già il numero massimo di account di calendario.",
   "Your dated tasks become events in your own calendar; moving an event moves the task.": "Le tue attività con data diventano eventi nel tuo calendario; spostare un evento sposta l’attività.",
-  "calendar sync": "sincronizzazione del calendario"
+  "calendar sync": "sincronizzazione del calendario",
+  "Show calendar events": "Mostra gli eventi del calendario",
+  "Hide calendar events": "Nascondi gli eventi del calendario",
+  "Calendar events today": "Eventi del calendario di oggi",
+  "Ended": "Terminato"
 }

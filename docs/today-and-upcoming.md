@@ -25,11 +25,13 @@ Tasks [waiting for another task](tasks-and-projects.md#wait-for-another-task) ga
 
 To push a task to later, open it and change **Due**, or press <kbd>s</kbd> to place it on the Day calendar.
 
+Your appointments can show here too: [Calendar events in Today](calendar-events-in-today.md).
+
 At the end of the list, **Close the day** moves what is left to tomorrow in one step ([Close the day](method/rhythms.md#close-the-day)); afterwards it reads **Day closed** with the time.
 
 ## Plan your week with Upcoming
 
-A task you add here with [quick add](quick-add.md) is due tomorrow unless you type a date. Upcoming lists everything that has a date after today, under headings like **Tomorrow** and the weekday names. Scan the next few days, move what won't fit, and spot empty days.
+A task you add here with [quick add](quick-add.md) is due tomorrow unless you type a date. Upcoming lists everything that has a date after today, under headings like **Tomorrow** and the weekday names.
 
 <picture><source srcset="images/upcoming-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/upcoming-light.webp" alt="The Upcoming view with tasks grouped under Tomorrow and the following weekdays."></picture>
 
