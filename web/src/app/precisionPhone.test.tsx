@@ -10,7 +10,7 @@ import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { PageHeader } from '../ui'
 import { pageBar } from '../ui/patterns/pageBar'
-import { click, flush, minWidthPx, render } from '../ui/test-utils'
+import { click, minWidthPx, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -39,10 +39,6 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals(); resetPanel(); resetTaskTrail() })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 describe('the day head on a phone (D1)', () => {
   it('keeps the title at the display step, the date and the briefing in the page, scrolling with the list', async () => {

@@ -3,7 +3,6 @@
 // the account's choice and a list's own, and the priority mark that is never colour
 // alone.
 import 'fake-indexeddb/auto'
-import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
@@ -109,7 +108,7 @@ describe('a detailed row', () => {
     await click(document.querySelector('[data-display-row-layout] [data-row-layout="detailed"]')!)
     await waitFor(() => !!document.querySelector('li[data-row-layout="detailed"]'), 'detailed view')
     expect((await db.views.get(id))?.row_layout).toBe('detailed')
-    await act(async () => { await flush(10) })
+    await flush()
     await r.unmount()
   })
 })

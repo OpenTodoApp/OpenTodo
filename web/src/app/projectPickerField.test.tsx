@@ -9,11 +9,10 @@ import { db, useDatabase } from '../lib/db'
 import { createProject, resetDeviceId } from '../lib/ops'
 import { parseShare } from '../lib/share'
 import type { Project } from '../lib/types'
-import { click, key, render, type } from '../ui/test-utils'
+import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { ProjectPickerField } from './ProjectPickerField'
 import { ShareCapture, setPendingShare } from './ShareCapture'
 
-const settle = () => act(async () => { for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 20)) })
 const field = () => document.querySelector<HTMLInputElement>('[data-overlay] input[role="combobox"]') ?? document.querySelectorAll<HTMLInputElement>('input[role="combobox"]:not([aria-label="Task title"])')[0]!
 const project = (id: string, name: string, parent_id: string | null = null): Project =>
   ({ id, name, color: '#16a34a', position: 1, archived: false, parent_id, created_at: 0, deleted_at: null, _clock: {} })
@@ -31,16 +30,14 @@ describe('ShareCapture project picker', () => {
     await createProject({ name: 'Work' })
     setPendingShare(parseShare('?title=Interesting%20article&url=https://example.org/post'))
     const view = await render(<ShareCapture />)
-    await settle()
+    await waitFor(() => !!document.querySelector('button[aria-label="Project: No project"]'), 'the project button')
     const button = document.querySelector<HTMLButtonElement>('button[aria-label="Project: No project"]')!
-    expect(button).not.toBeNull()
     await click(button)
     await type(field(), 'read')
     await key(field(), 'Enter')
-    await settle()
-    expect(document.querySelector('button[aria-label="Project: Reading"]')).not.toBeNull()
+    await waitFor(() => !!document.querySelector('button[aria-label="Project: Reading"]'), 'Reading chosen')
     await act(async () => { (document.getElementById('share-capture') as HTMLFormElement).requestSubmit() })
-    await settle()
+    await waitFor(async () => (await db.tasks.count()) > 0, 'the saved task')
     const tasks = await db.tasks.toArray()
     expect(tasks.map((t) => [t.title, t.project_id])).toEqual([['Interesting article', reading]])
     await view.unmount()

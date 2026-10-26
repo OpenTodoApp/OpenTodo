@@ -4,6 +4,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
+import { readHapticsPref } from '../lib/haptics'
 import { createTask, mutate, resetDeviceId } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { runBulk } from './bulk/BulkActions'
@@ -153,7 +154,9 @@ describe('haptic tick', () => {
     await mutate('user_prefs', USER_PREFS_ID, { haptics: 'off' })
     resetHaptics()
     tick()
-    await new Promise((r) => setTimeout(r, 20))
+    // The tick reads the preference first; a read issued after it settles after it.
+    expect(await readHapticsPref()).toBe(false)
+    await new Promise((r) => setTimeout(r, 0))
     expect(vibrate).toHaveBeenCalledTimes(1)
 
     vi.stubGlobal('navigator', { userAgent: 'test' })

@@ -7,7 +7,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render, type } from '../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
 import { addMonthsISO, MonthView } from './MonthView'
 import { resetPanel } from './panel'
 import { openedTask, resetTaskPage } from './taskPage.testkit'
@@ -31,10 +31,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const cell = (root: ParentNode, d: string) => root.querySelector<HTMLElement>(`[data-month-day="${d}"]`)!
 
 describe('month route', () => {
@@ -48,7 +44,7 @@ describe('month route', () => {
 
   it('keeps the date when switching range, and is remembered for /calendar', async () => {
     const r = await render(<MonthView date="2026-11-18" />)
-    await flush(30)
+    await waitFor(() => localStorage.getItem('ot.calendar.mode') === 'month', 'the remembered mode')
     expect(localStorage.getItem('ot.calendar.mode')).toBe('month')
     expect(parseRoute('/calendar')).toEqual({ view: 'month' })
     const sw = r.container.querySelector('[role="group"][aria-label="Calendar range"]')!
@@ -131,6 +127,7 @@ describe('month grid', () => {
     expect(r.container.querySelector(`[data-month-task="${id}"]`)!.textContent).toContain('read-only')
     await click(r.container.querySelector(`[data-month-task="${id}"]`)!)
     await key(document.body, 'ArrowRight')
+    // A fixed wait on purpose: nothing may be written, and a refused move shows no signal to wait for.
     await flush(50)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-20' })
     await r.unmount()

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, getMeta } from '../lib/db'
 import { createProject, resetDeviceId, updateProject } from '../lib/ops'
 import { saveViewMode } from '../lib/sections'
-import { click, flush, key, render } from '../ui/test-utils'
+import { click, key, render, waitFor } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 
 beforeEach(async () => {
@@ -22,10 +22,6 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const note = (root: ParentNode) => root.querySelector('[data-project-note]')
 
 describe('project note', () => {
