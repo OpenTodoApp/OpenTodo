@@ -16,7 +16,7 @@ Calendar feeds work in both directions:
 - **Other calendars in OpenTodo.** Subscribe to the iCal address of a Google, Outlook, Apple, Fastmail or Nextcloud calendar, and its events appear next to your tasks in [Day and Week](calendar-views.md). You see your real free time while you plan.
 - **Your tasks in your calendar app.** Create a private feed address, then subscribe to it from Google Calendar, Outlook or Apple Calendar. Your dated tasks show up there as events.
 
-Both directions are read-only. Events from other calendars can't be moved or edited in OpenTodo, and calendar apps can't change your tasks. For two-way sync with apps that support it, use [CalDAV](caldav.md).
+Both directions are read-only. Events from other calendars can't be moved or edited in OpenTodo, and calendar apps can't change your tasks. For two-way sync with the calendar you use (iCloud, Fastmail, Nextcloud or Google Calendar), use [calendar sync](calendar-sync.md): moving an event there moves the task. For to-do apps that speak CalDAV, use [CalDAV](caldav.md).
 
 Calendar feeds are off until the server owner turns them on under **Settings → Integrations → Calendar feeds**. The server fetches the calendar addresses itself; private network addresses follow the owner's webhooks setting.
 

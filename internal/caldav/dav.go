@@ -61,12 +61,16 @@ func (n *Node) Attr(local string) string {
 var ErrBadXML = errors.New("malformed XML body")
 
 // ParseXML reads one XML document into a tree. An empty body returns nil, nil.
-func ParseXML(r io.Reader) (*Node, error) {
-	data, err := io.ReadAll(io.LimitReader(r, MaxXMLBytes+1))
+func ParseXML(r io.Reader) (*Node, error) { return ParseXMLLimit(r, MaxXMLBytes) }
+
+// ParseXMLLimit is ParseXML with another size bound (calendar sync reads
+// multistatus answers that carry calendar data).
+func ParseXMLLimit(r io.Reader, max int) (*Node, error) {
+	data, err := io.ReadAll(io.LimitReader(r, int64(max)+1))
 	if err != nil {
 		return nil, err
 	}
-	if len(data) > MaxXMLBytes {
+	if len(data) > max {
 		return nil, fmt.Errorf("%w: too large", ErrBadXML)
 	}
 	if len(bytes.TrimSpace(data)) == 0 {

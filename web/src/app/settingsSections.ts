@@ -122,10 +122,11 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
   { id: 'about', label: msg('About'), group: 'app', icon: 'heart', description: () => t('Version, documentation, website, feedback and support') },
   {
     id: 'integrations', label: msg('Integrations'), group: 'data', icon: 'link',
-    description: () => t('Calendar apps (CalDAV), calendar feeds, issues, webhooks, API tokens, the assistant and AI assistants (MCP)'),
+    description: () => t('Calendar apps (CalDAV), calendar feeds and sync, issues, webhooks, API tokens, the assistant and AI assistants (MCP)'),
     pages: pages([
       page({ id: 'caldav', label: msg('Calendar apps (CalDAV)'), icon: 'calendar-sync', help: 'settings/caldav', demo: [msg('calendar apps (CalDAV)')] }),
       page({ id: 'calendar-feeds', label: msg('Calendar feeds'), icon: 'rss', help: 'settings/calendar-feeds', demo: [msg('calendar feeds')] }),
+      page({ id: 'calendar-sync', label: msg('Calendar sync'), icon: 'calendar-check', help: 'settings/calendar-sync', demo: [msg('calendar sync')] }),
       page({ id: 'issues', label: msg('Issues'), icon: 'git-pull-request', help: 'settings/issues' }),
       page({ id: 'webhooks', label: msg('Webhooks'), icon: 'webhook', help: 'settings/webhooks', demo: [msg('webhooks')] }),
       page({ id: 'tokens', label: msg('API tokens'), icon: 'key', help: 'settings/tokens', demo: [msg('API tokens')] }),

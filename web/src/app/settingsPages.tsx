@@ -36,6 +36,7 @@ import { WebhooksPanel } from './WebhooksPanel'
 import { CaldavPanel } from './CaldavPanel'
 import { CalendarFeedsPanel } from './CalendarFeedsPanel'
 import { IssuesPanel } from './IssuesPanel'
+import { CalendarSyncPanel } from './CalendarSyncPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { BriefingSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
@@ -95,6 +96,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'capture/email': ({ demo }) => <DemoDisabled on={demo}><EmailInboxPanel /></DemoDisabled>,
   'integrations/caldav': ({ user, demo }) => <DemoDisabled on={demo}><CaldavPanel isOwner={user.role === 'owner'} email={user.email} /></DemoDisabled>,
   'integrations/calendar-feeds': ({ user, demo }) => <DemoDisabled on={demo}><CalendarFeedsPanel isOwner={user.role === 'owner'} /></DemoDisabled>,
+  'integrations/calendar-sync': ({ user, demo }) => <DemoDisabled on={demo}><CalendarSyncPanel isOwner={user.role === 'owner'} /></DemoDisabled>,
   'integrations/issues': ({ user, demo }) => <DemoDisabled on={demo}><IssuesPanel isOwner={user.role === 'owner'} /></DemoDisabled>,
   'integrations/webhooks': ({ user, demo, hosted }) => <DemoDisabled on={demo}><WebhooksPanel isOwner={user.role === 'owner' && !hosted} /></DemoDisabled>,
   'integrations/tokens': ({ demo }) => <DemoDisabled on={demo}><TokensSection /></DemoDisabled>,
