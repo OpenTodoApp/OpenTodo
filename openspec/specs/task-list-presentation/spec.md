@@ -184,7 +184,7 @@ A group with no open tasks SHALL be hidden when it is generated (a date, "No sec
 - **THEN** the "Done" header shows no "n completed" and no Show control, and the two tasks are in the Completed group at the end of the list
 
 ### Requirement: Nothing between the header and the list
-Above the first task of a list there SHALL be at most the page header and the quick add, and the quick add SHALL end at its field and its preview chips: no help link, hint line or note under it. Filters (duration, labels, assignee), layout switches, disclosures, sort notes, promotions, help links and first-run guidance SHALL live in the page header, its menus, the overflow, the Help panel or an overlay, never as rows above or inside the list. A list with no task SHALL show its empty view (see "Empty views") in the place of the rows, with nothing between the quick add and it. This is presentation only and behaves the same offline.
+Above the first task of a list there SHALL be at most the page header and the quick add, and the quick add SHALL end at its field and its preview chips: no help link, hint line or note under it. Filters (duration, labels, assignee), layout switches, disclosures, sort notes, promotions, help links and first-run guidance SHALL live in the page header, its menus, the overflow, the Help panel or an overlay, never as rows above or inside the list. The one exception SHALL be Today's agenda of calendar events (OpenSpec `today-agenda`), which is content the user turned on and SHALL show between the quick add and the first task only while it is on and today has events. A list with no task SHALL show its empty view (see "Empty views") in the place of the rows, with nothing between the quick add and it apart from that agenda. This is presentation only and behaves the same offline.
 
 #### Scenario: First task on a phone
 - **WHEN** the Inbox with eight tasks opens on a 390×844 screen with the keyboard closed
@@ -201,6 +201,10 @@ Above the first task of a list there SHALL be at most the page header and the qu
 #### Scenario: First visit on a fresh account
 - **WHEN** an account opens the Inbox for the first time
 - **THEN** the list page holds the header, the quick add and the empty view only; the start guide is an overlay over it
+
+#### Scenario: Today's agenda
+- **WHEN** the user turned on Today's calendar events and today holds two events
+- **THEN** Today shows the header, the quick add, the agenda and then the first task; with the option off it shows the header, the quick add and the first task
 
 ### Requirement: Density preference
 Settings → Appearance SHALL offer a density of Comfortable (default) or Compact, synced with the appearance preferences, applied to rows, group headers and the sidebar at once.

@@ -10,7 +10,7 @@ import { calendarTasks, formatTime as toHHMM, placementStart, weekDates, type Gr
 import { calendarDays, calendarOrder, type DayData } from '../lib/calendarDays'
 import { useOnline } from '../lib/online'
 import { setShowEvents } from '../lib/calendarFeeds'
-import { addDaysISO, dueFromView, formatDate, formatShort, logicalToday, todayISO, viewedTask } from '../lib/dates'
+import { addDaysISO, dueFromView, formatDate, formatShort, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import { getTask, readGridPrefs, useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { updateTask } from '../lib/ops'
@@ -36,25 +36,10 @@ import { WeekAgenda } from './calendar/WeekAgenda'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
+import { useNowMinutes } from './calendar/useNowMinutes'
 
 /** Live preferences of this device (Dexie meta, never synced); MonthView and the settings read them too. */
 export { useGridPrefs }
-
-function useNowMinutes(): number {
-  // Minutes since the logical today's midnight (day-boundary D3): before the day start
-  // the clock is past that day's 24:00, so the now line is not drawn on its column.
-  const read = () => {
-    const d = new Date()
-    const minutes = d.getHours() * 60 + d.getMinutes()
-    return todayISO(d) === logicalToday(undefined, d.getTime()) ? minutes : minutes + 24 * 60
-  }
-  const [now, setNow] = useState(read)
-  useEffect(() => {
-    const id = setInterval(() => setNow(read()), 60_000)
-    return () => clearInterval(id)
-  }, [])
-  return now
-}
 
 /** Placement mode (`s`): a ghost the keys move, placed with Enter. */
 function usePlacement(dates: string[], today: string, prefs: GridPrefs, date: string | undefined, setSelectedId: (id: string) => void) {
