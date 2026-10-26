@@ -3,7 +3,7 @@
 // format, the keyboard-operable calendar and the quarter-hour suggestions.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { setDateTime } from '../../lib/dates'
-import { flush, key, render, type } from '../../ui/test-utils'
+import { key, render, type, waitFor } from '../../ui/test-utils'
 import { CalendarGrid, DateField } from './DateField'
 import { TimeField } from './TimeField'
 
@@ -45,7 +45,7 @@ describe('DateField', () => {
     const onChange = vi.fn()
     const { container, unmount } = await render(<DateField label="Due date" value="2026-10-14" onChange={onChange} />)
     await key(textInput(container), 'ArrowDown', { altKey: true })
-    await flush(20)
+    await waitFor(() => !!grid(), 'the calendar')
     expect(grid()).not.toBeNull()
     const focused = () => document.activeElement as HTMLElement
     expect(focused().dataset.date).toBe('2026-10-14')
@@ -53,7 +53,7 @@ describe('DateField', () => {
     await key(focused(), 'ArrowRight')
     expect(focused().dataset.date).toBe('2026-10-16')
     await key(focused(), 'Enter')
-    await flush(20)
+    await waitFor(() => onChange.mock.calls.length > 0, 'the date chosen')
     expect(onChange).toHaveBeenCalledWith('2026-10-16')
     expect(grid()).toBeNull()
     await unmount()
@@ -143,7 +143,7 @@ describe('accessibility (axe-core in happy-dom)', () => {
     const axe = (await import('axe-core')).default
     const { container, unmount } = await render(<DateField label="Due date" value="2026-10-14" onChange={() => {}} />)
     await key(textInput(container), 'ArrowDown', { altKey: true })
-    await flush(20)
+    await waitFor(() => !!grid(), 'the calendar')
     // Colour contrast needs layout and computed colours that happy-dom does not provide.
     const res = await axe.run(document.body, { rules: { 'color-contrast': { enabled: false } } })
     expect(res.passes.some((p) => p.id === 'aria-required-children')).toBe(true) // the grid was checked

@@ -2,7 +2,6 @@
 // Activity tab (task-detail-redesign 7.1): grouped runs, actors never merged,
 // pending runs, compact comment lines and offline rendering from local storage.
 import 'fake-indexeddb/auto'
-import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { groupRuns } from '../../lib/activityRuns'
 import { createComment } from '../../lib/comments'
@@ -10,7 +9,7 @@ import { db, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import { setCurrentUserId } from '../../lib/sharing'
 import type { ActivityEvent, ActivityKind } from '../../lib/types'
-import { click, flush, render } from '../../ui/test-utils'
+import { click, render, waitFor } from '../../ui/test-utils'
 import { ActivityTab, ActivityView, type ActivityViewProps } from './ActivityTab'
 
 const MIN = 60_000
@@ -98,7 +97,7 @@ describe('ActivityTab (local storage)', () => {
   it('starts with the task’s created and completed times', async () => {
     const id = await createTask({ title: 'Pay rent' })
     const r = await render(<ActivityTab task={(await db.tasks.get(id))!} userId="me" onOpenComment={() => {}} />)
-    await flush(40)
+    await waitFor(() => !!r.container.querySelector('[data-activity-times]')?.textContent?.includes('Created'), 'the times')
     const times = r.container.querySelector('[data-activity-times]')!
     expect(times.textContent).toContain('Created')
     expect(times.textContent).not.toContain('Completed')
@@ -106,7 +105,7 @@ describe('ActivityTab (local storage)', () => {
     await r.unmount()
     await updateTask(id, { completed_at: NOW })
     const done = await render(<ActivityTab task={(await db.tasks.get(id))!} userId="me" onOpenComment={() => {}} />)
-    await flush(40)
+    await waitFor(() => !!done.container.querySelector('[data-activity-times]')?.textContent?.includes('Completed'), 'the completed time')
     expect(done.container.querySelector('[data-activity-times]')!.textContent).toContain('Completed')
     await done.unmount()
   })
@@ -118,7 +117,7 @@ describe('ActivityTab (local storage)', () => {
     await createComment({ taskId: id, body: 'hi' })
     const task = (await db.tasks.get(id))!
     const v = await render(<ActivityTab task={task} userId="me" onOpenComment={() => {}} />)
-    await act(async () => { for (let i = 0; i < 5; i++) await flush(20) })
+    await waitFor(() => v.container.querySelectorAll('[data-run]').length >= 2, 'the activity runs')
     const runs = [...v.container.querySelectorAll('[data-run]')]
     expect(runs.map((r) => r.getAttribute('data-run'))).toEqual(['comment', 'changes'])
     expect(runs[1].textContent).toContain('You created the task') // creation and the quick priority edit fold into one event

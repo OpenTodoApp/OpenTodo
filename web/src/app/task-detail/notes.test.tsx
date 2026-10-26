@@ -5,7 +5,7 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it, vi } from 'vitest'
 import { createTask } from '../../lib/ops'
-import { click, flush, key, type } from '../../ui/test-utils'
+import { click, key, type } from '../../ui/test-utils'
 import { db } from '../../lib/db'
 import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
@@ -24,10 +24,10 @@ describe('notes', () => {
     expect(ed.getAttribute('data-placeholder')).toBe('Add notes…')
     expect(host.hasAttribute('data-notes-editing')).toBe(false)
     ed.focus()
-    await flush(20)
+    await waitFor(() => host.hasAttribute('data-notes-editing'), 'editing')
     expect(host.hasAttribute('data-notes-editing')).toBe(true)
     ed.blur()
-    await flush(20)
+    await waitFor(() => !host.hasAttribute('data-notes-editing'), 'not editing')
     expect(host.hasAttribute('data-notes-editing')).toBe(false)
     await unmount()
   })
@@ -58,7 +58,7 @@ describe('notes', () => {
     ed.focus()
     await key(ed, 'a', { ctrlKey: true })
     await key(ed, 'k', { ctrlKey: true })
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="link-dialog"]'), 'the link dialog')
     expect(asked).not.toHaveBeenCalled()
     const dialog = () => document.querySelector<HTMLElement>('[data-testid="link-dialog"]')
     expect(dialog()).toBeTruthy()
@@ -68,7 +68,7 @@ describe('notes', () => {
     expect(dialog()!.textContent).toContain('starts with https://')
     await type(input, 'https://example.com/guide')
     await click([...dialog()!.querySelectorAll('button')].find((b) => b.textContent === 'Save')!)
-    await flush(20)
+    await waitFor(() => !document.querySelector('[data-testid="link-dialog"]'), 'the link dialog closed')
     expect(dialog()).toBeNull()
     expect(ed.querySelector('a')?.getAttribute('href')).toBe('https://example.com/guide')
     await waitFor(async () => ((await db.tasks.get(id))?.description ?? '').includes('(https://example.com/guide)'), 'the saved link', 5000)

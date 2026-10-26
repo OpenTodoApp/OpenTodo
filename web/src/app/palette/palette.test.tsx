@@ -9,7 +9,7 @@ import { prepare, prepareQuery, matchPrepared } from '../../ui'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { recordPick } from '../../lib/pickRank'
 import type { Task, User } from '../../lib/types'
-import { flush, key, render, type } from '../../ui/test-utils'
+import { flush, key, render, type, waitFor } from '../../ui/test-utils'
 import { registerListState, type ListState } from '../listActions'
 import { navigate, parseRoute, routePath } from '../router'
 import { Shell } from '../Shell'
@@ -29,10 +29,6 @@ beforeEach(async () => {
 })
 afterEach(() => { vi.unstubAllGlobals() })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const palette = () => document.querySelector('[data-testid="command-palette"]')
 const field = () => document.querySelector('input[aria-label="Search tasks, projects and commands"]') as HTMLInputElement
 const options = () => [...document.querySelectorAll('[data-palette] [role="option"]')].map((o) => o.textContent ?? '')
@@ -46,7 +42,7 @@ describe('opening (1.1)', () => {
   it('Ctrl+K from the Inbox and from a text field, ⌘+K, not in the notes editor; Escape closes', async () => {
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('input[aria-label="Add a task"]'), 'the shell')
     const ev = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true })
     await act(async () => { document.body.dispatchEvent(ev) })
     await waitFor(() => !!palette())
@@ -67,7 +63,8 @@ describe('opening (1.1)', () => {
     document.body.append(editor)
     const inEditor = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true })
     await act(async () => { editor.dispatchEvent(inEditor) })
-    await flush(60)
+    // The handler runs synchronously: not preventing the key is the refusal; one turn lets a wrong opening show.
+    await flush()
     expect(palette()).toBeNull()
     expect(inEditor.defaultPrevented).toBe(false)
 
@@ -213,7 +210,7 @@ describe('the box (2.2, 2.3, 5.2)', () => {
     const b = await createProject({ name: 'Garden B' })
     await recordPick('palette', `project:${b}`)
     const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!field(), 'the search field')
     await type(field(), 'garden')
     await waitFor(() => options().some((o) => o.includes('Garden A')))
     const labels = options()
@@ -228,13 +225,13 @@ describe('the box (2.2, 2.3, 5.2)', () => {
     navigate({ view: 'inbox' })
     let closed = false
     const r = await render(<CommandPalette user={user} onClose={() => { closed = true }} showShortcuts={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!field(), 'the search field')
     await type(field(), 'fix the sink')
     await waitFor(() => options()[0]?.includes('Fix the sink'))
     await key(field(), 'Enter')
     await waitFor(() => closed)
     expect(location.pathname).toBe(`/task/${sink}`)
-    await flush(50)
+    await waitFor(async () => (await db.pickHistory.where('context').equals('palette').count()) > 0, 'the pick recorded')
     expect((await db.pickHistory.where('context').equals('palette').toArray()).length).toBe(1)
     const { clearLocalData } = await import('../../lib/db')
     await clearLocalData()
@@ -278,7 +275,7 @@ describe('sections and shortcuts from the registry (ux-overhaul 6.4, 6.5)', () =
   it('shows q beside "Quick add a task" as a keycap at the row\'s end, from the registry (palette-quick-add D5)', async () => {
     const { keysOf } = await import('../../lib/shortcuts')
     const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!field(), 'the search field')
     await type(field(), 'quick add')
     await waitFor(() => options().some((o) => o.includes('Quick add a task')))
     const row = [...document.querySelectorAll('[data-palette] [role="option"]')].find((o) => o.textContent?.includes('Quick add a task'))!
@@ -294,7 +291,7 @@ describe('sections and shortcuts from the registry (ux-overhaul 6.4, 6.5)', () =
     await db.tasks.put(t)
     const off = registerListState(listFor(t))
     const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('[data-palette-context]'), 'the list context')
     expect(document.querySelector('[data-palette-context]')!.textContent).toBe('Call the plumber about the boiler')
     await type(field(), 'go to upco')
     await waitFor(() => options().some((o) => o.includes('Go to Upcoming')))
@@ -310,7 +307,7 @@ describe('sections and shortcuts from the registry (ux-overhaul 6.4, 6.5)', () =
     await createProject({ name: 'Garden' })
     await createTask({ title: 'Garden hose' })
     const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!field(), 'the search field')
     await type(field(), 'garden')
     await waitFor(() => options().some((o) => o.includes('Garden hose')) && options().some((o) => o === 'Garden' || o.startsWith('Garden')))
     const h = headings()

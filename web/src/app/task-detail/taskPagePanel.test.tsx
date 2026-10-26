@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { createTask, mutate } from '../../lib/ops'
 import { click } from '../../ui/test-utils'
-import { ME, open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
+import { ME, open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 import { setRichComposer } from './Composer'
 
 // The plain composer field (the rich editor has its own tests in richComposer.test.tsx).
@@ -43,7 +43,7 @@ afterEach(() => vi.unstubAllGlobals())
 
 async function menuItem(r: { container: HTMLElement }, selector: string) {
   await click(r.container.querySelector('button[aria-label="Task actions"]')!)
-  await settle()
+  await waitFor(() => document.querySelectorAll('[role="menuitem"]').length > 0, 'the actions menu')
   return document.querySelector<HTMLButtonElement>(selector)
 }
 

@@ -5,7 +5,7 @@
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flush, key, render, type } from '../../ui/test-utils'
+import { key, render, type, waitFor } from '../../ui/test-utils'
 import { QuickAdd } from '../QuickAdd'
 
 const projects = [{ id: 'p-home', name: 'Home renovation', color: '#e8894a' }, { id: 'p-work', name: 'Work' }]
@@ -53,7 +53,7 @@ describe('field rows follow the line', () => {
     expect(row('when').hasAttribute('data-set')).toBe(false)
     expect(q('[data-testid="quick-add-title"]')!.textContent).toContain('Review may report')
     await act(async () => { input().form!.requestSubmit() })
-    await flush(10)
+    await waitFor(() => onAdd.mock.calls.length > 0, 'the task added')
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ title: 'Review may report' }))
     expect(onAdd.mock.calls[0][0].due).toBeUndefined()
     await r.unmount()
@@ -81,7 +81,7 @@ describe('keys', () => {
     await key(input(), 'ArrowDown')
     await key(input(), 'ArrowDown')
     await key(input(), 'Tab')
-    await flush(40)
+    await waitFor(() => input().value.endsWith('#'), 'the project token typed')
     expect(input().value).toBe('Buy primer #')
     expect(highlighted()).toBeNull()
     expect(q('[data-token-suggestions="project"]')).toBeTruthy()
@@ -93,7 +93,7 @@ describe('keys', () => {
     await type(input(), 'Pay rent friday')
     await key(input(), 'ArrowDown')
     await key(input(), 'Tab')
-    await flush(40)
+    await waitFor(() => input().selectionEnd !== input().selectionStart, 'the date words selected')
     expect([input().selectionStart, input().selectionEnd]).toEqual([9, 15])
     await r.unmount()
   })
@@ -102,7 +102,7 @@ describe('keys', () => {
     const r = await palette()
     await type(input(), 'Draft the offer')
     await act(async () => { row('estimate').click() })
-    await flush(40)
+    await waitFor(() => input().value.endsWith('+'), 'the estimate token typed')
     expect(input().value).toBe('Draft the offer +')
     const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
     await act(async () => { input().dispatchEvent(tab) })
@@ -124,7 +124,7 @@ describe('keys', () => {
     expect(outside).not.toHaveBeenCalled()
     document.removeEventListener('keydown', outside)
     await key(input(), 'Enter', { shiftKey: true })
-    await flush(10)
+    await waitFor(() => onAddAndOpen.mock.calls.length > 0, 'the task added and opened')
     expect(onAdd).not.toHaveBeenCalled()
     expect(onAddAndOpen).toHaveBeenCalledWith(expect.objectContaining({ title: 'Draft the offer', project_id: 'p-work' }))
     await r.unmount()

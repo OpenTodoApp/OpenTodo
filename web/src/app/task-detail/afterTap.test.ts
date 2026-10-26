@@ -29,11 +29,17 @@ describe('afterTap (a comment\'s More on a phone)', () => {
   })
 
   it('after a press with no click, runs after at most 600 ms', async () => {
+    // The 600 ms on a fake clock: not before it, and right after it.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     document.dispatchEvent(new Event('pointerdown', { bubbles: true }))
     const fn = vi.fn()
     afterTap(fn)
-    await new Promise((r) => setTimeout(r, 650))
+    vi.advanceTimersByTime(599)
+    await frame()
+    expect(fn).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
     await frame()
     expect(fn).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
   })
 })

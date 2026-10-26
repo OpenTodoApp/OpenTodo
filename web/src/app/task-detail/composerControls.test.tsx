@@ -40,13 +40,13 @@ async function typeText(v: EditorView, text: string) {
     const handled = v.someProp('handleTextInput', (f) => f(v, from, to, ch, () => v.state.tr.insertText(ch, from, to)))
     if (!handled) v.dispatch(v.state.tr.insertText(ch, from, to))
   }
-  await flush(10)
+  await flush()
 }
 
 async function press(v: EditorView, k: string, mods: KeyboardEventInit = {}) {
   const ev = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...mods })
   v.someProp('handleKeyDown', (f) => f(v, ev))
-  await flush(20)
+  await flush()
 }
 
 async function typeArea(el: HTMLTextAreaElement, text: string) {
@@ -65,7 +65,7 @@ beforeEach(() => {
 })
 afterEach(async () => {
   for (const r of mounted.splice(0)) await r.unmount()
-  await flush(20)
+  await flush()
   setRichComposer(true)
 })
 
@@ -79,7 +79,7 @@ describe('Mention control', () => {
     await typeText(v, 'Thanks')
     expect(mentionButton(r.container)?.getAttribute('aria-label')).toBe('Mention someone')
     await click(mentionButton(r.container)!)
-    await flush(20)
+    await waitFor(() => v.state.doc.textContent.endsWith('@'), 'the @ inserted')
     expect(v.state.doc.textContent).toBe('Thanks @')
     await waitFor(() => !!document.querySelector('[data-suggest="mention"]'), 'the mention list')
     const options = [...document.querySelectorAll('[data-suggest="mention"] [role="option"]')].map((o) => o.textContent)
@@ -98,13 +98,13 @@ describe('Mention control', () => {
     await typeArea(area, 'Hi')
     area.setSelectionRange(2, 2)
     await click(mentionButton(r.container)!)
-    await flush(20)
+    await waitFor(() => area.value.endsWith('@'), 'the @ inserted')
     expect(area.value).toBe('Hi @')
     await waitFor(() => document.querySelectorAll('[role="listbox"] [role="option"]').length > 0, 'the mention list')
     await key(area, 'Enter')
     expect(area.value).toBe('Hi @Anna ')
     // The pick places the caret after the name on the next frame.
-    await flush(50)
+    await waitFor(() => area.selectionStart === 'Hi @Anna '.length, 'the caret after the name')
     await key(area, 'Enter', { ctrlKey: true })
     await waitFor(() => posted(p).length > 0, 'the comment to post')
     expect(posted(p)[0].slice(0, 2)).toEqual(['Hi @Anna ', ['anna']])

@@ -18,6 +18,7 @@ import { db, useDatabase } from './db'
 import { applyOps, createProject, createSubtask, createTask, deleteProject, deleteTask, resetDeviceId, restoreProject, restoreTask, setTaskCompleted } from './ops'
 import { flushPendingPurges, pendingPurges, purgeItems, remainingDays, removeLocally, trashItems, visibleTasks } from './trash'
 import type { Op } from './types'
+import { nextMillisecond } from '../test/clock'
 
 let n = 0
 beforeEach(() => {
@@ -35,7 +36,7 @@ describe('Trash view data', () => {
     const a = await createTask({ title: 'A', project_id: home })
     const b = await createTask({ title: 'B' })
     await deleteTask(a)
-    await new Promise((r) => setTimeout(r, 2))
+    await nextMillisecond()
     await deleteTask(b)
     const items = trashItems(await db.tasks.toArray(), await db.projects.toArray())
     expect(items.map((i) => i.title)).toEqual(['B', 'A'])

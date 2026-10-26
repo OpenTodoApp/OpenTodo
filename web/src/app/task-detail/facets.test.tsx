@@ -8,8 +8,8 @@ import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { createProject, createTask } from '../../lib/ops'
-import { click, flush, key, type, visibleText } from '../../ui/test-utils'
-import { open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
+import { click, key, type, visibleText } from '../../ui/test-utils'
+import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
 
@@ -69,13 +69,13 @@ describe('popover editors', () => {
     expect(part.getAttribute('aria-expanded')).toBe('false')
     part.focus()
     await click(part) // Enter on a native button activates it
-    await settle()
+    await waitFor(() => part.getAttribute('aria-expanded') === 'true' && !!editor(), 'the popover')
     expect(part.getAttribute('aria-expanded')).toBe('true')
     expect(editor()).toBeTruthy()
     expect(editor()!.querySelector('[data-when-shown="due"]')).toBeTruthy()
     await waitFor(() => !!editor()!.contains(document.activeElement), 'focus in the popover')
     await key(document.activeElement!, 'Escape')
-    await settle()
+    await waitFor(() => !editor(), 'the popover closed')
     expect(editor()).toBeNull()
     expect(document.activeElement).toBe(valueButton('due'))
     await unmount()
@@ -86,7 +86,7 @@ describe('popover editors', () => {
     const { valueButton, editor, unmount } = await open(id)
     for (let i = 1; i <= 6; i++) {
       await click(valueButton('due'))
-      await settle()
+      await waitFor(() => !!editor() === (i % 2 === 1), `the popover after click ${i}`)
       expect(!!editor(), `after click ${i}`).toBe(i % 2 === 1)
     }
     await unmount()
@@ -96,11 +96,11 @@ describe('popover editors', () => {
     const id = await createTask({ title: 'Report', due: { date: '2026-10-15' }, deadline: '2026-10-20' })
     const { valueButton, editor, unmount } = await open(id)
     await click(valueButton('deadline'))
-    await settle()
+    await waitFor(() => !!editor()?.querySelector('[data-when-segment]'), 'the When popover')
     expect(editor()!.querySelectorAll('[data-when-segment]').length).toBe(1)
     expect(editor()!.querySelector('[data-when-segment="deadline"]')).toBeTruthy()
     await click(editor()!.querySelector('[data-when-tab="repeat"]')!)
-    await settle()
+    await waitFor(() => !!editor()!.querySelector('[data-when-segment="repeat"]'), 'the Repeat segment')
     expect(editor()!.querySelector('[data-when-segment="repeat"]')).toBeTruthy()
     expect(editor()!.querySelector('[data-when-segment="deadline"]')).toBeNull()
     await unmount()
@@ -111,10 +111,10 @@ describe('popover editors', () => {
     const { container, valueButton, editor, unmount } = await open(id)
     expect(container.querySelectorAll('[data-facets] button[aria-label^="Clear"]').length).toBe(0)
     await click(valueButton('deadline'))
-    await settle()
+    await waitFor(() => !!editor()?.querySelector('[data-facet-clear]'), 'the deadline editor')
     await click(editor()!.querySelector('[data-facet-clear]')!)
     await waitFor(async () => (await db.tasks.get(id))!.deadline === null, 'the deadline cleared')
-    expect(editor()).toBeNull()
+    await waitFor(() => !editor(), 'the editor closed')
     await waitFor(() => !lineText(container, 'when').includes('deadline'))
     await unmount()
   })
@@ -134,7 +134,7 @@ describe('Add menu', () => {
     expect(groups).toEqual(expect.arrayContaining(['When', 'How', 'Who']))
     expect(labels.some((l) => l.includes('Origin'))).toBe(false)
     await key(document.activeElement!, 'Escape')
-    await settle()
+    await waitFor(() => !document.querySelector('[role="menu"]'), 'the menu closed')
     expect(valueButton('deadline').textContent).toContain('deadline')
     await unmount()
   })
@@ -147,7 +147,7 @@ describe('Add menu', () => {
     expect(row('estimate')).toBeTruthy()
     await waitFor(() => !!editor()?.contains(document.activeElement), 'focus in the estimate editor')
     await key(document.activeElement!, 'Escape')
-    await flush(80)
+    await waitFor(() => row('estimate') === null && document.activeElement === addButton(), 'the chip gone, focus on Add')
     expect(row('estimate')).toBeNull()
     expect(document.activeElement).toBe(addButton())
     await unmount()
@@ -165,7 +165,7 @@ describe('Add menu', () => {
     await waitFor(() => !editor() && !!row('estimate')?.textContent?.includes('45m'), 'the editor closed on the saved value')
     expect(lineText(container, 'how')).toMatch(/P4\s*·\s*45m/)
     await click(valueButton('estimate'))
-    await settle()
+    await waitFor(() => !!editor()?.querySelector('[data-facet-clear]'), 'the estimate editor')
     await click(editor()!.querySelector('[data-facet-clear]')!)
     await waitFor(async () => (await db.tasks.get(id))!.estimate_minutes === null, 'the estimate cleared')
     await waitFor(() => !row('estimate'), 'the part removed')
@@ -190,9 +190,9 @@ describe('origin', () => {
     const items = await addItems()
     expect(items.some((i) => (i.textContent ?? '').includes('Origin'))).toBe(false)
     await key(document.activeElement!, 'Escape')
-    await settle()
+    await waitFor(() => !document.querySelector('[role="menu"]'), 'the menu closed')
     await click(container.querySelector('button[aria-label="Task actions"]')!)
-    await settle()
+    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((m) => m.textContent?.includes('Remove origin')), 'the actions menu')
     await click([...document.querySelectorAll('[role="menuitem"]')].find((m) => m.textContent?.includes('Remove origin'))!)
     await waitFor(async () => (await db.tasks.get(id))!.origin === null, 'the origin cleared')
     await waitFor(() => !row('origin'), 'the part removed')

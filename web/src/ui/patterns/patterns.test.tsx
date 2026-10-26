@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react'
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { click, flush, key, render } from '../test-utils'
+import { click, key, render, waitFor } from '../test-utils'
 import { ConfirmDialog } from './ConfirmDialog'
 import { EmptyState } from './EmptyState'
 import { ListRow } from './ListRow'
@@ -76,12 +76,12 @@ describe('ConfirmDialog', () => {
     const trigger = container.querySelector('button')!
     trigger.focus()
     await click(trigger)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-testid="confirm-dialog"]'), 'the dialog')
     const dialog = document.querySelector('[data-testid="confirm-dialog"]')!
     expect(dialog.getAttribute('role')).toBe('alertdialog')
     expect(document.activeElement?.textContent).toBe('Cancel')
     await key(document.activeElement!, 'Escape')
-    await flush(20)
+    await waitFor(() => !document.querySelector('[data-testid="confirm-dialog"]'), 'the dialog closed')
     expect(document.querySelector('[data-testid="confirm-dialog"]')).toBeNull()
     expect(onConfirm).not.toHaveBeenCalled()
     expect(document.activeElement).toBe(trigger)
@@ -92,14 +92,14 @@ describe('ConfirmDialog', () => {
     const onConfirm = vi.fn()
     const { container, unmount } = await render(<Harness onConfirm={onConfirm} />)
     await click(container.querySelector('button')!)
-    await flush(20)
+    await waitFor(() => !!document.querySelector('[data-overlay-root]'), 'the dialog')
     const backdrop = document.querySelector('[data-overlay-root]')!
     await click(backdrop)
     expect(document.querySelector('[data-testid="confirm-dialog"]')).not.toBeNull()
     expect(onConfirm).not.toHaveBeenCalled()
     const confirm = [...document.querySelectorAll('[data-testid="confirm-dialog"] button')].find((b) => b.textContent === 'Delete label')!
     await click(confirm)
-    await flush(20)
+    await waitFor(() => onConfirm.mock.calls.length > 0, 'the confirmation')
     expect(onConfirm).toHaveBeenCalledTimes(1)
     expect(document.querySelector('[data-testid="confirm-dialog"]')).toBeNull()
     await unmount()

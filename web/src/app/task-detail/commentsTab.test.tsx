@@ -6,7 +6,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setDateTime } from '../../lib/dates'
 import type { Comment, ProjectMember } from '../../lib/types'
-import { click, flush, key, render } from '../../ui/test-utils'
+import { click, flush, key, render, waitFor } from '../../ui/test-utils'
 import { readDraft, setRichComposer, writeDraft } from './Composer'
 import { CommentsView, type CommentsViewProps } from './CommentsTab'
 
@@ -263,7 +263,7 @@ describe('resting composer (task-panel-facets D4)', () => {
     const b = await render(<CommentsView {...props({ composerHost: host })} />)
     expect(host.querySelector('[data-composer-resting]')).toBeTruthy()
     await b.rerender(<CommentsView {...props({ composerHost: host, expand: 1 })} />)
-    await flush(30)
+    await waitFor(() => !!host.querySelector('#comment-composer'), 'the expanded composer')
     expect(host.querySelector('#comment-composer')).toBeTruthy()
     await b.unmount()
     host.remove()

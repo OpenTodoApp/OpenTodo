@@ -8,6 +8,7 @@ import { hueFor } from '../ui/tokens/palette'
 import { compareByPosition } from './ordering'
 import { applyOps, createTask, resetDeviceId } from './ops'
 import type { Label, Op } from './types'
+import { nextMillisecond } from '../test/clock'
 
 let n = 0
 beforeEach(() => {
@@ -65,7 +66,7 @@ describe('createLabel / updateLabel / reorderLabel', () => {
   it('an ordinary step writes exactly one label op (labels-and-menus 4.1)', async () => {
     const db = useDatabase(`one-op-${Date.now()}`)
     const ids = []
-    for (const name of ['a', 'b', 'c', 'd']) { ids.push(await createLabel({ name })); await new Promise((r) => setTimeout(r, 2)) }
+    for (const name of ['a', 'b', 'c', 'd']) { ids.push(await createLabel({ name })); await nextMillisecond() }
     await db.outbox.clear()
     await reorderLabel(ids[3], -1)
     const ops = (await db.outbox.toArray()).filter((o) => o.entity === 'label')
@@ -96,9 +97,9 @@ describe('createLabel / updateLabel / reorderLabel', () => {
   it('reorders by swapping positions with the neighbour', async () => {
     const db = useDatabase(`reorder-${Date.now()}`)
     const a = await createLabel({ name: 'a' })
-    await new Promise((r) => setTimeout(r, 2))
+    await nextMillisecond()
     const b = await createLabel({ name: 'b' })
-    await new Promise((r) => setTimeout(r, 2))
+    await nextMillisecond()
     const c = await createLabel({ name: 'c' })
     expect(activeLabels(await db.labels.toArray()).map((l) => l.id)).toEqual([a, b, c])
     await reorderLabel(c, -1)

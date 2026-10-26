@@ -9,7 +9,7 @@ import { db } from '../../lib/db'
 import { setBlockedBy } from '../../lib/dependencies'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
 import { loadShowCompleted } from '../../lib/sections'
-import { click, flush, mockFetch, noPublicLinks, render } from '../../ui/test-utils'
+import { click, mockFetch, noPublicLinks, render, waitFor } from '../../ui/test-utils'
 import { TaskListView } from '../TaskListView'
 
 const originalMatchMedia = window.matchMedia
@@ -36,10 +36,6 @@ afterEach(() => {
   window.matchMedia = originalMatchMedia
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const q = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)
 
 /**

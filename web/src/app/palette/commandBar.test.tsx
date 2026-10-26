@@ -9,7 +9,7 @@ import { DEMO_STATUS, resetAssistantStatus, setAssistantStatus, takeAssistantPre
 import { db } from '../../lib/db'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import type { User } from '../../lib/types'
-import { flush, key, render, type } from '../../ui/test-utils'
+import { key, render, type, waitFor } from '../../ui/test-utils'
 import { hideBulkToast } from '../bulk/toastStore'
 import { UndoToast } from '../bulk/UndoToast'
 import { navigate } from '../router'
@@ -38,10 +38,6 @@ afterEach(async () => {
   vi.unstubAllGlobals()
 })
 
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const q = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)
 const mode = () => q('[data-bar-mode-current]')?.getAttribute('data-bar-mode-current')
 const segments = () => [...document.querySelectorAll('[data-bar-mode]')].map((b) => b.getAttribute('data-bar-mode'))
@@ -228,10 +224,10 @@ describe('`q` where there is no quick add (5.5)', () => {
     for (const view of ['settings', 'week'] as const) {
       navigate({ view })
       const r = await render(<Shell user={user} onLogout={() => {}} />)
-      await flush(80)
+      await waitFor(() => !!document.querySelector('main h1'), 'the page')
       await key(document.body, 'q')
       // The bar is a lazy chunk: its first load can take a moment.
-      await waitFor(() => mode() === 'add', 6000)
+      await waitFor(() => mode() === 'add')
       expect(document.activeElement).toBe(q('[data-bar-add] input'))
       await r.unmount()
       document.body.innerHTML = ''
@@ -240,7 +236,7 @@ describe('`q` where there is no quick add (5.5)', () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!q('[data-list-page] input[aria-label="Add a task"]'))
     await key(document.body, 'q')
-    await flush(40)
+    await waitFor(() => document.activeElement === q('[data-list-page] input[aria-label="Add a task"]'), 'focus in Add a task')
     expect(q('[data-palette]')).toBeNull()
     expect(document.activeElement).toBe(q('[data-list-page] input[aria-label="Add a task"]'))
     await r.unmount()

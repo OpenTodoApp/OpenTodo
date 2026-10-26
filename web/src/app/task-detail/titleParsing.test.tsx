@@ -27,7 +27,7 @@ async function retitle(field: HTMLTextAreaElement, text: string) {
   await act(async () => { field.setSelectionRange(text.length, text.length) })
   await flush()
   await act(async () => { field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })) })
-  await flush(40)
+  await flush()
 }
 
 describe('the panel title parses what is typed into it', () => {
@@ -65,7 +65,7 @@ describe('the panel title parses what is typed into it', () => {
     await act(async () => { field.setSelectionRange(10, 10) })
     await flush()
     await act(async () => { field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })) })
-    await flush(30)
+    await waitFor(() => field.value.includes('@deep-work'), 'the label picked')
     await act(async () => { field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })) })
     await waitFor(async () => (await db.tasks.get(id))!.labels.length === 2, 'the label added')
     await v.unmount()
@@ -77,7 +77,7 @@ describe('the panel title parses what is typed into it', () => {
     await act(async () => { f2.setSelectionRange(10, 10) })
     await flush()
     await act(async () => { f2.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })) })
-    await flush(30)
+    await waitFor(() => f2.value.includes('#Work'), 'the project picked')
     await act(async () => { f2.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })) })
     await waitFor(async () => (await db.tasks.get(id))!.project_id === work, 'the task moved')
     expect((await db.tasks.get(id))!.title).toBe('Plan')

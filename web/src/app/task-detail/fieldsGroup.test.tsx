@@ -9,7 +9,7 @@ import { db } from '../../lib/db'
 import { createField, setFieldValue } from '../../lib/fields'
 import { applyOps, createProject, createTask } from '../../lib/ops'
 import { click, key } from '../../ui/test-utils'
-import { open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
+import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
 
@@ -61,7 +61,7 @@ describe('Fields group', () => {
     expect(input.getAttribute('inputmode')).toBe('decimal')
     await typeInto(input, '1234.5')
     await key(input, 'Enter')
-    await settle()
+    await waitFor(async () => (await db.tasks.get(id))!.fields?.[cost] === 1234.5, 'the value written')
     expect((await db.tasks.get(id))!.fields).toEqual({ [cost]: 1234.5 })
     await waitFor(() => input.value === new Intl.NumberFormat().format(1234.5))
     await r.unmount()
@@ -74,7 +74,7 @@ describe('Fields group', () => {
     const input = fieldRow(r.container, cost).querySelector('input') as HTMLInputElement
     await typeInto(input, 'abc')
     await key(input, 'Enter')
-    await settle()
+    await waitFor(() => input.getAttribute('aria-invalid') === 'true', 'the field marked invalid')
     expect(input.getAttribute('aria-invalid')).toBe('true')
     const err = fieldRow(r.container, cost).querySelector('[role="alert"]')
     expect(err?.textContent).toContain('number')
@@ -106,15 +106,15 @@ describe('Fields group', () => {
     const picker = fieldRow(r.container, status).querySelector('button[aria-haspopup]') as HTMLButtonElement
     picker.focus()
     await key(picker, 'ArrowDown', { altKey: true })
-    await settle()
+    await waitFor(() => picker.getAttribute('aria-expanded') === 'true', 'the picker open')
     expect(picker.getAttribute('aria-expanded')).toBe('true')
     const option = [...document.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes('Ordered'))!
     await click(option)
-    await settle()
+    await waitFor(async () => (await db.tasks.get(id))!.fields?.[status] === 'Ordered', 'the choice written')
     expect((await db.tasks.get(id))!.fields?.[status]).toBe('Ordered')
     const sw = fieldRow(r.container, paid).querySelector('[role="switch"]') as HTMLButtonElement
     await click(sw)
-    await settle()
+    await waitFor(async () => (await db.tasks.get(id))!.fields?.[paid] === true, 'the switch written')
     expect((await db.tasks.get(id))!.fields?.[paid]).toBe(true)
     await r.unmount()
   })
@@ -132,7 +132,7 @@ describe('Fields group', () => {
     expect(input.getAttribute('aria-describedby')).toContain(note!.id)
     await typeInto(input, '75')
     await key(input, 'Enter')
-    await settle()
+    await waitFor(async () => (await db.tasks.get(id))!.fields?.[cost] === 75, 'the value written')
     expect((await db.tasks.get(id))!.fields?.[cost]).toBe(75)
     await r.unmount()
   })

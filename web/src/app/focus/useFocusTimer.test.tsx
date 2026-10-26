@@ -46,19 +46,21 @@ function stubAudio() {
 async function setVisibility(v: 'visible' | 'hidden') {
   visibility = v
   document.dispatchEvent(new Event('visibilitychange'))
-  await flush(30)
+  await flush()
 }
 
 async function advance(ms: number) {
   vi.setSystemTime(Date.now() + ms)
   window.dispatchEvent(new Event('focus'))
-  await flush(30)
+  await flush()
 }
 
+/** The engine, with the phase it last rendered, so a test can wait for it. */
 function Engine() {
-  useFocusTimer()
-  return null
+  const { state } = useFocusTimer()
+  return <i data-engine-phase={state?.phase ?? ''} />
 }
+const phases = () => [...document.querySelectorAll('[data-engine-phase]')].map((e) => e.getAttribute('data-engine-phase'))
 
 let task = ''
 beforeEach(async () => {
@@ -91,7 +93,7 @@ describe('the end of a session', () => {
     await mutate('user_prefs', 'me', { focus_sound: 'on' })
     const r = await render(<Engine />)
     await startSession(task, FOCUS_DEFAULTS, Date.now())
-    await flush(30)
+    await waitFor(() => phases().includes('work'), 'the engine sees the session')
     await setVisibility('hidden')
     await advance(30 * MIN)
     await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
@@ -113,7 +115,8 @@ describe('the end of a session', () => {
     await setVisibility('hidden')
     await advance(26 * MIN)
     await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
-    await flush(50)
+    await waitFor(() => phases().every((p) => p === 'done'), 'the engine sees the end')
+    await flush()
     expect(shown).toEqual([])
     await r.unmount()
   })
@@ -122,11 +125,12 @@ describe('the end of a session', () => {
     const r1 = await render(<Engine />)
     const r2 = await render(<Engine />)
     await startSession(task, FOCUS_DEFAULTS, Date.now())
-    await flush(30)
+    await waitFor(() => phases().length === 2 && phases().every((p) => p === 'work'), 'both engines see the session')
     await setVisibility('hidden')
     await advance(26 * MIN)
     await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
-    await flush(80)
+    await waitFor(() => phases().every((p) => p === 'done') && shown.length > 0, 'both engines see the end')
+    await flush()
     expect(shown).toHaveLength(1)
     const entries = await db.timeEntries.toArray()
     expect(entries).toHaveLength(1)
@@ -142,7 +146,8 @@ describe('the end of a session', () => {
     await startSession(task, FOCUS_DEFAULTS, Date.now())
     await advance(25 * MIN)
     await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
-    await flush(50)
+    await waitFor(() => phases().every((p) => p === 'done'), 'the engine sees the end')
+    await flush()
     expect(tonesPlayed()).toBe(0)
     expect(shown).toEqual([])
     await r.unmount()
@@ -152,11 +157,12 @@ describe('the end of a session', () => {
     await mutate('user_prefs', 'me', { focus_sound: 'on' })
     const r = await render(<Engine />)
     await startSession(task, FOCUS_DEFAULTS, Date.now())
-    await flush(30)
+    await waitFor(() => phases().includes('work'), 'the engine sees the session')
     await advance(25 * MIN)
     await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
     await waitFor(() => tonesPlayed() === 1, 'tone')
-    await flush(50)
+    await waitFor(() => phases().every((p) => p === 'done'), 'the engine sees the end')
+    await flush()
     expect(tonesPlayed()).toBe(1)
     await r.unmount()
   })

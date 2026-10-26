@@ -9,7 +9,7 @@ import { db } from '../../lib/db'
 import { createProject, resetDeviceId } from '../../lib/ops'
 import type { Project, View } from '../../lib/types'
 import { getStartView } from '../../lib/views'
-import { click, flush, render } from '../../ui/test-utils'
+import { click, render, waitFor } from '../../ui/test-utils'
 import { ProjectHeader } from '../ProjectHeader'
 import { TaskListView } from '../TaskListView'
 import { ViewMenu, viewMenuGroups } from '../ViewsView'
@@ -29,10 +29,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const menuItem = (label: string) => [...document.querySelectorAll<HTMLElement>('[data-menu-label]')].find((e) => e.getAttribute('data-menu-label') === label)
 
 describe('entering display mode', () => {
@@ -46,7 +42,7 @@ describe('entering display mode', () => {
       await r.unmount()
     }
     const inbox = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await flush(40)
+    await waitFor(() => !!inbox.container.querySelector('[data-page-header]'), 'the Inbox header')
     expect(inbox.container.querySelector('[data-display-mode]')).toBeNull()
     await inbox.unmount()
   })
@@ -55,7 +51,7 @@ describe('entering display mode', () => {
     const project = { id: 'home', name: 'Home', color: '#22c55e', position: 1, archived: false, parent_id: null, created_at: 0, deleted_at: null, _clock: {} } as Project
     await db.projects.put(project)
     const r = await render(<ProjectHeader project={project} />)
-    await flush(40)
+    await waitFor(() => !!r.container.querySelector('button[aria-label="Project menu"]'), 'the project menu')
     await click(r.container.querySelector('button[aria-label="Project menu"]')!)
     await waitFor(() => !!menuItem('Display mode'))
     await click(menuItem('Display mode')!)
@@ -67,7 +63,7 @@ describe('entering display mode', () => {
     const view = { id: 'v1', name: 'Deep work', kind: 'list', query: 'p1', panels: [], pinned: true, position: 1, created_at: 0, deleted_at: null, _clock: {} } as unknown as View
     await db.views.put(view)
     const r = await render(<ViewMenu view={view} />)
-    await flush(30)
+    await waitFor(() => !!r.container.querySelector('button[aria-label="Menu for view Deep work"]'), 'the view menu')
     await click(r.container.querySelector('button[aria-label="Menu for view Deep work"]')!)
     await waitFor(() => !!menuItem('Display mode'))
     await click(menuItem('Display mode')!)
@@ -93,11 +89,11 @@ describe('leaving display mode', () => {
 
   it('the overflow menu makes this display the start view on this device, with its options', async () => {
     const r = await render(<DisplayScreen route={{ view: 'display', target: { kind: 'today' }, options: { ...DEFAULT_DISPLAY_OPTIONS, contrast: 'high', motion: 'none', seconds: false } }} />)
-    await flush(40)
+    await waitFor(() => !!r.container.querySelector('button[aria-label="Display options"]'), 'the display options')
     await click(r.container.querySelector('button[aria-label="Display options"]')!)
     await waitFor(() => !!menuItem('Make this the start view on this device'))
     await click(menuItem('Make this the start view on this device')!)
-    await flush(40)
+    await waitFor(async () => (await getStartView()) !== 'inbox', 'the start view stored')
     expect(await getStartView()).toBe('display:/display/today?eink=1')
     await r.unmount()
   })

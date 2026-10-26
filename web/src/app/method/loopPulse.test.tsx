@@ -6,7 +6,7 @@ import { db } from '../../lib/db'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
 import { compute, periodFor } from '../../lib/stats'
 import type { User } from '../../lib/types'
-import { flush, render } from '../../ui/test-utils'
+import { render, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { navigate } from '../router'
 import { Shell } from '../Shell'
@@ -34,10 +34,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 const figure = (k: string) => document.querySelector<HTMLElement>(`[data-pulse="${k}"]`)!
 
 /** A task created `createdAgo` days ago and, when given, completed `doneAgo` days ago (the clock moves, then comes back). */

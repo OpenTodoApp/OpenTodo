@@ -10,7 +10,7 @@ import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId, REVIEW_DEFAULTS, setTaskCompleted } from '../../lib/ops'
 import { closeDay } from '../../lib/review'
 import type { User } from '../../lib/types'
-import { flush, key, render, type } from '../../ui/test-utils'
+import { flush, key, render, type, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { navigate } from '../router'
 import { Shell } from '../Shell'
@@ -41,10 +41,6 @@ afterEach(() => {
   resetPanel()
 })
 
-async function waitFor(ok: () => boolean, ms = 3000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 const stepTitle = () => document.querySelector<HTMLElement>('#review-step-title')
 const currentStep = () => document.querySelector('[data-progress-step][aria-current="step"]')?.getAttribute('data-progress-step')
@@ -89,7 +85,7 @@ describe('Weekly review', () => {
   it('g Shift+S opens Statistics', async () => {
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await flush(50)
+    await waitFor(() => !!document.querySelector('main h1'), 'the Inbox')
     await key(document.body, 'g')
     await key(document.body, 'S', { shiftKey: true })
     await waitFor(() => location.pathname === '/stats' && !!document.querySelector('[data-period-chooser]'))
@@ -246,6 +242,7 @@ describe('rhythm markers (open-loops-method 5.6)', () => {
     expect(document.querySelector('[data-daily-toast]')).toBeNull()
     await r.unmount()
     const again = await render(<Shell user={user} onLogout={() => {}} />)
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts the toast stays away once the day is read
     await flush(100)
     expect(document.querySelector('[data-daily-toast]')).toBeNull()
     await again.unmount()

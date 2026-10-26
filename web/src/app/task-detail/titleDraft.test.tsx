@@ -6,7 +6,8 @@ import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { applyOps, createTask } from '../../lib/ops'
-import { open, settle, setupTaskDetailTests } from './taskDetail.testkit'
+import { flush } from '../../ui/test-utils'
+import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 import { act } from 'react'
 
 setupTaskDetailTests()
@@ -34,10 +35,12 @@ describe('task title draft', () => {
       type(input, 'Plan the trip')
     })
     await remoteTitle(id, 'Plan (remote)', Date.now() + 60_000)
-    await settle()
+    // Nothing shows the remote title while the draft is kept: give it a moment to arrive.
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts the remote change does not replace the draft
+    await flush(40)
     expect(titleInput().value).toBe('Plan the trip')
     await act(async () => { titleInput().blur() })
-    await settle()
+    await waitFor(async () => (await db.outbox.toArray()).some((o) => o.entityId === id && o.field === 'title' && o.value === 'Plan the trip'), 'the draft written')
     // The draft goes out as the user's own edit (a new op); last writer wins as usual.
     expect((await db.outbox.toArray()).some((o) => o.entityId === id && o.field === 'title' && o.value === 'Plan the trip')).toBe(true)
     await unmount()
@@ -47,11 +50,11 @@ describe('task title draft', () => {
     const id = await createTask({ title: 'Plan' })
     const { unmount } = await open(id)
     await remoteTitle(id, 'Plan v2', Date.now() + 60_000)
-    await settle()
+    await waitFor(() => titleInput().value === 'Plan v2', 'the remote title')
     expect(titleInput().value).toBe('Plan v2')
     await act(async () => { titleInput().focus() })
     await remoteTitle(id, 'Plan v3', Date.now() + 120_000)
-    await settle()
+    await waitFor(() => titleInput().value === 'Plan v3', 'the remote title')
     expect(titleInput().value).toBe('Plan v3')
     await unmount()
   })
