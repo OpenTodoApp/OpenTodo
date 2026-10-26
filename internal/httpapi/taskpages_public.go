@@ -122,7 +122,7 @@ func (s *Server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := rp.page
-	out := map[string]any{"rights": p.Rights, "serverTime": time.Now().UnixMilli(), "label": p.Label}
+	out := map[string]any{"rights": p.Rights, "serverTime": s.now().UnixMilli(), "label": p.Label}
 	if rp.encrypted {
 		out["mode"] = "encrypted"
 		out["snapshot"] = string(p.Snapshot)
@@ -229,7 +229,7 @@ func (s *Server) handleTaskPageReply(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.sync.EmitPageActivity(ctx, notify.PageEvent{Kind: notify.KindPageReplied, PublisherID: p.UserID, PageID: p.ID, TaskID: p.TaskID,
-			Encrypted: true, At: time.Now().UnixMilli()})
+			Encrypted: true, At: s.now().UnixMilli()})
 		writeJSON(w, http.StatusCreated, map[string]any{"id": id, "pending": true})
 		return
 	}
@@ -248,7 +248,7 @@ func (s *Server) handleTaskPageReply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := ids.New()
-	now := time.Now().UnixMilli()
+	now := s.now().UnixMilli()
 	ts := s.opTS()
 	fields := map[string]json.RawMessage{
 		"task_id": mustJSON(p.TaskID), "author_id": mustJSON(p.UserID), "body": mustJSON(body), "parent_id": json.RawMessage("null"),
@@ -325,7 +325,7 @@ func (s *Server) handleTaskPageTick(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such task on this page")
 		return
 	}
-	now := time.Now()
+	now := s.now()
 	if !*in.Completed {
 		var done int64
 		_ = json.Unmarshal(task["completed_at"], &done)

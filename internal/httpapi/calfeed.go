@@ -78,7 +78,7 @@ func (s *Server) seedCalendarFeeds(ctx context.Context) {
 		return
 	}
 	if _, err := s.sync.DB().ExecContext(ctx, `INSERT OR IGNORE INTO settings(key,value,updated_at) VALUES(?,?,?)`,
-		calendarFeedsSettingKey, boolText(*s.cfg.CalendarFeeds), time.Now().UnixMilli()); err != nil {
+		calendarFeedsSettingKey, boolText(*s.cfg.CalendarFeeds), s.now().UnixMilli()); err != nil {
 		s.log.Error("seed calendar feeds setting", "err", err)
 	}
 }
@@ -451,7 +451,7 @@ func (s *Server) handleTaskFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	gen, _ := s.sync.Generation(ctx)
-	now := time.Now()
+	now := s.now()
 	etag := fmt.Sprintf(`W/"%s-%d-%s"`, gen, cursor, now.UTC().Format("20060102"))
 	w.Header().Set("ETag", etag)
 	w.Header().Set("Cache-Control", "private, max-age="+strconv.Itoa(feedCacheSeconds))

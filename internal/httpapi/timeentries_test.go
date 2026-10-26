@@ -56,6 +56,7 @@ func TestTimeEntryRoutesAuth(t *testing.T) {
 
 func TestTimeEntryStartStopLogEdit(t *testing.T) {
 	e := ownerEnv(t)
+	e.now.Freeze(time.Now())
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Write the report"})
 	e.mustStatus(resp, 201, out)
 	a := out["id"].(string)
@@ -69,7 +70,7 @@ func TestTimeEntryStartStopLogEdit(t *testing.T) {
 	if first["endedAt"] != nil || first["taskTitle"] != "Write the report" || !strings.HasPrefix(first["deviceId"].(string), "server") {
 		t.Fatalf("started = %v", first)
 	}
-	time.Sleep(5 * time.Millisecond)
+	e.now.Advance(time.Minute)
 	resp, second := e.do("POST", "/api/v1/time-entries", map[string]any{"taskId": b})
 	e.mustStatus(resp, 201, second)
 	resp, out = e.do("GET", "/api/v1/time-entries?running=true", nil)

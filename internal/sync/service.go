@@ -155,6 +155,10 @@ func NewService(db *sql.DB) *Service {
 	return s
 }
 
+// SetClock replaces the service's time source (server timestamps, ServerTS);
+// tests only, through httpapi.WithClock.
+func (s *Service) SetClock(now func() time.Time) { s.now = now }
+
 // SetReader installs the reader pool (store.OpenReader) that List, Get and
 // Pull read from, so they do not queue behind writes. Call it during wiring.
 func (s *Service) SetReader(db *sql.DB) { s.rdb = db }

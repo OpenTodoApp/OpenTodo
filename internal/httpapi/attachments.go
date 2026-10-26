@@ -302,7 +302,7 @@ func (s *Server) writeBlobError(w http.ResponseWriter, err error) {
 // otherwise win last-writer-wins, the op would be dropped, and the file would
 // stay "uploading" on every device for good (issue #246).
 func (s *Server) markUploaded(ctx context.Context, uid, id string) error {
-	now := time.Now().UnixMilli()
+	now := s.now().UnixMilli()
 	fieldTS, err := s.sync.FieldTS(ctx, uid, "attachment", id, "uploaded_at")
 	if err != nil {
 		return err
@@ -425,7 +425,7 @@ func (s *Server) handleRemoveAttachment(w http.ResponseWriter, r *http.Request) 
 	if _, ok := s.liveAttachment(w, r); !ok {
 		return
 	}
-	s.writeAttachment(w, r, r.PathValue("id"), map[string]json.RawMessage{"deleted_at": json.RawMessage(strconv.FormatInt(time.Now().UnixMilli(), 10))}, http.StatusNoContent)
+	s.writeAttachment(w, r, r.PathValue("id"), map[string]json.RawMessage{"deleted_at": json.RawMessage(strconv.FormatInt(s.now().UnixMilli(), 10))}, http.StatusNoContent)
 }
 
 // writeAttachment applies attachment fields as one strict REST write.
@@ -497,7 +497,7 @@ func (s *Server) handleCreateAttachment(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
-	now := time.Now().UnixMilli()
+	now := s.now().UnixMilli()
 	body := map[string]json.RawMessage{
 		"task_id": mustJSON(taskID), "author_id": mustJSON(uid), "comment_id": json.RawMessage("null"),
 		"encrypted": json.RawMessage("false"), "created_at": json.RawMessage(strconv.FormatInt(now, 10)),

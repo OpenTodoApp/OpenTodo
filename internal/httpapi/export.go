@@ -16,7 +16,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", `format: must be "json" or "zip"`)
 		return
 	}
-	out := map[string]any{"format": "opentodo-export", "version": 1, "exportedAt": time.Now().UTC().Format(time.RFC3339),
+	out := map[string]any{"format": "opentodo-export", "version": 1, "exportedAt": s.now().UTC().Format(time.RFC3339),
 		// The exporting account (time-tracking D11): an import tells its own time
 		// entries from other members' by it.
 		"userId": uid}

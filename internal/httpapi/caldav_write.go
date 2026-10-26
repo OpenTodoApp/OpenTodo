@@ -10,7 +10,6 @@ import (
 	"slices"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/pixari/opentodo/internal/caldav"
 	"github.com/pixari/opentodo/internal/ids"
@@ -436,7 +435,7 @@ func (d *davRequest) applyCreate(v *davView, in *caldav.Inbound, id, cal string)
 		return opsync.ApplyResult{}, err
 	}
 	f, extra := df.f, df.pre
-	now := time.Now().UnixMilli()
+	now := d.s.now().UnixMilli()
 	f["project_id"] = projectValue(cal)
 	if isInboxID(cal) {
 		f["workspace_id"] = v.workspaceValue(cal)
@@ -527,9 +526,9 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	case !in.Completed && !wasDone && completesCurrentOccurrence(in, cur):
 		// A completed override of the current occurrence (Thunderbird's task
 		// list) completes it, which records it and moves the series below.
-		body["completed_at"] = mustJSON(time.Now().UnixMilli())
+		body["completed_at"] = mustJSON(d.s.now().UnixMilli())
 	case in.Completed && !wasDone:
-		c := time.Now().UnixMilli()
+		c := d.s.now().UnixMilli()
 		if in.CompletedAt != nil {
 			c = *in.CompletedAt
 		}
@@ -551,7 +550,7 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	extra = append(extra, extraOps...)
 	// Completing a recurring task records the occurrence and moves the series,
 	// exactly like a REST completion.
-	recordID, record, ok, err := d.s.recurringCompletion(d.ctx(), d.user.ID, id, body, cur, localToday(time.Now()))
+	recordID, record, ok, err := d.s.recurringCompletion(d.ctx(), d.user.ID, id, body, cur, localToday(d.s.now()))
 	if err != nil {
 		return "", err
 	}
@@ -617,7 +616,7 @@ func (d *davRequest) copyMove(v *davView, cur opsync.Entity, in *caldav.Inbound)
 	f["deleted_at"] = json.RawMessage("null")
 	f["completed_at"] = json.RawMessage("null")
 	if in.Completed {
-		c := time.Now().UnixMilli()
+		c := d.s.now().UnixMilli()
 		if in.CompletedAt != nil {
 			c = *in.CompletedAt
 		}
@@ -640,7 +639,7 @@ func (d *davRequest) copyMove(v *davView, cur opsync.Entity, in *caldav.Inbound)
 		ops = append(ops, d.op("task", id, field, val, ts))
 	}
 	ops = append(ops, df.post...)
-	ops = append(ops, d.op("task", idOf(cur["id"]), "deleted_at", mustJSON(time.Now().UnixMilli()), ts))
+	ops = append(ops, d.op("task", idOf(cur["id"]), "deleted_at", mustJSON(d.s.now().UnixMilli()), ts))
 	if _, err := d.apply(ops); err != nil {
 		return "", err
 	}
@@ -671,7 +670,7 @@ func (d *davRequest) delete() {
 			return
 		}
 		ts := d.s.opTS()
-		if _, err := d.apply([]opsync.Op{d.op("task", idOf(t["id"]), "deleted_at", mustJSON(time.Now().UnixMilli()), ts)}); err != nil {
+		if _, err := d.apply([]opsync.Op{d.op("task", idOf(t["id"]), "deleted_at", mustJSON(d.s.now().UnixMilli()), ts)}); err != nil {
 			d.applyError(err)
 			return
 		}
@@ -702,7 +701,7 @@ func (d *davRequest) deleteCalendar(v *davView) {
 		return
 	}
 	ts := d.s.opTS()
-	now := time.Now().UnixMilli()
+	now := d.s.now().UnixMilli()
 	_, shared := v.roles[cal]
 	var ops []opsync.Op
 	tasks := []opsync.Entity{}
@@ -858,7 +857,7 @@ func (d *davRequest) mkcalendar() {
 		}
 	}
 	ts := d.s.opTS()
-	now := time.Now().UnixMilli()
+	now := d.s.now().UnixMilli()
 	var ops []opsync.Op
 	for field, val := range map[string]json.RawMessage{
 		"name": mustJSON(name), "color": mustJSON(color), "position": mustJSON(now), "archived": json.RawMessage("false"),

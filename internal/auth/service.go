@@ -210,7 +210,7 @@ func (s *Service) RegisterFrom(ctx context.Context, email, name, password, invit
 	// Refuse what the policy refuses before paying for a hash (SEC-5). The
 	// write transaction checks again, so a change in between is still caught.
 	if err := s.readTx(ctx, func(tx *sql.Tx) error {
-		_, _, _, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, local, time.Now().UnixMilli())
+		_, _, _, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, local, s.clock().UnixMilli())
 		return err
 	}); err != nil {
 		return nil, err
@@ -224,7 +224,7 @@ func (s *Service) RegisterFrom(ctx context.Context, email, name, password, invit
 		return nil, err
 	}
 	defer tx.Rollback()
-	now := time.Now().UnixMilli()
+	now := s.clock().UnixMilli()
 	n, role, invitationID, err := s.admitRegistration(ctx, tx, email, invitation, setupToken, local, now)
 	if err != nil {
 		return nil, err
@@ -376,7 +376,7 @@ func (s *Service) UserBySession(ctx context.Context, secret string) (*User, erro
 	err := s.db.QueryRowContext(ctx, `SELECT u.id,u.email,u.name,u.role,u.created_at FROM sessions s
 		JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?
 		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`,
-		hashToken(secret), time.Now().UnixMilli()).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+		hashToken(secret), s.clock().UnixMilli()).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -434,7 +434,7 @@ func (s *Service) CreateAccount(ctx context.Context, email, name, password, role
 			return nil, errors.New("an owner can only be created on an empty server")
 		}
 	}
-	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: role, CreatedAt: time.Now().UnixMilli()}
+	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: role, CreatedAt: s.clock().UnixMilli()}
 	if err := insertUser(ctx, tx, u, hash); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrEmailTaken
@@ -455,7 +455,7 @@ func (s *Service) CreatePasswordlessAccount(ctx context.Context, email, name str
 	if _, err := mail.ParseAddress(email); err != nil || email == "" {
 		return nil, ErrInvalidEmail
 	}
-	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: time.Now().UnixMilli()}
+	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: s.clock().UnixMilli()}
 	if err := insertUser(ctx, s.db, u, ""); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, ErrEmailTaken
@@ -491,7 +491,7 @@ func (s *Service) CreateTokenScoped(ctx context.Context, userID, name, scope str
 		name = "API token"
 	}
 	plain := "ot_" + ids.Secret(32)
-	t := &Token{ID: ids.New(), Name: truncate(name, 100), Scope: scope, CreatedAt: time.Now().UnixMilli()}
+	t := &Token{ID: ids.New(), Name: truncate(name, 100), Scope: scope, CreatedAt: s.clock().UnixMilli()}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, "", err
@@ -561,7 +561,7 @@ func (s *Service) UserByTokenInfo(ctx context.Context, plain string) (*User, Tok
 	if err != nil {
 		return nil, TokenInfo{}, err
 	}
-	if now := time.Now().UnixMilli(); lastUseStale(lastUsed, now) {
+	if now := s.clock().UnixMilli(); lastUseStale(lastUsed, now) {
 		_, _ = s.db.ExecContext(ctx, "UPDATE api_tokens SET last_used_at = ? WHERE id = ?", now, info.ID)
 	}
 	return &u, info, nil
