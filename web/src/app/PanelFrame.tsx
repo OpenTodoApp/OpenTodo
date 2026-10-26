@@ -34,7 +34,7 @@ export function PanelFrame({ title, children, actions, testId, onEscape, onClose
         {actions}
         <IconButton icon="x" label={t('Close')} onClick={onClose} data-overlay-close className="touch-target" />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">{children}</div>
+      <div className="relative min-h-0 flex-1 overflow-y-auto px-4 py-3" data-panel-frame-body>{children}</div>
     </aside>
   )
 }
