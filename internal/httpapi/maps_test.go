@@ -167,7 +167,7 @@ func TestMapProxyPrivateTargets(t *testing.T) {
 		t.Fatal("a tile URL from the provider's style reached a local address")
 	}
 
-	hosted := newEnvWith(t, true, WithHosted())
+	hosted := newEnvWith(t, true, asHosted)
 	hosted.register("owner@example.com")
 	resp, out = hosted.do("PUT", "/api/v1/settings/maps", map[string]any{"enabled": true, "tiles_url": f.srv.URL + "/style", "geocoder_url": f.srv.URL})
 	hosted.mustStatus(resp, 200, out)

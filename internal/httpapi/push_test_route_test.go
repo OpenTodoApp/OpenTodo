@@ -1,11 +1,9 @@
 package httpapi
 
 import (
-	"context"
 	"crypto/ecdh"
 	"encoding/base64"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -13,12 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
-	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // countingPush is a push service endpoint that answers status and counts requests.
@@ -145,18 +141,14 @@ func TestPushTestRefusedInDemoMode(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour, Demo: true}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	authSvc := auth.NewService(db, cfg.SessionTTL, false)
-	d := demo.New(authSvc, syncSvc, log)
-	if err := d.Start(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	p := push.New(db, syncSvc, t.TempDir(), push.Options{AllowHTTP: true, Client: http.DefaultClient})
-	srv := httptest.NewServer(New(cfg, authSvc, syncSvc, http.NotFoundHandler(), log, "test", WithDemo(d), WithPush(p)))
+	set := testSet(t, config.Config{SessionTTL: time.Hour, Demo: true}, db, services.Options{})
+	syncSvc := set.Sync
+	// A demo instance builds no push service; this one is forced on to prove the
+	// demo guard refuses the route anyway.
+	set.Push = push.New(db, syncSvc, t.TempDir(), push.Options{AllowHTTP: true, Client: http.DefaultClient})
+	set.Cfg.PushDisabled = false
+	srv := httptest.NewServer(New(set, http.NotFoundHandler()))
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	ps := newCountingPush(t)
 	jar, _ := cookiejar.New(nil)
 	e := &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, sync: syncSvc}

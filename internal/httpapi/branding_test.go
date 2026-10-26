@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"image"
 	"image/png"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -13,10 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // fakeWeb stands in for the built web app: the page and the manifest as Vite writes them.
@@ -43,13 +40,11 @@ func brandingEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour, DataDir: dir}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, false), syncSvc, fakeWeb, log, "test")
+	set := testSet(t, config.Config{SessionTTL: time.Hour, DataDir: dir}, db, services.Options{})
+	syncSvc := set.Sync
+	h := New(set, fakeWeb)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
 	e := &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})

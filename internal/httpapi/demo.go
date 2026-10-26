@@ -9,13 +9,6 @@ import (
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
-// WithDemo turns on demo mode (OpenSpec `demo-mode`, `demo-sandboxes`):
-// auth/status carries a sandbox-creation token, POST /api/v1/demo/sandbox
-// creates a private sandbox, every route in demoRules answers 403
-// demo_restricted before authentication, sandbox writes are bounded by the
-// demo's write guard, and every response carries X-Robots-Tag.
-func WithDemo(d *demo.Service) Option { return func(s *Server) { s.demo = d } }
-
 // registerDemoRoutes adds the sandbox route on a demo instance only. It is
 // unauthenticated by design (the visitor has no account yet); a single-use
 // creation token from auth/status, the same-origin check and the limits in

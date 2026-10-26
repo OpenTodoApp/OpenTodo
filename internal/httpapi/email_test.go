@@ -2,8 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -14,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // testMailbox is an in-memory email.Source for the HTTP tests.
@@ -81,15 +79,14 @@ func emailEnv(t *testing.T) (*env, *email.Service, *testMailbox) {
 		IMAPHost: testIMAPHost, IMAPUser: testIMAPUser, IMAPPassword: testIMAPPass,
 		Mailbox: "INBOX", PollInterval: time.Minute, Processed: "move", ProcessedFolder: "OpenTodo/Processed",
 	}}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	authSvc := auth.NewService(db, cfg.SessionTTL, true)
+	set := testSet(t, cfg, db, services.Options{})
+	syncSvc := set.Sync
 	box := &testMailbox{msgs: map[uint32][]byte{}}
-	svc := email.New(db, syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit(), Source: box})
-	h := New(cfg, authSvc, syncSvc, nil, log, "test", WithEmail(svc))
+	svc := email.New(db, syncSvc, cfg.Email, email.Options{Log: set.Log, Audit: set.Auth.Audit(), Source: box})
+	set.Email = svc
+	h := New(set, nil)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
 	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}, svc, box
 }

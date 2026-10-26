@@ -3,8 +3,6 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -13,11 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // demoServer is a demo instance; visitors are envs with their own cookie jar
@@ -36,18 +33,11 @@ func newDemoServer(t *testing.T) *demoServer {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour, Demo: true}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
-	authSvc := auth.NewService(db, cfg.SessionTTL, false)
-	d := demo.New(authSvc, syncSvc, log)
-	if err := d.Start(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	h := New(cfg, authSvc, syncSvc, http.NotFoundHandler(), log, "test", WithDemo(d))
+	set := testSet(t, config.Config{SessionTTL: time.Hour, Demo: true}, db, services.Options{})
+	syncSvc, d := set.Sync, set.Demo
+	h := New(set, http.NotFoundHandler())
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
 	return &demoServer{t: t, demo: d, base: &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}}
 }

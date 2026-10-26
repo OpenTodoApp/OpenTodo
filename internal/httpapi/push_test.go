@@ -4,19 +4,16 @@ import (
 	"crypto/ecdh"
 	"encoding/base64"
 	"encoding/json"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // pushEnv is newEnv with the push service wired, registered as the owner.
@@ -28,14 +25,13 @@ func pushEnv(t *testing.T, disabled bool) (*env, *push.Service) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour, PushDisabled: disabled}
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncSvc := opsync.NewService(db)
+	set := testSet(t, config.Config{SessionTTL: time.Hour, PushDisabled: disabled}, db, services.Options{})
+	syncSvc := set.Sync
 	p := push.New(db, syncSvc, dir, push.Options{AllowHTTP: true, Client: http.DefaultClient})
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, false), syncSvc, nil, log, "test", WithPush(p))
+	set.Push = p
+	h := New(set, nil)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
-	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
 	e := &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})

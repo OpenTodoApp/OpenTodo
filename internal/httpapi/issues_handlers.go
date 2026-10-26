@@ -359,8 +359,5 @@ func (s *Server) handleSyncIssueConnection(w http.ResponseWriter, r *http.Reques
 // stopIssueConnections stops the account's connections when encryption is
 // turned on (spec "Encrypted accounts") and returns their names.
 func (s *Server) stopIssueConnections(ctx context.Context, uid string) ([]string, error) {
-	if s.issueWorker == nil {
-		return nil, nil
-	}
 	return s.issueWorker.Store.StopUser(ctx, uid, issues.ReasonEncrypted)
 }

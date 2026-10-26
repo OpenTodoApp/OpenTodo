@@ -14,11 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/httpapi"
 	"github.com/pixari/opentodo/internal/store"
-	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/tenant/services"
 )
 
 // server runs the real API in process (as internal/cli's harness does).
@@ -36,9 +35,14 @@ func newServer(t *testing.T) *server {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour}
+	cfg := config.Config{SessionTTL: time.Hour, DataDir: t.TempDir()}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	h := httpapi.New(cfg, auth.NewService(db, cfg.SessionTTL, false), opsync.NewService(db), nil, log, "test")
+	set, err := services.Build(context.Background(), cfg, db, nil, services.Options{Version: "test", Log: log})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(set.Sync.Notifier().CloseAll)
+	h := httpapi.New(set, nil)
 	hs := httptest.NewServer(h)
 	t.Cleanup(hs.Close)
 	s := &server{t: t, url: hs.URL}

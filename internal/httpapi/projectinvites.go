@@ -22,10 +22,6 @@ import (
 // account data: nothing here writes an op except the membership change, which
 // goes through sync.AddMemberTx like adding a member by email.
 
-// membersInviteKey is the owner switch "Members can invite new people with
-// project links" (design D6): a JSON boolean, false when unset.
-const membersInviteKey = "project_invites.members_create_accounts"
-
 func (s *Server) registerProjectInviteRoutes(mux *routes) {
 	s.projectInviteLimiter = newRateLimiter(20, time.Hour)
 	mux.handle("GET /api/v1/projects/{id}/invites", signedIn.demoDenied(), s.handleListProjectInvites)

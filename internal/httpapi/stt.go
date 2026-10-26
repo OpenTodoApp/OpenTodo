@@ -19,9 +19,6 @@ import (
 // text stay in memory for the request only: never written, never logged, never
 // in the audit log. Only the per-user rate limiter counts requests.
 func (s *Server) registerSTTRoutes(mux *routes) {
-	if s.stt == nil {
-		s.stt = stt.New(s.settings, s.cfg.DataDir, s.cfg.STT, s.allowPrivate())
-	}
 	mux.handle("GET /api/v1/settings/stt", ownerOnly("manage the speech-to-text service").credential().demoDenied(), s.handleGetSTT)
 	mux.handle("PUT /api/v1/settings/stt", ownerOnly("manage the speech-to-text service").credential().demoDenied(), s.handlePutSTT)
 	mux.handle("POST /api/v1/settings/stt/test", ownerOnly("test the speech-to-text service").credential().demoDenied(), s.handleTestSTT)
@@ -31,7 +28,7 @@ func (s *Server) registerSTTRoutes(mux *routes) {
 // speechStatus is what every user learns from /me: whether a service is
 // connected and its host, named in the recogniser statement.
 func (s *Server) speechStatus(r *http.Request) map[string]any {
-	if s.stt == nil || s.cfg.Demo {
+	if s.cfg.Demo {
 		return map[string]any{"connected": false}
 	}
 	v, err := s.stt.View(r.Context())
