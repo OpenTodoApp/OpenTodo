@@ -2,6 +2,8 @@
 // notes generated with the Web Audio API, no audio file and no network. The
 // context is created on the first Start (a user gesture, so autoplay rules allow
 // it); when audio is unavailable or refused the tone is skipped silently.
+import { resettable } from '../moduleState'
+
 type Ctor = new () => AudioContext
 
 let ctx: AudioContext | null = null
@@ -58,3 +60,4 @@ export async function playTone(): Promise<boolean> {
 export function resetTone(): void {
   ctx = null
 }
+resettable('focusTone', resetTone)

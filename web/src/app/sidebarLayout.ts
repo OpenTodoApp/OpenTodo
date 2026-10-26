@@ -2,6 +2,7 @@
 // sidebar"): its width between 15 and 22.5 rem, and whether it is collapsed to
 // icons. Device state, never synced.
 import { useSyncExternalStore } from 'react'
+import { resettable } from '../lib/moduleState'
 
 export const SIDEBAR_MIN_REM = 15
 export const SIDEBAR_MAX_REM = 22.5
@@ -69,3 +70,4 @@ export function resetSidebarLayout(): void {
   try { localStorage.removeItem(WIDTH_KEY); localStorage.removeItem(COLLAPSED_KEY) } catch { /* ignore */ }
   emit()
 }
+resettable('sidebarLayout', resetSidebarLayout)

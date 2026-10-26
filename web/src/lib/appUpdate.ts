@@ -7,6 +7,7 @@
 // user's word, instead of a broken screen.
 import { useSyncExternalStore } from 'react'
 import { databaseOutdated, onDatabaseOutdated } from './db'
+import { resettable } from './moduleState'
 
 /** Why this tab should reload: a newer release is installed, or it took over the database. */
 export type UpdateReason = 'release' | 'database'
@@ -100,3 +101,4 @@ export function logUnhandledRejections(win: Pick<Window, 'addEventListener'> = w
 export function resetAppUpdate(): void {
   reason = null
 }
+resettable('appUpdate', resetAppUpdate)
