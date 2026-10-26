@@ -46,6 +46,9 @@ type Event struct {
 	Cancelled    bool
 	Free         bool // TRANSP:TRANSPARENT
 	Sequence     int
+	// LastModified is LAST-MODIFIED in Unix ms, 0 when absent (calendar sync
+	// compares it with the task's last change, calendar-two-way D8).
+	LastModified int64
 }
 
 // Calendar is a parsed calendar: its events and the hints it carries.
@@ -142,6 +145,10 @@ func parseEvent(c *caldav.Component, defaultLoc *time.Location, w warnings) (Eve
 			ev.Free = strings.EqualFold(strings.TrimSpace(p.Value), "TRANSPARENT")
 		case "SEQUENCE":
 			ev.Sequence, _ = strconv.Atoi(strings.TrimSpace(p.Value))
+		case "LAST-MODIFIED":
+			if t, err := time.Parse("20060102T150405Z", strings.TrimSpace(p.Value)); err == nil {
+				ev.LastModified = t.UnixMilli()
+			}
 		}
 	}
 	if start == nil {

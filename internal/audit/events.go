@@ -50,6 +50,11 @@ const (
 	IssueConnectionCreatedName Name = "issue_connection.created"
 	IssueConnectionUpdatedName Name = "issue_connection.updated"
 	IssueConnectionDeletedName Name = "issue_connection.deleted"
+	// Calendar sync connections (OpenSpec change calendar-two-way): never the
+	// server address, username, password, token or a calendar's name.
+	CalendarConnectionCreatedName Name = "calendar_connection.created"
+	CalendarConnectionUpdatedName Name = "calendar_connection.updated"
+	CalendarConnectionDeletedName Name = "calendar_connection.deleted"
 	// Notification delivery channels (OpenSpec change notification-channels):
 	// created, deleted, and changed settings or secrets by name.
 	NotificationChannelCreatedName Name = "notification_channel.created"
@@ -142,6 +147,7 @@ var Names = []Name{
 	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
+	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName,
 	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
@@ -179,6 +185,7 @@ var PersonalNames = []Name{
 	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
+	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName,
 	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
@@ -244,7 +251,7 @@ var allowedDetailKeys = map[string]bool{
 	"from":              true, // previous value of a setting or role
 	"to":                true, // new value of a setting or role
 	"provider":          true, // identity provider name, or github | gitlab for an issue connection
-	"connection_id":     true, // id of an issue connection (never its host or token)
+	"connection_id":     true, // id of an issue or calendar connection (never its host, username or secret)
 	// A notification channel's id and kind (ntfy, pushover, gotify, webhook),
 	// never its address, topic, token or user key.
 	"notification_channel_id": true,
@@ -469,6 +476,26 @@ func IssueConnectionUpdated(userID, connID, provider, setting string) Event {
 // IssueConnectionDeleted records a deleted connection (its token removed).
 func IssueConnectionDeleted(userID, connID, provider string) Event {
 	return ev(IssueConnectionDeletedName, Success, userID, "", "connection_id", connID, "provider", provider)
+}
+
+// ---- calendar sync connections ----
+
+// CalendarConnectionCreated records a new calendar connection: its id and
+// provider (caldav | google), never the address, username or secret.
+func CalendarConnectionCreated(userID, connID, provider string) Event {
+	return ev(CalendarConnectionCreatedName, Success, userID, "", "connection_id", connID, "provider", provider)
+}
+
+// CalendarConnectionUpdated records a change of a calendar connection: setting
+// names what changed (password, calendars, name, enabled, options,
+// reconnected; a comma-separated list when several did), never a value.
+func CalendarConnectionUpdated(userID, connID, provider, setting string) Event {
+	return ev(CalendarConnectionUpdatedName, Success, userID, "", "connection_id", connID, "provider", provider, "setting", setting)
+}
+
+// CalendarConnectionDeleted records a deleted calendar connection (its secret removed).
+func CalendarConnectionDeleted(userID, connID, provider string) Event {
+	return ev(CalendarConnectionDeletedName, Success, userID, "", "connection_id", connID, "provider", provider)
 }
 
 // ---- notification channels ----

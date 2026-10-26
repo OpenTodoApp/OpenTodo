@@ -494,6 +494,27 @@ export const SETTINGS_COPY = {
       encrypted: msg('Not available with end-to-end encryption: polls would store issue text unencrypted.'),
     },
   },
+  'calendar-sync': {
+    title: msg('Calendar sync'),
+    icon: 'calendar-sync',
+    description: msg('Your dated tasks become events in your own calendar; moving an event moves the task.'),
+    learnMore: 'settings/calendar-sync',
+    rows: {
+      server: {
+        label: msg('On this server'),
+        description: {
+          owner: msg('People can connect a CalDAV or Google calendar; tasks and events stay in step.'),
+          member: msg('The owner has not enabled calendar sync on this server.'),
+        },
+      },
+      google: { label: msg('Google client'), description: msg('Lets people connect Google Calendar. Register the redirect address in your OAuth client.') },
+      connections: { label: msg('Calendar accounts'), description: msg('Up to {max}. Outlook and Microsoft 365 are not supported yet.') },
+    },
+    notices: {
+      offline: msg('Changing calendar sync needs a connection. You are seeing the last loaded state.'),
+      encrypted: msg('With encryption, events are titled “Encrypted item”; calendar renames are not applied.'),
+    },
+  },
   webhooks: {
     title: msg('Webhooks'),
     icon: 'webhook',
