@@ -85,6 +85,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | Home Assistant add-on: OpenTodo on Home Assistant OS and Supervised, from its own add-on repository | `homeassistant-addon` |
+| n8n community nodes: tasks, projects, labels and comments, usable as an AI Agent tool, and a trigger with a signed webhook; separate repository `pixari/n8n-nodes-opentodo`, published to npm as `n8n-nodes-opentodo` | none (separate repository) |
 | Notification channels: ntfy, Pushover, Gotify and a webhook for reminders and notifications (closes #271) | `notification-channels` |
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 | AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |
