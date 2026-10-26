@@ -58,6 +58,9 @@ export default [
   'src/app/linkedAccounts.test.tsx',
   'src/app/listDisplayPanel.test.tsx',
   'src/app/listPerformance.test.tsx',
+  // The same file once the scale tests run on their own (test audit F4): its
+  // waits are the measurement windows of the render and read budgets.
+  'src/app/listPerformance.perf.test.tsx',
   'src/app/locations/locationEditor.test.tsx',
   'src/app/locations/places.test.tsx',
   'src/app/logbook.test.tsx',
