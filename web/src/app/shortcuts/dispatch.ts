@@ -6,6 +6,7 @@
 // runs once. No DOM beyond the event and `document.activeElement`, so tests drive
 // it with plain frames and synthetic events.
 import { type Chord, chordKey, chordsOf, matchesChord, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
+import { resettable } from '../../lib/moduleState'
 
 export type ShortcutHandler = (e: KeyboardEvent, s: Shortcut) => boolean | void
 
@@ -292,3 +293,4 @@ export function resetShortcutScopes(): void {
   frames = []
   clearPrefix()
 }
+resettable('shortcuts', resetShortcutScopes)

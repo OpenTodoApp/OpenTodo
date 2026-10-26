@@ -2,6 +2,7 @@
 // task's own actions too since ux-overhaul): module state so any list or panel can
 // show it and the Shell renders it once. A new offer replaces the previous one.
 import { useSyncExternalStore } from 'react'
+import { resettable } from '../../lib/moduleState'
 
 export interface BulkToast {
   key: number
@@ -19,6 +20,10 @@ let current: BulkToast | null = null
 let seq = 0
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((fn) => fn())
+resettable('bulkToast', () => {
+  current = null
+  seq = 0
+})
 
 /** Show (or replace) the toast for a bulk action. */
 export function showBulkToast(label: string, undoId: string | null, opts: { ttl?: number; action?: BulkToast['action'] } = {}): void {

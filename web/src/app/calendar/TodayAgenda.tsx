@@ -17,6 +17,7 @@ import { hueFor, Popover } from '../../ui'
 import { EventDetails } from '../CalendarEvents'
 import { CalendarStatus } from './CalendarStatus'
 import { useNowMinutes } from './useNowMinutes'
+import { resettable } from '../../lib/moduleState'
 
 /** When Today's last fetch failed on this device (D3): no new attempt from Today for STALE_MS. */
 let lastMiss = 0
@@ -25,6 +26,7 @@ let lastMiss = 0
 export function resetTodayAgendaFetch(): void {
   lastMiss = 0
 }
+resettable('todayAgenda', resetTodayAgendaFetch)
 
 /** Make sure the cache holds a fresh copy of today, at most one failed attempt per STALE_MS (D3). */
 async function askForToday(range: DayRange): Promise<void> {

@@ -28,6 +28,7 @@ import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoi
 import { t } from './i18n'
 import { uuid } from './ids'
 import { onTestTeardown } from './testTeardown'
+import { resettable } from './moduleState'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -700,6 +701,20 @@ export function stopSync(): void {
   resign()
   publish({ state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null })
 }
+
+/**
+ * Test hook (resetModuleState): stops a running loop and forgets the session's
+ * status, refusal notice and held-ops retry, as after a fresh import.
+ */
+resettable('sync', () => {
+  if (started) stopSync()
+  lastHeldRetry = 0
+  heldReason = null
+  needNotifications = true
+  failures = 0
+  attempts = 0
+  snapshot = { state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null }
+})
 
 /**
  * stopSync, then wait until the exchange that was running has stopped. Sign-out

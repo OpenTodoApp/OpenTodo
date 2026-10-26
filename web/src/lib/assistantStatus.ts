@@ -5,6 +5,7 @@
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import { getMeta, setMeta } from './db'
+import { resettable } from './moduleState'
 
 /** GET /api/v1/me/assistant: what this account may do; never a key. */
 export interface AssistantStatus {
@@ -184,3 +185,4 @@ export function resetAssistantStatus(): void {
   prefill = null
   emit()
 }
+resettable('assistantStatus', resetAssistantStatus)

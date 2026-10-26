@@ -1,12 +1,14 @@
 import 'fake-indexeddb/auto'
 import { afterAll, afterEach, beforeEach } from 'vitest'
-import { hlcReset } from './lib/hlc'
+import { resetModuleState } from './lib/moduleState'
 import { teardown } from './test/teardown'
 
-// Each test starts with a fresh clock: received ops move it forward (the
-// clock's receive rule), so a test that applies ops stamped in the future would
-// otherwise push the next test's local edits past the timestamps it chose.
-beforeEach(() => hlcReset())
+// Module-level state (clocks, caches, stores) starts fresh in every test: each
+// stateful module registers its reset with src/lib/moduleState.ts. The clock is
+// one of them: received ops move it forward (the clock's receive rule), so a test
+// that applies ops stamped in the future would otherwise push the next test's
+// local edits past the timestamps it chose.
+beforeEach(resetModuleState)
 
 // No test reaches the network (OpenSpec web-lint-and-test-hygiene). Unless a test
 // mocks fetch itself (vi.stubGlobal('fetch', ...), vi.spyOn(globalThis, 'fetch')),

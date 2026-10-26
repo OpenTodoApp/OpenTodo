@@ -2,6 +2,7 @@
 // that timestamps issued by this device are strictly increasing even when the
 // system clock jumps backwards, and corrected towards server time when the
 // local clock is clearly off.
+import { resettable } from './moduleState'
 
 let last = 0
 let offset = 0
@@ -80,11 +81,12 @@ export function hlcSeedOffset(stored: number): void {
   if (Number.isFinite(stored)) offset = stored
 }
 
-/** Test hook: forget the clock state. */
+/** Test hook: forget the clock state (registered with resetModuleState). */
 export function hlcReset(): void {
   last = 0
   offset = 0
 }
+resettable('hlc', hlcReset)
 
 /** Last-writer-wins comparison shared with the server (see internal/sync/ops.go). */
 export function wins(ts: number, device: string, existing?: { ts: number; device: string }): boolean {
