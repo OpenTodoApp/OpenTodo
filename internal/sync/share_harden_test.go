@@ -10,11 +10,16 @@ import (
 // alice's unshared project "p", creates a project with that id in his own
 // personal scope and shares it with carol. Before harden-links-and-sharing the
 // share created the scope project:p owned by bob, and alice lost her own
-// project for good (her writes were refused, she could never share it). Now
-// either share is refused and both keep their own project.
+// project for good (her writes were refused, she could never share it). Since
+// entity-id-ownership bob cannot create the copy at all; a copy written before
+// that still makes either share refused, and both keep their own project.
 func TestShareRefusesProjectIDSquat(t *testing.T) {
 	f := newSharing(t)
-	f.apply("bob", "B", f.op("project", "p", "name", `"Squat"`))
+	squat := f.op("project", "p", "name", `"Squat"`)
+	if res := f.apply("bob", "B", squat); !slices.Equal(rejectedIDs(res), []string{squat.ID + ":forbidden"}) || len(res.Restore) != 0 {
+		t.Fatalf("bob creates a project with alice's id = %+v", res)
+	}
+	f.legacyWrite("bob", PersonalScope("bob"), f.op("project", "p", "name", `"Squat"`))
 	if _, err := f.s.AddMember(f.ctx, "bob", "p", "carol", RoleEditor); !errors.Is(err, ErrProjectIDConflict) {
 		t.Fatalf("bob shares the squatted id: %v", err)
 	}

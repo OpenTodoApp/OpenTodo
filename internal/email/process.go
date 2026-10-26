@@ -151,6 +151,10 @@ func taskOps(userID string, msg *Parsed, now time.Time, ts int64) []opsync.Op {
 		{"priority", json.RawMessage("4")},
 		{"created_at", num},
 		{"position", num},
+		// The id is derived from the Message-ID, so the task names its place
+		// (the Inbox): an id someone created first in a shared project is then
+		// refused as a whole, never filled with the message (entity-id-ownership).
+		{"project_id", json.RawMessage("null")},
 	}
 	// The Message-ID as the task's origin, in the same batch (task-origin D5): no
 	// URL, no title, never the sender. A message without a real Message-ID, or

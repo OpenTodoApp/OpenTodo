@@ -32,6 +32,10 @@ func TestMigrationCaldavOrphans(t *testing.T) {
 	}
 	for _, q := range []string{
 		"PRAGMA user_version = " + strconv.Itoa(version-1),
+		// The table as it was before 0048 (one row per task).
+		"DROP TABLE caldav_resources",
+		"CREATE TABLE caldav_resources (task_id TEXT PRIMARY KEY, name TEXT NOT NULL, uid TEXT NOT NULL)",
+		`INSERT INTO users(id,email,name,password_hash,created_at) VALUES('u1','u1@example.com','u1','h',1)`,
 		`INSERT INTO scope_fields(scope_id,entity,entity_id,field,value,ts,device) VALUES('user:u1','task','live','title','"x"',1,'A')`,
 		`INSERT INTO caldav_resources(task_id,name,uid) VALUES('live','a.ics','a'),('purged','b.ics','b')`,
 	} {
