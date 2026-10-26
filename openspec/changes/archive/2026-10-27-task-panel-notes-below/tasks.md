@@ -19,5 +19,5 @@
 
 ## 4. Release
 
-- [ ] 4.1 Run `make check` and `make openspec-validate`. Verify: both pass.
-- [ ] 4.2 After the PR is merged, reply on issue #444 with a short, friendly note: properties first, notes in full below them, no Show all, and why the notes grow with the panel instead of scrolling on their own (the three-scroll-region budget). Name the release, then close the issue. Verify: `gh issue view 444 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
+- [x] 4.1 Run `make check` and `make openspec-validate`. Verify: both pass.
+- [x] 4.2 After the PR is merged, reply on issue #444 with a short, friendly note: properties first, notes in full below them, no Show all, and why the notes grow with the panel instead of scrolling on their own (the three-scroll-region budget). Name the release, then close the issue. Verify: `gh issue view 444 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
