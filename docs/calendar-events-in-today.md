@@ -3,7 +3,7 @@ title: Calendar events in Today
 summary: Show the day's appointments from your subscribed calendars above Today's tasks: turning it on, what the agenda shows, and how it works offline.
 audience: user
 section: Guides
-specs: [calendar-feeds, task-list-presentation]
+specs: [today-agenda, calendar-feeds, task-list-presentation]
 screens: []
 order: 23
 ---
