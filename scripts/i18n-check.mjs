@@ -12,7 +12,9 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { existsSync } from 'node:fs'
 import { extract } from './i18n/extract.mjs'
+import { checkShellCatalog, readShellCatalog, shellCatalogPath } from './i18n/shell.mjs'
 import { repo, ts } from './i18n/source.mjs'
 
 /** The shipped language codes, read from web/src/locales/index.ts. */
@@ -92,6 +94,10 @@ export async function check(root = repo) {
   }
   for (const lang of shipped) {
     if (lang !== 'en' && !readdirSync(dir).includes(`${lang}.json`)) problems.push(`${lang}: listed in index.ts but web/src/locales/${lang}.json is missing`)
+  }
+  // The iOS shell's own screens (ios-shell): a String Catalog, not a web catalog.
+  if (existsSync(shellCatalogPath(root))) {
+    problems.push(...checkShellCatalog(readShellCatalog(root), shipped.filter((c) => c !== 'en')))
   }
   return { problems, summary, count: messages.length }
 }
