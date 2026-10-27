@@ -40,4 +40,10 @@
     <string name="widget_untitled">Tarea</string>
     <string name="widget_more">+ %1$d más</string>
     <string name="setup_old_webview">El Android System WebView de este teléfono es antiguo (versión %1$s). Actualízalo desde la tienda de apps para que OpenTodo funcione por completo.</string>
+    <string name="site_bar_host">Iniciando sesión en %1$s</string>
+    <string name="site_bar_close">Volver a OpenTodo</string>
+    <string name="setup_login_wall">Este servidor está detrás de una página de inicio de sesión. Inicia sesión aquí; la app se conecta en cuanto entres.</string>
+    <string name="setup_web_page">Esta dirección responde con una página web, no como un servidor OpenTodo. Si tu servidor está detrás de una página de inicio de sesión, inicia sesión aquí; si no, revisa la dirección.</string>
+    <string name="setup_sign_in">Iniciar sesión aquí</string>
+    <string name="error_sign_in">Tu servidor está detrás de una página de inicio de sesión y el inicio de sesión no continuó en la app. Vuelve a iniciar sesión aquí.</string>
 </resources>
