@@ -19,11 +19,10 @@
 // stretch of work is one row). Only the author's entries can be changed: the
 // server refuses other members' (time-tracking "Time entry authorship").
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { derived, liveSnapshot } from './liveSnapshot'
 import { getDeviceId, mutateMany, mutationTables, type Change } from './ops'
-import { currentUserId } from './sharing'
+import { currentUserId, useMe } from './sharing'
 import { isRunning, ownMinutesOnDay, repairs, running, startBatch, totalsByTask, type Repair } from './time'
 import { useLiveTasks } from './liveTasks'
 import { uuid } from './ids'
@@ -165,9 +164,7 @@ export function useLiveEntries(): TimeEntry[] {
 }
 
 /** The signed-in account id, live (null while loading or signed out). */
-export function useMe(): string | null {
-  return useLiveQuery(() => currentUserId(), [], null)
-}
+export { useMe }
 
 /** The user's running entry, or null (the indicator, the menus, the `y` key). */
 export function useRunningEntry(): TimeEntry | null {
