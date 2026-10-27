@@ -6,8 +6,15 @@ enum Version {
     /// What the build baked in: `OPENTODO_VERSION` is a build setting, not a run-time
     /// variable, so on a device only the bundle knows it.
     static var app: String {
-        let raw = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0-dev"
-        return raw.hasPrefix("v") ? String(raw.dropFirst()) : raw
+        normalize(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
+    }
+
+    /// The bundle's version string as the bridge reports it: no leading `v`, and
+    /// `0.0.0-dev` when the bundle carries none.
+    static func normalize(_ raw: String?) -> String {
+        let value = (raw ?? "").trimmingCharacters(in: .whitespaces)
+        guard !value.isEmpty else { return "0.0.0-dev" }
+        return value.hasPrefix("v") ? String(value.dropFirst()) : value
     }
 
     /// `major * 10000 + minor * 100 + patch`, as `CFBundleVersion`.
