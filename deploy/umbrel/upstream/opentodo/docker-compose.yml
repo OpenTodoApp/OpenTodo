@@ -14,7 +14,7 @@ services:
       PROXY_AUTH_BLACKLIST: "/api/v1/auth/register"
 
   web:
-    image: ghcr.io/opentodoapp/opentodo:0.15.0@sha256:0086cc3292a88244450ed029039f732796943fcd78c22c6624162759949b9141
+    image: ghcr.io/opentodoapp/opentodo:0.16.0@sha256:0086cc3292a88244450ed029039f732796943fcd78c22c6624162759949b9141
     # Umbrel creates the app data owned by 1000:1000; OpenTodo's static binary runs as any user.
     user: "1000:1000"
     restart: on-failure
