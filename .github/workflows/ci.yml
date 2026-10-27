@@ -223,6 +223,10 @@ jobs:
     # The pinned Playwright image (PLAYWRIGHT_IMAGE in the Makefile): Chromium, WebKit and
     # their system packages are in it. The server is a static Go build made in the job.
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
+    # The checkout belongs to the runner's user, not the container's root, so Go cannot
+    # read its VCS status (nothing uses the stamp).
+    env:
+      GOFLAGS: -buildvcs=false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
