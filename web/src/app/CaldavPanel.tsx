@@ -164,7 +164,7 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
 
   const load = useCallback(async () => {
     try {
-      const [s, list] = await Promise.all([api.caldavSetting(), api.listAppPasswords()])
+      const [s, list] = await Promise.all([api.caldavSwitch.get(), api.listAppPasswords()])
       setSetting(s)
       setPasswords(list.appPasswords)
     } catch (err) {
@@ -181,7 +181,7 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
         error={error} busy={busy} creating={creating} onNameChange={setNewName}
         onNew={() => { setError(null); setSecret(null); setCreating(true) }}
         onCloseNew={() => { setCreating(false); setSecret(null); setNewName('') }}
-        onToggle={(enabled) => void run(async () => setSetting(await api.setCaldavEnabled(enabled)))}
+        onToggle={(enabled) => void run(async () => setSetting(await api.caldavSwitch.put(enabled)))}
         onCreate={() => void run(async () => {
           const res = await api.createAppPassword(newName.trim() || 'Calendar app')
           setSecret(res.secret)

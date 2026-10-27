@@ -20,10 +20,10 @@ export const PAGE_STATUS: Readonly<Record<string, Loader>> = {
   'account/security': async () => ((await api.mfaStatus()).mfa.enrolled ? t('Two-factor on') : t('Two-factor off')),
   'account/encryption': async () => onOff(encryptionSnapshot().enabled),
   'notifications/digest': async () => { const d = await api.emailDigest(); return d.available ? onOff(d.enabled) : null },
-  'integrations/caldav': async () => onOff((await api.caldavSetting()).enabled),
-  'integrations/calendar-feeds': async () => onOff((await api.calendarFeedsSetting()).enabled),
-  'integrations/calendar-sync': async () => ((await api.getCalendarSyncSetting()).enabled ? count((await api.listCalendarConnections()).connections.length) : t('Off')),
-  'integrations/issues': async () => ((await api.getIssuesSetting()).enabled ? count((await api.listIssueConnections()).connections.length) : t('Off')),
+  'integrations/caldav': async () => onOff((await api.caldavSwitch.get()).enabled),
+  'integrations/calendar-feeds': async () => onOff((await api.calendarFeedsSwitch.get()).enabled),
+  'integrations/calendar-sync': async () => ((await api.calendarSyncSwitch.get()).enabled ? count((await api.listCalendarConnections()).connections.length) : t('Off')),
+  'integrations/issues': async () => ((await api.issuesSwitch.get()).enabled ? count((await api.listIssueConnections()).connections.length) : t('Off')),
   'integrations/webhooks': async () => count((await api.listWebhooks()).webhooks.length),
   'integrations/tokens': async () => count((await api.listTokens()).tokens.length),
   'integrations/assistant': async () => onOff((await api.getMyAssistant()).enabled),
@@ -34,7 +34,7 @@ export const PAGE_STATUS: Readonly<Record<string, Loader>> = {
   'server/attachments': async () => onOff((await api.attachmentSettings()).enabled),
   'server/outgoing-email': async () => onOff((await api.smtpSettings()).configured),
   'server/maps': async () => onOff((await api.getMapsSetting()).enabled),
-  'server/automations': async () => onOff((await api.getAutomationsSetting()).enabled),
+  'server/automations': async () => onOff((await api.automationsSwitch.get()).enabled),
   'server/speech': async () => onOff((await api.speechSettings()).url !== ''),
 }
 

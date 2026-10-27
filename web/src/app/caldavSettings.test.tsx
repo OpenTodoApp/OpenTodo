@@ -82,8 +82,8 @@ describe('caldav API client', () => {
       const body = String(input).includes('app-passwords') && init?.method === 'POST' ? { appPassword: pw(), secret: 'otap_x' } : { enabled: true, url: 'u', secure: true, appPasswords: [] }
       return init?.method === 'DELETE' ? new Response(null, { status: 204 }) : new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
     })
-    await api.caldavSetting()
-    await api.setCaldavEnabled(true)
+    await api.caldavSwitch.get()
+    await api.caldavSwitch.put(true)
     await api.listAppPasswords()
     expect((await api.createAppPassword('iPhone')).secret).toBe('otap_x')
     await api.revokeAppPassword('a1')

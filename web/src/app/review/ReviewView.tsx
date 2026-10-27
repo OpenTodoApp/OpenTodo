@@ -30,6 +30,7 @@ import { ProjectWalk } from './ProjectWalk'
 import { ReviewProgress } from './ReviewProgress'
 import { StepCard } from './StepCard'
 import { useShortcutScope } from '../shortcuts'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 const LIST_STEPS: readonly StepId[] = ['clear', 'back', 'waiting', 'ahead', 'someday']
 
@@ -64,11 +65,11 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const [notice, setNotice] = useState<string | null>(null)
   const [finished, setFinished] = useState<number | null>(null)
   const openId = usePanelTaskId()
-  useEffect(() => setSelected(null), [step])
+  useResetOnChange([step], () => setSelected(null))
   // Working in a step (a selection, an open task) counts as choosing it.
   useEffect(() => { if (selected) chosen.current = true }, [selected])
   // The walk compares stamps with "now"; refresh it when a project is marked reviewed.
-  useEffect(() => setNow(Date.now()), [reviewedAt])
+  useResetOnChange([reviewedAt], () => setNow(Date.now()))
 
   const current = step ?? 'clear'
   const taskRows = useMemo(() => (steps ? stepTasks(steps, current) : []), [steps, current])

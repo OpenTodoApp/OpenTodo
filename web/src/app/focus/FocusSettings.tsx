@@ -4,12 +4,13 @@
 // switches, the break reminder and the sound. Each row writes one synced
 // `user_prefs` field after its bounds check; a value out of range is refused with
 // the allowed range and nothing is written.
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Input, Select, SettingRow, SettingsSection, Switch } from '../../ui'
 import { autoStartValue, DEFAULT_BREAK_AFTER, FOCUS_BOUNDS, FOCUS_MODES, inBounds, modeName, setFocusPref, useFocusPrefs, type FocusMode, type FocusNumberField, type FocusPrefs } from '../../lib/focus/prefs'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { cardCopy, rowCopy } from '../../lib/settingsCopy'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export function FocusSection() {
   const prefs = useFocusPrefs()
@@ -19,7 +20,7 @@ export function FocusSection() {
 /** A minutes (or count) field: commits a whole number inside its range on change, else shows the range. */
 function NumberRow({ field, label, value, unit = 'minutes', description }: { field: FocusNumberField; value: number; unit?: 'minutes' | 'sessions'; label: string; description?: string }) {
   const [text, setText] = useState(String(value))
-  useEffect(() => setText(String(value)), [value])
+  useResetOnChange([value], () => setText(String(value)))
   const [min, max] = FOCUS_BOUNDS[field]
   const n = Number(text)
   const valid = text.trim() !== '' && inBounds(field, n)

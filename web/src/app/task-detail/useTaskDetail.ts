@@ -19,6 +19,7 @@ import { useShortcutScope } from '../shortcuts'
 import { commitTitleEdit } from '../titleEdit'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { useTaskPageStatus } from './taskPageStatus'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** The link that opens a task in the app: its page (task-full-page). */
 export function taskLink(id: string, origin = typeof location === 'undefined' ? '' : location.origin): string {
@@ -72,7 +73,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
     titleBase.current = task.title
     setTitle(task.title)
   }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps -- reacts to the stored title only; the draft is read, not a trigger
-  useEffect(() => setCopied(false), [taskId])
+  useResetOnChange([taskId], () => setCopied(false))
   // The title grows to two lines, then stops (it scrolls inside itself while being edited).
   useLayoutEffect(() => {
     const el = titleField.current

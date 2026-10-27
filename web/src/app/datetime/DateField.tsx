@@ -13,6 +13,7 @@ import { Field, Input } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { parseDateInput } from './parse'
 import { t, preferredLanguages } from '../../lib/i18n'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export interface DateFieldProps {
   /** `YYYY-MM-DD`, or null when empty. */
@@ -44,7 +45,7 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
   const button = useRef<HTMLButtonElement>(null)
 
   // A new value from outside (another device, the calendar) replaces the text.
-  useEffect(() => { setDraft(shown); setError(null) }, [shown])
+  useResetOnChange([shown], () => { setDraft(shown); setError(null) })
 
   const commit = () => {
     const text = draft.trim()

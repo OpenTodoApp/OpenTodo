@@ -13,6 +13,7 @@ import { Switch } from '../ui'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
+import { useResetOnChange } from '../lib/useResetOnChange'
 
 export const MAX_FILE_MB = 2048
 /** 1 TB, the server's bound. */
@@ -34,7 +35,7 @@ export function AttachmentSettingsView({ value, online, busy, error, saved, onSa
   onSave: (s: AttachmentSettings) => void
 }) {
   const [draft, setDraft] = useState<AttachmentSettings | null>(value)
-  useEffect(() => setDraft(value), [value])
+  useResetOnChange([value], () => setDraft(value))
   const disabled = !online || busy || !draft
   const problem = draft ? validateAttachmentSettings(draft) : null
   const dirty = !!draft && !!value && (draft.enabled !== value.enabled || draft.max_file_mb !== value.max_file_mb || draft.quota_mb !== value.quota_mb)

@@ -187,7 +187,7 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
   const [polling, setPolling] = useState<ReadonlySet<string>>(new Set())
   const [fieldError, setFieldError] = useState<FieldErrorState | null>(null)
   const server = useServerList({
-    setting: api.getIssuesSetting,
+    setting: api.issuesSwitch.get,
     list: async () => (await api.listIssueConnections()).connections,
     cached: cachedIssueConnections,
     cache: cacheIssueConnections,
@@ -205,7 +205,7 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
     <IssuesView isOwner={isOwner} enabled={enabled} connected={connected} encrypted={encrypted} connections={connections} projects={projects}
       busy={busy} polling={polling} error={error} draft={draft} fieldError={fieldError}
       onToggle={(on) => void run(async () => {
-        await api.putIssuesSetting(on)
+        await api.issuesSwitch.put(on)
         setEnabled(on)
         if (on) await load()
       })}

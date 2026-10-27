@@ -208,7 +208,7 @@ export function CalendarFeedsPanel({ isOwner }: { isOwner: boolean }) {
 
   const load = useCallback(async () => {
     try {
-      const { enabled: on } = await api.calendarFeedsSetting()
+      const { enabled: on } = await api.calendarFeedsSwitch.get()
       setEnabled(on)
       setUnreachable(false)
       if (!on) return
@@ -247,7 +247,7 @@ export function CalendarFeedsPanel({ isOwner }: { isOwner: boolean }) {
     <CalendarFeedsView isOwner={isOwner} enabled={enabled} connected={connected} encrypted={encrypted}
       subscriptions={subscriptions} feed={feed} busy={busy} error={error} draft={draft} feedUrl={feedUrl}
       onToggle={(on) => void run(async () => {
-        await api.setCalendarFeedsSetting(on)
+        await api.calendarFeedsSwitch.put(on)
         setEnabled(on)
         if (on) await load()
       })}

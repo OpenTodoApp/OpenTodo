@@ -4,6 +4,7 @@
 // the panel with an editor through the focus signals handled here.
 import { type RefObject, useEffect, useRef, useState } from 'react'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus } from '../signals'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** The properties the Add menu can offer, in its order. */
 export type Optional = 'deadline' | 'when' | 'evening' | 'reminders' | 'estimate' | 'repeat' | 'labels' | 'assignee' | 'blocked-by' | 'parent' | 'section' | 'location'
@@ -22,7 +23,7 @@ export function usePropertyEditing(taskId: string, has: Record<Optional, boolean
   const setEditing = (id: string, on: boolean) => setEditingState((cur) => (on ? id : cur === id ? null : cur))
   const reveal = (id: Optional) => { setShown((s) => new Set(s).add(id)); setEditingState(id) }
   // Another task starts with no editor open and nothing revealed (before the focus signals below).
-  useEffect(() => { setEditingState(null); setShown(new Set()) }, [taskId])
+  useResetOnChange([taskId], () => { setEditingState(null); setShown(new Set()) })
 
   // `b`, `Shift+N`, `d` and `e` on a list row open the panel with that editor (task-dependencies 3.3,
   // someday-and-evening 3.3, deadlines 3.2, time-blocking).

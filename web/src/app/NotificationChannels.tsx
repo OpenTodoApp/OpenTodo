@@ -151,7 +151,7 @@ export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
   const { enabled: encrypted } = useEncryption()
   const [fieldError, setFieldError] = useState<ChannelFieldError | null>(null)
   const server = useServerList({
-    setting: channelsApi.getSetting,
+    setting: channelsApi.switch.get,
     list: async () => (await channelsApi.list()).channels,
     cached: cachedChannels,
     cache: cacheChannels,
@@ -167,7 +167,7 @@ export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
     <ChannelsView isOwner={isOwner} enabled={enabled} connected={connected} encrypted={encrypted} channels={channels} busy={busy} error={error}
       draft={draft} fieldError={fieldError} secret={secret} tests={tests}
       onToggle={(on) => void run(async () => {
-        await channelsApi.putSetting(on)
+        await channelsApi.switch.put(on)
         setEnabled(on)
         if (on) await load()
       })}
