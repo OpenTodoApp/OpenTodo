@@ -9,10 +9,10 @@ While an account has one workspace, the workspace control at the top of the side
 ## What Changes
 
 - While the control shows both names, it shows them on two lines:
-  - **Line 1:** the instance's wordmark (the owner's name on a branded instance), at the body size in the strong tone, as the header row requires today.
+  - **Line 1:** the instance's wordmark (the owner's name on a branded instance), at the size and tone it has today.
   - **Line 2:** the workspace name, at the metadata size in the muted tone.
   - Each line truncates on its own, and the " · " separator goes away.
-- The header row stays one row of 40 px or less (two lines of 20 + 18 px). The mark, the update dot, the chevron and the search button stay where they are.
+- The header row stays one row of 40 px or less (two lines of 20 + 18 px, measured at 38 px). The mark, the update dot, the chevron and the search button stay where they are.
 - With several workspaces the control keeps showing only the workspace name, on one line, as today. The instance name is not added there, because the rule that it appears only while there is one workspace is unchanged.
 - The control's accessible name and tooltip still read "Workspace: OpenTodo · Personal".
 

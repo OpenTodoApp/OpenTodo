@@ -15,10 +15,12 @@
 ### D1. A two-line label inside the existing trigger
 
 The single `truncate` span becomes a `flex flex-col` block with two `truncate` lines:
-- The instance wordmark, unchanged: body size, semibold, strong. This keeps the "Sidebar header row" rule for the wordmark.
-- The workspace name in `text-meta text-muted`.
+- The instance wordmark at the size it already renders at (16 px, semibold, strong), with its line height tightened to 20 px (`leading-5`). Its inherited 24 px would have made the header 42 px.
+- The workspace name in `text-meta text-muted` (12.5 px on an 18 px line).
 
-The two line heights are 20 px and 18 px, 38 px in total. That fits the 40 px limit in "Header at rest", and the header grows by at most 2 px over its minimum. The mark and the chevron are centred against the block, so they stay vertically centred.
+The two lines total 38 px. Measured in the built stories at 1280 and 375 px, the header row is 38 px (it was 32 px with a fine pointer), within the 40 px limit in "Header at rest". The mark and the chevron are centred against the block, so they stay vertically centred.
+
+A trailing space after the wordmark keeps the visible text "OpenTodo Personal". Without it, the two lines read "OpenTodoPersonal", which no longer sits inside the accessible name "Workspace: OpenTodo · Personal". axe reports that as `label-content-name-mismatch`, which matters for speech input.
 
 Alternatives considered:
 - **Workspace name first, instance name second.** Rejected. The wordmark is the header's anchor in the existing requirement. Below it, the workspace name reads as "where you are inside it".
