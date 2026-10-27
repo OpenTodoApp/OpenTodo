@@ -17,6 +17,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { db, getMeta, setMeta, type AttachmentBlob } from './db'
 import { rememberFieldNames } from './fieldNames'
+import { applicableFieldsLookup } from './fieldTree'
 import { t } from './i18n'
 import { activeLabels } from './labels'
 import { derived, liveSnapshot } from './liveSnapshot'
@@ -137,6 +138,12 @@ export function useMembershipMap(): Map<string, Membership> {
   return all ? memberMapOf(all) : NO_MEMBER_MAP
 }
 
+/** The membership map, or undefined while the first read runs. */
+export function useMembershipMapOrLoading(): Map<string, Membership> | undefined {
+  const all = membershipRows.use()
+  return all ? memberMapOf(all) : undefined
+}
+
 /** One project's membership: null for a personal project, undefined while loading. */
 export function useMembership(projectId: string): Membership | null | undefined {
   const all = membershipRows.use()
@@ -189,6 +196,24 @@ const liveFieldsOf = derived((all: FieldDef[]) => all.filter((d) => !d.deleted_a
 export function useFieldDefs(): FieldDef[] {
   const all = fieldRows.use()
   return all ? liveFieldsOf(all) : NO_FIELDS
+}
+
+type FieldLookup = (projectId: string | null | undefined) => FieldDef[]
+const fieldLookups = new WeakMap<Project[], WeakMap<FieldDef[], FieldLookup>>()
+
+/**
+ * The fields that apply to each project, inherited ones included (OpenSpec
+ * inherited-custom-fields): one shared, memoizing lookup per snapshot of projects
+ * and definitions, so every row of a list reuses the same chain walks.
+ */
+export function useApplicableFields(): FieldLookup {
+  const projects = useProjects()
+  const defs = useFieldDefs()
+  let byDefs = fieldLookups.get(projects)
+  if (!byDefs) fieldLookups.set(projects, (byDefs = new WeakMap()))
+  let lookup = byDefs.get(defs)
+  if (!lookup) byDefs.set(defs, (lookup = applicableFieldsLookup(projects, defs)))
+  return lookup
 }
 
 /** Every field definition row of one project, deleted ones too (liveFields narrows them). */

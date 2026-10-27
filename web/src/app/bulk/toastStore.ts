@@ -1,8 +1,8 @@
 // The undo toast of the last action (OpenSpec change bulk-edit, design D5; one
 // task's own actions too since ux-overhaul): module state so any list or panel can
 // show it and the Shell renders it once. A new offer replaces the previous one.
-import { useSyncExternalStore } from 'react'
 import { resettable } from '../../lib/moduleState'
+import { createStore } from '../../lib/store'
 
 export interface BulkToast {
   key: number
@@ -16,19 +16,13 @@ export interface BulkToast {
   action?: { label: string; run: () => void }
 }
 
-let current: BulkToast | null = null
+const store = createStore<BulkToast | null>('bulkToast', null)
 let seq = 0
-const listeners = new Set<() => void>()
-const emit = () => listeners.forEach((fn) => fn())
-resettable('bulkToast', () => {
-  current = null
-  seq = 0
-})
+resettable('bulkToastSeq', () => { seq = 0 })
 
 /** Show (or replace) the toast for a bulk action. */
 export function showBulkToast(label: string, undoId: string | null, opts: { ttl?: number; action?: BulkToast['action'] } = {}): void {
-  current = { key: ++seq, label, undoId, ...(opts.ttl ? { ttl: opts.ttl } : {}), ...(opts.action ? { action: opts.action } : {}) }
-  emit()
+  store.set({ key: ++seq, label, undoId, ...(opts.ttl ? { ttl: opts.ttl } : {}), ...(opts.action ? { action: opts.action } : {}) })
 }
 
 /** Five seconds: the offer after one task's own action (task-list-presentation "Completion feedback"). */
@@ -38,21 +32,14 @@ export const ACTION_TOAST_MS = 5_000
 export const showUndoToast = (label: string, undoId: string | null, ttl = ACTION_TOAST_MS): void => showBulkToast(label, undoId, { ttl })
 
 export function updateBulkToast(patch: Partial<BulkToast>): void {
-  if (!current) return
-  current = { ...current, ...patch }
-  emit()
+  const current = store.get()
+  if (current) store.set({ ...current, ...patch })
 }
 
 export function hideBulkToast(key?: number): void {
-  if (key !== undefined && current?.key !== key) return
-  current = null
-  emit()
+  if (key !== undefined && store.get()?.key !== key) return
+  store.set(null)
 }
 
-export function bulkToast(): BulkToast | null {
-  return current
-}
-
-export function useBulkToast(): BulkToast | null {
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => listeners.delete(fn) }, () => current, () => null)
-}
+export const bulkToast = store.get
+export const useBulkToast = store.use

@@ -40,4 +40,10 @@
     <string name="widget_untitled">Attività</string>
     <string name="widget_more">+ altre %1$d</string>
     <string name="setup_old_webview">L’Android System WebView di questo telefono è vecchio (versione %1$s). Aggiornalo dallo store delle app perché OpenTodo funzioni del tutto.</string>
+    <string name="site_bar_host">Accesso su %1$s</string>
+    <string name="site_bar_close">Torna a OpenTodo</string>
+    <string name="setup_login_wall">Questo server è dietro una pagina di accesso. Accedi qui; l’app si collega appena hai finito.</string>
+    <string name="setup_web_page">Questo indirizzo risponde con una pagina web, non come un server OpenTodo. Se il server è dietro una pagina di accesso, accedi qui; altrimenti controlla l’indirizzo.</string>
+    <string name="setup_sign_in">Accedi qui</string>
+    <string name="error_sign_in">Il server è dietro una pagina di accesso e l’accesso non è proseguito nell’app. Accedi di nuovo qui.</string>
 </resources>

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	"github.com/OpenTodoApp/opentodo/internal/push"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/tenant"
@@ -38,7 +39,7 @@ func TestSchedulerIgnoresIdleTenants(t *testing.T) {
 		}
 		// Some have work, all of it later than the hour under test.
 		if i%3 == 0 {
-			if _, err := tx.Exec(`INSERT INTO due(tenant,kind,at) VALUES(?,?,?)`, name, KindReminders, now.Add(61*time.Minute+time.Duration(i)*time.Second).UnixMilli()); err != nil {
+			if _, err := tx.Exec(`INSERT INTO due(tenant,kind,at) VALUES(?,?,?)`, name, jobs.Reminders, now.Add(61*time.Minute+time.Duration(i)*time.Second).UnixMilli()); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -109,7 +110,7 @@ func TestReminderInClosedTenant(t *testing.T) {
 		t.Fatalf("swept %d", n)
 	}
 	due, order, err := f.h.reg.DueBefore(ctx, time.UnixMilli(fire), 10)
-	if err != nil || len(order) != 1 || due["alice"][0] != KindReminders {
+	if err != nil || len(order) != 1 || due["alice"][0] != jobs.Reminders {
 		t.Fatalf("index: %v %v %v", due, order, err)
 	}
 	// Before the reminder is due nothing opens it.

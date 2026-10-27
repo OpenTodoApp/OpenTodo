@@ -136,6 +136,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels, see [Label fields](#label-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
+| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders` and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
+| GET/PATCH/DELETE | `/api/v1/{collection}/{id}` | yes | read, partial update, soft delete one item of those collections |
 | GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
 | DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
 | POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{…}}` |
@@ -146,8 +148,12 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/comments/{id}/reactions` | yes | `{reactions: [names]}` replaces your own reactions → 200 comment; 400 `invalid_input` naming an unknown name or a duplicate; 404 for an unreadable or deleted comment; `read` and `agent` tokens get 403 `insufficient_scope` |
 | GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
 | GET | `/api/v1/activity` | yes | the activity feed across every shared project you are a member of; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
-| GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}]}`, see [Sharing](#sharing) |
-| POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use); recorded as `project.member_added`; adding by email is limited to 30 attempts per account per hour, together with workspace members (429 `rate_limited`) |
+| GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}], pending?}`; `pending` (owners and admins only) lists the open [invitations](#membership-invitations) `[{id,email,role,invitedBy,createdAt,expiresAt}]`, see [Sharing](#sharing) |
+| POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use) when the account already shares a project or workspace with you, otherwise **202 `{pending: true}`**, also for an address without an account: the person is invited and becomes a member when they accept (see [Membership invitations](#membership-invitations)); 400 `invalid_input` for anything but one address; recorded as `project.member_added` or `member_invitation.created`; adding by email is limited to 30 attempts per account per hour, together with workspace members (429 `rate_limited`) |
+| DELETE | `/api/v1/projects/{id}/member-invitations/{invitationId}` | owner, admin of the project | cancel an open invitation → 204; 404 `not_found` |
+| GET | `/api/v1/me/member-invitations` | session, `full` or `admin` token | your open invitations `{invitations:[{id,kind,targetId,targetName,role,inviterId,inviterName,createdAt,expiresAt}]}`, see [Membership invitations](#membership-invitations) |
+| POST | `/api/v1/me/member-invitations/{id}/accept` | session, `full` or `admin` token | join → 200 `{kind, targetId, role}`; 410 `invitation_stale` when the inviter can no longer add you; 404 `not_found` |
+| POST | `/api/v1/me/member-invitations/{id}/decline` | session, `full` or `admin` token | decline → 204; you are not asked again for this project or workspace until it would have expired |
 | PATCH | `/api/v1/projects/{id}/members/{userId}` | owner, admin of the project | `{role}` → membership |
 | DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
 | POST | `/api/v1/projects/{id}/transfer` | owner of the project | `{userId}` → membership; the previous owner becomes an admin |
@@ -170,7 +176,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/pages/{secret}` | none | the page: `mode` `live` (the task's shown fields) or `encrypted` (`snapshot`) |
 | POST | `/api/v1/pages/{secret}/replies` | none (`reply` or `tick` page) | `{name, body}`, or `{ciphertext}` on an encrypted page → 201 |
 | POST | `/api/v1/pages/{secret}/tick` | none (a `tick` page) | `{taskId, completed, name}` → `{taskId, completed_at}` |
-| GET | `/api/v1/pages/{secret}/files/{fileId}`, `…/maps/…` | none | a file of the task, as a download; the page's map style, tiles, fonts and sprites |
+| GET | `/api/v1/pages/{secret}/files/{fileId}` | none | a file of the task, as a download |
+| GET | `/api/v1/pages/{secret}/maps/…` | none | the page's map style, tiles, fonts and sprites, see [Maps](#maps) |
 | GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
@@ -738,7 +745,7 @@ A reminder belongs to one task and fires at an instant (OpenSpec change `reminde
  "keys": {"p256dh": "BCVx…", "auth": "BTBZ…"}, "includeContent": false}
 ```
 
-It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt", "lastOkAt", "lastError", "failures", "needsRenewal"}}`; the endpoint and keys are never returned. Posting again for the same device replaces its subscription (200). A body without an `https` endpoint URL, an uncompressed P-256 `p256dh` key or a 16-byte `auth` secret is rejected with 400 `invalid_input`. A subscription created with a browser session is deleted when that session signs out or is revoked; the push service answering 404/410 deletes it as well, and `needsRenewal` turns true after 5 consecutive failed sends. After 20 consecutive failed sends and a day without a delivery (since the last success, or since it was registered) the server stops sending to it; posting it again from the device ("Re-enable") starts it afresh. An account keeps at most 20 subscriptions: registering a new device beyond that replaces the one registered least recently. Reminders are sent for up to 8 accounts at a time, and one account's sends take at most 20 seconds per pass; what is left is sent on the next pass (every 30 seconds) while the reminder is less than an hour overdue. With `OPENTODO_PUSH=off` every `/api/v1/push/` route answers 404 `not_found`.
+It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt", "lastOkAt", "lastError", "failures", "needsRenewal"}}`; the endpoint and keys are never returned. Posting again for the same device replaces its subscription (200). A body without an `https` endpoint URL, an uncompressed P-256 `p256dh` key or a 16-byte `auth` secret is rejected with 400 `invalid_input`. A subscription created with a browser session is deleted when that session signs out or is revoked; the push service answering 404/410 deletes it as well, and `needsRenewal` turns true after 5 consecutive failed sends. After 20 consecutive failed sends and a day without a delivery (since the last success, or since it was registered) the server stops sending to it; posting it again from the device ("Re-enable") starts it afresh. An account keeps at most 20 subscriptions: registering a new device beyond that replaces the one registered least recently. Reminders are sent for up to 8 accounts at a time, and one account's sends take at most 20 seconds per pass; what is left is sent on another pass 30 seconds later while the reminder is less than an hour overdue. With `OPENTODO_PUSH=off` every `/api/v1/push/` route answers 404 `not_found`.
 
 **Test push.** `POST /api/v1/push/test` with `{"deviceId": "…"}` sends one real push to the caller's subscription for that device, through the same encryption, VAPID signature and push service as a reminder, and records it in the subscription's delivery status (`lastOkAt`, `failures`, removal when gone). The payload is `{"type":"test","testId":"…","sentAt":…}` and carries no task data; the service worker always shows it as a system notification and reports receipt to the open page. A push-service outcome is a successful diagnostic, so it answers 200:
 
@@ -1026,7 +1033,9 @@ The server records security-relevant events in its own database (never synced to
 | `workspace.member_added`, `workspace.member_role_changed`, `workspace.member_removed` | success | actor = owner or admin (the member when leaving), target = member | `workspace`, `workspace_role` or `from`, `to` |
 | `workspace.group_created`, `workspace.group_deleted` | success | actor = owner or admin | `workspace`, `group` (ids, never names) |
 | `workspace.group_member_added`, `workspace.group_member_removed` | success | actor = owner or admin, target = member | `workspace`, `group` |
-| `project.member_added` | success | actor = project owner or admin, target = the added account | `shared_project_id`, `project_role` |
+| `project.member_added` | success | actor = project owner or admin (the inviter for an accepted invitation), target = the added account | `shared_project_id`, `project_role` |
+| `member_invitation.created`, `member_invitation.cancelled` | success | actor = project or workspace owner or admin, target = the invited account (none for an address without an account) | `member_invitation_id`, `shared_project_id` and `project_role`, or `workspace` and `workspace_role` |
+| `member_invitation.accepted`, `member_invitation.declined` | success | actor = the invited account, target = the inviter | `member_invitation_id`, `shared_project_id` and `project_role`, or `workspace` and `workspace_role` |
 | `project.grant_added`, `project.grant_changed`, `project.grant_removed` | success | actor = project owner or admin | `shared_project_id`, `group`, `project_role` or `from`, `to` |
 | `workspace_invite.created`, `workspace_invite.revoked` | success | actor = workspace owner or admin | `workspace_invite_id`, `workspace`, `workspace_role`, `invited_email` (bound email, if any) |
 | `workspace_invite.accepted` | success | actor = the account that joined, target = the link's creator | `workspace_invite_id`, `workspace`, `workspace_role` |
@@ -1082,7 +1091,7 @@ curl -sS -H "Authorization: Bearer $TOKEN" \
 
 **Export** — `GET /api/v1/audit/export` (owner) with the same filters except `cursor` and `limit` → every matching event as newline-delimited JSON (`application/x-ndjson`, `Content-Disposition: attachment; filename="opentodo-audit-YYYYMMDD.ndjson"`), one event object per line, newest first. The export records an `audit.exported` event.
 
-**Settings** — `GET /api/v1/settings/audit` (owner) → `{"retentionDays": 90, "logIp": false}`. `PUT` the same object, both fields optional: `retentionDays` is an integer 7–3650 (otherwise 400 `invalid_input`), `logIp` turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as `settings.changed`; lowering retention prunes expired events immediately, and the server also prunes at startup and hourly.
+**Settings** — `GET /api/v1/settings/audit` (owner) → `{"retentionDays": 90, "logIp": false}`. `PUT` the same object, both fields optional: `retentionDays` is an integer 7–3650 (otherwise 400 `invalid_input`), `logIp` turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as `settings.changed`; lowering retention prunes expired events immediately, and the server also prunes at startup and whenever the oldest event passes the retention.
 
 **Personal activity** — `GET /api/v1/me/activity` (any signed-in user) → `{events: [...]}`: the caller's own sign-ins, failed sign-ins against their account, sign-outs and credential and token events from the last 90 days, at most 100, newest first. Events about other accounts never appear.
 
@@ -1097,17 +1106,18 @@ A project owner shares a project with other accounts on the same server by exact
 | `admin` | also rename, recolour and archive the project; add, re-role and remove viewers and editors |
 | `owner` | everything, including deleting the project, transferring ownership and managing admins; exactly one per project |
 
-Every route requires a session or token. A caller who is not a member gets `404 not_found`, the same as for a project that does not exist; the member's email is looked up only after the caller's role was checked, so the routes cannot be used to probe for accounts. Labels and saved views stay personal.
+Every route requires a session or token. A caller who is not a member gets `404 not_found`, the same as for a project that does not exist; the member's email is looked up only after the caller's role was checked, and an address without an account gets the same answer as a stranger with one, so the routes cannot be used to probe for accounts. Labels and saved views stay personal.
 
 ```sh
-# Share with an existing account as editor
+# Share with an existing account you already share another project with: added at once
 curl -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
   -d '{"email":"bob@example.com","role":"editor"}' $BASE/api/v1/projects/$P/members
 # 201 {"projectId":"…","role":"owner","ownerId":"…","members":[{"userId":"…","name":"Alice","email":"alice@example.com","role":"owner"},
-#      {"userId":"…","name":"Bob","email":"bob@example.com","role":"editor"}]}
+#      {"userId":"…","name":"Bob","email":"bob@example.com","role":"editor"}],"pending":[]}
 
-curl -X POST … -d '{"email":"nobody@example.com","role":"editor"}' $BASE/api/v1/projects/$P/members
-# 404 {"error":{"code":"user_not_found","message":"no account with this email exists on this server"}}
+# Anyone else, with or without an account: an invitation
+curl -X POST … -d '{"email":"dan@example.com","role":"editor"}' $BASE/api/v1/projects/$P/members
+# 202 {"pending":true}
 
 curl -X DELETE -H "Authorization: Bearer $T" $BASE/api/v1/projects/$P/members/me    # as the owner
 # 409 {"error":{"code":"owner_must_transfer","message":"the owner cannot leave the project; transfer ownership to another member first"}}
@@ -1119,6 +1129,22 @@ curl -X POST … -d '{"userId":"<bob>"}' $BASE/api/v1/projects/$P/transfer
 Collections, single reads and the export include the shared projects and their tasks; a shared project carries the read-only keys `role` (yours) and `owner_id`. They are ignored when sent back in a write. REST writes are checked with the same role table as sync: a refused write answers `403 forbidden` and stores nothing. A task cannot change sharing scope: `PATCH` of `project_id` to a project shared differently (or to the Inbox from a shared project) answers `400 scope_change`; create a copy in the destination and delete the original instead, which is what the web app does.
 
 Membership changes are recorded in the audit log as `role.changed` with `from`/`to` values such as `none` → `project.editor`.
+
+#### Membership invitations
+
+Adding someone by email adds them at once only when they already share a shared project or a created workspace with you (OpenSpec `member-add-consent`). Anyone else gets an invitation and the add answers **202 `{"pending": true}`**, the same answer for an address that has no account, so nobody can find out which addresses have accounts. The invitation is listed in the member list's `pending` (owners and admins only) like any other, expires after 14 days, and at most 50 can be open per project or workspace (409 `limit_reached`). For an existing account it shows in the person's notifications (kind `member_invitation`) and, when outgoing email is on, an email names you and the role, never the project. Adding the same address again while the invitation is open updates its role; after the person declined, it answers 202 and changes nothing until the declined invitation would have expired.
+
+The invitee lists their invitations with `GET /api/v1/me/member-invitations` and answers with `POST …/{id}/accept` or `POST …/{id}/decline`. Accepting adds the membership with the inviter as the acting member, after checking that the inviter is still active and may still grant the role on the live project or workspace; otherwise it answers 410 `invitation_stale` and the invitation is gone. These three routes need a session or a `full` or `admin` token (`read` and `agent` tokens: 403 `insufficient_scope`) and answer 403 `demo_restricted` on a demo. Owners and admins cancel an invitation with `DELETE /api/v1/projects/{id}/member-invitations/{invitationId}` (or the workspace twin). Invitations are server state, never operations or synced; the project or workspace reaches the invitee's devices with the next sync after accepting.
+
+**Upgrading a script.** Up to 0.15, an add by email answered 201 for every existing account and 404 `user_not_found` for an unknown address. A client that adds people by email must now treat 202 as "invited, not yet a member", and must not rely on 404 to detect unknown addresses.
+
+```sh
+# The invitee
+curl -H "Authorization: Bearer $T" $BASE/api/v1/me/member-invitations
+# 200 {"invitations":[{"id":"…","kind":"project","targetId":"…","targetName":"Garden","role":"editor","inviterId":"…","inviterName":"Alice",…}]}
+curl -X POST -H "Authorization: Bearer $T" $BASE/api/v1/me/member-invitations/$I/accept
+# 200 {"kind":"project","targetId":"…","role":"editor"}
+```
 
 ### Project invite links
 
@@ -1183,7 +1209,8 @@ Every route needs a session or a `full` or `admin` token (`read` and `agent` tok
 | `POST` | `/api/v1/workspaces` | `{name, icon?, color?}` → 201 workspace; 20 owned per account (409 `limit_reached`) |
 | `GET`, `PATCH`, `DELETE` | `/api/v1/workspaces/{id}` | `PATCH {name?, icon?, color?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members |
 | `POST` | `/api/v1/workspaces/{id}/leave`, `…/transfer` | leave → 204 (the owner: 409 `owner_must_transfer`); transfer `{userId}` (owner, to a member) → 200 |
-| `GET`, `POST` | `/api/v1/workspaces/{id}/members` | `POST {email, role: member\|admin}` (admins add members) → 201; 404 `user_not_found`; 200 members |
+| `GET`, `POST` | `/api/v1/workspaces/{id}/members` | `POST {email, role: member\|admin}` (admins add members) → 201 when the account already shares a project or workspace with you, otherwise 202 `{pending: true}` with or without an account ([invitations](#membership-invitations)); `GET` → 200 `{members, pending?}` (`pending` for the owner and admins) |
+| `DELETE` | `/api/v1/workspaces/{id}/member-invitations/{invitationId}` | cancel an open invitation (owner, admin) → 204 |
 | `PATCH`, `DELETE` | `/api/v1/workspaces/{id}/members/{userId}` | `{role}`; removing a member also removes every grant they hold on the workspace's projects |
 | `GET`, `POST` | `/api/v1/workspaces/{id}/groups` | `POST {name}` → 201 `{id, name, members}`; names unique ignoring case (409 `group_exists`), 50 groups |
 | `PATCH`, `DELETE` | `/api/v1/workspaces/{id}/groups/{groupId}` | rename `{name}`, delete |
@@ -1202,7 +1229,7 @@ Members carry names, never emails. Limits are 409 `limit_reached` naming the lim
 
 **Group grants** — `POST /api/v1/projects/{id}/grants` `{groupId, role}` → 201 member list; `PATCH …/grants/{groupId}` `{role}`; `DELETE …/grants/{groupId}` → 204. The project's member rules apply (an admin grants viewer and editor), and only groups of the project's workspace (404 otherwise). A member's role is the highest of their direct grant and their groups'; the member list adds `via` (the groups a role comes from, `[]` for a direct grant) and `grants`. Changing a group changes every project it is on in the same request, without writing an op.
 
-**Invite links** — `POST /api/v1/workspaces/{id}/invites` `{role: member|admin, email?, expiresInHours?, send?}` (owner or admin; `admin` links only by the owner) → 201 `{invite, link, newAccounts}` with a `/invite/w/otw_…` link, as [project invite links](#project-invite-links): 20 per hour, `GET` lists pending links, `DELETE …/invites/{inviteId}` revokes. `GET /api/v1/workspace-invites/{token}` (no authentication; 404 `invitation_invalid` on a demo) → `{inviterName, workspaceName, role, email, expiresAt, canCreateAccount, alreadyMember?}`; `POST …/accept` → `{workspaceId, role}` (409 `already_member`); `POST /api/v1/auth/register` with `workspaceInvite` creates the account under the project-link rule.
+**Invite links** — `POST /api/v1/workspaces/{id}/invites` `{role: member|admin, email?, expiresInHours?, send?}` (owner or admin; `admin` links only by the owner) → 201 `{invite, link, newAccounts}` with a `/invite/w/otw_…` link, as [project invite links](#project-invite-links): 20 per hour, `GET …/invites` lists pending links, `DELETE …/invites/{inviteId}` revokes. `GET /api/v1/workspace-invites/{token}` (no authentication; 404 `invitation_invalid` on a demo) → `{inviterName, workspaceName, role, email, expiresAt, canCreateAccount, alreadyMember?}`; `POST …/accept` → `{workspaceId, role}` (409 `already_member`); `POST /api/v1/auth/register` with `workspaceInvite` creates the account under the project-link rule.
 
 ### Public links
 
@@ -1302,7 +1329,7 @@ The owner gives the server a name and a logo (**Settings → Server → Branding
 | `GET` / `PUT /api/v1/settings/branding` | Owner. `PUT {"name": "…"}`: up to 40 characters after trimming, no control characters, empty for OpenTodo's own name (400 `invalid_input` otherwise). Answers `{name, logoVersion}`; recorded as `settings.changed` (`branding.name`) |
 | `PUT /api/v1/settings/branding/logo` | Owner. The raw bytes of a PNG or JPEG, at most 2 MB (413 `too_large`), at least 192 and at most 4096 pixels a side (400 `invalid_input`). The server crops the centre square and renders 32, 180, 192 and 512 px PNGs plus a maskable 512 px icon under `<data>/branding/`, bumps `logoVersion` and answers `{name, logoVersion}`; recorded as `settings.changed` (`branding.logo`) |
 | `DELETE /api/v1/settings/branding/logo` | Owner. Removes the rendered files; `logoVersion` becomes 0 and the app's own icons return |
-| `GET /branding/logo-{32,180,192,512}.png`, `GET /branding/logo-maskable-512.png` | Public, like the app's own icons. With `?v=<logoVersion>` cached for a year (`immutable`); without the current version `no-cache`. 404 without a logo |
+| `GET /branding/{file}`: `logo-{32,180,192,512}.png`, `logo-maskable-512.png` | Public, like the app's own icons. With `?v=<logoVersion>` cached for a year (`immutable`); without the current version `no-cache`. 404 without a logo |
 
 Branding is refused on a demo instance like every server setting.
 
@@ -1316,6 +1343,35 @@ Errors: `400 attachment_mismatch` (bytes do not match the size or digest), `413 
 curl -sS -X POST "$OT/api/v1/tasks/$TASK/attachments" -H "Authorization: Bearer $TOKEN" -F file=@receipt.pdf
 # 201 {"id":"…","name":"receipt.pdf","mime":"application/pdf","size":48213,"uploaded":true,…}
 ```
+
+### Maps
+
+The server proxies the map provider for the web app's maps and place search (guide: [locations and places](locations-and-places.md)), so a browser never contacts a third party. The routes need a session or a `full` or `admin` token; with maps off they answer `404 maps_disabled`, and when the provider does not answer `502 maps_unavailable`. A demo instance has maps off unless `OPENTODO_MAPS=on`.
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/maps/style` | yes | the provider's style, rewritten to point at the routes below (cached for an hour) |
+| GET | `/api/v1/maps/tiles/{z}/{x}/{y}` | yes | one vector tile (`.pbf` optional), cached on the server under `<data>/cache/maps` and in the browser for a day |
+| GET | `/api/v1/maps/fonts/{fontstack}/{range}` | yes | the glyphs of a font range (`.pbf` optional) |
+| GET | `/api/v1/maps/sprites/{file}` | yes | the style's sprite sheet (`.png`) or its index (`.json`) |
+| GET | `/api/v1/maps/search` | yes | `?q=…&lang=en&limit=5` (1–10) → `{results: [{name, address, lat, lon}]}`; 30 searches a minute per account with `/reverse` (`429 rate_limited`) |
+| GET | `/api/v1/maps/reverse` | yes | `?lat=…&lon=…&lang=en` → `{result: {name, address, lat, lon}}` |
+| GET, PUT | `/api/v1/settings/maps` | owner (`PUT`: credential) | `{enabled, tiles_url, geocoder_url, locked, defaults: {tiles_url, geocoder_url}}`; `PUT {enabled, tiles_url?, geocoder_url?}` (empty URLs use the defaults). A value set by `OPENTODO_MAPS*` is listed in `locked` and cannot be changed. Changes are audited as `settings.changed` (`maps.enabled`, `maps.tiles_url`, `maps.geocoder_url`); refused on a demo |
+
+A [task page](#task-pages) with its map shared serves the same map without a sign-in: `GET /api/v1/pages/{secret}/maps/style`, `…/maps/tiles/{z}/{x}/{y}`, `…/maps/fonts/{fontstack}/{range}` and `…/maps/sprites/{file}` (`404 page_invalid` when the page does not include its map or maps are off; rate limited per address and per page).
+
+### Speech to text
+
+Voice capture sends a recorded phrase through the server to the owner's OpenAI-compatible transcription service (guides: [speech to text](self-hosting/speech-to-text.md), [quick add](quick-add.md)). The audio and the text stay in memory for the request: never stored, logged or audited. `GET /api/v1/me` carries `speech: {connected, host?}` for every user.
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/settings/stt` | owner, credential | `{url, model, keySet, locked, connected}`; the key is write-only. A value set by `OPENTODO_STT_URL`, `OPENTODO_STT_MODEL` or `OPENTODO_STT_KEY_FILE` is listed in `locked` |
+| PUT | `/api/v1/settings/stt` | owner, credential | any of `{url, model, key}` (`""` clears; a model is needed while a URL is set) → the same shape; `400 invalid_input` names a bad field; connecting or disconnecting is audited as `settings.changed` (`stt.connected`) |
+| POST | `/api/v1/settings/stt/test` | owner, credential | optional draft `{url, model, key}`: sends a built-in sample with the draft or the stored values → `{ok: true, text}` or `{ok: false, error}`; `409 stt_not_configured` without a service |
+| POST | `/api/v1/voice/transcribe` | session or `full` token | the raw audio (`Content-Type` `audio/webm`, `audio/ogg`, `audio/mp4` or `audio/wav`; at most 5 MB and 60 seconds, `?seconds=` as recorded), optional `?language=de` → `{text}`; 30 phrases a minute per account (`429 rate_limited`), `409 stt_not_configured`, `502 stt_unavailable` |
+
+The settings routes and the transcription are refused on a demo instance.
 
 ### Comments and activity
 
@@ -1723,7 +1779,7 @@ The [in-app assistant](assistant.md) (OpenSpec `in-app-assistant`). Every route 
 
 `cap_member_keys` (default `false`): whether turns on a member's own key count toward `monthly_token_cap_per_user`; off, they are recorded but neither counted nor blocked. `member_providers` lists what members may choose for their own key (never `compatible`); `own_key_members` counts accounts whose turns use their own provider and key right now.
 
-Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user, cap_member_keys}`. `PUT` (owner only, 403 `forbidden` otherwise; a session or an `admin` token, since it holds provider keys) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
+Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user, cap_member_keys}`. `PUT /api/v1/settings/assistant` (owner only, 403 `forbidden` otherwise; a session or an `admin` token, since it holds provider keys) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
 
 ```bash
 curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \

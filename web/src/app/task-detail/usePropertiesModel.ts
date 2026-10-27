@@ -1,7 +1,7 @@
 // The data and actions behind the task panel's property chips (OpenSpec change
 // web-component-structure): live reads come from lib/liveData, every write is the
 // same op the chips wrote before. Facets renders; this hook decides.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { localDueOf, zoneHint } from '../../lib/dates'
 import { blockerCandidates, dependents, setBlockedBy } from '../../lib/dependencies'
 import { t } from '../../lib/i18n'
@@ -19,6 +19,7 @@ import { useViewerZone } from '../useViews'
 import type { PropertiesProps } from './Facets'
 import { type Optional, usePropertyEditing } from './usePropertyEditing'
 import { messageOf } from '../../lib/errorText'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** An error message from a failed write, shown beside its chip. */
 
@@ -32,7 +33,7 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
   const reminders = useReminderCount(task.id)
   const [parentError, setParentError] = useState<string | null>(null)
   const [blockError, setBlockError] = useState<string | null>(null)
-  useEffect(() => { setParentError(null); setBlockError(null) }, [task.id])
+  useResetOnChange([task.id], () => { setParentError(null); setBlockError(null) })
   const section = useRef<HTMLElement>(null)
   // Every live task: blockers may sit in any project of the same sharing scope.
   const allTasks = useLiveTasks() ?? NO_TASKS

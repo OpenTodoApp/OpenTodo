@@ -751,8 +751,6 @@ select.ui-input:not([multiple]) {
 /* At rest the notes are a quiet block of text (one placeholder line when empty);
    while focused they grow into a bordered editor (ux-overhaul, "Task panel layout"). */
 .notes-host { @apply -mx-2; }
-/* Long notes at rest in the panel (task-panel-facets D4): eight lines and a fade; not a scroller. */
-.notes-clamp[data-clamped] > :first-child { max-height: calc(8lh + 0.5rem); overflow: hidden; mask-image: linear-gradient(to bottom, black 75%, transparent); }
 .notes-editor {
   @apply relative min-h-8 w-full space-y-2 rounded-control border border-transparent px-2 py-1 text-prose text-default
     focus:outline-none;

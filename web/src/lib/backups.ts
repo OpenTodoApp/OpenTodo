@@ -3,15 +3,13 @@
 // screen still has something to show while offline.
 import { getMeta, setMeta } from './db'
 import type { BackupRun, BackupSettings, BackupStatus } from './types'
-import { formatInstant, formatTime, dateLocaleOf } from './dates'
+import { formatInstant, formatTime, weekdayName } from './dates'
 import { t } from './i18n'
 
 const STATUS_KEY = 'backupStatus'
 
 /** Weekday 0 (Sunday) … 6 as the interface language writes it. */
-export function weekdayName(day: number): string {
-  return new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + day)))
-}
+export { weekdayName }
 
 export const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6]
 

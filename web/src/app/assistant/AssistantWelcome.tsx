@@ -6,6 +6,7 @@ import { useState, type ReactNode } from 'react'
 import type { AssistantSkill } from '../../lib/assistantSkills'
 import { t } from '../../lib/i18n'
 import { BrandMark, Icon, type IconName } from '../../ui'
+import { readString, writeString } from '../../lib/deviceStorage'
 
 /** The skills offered as starters, in this order (assistant-skills "Skills as starters"). */
 export const STARTER_SKILLS = ['plan-week', 'triage-inbox', 'idea-to-project'] as const
@@ -26,7 +27,7 @@ export function greeting(name: string, hour = new Date().getHours()): string {
 }
 
 function readHidden(): boolean {
-  try { return localStorage.getItem(HIDE_KEY) === '1' } catch { return false }
+  return readString(HIDE_KEY) === '1'
 }
 
 export interface AssistantWelcomeProps {
@@ -44,7 +45,7 @@ export function AssistantWelcome({ name, skills, onStarter, composer, layout }: 
   const starters = starterSkills(skills)
   const hide = () => {
     setHidden(true)
-    try { localStorage.setItem(HIDE_KEY, '1') } catch { /* private window: hidden for this visit */ }
+    writeString(HIDE_KEY, '1') // private window: hidden for this visit
   }
   const page = layout === 'page'
   return (

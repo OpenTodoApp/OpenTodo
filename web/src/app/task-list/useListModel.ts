@@ -4,7 +4,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePlace } from '../../lib/locations'
 import { blockedMap } from '../../lib/dependencies'
-import { liveFields } from '../../lib/fields'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { habitStatsMap } from '../../lib/habits'
 import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
@@ -23,28 +22,21 @@ import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
 import type { Route } from '../router'
-import { useFieldDefs } from '../useFields'
+import { useApplicableFields } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
+import { readJSON, writeJSON } from '../../lib/deviceStorage'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export type ListRoute = Extract<Route, ListScope>
 
 const COLLAPSE_KEY = 'opentodo.collapsed'
 
 function loadCollapsed(): Set<string> {
-  try {
-    const raw = localStorage.getItem(COLLAPSE_KEY)
-    return new Set(raw ? (JSON.parse(raw) as string[]) : [])
-  } catch {
-    return new Set()
-  }
+  return new Set(readJSON<string[]>(COLLAPSE_KEY, [], (v) => (Array.isArray(v) ? v as string[] : null)))
 }
 
 function saveCollapsed(set: Set<string>) {
-  try {
-    localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...set]))
-  } catch {
-    // Per-device convenience only; losing it is harmless.
-  }
+  writeJSON(COLLAPSE_KEY, [...set]) // per-device convenience only; losing it is harmless
 }
 
 /** Views that offer the duration filter, each with its own per-device setting. */
@@ -100,8 +92,9 @@ function useProjectLayout(projectId: string | null) {
   const collapsedSections = useCollapsedSections(projectId)
   // Custom fields (custom-fields): the list's columns layout, offered on wide
   // screens when the project defines fields; below 768 px rows show badges.
-  const fieldDefs = useFieldDefs()
-  const projectFieldDefs = useMemo(() => liveFields(projectId, fieldDefs), [projectId, fieldDefs])
+  // Inherited fields are columns too (inherited-custom-fields).
+  const fieldsOf = useApplicableFields()
+  const projectFieldDefs = useMemo(() => fieldsOf(projectId), [projectId, fieldsOf])
   const wideScreen = useMediaQuery(DESKTOP_HEADER_QUERY)
   const columnsPref = useListColumnsPref(projectId)
   const offerColumns = !!projectId && viewMode === 'list' && wideScreen && projectFieldDefs.length > 0
@@ -150,7 +143,7 @@ export function useListModel(route: ListRoute, userId?: string) {
 
   // Completed renders a page of the logbook at a time; a new route starts again.
   const [logbookLimit, setLogbookLimit] = useState(LOGBOOK_PAGE)
-  useEffect(() => setLogbookLimit(LOGBOOK_PAGE), [route.view])
+  useResetOnChange([route.view], () => setLogbookLimit(LOGBOOK_PAGE))
   const logbook = useMemo(() => (route.view === 'completed' ? logbookGroups(tasks, logbookLimit) : null), [route.view, tasks, logbookLimit])
 
   const { collapsed, toggleCollapsed } = useCollapsedRows()

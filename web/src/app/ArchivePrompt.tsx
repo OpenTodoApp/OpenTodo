@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState } from 'react'
 import { projectFinishedBy, runAutoArchive, undoAutoArchive } from '../lib/archive'
 import { archiveProject } from '../lib/ops'
 import type { Project } from '../lib/types'
@@ -6,17 +6,14 @@ import { useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { createStore } from '../lib/store'
 
 // Automatic archive of finished projects (OpenSpec `trash-and-history`): a one-key
 // prompt after the last open task of a project is completed, and a notice with
 // undo when the daily pass archived projects idle for 30 days.
 
-let offered: Project | null = null
-const listeners = new Set<() => void>()
-function setOffered(p: Project | null) {
-  offered = p
-  listeners.forEach((fn) => fn())
-}
+const offered = createStore<Project | null>('archiveOffer', null)
+const setOffered = offered.set
 
 /** After completing a task: offer to archive its project when it was the last open task. */
 export async function offerArchiveAfterCompletion(taskId: string): Promise<void> {
@@ -27,20 +24,13 @@ export async function offerArchiveAfterCompletion(taskId: string): Promise<void>
 const CHECK_MS = 60 * 60 * 1000
 
 export function ArchivePrompt() {
-  const project = useSyncExternalStore(
-    (fn) => {
-      listeners.add(fn)
-      return () => listeners.delete(fn)
-    },
-    () => offered,
-    () => null,
-  )
+  const project = offered.use()
   const [archived, setArchived] = useState<Project[]>([])
 
   // Enter archives (`list.archive-offer`); any other key dismisses the offer and still does its usual job.
   useShortcutScope('list', {
     'list.archive-offer': () => {
-      const p = offered
+      const p = offered.get()
       setOffered(null)
       if (!p) return false
       act(archiveProject(p.id))

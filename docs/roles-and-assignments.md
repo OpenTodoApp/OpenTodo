@@ -4,7 +4,7 @@ summary: What viewers, editors, admins and the owner can do in a shared project,
 audience: user
 section: Guides
 specs: [project-sharing, task-assignment]
-screens: []
+screens: [settings/invitations#when-someone-is-asked-first]
 order: 72
 ---
 # Roles and assignments
@@ -25,6 +25,12 @@ Every member of a shared project has a role that says what they can do, and ever
 Every project has exactly one owner. To change someone's role, open **Share** and pick a new one next to their name. **Remove** takes them out of the project.
 
 For viewers, the project is read-only: the add box and edit controls are switched off, with a note saying so.
+
+## When someone is asked first
+
+Adding someone by email who shares no project or [workspace](workspaces.md) with you yet sends them an invitation instead of the project: it shows in their notifications with **Accept** and **Decline**, in **Settings → Account → Invitations**, and by email when your server sends email. The project reaches them only once they accept. Until then **Share** lists the address under **Waiting for an answer**, where **Cancel** withdraws it. Adding someone to a workspace works the same way.
+
+The dialog answers the same whether or not the address has an account, so nobody can use it to find out who is on the server: an address without an account simply never answers. Invitations expire after 14 days, and someone who declines is not asked again by the same project for 14 days. For someone without an account, use an [invite link](sharing.md#invite-with-a-link).
 
 ## Leave or hand over a project
 

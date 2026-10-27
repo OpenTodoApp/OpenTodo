@@ -12,6 +12,8 @@
 import { createElement, Fragment, type ReactNode } from 'react'
 import { SHIPPED, isShipped, type LanguageCode } from '../../locales'
 import { compile, formatNumberIn, render, type TagFn, type Values } from './format'
+import { createSignal } from '../store'
+import { readString, writeString } from '../deviceStorage'
 
 type Catalog = Record<string, string>
 
@@ -25,7 +27,7 @@ let language: LanguageCode = 'en'
 let locale = 'en'
 let catalog: Catalog = {}
 let version = 0
-const listeners = new Set<() => void>()
+const changes = createSignal()
 
 /** The stored preference last applied on this device: 'system' or a shipped code. */
 export function currentPreference(): string { return preference }
@@ -36,19 +38,16 @@ export function currentLanguage(): LanguageCode { return language }
 export function currentLocale(): string { return locale }
 /** Bumped on every language change; React subscribes through useT(). */
 export function languageVersion(): number { return version }
-export function onLanguageChange(fn: () => void): () => void {
-  listeners.add(fn)
-  return () => { listeners.delete(fn) }
-}
+export const onLanguageChange = changes.subscribe
 
 const LANG_KEY = 'opentodo.lang'
 
 /** The last applied language preference on this device (a first-paint convenience, never synced). */
 export function mirroredPreference(): string | null {
-  try { return localStorage.getItem(LANG_KEY) } catch { return null }
+  return readString(LANG_KEY)
 }
 export function mirrorPreference(pref: string): void {
-  try { localStorage.setItem(LANG_KEY, pref) } catch { /* storage blocked: first paint follows the browser */ }
+  writeString(LANG_KEY, pref) // storage blocked: first paint follows the browser
 }
 
 /** Fetches a catalog without applying it. English resolves to an empty catalog. */
@@ -66,7 +65,7 @@ export function applyCatalog(code: LanguageCode, intlLocale: string, entries: Ca
   catalog = entries
   version++
   if (typeof document !== 'undefined') document.documentElement.lang = code
-  for (const fn of [...listeners]) fn()
+  changes.notify()
 }
 
 /** Loads and applies a language. Rejects (and keeps the current language) when the catalog cannot be fetched. */

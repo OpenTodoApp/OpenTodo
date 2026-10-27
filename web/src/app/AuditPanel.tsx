@@ -15,9 +15,9 @@ import { SettingRow, SettingsSection } from '../ui'
 import { AUDIT_EVENT_NAMES, type AuditEvent, type AuditFilters, type AuditSettings } from '../lib/types'
 import { AUDIT_LABELS, EMPTY_FORM, eventAccount, eventSummary, type FilterForm, shortAgent, toFilters } from './auditFormat'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { relativeTime } from './SecurityPanel'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { relativeTime } from '../lib/dates'
 
 export type LogStatus = 'loading' | 'ready' | 'offline' | 'error'
 

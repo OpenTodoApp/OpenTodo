@@ -113,7 +113,17 @@ func TestPollerSurvivesSourceErrors(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(h.ctx)
 	done := make(chan struct{})
-	go func() { p.Run(ctx); close(done) }()
+	go func() {
+		// The tenant's "email" job: a poll whenever Next passes.
+		for ctx.Err() == nil {
+			p.Tick(ctx)
+			select {
+			case <-ctx.Done():
+			case <-time.After(time.Until(p.Next())):
+			}
+		}
+		close(done)
+	}()
 	waitFor(t, func() bool { src.mu.Lock(); defer src.mu.Unlock(); return src.opens >= 3 })
 
 	// The mail server comes back with a message: polling resumes by itself.

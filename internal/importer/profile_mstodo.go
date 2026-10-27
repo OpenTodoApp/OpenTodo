@@ -12,12 +12,13 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // Microsoft To Do has no export of its own (OpenSpec change more-importers, D1):
 // this profile reads the Microsoft Graph To Do shape the switch guide's PowerShell
 // script writes, an array (or a `value` array) of todoTaskList objects with their
-// tasks. Graph names time zones by their Windows id; windowszones.go maps them.
+// tasks. Graph names time zones by their Windows id; zoned.WindowsZone maps them.
 
 const msTodoFormat = "microsoft-todo-json"
 
@@ -107,7 +108,7 @@ func graphZone(zone string) (*time.Location, error) {
 		return time.UTC, nil
 	}
 	name := zone
-	if iana, ok := windowsZones[zone]; ok {
+	if iana, ok := zoned.WindowsZone(zone); ok {
 		name = iana
 	}
 	loc, err := time.LoadLocation(name)

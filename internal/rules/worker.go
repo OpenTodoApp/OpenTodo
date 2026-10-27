@@ -17,40 +17,8 @@ import (
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
-// Worker pacing.
-const (
-	drainEvery = 5 * time.Second
-	takeBatch  = 200
-	pruneEvery = time.Hour
-)
-
-// Run drains the queue when woken or every few seconds, runs the scheduler
-// every minute and prunes the run log hourly, until ctx ends. It runs on the
-// jobs leader only.
-func (e *Engine) Run(ctx context.Context) {
-	drain := time.NewTicker(drainEvery)
-	defer drain.Stop()
-	tick := time.NewTicker(TickInterval)
-	defer tick.Stop()
-	var pruned time.Time
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-e.wake:
-		case <-drain.C:
-		case <-tick.C:
-			e.Tick(ctx)
-		}
-		e.Drain(ctx)
-		if time.Since(pruned) >= pruneEvery {
-			pruned = time.Now()
-			if _, err := e.Store.Prune(ctx); err != nil {
-				e.Log.Error("rules: prune runs", "err", err)
-			}
-		}
-	}
-}
+// takeBatch is how many queued events one read takes.
+const takeBatch = 200
 
 // Drain runs every queued event, oldest first.
 func (e *Engine) Drain(ctx context.Context) {

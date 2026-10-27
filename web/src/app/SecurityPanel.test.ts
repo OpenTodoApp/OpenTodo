@@ -4,7 +4,8 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { Passkey } from '../lib/types'
-import { relativeTime, SecurityPanelView, type SecurityPanelViewProps } from './SecurityPanel'
+import { SecurityPanelView, type SecurityPanelViewProps } from './SecurityPanel'
+import { relativeTime } from '../lib/dates'
 
 /** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
 const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')

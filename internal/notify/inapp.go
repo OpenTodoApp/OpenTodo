@@ -92,6 +92,19 @@ func (n *InApp) RulePaused(ctx context.Context, e RuleEvent) {
 	n.insert(ctx, e.UserID, KindRulePaused, e)
 }
 
+// MemberInvited stores a member_invitation notification for the invitee (member-add-consent).
+func (n *InApp) MemberInvited(ctx context.Context, e MemberInvited) {
+	n.insert(ctx, e.RecipientID, KindMemberInvitation, e)
+}
+
+// MarkInvitationRead marks userID's notification about invitationID read, once
+// the invitation was answered or cancelled (member-add-consent D5).
+func (n *InApp) MarkInvitationRead(ctx context.Context, userID, invitationID string) error {
+	_, err := n.db.ExecContext(ctx, `UPDATE notifications SET read_at = ? WHERE user_id = ? AND kind = ? AND read_at IS NULL
+		AND json_extract(payload, '$.invitationId') = ?`, n.now().UnixMilli(), userID, KindMemberInvitation, invitationID)
+	return err
+}
+
 // List returns the user's notifications, newest first, and the number unread.
 func (n *InApp) List(ctx context.Context, userID string) ([]Notification, int, error) {
 	rows, err := n.db.QueryContext(ctx, `SELECT id, kind, payload, created_at, read_at FROM notifications
@@ -140,12 +153,8 @@ func (n *InApp) MarkRead(ctx context.Context, userID, id string) error {
 	return err
 }
 
-// SweepInterval is how often RunSweeper applies the retention.
-const SweepInterval = 24 * time.Hour
-
 // Sweep deletes read notifications older than Retention. It runs when a
-// tenant opens and then daily (RunSweeper on a self-hosted server, the host's
-// scheduler on a host).
+// tenant opens and then from the housekeeping job when NextSweep passes.
 func (n *InApp) Sweep(ctx context.Context) (int64, error) {
 	cutoff := n.now().Add(-Retention).UnixMilli()
 	r, err := n.db.ExecContext(ctx, `DELETE FROM notifications WHERE read_at IS NOT NULL AND created_at < ?`, cutoff)
@@ -155,24 +164,12 @@ func (n *InApp) Sweep(ctx context.Context) (int64, error) {
 	return r.RowsAffected()
 }
 
-// RunSweeper calls Sweep every interval until ctx is cancelled (a self-hosted
-// server's jobs; the start-up sweep happens when the tenant opens).
-func (n *InApp) RunSweeper(ctx context.Context, interval time.Duration) {
-	t := time.NewTicker(interval)
-	defer t.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			if c, err := n.Sweep(ctx); err != nil {
-				if ctx.Err() != nil {
-					return
-				}
-				n.log.Warn("notification sweep failed", "err", err)
-			} else if c > 0 {
-				n.log.Info("old notifications removed", "count", c)
-			}
-		}
+// NextSweep is when the oldest read notification passes Retention; ok is
+// false when there is none (the housekeeping job's deadline, internal/jobs).
+func (n *InApp) NextSweep(ctx context.Context) (time.Time, bool, error) {
+	var at sql.NullInt64
+	if err := n.db.QueryRowContext(ctx, `SELECT MIN(created_at) FROM notifications WHERE read_at IS NOT NULL`).Scan(&at); err != nil || !at.Valid {
+		return time.Time{}, false, err
 	}
+	return time.UnixMilli(at.Int64).Add(Retention), true, nil
 }

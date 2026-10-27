@@ -6,15 +6,64 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **Sub-projects inherit their parent's custom fields.** A field defined on a project now applies to every sub-project below it: its tasks show, edit, filter by and export the field like their own, and the sub-project's **Fields…** dialog lists inherited fields first, read-only. Names stay unique across the tree, the 30-field limit counts inherited fields, and the API and assistant tools follow the same rules. No migration; values are stored as before. ([Custom fields](docs/custom-fields.md#fields-of-sub-projects), `inherited-custom-fields`, closes #405)
+
+### Changed
+
+- **The top of the sidebar shows your server's name and your workspace on two lines.** With one workspace the header used to squeeze both into one line ("OpenTodo · Personal"), so a longer server name cut off the workspace. Now the name sits on the first line and the workspace below it, each with its own room. ([#492](https://github.com/OpenTodoApp/OpenTodo/issues/492), [Workspaces](docs/workspaces.md))
+
+## [0.16.0] - 2026-10-27
+
+OpenTodo 0.16.0 is a **security release** that finishes the internal audit: **adding someone to a project or workspace by email now asks them first**, unless you already share something with them, and the answer no longer reveals whether an address has an account. Background work now runs **when it is due**: reminders at their exact time, digests at the chosen hour, deliveries right away. Please read the upgrade note for API clients.
+
+### Upgrade notes
+
+- **One migration** (`0049_member_invitations`: the table of membership invitations). No new variable. Back up first, as for every release.
+- **API clients that add people by email must handle 202.** `POST /api/v1/projects/{id}/members` and `POST /api/v1/workspaces/{id}/members` with an `email` now answer **202 `{"pending": true}`** when the person shares no project or workspace with you yet, and also for an address without an account, which used to answer 404 `user_not_found`. The person is not a member until they accept, so a script that shares a project and then expects the member list to include the person must wait for the acceptance (or add someone it already shares a project with, which still answers 201). Adding by account id inside a created workspace is unchanged. ([Membership invitations](docs/api.md#membership-invitations))
+
+### Security
+
+- **Adding someone by email asks them first.** The owner or an admin of any project could add any account on the server by its address, and the project appeared in that person's sidebar without their say; the answer also told whether the address had an account. Someone who already shares a project or workspace with you is still added at once. Anyone else gets an invitation in their notifications and in **Settings → Account → Invitations** (and by email when outgoing email is on) and becomes a member only by accepting it; an address without an account gets the same answer and the same "waiting for an answer" row, so the share dialog no longer tells which addresses have accounts. Declining keeps the same project from asking again for 14 days. Found in an internal audit. ([Roles and assignments](docs/roles-and-assignments.md#when-someone-is-asked-first))
+
+### Changed
+
+- **Background jobs run when their work is due instead of on fixed timers.** On a self-hosted server:
+  - Web push reminders go out at their firing time instead of up to 30 seconds later.
+  - Weekly digests go out at the chosen hour instead of up to 5 minutes later.
+  - Calendar fetches, calendar sync, issue polls and webhook retries run at their scheduled time.
+  - Queued webhook and notification channel deliveries are sent at once.
+  - The audit log, the Trash, old read notifications and the delivery logs are cleaned when an item passes its retention, instead of hourly or daily.
+  - An idle server no longer checks the delivery queues every second.
+
+  Self-hosted servers and hosts now run the same job definitions. ([Architecture](docs/architecture.md#background-work))
+
+- **The share dialog and a workspace's members list show who has not answered yet.** Invitations are listed under **Waiting for an answer** with their role, and can be cancelled. ([Roles and assignments](docs/roles-and-assignments.md#when-someone-is-asked-first), [Workspaces](docs/workspaces.md))
+- **The add-member routes answer 202 for invitations.** See the upgrade note above. ([API](docs/api.md#membership-invitations))
+
+## [0.15.0] - 2026-10-27
+
+OpenTodo 0.15.0 moves the project to its own home, the **OpenTodoApp** organization on GitHub, with the image now at `ghcr.io/opentodoapp/opentodo`. The **Android app signs in behind a login page** (Pangolin, Authelia, Authentik, Cloudflare Access) and with single sign-on, inside the app, and targets Android 16 as Google Play requires. `ot vault` now also syncs **TaskNotes** task notes, the task panel shows a task's properties first and its notes in full, and a round of fixes for project counts, drag highlights, tab rows and task order.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart.** No migrations. Upgrade the server before the devices, as for every release.
+- **New image name:** `ghcr.io/opentodoapp/opentodo`. The old name `ghcr.io/pixari/opentodo` still receives every release through 0.16.x, so nothing breaks; switch your compose file or template when convenient. ([Docker](docs/self-hosting/docker.md#the-move-to-opentodoapp))
+- **Android app behind a login page:** see the new section in the [Android app guide](docs/android-app.md) for what works and which paths a bypass needs if you prefer one.
+
+### Added
+
 - **`ot vault` syncs TaskNotes task notes.** Link the folder where the Obsidian plugin TaskNotes keeps your task notes with `ot vault tasknotes <folder>`, and every task note becomes an OpenTodo task, so it shows in Today, the calendar and your reminders. Status, priority, scheduled and due dates, tags and contexts, the project link, the estimate, recurrence with completed instances, time entries and the note's text sync both ways with the vault's field-by-field merge. The vault reads your TaskNotes settings, so renamed fields, your own statuses and priorities work. Only the keys whose value changed are rewritten, and the note is matched by an `opentodo-id` key TaskNotes leaves alone. ([Markdown vault](docs/vault.md#tasknotes), #440)
 
 ### Changed
 
 - **OpenTodo moved to the OpenTodoApp organization, and the image to `ghcr.io/opentodoapp/opentodo`.** The repository is now [github.com/OpenTodoApp/OpenTodo](https://github.com/OpenTodoApp/OpenTodo) (old links redirect), the image `ghcr.io/opentodoapp/opentodo` with the same tags, and the Helm chart `oci://ghcr.io/opentodoapp/charts/opentodo`. The old image `ghcr.io/pixari/opentodo` and chart `oci://ghcr.io/pixari/charts/opentodo` keep getting every release through 0.16.x and stop being updated with 0.17.0: replace `ghcr.io/pixari/opentodo` with `ghcr.io/opentodoapp/opentodo` where you run OpenTodo, nothing else changes. The Go module is now `github.com/OpenTodoApp/opentodo` (`go install github.com/OpenTodoApp/opentodo/cmd/ot@latest`). ([Docker](docs/self-hosting/docker.md#the-move-to-opentodoapp))
+- **The task panel shows a task's properties first and its notes in full below them, without Show all.** Long notes no longer push the project, dates, priority and labels out of view: the panel lists them, the subtasks and the attachments first, then the whole note, which grows with the panel's scrolling. On a task page narrower than 1024 px the facts card now sits above the notes too. ([#444](https://github.com/OpenTodoApp/OpenTodo/issues/444), [The task page](docs/task-panel.md))
+- **Plainer words in the start guide and How you work.** The start guide now says what Open Loops is before asking how much of it you want. The three choices are now called **Simple lists**, **Lists with method hints** and **Full Open Loops method** (they were Lists only, Companion and Open Loops first), the link reads **What is Open Loops?**, and the offers explain what a context and the Loop home are. Your choice is kept; nothing else changes. ([#433](https://github.com/OpenTodoApp/OpenTodo/issues/433), [Set up in ten minutes](docs/method/set-up.md))
 - **The Android app targets Android 16 (API level 36),** as Google Play now requires. Nothing changes for users: back navigation already used the system's predictive back, and the app already drew edge to edge.
 
 ### Fixed
 
+- **The Android app signs in behind a login page and with single sign-on** ([#471](https://github.com/OpenTodoApp/OpenTodo/issues/471)). With the server behind a login wall (Pangolin with Pocket ID, Authelia, Authentik, Cloudflare Access, oauth2-proxy…), or with **Sign in with …**, the sign-in page opened in the phone's browser, so the app never got the session. The sign-in now happens inside the app, with a bar naming the site you are signing in on and a way back to your server; other links still open in the browser. The first-run screen no longer calls such a server "not an OpenTodo server": it says the server is behind a login page and offers to sign in there. Providers that refuse app web views, such as Google, still can't be used in the app; sign in with a password or passkey there. ([The Android app](docs/android-app.md#behind-a-login-page-pangolin-authelia-and-others))
 - **Deleting or archiving a project names the right number of open tasks.** Opened right after the project, before its tasks had loaded, the confirmation could say "0 open tasks". The number is now counted when the confirmation opens.
 - **The drop highlight no longer stays on a shared project you can only view.** Dragging a task over such a project in the sidebar left its ring on after the drag ended.
 - **Tab rows no longer show a stray vertical scrollbar.** The task panel's Comments, Activity, History and Time row, and every other tab row, drew a small scrollbar at its right end because the selected tab's underline overflowed the row by one pixel. Tab rows now scroll only sideways. ([#445](https://github.com/OpenTodoApp/OpenTodo/issues/445))
@@ -951,7 +1000,9 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.2...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.15.0...v0.16.0
+[0.15.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.2...v0.15.0
 [0.14.2]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.13.0...v0.14.0

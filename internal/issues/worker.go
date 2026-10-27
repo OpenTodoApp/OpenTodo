@@ -19,10 +19,8 @@ import (
 
 // Worker pacing and bounds (design D9, spec "Connection limits per server").
 const (
-	PollInterval = 30 * time.Second
-	InFlight     = 2
-	MaxPages     = 10
-	sweepEvery   = time.Hour
+	InFlight = 2
+	MaxPages = 10
 )
 
 // PollError is a failed poll with the reason stored on the connection; Until
@@ -106,22 +104,6 @@ func (w *Worker) lock(id string) *sync.Mutex {
 		w.locks[id] = &sync.Mutex{}
 	}
 	return w.locks[id]
-}
-
-// Run polls until ctx ends and sweeps tokens without a connection hourly.
-func (w *Worker) Run(ctx context.Context) {
-	var swept time.Time
-	poll.Every(ctx, PollInterval, func(ctx context.Context) {
-		if time.Since(swept) >= sweepEvery {
-			swept = time.Now()
-			if n, err := w.Tokens.Sweep(ctx, w.Store); err != nil {
-				w.log().Error("issue connections: sweep tokens", "err", err)
-			} else if n > 0 {
-				w.log().Debug("issue connections: removed tokens without a connection", "count", n)
-			}
-		}
-		w.RunOnce(ctx)
-	})
 }
 
 // RunOnce polls the connections due now, at most InFlight at a time (Poll also

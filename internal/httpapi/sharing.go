@@ -59,7 +59,12 @@ func (s *Server) handleListMembers(w http.ResponseWriter, r *http.Request) {
 		s.memberError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, m)
+	v, err := s.projectMembersView(r.Context(), m)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
 }
 
 // respondMembers answers a successful change with the caller's fresh view of the
@@ -80,7 +85,12 @@ func (s *Server) respondMembers(w http.ResponseWriter, r *http.Request, status i
 		s.memberError(w, err)
 		return
 	}
-	writeJSON(w, status, m)
+	v, err := s.projectMembersView(ctx, m)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, status, v)
 }
 
 // projectRoleLabel is how a project role appears in the audit log's from/to
@@ -129,16 +139,18 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request) {
 	if len(m.Members) <= 1 && s.refuseIfEncrypted(w, r, "sharing is not available for accounts with end-to-end encryption yet") {
 		return
 	}
-	if in.UserID == "" && !s.allowMemberAdd(w, actor.ID) {
-		return
-	}
-	target, err := s.memberTarget(r, in.Email, in.UserID)
-	if errors.Is(err, auth.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "user_not_found", "no account with this email exists on this server")
-		return
-	}
-	if err != nil {
-		s.internal(w, err)
+	var target *auth.User
+	if in.UserID != "" {
+		target, err = s.memberTarget(r, in.UserID)
+		if errors.Is(err, auth.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "user_not_found", "no account with this id is in the project's workspace")
+			return
+		}
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+	} else if target = s.memberByEmail(w, r, m.Role, in.Email, in.Role); target == nil {
 		return
 	}
 	ch, err := s.sync.AddMember(ctx, actor.ID, r.PathValue("id"), target.ID, in.Role)
@@ -148,6 +160,52 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request) {
 	}
 	s.audit.Record(ctx, audit.ProjectMemberAdded(actor.ID, target.ID, r.PathValue("id"), in.Role))
 	s.respondMembers(w, r, http.StatusCreated, target.ID, ch)
+}
+
+// memberByEmail resolves an add by email (member-add-consent D1): it returns
+// the account to add at once, or answers the request itself (an invitation,
+// or an error) and returns nil. In a project of a created workspace only its
+// directory can be added, whether or not the address has an account.
+func (s *Server) memberByEmail(w http.ResponseWriter, r *http.Request, myRole, email, role string) *auth.User {
+	ctx := r.Context()
+	actor := userFrom(ctx)
+	if !s.allowMemberAdd(w, actor.ID) {
+		return nil
+	}
+	email, ok := inviteAddress(w, email)
+	if !ok {
+		return nil
+	}
+	target, err := s.lookupInvitee(ctx, email)
+	if err != nil {
+		s.internal(w, err)
+		return nil
+	}
+	closed, err := s.sync.InClosedWorkspace(ctx, r.PathValue("id"))
+	if err != nil {
+		s.internal(w, err)
+		return nil
+	}
+	if closed {
+		if target == nil {
+			s.memberError(w, opsync.ErrNotInWorkspace)
+		}
+		return target
+	}
+	now, err := s.addsAtOnce(ctx, actor.ID, target)
+	if err != nil {
+		s.internal(w, err)
+		return nil
+	}
+	if now {
+		return target
+	}
+	if !opsync.CanGrant(myRole, role) {
+		s.memberError(w, opsync.ErrForbidden)
+		return nil
+	}
+	s.inviteMember(w, r, auth.InvitationProject, r.PathValue("id"), target, email, role)
+	return nil
 }
 
 // memberAddsPerHour is how many people one account may try to add to projects
@@ -287,13 +345,10 @@ func stripAnnotations(entity string, body map[string]json.RawMessage) {
 	}
 }
 
-// memberTarget resolves who to add: by email, or by account id for a project
-// of a created workspace, whose directory the dialog lists (an id elsewhere is
-// answered as an unknown account, so ids cannot probe for accounts).
-func (s *Server) memberTarget(r *http.Request, email, userID string) (*auth.User, error) {
-	if userID == "" {
-		return s.auth.UserByEmail(r.Context(), email)
-	}
+// memberTarget resolves an add by account id, for a project of a created
+// workspace, whose directory the dialog lists (an id elsewhere is answered as
+// an unknown account, so ids cannot probe for accounts).
+func (s *Server) memberTarget(r *http.Request, userID string) (*auth.User, error) {
 	closed, err := s.sync.InClosedWorkspace(r.Context(), r.PathValue("id"))
 	if err != nil {
 		return nil, err

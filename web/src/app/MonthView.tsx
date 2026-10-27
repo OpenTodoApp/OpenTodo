@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, EmptyState, hueFor, MenuItem, PageBody, PageHeader, useMediaQuery } from '../ui'
 import { calendarTasks, dayLoad, nudgeDue } from '../lib/calendar'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { addDaysISO, dueFromView, formatTime, viewedTask, dateLocaleOf } from '../lib/dates'
+import { addDaysISO, dueFromView, formatTime, viewedTask, formatDateParts, monthName } from '../lib/dates'
 import { getTask, useMembershipMap, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import { formatMinutes } from '../lib/duration'
@@ -29,6 +29,7 @@ import { useToday, useViewerZone } from './useViews'
 import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
 import { CapacityLine } from './calendar/CapacityLine'
+import { useResetOnChange } from '../lib/useResetOnChange'
 
 /** Task rows a desktop cell shows before "+N more". */
 const CELL_ROWS = 3
@@ -79,7 +80,7 @@ export function MonthView({ date }: { date?: string }) {
   const gridRef = useRef<HTMLDivElement>(null)
 
   // A new anchor (navigation, a task followed into another month) moves the focus there.
-  useEffect(() => { setFocused(anchor) }, [anchor])
+  useResetOnChange([anchor], () => setFocused(anchor))
 
   const goTo = useCallback((d: string) => navigate({ view: 'month', date: d === today ? undefined : d }), [today])
   /** Keep the focus on screen: a day outside the grid's month opens that month. */
@@ -171,12 +172,8 @@ export function MonthView({ date }: { date?: string }) {
     if (d && (cells.get(d)?.length ?? 0) > CELL_ROWS && !visibleRows(cells.get(d)!, CELL_ROWS).shown.some((task) => task.id === selectedId)) setExpanded(d)
   }, [selectedId, viewedMap, cells])
 
-  const [y, m] = month.split('-').map(Number)
-  const title = new Intl.DateTimeFormat(dateLocaleOf(), { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1))
-  const weekdays = grid[0].map((d) => {
-    const [yy, mm, dd] = d.split('-').map(Number)
-    return new Intl.DateTimeFormat(dateLocaleOf(), { weekday: narrow ? 'narrow' : 'short' }).format(new Date(yy, mm - 1, dd))
-  })
+  const title = monthName(month, 'long', true)
+  const weekdays = grid[0].map((d) => formatDateParts(d, { weekday: narrow ? 'narrow' : 'short' }))
 
   const row = (task: Task, compact: boolean) => {
     const v = viewedMap.get(task.id)

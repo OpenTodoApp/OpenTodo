@@ -10,15 +10,14 @@
 // keycaps, and a footer that names the keys.
 import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
-import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState } from '../../lib/localData'
+import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading } from '../../lib/localData'
 import { isFavourite } from '../../lib/favourites'
 import { earlierIds } from '../../lib/dayLists'
-import { pickScores } from '../../lib/pickRank'
-import { canEditProject, membershipMap, roleOf } from '../../lib/sharing'
-import { loadViewMode } from '../../lib/sections'
+import { usePickScores } from '../../lib/pickRank'
+import { canEditProject, roleOf } from '../../lib/sharing'
+import { useViewMode } from '../../lib/sections'
 import { NO_TASKS, useLiveTasks, useTasksOfEveryWorkspace } from '../../lib/liveTasks'
 import { Partition } from '../../lib/workspaces'
 import { workspaceLabel } from '../workspaceNav'
@@ -42,6 +41,7 @@ import { useAssistantStatus } from '../../lib/assistantStatus'
 import { addFromBar, lineToInput } from './addFromBar'
 import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarParts'
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -71,11 +71,11 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const labels = useLabels()
   const prefs = useUserPrefsRow()
   const views = useViews()
-  const memberships = useLiveQuery(() => membershipMap(), [])
-  const scores = useLiveQuery(() => pickScores('palette'), [], new Map<string, number>())
+  const memberships = useMembershipMapOrLoading()
+  const scores = usePickScores('palette')
   const task = useMemo(() => tasks.find((tk) => tk.id === taskId), [tasks, taskId])
   const place = useSectionPlace(task?.section_id, task?.project_id)
-  const viewMode = useLiveQuery(() => (task?.project_id ? loadViewMode(task.project_id) : undefined), [task?.project_id])
+  const viewMode = useViewMode(task?.project_id)
   const sectionInfo = useMemo(() => (place ? { ...place, layout: viewMode === 'board' ? 'board' as const : 'list' as const } : undefined), [place, viewMode])
 
   // What is typed, debounced, for the filter results and the "Search Help" command.
@@ -168,7 +168,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     onPick: (e) => runEntry(e),
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })
-  useEffect(() => { setTyped(state.query) }, [state.query])
+  useResetOnChange([state.query], () => setTyped(state.query))
   // The prefixes switch mode as the first character of an empty field (modes.ts).
   const field = { ...state, setQuery: (next: SetStateAction<string>) => {
     const v = typeof next === 'function' ? next(state.query) : next

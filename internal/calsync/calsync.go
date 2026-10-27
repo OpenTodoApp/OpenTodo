@@ -32,7 +32,6 @@ const (
 	BackoffStart     = 5 * time.Minute
 	BackoffMax       = 6 * time.Hour
 	Debounce         = 20 * time.Second
-	TickInterval     = 15 * time.Second
 	InFlight         = 2
 	MaxWritesPerRun  = 200
 	MultigetBatch    = 50
@@ -42,7 +41,6 @@ const (
 	MaxRedirects     = 3
 	MaxCalendars     = 50
 	MaxReadCalendars = 10
-	sweepEvery       = time.Hour
 )
 
 // Reasons stored on a connection (design D11).

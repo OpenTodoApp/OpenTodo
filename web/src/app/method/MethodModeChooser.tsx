@@ -1,8 +1,9 @@
 // "How you work" (OpenSpec change open-loops-method, design D2, D10; open-loops
 // "Choosing how you work"): three choices as a radio group of cards, each with one
-// sentence, "Learn the method", and after choosing Open Loops the two offers: the
-// starter contexts (when there is no context yet) and, for Open Loops first, the
-// Loop home as this device's start view. Nothing is written about the offers.
+// sentence, "What is Open Loops?", and after choosing the method the two offers: the
+// starter contexts (when there is no context yet) and, for the full method, the
+// Loop home as this device's start view. Nothing is written about the offers. Plain
+// words only (onboarding-plain-language): a method term is explained where it first shows.
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { t, translatedMap } from '../../lib/i18n'
 import { SETTINGS_COPY } from '../../lib/settingsCopy'
@@ -71,7 +72,7 @@ export function MethodModeChooser({ value, onChosen, writeOnChoose = true, offer
       </div>
       <p className="mt-2">
         <button type="button" className="text-meta text-accent underline" data-learn-method data-help-screen={METHOD_HELP_SCREENS.overview} aria-haspopup="dialog"
-          onClick={(e) => openHelp(METHOD_HELP_SCREENS.overview, e.currentTarget)}>{t('Learn the method: {method}', { method: METHOD_NAME })}</button>
+          onClick={(e) => openHelp(METHOD_HELP_SCREENS.overview, e.currentTarget)}>{t('What is {method}?', { method: METHOD_NAME })}</button>
       </p>
       {offers.includes('contexts') && (
         <div className="mt-3" data-offer="contexts">
@@ -79,7 +80,7 @@ export function MethodModeChooser({ value, onChosen, writeOnChoose = true, offer
             <Button size="sm" variant="primary" onClick={() => act(createStarterContexts().then((names) => { drop('contexts'); setDone(names.length ? t('Created {names}.', { names: names.join(', ') }) : null) }))}>{t('Create them')}</Button>
             <Button size="sm" variant="ghost" onClick={() => drop('contexts')}>{t('No thanks')}</Button>
           </span>}>
-            {t('Start with four contexts? {names}. Any label that starts with @ is a context.', { names: STARTER_CONTEXTS.map((n) => t(n)).join(', ') })}
+            {t('Add four context labels, {names}? A context is where or how you can do a task; any label starting with @ is one.', { names: STARTER_CONTEXTS.map((n) => t(n)).join(', ') })}
           </Notice>
         </div>
       )}
@@ -89,7 +90,7 @@ export function MethodModeChooser({ value, onChosen, writeOnChoose = true, offer
             <Button size="sm" variant="primary" onClick={() => act(setStartView('loop').then(() => { drop('start'); setDone(t('This device now opens on the Loop home.')) }))}>{t('Open on the Loop home')}</Button>
             <Button size="sm" variant="ghost" onClick={() => drop('start')}>{t('Keep my start view')}</Button>
           </span>}>
-            {t('Open on the Loop home on this device? Your other devices keep their own start view.')}
+            {t('Open on the Loop home on this device? It shows what needs your attention today. Your other devices keep their own start view.')}
           </Notice>
         </div>
       )}

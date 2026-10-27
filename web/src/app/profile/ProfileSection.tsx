@@ -15,21 +15,17 @@ import { Button, Dialog, Field, Input, Notice, SettingRow, SettingsSection } fro
 import { PersonAvatar } from '../PersonAvatar'
 import { ACCOUNT_CHANGED_EVENT } from '../UsersPanel'
 import { PictureDialog } from './PictureDialog'
+import { readJSON, writeJSON } from '../../lib/deviceStorage'
 
 const CACHE_KEY = 'opentodo.profile'
 
 function readCache(userId: string): Profile | null {
-  try {
-    const p = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null') as Profile | null
-    return p?.user.id === userId ? p : null
-  } catch {
-    return null
-  }
+  return readJSON<Profile | null>(CACHE_KEY, null, (v) => ((v as Profile | null)?.user?.id === userId ? v as Profile : null))
 }
 
 /** Adopts a profile answer: this device's copy, the own picture version, and the app's user. */
 function adopt(p: Profile, prev: Profile | null): void {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(p)) } catch { /* storage unavailable */ }
+  writeJSON(CACHE_KEY, p)
   setOwnAvatar(p.user.id, p.avatarVersion)
   if (prev && (prev.user.name !== p.user.name || prev.user.email !== p.user.email)) window.dispatchEvent(new Event(ACCOUNT_CHANGED_EVENT))
 }

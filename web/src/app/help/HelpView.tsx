@@ -7,6 +7,7 @@ import type { SearchEntry } from '../../../scripts/docs/search-core.mjs'
 import { navigate } from '../router'
 import { HelpContent } from './HelpContent'
 import { t, msg, translatedList } from '../../lib/i18n'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 const SITE = 'https://open-todo.app/docs/'
 
@@ -40,7 +41,7 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
   const [anchor, setAnchor] = useState<string | undefined>(() => (typeof location !== 'undefined' && location.hash ? decodeURIComponent(location.hash.slice(1)) : undefined))
   const searchRef = useRef<HTMLInputElement>(null)
   useEffect(() => { loadHelp().then(setData, () => setFailed(true)) }, [])
-  useEffect(() => { setQuery(q ?? '') }, [q])
+  useResetOnChange([q], () => setQuery(q ?? ''))
   // The landing opens on the search field.
   useEffect(() => { if (data && !slug) searchRef.current?.focus({ preventScroll: true }) }, [data, slug])
   // `:help <topic>` that names a guide opens it directly.

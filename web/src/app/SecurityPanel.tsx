@@ -14,11 +14,12 @@ import { useOnline } from '../lib/online'
 import { createPasskey, isCancellation, passkeysSupported, rpIdMatches } from '../lib/passkeys'
 import type { Passkey } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { formatInstant } from '../lib/dates'
+import { relativeTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
+import { readString, writeString } from '../lib/deviceStorage'
 
 // Settings → Account → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
@@ -26,23 +27,8 @@ import { useAction } from '../lib/useAction'
 
 const AVAILABLE_KEY = 'opentodo.passkeysAvailable'
 
-export function relativeTime(ts: number | null, now = Date.now()): string {
-  if (ts === null) return t('never')
-  const s = Math.max(0, Math.round((now - ts) / 1000))
-  if (s < 60) return t('just now')
-  const m = Math.round(s / 60)
-  if (m < 60) return t('{m} min ago', { m })
-  const h = Math.round(m / 60)
-  if (h < 24) return t('{h} h ago', { h })
-  return formatInstant(ts, 'date')
-}
-
 function readCachedAvailability(): boolean {
-  try {
-    return localStorage.getItem(AVAILABLE_KEY) === 'true'
-  } catch {
-    return false
-  }
+  return readString(AVAILABLE_KEY) === 'true'
 }
 
 /** The error for a failed passkey action; null when the user cancelled and nothing changed. */
@@ -71,11 +57,7 @@ export function SecurityPanel() {
       const ok = status.passkeysAvailable === true
       setAvailable(ok)
       setDomain(status.passkeyDomain || undefined)
-      try {
-        localStorage.setItem(AVAILABLE_KEY, String(ok))
-      } catch {
-        /* storage unavailable: availability is re-read next time */
-      }
+      writeString(AVAILABLE_KEY, String(ok)) // storage unavailable: availability is re-read next time
       if (ok) setPasskeys((await api.listPasskeys()).passkeys)
     } catch (err) {
       // Offline or server unreachable: keep whatever we had.

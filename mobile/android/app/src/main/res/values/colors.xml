@@ -8,4 +8,5 @@
     <color name="widget_text">#FF1B1F24</color>
     <color name="widget_muted">#FF5B6470</color>
     <color name="overdue">#FFC93C37</color>
+    <color name="site_bar">#FFEEF1F5</color>
 </resources>

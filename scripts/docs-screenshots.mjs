@@ -173,10 +173,12 @@ async function plainSetup() {
   const { link } = await api('POST', '/api/v1/invitations', { email: 'bob@example.com' })
   const bc = await browser.newContext()
   await api('POST', '/api/v1/auth/register', { email: 'bob@example.com', name: 'Bob Okafor', password: PASSWORD, invitation: link.split('/invite/')[1] }, bc)
-  await bc.close()
   await api('POST', '/api/v1/invitations', { email: 'chen@example.com' })
   const home = await api('POST', '/api/v1/projects', { name: 'Home renovation', color: '#f59e0b' })
   await api('POST', `/api/v1/projects/${home.id}/members`, { email: 'bob@example.com', role: 'editor' })
+  // Bob shares nothing with Ada yet, so the add is an invitation he accepts (member-add-consent).
+  for (const inv of (await api('GET', '/api/v1/me/member-invitations', undefined, bc)).invitations) await api('POST', `/api/v1/me/member-invitations/${inv.id}/accept`, {}, bc)
+  await bc.close()
   for (const title of ['Get three quotes for the kitchen', 'Pick paint colours', 'Order new taps']) await api('POST', '/api/v1/tasks', { title, project_id: home.id })
   // Archived projects for Settings → Projects (unarchive-projects).
   const trip = await api('POST', '/api/v1/projects', { name: 'Trip to Lisbon', color: '#0ea5e9' })

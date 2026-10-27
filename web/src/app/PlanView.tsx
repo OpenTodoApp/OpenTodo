@@ -9,7 +9,7 @@ import { Button, hueFor, MenuItem, MenuSeparator, PageBody, PageHeader, Skeleton
 import { allDayEvents, calendarTasks, eventBlocks, nudgeDue } from '../lib/calendar'
 import { setShowEvents } from '../lib/calendarFeeds'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { addDaysISO, dateLocaleOf, dueFromView, formatShort, viewedTask } from '../lib/dates'
+import { addDaysISO, dueFromView, formatShort, viewedTask, formatDateParts } from '../lib/dates'
 import { beginDrag } from '../lib/dnd'
 import { getTask, saveGridPrefs, useMembershipMap } from '../lib/localData'
 import { useGridPrefs, useLiveProjects } from '../lib/liveData'
@@ -240,10 +240,7 @@ function PlanGrid({ gridRef, title, days, today, focused, dayLength, eventHue, o
   rowProps: PlanRowProps
 }) {
   const weeks = useMemo(() => Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => days.slice(i * 7, i * 7 + 7)), [days])
-  const weekday = (d: string) => {
-    const [y, m, dd] = d.split('-').map(Number)
-    return new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short' }).format(new Date(y, m - 1, dd))
-  }
+  const weekday = (d: string) => formatDateParts(d, { weekday: 'short' })
   return (
     <div ref={gridRef} role="grid" aria-label={title} aria-readonly={false} className="w-full min-w-0 select-none" data-plan-grid>
       <div role="row" className="grid grid-cols-7 border-b border-default">

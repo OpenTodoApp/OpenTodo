@@ -8,6 +8,7 @@ import { ACCENTS, DARK_BAR, DEFAULT_ACCENT, isAccent, type AccentId } from '../u
 import { mutate } from './ops'
 import type { ThemeModePref, UserPrefs } from './types'
 import { USER_PREFS_ID } from './userPrefs'
+import { writeJSON } from './deviceStorage'
 
 export const THEME_MODES: readonly ThemeModePref[] = ['system', 'light', 'dark']
 
@@ -91,11 +92,8 @@ export function applyAppearance(a: Appearance, doc: Document = document): void {
     add(lightBar(a.accent), '(prefers-color-scheme: light)')
     add(DARK_BAR, '(prefers-color-scheme: dark)')
   } else add(a.mode === 'dark' ? DARK_BAR : lightBar(a.accent))
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ mode: a.mode, accent: a.accent, bar: lightBar(a.accent) }))
-  } catch {
-    // Private mode or blocked storage: the next start shows the defaults until the row is read.
-  }
+  // Private mode or blocked storage: the next start shows the defaults until the row is read.
+  writeJSON(CACHE_KEY, { mode: a.mode, accent: a.accent, bar: lightBar(a.accent) })
 }
 
 function setMeta(doc: Document, name: string, content: string) {

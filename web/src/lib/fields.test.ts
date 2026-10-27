@@ -6,8 +6,9 @@ import { occurrenceId } from './ids'
 import { applyOps, completeTask, createProject, createTask, getDeviceId, mutate, resetDeviceId, updateTask } from './ops'
 import {
   countValues, createField, deleteField, FieldError, fieldBadges, formatValue, liveFields, matchesType, MAX_FIELDS, parseLocaleNumber,
-  parseOptions, renameField, reorderField, setFieldOptions, setFieldValue, validateValue,
+  parseOptions, renameField, reorderField, setFieldOptions, setFieldValue, validateValue, applicableFields, fieldDescendants, type FieldProject,
 } from './fields'
+import vectors from './fields.vectors.json'
 import { isContentField } from './e2ee'
 import type { FieldDef, Op, Task } from './types'
 
@@ -240,5 +241,66 @@ describe('definition ops', () => {
       [[t1, `fields.${status}`, 'On order'], [t2, `fields.${status}`, 'On order']].sort())
     expect((await db.fields.get(status))?.options).toBe('Quote\nOn order\nDone')
     expect((await db.tasks.get(t3))?.fields?.[status]).toBe('Quote')
+  })
+})
+
+// Inherited fields (OpenSpec inherited-custom-fields): the shared vectors pin the
+// resolver against internal/sync, then the definition checks across a tree.
+describe('inherited fields', () => {
+  it('matches the shared vectors', () => {
+    for (const c of vectors.cases) {
+      const got = applicableFields(c.project, c.projects as FieldProject[], c.fields as unknown as FieldDef[]).map((d) => d.id)
+      expect(got, c.name).toEqual(c.want)
+    }
+    for (const c of vectors.descendants) {
+      expect(fieldDescendants(c.project, c.projects as FieldProject[]).sort(), c.name).toEqual(c.want)
+    }
+  })
+
+  describe('checks across a project tree', () => {
+    beforeEach(async () => { await use(run()) })
+
+    it('a sub-project cannot reuse an inherited name, nor a parent a sub-project\'s name', async () => {
+      const scoring = await createProject({ name: 'Scoring' })
+      const topicA = await createProject({ name: 'Topic A', parent_id: scoring })
+      const topicB = await createProject({ name: 'Topic B', parent_id: scoring })
+      const detail = await createProject({ name: 'Detail', parent_id: topicA })
+      await createField(scoring, { name: 'WSJF', type: 'number' })
+      await createField(topicB, { name: 'Size', type: 'number' })
+      await expect(createField(detail, { name: 'wsjf', type: 'number' })).rejects.toThrow(/inherits a field named “wsjf” from “Scoring”/)
+      await expect(createField(scoring, { name: 'size', type: 'number' })).rejects.toThrow(/sub-project “Topic B” already has a field named “size”/)
+      const own = await createField(topicA, { name: 'Notes', type: 'text' })
+      await expect(renameField(own, 'WSJF')).rejects.toThrow(/from “Scoring”/)
+      const defs = await db.fields.toArray()
+      const projects = await db.projects.toArray()
+      expect(applicableFields(detail, projects, defs).map((d) => d.name)).toEqual(['WSJF', 'Notes'])
+    })
+
+    it('the limit counts inherited fields, for every sub-project below', async () => {
+      const root = await createProject({ name: 'Root' })
+      const child = await createProject({ name: 'Child', parent_id: root })
+      for (let i = 0; i < MAX_FIELDS - 1; i++) {
+        await mutate('field', `own-${i}`, { name: `F${i}`, project_id: child, type: 'text', options: '', position: i, created_at: 1, deleted_at: null })
+      }
+      await createField(root, { name: 'Last', type: 'text' })
+      await expect(createField(root, { name: 'One more', type: 'text' })).rejects.toThrow(/sub-project “Child” would have more than 30 fields/)
+      await expect(createField(child, { name: 'One more', type: 'text' })).rejects.toThrow(/at most 30 fields/)
+    })
+
+    it('renaming an option rewrites tasks of sub-projects too, and badges show inherited values', async () => {
+      const root = await createProject({ name: 'Root' })
+      const child = await createProject({ name: 'Child', parent_id: root })
+      const stage = await createField(root, { name: 'Stage', type: 'choice', options: 'Quote\nOrdered' })
+      const inChild = await createTask({ title: 'Tiles', project_id: child })
+      await setFieldValue(inChild, stage, 'Ordered')
+      expect(await setFieldOptions(stage, 'Quote\nOn order', { Ordered: 'On order' })).toBe(1)
+      const task = (await db.tasks.get(inChild))!
+      expect(task.fields?.[stage]).toBe('On order')
+      const defs = await db.fields.toArray()
+      const projects = await db.projects.toArray()
+      expect(fieldBadges(task, defs).map((b) => b.text)).toEqual([])
+      expect(fieldBadges(task, defs, undefined, (pid) => applicableFields(pid, projects, defs)).map((b) => b.text)).toEqual(['Stage On order'])
+      expect(countValues(stage, await db.tasks.toArray())).toBe(1)
+    })
   })
 })

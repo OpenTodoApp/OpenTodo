@@ -15,6 +15,7 @@ import { Button, ComposerFrame, IconButton, Popover, useMediaQuery } from '../..
 import { Icon } from '../../ui'
 import { filesFrom } from './AttachmentsRow'
 import { t } from '../../lib/i18n'
+import { readString, writeString } from '../../lib/deviceStorage'
 
 const MAX_LINES = 10
 const LINE_PX = 20
@@ -40,22 +41,14 @@ const draftStorageKey = (taskId: string) => `ot.draft.${taskId}`
 
 export function readDraft(taskId: string): string {
   if (drafts.has(taskId)) return drafts.get(taskId)!
-  try {
-    return sessionStorage.getItem(draftStorageKey(taskId)) ?? ''
-  } catch {
-    return ''
-  }
+  return readString(draftStorageKey(taskId), 'session') ?? ''
 }
 
 export function writeDraft(taskId: string, body: string) {
   if (body) drafts.set(taskId, body)
   else drafts.delete(taskId)
-  try {
-    if (body) sessionStorage.setItem(draftStorageKey(taskId), body)
-    else sessionStorage.removeItem(draftStorageKey(taskId))
-  } catch {
-    // storage unavailable: the in-memory copy still covers closing and reopening the panel
-  }
+  // Storage unavailable: the in-memory copy still covers closing and reopening the panel.
+  writeString(draftStorageKey(taskId), body || null, 'session')
 }
 
 /** The submit hint: ⌘ on Apple platforms, Ctrl elsewhere. */

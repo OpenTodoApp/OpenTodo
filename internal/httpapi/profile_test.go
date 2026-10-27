@@ -246,8 +246,7 @@ func TestProfilePicture(t *testing.T) {
 		t.Fatalf("stranger = %d", resp.StatusCode)
 	}
 	pid := e.newProject(map[string]any{"name": "Shared"})
-	resp, out = e.do("POST", "/api/v1/projects/"+pid+"/members", map[string]any{"email": "stranger@example.com", "role": "editor"})
-	e.mustStatus(resp, 201, out)
+	addByEmail(e, stranger, "/api/v1/projects/"+pid+"/members", "stranger@example.com", "editor")
 	// The member list carries the picture's version.
 	resp, out = stranger.do("GET", "/api/v1/projects/"+pid+"/members", nil)
 	stranger.mustStatus(resp, 200, out)

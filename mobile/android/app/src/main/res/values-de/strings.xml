@@ -40,4 +40,10 @@
     <string name="widget_untitled">Aufgabe</string>
     <string name="widget_more">+ %1$d weitere</string>
     <string name="setup_old_webview">Das Android System WebView dieses Telefons ist alt (Version %1$s). Aktualisiere es im App-Store, damit OpenTodo vollständig funktioniert.</string>
+    <string name="site_bar_host">Anmeldung bei %1$s</string>
+    <string name="site_bar_close">Zurück zu OpenTodo</string>
+    <string name="setup_login_wall">Dieser Server liegt hinter einer Anmeldeseite. Melde dich hier an; die App verbindet sich, sobald du durch bist.</string>
+    <string name="setup_web_page">Diese Adresse antwortet mit einer Webseite, nicht wie ein OpenTodo-Server. Liegt dein Server hinter einer Anmeldeseite, melde dich hier an; sonst prüfe die Adresse.</string>
+    <string name="setup_sign_in">Hier anmelden</string>
+    <string name="error_sign_in">Dein Server liegt hinter einer Anmeldeseite, und die Anmeldung ging in der App nicht weiter. Melde dich hier erneut an.</string>
 </resources>

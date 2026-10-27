@@ -21,11 +21,8 @@ const (
 	MaxAttempts = 1 + 6
 	// AutoDisableAfter consecutive failed deliveries disables a webhook.
 	AutoDisableAfter = deliveryq.AutoDisableAfter
-	// PollInterval is how often an idle worker looks for due retries.
-	PollInterval = deliveryq.PollInterval
-	// PruneInterval and LogRetention bound the delivery log.
-	PruneInterval = deliveryq.PruneInterval
-	LogRetention  = deliveryq.LogRetention
+	// LogRetention bounds the delivery log (LogLimit bounds it per webhook).
+	LogRetention = deliveryq.LogRetention
 )
 
 // table is the delivery queue and log (deliveryq).
@@ -51,14 +48,16 @@ func Backoff(failed int, r float64) (time.Duration, bool) {
 
 func defaultResolver() Resolver { return net.DefaultResolver }
 
-// Wake nudges the worker to look at the queue now instead of at the next poll.
-func (s *Service) Wake() { deliveryq.Nudge(s.wake) }
+// SetWake installs what Wake calls: the tenant's jobs signal (internal/jobs).
+// Call it before the service is used.
+func (s *Service) SetWake(fn func()) { s.wake = fn }
 
-// Run is the single worker loop. It returns when ctx is cancelled, after the
-// pass in progress has finished (each send is bounded by the 10 s timeout).
-func (s *Service) Run(ctx context.Context) {
-	l := deliveryq.Loop{Name: "webhooks", Log: s.log, Now: s.now, After: s.after, Wake: s.wake, Prune: s.Prune, Process: s.ProcessDue}
-	l.Run(ctx)
+// Wake reports that deliveries may be due now, so the "webhooks" job runs at
+// once instead of at its next check.
+func (s *Service) Wake() {
+	if s.wake != nil {
+		s.wake()
+	}
 }
 
 type queued struct {

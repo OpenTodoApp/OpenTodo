@@ -12,15 +12,15 @@ order: 10
 
 In **Settings → You → How you work** (or in the start guide on your first visit):
 
-- **Lists only**: OpenTodo as a plain task app, no method words.
-- **Companion**: your sidebar stays as it is; screens name the move they serve and link to the method.
-- **Open Loops first**: the **Loop home** opens first, the sidebar shows Loop home, Inbox, Today, Next, Waiting and Review, and the app offers a Daily check each day.
+- **Simple lists**: just your tasks and lists, nothing else.
+- **Lists with method hints**: your sidebar stays as it is, and each screen gets a short hint on its purpose in the method, with a link to this guide.
+- **Full Open Loops method**: the **Loop home**, a page that shows what needs your attention today, opens first; the sidebar shows Loop home, Inbox, Today, Next, Waiting and Review; and the app offers a Daily check each day.
 
-The choice syncs to all your devices and changes no task. You can switch any time. Choosing Open Loops first also offers to open on the Loop home on this device.
+The start guide says what Open Loops is before you choose, and **What is Open Loops?** opens this guide's overview. The choice syncs to all your devices and changes no task. You can switch any time. Choosing the full method also offers to open on the Loop home on this device.
 
 ## 2. Create your contexts
 
-When you choose Companion or Open Loops first and have no context yet, the app offers `@home`, `@computer`, `@calls` and `@errands`. Accept, or make your own: any label starting with `@` is a context.
+A context is where or how you can do a task. When you choose method hints or the full method and have no context yet, the app offers four context labels: `@home`, `@computer`, `@calls` and `@errands`. Accept, or make your own: any label starting with `@` is a context.
 
 ## 3. Empty your head
 

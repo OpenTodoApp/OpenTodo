@@ -49,12 +49,18 @@ func (s *Service) Export(ctx context.Context, w io.Writer) error {
 	return nil
 }
 
-// RunIfDue performs a scheduled backup when one is due: one pass of the
-// scheduler, for a host's shared scheduler (OpenSpec `multi-tenant-host` D3),
-// which marks runs a previous process left "running" as interrupted first.
+// RunIfDue performs a scheduled backup when one is due: one run of the
+// tenant's "backup" job (internal/jobs). It marks runs a previous process left
+// "running" as interrupted first (on a host, the tenant may have been open in
+// a process that stopped). The run is cancelled by shutdown (Stop) as well as
+// by ctx.
 func (s *Service) RunIfDue(ctx context.Context) {
 	if err := s.markInterrupted(context.WithoutCancel(ctx)); err != nil {
 		s.log.Error("backup: mark interrupted runs", "err", err)
 	}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	stop := context.AfterFunc(s.life, cancel)
+	defer stop()
 	s.runIfDue(ctx)
 }

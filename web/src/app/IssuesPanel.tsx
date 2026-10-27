@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button, Card, ConfirmDialog, Icon, Menu, MenuItem, Notice, SettingRow, SettingsSection, Switch, type HueName, StatusIndicator, toneForHue } from '../ui'
-import { api, ApiError, isNetworkError } from '../lib/api'
+import { api, ApiError } from '../lib/api'
 import { cachedIssueConnections, cacheIssueConnections, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
-import { useOnline } from '../lib/online'
-import { errorText } from '../lib/errorText'
-import { useAction } from '../lib/useAction'
-import { formatClock } from '../lib/dates'
+import { useServerList } from '../lib/useServerList'
+import { fieldErrorOf } from '../lib/errorText'
+import { formatClock, ago } from '../lib/dates'
 import type { IssueConnection, Project } from '../lib/types'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
-import { ago } from './CalendarFeedsPanel'
 import { draftBody, draftError, draftOf, IssueEditor, intervalLabel, newDraft, type FieldErrorState, type IssueDraft } from './IssueEditor'
 import { useSettingsPending } from './settingsPending'
 
@@ -178,64 +176,26 @@ export function IssuesView(p: IssuesViewProps) {
 }
 
 /** A server answer naming a field, as the editor shows it beside that field. */
-function fieldErrorOf(err: unknown): FieldErrorState | null {
-  if (!(err instanceof ApiError)) return null
-  if (err.field) return { field: err.field, message: err.serverMessage.replace(new RegExp(`^${err.field}: `), '') }
-  if (err.code === 'private_target') return { field: 'host', message: err.message }
-  return null
+function issueFieldError(err: unknown): FieldErrorState | null {
+  if (err instanceof ApiError && !err.field && err.code === 'private_target') return { field: 'host', message: err.message }
+  return fieldErrorOf(err)
 }
 
 export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
-  const online = useOnline()
   const projects = useProjects()
   const { enabled: encrypted } = useEncryption()
-  const [enabled, setEnabled] = useState<boolean | null>(null)
-  const [connections, setConnections] = useState<IssueConnection[] | null>(null)
-  useSettingsPending(enabled === null || connections === null)
-  const [unreachable, setUnreachable] = useState(false)
   const [polling, setPolling] = useState<ReadonlySet<string>>(new Set())
   const [fieldError, setFieldError] = useState<FieldErrorState | null>(null)
-  const { busy, error, setError, run, act } = useAction({
-    onStart: () => setFieldError(null),
-    onError: (err) => {
-      if (isNetworkError(err)) setUnreachable(true)
-      setFieldError(fieldErrorOf(err))
-    },
+  const server = useServerList({
+    setting: api.issuesSwitch.get,
+    list: async () => (await api.listIssueConnections()).connections,
+    cached: cachedIssueConnections,
+    cache: cacheIssueConnections,
+    action: { onStart: () => setFieldError(null), onError: (err) => setFieldError(issueFieldError(err)) },
   })
+  const { enabled, setEnabled, rows: connections, upsert, connected, load, busy, error, setError, run, act } = server
+  useSettingsPending(enabled === null || connections === null)
   const [draft, setDraft] = useState<IssueDraft | null>(null)
-
-  const keep = useCallback((list: IssueConnection[]) => {
-    setConnections(list)
-    void cacheIssueConnections(list).catch(() => undefined)
-  }, [])
-  const load = useCallback(async () => {
-    try {
-      const { enabled: on } = await api.getIssuesSetting()
-      setEnabled(on)
-      setUnreachable(false)
-      if (on) keep((await api.listIssueConnections()).connections)
-    } catch (err) {
-      if (isNetworkError(err)) setUnreachable(true)
-      else setError(errorText(err))
-    }
-  }, [keep, setError])
-  useEffect(() => {
-    void cachedIssueConnections().then((cached) => {
-      if (cached.length) {
-        setConnections((cur) => cur ?? cached)
-        setEnabled((cur) => cur ?? true)
-      }
-    }).catch(() => undefined)
-  }, [])
-  useEffect(() => {
-    if (online) void load()
-  }, [online, load])
-
-  const connected = online && !unreachable
-  const upsert = (c: IssueConnection) => {
-    const list = connections ?? []
-    keep(list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c])
-  }
   const poll = (c: IssueConnection, action: () => Promise<void>) => {
     setPolling((s) => new Set(s).add(c.id))
     void run(action).finally(() => setPolling((s) => { const n = new Set(s); n.delete(c.id); return n }))
@@ -245,7 +205,7 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
     <IssuesView isOwner={isOwner} enabled={enabled} connected={connected} encrypted={encrypted} connections={connections} projects={projects}
       busy={busy} polling={polling} error={error} draft={draft} fieldError={fieldError}
       onToggle={(on) => void run(async () => {
-        await api.putIssuesSetting(on)
+        await api.issuesSwitch.put(on)
         setEnabled(on)
         if (on) await load()
       })}
@@ -276,7 +236,7 @@ export function IssuesPanel({ isOwner }: { isOwner: boolean }) {
       onSetEnabled={(c, on) => void run(async () => { upsert((await api.patchIssueConnection(c.id, { enabled: on })).connection) })}
       onDelete={(c) => act(async () => {
         await api.deleteIssueConnection(c.id)
-        keep((connections ?? []).filter((x) => x.id !== c.id))
+        server.remove(c.id)
       })} />
   )
 }

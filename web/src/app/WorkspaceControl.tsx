@@ -2,15 +2,15 @@
 // header row names the current workspace and opens the switcher, a menu of the
 // account's workspaces with their Inbox and Today counts, "New workspace" and
 // "Manage workspaces". It is not a destination and adds no row; with one
-// workspace it reads "OpenTodo · Personal". Switching is device state.
+// workspace it shows "OpenTodo" with "Personal" below it (sidebar-title-lines).
+// Switching is device state.
 import { useMemo } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
 import { t } from '../lib/i18n'
 import { inboxParents, isInboxTask } from '../lib/inbox'
 import { useTasksOfEveryWorkspace } from '../lib/liveTasks'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
-import { unreadCounts, type UnreadCounts } from '../lib/feed'
+import { useUnreadCounts } from '../lib/feed'
 import type { Workspace } from '../lib/types'
 import { inToday } from '../lib/views'
 import { Partition } from '../lib/workspaces'
@@ -38,7 +38,7 @@ function useWorkspaceCounts(): Counts {
   const projects = useProjectsOfEveryWorkspace()
   const tasks = useTasksOfEveryWorkspace()
   const today = useToday()
-  const unread = useLiveQuery(() => unreadCounts(), [], { byProject: new Map(), total: 0 } as UnreadCounts)
+  const unread = useUnreadCounts()
   return useMemo(() => {
     const out: Counts = new Map(state.list.map((w) => [w.id, { inbox: 0, today: 0, unread: 0 }]))
     if (!tasks || state.list.length === 0) return out
@@ -78,9 +78,16 @@ export function WorkspaceControl({ route, collapsed = false }: { route: Route; c
         triggerClassName={`flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-control px-1 text-left hover:bg-sunken focus-visible:bg-sunken pointer-fine:min-h-8 dark:hover:bg-raised ${collapsed ? 'justify-center' : ''}`}
         trigger={<>
           <WorkspaceMark workspace={current} />
-          {!collapsed && <span className="min-w-0 flex-1 truncate font-semibold text-strong">
-            {single ? <><InstanceWordmark /><span className="text-faint"> · </span><span>{name}</span></> : name}
-          </span>}
+          {/* With one workspace both names show, on two lines that truncate on their own
+              (sidebar-title-lines, GitHub issue 492); the accessible label keeps "app · name".
+              The space after the wordmark keeps the visible text "app name", so it still
+              matches the label for speech input (axe label-content-name-mismatch). */}
+          {!collapsed && (single
+            ? <span className="flex min-w-0 flex-1 flex-col" data-workspace-lines>
+              <span className="truncate font-semibold leading-5 text-strong" data-workspace-app><InstanceWordmark />{' '}</span>
+              <span className="truncate text-meta text-muted" data-workspace-name>{name}</span>
+            </span>
+            : <span className="min-w-0 flex-1 truncate font-semibold text-strong" data-workspace-name>{name}</span>)}
           {updates && <StatusDot label={updates} data-workspace-updates />}
           {!collapsed && <span aria-hidden className="text-faint"><Icon name="chevron-down" size="xs" /></span>}
         </>}>

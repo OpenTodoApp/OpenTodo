@@ -9,8 +9,8 @@ import { FacetLine } from './FacetLine'
 import { TimeTab } from './TimeTab'
 
 // The task panel's anatomy (OpenSpec change task-panel-facets, web-app "Task panel
-// layout"): sticky header, quiet notes, the four facet lines with Add, the subtasks
-// checklist and the tabs. Static fixtures keep the stories independent of
+// layout"): sticky header, the four facet lines with Add, the subtasks checklist, the
+// attachments, then the notes in full (task-panel-notes-below, GitHub issue 444) and the tabs. Static fixtures keep the stories independent of
 // local data and of today's date; the workbench captures each in light and dark at
 // 375 and 1280.
 const meta: Meta = { title: 'Task/Panel' }
@@ -33,11 +33,11 @@ function Header({ title, done = false, readOnly = false, priority = 4 }: { title
   )
 }
 
-function Notes({ text, editing = false }: { text?: string; editing?: boolean }) {
+function Notes({ text, editing = false }: { text?: string | string[]; editing?: boolean }) {
   return (
     <div className="notes-host" data-notes-editing={editing || undefined}>
       <div className={`notes-editor ${text ? '' : 'is-empty'}`} data-placeholder="Add notes…" role="textbox" aria-label="Notes" aria-multiline="true" contentEditable={false}>
-        {text && <p>{text}</p>}
+        {(Array.isArray(text) ? text : text ? [text] : []).map((line, i) => <p key={i}>{line}</p>)}
       </div>
     </div>
   )
@@ -91,11 +91,11 @@ export const EmptyTask: StoryObj = {
     <Panel>
       <Header title="Call the bank" />
       <div className="min-w-0 space-y-4 p-4">
-        <Notes />
         <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P4' }]} />
         <section aria-label="Subtasks" className="flex items-center gap-2 px-1 text-faint">
           <Icon name="plus" size="xs" /><span className="text-body">Add subtask…</span>
         </section>
+        <Notes />
       </div>
       <TabsArea />
     </Panel>
@@ -108,7 +108,6 @@ export const FullTask: StoryObj = {
     <Panel>
       <Header title="Prepare the quarterly report" priority={2} />
       <div className="min-w-0 space-y-4 p-4">
-        <Notes text="Numbers from finance land on Monday; the deck needs the three charts and a one-page summary." />
         <Lines
           where={[{ id: 'project', text: 'Acme' }, { id: 'section', text: 'Doing', sep: 'chevron' }]}
           when={[{ id: 'due', text: 'Tomorrow 09:00', tone: 'soon' }, { id: 'repeat', text: 'every 3 months' }, { id: 'deadline', text: 'deadline Sat, Oct 24, 9 days' }, { id: 'when', text: 'since Wed, Oct 14' }, { id: 'reminders', text: '2 reminders' }]}
@@ -130,6 +129,7 @@ export const FullTask: StoryObj = {
           <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted"><Icon name="paperclip" className="text-faint" />Attachments<span className="font-normal text-faint">1</span></h3>
           <p className="flex items-center gap-2 text-body"><Badge hue="slate">PDF</Badge>Q2 numbers.pdf<span className="text-meta text-faint">212 KB</span></p>
         </section>
+        <Notes text="Numbers from finance land on Monday; the deck needs the three charts and a one-page summary." />
       </div>
       <TabsArea count={4} />
     </Panel>
@@ -142,8 +142,8 @@ export const Viewer: StoryObj = {
     <Panel readOnly>
       <Header title="Book the venue" readOnly priority={3} />
       <div className="min-w-0 space-y-4 p-4">
-        <Notes text="Ask for the Thursday slot; the Friday one is already taken." />
         <Lines readOnly where={[{ id: 'project', text: 'Team offsite' }]} when={[{ id: 'due', text: 'Tue, Oct 21', tone: 'later' }]} how={[{ id: 'priority', text: 'P3' }]} who={[{ id: 'assignee', text: 'Jo' }]} />
+        <Notes text="Ask for the Thursday slot; the Friday one is already taken." />
       </div>
       <TabsArea count={2} />
     </Panel>
@@ -156,9 +156,34 @@ export const NotesEditing: StoryObj = {
     <Panel>
       <Header title="Call the bank" />
       <div className="min-w-0 space-y-4 p-4">
-        <Notes editing />
         <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P4' }]} />
+        <Notes editing />
       </div>
+    </Panel>
+  ),
+}
+
+/** A forty-line note (GitHub issue 444): the facet lines stay at the top, the note follows in full, no Show all. */
+export const LongNote: StoryObj = {
+  render: () => (
+    <Panel>
+      <Header title="Plan the garden" />
+      <div className="min-w-0 space-y-4 p-4">
+        <Lines where={[{ id: 'project', text: 'Home' }]} when={[{ id: 'due', text: 'Sat, Oct 24', tone: 'later' }]} how={[{ id: 'priority', text: 'P3' }]} />
+        <section aria-label="Subtasks">
+          <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted"><Icon name="list" className="text-faint" />Subtasks<span className="font-normal text-faint">0/2</span></h3>
+          <ul className="space-y-0.5" aria-label="Subtasks">
+            {['Buy the seeds', 'Turn the beds'].map((t) => (
+              <li key={t} className="flex items-center gap-2 rounded-control px-1 py-1">
+                <span aria-hidden="true" className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-input" />
+                <span className="min-w-0 flex-1 truncate text-body text-default">{t}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <Notes text={Array.from({ length: 40 }, (_, i) => `Step ${i + 1}: water the beds along the north fence before noon.`)} />
+      </div>
+      <TabsArea />
     </Panel>
   ),
 }
