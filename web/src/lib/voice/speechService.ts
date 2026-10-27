@@ -2,30 +2,26 @@
 // change settings-refresh, design D7). Read from /me when online and remembered
 // on this device, so the Voice capture card can offer "This server's speech
 // service" and name its host. Kept out of the voice engine chunk: the card needs it.
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect } from 'react'
 import { api } from '../api'
 import type { SpeechService } from '../types'
+import { createStore } from '../store'
+import { readJSON, writeJSON } from '../deviceStorage'
 
 const KEY = 'opentodo.speech-service'
 const NONE: SpeechService = { connected: false }
 
-let current: SpeechService = read()
-const listeners = new Set<() => void>()
+const store = createStore<SpeechService>('speechService', read())
 
 function read(): SpeechService {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') as SpeechService | null
-    return v && typeof v.connected === 'boolean' ? v : NONE
-  } catch {
-    return NONE
-  }
+  return readJSON<SpeechService>(KEY, NONE, (v) => (v && typeof (v as SpeechService).connected === 'boolean' ? v as SpeechService : null))
 }
 
 /** Records the server's answer (also used by tests and stories). */
 export function setSpeechService(s: SpeechService): void {
-  current = s.connected ? { connected: true, host: s.host } : NONE
-  try { localStorage.setItem(KEY, JSON.stringify(current)) } catch { /* memory only */ }
-  listeners.forEach((fn) => fn())
+  const next = s.connected ? { connected: true, host: s.host } : NONE
+  writeJSON(KEY, next) // storage refused: memory only
+  store.set(next)
 }
 
 let inflight: Promise<void> | null = null
@@ -39,13 +35,11 @@ export function refreshSpeechService(): Promise<void> {
 /** The speech service as this device knows it; asks the server once when `refresh` (the default). */
 export function useSpeechService(refresh = true): SpeechService {
   useEffect(() => { if (refresh) void refreshSpeechService() }, [refresh])
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn) } }, () => current, () => NONE)
+  return store.use()
 }
 
 /** The current answer without subscribing. */
-export function speechService(): SpeechService {
-  return current
-}
+export const speechService = store.get
 
 /** Whether this browser can record a phrase for the server's service. */
 export function canRecord(win: unknown = globalThis): boolean {

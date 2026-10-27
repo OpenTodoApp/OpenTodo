@@ -7,31 +7,26 @@
 // user's word, instead of a broken screen.
 import { useSyncExternalStore } from 'react'
 import { databaseOutdated, onDatabaseOutdated } from './db'
-import { resettable } from './moduleState'
+import { createStore } from './store'
+import { readString, writeString } from './deviceStorage'
 
 /** Why this tab should reload: a newer release is installed, or it took over the database. */
 export type UpdateReason = 'release' | 'database'
 
-let reason: UpdateReason | null = null
-const listeners = new Set<() => void>()
+const reason = createStore<UpdateReason | null>('appUpdate', null)
 
 function set(next: UpdateReason): void {
   // The database reason wins: this tab can no longer save anything.
-  if (reason === 'database') return
-  reason = next
-  for (const fn of listeners) fn()
+  if (reason.get() !== 'database') reason.set(next)
 }
 
 /** The current reason to reload, or null while this tab is current. */
 export function updateReason(): UpdateReason | null {
-  return reason ?? (databaseOutdated() ? 'database' : null)
+  return reason.get() ?? (databaseOutdated() ? 'database' : null)
 }
 
 export function useUpdateReason(): UpdateReason | null {
-  return useSyncExternalStore((fn) => {
-    listeners.add(fn)
-    return () => listeners.delete(fn)
-  }, updateReason, () => null)
+  return useSyncExternalStore(reason.subscribe, updateReason, () => null)
 }
 
 /** A chunk failed to load this long after the last automatic reload: ask instead of looping. */
@@ -39,19 +34,11 @@ const RELOAD_GUARD_MS = 10_000
 const RELOAD_KEY = 'opentodo.chunkReloadAt'
 
 function readReloadedAt(): number {
-  try {
-    return Number(sessionStorage.getItem(RELOAD_KEY) ?? 0) || 0
-  } catch {
-    return 0
-  }
+  return Number(readString(RELOAD_KEY, 'session') ?? 0) || 0
 }
 
 function markReload(now: number): void {
-  try {
-    sessionStorage.setItem(RELOAD_KEY, String(now))
-  } catch {
-    // Storage unavailable: the guard below still holds within this page.
-  }
+  writeString(RELOAD_KEY, String(now), 'session') // storage unavailable: the guard below still holds within this page
 }
 
 interface UpdateTarget {
@@ -99,6 +86,5 @@ export function logUnhandledRejections(win: Pick<Window, 'addEventListener'> = w
 
 /** Test hook. */
 export function resetAppUpdate(): void {
-  reason = null
+  reason.set(null)
 }
-resettable('appUpdate', resetAppUpdate)

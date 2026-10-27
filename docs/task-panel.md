@@ -23,7 +23,7 @@ The **⋯** menu holds **Copy link**, **Attach**, **Delete** and the less freque
 
 ## The facts
 
-Beside the notes (under them on a narrow screen) are the task's facts, in the words the list uses:
+Beside the notes (above them on a narrow screen) are the task's facts, in the words the list uses:
 
 - **Schedule**: **Do** (the date and time, and evening), **Start**, **Deadline**, **Reminder** and **Repeat**.
 - **Details**: **Priority**, **Estimate**, **Assignee**, **Blocked by**, **Blocks** (when something waits for this task) and **Location**.
@@ -40,7 +40,7 @@ If you are a viewer of a shared project, the lines read as text and can't be cha
 
 ## Open tasks beside the list
 
-To keep tasks beside the list, choose **In a side panel** under **Settings → Appearance → Task details**. From 1024 px wide every list (Inbox, Today, projects, labels, views and the rest) has a panel with the task's notes, facts, subtasks, attachments and comments:
+To keep tasks beside the list, choose **In a side panel** under **Settings → Appearance → Task details**. From 1024 px wide every list (Inbox, Today, projects, labels, views and the rest) has a panel with the task's facts, subtasks and attachments, then its notes in full, then the comments:
 
 - A click on a task, or moving to it with <kbd>j</kbd> / <kbd>k</kbd>, shows it there; <kbd>Enter</kbd> on the task shown opens its page.
 - The panel never closes by itself. Only its **×**, or <kbd>Esc</kbd> inside it, closes it, and it stays closed until you click a task or press <kbd>Enter</kbd> on one.

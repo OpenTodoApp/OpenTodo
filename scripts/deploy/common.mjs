@@ -42,6 +42,21 @@ export function latestRelease(changelog) {
   return { major: m[1], minor: m[2], patch: m[3] }
 }
 
+/** The newest released version in CHANGELOG.md as x.y.z: what the tests expect the pinned templates to name. */
+export function releaseVersion(changelog) {
+  const r = latestRelease(changelog)
+  return `${r.major}.${r.minor}.${r.patch}`
+}
+
+/** A release after `version` (its next minor), for tests that make the pinned templates stale. */
+export function laterRelease(version) {
+  const [major, minor] = version.split('.').map(Number)
+  return `${major}.${minor + 1}.1`
+}
+
+/** `s` with every regular expression metacharacter escaped. */
+export const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+
 /** Every OPENTODO_* name written as a string literal in internal/config (tests excluded). */
 export function configVariables(root = ROOT) {
   const dir = join(root, 'internal/config')

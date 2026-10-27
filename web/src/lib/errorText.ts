@@ -25,6 +25,12 @@ export function errorText(err: unknown, opts: ErrorTextOptions = {}): string {
   return err.message.charAt(0).toUpperCase() + err.message.slice(1)
 }
 
+/** A server answer naming an input field: the field and its message without the field's prefix. */
+export function fieldErrorOf(err: unknown): { field: string; message: string } | null {
+  if (!(err instanceof ApiError) || !err.field) return null
+  return { field: err.field, message: err.serverMessage.replace(new RegExp(`^${err.field}: `), '') }
+}
+
 /** The message of any thrown value, for errors raised in the browser (not by the server). */
 export function messageOf(err: unknown): string {
   return err instanceof Error ? err.message : String(err)

@@ -12,10 +12,11 @@ import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
 import { qrMatrix, qrPath } from '../lib/qr'
 import type { MfaPolicy, MfaStatus, TrustedDevice, User } from '../lib/types'
-import { relativeTime } from './SecurityPanel'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap, currentLanguage } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { readJSON, writeString } from '../lib/deviceStorage'
+import { relativeTime } from '../lib/dates'
 
 // Settings → Two-factor authentication and the enrolment wizard (OpenSpec
 // `mfa-totp`). The server is authoritative; the last known status is cached
@@ -26,21 +27,12 @@ import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 const STATUS_KEY = 'opentodo.mfa'
 
 export function readCachedMfa(): MfaStatus | null {
-  try {
-    const raw = localStorage.getItem(STATUS_KEY)
-    return raw ? (JSON.parse(raw) as MfaStatus) : null
-  } catch {
-    return null
-  }
+  return readJSON<MfaStatus | null>(STATUS_KEY, null)
 }
 
 export function cacheMfa(st: MfaStatus | null) {
-  try {
-    if (st) localStorage.setItem(STATUS_KEY, JSON.stringify(st))
-    else localStorage.removeItem(STATUS_KEY)
-  } catch {
-    /* storage unavailable: the status is fetched again next time */
-  }
+  // Storage unavailable: the status is fetched again next time.
+  writeString(STATUS_KEY, st ? JSON.stringify(st) : null)
 }
 
 /** Splits a base32 secret into groups of four for typing into an app. */

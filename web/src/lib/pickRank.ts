@@ -1,5 +1,6 @@
 // Most-probable ordering for pickers (OpenSpec change ui-primitives, design D7):
 // per-device recency and frequency, never synced, exported or sent anywhere.
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 
 /** Half-life of a pick's weight. */
@@ -39,4 +40,9 @@ export function rankBy<T>(items: readonly T[], key: (t: T) => string, scores: Ma
     .map((item, i) => ({ item, i, s: scores.get(key(item)) ?? 0 }))
     .sort((a, b) => b.s - a.s || a.i - b.i)
     .map((x) => x.item)
+}
+
+/** Pick scores for one picker, live (none until read). */
+export function usePickScores(kind: Parameters<typeof pickScores>[0]): Map<string, number> {
+  return useLiveQuery(() => pickScores(kind), [kind], new Map<string, number>())
 }

@@ -25,26 +25,18 @@ import { hasTimeColumn } from '../../lib/rowTime'
 import type { Route } from '../router'
 import { useFieldDefs } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
+import { readJSON, writeJSON } from '../../lib/deviceStorage'
 
 export type ListRoute = Extract<Route, ListScope>
 
 const COLLAPSE_KEY = 'opentodo.collapsed'
 
 function loadCollapsed(): Set<string> {
-  try {
-    const raw = localStorage.getItem(COLLAPSE_KEY)
-    return new Set(raw ? (JSON.parse(raw) as string[]) : [])
-  } catch {
-    return new Set()
-  }
+  return new Set(readJSON<string[]>(COLLAPSE_KEY, [], (v) => (Array.isArray(v) ? v as string[] : null)))
 }
 
 function saveCollapsed(set: Set<string>) {
-  try {
-    localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...set]))
-  } catch {
-    // Per-device convenience only; losing it is harmless.
-  }
+  writeJSON(COLLAPSE_KEY, [...set]) // per-device convenience only; losing it is harmless
 }
 
 /** Views that offer the duration filter, each with its own per-device setting. */

@@ -3,20 +3,20 @@
 // duration, note and, in a shared project, who tracked them; the total; Start or
 // Stop; adding past work by duration or by start and end; editing and deleting
 // one's own entries. Every write goes through lib/timeEntries (ops, offline-safe).
-import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, useId, useMemo, useState } from 'react'
 import { PersonAvatar } from '../PersonAvatar'
 import { Button, Field, Icon, Input, Menu, MenuItem } from '../../ui'
 import { formatMinutes, parseDuration } from '../../lib/duration'
 import { formatDate, formatTime, logicalToday } from '../../lib/dates'
 import { keysOf } from '../../lib/shortcuts'
-import { membershipMap, memberName } from '../../lib/sharing'
+import { memberName } from '../../lib/sharing'
 import { isRunning, minutesOf, entryDay } from '../../lib/time'
 import { deleteTimeEntry, logTime, TimeRangeError, toggleTracking, updateTimeEntry, useMe, useMinuteNow, useRunningEntry, useTaskEntries } from '../../lib/timeEntries'
-import type { Membership, Task, TimeEntry } from '../../lib/types'
+import type { Task, TimeEntry } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { useMembershipMap } from '../../lib/localData'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 /** The local wall time HH:MM of an instant. */
@@ -170,7 +170,7 @@ export function TimeTab({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const entries = useTaskEntries(task.id)
   const me = useMe()
   const running = useRunningEntry()
-  const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
+  const memberships = useMembershipMap()
   const shared = !!task.project_id && memberships.has(task.project_id)
   const now = useMinuteNow(entries.some(isRunning))
   const total = useMemo(() => entries.reduce((n, e) => n + minutesOf(e, now), 0), [entries, now])

@@ -20,7 +20,7 @@ export interface RowActions {
   expand: (id: string) => void
 }
 
-type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
+type TaskListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
   labelMap: Map<string, Label>
   /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
@@ -38,7 +38,7 @@ type ListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTic
  * list's maps, or the stable `handlers`, so moving the cursor re-renders only the
  * rows whose `selected` changed.
  */
-export const ListRow = memo(function ListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, handlers: actions, ...rest }: ListRowProps) {
+export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, handlers: actions, ...rest }: TaskListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
   return (
     <TaskRow

@@ -5,7 +5,7 @@
 // axis, the bars and the date edits, each one batch of ordinary field ops.
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon, ReadAs } from '../ui'
-import { addDaysISO, daysBetweenISO, formatDate, viewedTask, dateLocaleOf } from '../lib/dates'
+import { addDaysISO, daysBetweenISO, formatDate, viewedTask, formatDateRange, monthName } from '../lib/dates'
 import { isBlocked } from '../lib/dependencies'
 import { getTask } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
@@ -16,6 +16,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
+import { readString, writeString } from '../lib/deviceStorage'
 
 // The list's comfortable row (precision-boards-timeline D5); bars are 24 px inside it.
 const ROW_PX = 36
@@ -38,7 +39,7 @@ interface Line {
 }
 
 function readZoom(): Zoom {
-  try { return localStorage.getItem(ZOOM_KEY) === 'week' ? 'week' : 'day' } catch { return 'day' }
+  return readString(ZOOM_KEY) === 'week' ? 'week' : 'day'
 }
 
 /** The deadline step of Shift+Left / Shift+Right: from the deadline, else from the due day. */
@@ -102,7 +103,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
 
   const chooseZoom = (z: Zoom) => {
     setZoom(z)
-    try { localStorage.setItem(ZOOM_KEY, z) } catch { /* per-device convenience */ }
+    writeString(ZOOM_KEY, z) // per-device convenience
   }
   // Start with today in view.
   useLayoutEffect(() => {
@@ -215,12 +216,9 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     </div>
   )
 
-  const monthLabel = (iso: string) => new Intl.DateTimeFormat(dateLocaleOf(), { month: 'short' }).format(new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, 1))
+  const monthLabel = (iso: string) => monthName(iso, 'short')
   // A week column reads as its range, "20–26 Oct" (D9), in the user's locale.
-  const weekLabel = (iso: string) => {
-    const d = (v: string) => new Date(Number(v.slice(0, 4)), Number(v.slice(5, 7)) - 1, Number(v.slice(8)))
-    return new Intl.DateTimeFormat(dateLocaleOf(), { month: 'short', day: 'numeric' }).formatRange(d(iso), d(addDaysISO(iso, 6)))
-  }
+  const weekLabel = (iso: string) => formatDateRange(iso, addDaysISO(iso, 6), { month: 'short', day: 'numeric' })
   const headerRows = 1
   return (
     <div data-timeline className="min-w-0">

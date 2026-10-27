@@ -1,6 +1,7 @@
 // Per-device quick-add preferences. Stored only in this browser's localStorage and
 // never synced (natural-language-capture: "Per-device parsing toggle").
 import { activeLanguages, VOCABULARIES, type DayMonthOrder } from './vocab'
+import { readJSON, writeJSON } from '../deviceStorage'
 
 export interface QuickAddSettings {
   /** Parse natural language in quick add. */
@@ -15,30 +16,21 @@ const KEY = 'opentodo.quickadd'
 const EVENT = 'opentodo:quickadd-settings'
 
 export function loadQuickAddSettings(): QuickAddSettings {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return { ...DEFAULT_QUICK_ADD_SETTINGS }
-    const v = JSON.parse(raw) as Partial<QuickAddSettings> & { dayMonthOrder?: unknown }
-    const s: QuickAddSettings = {
-      enabled: typeof v.enabled === 'boolean' ? v.enabled : true,
-      languages: Array.isArray(v.languages) ? v.languages.filter((l): l is string => typeof l === 'string' && l in VOCABULARIES) : null,
-    }
-    // The device-level numeric order of earlier versions is ignored and dropped
-    // from the key (settings-refresh D6): numeric dates follow the date format.
-    if ('dayMonthOrder' in v) localStorage.setItem(KEY, JSON.stringify(s))
-    return s
-  } catch {
-    // Private mode or blocked storage: parsing still works with the defaults.
-    return { ...DEFAULT_QUICK_ADD_SETTINGS }
+  // Private mode, blocked storage or an unreadable value: parsing still works with the defaults.
+  const v = readJSON<(Partial<QuickAddSettings> & { dayMonthOrder?: unknown }) | null>(KEY, null, (x) => (x !== null && typeof x === 'object' ? x : null))
+  if (!v) return { ...DEFAULT_QUICK_ADD_SETTINGS }
+  const s: QuickAddSettings = {
+    enabled: typeof v.enabled === 'boolean' ? v.enabled : true,
+    languages: Array.isArray(v.languages) ? v.languages.filter((l): l is string => typeof l === 'string' && l in VOCABULARIES) : null,
   }
+  // The device-level numeric order of earlier versions is ignored and dropped
+  // from the key (settings-refresh D6): numeric dates follow the date format.
+  if ('dayMonthOrder' in v) writeJSON(KEY, s)
+  return s
 }
 
 export function saveQuickAddSettings(s: QuickAddSettings): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(s))
-  } catch {
-    // Per-device convenience only.
-  }
+  writeJSON(KEY, s) // per-device convenience only
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(EVENT))
 }
 

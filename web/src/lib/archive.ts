@@ -3,6 +3,7 @@
 // one-key archive) and a daily pass that archives projects with tasks but no open
 // task for 30 days. Archiving is an ordinary op, so devices converge; two devices
 // archiving at once write the same value. The opt-out is per device (`meta`).
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta, setMeta } from './db'
 import { archiveProject, updateProject } from './ops'
 import { canEditProject, membershipMap, roleOf } from './sharing'
@@ -133,4 +134,9 @@ export function archivedProjects(
         canRestore: canEditProject(roleOf(p.id, memberships)),
       }
     })
+}
+
+/** Whether finished projects are archived automatically, live (on until read). */
+export function useAutoArchive(): boolean {
+  return useLiveQuery(getAutoArchive, [], true)
 }

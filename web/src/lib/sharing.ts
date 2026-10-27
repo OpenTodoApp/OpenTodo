@@ -2,6 +2,7 @@
 // server-owned authorization data: every sync response carries the caller's list,
 // which replaces the local cache, so all devices converge on the server's member
 // list and roles. Everything here reads the cache, so roles render the same offline.
+import { useLiveQuery } from 'dexie-react-hooks'
 import { forgetEntities } from './activity'
 import { db, entityTables, getMeta, setMeta, syncedTables, tableOf } from './db'
 import type { Entity, Membership, Op, ProjectMember, ProjectRole, Rejection, Task } from './types'
@@ -229,4 +230,14 @@ export function describeRejected(n: RejectedNotice): string {
       : ` ${t('(your role in {place} changed)', { place })}`
   const tasks = n.tasks.length ? `: ${n.tasks.slice(0, 5).join(', ')}${n.tasks.length > 5 ? '…' : ''}` : ''
   return `${what}${where}${tasks}`
+}
+
+/** The signed-in account id, live; undefined until read, null before the first sign-in. */
+export function useCurrentUserId(): string | null | undefined {
+  return useLiveQuery(() => currentUserId(), [])
+}
+
+/** The signed-in account id, live; null until read or before the first sign-in. */
+export function useMe(): string | null {
+  return useLiveQuery(() => currentUserId(), [], null)
 }

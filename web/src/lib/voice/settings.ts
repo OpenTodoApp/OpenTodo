@@ -2,6 +2,7 @@
 // in this browser's localStorage, like the quick-add parsing settings: never an op,
 // never synced, so turning dictation on for a phone does not turn it on elsewhere.
 import { VOCABULARIES } from '../nlp/vocab'
+import { readJSON, writeJSON } from '../deviceStorage'
 
 export interface VoiceSettings {
   /** Off by default; switched on only after the privacy statement was confirmed. */
@@ -24,26 +25,19 @@ const KEY = 'opentodo.voice'
 const EVENT = 'opentodo:voice-settings'
 
 export function loadVoiceSettings(): VoiceSettings {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return { ...DEFAULT_VOICE_SETTINGS }
-    const v = JSON.parse(raw) as Partial<VoiceSettings>
+  return readJSON<VoiceSettings>(KEY, { ...DEFAULT_VOICE_SETTINGS }, (raw) => {
+    if (raw === null || typeof raw !== 'object') return null
+    const v = raw as Partial<VoiceSettings>
     return {
       enabled: v.enabled === true,
       lang: typeof v.lang === 'string' && v.lang in VOCABULARIES ? v.lang : null,
       recognizer: v.recognizer === 'server' ? 'server' : 'browser',
     }
-  } catch {
-    return { ...DEFAULT_VOICE_SETTINGS }
-  }
+  })
 }
 
 export function saveVoiceSettings(s: VoiceSettings): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(s))
-  } catch {
-    // Per-device convenience only.
-  }
+  writeJSON(KEY, s) // per-device convenience only
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(EVENT))
 }
 

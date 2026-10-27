@@ -2,7 +2,6 @@
 // until both sides are quiet. Runs on mutation, reconnect, tab focus, a timer and
 // on live wake-ups from the server's event stream (which carries no data; it only
 // tells us to run the exchange now).
-import { useSyncExternalStore } from 'react'
 import { forgetActivity } from './activity'
 import { api, ApiError } from './api'
 import { isTransientNetworkError } from './http'
@@ -30,6 +29,7 @@ import { uuid } from './ids'
 import { onTestTeardown } from './testTeardown'
 import { resettable } from './moduleState'
 import { messageOf } from './errorText'
+import { createStore } from './store'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -53,8 +53,8 @@ interface Snapshot {
   rejected: RejectedNotice | null
 }
 
-let snapshot: Snapshot = { state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null }
-const listeners = new Set<() => void>()
+const IDLE: Snapshot = { state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null }
+const status = createStore<Snapshot>('syncStatus', IDLE)
 let running = false
 let again = false
 let debounce: ReturnType<typeof setTimeout> | null = null
@@ -87,27 +87,15 @@ let openTimer: ReturnType<typeof setTimeout> | null = null
 let attempts = 0
 
 function publish(patch: Partial<Snapshot>) {
-  snapshot = { ...snapshot, ...patch }
-  for (const fn of listeners) fn()
+  status.update((cur) => ({ ...cur, ...patch }))
   // The tabs that do not sync show the leader's status (one tab syncs).
-  if (leader && channel) post({ type: 'status', snapshot })
+  if (leader && channel) post({ type: 'status', snapshot: status.get() })
 }
 
-export function useSyncStatus(): Snapshot {
-  return useSyncExternalStore(
-    (fn) => {
-      listeners.add(fn)
-      return () => listeners.delete(fn)
-    },
-    () => snapshot,
-    () => snapshot,
-  )
-}
+export const useSyncStatus = status.use
 
 /** The current sync status outside React (tests, one-off reads). */
-export function syncSnapshot(): Snapshot {
-  return snapshot
-}
+export const syncSnapshot = status.get
 
 /** Hide the "changes were not accepted" notice. */
 export function dismissRejected(): void {
@@ -115,7 +103,7 @@ export function dismissRejected(): void {
 }
 
 function addRejected(n: RejectedNotice): void {
-  const prev = snapshot.rejected
+  const prev = status.get().rejected
   const merge = (a: string[], b: string[]) => [...new Set([...a, ...b])]
   publish({
     rejected: prev
@@ -487,11 +475,11 @@ function scheduleRetry(): void {
 function armTimer(): void {
   if (!leader) return
   if (timer) clearInterval(timer)
-  timer = setInterval(() => void syncNow(), snapshot.live ? LIVE_INTERVAL_MS : INTERVAL_MS)
+  timer = setInterval(() => void syncNow(), status.get().live ? LIVE_INTERVAL_MS : INTERVAL_MS)
 }
 
 function setLive(live: boolean): void {
-  if (snapshot.live === live) return
+  if (status.get().live === live) return
   publish({ live })
   if (started) armTimer()
 }
@@ -616,7 +604,7 @@ export function startSync(): void {
   const offMutation = onLocalMutation(() => {
     // Reflect the pending edit immediately so the indicator never claims "Synced"
     // while an op is still waiting in the debounce window.
-    if (snapshot.state === 'idle') publish({ state: 'syncing', pending: snapshot.pending + 1 })
+    if (status.get().state === 'idle') publish({ state: 'syncing', pending: status.get().pending + 1 })
     requestSync()
   })
   const offs: (() => void)[] = [offMutation, () => onUploadRequest(null)]
@@ -714,7 +702,6 @@ resettable('sync', () => {
   needNotifications = true
   failures = 0
   attempts = 0
-  snapshot = { state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null }
 })
 
 /**
@@ -786,14 +773,13 @@ function onMessage(ev: MessageEvent<Message>): void {
       }
       // The key may have been entered in the asking tab: read it again from the
       // shared database before syncing for it (end-to-end encryption).
-      if (snapshot.state === 'locked') void loadEncryptionState().then(run, run)
+      if (status.get().state === 'locked') void loadEncryptionState().then(run, run)
       else run()
     }
     return
   }
   if (msg.type === 'status') {
-    snapshot = msg.snapshot
-    for (const fn of listeners) fn()
+    status.set(msg.snapshot)
   } else if (msg.type === 'done') {
     waiting.get(msg.id)?.()
   }

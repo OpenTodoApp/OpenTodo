@@ -11,6 +11,7 @@
 //
 // Views read these through Dexie live queries, so every sync that writes ops
 // (including one triggered by the server's wake-up channel) refreshes them.
+import { useLiveQuery } from 'dexie-react-hooks'
 import { api } from './api'
 import { decryptActivityPage } from './e2ee'
 import { LOCAL_RETENTION, newestFirst, projectActivity } from './activity'
@@ -216,4 +217,21 @@ export function markEventsSeen(events: ActivityEvent[]): void {
   const newest = new Map<string, number>()
   for (const e of events) if (e.projectId) newest.set(e.projectId, Math.max(newest.get(e.projectId) ?? 0, e.ts))
   for (const [id, ts] of newest) markSeen(id, ts)
+}
+
+const NO_UNREAD: UnreadCounts = { byProject: new Map(), total: 0 }
+
+/** Unread feed events per project and in all, live (none until read). */
+export function useUnreadCounts(): UnreadCounts {
+  return useLiveQuery(() => unreadCounts(), [], NO_UNREAD)
+}
+
+/** The ids of the shared projects, live; null until read. */
+export function useSharedProjectIds(): string[] | null {
+  return useLiveQuery(() => sharedProjectIds(), [], null as string[] | null)
+}
+
+/** The feed's events from local data, live; null until read. */
+export function useFeedEvents() {
+  return useLiveQuery(() => feedEvents(), [], null as Awaited<ReturnType<typeof feedEvents>> | null)
 }

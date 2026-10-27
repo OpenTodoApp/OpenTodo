@@ -3,7 +3,6 @@
 // behaviour"): threads oldest first, chat style, with the composer after the
 // newest one. Built from local storage, so it reads and writes offline. Viewers
 // may comment, so it ignores the panel's read-only mode.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { forwardRef, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { useAttachmentLimits } from '../../lib/attachments'
@@ -11,10 +10,10 @@ import {
   canDeleteComment, canEditComment, createComment, deleteComment, editComment, type MentionTarget, type ReactionName, type Thread, threadOrder,
   threadVisible, toggleReaction,
 } from '../../lib/comments'
-import { useCommentAttachments, useCommentRows } from '../../lib/localData'
+import { useCommentAttachments, useCommentRows, useMembershipMap } from '../../lib/localData'
 import { useDemo } from '../../lib/demo'
-import { currentUserId, membershipMap, memberName, roleOf } from '../../lib/sharing'
-import type { Attachment, Comment, Membership, ProjectRole, Task } from '../../lib/types'
+import { memberName, roleOf, useMe } from '../../lib/sharing'
+import type { Attachment, Comment, ProjectRole, Task } from '../../lib/types'
 import { mentionChipsOf, useMentionTargets } from '../useMentionTargets'
 import { PersonAvatar } from '../PersonAvatar'
 import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
@@ -274,9 +273,9 @@ export interface CommentsTabProps {
 
 /** Container: reads comments, members and the signed-in user from local storage. */
 export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost, expand }, composerRef) {
-  const storedMe = useLiveQuery(() => currentUserId(), [], null)
+  const storedMe = useMe()
   const me = userId ?? storedMe
-  const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
+  const memberships = useMembershipMap()
   const comments = useCommentRows(task.id)
   // Comment attachments (OpenSpec attachments): a deleted comment's are hidden with it.
   const attachments = useCommentAttachments(task.id)

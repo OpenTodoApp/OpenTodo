@@ -2,14 +2,13 @@
 // menu for the ticked tasks (or the cursor task when nothing is ticked), built on
 // the shared ActionMenu so its items, pickers, shortcuts and disabled reasons work
 // like every other object menu. Moves and assignments go through the review (D6).
-import { useLiveQuery } from 'dexie-react-hooks'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
 import { useMemo, useState, type RefObject } from 'react'
-import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan } from '../../lib/bulk'
-import { useAllLabels, useLiveSections, useProjects } from '../../lib/localData'
+import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
+import { useAllLabels, useLiveSections, useProjects, useMembershipMap } from '../../lib/localData'
 import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
-import { membershipMap, roleOf } from '../../lib/sharing'
+import { roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
 import { act } from '../actionError'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
@@ -120,12 +119,12 @@ function useBulkData(ids: readonly string[]): Data {
   const key = ids.join(',')
   // Tagged with the selection it was read for: until the read for this selection lands,
   // the menu has no tasks (and marks no common label) rather than an earlier selection's.
-  const read = useLiveQuery(() => readTicked(ids).then((r) => ({ key, tasks: r.tasks })), [key])
+  const read = useTickedTasks(ids, key)
   const tasks = useMemo(() => (read?.key === key ? read.tasks : []), [read, key])
   const labels = useAllLabels()
   const projects = useProjects()
   const sections = useLiveSections()
-  const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
+  const memberships = useMembershipMap()
   const runningTask = useRunningEntry()?.task_id ?? null
   return { tasks, labels, projects, sections, memberships, runningTask }
 }

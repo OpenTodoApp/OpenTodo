@@ -2,6 +2,7 @@
 // mutate()/mutateMany(); a board has no state of its own, it is a rendering of
 // sections and tasks. View mode and collapsed sections are per-device preferences
 // in the local `meta` table and are never synced (design D5).
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta, setMeta } from './db'
 import { mutate, mutateMany, type Change } from './ops'
 import { byPosition, planStep, positionAtEnd } from './ordering'
@@ -221,3 +222,8 @@ export async function saveShowCompleted(projectId: string, on: boolean): Promise
 
 /** Meta keys the UI subscribes to with useLiveQuery. */
 export const prefKeys = { mode: modeKey, collapsed: collapsedKey, columns: columnsKey, completed: completedKey }
+
+/** A project's view mode, live; undefined without a project or until read. */
+export function useViewMode(projectId: string | null | undefined) {
+  return useLiveQuery(() => (projectId ? loadViewMode(projectId) : undefined), [projectId])
+}

@@ -15,6 +15,7 @@ import { Button } from '../ui/Button'
 import { Field, Input, Textarea } from '../ui/Field'
 import { Icon } from '../ui/Icon'
 import { Notice } from '../ui/patterns/Notice'
+import { readString, writeString } from '../lib/deviceStorage'
 
 const MapView = lazy(() => import('../app/locations/MapView'))
 
@@ -36,11 +37,11 @@ function nameKey(secret: string): string {
 }
 
 function storedName(secret: string): string {
-  try { return localStorage.getItem(nameKey(secret)) ?? '' } catch { return '' }
+  return readString(nameKey(secret)) ?? ''
 }
 
 function storeName(secret: string, name: string): void {
-  try { localStorage.setItem(nameKey(secret), name) } catch { /* storage refused: asked again next time */ }
+  writeString(nameKey(secret), name) // storage refused: asked again next time
 }
 
 export function TaskPageScreen({ secret, fragment }: { secret: string; fragment: string }) {

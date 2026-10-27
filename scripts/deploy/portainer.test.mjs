@@ -1,11 +1,13 @@
 // node --test scripts/deploy/portainer.test.mjs  (OpenSpec change platform-catalogs)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText } from './common.mjs'
+import { configVariables, loadFacts, readText, releaseVersion } from './common.mjs'
 import { check, checkRow, checkTemplate, ROW, TEMPLATE } from './portainer.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
 const text = readText(TEMPLATE)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
 /** Applies fn to a parsed copy of the single template and checks the result. */
@@ -30,7 +32,7 @@ test('portainer: list format', () => {
 
 test('portainer: image policy, port and data path', () => {
   has(edit((t) => { t.image = 'ghcr.io/opentodoapp/opentodo:latest' }), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
-  has(edit((t) => { t.image = 'ghcr.io/opentodoapp/opentodo:0.14.2' }), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(edit((t) => { t.image = `ghcr.io/opentodoapp/opentodo:${V}` }), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(edit((t) => { t.ports = ['3000:3000/tcp'] }), /port must be 8080/)
   has(edit((t) => { t.ports = ['8080:8080'] }), /host:container\/tcp/)
   has(edit((t) => { t.ports = ['127.0.0.1:8080:8080/tcp'] }), /without a host IP/)
@@ -62,7 +64,7 @@ test('portainer: description, categories, logo, note', () => {
 test('portainer: the sources.csv row', () => {
   const row = readText(ROW)
   assert.deepEqual(checkRow(row, ctx), [])
-  has(checkRow(row.replace('/main/', '/v0.14.2/'), ctx), /must be exactly/)
+  has(checkRow(row.replace('/main/', `/v${V}/`), ctx), /must be exactly/)
   has(checkRow(row.replace(', app', ', collection'), ctx), /must be exactly/)
   has(checkRow(null, ctx), /is missing/)
 })

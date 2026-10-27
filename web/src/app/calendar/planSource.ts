@@ -8,21 +8,18 @@ import { inboxTasks } from '../../lib/inbox'
 import { compareDueThenPriority } from '../../lib/ordering'
 import type { Label, Project, Task, View } from '../../lib/types'
 import { isDashboard, runView, type ViewContext } from '../../lib/views'
+import { readString, writeString } from '../../lib/deviceStorage'
 
 export const TRAY_KEY = 'opentodo.calendar.tray'
 /** The list shows at most this many tasks. */
 export const PLAN_LIST_LIMIT = 200
 
 export function readTray(): string {
-  try {
-    return localStorage.getItem(TRAY_KEY) ?? 'inbox'
-  } catch {
-    return 'inbox'
-  }
+  return readString(TRAY_KEY) ?? 'inbox'
 }
 
 export function saveTray(source: string): void {
-  try { localStorage.setItem(TRAY_KEY, source) } catch { /* per-device convenience only */ }
+  writeString(TRAY_KEY, source) // per-device convenience only
 }
 
 export type PlanSourceKind = 'list' | 'project' | 'label' | 'view'

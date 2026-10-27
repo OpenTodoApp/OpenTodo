@@ -18,7 +18,7 @@ import { SectionHeader, SectionQuickAdd } from '../Sections'
 import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGhosts, type Departure } from '../motion'
 import { navigate } from '../router'
 import type { RowMotion } from '../TaskRow'
-import { ListRow, SubtaskInput, type RowActions } from './ListRow'
+import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
 import type { ListRoute } from './useListModel'
 
 export interface RowContext {
@@ -119,7 +119,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
     const ghost = motion === 'leave'
     return (
       <Fragment key={r.task.id}>
-        <ListRow
+        <TaskListRow
           motion={motion}
           task={r.task}
           depth={r.depth}

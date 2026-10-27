@@ -2,16 +2,12 @@
 // Duplicate… and Save as template… from the project menu, From a template… from
 // the sidebar, which opens on the template library (template-library). Everything happens on the device: a copy is one batch of ops, a
 // template file is built from local data and downloaded.
-import { useLiveQuery } from 'dexie-react-hooks'
-import { lazy, Suspense, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { logicalToday } from '../lib/dates'
 import { projectsAndLabels, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { mutateMany } from '../lib/ops'
-import {
-  countTasks, downloadJSON, duplicateProject, fileFromTree, planTree, summarise, TemplateFileError, TemplateTooLargeError, templateFileName,
-  treeFromFile, treeFromProject, type TemplateTree,
-} from '../lib/templates'
+import { countTasks, downloadJSON, duplicateProject, fileFromTree, planTree, summarise, TemplateFileError, TemplateTooLargeError, templateFileName, treeFromFile, type TemplateTree, useProjectTree } from '../lib/templates'
 import type { Project } from '../lib/types'
 import { Button, Field, IconButton, Input, Notice, Dialog } from '../ui'
 import { DateField } from './datetime/DateField'
@@ -24,20 +20,17 @@ import { ProjectPickerField } from './ProjectPickerField'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
+import { createStore } from '../lib/store'
 
 // "From a template…" can be opened from elsewhere (the Import screen's hint).
-let templateRequested = 0
-const listeners = new Set<() => void>()
+const templateRequested = createStore('templateRequests', 0)
 /** Ask the sidebar to open the From a template dialog. */
 export function requestTemplateDialog(): void {
-  templateRequested++
-  listeners.forEach((fn) => fn())
+  templateRequested.update((n) => n + 1)
 }
 /** How many times the dialog was asked for (tests). */
-export const templateRequests = (): number => templateRequested
-export function useTemplateRequests(): number {
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => listeners.delete(fn) }, () => templateRequested)
-}
+export const templateRequests = templateRequested.get
+export const useTemplateRequests = templateRequested.use
 
 function Summary({ tree }: { tree: TemplateTree }) {
   const s = summarise(tree)
@@ -55,7 +48,7 @@ function Summary({ tree }: { tree: TemplateTree }) {
 /** Duplicate… : a personal copy, optionally under a parent and with dates moved to a start day. */
 export function DuplicateProjectDialog({ project, shared, onClose }: { project: Project; shared: boolean; onClose: () => void }) {
   const projects = useProjects()
-  const tree = useLiveQuery(() => treeFromProject(project.id), [project.id])
+  const tree = useProjectTree(project.id)
   const [name, setName] = useState(`${project.name} copy`)
   const [parentId, setParentId] = useState<string | null>(project.parent_id ?? null)
   const [startDay, setStartDay] = useState<string | null>(null)
@@ -99,7 +92,7 @@ export function DuplicateProjectDialog({ project, shared, onClose }: { project: 
 
 /** Save as template… : a file in the own export format, built on this device. */
 export function SaveTemplateDialog({ project, onClose }: { project: Project; onClose: () => void }) {
-  const tree = useLiveQuery(() => treeFromProject(project.id), [project.id])
+  const tree = useProjectTree(project.id)
   const enc = useEncryption()
   const save = () => {
     if (!tree) return

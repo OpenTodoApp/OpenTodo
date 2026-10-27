@@ -8,7 +8,6 @@
 // nothing leaves the device for an encrypted account except ciphertext for the
 // content fields below and wrapped key material.
 import { OP_CONTENT_FIELDS } from '../generated/opSchema'
-import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import {
   checkRecordParams, createKeyRecord, decryptValue, KeyRecordParamsError, isEnvelope, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
@@ -18,6 +17,7 @@ import { db, getMeta, setMeta } from './db'
 import type { Entity, EncryptionStatus } from './types'
 import { t, msg } from './i18n'
 import { biometricForget, biometricRead, biometricStore, has as shellHas } from './shell'
+import { createStore } from './store'
 
 /** The client's ciphertext-awareness level; the server's minClientVersion is compared with it (design D9). */
 export const CLIENT_VERSION = 1
@@ -126,27 +126,18 @@ export interface EncryptionSnapshot {
   recordMissing: boolean
 }
 
-let snap: EncryptionSnapshot = { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false, recordMissing: false }
-const listeners = new Set<() => void>()
+const snap = createStore<EncryptionSnapshot>('encryption', { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false, recordMissing: false })
 
 export function publishEncryption(patch: Partial<EncryptionSnapshot>): void {
-  snap = { ...snap, ...patch }
-  for (const fn of listeners) fn()
+  snap.update((cur) => ({ ...cur, ...patch }))
 }
 
-export function encryptionSnapshot(): EncryptionSnapshot {
-  return snap
-}
+export const encryptionSnapshot = snap.get
 
 /** Call `fn` on every change of the snapshot; returns the unsubscribe. */
-export function onEncryptionChange(fn: () => void): () => void {
-  listeners.add(fn)
-  return () => { listeners.delete(fn) }
-}
+export const onEncryptionChange = snap.subscribe
 
-export function useEncryption(): EncryptionSnapshot {
-  return useSyncExternalStore(onEncryptionChange, () => snap, () => snap)
-}
+export const useEncryption = snap.use
 
 // ---- key storage ----
 
@@ -218,7 +209,7 @@ export async function loadEncryptionState(): Promise<EncryptionSnapshot> {
   memKeys.delete(db.name)
   const [enabled, key, record, missing] = await Promise.all([isEnabled(), currentKey(), cachedRecord(), isRecordMissing()])
   publishEncryption({ enabled, unlocked: !!key, keyVersion: record?.version ?? 0, recordMissing: enabled && missing })
-  return snap
+  return snap.get()
 }
 
 /**
@@ -494,7 +485,7 @@ export function forgetMemoryKeys(): void {
 
 /** A content value the UI should mark: plaintext on the server while the account encrypts. */
 export function notYetEncrypted(row: { _e2ee?: { wire?: Record<string, string> } } & Record<string, unknown>, entity: Entity, personal = true): boolean {
-  if (!snap.enabled || !personal) return false
+  if (!snap.get().enabled || !personal) return false
   const values = entity === 'task' ? Object.entries((row.fields ?? {}) as Record<string, unknown>).map(([id, v]) => [`fields.${id}`, v] as const) : []
   for (const [f, v] of [...(CONTENT_FIELDS[entity] ?? []).map((f) => [f, row[f]] as const), ...values]) {
     const text = contentToString(entity, f, v)
