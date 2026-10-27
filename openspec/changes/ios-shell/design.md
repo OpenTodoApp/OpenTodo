@@ -71,6 +71,14 @@ Rejected: APNs (needs a server sender, a new credential per instance and a store
 
 **D12. Reminder actions are foreground actions.** A local notification cannot touch the web app's data, so `Snooze 10 min` and `Dismiss` are registered with `.foreground` options: iOS opens the shell, `Notifications` maps the action to `/?reminder=<id>&action=snooze|dismiss`, and the web app does what it already does for the Android shell. The alternative — a hidden `WKWebView` run from the notification — needs no user action but gives the user no way past a server that is briefly unreachable, and the app is being opened anyway. A tap opens `/?task=<id>`; notifications are shown while the app is in front, which the default `UNNotificationPresentationOptions` would swallow.
 
+**D13. Everything that reaches the shell from outside is data.** Deep links (any app or page can open `opentodo://`), the share index in the shared App Group container, the widget publication and notification payloads are parsed by small pure functions with unit tests, and nothing from them is trusted to be well-formed:
+- the share index may only name a file directly in `share/` (`ShareInbox.isInboxPath`), so a path such as `share/../…` cannot hand a file of the app's own storage to the page;
+- stored share file names lose separators and control characters and are kept short (`ShareInbox.storedName`);
+- a new share clears one that was never handed over;
+- widget links percent-encode the task id and never force-unwrap (`WidgetPublication.taskLink`);
+- notification responses map to a route (`Notifications.route`), where the test notification and empty ids only bring the app forward;
+- schedule hand-overs from the screen and a background run are applied one after the other (`Reminders.replace`).
+
 ## Data model impact
 
 None. No op, field, route or migration. The shell stores: the server address (`UserDefaults`), the last handed-over reminder schedule and widget publication (`App Group`), the biometric key (Keychain), and the web app's own origin storage (WebKit, as in a browser).

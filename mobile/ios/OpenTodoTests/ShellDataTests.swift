@@ -1,3 +1,4 @@
+import UserNotifications
 import XCTest
 @testable import OpenTodo
 
@@ -250,5 +251,109 @@ final class AppModelTests: XCTestCase {
     func testTheChangeServerShortcutDoesNotResetWithoutConfirmation() {
         let model = AppModel()
         XCTAssertFalse(model.changeServerRequested)
+    }
+}
+
+/// The second review's fixes (ios-shell): untrusted input from the shared container, the
+/// server's widget data and notifications, each pinned by a test.
+final class ShareInboxSafetyTests: XCTestCase {
+    func testOnlyAFileDirectlyInTheInboxIsRead() {
+        XCTAssertTrue(ShareInbox.isInboxPath("share/0A1B-photo.jpg"))
+        for path in ["share/../Library/Cookies/Cookies.binarycookies", "../share/x", "share/a/b", "share/", "share/..",
+                     "share/.", "/share/x", "Library/x", "share\\..\\x", "share/a\\b", ""] {
+            XCTAssertFalse(ShareInbox.isInboxPath(path), path)
+        }
+    }
+
+    func testAPathOutsideTheInboxIsNotHandedOver() throws {
+        // A real file next to the inbox: the index points at it by climbing out.
+        let outside = Store.url("not-a-share.txt")
+        try FileManager.default.createDirectory(at: Store.container, withIntermediateDirectories: true)
+        try Data("secret".utf8).write(to: outside)
+        defer { try? FileManager.default.removeItem(at: outside) }
+        let entry = ShareInbox.Entry(title: nil, text: nil, url: nil,
+                                     files: [.init(name: "x.txt", type: "text/plain", path: "share/../not-a-share.txt")])
+        XCTAssertNil(ShareInbox.message(entry))
+    }
+
+    func testStoredNameHasNoSeparatorsAndAFileSystemSafeLength() {
+        XCTAssertEqual(ShareInbox.storedName("photo.jpg"), "photo.jpg")
+        XCTAssertEqual(ShareInbox.storedName("a/b\\c:d.txt"), "a-b-c-d.txt")
+        XCTAssertEqual(ShareInbox.storedName("tab\there.txt"), "tab-here.txt")
+        XCTAssertEqual(ShareInbox.storedName(".."), "file")
+        XCTAssertEqual(ShareInbox.storedName("   "), "file")
+        let long = String(repeating: "x", count: 400) + ".pdf"
+        let stored = ShareInbox.storedName(long)
+        XCTAssertLessThanOrEqual(stored.utf8.count, 120)
+        XCTAssertTrue(stored.hasSuffix(".pdf"), "the extension is kept")
+    }
+}
+
+final class WidgetSafetyTests: XCTestCase {
+    private func task(priority: Int) -> WidgetPublication.Task {
+        WidgetPublication.Task(id: "a", title: nil, time: nil, priority: priority, overdue: false)
+    }
+
+    func testOnlyPrioritiesOneToThreeAreFlagged() {
+        XCTAssertTrue(task(priority: 1).flagged)
+        XCTAssertTrue(task(priority: 3).flagged)
+        XCTAssertFalse(task(priority: 4).flagged, "4 means no priority")
+        XCTAssertFalse(task(priority: 0).flagged)
+    }
+
+    func testATaskLinkIsEncodedAndNeverCrashes() {
+        XCTAssertEqual(WidgetPublication.taskLink("abc")?.absoluteString, "opentodo://task/abc")
+        XCTAssertEqual(WidgetPublication.taskLink("a b?c")?.absoluteString, "opentodo://task/a%20b%3Fc")
+        XCTAssertEqual(WidgetPublication.taskLink("../x")?.absoluteString, "opentodo://task/..%2Fx")
+        XCTAssertNil(WidgetPublication.taskLink(""))
+    }
+
+    @MainActor
+    func testAWidgetLinkOpensThatTask() throws {
+        let model = AppModel()
+        model.handle(url: try XCTUnwrap(WidgetPublication.taskLink("a b")))
+        XCTAssertEqual(model.pendingPath, "/?task=a%20b")
+    }
+}
+
+final class NotificationRouteTests: XCTestCase {
+    func testATapOpensTheTask() {
+        XCTAssertEqual(Notifications.route(reminder: "r1", task: "t1", action: UNNotificationDefaultActionIdentifier), .task("t1"))
+    }
+
+    func testSnoozeAndDismissGoToTheReminder() {
+        XCTAssertEqual(Notifications.route(reminder: "r1", task: "t1", action: "snooze"), .reminder("r1", action: "snooze"))
+        XCTAssertEqual(Notifications.route(reminder: "r1", task: "t1", action: "dismiss"), .reminder("r1", action: "dismiss"))
+    }
+
+    func testTheTestNotificationOnlyOpensTheApp() {
+        for action in [UNNotificationDefaultActionIdentifier, "snooze", "dismiss"] {
+            XCTAssertEqual(Notifications.route(reminder: Notifications.testReminder, task: "", action: action), .app, action)
+        }
+    }
+
+    func testEmptyOrMissingIdsOnlyOpenTheApp() {
+        XCTAssertEqual(Notifications.route(reminder: "r1", task: "", action: UNNotificationDefaultActionIdentifier), .app)
+        XCTAssertEqual(Notifications.route(reminder: nil, task: nil, action: UNNotificationDefaultActionIdentifier), .app)
+        XCTAssertEqual(Notifications.route(reminder: "", task: "t1", action: "snooze"), .task("t1"))
+        XCTAssertEqual(Notifications.route(reminder: "r1", task: "t1", action: UNNotificationDismissActionIdentifier), .app)
+    }
+
+    @MainActor
+    func testAnEmptyTaskIdLeavesNoPath() {
+        let model = AppModel()
+        model.show(task: "")
+        XCTAssertNil(model.pendingPath)
+        model.show(reminder: "", action: "snooze")
+        XCTAssertNil(model.pendingPath)
+    }
+}
+
+final class VersionNormalizeTests: XCTestCase {
+    func testTheBridgeReportsTheBundleVersionWithoutAV() {
+        XCTAssertEqual(Version.normalize("v1.2.3"), "1.2.3")
+        XCTAssertEqual(Version.normalize("1.2.3"), "1.2.3")
+        XCTAssertEqual(Version.normalize(nil), "0.0.0-dev")
+        XCTAssertEqual(Version.normalize(" "), "0.0.0-dev")
     }
 }
