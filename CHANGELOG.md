@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Sub-projects inherit their parent's custom fields.** A field defined on a project now applies to every sub-project below it: its tasks show, edit, filter by and export the field like their own, and the sub-project's **Fields…** dialog lists inherited fields first, read-only. Names stay unique across the tree, the 30-field limit counts inherited fields, and the API and assistant tools follow the same rules. No migration; values are stored as before. ([Custom fields](docs/custom-fields.md#fields-of-sub-projects), `inherited-custom-fields`, closes #405)
+
 ## [0.16.0] - 2026-10-27
 
 OpenTodo 0.16.0 is a **security release** that finishes the internal audit: **adding someone to a project or workspace by email now asks them first**, unless you already share something with them, and the answer no longer reveals whether an address has an account. Background work now runs **when it is due**: reminders at their exact time, digests at the chosen hour, deliveries right away. Please read the upgrade note for API clients.
