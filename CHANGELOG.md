@@ -4,6 +4,16 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-27
+
+OpenTodo 0.15.0 moves the project to its own home, the **OpenTodoApp** organization on GitHub, with the image now at `ghcr.io/opentodoapp/opentodo`. The **Android app signs in behind a login page** (Pangolin, Authelia, Authentik, Cloudflare Access) and with single sign-on, inside the app, and targets Android 16 as Google Play requires. `ot vault` now also syncs **TaskNotes** task notes, the task panel shows a task's properties first and its notes in full, and a round of fixes for project counts, drag highlights, tab rows and task order.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart.** No migrations. Upgrade the server before the devices, as for every release.
+- **New image name:** `ghcr.io/opentodoapp/opentodo`. The old name `ghcr.io/pixari/opentodo` still receives every release through 0.16.x, so nothing breaks; switch your compose file or template when convenient. ([Docker](docs/self-hosting/docker.md#the-move-to-opentodoapp))
+- **Android app behind a login page:** see the new section in the [Android app guide](docs/android-app.md) for what works and which paths a bypass needs if you prefer one.
+
 ### Added
 
 - **`ot vault` syncs TaskNotes task notes.** Link the folder where the Obsidian plugin TaskNotes keeps your task notes with `ot vault tasknotes <folder>`, and every task note becomes an OpenTodo task, so it shows in Today, the calendar and your reminders. Status, priority, scheduled and due dates, tags and contexts, the project link, the estimate, recurrence with completed instances, time entries and the note's text sync both ways with the vault's field-by-field merge. The vault reads your TaskNotes settings, so renamed fields, your own statuses and priorities work. Only the keys whose value changed are rewritten, and the note is matched by an `opentodo-id` key TaskNotes leaves alone. ([Markdown vault](docs/vault.md#tasknotes), #440)
@@ -953,7 +963,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.2...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.2...v0.15.0
 [0.14.2]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.13.0...v0.14.0
