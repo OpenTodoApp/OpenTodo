@@ -58,12 +58,14 @@ const pages = (list: SettingsPage[]): readonly SettingsPage[] => translatedList<
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<SettingsSection, 'label'>([
   {
     id: 'account', label: msg('Account'), group: 'you', icon: 'user-check',
-    description: () => t('Profile, security, sessions and encryption'),
+    description: () => t('Profile, security, invitations, sessions and encryption'),
     pages: pages([
       page({ id: 'profile', label: msg('Profile'), icon: 'user-round', help: 'settings/account', anchors: ['profile', 'how-you-work'] }),
       page({ id: 'security', label: msg('Security'), icon: 'shield-check', help: 'settings/security', anchors: ['security', 'session'],
         demo: [msg('password and two-factor authentication'), msg('passkeys'), msg('linked accounts')] }),
       page({ id: 'activity', label: msg('Recent activity'), icon: 'history', help: 'settings/activity', anchors: ['sessions'] }),
+      // Invitations to join a project or workspace (member-add-consent).
+      page({ id: 'invitations', label: msg('Invitations'), icon: 'mail', help: 'settings/invitations', anchors: ['invitations'] }),
       page({ id: 'encryption', label: msg('End-to-end encryption'), icon: 'lock', help: 'settings/encryption', anchors: ['encryption'], demo: [msg('end-to-end encryption')] }),
     ]),
   },

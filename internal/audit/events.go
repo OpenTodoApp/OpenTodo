@@ -136,6 +136,12 @@ const (
 	WorkspaceInviteCreatedName  Name = "workspace_invite.created"
 	WorkspaceInviteAcceptedName Name = "workspace_invite.accepted"
 	WorkspaceInviteRevokedName  Name = "workspace_invite.revoked"
+	// Membership invitations (OpenSpec change member-add-consent): ids and
+	// roles only, never the invited address or a name.
+	MemberInvitationCreatedName   Name = "member_invitation.created"
+	MemberInvitationAcceptedName  Name = "member_invitation.accepted"
+	MemberInvitationDeclinedName  Name = "member_invitation.declined"
+	MemberInvitationCancelledName Name = "member_invitation.cancelled"
 )
 
 // Names lists the whole catalogue in a stable order (used by the API docs, the
@@ -175,6 +181,7 @@ var Names = []Name{
 	ProjectMemberAddedName,
 	ProjectGrantAddedName, ProjectGrantChangedName, ProjectGrantRemovedName,
 	WorkspaceInviteCreatedName, WorkspaceInviteAcceptedName, WorkspaceInviteRevokedName,
+	MemberInvitationCreatedName, MemberInvitationAcceptedName, MemberInvitationDeclinedName, MemberInvitationCancelledName,
 }
 
 // PersonalNames are the events a user sees about themselves in
@@ -285,6 +292,8 @@ var allowedDetailKeys = map[string]bool{
 	"group":               true,
 	"workspace_role":      true,
 	"workspace_invite_id": true,
+	// Membership invitations (member-add-consent): the invitation's id.
+	"member_invitation_id": true,
 }
 
 // Event is one security-relevant occurrence. Build it with a constructor.
@@ -835,4 +844,36 @@ func WorkspaceInviteAccepted(userID, creatorID, inviteID, workspaceID, role stri
 // WorkspaceInviteRevoked records a revoked workspace invite link.
 func WorkspaceInviteRevoked(actorID, inviteID, workspaceID string) Event {
 	return ev(WorkspaceInviteRevokedName, Success, actorID, "", "workspace_invite_id", inviteID, "workspace", workspaceID)
+}
+
+// memberInvitationDetails are the details of a membership invitation event:
+// its id, the project or workspace id and the role, under the same keys as
+// the membership events.
+func memberInvitationDetails(id, kind, targetID, role string) []string {
+	if kind == "workspace" {
+		return []string{"member_invitation_id", id, "workspace", targetID, "workspace_role", role}
+	}
+	return []string{"member_invitation_id", id, "shared_project_id", targetID, "project_role", role}
+}
+
+// MemberInvitationCreated records an add by email that became an invitation;
+// inviteeID is empty for an address without an account.
+func MemberInvitationCreated(actorID, inviteeID, id, kind, targetID, role string) Event {
+	return ev(MemberInvitationCreatedName, Success, actorID, inviteeID, memberInvitationDetails(id, kind, targetID, role)...)
+}
+
+// MemberInvitationAccepted records the invitee joining; the inviter is the target.
+func MemberInvitationAccepted(inviteeID, inviterID, id, kind, targetID, role string) Event {
+	return ev(MemberInvitationAcceptedName, Success, inviteeID, inviterID, memberInvitationDetails(id, kind, targetID, role)...)
+}
+
+// MemberInvitationDeclined records the invitee saying no; the inviter is the target.
+func MemberInvitationDeclined(inviteeID, inviterID, id, kind, targetID, role string) Event {
+	return ev(MemberInvitationDeclinedName, Success, inviteeID, inviterID, memberInvitationDetails(id, kind, targetID, role)...)
+}
+
+// MemberInvitationCancelled records an owner or admin withdrawing an
+// invitation; the invitee, if any, is the target.
+func MemberInvitationCancelled(actorID, inviteeID, id, kind, targetID, role string) Event {
+	return ev(MemberInvitationCancelledName, Success, actorID, inviteeID, memberInvitationDetails(id, kind, targetID, role)...)
 }

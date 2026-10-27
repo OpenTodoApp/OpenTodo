@@ -289,8 +289,7 @@ func TestSharingRefusedForEncryptedAccount(t *testing.T) {
 	// Bob (not encrypted) can still share his own project with alice.
 	resp, out = se.bob.do("POST", "/api/v1/projects", map[string]any{"name": "Bob's"})
 	se.bob.mustStatus(resp, 201, out)
-	resp, out = se.bob.do("POST", "/api/v1/projects/"+out["id"].(string)+"/members", map[string]any{"email": "alice@example.com", "role": "editor"})
-	se.bob.mustStatus(resp, 201, out)
+	addByEmail(se.bob, se.alice, "/api/v1/projects/"+out["id"].(string)+"/members", "alice@example.com", "editor")
 }
 
 func TestCaldavRefusedForEncryptedAccount(t *testing.T) {

@@ -1,0 +1,9 @@
+{{.Inviter}} wants to share a project or workspace with you
+
+{{.Inviter}} asked to add your account {{.Email}} as {{.Role}} on the OpenTodo server at {{.Origin}}. Nothing is shared with you until you answer.
+
+To accept or decline, sign in and open:
+
+{{.Link}}
+
+The invitation expires in {{.Expiry}}. If you do not know {{.Inviter}}, decline it or let it expire.

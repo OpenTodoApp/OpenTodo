@@ -275,6 +275,16 @@ func (s *Service) WorkspaceByID(ctx context.Context, userID, id string) (Workspa
 	return Workspace{}, ErrNotFound
 }
 
+// WorkspaceName returns the name of a live created workspace, or ok false (a
+// membership invitation names its workspace to the invitee, member-add-consent).
+func (s *Service) WorkspaceName(ctx context.Context, id string) (name string, ok bool, err error) {
+	err = s.db.QueryRowContext(ctx, `SELECT name FROM workspaces WHERE id = ? AND kind = 'created' AND deleted_at IS NULL`, id).Scan(&name)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", false, nil
+	}
+	return name, err == nil, err
+}
+
 // WorkspaceInput is a create or update body; nil fields stay as they are.
 type WorkspaceInput struct {
 	Name  *string `json:"name"`

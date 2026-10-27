@@ -1,0 +1,9 @@
+{{.Inviter}} quer compartilhar um projeto ou espaço de trabalho com você
+
+{{.Inviter}} pediu para adicionar sua conta {{.Email}} como {{.Role}} no servidor OpenTodo {{.Origin}}. Nada é compartilhado com você até que responda.
+
+Para aceitar ou recusar, entre e abra:
+
+{{.Link}}
+
+O convite expira em {{.Expiry}}. Se não conhece {{.Inviter}}, recuse-o ou deixe-o expirar.

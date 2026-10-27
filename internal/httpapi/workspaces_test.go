@@ -90,13 +90,13 @@ func TestWorkspaceRoutesAuthAndScopes(t *testing.T) {
 	if resp.StatusCode != 409 || errCode(out) != "default_workspace" {
 		t.Fatalf("member of default = %d %v", resp.StatusCode, out)
 	}
-	// Unknown email; a member cannot manage.
+	// Unknown email: the same invitation answer as for a stranger
+	// (member-add-consent); a member cannot manage.
 	resp, out = se.alice.do("POST", "/api/v1/workspaces/"+ws+"/members", map[string]any{"email": "nobody@example.com"})
-	if resp.StatusCode != 404 || errCode(out) != "user_not_found" {
+	if resp.StatusCode != 202 || out["pending"] != true {
 		t.Fatalf("unknown email = %d %v", resp.StatusCode, out)
 	}
-	resp, out = se.alice.do("POST", "/api/v1/workspaces/"+ws+"/members", map[string]any{"email": "bob@example.com", "role": "member"})
-	se.alice.mustStatus(resp, 201, out)
+	addByEmail(se.alice, se.bob, "/api/v1/workspaces/"+ws+"/members", "bob@example.com", "member")
 	resp, out = se.bob.do("POST", "/api/v1/workspaces/"+ws+"/groups", map[string]any{"name": "Kids"})
 	if resp.StatusCode != 403 || errCode(out) != "forbidden" {
 		t.Fatalf("member creates group = %d %v", resp.StatusCode, out)
@@ -119,8 +119,7 @@ func TestWorkspaceDirectoryInSyncAndWake(t *testing.T) {
 	ws := createWorkspace(se.alice, "Family")
 	sub := se.alice.sync.Notifier().Subscribe(se.ids["bob"], "bob-phone")
 	defer se.alice.sync.Notifier().Unsubscribe(sub)
-	resp, out := se.alice.do("POST", "/api/v1/workspaces/"+ws+"/members", map[string]any{"email": "bob@example.com"})
-	se.alice.mustStatus(resp, 201, out)
+	addByEmail(se.alice, se.bob, "/api/v1/workspaces/"+ws+"/members", "bob@example.com", "")
 	select {
 	case <-sub.C():
 	case <-time.After(2 * time.Second):
@@ -151,8 +150,7 @@ func TestProjectGroupGrants(t *testing.T) {
 	se := newShareEnv(t)
 	ws := createWorkspace(se.alice, "Family")
 	for _, u := range []string{"bob", "carol"} {
-		resp, out := se.alice.do("POST", "/api/v1/workspaces/"+ws+"/members", map[string]any{"email": u + "@example.com"})
-		se.alice.mustStatus(resp, 201, out)
+		addByEmail(se.alice, se.byEmail(u+"@example.com"), "/api/v1/workspaces/"+ws+"/members", u+"@example.com", "")
 	}
 	resp, out := se.alice.do("POST", "/api/v1/workspaces/"+ws+"/groups", map[string]any{"name": "Adults"})
 	se.alice.mustStatus(resp, 201, out)
@@ -347,9 +345,8 @@ func TestWorkspacesInTheExport(t *testing.T) {
 	se := newShareEnv(t)
 	work := createWorkspace(se.alice, "Work")
 	fam := createWorkspace(se.bob, "Family")
-	resp, out := se.bob.do("POST", "/api/v1/workspaces/"+fam+"/members", map[string]any{"email": "alice@example.com"})
-	se.bob.mustStatus(resp, 201, out)
-	resp, out = se.alice.do("PATCH", "/api/v1/projects/"+se.project, map[string]any{"workspace_id": work})
+	addByEmail(se.bob, se.alice, "/api/v1/workspaces/"+fam+"/members", "alice@example.com", "")
+	resp, out := se.alice.do("PATCH", "/api/v1/projects/"+se.project, map[string]any{"workspace_id": work})
 	se.alice.mustStatus(resp, 200, out)
 	resp, out = se.alice.do("GET", "/api/v1/export", nil)
 	se.alice.mustStatus(resp, 200, out)

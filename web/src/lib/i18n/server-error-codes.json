@@ -55,6 +55,7 @@
   "invitation_email_mismatch",
   "invitation_invalid",
   "invitation_spent",
+  "invitation_stale",
   "issues_disabled",
   "last_credential",
   "limit_members",

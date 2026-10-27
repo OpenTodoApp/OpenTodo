@@ -33,7 +33,7 @@ Choose **New workspace** in the switcher, name it and pick a colour. It needs a 
 Open **Settings → Workspaces** and pick a workspace in the list; on a wide screen it opens beside the list, on a phone as its own page. Its tabs:
 
 - **General**: the name, colour and icon, then **Transfer**, **Delete** or **Leave**.
-- **Members**: add people by the email of their account on this server and give them the **member** or **admin** role.
+- **Members**: add people by their account's email as **member** or **admin**; someone new to you is [asked first](roles-and-assignments.md#when-someone-is-asked-first).
 - **Groups**: make groups such as **Adults**. Open a group to rename it, add people by searching their name, or remove them. Deleting a group first tells you which projects lose access through it.
 - **Invites**: create a link that adds whoever opens it, as a member or (for the owner) an admin, valid for 1 hour, 1 day, 7 days or 30 days.
 

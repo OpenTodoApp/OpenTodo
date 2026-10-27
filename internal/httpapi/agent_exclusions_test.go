@@ -137,8 +137,7 @@ func TestAgentAccessRoutePolicy(t *testing.T) {
 	if resp, out := m.do("GET", path, nil); resp.StatusCode != 404 || errCode(out) != "not_found" {
 		t.Fatalf("non-member = %d %v", resp.StatusCode, out)
 	}
-	resp, out = e.do("POST", "/api/v1/projects/"+pid+"/members", map[string]any{"email": "member@example.com", "role": "editor"})
-	e.mustStatus(resp, 201, out)
+	addByEmail(e, m, "/api/v1/projects/"+pid+"/members", "member@example.com", "editor")
 	resp, out = m.do("GET", path, nil)
 	m.mustStatus(resp, 200, out)
 	if resp, out := m.do("PUT", path, map[string]any{"kept_away": true}); resp.StatusCode != 403 || errCode(out) != "forbidden" {

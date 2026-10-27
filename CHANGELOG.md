@@ -4,6 +4,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **One migration** (`0049_member_invitations`: the table of membership invitations). No new variable. Back up first, as for every release.
+- **API clients that add people by email must handle 202.** `POST /api/v1/projects/{id}/members` and `POST /api/v1/workspaces/{id}/members` with an `email` now answer **202 `{"pending": true}`** when the person shares no project or workspace with you yet, and also for an address without an account, which used to answer 404 `user_not_found`. The person is not a member until they accept, so a script that shares a project and then expects the member list to include the person must wait for the acceptance (or add someone it already shares a project with, which still answers 201). Adding by account id inside a created workspace is unchanged. ([Membership invitations](docs/api.md#membership-invitations))
+
+### Security
+
+- **Adding someone by email asks them first.** The owner or an admin of any project could add any account on the server by its address, and the project appeared in that person's sidebar without their say; the answer also told whether the address had an account. Someone who already shares a project or workspace with you is still added at once. Anyone else gets an invitation in their notifications and in **Settings → Account → Invitations** (and by email when outgoing email is on) and becomes a member only by accepting it; an address without an account gets the same answer and the same "waiting for an answer" row, so the share dialog no longer tells which addresses have accounts. Declining keeps the same project from asking again for 14 days. Found in an internal audit. ([Roles and assignments](docs/roles-and-assignments.md#when-someone-is-asked-first))
+
 ### Changed
 
 - **Background jobs run when their work is due instead of on fixed timers.** On a self-hosted server:
@@ -15,6 +24,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
   - An idle server no longer checks the delivery queues every second.
 
   Self-hosted servers and hosts now run the same job definitions. ([Architecture](docs/architecture.md#background-work))
+
+- **The share dialog and a workspace's members list show who has not answered yet.** Invitations are listed under **Waiting for an answer** with their role, and can be cancelled. ([Roles and assignments](docs/roles-and-assignments.md#when-someone-is-asked-first), [Workspaces](docs/workspaces.md))
+- **The add-member routes answer 202 for invitations.** See the upgrade note above. ([API](docs/api.md#membership-invitations))
 
 ## [0.15.0] - 2026-10-27
 

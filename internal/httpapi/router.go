@@ -109,6 +109,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Project invite links (OpenSpec `project-invite-links`).
 	s.registerProjectInviteRoutes(mux)
 	s.registerWorkspaceRoutes(mux)
+	// Membership invitations (OpenSpec change member-add-consent).
+	s.registerMemberInvitationRoutes(mux)
 	s.registerBrandingRoutes(mux)
 	// Web push (OpenSpec `reminders`): registered only while push is enabled.
 	s.registerPushRoutes(mux)

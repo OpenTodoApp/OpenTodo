@@ -85,15 +85,16 @@ func prefix(p string) func(string) bool {
 }
 func exact(p string) func(string) bool { return func(s string) bool { return s == p } }
 
-// projectMembership matches /api/v1/projects/{id}/members[/...], /transfer
-// and the group grants /grants[/...] (OpenSpec change workspaces).
+// projectMembership matches /api/v1/projects/{id}/members[/...], /transfer,
+// the group grants /grants[/...] (OpenSpec change workspaces) and the
+// invitations /member-invitations/... (member-add-consent).
 func projectMembership(p string) bool {
 	rest, ok := strings.CutPrefix(p, "/api/v1/projects/")
 	if !ok {
 		return false
 	}
 	parts := strings.Split(rest, "/")
-	return len(parts) >= 2 && (parts[1] == "members" || parts[1] == "transfer" || parts[1] == "grants")
+	return len(parts) >= 2 && (parts[1] == "members" || parts[1] == "transfer" || parts[1] == "grants" || parts[1] == "member-invitations")
 }
 
 // taskAttachments matches /api/v1/tasks/{id}/attachments (OpenSpec `attachments`).
@@ -240,6 +241,9 @@ var demoRules = []demoRule{
 	{"End-to-end encryption", true, prefix("/api/v1/encryption")},
 	{"Web push", true, prefix("/api/v1/push")},
 	{"Sharing changes", true, projectMembership},
+	// Answering an invitation is a membership change; a sandbox never gets one
+	// (member-add-consent): every method.
+	{"Sharing changes", false, prefix("/api/v1/me/member-invitations")},
 	// Every method: links would let one sandbox join another's project.
 	{"Project invite links", false, projectInvites},
 	{"Project invite links", false, prefix("/api/v1/project-invites")},
