@@ -34,9 +34,11 @@ type snapshot struct {
 	// sectionProject maps a section id onto its project id (write validation).
 	sectionProject map[string]string
 	labelList      []opsync.Entity
-	// fieldDefs maps a project id onto its live custom field definitions in
-	// position order (custom-fields).
-	fieldDefs map[string][]opsync.Entity
+	// fieldDefs maps a project id onto the custom fields that apply to it, its
+	// ancestors' first (custom-fields, inherited-custom-fields); fieldsFor fills
+	// it on first use from allFieldDefs.
+	fieldDefs    map[string][]opsync.Entity
+	allFieldDefs []opsync.Entity
 	// tracked is every member's live tracked minutes per task, a running entry
 	// to the server time (time-tracking D11).
 	tracked map[string]int
@@ -122,11 +124,10 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 		return nil, err
 	}
 	for _, d := range defs {
-		pid := rawStr(d, "project_id")
-		if snap.keptAway[pid] {
+		if snap.keptAway[rawStr(d, "project_id")] {
 			continue
 		}
-		snap.fieldDefs[pid] = append(snap.fieldDefs[pid], d)
+		snap.allFieldDefs = append(snap.allFieldDefs, d)
 	}
 	if snap.tasks, err = r.list(ctx, userID, "task", false); err != nil {
 		return nil, err
@@ -542,9 +543,26 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 // fieldOut is a custom field definition as assistants see it: its name is
 // user text, its options too.
 type fieldOut struct {
-	ID        string    `json:"id"`
-	Type      string    `json:"type"`
-	Untrusted fieldText `json:"untrusted_text"`
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	// InheritedFrom is the id of the project above that defines the field,
+	// when it is inherited (inherited-custom-fields); empty for the project's own.
+	InheritedFrom string    `json:"inherited_from,omitempty"`
+	Untrusted     fieldText `json:"untrusted_text"`
+}
+
+// fieldsFor lists the custom fields that apply to a project: the live
+// definitions of its ancestors, farthest first, then its own (none for Inbox).
+func (snap *snapshot) fieldsFor(pid string) []opsync.Entity {
+	if pid == "" {
+		return nil
+	}
+	if defs, ok := snap.fieldDefs[pid]; ok {
+		return defs
+	}
+	defs := opsync.ApplicableFields(pid, snap.projects, snap.allFieldDefs)
+	snap.fieldDefs[pid] = defs
+	return defs
 }
 
 type fieldText struct {
@@ -554,8 +572,11 @@ type fieldText struct {
 
 func (snap *snapshot) renderFields(pid string) []fieldOut {
 	out := []fieldOut{}
-	for _, d := range snap.fieldDefs[pid] {
+	for _, d := range snap.fieldsFor(pid) {
 		f := fieldOut{ID: str(d, "id"), Type: str(d, "type"), Untrusted: fieldText{Name: str(d, "name")}}
+		if owner := rawStr(d, "project_id"); owner != pid {
+			f.InheritedFrom = owner
+		}
 		if f.Type == "choice" {
 			if opts := rawStr(d, "options"); e2ee.IsCiphertext(opts) {
 				f.Untrusted.Options = []string{e2ee.Placeholder}
@@ -575,7 +596,7 @@ func (snap *snapshot) renderFields(pid string) []fieldOut {
 func (snap *snapshot) fieldValues(t opsync.Entity) (map[string]any, map[string]string) {
 	plain := map[string]any{}
 	var text map[string]string
-	for _, d := range snap.fieldDefs[rawStr(t, "project_id")] {
+	for _, d := range snap.fieldsFor(rawStr(t, "project_id")) {
 		id := str(d, "id")
 		raw, ok := t[opsync.FieldValuePrefix+id]
 		if !ok {
@@ -607,7 +628,7 @@ func (snap *snapshot) fieldValues(t opsync.Entity) (map[string]any, map[string]s
 // id-keyed map nor a value of several types.
 func (snap *snapshot) fieldPatch(prefix, pid string, raw json.RawMessage, encrypted bool) (map[string]json.RawMessage, error) {
 	defs := map[string]opsync.Entity{}
-	for _, d := range snap.fieldDefs[pid] {
+	for _, d := range snap.fieldsFor(pid) {
 		defs[str(d, "id")] = d
 	}
 	var values map[string]json.RawMessage

@@ -1,0 +1,160 @@
+{
+  "description": "Which custom fields apply to a project (OpenSpec inherited-custom-fields D1): the live definitions of its ancestors, farthest first, then its own, each in position order then id. Read by internal/sync/fields_vectors_test.go and web/src/lib/fields.test.ts.",
+  "cases": [
+    {
+      "name": "own fields only, by position then id",
+      "project": "p1",
+      "projects": [{ "id": "p1", "parent_id": null }],
+      "fields": [
+        { "id": "f2", "project_id": "p1", "position": 1 },
+        { "id": "f1", "project_id": "p1", "position": 1 },
+        { "id": "f0", "project_id": "p1", "position": 0 }
+      ],
+      "want": ["f0", "f1", "f2"]
+    },
+    {
+      "name": "inbox has none",
+      "project": null,
+      "projects": [{ "id": "p1", "parent_id": null }],
+      "fields": [{ "id": "f1", "project_id": "p1", "position": 0 }],
+      "want": []
+    },
+    {
+      "name": "parent first, then own",
+      "project": "child",
+      "projects": [{ "id": "root", "parent_id": null }, { "id": "child", "parent_id": "root" }],
+      "fields": [
+        { "id": "own", "project_id": "child", "position": 0 },
+        { "id": "inherited", "project_id": "root", "position": 5 }
+      ],
+      "want": ["inherited", "own"]
+    },
+    {
+      "name": "grandparent, parent, own; an unrelated project's field does not apply",
+      "project": "c",
+      "projects": [
+        { "id": "a", "parent_id": null },
+        { "id": "b", "parent_id": "a" },
+        { "id": "c", "parent_id": "b" },
+        { "id": "x", "parent_id": null }
+      ],
+      "fields": [
+        { "id": "fc", "project_id": "c", "position": 0 },
+        { "id": "fb", "project_id": "b", "position": 0 },
+        { "id": "fa", "project_id": "a", "position": 0 },
+        { "id": "fx", "project_id": "x", "position": 0 }
+      ],
+      "want": ["fa", "fb", "fc"]
+    },
+    {
+      "name": "deleted definitions are left out",
+      "project": "child",
+      "projects": [{ "id": "root", "parent_id": null }, { "id": "child", "parent_id": "root" }],
+      "fields": [
+        { "id": "gone", "project_id": "root", "position": 0, "deleted_at": 5 },
+        { "id": "kept", "project_id": "root", "position": 1 }
+      ],
+      "want": ["kept"]
+    },
+    {
+      "name": "a deleted parent stops the chain",
+      "project": "c",
+      "projects": [
+        { "id": "a", "parent_id": null },
+        { "id": "b", "parent_id": "a", "deleted_at": 9 },
+        { "id": "c", "parent_id": "b" }
+      ],
+      "fields": [
+        { "id": "fa", "project_id": "a", "position": 0 },
+        { "id": "fb", "project_id": "b", "position": 0 },
+        { "id": "fc", "project_id": "c", "position": 0 }
+      ],
+      "want": ["fc"]
+    },
+    {
+      "name": "a missing parent stops the chain (not visible, or not synced yet)",
+      "project": "c",
+      "projects": [{ "id": "c", "parent_id": "hidden" }],
+      "fields": [
+        { "id": "fh", "project_id": "hidden", "position": 0 },
+        { "id": "fc", "project_id": "c", "position": 0 }
+      ],
+      "want": ["fc"]
+    },
+    {
+      "name": "the project's own row missing: its own fields still apply",
+      "project": "unknown",
+      "projects": [],
+      "fields": [{ "id": "fu", "project_id": "unknown", "position": 0 }],
+      "want": ["fu"]
+    },
+    {
+      "name": "a deleted project keeps its own fields and no ancestor's",
+      "project": "b",
+      "projects": [{ "id": "a", "parent_id": null }, { "id": "b", "parent_id": "a", "deleted_at": 3 }],
+      "fields": [
+        { "id": "fa", "project_id": "a", "position": 0 },
+        { "id": "fb", "project_id": "b", "position": 0 }
+      ],
+      "want": ["fb"]
+    },
+    {
+      "name": "a cycle from concurrent moves lists every project once (from a)",
+      "project": "a",
+      "projects": [{ "id": "a", "parent_id": "b" }, { "id": "b", "parent_id": "a" }],
+      "fields": [
+        { "id": "fa", "project_id": "a", "position": 0 },
+        { "id": "fb", "project_id": "b", "position": 0 }
+      ],
+      "want": ["fb", "fa"]
+    },
+    {
+      "name": "a cycle from concurrent moves lists every project once (from b)",
+      "project": "b",
+      "projects": [{ "id": "a", "parent_id": "b" }, { "id": "b", "parent_id": "a" }],
+      "fields": [
+        { "id": "fa", "project_id": "a", "position": 0 },
+        { "id": "fb", "project_id": "b", "position": 0 }
+      ],
+      "want": ["fa", "fb"]
+    },
+    {
+      "name": "a project that is its own parent",
+      "project": "a",
+      "projects": [{ "id": "a", "parent_id": "a" }],
+      "fields": [{ "id": "fa", "project_id": "a", "position": 0 }],
+      "want": ["fa"]
+    },
+    {
+      "name": "an archived parent still applies",
+      "project": "c",
+      "projects": [{ "id": "a", "parent_id": null, "archived": true }, { "id": "c", "parent_id": "a" }],
+      "fields": [
+        { "id": "fa", "project_id": "a", "position": 0 },
+        { "id": "fc", "project_id": "c", "position": 0 }
+      ],
+      "want": ["fa", "fc"]
+    }
+  ],
+  "descendants": [
+    {
+      "name": "every live project below, at any depth, skipping deleted branches",
+      "project": "a",
+      "projects": [
+        { "id": "a", "parent_id": null },
+        { "id": "b", "parent_id": "a" },
+        { "id": "c", "parent_id": "b" },
+        { "id": "d", "parent_id": "a", "deleted_at": 1 },
+        { "id": "e", "parent_id": "d" },
+        { "id": "x", "parent_id": null }
+      ],
+      "want": ["b", "c"]
+    },
+    {
+      "name": "a cycle does not loop",
+      "project": "a",
+      "projects": [{ "id": "a", "parent_id": "b" }, { "id": "b", "parent_id": "a" }],
+      "want": ["b"]
+    }
+  ]
+}

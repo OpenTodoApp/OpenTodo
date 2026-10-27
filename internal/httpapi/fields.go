@@ -38,22 +38,48 @@ func foldFieldsInPlace(e opsync.Entity) {
 	e["fields"] = folded["fields"]
 }
 
-// fieldDefs lists the live definitions of a project.
-func (s *Server) fieldDefs(ctx context.Context, uid, projectID string) ([]opsync.Entity, error) {
-	if projectID == "" {
-		return nil, nil
-	}
-	all, err := s.sync.List(ctx, uid, "field", false)
+// fieldTree is what the inherited-fields rules read (OpenSpec change
+// inherited-custom-fields): the projects the user sees and every definition.
+type fieldTree struct {
+	projects map[string]opsync.Entity
+	defs     []opsync.Entity
+}
+
+func (s *Server) loadFieldTree(ctx context.Context, uid string) (fieldTree, error) {
+	projects, err := s.sync.List(ctx, uid, "project", false)
 	if err != nil {
-		return nil, err
+		return fieldTree{}, err
 	}
+	defs, err := s.sync.List(ctx, uid, "field", false)
+	if err != nil {
+		return fieldTree{}, err
+	}
+	return fieldTree{projects: opsync.ProjectsByID(projects), defs: defs}, nil
+}
+
+// applicable lists the fields that apply to a project: its ancestors' live
+// definitions, then its own (none for Inbox).
+func (t fieldTree) applicable(projectID string) []opsync.Entity {
+	return opsync.ApplicableFields(projectID, t.projects, t.defs)
+}
+
+// own lists the live definitions of one project.
+func (t fieldTree) own(projectID string) []opsync.Entity {
 	var out []opsync.Entity
-	for _, f := range all {
-		if idOf(f["project_id"]) == projectID {
-			out = append(out, f)
+	for _, d := range t.defs {
+		if idOf(d["project_id"]) == projectID && !d.Deleted() {
+			out = append(out, d)
 		}
 	}
-	return out, nil
+	return out
+}
+
+// projectName is a project's name for a message (an encrypted one reads as the placeholder).
+func (t fieldTree) projectName(id string) string {
+	if p, ok := t.projects[id]; ok {
+		return rawStr(p, "name")
+	}
+	return id
 }
 
 // checkTaskFields validates a task body's `fields` object against the live
@@ -87,12 +113,12 @@ func (s *Server) checkTaskFields(ctx context.Context, uid string, body map[strin
 	if _, moved := body["project_id"]; !moved && existing != nil {
 		project = idOf(existing["project_id"])
 	}
-	defs, err := s.fieldDefs(ctx, uid, project)
+	tree, err := s.loadFieldTree(ctx, uid)
 	if err != nil {
 		return "", err
 	}
 	byID := map[string]opsync.Entity{}
-	for _, d := range defs {
+	for _, d := range tree.applicable(project) {
 		byID[idOf(d["id"])] = d
 	}
 	ids := make([]string, 0, len(values))
@@ -103,7 +129,7 @@ func (s *Server) checkTaskFields(ctx context.Context, uid string, body map[strin
 	for _, id := range ids {
 		def, ok := byID[id]
 		if _, valid := opsync.FieldValueID(opsync.FieldValuePrefix + id); !ok || !valid {
-			return fmt.Sprintf("task.fields: %q is not a field of the task's project", id), nil
+			return fmt.Sprintf("task.fields: %q is not a field of the task's project or of a project above it", id), nil
 		}
 		if msg := opsync.CheckFieldValue(def, values[id]); msg != "" {
 			return fmt.Sprintf("task.fields: %q (%s) %s", id, rawStr(def, "name"), msg), nil
@@ -185,24 +211,55 @@ func (s *Server) checkField(ctx context.Context, uid, id string, body map[string
 			}
 		}
 	}
-	defs, err := s.fieldDefs(ctx, uid, project)
+	tree, err := s.loadFieldTree(ctx, uid)
 	if err != nil {
 		return "", err
 	}
-	if existing == nil && len(defs) >= opsync.MaxFieldsPerProject {
-		return fmt.Sprintf("a project can have at most %d fields", opsync.MaxFieldsPerProject), nil
-	}
-	if name != "" {
-		for _, d := range defs {
-			if idOf(d["id"]) == id {
-				continue
-			}
-			var other string
-			_ = json.Unmarshal(d["name"], &other)
-			if strings.EqualFold(strings.TrimSpace(other), name) {
-				return fmt.Sprintf("field.name: the project already has a field named %q", other), nil
+	return tree.check(project, id, name, existing == nil), nil
+}
+
+// check applies the rules of a project tree to a field create or rename
+// (inherited-custom-fields "Names and limits across a project tree"): the 30
+// limit counts inherited fields, for the project and every sub-project below
+// it; a name is unique, ignoring case, among the fields that apply to the
+// project and the own fields of every sub-project. Encrypted names cannot be
+// compared here; the clients check those.
+func (t fieldTree) check(project, id, name string, create bool) string {
+	below := opsync.FieldDescendants(project, t.projects)
+	if create {
+		if len(t.applicable(project)) >= opsync.MaxFieldsPerProject {
+			return fmt.Sprintf("a project can have at most %d fields, inherited ones included", opsync.MaxFieldsPerProject)
+		}
+		for _, pid := range below {
+			if len(t.applicable(pid)) >= opsync.MaxFieldsPerProject {
+				return fmt.Sprintf("the sub-project %q would have more than %d fields", t.projectName(pid), opsync.MaxFieldsPerProject)
 			}
 		}
 	}
-	return "", nil
+	if name == "" {
+		return ""
+	}
+	same := func(d opsync.Entity) (string, bool) {
+		var other string
+		_ = json.Unmarshal(d["name"], &other)
+		return other, idOf(d["id"]) != id && strings.EqualFold(strings.TrimSpace(other), name)
+	}
+	for _, d := range t.applicable(project) {
+		other, clash := same(d)
+		if !clash {
+			continue
+		}
+		if owner := idOf(d["project_id"]); owner != project {
+			return fmt.Sprintf("field.name: the project already inherits a field named %q from %q", other, t.projectName(owner))
+		}
+		return fmt.Sprintf("field.name: the project already has a field named %q", other)
+	}
+	for _, pid := range below {
+		for _, d := range t.own(pid) {
+			if other, clash := same(d); clash {
+				return fmt.Sprintf("field.name: the sub-project %q already has a field named %q", t.projectName(pid), other)
+			}
+		}
+	}
+	return ""
 }

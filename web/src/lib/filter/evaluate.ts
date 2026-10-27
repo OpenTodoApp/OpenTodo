@@ -5,6 +5,7 @@
 import { blockedMap } from '../dependencies'
 import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
+import { applicableFieldsLookup } from '../fieldTree'
 import type { FieldDef, FieldValue, Label, Project, Task } from '../types'
 import { originMatches, originOf } from '../taskOrigin'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
@@ -165,12 +166,13 @@ function isEmptyValue(v: FieldValue | undefined): boolean {
  * The predicate of one field term against one definition (custom-fields D5):
  * numbers numerically, dates with the date grammar, text, link and choice with
  * `=` only ignoring case, checkboxes with `= true` / `= false`. A term the type
- * cannot answer is a FilterSyntaxError at the operator. Only tasks of the
- * definition's project are considered, the same values the panel shows.
+ * cannot answer is a FilterSyntaxError at the operator. Only tasks of projects
+ * the definition applies to (its own and its sub-projects, inherited-custom-fields)
+ * are considered, the same values the panel shows.
  */
-function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: string, weekStart: number): Pred {
+function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: string, weekStart: number, applies: (task: Task, def: FieldDef) => boolean): Pred {
   const at = n.opPos
-  const value = (task: Task): FieldValue | undefined => (task.project_id === def.project_id ? task.fields?.[def.id] : undefined)
+  const value = (task: Task): FieldValue | undefined => (applies(task, def) ? task.fields?.[def.id] : undefined)
   const label = `"${n.name}"`
   switch (def.type) {
     case 'number': {
@@ -204,7 +206,7 @@ function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: st
       // An unset checkbox reads as unchecked.
       return (task) => {
         const v = value(task)
-        return task.project_id === def.project_id && (want ? v === true : v !== true)
+        return applies(task, def) && (want ? v === true : v !== true)
       }
     }
     default: {
@@ -236,6 +238,15 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
   const fieldsByName = new Map<string, FieldDef[]>()
   for (const d of ctx.fields ?? []) {
     if (!d.deleted_at) fieldsByName.set(nameKey(d.name), [...(fieldsByName.get(nameKey(d.name)) ?? []), d])
+  }
+  // Which definitions apply to a task's project, inherited ones included (inherited-custom-fields D2).
+  const fieldsOf = applicableFieldsLookup(liveProjects, ctx.fields ?? [])
+  const appliesTo = new Map<string, Set<string>>()
+  const applies = (task: Task, def: FieldDef): boolean => {
+    if (!task.project_id) return false
+    let ids = appliesTo.get(task.project_id)
+    if (!ids) appliesTo.set(task.project_id, (ids = new Set(fieldsOf(task.project_id).map((d) => d.id))))
+    return ids.has(def.id)
   }
   const today = ctx.today
   const weekStart = ctx.weekStart ?? currentDateTime().weekStart
@@ -316,7 +327,7 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         let first: unknown = null
         for (const d of defs) {
           try {
-            ps.push(fieldPred(d, n, today, weekStart))
+            ps.push(fieldPred(d, n, today, weekStart, applies))
           } catch (e) {
             first ??= e
           }
@@ -330,7 +341,7 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           warn(t('No field named "{name}"', { name: n.name }))
           return NEVER
         }
-        return (task) => defs.some((d) => task.project_id === d.project_id && isEmptyValue(task.fields?.[d.id]))
+        return (task) => defs.some((d) => applies(task, d) && isEmptyValue(task.fields?.[d.id]))
       }
       case 'search': {
         const needle = n.text.toLocaleLowerCase()

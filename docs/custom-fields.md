@@ -38,9 +38,13 @@ Open a task: the **Fields** group of the panel lists the project's fields in ord
 
 Rows and board cards show up to three values as small badges, such as **Cost 1,200** or **Paid**, and **+2** for the rest. On a wide screen a project's list offers a **Columns** button above its tasks: one column per field, read-only, with the task panel for editing. The choice is remembered per project on that device.
 
+## Fields of sub-projects
+
+A field applies to its project and to every sub-project below it. The **Fields…** dialog of a sub-project lists the inherited fields first, under **From** and the parent's name; edit them in the parent. No two fields that apply to a project share a name, and the limit of 30 counts inherited fields. Someone you share only the sub-project with sees its own fields, not the parent's.
+
 ## Move a task or delete a field
 
-A task moved to another project keeps its values, but shows only the fields of its new project; move it back and they reappear. Deleting a field asks first and says how many tasks hold a value: the values stay in the data and in the export, hidden.
+A task moved to another project keeps its values, but shows only the fields of its new project; move it back and they reappear. Moving a sub-project works the same way. Deleting a field asks first and says how many tasks hold a value: the values stay in the data and in the export, hidden.
 
 Renaming an option of a choice field in place (same line) updates the tasks that held the old text.
 

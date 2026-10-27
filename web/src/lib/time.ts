@@ -7,6 +7,7 @@ import { isCiphertext } from './crypto'
 import { addDaysISO, currentDayStart, logicalDay } from './dates'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
+import { fieldChain } from './fieldTree'
 import type { FieldDef, Label, Project, Task, TimeEntry } from './types'
 
 /** The part of an entry the rules read. */
@@ -161,7 +162,7 @@ export const BOM = '\uFEFF'
 export const ENCRYPTED = '[encrypted]'
 
 type CsvTask = Pick<Task, 'id' | 'title' | 'project_id' | 'labels' | 'deleted_at'> & { fields?: Record<string, unknown> }
-type CsvProject = Pick<Project, 'id' | 'name' | 'deleted_at'>
+type CsvProject = Pick<Project, 'id' | 'name' | 'deleted_at'> & { parent_id?: string | null }
 type CsvField = Pick<FieldDef, 'id' | 'project_id' | 'name' | 'position' | 'deleted_at'>
 
 export interface CsvInput {
@@ -217,8 +218,9 @@ export function csvCell(s: string): string {
 
 /**
  * The CSV of design D8: a BOM, the header, one row per entry of `csvRows`. Custom
- * field columns are the union of the live fields of every project present, by
- * name, in the order their projects first appear and each project's field order.
+ * field columns are the union of the fields that apply to every project present
+ * (its ancestors' first, inherited-custom-fields), by name, in the order their
+ * projects first appear and each project's field order.
  * Lines end with CRLF. Byte for byte the server's CSV for the same rows.
  */
 export function toCSV(input: CsvInput): string {
@@ -234,13 +236,15 @@ export function toCSV(input: CsvInput): string {
     byProject.set(f.project_id, list)
   }
   for (const list of byProject.values()) list.sort((a, b) => a.position - b.position || byId(a, b))
+  const projectRows = new Map(input.projects.map((p) => [p.id, { id: p.id, parent_id: p.parent_id ?? null, deleted_at: p.deleted_at }]))
+  const applies = (pid: string): CsvField[] => (pid ? fieldChain(pid, projectRows).flatMap((id) => byProject.get(id) ?? []) : [])
   const columns: string[] = []
   const seenProject = new Set<string>()
   for (const e of rows) {
     const pid = tasks.get(e.task_id)?.project_id ?? ''
     if (seenProject.has(pid)) continue
     seenProject.add(pid)
-    for (const f of byProject.get(pid) ?? []) if (!columns.includes(display(f.name))) columns.push(display(f.name))
+    for (const f of applies(pid)) if (!columns.includes(display(f.name))) columns.push(display(f.name))
   }
   const dayStart = input.dayStart ?? currentDayStart()
   const lines = [[...CSV_HEADER, ...columns]]
@@ -248,7 +252,7 @@ export function toCSV(input: CsvInput): string {
     const t = tasks.get(e.task_id)!
     const names = (t.labels ?? []).filter((id) => labels.has(id)).map((id) => display(labels.get(id)))
     const values = new Map<string, string>()
-    for (const f of byProject.get(t.project_id ?? '') ?? []) {
+    for (const f of applies(t.project_id ?? '')) {
       const v = t.fields?.[f.id]
       if (v !== undefined && v !== null) values.set(display(f.name), fieldText(v))
     }

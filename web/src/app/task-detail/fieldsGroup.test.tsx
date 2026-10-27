@@ -53,6 +53,24 @@ describe('Fields group', () => {
     await r3.unmount()
   })
 
+  it('a sub-project task shows its ancestors\' fields first and writes them under their ids (inherited-custom-fields)', async () => {
+    const scoring = await createProject({ name: 'Scoring' })
+    const topic = await createProject({ name: 'Topic', parent_id: scoring })
+    const detail = await createProject({ name: 'Detail', parent_id: topic })
+    const wsjf = await createField(scoring, { name: 'WSJF', type: 'number' })
+    const size = await createField(topic, { name: 'Size', type: 'number' })
+    const own = await createField(detail, { name: 'Note', type: 'text' })
+    const id = await createTask({ title: 'Pick', project_id: detail })
+    const r = await open(id)
+    await waitFor(() => group(r.container)?.querySelectorAll('[data-field-row]').length === 3, 'three fields')
+    expect([...group(r.container)!.querySelectorAll('[data-field-row]')].map((e) => e.getAttribute('data-field-row'))).toEqual([wsjf, size, own])
+    const input = fieldRow(r.container, wsjf).querySelector('input') as HTMLInputElement
+    await typeInto(input, '8')
+    await key(input, 'Enter')
+    await waitFor(async () => (await db.tasks.get(id))!.fields?.[wsjf] === 8, 'the inherited value written')
+    await r.unmount()
+  })
+
   it('Edit a number: 120 and Enter writes the number, shown with digit grouping', async () => {
     const { id, cost } = await kitchen()
     const r = await open(id)

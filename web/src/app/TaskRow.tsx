@@ -39,7 +39,7 @@ import { prefersReducedMotion } from './motion'
 import { useRowSwipe } from './task-list/RowSwipe'
 import { dragFeedback } from './listDrop'
 import { fieldBadges } from '../lib/fields'
-import { useFieldDefs } from './useFields'
+import { useApplicableFields, useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
 import { originOf } from '../lib/taskOrigin'
 import { taskSource, type SourceKind } from '../lib/taskSource'
@@ -536,6 +536,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const counts = rowCounts({ progress, notes: !!task.description, comments, attachments })
   // Custom field values of the task's project (custom-fields): three values, then "+n".
   const fieldDefs = useFieldDefs()
+  const fieldsOf = useApplicableFields()
   // Tracked time joins the estimate: one item, `35m / 1h` (time-tracking).
   const estimate = hides('estimate') ? null : tracked !== undefined
     ? { text: trackedText(tracked, task.estimate_minutes ?? null), label: trackedLabel(tracked, task.estimate_minutes ?? null), tracked: true }
@@ -556,7 +557,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,
     startText, someday: start === 'someday',
     estimate, blockedBy: done ? 0 : blockedBy, streak: habit && !done ? habit : null,
-    badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved),
+    badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved, fieldsOf),
     assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
     origin: null,
     labels: <LabelChips labels={labels} omit={omitLabel} />,

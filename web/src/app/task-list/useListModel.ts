@@ -4,7 +4,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePlace } from '../../lib/locations'
 import { blockedMap } from '../../lib/dependencies'
-import { liveFields } from '../../lib/fields'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { habitStatsMap } from '../../lib/habits'
 import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
@@ -23,7 +22,7 @@ import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
 import type { Route } from '../router'
-import { useFieldDefs } from '../useFields'
+import { useApplicableFields } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
 import { readJSON, writeJSON } from '../../lib/deviceStorage'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -93,8 +92,9 @@ function useProjectLayout(projectId: string | null) {
   const collapsedSections = useCollapsedSections(projectId)
   // Custom fields (custom-fields): the list's columns layout, offered on wide
   // screens when the project defines fields; below 768 px rows show badges.
-  const fieldDefs = useFieldDefs()
-  const projectFieldDefs = useMemo(() => liveFields(projectId, fieldDefs), [projectId, fieldDefs])
+  // Inherited fields are columns too (inherited-custom-fields).
+  const fieldsOf = useApplicableFields()
+  const projectFieldDefs = useMemo(() => fieldsOf(projectId), [projectId, fieldsOf])
   const wideScreen = useMediaQuery(DESKTOP_HEADER_QUERY)
   const columnsPref = useListColumnsPref(projectId)
   const offerColumns = !!projectId && viewMode === 'list' && wideScreen && projectFieldDefs.length > 0

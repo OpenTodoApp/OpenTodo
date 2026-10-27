@@ -133,3 +133,24 @@ describe('field name suggestions', () => {
     expect(fieldSuggestions('"Order date" <= friday', FIELDS)).toEqual([])
   })
 })
+
+describe('field terms: inherited fields (inherited-custom-fields)', () => {
+  const projects = [project('scoring', 'Scoring'), { ...project('topic', 'Topic'), parent_id: 'scoring' }, { ...project('detail', 'Detail'), parent_id: 'topic' }, project('other', 'Other')]
+  const fields = [def('wsjf', 'WSJF', 'number', 'scoring')]
+  const tasks = [
+    task('deep', { project_id: 'detail', fields: { wsjf: 8 } }),
+    task('mid', { project_id: 'topic', fields: { wsjf: 3 } }),
+    task('empty', { project_id: 'detail' }),
+    task('elsewhere', { project_id: 'other', fields: { wsjf: 9 } }),
+  ]
+  const run = (q: string) => {
+    const r = runFilter(q, tasks, { today: TODAY, labels: [], projects, fields, weekStart: 1 })
+    if (!r.ok) throw new Error(r.error)
+    return r.tasks.map((t) => t.id).sort()
+  }
+  it('a field of a parent matches tasks of its sub-projects at any depth, not of other projects', () => {
+    expect(run('wsjf >= 5')).toEqual(['deep'])
+    expect(run('wsjf > 0')).toEqual(['deep', 'mid'])
+    expect(run('no wsjf')).toEqual(['empty'])
+  })
+})
