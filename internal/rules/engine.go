@@ -67,7 +67,7 @@ type Engine struct {
 	keys   *e2ee.Store
 	now    func() time.Time
 	limits *limiter
-	wake   chan struct{}
+	wake   func()
 
 	mu    sync.Mutex
 	kinds map[string]map[string]bool // user -> trigger kinds of their enabled rules
@@ -82,8 +82,12 @@ func New(db *sql.DB, syncSvc *opsync.Service, log *slog.Logger) *Engine {
 		log = slog.Default()
 	}
 	return &Engine{Store: NewStore(db), Sync: syncSvc, Log: log, db: db, keys: e2ee.NewStore(db), now: time.Now,
-		limits: newLimiter(), wake: make(chan struct{}, 1), kinds: map[string]map[string]bool{}}
+		limits: newLimiter(), kinds: map[string]map[string]bool{}}
 }
+
+// SetWake installs what queueing an event calls: the tenant's jobs signal
+// (internal/jobs), so the "rules" job runs at once. Call it before use.
+func (e *Engine) SetWake(fn func()) { e.wake = fn }
 
 // SetClock replaces the engine's clock (tests).
 func (e *Engine) SetClock(now func() time.Time) { e.now = now; e.Store.SetClock(now) }

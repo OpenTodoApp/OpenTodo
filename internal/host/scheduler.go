@@ -2,36 +2,27 @@ package host
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"sync"
 	"time"
 
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	"github.com/OpenTodoApp/opentodo/internal/tenant"
 )
 
-// Kinds of background work in the "next due" index (design D3).
-const (
-	KindReminders    = "reminders"    // web push of due reminders
-	KindBackup       = "backup"       // a scheduled backup
-	KindWebhooks     = "webhooks"     // queued webhook deliveries
-	KindCalendars    = "calendars"    // calendar subscriptions to fetch
-	KindHousekeeping = "housekeeping" // Trash retention, audit and log pruning
-	KindDigest       = "digest"       // weekly digest emails (stats-and-review)
-	KindIssues       = "issues"       // issue connections to poll (issue-import)
-	KindRules        = "rules"        // automation rules: queued events and time triggers
-)
+// The kinds of the "next due" index (design D3) are the names of the
+// tenant's jobs (tenant.Jobs, internal/jobs): a self-hosted server runs the
+// same jobs with jobs.Runner.
 
 // Scheduler tuning.
 const (
 	// schedulerMax is the longest the scheduler sleeps; open tenants' entries
-	// are refreshed at least this often. It matches the push tick, so a
-	// reminder is pushed no later than on a self-hosted server.
-	schedulerMax = 30 * time.Second
+	// are refreshed at least this often, like a self-hosted runner asks its
+	// jobs (jobs.CheckEvery).
+	schedulerMax = jobs.CheckEvery
 	// schedulerMin is the shortest sleep, and the debounce after a change.
 	schedulerMin = time.Second
-	// retryAfter pushes work that is still due after it ran (a transient push
-	// failure, an unreachable destination) to a later pass.
-	retryAfter = 30 * time.Second
 	// tenantsPerPass and passConcurrency bound one pass of the scheduler.
 	tenantsPerPass  = 64
 	passConcurrency = 4
@@ -49,116 +40,24 @@ func (h *Host) markDirty(name string) {
 	}
 }
 
-// computeDue asks an open tenant when each kind of work is next due.
+// computeDue asks an open tenant when each of its jobs is next due.
 func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]time.Time, error) {
 	due := map[string]time.Time{}
-	if t.Push != nil {
-		at, ok, err := t.Push.NextDue(ctx)
+	for _, j := range t.Jobs() {
+		at, ok, err := j.Next(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%s: %w", j.Name, err)
 		}
 		if ok {
-			due[KindReminders] = at
+			due[j.Name] = at
 		}
-	}
-	next, err := t.Backups.NextRun(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if next != nil {
-		due[KindBackup] = *next
-	}
-	at, ok, err := t.Hooks.NextDue(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		due[KindWebhooks] = at
-	}
-	// Notification channels ride on the webhooks entry: both are queued
-	// outbound deliveries (notification-channels).
-	if t.Channels != nil {
-		at, ok, err := t.Channels.NextDue(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if cur, has := due[KindWebhooks]; ok && (!has || at.Before(cur)) {
-			due[KindWebhooks] = at
-		}
-	}
-	if t.Calendar.Enabled == nil || t.Calendar.Enabled(ctx) {
-		at, ok, err := t.Calendar.Store.NextFetch(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
-			due[KindCalendars] = at
-		}
-	}
-	// Calendar sync rides on the calendars entry (calendar-two-way): only while
-	// its owner switch is on and a connection is due.
-	if t.CalSync != nil {
-		at, ok, err := t.CalSync.NextDue(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if cur, has := due[KindCalendars]; ok && (!has || at.Before(cur)) {
-			due[KindCalendars] = at
-		}
-	}
-	if t.Issues != nil && t.Issues.Enabled != nil && t.Issues.Enabled(ctx) {
-		// Only while the owner switch is on: a tenant with it off is never opened for it.
-		at, ok, err := t.Issues.Store.NextPoll(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
-			due[KindIssues] = at
-		}
-	}
-	if t.Digest != nil {
-		// Only while the operator configured outgoing email and someone opted in.
-		at, ok, err := t.Digest.NextDue(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
-			due[KindDigest] = at
-		}
-	}
-	if t.Rules != nil {
-		at, ok, err := t.Rules.NextDue(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
-			due[KindRules] = at
-		}
-	}
-	// Housekeeping is due when the first of its deadlines passes.
-	var house time.Time
-	for _, f := range []func(context.Context) (time.Time, bool, error){
-		func(ctx context.Context) (time.Time, bool, error) {
-			return t.Sync.NextRetention(ctx, t.Cfg.TrashRetentionDays)
-		},
-		t.Auth.Audit().NextPrune, t.Auth.NextSignupExpiry, t.Hooks.NextPrune, channelsNextPrune(t),
-	} {
-		at, ok, err := f(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if ok && (house.IsZero() || at.Before(house)) {
-			house = at
-		}
-	}
-	if !house.IsZero() {
-		due[KindHousekeeping] = house
 	}
 	return due, nil
 }
 
-// refreshDue rewrites a tenant's entries. ran are kinds that just ran: one
-// still due afterwards is retried after retryAfter instead of at once.
+// refreshDue rewrites a tenant's entries. ran are jobs that just ran: one
+// still due afterwards (a transient failure, an unreachable destination, a
+// backlog) waits its retry pause instead of running again at once.
 func (h *Host) refreshDue(ctx context.Context, name string, t *tenant.Tenant, ran []string) {
 	due, err := h.computeDue(ctx, t)
 	if err != nil {
@@ -166,9 +65,9 @@ func (h *Host) refreshDue(ctx context.Context, name string, t *tenant.Tenant, ra
 		return
 	}
 	now := h.now()
-	for _, k := range ran {
-		if at, ok := due[k]; ok && !at.After(now) {
-			due[k] = now.Add(retryAfter)
+	for _, j := range t.Jobs() {
+		if at, ok := due[j.Name]; ok && !at.After(now) && slices.Contains(ran, j.Name) {
+			due[j.Name] = now.Add(j.RetryInterval())
 		}
 	}
 	if err := h.reg.SetDue(ctx, name, due); err != nil {
@@ -176,94 +75,12 @@ func (h *Host) refreshDue(ctx context.Context, name string, t *tenant.Tenant, ra
 	}
 }
 
-// runDue runs a tenant's due work through the same code paths a self-hosted
-// server's background jobs use.
+// runDue runs a tenant's due jobs, the same Run a self-hosted server's runner
+// calls, one after the other.
 func (h *Host) runDue(ctx context.Context, name string, t *tenant.Tenant, kinds []string) {
-	log := h.log.With("tenant", name)
-	for _, k := range kinds {
-		switch k {
-		case KindReminders:
-			if t.Push == nil {
-				continue
-			}
-			if n, err := t.Push.Tick(ctx); err != nil {
-				log.Error("reminder scheduler", "err", err)
-			} else if n > 0 {
-				log.Debug("reminders delivered", "count", n)
-			}
-		case KindBackup:
-			t.Backups.RunIfDue(ctx)
-		case KindWebhooks:
-			for i := 0; i < 64 && t.Hooks.ProcessDue(ctx) > 0; i++ {
-			}
-			if t.Channels != nil && t.Channels.On(ctx) {
-				for i := 0; i < 64 && t.Channels.ProcessDue(ctx) > 0; i++ {
-				}
-			}
-		case KindCalendars:
-			t.Calendar.RunOnce(ctx)
-			if t.CalSync != nil {
-				t.CalSync.RunOnce(ctx)
-			}
-		case KindIssues:
-			if t.Issues != nil {
-				t.Issues.RunOnce(ctx)
-			}
-		case KindDigest:
-			if t.Digest == nil {
-				continue
-			}
-			if n, err := t.Digest.Tick(ctx); err != nil {
-				log.Error("digest scheduler", "err", err)
-			} else if n > 0 {
-				log.Info("weekly digests sent", "count", n)
-			}
-		case KindRules:
-			if t.Rules != nil {
-				t.Rules.RunOnce(ctx)
-			}
-		case KindHousekeeping:
-			if t.Rules != nil {
-				if _, err := t.Rules.Store.Prune(ctx); err != nil {
-					log.Error("rules: prune runs", "err", err)
-				}
-			}
-			if _, err := t.Sync.RetentionPass(ctx, t.Cfg.TrashRetentionDays); err != nil {
-				log.Error("trash retention failed", "err", err)
-			}
-			if _, err := t.Auth.Audit().Prune(ctx); err != nil {
-				log.Error("audit: prune failed", "err", err)
-			}
-			if _, err := t.Auth.PruneSignups(ctx); err != nil {
-				log.Error("prune failed", "err", err)
-			}
-			if err := t.Hooks.Prune(ctx); err != nil {
-				log.Error("webhooks: prune failed", "err", err)
-			}
-			if t.Channels != nil {
-				if err := t.Channels.Prune(ctx); err != nil {
-					log.Error("notification channels: prune failed", "err", err)
-				}
-				if _, err := t.Channels.SweepSecrets(ctx); err != nil {
-					log.Error("notification channels: sweep secrets", "err", err)
-				}
-			}
-			if t.Issues != nil {
-				if _, err := t.Issues.Tokens.Sweep(ctx, t.Issues.Store); err != nil {
-					log.Error("issue connections: sweep tokens", "err", err)
-				}
-			}
-			if t.CalSync != nil {
-				if _, err := t.CalSync.Secrets.Sweep(ctx, t.CalSync.Store); err != nil {
-					log.Error("calendar sync: sweep secrets", "err", err)
-				}
-			}
-			if _, err := t.Inbox.Sweep(ctx); err != nil {
-				log.Warn("notification sweep failed", "err", err)
-			}
-			if err := store.Optimize(ctx, t.DB); err != nil {
-				log.Warn("database optimize failed", "err", err)
-			}
+	for _, j := range t.Jobs() {
+		if slices.Contains(kinds, j.Name) {
+			j.Run(ctx)
 		}
 	}
 	h.refreshDue(ctx, name, t, kinds)
@@ -356,15 +173,5 @@ func (h *Host) RunScheduler(ctx context.Context) {
 			wait = min(max(next.Sub(h.now()), schedulerMin), schedulerMax)
 		}
 		reset(wait)
-	}
-}
-
-// channelsNextPrune is the channels' prune deadline, none without channels.
-func channelsNextPrune(t *tenant.Tenant) func(context.Context) (time.Time, bool, error) {
-	return func(ctx context.Context) (time.Time, bool, error) {
-		if t.Channels == nil {
-			return time.Time{}, false, nil
-		}
-		return t.Channels.NextPrune(ctx)
 	}
 }

@@ -1,27 +1,9 @@
-// Package poll is the shape shared by the subscription pollers (calendar
-// feeds, issue connections): a ticker loop and a pass that handles the items
-// due now with bounded concurrency.
+// Package poll is the pass shared by the subscription pollers (calendar
+// feeds, issue connections): the items due now, handled with bounded
+// concurrency. When a pass runs is the tenant's jobs' business (internal/jobs).
 package poll
 
-import (
-	"context"
-	"sync"
-	"time"
-)
-
-// Every runs pass now and then every interval until ctx ends.
-func Every(ctx context.Context, interval time.Duration, pass func(context.Context)) {
-	t := time.NewTicker(interval)
-	defer t.Stop()
-	for {
-		pass(ctx)
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
-	}
-}
+import "sync"
 
 // Each runs fn for every item, at most limit at a time, and waits for all.
 func Each[T any](items []T, limit int, fn func(*T)) {

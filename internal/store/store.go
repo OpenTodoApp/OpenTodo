@@ -40,9 +40,14 @@ func Open(dataDir string) (*sql.DB, error) {
 	return db, nil
 }
 
-// OptimizeInterval is how often RunOptimizer refreshes the query planner's
-// statistics.
-const OptimizeInterval = 24 * time.Hour
+// DataVersion is SQLite's data_version on db's connection (the writer has
+// one): it changes only when another connection, such as another process on
+// the same data directory, committed since the last call.
+func DataVersion(ctx context.Context, db *sql.DB) (int64, error) {
+	var v int64
+	err := db.QueryRowContext(ctx, "PRAGMA data_version").Scan(&v)
+	return v, err
+}
 
 // Optimize refreshes the query planner's statistics (PRAGMA optimize) for the
 // tables whose size changed a lot since they were last analysed, reading at
@@ -64,22 +69,6 @@ func Optimize(ctx context.Context, db *sql.DB) error {
 		return fmt.Errorf("optimize: %w", err)
 	}
 	return nil
-}
-
-// RunOptimizer runs Optimize every interval until ctx ends.
-func RunOptimizer(ctx context.Context, db *sql.DB, interval time.Duration, log *slog.Logger) {
-	t := time.NewTicker(interval)
-	defer t.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			if err := Optimize(ctx, db); err != nil && ctx.Err() == nil {
-				log.Warn("database optimize failed", "err", err)
-			}
-		}
-	}
 }
 
 // DBFile is the database file name inside the data directory.

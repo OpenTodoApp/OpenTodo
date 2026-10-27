@@ -77,24 +77,20 @@ func TestMissedRunExecutesAtStartup(t *testing.T) {
 		t.Fatal("missed run not detected")
 	}
 
-	e.svc.startupDelay = 0
+	// The "backup" job (internal/jobs) asks NextRun at startup: due now.
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	e.svc.Start(runCtx)
-	deadline := time.Now().Add(10 * time.Second)
-	var hist []Run
-	for time.Now().Before(deadline) {
-		hist, _ = e.svc.History(ctx, 10)
-		if len(hist) == 2 && hist[0].Status != StatusRunning {
-			break
-		}
-		time.Sleep(20 * time.Millisecond)
+	if next, _ := e.svc.NextRun(ctx); next == nil || next.After(e.clock.Now()) {
+		t.Fatalf("missed run not due at startup: %v", next)
 	}
+	e.svc.RunIfDue(runCtx)
+	hist, _ := e.svc.History(ctx, 10)
 	if len(hist) != 2 || hist[0].Kind != KindScheduled || hist[0].Status != StatusSucceeded {
 		t.Fatalf("history after startup = %+v", hist)
 	}
-	// Exactly once: the schedule continues from the configured time.
-	time.Sleep(100 * time.Millisecond)
+	// Exactly once: a second run of the job does nothing.
+	e.svc.RunIfDue(runCtx)
 	if hist, _ = e.svc.History(ctx, 10); len(hist) != 2 {
 		t.Fatalf("missed run executed more than once: %d runs", len(hist))
 	}

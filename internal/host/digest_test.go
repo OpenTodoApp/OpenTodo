@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	"github.com/OpenTodoApp/opentodo/internal/mail/smtptest"
 )
 
@@ -38,10 +39,10 @@ func TestDigestInClosedTenant(t *testing.T) {
 		t.Fatalf("swept %d", n)
 	}
 	due, _, err := f.h.reg.DueBefore(ctx, sched, 10)
-	if err != nil || !slices.Contains(due["alice"], KindDigest) {
+	if err != nil || !slices.Contains(due["alice"], jobs.Digest) {
 		t.Fatalf("index at %v: %v %v", sched, due, err)
 	}
-	if early, _, _ := f.h.reg.DueBefore(ctx, sched.Add(-time.Second), 10); slices.Contains(early["alice"], KindDigest) {
+	if early, _, _ := f.h.reg.DueBefore(ctx, sched.Add(-time.Second), 10); slices.Contains(early["alice"], jobs.Digest) {
 		t.Fatalf("digest due before its hour: %v", early)
 	}
 
@@ -64,10 +65,10 @@ func TestDigestInClosedTenant(t *testing.T) {
 		t.Fatalf("sent %d, want 1", n)
 	}
 	later, _, err := f.h.reg.DueBefore(ctx, sched.Add(6*24*time.Hour), 10)
-	if err != nil || slices.Contains(later["alice"], KindDigest) {
+	if err != nil || slices.Contains(later["alice"], jobs.Digest) {
 		t.Fatalf("digest due again within the week: %v %v", later, err)
 	}
-	if next, _, _ := f.h.reg.DueBefore(ctx, sched.Add(7*24*time.Hour), 10); !slices.Contains(next["alice"], KindDigest) {
+	if next, _, _ := f.h.reg.DueBefore(ctx, sched.Add(7*24*time.Hour), 10); !slices.Contains(next["alice"], jobs.Digest) {
 		t.Fatalf("next week's digest not indexed: %v", next)
 	}
 }
@@ -98,7 +99,7 @@ func TestDigestWithoutOperatorEmail(t *testing.T) {
 	f.clock.Advance(11 * time.Minute)
 	f.h.pool.sweep()
 	due, _, err := f.h.reg.DueBefore(ctx, f.clock.Now().Add(30*24*time.Hour), 10)
-	if err != nil || slices.Contains(due["bob"], KindDigest) {
+	if err != nil || slices.Contains(due["bob"], jobs.Digest) {
 		t.Fatalf("index: %v %v", due, err)
 	}
 }
