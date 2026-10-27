@@ -2,12 +2,13 @@
 // chunk when a note is first opened (task 3.1), the rendered Markdown while it loads,
 // and plain text when it cannot load. Notes are shown in full in the panel and on the
 // task page; long ones grow with the panel's own scrolling (task-panel-notes-below).
-import { Component, lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
+import { Component, lazy, type ReactNode, Suspense, useState } from 'react'
 import { updateTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { Markdown } from '../Markdown'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
@@ -34,7 +35,7 @@ function NotesPreview({ text }: { text: string }) {
 /** Plain-text notes, the fallback when the editor cannot load (e.g. its chunk is missing offline). */
 function PlainNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const [text, setText] = useState(task.description)
-  useEffect(() => setText(task.description), [task.id, task.description])
+  useResetOnChange([task.id, task.description], () => setText(task.description))
   return (
     <textarea
       className="notes-plain"

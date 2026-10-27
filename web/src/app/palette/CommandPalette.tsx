@@ -41,6 +41,7 @@ import { useAssistantStatus } from '../../lib/assistantStatus'
 import { addFromBar, lineToInput } from './addFromBar'
 import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarParts'
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -167,7 +168,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     onPick: (e) => runEntry(e),
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })
-  useEffect(() => { setTyped(state.query) }, [state.query])
+  useResetOnChange([state.query], () => setTyped(state.query))
   // The prefixes switch mode as the first character of an empty field (modes.ts).
   const field = { ...state, setQuery: (next: SetStateAction<string>) => {
     const v = typeof next === 'function' ? next(state.query) : next

@@ -254,7 +254,7 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
   const [notice, setNotice] = useState<string | null>(null)
   const [choose, setChoose] = useState<string | null>(null)
   const server = useServerList({
-    setting: api.getCalendarSyncSetting,
+    setting: api.calendarSyncSwitch.get,
     onSetting: (s) => {
       setGoogle(s.google)
       setMax(s.max_connections || 3)
@@ -280,7 +280,7 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
       connected={connected} encrypted={encrypted} connections={connections} busy={busy} syncing={syncing} error={error} notice={notice}
       choose={choose} onChoose={setChoose}
       onToggle={(on) => void run(async () => {
-        await api.putCalendarSyncSetting(on)
+        await api.calendarSyncSwitch.put(on)
         setEnabled(on)
         if (on) await load()
       })}

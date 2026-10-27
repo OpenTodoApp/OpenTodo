@@ -26,6 +26,7 @@ import type { Route } from '../router'
 import { useFieldDefs } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
 import { readJSON, writeJSON } from '../../lib/deviceStorage'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export type ListRoute = Extract<Route, ListScope>
 
@@ -142,7 +143,7 @@ export function useListModel(route: ListRoute, userId?: string) {
 
   // Completed renders a page of the logbook at a time; a new route starts again.
   const [logbookLimit, setLogbookLimit] = useState(LOGBOOK_PAGE)
-  useEffect(() => setLogbookLimit(LOGBOOK_PAGE), [route.view])
+  useResetOnChange([route.view], () => setLogbookLimit(LOGBOOK_PAGE))
   const logbook = useMemo(() => (route.view === 'completed' ? logbookGroups(tasks, logbookLimit) : null), [route.view, tasks, logbookLimit])
 
   const { collapsed, toggleCollapsed } = useCollapsedRows()

@@ -13,6 +13,7 @@ import { Button, Input, Notice, SettingRow, SettingsSection } from '../ui'
 import { BrandMark } from '../ui'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
+import { useResetOnChange } from '../lib/useResetOnChange'
 
 export const LOGO_TYPES = ['image/png', 'image/jpeg']
 export const LOGO_MAX_BYTES = 2 << 20
@@ -39,7 +40,7 @@ export interface BrandingViewProps {
 export function BrandingView({ value, online, busy, error, saved, onSaveName, onLogo, onRemoveLogo }: BrandingViewProps) {
   const [name, setName] = useState(value?.name ?? '')
   const [fileError, setFileError] = useState<string | null>(null)
-  useEffect(() => setName(value?.name ?? ''), [value])
+  useResetOnChange([value], () => setName(value?.name ?? ''))
   const disabled = !online || busy || !value
   const dirty = !!value && name.trim() !== value.name
   const tooLong = [...name.trim()].length > NAME_MAX

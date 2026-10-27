@@ -3,7 +3,7 @@
 // list is read from the server and kept in the meta table for the offline card.
 // Secrets go up once and never come back, except a webhook's signing secret,
 // returned once on creation or rotation.
-import { request } from './api'
+import { ownerSwitch, request } from './api'
 import { getMeta, setMeta } from './db'
 import { currentLanguage } from './i18n'
 
@@ -65,8 +65,7 @@ function withContext(body: ChannelInput): ChannelInput {
 const path = (id: string) => `/api/v1/notification-channels/${encodeURIComponent(id)}`
 
 export const channelsApi = {
-  getSetting: () => request<{ enabled: boolean }>('GET', '/api/v1/settings/notification-channels'),
-  putSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/notification-channels', { enabled }),
+  switch: ownerSwitch('notification-channels'),
   list: () => request<{ channels: NotificationChannel[] }>('GET', '/api/v1/notification-channels'),
   create: (body: ChannelInput) => request<{ channel: NotificationChannel; secret?: string }>('POST', '/api/v1/notification-channels', withContext(body)),
   update: (id: string, body: ChannelInput) => request<{ channel: NotificationChannel; secret?: string }>('PATCH', path(id), withContext(body)),

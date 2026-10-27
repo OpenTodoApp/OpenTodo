@@ -20,6 +20,7 @@ import { ZoneControl } from './ZoneControl'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export type WhenSegment = 'due' | 'start' | 'deadline' | 'evening' | 'repeat' | 'reminders'
 
@@ -88,7 +89,7 @@ function DoOn({ task, readOnly, withEvening }: { task: Task; readOnly: boolean; 
   const dt = useDateTimeFormat()
   const view = localDueOf(task.due, zone)
   const [addingTime, setAddingTime] = useState(false)
-  useEffect(() => { setAddingTime(false) }, [task.id])
+  useResetOnChange([task.id], () => setAddingTime(false))
   const setView = (next: { date: string; time?: string } | null) => act(setDueWithUndo(task.id, dueFromView(task.due, next, zone)))
   const showTime = !!view && (!!view.time || addingTime)
   return (
@@ -140,7 +141,7 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
   ].map((p) => ({ ...p, canonical: (() => { const r = parseRule(p.rule); return r.ok ? r.canonical : p.rule })() }))
   const current = presets.find((p) => p.canonical === task.recurrence)?.id ?? null
   const [custom, setCustom] = useState(false)
-  useEffect(() => { setCustom(false) }, [task.id])
+  useResetOnChange([task.id], () => setCustom(false))
   const showCustom = custom || (!!task.recurrence && !current)
   return (
     <div className="space-y-3">

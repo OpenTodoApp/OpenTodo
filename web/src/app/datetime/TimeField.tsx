@@ -10,6 +10,7 @@ import { Field, Input } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { parseTimeInput } from './parse'
 import { t } from '../../lib/i18n'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export interface TimeFieldProps {
   /** `HH:MM`, or null when empty. */
@@ -44,7 +45,7 @@ export function TimeField({ value, onChange, label, hideLabel, disabled, classNa
   const listId = useId()
   const options = useMemo(() => QUARTER_HOURS.map((item) => ({ value: item, label: formatTime(item, { ...resolved, time: resolved.hour12 ? '12h' : '24h' }) })), [resolved])
 
-  useEffect(() => { setDraft(shown); setError(null) }, [shown])
+  useResetOnChange([shown], () => { setDraft(shown); setError(null) })
   useEffect(() => {
     if (open) list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView?.({ block: 'nearest' })
   }, [open, active])

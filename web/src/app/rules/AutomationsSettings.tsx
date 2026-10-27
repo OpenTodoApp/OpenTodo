@@ -14,10 +14,10 @@ export function AutomationsServerPanel() {
   const [s, setS] = useState<AutomationsSetting | null>(null)
   const [error, setError] = useState('')
   useEffect(() => {
-    api.getAutomationsSetting().then(setS, (err: unknown) =>
+    api.automationsSwitch.get().then(setS, (err: unknown) =>
       setError(isNetworkError(err) ? t('Connect to change this setting.') : messageOf(err)))
   }, [])
-  const save = (enabled: boolean) => act(api.putAutomationsSetting(enabled).then(setS))
+  const save = (enabled: boolean) => act(api.automationsSwitch.put(enabled).then(setS))
   return (
     <SettingsSection {...cardCopy('automations-server')} id="automations">
       {s && (
