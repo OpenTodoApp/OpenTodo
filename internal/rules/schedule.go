@@ -24,7 +24,6 @@ func (e *Engine) Tick(ctx context.Context) {
 		e.Log.Error("rules: list users", "err", err)
 		return
 	}
-	var queued bool
 	for _, uid := range users {
 		k := e.ruleKinds(ctx, uid)
 		if !k[ruleval.Schedule] && !k[ruleval.DueReached] && !k[ruleval.Overdue] {
@@ -33,16 +32,8 @@ func (e *Engine) Tick(ctx context.Context) {
 		if paused, err := e.Store.UserPaused(ctx, uid); err != nil || paused {
 			continue
 		}
-		n, err := e.tickUser(ctx, uid)
-		if err != nil {
+		if _, err := e.tickUser(ctx, uid); err != nil {
 			e.Log.Error("rules: schedule", "err", err)
-		}
-		queued = queued || n > 0
-	}
-	if queued {
-		select {
-		case e.wake <- struct{}{}:
-		default:
 		}
 	}
 }
@@ -198,7 +189,7 @@ func lastScheduled(tr ruleval.Trigger, zone *time.Location, from, to int64) (tim
 	return time.Time{}, false
 }
 
-// NextDue tells a host's shared scheduler when the engine next has work: now
+// NextDue tells the tenant's "rules" job when the engine next has work: now
 // while events wait, the next minute while any rule keeps a watermark or a rule
 // changed since the last tick (design D5).
 func (e *Engine) NextDue(ctx context.Context) (time.Time, bool, error) {
@@ -226,7 +217,7 @@ func (e *Engine) NextDue(ctx context.Context) (time.Time, bool, error) {
 	return now.Truncate(TickInterval).Add(TickInterval), true, nil
 }
 
-// RunOnce is one pass for a host's shared scheduler: the time triggers, then
+// RunOnce is one run of the tenant's "rules" job: the time triggers, then
 // the queue.
 func (e *Engine) RunOnce(ctx context.Context) {
 	e.mu.Lock()

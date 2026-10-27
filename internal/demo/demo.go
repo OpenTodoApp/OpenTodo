@@ -131,8 +131,10 @@ type Service struct {
 
 	// touched remembers the last last_active_at write per sandbox (Unix ms).
 	touched sync.Map
+	// lastCleanup is when the demo job last deleted expired sandboxes (Unix ms).
+	lastCleanup atomic.Int64
 	// vacuumPending is set when sandboxes were deleted at startup; the jobs
-	// leader reclaims the space when its loop starts.
+	// leader reclaims the space at its first demo job run.
 	vacuumPending atomic.Bool
 }
 
@@ -183,7 +185,7 @@ func (s *Service) EnsureOwner(ctx context.Context) error {
 // hidden owner, removal of the shared accounts of the first demo version, and
 // the reset when the last one predates the most recent nightly reset time (the
 // server was down at 03:00 UTC). Live sandboxes survive a plain restart. The
-// disk space of a startup reset is reclaimed by the jobs leader (Run).
+// disk space of a startup reset is reclaimed by the jobs leader (RunDue).
 func (s *Service) Start(ctx context.Context) error {
 	if err := s.loadTokenKey(ctx); err != nil {
 		return err
@@ -252,32 +254,41 @@ func (s *Service) LastReset(ctx context.Context) (time.Time, error) {
 	return time.UnixMilli(ms), nil
 }
 
-// Run is the jobs leader's loop (rolling-updates): it reclaims space left by a
-// startup reset, deletes expired sandboxes every CleanupInterval and resets
-// everything every night at ResetHour UTC, until ctx is done.
-func (s *Service) Run(ctx context.Context) {
+// NextDue is when the demo job next has work (rolling-updates: jobs leader
+// only): at once while a startup reset left space to reclaim, CleanupInterval
+// after the last cleanup, and the first ResetHour after the last reset.
+func (s *Service) NextDue(ctx context.Context) (time.Time, bool, error) {
+	if s.vacuumPending.Load() {
+		return s.now(), true, nil
+	}
+	last, err := s.LastReset(ctx)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	at := NextReset(last)
+	if c := time.UnixMilli(s.lastCleanup.Load()).Add(CleanupInterval); c.Before(at) {
+		at = c
+	}
+	return at, true, nil
+}
+
+// RunDue reclaims the space a startup reset left, resets everything when the
+// nightly reset time passed, and deletes expired sandboxes every CleanupInterval.
+func (s *Service) RunDue(ctx context.Context) {
 	if s.vacuumPending.Load() {
 		if err := s.vacuum(ctx); err != nil && ctx.Err() == nil {
 			s.log.Error("demo vacuum failed", "err", err)
 		}
 	}
-	s.cleanupLogged(ctx)
-	tick := time.NewTicker(CleanupInterval)
-	defer tick.Stop()
-	for {
-		nightly := time.NewTimer(time.Until(NextReset(s.now())))
-		select {
-		case <-ctx.Done():
-			nightly.Stop()
-			return
-		case <-tick.C:
-			nightly.Stop()
-			s.cleanupLogged(ctx)
-		case <-nightly.C:
-			if err := s.Reset(ctx); err != nil && ctx.Err() == nil {
-				s.log.Error("demo reset failed", "err", err)
-			}
+	now := s.now()
+	if last, err := s.LastReset(ctx); err == nil && !now.Before(NextReset(last)) {
+		if err := s.Reset(ctx); err != nil && ctx.Err() == nil {
+			s.log.Error("demo reset failed", "err", err)
 		}
+	}
+	if !now.Before(time.UnixMilli(s.lastCleanup.Load()).Add(CleanupInterval)) {
+		s.cleanupLogged(ctx)
+		s.lastCleanup.Store(now.UnixMilli())
 	}
 }
 

@@ -35,13 +35,12 @@ type Service struct {
 	loc *time.Location
 	// client performs outbound requests, only ever to the configured destination.
 	client *http.Client
-	// startupDelay is how long after Start the first due-check runs.
-	startupDelay time.Duration
 
 	runMu   sync.Mutex // held for the duration of a run
 	stateMu sync.Mutex
 	running *Run // the run in progress, if any
-	wakeCh  chan struct{}
+	// onWake is the tenant's jobs signal for the "backup" job (SetWake).
+	onWake func()
 
 	// Web restore (staging.go): the one staged restore and the restart hook.
 	restoreMu sync.Mutex
@@ -55,7 +54,8 @@ type Service struct {
 	// Lifecycle (reliable-background-jobs): every goroutine the service starts
 	// is counted in wg, and life is cancelled by Stop (or when Start's context
 	// ends), so shutdown cancels a run in progress and waits for its outcome to
-	// be recorded before the database closes.
+	// be recorded before the database closes. Scheduled runs come from the
+	// tenant's "backup" job (RunIfDue), which shutdown waits for too.
 	life     context.Context
 	lifeStop context.CancelFunc
 	lifeMu   sync.Mutex
@@ -83,8 +83,7 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 	s := &Service{
 		db: db, dataDir: dataDir, version: o.Version, log: o.Log,
 		settings: settings.New(db), secrets: settings.NewSecretsFile(dataDir, "backup"),
-		now: o.Now, loc: o.Loc, client: o.Client, audit: o.Audit, startupDelay: 10 * time.Second,
-		wakeCh: make(chan struct{}, 1), freeSpace: o.FreeSpace,
+		now: o.Now, loc: o.Loc, client: o.Client, audit: o.Audit, freeSpace: o.FreeSpace,
 	}
 	s.life, s.lifeStop = context.WithCancel(context.Background())
 	s.sameFS = sameFilesystem
@@ -117,11 +116,15 @@ func (s *Service) tmpDir() string { return filepath.Join(s.dataDir, "tmp") }
 // defaultLocalDir is where the local destination writes when no dir is set.
 func (s *Service) defaultLocalDir() string { return filepath.Join(s.dataDir, "backups") }
 
-// wake nudges the scheduler to re-read settings.
+// SetWake installs what a settings change calls: the tenant's jobs signal
+// (internal/jobs), so the "backup" job reads the new schedule at once. Call it
+// before the service is used.
+func (s *Service) SetWake(fn func()) { s.onWake = fn }
+
+// wake reports that the schedule changed.
 func (s *Service) wake() {
-	select {
-	case s.wakeCh <- struct{}{}:
-	default:
+	if s.onWake != nil {
+		s.onWake()
 	}
 }
 

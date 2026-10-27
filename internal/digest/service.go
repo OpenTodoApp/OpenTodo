@@ -16,8 +16,6 @@ import (
 
 // Scheduling (design D6).
 const (
-	// TickInterval is the pass interval on the jobs leader.
-	TickInterval = 5 * time.Minute
 	// Window is how long after the chosen hour a failed send is retried.
 	Window = 6 * time.Hour
 	// RetryEvery spaces the retries of a failed send, so they stay below the
@@ -182,27 +180,6 @@ func dueAt(st Settings, now time.Time) time.Time {
 		return end
 	}
 	return retry
-}
-
-// Run passes every TickInterval until ctx ends (jobs leader only).
-func (s *Service) Run(ctx context.Context) {
-	t := time.NewTicker(TickInterval)
-	defer t.Stop()
-	for {
-		if n, err := s.Tick(ctx); err != nil {
-			if ctx.Err() != nil {
-				return
-			}
-			s.log.Error("digest scheduler", "err", err)
-		} else if n > 0 {
-			s.log.Info("weekly digests sent", "count", n)
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
-	}
 }
 
 // Tick runs one pass and returns how many digests were sent.

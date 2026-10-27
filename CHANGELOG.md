@@ -4,6 +4,18 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **Background jobs run when their work is due instead of on fixed timers.** On a self-hosted server:
+  - Web push reminders go out at their firing time instead of up to 30 seconds later.
+  - Weekly digests go out at the chosen hour instead of up to 5 minutes later.
+  - Calendar fetches, calendar sync, issue polls and webhook retries run at their scheduled time.
+  - Queued webhook and notification channel deliveries are sent at once.
+  - The audit log, the Trash, old read notifications and the delivery logs are cleaned when an item passes its retention, instead of hourly or daily.
+  - An idle server no longer checks the delivery queues every second.
+
+  Self-hosted servers and hosts now run the same job definitions. ([Architecture](docs/architecture.md#background-work))
+
 ## [0.15.0] - 2026-10-27
 
 OpenTodo 0.15.0 moves the project to its own home, the **OpenTodoApp** organization on GitHub, with the image now at `ghcr.io/opentodoapp/opentodo`. The **Android app signs in behind a login page** (Pangolin, Authelia, Authentik, Cloudflare Access) and with single sign-on, inside the app, and targets Android 16 as Google Play requires. `ot vault` now also syncs **TaskNotes** task notes, the task panel shows a task's properties first and its notes in full, and a round of fixes for project counts, drag highlights, tab rows and task order.

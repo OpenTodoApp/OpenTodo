@@ -24,6 +24,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/email"
 	"github.com/OpenTodoApp/opentodo/internal/importer"
 	"github.com/OpenTodoApp/opentodo/internal/issues"
+	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	"github.com/OpenTodoApp/opentodo/internal/mail"
 	"github.com/OpenTodoApp/opentodo/internal/maps"
 	"github.com/OpenTodoApp/opentodo/internal/mcp"
@@ -70,8 +71,9 @@ type Hosted struct {
 	MaxMembers int
 	// Workspaces lowers the workspace limits for this tenant (workspaces "Limits").
 	Workspaces opsync.WorkspaceLimits
-	// Changed is called after every committed write, so the host can refresh
-	// the tenant's entries in the "next due" index (D3).
+	// Changed is called after every committed write and every wake-up of one
+	// of the tenant's jobs, so the host can refresh the tenant's entries in the
+	// "next due" index (D3).
 	Changed func()
 	// OnClose is called once the tenant has closed (the host's bookkeeping).
 	OnClose func()
@@ -86,6 +88,10 @@ type Set struct {
 	Version string
 	// Hosted is the host's settings for this tenant; nil when self-hosted.
 	Hosted *Hosted
+	// Signal carries the services' wake-ups to whatever runs the tenant's jobs
+	// (internal/jobs): the host from the start, a self-hosted server's runner
+	// once this process leads the jobs, otherwise nothing.
+	Signal *jobs.Signal
 
 	Auth     *auth.Service
 	Sync     *opsync.Service
@@ -135,7 +141,10 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 		// no web push, and none of the outbound integrations run.
 		cfg.AllowSignup, cfg.PushDisabled = false, true
 	}
-	s := &Set{Cfg: cfg, Log: log, Version: o.Version, Hosted: o.Hosted, Settings: settings.New(db)}
+	s := &Set{Cfg: cfg, Log: log, Version: o.Version, Hosted: o.Hosted, Settings: settings.New(db), Signal: &jobs.Signal{}}
+	if h := o.Hosted; h != nil && h.Changed != nil {
+		s.Signal.Attach(func(string) { h.Changed() }, h.Changed)
+	}
 	s.Auth = auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	s.Auth.SetSetupToken(cfg.SetupToken)
 	s.Auth.SetSetupCodeRequired(cfg.SetupCodeRequired)
@@ -155,7 +164,7 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	if o.Now != nil {
 		s.CalSync.SetClock(o.Now)
 	}
-	wireObserver(s.Sync, s.Hooks, s.Rules, o.Hosted, s.CalSync)
+	wireObserver(s.Sync, s.Hooks, s.Rules, s.Signal, s.CalSync)
 	if s.Backups, err = openBackups(ctx, cfg, o, db, s.Auth, log); err != nil {
 		return nil, err
 	}
@@ -181,6 +190,7 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	if s.Demo, err = startDemo(ctx, cfg, s.Auth, s.Sync, log); err != nil {
 		return nil, err
 	}
+	s.wireWakes()
 	s.openSwitches(ctx, db)
 	s.wireAccounts()
 	s.openImporter()

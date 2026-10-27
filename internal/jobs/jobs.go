@@ -88,6 +88,20 @@ func (realClock) After(d time.Duration) <-chan time.Time { return time.After(d) 
 // Real is the system clock.
 var Real Clock = realClock{}
 
+type clockAt struct{ now func() time.Time }
+
+func (c clockAt) Now() time.Time                         { return c.now() }
+func (c clockAt) After(d time.Duration) <-chan time.Time { return time.After(d) }
+
+// ClockAt is the system timer with now as its time source (a tenant's clock,
+// so a runner and the jobs' Next agree on the time); a nil now is Real.
+func ClockAt(now func() time.Time) Clock {
+	if now == nil {
+		return Real
+	}
+	return clockAt{now}
+}
+
 // Signal carries wake-ups from a tenant's services to whatever runs its jobs:
 // the self-hosted Runner, a host's scheduler, or nothing (a process that does
 // not lead the jobs), in which case they are dropped. The zero value is ready;

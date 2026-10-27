@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	gosync "sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -473,24 +474,31 @@ func TestHostTurnsPrivateMarksFailed(t *testing.T) {
 	}
 }
 
-func TestWorkerWakesOnEnqueue(t *testing.T) {
+// TestQueueWakesTheJob: queueing a delivery, and turning a webhook on again,
+// wake the tenant's "webhooks" job (internal/jobs) instead of waiting for a poll.
+func TestQueueWakesTheJob(t *testing.T) {
 	h := newHarness(t)
 	rcv := newReceiver(t, 200)
-	h.create("u1", rcv.srv.URL, []string{"task.created"}, nil)
-	never := make(chan time.Time) // the poll timer never fires: only the wake-up can start a pass
-	h.hooks.after = func(time.Duration) <-chan time.Time { return never }
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan struct{})
-	go func() { h.hooks.Run(ctx); close(done) }()
+	w := h.create("u1", rcv.srv.URL, []string{"task.created"}, nil)
+	var wakes atomic.Int32
+	h.hooks.SetWake(func() { wakes.Add(1) })
 	h.apply("u1", setOp("task", "t1", "created_at", `1`))
-	deadline := time.Now().Add(5 * time.Second)
-	for rcv.count() == 0 && time.Now().Before(deadline) {
-		time.Sleep(5 * time.Millisecond)
+	if wakes.Load() != 1 {
+		t.Fatalf("wakes after a queued delivery = %d, want 1", wakes.Load())
 	}
-	cancel()
-	<-done
-	if rcv.count() != 1 {
-		t.Fatalf("receiver saw %d requests", rcv.count())
+	ctx := context.Background()
+	off, on := false, true
+	if _, err := h.hooks.Update(ctx, "u1", w.ID, Patch{Enabled: &off}); err != nil {
+		t.Fatal(err)
+	}
+	if wakes.Load() != 1 {
+		t.Fatal("turning a webhook off woke the job")
+	}
+	if _, err := h.hooks.Update(ctx, "u1", w.ID, Patch{Enabled: &on}); err != nil {
+		t.Fatal(err)
+	}
+	if wakes.Load() != 2 {
+		t.Fatalf("wakes after turning it on = %d, want 2", wakes.Load())
 	}
 }
 

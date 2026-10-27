@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-// maxSleep caps how long the scheduler sleeps between checks so wall-clock
-// jumps (suspend, NTP, DST) are noticed within a minute.
-const maxSleep = time.Minute
-
 // nextRun returns the first scheduled instant strictly after `after`,
 // evaluated in loc. Frequency "off" yields the zero time.
 func nextRun(sc Schedule, after time.Time, loc *time.Location) time.Time {
@@ -96,10 +92,11 @@ func (s *Service) runIfDue(ctx context.Context) {
 	}
 }
 
-// Start launches the scheduler goroutine; it stops when ctx is cancelled or
-// Stop is called, and Stop waits for it. Runs left "running" by a previous
-// process are marked as interrupted first, and the temp files such a run left
-// behind are removed (Start runs only in the process that leads the jobs).
+// Start prepares the process that leads the jobs (it runs only there): runs
+// left "running" by a previous process are marked as interrupted, the temp
+// files such a run left behind are removed, and the restore housekeeping
+// starts. It stops when ctx is cancelled or Stop is called, and Stop waits for
+// it. Scheduled runs come from the tenant's "backup" job (NextRun, RunIfDue).
 func (s *Service) Start(ctx context.Context) {
 	context.AfterFunc(ctx, s.lifeStop)
 	if err := s.markInterrupted(context.WithoutCancel(ctx)); err != nil {
@@ -108,34 +105,4 @@ func (s *Service) Start(ctx context.Context) {
 	s.sweepTemp(context.WithoutCancel(ctx))
 	s.startRestoreHousekeeping(context.WithoutCancel(ctx))
 	s.recordPendingRestore(context.WithoutCancel(ctx))
-	s.spawn(func() { s.loop(s.life) })
-}
-
-func (s *Service) loop(ctx context.Context) {
-	timer := time.NewTimer(s.startupDelay)
-	defer timer.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-			s.runIfDue(ctx)
-		case <-s.wakeCh:
-			if !timer.Stop() {
-				select {
-				case <-timer.C:
-				default:
-				}
-			}
-		}
-		wait := maxSleep
-		if next, isDue, err := s.due(ctx); err == nil && !next.IsZero() {
-			if isDue {
-				wait = time.Second
-			} else if d := next.Sub(s.now()); d < wait {
-				wait = max(d, time.Second)
-			}
-		}
-		timer.Reset(wait)
-	}
 }

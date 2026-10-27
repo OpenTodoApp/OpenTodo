@@ -121,7 +121,6 @@ type Options struct {
 	Version string
 	Log     *slog.Logger
 	Now     func() time.Time
-	After   func(time.Duration) <-chan time.Time
 	Rand    func() float64
 	// Client sends messages; the default is the outbound client with AllowPrivate.
 	Client *http.Client
@@ -146,7 +145,6 @@ type Service struct {
 	log         *slog.Logger
 	version     string
 	now         func() time.Time
-	after       func(time.Duration) <-chan time.Time
 	rand        func() float64
 	client      *http.Client
 	dialer      *outbound.Dialer
@@ -154,7 +152,7 @@ type Service struct {
 	encrypted   func(context.Context, string) (bool, error)
 	baseOrigin  string
 	pushoverURL string
-	wake        chan struct{}
+	wake        func()
 	sw          *settings.Switch
 }
 
@@ -168,8 +166,8 @@ const (
 // New wires a Service on the server database and data directory.
 func New(db *sql.DB, dataDir string, o Options) *Service {
 	s := &Service{db: db, secrets: settings.NewSecretsFile(dataDir, SecretsName), log: o.Log, version: o.Version,
-		now: o.Now, after: o.After, rand: o.Rand, client: o.Client, enabled: o.Enabled, encrypted: o.Encrypted,
-		baseOrigin: o.BaseOrigin, pushoverURL: o.PushoverURL, wake: make(chan struct{}, 1)}
+		now: o.Now, rand: o.Rand, client: o.Client, enabled: o.Enabled, encrypted: o.Encrypted,
+		baseOrigin: o.BaseOrigin, pushoverURL: o.PushoverURL}
 	if s.log == nil {
 		s.log = slog.Default()
 	}
@@ -178,9 +176,6 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 	}
 	if s.now == nil {
 		s.now = time.Now
-	}
-	if s.after == nil {
-		s.after = time.After
 	}
 	if s.rand == nil {
 		s.rand = rand.Float64
@@ -581,6 +576,9 @@ func (s *Service) Update(ctx context.Context, userID, id string, in Input) (*Cha
 	secret, err := s.storeSecrets(d, in.RotateSecret && d.Kind == KindWebhook)
 	if err != nil {
 		return nil, "", nil, err
+	}
+	if d.Enabled && !cur.Enabled {
+		s.Wake() // messages held while it was off are due now
 	}
 	c, err := s.Get(ctx, userID, id)
 	return c, secret, changed, err
