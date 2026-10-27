@@ -29,7 +29,7 @@ export const Channels: StoryObj = { render: () => view() }
 export const Empty: StoryObj = { render: () => view({ channels: [], tests: {} }) }
 export const MemberWhileOff: StoryObj = { render: () => view({ isOwner: false, enabled: false, channels: null }) }
 export const Offline: StoryObj = { render: () => view({ connected: false }) }
-export const SecretOnce: StoryObj = { render: () => view({ secret: { name: 'Home Assistant', value: 'whsec_9fK2mQ7xVb4LpT1cRz8NwY3dHs6GaJ0e' } }) }
+export const SecretOnce: StoryObj = { render: () => view({ secret: { name: 'Home Assistant', value: 'whsec_example-shown-once-not-real' } }) }
 export const AddNtfy: StoryObj = { render: () => view({ draft: { ...newChannelDraft('ntfy'), topic: 'ada-tasks' } }) }
 export const EditPushover: StoryObj = { render: () => view({ draft: channelDraftOf(pushover) }) }
 export const EncryptedEditor: StoryObj = { render: () => view({ encrypted: true, draft: channelDraftOf(channel()) }) }
