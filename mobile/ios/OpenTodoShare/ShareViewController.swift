@@ -19,6 +19,9 @@ final class ShareViewController: UIViewController {
     }
 
     private func collect() {
+        // A new share replaces one that was never handed over; without this its files
+        // would stay in the shared container for good, since the index is overwritten.
+        ShareInbox.clear()
         let items = (extensionContext?.inputItems as? [NSExtensionItem]) ?? []
         let providers = items.flatMap { $0.attachments ?? [] }
         title_ = items.compactMap { $0.attributedTitle?.string }.first
@@ -52,10 +55,11 @@ final class ShareViewController: UIViewController {
 
     private func save(_ temp: URL?, provider: NSItemProvider, type: String) -> ShareInbox.File? {
         guard let temp else { return nil }
-        let size = (try? FileManager.default.attributesOfItem(atPath: temp.path)[.size]) as? NSNumber
-        guard (size?.intValue ?? 0) <= ShareMap.maxFileBytes else { return nil }
+        // A file whose size cannot be read is not copied: it could be of any size.
+        guard let size = (try? FileManager.default.attributesOfItem(atPath: temp.path)[.size]) as? NSNumber,
+              size.int64Value <= Int64(ShareMap.maxFileBytes) else { return nil }
         let name = provider.suggestedName ?? temp.lastPathComponent
-        let path = "\(ShareInbox.directory)/\(UUID().uuidString)-\(name.replacingOccurrences(of: "/", with: "-"))"
+        let path = "\(ShareInbox.directory)/\(UUID().uuidString)-\(ShareInbox.storedName(name))"
         let target = Store.url(path)
         try? FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
         guard (try? FileManager.default.copyItem(at: temp, to: target)) != nil else { return nil }

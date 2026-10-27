@@ -45,6 +45,8 @@ final class AppModel: ObservableObject {
         ShareInbox.clear()
         BiometricKeyStore.forget()
         prefs.serverOrigin = nil
+        // The http warning belonged to the old address; the next one is checked afresh.
+        prefs.insecureLocalServer = false
         origin = nil
     }
 
@@ -69,11 +71,16 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// `/?task=<id>`: a reminder tap opens the task it belongs to.
-    func show(task id: String) { pendingPath = path([URLQueryItem(name: "task", value: id)]) }
+    /// `/?task=<id>`: a reminder tap opens the task it belongs to. An empty id (the test
+    /// notification carries one) only brings the app forward.
+    func show(task id: String) {
+        guard !id.isEmpty else { return }
+        pendingPath = path([URLQueryItem(name: "task", value: id)])
+    }
 
     /// `/?reminder=<id>&action=snooze|dismiss`: the web app's own reminder operations.
     func show(reminder id: String, action: String?) {
+        guard !id.isEmpty else { return }
         var items = [URLQueryItem(name: "reminder", value: id)]
         if let action = action?.lowercased(), action == "snooze" || action == "dismiss" {
             items.append(URLQueryItem(name: "action", value: action))
