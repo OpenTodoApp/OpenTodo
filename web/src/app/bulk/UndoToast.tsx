@@ -13,6 +13,7 @@ import { cancelDepartures, emphasisMs, noMotion, withListTransition } from '../m
 import { ACTION_TOAST_MS, hideBulkToast, updateBulkToast, useBulkToast, type BulkToast } from './toastStore'
 import { useShortcutScope } from '../shortcuts'
 import { t } from '../../lib/i18n'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export const TOAST_MS = 10_000
 
@@ -64,7 +65,7 @@ export function UndoToast() {
   const [focused, setFocused] = useState(false)
   // After Undo the result reads for one task's action time (issue 348).
   useToastTimer(toast?.key, toast?.result, toast?.result ? ACTION_TOAST_MS : toast?.ttl ?? TOAST_MS, hovered || focused)
-  useEffect(() => { setHovered(false); setFocused(false) }, [toast?.key])
+  useResetOnChange([toast?.key], () => { setHovered(false); setFocused(false) })
   const region = useRef<HTMLDivElement>(null)
   // Undo removes its own button while it has focus, and the browser may not report that
   // focus left (issue 348): a new message reads the hold from the page, not from events.

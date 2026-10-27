@@ -38,7 +38,7 @@ export function ProjectInvitePolicyPanel() {
 
   useEffect(() => {
     let cancelled = false
-    api.getProjectInviteSettings().then((r) => { if (!cancelled) setValue(r.membersCanInviteNewPeople) }, () => undefined)
+    api.projectInvitesSwitch.get().then((r) => { if (!cancelled) setValue(r.membersCanInviteNewPeople) }, () => undefined)
     return () => { cancelled = true }
   }, [])
 
@@ -46,7 +46,7 @@ export function ProjectInvitePolicyPanel() {
     setBusy(true)
     setError(null)
     try {
-      setValue((await api.putProjectInviteSettings(on)).membersCanInviteNewPeople)
+      setValue((await api.projectInvitesSwitch.put(on)).membersCanInviteNewPeople)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('The server could not be reached; try again when you are online.'))
     } finally {
