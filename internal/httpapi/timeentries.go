@@ -95,7 +95,7 @@ func (s *Server) loadTimeData(ctx context.Context, uid string, csv bool) (*timeD
 		return nil, err
 	}
 	for _, r := range projects {
-		p := timetrack.Project{ID: idOf(r["id"]), Name: idOf(r["name"])}
+		p := timetrack.Project{ID: idOf(r["id"]), Name: idOf(r["name"]), ParentID: idOf(r["parent_id"])}
 		if v := r["deleted_at"]; len(v) > 0 && string(v) != "null" {
 			d.trashed[p.ID] = true
 			p.DeletedAt = new(int64)

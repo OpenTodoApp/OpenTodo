@@ -149,3 +149,104 @@ func CheckFieldValue(def Entity, raw json.RawMessage) string {
 	}
 	return ""
 }
+
+// Inherited fields (OpenSpec change inherited-custom-fields, design D1): the
+// fields that apply to a project are the live definitions of its ancestors,
+// farthest first, then its own, each group in position order. Ancestors follow
+// raw parent pointers through the given live projects and stop at a missing or
+// deleted parent or a project already visited. The web client's twin is
+// web/src/lib/fieldTree.ts; both are pinned by web/src/lib/fields.vectors.json.
+
+// FieldChain returns the ids of the projects whose fields apply to projectID:
+// its ancestors farthest first, then projectID itself.
+func FieldChain(projectID string, projects map[string]Entity) []string {
+	chain := []string{projectID}
+	seen := map[string]bool{projectID: true}
+	cur := projects[projectID]
+	for cur != nil {
+		parent := cur.str("parent_id")
+		if parent == "" || seen[parent] {
+			break
+		}
+		p, ok := projects[parent]
+		if !ok || p.deleted() {
+			break
+		}
+		seen[parent] = true
+		chain = append(chain, parent)
+		cur = p
+	}
+	for i, j := 0, len(chain)-1; i < j; i, j = i+1, j-1 {
+		chain[i], chain[j] = chain[j], chain[i]
+	}
+	return chain
+}
+
+// ApplicableFields returns the live field definitions that apply to a project
+// (none for Inbox, an empty id), inherited ones first.
+func ApplicableFields(projectID string, projects map[string]Entity, defs []Entity) []Entity {
+	if projectID == "" {
+		return nil
+	}
+	byProject := map[string][]Entity{}
+	for _, d := range defs {
+		if !d.deleted() {
+			pid := d.str("project_id")
+			byProject[pid] = append(byProject[pid], d)
+		}
+	}
+	var out []Entity
+	for _, pid := range FieldChain(projectID, projects) {
+		own := byProject[pid]
+		sort.SliceStable(own, func(i, j int) bool {
+			if a, b := own[i].number("position"), own[j].number("position"); a != b {
+				return a < b
+			}
+			return own[i].str("id") < own[j].str("id")
+		})
+		out = append(out, own...)
+	}
+	return out
+}
+
+// FieldDescendants returns the ids of the live projects below projectID at any
+// depth, following raw parent pointers (cycle-safe), in no particular order.
+func FieldDescendants(projectID string, projects map[string]Entity) []string {
+	children := map[string][]string{}
+	for id, p := range projects {
+		if p.deleted() {
+			continue
+		}
+		if parent := p.str("parent_id"); parent != "" {
+			children[parent] = append(children[parent], id)
+		}
+	}
+	var out []string
+	seen := map[string]bool{projectID: true}
+	stack := []string{projectID}
+	for len(stack) > 0 {
+		cur := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		for _, c := range children[cur] {
+			if !seen[c] {
+				seen[c] = true
+				out = append(out, c)
+				stack = append(stack, c)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// ProjectsByID indexes live projects by id, the input FieldChain and
+// ApplicableFields expect.
+func ProjectsByID(projects []Entity) map[string]Entity {
+	out := make(map[string]Entity, len(projects))
+	for _, p := range projects {
+		if !p.deleted() {
+			out[p.str("id")] = p
+		}
+	}
+	return out
+}

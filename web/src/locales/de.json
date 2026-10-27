@@ -5446,5 +5446,13 @@
   "Hide calendar events": "Kalendertermine ausblenden",
   "Calendar events today": "Kalendertermine heute",
   "Ended": "Vorbei",
-  "You have used this month’s assistant allowance.": "Du hast das Assistenten-Kontingent für diesen Monat aufgebraucht."
+  "You have used this month’s assistant allowance.": "Du hast das Assistenten-Kontingent für diesen Monat aufgebraucht.",
+  "From {name}": "Aus {name}",
+  "Inherited fields are edited in the project that defines them.": "Geerbte Felder bearbeitest du in dem Projekt, das sie festlegt.",
+  "No fields of its own yet.": "Noch keine eigenen Felder.",
+  "People this project is shared with see them only if they can also see that project.": "Personen, mit denen dieses Projekt geteilt ist, sehen sie nur, wenn sie auch jenes Projekt sehen.",
+  "Same name as a field from “{project}”. Rename one of them.": "Gleicher Name wie ein Feld aus „{project}“. Benenne eines davon um.",
+  "The sub-project “{project}” already has a field named “{name}”.": "Das Unterprojekt „{project}“ hat bereits ein Feld namens „{name}“.",
+  "The sub-project “{project}” would have more than {n} fields.": "Das Unterprojekt „{project}“ hätte dann mehr als {n} Felder.",
+  "This project already inherits a field named “{name}” from “{project}”.": "Dieses Projekt erbt bereits ein Feld namens „{name}“ von „{project}“."
 }

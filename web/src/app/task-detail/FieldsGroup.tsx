@@ -1,11 +1,11 @@
 // The "Fields" group of the task panel (OpenSpec custom-fields, "Fields in the
-// detail panel"): one row per live definition of the task's project, in position
-// order, each with an editor for its type. Every edit is one `fields.<id>` op,
+// detail panel"): one row per field that applies to the task's project (its
+// ancestors' fields first, inherited-custom-fields), in position order, each with an editor for its type. Every edit is one `fields.<id>` op,
 // applied locally first. A value that no longer fits its definition's type is
 // shown as text with a note; the next edit replaces it.
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { useProjectFieldRows } from '../../lib/localData'
-import { formatValue, liveFields, matchesType, parseOptions, setFieldValue, taskFields, validateValue } from '../../lib/fields'
+import { useApplicableFields } from '../useFields'
+import { formatValue, matchesType, parseOptions, setFieldValue, taskFields, validateValue } from '../../lib/fields'
 import type { FieldDef, FieldValue, Task } from '../../lib/types'
 import { ComboboxPanel, Icon, Input, Switch, Popover } from '../../ui'
 import { DateField } from '../datetime/DateField'
@@ -15,8 +15,7 @@ const NOT_A = translatedMap<string>({ number: msg('not a number'), date: msg('no
 
 export function FieldsGroup({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const projectId = task.project_id
-  const defs = useProjectFieldRows(projectId)
-  const live = liveFields(projectId, defs)
+  const live = useApplicableFields()(projectId)
   if (live.length === 0) return null
   const values = taskFields(task)
   return (
