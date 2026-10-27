@@ -15,6 +15,8 @@ Base path: `/api/v1`. All requests and responses are JSON. Errors look like:
 { "error": { "code": "invalid_input", "message": "task.priority must be an integer from 1 (highest) to 4 (lowest)" } }
 ```
 
+A path under `/api/` that exists, asked with a method it doesn't serve, answers 405 `method_not_allowed` with an `Allow` header listing the methods it does, for example `GET is not allowed on /api/v1/settings/assistant/test; use POST`. A path no route serves answers 404 `not_found` with `unknown API route: <method> <path>`; the query string is never repeated. A switched-off feature's routes are absent, so they answer 404, not 405.
+
 ## Authentication
 
 Two options:

@@ -3,6 +3,7 @@ import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
 import { api } from '../../lib/api'
 import { errorText } from '../../lib/errorText'
+import { testRequestError } from './testRequestError'
 import { clearThreads, getAutoApply, setAutoApply } from '../../lib/assistant'
 import { refreshAssistantStatus, setAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
 import {
@@ -586,7 +587,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
       const r = await api.testAssistant(p, values)
       setTests((entry) => ({ ...entry, [p]: r.ok && testIsUnsaved(values, settings, p) ? { ...r, message: t(SAVE_TO_USE) } : r }))
     } catch (err) {
-      setTests((x1) => ({ ...x1, [p]: { ok: false, message: message(err) } }))
+      setTests((x1) => ({ ...x1, [p]: { ok: false, message: testRequestError(err, message) } }))
     }
   }
   const updateMine = async (input: MyAssistantInput): Promise<boolean> => {
@@ -615,7 +616,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
     try {
       setOwnTest(await api.testMyAssistant(values))
     } catch (err) {
-      setOwnTest({ ok: false, message: message(err) })
+      setOwnTest({ ok: false, message: testRequestError(err, message) })
     }
   }
 
