@@ -13,12 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/backup"
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/demo"
 	"github.com/OpenTodoApp/opentodo/internal/httpapi"
-	"github.com/OpenTodoApp/opentodo/internal/notify"
+	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	"github.com/OpenTodoApp/opentodo/internal/push"
 	"github.com/OpenTodoApp/opentodo/internal/store"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
@@ -61,7 +60,10 @@ type Tenant struct {
 	Handler http.Handler
 
 	log       *slog.Logger
+	now       func() time.Time
 	hosted    *Hosted
+	jobs      []jobs.Job
+	upkeep    *jobs.Upkeep
 	unlock    func()
 	closeOnce sync.Once
 	closeErr  error
@@ -125,15 +127,22 @@ func (t *Tenant) wire(ctx context.Context, cfg config.Config, o Options) error {
 	}
 	t.Handler = httpapi.New(set, webHandler)
 	t.Set = set
+	t.now = o.Now
+	if t.now == nil {
+		t.now = time.Now
+	}
+	t.upkeep = jobs.NewUpkeep(upkeepEvery, set.Signal, t.now())
+	t.jobs = t.buildJobs()
 	return nil
 }
 
-// StartJobs starts the background jobs of a self-hosted server. They stop when
-// ctx is cancelled or stop is called; stop cancels them and returns once every
-// goroutine StartJobs started (and any backup in progress) has finished, so
-// the database can be closed after it (reliable-background-jobs). A delivery
-// or send in progress records its outcome first; each is bounded by its own
-// timeout.
+// StartJobs starts the background jobs of a self-hosted server: the tenant's
+// jobs (Jobs) on one jobs.Runner, woken by the services through the tenant's
+// Signal, plus the probe for other processes' writes. They stop when ctx is
+// cancelled or stop is called; stop cancels them and returns once every job
+// run in progress (and any backup in progress) has finished, so the database
+// can be closed after it (reliable-background-jobs). A delivery or send in
+// progress records its outcome first; each is bounded by its own timeout.
 func (t *Tenant) StartJobs(ctx context.Context, demoSignal func(context.Context, *demo.Service)) (stop func()) {
 	cfg := t.Cfg
 	ctx, cancel := context.WithCancel(ctx)
@@ -145,60 +154,21 @@ func (t *Tenant) StartJobs(ctx context.Context, demoSignal func(context.Context,
 			f(ctx)
 		}()
 	}
-	// Prune audit events past the owner's retention at startup and hourly.
-	// Expired pending sign-ups (outgoing-email) go on the same tick.
-	t.Auth.Audit().AlsoPrune(t.Auth.PruneSignups)
-	spawn(func(ctx context.Context) { t.Auth.Audit().RunPruner(ctx, audit.PruneInterval) })
-	// Read notifications past the 90-day retention: swept on open and daily.
-	spawn(func(ctx context.Context) { t.Inbox.RunSweeper(ctx, notify.SweepInterval) })
 	if !cfg.Demo {
-		// The backup service counts its own goroutines (scheduler, restore
-		// housekeeping, a run started from the web app); stop waits for them.
+		// Runs left "running" by a previous process, temp files, the restore
+		// housekeeping; the backup service counts its own goroutines and stop
+		// waits for them.
 		t.Backups.Start(ctx)
 	}
-	if t.Push != nil {
-		spawn(t.Push.Run)
-	}
-	if t.Digest != nil {
-		// Weekly digests: a pass every 5 minutes; it sends nothing while
-		// outgoing email is not configured.
-		spawn(t.Digest.Run)
-	}
-	if t.Demo != nil {
-		// Expired-sandbox cleanup every 5 minutes and the nightly reset.
-		spawn(t.Demo.Run)
-		if demoSignal != nil {
-			// The operator (or a test) can force a reset with SIGUSR1; there is no route.
-			spawn(func(ctx context.Context) { demoSignal(ctx, t.Demo) })
-		}
-	} else {
-		spawn(t.Email.Run)
-	}
-	// Purge items that outlived the Trash retention at startup and daily
-	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
-	spawn(func(ctx context.Context) { t.Sync.RunRetention(ctx, cfg.TrashRetentionDays, t.log) })
-	// Query planner statistics: refreshed on open and daily (database-concurrency).
-	spawn(func(ctx context.Context) { store.RunOptimizer(ctx, t.DB, store.OptimizeInterval, t.log) })
-	if !cfg.Demo {
-		// No outbound calendar fetches on a demo instance.
-		spawn(t.Calendar.Run)
-		// No outbound issue polls on a demo instance.
-		spawn(t.Issues.Run)
-		// No calendar sync on a demo instance.
-		spawn(t.CalSync.Run)
-		// No outbound webhook deliveries on a demo instance.
-		spawn(t.Hooks.Run)
-	}
-	if t.Channels != nil {
-		// Notification channels: one worker; nil (and silent) on a demo instance.
-		spawn(t.Channels.Run)
-	}
-	if t.Rules != nil {
-		// Automation rules: the queue, the minute scheduler and the run log
-		// pruning; nothing on a demo instance (t.Rules is nil there).
-		spawn(t.Rules.Run)
+	runner := jobs.NewRunner(append(t.Jobs(), t.writesJob()), jobs.ClockAt(t.now), t.log)
+	detach := t.Signal.Attach(runner.Wake, runner.Changed)
+	spawn(runner.Run)
+	if t.Demo != nil && demoSignal != nil {
+		// The operator (or a test) can force a reset with SIGUSR1; there is no route.
+		spawn(func(ctx context.Context) { demoSignal(ctx, t.Demo) })
 	}
 	return func() {
+		detach()
 		cancel()
 		wg.Wait()
 		if !cfg.Demo {

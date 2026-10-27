@@ -18,8 +18,6 @@ import (
 const (
 	Concurrency      = deliveryq.Concurrency
 	AutoDisableAfter = deliveryq.AutoDisableAfter
-	PollInterval     = deliveryq.PollInterval
-	PruneInterval    = deliveryq.PruneInterval
 	LogRetention     = deliveryq.LogRetention
 	LogLimit         = 50
 	limitWindow      = time.Hour
@@ -168,16 +166,16 @@ func (s *Service) origin(c Channel) string {
 
 // ---- worker ----
 
-// Wake nudges the worker to look at the queue now.
-func (s *Service) Wake() { deliveryq.Nudge(s.wake) }
+// SetWake installs what Wake calls: the tenant's jobs signal (internal/jobs).
+// Call it before the service is used.
+func (s *Service) SetWake(fn func()) { s.wake = fn }
 
-// Run is the single worker loop; it returns when ctx is cancelled, after the
-// pass in progress (each send is bounded by SendTimeout). It sends nothing
-// while the owner switch is off.
-func (s *Service) Run(ctx context.Context) {
-	l := deliveryq.Loop{Name: "notification channels", Log: s.log, Now: s.now, After: s.after, Wake: s.wake,
-		Enabled: s.enabled, Prune: s.Prune, Process: s.ProcessDue}
-	l.Run(ctx)
+// Wake reports that messages may be due now, so the "webhooks" job (which
+// also sends channel messages) runs at once.
+func (s *Service) Wake() {
+	if s.wake != nil {
+		s.wake()
+	}
 }
 
 type queued struct {

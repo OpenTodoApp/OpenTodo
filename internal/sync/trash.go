@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"sort"
 	"time"
 )
@@ -377,9 +376,6 @@ func (s *Service) SweepOrphans(ctx context.Context) (int, error) {
 	return len(orphans), nil
 }
 
-// RetentionInterval is how often the retention job runs after its startup pass.
-const RetentionInterval = 24 * time.Hour
-
 // RetentionPass purges everything that has been in the Trash for more than days
 // (design D7) and wakes the devices that could see it. days <= 0 does nothing.
 func (s *Service) RetentionPass(ctx context.Context, days int) (PurgeResult, error) {
@@ -395,37 +391,6 @@ func (s *Service) RetentionPass(ctx context.Context, days int) (PurgeResult, err
 		return res, err
 	}
 	return res, nil
-}
-
-// RunRetention runs RetentionPass at startup and every RetentionInterval until
-// ctx is done. days <= 0 (OPENTODO_TRASH_RETENTION_DAYS=0) returns immediately.
-func (s *Service) RunRetention(ctx context.Context, days int, log *slog.Logger) {
-	if days <= 0 {
-		return
-	}
-	pass := func() {
-		res, err := s.RetentionPass(ctx, days)
-		if err != nil {
-			if ctx.Err() == nil {
-				log.Error("trash retention failed", "err", err)
-			}
-			return
-		}
-		if res.Tasks+res.Projects+res.Attachments+res.Orphans > 0 {
-			log.Info("trash retention purged items", "tasks", res.Tasks, "projects", res.Projects, "attachments", res.Attachments, "orphan_files", res.Orphans, "days", days)
-		}
-	}
-	pass()
-	t := time.NewTicker(RetentionInterval)
-	defer t.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			pass()
-		}
-	}
 }
 
 type trashedEntity struct {

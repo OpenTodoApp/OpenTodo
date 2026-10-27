@@ -67,9 +67,8 @@ func (e *Engine) Observe(ctx context.Context, changes []opsync.Change) {
 		e.Log.Error("rules: queue events", "err", err)
 		return
 	}
-	select {
-	case e.wake <- struct{}{}:
-	default:
+	if e.wake != nil {
+		e.wake()
 	}
 }
 

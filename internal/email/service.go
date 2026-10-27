@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
+	"sync/atomic"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/audit"
@@ -64,16 +65,9 @@ func (s *Service) Poller() *Poller { return s.poller }
 // Address returns the inbox address for a secret.
 func (s *Service) Address(secret string) string { return s.cfg.AddressFor(secret) }
 
-// Run polls until ctx ends; it returns at once when email capture is disabled.
-func (s *Service) Run(ctx context.Context) {
-	if s.poller == nil {
-		return
-	}
-	s.poller.Run(ctx)
-}
-
 // Poller fetches unseen messages at a fixed interval and hands them to the
-// processor. A failed poll is logged once and retried at the next tick.
+// processor. A failed poll is logged once and retried at the next poll. The
+// tenant's "email" job (internal/jobs) calls Tick when Next passes.
 type Poller struct {
 	src       Source
 	proc      *Processor
@@ -81,6 +75,7 @@ type Poller struct {
 	interval  time.Duration
 	log       *slog.Logger
 	now       func() time.Time
+	lastPoll  atomic.Int64 // Unix ms; zero before the first poll
 	lastPrune time.Time
 }
 
@@ -92,22 +87,25 @@ func NewPoller(src Source, proc *Processor, store *Store, interval time.Duration
 	return &Poller{src: src, proc: proc, store: store, interval: interval, log: log, now: time.Now}
 }
 
-// Run polls immediately and then every interval until ctx is cancelled.
-func (p *Poller) Run(ctx context.Context) {
-	p.log.Info("email capture polling", "interval", p.interval.String())
-	t := time.NewTicker(p.interval)
-	defer t.Stop()
-	for {
-		p.tick(ctx)
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
+// Next is when the next poll is due: at once before the first one, then one
+// interval after the last.
+func (p *Poller) Next() time.Time {
+	last := p.lastPoll.Load()
+	if last == 0 {
+		return p.now()
 	}
+	return time.UnixMilli(last).Add(p.interval)
 }
 
-func (p *Poller) tick(ctx context.Context) {
+// Interval is the time between polls.
+func (p *Poller) Interval() time.Duration { return p.interval }
+
+// Tick polls once, logs the outcome and prunes old receipts daily.
+func (p *Poller) Tick(ctx context.Context) {
+	if p.lastPoll.Load() == 0 {
+		p.log.Info("email capture polling", "interval", p.interval.String())
+	}
+	p.lastPoll.Store(p.now().UnixMilli())
 	counts, err := p.Poll(ctx)
 	if ctx.Err() != nil {
 		return
