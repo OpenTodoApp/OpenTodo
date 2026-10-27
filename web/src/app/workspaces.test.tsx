@@ -42,8 +42,11 @@ describe('the workspace control', () => {
     const trigger = () => r.container.querySelector<HTMLElement>('[data-workspace-trigger]')!
     await waitFor(() => !!trigger().querySelector('[data-workspace-lines]'))
     const lines = trigger().querySelector('[data-workspace-lines]')!
-    expect(lines.querySelector('[data-workspace-app]')!.textContent).toBe('OpenTodo')
+    expect(lines.querySelector('[data-workspace-app]')!.textContent!.trim()).toBe('OpenTodo')
     expect(lines.querySelector('[data-workspace-name]')!.textContent).toBe('Personal')
+    // The visible text reads "OpenTodo Personal", so it stays inside the accessible name
+    // once punctuation is ignored (axe label-content-name-mismatch).
+    expect(lines.textContent).toBe('OpenTodo Personal')
     expect(lines.querySelector('[data-workspace-name]')!.className).toMatch(/\btruncate\b/)
     expect(lines.querySelector('[data-workspace-app]')!.className).toMatch(/\btruncate\b/)
     expect(visibleText(trigger())).not.toContain('·')

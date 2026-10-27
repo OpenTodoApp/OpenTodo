@@ -79,10 +79,12 @@ export function WorkspaceControl({ route, collapsed = false }: { route: Route; c
         trigger={<>
           <WorkspaceMark workspace={current} />
           {/* With one workspace both names show, on two lines that truncate on their own
-              (sidebar-title-lines, GitHub issue 492); the accessible label keeps "app · name". */}
+              (sidebar-title-lines, GitHub issue 492); the accessible label keeps "app · name".
+              The space after the wordmark keeps the visible text "app name", so it still
+              matches the label for speech input (axe label-content-name-mismatch). */}
           {!collapsed && (single
             ? <span className="flex min-w-0 flex-1 flex-col" data-workspace-lines>
-              <span className="truncate font-semibold text-strong" data-workspace-app><InstanceWordmark /></span>
+              <span className="truncate font-semibold text-strong" data-workspace-app><InstanceWordmark />{' '}</span>
               <span className="truncate text-meta text-muted" data-workspace-name>{name}</span>
             </span>
             : <span className="min-w-0 flex-1 truncate font-semibold text-strong" data-workspace-name>{name}</span>)}
