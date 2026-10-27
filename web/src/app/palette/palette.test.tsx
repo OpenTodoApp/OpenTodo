@@ -171,6 +171,14 @@ describe('registry (4.1, 4.2)', () => {
     commands(ctxFor({ vimEnabled: true })).find((c) => c.id === 'app:vim')!.run()
     expect(isVimEnabled()).toBe(false)
   })
+  it('plugin commands: listed when the plugin is on, gone when it is off (plugin-section)', () => {
+    const enabled = commands(ctxFor())
+    expect(enabled.some((c) => c.id === 'plugin:daily-digest:copy-markdown')).toBe(true)
+    const disabled = commands(ctxFor({ disabledPlugins: new Set(['daily-digest']) }))
+    expect(disabled.some((c) => c.id === 'plugin:daily-digest:copy-markdown')).toBe(false)
+    // An id from a newer build changes nothing.
+    expect(commands(ctxFor({ disabledPlugins: new Set(['not-shipped']) })).some((c) => c.id === 'plugin:daily-digest:copy-markdown')).toBe(true)
+  })
   it('task commands: none without a selection, no writes for a read-only task, priority writes an op', async () => {
     expect(commands(ctxFor()).some((c) => c.id.startsWith('task:'))).toBe(false)
     const id = await createTask({ title: 'Report' })

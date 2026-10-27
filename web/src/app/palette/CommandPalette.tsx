@@ -13,6 +13,7 @@ import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
 import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading } from '../../lib/localData'
+import { readDisabledPlugins } from '../../lib/plugins'
 import { isFavourite } from '../../lib/favourites'
 import { earlierIds } from '../../lib/dayLists'
 import { usePickScores } from '../../lib/pickRank'
@@ -96,6 +97,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     const sorted = [...views].sort((a, b) => a.position - b.position)
     return {
       route, user, today, list, task, filterQuery: route.view === 'filter' ? currentFilter() : null, query, vimEnabled, showShortcuts,
+      disabledPlugins: readDisabledPlugins(prefs),
       workspaces: { list: workspaceState.list, current: workspaceState.current },
       focusQuickAdd: () => list?.focusQuickAdd(null) ?? false,
       project: project && canEditProject(role) ? {

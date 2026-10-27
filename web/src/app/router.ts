@@ -65,7 +65,7 @@ export type Route =
 /** Settings sections, each at /settings/<id> (settings-navigation), in list order (workspaces added Workspaces, settings-subpages Language and region). */
 export const SETTINGS_SECTION_IDS = [
   'account', 'workspaces', 'appearance',
-  'general', 'language', 'notifications', 'capture', 'about',
+  'general', 'language', 'notifications', 'capture', 'plugins', 'about',
   'integrations', 'data',
   'people', 'server',
 ] as const

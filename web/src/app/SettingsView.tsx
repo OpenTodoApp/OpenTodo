@@ -21,7 +21,7 @@ export { followLink }
 /** Each page's Help screen (documentation "Help links name the same screens"); the guide's `screens` resolve them. */
 const PAGE_HELP_SCREENS: Record<SettingsSectionId, string> = {
   account: 'settings/account', workspaces: 'settings/workspaces', appearance: 'settings/appearance', general: 'settings/general', language: 'settings/language',
-  notifications: 'settings/notifications', capture: 'settings/capture', about: 'settings/about', integrations: 'settings/integrations', data: 'settings/data',
+  notifications: 'settings/notifications', capture: 'settings/capture', plugins: 'settings/plugins', about: 'settings/about', integrations: 'settings/integrations', data: 'settings/data',
   people: 'settings/people', server: 'settings/server',
 }
 

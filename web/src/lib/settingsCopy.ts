@@ -375,6 +375,15 @@ export const SETTINGS_COPY = {
     },
     notices: { copied: msg('Copied. Create a bookmark and paste it as the address.') },
   },
+  // Settings → Plugins (plugin-section): the built-in plugins' switches.
+  plugins: {
+    title: msg('Plugins'),
+    icon: 'wrench',
+    description: msg('Built-in plugins, each adding commands you can turn off here.'),
+    notices: {
+      builtIn: msg('Plugins are part of the app itself; nothing is downloaded.'),
+    },
+  },
   'email-inbox': {
     title: msg('Email to task'),
     icon: 'mail',

@@ -703,6 +703,13 @@ var Schema = map[string]map[string]Field{
 		// design D1): "shown" or "hidden"; clients read an empty or unknown
 		// value as hidden and keep the stored value.
 		"today_events": {Kind: kString, Default: `""`},
+		// Built-in plugins this user turned off (OpenSpec change plugin-section,
+		// plugins "Enable and disable state", design D3): a comma-separated
+		// list of plugin ids in the client's own registry; an empty value means
+		// every plugin is on, and an unknown id is ignored on read and kept in
+		// the stored value, so a list from a newer build stays harmless. Ids
+		// only, never content.
+		"disabled_plugins": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

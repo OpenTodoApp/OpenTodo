@@ -120,6 +120,11 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
       page({ id: 'email', label: msg('Email to task'), icon: 'mail', help: 'settings/email', demo: [msg('email to task')] }),
     ]),
   },
+  // plugin-section: the built-in plugins and their switches, for every role.
+  {
+    id: 'plugins', label: msg('Plugins'), group: 'app', icon: 'wrench',
+    description: () => t('Built-in plugins and the commands they add'),
+  },
   // welcome-note: the version, docs, website, feedback and support links.
   { id: 'about', label: msg('About'), group: 'app', icon: 'heart', description: () => t('Version, documentation, website, feedback and support') },
   {

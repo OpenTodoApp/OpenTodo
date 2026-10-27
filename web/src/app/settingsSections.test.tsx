@@ -36,11 +36,11 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const TEN = ['account', 'workspaces', 'appearance', 'general', 'language', 'notifications', 'capture', 'about', 'integrations', 'data', 'people', 'server'] as const
+const ALL = ['account', 'workspaces', 'appearance', 'general', 'language', 'notifications', 'capture', 'plugins', 'about', 'integrations', 'data', 'people', 'server'] as const
 
 describe('routes', () => {
-  it('parses and builds /settings/<section> for the twelve sections', () => {
-    expect(SETTINGS_SECTION_IDS).toEqual(TEN)
+  it('parses and builds /settings/<section> for the thirteen sections', () => {
+    expect(SETTINGS_SECTION_IDS).toEqual(ALL)
     for (const id of SETTINGS_SECTION_IDS) {
       expect(parseRoute(`/settings/${id}`)).toEqual({ view: 'settings', section: id })
       expect(routePath({ view: 'settings', section: id })).toBe(`/settings/${id}`)
@@ -93,11 +93,11 @@ describe('section table', () => {
     }
   })
 
-  it('groups the ten sections in the stated order per role, omitting empty groups', () => {
+  it('groups the thirteen sections in the stated order per role, omitting empty groups', () => {
     const shape = (u: User) => groupedSections(u).map((g) => [g.group.label, g.sections.map((s) => s.id)])
     expect(shape(owner)).toEqual([
       ['You', ['account', 'workspaces', 'appearance']],
-      ['App', ['general', 'language', 'notifications', 'capture', 'about']],
+      ['App', ['general', 'language', 'notifications', 'capture', 'plugins', 'about']],
       ['Data', ['integrations', 'data']],
       ['Server', ['people', 'server']],
     ])
@@ -291,11 +291,11 @@ describe('opening a section', () => {
   })
 
   it('has no help link or action in any card header', () => {
-    const all = withoutLearnMore(TEN.map((id) => render(owner, id)).join('\n'))
+    const all = withoutLearnMore(ALL.map((id) => render(owner, id)).join('\n'))
     expect(all).not.toContain('data-help-screen="settings/password"')
-    expect(all.match(/data-help-screen="settings\/[a-z]+"/g)?.length).toBe(TEN.length)
+    expect(all.match(/data-help-screen="settings\/[a-z]+"/g)?.length).toBe(ALL.length)
     // Learn more sits in a card's line, never in its header.
-    expect(TEN.map((id) => render(owner, id)).join('\n')).not.toMatch(/<h2[^>]*>[^<]*<button/)
+    expect(ALL.map((id) => render(owner, id)).join('\n')).not.toMatch(/<h2[^>]*>[^<]*<button/)
   })
 })
 

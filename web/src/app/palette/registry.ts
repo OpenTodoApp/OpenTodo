@@ -30,6 +30,7 @@ import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
 import { keysOf } from '../../lib/shortcuts'
+import { pluginCommands } from '../../plugins/registry'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
@@ -60,6 +61,8 @@ export interface PaletteContext {
   focusQuickAdd: () => boolean
   /** The tasks of Today's Earlier group (page-rhythm D6); its two commands are offered while it is not empty. */
   earlier?: readonly string[]
+  /** The plugin ids this account has turned off (plugin-section); absent means every plugin is on. */
+  disabledPlugins?: ReadonlySet<string>
 }
 
 interface Command {
@@ -290,6 +293,8 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
     { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
   )
+  // Commands of the enabled plugins (plugin-section "Commands from enabled plugins").
+  out.push(...pluginCommands(ctx.disabledPlugins).map((c): Command => ({ id: `plugin:${c.id}`, label: c.label, icon: c.icon, keywords: c.keywords, run: c.run })))
   if (ctx.query.trim()) {
     const q = ctx.query.trim()
     out.push({ id: 'app:help-search', label: t('Search Help for “{query}”', { query: q }), icon: 'search', run: () => navigate({ view: 'help', q }) })

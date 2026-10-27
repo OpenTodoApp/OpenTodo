@@ -42,6 +42,7 @@ import { EmailInboxPanel } from './EmailInboxPanel'
 import { BriefingSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
+import { PluginsSection } from './PluginsSection'
 import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { MapsServerPanel, MapsUserSection } from './locations/MapsSettings'
@@ -132,6 +133,8 @@ function SectionCards({ section, user, onLogout, demo, hosted }: { section: Sett
       return <WorkspacesSettings user={user} />
     case 'about':
       return <AboutSection user={user} />
+    case 'plugins':
+      return <PluginsSection />
     case 'data':
       return <><YourDataSection demo={demo} isOwner={user.role === 'owner'} /><Anchor id="projects"><AutoArchiveSection /></Anchor></>
     default: {

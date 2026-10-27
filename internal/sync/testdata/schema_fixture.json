@@ -164,6 +164,7 @@
       "date_format",
       "day_start",
       "density",
+      "disabled_plugins",
       "favourites",
       "first_run",
       "focus_auto_start",

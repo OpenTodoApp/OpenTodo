@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **Built-in plugins, each with a switch.** A plugin is a small module in the source that adds commands to the palette. **Settings → Plugins** lists every built-in plugin with one line about it and an enable switch; the switches are account settings that sync like every preference, and a switched-off plugin's commands leave the palette on every device. The example plugin, Daily digest, copies today's open tasks as a Markdown checklist. ([Plugins](docs/plugins.md), `plugin-section`)
 - **Sub-projects inherit their parent's custom fields.** A field defined on a project now applies to every sub-project below it: its tasks show, edit, filter by and export the field like their own, and the sub-project's **Fields…** dialog lists inherited fields first, read-only. Names stay unique across the tree, the 30-field limit counts inherited fields, and the API and assistant tools follow the same rules. No migration; values are stored as before. ([Custom fields](docs/custom-fields.md#fields-of-sub-projects), `inherited-custom-fields`, closes #405)
 
 ### Fixed

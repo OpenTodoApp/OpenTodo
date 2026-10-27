@@ -1888,6 +1888,12 @@
   "Built-in": [
     "web/src/app/PreferencesPanels.tsx"
   ],
+  "Built-in plugins and the commands they add": [
+    "web/src/app/settingsSections.ts"
+  ],
+  "Built-in plugins, each adding commands you can turn off here.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Bullet list": [
     "web/src/app/EditorChrome.tsx",
     "web/src/app/editorCommands.ts",
@@ -2947,6 +2953,12 @@
   "Copy this {what} now. It will not be shown again.": [
     "web/src/app/TokensSection.tsx"
   ],
+  "Copy today's open tasks as a Markdown checklist.": [
+    "web/src/plugins/daily-digest/index.ts"
+  ],
+  "Copy today's tasks as Markdown": [
+    "web/src/plugins/daily-digest/index.ts"
+  ],
   "Copy {label}": [
     "web/src/app/CaldavPanel.tsx"
   ],
@@ -3203,6 +3215,9 @@
     "web/src/app/review/ReviewView.tsx",
     "web/src/lib/method/vocabulary.json",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Daily digest": [
+    "web/src/plugins/daily-digest/index.ts"
   ],
   "Danger zone": [
     "web/src/app/LabelsView.tsx",
@@ -8194,6 +8209,9 @@
   "Nothing is due in the next seven days.": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Nothing is due today.": [
+    "web/src/plugins/daily-digest/index.ts"
+  ],
   "Nothing is due today. Pick your focus from Next.": [
     "web/src/app/review/DailyCheck.tsx"
   ],
@@ -9384,6 +9402,13 @@
   "Please wait…": [
     "web/src/app/App.tsx",
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Plugins": [
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Plugins are part of the app itself; nothing is downloaded.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Policy for this server": [
     "web/src/lib/settingsCopy.ts"
@@ -14742,6 +14767,9 @@
   ],
   "Use {coords}": [
     "web/src/app/locations/LocationEditor.tsx"
+  ],
+  "Use {plugin}": [
+    "web/src/app/PluginsSection.tsx"
   ],
   "Used to sign in on new devices.": [
     "web/src/lib/settingsCopy.ts"
