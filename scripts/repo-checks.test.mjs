@@ -247,6 +247,28 @@ test('base and job images are pinned by digest', () => {
   }
 })
 
+// The runner's apt mirror sometimes serves a job at a few kB/s, so no job installs
+// browsers or their system packages: every job that uses Playwright runs in the pinned
+// Playwright image, and every Playwright package is the Makefile's PLAYWRIGHT_VERSION.
+test('Playwright jobs run in the pinned image at one version', () => {
+  const version = read('Makefile').match(/^PLAYWRIGHT_VERSION := (\S+)$/m)?.[1]
+  assert.ok(version, 'Makefile sets PLAYWRIGHT_VERSION')
+  const files = [...workflowFiles(), 'Makefile', 'scripts/README.md', 'docs/design-system.md']
+  for (const f of files) {
+    for (const [, v] of read(f).matchAll(/playwright(?:\/test)?@(\d[\w.-]*)/g)) {
+      assert.equal(v, version, `${f}: Playwright ${v} must be the Makefile's PLAYWRIGHT_VERSION`)
+    }
+  }
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      assert.doesNotMatch(block, /playwright install|--with-deps/, `${f}: job ${id} must not install browsers or apt packages`)
+      if (/playwright(?:\/test)?@/.test(block)) {
+        assert.match(block, /^ {4}container: mcr\.microsoft\.com\/playwright:/m, `${f}: job ${id} uses Playwright, so it runs in the pinned Playwright image`)
+      }
+    }
+  }
+})
+
 test('the image, stable tag and release are published only after every gate', () => {
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
   // claude-plugin publishes the Claude Code marketplace after the release (claude-plugin D5).
@@ -338,9 +360,10 @@ test('the OpenSpec CLI runs at one exact version', () => {
 
 test('browser end-to-end checks run in CI and the race detector nightly', () => {
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
-  assert.match(jobs.layout, /run: make e2e$/m, 'the layout job runs make e2e')
-  const e2e = read('Makefile').match(/^e2e:[^\n]*\n((?:\t.*\n)+)/m)?.[1] ?? ''
-  assert.match(e2e, /e2e-smoke e2e-views e2e-offline/, 'make e2e runs the two-device, saved-view and offline-start scripts')
+  // CI's image has no make, so the layout job runs what `make e2e` runs.
+  assert.match(jobs.layout, /^ {10}scripts\/e2e\.sh$/m, 'the layout job runs scripts/e2e.sh')
+  assert.match(read('Makefile'), /^e2e: cli\n\tscripts\/e2e\.sh$/m, 'make e2e builds bin/ot and runs scripts/e2e.sh')
+  assert.match(read('scripts/e2e.sh'), /e2e-smoke e2e-views e2e-offline/, 'scripts/e2e.sh runs the two-device, saved-view and offline-start scripts')
   // The built service worker and manifest tests run after the build, where they cannot skip.
   const build = jobsOf(read('.github/workflows/ci.yml'))['web-build'] ?? ''
   assert.ok(build.indexOf('run: npm run test:built') > build.indexOf('run: npm run build'), 'the web-build job runs npm run test:built after npm run build')

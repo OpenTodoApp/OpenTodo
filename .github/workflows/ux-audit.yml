@@ -27,6 +27,8 @@ jobs:
     name: Interface audit
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # The pinned Playwright image (PLAYWRIGHT_IMAGE in the Makefile), like the layout check.
+    container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -41,8 +43,7 @@ jobs:
       - run: npm ci --no-audit --no-fund && npm run build
         working-directory: web
       - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
-      - name: Install Playwright with Chromium
-        run: scripts/ci-playwright-install.sh 1.56.1 chromium
+      - run: npm i -g --no-audit --no-fund playwright@1.56.1
       - name: Measurement tests (fixtures in Chromium)
         run: node --test scripts/ux-audit/measure.test.mjs
       # Reports only, unless the maintainer sets the repository variable UX_AUDIT_STRICT to 1.
