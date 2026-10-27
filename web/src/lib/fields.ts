@@ -6,8 +6,9 @@
 import { db } from './db'
 import { formatDate, type ResolvedDateTime, currentDateTime } from './dates'
 import { mutate, mutateMany, type Change } from './ops'
-import { byPosition, planStep, positionAtEnd } from './ordering'
-import type { FieldDef, FieldType, FieldValue, Task } from './types'
+import { planStep, positionAtEnd } from './ordering'
+import { applicableFields, fieldDescendants, liveFields } from './fieldTree'
+import type { FieldDef, FieldType, FieldValue, Project, Task } from './types'
 import { t, msg, translatedList } from './i18n'
 import { uuid } from './ids'
 
@@ -41,11 +42,6 @@ export function parseOptions(options: string | null | undefined): string[] {
   return (options ?? '').split('\n').map((o) => o.trim()).filter(Boolean)
 }
 
-/** Live definitions of a project, in position order. Inbox (null) has none. */
-export function liveFields(projectId: string | null | undefined, defs: readonly FieldDef[]): FieldDef[] {
-  if (!projectId) return []
-  return defs.filter((d) => d.project_id === projectId && !d.deleted_at).sort(byPosition)
-}
 
 /** Live definitions by lower-cased name, across every project (filter terms). */
 export function fieldsByName(defs: readonly FieldDef[]): Map<string, FieldDef[]> {
@@ -165,10 +161,11 @@ export function formatValue(def: Pick<FieldDef, 'type'>, value: FieldValue | und
  * its project's live definitions in definition order. A checked checkbox reads as
  * its name, an unchecked one shows nothing.
  */
-export function fieldBadges(task: Pick<Task, 'project_id' | 'fields'>, defs: readonly FieldDef[], p?: ResolvedDateTime): { def: FieldDef; text: string }[] {
+export function fieldBadges(task: Pick<Task, 'project_id' | 'fields'>, defs: readonly FieldDef[], p?: ResolvedDateTime, fieldsOf?: (projectId: string | null | undefined) => FieldDef[]): { def: FieldDef; text: string }[] {
   const values = taskFields(task)
   const out: { def: FieldDef; text: string }[] = []
-  for (const def of liveFields(task.project_id, defs)) {
+  // With a lookup (inherited-custom-fields) the badges include the fields the project inherits.
+  for (const def of fieldsOf ? fieldsOf(task.project_id) : liveFields(task.project_id, defs)) {
     const v = values[def.id]
     if (v === null || v === undefined || v === '' || v === false) continue
     out.push({ def, text: v === true && def.type === 'checkbox' ? def.name : `${def.name} ${formatValue(def, v, p)}` })
@@ -193,15 +190,47 @@ export async function projectFields(projectId: string): Promise<FieldDef[]> {
   return liveFields(projectId, await db.fields.where('project_id').equals(projectId).toArray())
 }
 
-function checkName(name: string, siblings: readonly FieldDef[], exceptId?: string): string {
+/** The live projects and every definition row, for the checks across a project tree. */
+async function fieldTree(): Promise<{ projects: Project[]; defs: FieldDef[] }> {
+  const [projects, defs] = await Promise.all([db.projects.toArray(), db.fields.toArray()])
+  return { projects: projects.filter((p) => !p.deleted_at), defs }
+}
+
+const sameName = (d: FieldDef, key: string) => d.name.trim().toLocaleLowerCase() === key
+
+/**
+ * A field name for `projectId` (inherited-custom-fields "Names and limits across a
+ * project tree"): unique, ignoring case, among the fields that apply to the
+ * project (its own and the inherited ones) and among the own fields of every
+ * sub-project at any depth.
+ */
+function checkName(name: string, projectId: string, tree: { projects: readonly Project[]; defs: readonly FieldDef[] }, exceptId?: string): string {
   const trimmed = name.trim()
   if (!trimmed) throw new FieldError(t('A field needs a name.'))
   if ([...trimmed].length > MAX_FIELD_NAME) throw new FieldError(t('A name has at most {n} characters.', { n: MAX_FIELD_NAME }))
   const key = trimmed.toLocaleLowerCase()
-  if (siblings.some((d) => d.id !== exceptId && d.name.trim().toLocaleLowerCase() === key)) {
-    throw new FieldError(t('This project already has a field named “{name}”.', { name: trimmed }))
+  const nameOf = (pid: string) => tree.projects.find((p) => p.id === pid)?.name ?? ''
+  for (const d of applicableFields(projectId, tree.projects, tree.defs)) {
+    if (d.id === exceptId || !sameName(d, key)) continue
+    if (d.project_id === projectId) throw new FieldError(t('This project already has a field named “{name}”.', { name: trimmed }))
+    throw new FieldError(t('This project already inherits a field named “{name}” from “{project}”.', { name: trimmed, project: nameOf(d.project_id) }))
+  }
+  for (const pid of fieldDescendants(projectId, tree.projects)) {
+    if (liveFields(pid, tree.defs).some((d) => d.id !== exceptId && sameName(d, key))) {
+      throw new FieldError(t('The sub-project “{project}” already has a field named “{name}”.', { name: trimmed, project: nameOf(pid) }))
+    }
   }
   return trimmed
+}
+
+/** The 30-field limit counts inherited fields, for the project and every sub-project below it. */
+function checkLimit(projectId: string, tree: { projects: readonly Project[]; defs: readonly FieldDef[] }): void {
+  if (applicableFields(projectId, tree.projects, tree.defs).length >= MAX_FIELDS) throw new FieldError(t('A project can have at most {n} fields.', { n: MAX_FIELDS }))
+  for (const pid of fieldDescendants(projectId, tree.projects)) {
+    if (applicableFields(pid, tree.projects, tree.defs).length >= MAX_FIELDS) {
+      throw new FieldError(t('The sub-project “{project}” would have more than {n} fields.', { n: MAX_FIELDS, project: tree.projects.find((p) => p.id === pid)?.name ?? '' }))
+    }
+  }
 }
 
 function checkOptions(options: string): string {
@@ -215,8 +244,9 @@ function checkOptions(options: string): string {
 /** Add a definition at the end of the project's fields. Returns its id. */
 export async function createField(projectId: string, input: { name: string; type: FieldType; options?: string }): Promise<string> {
   const siblings = await projectFields(projectId)
-  if (siblings.length >= MAX_FIELDS) throw new FieldError(t('A project can have at most {n} fields.', { n: MAX_FIELDS }))
-  const name = checkName(input.name, siblings)
+  const tree = await fieldTree()
+  checkLimit(projectId, tree)
+  const name = checkName(input.name, projectId, tree)
   if (!FIELD_TYPES.some((item) => item.type === input.type)) throw new FieldError(t('Choose a type.'), 'type')
   const options = input.type === 'choice' ? checkOptions(input.options ?? '') : ''
   if (input.type === 'choice' && !options) throw new FieldError(t('A choice field needs at least one option.'), 'options')
@@ -230,7 +260,7 @@ export async function createField(projectId: string, input: { name: string; type
 export async function renameField(id: string, name: string): Promise<void> {
   const def = await db.fields.get(id)
   if (!def || def.deleted_at) return
-  const trimmed = checkName(name, await projectFields(def.project_id), id)
+  const trimmed = checkName(name, def.project_id, await fieldTree(), id)
   if (trimmed !== def.name) await mutate('field', id, { name: trimmed })
 }
 
@@ -249,7 +279,10 @@ export async function setFieldOptions(id: string, options: string, renamed: Reco
   if (next !== def.options) changes.push({ entity: 'field', entityId: id, patch: { options: next } })
   const rename = new Map(Object.entries(renamed).filter(([from, to]) => from !== to && to.trim()))
   if (rename.size) {
-    const tasks = await db.tasks.where('project_id').equals(def.project_id).filter((task) => !task.deleted_at).toArray()
+    // Values live in the defining project and in every sub-project that inherits the field.
+    const { projects } = await fieldTree()
+    const scope = [def.project_id, ...fieldDescendants(def.project_id, projects)]
+    const tasks = await db.tasks.where('project_id').anyOf(scope).filter((task) => !task.deleted_at).toArray()
     for (const tk of tasks) {
       const v = tk.fields?.[id]
       if (typeof v === 'string' && rename.has(v)) changes.push({ entity: 'task', entityId: tk.id, patch: { fields: { [id]: rename.get(v)!.trim() } } })
@@ -277,6 +310,7 @@ export async function deleteField(id: string): Promise<void> {
 }
 
 export { fieldNameOf, fieldValueLabel, rememberFieldNames } from './fieldNames'
+export { applicableFields, applicableFieldsLookup, fieldChain, fieldDescendants, liveFields, type FieldProject } from './fieldTree'
 
 /** Set one value of a task (null clears); one `fields.<id>` op, nothing else touched. */
 export async function setFieldValue(taskId: string, defId: string, value: FieldValue): Promise<void> {

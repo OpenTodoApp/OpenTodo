@@ -5043,6 +5043,9 @@
   "From {min} to {max} sessions": [
     "web/src/app/focus/FocusSettings.tsx"
   ],
+  "From {name}": [
+    "web/src/app/FieldsDialog.tsx"
+  ],
   "From {site}": [
     "web/src/lib/taskSource.ts"
   ],
@@ -5932,6 +5935,9 @@
   ],
   "Indigo": [
     "web/src/lib/colourNames.ts"
+  ],
+  "Inherited fields are edited in the project that defines them.": [
+    "web/src/app/FieldsDialog.tsx"
   ],
   "Inline code": [
     "web/src/lib/richtextEditor.ts"
@@ -7668,6 +7674,9 @@
   "No field named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
   ],
+  "No fields of its own yet.": [
+    "web/src/app/FieldsDialog.tsx"
+  ],
   "No fields yet.": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -9221,6 +9230,9 @@
   "People can subscribe to calendar addresses and get a private feed of their tasks.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "People this project is shared with see them only if they can also see that project.": [
+    "web/src/app/FieldsDialog.tsx"
+  ],
   "People to see or thank": [
     "web/src/lib/review.ts"
   ],
@@ -10685,6 +10697,9 @@
   ],
   "Safety copy from {instant}, {size}": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Same name as a field from “{project}”. Rename one of them.": [
+    "web/src/app/FieldsDialog.tsx"
   ],
   "Same sidebar, plus a hint on each screen's purpose.": [
     "web/src/lib/settingsCopy.ts"
@@ -13088,6 +13103,12 @@
   "The start must be on or before the due date.": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "The sub-project “{project}” already has a field named “{name}”.": [
+    "web/src/lib/fields.ts"
+  ],
+  "The sub-project “{project}” would have more than {n} fields.": [
+    "web/src/lib/fields.ts"
+  ],
   "The tasks must be in one project": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
@@ -13592,6 +13613,9 @@
     "web/src/app/assistant/AssistantPanel.tsx"
   ],
   "This project already has a field named “{name}”.": [
+    "web/src/lib/fields.ts"
+  ],
+  "This project already inherits a field named “{name}” from “{project}”.": [
     "web/src/lib/fields.ts"
   ],
   "This project belongs to a workspace you are not part of. Ask the workspace owner to add you first, then open the link again.": [

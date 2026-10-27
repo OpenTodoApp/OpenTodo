@@ -6,8 +6,8 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../lib/db'
-import { liveFields, setFieldValue } from '../lib/fields'
-import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { createField, liveFields, setFieldValue } from '../lib/fields'
+import { createProject, createTask, mutate, resetDeviceId } from '../lib/ops'
 import type { Project } from '../lib/types'
 import { click, key, render, waitFor } from '../ui/test-utils'
 import { FieldsDialog, renamedOptions, valuesText } from './FieldsDialog'
@@ -111,6 +111,33 @@ describe('Fields dialog', () => {
     const res = await axe.run(dialog(), { rules: { 'color-contrast': { enabled: false } } })
     expect(res.violations.map((v) => v.id)).toEqual([])
     await r.unmount()
+  })
+})
+
+describe('inherited fields (inherited-custom-fields)', () => {
+  it('lists the parent\'s fields first, read-only, refuses their names and flags a clash', async () => {
+    const scoring = await createProject({ name: 'Scoring' })
+    const topic = await createProject({ name: 'Topic', parent_id: scoring })
+    await createField(scoring, { name: 'WSJF', type: 'number' })
+    // A clash that arrives through a move: written as plain ops, as another device would.
+    await mutate('field', 'own-size', { name: 'Size', project_id: topic, type: 'number', options: '', position: 0, created_at: 1, deleted_at: null })
+    await mutate('field', 'parent-size', { name: 'size', project_id: scoring, type: 'number', options: '', position: 5, created_at: 1, deleted_at: null })
+    const project = (await db.projects.get(topic)) as Project
+    await render(<FieldsDialog project={project} onClose={() => {}} />)
+    const dialog = () => document.querySelector('[data-testid="fields-dialog"]') as HTMLElement
+    await waitFor(() => dialog()?.querySelectorAll('[data-field-inherited]').length === 2, 'the inherited fields')
+    const group = dialog().querySelector(`[data-inherited-fields="${scoring}"]`) as HTMLElement
+    expect(group.textContent).toContain('From Scoring')
+    expect(group.querySelectorAll('button')).toHaveLength(0)
+    expect(dialog().querySelector('[data-inherited-note]')?.textContent).toContain('edited in the project that defines them')
+    expect(dialog().querySelector('[data-field-def="own-size"] [data-field-clash]')?.textContent).toContain('“Scoring”')
+    // Adding a name the parent already has is refused, naming the parent.
+    const form = dialog().querySelector('form[aria-label="Add a field"]') as HTMLFormElement
+    const input = form.querySelector('input') as HTMLInputElement
+    await setValue(input, 'wsjf')
+    await act(async () => { form.requestSubmit() })
+    await waitFor(() => /inherits a field named “wsjf” from “Scoring”/.test(dialog().textContent ?? ''), 'the refusal')
+    expect(document.activeElement).toBe(input)
   })
 })
 
