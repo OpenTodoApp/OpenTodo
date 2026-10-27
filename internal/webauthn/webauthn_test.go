@@ -215,6 +215,43 @@ func TestCOSEKeyOffCurveRefused(t *testing.T) {
 	}
 }
 
+// rsaCOSE encodes an RS256 COSE key with a 256-byte modulus and the given exponent.
+func rsaCOSE(n, e []byte) []byte {
+	raw := []byte{0xa4, 0x01, 0x03, 0x03, 0x39, 0x01, 0x00, 0x20, 0x59, 0x01, 0x00}
+	raw = append(raw, n...)
+	raw = append(raw, 0x21, 0x40|byte(len(e)))
+	return append(raw, e...)
+}
+
+// TestCOSEKeyRSASizeAndParity (nightly fuzz, issue 497): the RSA size is the
+// modulus's bit length, so 256 bytes with leading zeros are not 2048 bits; an
+// even modulus or exponent is not an RSA key.
+func TestCOSEKeyRSASizeAndParity(t *testing.T) {
+	modulus := func(first, last byte) []byte {
+		n := bytes.Repeat([]byte{0xff}, 256)
+		n[0], n[255] = first, last
+		return n
+	}
+	f4 := []byte{0x01, 0x00, 0x01}
+	if _, alg, err := webauthn.ParseCOSEKey(rsaCOSE(modulus(0x80, 0xff), f4)); err != nil || alg != webauthn.AlgRS256 {
+		t.Fatalf("a 2048-bit key: alg %d, %v", alg, err)
+	}
+	for _, tc := range []struct {
+		name string
+		raw  []byte
+		want error
+	}{
+		{"leading zero bytes", rsaCOSE(modulus(0x00, 0xff), f4), webauthn.ErrUnsupportedAlgorithm},
+		{"even modulus", rsaCOSE(modulus(0x80, 0xfe), f4), webauthn.ErrMalformed},
+		{"even exponent", rsaCOSE(modulus(0x80, 0xff), []byte{0x30, 0x30, 0x30}), webauthn.ErrMalformed},
+		{"exponent 1", rsaCOSE(modulus(0x80, 0xff), []byte{0x01}), webauthn.ErrMalformed},
+	} {
+		if _, _, err := webauthn.ParseCOSEKey(tc.raw); !errors.Is(err, tc.want) {
+			t.Errorf("%s: %v, want %v", tc.name, err, tc.want)
+		}
+	}
+}
+
 func TestChallengeExpiresAndIsSingleUse(t *testing.T) {
 	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
 	c := webauthn.NewChallenges(webauthn.ChallengeTTL)
