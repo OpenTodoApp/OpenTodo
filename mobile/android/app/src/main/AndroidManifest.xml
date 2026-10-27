@@ -50,6 +50,12 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".SignInActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <receiver android:name=".AlarmReceiver" android:exported="false" />
         <receiver android:name=".NotificationActionReceiver" android:exported="false" />
         <receiver android:name=".BootReceiver" android:exported="false">

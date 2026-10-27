@@ -116,6 +116,10 @@ The owner always keeps their password (and passkeys):
 
 Signing out of OpenTodo always ends the OpenTodo session only. With **Sign out of &lt;name&gt; too** on (and a provider that publishes an `end_session_endpoint`), people who signed in through the provider are then sent to the provider's sign-out page with an `id_token_hint`, and back to OpenTodo's sign-in screen afterwards. Register `https://todo.example.com/` as a post-logout redirect URI at the provider for that.
 
+## In the Android app
+
+The [Android app](../android-app.md#behind-a-login-page-pangolin-authelia-and-others) completes **Sign in with &lt;name&gt;** inside the app: the provider's page opens in the app, with its address shown above it, and sends the person back signed in. Some providers refuse sign-in inside an app's web view (Google answers "Error 403: disallowed_useragent"); with those, people sign in to the Android app with their password or a passkey.
+
 ## Offline
 
 An installed app that signed in through the provider opens offline from its cached account, like any other session; the provider is only contacted when someone signs in.
