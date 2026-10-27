@@ -14,11 +14,11 @@ import (
 
 // Errors returned by Decode besides ErrInvalid (unparseable data).
 var (
-	// ErrUnsupportedComponent: the object holds a VEVENT or VJOURNAL instead of a
-	// VTODO (CALDAV:supported-calendar-component).
-	ErrUnsupportedComponent = errors.New("only VTODO components are supported")
-	// ErrInvalidObject: no UID, several UIDs, or no VTODO at all
-	// (CALDAV:valid-calendar-object-resource).
+	// ErrUnsupportedComponent: the object holds a VJOURNAL or VFREEBUSY
+	// instead of a VTODO or a VEVENT (CALDAV:supported-calendar-component).
+	ErrUnsupportedComponent = errors.New("only VTODO and VEVENT components are supported")
+	// ErrInvalidObject: no UID, several UIDs, no VTODO or VEVENT at all, or
+	// both kinds in one object (CALDAV:valid-calendar-object-resource).
 	ErrInvalidObject = errors.New("invalid calendar object resource")
 	// ErrInvalidValue: a property the mapping consumes has a value outside
 	// what the task field accepts, e.g. an ESTIMATED-DURATION beyond one week
