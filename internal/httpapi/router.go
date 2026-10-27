@@ -171,9 +171,9 @@ func (s *Server) registerDataRoutes(mux *routes) {
 	mux.handle("GET /api/v1/{collection}/{id}", signedIn, s.handleGet)
 	mux.handle("PATCH /api/v1/{collection}/{id}", signedIn, s.handlePatch)
 	mux.handle("DELETE /api/v1/{collection}/{id}", signedIn, s.handleDelete)
-	mux.handle("/api/", public("unknown API routes answer 404 not_found"), func(w http.ResponseWriter, r *http.Request) {
-		writeError(w, http.StatusNotFound, "not_found", "unknown API route")
-	})
+	// A known path asked with another method is a 405, anything else a 404
+	// naming the method and path (api-method-not-allowed).
+	mux.handle("/api/", public("unknown API routes answer 404 not_found, a known path with another method 405"), mux.unknownAPIRoute)
 }
 
 // registerWebAppRoutes serves the embedded web app; web is nil when only the

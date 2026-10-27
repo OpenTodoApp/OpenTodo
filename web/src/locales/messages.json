@@ -13043,6 +13043,9 @@
   "The server refused the file ({status}).": [
     "web/src/lib/attachments.ts"
   ],
+  "The server rejected the test request ({status}: {reason}). A reverse proxy or a redirect may have changed it on the way; the provider was not asked.": [
+    "web/src/app/assistant/testRequestError.ts"
+  ],
   "The server restarts. Everyone is briefly disconnected.": [
     "web/src/app/RestoreSection.tsx"
   ],
