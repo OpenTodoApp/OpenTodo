@@ -14,7 +14,7 @@
 ## 2. Docs and baselines
 
 - [x] 2.1 Update `docs/workspaces.md` (the top of the sidebar shows the app's name with the workspace name below it) and regenerate the help. Verify: `npm run docs:check`.
-- [ ] 2.2 Accept the changed Sidebar baselines after inspecting each diff (CI artifact recipe). Verify: `make ui-check` passes in CI, and only the header text differs.
+- [x] 2.2 Accept the changed Sidebar baselines after inspecting each diff (CI artifact recipe). Verify: `make ui-check` passes in CI, and only the header text differs.
 
 ## 3. Release
 
