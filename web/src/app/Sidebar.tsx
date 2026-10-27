@@ -46,6 +46,7 @@ import { act } from './actionError'
 import { countInbox } from '../lib/inbox'
 import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
 import { readString, writeString } from '../lib/deviceStorage'
+import { useResetOnChange } from '../lib/useResetOnChange'
 
 
 /**
@@ -246,7 +247,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const isOpen = (id: GroupId) => (found ? true : groupOpen[id])
   const active = found?.order[Math.min(activeMatch, Math.max(0, (found?.order.length ?? 1) - 1))] ?? null
   const isActiveMatch = (kind: 'project' | 'label' | 'view', id: string) => active?.kind === kind && active.id === id
-  useEffect(() => setActiveMatch(0), [query])
+  useResetOnChange([query], () => setActiveMatch(0))
   const openMatch = (m: { kind: 'project' | 'label' | 'view'; id: string }) => {
     if (m.kind === 'project') navigate({ view: 'project', id: m.id })
     else if (m.kind === 'label') navigate({ view: 'label', id: m.id })

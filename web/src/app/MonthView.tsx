@@ -29,6 +29,7 @@ import { useToday, useViewerZone } from './useViews'
 import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
 import { CapacityLine } from './calendar/CapacityLine'
+import { useResetOnChange } from '../lib/useResetOnChange'
 
 /** Task rows a desktop cell shows before "+N more". */
 const CELL_ROWS = 3
@@ -79,7 +80,7 @@ export function MonthView({ date }: { date?: string }) {
   const gridRef = useRef<HTMLDivElement>(null)
 
   // A new anchor (navigation, a task followed into another month) moves the focus there.
-  useEffect(() => { setFocused(anchor) }, [anchor])
+  useResetOnChange([anchor], () => setFocused(anchor))
 
   const goTo = useCallback((d: string) => navigate({ view: 'month', date: d === today ? undefined : d }), [today])
   /** Keep the focus on screen: a day outside the grid's month opens that month. */

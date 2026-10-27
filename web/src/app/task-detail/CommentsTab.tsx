@@ -28,6 +28,7 @@ import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
 import { messageOf } from '../../lib/errorText'
 import { useAction } from '../../lib/useAction'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** True on touch screens: comment actions are always shown there instead of on hover. */
 export function useCoarsePointer(): boolean {
@@ -113,7 +114,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
   // expands on click or focus, with a draft, with a reply target or on Shift+C, and
   // collapses again when left empty.
   const [open, setOpen] = useState(() => !!readDraft(taskId))
-  useEffect(() => { setOpen(!!readDraft(taskId)) }, [taskId])
+  useResetOnChange([taskId], () => setOpen(!!readDraft(taskId)))
   // A published task's comments appear on its page (task-pages, "Composer notice").
   const published = useTaskPublished(taskId)
   const focusComposer = () => requestAnimationFrame(() => (typeof composerRef === 'object' ? composerRef?.current : null)?.focus())
@@ -282,7 +283,7 @@ export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(func
   const demo = useDemo()
   const limits = useAttachmentLimits()
   const { error, setError, run: attempt } = useAction({ describe: messageOf })
-  useEffect(() => setError(null), [task.id, setError])
+  useResetOnChange([task.id], () => setError(null))
 
   const name = useCallback((id: string) => (id && id === me ? t('You') : memberName(id, memberships) ?? t('Someone')), [me, memberships])
   const targets = useMentionTargets(task.project_id, me)
