@@ -50,6 +50,15 @@ export async function account(name = 'Contract'): Promise<{ email: string; passw
   return { email, password, id: res.user.id }
 }
 
+/**
+ * Accepts every open membership invitation of the device's account: an add by
+ * email between accounts that share nothing is an invitation (member-add-consent).
+ */
+export async function acceptInvitations(d: Device): Promise<void> {
+  const { invitations } = await call<{ invitations: { id: string }[] }>(d.session, 'GET', '/api/v1/me/member-invitations')
+  for (const inv of invitations) await call(d.session, 'POST', `/api/v1/me/member-invitations/${inv.id}/accept`, {})
+}
+
 export interface Device {
   name: string
   session: Session

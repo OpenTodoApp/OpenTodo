@@ -52,6 +52,36 @@ export async function markTaskNotificationsRead(taskId: string, now = Date.now()
   return unread.length
 }
 
+/** Mark one notification read (an answered invitation, member-add-consent). Works offline. */
+export async function markNotificationRead(id: string, now = Date.now()): Promise<void> {
+  const n = await db.notifications.get(id)
+  if (!n || n.readAt !== null) return
+  await db.notifications.put({ ...n, readAt: now, readPending: true })
+  void flushReads().catch(() => undefined)
+}
+
+/**
+ * Answer a membership invitation (member-add-consent) and mark its notification
+ * read. An invitation that is gone (404) or can no longer be accepted (410) is
+ * marked read too before the error is passed on. The caller then asks for a
+ * sync, which brings the project or workspace after an acceptance.
+ */
+export async function answerInvitation(invitationId: string, accept: boolean, notificationId?: string): Promise<void> {
+  const read = async () => {
+    const ids = notificationId ? [notificationId]
+      : (await db.notifications.filter((n) => n.kind === 'member_invitation' && 'invitationId' in n.payload && n.payload.invitationId === invitationId).toArray()).map((n) => n.id)
+    for (const id of ids) await markNotificationRead(id)
+  }
+  try {
+    await (accept ? api.acceptMemberInvitation(invitationId) : api.declineMemberInvitation(invitationId))
+  } catch (err) {
+    const status = (err as { status?: number }).status
+    if (status === 404 || status === 410) await read()
+    throw err
+  }
+  await read()
+}
+
 /** Unread notifications, newest first. */
 export async function unreadNotifications(): Promise<AppNotification[]> {
   const list = await db.notifications.orderBy('createdAt').reverse().toArray()

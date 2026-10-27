@@ -161,6 +161,20 @@ func (s *Service) SharesProject(ctx context.Context, a, b string) (bool, error) 
 	return n > 0, err
 }
 
+// Acquainted reports whether two accounts already share a shared project
+// (any role, direct or through a group) or a created workspace: adding one by
+// email then needs no invitation (member-add-consent D1). A default workspace
+// never has a second member, so it never counts.
+func (s *Service) Acquainted(ctx context.Context, a, b string) (bool, error) {
+	var ok bool
+	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM project_members x JOIN project_members y ON y.project_id = x.project_id
+			WHERE x.user_id = ? AND y.user_id = ?)
+		OR EXISTS(SELECT 1 FROM workspace_members x JOIN workspace_members y ON y.workspace_id = x.workspace_id
+			JOIN workspaces w ON w.id = x.workspace_id WHERE x.user_id = ? AND y.user_id = ? AND w.kind = 'created' AND w.deleted_at IS NULL)`,
+		a, b, a, b).Scan(&ok)
+	return ok, err
+}
+
 var roleOrder = map[string]int{RoleOwner: 0, RoleAdmin: 1, RoleEditor: 2, RoleViewer: 3}
 
 func members(ctx context.Context, q querier, projectID string) ([]Member, error) {

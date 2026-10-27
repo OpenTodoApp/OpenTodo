@@ -16,6 +16,7 @@ import { t, msg, translatedMap } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
 import { useWorkspaceGroups, useWorkspaceState } from '../lib/localData'
 import { ShareDirectory } from './ShareDirectory'
+import { PendingInvitations } from './PendingInvitations'
 
 const ROLE_HINT = translatedMap<ProjectRole>({
   owner: msg('Owner'),
@@ -29,7 +30,9 @@ const ROLE_HINT = translatedMap<ProjectRole>({
  * role, change roles, remove members, leave, transfer ownership. Membership is
  * server data, so every action is a REST call followed by a sync that refreshes
  * the local cache on all devices. Owners and admins can also invite with a
- * single-use link (OpenSpec `project-invite-links`, InviteLinksSection). Fully keyboard operable: the email field has
+ * single-use link (OpenSpec `project-invite-links`, InviteLinksSection). Someone the owner shares nothing
+ * with yet is asked first (OpenSpec change member-add-consent): the add answers "pending" and the address
+ * waits under the members until they accept. Fully keyboard operable: the email field has
  * focus, Enter shares, Esc closes.
  */
 export function ShareDialog({ project, userId, cached, section, onPublicLinks, onClose }: {
@@ -56,6 +59,8 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
   // Handing over the project and leaving it are confirmed in the app's own dialog.
   const [asking, setAsking] = useState<{ kind: 'transfer'; userId: string; name: string } | { kind: 'leave' } | null>(null)
   const emailRef = useRef<HTMLInputElement>(null)
+  // The address of the last add that became an invitation, for the note under the form.
+  const [invited, setInvited] = useState<string | null>(null)
   // In a created workspace the dialog shares from its directory (workspaces "A created workspace is a closed directory").
   const wsState = useWorkspaceState()
   const directory = wsState.list.find((w) => w.id === wsState.current && !w.default)
@@ -80,7 +85,16 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
   function share(e: FormEvent) {
     e.preventDefault()
     if (!email.trim()) return
-    void run(() => api.addMember(project.id, email.trim(), role), () => {
+    const address = email.trim()
+    void run(async () => {
+      const res = await api.addMember(project.id, address, role)
+      if ('pending' in res) {
+        setInvited(address)
+        return api.listMembers(project.id)
+      }
+      setInvited(null)
+      return res
+    }, () => {
       setEmail('')
       emailRef.current?.focus()
     })
@@ -99,6 +113,11 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
             </select>
             <button className="ui-btn ui-btn--primary ui-btn--md" disabled={busy || !email.trim()}>{t('Share')}</button>
           </form>
+        )}
+        {invited && !directory && roles.length > 0 && (
+          <p role="status" className="-mt-2 mb-4 text-meta text-muted" data-invited-note>
+            {t('If {email} has an account on this server, they get an invitation to accept. For someone without an account, create an invite link.', { email: invited })}
+          </p>
         )}
         {roles.length > 0 && <InviteLinksSection projectId={project.id} myRole={myRole} />}
         {!locked && (myRole === 'owner' || myRole === 'admin') && <PublicLinksSection projectId={project.id} focus={section === 'public'} onChange={onPublicLinks} />}
@@ -144,6 +163,10 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
             )
           })}
         </ul>
+        {!locked && membership?.pending && (
+          <PendingInvitations pending={membership.pending} disabled={busy}
+            onCancel={(p) => void run(async () => { await api.cancelProjectInvitation(project.id, p.id); return api.listMembers(project.id) })} />
+        )}
         <p className="mt-3 flex flex-wrap items-center justify-between gap-2 text-meta text-faint">
           <span>{t('Adding by email works for accounts on this server; invite anyone else with a link. Labels stay personal.')}</span>
           <HelpLink screen="share-dialog" topic={t('Sharing projects')} />

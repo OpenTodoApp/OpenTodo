@@ -25,6 +25,7 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
   - **Linked accounts**: connect a single sign-on login, if your server offers one. If the owner turned it on, your picture at the provider becomes your profile picture when you sign in or link; a picture you upload yourself is never replaced, and one you remove is not fetched again. See [Single sign-on](self-hosting/sso.md#profile-pictures-from-the-provider).
 - **End-to-end encryption**: encrypt your task text on your devices, and keep its recovery key. See [End-to-end encryption](e2ee.md).
 - **Recent activity**: sign-ins and token changes from the last 90 days.
+- **Invitations**: answer people who asked to add you to a project or workspace.
 
 ## How you work
 

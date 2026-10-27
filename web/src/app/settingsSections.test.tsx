@@ -221,7 +221,7 @@ describe('opening a section', () => {
 
   it('lists the sub-pages of each section with an overview, in order', () => {
     const rows = (u: User, id: SettingsSectionId) => [...render(u, id).matchAll(/data-settings-subpage="([a-z-]+)"/g)].map((m) => m[1])
-    expect(rows(member, 'account')).toEqual(['profile', 'security', 'activity', 'encryption'])
+    expect(rows(member, 'account')).toEqual(['profile', 'security', 'activity', 'invitations', 'encryption'])
     expect(rows(member, 'appearance')).toEqual(['theme', 'sidebar', 'task-details'])
     expect(rows(member, 'general')).toEqual(['start', 'keyboard', 'focus', 'maps'])
     expect(rows(member, 'language')).toEqual(['language', 'date-time', 'calendar'])
@@ -242,6 +242,7 @@ describe('opening a section', () => {
     expect(security).not.toContain('id="e2ee-heading"')
     expect(render(member, 'account', 'encryption')).toContain('id="e2ee-heading"')
     expect(render(member, 'account', 'activity')).toContain('id="activity-heading"')
+    expect(render(member, 'account', 'invitations')).toContain('data-settings-anchor="invitations"')
     expect(render(member, 'account', 'profile')).toContain('data-settings-anchor="how-you-work"')
     const theme = render(member, 'appearance', 'theme')
     expect(theme).toContain('data-appearance-themes')
