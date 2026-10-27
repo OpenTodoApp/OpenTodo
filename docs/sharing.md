@@ -20,7 +20,7 @@ Share a project with people who have an account on the same OpenTodo server: you
 2. Type the person's email address.
 3. Pick a role and select **Share**.
 
-The project appears on their devices the next time they sync, with all its tasks. Shared projects show a people icon in the sidebar.
+It reaches their devices at their next sync, with its tasks; new contacts [accept first](roles-and-assignments.md#when-someone-is-asked-first). Shared projects show a people icon in the sidebar.
 
 Email works only for people with an account on your server; anyone else gets an invite link (next section).
 

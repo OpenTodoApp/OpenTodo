@@ -17,6 +17,7 @@ import type {
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
+  MemberInvitation, PendingAnswer,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, GoogleClientSetting,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
@@ -307,8 +308,16 @@ export const api = {
   getProjectAgentAccess: (projectId: string) => request<{ kept_away: boolean; inherited_from: string | null }>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/agent-access`),
   setProjectAgentAccess: (projectId: string, keptAway: boolean) => request<{ kept_away: boolean; inherited_from: string | null }>('PUT', `/api/v1/projects/${encodeURIComponent(projectId)}/agent-access`, { kept_away: keptAway }),
   listMembers: (projectId: string) => request<Membership>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/members`),
+  /** 201 with the membership, or 202 `{pending: true}` when the person is asked first (member-add-consent). */
   addMember: (projectId: string, email: string, role: ProjectRole) =>
-    request<Membership>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/members`, { email, role }),
+    request<Membership | PendingAnswer>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/members`, { email, role }),
+  cancelProjectInvitation: (projectId: string, invitationId: string) =>
+    request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/member-invitations/${encodeURIComponent(invitationId)}`),
+  // Membership invitations sent to this account (member-add-consent).
+  listMemberInvitations: () => request<{ invitations: MemberInvitation[] }>('GET', '/api/v1/me/member-invitations'),
+  acceptMemberInvitation: (id: string) =>
+    request<{ kind: MemberInvitation['kind']; targetId: string; role: MemberInvitation['role'] }>('POST', `/api/v1/me/member-invitations/${encodeURIComponent(id)}/accept`, {}),
+  declineMemberInvitation: (id: string) => request<void>('POST', `/api/v1/me/member-invitations/${encodeURIComponent(id)}/decline`, {}),
   setMemberRole: (projectId: string, userId: string, role: ProjectRole) =>
     request<Membership>('PATCH', `/api/v1/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`, { role }),
   removeMember: (projectId: string, userId: string) =>

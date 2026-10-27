@@ -148,8 +148,12 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/comments/{id}/reactions` | yes | `{reactions: [names]}` replaces your own reactions → 200 comment; 400 `invalid_input` naming an unknown name or a duplicate; 404 for an unreadable or deleted comment; `read` and `agent` tokens get 403 `insufficient_scope` |
 | GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
 | GET | `/api/v1/activity` | yes | the activity feed across every shared project you are a member of; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
-| GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}]}`, see [Sharing](#sharing) |
-| POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use); recorded as `project.member_added`; adding by email is limited to 30 attempts per account per hour, together with workspace members (429 `rate_limited`) |
+| GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}], pending?}`; `pending` (owners and admins only) lists the open [invitations](#membership-invitations) `[{id,email,role,invitedBy,createdAt,expiresAt}]`, see [Sharing](#sharing) |
+| POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use) when the account already shares a project or workspace with you, otherwise **202 `{pending: true}`**, also for an address without an account: the person is invited and becomes a member when they accept (see [Membership invitations](#membership-invitations)); 400 `invalid_input` for anything but one address; recorded as `project.member_added` or `member_invitation.created`; adding by email is limited to 30 attempts per account per hour, together with workspace members (429 `rate_limited`) |
+| DELETE | `/api/v1/projects/{id}/member-invitations/{invitationId}` | owner, admin of the project | cancel an open invitation → 204; 404 `not_found` |
+| GET | `/api/v1/me/member-invitations` | session, `full` or `admin` token | your open invitations `{invitations:[{id,kind,targetId,targetName,role,inviterId,inviterName,createdAt,expiresAt}]}`, see [Membership invitations](#membership-invitations) |
+| POST | `/api/v1/me/member-invitations/{id}/accept` | session, `full` or `admin` token | join → 200 `{kind, targetId, role}`; 410 `invitation_stale` when the inviter can no longer add you; 404 `not_found` |
+| POST | `/api/v1/me/member-invitations/{id}/decline` | session, `full` or `admin` token | decline → 204; you are not asked again for this project or workspace until it would have expired |
 | PATCH | `/api/v1/projects/{id}/members/{userId}` | owner, admin of the project | `{role}` → membership |
 | DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
 | POST | `/api/v1/projects/{id}/transfer` | owner of the project | `{userId}` → membership; the previous owner becomes an admin |
@@ -1029,7 +1033,9 @@ The server records security-relevant events in its own database (never synced to
 | `workspace.member_added`, `workspace.member_role_changed`, `workspace.member_removed` | success | actor = owner or admin (the member when leaving), target = member | `workspace`, `workspace_role` or `from`, `to` |
 | `workspace.group_created`, `workspace.group_deleted` | success | actor = owner or admin | `workspace`, `group` (ids, never names) |
 | `workspace.group_member_added`, `workspace.group_member_removed` | success | actor = owner or admin, target = member | `workspace`, `group` |
-| `project.member_added` | success | actor = project owner or admin, target = the added account | `shared_project_id`, `project_role` |
+| `project.member_added` | success | actor = project owner or admin (the inviter for an accepted invitation), target = the added account | `shared_project_id`, `project_role` |
+| `member_invitation.created`, `member_invitation.cancelled` | success | actor = project or workspace owner or admin, target = the invited account (none for an address without an account) | `member_invitation_id`, `shared_project_id` and `project_role`, or `workspace` and `workspace_role` |
+| `member_invitation.accepted`, `member_invitation.declined` | success | actor = the invited account, target = the inviter | `member_invitation_id`, `shared_project_id` and `project_role`, or `workspace` and `workspace_role` |
 | `project.grant_added`, `project.grant_changed`, `project.grant_removed` | success | actor = project owner or admin | `shared_project_id`, `group`, `project_role` or `from`, `to` |
 | `workspace_invite.created`, `workspace_invite.revoked` | success | actor = workspace owner or admin | `workspace_invite_id`, `workspace`, `workspace_role`, `invited_email` (bound email, if any) |
 | `workspace_invite.accepted` | success | actor = the account that joined, target = the link's creator | `workspace_invite_id`, `workspace`, `workspace_role` |
@@ -1100,17 +1106,18 @@ A project owner shares a project with other accounts on the same server by exact
 | `admin` | also rename, recolour and archive the project; add, re-role and remove viewers and editors |
 | `owner` | everything, including deleting the project, transferring ownership and managing admins; exactly one per project |
 
-Every route requires a session or token. A caller who is not a member gets `404 not_found`, the same as for a project that does not exist; the member's email is looked up only after the caller's role was checked, so the routes cannot be used to probe for accounts. Labels and saved views stay personal.
+Every route requires a session or token. A caller who is not a member gets `404 not_found`, the same as for a project that does not exist; the member's email is looked up only after the caller's role was checked, and an address without an account gets the same answer as a stranger with one, so the routes cannot be used to probe for accounts. Labels and saved views stay personal.
 
 ```sh
-# Share with an existing account as editor
+# Share with an existing account you already share another project with: added at once
 curl -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
   -d '{"email":"bob@example.com","role":"editor"}' $BASE/api/v1/projects/$P/members
 # 201 {"projectId":"…","role":"owner","ownerId":"…","members":[{"userId":"…","name":"Alice","email":"alice@example.com","role":"owner"},
-#      {"userId":"…","name":"Bob","email":"bob@example.com","role":"editor"}]}
+#      {"userId":"…","name":"Bob","email":"bob@example.com","role":"editor"}],"pending":[]}
 
-curl -X POST … -d '{"email":"nobody@example.com","role":"editor"}' $BASE/api/v1/projects/$P/members
-# 404 {"error":{"code":"user_not_found","message":"no account with this email exists on this server"}}
+# Anyone else, with or without an account: an invitation
+curl -X POST … -d '{"email":"dan@example.com","role":"editor"}' $BASE/api/v1/projects/$P/members
+# 202 {"pending":true}
 
 curl -X DELETE -H "Authorization: Bearer $T" $BASE/api/v1/projects/$P/members/me    # as the owner
 # 409 {"error":{"code":"owner_must_transfer","message":"the owner cannot leave the project; transfer ownership to another member first"}}
@@ -1122,6 +1129,22 @@ curl -X POST … -d '{"userId":"<bob>"}' $BASE/api/v1/projects/$P/transfer
 Collections, single reads and the export include the shared projects and their tasks; a shared project carries the read-only keys `role` (yours) and `owner_id`. They are ignored when sent back in a write. REST writes are checked with the same role table as sync: a refused write answers `403 forbidden` and stores nothing. A task cannot change sharing scope: `PATCH` of `project_id` to a project shared differently (or to the Inbox from a shared project) answers `400 scope_change`; create a copy in the destination and delete the original instead, which is what the web app does.
 
 Membership changes are recorded in the audit log as `role.changed` with `from`/`to` values such as `none` → `project.editor`.
+
+#### Membership invitations
+
+Adding someone by email adds them at once only when they already share a shared project or a created workspace with you (OpenSpec `member-add-consent`). Anyone else gets an invitation and the add answers **202 `{"pending": true}`**, the same answer for an address that has no account, so nobody can find out which addresses have accounts. The invitation is listed in the member list's `pending` (owners and admins only) like any other, expires after 14 days, and at most 50 can be open per project or workspace (409 `limit_reached`). For an existing account it shows in the person's notifications (kind `member_invitation`) and, when outgoing email is on, an email names you and the role, never the project. Adding the same address again while the invitation is open updates its role; after the person declined, it answers 202 and changes nothing until the declined invitation would have expired.
+
+The invitee lists their invitations with `GET /api/v1/me/member-invitations` and answers with `POST …/{id}/accept` or `POST …/{id}/decline`. Accepting adds the membership with the inviter as the acting member, after checking that the inviter is still active and may still grant the role on the live project or workspace; otherwise it answers 410 `invitation_stale` and the invitation is gone. These three routes need a session or a `full` or `admin` token (`read` and `agent` tokens: 403 `insufficient_scope`) and answer 403 `demo_restricted` on a demo. Owners and admins cancel an invitation with `DELETE /api/v1/projects/{id}/member-invitations/{invitationId}` (or the workspace twin). Invitations are server state, never operations or synced; the project or workspace reaches the invitee's devices with the next sync after accepting.
+
+**Upgrading a script.** Up to 0.15, an add by email answered 201 for every existing account and 404 `user_not_found` for an unknown address. A client that adds people by email must now treat 202 as "invited, not yet a member", and must not rely on 404 to detect unknown addresses.
+
+```sh
+# The invitee
+curl -H "Authorization: Bearer $T" $BASE/api/v1/me/member-invitations
+# 200 {"invitations":[{"id":"…","kind":"project","targetId":"…","targetName":"Garden","role":"editor","inviterId":"…","inviterName":"Alice",…}]}
+curl -X POST -H "Authorization: Bearer $T" $BASE/api/v1/me/member-invitations/$I/accept
+# 200 {"kind":"project","targetId":"…","role":"editor"}
+```
 
 ### Project invite links
 
@@ -1186,7 +1209,8 @@ Every route needs a session or a `full` or `admin` token (`read` and `agent` tok
 | `POST` | `/api/v1/workspaces` | `{name, icon?, color?}` → 201 workspace; 20 owned per account (409 `limit_reached`) |
 | `GET`, `PATCH`, `DELETE` | `/api/v1/workspaces/{id}` | `PATCH {name?, icon?, color?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members |
 | `POST` | `/api/v1/workspaces/{id}/leave`, `…/transfer` | leave → 204 (the owner: 409 `owner_must_transfer`); transfer `{userId}` (owner, to a member) → 200 |
-| `GET`, `POST` | `/api/v1/workspaces/{id}/members` | `POST {email, role: member\|admin}` (admins add members) → 201; 404 `user_not_found`; 200 members |
+| `GET`, `POST` | `/api/v1/workspaces/{id}/members` | `POST {email, role: member\|admin}` (admins add members) → 201 when the account already shares a project or workspace with you, otherwise 202 `{pending: true}` with or without an account ([invitations](#membership-invitations)); `GET` → 200 `{members, pending?}` (`pending` for the owner and admins) |
+| `DELETE` | `/api/v1/workspaces/{id}/member-invitations/{invitationId}` | cancel an open invitation (owner, admin) → 204 |
 | `PATCH`, `DELETE` | `/api/v1/workspaces/{id}/members/{userId}` | `{role}`; removing a member also removes every grant they hold on the workspace's projects |
 | `GET`, `POST` | `/api/v1/workspaces/{id}/groups` | `POST {name}` → 201 `{id, name, members}`; names unique ignoring case (409 `group_exists`), 50 groups |
 | `PATCH`, `DELETE` | `/api/v1/workspaces/{id}/groups/{groupId}` | rename `{name}`, delete |

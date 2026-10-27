@@ -45,11 +45,64 @@ func newShareEnv(t *testing.T) *shareEnv {
 	return se
 }
 
+// share adds email to the project as role; when the add became an invitation
+// (member-add-consent: the two accounts shared nothing yet), the invitee
+// accepts it. It returns by's view of the member list.
 func (se *shareEnv) share(by *env, email, role string) map[string]any {
 	by.t.Helper()
-	resp, out := by.do("POST", "/api/v1/projects/"+se.project+"/members", map[string]any{"email": email, "role": role})
-	by.mustStatus(resp, 201, out)
+	return addByEmail(by, se.byEmail(email), "/api/v1/projects/"+se.project+"/members", email, role)
+}
+
+// byEmail is the client of alice, bob or carol by their address.
+func (se *shareEnv) byEmail(email string) *env {
+	switch strings.ToLower(email) {
+	case "alice@example.com":
+		return se.alice
+	case "bob@example.com":
+		return se.bob
+	case "carol@example.com":
+		return se.carol
+	}
+	return nil
+}
+
+// addByEmail posts {email, role} to a project's or workspace's members route
+// as by. When the add became an invitation (202), to accepts every invitation
+// it has and the caller's fresh view is returned; otherwise the add must
+// answer 201.
+func addByEmail(by, to *env, path, email, role string) map[string]any {
+	by.t.Helper()
+	body := map[string]any{"email": email}
+	if role != "" {
+		body["role"] = role
+	}
+	resp, out := by.do("POST", path, body)
+	if resp.StatusCode != 202 || to == nil {
+		by.mustStatus(resp, 201, out)
+		return out
+	}
+	if out["pending"] != true {
+		by.t.Fatalf("POST %s: 202 without pending: %v", path, out)
+	}
+	acceptInvitations(to)
+	get := path // a project's member list, or the workspace itself
+	if strings.HasPrefix(path, "/api/v1/workspaces/") {
+		get = strings.TrimSuffix(path, "/members")
+	}
+	resp, out = by.do("GET", get, nil)
+	by.mustStatus(resp, 200, out)
 	return out
+}
+
+// acceptInvitations accepts every open membership invitation of c's account.
+func acceptInvitations(c *env) {
+	c.t.Helper()
+	resp, out := c.do("GET", "/api/v1/me/member-invitations", nil)
+	c.mustStatus(resp, 200, out)
+	for _, x := range out["invitations"].([]any) {
+		resp, o := c.do("POST", "/api/v1/me/member-invitations/"+x.(map[string]any)["id"].(string)+"/accept", nil)
+		c.mustStatus(resp, 200, o)
+	}
 }
 
 func syncOnce(c *env, device string, cursor float64, ops []map[string]any) map[string]any {
@@ -118,18 +171,20 @@ func TestMembershipRoutesAuthAndErrors(t *testing.T) {
 	if ms := out["members"].([]any); len(ms) != 1 || out["role"] != "owner" {
 		t.Fatalf("unshared members = %v", out)
 	}
-	// Unknown email: 404 user_not_found, nothing about other accounts in the answer.
+	// Unknown email: the same 202 as for a stranger with an account (member-add-consent).
 	resp, out = se.alice.do("POST", p+"/members", map[string]any{"email": "nobody@example.com", "role": "editor"})
-	se.alice.mustStatus(resp, 404, out)
-	if errCode(out) != "user_not_found" || strings.Contains(fmt.Sprint(out), "bob@") {
+	se.alice.mustStatus(resp, 202, out)
+	if out["pending"] != true || len(out) != 1 {
 		t.Fatalf("unknown email = %v", out)
 	}
+	resp, out = se.alice.do("POST", p+"/members", map[string]any{"email": "not an address", "role": "editor"})
+	se.alice.mustStatus(resp, 400, out)
 	resp, out = se.alice.do("POST", p+"/members", map[string]any{"email": "bob@example.com", "role": "owner"})
 	se.alice.mustStatus(resp, 400, out)
 	if errCode(out) != "invalid_input" {
 		t.Fatalf("bad role = %v", out)
 	}
-	// Share with bob as editor: 201 with the member list.
+	// Share with bob as editor: he accepts, and the member list has him.
 	out = se.share(se.alice, "BOB@example.com", "editor")
 	if out["ownerId"] != se.ids["alice"] || len(out["members"].([]any)) != 2 {
 		t.Fatalf("after share = %v", out)
@@ -392,17 +447,24 @@ func TestMembershipChangeWakesMemberDevices(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("bob's device was not woken by the share")
 	}
-	// An edit by alice in the shared project wakes bob with a cursor.
+	// An edit by alice in the shared project wakes bob with a cursor (after
+	// the membership wake-ups of the invitation and its acceptance).
 	resp2, out := se.alice.do("PATCH", "/api/v1/tasks/"+se.task, map[string]any{"title": "Oat milk"})
 	se.alice.mustStatus(resp2, 200, out)
-	select {
-	case d := <-got:
-		var v map[string]any
-		if json.Unmarshal([]byte(d), &v) != nil || v["cursor"] == nil {
-			t.Fatalf("edit wake-up = %q", d)
+	for woken := false; !woken; {
+		select {
+		case d := <-got:
+			if d == "{}" {
+				continue
+			}
+			var v map[string]any
+			if json.Unmarshal([]byte(d), &v) != nil || v["cursor"] == nil {
+				t.Fatalf("edit wake-up = %q", d)
+			}
+			woken = true
+		case <-time.After(2 * time.Second):
+			t.Fatal("bob's device was not woken by alice's edit")
 		}
-	case <-time.After(2 * time.Second):
-		t.Fatal("bob's device was not woken by alice's edit")
 	}
 }
 
@@ -476,7 +538,7 @@ func TestAddMemberByEmailIsLimitedAndAudited(t *testing.T) {
 	p := "/api/v1/projects/" + se.project + "/members"
 	for i := 1; i < memberAddsPerHour; i++ {
 		resp, out := se.alice.do("POST", p, map[string]any{"email": fmt.Sprintf("probe%d@example.com", i), "role": "viewer"})
-		if resp.StatusCode != 404 {
+		if resp.StatusCode != 202 {
 			t.Fatalf("probe %d = %d %v", i, resp.StatusCode, out)
 		}
 	}
@@ -495,5 +557,5 @@ func TestAddMemberByEmailIsLimitedAndAudited(t *testing.T) {
 	resp, out = se.bob.do("POST", "/api/v1/projects", map[string]any{"name": "Bob's"})
 	se.bob.mustStatus(resp, 201, out)
 	resp, out = se.bob.do("POST", "/api/v1/projects/"+out["id"].(string)+"/members", map[string]any{"email": "carol@example.com", "role": "viewer"})
-	se.bob.mustStatus(resp, 201, out)
+	se.bob.mustStatus(resp, 202, out)
 }

@@ -27,10 +27,20 @@ func TestNotificationRoutesAuthAndOwnership(t *testing.T) {
 	if out["assignee_id"] != se.ids["bob"] {
 		t.Fatalf("patched = %v", out)
 	}
-	// Bob has one unread notification naming alice, the task and the project.
+	// Bob has one unread notification naming alice, the task and the project
+	// (beside the invitation to the project he accepted, which is read).
 	resp, out = se.bob.do("GET", "/api/v1/notifications", nil)
 	se.bob.mustStatus(resp, 200, out)
-	list := out["notifications"].([]any)
+	list := []any{}
+	for _, n := range out["notifications"].([]any) {
+		if n.(map[string]any)["kind"] == "member_invitation" {
+			if n.(map[string]any)["readAt"] == nil {
+				t.Fatalf("the accepted invitation is unread: %v", n)
+			}
+			continue
+		}
+		list = append(list, n)
+	}
 	if len(list) != 1 || out["unread"].(float64) != 1 {
 		t.Fatalf("bob's notifications = %v", out)
 	}

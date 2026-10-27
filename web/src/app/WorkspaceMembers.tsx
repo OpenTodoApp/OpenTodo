@@ -1,24 +1,33 @@
 // Settings → Workspaces → Members (OpenSpec change workspaces-settings-v2): each
 // person with their avatar; the owner and admins change roles, remove people and
-// add them by email, everyone else reads the list.
-import { type FormEvent, useState } from 'react'
+// add them by email, everyone else reads the list. Someone they share nothing
+// with yet is asked first and waits under the members (member-add-consent).
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Badge, Button, Field, Input, Select, SettingsSection } from '../ui'
 import { act, actionErrorMessage } from './actionError'
 import { t } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
-import type { User, Workspace, WorkspaceMember, WorkspaceRole } from '../lib/types'
+import type { PendingMember, User, Workspace, WorkspaceMember, WorkspaceRole } from '../lib/types'
 import { workspaceApi } from '../lib/workspaceApi'
 import { cardCopy } from '../lib/settingsCopy'
 import { PersonAvatar } from './PersonAvatar'
+import { PendingInvitations } from './PendingInvitations'
 
 export function WorkspaceMembers({ ws, members, user, canManage, online }: { ws: Workspace; members: WorkspaceMember[]; user: User; canManage: boolean; online: boolean }) {
   const copy = cardCopy('workspace-members', { variant: 'created' })
+  // The open invitations come from the server, for the owner and admins only.
+  const [pending, setPending] = useState<PendingMember[]>([])
+  const load = useCallback(() => {
+    if (canManage && online) workspaceApi.pending(ws.id).then(setPending, () => undefined)
+  }, [ws.id, canManage, online])
+  useEffect(load, [load])
   return (
     <SettingsSection {...copy} id="workspace-members" level={3}>
       <ul className="divide-y divide-(--ot-border)" data-workspace-members>
         {members.map((m) => <MemberRow key={m.userId} ws={ws} m={m} you={m.userId === user.id} canManage={canManage} online={online} />)}
       </ul>
-      {canManage && <AddMember ws={ws} online={online} />}
+      {canManage && <PendingInvitations pending={pending} disabled={!online} onCancel={(p) => act(workspaceApi.cancelInvitation(ws.id, p.id).then(load))} />}
+      {canManage && <AddMember ws={ws} online={online} onAdded={load} />}
     </SettingsSection>
   )
 }
@@ -51,16 +60,21 @@ function MemberRow({ ws, m, you, canManage, online }: { ws: Workspace; m: Worksp
   )
 }
 
-function AddMember({ ws, online }: { ws: Workspace; online: boolean }) {
+function AddMember({ ws, online, onAdded }: { ws: Workspace; online: boolean; onAdded: () => void }) {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<WorkspaceRole>('member')
   const [error, setError] = useState<string | null>(null)
+  // The address of the last add that became an invitation, for the note below.
+  const [invited, setInvited] = useState<string | null>(null)
   async function add(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    const address = email.trim()
     try {
-      await workspaceApi.addMember(ws.id, email.trim(), role)
+      const res = await workspaceApi.addMember(ws.id, address, role)
+      setInvited('pending' in res ? address : null)
       setEmail('')
+      onAdded()
     } catch (err) {
       setError(actionErrorMessage(err))
     }
@@ -77,6 +91,11 @@ function AddMember({ ws, online }: { ws: Workspace; online: boolean }) {
           <Button type="submit" disabled={!online || !email.trim()}>{t('Add')}</Button>
         </div>
       </Field>
+      {invited && (
+        <p role="status" className="mt-2 text-meta text-muted" data-invited-note>
+          {t('If {email} has an account on this server, they get an invitation to accept.', { email: invited })}
+        </p>
+      )}
     </form>
   )
 }

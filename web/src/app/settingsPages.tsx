@@ -50,6 +50,7 @@ import { SpeechServerPanel } from './SpeechServerPanel'
 import { BrandingPanel } from './BrandingPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
+import { InvitationsPanel } from './MemberInvitations'
 import { ServerArchivePanel } from './ServerArchivePanel'
 import { WorkspacesSettings } from './WorkspacesSettings'
 import { demoFeatures, joinList, type SettingsPage, type SettingsSection } from './settingsSections'
@@ -76,6 +77,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
     </>
   ),
   'account/activity': () => <Anchor id="sessions"><ActivityPanel /></Anchor>,
+  'account/invitations': ({ demo }) => <Anchor id="invitations"><DemoDisabled on={demo}><InvitationsPanel /></DemoDisabled></Anchor>,
   'account/encryption': ({ demo }) => <Anchor id="encryption"><DemoDisabled on={demo}><EncryptionPanel /></DemoDisabled></Anchor>,
   'general/start': () => <><StartViewSection /><BriefingSection /></>,
   'general/keyboard': () => <KeyboardSection />,

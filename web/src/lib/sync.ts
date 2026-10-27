@@ -579,6 +579,11 @@ async function onWakeUp(data: string): Promise<void> {
   if (Number.isFinite(cursor)) {
     const stored = await getMeta<number>('cursor', 0)
     if (cursor <= stored) return
+  } else {
+    // A wake-up without a cursor is about membership: someone added, removed or
+    // invited this account (member-add-consent D5), so read the notifications
+    // too, even when the exchange brings no ops.
+    needNotifications = true
   }
   requestSync(0)
 }

@@ -1,0 +1,9 @@
+{{.Inviter}} möchte ein Projekt oder einen Arbeitsbereich mit dir teilen
+
+{{.Inviter}} möchte dein Konto {{.Email}} als {{.Role}} auf dem OpenTodo-Server {{.Origin}} hinzufügen. Nichts wird mit dir geteilt, bevor du antwortest.
+
+Um anzunehmen oder abzulehnen, melde dich an und öffne:
+
+{{.Link}}
+
+Die Einladung läuft in {{.Expiry}} ab. Wenn du {{.Inviter}} nicht kennst, lehne sie ab oder lass sie ablaufen.

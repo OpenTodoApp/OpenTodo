@@ -72,6 +72,17 @@ export const SETTINGS_COPY = {
       guide: { label: msg('Start guide'), description: msg('Add a first task, choose how you work, install the app.') },
     },
   },
+  // Settings → Account → Invitations (member-add-consent).
+  invitations: {
+    title: msg('Invitations'),
+    icon: 'mail',
+    description: msg('People who asked to add you to a project or workspace. Nothing is shared until you accept.'),
+    learnMore: 'settings/invitations',
+    notices: {
+      offline: msg('Answering an invitation needs a connection.'),
+      empty: msg('No invitations are waiting for you.'),
+    },
+  },
   session: {
     title: msg('Session'),
     icon: 'monitor',

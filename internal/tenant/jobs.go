@@ -169,6 +169,10 @@ func (t *Tenant) housekeeping(ctx context.Context) {
 	if _, err := t.Auth.PruneSignups(ctx); err != nil {
 		log.Error("prune failed", "err", err)
 	}
+	// Expired membership invitations, declined ones included (member-add-consent).
+	if _, err := t.Auth.PruneMemberInvitations(ctx); err != nil {
+		log.Error("prune membership invitations failed", "err", err)
+	}
 	if n, err := t.Inbox.Sweep(ctx); err != nil {
 		log.Warn("notification sweep failed", "err", err)
 	} else if n > 0 {
