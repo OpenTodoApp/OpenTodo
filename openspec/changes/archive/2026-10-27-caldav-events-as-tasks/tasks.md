@@ -14,4 +14,4 @@
 
 - [x] 3.1 `docs/caldav.md`: what happens to an item saved from iOS Calendar (it becomes a task, then shows in Reminders, not Calendar); recommend Reminders for new items. Add a CHANGELOG entry (Fixes #500). Verify: `npm run docs:check`.
 - [x] 3.2 Validate the change. Verify: `make openspec-validate`.
-- [ ] 3.3 After the PR is merged, reply on issue #500: thank calli33 (their Reminders observation pinpointed it), explain that events saved or moved to the OpenTodo account now become tasks and appear in OpenTodo and iOS Reminders, not in iOS Calendar, and name the release. Close it if the merge didn't. Verify: `gh issue view 500 -R OpenTodoApp/OpenTodo` shows the reply and the state CLOSED.
+- [x] 3.3 After the PR is merged, reply on issue #500: thank calli33 (their Reminders observation pinpointed it), explain that events saved or moved to the OpenTodo account now become tasks and appear in OpenTodo and iOS Reminders, not in iOS Calendar, and name the release. Close it if the merge didn't. Verify: `gh issue view 500 -R OpenTodoApp/OpenTodo` shows the reply and the state CLOSED.
