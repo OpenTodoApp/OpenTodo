@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar'
 import { seedInbox, seedToday, seedTracking, seeded, storyUser, withSeed } from './stories/fixtures'
 import { createProject, createTask } from '../lib/ops'
 import { storeWorkspaces, switchTo } from '../lib/workspaces'
+import { setBranding } from '../lib/branding'
 
 // Core screen: the sidebar (OpenSpec change ux-overhaul, task 8.7; app-shell
 // "Sidebar structure", "Resizable sidebar", "No desktop top bar"). The real
@@ -238,11 +239,31 @@ export const SwitcherOpen: StoryObj = {
   ),
 }
 
-/** One workspace (the account never created one): the header reads OpenTodo · Personal. */
+/** One workspace (the account never created one): the header shows OpenTodo with Personal below it. */
 export const OneWorkspace: StoryObj = {
   ...withSeed(async () => {
     await seedInbox()
     await storeWorkspaces([{ id: 'ws-personal', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: storyUser.id, members: [], groups: [] }])
   }),
   render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
+}
+
+/** The instance's name for one story, put back when the story unmounts (branding is device state shared by every story). */
+function Branded({ name, children }: { name: string; children: ReactNode }) {
+  useState(() => { setBranding({ name }); return name })
+  useEffect(() => () => setBranding(undefined), [])
+  return <>{children}</>
+}
+
+/** One workspace on a branded instance with a long name (issue 492): the name on the first line, cut if it must be, the workspace below it in full. */
+export const OneWorkspaceBranded: StoryObj = {
+  ...withSeed(async () => {
+    await seedInbox()
+    await storeWorkspaces([{ id: 'ws-personal', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: storyUser.id, members: [], groups: [] }])
+  }),
+  render: () => (
+    <Branded name="Acme Family Tasks Server">
+      <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+    </Branded>
+  ),
 }

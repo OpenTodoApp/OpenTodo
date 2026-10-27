@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **The top of the sidebar shows your server's name and your workspace on two lines.** With one workspace the header used to squeeze both into one line ("OpenTodo · Personal"), so a longer server name cut off the workspace. Now the name sits on the first line and the workspace below it, each with its own room. ([#492](https://github.com/OpenTodoApp/OpenTodo/issues/492), [Workspaces](docs/workspaces.md))
+
 ## [0.16.0] - 2026-10-27
 
 OpenTodo 0.16.0 is a **security release** that finishes the internal audit: **adding someone to a project or workspace by email now asks them first**, unless you already share something with them, and the answer no longer reveals whether an address has an account. Background work now runs **when it is due**: reminders at their exact time, digests at the chosen hour, deliveries right away. Please read the upgrade note for API clients.
