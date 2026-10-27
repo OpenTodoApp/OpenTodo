@@ -44,8 +44,23 @@ final class Reminders {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
+    /// The hand-over in progress. The screen and a background run each have a web view and
+    /// both hand over schedules; a replace waits for the one before it, so their
+    /// remove-then-add steps cannot interleave and leave an older schedule behind.
+    private var latestReplace: Task<String, Never>?
+
     /// Replaces the schedule; returns what `scheduleReminders` answers the web app.
     func replace(_ json: String) async -> String {
+        let previous = latestReplace
+        let task = Task { @MainActor in
+            _ = await previous?.value
+            return await self.apply(json)
+        }
+        latestReplace = task
+        return await task.value
+    }
+
+    private func apply(_ json: String) async -> String {
         let handed = Self.parse(json)
         let chosen = Self.select(handed)
         await removeScheduled()
@@ -78,7 +93,7 @@ final class Reminders {
         content.body = String(localized: "This is what a reminder looks like.")
         content.sound = .default
         content.categoryIdentifier = Self.categoryIdentifier
-        content.userInfo = ["reminder": "test", "task": ""]
+        content.userInfo = ["reminder": Notifications.testReminder, "task": ""]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
         return (try? await center.add(UNNotificationRequest(identifier: Self.identifierPrefix + "test", content: content, trigger: trigger))) != nil
     }

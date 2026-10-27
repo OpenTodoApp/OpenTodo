@@ -16,6 +16,26 @@ enum WidgetPublication {
         let time: String?
         let priority: Int
         let overdue: Bool
+
+        /// Priorities run 1 (highest) to 4, which means "no priority"; only 1-3 get a flag.
+        var flagged: Bool { (1...3).contains(priority) }
+
+        /// `opentodo://task/<id>`, or nil for an id that cannot be a link. The id comes from
+        /// the server's data, so it is percent-encoded rather than trusted to be URL-safe.
+        var link: URL? { WidgetPublication.taskLink(id) }
+    }
+
+    /// Unreserved characters only, so a slash, a space or a `?` in an id stays inside the
+    /// one path segment instead of adding a segment or a query of its own.
+    private static let unreserved = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+
+    static func taskLink(_ id: String) -> URL? {
+        guard !id.isEmpty, let encoded = id.addingPercentEncoding(withAllowedCharacters: unreserved) else { return nil }
+        var components = URLComponents()
+        components.scheme = "opentodo"
+        components.host = "task"
+        components.percentEncodedPath = "/" + encoded
+        return components.url
     }
 
     struct Publication: Decodable, Equatable {

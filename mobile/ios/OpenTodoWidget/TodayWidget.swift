@@ -58,15 +58,12 @@ struct TodayWidgetView: View {
                     .font(.caption).foregroundStyle(.secondary)
             } else {
                 ForEach(rows, id: \.id) { task in
-                    Link(destination: URL(string: "opentodo://task/\(task.id)")!) {
-                        HStack(spacing: 6) {
-                            Text(task.title ?? "Task").lineLimit(1).font(.caption)
-                            Spacer(minLength: 4)
-                            if task.overdue { Image(systemName: "exclamationmark.circle").font(.caption2) }
-                            if let time = task.time { Text(time).font(.caption2).foregroundStyle(.secondary) }
-                            // Priorities run 1 (highest) to 4, which means "no priority".
-                            if task.priority < 4 { Image(systemName: "flag.fill").font(.caption2) }
-                        }
+                    // No force unwrap: the id is the server's data, and a widget that crashes
+                    // shows nothing at all. A row without a usable link is shown, not tappable.
+                    if let link = task.link {
+                        Link(destination: link) { row(task) }
+                    } else {
+                        row(task)
                     }
                 }
             }
@@ -74,6 +71,16 @@ struct TodayWidgetView: View {
             if !updated.isEmpty { Text(updated).font(.caption2).foregroundStyle(.tertiary) }
         }
         .modifier(WidgetBackground())
+    }
+
+    private func row(_ task: WidgetPublication.Task) -> some View {
+        HStack(spacing: 6) {
+            Text(task.title ?? "Task").lineLimit(1).font(.caption)
+            Spacer(minLength: 4)
+            if task.overdue { Image(systemName: "exclamationmark.circle").font(.caption2) }
+            if let time = task.time { Text(time).font(.caption2).foregroundStyle(.secondary) }
+            if task.flagged { Image(systemName: "flag.fill").font(.caption2) }
+        }
     }
 
     private var count: Int { entry.publication?.count ?? 0 }
