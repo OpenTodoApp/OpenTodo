@@ -4,7 +4,7 @@
 // and drives src/lib/sync.ts, ops.ts and db.ts as the app does.
 // Run with `npm run test:contract` (needs ../bin/opentodo).
 import { describe, expect, it } from 'vitest'
-import { account, call, device, setOffline, switchTo } from '../test/contract'
+import { acceptInvitations, account, call, device, setOffline, switchTo } from '../test/contract'
 import { db } from './db'
 import { hlcLast, hlcSeed, MAX_FUTURE_SKEW_MS } from './hlc'
 import { mutate } from './ops'
@@ -117,7 +117,7 @@ describe('sync client against the server', () => {
     await syncNow()
     await call(o.session, 'POST', `/api/v1/projects/${project}/members`, { email: viewer.email, role: 'viewer' })
 
-    await device(viewer, 'viewer')
+    await acceptInvitations(await device(viewer, 'viewer'))
     await syncNow()
     expect((await db.tasks.get(task))?.title).toBe('Owner wrote this')
     await mutate('task', task, { title: 'Viewer tried this' })
