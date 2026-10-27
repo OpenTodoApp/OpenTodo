@@ -33,6 +33,13 @@ const (
 	AlgRS256 int64 = -257
 )
 
+// RS256 key sizes accepted at registration: at least 2048 bits, and a generous
+// upper bound so an oversized modulus cannot make every sign-in slow to verify.
+const (
+	minRSABits = 2048
+	maxRSABits = 16384
+)
+
 // SupportedAlgorithms lists the algorithms offered to authenticators, most preferred first.
 var SupportedAlgorithms = []int64{AlgES256, AlgEdDSA, AlgRS256}
 
@@ -252,14 +259,23 @@ func ParseCOSEKey(raw []byte) (crypto.PublicKey, int64, error) {
 		if err != nil {
 			return nil, 0, err
 		}
-		if len(n) < 256 || len(e) == 0 || len(e) > 4 {
-			return nil, 0, fmt.Errorf("%w: RSA key must be at least 2048 bits", ErrUnsupportedAlgorithm)
-		}
-		exp := new(big.Int).SetBytes(e)
-		if !exp.IsInt64() || exp.Int64() < 3 {
+		if len(e) == 0 || len(e) > 4 {
 			return nil, 0, fmt.Errorf("%w: bad RSA exponent", ErrMalformed)
 		}
-		return &rsa.PublicKey{N: new(big.Int).SetBytes(n), E: int(exp.Int64())}, alg, nil
+		// The size is the modulus's bit length, not its encoded length: leading
+		// zero bytes would otherwise pass a short key as 2048 bits (nightly fuzz).
+		mod := new(big.Int).SetBytes(n)
+		if mod.BitLen() < minRSABits || mod.BitLen() > maxRSABits {
+			return nil, 0, fmt.Errorf("%w: RSA key must be %d to %d bits", ErrUnsupportedAlgorithm, minRSABits, maxRSABits)
+		}
+		if mod.Bit(0) == 0 {
+			return nil, 0, fmt.Errorf("%w: RSA modulus must be odd", ErrMalformed)
+		}
+		exp := new(big.Int).SetBytes(e)
+		if !exp.IsInt64() || exp.Int64() < 3 || exp.Bit(0) == 0 {
+			return nil, 0, fmt.Errorf("%w: bad RSA exponent", ErrMalformed)
+		}
+		return &rsa.PublicKey{N: mod, E: int(exp.Int64())}, alg, nil
 	}
 	return nil, 0, fmt.Errorf("%w: kty %d alg %d", ErrUnsupportedAlgorithm, kty, alg)
 }

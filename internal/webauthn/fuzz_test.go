@@ -144,7 +144,7 @@ func FuzzParseCOSEKey(f *testing.F) {
 				t.Fatalf("Ed25519 key with alg %d, %d bytes", alg, len(k))
 			}
 		case *rsa.PublicKey:
-			if alg != webauthn.AlgRS256 || k.N.BitLen() < 2041 || k.E < 3 {
+			if alg != webauthn.AlgRS256 || k.N.BitLen() < 2048 || k.N.BitLen() > 16384 || k.N.Bit(0) == 0 || k.E < 3 || k.E%2 == 0 {
 				t.Fatalf("RSA key with alg %d, %d bits, e=%d", alg, k.N.BitLen(), k.E)
 			}
 		default:
