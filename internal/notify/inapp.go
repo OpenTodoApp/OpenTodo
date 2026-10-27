@@ -92,6 +92,19 @@ func (n *InApp) RulePaused(ctx context.Context, e RuleEvent) {
 	n.insert(ctx, e.UserID, KindRulePaused, e)
 }
 
+// MemberInvited stores a member_invitation notification for the invitee (member-add-consent).
+func (n *InApp) MemberInvited(ctx context.Context, e MemberInvited) {
+	n.insert(ctx, e.RecipientID, KindMemberInvitation, e)
+}
+
+// MarkInvitationRead marks userID's notification about invitationID read, once
+// the invitation was answered or cancelled (member-add-consent D5).
+func (n *InApp) MarkInvitationRead(ctx context.Context, userID, invitationID string) error {
+	_, err := n.db.ExecContext(ctx, `UPDATE notifications SET read_at = ? WHERE user_id = ? AND kind = ? AND read_at IS NULL
+		AND json_extract(payload, '$.invitationId') = ?`, n.now().UnixMilli(), userID, KindMemberInvitation, invitationID)
+	return err
+}
+
 // List returns the user's notifications, newest first, and the number unread.
 func (n *InApp) List(ctx context.Context, userID string) ([]Notification, int, error) {
 	rows, err := n.db.QueryContext(ctx, `SELECT id, kind, payload, created_at, read_at FROM notifications

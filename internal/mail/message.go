@@ -35,10 +35,14 @@ const (
 	// (OpenSpec change settings-refresh D10).
 	KindEmailChange       Kind = "email_change"
 	KindEmailChangeNotice Kind = "email_change_notice"
+	// KindMemberInvitation tells an account that someone asked to add it to a
+	// project or workspace, with a link to answer in the app (OpenSpec change
+	// member-add-consent). Like a project invite it never names the project.
+	KindMemberInvitation Kind = "member_invitation"
 )
 
 // Kinds lists every kind.
-var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindWorkspaceInvite, KindTest, KindDigest, KindEmailChange, KindEmailChangeNotice}
+var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindWorkspaceInvite, KindTest, KindDigest, KindEmailChange, KindEmailChangeNotice, KindMemberInvitation}
 
 // carriesContent marks kinds that include entity content and must never be
 // built for an account with end-to-end encryption (design D8). Only the

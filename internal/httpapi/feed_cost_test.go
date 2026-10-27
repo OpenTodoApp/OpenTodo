@@ -60,8 +60,7 @@ func TestFeedPagesMatchWholeHistory(t *testing.T) {
 	resp, out := se.alice.do("POST", "/api/v1/projects", map[string]any{"name": "Work"})
 	se.alice.mustStatus(resp, 201, out)
 	work := out["id"].(string)
-	resp, out = se.alice.do("POST", "/api/v1/projects/"+work+"/members", map[string]any{"email": "bob@example.com", "role": "editor"})
-	se.alice.mustStatus(resp, 201, out)
+	addByEmail(se.alice, se.bob, "/api/v1/projects/"+work+"/members", "bob@example.com", "editor")
 
 	rng := rand.New(rand.NewPCG(7, 11))
 	base := time.Now().Add(-48 * time.Hour).UnixMilli()

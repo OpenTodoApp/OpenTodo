@@ -4,7 +4,7 @@
 // other devices through the server.
 import { request } from './api'
 import { syncNow } from './sync'
-import type { Membership, ProjectRole, WorkspaceEntry, WorkspaceRole } from './types'
+import type { Membership, PendingAnswer, PendingMember, ProjectRole, WorkspaceEntry, WorkspaceRole } from './types'
 import { storeWorkspacesFromSync } from './workspaces'
 
 const base = '/api/v1/workspaces'
@@ -51,7 +51,11 @@ export const workspaceApi = {
   remove: (id: string) => change(() => request<void>('DELETE', `${base}/${enc(id)}`)),
   leave: (id: string) => change(() => request<void>('POST', `${base}/${enc(id)}/leave`)),
   transfer: (id: string, userId: string) => change(() => request<WorkspaceEntry>('POST', `${base}/${enc(id)}/transfer`, { userId })),
-  addMember: (id: string, email: string, role: WorkspaceRole) => change(() => request<WorkspaceEntry>('POST', `${base}/${enc(id)}/members`, { email, role })),
+  /** 201 with the workspace, or 202 `{pending: true}` when the person is asked first (member-add-consent). */
+  addMember: (id: string, email: string, role: WorkspaceRole) => change(() => request<WorkspaceEntry | PendingAnswer>('POST', `${base}/${enc(id)}/members`, { email, role })),
+  /** The open invitations (owner and admins; absent for anyone else). */
+  pending: async (id: string) => (await request<{ pending?: PendingMember[] }>('GET', `${base}/${enc(id)}/members`)).pending ?? [],
+  cancelInvitation: (id: string, invitationId: string) => request<void>('DELETE', `${base}/${enc(id)}/member-invitations/${enc(invitationId)}`),
   setRole: (id: string, userId: string, role: WorkspaceRole) => change(() => request<WorkspaceEntry>('PATCH', `${base}/${enc(id)}/members/${enc(userId)}`, { role })),
   removeMember: (id: string, userId: string) => change(() => request<void>('DELETE', `${base}/${enc(id)}/members/${enc(userId)}`)),
   createGroup: (id: string, name: string) => change(() => request<{ id: string; name: string; members: string[] }>('POST', `${base}/${enc(id)}/groups`, { name })),

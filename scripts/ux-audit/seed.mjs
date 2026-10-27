@@ -35,6 +35,8 @@ export async function seed({ base, pw, lang = '' }) {
   let nested = work.id
   for (const name of ['Clients', 'Acme Corporation international', 'Q4 launch campaign', 'Press kit']) nested = (await A('POST', '/api/v1/projects', { name, parent_id: nested })).id
   await A('POST', `/api/v1/projects/${home.id}/members`, { email: 'bob@example.com', role: 'editor' })
+  // Bob shares nothing with Ada yet, so the add is an invitation he accepts (member-add-consent).
+  for (const inv of (await B('GET', '/api/v1/me/member-invitations')).invitations) await B('POST', `/api/v1/me/member-invitations/${inv.id}/accept`, {})
   // A pending project invite link (project-invite-links): its acceptance screen is
   // checked signed out and signed in, and the share dialog lists it.
   const { link: projectLink } = await A('POST', `/api/v1/projects/${home.id}/invites`, { role: 'editor', email: 'dora@example.com' })

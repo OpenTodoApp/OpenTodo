@@ -152,6 +152,12 @@
   "<b>{actor}</b> mentioned you on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<b>{inviter}</b> invited you to the project <b2>{name}</b2> as {role}": [
+    "web/src/app/MemberInvitations.tsx"
+  ],
+  "<b>{inviter}</b> invited you to the workspace <b2>{name}</b2> as {role}": [
+    "web/src/app/MemberInvitations.tsx"
+  ],
   "<b>{name}</b> replied on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
   ],
@@ -532,6 +538,9 @@
   ],
   "Absolute path on the server. Empty: the backups folder inside the data directory.": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Accept": [
+    "web/src/app/MemberInvitations.tsx"
   ],
   "Accept and continue": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -1233,6 +1242,12 @@
   ],
   "Answering an AI connector": [
     "web/src/app/RelaySettings.tsx"
+  ],
+  "Answering an invitation needs a connection.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Answering needs a connection to your server.": [
+    "web/src/app/MemberInvitations.tsx"
   ],
   "Answers on your key do not count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -2018,6 +2033,7 @@
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PasswordSection.tsx",
+    "web/src/app/PendingInvitations.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/RestoreSection.tsx",
@@ -2060,6 +2076,9 @@
   ],
   "Cancel reply": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "Cancel the invitation of {email}": [
+    "web/src/app/PendingInvitations.tsx"
   ],
   "Capture": [
     "web/src/app/settingsSections.ts",
@@ -3349,6 +3368,7 @@
     "web/src/app/review/CarryOver.tsx"
   ],
   "Decline": [
+    "web/src/app/MemberInvitations.tsx",
     "web/src/app/RelayConfirm.tsx"
   ],
   "Declined": [
@@ -5616,6 +5636,12 @@
   "If it is on your mind, it goes in the Inbox.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "If {email} has an account on this server, they get an invitation to accept.": [
+    "web/src/app/WorkspaceMembers.tsx"
+  ],
+  "If {email} has an account on this server, they get an invitation to accept. For someone without an account, create an invite link.": [
+    "web/src/app/ShareDialog.tsx"
+  ],
   "Ignore": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -5946,11 +5972,27 @@
   "Invitation revoked": [
     "web/src/app/auditFormat.ts"
   ],
+  "Invitation to join": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Invitation to join accepted": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Invitation to join cancelled": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Invitation to join declined": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Invitation to join sent": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Invitation {who}, {status}": [
     "web/src/app/MembersPanel.tsx"
   ],
   "Invitations": [
     "web/src/app/MembersPanel.tsx",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Invite link": [
@@ -5974,6 +6016,9 @@
   ],
   "Invite with a link": [
     "web/src/app/InviteLinksSection.tsx"
+  ],
+  "Invited, open until {date}": [
+    "web/src/app/PendingInvitations.tsx"
   ],
   "Invites": [
     "web/src/app/WorkspacesSettings.tsx"
@@ -7654,6 +7699,9 @@
   "No imports yet.": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "No invitations are waiting for you.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "No invitations yet": [
     "web/src/app/MembersPanel.tsx"
   ],
@@ -8786,6 +8834,9 @@
   "Open the weekly review": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "Open until {date}": [
+    "web/src/app/MemberInvitations.tsx"
+  ],
   "Open view": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -9173,6 +9224,9 @@
   "People to see or thank": [
     "web/src/lib/review.ts"
   ],
+  "People who asked to add you to a project or workspace. Nothing is shared until you accept.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "People who share a project with you see it. It is not end-to-end encrypted.": [
     "web/src/app/profile/PictureDialog.tsx"
   ],
@@ -9500,7 +9554,7 @@
   "Profile picture changed": [
     "web/src/app/auditFormat.ts"
   ],
-  "Profile, security, sessions and encryption": [
+  "Profile, security, invitations, sessions and encryption": [
     "web/src/app/settingsSections.ts"
   ],
   "Progress": [
@@ -11731,6 +11785,7 @@
   ],
   "Someone": [
     "web/src/app/FeedView.tsx",
+    "web/src/app/MemberInvitations.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
@@ -13363,6 +13418,9 @@
   "This identity is already linked to another account.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This invitation can no longer be accepted. Ask the person who invited you to add you again.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This invitation is for <strong>{email}</strong>.": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -14787,6 +14845,9 @@
   "Waiting for": [
     "web/src/lib/activity.ts"
   ],
+  "Waiting for an answer": [
+    "web/src/app/PendingInvitations.tsx"
+  ],
   "Waiting for confirmation: {email}": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -15557,6 +15618,7 @@
     "web/src/lib/assistant.ts"
   ],
   "a project": [
+    "web/src/app/MemberInvitations.tsx",
     "web/src/lib/assistant.ts"
   ],
   "a project cannot be its own parent": [
@@ -15588,6 +15650,9 @@
   ],
   "a task cannot be its own parent": [
     "web/src/lib/ops.ts"
+  ],
+  "a workspace": [
+    "web/src/app/MemberInvitations.tsx"
   ],
   "account deactivated": [
     "web/src/app/auditFormat.ts"

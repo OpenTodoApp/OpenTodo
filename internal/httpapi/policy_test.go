@@ -224,8 +224,15 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"GET /api/v1/email-inbox":         "auth full-tokens",
 		"PATCH /api/v1/email-inbox":       "auth full-tokens demo",
 		"POST /api/v1/email-inbox/rotate": "auth full-tokens demo",
-		"POST /api/v1/assistant/turn":     "auth session-only demo",
-		"POST /api/v1/me/assistant/test":  "auth session-only demo",
+		// Membership invitations (member-add-consent D4): the invitee answers
+		// with a session or a full token; managers cancel like they add.
+		"GET /api/v1/me/member-invitations":                                "auth full-tokens demo",
+		"POST /api/v1/me/member-invitations/{id}/accept":                   "auth full-tokens demo",
+		"POST /api/v1/me/member-invitations/{id}/decline":                  "auth full-tokens demo",
+		"DELETE /api/v1/projects/{id}/member-invitations/{invitationId}":   "auth demo",
+		"DELETE /api/v1/workspaces/{id}/member-invitations/{invitationId}": "auth full-tokens demo",
+		"POST /api/v1/assistant/turn":                                      "auth session-only demo",
+		"POST /api/v1/me/assistant/test":                                   "auth session-only demo",
 		// Regular content routes.
 		"POST /api/v1/sync":                       "auth",
 		"POST /api/v1/{collection}":               "auth",

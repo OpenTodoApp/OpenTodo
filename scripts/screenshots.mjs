@@ -131,6 +131,10 @@ const garage = await proj({ name: 'Garage sale', color: '#ef4444', position: 4 }
 await A('POST', `/api/v1/projects/${home.id}/members`, { email: 'bob@example.com', role: 'editor' })
 await A('POST', `/api/v1/projects/${home.id}/members`, { email: 'chen@example.com', role: 'viewer' })
 await A('POST', `/api/v1/projects/${launch.id}/members`, { email: 'bob@example.com', role: 'admin' })
+// Bob and Chen share nothing with Ada yet: each add is an invitation they accept (member-add-consent).
+for (const who of [bob, chen]) {
+  for (const inv of (await who.call('GET', '/api/v1/me/member-invitations')).invitations) await who.call('POST', `/api/v1/me/member-invitations/${inv.id}/accept`, {})
+}
 
 const sec = async (project, names) => { const out = {}; let i = 1; for (const n of names) out[n] = (await A('POST', '/api/v1/sections', { name: n, project_id: project, position: i++ })).id; return out }
 const hs = await sec(home.id, ['Planning', 'In progress', 'Waiting'])
