@@ -24,4 +24,4 @@
 - [x] 3.1 Describe the 405 and the new 404 text in `docs/api.md`, and add a reverse-proxy troubleshooting note to `docs/self-hosting/docker.md`. Verify: `cd web && npm run docs:check`.
 - [x] 3.2 Add a CHANGELOG.md entry under Unreleased (Refs #501). Verify: `npm run docs:check`.
 - [x] 3.3 Run `go test ./...`, `cd web && npm test && npm run build`, `make openspec-validate`. Verify: all pass, then CI on the pull request.
-- [ ] 3.4 After merge, comment on issue #501: the diagnostics landed, what the reporter will now see, and a repeated request for their failed request's URL, method and status. Keep the issue open. Verify: `gh issue view 501 -R OpenTodoApp/OpenTodo` shows the comment and state OPEN.
+- [x] 3.4 After merge, comment on issue #501: the diagnostics landed, what the reporter will now see, and a repeated request for their failed request's URL, method and status. Keep the issue open. Verify: `gh issue view 501 -R OpenTodoApp/OpenTodo` shows the comment and state OPEN.
