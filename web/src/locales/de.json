@@ -5454,5 +5454,6 @@
   "Same name as a field from “{project}”. Rename one of them.": "Gleicher Name wie ein Feld aus „{project}“. Benenne eines davon um.",
   "The sub-project “{project}” already has a field named “{name}”.": "Das Unterprojekt „{project}“ hat bereits ein Feld namens „{name}“.",
   "The sub-project “{project}” would have more than {n} fields.": "Das Unterprojekt „{project}“ hätte dann mehr als {n} Felder.",
-  "This project already inherits a field named “{name}” from “{project}”.": "Dieses Projekt erbt bereits ein Feld namens „{name}“ von „{project}“."
+  "This project already inherits a field named “{name}” from “{project}”.": "Dieses Projekt erbt bereits ein Feld namens „{name}“ von „{project}“.",
+  "The server rejected the test request ({status}: {reason}). A reverse proxy or a redirect may have changed it on the way; the provider was not asked.": "Der Server hat die Testanfrage abgelehnt ({status}: {reason}). Ein Reverse-Proxy oder eine Weiterleitung hat sie unterwegs vermutlich verändert; der Anbieter wurde nicht gefragt."
 }

@@ -123,6 +123,10 @@ Troubleshooting "live updates disconnected" (the status pill says **Polling** in
 2. If it works but drops after a fixed time, a timeout somewhere in the chain is shorter than the heartbeat; raise it above 25 s.
 3. Nothing is lost either way: while the stream is down the app polls every 30 s exactly as before.
 
+### "Method not allowed" or "unknown API route" from a test or save
+
+A 405 `method_not_allowed` ("GET is not allowed on /api/v1/…; use POST") means the request reached OpenTodo with another method than the app sent. Almost always a redirect in front of it did that: a 301 or 302 turns a `POST` into a `GET`. Proxy `/api/` without redirects, or use 307 or 308, which keep the method. A 404 "unknown API route" names the method and path the server received; a trailing slash or a rewritten path shows up there.
+
 ## Reminders and web push
 
 Reminders are shown in the app on every device and, for devices that enable notifications in **Settings → Notifications**, sent as web push so a closed app still notifies. Nothing needs configuring: on first use the server generates a VAPID key pair at `<data>/push_vapid.pem` (mode 0600). Keep it with the database: it is included in backup archives and restored with them, and existing subscriptions only work with the key they were created for.

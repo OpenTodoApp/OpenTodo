@@ -10,6 +10,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Changed
 
+- **A request your reverse proxy changed now says so.** An API path asked with the wrong method answers 405 with an `Allow` header ("GET is not allowed on /api/v1/settings/assistant/test; use POST") instead of "unknown API route", and a 404 names the method and path the server received. A 301 or 302 redirect in front of OpenTodo turns a `POST` into a `GET`; the assistant's **Test connection** now explains that instead of showing the raw error. ([API](docs/api.md), [Behind a reverse proxy](docs/self-hosting/docker.md#method-not-allowed-or-unknown-api-route-from-a-test-or-save), `api-method-not-allowed`, refs #501)
 - **The top of the sidebar shows your server's name and your workspace on two lines.** With one workspace the header used to squeeze both into one line ("OpenTodo · Personal"), so a longer server name cut off the workspace. Now the name sits on the first line and the workspace below it, each with its own room. ([#492](https://github.com/OpenTodoApp/OpenTodo/issues/492), [Workspaces](docs/workspaces.md))
 
 ## [0.16.0] - 2026-10-27
