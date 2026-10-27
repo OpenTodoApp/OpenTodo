@@ -25,9 +25,9 @@ import (
 
 // Defaults of the scheduler and the sender.
 const (
-	// TickInterval is how often the scheduler looks for due reminders (the spec
-	// requires at least once a minute).
-	TickInterval = 30 * time.Second
+	// RetryPause is how long the reminders job waits before another pass when
+	// reminders are still due after one (failed sends, the batch limit).
+	RetryPause = 30 * time.Second
 	// SendTimeout caps each request to a push service.
 	SendTimeout = 10 * time.Second
 	// MessageTTL is how long a push service keeps an undelivered message (seconds).
@@ -599,26 +599,4 @@ func (s *Service) recordReminderField(ctx context.Context, userID, reminderID, f
 		s.sync.NotifyApplied(res, opsync.ServerDevice)
 	}
 	return nil
-}
-
-// Run ticks until ctx is cancelled, starting with an immediate pass so
-// reminders that fell due while the server was down go out after startup.
-func (s *Service) Run(ctx context.Context) {
-	t := time.NewTicker(TickInterval)
-	defer t.Stop()
-	for {
-		if n, err := s.Tick(ctx); err != nil {
-			if ctx.Err() != nil {
-				return
-			}
-			s.log.Error("reminder scheduler", "err", err)
-		} else if n > 0 {
-			s.log.Debug("reminders delivered", "count", n)
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
-	}
 }

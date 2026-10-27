@@ -16,6 +16,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/digest"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/email"
+	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	"github.com/OpenTodoApp/opentodo/internal/mail"
 	"github.com/OpenTodoApp/opentodo/internal/mcp"
 	"github.com/OpenTodoApp/opentodo/internal/notify"
@@ -58,12 +59,9 @@ func wireWebhooks(ctx context.Context, cfg config.Config, o Options, db *sql.DB,
 
 // wireObserver installs the post-commit observer: webhooks first, then the
 // automation rules (automation-rules D5), then calendar sync's debounced
-// trigger (calendar-two-way D9), then a host's change callback.
-func wireObserver(syncSvc *opsync.Service, hooks *webhook.Service, engine *rules.Engine, hosted *Hosted, cal *calsync.Worker) {
-	var changed func()
-	if hosted != nil {
-		changed = hosted.Changed
-	}
+// trigger (calendar-two-way D9), then the jobs signal: any job may be due
+// earlier now (a new reminder, a trashed item).
+func wireObserver(syncSvc *opsync.Service, hooks *webhook.Service, engine *rules.Engine, sig *jobs.Signal, cal *calsync.Worker) {
 	syncSvc.SetObserver(func(ctx context.Context, changes []opsync.Change) {
 		hooks.Observe(ctx, changes)
 		if engine != nil {
@@ -72,10 +70,23 @@ func wireObserver(syncSvc *opsync.Service, hooks *webhook.Service, engine *rules
 		if cal != nil {
 			cal.Observe(ctx, changes)
 		}
-		if changed != nil {
-			changed()
-		}
+		sig.Changed()
 	})
+}
+
+// wireWakes makes the services that queue work wake their job at once: a
+// webhook delivery or channel message queued (or its target turned on again),
+// a rule event queued, a backup schedule saved.
+func (s *Set) wireWakes() {
+	wake := func(name string) func() { return func() { s.Signal.Wake(name) } }
+	s.Hooks.SetWake(wake(jobs.Webhooks))
+	if s.Channels != nil {
+		s.Channels.SetWake(wake(jobs.Webhooks))
+	}
+	if s.Rules != nil {
+		s.Rules.SetWake(wake(jobs.Rules))
+	}
+	s.Backups.SetWake(wake(jobs.Backup))
 }
 
 // openRules builds the automation rules engine (automation-rules): the owner

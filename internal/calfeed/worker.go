@@ -5,16 +5,12 @@ import (
 	"errors"
 	"log/slog"
 	"net/url"
-	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/poll"
 )
 
-// Worker pacing (design D3).
-const (
-	PollInterval = 30 * time.Second
-	InFlight     = 2
-)
+// InFlight bounds the fetches of one pass (design D3).
+const InFlight = 2
 
 // Worker fetches due subscriptions in the background, under the jobs leader.
 type Worker struct {
@@ -26,9 +22,6 @@ type Worker struct {
 	Notify func(userID string)
 	Log    *slog.Logger
 }
-
-// Run polls until ctx ends.
-func (w *Worker) Run(ctx context.Context) { poll.Every(ctx, PollInterval, w.RunOnce) }
 
 // RunOnce fetches the subscriptions due now, at most InFlight at a time, and
 // waits for them.

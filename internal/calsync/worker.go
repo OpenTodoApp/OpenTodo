@@ -115,29 +115,6 @@ func (w *Worker) lock(id string) *sync.Mutex {
 // Changed forgets whether connections exist (after a route changed one).
 func (w *Worker) Changed() { w.active.Store(0) }
 
-// Run syncs due connections until ctx ends and sweeps secrets hourly.
-func (w *Worker) Run(ctx context.Context) {
-	t := time.NewTicker(TickInterval)
-	defer t.Stop()
-	var swept time.Time
-	for {
-		if time.Since(swept) >= sweepEvery {
-			swept = time.Now()
-			if n, err := w.Secrets.Sweep(ctx, w.Store); err != nil {
-				w.log().Error("calendar sync: sweep secrets", "err", err)
-			} else if n > 0 {
-				w.log().Debug("calendar sync: removed secrets without a connection", "count", n)
-			}
-		}
-		w.RunOnce(ctx)
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
-	}
-}
-
 // RunOnce syncs the connections due now, at most InFlight at a time.
 func (w *Worker) RunOnce(ctx context.Context) {
 	if w.Enabled != nil && !w.Enabled(ctx) {

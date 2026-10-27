@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/jobs"
 )
 
 // TestIssuePollInClosedTenant (multi-tenant-host x issue-import): a poll due in
@@ -47,7 +48,7 @@ func TestIssuePollInClosedTenant(t *testing.T) {
 		t.Fatalf("swept %d", n)
 	}
 	idx, _, err := f.h.reg.DueBefore(ctx, f.clock.Now(), 10)
-	if err != nil || !slices.Contains(idx["alice"], KindIssues) || slices.Contains(idx["bob"], KindIssues) {
+	if err != nil || !slices.Contains(idx["alice"], jobs.Issues) || slices.Contains(idx["bob"], jobs.Issues) {
 		t.Fatalf("index: %v %v", idx, err)
 	}
 	f.h.tick(ctx)

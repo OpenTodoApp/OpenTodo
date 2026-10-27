@@ -1,7 +1,7 @@
 // Package deliveryq is the machinery shared by the two durable outbound queues
 // in SQLite, webhook deliveries (internal/webhook) and notification channel
-// messages (internal/channels): the single worker loop, the parallel pass over
-// due rows, pruning the log, and the "next due" times a host indexes. Each
+// messages (internal/channels): the parallel pass over due rows, pruning the
+// log, and the "next due" times of the tenant's "webhooks" job. Each
 // queue keeps its payloads, its send and the recording of an attempt's
 // outcome; the retry schedule is webhook.Backoff for both.
 package deliveryq
@@ -10,7 +10,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log/slog"
 	"sync"
 	"time"
 )
@@ -21,11 +20,13 @@ const (
 	Concurrency = 4
 	// AutoDisableAfter consecutive failed items disable their target.
 	AutoDisableAfter = 20
-	// PollInterval is how often an idle worker looks for due retries.
-	PollInterval = time.Second
-	// PruneInterval and LogRetention bound the log.
-	PruneInterval = time.Hour
-	LogRetention  = 30 * 24 * time.Hour
+	// Retry is the pause before the "webhooks" job runs again when deliveries
+	// are still due after a run (a backlog larger than one run sends).
+	Retry = time.Second
+	// Batches bounds the passes of one run per queue (Batches x Concurrency items).
+	Batches = 64
+	// LogRetention bounds the log by age (Table.LogLimit by count).
+	LogRetention = 30 * 24 * time.Hour
 )
 
 // Table names one queue's tables. The names are constants of the queue's
@@ -42,54 +43,10 @@ type Table struct {
 	Noun, Nouns string
 }
 
-// Loop is a queue's single worker.
-type Loop struct {
-	// Name prefixes log lines ("webhooks").
-	Name string
-	Log  *slog.Logger
-	Now  func() time.Time
-	// After is time.After (tests replace it).
-	After func(time.Duration) <-chan time.Time
-	// Wake nudges the loop (buffered, size 1).
-	Wake chan struct{}
-	// Enabled, when set, pauses sending while it reports false; pruning goes on.
-	Enabled func(context.Context) bool
-	// Prune trims the log; Process sends due items and reports how many.
-	Prune   func(context.Context) error
-	Process func(context.Context) int
-}
-
-// Nudge wakes the loop now instead of at the next poll.
-func Nudge(wake chan struct{}) {
-	select {
-	case wake <- struct{}{}:
-	default:
-	}
-}
-
-// Run is the worker loop. It returns when ctx is cancelled, after the pass in
-// progress has finished (each send is bounded by its own timeout).
-func (l *Loop) Run(ctx context.Context) {
-	var lastPrune time.Time
-	for {
-		if ctx.Err() != nil {
-			return
-		}
-		if now := l.Now(); now.Sub(lastPrune) >= PruneInterval {
-			if err := l.Prune(ctx); err != nil && ctx.Err() == nil {
-				l.Log.Error(l.Name+": prune failed", "err", err)
-			}
-			lastPrune = now
-		}
-		if (l.Enabled == nil || l.Enabled(ctx)) && l.Process(ctx) > 0 {
-			continue
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-l.Wake:
-		case <-l.After(PollInterval):
-		}
+// Drain runs process (one pass that sends due items and reports how many)
+// until nothing was sent, at most Batches times, or ctx ends.
+func Drain(ctx context.Context, process func(context.Context) int) {
+	for i := 0; i < Batches && ctx.Err() == nil && process(ctx) > 0; i++ {
 	}
 }
 
