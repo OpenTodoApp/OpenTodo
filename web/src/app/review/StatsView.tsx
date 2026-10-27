@@ -3,15 +3,14 @@
 // local rows by lib/dashboard.ts. It sends nothing and writes nothing, so it works
 // offline and every synced device shows the same numbers, except "keeps slipping",
 // which reads this device's own activity record and says so (design D5).
-import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, Menu, MenuItem, PageBody, PageHeader } from '../../ui'
 import { NO_TASK_ROWS, useAllLabels, useAllProjects, useAllTaskRows, useMemberships } from '../../lib/localData'
 import { currentDayStart, formatDate, monthName, weekdayName } from '../../lib/dates'
-import { currentUserId } from '../../lib/sharing'
+import { useMe } from '../../lib/sharing'
 import { comparisonOf, PERIOD_KINDS, PERIOD_LABELS, periodFor, sharedIds, type DashboardPeriod, type Period } from '../../lib/stats'
 import { buildModel, dashboardOf, type Dashboard, type HourGrid } from '../../lib/dashboard'
-import { slippingFrom, slipRows } from '../../lib/statsSlipping'
+import { slippingFrom, useSlipRows } from '../../lib/statsSlipping'
 import type { Label, Membership, Project, Task, TimeEntry } from '../../lib/types'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { HelpLink } from '../help/HelpLink'
@@ -302,11 +301,11 @@ export function StatsView() {
   const projects = useAllProjects()
   const labels = useAllLabels()
   const memberships = useMemberships()
-  const me = useLiveQuery(() => currentUserId(), [], null)
+  const me = useMe()
   const entries = useLiveEntries()
   const now = useMinuteNow(entries.some((e) => e.ended_at === null))
   // This device's due-date changes, read once per open (design D5, D8).
-  const read = useLiveQuery(() => slipRows(Date.now()), [], null)
+  const read = useSlipRows()
   const rows = useMemo(() => read ?? [], [read])
   // The panels wait for the tasks and this device's date changes: panels that fill in stages move the page (ux-fixes-phone, audit M12).
   const ready = tasks !== NO_TASK_ROWS && read !== null

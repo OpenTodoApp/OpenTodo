@@ -3,6 +3,7 @@
 // entity, written with a single mutateMany through the undo store (lib/undo.ts).
 // They reuse the single-task rules (recurring roll-forward, subtree completion and
 // trash, project moves across sharing scopes) so a batch behaves like the keys.
+import { useLiveQuery } from 'dexie-react-hooks'
 import type { ProposedChange } from './assistantTypes'
 import { addDaysISO, logicalToday, weekStartOf } from './dates'
 import { db } from './db'
@@ -269,4 +270,13 @@ export function commonSharedProject(tasks: readonly Task[], memberships: Map<str
   const p = tasks[0]?.project_id ?? null
   if (!p || !memberships.has(p) || tasks.some((task) => task.project_id !== p)) return null
   return p
+}
+
+/**
+ * The ticked tasks, live, tagged with the selection `key` they were read for:
+ * until the read for this selection lands, the caller can tell it is an earlier one.
+ */
+export function useTickedTasks(ids: readonly string[], key: string) {
+  // `key` is the selection's identity (the ids joined).
+  return useLiveQuery(() => readTicked(ids).then((r) => ({ key, tasks: r.tasks })), [key])
 }

@@ -137,6 +137,12 @@ export function useMembershipMap(): Map<string, Membership> {
   return all ? memberMapOf(all) : NO_MEMBER_MAP
 }
 
+/** The membership map, or undefined while the first read runs. */
+export function useMembershipMapOrLoading(): Map<string, Membership> | undefined {
+  const all = membershipRows.use()
+  return all ? memberMapOf(all) : undefined
+}
+
 /** One project's membership: null for a personal project, undefined while loading. */
 export function useMembership(projectId: string): Membership | null | undefined {
   const all = membershipRows.use()
