@@ -38,3 +38,7 @@ After installing, OpenTodo also appears in Android's share menu, so you can send
 ## The Android app
 
 Instead of installing from the browser, you can install the **OpenTodo** app from Google Play or F-Droid and enter your server's address on its first screen. It works the same and adds reminders without a push service, sharing on phones without Google Play services, home-screen widgets and fingerprint unlock. See [The Android app](android-app.md).
+
+## The iOS app
+
+There is no OpenTodo app in the App Store: the licence and the store's terms conflict, so the app is built from source. With a Mac and Xcode you can build it, sign it for your own iPhone or iPad and open your server from it; it then appears in the share sheet and adds a Today widget, Face ID unlock of an encrypted account and reminders scheduled on the phone. See [The iOS app](ios-app.md).

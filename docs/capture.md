@@ -49,7 +49,7 @@ The web app manifest declares a [Web Share Target](https://developer.mozilla.org
 
 ### From the Android app
 
-The [Android app](android-app.md) is in the share menu as soon as it is installed, also on phones without Google Play services. Links and text open the capture screen as above; photos and files (up to ten, 20 MB each, 25 MB together) are handed to it the way the browser extension hands over a screenshot, and stay on the phone until you save. A share that arrives before you have entered a server waits until you have.
+The [Android app](android-app.md) is in the share menu as soon as it is installed, also on phones without Google Play services. Links and text open the capture screen as above; photos and files (up to ten, 20 MB each, 25 MB together) are handed to it the way the browser extension hands over a screenshot, and stay on the phone until you save. A share that arrives before you have entered a server waits until you have. The [iOS app](ios-app.md), built from source, is in the share sheet the same way and hands text, links and up to ten files to the capture screen.
 
 ### OpenTodo is missing from the share menu on Android
 

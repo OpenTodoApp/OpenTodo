@@ -29,14 +29,14 @@ const table = [
   [['web/src/app/App.tsx'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['go.sum'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['Dockerfile'], { code: 'true', docs: 'false', mobile: 'false' }],
-  [['.github/workflows/ci.yml'], { code: 'true', docs: 'false', mobile: 'true' }],
+  [['.github/workflows/ci.yml'], { code: 'true', docs: 'false', mobile: 'true', ios: 'true' }],
   [['skills/opentodo-cli/SKILL.md'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['skills/skills.go'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['deploy/coolify/opentodo.yaml'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/deploy/casaos.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/deploy-check.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/release/prepare.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
-  [['scripts/ci-changes.sh'], { code: 'true', docs: 'false', mobile: 'true' }],
+  [['scripts/ci-changes.sh'], { code: 'true', docs: 'false', mobile: 'true', ios: 'true' }],
   [['scripts/repo-checks.test.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['docker-compose.yml'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/coolify-template-check.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
@@ -55,9 +55,12 @@ const table = [
   [['docs/api.md', 'internal/httpapi/router.go'], { code: 'true', docs: 'true', mobile: 'false' }],
   [['skill/README.md'], { code: 'false', docs: 'false', mobile: 'false' }],
   [['LICENSE'], { code: 'false', docs: 'false', mobile: 'false' }],
-  [['mobile/android/app/src/main/java/app/opentodo/Bridge.kt'], { code: 'false', docs: 'false', mobile: 'true' }],
-  [['mobile/README.md', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true' }],
+  [['mobile/android/app/src/main/java/app/opentodo/Bridge.kt'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
+  [['mobile/README.md', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/android/store/permissions.txt', 'internal/httpapi/router.go'], { code: 'true', docs: 'false', mobile: 'true' }],
+  [['mobile/ios/OpenTodo/Bridge.swift'], { code: 'false', docs: 'false', mobile: 'false', ios: 'true' }],
+  [['mobile/ios/project.yml', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'true' }],
+  [['mobile/README.md'], { code: 'false', docs: 'false', mobile: 'false', ios: 'false' }],
 ]
 
 // The tier outputs (ci-speed): which pull request jobs a change runs.
@@ -76,7 +79,7 @@ const tiers = [
   [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
   [['web/src/generated/help.json'], { code: 'false', ui: 'false', layout: 'false' }],
-  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', extension: 'true', skill: 'true', mobile: 'true' }],
+  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', extension: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
 ]
 
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]))

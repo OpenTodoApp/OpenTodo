@@ -1,0 +1,888 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		019924B697460063BC288DD1 /* ShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AA01546E9D89832E97D0CC8 /* ShellView.swift */; };
+		0E58586F44510D255B9507A3 /* ShareMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F2434289E6B5E5C230FE9 /* ShareMap.swift */; };
+		129207436EC529C5267F6E59 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D81052402DC912DF25E566D /* JSON.swift */; };
+		12E06B7CA8F6B63FB7795774 /* OpenTodoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10E9CB49DE30DDBDD4134946 /* OpenTodoApp.swift */; };
+		1A95D043401C59677641DB87 /* Reminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDF972565A46439E40E98E7F /* Reminders.swift */; };
+		1AF4F45D1A7A4F8E955EC260 /* BridgeHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8794599E4D0E39C2DCF26C16 /* BridgeHost.swift */; };
+		28E6935BE94290233F7E5404 /* Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16AF3DC74A2267EFDBC4C931 /* Bridge.swift */; };
+		36B6CDA8E9D3BC41A81D2810 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB6E4B7A9C8F16AEB65C781 /* ShareInbox.swift */; };
+		3BC19BDB6D1E9CE0B9CDCAAA /* Origin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8407A0F4AD2F032D414F19A2 /* Origin.swift */; };
+		3FDFB7915FCF248E011B9902 /* TodayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF02FEF6607848477AEECD7 /* TodayWidget.swift */; };
+		405EE73A8C49116F83C05E74 /* ShellDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96393A759F2B87B27D9E7E0A /* ShellDataTests.swift */; };
+		4765AC84702C76D4DCAE3AA1 /* OpenTodoWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 54FD68501123AE1BE87BC42B /* OpenTodoWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		49BDEDE91D605613D757ED93 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DBD2D9F3CA1F7C5D63C9F0FC /* Assets.xcassets */; };
+		4A84DB2EF94F4EDC2A6CBEF4 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D81052402DC912DF25E566D /* JSON.swift */; };
+		560C61BD4251D7BB58A71EC1 /* BiometricKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C788B365C57DC492692D8E10 /* BiometricKeyStore.swift */; };
+		561FBA946FD87D4F1ACEFD5C /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40389A7CBF63E93B78B6D95B /* ShareViewController.swift */; };
+		5DCE2676117112DC39972C15 /* BackgroundRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 659E1258F5B9ECE88757F519 /* BackgroundRefresh.swift */; };
+		66ACE71599133FD6F72251D1 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750F4C1ECA56E888998D2B8C /* AppModel.swift */; };
+		6EF08424DEF31BCC9E483D41 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30808D5A379DF00A50741685 /* Store.swift */; };
+		727ECE59A8C0B1E621FDCBB2 /* FirstRunTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E0B20322933077E18A7D51 /* FirstRunTests.swift */; };
+		754F1F0DA4E9CEC80D381AC0 /* WidgetPublication.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76B6CC810FF847258BFE66C /* WidgetPublication.swift */; };
+		806F4F34BA69562B003495FF /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 957AC17D01C033216546B603 /* SetupView.swift */; };
+		8580D45311D98649791F0605 /* ShareMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F2434289E6B5E5C230FE9 /* ShareMap.swift */; };
+		85D44716AE643C1C4F874A02 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D81052402DC912DF25E566D /* JSON.swift */; };
+		8B1B0235C36DFFD8F6751285 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 22C4610D50FAF8C9A2F07252 /* Localizable.xcstrings */; };
+		90227290A98E893447F9F5B9 /* AppBoundDomains.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFD246A16B3958BB2712D921 /* AppBoundDomains.swift */; };
+		9513C75F8A86142FD4F82915 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B456379220DDE28EA687B65F /* AppDelegate.swift */; };
+		9CC1ED807AF7798D89018403 /* Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EBB2043E1AE8A8B6CCC2163 /* Version.swift */; };
+		A1D5DEAFEAAE605447031B36 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132F5C96551EA51999C089B /* Notifications.swift */; };
+		A1EA5598620CDF91C0650358 /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CE229050EA41875E276E76B /* Prefs.swift */; };
+		CB2FC72B3B03060926024AA5 /* ServerAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AFC10C15329891DCF7BF3C8 /* ServerAddress.swift */; };
+		D02A9017D75C70840990A6F9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C7D944907B9AC239B781669B /* PrivacyInfo.xcprivacy */; };
+		D0780816A603AD0624AA1C6B /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DEC136C0E25392B8582FB5 /* RootView.swift */; };
+		D49CB798F6CA86EB222544EE /* HealthCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */; };
+		D8775F2B3AE3CD58BD32000F /* ShellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7E631346169346BF2C4779E /* ShellTests.swift */; };
+		DE806B63F2F96260D63F47E7 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB6E4B7A9C8F16AEB65C781 /* ShareInbox.swift */; };
+		E8272D009EC5D29F2FDC49DC /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 22C4610D50FAF8C9A2F07252 /* Localizable.xcstrings */; };
+		EB5427342BA36950F7FA8CA6 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30808D5A379DF00A50741685 /* Store.swift */; };
+		F2E95D1D34C7A76BED542BDD /* WidgetPublication.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76B6CC810FF847258BFE66C /* WidgetPublication.swift */; };
+		F5191A0E8249CEE610DA9512 /* OpenTodoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6D58C5588CD05D765202A22F /* OpenTodoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F5E06AABC6A2113125D151CD /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30808D5A379DF00A50741685 /* Store.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4CD1FD0BEC0260AB0FB1D6D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29511AAFB9964A16788035A3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 28FFF891690EF0F8BE77EE6B;
+			remoteInfo = OpenTodo;
+		};
+		7F33DBAA36B33C3FDB6788E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29511AAFB9964A16788035A3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 44263A0906623E1EAFA2A7F2;
+			remoteInfo = OpenTodoWidget;
+		};
+		EE92B1B5C4661BF983AC8740 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29511AAFB9964A16788035A3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 444C005D8B98F8A1BC5EC21B;
+			remoteInfo = OpenTodoShare;
+		};
+		EF33C88EAD4A197A496E87F2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29511AAFB9964A16788035A3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 28FFF891690EF0F8BE77EE6B;
+			remoteInfo = OpenTodo;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1637260C5AD6CBEF7EB44BDB /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4765AC84702C76D4DCAE3AA1 /* OpenTodoWidget.appex in Embed Foundation Extensions */,
+				F5191A0E8249CEE610DA9512 /* OpenTodoShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0284DCAD743970B2CB3CCC0F /* OpenTodoShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenTodoShare.entitlements; sourceTree = "<group>"; };
+		0EBB2043E1AE8A8B6CCC2163 /* Version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Version.swift; sourceTree = "<group>"; };
+		10E9CB49DE30DDBDD4134946 /* OpenTodoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenTodoApp.swift; sourceTree = "<group>"; };
+		16AF3DC74A2267EFDBC4C931 /* Bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bridge.swift; sourceTree = "<group>"; };
+		1BC891710726BD12FF8B163B /* OpenTodoUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = OpenTodoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CF02FEF6607848477AEECD7 /* TodayWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidget.swift; sourceTree = "<group>"; };
+		219379B0310AFB0EB86C6A8D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		22C4610D50FAF8C9A2F07252 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		2AA01546E9D89832E97D0CC8 /* ShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellView.swift; sourceTree = "<group>"; };
+		2AFC10C15329891DCF7BF3C8 /* ServerAddress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerAddress.swift; sourceTree = "<group>"; };
+		2F50EA7CC8549E6BF622EBD0 /* OpenTodoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = OpenTodoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		30808D5A379DF00A50741685 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthCheck.swift; sourceTree = "<group>"; };
+		40389A7CBF63E93B78B6D95B /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		5132F5C96551EA51999C089B /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
+		54FD68501123AE1BE87BC42B /* OpenTodoWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = OpenTodoWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		5CE229050EA41875E276E76B /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
+		659E1258F5B9ECE88757F519 /* BackgroundRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefresh.swift; sourceTree = "<group>"; };
+		6D58C5588CD05D765202A22F /* OpenTodoShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = OpenTodoShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		750F4C1ECA56E888998D2B8C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		7DBFFA13DDE2752DC1E0D5A6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8407A0F4AD2F032D414F19A2 /* Origin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Origin.swift; sourceTree = "<group>"; };
+		8794599E4D0E39C2DCF26C16 /* BridgeHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeHost.swift; sourceTree = "<group>"; };
+		8D81052402DC912DF25E566D /* JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
+		957AC17D01C033216546B603 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		96393A759F2B87B27D9E7E0A /* ShellDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellDataTests.swift; sourceTree = "<group>"; };
+		989B6D10753CB9F8A784B420 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		9DB6E4B7A9C8F16AEB65C781 /* ShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInbox.swift; sourceTree = "<group>"; };
+		AE01E13BB37C998C38284ED4 /* OpenTodoWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenTodoWidget.entitlements; sourceTree = "<group>"; };
+		B38F2434289E6B5E5C230FE9 /* ShareMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareMap.swift; sourceTree = "<group>"; };
+		B456379220DDE28EA687B65F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B6BE98DF31BC6BB01D13DDE2 /* OpenTodo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OpenTodo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BDF972565A46439E40E98E7F /* Reminders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminders.swift; sourceTree = "<group>"; };
+		C788B365C57DC492692D8E10 /* BiometricKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricKeyStore.swift; sourceTree = "<group>"; };
+		C7D944907B9AC239B781669B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		C7E631346169346BF2C4779E /* ShellTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellTests.swift; sourceTree = "<group>"; };
+		C8E0B20322933077E18A7D51 /* FirstRunTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunTests.swift; sourceTree = "<group>"; };
+		CFD246A16B3958BB2712D921 /* AppBoundDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBoundDomains.swift; sourceTree = "<group>"; };
+		D76B6CC810FF847258BFE66C /* WidgetPublication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPublication.swift; sourceTree = "<group>"; };
+		DBD2D9F3CA1F7C5D63C9F0FC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E3DEC136C0E25392B8582FB5 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		F44BDB908FFA6D9D6BFDEFF7 /* OpenTodo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenTodo.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		233BB44BBE9AD4EFF1E16A55 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B6BE98DF31BC6BB01D13DDE2 /* OpenTodo.app */,
+				6D58C5588CD05D765202A22F /* OpenTodoShare.appex */,
+				2F50EA7CC8549E6BF622EBD0 /* OpenTodoTests.xctest */,
+				1BC891710726BD12FF8B163B /* OpenTodoUITests.xctest */,
+				54FD68501123AE1BE87BC42B /* OpenTodoWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3A5F813D845C028228AF1414 /* OpenTodoUITests */ = {
+			isa = PBXGroup;
+			children = (
+				C8E0B20322933077E18A7D51 /* FirstRunTests.swift */,
+			);
+			path = OpenTodoUITests;
+			sourceTree = "<group>";
+		};
+		3CA2DE52756AE0E1E0F6DEC9 /* OpenTodoShare */ = {
+			isa = PBXGroup;
+			children = (
+				7DBFFA13DDE2752DC1E0D5A6 /* Info.plist */,
+				0284DCAD743970B2CB3CCC0F /* OpenTodoShare.entitlements */,
+				40389A7CBF63E93B78B6D95B /* ShareViewController.swift */,
+			);
+			path = OpenTodoShare;
+			sourceTree = "<group>";
+		};
+		3DC5F625831D805FBA4576F2 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				22C4610D50FAF8C9A2F07252 /* Localizable.xcstrings */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		6ACC4C8D87733BB9B804BF11 /* OpenTodoWidget */ = {
+			isa = PBXGroup;
+			children = (
+				989B6D10753CB9F8A784B420 /* Info.plist */,
+				AE01E13BB37C998C38284ED4 /* OpenTodoWidget.entitlements */,
+				1CF02FEF6607848477AEECD7 /* TodayWidget.swift */,
+			);
+			path = OpenTodoWidget;
+			sourceTree = "<group>";
+		};
+		DD10E658F83B49123FC9514F = {
+			isa = PBXGroup;
+			children = (
+				F9041DA2870BFC38D07B2544 /* OpenTodo */,
+				3CA2DE52756AE0E1E0F6DEC9 /* OpenTodoShare */,
+				F2ED2068FA1E94E2C849ABE0 /* OpenTodoTests */,
+				3A5F813D845C028228AF1414 /* OpenTodoUITests */,
+				6ACC4C8D87733BB9B804BF11 /* OpenTodoWidget */,
+				3DC5F625831D805FBA4576F2 /* Shared */,
+				233BB44BBE9AD4EFF1E16A55 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F2ED2068FA1E94E2C849ABE0 /* OpenTodoTests */ = {
+			isa = PBXGroup;
+			children = (
+				96393A759F2B87B27D9E7E0A /* ShellDataTests.swift */,
+				C7E631346169346BF2C4779E /* ShellTests.swift */,
+			);
+			path = OpenTodoTests;
+			sourceTree = "<group>";
+		};
+		F9041DA2870BFC38D07B2544 /* OpenTodo */ = {
+			isa = PBXGroup;
+			children = (
+				CFD246A16B3958BB2712D921 /* AppBoundDomains.swift */,
+				B456379220DDE28EA687B65F /* AppDelegate.swift */,
+				750F4C1ECA56E888998D2B8C /* AppModel.swift */,
+				DBD2D9F3CA1F7C5D63C9F0FC /* Assets.xcassets */,
+				659E1258F5B9ECE88757F519 /* BackgroundRefresh.swift */,
+				C788B365C57DC492692D8E10 /* BiometricKeyStore.swift */,
+				16AF3DC74A2267EFDBC4C931 /* Bridge.swift */,
+				8794599E4D0E39C2DCF26C16 /* BridgeHost.swift */,
+				361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */,
+				219379B0310AFB0EB86C6A8D /* Info.plist */,
+				8D81052402DC912DF25E566D /* JSON.swift */,
+				5132F5C96551EA51999C089B /* Notifications.swift */,
+				F44BDB908FFA6D9D6BFDEFF7 /* OpenTodo.entitlements */,
+				10E9CB49DE30DDBDD4134946 /* OpenTodoApp.swift */,
+				8407A0F4AD2F032D414F19A2 /* Origin.swift */,
+				5CE229050EA41875E276E76B /* Prefs.swift */,
+				C7D944907B9AC239B781669B /* PrivacyInfo.xcprivacy */,
+				BDF972565A46439E40E98E7F /* Reminders.swift */,
+				E3DEC136C0E25392B8582FB5 /* RootView.swift */,
+				2AFC10C15329891DCF7BF3C8 /* ServerAddress.swift */,
+				957AC17D01C033216546B603 /* SetupView.swift */,
+				9DB6E4B7A9C8F16AEB65C781 /* ShareInbox.swift */,
+				B38F2434289E6B5E5C230FE9 /* ShareMap.swift */,
+				2AA01546E9D89832E97D0CC8 /* ShellView.swift */,
+				30808D5A379DF00A50741685 /* Store.swift */,
+				0EBB2043E1AE8A8B6CCC2163 /* Version.swift */,
+				D76B6CC810FF847258BFE66C /* WidgetPublication.swift */,
+			);
+			path = OpenTodo;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		28FFF891690EF0F8BE77EE6B /* OpenTodo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1056CADBCCA2E46FEBB5BBA0 /* Build configuration list for PBXNativeTarget "OpenTodo" */;
+			buildPhases = (
+				C9A820EFBD5DA11E70EC2DD1 /* Sources */,
+				E3E731A009DE647AB6372C29 /* Resources */,
+				1637260C5AD6CBEF7EB44BDB /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BDAFC342B7348FDC1891C8A1 /* PBXTargetDependency */,
+				A76D666046C36E366F86ACD7 /* PBXTargetDependency */,
+			);
+			name = OpenTodo;
+			packageProductDependencies = (
+			);
+			productName = OpenTodo;
+			productReference = B6BE98DF31BC6BB01D13DDE2 /* OpenTodo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		44263A0906623E1EAFA2A7F2 /* OpenTodoWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6F1D8DC32E4C067CBF694F3A /* Build configuration list for PBXNativeTarget "OpenTodoWidget" */;
+			buildPhases = (
+				DA5D0A1397BB01229262F4B1 /* Sources */,
+				A0D5205D1CEA80E4E421A42B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OpenTodoWidget;
+			packageProductDependencies = (
+			);
+			productName = OpenTodoWidget;
+			productReference = 54FD68501123AE1BE87BC42B /* OpenTodoWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		444C005D8B98F8A1BC5EC21B /* OpenTodoShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A5E4AFF91446A5A61D194903 /* Build configuration list for PBXNativeTarget "OpenTodoShare" */;
+			buildPhases = (
+				7F979573DE5AEB17B31CC603 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OpenTodoShare;
+			packageProductDependencies = (
+			);
+			productName = OpenTodoShare;
+			productReference = 6D58C5588CD05D765202A22F /* OpenTodoShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B26865283C73FC64295F640A /* OpenTodoUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6B9F91BDFD77C8A664336850 /* Build configuration list for PBXNativeTarget "OpenTodoUITests" */;
+			buildPhases = (
+				301B02D227D1B3C030B7A897 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5E6C89381DD1D81076CF481D /* PBXTargetDependency */,
+			);
+			name = OpenTodoUITests;
+			packageProductDependencies = (
+			);
+			productName = OpenTodoUITests;
+			productReference = 1BC891710726BD12FF8B163B /* OpenTodoUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		F94EA393906031F66FDEC7D2 /* OpenTodoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54BCC13D59C5A671FA36B08C /* Build configuration list for PBXNativeTarget "OpenTodoTests" */;
+			buildPhases = (
+				DA8BC37AACF9273C60F1DFE8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7EA41EF225D7DD13F2DB630C /* PBXTargetDependency */,
+			);
+			name = OpenTodoTests;
+			packageProductDependencies = (
+			);
+			productName = OpenTodoTests;
+			productReference = 2F50EA7CC8549E6BF622EBD0 /* OpenTodoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		29511AAFB9964A16788035A3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					28FFF891690EF0F8BE77EE6B = {
+						ProvisioningStyle = Automatic;
+					};
+					44263A0906623E1EAFA2A7F2 = {
+						ProvisioningStyle = Automatic;
+					};
+					444C005D8B98F8A1BC5EC21B = {
+						ProvisioningStyle = Automatic;
+					};
+					B26865283C73FC64295F640A = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 28FFF891690EF0F8BE77EE6B;
+					};
+					F94EA393906031F66FDEC7D2 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D0EBAC3BC3DE73D8361BF881 /* Build configuration list for PBXProject "OpenTodo" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				de,
+				en,
+				es,
+				fr,
+				it,
+				pt,
+			);
+			mainGroup = DD10E658F83B49123FC9514F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 233BB44BBE9AD4EFF1E16A55 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				28FFF891690EF0F8BE77EE6B /* OpenTodo */,
+				44263A0906623E1EAFA2A7F2 /* OpenTodoWidget */,
+				444C005D8B98F8A1BC5EC21B /* OpenTodoShare */,
+				F94EA393906031F66FDEC7D2 /* OpenTodoTests */,
+				B26865283C73FC64295F640A /* OpenTodoUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A0D5205D1CEA80E4E421A42B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8B1B0235C36DFFD8F6751285 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E3E731A009DE647AB6372C29 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49BDEDE91D605613D757ED93 /* Assets.xcassets in Resources */,
+				E8272D009EC5D29F2FDC49DC /* Localizable.xcstrings in Resources */,
+				D02A9017D75C70840990A6F9 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		301B02D227D1B3C030B7A897 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				727ECE59A8C0B1E621FDCBB2 /* FirstRunTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7F979573DE5AEB17B31CC603 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				85D44716AE643C1C4F874A02 /* JSON.swift in Sources */,
+				36B6CDA8E9D3BC41A81D2810 /* ShareInbox.swift in Sources */,
+				8580D45311D98649791F0605 /* ShareMap.swift in Sources */,
+				561FBA946FD87D4F1ACEFD5C /* ShareViewController.swift in Sources */,
+				F5E06AABC6A2113125D151CD /* Store.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C9A820EFBD5DA11E70EC2DD1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				90227290A98E893447F9F5B9 /* AppBoundDomains.swift in Sources */,
+				9513C75F8A86142FD4F82915 /* AppDelegate.swift in Sources */,
+				66ACE71599133FD6F72251D1 /* AppModel.swift in Sources */,
+				5DCE2676117112DC39972C15 /* BackgroundRefresh.swift in Sources */,
+				560C61BD4251D7BB58A71EC1 /* BiometricKeyStore.swift in Sources */,
+				28E6935BE94290233F7E5404 /* Bridge.swift in Sources */,
+				1AF4F45D1A7A4F8E955EC260 /* BridgeHost.swift in Sources */,
+				D49CB798F6CA86EB222544EE /* HealthCheck.swift in Sources */,
+				129207436EC529C5267F6E59 /* JSON.swift in Sources */,
+				A1D5DEAFEAAE605447031B36 /* Notifications.swift in Sources */,
+				12E06B7CA8F6B63FB7795774 /* OpenTodoApp.swift in Sources */,
+				3BC19BDB6D1E9CE0B9CDCAAA /* Origin.swift in Sources */,
+				A1EA5598620CDF91C0650358 /* Prefs.swift in Sources */,
+				1A95D043401C59677641DB87 /* Reminders.swift in Sources */,
+				D0780816A603AD0624AA1C6B /* RootView.swift in Sources */,
+				CB2FC72B3B03060926024AA5 /* ServerAddress.swift in Sources */,
+				806F4F34BA69562B003495FF /* SetupView.swift in Sources */,
+				DE806B63F2F96260D63F47E7 /* ShareInbox.swift in Sources */,
+				0E58586F44510D255B9507A3 /* ShareMap.swift in Sources */,
+				019924B697460063BC288DD1 /* ShellView.swift in Sources */,
+				EB5427342BA36950F7FA8CA6 /* Store.swift in Sources */,
+				9CC1ED807AF7798D89018403 /* Version.swift in Sources */,
+				F2E95D1D34C7A76BED542BDD /* WidgetPublication.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA5D0A1397BB01229262F4B1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A84DB2EF94F4EDC2A6CBEF4 /* JSON.swift in Sources */,
+				6EF08424DEF31BCC9E483D41 /* Store.swift in Sources */,
+				3FDFB7915FCF248E011B9902 /* TodayWidget.swift in Sources */,
+				754F1F0DA4E9CEC80D381AC0 /* WidgetPublication.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA8BC37AACF9273C60F1DFE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				405EE73A8C49116F83C05E74 /* ShellDataTests.swift in Sources */,
+				D8775F2B3AE3CD58BD32000F /* ShellTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		5E6C89381DD1D81076CF481D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 28FFF891690EF0F8BE77EE6B /* OpenTodo */;
+			targetProxy = EF33C88EAD4A197A496E87F2 /* PBXContainerItemProxy */;
+		};
+		7EA41EF225D7DD13F2DB630C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 28FFF891690EF0F8BE77EE6B /* OpenTodo */;
+			targetProxy = 4CD1FD0BEC0260AB0FB1D6D5 /* PBXContainerItemProxy */;
+		};
+		A76D666046C36E366F86ACD7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 444C005D8B98F8A1BC5EC21B /* OpenTodoShare */;
+			targetProxy = EE92B1B5C4661BF983AC8740 /* PBXContainerItemProxy */;
+		};
+		BDAFC342B7348FDC1891C8A1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 44263A0906623E1EAFA2A7F2 /* OpenTodoWidget */;
+			targetProxy = 7F33DBAA36B33C3FDB6788E2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0754B0AC28EE4154694D4B7F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = OpenTodo/OpenTodo.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = OpenTodo/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OPENTODO_APP_BOUND_HOST = none.invalid;
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		1583B9D2C3404DF430C402F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = OpenTodo/OpenTodo.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = OpenTodo/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OPENTODO_APP_BOUND_HOST = none.invalid;
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		2A5B61D1ECF796C4C0ABB80C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = OpenTodo;
+			};
+			name = Debug;
+		};
+		3B25FAA4E2728325AFDBF4F5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OpenTodoShare/OpenTodoShare.entitlements;
+				INFOPLIST_FILE = OpenTodoShare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.share;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3E746E6305C85CCA1FEDE7BD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenTodo.app/OpenTodo";
+			};
+			name = Release;
+		};
+		3E87BC705979796FD509AE6C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_LANGUAGE = en;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				MARKETING_VERSION = "$(OPENTODO_VERSION)";
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OPENTODO_VERSION = 0.0.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4239116CC6D8F6369BD056E6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenTodo.app/OpenTodo";
+			};
+			name = Debug;
+		};
+		662B82CAEDF6CE6110E7FE55 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OpenTodoWidget/OpenTodoWidget.entitlements;
+				INFOPLIST_FILE = OpenTodoWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.widget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A7F4594874F6DF480D3330E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_LANGUAGE = en;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				MARKETING_VERSION = "$(OPENTODO_VERSION)";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OPENTODO_VERSION = 0.0.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D3D86C54D7046D10856D84E7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OpenTodoWidget/OpenTodoWidget.entitlements;
+				INFOPLIST_FILE = OpenTodoWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.widget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F0EA4D285EEEE8EB53B86A98 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = OpenTodo;
+			};
+			name = Release;
+		};
+		FC8CDD60699809FDF72CC6A9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OpenTodoShare/OpenTodoShare.entitlements;
+				INFOPLIST_FILE = OpenTodoShare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.share;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1056CADBCCA2E46FEBB5BBA0 /* Build configuration list for PBXNativeTarget "OpenTodo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0754B0AC28EE4154694D4B7F /* Debug */,
+				1583B9D2C3404DF430C402F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		54BCC13D59C5A671FA36B08C /* Build configuration list for PBXNativeTarget "OpenTodoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4239116CC6D8F6369BD056E6 /* Debug */,
+				3E746E6305C85CCA1FEDE7BD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6B9F91BDFD77C8A664336850 /* Build configuration list for PBXNativeTarget "OpenTodoUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2A5B61D1ECF796C4C0ABB80C /* Debug */,
+				F0EA4D285EEEE8EB53B86A98 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6F1D8DC32E4C067CBF694F3A /* Build configuration list for PBXNativeTarget "OpenTodoWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3D86C54D7046D10856D84E7 /* Debug */,
+				662B82CAEDF6CE6110E7FE55 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A5E4AFF91446A5A61D194903 /* Build configuration list for PBXNativeTarget "OpenTodoShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3B25FAA4E2728325AFDBF4F5 /* Debug */,
+				FC8CDD60699809FDF72CC6A9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D0EBAC3BC3DE73D8361BF881 /* Build configuration list for PBXProject "OpenTodo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A7F4594874F6DF480D3330E5 /* Debug */,
+				3E87BC705979796FD509AE6C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 29511AAFB9964A16788035A3 /* Project object */;
+}

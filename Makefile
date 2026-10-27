@@ -67,6 +67,32 @@ android:
 	cd mobile/android && ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:checkDependencies :app:checkTranslations :app:checkStoreMetadata :app:assembleDebug :app:assembleDebugAndroidTest
 	@echo "  mobile/android/app/build/outputs/apk/debug/app-debug.apk ($$(wc -c < mobile/android/app/build/outputs/apk/debug/app-debug.apk) bytes)"
 
+## The iOS app (ios-shell): unit tests on a simulator, an unsigned device build,
+## the version and the no-third-party-dependency check. Needs Xcode 16 or newer
+## with an iOS simulator runtime; the project comes from `xcodegen generate` and
+## is committed, so xcodegen is only needed after editing project.yml. Not part of
+## `make check`. See docs/ios-app.md.
+## SIM=iPhone 16 overrides the simulator `make ios` uses; the first installed one otherwise.
+IOS_VERSION = $(patsubst v%,%,$(shell git describe --tags --abbrev=0 2>/dev/null || echo 0.0.0-dev))
+IOS_BUILD = $(shell echo '$(IOS_VERSION)' | awk -F. '{printf "%d", $$1*10000+$$2*100+$$3}')
+ios:
+	@command -v xcodebuild >/dev/null 2>&1 || { echo "make ios needs Xcode 16 or newer (see docs/ios-app.md)"; exit 1; }
+	@sim=$${SIM:-$$(xcrun simctl list devices available 2>/dev/null | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)}; \
+	  test -n "$$sim" || { echo "make ios needs an iOS simulator runtime (Xcode > Settings > Components)"; exit 1; }; \
+	  echo "  simulator: $$sim"; \
+	  cd mobile/ios && xcodebuild -project OpenTodo.xcodeproj -scheme OpenTodo -configuration Debug \
+	    -derivedDataPath build -destination "platform=iOS Simulator,name=$$sim" \
+	    OPENTODO_VERSION=$(IOS_VERSION) CURRENT_PROJECT_VERSION=$(IOS_BUILD) test || exit 1
+	cd mobile/ios && xcodebuild -project OpenTodo.xcodeproj -scheme OpenTodo -configuration Release \
+	  -derivedDataPath build -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO \
+	  OPENTODO_VERSION=$(IOS_VERSION) CURRENT_PROJECT_VERSION=$(IOS_BUILD) build
+	@app=mobile/ios/build/Build/Products/Release-iphoneos/OpenTodo.app; \
+	  test -f "$$app/OpenTodo" || { echo "no app binary at $$app"; exit 1; }; \
+	  echo "  $$app ($$(du -sk $$app | cut -f1) KB), version $(IOS_VERSION) build $(IOS_BUILD)"; \
+	  third=$$(otool -L $$app/OpenTodo | tail -n +2 | grep -vE '/System/Library/|/usr/lib/|@rpath/libswift|@executable_path/Frameworks|/usr/lib/swift/' || true); \
+	  if [ -n "$$third" ]; then echo "third-party libraries:"; echo "$$third"; exit 1; fi; \
+	  echo "  no third-party libraries (native-shells D1)"
+
 build: web server
 
 ## Layout check (mobile-layout): every screen and overlay at 360/390/768 px in
@@ -288,8 +314,9 @@ web-lint:
 
 ## Translation catalogs (app-localization): every shipped catalog complete, no stale
 ## or malformed entries, placeholders as in the source; script tests included.
+## The iOS shell's String Catalog is checked the same way (ios-shell).
 i18n-check:
-	node --test scripts/i18n/extract.test.mjs scripts/i18n/untranslated.test.mjs scripts/i18n-check.test.mjs
+	node --test scripts/i18n/extract.test.mjs scripts/i18n/untranslated.test.mjs scripts/i18n-check.test.mjs scripts/i18n/shell.test.mjs
 	node scripts/i18n-check.mjs
 
 docker:
