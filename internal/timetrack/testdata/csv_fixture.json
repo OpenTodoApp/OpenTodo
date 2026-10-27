@@ -1,5 +1,5 @@
 {
- "about": "The CSV export shared by internal/timetrack (csv_test.go) and web/src/lib/time.ts toCSV (time.test.ts), OpenSpec change time-tracking design D8. expected was written by `go test ./internal/timetrack -update-csv` and reviewed by hand; both implementations must produce it byte for byte.",
+ "about": "The CSV export shared by internal/timetrack (csv_test.go) and web/src/lib/time.ts toCSV (time.test.ts), OpenSpec change time-tracking design D8. expected was written by `go test ./internal/timetrack -update-csv` and reviewed by hand; both implementations must produce it byte for byte. Project ps is a sub-project of pa and inherits its fields (OpenSpec change inherited-custom-fields).",
  "day_start": 0,
  "entries": [
   {
@@ -73,9 +73,18 @@
    "started_at": 1792051200000,
    "task_id": "t5",
    "user_id": "u1"
+  },
+  {
+   "deleted_at": null,
+   "ended_at": 1792141200000,
+   "id": "e8",
+   "note": "",
+   "started_at": 1792137600000,
+   "task_id": "t6",
+   "user_id": "u1"
   }
  ],
- "expected": "\ufeffdate,start,end,minutes,task,project,labels,note,Rate,Phase,Billable\r\n2026-10-12,09:00,09:25,25,Write the report,Client A,billable;calls,kick-off,95.5,Draft,\r\n2026-10-13,14:00,15:30,90,Write the report,Client A,billable;calls,\"review, part 2\",95.5,Draft,\r\n2026-10-15,00:30,01:10,40,'=SUM(A1),Internal,,[encrypted],,Build,true\r\n2026-10-18,16:20,,40,\"Inbox, \"\"quoted\"\"\",,,\"line one\nline two\",,,\r\n",
+ "expected": "\ufeffdate,start,end,minutes,task,project,labels,note,Rate,Phase,Billable,Size\r\n2026-10-12,09:00,09:25,25,Write the report,Client A,billable;calls,kick-off,95.5,Draft,,\r\n2026-10-13,14:00,15:30,90,Write the report,Client A,billable;calls,\"review, part 2\",95.5,Draft,,\r\n2026-10-15,00:30,01:10,40,'=SUM(A1),Internal,,[encrypted],,Build,true,\r\n2026-10-16,10:00,11:00,60,Inherited fields,Client A sub,,,120,,,M\r\n2026-10-18,16:20,,40,\"Inbox, \"\"quoted\"\"\",,,\"line one\nline two\",,,,\r\n",
  "fields": [
   {
    "deleted_at": null,
@@ -111,6 +120,13 @@
    "name": "Billable",
    "position": 2,
    "project_id": "pi"
+  },
+  {
+   "deleted_at": null,
+   "id": "s1",
+   "name": "Size",
+   "position": 0,
+   "project_id": "ps"
   }
  ],
  "from": "2026-10-12",
@@ -140,6 +156,12 @@
    "deleted_at": 5,
    "id": "pt",
    "name": "Trashed"
+  },
+  {
+   "deleted_at": null,
+   "id": "ps",
+   "name": "Client A sub",
+   "parent_id": "pa"
   }
  ],
  "tasks": [
@@ -193,6 +215,18 @@
    "labels": [],
    "project_id": "pt",
    "title": "In trashed project"
+  },
+  {
+   "deleted_at": null,
+   "fields": {
+    "f1": 120,
+    "g1": "hidden",
+    "s1": "M"
+   },
+   "id": "t6",
+   "labels": [],
+   "project_id": "ps",
+   "title": "Inherited fields"
   }
  ],
  "to": "2026-10-18",
