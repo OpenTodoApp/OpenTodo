@@ -32,7 +32,7 @@ jobs:
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version: 24
       - run: helm lint --strict deploy/helm/opentodo
       - run: helm template opentodo deploy/helm/opentodo > /dev/null
       - name: Render with an Ingress, an existing Secret and claim

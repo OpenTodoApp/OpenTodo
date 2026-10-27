@@ -24,7 +24,6 @@ import { useTaskDetail } from './useTaskDetail'
 
 export { taskLink } from './useTaskDetail'
 export { AddSubtask } from './Subtasks'
-export { NOTES_CLAMP_LINES } from './TaskNotes'
 
 export interface TaskDetailProps {
   taskId: string
@@ -79,13 +78,15 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
       <div className="relative min-w-0 flex-1 overflow-y-auto" data-panel-body>
         <div className="min-w-0 space-y-4 p-4">
           <TaskRelations m={m} onOpen={onOpen} />
-          <TaskNotes task={task} readOnly={readOnly} clamp />
+          {/* The properties first and the notes in full after the attachments, so long notes
+              never push the facts out of view (task-panel-notes-below, GitHub issue 444). */}
           <Facets task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
             parent={m.parent ?? undefined} childCount={m.children.length} onOpen={onOpen} />
           {/* Custom field values of the task's project (custom-fields). */}
           <FieldsGroup task={task} readOnly={readOnly} />
           <Subtasks task={task} items={m.children} progress={m.progress} readOnly={readOnly} onToggle={m.toggle} onOpen={onOpen} />
           <AttachmentsRow taskId={task.id} userId={userId} role={roleOf(task.project_id, m.memberships ?? new Map())} dropTarget={panel} />
+          <TaskNotes task={task} readOnly={readOnly} />
         </div>
         <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} composerHost={footer} />
       </div>

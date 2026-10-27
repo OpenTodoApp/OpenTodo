@@ -79,10 +79,15 @@ export default [
       'src/app/**/*.test.{ts,tsx}', 'src/app/**/*.testkit.tsx', 'src/app/**/*.stories.tsx', 'src/app/stories/**',
     ],
     rules: {
-      'no-restricted-imports': ['error', { patterns: [{
-        regex: '(^|/)lib/db$', allowImportNames: ['clearLocalData', 'requestPersistentStorage'],
-        message: 'Screens read local data through src/lib (lib/localData.ts, lib/liveTasks.ts), not lib/db (web-layering).',
-      }] }],
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          regex: '(^|/)lib/db$', allowImportNames: ['clearLocalData', 'requestPersistentStorage'],
+          message: 'Screens read local data through src/lib (lib/localData.ts, lib/liveTasks.ts), not lib/db (web-layering).',
+        }],
+        // Every live read is a named hook in src/lib (wave 4, M5): shared snapshots
+        // where one exists (lib/localData.ts), else a hook beside its query.
+        paths: [{ name: 'dexie-react-hooks', message: 'Screens read live data through a named hook in src/lib (lib/localData.ts or beside the query), not useLiveQuery.' }],
+      }],
       'no-restricted-syntax': ['error', {
         selector: "MemberExpression[object.name='db']",
         message: 'Screens read local data through src/lib (lib/localData.ts, lib/liveTasks.ts), not the Dexie database (web-layering).',

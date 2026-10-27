@@ -3,6 +3,7 @@
 // template file; one planner that turns a tree into a single batch of ordinary
 // ops with fresh ids and dates shifted to a start day. Copies carry structure and
 // open work, never completion, assignees, comments or reminders.
+import { useLiveQuery } from 'dexie-react-hooks'
 import { addDaysISO, daysBetweenISO, logicalToday } from './dates'
 import { db } from './db'
 import { nameId, uuid } from './ids'
@@ -496,4 +497,9 @@ export async function duplicateTask(id: string, opts: { startDay?: string | null
   }
   await mutateMany(plan.changes)
   return copyId
+}
+
+/** A project as a template tree, live; undefined until read. */
+export function useProjectTree(projectId: string) {
+  return useLiveQuery(() => treeFromProject(projectId), [projectId])
 }

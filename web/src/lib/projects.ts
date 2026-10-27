@@ -4,6 +4,7 @@
 // local `meta` table; nothing here writes an op, so it is correct offline and the
 // tree converges by construction (orphans at the top level, cycles broken at the
 // member with the newest `parent_id` clock, see tree.ts).
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta, setMeta } from './db'
 import { buildTree, descendants, isDescendant as isTreeDescendant, type Tree, type TreeNode } from './tree'
 import type { Project, Task } from './types'
@@ -163,4 +164,12 @@ export function projectPath(p: Pick<Project, 'name' | 'parent_id'>, byId: Readon
     names.unshift(cur.name)
   }
   return names.length ? [...names, p.name].join(' › ') : undefined
+}
+
+/**
+ * This device's collapsed parents for `projects`, live, tagged with the list it was
+ * read for; undefined until the first read.
+ */
+export function useCollapsedProjects(projects: Parameters<typeof readCollapsed>[0]) {
+  return useLiveQuery(async () => ({ of: projects, set: await readCollapsed(projects) }), [projects])
 }

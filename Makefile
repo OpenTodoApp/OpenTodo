@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
 
 all: build
 
@@ -233,13 +233,26 @@ coolify-smoke:
 ## Every platform template in deploy/ against deploy/deploy.json and its platform's rules
 ## (Coolify, Unraid); see deploy/README.md.
 deploy-check:
-	node --test scripts/coolify-template-check.test.mjs scripts/deploy/*.test.mjs scripts/site-bundle.test.mjs
+	node --test scripts/coolify-template-check.test.mjs scripts/deploy/*.test.mjs scripts/site-bundle.test.mjs scripts/release/*.test.mjs
+	node scripts/deploy/mirror.mjs --check
 	node scripts/deploy-check.mjs
 
+## Every edit a release needs, for VERSION=x.y.z (RELEASING.md): the version in the templates,
+## docs, web/package.json and its lockfile, the changelog heading and the upstream/ copies.
+release-prepare:
+	@test -n "$(VERSION)" || { echo "usage: make release-prepare VERSION=x.y.z"; exit 2; }
+	node scripts/release/prepare.mjs $(VERSION)
+
 ## CI path filter cases, the shared Go toolchain (go.mod, Dockerfile, CI) and compose defaults;
+## the Go/TypeScript contract index (docs/contracts.md);
 ## the brand rasters rendered from the current brand.svg (sidebar-v2 D3).
 repo-check:
-	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs
+	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs
+
+## The web app's first load (entry chunk and its static imports, gzip) against web/bundle-budget.json;
+## expects `make web`. CI runs it in the Web build job.
+bundle-budget:
+	node scripts/bundle-budget.mjs
 
 ## Every brand raster (app icons, favicon, extension icons) from web/src/ui/icons/brand.svg.
 brand-icons:

@@ -108,3 +108,17 @@ describe('every view opens a task as its page', () => {
     await r.unmount()
   })
 })
+
+describe('task page order (task-panel-notes-below 2.1, GitHub issue 444)', () => {
+  it('reads the title, then the facts, then the notes, so narrow screens show the facts above a long note', async () => {
+    const id = await createTask({ title: 'Long plan', description: 'Line one.' })
+    navigate({ view: 'task', id })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => pageFor() === id && !!document.querySelector('[data-task-facts]') && !!document.querySelector('[data-task-notes-block] .notes-host, [data-task-notes-block] .notes-editor'))
+    const page = document.querySelector('[data-task-page]')!
+    const parts = ['[data-task-content]', '[data-task-facts]', '[data-task-notes-block]', '[data-task-rest]'].map((sel) => page.querySelector(sel)!)
+    for (let i = 1; i < parts.length; i++) expect(parts[i - 1].compareDocumentPosition(parts[i]) & Node.DOCUMENT_POSITION_FOLLOWING, `block ${i - 1} before block ${i}`).toBeTruthy()
+    expect(page.querySelector('[data-task-content] .notes-host')).toBeNull()
+    await r.unmount()
+  })
+})

@@ -25,6 +25,12 @@ describe('web layering', () => {
     expect(await rules('src/app/Fake.tsx', 'declare const db: { tasks: unknown }\nexport const x = db.tasks\n')).toEqual(['no-restricted-syntax'])
   })
 
+  it('refuses useLiveQuery in screens: live reads are named hooks in src/lib (wave 4, M5)', async () => {
+    expect(await rules('src/app/Fake.tsx', "import { useLiveQuery } from 'dexie-react-hooks'\nexport const x = useLiveQuery\n")).toEqual(['no-restricted-imports'])
+    expect(await rules('src/lib/fake.ts', "import { useLiveQuery } from 'dexie-react-hooks'\nexport const x = useLiveQuery\n")).toEqual([])
+    expect(await rules('src/app/fake.test.tsx', "import { useLiveQuery } from 'dexie-react-hooks'\nexport const x = useLiveQuery\n")).toEqual([])
+  })
+
   it('allows the lifecycle calls and tests', async () => {
     expect(await rules('src/app/Fake.tsx', "import { clearLocalData } from '../lib/db'\nexport const x = clearLocalData\n")).toEqual([])
     expect(await rules('src/app/fake.test.tsx', "import { db } from '../lib/db'\nexport const x = db.tasks\n")).toEqual([])

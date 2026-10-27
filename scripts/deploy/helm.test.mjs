@@ -1,7 +1,7 @@
 // node --test scripts/deploy/helm.test.mjs
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText } from './common.mjs'
+import { configVariables, escapeRegExp, loadFacts, readText, releaseVersion } from './common.mjs'
 import {
   ARTIFACTHUB, CHART, DEPLOYMENT, SCHEMA, VALUES, WORKFLOW,
   check, checkArtifactHub, checkChart, checkDeployment, checkValues, checkWorkflow,
@@ -10,12 +10,15 @@ import { checkShared } from './common.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
+const VR = escapeRegExp(V)
 const chart = readText(CHART)
 const values = readText(VALUES)
 const schema = readText(SCHEMA)
 const deployment = readText(DEPLOYMENT)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
-const valuesFound = (text, s = schema) => checkValues(text, s, '0.14.2', ctx)
+const valuesFound = (text, s = schema) => checkValues(text, s, V, ctx)
 /** The shared rules on values.yaml as the chart renders it. */
 const shared = (text) => {
   const v = valuesFound(text)
@@ -29,11 +32,11 @@ test('helm: the committed chart passes', () => {
 
 test('helm: Chart.yaml follows the latest release', () => {
   assert.deepEqual(checkChart(chart, ctx).errors, [])
-  has(checkChart(chart.replace('version: 0.14.2', 'version: 0.8.0'), ctx).errors, /version \(0\.8\.0\) must equal appVersion/)
-  has(checkChart(chart.replace('appVersion: "0.14.2"', 'appVersion: "0.6.0"'), ctx).errors, /appVersion must be 0\.14\.2/)
-  has(checkChart(chart.replace('appVersion: "0.14.2"', 'appVersion: 0.14.2'), ctx).errors, /quote appVersion/)
+  has(checkChart(chart.replace(`version: ${V}`, 'version: 0.8.0'), ctx).errors, /version \(0\.8\.0\) must equal appVersion/)
+  has(checkChart(chart.replace(`appVersion: "${V}"`, 'appVersion: "0.6.0"'), ctx).errors, new RegExp(String.raw`appVersion must be ${VR}`))
+  has(checkChart(chart.replace(`appVersion: "${V}"`, `appVersion: ${V}`), ctx).errors, /quote appVersion/)
   has(checkChart(chart.replace('apiVersion: v2', 'apiVersion: v1'), ctx).errors, /apiVersion must be v2/)
-  has(checkChart(chart.replace('image: ghcr.io/opentodoapp/opentodo:0.14.2', 'image: ghcr.io/opentodoapp/opentodo:stable'), ctx).errors, /artifacthub\.io\/images must list exactly/)
+  has(checkChart(chart.replace(`image: ghcr.io/opentodoapp/opentodo:${V}`, 'image: ghcr.io/opentodoapp/opentodo:stable'), ctx).errors, /artifacthub\.io\/images must list exactly/)
   has(checkChart(chart.replace('artifacthub.io/license: AGPL-3.0-only', 'artifacthub.io/license: MIT'), ctx).errors, /license/)
   has(checkChart(chart.replace('- name: support', '- name: issues'), ctx).errors, /"support" link/)
   has(checkChart(chart.replace('pwa-512.png', 'logo.png'), ctx).errors, /icon must be/)
@@ -44,7 +47,7 @@ test('helm: Chart.yaml follows the latest release', () => {
 test('helm: values.yaml image policy and variables', () => {
   assert.deepEqual(shared(values), [])
   has(shared(values.replace('tag: ""', 'tag: "stable"')), /image\.tag must be ""/)
-  has(shared(values.replace('tag: ""', 'tag: "stable"')), /image must be ghcr\.io\/opentodoapp\/opentodo:0\.14\.2/)
+  has(shared(values.replace('tag: ""', 'tag: "stable"')), new RegExp(String.raw`image must be ghcr\.io\/opentodoapp\/opentodo:${VR}`))
   has(shared(values.replace('repository: ghcr.io/opentodoapp/opentodo', 'repository: docker.io/opentodoapp/opentodo')), /image\.repository must be/)
   has(shared(values.replace('  OPENTODO_TRUSTED_PROXIES: ""\n', '')), /OPENTODO_TRUSTED_PROXIES must be offered/)
   has(shared(values.replace('  OPENTODO_ALLOW_SIGNUP: "false"', '  OPENTODO_ALLOW_SIGNUP: "true"')), /defaults to "true", the catalogue says "false"/)

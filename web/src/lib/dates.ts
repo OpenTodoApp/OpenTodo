@@ -1,6 +1,7 @@
 import { t } from './i18n/catalog'
 import type { Due } from './types'
 import type { DateTimePrefs } from './userPrefs'
+import { createSignal } from './store'
 
 /** Local calendar date as YYYY-MM-DD. */
 export function todayISO(now = new Date()): string {
@@ -76,7 +77,7 @@ function resolveZone(): string {
 }
 
 let currentZone = resolveZone()
-const zoneListeners = new Set<() => void>()
+const zone = createSignal()
 
 /** The viewer's IANA zone, as last resolved. */
 export function viewerZone(): string {
@@ -92,15 +93,12 @@ export function refreshViewerZone(): boolean {
   if (z === currentZone) return false
   currentZone = z
   localCache.clear()
-  for (const fn of zoneListeners) fn()
+  zone.notify()
   return true
 }
 
 /** Subscribe to viewer-zone changes; returns the unsubscribe function. */
-export function onViewerZoneChange(fn: () => void): () => void {
-  zoneListeners.add(fn)
-  return () => zoneListeners.delete(fn)
-}
+export const onViewerZoneChange = zone.subscribe
 
 /** Re-resolve the zone whenever the page becomes visible again (design D5). */
 export function watchViewerZone(doc: Document = document): () => void {
@@ -473,19 +471,45 @@ export function setDateTime(prefs: DateTimePrefs, sys?: SystemDateTime): Resolve
 }
 
 const dateFormatters = new Map<string, Intl.DateTimeFormat>()
-function fmt(opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  const key = JSON.stringify(opts)
+/** A formatter per locale and options (cleared when the date locale changes). */
+function fmt(opts: Intl.DateTimeFormatOptions, locale: string | undefined = dateLocale): Intl.DateTimeFormat {
+  const key = `${locale ?? ''}|${JSON.stringify(opts)}`
   let f = dateFormatters.get(key)
   if (!f) {
-    f = new Intl.DateTimeFormat(dateLocale, opts)
+    f = new Intl.DateTimeFormat(locale, opts)
     dateFormatters.set(key, f)
   }
   return f
 }
 
+/** A calendar date (`YYYY-MM-DD`, or `YYYY-MM` for its first day) as a local Date. */
 function dateOf(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d)
+  return new Date(y, m - 1, d || 1)
+}
+
+/**
+ * A calendar date (`YYYY-MM-DD`, or `YYYY-MM`) written with Intl options in the
+ * date locale, or in `locale`: for a part the date styles do not cover (a
+ * weekday alone, a month heading).
+ */
+export function formatDateParts(iso: string, opts: Intl.DateTimeFormatOptions, locale?: string): string {
+  return fmt(opts, locale ?? dateLocale).format(dateOf(iso))
+}
+
+/** Two calendar dates as a range, "20–26 Oct". */
+export function formatDateRange(from: string, to: string, opts: Intl.DateTimeFormatOptions): string {
+  return fmt(opts).formatRange(dateOf(from), dateOf(to))
+}
+
+/** The name of weekday `wd`, 0 = Sunday (2026-10-11 is a Sunday), in the date locale or `locale`. */
+export function weekdayName(wd: number, style: 'long' | 'short' | 'narrow' = 'long', locale?: string): string {
+  return formatDateParts(`2026-10-${11 + wd}`, { weekday: style }, locale)
+}
+
+/** The month of `iso` (`YYYY-MM` or a date in it) by name, with its year when asked. */
+export function monthName(iso: string, style: 'long' | 'short' = 'long', withYear = false): string {
+  return formatDateParts(iso.slice(0, 7), { month: style, ...(withYear ? { year: 'numeric' } : {}) })
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -643,4 +667,26 @@ export function quickChoices(kind: 'due' | 'start' | 'deadline', today = logical
       { id: 'two-weeks', label: t('In 2 weeks'), date: addDaysISO(today, 14) },
     ]
   }
+}
+
+/** "just now", "5 min ago", "3 h ago", then the date: when something last happened (sessions, passkeys, sign-ins). */
+export function relativeTime(ts: number | null, now = Date.now()): string {
+  if (ts === null) return t('never')
+  const s = Math.max(0, Math.round((now - ts) / 1000))
+  if (s < 60) return t('just now')
+  const m = Math.round(s / 60)
+  if (m < 60) return t('{m} min ago', { m })
+  const h = Math.round(m / 60)
+  if (h < 24) return t('{h} h ago', { h })
+  return formatInstant(ts, 'date')
+}
+
+/** "just now", "5 min ago", "3 h ago", "2 d ago": the age of a server row's last result (integrations). */
+export function ago(ms: number, now = Date.now()): string {
+  const m = Math.max(0, Math.round((now - ms) / 60000))
+  if (m < 1) return t('just now')
+  if (m < 60) return t('{m} min ago', { m })
+  const h = Math.round(m / 60)
+  if (h < 24) return t('{h} h ago', { h })
+  return t('{d} d ago', { d: Math.round(h / 24) })
 }

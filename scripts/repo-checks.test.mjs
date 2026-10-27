@@ -35,6 +35,7 @@ const table = [
   [['deploy/coolify/opentodo.yaml'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/deploy/casaos.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/deploy-check.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
+  [['scripts/release/prepare.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/ci-changes.sh'], { code: 'true', docs: 'false', mobile: 'true' }],
   [['scripts/repo-checks.test.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['docker-compose.yml'], { code: 'true', docs: 'false', mobile: 'false' }],

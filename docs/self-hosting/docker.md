@@ -40,7 +40,7 @@ To add more people, keep sign-up closed and create single-use invitation links i
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`, and the host address it is published on with `OPENTODO_BIND` (default `0.0.0.0`, every interface, so other devices on your network reach it). Behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice: only the proxy reaches the server.
 - Every variable in the [configuration table](../../README.md#configuration) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
-- The compose file pulls `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. To stay on one release line use `:0.13` (its fixes only), to pin one version `:0.14.2`; `:latest` follows the main branch and carries unreleased changes; it reports its version as `dev+<commit>`, the commit it was built from. The running version is shown in **Settings → About**, at the bottom of the sign-in screen, at `/healthz` and in the startup log line `opentodo listening`.
+- The compose file pulls `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. To stay on one release line use `:0.14` (its fixes only), to pin one version `:0.14.2`; `:latest` follows the main branch and carries unreleased changes; it reports its version as `dev+<commit>`, the commit it was built from. The running version is shown in **Settings → About**, at the bottom of the sign-in screen, at `/healthz` and in the startup log line `opentodo listening`.
 - To build locally instead of pulling: replace `image: ghcr.io/opentodoapp/opentodo:stable` with `build: .`.
 
 ## Plain `docker run`
@@ -270,4 +270,4 @@ Before an image is published, CI starts it the way Coolify does (health check, o
 
 ## Resource usage
 
-Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 23 MB with the web app embedded, and the image adds only the distroless base (about 2 MB). A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.
+Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 34 MB with the web app embedded, and the image adds only the distroless base (about 5 MB, most of it time-zone data); a pull downloads about 13 MB. A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.

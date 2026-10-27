@@ -3,22 +3,21 @@
 // channels as rows with their last result, and the editor. The pure ChannelsView
 // renders every state; NotificationChannelsCard loads and acts. Channels are server
 // data: offline, the last loaded rows stay with every control off.
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Badge, Button, ConfirmDialog, Icon, Input, Menu, MenuItem, Notice, SettingRow, SettingsSection, Switch, StatusIndicator, toneForHue } from '../ui'
-import { ApiError, isNetworkError } from '../lib/api'
 import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
-import { errorText } from '../lib/errorText'
-import { useAction } from '../lib/useAction'
+import { useServerList } from '../lib/useServerList'
+import { fieldErrorOf } from '../lib/errorText'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { cacheChannels, cachedChannels, channelsApi, MAX_CHANNELS, type NotificationChannel } from '../lib/notificationChannels'
-import { ago } from './CalendarFeedsPanel'
 import {
   channelDraftBody, channelDraftError, channelDraftOf, KIND_ICON, kindName, newChannelDraft, NotificationChannelEditor,
   type ChannelDraft, type ChannelFieldError,
 } from './NotificationChannelEditor'
 import { useSettingsPending } from './settingsPending'
+import { ago } from '../lib/dates'
 
 /** The row's second line: why it is off, the last error, or when it last delivered. */
 export function channelStatus(c: NotificationChannel, now = Date.now()): string {
@@ -141,12 +140,6 @@ export function ChannelsView(p: ChannelsViewProps) {
   )
 }
 
-function fieldErrorOf(err: unknown): ChannelFieldError | null {
-  if (!(err instanceof ApiError)) return null
-  if (err.field) return { field: err.field, message: err.serverMessage.replace(new RegExp(`^${err.field}: `), '') }
-  return null
-}
-
 /** The outcome of Send test in words. */
 export function testText(r: { delivered: boolean; statusCode?: number; error?: string }): string {
   if (r.delivered) return t('Test delivered.')
@@ -156,54 +149,19 @@ export function testText(r: { delivered: boolean; statusCode?: number; error?: s
 export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
   const online = useOnline()
   const { enabled: encrypted } = useEncryption()
-  const [enabled, setEnabled] = useState<boolean | null>(null)
-  const [channels, setChannels] = useState<NotificationChannel[] | null>(null)
-  useSettingsPending(enabled === null && online)
-  const [unreachable, setUnreachable] = useState(false)
   const [fieldError, setFieldError] = useState<ChannelFieldError | null>(null)
-  const { busy, error, setError, run, act } = useAction({
-    onStart: () => setFieldError(null),
-    onError: (err) => {
-      if (isNetworkError(err)) setUnreachable(true)
-      setFieldError(fieldErrorOf(err))
-    },
+  const server = useServerList({
+    setting: channelsApi.getSetting,
+    list: async () => (await channelsApi.list()).channels,
+    cached: cachedChannels,
+    cache: cacheChannels,
+    action: { onStart: () => setFieldError(null), onError: (err) => setFieldError(fieldErrorOf(err)) },
   })
+  const { enabled, setEnabled, rows: channels, keep, upsert, connected, load, busy, error, setError, run, act } = server
+  useSettingsPending(enabled === null && online)
   const [draft, setDraft] = useState<ChannelDraft | null>(null)
   const [secret, setSecret] = useState<{ name: string; value: string } | null>(null)
   const [tests, setTests] = useState<Record<string, string>>({})
-
-  const keep = useCallback((list: NotificationChannel[]) => {
-    setChannels(list)
-    void cacheChannels(list).catch(() => undefined)
-  }, [])
-  const load = useCallback(async () => {
-    try {
-      const { enabled: on } = await channelsApi.getSetting()
-      setEnabled(on)
-      setUnreachable(false)
-      if (on) keep((await channelsApi.list()).channels)
-    } catch (err) {
-      if (isNetworkError(err)) setUnreachable(true)
-      else setError(errorText(err))
-    }
-  }, [keep, setError])
-  useEffect(() => {
-    void cachedChannels().then((cached) => {
-      if (cached.length) {
-        setChannels((cur) => cur ?? cached)
-        setEnabled((cur) => cur ?? true)
-      }
-    }).catch(() => undefined)
-  }, [])
-  useEffect(() => {
-    if (online) void load()
-  }, [online, load])
-
-  const connected = online && !unreachable
-  const upsert = (c: NotificationChannel) => {
-    const list = channels ?? []
-    keep(list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c])
-  }
 
   return (
     <ChannelsView isOwner={isOwner} enabled={enabled} connected={connected} encrypted={encrypted} channels={channels} busy={busy} error={error}
@@ -243,7 +201,7 @@ export function NotificationChannelsCard({ isOwner }: { isOwner: boolean }) {
       })}
       onDelete={(c) => act(async () => {
         await channelsApi.remove(c.id)
-        keep((channels ?? []).filter((x) => x.id !== c.id))
+        server.remove(c.id)
       })}
       onSecretSeen={() => setSecret(null)} />
   )

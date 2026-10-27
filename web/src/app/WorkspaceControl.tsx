@@ -4,13 +4,12 @@
 // "Manage workspaces". It is not a destination and adds no row; with one
 // workspace it reads "OpenTodo · Personal". Switching is device state.
 import { useMemo } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
 import { t } from '../lib/i18n'
 import { inboxParents, isInboxTask } from '../lib/inbox'
 import { useTasksOfEveryWorkspace } from '../lib/liveTasks'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
-import { unreadCounts, type UnreadCounts } from '../lib/feed'
+import { useUnreadCounts } from '../lib/feed'
 import type { Workspace } from '../lib/types'
 import { inToday } from '../lib/views'
 import { Partition } from '../lib/workspaces'
@@ -38,7 +37,7 @@ function useWorkspaceCounts(): Counts {
   const projects = useProjectsOfEveryWorkspace()
   const tasks = useTasksOfEveryWorkspace()
   const today = useToday()
-  const unread = useLiveQuery(() => unreadCounts(), [], { byProject: new Map(), total: 0 } as UnreadCounts)
+  const unread = useUnreadCounts()
   return useMemo(() => {
     const out: Counts = new Map(state.list.map((w) => [w.id, { inbox: 0, today: 0, unread: 0 }]))
     if (!tasks || state.list.length === 0) return out
