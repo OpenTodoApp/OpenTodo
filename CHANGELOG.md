@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-27
+
+OpenTodo 0.16.0 is a **security release** that finishes the internal audit: **adding someone to a project or workspace by email now asks them first**, unless you already share something with them, and the answer no longer reveals whether an address has an account. Background work now runs **when it is due**: reminders at their exact time, digests at the chosen hour, deliveries right away. Please read the upgrade note for API clients.
+
 ### Upgrade notes
 
 - **One migration** (`0049_member_invitations`: the table of membership invitations). No new variable. Back up first, as for every release.
@@ -987,7 +991,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.2...v0.15.0
 [0.14.2]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.14.0...v0.14.1
