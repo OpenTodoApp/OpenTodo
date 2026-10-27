@@ -19,5 +19,5 @@
 ## 3. Release
 
 - [x] 3.1 Add a CHANGELOG.md entry under Unreleased (Closes #492). Verify: `npm run docs:check`.
-- [ ] 3.2 Run `make openspec-validate` and the web tests. Verify: both pass, and CI is green on the PR.
-- [ ] 3.3 After the PR is merged, reply on issue #492 with a short, friendly note thanking calli33 and describing the change, then close it. Verify: `gh issue view 492 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
+- [x] 3.2 Run `make openspec-validate` and the web tests. Verify: both pass, and CI is green on the PR.
+- [x] 3.3 After the PR is merged, reply on issue #492 with a short, friendly note thanking calli33 and describing the change, then close it. Verify: `gh issue view 492 -R OpenTodoApp/OpenTodo` shows the comment and the state CLOSED.
