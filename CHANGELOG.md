@@ -8,6 +8,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **Sub-projects inherit their parent's custom fields.** A field defined on a project now applies to every sub-project below it: its tasks show, edit, filter by and export the field like their own, and the sub-project's **Fields…** dialog lists inherited fields first, read-only. Names stay unique across the tree, the 30-field limit counts inherited fields, and the API and assistant tools follow the same rules. No migration; values are stored as before. ([Custom fields](docs/custom-fields.md#fields-of-sub-projects), `inherited-custom-fields`, closes #405)
 
+### Fixed
+
+- **An event saved to OpenTodo from iOS Calendar is no longer lost.** Calendar apps send events, and the CalDAV endpoint used to refuse them; iOS then dropped the item silently, and an event moved there from iCloud disappeared altogether. An event now becomes a task: due at its start, its length as the estimate, its alarms as reminders, its repeat rule where OpenTodo can express it. It then shows in Reminders and OpenTodo rather than in Calendar. ([Calendar apps](docs/caldav.md#apple-reminders-iphone-ipad-mac), `caldav-events-as-tasks`, fixes #500)
+
 ### Changed
 
 - **A request your reverse proxy changed now says so.** An API path asked with the wrong method answers 405 with an `Allow` header ("GET is not allowed on /api/v1/settings/assistant/test; use POST") instead of "unknown API route", and a 404 names the method and path the server received. A 301 or 302 redirect in front of OpenTodo turns a `POST` into a `GET`; the assistant's **Test connection** now explains that instead of showing the raw error. ([API](docs/api.md), [Behind a reverse proxy](docs/self-hosting/docker.md#method-not-allowed-or-unknown-api-route-from-a-test-or-save), `api-method-not-allowed`, refs #501)

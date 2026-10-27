@@ -40,6 +40,7 @@ The server address is `https://<your server>/dav/` (Settings shows it with a cop
 - iOS / iPadOS: **Settings → Apps → Calendar → Calendar Accounts → Add Account → Other → Add CalDAV Account** (on older versions: Settings → Calendar → Accounts). Server: your server's host name (or the full address above), user name: your email, password: the app password. Under *Advanced settings* make sure SSL is on.
 - macOS: **System Settings → Internet Accounts → Add Account → Add Other Account → CalDAV Account**, account type *Manual*, then the same values.
 - Turn on **Reminders** for the account. Your projects appear as lists; new lists created in Reminders become projects.
+- Create new items in **Reminders**, not Calendar. An event you save or move into the OpenTodo account in Calendar becomes a task: due at the event's start, with its length as the estimate, its alarms as reminders and its repeat rule where OpenTodo can express it. After the next sync it shows in Reminders and OpenTodo instead of Calendar. Nothing is lost; the server just serves tasks, never events.
 
 ### Thunderbird
 

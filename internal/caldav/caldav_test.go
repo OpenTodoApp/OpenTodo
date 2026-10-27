@@ -1,6 +1,7 @@
 package caldav
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -19,6 +20,9 @@ func toTask(in *Inbound) Task {
 		Categories: in.Categories, ParentUID: in.ParentUID, Recurrence: in.Rule, Extra: in.Extra, Modified: 1_760_000_000_000}
 	if in.CreatedAt != nil {
 		t.CreatedAt = *in.CreatedAt
+	}
+	if in.EstimateMinutes != nil {
+		t.EstimateMinutes = *in.EstimateMinutes
 	}
 	// What the caller does with alarms (caldav-interop D4): a mappable one
 	// becomes a reminder served back under its UID, any other is client data.
@@ -91,6 +95,11 @@ func TestICalRoundTripFixtures(t *testing.T) {
 			// #248): the shape is how the dates were written, not what they mean.
 			if first.Shape == ShapeDueOnly && second.Shape == ShapeStartDueEqual && first.Due != nil && first.Due.Time != nil {
 				second.Shape = first.Shape
+			}
+			// An event (caldav-events-as-tasks) comes back as a VTODO whose DUE
+			// and DTSTART are its start: same dates, written as a task.
+			if strings.Contains(string(raw), "BEGIN:VEVENT") && first.Shape == ShapeStartDuration && second.Shape == ShapeStartDueEqual {
+				second.Shape, second.SentDue = first.Shape, first.SentDue
 			}
 			if !reflect.DeepEqual(first, second) {
 				t.Fatalf("round trip differs\nfirst:  %+v\nsecond: %+v\n%s", first, second, out)
@@ -243,8 +252,18 @@ func TestDecodeRejects(t *testing.T) {
 	if _, err := Decode([]byte("not ical")); err == nil {
 		t.Fatal("garbage accepted")
 	}
-	if _, err := Decode([]byte("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:e\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")); err != ErrUnsupportedComponent {
-		t.Fatalf("VEVENT: %v", err)
+	// A VEVENT becomes a task (caldav-events-as-tasks); journals and free/busy stay refused.
+	if _, err := Decode([]byte("BEGIN:VCALENDAR\r\nBEGIN:VJOURNAL\r\nUID:j\r\nEND:VJOURNAL\r\nEND:VCALENDAR\r\n")); err != ErrUnsupportedComponent {
+		t.Fatalf("VJOURNAL: %v", err)
+	}
+	if _, err := Decode([]byte("BEGIN:VCALENDAR\r\nBEGIN:VFREEBUSY\r\nUID:f\r\nEND:VFREEBUSY\r\nEND:VCALENDAR\r\n")); err != ErrUnsupportedComponent {
+		t.Fatalf("VFREEBUSY: %v", err)
+	}
+	if _, err := Decode([]byte("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:m\r\nEND:VTODO\r\nBEGIN:VEVENT\r\nUID:m\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")); !errors.Is(err, ErrInvalidObject) {
+		t.Fatalf("VTODO and VEVENT mixed: %v", err)
+	}
+	if _, err := Decode([]byte("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:x\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")); !errors.Is(err, ErrInvalidObject) {
+		t.Fatalf("VEVENT without UID: %v", err)
 	}
 	if _, err := Decode([]byte("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nSUMMARY:x\r\nEND:VTODO\r\nEND:VCALENDAR\r\n")); err == nil {
 		t.Fatal("missing UID accepted")
