@@ -613,7 +613,11 @@ func TestRecurringCompletionMovesSeries(t *testing.T) {
 func TestInvalidCalendarData(t *testing.T) {
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"x.ics", "BEGIN:VCALENDAR\r\nnot really", 415)
-	c.must("PUT", c.cal("inbox")+"x.ics", "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n", 403)
+	// A VEVENT becomes a task (caldav-events-as-tasks, TestEventsBecomeTasks); a journal is still refused.
+	_, journal := c.must("PUT", c.cal("inbox")+"x.ics", "BEGIN:VCALENDAR\r\nBEGIN:VJOURNAL\r\nUID:x\r\nEND:VJOURNAL\r\nEND:VCALENDAR\r\n", 403)
+	if !strings.Contains(journal, "supported-calendar-component") {
+		t.Fatalf("precondition element missing: %s", journal)
+	}
 	_, body := c.must("PUT", c.cal("inbox")+"x.ics", "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nSUMMARY:x\r\nEND:VTODO\r\nEND:VCALENDAR\r\n", 403)
 	if !strings.Contains(body, "valid-calendar-object-resource") {
 		t.Fatalf("precondition element missing: %s", body)
