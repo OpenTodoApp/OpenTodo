@@ -5,10 +5,11 @@
 // with the keyboard. Offered to editors and above only (the project menu hides it
 // from viewers).
 import { useMemo, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
-import { useProjectFieldRows, useProjectTaskRows } from '../lib/localData'
+import { useMembership, useProjectFieldRows, useProjects, useTaskRowsOfProjects } from '../lib/localData'
 import {
-  countValues, createField, deleteField, FIELD_TYPES, FieldError, liveFields, MAX_FIELDS, parseOptions, renameField, reorderField, setFieldOptions,
+  countValues, createField, deleteField, FIELD_TYPES, FieldError, fieldDescendants, liveFields, MAX_FIELDS, parseOptions, renameField, reorderField, setFieldOptions,
 } from '../lib/fields'
+import { useApplicableFields } from './useFields'
 import type { FieldDef, FieldType, Project, Task } from '../lib/types'
 import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea, Dialog } from '../ui'
 import { HelpLink } from './help/HelpLink'
@@ -20,8 +21,29 @@ const typeLabel = (item: string) => FIELD_TYPES.find((x) => x.type === item)?.la
 
 export function FieldsDialog({ project, onClose }: { project: Project; onClose: () => void }) {
   const defs = useProjectFieldRows(project.id)
-  const tasks = useProjectTaskRows(project.id)
   const live = useMemo(() => liveFields(project.id, defs), [project.id, defs])
+  // Inherited fields (inherited-custom-fields): the ancestors' fields, read-only here,
+  // and the tasks of every sub-project, which hold values of this project's fields too.
+  const projects = useProjects()
+  const applicable = useApplicableFields()(project.id)
+  const inherited = useMemo(() => applicable.filter((d) => d.project_id !== project.id), [applicable, project.id])
+  const groups = useMemo(() => {
+    const out: { projectId: string; name: string; defs: FieldDef[] }[] = []
+    for (const d of inherited) {
+      const last = out[out.length - 1]
+      if (last?.projectId === d.project_id) last.defs.push(d)
+      else out.push({ projectId: d.project_id, name: projects.find((p) => p.id === d.project_id)?.name ?? '', defs: [d] })
+    }
+    return out
+  }, [inherited, projects])
+  const subtree = useMemo(() => [project.id, ...fieldDescendants(project.id, projects)], [project.id, projects])
+  const tasks = useTaskRowsOfProjects(subtree)
+  const shared = !!useMembership(project.id)
+  const clashOf = (d: FieldDef) => {
+    const key = d.name.trim().toLocaleLowerCase()
+    const other = inherited.find((i) => i.name.trim().toLocaleLowerCase() === key)
+    return other ? groups.find((g) => g.projectId === other.project_id)?.name ?? '' : null
+  }
   const [removing, setRemoving] = useState<FieldDef | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const listRef = useRef<HTMLUListElement>(null)
@@ -52,19 +74,38 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
         <p className="text-meta text-muted">
           {t('Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {max} fields.', { max: MAX_FIELDS })}{' '}<HelpLink screen="project-fields" topic={t('Custom fields')} />
         </p>
+        {groups.map((g) => (
+          <section key={g.projectId} className="space-y-1.5" aria-label={t('From {name}', { name: g.name })} data-inherited-fields={g.projectId}>
+            <h3 className="text-meta font-semibold text-muted">{t('From {name}', { name: g.name })}</h3>
+            <ul className="divide-y divide-default rounded-card border border-default">
+              {g.defs.map((d) => (
+                <li key={d.id} data-field-inherited={d.id} className="flex items-center gap-2 px-3 py-2">
+                  <span className="user-text min-w-0 flex-1 truncate text-body text-default">{d.name}</span>
+                  <span className="shrink-0 text-meta text-faint">{typeLabel(d.type)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+        {groups.length > 0 && (
+          <p className="text-meta text-muted" data-inherited-note>
+            {t('Inherited fields are edited in the project that defines them.')}
+            {shared && <> {t('People this project is shared with see them only if they can also see that project.')}</>}
+          </p>
+        )}
         {live.length === 0 ? (
-          <p className="text-body text-faint">{t('No fields yet.')}</p>
+          <p className="text-body text-faint">{groups.length > 0 ? t('No fields of its own yet.') : t('No fields yet.')}</p>
         ) : (
           <ul ref={listRef} className="divide-y divide-default rounded-card border border-default" aria-label={t('Fields')}>
             {live.map((d, i) => (
               <FieldItem key={d.id} def={d} first={i === 0} last={i === live.length - 1} dragging={dragId === d.id}
                 onMove={(delta) => act(move(d.id, delta))} onHandleKey={(e) => onHandleKey(e, d.id)}
                 onDragStart={() => setDragId(d.id)} onDrop={(e) => void onDrop(e, d.id)}
-                onDelete={() => setRemoving(d)} tasks={tasks} />
+                onDelete={() => setRemoving(d)} tasks={tasks} clash={clashOf(d)} />
             ))}
           </ul>
         )}
-        <AddField projectId={project.id} disabled={live.length >= MAX_FIELDS} />
+        <AddField projectId={project.id} disabled={applicable.length >= MAX_FIELDS} />
       </div>
       {removing && (
         <ConfirmDialog title={t('Delete the field “{name}”?', { name: removing.name })} confirmLabel={t('Delete field')}
@@ -81,8 +122,10 @@ export function valuesText(n: number): string {
   return t('{n, plural, one {Values on # task are kept but hidden.} other {Values on # tasks are kept but hidden.}}', { n })
 }
 
-function FieldItem({ def, first, last, dragging, tasks, onMove, onHandleKey, onDragStart, onDrop, onDelete }: {
+function FieldItem({ def, first, last, dragging, tasks, clash, onMove, onHandleKey, onDragStart, onDrop, onDelete }: {
   def: FieldDef; first: boolean; last: boolean; dragging: boolean; tasks: Task[]
+  /** The project an inherited field of the same name comes from (a clash after a move), or null. */
+  clash: string | null
   onMove: (delta: -1 | 1) => void; onHandleKey: (e: KeyboardEvent) => void
   onDragStart: () => void; onDrop: (e: DragEvent) => void; onDelete: () => void
 }) {
@@ -128,6 +171,7 @@ function FieldItem({ def, first, last, dragging, tasks, onMove, onHandleKey, onD
         <IconButton icon="trash-2" size="sm" label={t('Delete {name}', { name: def.name })} onClick={onDelete} />
       </div>
       {error && <p role="alert" className="text-meta text-danger">{error}</p>}
+      {clash !== null && !renaming && <p className="text-meta text-warning" data-field-clash>{t('Same name as a field from “{project}”. Rename one of them.', { project: clash })}</p>}
       {editingOptions && <OptionsEditor def={def} tasks={tasks} onDone={() => setEditingOptions(false)} />}
     </li>
   )

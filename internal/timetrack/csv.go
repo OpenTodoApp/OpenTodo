@@ -27,10 +27,13 @@ type Task struct {
 	DeletedAt *int64         `json:"deleted_at"`
 }
 
-// Project is a project's id, name and deletion state.
+// Project is a project's id, name, parent and deletion state.
 type Project struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// ParentID makes the project's ancestors' custom fields apply to its tasks
+	// (OpenSpec change inherited-custom-fields).
+	ParentID  string `json:"parent_id,omitempty"`
 	DeletedAt *int64 `json:"deleted_at"`
 }
 
@@ -111,9 +114,10 @@ func Rows(in CSVInput) []Entry {
 }
 
 // CSV writes the export (design D8): a BOM, the header, then one row per
-// entry from Rows. Custom field columns are the union of the live fields of
-// every project present, by name, in the order their projects first appear
-// and the project's field order. Lines end with CRLF (RFC 4180).
+// entry from Rows. Custom field columns are the union of the fields that
+// apply to every project present (its ancestors' first, inherited-custom-fields),
+// by name, in the order their projects first appear and each project's field
+// order. Lines end with CRLF (RFC 4180).
 func CSV(in CSVInput) string {
 	display := Display
 	rows := Rows(in)
@@ -122,8 +126,10 @@ func CSV(in CSVInput) string {
 		tasks[t.ID] = t
 	}
 	projects := map[string]string{}
+	byID := map[string]Project{}
 	for _, p := range in.Projects {
 		projects[p.ID] = p.Name
+		byID[p.ID] = p
 	}
 	labels := map[string]string{}
 	for _, l := range in.Labels {
@@ -143,6 +149,13 @@ func CSV(in CSVInput) string {
 			return fs[i].ID < fs[j].ID
 		})
 	}
+	applies := func(pid string) []Field {
+		var out []Field
+		for _, id := range fieldChain(pid, byID) {
+			out = append(out, byProject[id]...)
+		}
+		return out
+	}
 	var columns []string
 	seenCol := map[string]bool{}
 	seenProject := map[string]bool{}
@@ -152,7 +165,7 @@ func CSV(in CSVInput) string {
 			continue
 		}
 		seenProject[pid] = true
-		for _, f := range byProject[pid] {
+		for _, f := range applies(pid) {
 			name := display(f.Name)
 			if !seenCol[name] {
 				seenCol[name] = true
@@ -181,7 +194,7 @@ func CSV(in CSVInput) string {
 			strings.Join(names, ";"), display(e.Note),
 		}
 		values := map[string]string{}
-		for _, f := range byProject[t.ProjectID] {
+		for _, f := range applies(t.ProjectID) {
 			if v, ok := t.Fields[f.ID]; ok {
 				values[display(f.Name)] = fieldText(v, display)
 			}
@@ -241,3 +254,33 @@ func Cell(s string) string {
 }
 
 var signedNumber = regexp.MustCompile(`^[+-][0-9]+(\.[0-9]+)?$`)
+
+// fieldChain is the projects whose fields apply to pid: its ancestors farthest
+// first, then pid, following parent references through live projects and
+// stopping at a missing or deleted parent or a repeat. It is the rule of
+// internal/sync FieldChain (pinned by web/src/lib/fields.vectors.json), kept
+// here because internal/sync imports this package.
+func fieldChain(pid string, projects map[string]Project) []string {
+	if pid == "" {
+		return nil
+	}
+	chain := []string{pid}
+	seen := map[string]bool{pid: true}
+	cur, ok := projects[pid]
+	if ok && cur.DeletedAt != nil {
+		ok = false
+	}
+	for ok && cur.ParentID != "" && !seen[cur.ParentID] {
+		parent, found := projects[cur.ParentID]
+		if !found || parent.DeletedAt != nil {
+			break
+		}
+		seen[parent.ID] = true
+		chain = append(chain, parent.ID)
+		cur = parent
+	}
+	for i, j := 0, len(chain)-1; i < j; i, j = i+1, j-1 {
+		chain[i], chain[j] = chain[j], chain[i]
+	}
+	return chain
+}
