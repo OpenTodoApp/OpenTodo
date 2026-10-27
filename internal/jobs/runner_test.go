@@ -13,6 +13,15 @@ type fakeClock struct {
 	mu      sync.Mutex
 	now     time.Time
 	waiters []waiter
+	// sleeps counts calls to After, so the harness can tell that the runner's
+	// sleep is registered (the runner reports its turn just before it sleeps).
+	sleeps int
+}
+
+func (c *fakeClock) sleepCount() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.sleeps
 }
 
 type waiter struct {
@@ -29,6 +38,7 @@ func (c *fakeClock) Now() time.Time {
 func (c *fakeClock) After(d time.Duration) <-chan time.Time {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.sleeps++
 	ch := make(chan time.Time, 1)
 	if d <= 0 {
 		ch <- c.now
@@ -127,6 +137,9 @@ type harness struct {
 type turn struct {
 	running int
 	wait    time.Duration
+	// sleeps is the clock's sleep count when the turn was reported; the runner
+	// sleeps right after, so idle waits for the count to move past it.
+	sleeps int
 }
 
 var t0 = time.Date(2026, 10, 27, 9, 0, 0, 0, time.UTC)
@@ -146,7 +159,7 @@ func (h *harness) start(jobs ...Job) {
 	h.cancel = cancel
 	h.r.turn = func(running int, wait time.Duration) {
 		select {
-		case h.turns <- turn{running, wait}:
+		case h.turns <- turn{running, wait, h.clock.sleepCount()}:
 		case <-ctx.Done():
 		}
 	}
@@ -170,11 +183,37 @@ func (h *harness) idle() time.Duration {
 		select {
 		case tn := <-h.turns:
 			if tn.running == 0 {
+				h.sleeping(tn.sleeps)
 				return tn.wait
 			}
 		case <-time.After(5 * time.Second):
 			h.t.Fatal("the runner never went idle")
 		}
+	}
+}
+
+// sleeping waits until the runner has registered the sleep that follows a turn
+// reported at sleep count before; advancing the clock earlier would miss it.
+func (h *harness) sleeping(before int) {
+	h.t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for h.clock.sleepCount() <= before {
+		if time.Now().After(deadline) {
+			h.t.Fatal("the runner never went to sleep")
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+// until waits (in real time, briefly) for a condition the runner's goroutines make true.
+func (h *harness) until(cond func() bool, what string) {
+	h.t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for !cond() {
+		if time.Now().After(deadline) {
+			h.t.Fatalf("timed out waiting for %s", what)
+		}
+		time.Sleep(time.Millisecond)
 	}
 }
 
@@ -321,11 +360,19 @@ func TestJobsRunIndependently(t *testing.T) {
 	slow, fast := h.fake(t0), h.fake(time.Time{})
 	slow.block = make(chan struct{})
 	h.start(slow.job(Backup), fast.job(Webhooks))
+	// Release the backup even when the test fails, or stopping the runner
+	// would wait for it forever (registered after start, so it runs first).
+	var release sync.Once
+	unblock := func() { release.Do(func() { close(slow.block) }) }
+	t.Cleanup(unblock)
 	// The backup is running: the runner sleeps with one job running.
 	tn := <-h.turns
 	if tn.running != 1 {
 		t.Fatalf("running %d, want the backup", tn.running)
 	}
+	// The runner counts a job as running once it has started its goroutine;
+	// wait until the backup has actually begun before changing its due time.
+	h.until(func() bool { _, runs := slow.counts(); return runs == 1 }, "the backup to start")
 	fast.set(h.clock.Now())
 	slow.set(h.clock.Now())
 	h.r.Wake(Webhooks)
@@ -339,7 +386,7 @@ func TestJobsRunIndependently(t *testing.T) {
 	if _, runs := slow.counts(); runs != 1 {
 		t.Fatalf("backup started %d times while it was running", runs)
 	}
-	close(slow.block)
+	unblock()
 	h.idle()
 	if _, runs := slow.counts(); runs != 1 {
 		t.Fatalf("backup ran %d times, want 1 (still due after a run waits)", runs)
