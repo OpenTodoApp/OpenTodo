@@ -94,12 +94,23 @@ func (s *Server) respondWorkspace(w http.ResponseWriter, r *http.Request, status
 		w.WriteHeader(status)
 		return
 	}
+	s.writeWorkspace(w, r, status, wsID)
+}
+
+// writeWorkspace answers with the caller's view of a workspace and, for its
+// owner and admins, the open invitations (member-add-consent).
+func (s *Server) writeWorkspace(w http.ResponseWriter, r *http.Request, status int, wsID string) {
 	ws, err := s.sync.WorkspaceByID(r.Context(), userFrom(r.Context()).ID, wsID)
 	if err != nil {
 		s.directoryError(w, err)
 		return
 	}
-	writeJSON(w, status, ws)
+	pending, err := s.workspacePending(r.Context(), ws)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, status, workspaceView{Workspace: ws, Pending: pending})
 }
 
 func (s *Server) handleListWorkspaces(w http.ResponseWriter, r *http.Request) {
@@ -112,12 +123,7 @@ func (s *Server) handleListWorkspaces(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetWorkspace(w http.ResponseWriter, r *http.Request) {
-	ws, err := s.sync.WorkspaceByID(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"))
-	if err != nil {
-		s.directoryError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ws)
+	s.writeWorkspace(w, r, http.StatusOK, r.PathValue("id"))
 }
 
 func (s *Server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
@@ -199,7 +205,16 @@ func (s *Server) handleListWorkspaceMembers(w http.ResponseWriter, r *http.Reque
 		s.directoryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"members": ws.Members})
+	out := map[string]any{"members": ws.Members}
+	pending, err := s.workspacePending(r.Context(), ws)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	if pending != nil {
+		out["pending"] = pending
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *Server) handleListGroups(w http.ResponseWriter, r *http.Request) {
@@ -246,7 +261,8 @@ func (s *Server) handleAddWorkspaceMember(w http.ResponseWriter, r *http.Request
 		return
 	}
 	// The caller's rights first, so nobody can probe which accounts exist.
-	if s.workspaceManager(w, r) == nil || s.encryptedDirectory(w, r) {
+	ws := s.workspaceManager(w, r)
+	if ws == nil || s.encryptedDirectory(w, r) {
 		return
 	}
 	if in.Role == "" {
@@ -255,16 +271,31 @@ func (s *Server) handleAddWorkspaceMember(w http.ResponseWriter, r *http.Request
 	if !s.allowMemberAdd(w, userFrom(r.Context()).ID) {
 		return
 	}
-	target, err := s.auth.UserByEmail(r.Context(), in.Email)
-	if errors.Is(err, auth.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "user_not_found", "no account with this email exists on this server")
+	email, ok := inviteAddress(w, in.Email)
+	if !ok {
 		return
 	}
+	target, err := s.lookupInvitee(r.Context(), email)
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
 	actor, id := userFrom(r.Context()).ID, r.PathValue("id")
+	// Someone the caller shares nothing with is asked first (member-add-consent D1).
+	if now, err := s.addsAtOnce(r.Context(), actor, target); err != nil {
+		s.internal(w, err)
+		return
+	} else if !now {
+		switch {
+		case !opsync.ValidWorkspaceRole(in.Role):
+			s.directoryError(w, fmt.Errorf("%w: role must be member or admin", opsync.ErrInvalidInput))
+		case ws.Role == opsync.WorkspaceAdmin && in.Role == opsync.WorkspaceAdmin:
+			s.directoryError(w, opsync.ErrForbidden)
+		default:
+			s.inviteMember(w, r, auth.InvitationWorkspace, id, target, email, in.Role)
+		}
+		return
+	}
 	ch, err := s.sync.AddWorkspaceMember(r.Context(), actor, id, target.ID, in.Role)
 	if err != nil {
 		s.directoryError(w, err)

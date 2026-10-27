@@ -1,8 +1,7 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
-import { useTask } from '../lib/localData'
+import { useTask, useMembershipMap } from '../lib/localData'
 import { updateTask } from '../lib/ops'
-import { assigneeOptions, memberName, membershipMap } from '../lib/sharing'
+import { assigneeOptions, memberName } from '../lib/sharing'
 import { PersonAvatar } from './PersonAvatar'
 import { Tooltip } from '../ui'
 import { Combobox, ComboboxPanel } from '../ui'
@@ -37,7 +36,7 @@ export function AssigneePicker({ taskId, userId, onClose, inline = false }: {
   inline?: boolean
 }) {
   const task = useTask(taskId)
-  const memberships = useLiveQuery(() => membershipMap(), [], new Map())
+  const memberships = useMembershipMap()
 
   const lang = useLanguageVersion()
   const people = useMemo<Person[]>(() => [

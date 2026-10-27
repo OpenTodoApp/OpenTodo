@@ -1,12 +1,11 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { describeEvent, guestActorLabel, isPending, mergeOlder, pendingOpIds } from '../lib/activity'
+import { describeEvent, guestActorLabel, isPending, mergeOlder, usePendingOpIds } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
-import { useAllProjects, useProjectsLoaded, useTasksByIdRead } from '../lib/localData'
-import { dayOf, FEED_KINDS, feedEvents, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, sharedProjectIds, type FeedKind } from '../lib/feed'
+import { useAllProjects, useProjectsLoaded, useTasksByIdRead, useMembershipMap } from '../lib/localData'
+import { dayOf, FEED_KINDS, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, type FeedKind, useSharedProjectIds, useFeedEvents } from '../lib/feed'
 import { useOnline } from '../lib/online'
-import { currentUserId, memberName, membershipMap } from '../lib/sharing'
-import type { ActivityEvent, Membership } from '../lib/types'
+import { memberName, useCurrentUserId } from '../lib/sharing'
+import type { ActivityEvent } from '../lib/types'
 import { navigate } from './router'
 import { openTaskInList } from './signals'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
@@ -27,12 +26,12 @@ import { t } from '../lib/i18n'
 export function FeedView() {
   const dt = useDateTimeFormat()
   const online = useOnline()
-  const meRead = useLiveQuery(() => currentUserId(), [])
+  const meRead = useCurrentUserId()
   const me = meRead ?? null
-  const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
-  const shared = useLiveQuery(() => sharedProjectIds(), [], null as string[] | null)
-  const local = useLiveQuery(() => feedEvents(), [], null as ActivityEvent[] | null)
-  const pending = useLiveQuery(() => pendingOpIds(), [], new Set<string>())
+  const memberships = useMembershipMap()
+  const shared = useSharedProjectIds()
+  const local = useFeedEvents()
+  const pending = usePendingOpIds()
   const projects = useAllProjects()
   const taskIds = useMemo(() => [...new Set((local ?? []).map((e) => e.taskId).filter((id): id is string => !!id))], [local])
   const { tasks, read: tasksRead } = useTasksByIdRead(taskIds)

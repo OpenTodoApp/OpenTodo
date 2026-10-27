@@ -1,65 +1,25 @@
 // The task's notes (collaborative-rich-text): the rich-text editor, fetched as its own
 // chunk when a note is first opened (task 3.1), the rendered Markdown while it loads,
-// and plain text when it cannot load. The docked panel clamps long notes at rest; the
-// task page never does (task-full-page).
-import { Component, lazy, type ReactNode, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+// and plain text when it cannot load. Notes are shown in full in the panel and on the
+// task page; long ones grow with the panel's own scrolling (task-panel-notes-below).
+import { Component, lazy, type ReactNode, Suspense, useState } from 'react'
 import { updateTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { Markdown } from '../Markdown'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
-/** The notes editor with its loading and failure fallbacks; `clamp` rests long notes at about eight lines. */
-export function TaskNotes({ task, readOnly, clamp }: { task: Task; readOnly: boolean; clamp: boolean }) {
+/** The notes editor with its loading and failure fallbacks. */
+export function TaskNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
   return (
-    <NotesClamp taskId={task.id} enabled={clamp}>
-      <NotesBoundary task={task} readOnly={readOnly}>
-        <Suspense fallback={<NotesPreview text={task.description} />}>
-          <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} />
-        </Suspense>
-      </NotesBoundary>
-    </NotesClamp>
-  )
-}
-
-/** Lines of notes shown at rest in the panel before "Show all" (task-panel-facets D4). */
-export const NOTES_CLAMP_LINES = 8
-
-/**
- * Long notes rest clamped in the panel (web-app "Task panel notes clamp"): about eight
- * lines and a "Show all" line, so the facts below stay in view. Focusing the notes or
- * Show all expands them until another task is opened; the task page never clamps, and
- * notes only a line over the limit are never clamped, so short notes do not flicker.
- */
-function NotesClamp({ taskId, enabled, children }: { taskId: string; enabled: boolean; children: ReactNode }) {
-  const box = useRef<HTMLDivElement>(null)
-  const [expanded, setExpanded] = useState(false)
-  const [tall, setTall] = useState(false)
-  useEffect(() => { setExpanded(false) }, [taskId])
-  useLayoutEffect(() => {
-    const el = box.current
-    if (!el || !enabled) return
-    const measure = () => {
-      const content = el.firstElementChild as HTMLElement | null
-      if (!content) return
-      const line = parseFloat(getComputedStyle(content).lineHeight) || 24
-      setTall(content.scrollHeight > line * (NOTES_CLAMP_LINES + 1))
-    }
-    measure()
-    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
-    if (ro && el.firstElementChild) ro.observe(el.firstElementChild)
-    return () => ro?.disconnect()
-  }, [enabled, taskId])
-  const clamped = enabled && tall && !expanded
-  return (
-    <div ref={box} className="notes-clamp" data-clamped={clamped || undefined} onFocusCapture={() => setExpanded(true)}>
-      {children}
-      {clamped && (
-        <button type="button" className="mt-1 text-meta text-accent hover:underline" onClick={() => setExpanded(true)} data-notes-show-all>{t('Show all')}</button>
-      )}
-    </div>
+    <NotesBoundary task={task} readOnly={readOnly}>
+      <Suspense fallback={<NotesPreview text={task.description} />}>
+        <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} />
+      </Suspense>
+    </NotesBoundary>
   )
 }
 
@@ -75,7 +35,7 @@ function NotesPreview({ text }: { text: string }) {
 /** Plain-text notes, the fallback when the editor cannot load (e.g. its chunk is missing offline). */
 function PlainNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const [text, setText] = useState(task.description)
-  useEffect(() => setText(task.description), [task.id, task.description])
+  useResetOnChange([task.id, task.description], () => setText(task.description))
   return (
     <textarea
       className="notes-plain"

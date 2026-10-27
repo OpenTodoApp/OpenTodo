@@ -1,8 +1,8 @@
 // Per-device sidebar layout (OpenSpec change ux-overhaul, app-shell "Resizable
 // sidebar"): its width between 15 and 22.5 rem, and whether it is collapsed to
 // icons. Device state, never synced.
-import { useSyncExternalStore } from 'react'
-import { resettable } from '../lib/moduleState'
+import { readString, removeItem, writeString } from '../lib/deviceStorage'
+import { createStore } from '../lib/store'
 
 export const SIDEBAR_MIN_REM = 15
 export const SIDEBAR_MAX_REM = 22.5
@@ -15,59 +15,45 @@ const COLLAPSED_KEY = 'ot.sidebar.collapsed'
 
 export interface SidebarLayout { width: number; collapsed: boolean }
 
+const DEFAULT: SidebarLayout = { width: SIDEBAR_DEFAULT_REM, collapsed: false }
+
 function read(): SidebarLayout {
-  try {
-    const w = Number(localStorage.getItem(WIDTH_KEY))
-    return { width: clamp(Number.isFinite(w) && w > 0 ? w : SIDEBAR_DEFAULT_REM), collapsed: localStorage.getItem(COLLAPSED_KEY) === '1' }
-  } catch {
-    return { width: SIDEBAR_DEFAULT_REM, collapsed: false }
-  }
+  const w = Number(readString(WIDTH_KEY))
+  return { width: clamp(Number.isFinite(w) && w > 0 ? w : SIDEBAR_DEFAULT_REM), collapsed: readString(COLLAPSED_KEY) === '1' }
 }
 
 export const clamp = (rem: number): number => Math.min(SIDEBAR_MAX_REM, Math.max(SIDEBAR_MIN_REM, Math.round(rem * 2) / 2))
 
-let current: SidebarLayout = typeof localStorage === 'undefined' ? { width: SIDEBAR_DEFAULT_REM, collapsed: false } : read()
-const listeners = new Set<() => void>()
-const emit = () => listeners.forEach((fn) => fn())
+// Two keys, so a plain store that writes both (blocked storage: the layout lasts for this page).
+const layout = createStore<SidebarLayout>('sidebarLayout', read(), () => {
+  removeItem(WIDTH_KEY)
+  removeItem(COLLAPSED_KEY)
+  return DEFAULT
+})
 
-function write() {
-  try {
-    localStorage.setItem(WIDTH_KEY, String(current.width))
-    localStorage.setItem(COLLAPSED_KEY, current.collapsed ? '1' : '0')
-  } catch {
-    // Private mode or blocked storage: the layout lasts for this page only.
-  }
+function set(next: SidebarLayout): void {
+  writeString(WIDTH_KEY, String(next.width))
+  writeString(COLLAPSED_KEY, next.collapsed ? '1' : '0')
+  layout.set(next)
 }
 
 export function setSidebarWidth(rem: number): void {
   const width = clamp(rem)
-  if (width === current.width) return
-  current = { ...current, width }
-  write()
-  emit()
+  if (width !== layout.get().width) set({ ...layout.get(), width })
 }
 
 export function setSidebarCollapsed(collapsed: boolean): void {
-  if (collapsed === current.collapsed) return
-  current = { ...current, collapsed }
-  write()
-  emit()
+  if (collapsed !== layout.get().collapsed) set({ ...layout.get(), collapsed })
 }
 
-export const toggleSidebarCollapsed = (): void => setSidebarCollapsed(!current.collapsed)
+export const toggleSidebarCollapsed = (): void => setSidebarCollapsed(!layout.get().collapsed)
 
-export function sidebarLayout(): SidebarLayout {
-  return current
-}
-
-export function useSidebarLayout(): SidebarLayout {
-  return useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn) } }, () => current, () => current)
-}
+export const sidebarLayout = layout.get
+export const useSidebarLayout = layout.use
 
 /** Tests: back to the defaults. */
 export function resetSidebarLayout(): void {
-  current = { width: SIDEBAR_DEFAULT_REM, collapsed: false }
-  try { localStorage.removeItem(WIDTH_KEY); localStorage.removeItem(COLLAPSED_KEY) } catch { /* ignore */ }
-  emit()
+  removeItem(WIDTH_KEY)
+  removeItem(COLLAPSED_KEY)
+  layout.set(DEFAULT)
 }
-resettable('sidebarLayout', resetSidebarLayout)

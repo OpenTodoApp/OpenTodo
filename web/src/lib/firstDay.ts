@@ -7,8 +7,9 @@
 // carry a clock from another browser device. Hiding the sidebar entry is the synced
 // `start_checklist` preference (userPrefs.ts).
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState } from 'react'
 import { db } from './db'
+import { createStoredValue } from './deviceStorage'
 import { getDeviceId } from './ops'
 import { isSample } from './sampleTasks'
 import type { Task } from './types'
@@ -18,20 +19,14 @@ export const FIRST_DAY_STEPS: readonly FirstDayStep[] = ['add', 'plan', 'device'
 export type FirstDayState = Record<FirstDayStep, boolean>
 
 const TODAY_KEY = 'opentodo.firstDay.todayOpened'
-const listeners = new Set<() => void>()
-const emit = () => listeners.forEach((fn) => fn())
-
-function readTodayOpened(): boolean {
-  try { return localStorage.getItem(TODAY_KEY) === '1' } catch { return false }
-}
+// Private window: the step stays open (the write is dropped).
+const todayOpened = createStoredValue<boolean>(TODAY_KEY, { parse: (raw) => raw === '1', serialize: (on) => (on ? '1' : null) }, { server: false })
 
 /** Today was opened: counts for "Plan today" once a real task exists. Device state only. */
 export async function noteTodayOpened(): Promise<void> {
-  if (readTodayOpened()) return
+  if (todayOpened.get()) return
   const real = await db.tasks.filter((task) => !task.deleted_at && !isSample(task)).first()
-  if (!real) return
-  try { localStorage.setItem(TODAY_KEY, '1') } catch { /* private window: the step stays open */ }
-  emit()
+  if (real) todayOpened.set(true)
 }
 
 /** Whether the app runs installed (its own window) on this device. */
@@ -64,10 +59,10 @@ async function readState(todayOpened: boolean, self: string): Promise<FirstDaySt
 
 /** The checklist's live state, or undefined while loading or when not `enabled` (nothing is read then). */
 export function useFirstDay(enabled = true): FirstDayState | undefined {
-  const todayOpened = useSyncExternalStore((fn) => { listeners.add(fn); return () => { listeners.delete(fn) } }, readTodayOpened, () => false)
+  const opened = todayOpened.use()
   const [self, setSelf] = useState<string | null>(null)
   useEffect(() => { if (enabled) void getDeviceId().then(setSelf) }, [enabled])
-  return useLiveQuery(() => (enabled && self ? readState(todayOpened, self) : undefined), [todayOpened, enabled, self])
+  return useLiveQuery(() => (enabled && self ? readState(opened, self) : undefined), [opened, enabled, self])
 }
 
 export const doneCount = (state: FirstDayState): number => FIRST_DAY_STEPS.filter((s) => state[s]).length

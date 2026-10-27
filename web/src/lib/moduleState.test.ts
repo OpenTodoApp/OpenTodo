@@ -30,8 +30,9 @@ describe('module state reset (T1)', () => {
 
 // Module-level `let` outside tests: each such file either registers a reset with
 // resettable() or is counted here. The count may only go down; a new stateful
-// module registers its reset instead (improvement plan T1).
-const UNREGISTERED_CEILING = 48
+// module registers its reset instead, or keeps its value in a lib/store.ts store,
+// which registers one itself (improvement plan T1).
+const UNREGISTERED_CEILING = 33
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

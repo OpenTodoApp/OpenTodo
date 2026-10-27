@@ -98,22 +98,26 @@ Opening an address that names an entity of another workspace (`?task=<id>`, `/pr
 - **THEN** the project opens in Work
 
 ### Requirement: Workspace membership and roles
-A workspace SHALL have exactly one `owner` (its creator until transferred) and any number of members with the role `admin` or `member`. In a workspace the user created, the owner and admins SHALL add an existing account by its exact email and change roles; the owner SHALL transfer ownership to a member and delete the workspace; any member but the owner SHALL leave; admins SHALL remove members, the owner anyone but themselves. The default workspace of an account SHALL have that account as its only member and SHALL accept no members. Membership SHALL be visible to every member and cached on each device; a device SHALL adopt the server's list on every sync. Removing a member SHALL also remove every project grant they hold in that workspace, directly or through its groups, with the effects of removal from those projects.
+A workspace SHALL have exactly one `owner` (its creator until transferred) and any number of members with the role `admin` or `member`. In a workspace the user created, the owner and admins SHALL add an existing account by its exact email and change roles; the owner SHALL transfer ownership to a member and delete the workspace; any member but the owner SHALL leave; admins SHALL remove members, the owner anyone but themselves. Adding by email SHALL follow the project-sharing rule "Membership invitations for strangers": an account that already shares a shared project or a created workspace with the caller is added at once (201), and any other address, with or without an account, answers 202 `{pending: true}` and becomes an invitation the person accepts or declines, listed as `pending` to the workspace's owner and admins. The default workspace of an account SHALL have that account as its only member and SHALL accept no members. Membership SHALL be visible to every member and cached on each device; a device SHALL adopt the server's list on every sync. Removing a member SHALL also remove every project grant they hold in that workspace, directly or through its groups, with the effects of removal from those projects.
 
 #### Scenario: Add by email
-- **WHEN** the owner of "Family" adds `bob@example.com`, an existing account, as `member`
+- **WHEN** the owner of "Family" adds `bob@example.com`, an existing account that already shares a project with the owner, as `member`
 - **THEN** Bob is listed in Family's members on every member's devices after sync, Bob's devices receive the workspace, and Bob's sidebar offers Family in its switcher
+
+#### Scenario: Add a stranger by email
+- **WHEN** the owner of "Family" adds `dan@example.com`, an existing account that shares nothing with the owner
+- **THEN** the response is 202 `{pending: true}`, Dan is not a member, Family's member list shows Dan's address as pending to the owner and admins, and Dan becomes a member only after accepting
 
 #### Scenario: Unknown email
 - **WHEN** a member is added by an email with no account on this server
-- **THEN** the response is 404 `user_not_found` and does not reveal any account's existence
+- **THEN** the response is the same 202 `{pending: true}` as for a stranger with an account, and does not reveal any account's existence
 
 #### Scenario: Member of the default workspace
 - **WHEN** a user tries to add someone to their default workspace
 - **THEN** the response is 409 `default_workspace` and nothing changes
 
 #### Scenario: Member cannot manage
-- **WHEN** an account with the role `member` adds, removes or changes the role of a member, or creates a group
+- **WHEN** an account with the role `member` adds, removes or changes the role of a member, cancels an invitation, or creates a group
 - **THEN** the response is 403 `forbidden`
 
 #### Scenario: Remove a member who holds grants
@@ -141,19 +145,19 @@ A workspace SHALL have exactly one `owner` (its creator until transferred) and a
 - **THEN** it is removed from every workspace and every grant, its default workspace and its personal data are deleted with it, and a workspace it owned is transferred to its oldest admin or, without one, deleted when empty and otherwise kept with the server owner as its owner
 
 ### Requirement: A created workspace is a closed directory
-In a workspace the user created, a project in that workspace SHALL be shareable only with members and groups of that workspace: adding anyone else to the project, or accepting a project invite link to it from an account outside the workspace, SHALL be refused. The assignee picker, the mention completion and the "add member" picker in such a project SHALL offer only the workspace's members, by name, from the local cache. In the default workspace, projects SHALL keep today's rule: any account on the server can be added by its exact email. A member of a shared project who is not a member of the project's workspace SHALL see the project in their default workspace, so a project shared before this change, or moved later, stays reachable for everyone on it.
+In a workspace the user created, a project in that workspace SHALL be shareable only with members and groups of that workspace: adding anyone else to the project, or accepting a project invite link to it from an account outside the workspace, SHALL be refused, and adding an address by email that is not in the directory SHALL answer 409 `not_in_workspace` whether or not an account has it. The assignee picker, the mention completion and the "add member" picker in such a project SHALL offer only the workspace's members, by name, from the local cache. In the default workspace, projects SHALL keep the rule of project sharing: any account on the server can be added by its exact email, at once when it already shares something with the caller and otherwise after accepting an invitation. A member of a shared project who is not a member of the project's workspace SHALL see the project in their default workspace, so a project shared before this change, or moved later, stays reachable for everyone on it.
 
 #### Scenario: Share with an outsider
-- **WHEN** the owner of "Website" in "Work" adds `dan@example.com`, an account that is not a member of Work
-- **THEN** the response is 409 `not_in_workspace` and Dan is not added
+- **WHEN** the owner of "Website" in "Work" adds `dan@example.com`, an account that is not a member of Work, or `nobody@example.com`, an address without an account
+- **THEN** both responses are 409 `not_in_workspace` and nobody is added or invited
 
 #### Scenario: Picker lists the directory
 - **WHEN** an admin opens the share dialog of a project in "Work", which has eight members
 - **THEN** the people picker lists those eight by name and avatar, filterable by typing, without an email field, and works offline from the cache
 
 #### Scenario: Default workspace keeps today's rule
-- **WHEN** a user adds `bob@example.com` to a project in their default workspace
-- **THEN** Bob is added exactly as before this change, and Bob sees the project in his own default workspace
+- **WHEN** a user adds `bob@example.com`, with whom they already share a project, to another project in their default workspace
+- **THEN** Bob is added at once, and Bob sees the project in his own default workspace
 
 #### Scenario: Invite link from outside
 - **WHEN** an account that is not a member of "Work" accepts a project invite link to a project in Work
@@ -245,7 +249,7 @@ The owner of a project SHALL move it to another of their workspaces from the pro
 - **THEN** the sidebar reflects the move at once and the operations are uploaded when the network returns
 
 ### Requirement: Workspace routes
-The API SHALL expose `GET`/`POST /api/v1/workspaces`, `GET`/`PATCH`/`DELETE /api/v1/workspaces/{id}`, `POST .../leave`, `POST .../transfer`, `GET`/`POST .../members`, `PATCH`/`DELETE .../members/{userId}`, `GET`/`POST .../groups`, `PATCH`/`DELETE .../groups/{groupId}`, `PUT`/`DELETE .../groups/{groupId}/members/{userId}`, and the invite routes above. All SHALL require a session or a `full` or `admin` token, apply the role rules above, return the JSON error envelope on failure, and be refused with 403 `demo_restricted` on a demo instance before authentication (except the anonymous preview, which answers 404 there). Project group grants SHALL go through `POST /api/v1/projects/{id}/grants` and `PATCH`/`DELETE .../grants/{groupId}` with the project's member-management rules. Every membership, role, group and transfer change SHALL be recorded as an audit event carrying ids only.
+The API SHALL expose `GET`/`POST /api/v1/workspaces`, `GET`/`PATCH`/`DELETE /api/v1/workspaces/{id}`, `POST .../leave`, `POST .../transfer`, `GET`/`POST .../members`, `PATCH`/`DELETE .../members/{userId}`, `DELETE .../member-invitations/{invitationId}`, `GET`/`POST .../groups`, `PATCH`/`DELETE .../groups/{groupId}`, `PUT`/`DELETE .../groups/{groupId}/members/{userId}`, and the invite routes above. All SHALL require a session or a `full` or `admin` token, apply the role rules above, return the JSON error envelope on failure, and be refused with 403 `demo_restricted` on a demo instance before authentication (except the anonymous preview, which answers 404 there). The workspace and its member list SHALL carry `pending`, the open invitations, for the owner and admins only. Project group grants SHALL go through `POST /api/v1/projects/{id}/grants` and `PATCH`/`DELETE .../grants/{groupId}` with the project's member-management rules. Every membership, role, group, invitation and transfer change SHALL be recorded as an audit event carrying ids only.
 
 #### Scenario: List workspaces
 - **WHEN** a user who owns "Personal" and "Work" and is a member of "Family" lists workspaces

@@ -1,11 +1,13 @@
 // node --test scripts/deploy/podman.test.mjs
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { configVariables, loadFacts, readText } from './common.mjs'
+import { configVariables, loadFacts, readText, releaseVersion } from './common.mjs'
 import { check, checkContainer, CONTAINER, parseUnit, VOLUME } from './podman.mjs'
 
 const facts = loadFacts()
 const ctx = { facts, configVars: configVariables(), changelog: readText('CHANGELOG.md') }
+/** The latest release in CHANGELOG.md, which the pinned templates name. */
+const V = releaseVersion(ctx.changelog)
 const unit = readText(CONTAINER)
 const volume = readText(VOLUME)
 const has = (errors, re) => assert.ok(errors.some((e) => re.test(e)), `expected an error matching ${re}, got:\n${errors.join('\n')}`)
@@ -32,7 +34,7 @@ test('podman: strict unit syntax', () => {
 
 test('podman: image policy and auto-update', () => {
   has(edit('Image=ghcr.io/opentodoapp/opentodo:stable', 'Image=ghcr.io/opentodoapp/opentodo:latest'), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
-  has(edit('Image=ghcr.io/opentodoapp/opentodo:stable', 'Image=ghcr.io/opentodoapp/opentodo:0.14.2'), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
+  has(edit('Image=ghcr.io/opentodoapp/opentodo:stable', `Image=ghcr.io/opentodoapp/opentodo:${V}`), /image must be ghcr\.io\/opentodoapp\/opentodo:stable/)
   has(edit('AutoUpdate=registry', 'AutoUpdate=local'), /AutoUpdate must be registry/)
   has(edit('AutoUpdate=registry\n', ''), /AutoUpdate must be registry/)
 })

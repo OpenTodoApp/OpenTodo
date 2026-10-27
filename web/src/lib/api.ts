@@ -17,11 +17,13 @@ import type {
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
+  MemberInvitation, PendingAnswer,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, GoogleClientSetting,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
   AutomationsSetting, RuleRun, RulesStatus,
 } from './types'
+import { createSignal } from './store'
 
 export { fetchWithTimeout, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
 
@@ -68,7 +70,7 @@ export interface MapsSetting {
 }
 let reauthHandler: ReauthHandler | null = null
 let reauthInFlight: Promise<boolean> | null = null
-const enrolmentListeners = new Set<() => void>()
+const enrolment = createSignal()
 
 /** Registers the re-authentication prompt; returns an unregister function. */
 export function setReauthHandler(h: ReauthHandler): () => void {
@@ -79,10 +81,7 @@ export function setReauthHandler(h: ReauthHandler): () => void {
 }
 
 /** Subscribes to "this session must enrol a second factor"; returns an unsubscribe function. */
-export function onEnrolmentRequired(fn: () => void): () => void {
-  enrolmentListeners.add(fn)
-  return () => enrolmentListeners.delete(fn)
-}
+export const onEnrolmentRequired = enrolment.subscribe
 
 /**
  * Opens the registered re-authentication prompt without a refused request, for
@@ -117,7 +116,7 @@ export async function request<T>(method: string, path: string, body?: unknown, r
       if (err.code === 'reauth_required' && !retried && (await reauthenticate())) {
         return request<T>(method, path, body, true, opts)
       }
-      if (err.code === 'mfa_enrolment_required') enrolmentListeners.forEach((fn) => fn())
+      if (err.code === 'mfa_enrolment_required') enrolment.notify()
     }
     throw err
   }
@@ -235,6 +234,19 @@ async function parse<T>(res: Response): Promise<T> {
   return data as T
 }
 
+/**
+ * One owner switch at /api/v1/settings/<name>: `get` reads it and `put` sets
+ * `{ [field]: on }`. The client side of the server's `switchRoutes`
+ * (internal/httpapi/switch.go); every switch route goes through it.
+ */
+export function ownerSwitch<Get = { enabled: boolean }, Put = Get>(name: string, field = 'enabled') {
+  const path = `/api/v1/settings/${name}`
+  return {
+    get: () => request<Get>('GET', path),
+    put: (on: boolean) => request<Put>('PUT', path, { [field]: on }),
+  }
+}
+
 export const api = {
   authStatus: () => request<AuthStatus>('GET', '/api/v1/auth/status'),
   /** Hosted servers only: the owner's download of the whole server (multi-tenant-host). */
@@ -296,8 +308,16 @@ export const api = {
   getProjectAgentAccess: (projectId: string) => request<{ kept_away: boolean; inherited_from: string | null }>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/agent-access`),
   setProjectAgentAccess: (projectId: string, keptAway: boolean) => request<{ kept_away: boolean; inherited_from: string | null }>('PUT', `/api/v1/projects/${encodeURIComponent(projectId)}/agent-access`, { kept_away: keptAway }),
   listMembers: (projectId: string) => request<Membership>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/members`),
+  /** 201 with the membership, or 202 `{pending: true}` when the person is asked first (member-add-consent). */
   addMember: (projectId: string, email: string, role: ProjectRole) =>
-    request<Membership>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/members`, { email, role }),
+    request<Membership | PendingAnswer>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/members`, { email, role }),
+  cancelProjectInvitation: (projectId: string, invitationId: string) =>
+    request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/member-invitations/${encodeURIComponent(invitationId)}`),
+  // Membership invitations sent to this account (member-add-consent).
+  listMemberInvitations: () => request<{ invitations: MemberInvitation[] }>('GET', '/api/v1/me/member-invitations'),
+  acceptMemberInvitation: (id: string) =>
+    request<{ kind: MemberInvitation['kind']; targetId: string; role: MemberInvitation['role'] }>('POST', `/api/v1/me/member-invitations/${encodeURIComponent(id)}/accept`, {}),
+  declineMemberInvitation: (id: string) => request<void>('POST', `/api/v1/me/member-invitations/${encodeURIComponent(id)}/decline`, {}),
   setMemberRole: (projectId: string, userId: string, role: ProjectRole) =>
     request<Membership>('PATCH', `/api/v1/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`, { role }),
   removeMember: (projectId: string, userId: string) =>
@@ -359,8 +379,7 @@ export const api = {
   }),
   deleteEncryptionKeys: () => request<void>('DELETE', '/api/v1/encryption/keys'),
   purgeEncryptionHistory: () => request<{ purged: number; notice: string }>('POST', '/api/v1/encryption/purge-history'),
-  caldavSetting: () =>request<CaldavSetting>('GET', '/api/v1/settings/caldav'),
-  setCaldavEnabled: (enabled: boolean) => request<CaldavSetting>('PUT', '/api/v1/settings/caldav', { enabled }),
+  caldavSwitch: ownerSwitch<CaldavSetting>('caldav'),
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
   createAppPassword: (name: string) => request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name }),
   revokeAppPassword: (id: string) => request<void>('DELETE', `/api/v1/app-passwords/${encodeURIComponent(id)}`),
@@ -416,9 +435,7 @@ export const api = {
   previewProjectInvite: (token: string) => request<ProjectInvitePreview>('GET', `/api/v1/project-invites/${encodeURIComponent(token)}`),
   acceptProjectInvite: (token: string) =>
     request<{ projectId: string; role: ProjectRole }>('POST', `/api/v1/project-invites/${encodeURIComponent(token)}/accept`, {}),
-  getProjectInviteSettings: () => request<{ membersCanInviteNewPeople: boolean }>('GET', '/api/v1/settings/project-invites'),
-  putProjectInviteSettings: (membersCanInviteNewPeople: boolean) =>
-    request<{ membersCanInviteNewPeople: boolean }>('PUT', '/api/v1/settings/project-invites', { membersCanInviteNewPeople }),
+  projectInvitesSwitch: ownerSwitch<{ membersCanInviteNewPeople: boolean }>('project-invites', 'membersCanInviteNewPeople'),
 
   // User administration (OpenSpec `user-management`): owner and admins. Every
   // mutating route is a sensitive one (reauth_required is answered by the
@@ -488,8 +505,7 @@ export const api = {
   putBrandingLogo: (logo: Blob) => sendRaw<Branding>('PUT', '/api/v1/settings/branding/logo', logo),
   deleteBrandingLogo: () => request<Branding>('DELETE', '/api/v1/settings/branding/logo'),
   // Calendar feeds (OpenSpec calendar-feeds).
-  calendarFeedsSetting: () => request<{ enabled: boolean }>('GET', '/api/v1/settings/calendar-feeds'),
-  setCalendarFeedsSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/calendar-feeds', { enabled }),
+  calendarFeedsSwitch: ownerSwitch('calendar-feeds'),
   calendarSubscriptions: () => request<{ subscriptions: CalendarSubscription[] }>('GET', '/api/v1/calendar-feeds/subscriptions'),
   createCalendarSubscription: (body: { url: string; name?: string; color?: string }) =>
     request<{ subscription: CalendarSubscription }>('POST', '/api/v1/calendar-feeds/subscriptions', body),
@@ -504,8 +520,7 @@ export const api = {
   rotateCalendarFeed: () => request<{ feed: CalendarFeed; url: string }>('POST', '/api/v1/calendar-feeds/feed'),
   revokeCalendarFeed: () => request<void>('DELETE', '/api/v1/calendar-feeds/feed'),
   // Calendar sync (OpenSpec change calendar-two-way): connections are server data, never ops.
-  getCalendarSyncSetting: () => request<{ enabled: boolean; google: boolean; max_connections: number }>('GET', '/api/v1/settings/calendar-sync'),
-  putCalendarSyncSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/calendar-sync', { enabled }),
+  calendarSyncSwitch: ownerSwitch<{ enabled: boolean; google: boolean; max_connections: number }, { enabled: boolean }>('calendar-sync'),
   getGoogleClient: () => request<GoogleClientSetting>('GET', '/api/v1/settings/calendar-sync/google'),
   putGoogleClient: (body: { client_id: string; client_secret?: string }) => request<GoogleClientSetting>('PUT', '/api/v1/settings/calendar-sync/google', body),
   listCalendarConnections: () => request<{ connections: CalendarConnection[] }>('GET', '/api/v1/calendar-sync/connections'),
@@ -530,10 +545,8 @@ export const api = {
   myRules: () => request<RulesStatus>('GET', '/api/v1/me/rules'),
   ruleRuns: (id: string) => request<{ runs: RuleRun[] }>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs`),
   pauseRules: (paused: boolean) => request<{ enabled: boolean; paused: boolean }>('PUT', '/api/v1/me/rules/paused', { paused }),
-  getAutomationsSetting: () => request<AutomationsSetting>('GET', '/api/v1/settings/automations'),
-  putAutomationsSetting: (enabled: boolean) => request<AutomationsSetting>('PUT', '/api/v1/settings/automations', { enabled }),
-  getIssuesSetting: () => request<{ enabled: boolean }>('GET', '/api/v1/settings/issues'),
-  putIssuesSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/issues', { enabled }),
+  automationsSwitch: ownerSwitch<AutomationsSetting>('automations'),
+  issuesSwitch: ownerSwitch('issues'),
   listIssueConnections: () => request<{ connections: IssueConnection[] }>('GET', '/api/v1/issues/connections'),
   createIssueConnection: (body: IssueConnectionInput) => request<{ connection: IssueConnection }>('POST', '/api/v1/issues/connections', body),
   patchIssueConnection: (id: string, body: IssueConnectionInput) =>

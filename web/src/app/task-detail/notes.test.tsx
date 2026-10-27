@@ -13,6 +13,19 @@ setupTaskDetailTests()
 
 const editor = (root: ParentNode) => root.querySelector<HTMLElement>('.notes-editor[contenteditable]')
 
+describe('notes in full (task-panel-notes-below 1.2, GitHub issue 444)', () => {
+  it('a forty-line note is in the panel to its last line, with no clamp and no Show all', async () => {
+    const lines = Array.from({ length: 40 }, (_, i) => `Line ${i + 1} of the plan.`)
+    const id = await createTask({ title: 'Long plan', description: lines.join('\n\n') })
+    const { container, unmount } = await open(id)
+    await waitFor(() => !!editor(container)?.textContent?.includes('Line 40 of the plan.'), 'the whole note')
+    expect(container.querySelector('[data-clamped]')).toBeNull()
+    expect(container.querySelector('.notes-clamp')).toBeNull()
+    expect([...container.querySelectorAll('button')].some((b) => b.textContent === 'Show all')).toBe(false)
+    await unmount()
+  })
+})
+
 describe('notes', () => {
   it('an empty note is one placeholder line that becomes the editor on focus and goes quiet again on blur', async () => {
     const id = await createTask({ title: 'Plan' })

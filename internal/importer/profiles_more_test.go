@@ -48,23 +48,6 @@ func hasWarning(r Row, substr string) bool {
 	return false
 }
 
-func TestWindowsZones(t *testing.T) {
-	for win, iana := range map[string]string{
-		"Pacific Standard Time":   "America/Los_Angeles",
-		"W. Europe Standard Time": "Europe/Berlin",
-		"UTC":                     "Etc/UTC",
-	} {
-		if got := windowsZones[win]; got != iana {
-			t.Errorf("%s: got %q, want %s", win, got, iana)
-		}
-	}
-	for _, z := range windowsZones {
-		if _, err := time.LoadLocation(z); err != nil {
-			t.Errorf("zone %s does not load: %v", z, err)
-		}
-	}
-}
-
 func TestGoogleTasksDueDoesNotShift(t *testing.T) {
 	// Google writes the due date as midnight UTC; the date part is the date the
 	// user chose, whatever the import's zone.

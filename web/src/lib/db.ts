@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
 import { forgetShellData } from './shell'
 import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
+import { createStore } from './store'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -439,8 +440,7 @@ export function useDatabase(name: string): OpenTodoDB {
 
 // ---- a newer release in another tab (client-sync-robustness) ----
 
-let outdated = false
-const outdatedListeners = new Set<() => void>()
+const outdated = createStore('databaseOutdated', false)
 
 /**
  * Another tab opened the database with a newer schema: this tab closes its
@@ -450,23 +450,17 @@ const outdatedListeners = new Set<() => void>()
 function watchVersionChange(d: OpenTodoDB): OpenTodoDB {
   d.on('versionchange', () => {
     d.close()
-    outdated = true
-    for (const fn of outdatedListeners) fn()
+    outdated.set(true)
     return false
   })
   return d
 }
 
 /** True once a newer version of the app took over the local database in another tab. */
-export function databaseOutdated(): boolean {
-  return outdated
-}
+export const databaseOutdated = outdated.get
 
 /** Subscribes to {@link databaseOutdated}; returns an unsubscribe function. */
-export function onDatabaseOutdated(fn: () => void): () => void {
-  outdatedListeners.add(fn)
-  return () => outdatedListeners.delete(fn)
-}
+export const onDatabaseOutdated = outdated.subscribe
 
 /**
  * Asks the browser to keep this site's storage under pressure (Safari evicts

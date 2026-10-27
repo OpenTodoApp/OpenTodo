@@ -47,6 +47,8 @@ func allConstructors() []Event {
 		WorkspaceGroupMemberAdded("u", "v", "w", "g"), WorkspaceGroupMemberRemoved("u", "v", "w", "g"),
 		ProjectMemberAdded("u", "v", "p", "editor"), ProjectGrantAdded("u", "p", "g", "editor"), ProjectGrantChanged("u", "p", "g", "editor", "viewer"), ProjectGrantRemoved("u", "p", "g"),
 		WorkspaceInviteCreated("u", "i", "w", "member", "x@example.com"), WorkspaceInviteAccepted("v", "u", "i", "w", "member"), WorkspaceInviteRevoked("u", "i", "w"),
+		MemberInvitationCreated("u", "v", "i", "project", "p", "editor"), MemberInvitationAccepted("v", "u", "i", "workspace", "w", "member"),
+		MemberInvitationDeclined("v", "u", "i", "project", "p", "viewer"), MemberInvitationCancelled("u", "", "i", "project", "p", "editor"),
 		MFAEnrolled("u", "totp"),
 		MFADisabled("o", "u", "totp"),
 		MFAReset("o", "u"),
@@ -281,23 +283,26 @@ func TestPruneByRetention(t *testing.T) {
 	}
 }
 
-func TestRunPrunerRunsAtStartup(t *testing.T) {
+// TestNextPruneIsTheRetentionDeadline: the housekeeping job (internal/jobs)
+// prunes when the oldest event passes the retention, at startup when it
+// already has.
+func TestNextPruneIsTheRetentionDeadline(t *testing.T) {
 	r, db := newRecorder(t)
-	if _, err := db.Exec("INSERT INTO audit_events(ts,name,outcome) VALUES(?, 'logout', 'success')", time.Now().Add(-200*24*time.Hour).UnixMilli()); err != nil {
+	ctx := context.Background()
+	if _, ok, err := r.NextPrune(ctx); ok || err != nil {
+		t.Fatalf("empty log has a deadline: %v %v", ok, err)
+	}
+	old := time.Now().Add(-200 * 24 * time.Hour)
+	if _, err := db.Exec("INSERT INTO audit_events(ts,name,outcome) VALUES(?, 'logout', 'success')", old.UnixMilli()); err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan struct{})
-	go func() { r.RunPruner(ctx, time.Hour); close(done) }()
-	deadline := time.Now().Add(2 * time.Second)
-	for count(t, db, "1=1") != 0 {
-		if time.Now().After(deadline) {
-			t.Fatal("startup prune did not run")
-		}
-		time.Sleep(10 * time.Millisecond)
+	at, ok, err := r.NextPrune(ctx)
+	if err != nil || !ok || !at.Equal(time.UnixMilli(old.UnixMilli()).Add(90*24*time.Hour)) || at.After(time.Now()) {
+		t.Fatalf("next prune %v %v %v, want past: 90 days after the event", at, ok, err)
 	}
-	cancel()
-	<-done
+	if n, err := r.Prune(ctx); err != nil || n != 1 || count(t, db, "1=1") != 0 {
+		t.Fatalf("prune: %d %v", n, err)
+	}
 }
 
 func TestListFiltersAndCursor(t *testing.T) {

@@ -36,6 +36,36 @@ describe('the workspace control', () => {
     await r.unmount()
   })
 
+  it('One workspace: the app name and the workspace name sit on two lines, the accessible name is unchanged (issue 492)', async () => {
+    await storeWorkspaces([entry('w-p', { default: true, name: 'Personal' })])
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} />)
+    const trigger = () => r.container.querySelector<HTMLElement>('[data-workspace-trigger]')!
+    await waitFor(() => !!trigger().querySelector('[data-workspace-lines]'))
+    const lines = trigger().querySelector('[data-workspace-lines]')!
+    expect(lines.querySelector('[data-workspace-app]')!.textContent!.trim()).toBe('OpenTodo')
+    expect(lines.querySelector('[data-workspace-name]')!.textContent).toBe('Personal')
+    // The visible text reads "OpenTodo Personal", so it stays inside the accessible name
+    // once punctuation is ignored (axe label-content-name-mismatch).
+    expect(lines.textContent).toBe('OpenTodo Personal')
+    expect(lines.querySelector('[data-workspace-name]')!.className).toMatch(/\btruncate\b/)
+    expect(lines.querySelector('[data-workspace-app]')!.className).toMatch(/\btruncate\b/)
+    expect(visibleText(trigger())).not.toContain('·')
+    expect(trigger().getAttribute('aria-label')).toBe('Workspace: OpenTodo · Personal')
+    await r.unmount()
+  })
+
+  it('Several workspaces: one line with the current workspace name only', async () => {
+    await storeWorkspaces([entry('w-p', { default: true, name: 'Personal' }), entry('w-work', { name: 'Work' })])
+    await switchTo('w-work')
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} />)
+    const trigger = () => r.container.querySelector<HTMLElement>('[data-workspace-trigger]')!
+    await waitFor(() => visibleText(trigger()).includes('Work'))
+    expect(trigger().querySelector('[data-workspace-lines]')).toBeNull()
+    expect(trigger().querySelector('[data-workspace-name]')!.textContent).toBe('Work')
+    expect(visibleText(trigger())).not.toContain('OpenTodo')
+    await r.unmount()
+  })
+
   it('switching shows the other workspace\'s projects, and the choice stays on the device', async () => {
     await storeWorkspaces([entry('w-p', { default: true, name: 'Personal' }), entry('w-work', { name: 'Work' })])
     await createProject({ name: 'Garden' })

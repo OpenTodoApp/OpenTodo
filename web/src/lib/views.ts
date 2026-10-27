@@ -2,6 +2,7 @@
 // and sort options, pinned to the sidebar, composed into dashboards. Every write is
 // an op through mutate(); evaluation reuses the filter compiler from lib/filter, so a
 // saved view behaves exactly like the same query typed into the Filter view.
+import { useLiveQuery } from 'dexie-react-hooks'
 import { addDaysISO, compareDue, formatDateHeading, localDate, localDueOf } from './dates'
 import type { RowLayout } from './rowLayout'
 import { db, getMeta, setMeta } from './db'
@@ -681,4 +682,9 @@ export async function resolveStartView(): Promise<ResolvedStart> {
     return { kind: 'display', path }
   }
   return { kind: 'builtin', view: (BUILTIN_START_VIEWS as readonly string[]).includes(v) ? (v as BuiltinStartView) : 'inbox', removed: false }
+}
+
+/** This device's start view (local meta, never synced). */
+export function useStartView(): StartView {
+  return useLiveQuery(() => getStartView(), [], 'inbox' as StartView)
 }

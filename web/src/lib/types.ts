@@ -1539,6 +1539,7 @@ export const AUDIT_EVENT_NAMES = [
   'workspace.group_created', 'workspace.group_deleted', 'workspace.group_member_added', 'workspace.group_member_removed',
   'project.member_added', 'project.grant_added', 'project.grant_changed', 'project.grant_removed',
   'workspace_invite.created', 'workspace_invite.accepted', 'workspace_invite.revoked',
+  'member_invitation.created', 'member_invitation.accepted', 'member_invitation.declined', 'member_invitation.cancelled',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 
@@ -1708,6 +1709,40 @@ export interface Membership {
   members: ProjectMember[]
   /** The project's group grants (workspaces); only in the member route's answer. */
   grants?: { groupId: string; name: string; role: ProjectRole }[]
+  /** Open invitations (member-add-consent); only in the member route's answer, for owners and admins. */
+  pending?: PendingMember[]
+}
+
+/**
+ * An open membership invitation as a project's or workspace's owner and admins
+ * see it (OpenSpec change member-add-consent). It never says whether the address
+ * has an account: an address without one is listed the same way.
+ */
+export interface PendingMember {
+  id: string
+  email: string
+  role: ProjectRole | WorkspaceRole
+  invitedBy: string
+  createdAt: number
+  expiresAt: number
+}
+
+/** One of the signed-in account's open invitations (GET /api/v1/me/member-invitations). */
+export interface MemberInvitation {
+  id: string
+  kind: 'project' | 'workspace'
+  targetId: string
+  targetName: string
+  role: ProjectRole | WorkspaceRole
+  inviterId: string
+  inviterName: string
+  createdAt: number
+  expiresAt: number
+}
+
+/** The answer of an add by email that became an invitation (202). */
+export interface PendingAnswer {
+  pending: true
 }
 
 // ---- workspaces (OpenSpec `workspaces`) ----
@@ -1868,6 +1903,22 @@ export interface UnblockedPayload {
   at: number
 }
 
+/** Payload of a `member_invitation` notification (member-add-consent): someone asks to add the recipient. */
+export interface MemberInvitationPayload {
+  invitationId: string
+  target: 'project' | 'workspace'
+  targetId: string
+  targetName?: string
+  inviterId: string
+  inviterName: string
+  role: ProjectRole | WorkspaceRole
+  at: number
+  taskId?: undefined
+  projectId?: undefined
+  projectName?: undefined
+  actorName?: undefined
+}
+
 /**
  * An in-app notification (GET /api/v1/notifications), cached in the local
  * `notifications` table so it shows offline. Server-side account data, not an op.
@@ -1876,8 +1927,8 @@ export interface UnblockedPayload {
 export interface AppNotification {
   id: string
   kind: string
-  /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`, PagePayload for `page_replied` and `page_completed`. */
-  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload
+  /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`, PagePayload for `page_replied` and `page_completed`, MemberInvitationPayload for `member_invitation`. */
+  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload | MemberInvitationPayload
   createdAt: number
   readAt: number | null
   readPending?: boolean

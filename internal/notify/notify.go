@@ -224,3 +224,41 @@ func (m Multi) RulePaused(ctx context.Context, e RuleEvent) {
 		}
 	}
 }
+
+// KindMemberInvitation: someone who shares nothing with the recipient asked to
+// add them to a project or workspace (OpenSpec change member-add-consent, D5).
+const KindMemberInvitation = "member_invitation"
+
+// MemberInvited is emitted once when an invitation to an existing account is
+// stored. Target is "project" or "workspace"; TargetName is the project's or
+// workspace's name as shown to people (e2ee.Display for a project).
+type MemberInvited struct {
+	RecipientID  string `json:"-"`
+	InvitationID string `json:"invitationId"`
+	Target       string `json:"target"`
+	TargetID     string `json:"targetId"`
+	TargetName   string `json:"targetName,omitempty"`
+	InviterID    string `json:"inviterId"`
+	InviterName  string `json:"inviterName"`
+	Role         string `json:"role"`
+	At           int64  `json:"at"`
+}
+
+// InvitationSink is implemented by sinks that also handle membership
+// invitations; like MentionSink it is separate from Sink so existing sinks
+// keep compiling.
+type InvitationSink interface {
+	MemberInvited(ctx context.Context, e MemberInvited)
+}
+
+// MemberInvited fans the event out to every sink that implements InvitationSink.
+func (m Multi) MemberInvited(ctx context.Context, e MemberInvited) {
+	for _, s := range m {
+		if is, ok := s.(InvitationSink); ok {
+			is.MemberInvited(ctx, e)
+		}
+	}
+}
+
+// MemberInvited implements InvitationSink.
+func (Nop) MemberInvited(context.Context, MemberInvited) {}

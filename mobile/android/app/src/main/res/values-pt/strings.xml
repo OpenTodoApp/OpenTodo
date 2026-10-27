@@ -40,4 +40,10 @@
     <string name="widget_untitled">Tarefa</string>
     <string name="widget_more">+ mais %1$d</string>
     <string name="setup_old_webview">O Android System WebView deste telemóvel é antigo (versão %1$s). Atualize-o na loja de apps para que o OpenTodo funcione por completo.</string>
+    <string name="site_bar_host">Iniciando sessão em %1$s</string>
+    <string name="site_bar_close">Voltar ao OpenTodo</string>
+    <string name="setup_login_wall">Este servidor está atrás de uma página de login. Entre aqui; o app se conecta assim que você passar.</string>
+    <string name="setup_web_page">Este endereço responde com uma página web, não como um servidor OpenTodo. Se o servidor estiver atrás de uma página de login, entre aqui; caso contrário, verifique o endereço.</string>
+    <string name="setup_sign_in">Entrar aqui</string>
+    <string name="error_sign_in">Seu servidor está atrás de uma página de login, e o login não continuou no app. Entre novamente aqui.</string>
 </resources>

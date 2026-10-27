@@ -83,6 +83,10 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'workspace_invite.created': msg('Workspace invite link created'),
   'workspace_invite.accepted': msg('Joined a workspace with a link'),
   'workspace_invite.revoked': msg('Workspace invite link revoked'),
+  'member_invitation.created': msg('Invitation to join sent'),
+  'member_invitation.accepted': msg('Invitation to join accepted'),
+  'member_invitation.declined': msg('Invitation to join declined'),
+  'member_invitation.cancelled': msg('Invitation to join cancelled'),
 })
 
 const REASONS = translatedMap<string>({
@@ -121,6 +125,7 @@ const EMAIL_KINDS = translatedMap<string>({
   test: msg('Test message'),
   email_change: msg('Email change confirmation'),
   email_change_notice: msg('Email change notice'),
+  member_invitation: msg('Invitation to join'),
 })
 
 const SETTINGS = translatedMap<string>({

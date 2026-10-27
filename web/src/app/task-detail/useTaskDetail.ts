@@ -2,13 +2,12 @@
 // design D5): the live task and its relatives, the title draft that a change from
 // another device does not overwrite, the actions of the header menu, task pages'
 // publish state, and the `panel` keys (1–4, y, Shift+K) while focus is inside.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
-import { useSubtasks, useTask } from '../../lib/localData'
+import { useSubtasks, useTask, useMembershipMapOrLoading } from '../../lib/localData'
 import { markTaskNotificationsRead } from '../../lib/notifications'
 import { skipOccurrence, updateTask } from '../../lib/ops'
-import { membershipMap, roleOf } from '../../lib/sharing'
+import { roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import type { EditPlan } from '../../lib/nlp/edit'
 import type { Label, Priority, Project, Task } from '../../lib/types'
@@ -20,6 +19,7 @@ import { useShortcutScope } from '../shortcuts'
 import { commitTitleEdit } from '../titleEdit'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { useTaskPageStatus } from './taskPageStatus'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** The link that opens a task in the app: its page (task-full-page). */
 export function taskLink(id: string, origin = typeof location === 'undefined' ? '' : location.origin): string {
@@ -50,7 +50,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
   const parent = useTask(task?.parent_id)
   const series = useTask(task?.series_id)
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
-  const memberships = useLiveQuery(() => membershipMap(), [])
+  const memberships = useMembershipMapOrLoading()
   // Task pages (task-pages): the task's owner, or the owner and admins of its shared
   // project, publish a top-level task; the status comes from the server when online.
   const role = memberships ? roleOf(task?.project_id, memberships) : null
@@ -73,7 +73,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
     titleBase.current = task.title
     setTitle(task.title)
   }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps -- reacts to the stored title only; the draft is read, not a trigger
-  useEffect(() => setCopied(false), [taskId])
+  useResetOnChange([taskId], () => setCopied(false))
   // The title grows to two lines, then stops (it scrolls inside itself while being edited).
   useLayoutEffect(() => {
     const el = titleField.current

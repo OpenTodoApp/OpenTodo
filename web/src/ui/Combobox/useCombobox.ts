@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { pickScores, rankBy, recordPick } from '../../lib/pickRank'
 import { matchPrepared, prepare, prepareQuery, type Match } from './match'
 import { t } from '../../lib/i18n'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export type AsyncSource<T> = (query: string, signal: AbortSignal) => Promise<{ items: T[]; hasMore?: boolean }>
 
@@ -163,7 +164,7 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
   const more = cfg.limit !== undefined ? Math.max(0, allOptions.length - cfg.limit) : 0
   const options = more ? allOptions.slice(0, cfg.limit) : allOptions
 
-  useEffect(() => { setActive(0) }, [query])
+  useResetOnChange([query], () => setActive(0))
   const activeIndex = Math.min(active, Math.max(0, options.length - 1))
 
   // Result count for assistive technology, after typing pauses.

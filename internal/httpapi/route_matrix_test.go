@@ -81,10 +81,9 @@ func newMatrixEnv(t *testing.T) *matrixEnv {
 	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Shared task", "project_id": m.sharedProject})
 	e.mustStatus(resp, 201, out)
 	m.sharedTask = out["id"].(string)
-	resp, out = e.do("POST", "/api/v1/projects/"+m.sharedProject+"/members", map[string]any{"email": "member@example.com", "role": "viewer"})
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		t.Fatalf("share as viewer: %d %v", resp.StatusCode, out)
-	}
+	// The member shares nothing with the owner yet, so the add is an
+	// invitation the member accepts (member-add-consent).
+	addByEmail(e, m.member, "/api/v1/projects/"+m.sharedProject+"/members", "member@example.com", "viewer")
 	m.anon = newClientAt(e, "203.0.113.42")
 	return m
 }

@@ -9,7 +9,7 @@
 // moving past the month's edge turns the month. One cell holds the tab stop.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Icon, IconButton, type IconName } from '../ui'
-import { addDaysISO, logicalToday, weekday, dateLocaleOf } from '../lib/dates'
+import { addDaysISO, logicalToday, weekday, monthName } from '../lib/dates'
 import { monthGrid, type DayState } from '../lib/habits'
 import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -44,13 +44,13 @@ function shiftMonth(iso: string, n: number): string {
   return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-const monthName = (year: number, month: number, withYear: boolean) =>
-  new Intl.DateTimeFormat(dateLocaleOf(), { month: 'long', ...(withYear ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, 1)))
+const monthNameOf = (year: number, month: number, withYear: boolean) =>
+  monthName(`${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`, 'long', withYear)
 
 /** "6 October, skipped": the cell's accessible name. */
 export function dayLabel(iso: string, state: DayState): string {
   const { year, month } = monthOf(iso)
-  return `${Number(iso.slice(8, 10))} ${monthName(year, month, false)}, ${STATE_TEXT[state]}`
+  return `${Number(iso.slice(8, 10))} ${monthNameOf(year, month, false)}, ${STATE_TEXT[state]}`
 }
 
 export function HabitHistory({ series, records, today = logicalToday() }: { series: Task; records: readonly Task[]; today?: string }) {
@@ -97,7 +97,7 @@ export function HabitHistory({ series, records, today = logicalToday() }: { seri
     go(next())
   }
 
-  const heading = monthName(year, month, true)
+  const heading = monthNameOf(year, month, true)
   const headingId = `habit-month-${series.id}`
   return (
     <div className="w-fit space-y-1" data-habit-history>

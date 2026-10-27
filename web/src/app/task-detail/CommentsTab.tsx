@@ -3,7 +3,6 @@
 // behaviour"): threads oldest first, chat style, with the composer after the
 // newest one. Built from local storage, so it reads and writes offline. Viewers
 // may comment, so it ignores the panel's read-only mode.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { forwardRef, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { useAttachmentLimits } from '../../lib/attachments'
@@ -11,10 +10,10 @@ import {
   canDeleteComment, canEditComment, createComment, deleteComment, editComment, type MentionTarget, type ReactionName, type Thread, threadOrder,
   threadVisible, toggleReaction,
 } from '../../lib/comments'
-import { useCommentAttachments, useCommentRows } from '../../lib/localData'
+import { useCommentAttachments, useCommentRows, useMembershipMap } from '../../lib/localData'
 import { useDemo } from '../../lib/demo'
-import { currentUserId, membershipMap, memberName, roleOf } from '../../lib/sharing'
-import type { Attachment, Comment, Membership, ProjectRole, Task } from '../../lib/types'
+import { memberName, roleOf, useMe } from '../../lib/sharing'
+import type { Attachment, Comment, ProjectRole, Task } from '../../lib/types'
 import { mentionChipsOf, useMentionTargets } from '../useMentionTargets'
 import { PersonAvatar } from '../PersonAvatar'
 import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
@@ -29,6 +28,7 @@ import { RelativeTime } from './RelativeTime'
 import { t } from '../../lib/i18n'
 import { messageOf } from '../../lib/errorText'
 import { useAction } from '../../lib/useAction'
+import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** True on touch screens: comment actions are always shown there instead of on hover. */
 export function useCoarsePointer(): boolean {
@@ -114,7 +114,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
   // expands on click or focus, with a draft, with a reply target or on Shift+C, and
   // collapses again when left empty.
   const [open, setOpen] = useState(() => !!readDraft(taskId))
-  useEffect(() => { setOpen(!!readDraft(taskId)) }, [taskId])
+  useResetOnChange([taskId], () => setOpen(!!readDraft(taskId)))
   // A published task's comments appear on its page (task-pages, "Composer notice").
   const published = useTaskPublished(taskId)
   const focusComposer = () => requestAnimationFrame(() => (typeof composerRef === 'object' ? composerRef?.current : null)?.focus())
@@ -274,16 +274,16 @@ export interface CommentsTabProps {
 
 /** Container: reads comments, members and the signed-in user from local storage. */
 export const CommentsTab = forwardRef<HTMLElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost, expand }, composerRef) {
-  const storedMe = useLiveQuery(() => currentUserId(), [], null)
+  const storedMe = useMe()
   const me = userId ?? storedMe
-  const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
+  const memberships = useMembershipMap()
   const comments = useCommentRows(task.id)
   // Comment attachments (OpenSpec attachments): a deleted comment's are hidden with it.
   const attachments = useCommentAttachments(task.id)
   const demo = useDemo()
   const limits = useAttachmentLimits()
   const { error, setError, run: attempt } = useAction({ describe: messageOf })
-  useEffect(() => setError(null), [task.id, setError])
+  useResetOnChange([task.id], () => setError(null))
 
   const name = useCallback((id: string) => (id && id === me ? t('You') : memberName(id, memberships) ?? t('Someone')), [me, memberships])
   const targets = useMentionTargets(task.project_id, me)

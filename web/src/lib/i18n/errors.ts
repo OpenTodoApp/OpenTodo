@@ -78,6 +78,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   invitation_email_mismatch: msg('This invite link was issued for a different email address.'),
   invitation_invalid: msg('This invite link is not valid.'),
   invitation_spent: msg('This invite link has already been used.'),
+  invitation_stale: msg('This invitation can no longer be accepted. Ask the person who invited you to add you again.'),
   last_credential: msg('This is the last way to sign in to the account. Add another before removing it.'),
   limit_members: msg('This server has as many members as its plan allows. Ask the owner to make room or upgrade.'),
   limit_ops_hour: msg('This server reached its limit of changes per hour. Your latest changes stay on this device and upload later.'),

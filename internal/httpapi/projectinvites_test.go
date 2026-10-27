@@ -337,8 +337,7 @@ func newClosedEnv(t *testing.T) *closedEnv {
 	resp, out = alice.do("POST", "/api/v1/projects", map[string]any{"name": "Trip"})
 	alice.mustStatus(resp, 201, out)
 	project := out["id"].(string)
-	resp, out = alice.do("POST", "/api/v1/projects/"+project+"/members", map[string]any{"email": "bob@example.com", "role": "admin"})
-	alice.mustStatus(resp, 201, out)
+	addByEmail(alice, bob, "/api/v1/projects/"+project+"/members", "bob@example.com", "admin")
 	return &closedEnv{alice: alice, bob: bob, project: project}
 }
 

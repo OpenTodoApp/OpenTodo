@@ -7,7 +7,6 @@ import { useShortcutHints } from './shortcuts/hints'
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { readAppearance, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
@@ -20,7 +19,7 @@ import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { SidebarFooter } from './SidebarFooter'
 import { WorkspaceControl } from './WorkspaceControl'
 import { InstanceMark, useInstanceName } from './InstanceBrand'
-import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, projectPath, readCollapsed, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode } from '../lib/projects'
+import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, projectPath, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode, useCollapsedProjects } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { Label, Project, Review, Task, User, View } from '../lib/types'
 import { useTrackedTotals } from '../lib/timeEntries'
@@ -39,13 +38,15 @@ import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, canEditTasks, roleOf } from '../lib/sharing'
 import { taskDrop } from './taskDrop'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
-import { formatUnread, unreadCounts, type UnreadCounts } from '../lib/feed'
+import { formatUnread, useUnreadCounts } from '../lib/feed'
 import { matchSidebar } from '../lib/sidebarFind'
 import { sidebarFind } from './signals'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { countInbox } from '../lib/inbox'
 import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
+import { readString, writeString } from '../lib/deviceStorage'
+import { useResetOnChange } from '../lib/useResetOnChange'
 
 
 /**
@@ -88,13 +89,11 @@ const MORE_KEY = 'ot.sidebar.more'
 type GroupId = 'filters' | 'projects' | 'labels'
 const groupKey = (id: GroupId) => `ot.sidebar.group.${id}`
 function readOpen(key: string, fallback: boolean): boolean {
-  try {
-    const v = localStorage.getItem(key)
-    return v === null ? fallback : v === '1'
-  } catch { return fallback }
+  const v = readString(key)
+  return v === null ? fallback : v === '1'
 }
 function writeOpen(key: string, open: boolean): void {
-  try { localStorage.setItem(key, open ? '1' : '0') } catch { /* device state only */ }
+  writeString(key, open ? '1' : '0') // device state only
 }
 
 /**
@@ -166,7 +165,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   // Per-device collapse state lives in the local meta table (never synced); reading it
   // through a live query keeps every Sidebar instance in step.
   // A device that never stored a state reads every parent as collapsed (roots only).
-  const collapsedLive = useLiveQuery(async () => ({ of: projects, set: await readCollapsed(projects) }), [projects])
+  const collapsedLive = useCollapsedProjects(projects)
   const collapsed_ = useMemo(() => collapsedLive?.set ?? new Set<string>(), [collapsedLive])
   // The groups wait for the rows and this device's collapse state, so the tree never opens and then folds (motion-polish D2);
   // once shown they stay, so a later change to the projects does not remount them (and lose an open menu's trigger).
@@ -186,7 +185,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
 
   // Unread activity in shared projects (activity-feed): a live query over the local
   // activity log and the synced seen markers, so it moves with every sync.
-  const unread = useLiveQuery(() => unreadCounts(), [], { byProject: new Map(), total: 0 } as UnreadCounts)
+  const unread = useUnreadCounts()
 
   const openTasks = useOpenTasks()
   const liveTasks = useLiveTasks()
@@ -248,7 +247,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const isOpen = (id: GroupId) => (found ? true : groupOpen[id])
   const active = found?.order[Math.min(activeMatch, Math.max(0, (found?.order.length ?? 1) - 1))] ?? null
   const isActiveMatch = (kind: 'project' | 'label' | 'view', id: string) => active?.kind === kind && active.id === id
-  useEffect(() => setActiveMatch(0), [query])
+  useResetOnChange([query], () => setActiveMatch(0))
   const openMatch = (m: { kind: 'project' | 'label' | 'view'; id: string }) => {
     if (m.kind === 'project') navigate({ view: 'project', id: m.id })
     else if (m.kind === 'label') navigate({ view: 'label', id: m.id })

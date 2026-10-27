@@ -28,6 +28,12 @@ func (s *Service) EmitPageActivity(ctx context.Context, e notify.PageEvent) {
 	s.sinks.PageActivity(ctx, e)
 }
 
+// EmitMemberInvited hands a membership invitation to the sinks
+// (member-add-consent D5).
+func (s *Service) EmitMemberInvited(ctx context.Context, e notify.MemberInvited) {
+	s.sinks.MemberInvited(ctx, e)
+}
+
 // emitAssignments hands one notify.Assigned event per task whose assignee_id
 // changed in a committed batch to someone other than its author. It runs after
 // commit, so the sinks see the stored state and cannot affect the batch.

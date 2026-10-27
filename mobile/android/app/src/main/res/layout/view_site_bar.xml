@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shown while a page of another origin (a login wall, a sign-in provider) fills the web view,
+     which has no address bar: the site's host and a way back to the server (android-sign-in-flows). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/site_bar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/site_bar"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="4dp"
+    android:visibility="gone">
+
+    <TextView
+        android:id="@+id/site_host"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:accessibilityLiveRegion="polite"
+        android:ellipsize="middle"
+        android:singleLine="true"
+        android:textColor="@color/text"
+        android:textSize="14sp" />
+
+    <ImageButton
+        android:id="@+id/site_close"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/site_bar_close"
+        android:src="@drawable/ic_close" />
+</LinearLayout>

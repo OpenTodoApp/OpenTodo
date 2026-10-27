@@ -75,15 +75,39 @@ REST collections, the export, MCP tools (the shared agent tool registry in `inte
 
 ### Background work
 
-Started by `cmd/opentodo` and stopped on shutdown:
+Every tenant describes its background work once, as a list of jobs (`tenant.Jobs`, package `jobs`): when each job is next due (`Next`) and what to run (`Run`). The same list runs in both modes:
 
-- **Reminder push scheduler** (`push.Service.Run`, unless `OPENTODO_PUSH=off`): one pass at startup and every 30 s. A single query over `scope_fields` (reminders are always personal) selects reminders whose `fire_at` has passed, not deleted, not delivered or dismissed for the current firing, whose task is open; each is encrypted and posted to every subscription of the owner (404/410 removes the subscription), then `delivered_at` is written through `sync.Apply` as device `server`. Delivery state lives in the op log, so a restart neither loses nor repeats a push (a crash between send and write can repeat one).
-- **Webhook worker** (`webhook.Run`): sends queued deliveries with retries; finishes the pass in progress on shutdown.
-- **Notification channel worker** (`channels.Run`): sends queued messages to ntfy, Pushover, Gotify and webhook channels with the same retries; never on a demo instance.
-- **Email poller** (`email.Run`): polls the configured IMAP mailbox, only when `OPENTODO_EMAIL_*` is set.
-- **Backup scheduler** (`backup.Start`): runs scheduled backups; a missed run executes once at startup.
-- **Trash retention** (`sync.RunRetention`): purges items older than `OPENTODO_TRASH_RETENTION_DAYS` at startup and daily.
-- **Audit pruning**: at startup and hourly. Old read notifications are swept at startup.
+- **Self-hosted:** `tenant.StartJobs` runs the list with `jobs.Runner`, only in the process that holds the jobs lock (`cmd/opentodo`, rolling updates). The runner sleeps until the earliest due time, asks a job again at least every 30 s, and never runs one job twice at once. Jobs run independently, so a long backup does not hold up a delivery.
+- **Host:** the host's shared scheduler writes the same due times into its index and calls the same `Run` (see `host`).
+
+Services report new work through the tenant's `jobs.Signal`:
+
+- **Wake-ups:**
+  - a queued webhook delivery or channel message, or a webhook or channel turned on again, wakes the webhooks job;
+  - a queued rule event wakes the rules job;
+  - a saved backup schedule wakes the backup job.
+- **Committed batches:** every committed batch asks every job again after one second (a new reminder, a moved task with a calendar event).
+- **Other processes:** a once-a-second `PRAGMA data_version` probe notices writes made by another process on the same data directory.
+
+A job that is still due after it ran waits its retry pause (30 s, 1 s for deliveries, 1 h for housekeeping). Stopping waits for the runs in progress, so their outcome is recorded before the database closes.
+
+The jobs:
+
+- **Reminders** (unless `OPENTODO_PUSH=off`): due at the earliest firing time.
+  - A single query over `scope_fields` (reminders are always personal) selects reminders whose `fire_at` has passed, not deleted, not delivered or dismissed for the current firing, whose task is open.
+  - Each is encrypted and posted to every subscription of the owner (404/410 removes the subscription), then `delivered_at` is written through `sync.Apply` as device `server`.
+  - Delivery state lives in the op log, so a restart neither loses nor repeats a push (a crash between send and write can repeat one).
+- **Webhooks:** sends queued webhook deliveries and notification channel messages (channels never on a demo instance) when they are due; retries follow `webhook.Backoff`.
+- **Calendars:** subscription fetches and calendar sync cycles, at their next due time, while their owner switches are on.
+- **Issues:** issue connection polls, at their next poll time, while the owner switch is on.
+- **Digest:** weekly digest emails at each user's chosen hour, while outgoing email is configured.
+- **Rules:** queued rule events at once, time triggers at the minute.
+- **Backup:** scheduled backups; a missed run executes once at startup.
+- **Housekeeping:**
+  - **Retention deadlines.** Each runs when the oldest item passes its retention: Trash retention (`OPENTODO_TRASH_RETENTION_DAYS`), the audit log (the owner's retention), expired sign-ups, the 30-day delivery logs and read notifications after 90 days.
+  - **Upkeep.** Hourly, and only after something changed: `PRAGMA optimize`, the delivery logs' size limits, the rule run log, and secrets of deleted connections.
+- **Email** (only when `OPENTODO_EMAIL_*` is set): polls the IMAP mailbox every `OPENTODO_EMAIL_POLL_SECONDS`.
+- **Demo** (demo instances only): expired sandboxes every 5 minutes, the reset at 03:00 UTC.
 
 ## Server packages (`cmd/opentodo`, `internal/`)
 
@@ -91,10 +115,11 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | --- | --- |
 | `config` | `OPENTODO_*` environment variables with defaults and validation; nothing is mandatory |
 | `codesize` | Test only: `go test ./...` fails when a function under `internal/` is longer than 150 lines or a file longer than 1,100 lines; exceptions need a reason, and the list can only shrink |
-| `store` | Opens SQLite (pure-Go `modernc.org/sqlite`, WAL): one writer connection whose write transactions begin `IMMEDIATE`, and a pool of query-only reader connections (`OpenReader`) for pure reads such as `sync` List, Get and Pull; applies embedded migrations (`migrations/NNNN_*.sql`) by `PRAGMA user_version`; runs `PRAGMA optimize` at open and daily; `Lock` holds `<data>/opentodo.lock` for the process lifetime |
+| `store` | Opens SQLite (pure-Go `modernc.org/sqlite`, WAL): one writer connection whose write transactions begin `IMMEDIATE`, and a pool of query-only reader connections (`OpenReader`) for pure reads such as `sync` List, Get and Pull; applies embedded migrations (`migrations/NNNN_*.sql`) by `PRAGMA user_version`; runs `PRAGMA optimize` at open (and the housekeeping job hourly after changes); `Lock` holds `<data>/opentodo.lock` for the process lifetime |
 | `stt` | Speech to text: the owner's OpenAI-compatible transcription service (`OPENTODO_STT_*` overrides, key in `<data>/secrets/stt.json`), requests through `outbound`, audio and text in memory only. See [speech-to-text.md](self-hosting/speech-to-text.md) |
 | `textutil` | Small string helpers shared by server packages: `Truncate` cuts a string to a byte limit on a character boundary, for names and messages stored under a length limit |
 | `tenant` | Builds one server around one data directory: the database and its lock, the services, the notifier, the HTTP handler and the background jobs. A self-hosted server opens exactly one tenant. Its sub-package `services` is the composition root: `Build` constructs, seeds and wires every service into a `Set`, which `httpapi.New` receives; registering routes builds nothing |
+| `jobs` | The one model of background work (change `one-job-model`): `Job{Name, Next, Run}` says when a job is next due and what to run; `tenant.Jobs` builds a tenant's list once, and both a self-hosted server (`Runner`) and a host's scheduler run it. Services report new work through a `Signal`; `Upkeep` is maintenance due only after a change; `Runner` sleeps until the earliest due time, wakes on a signal, waits a retry pause when work is still due after a run, and never runs a job twice at once |
 | `host` | Optional multi-tenant host, built only with `OPENTODO_HOST_URL`: a registry of tenants beside their data directories, host-name routing, lazy open and idle close, one scheduler for every tenant's background work, per-tenant limits and the operator interface a control plane drives |
 | `settings` | Owner-level key/value settings (`settings` table, JSON values), the owner on/off switches (`Switch`: cached, with a default and an optional environment override) and 0600 secret files under `<data>/secrets/` |
 | `sync` | Op schema and validation, `Apply` (idempotent, LWW, per-op authorisation and refusal reasons) and `ApplyStrict` (REST), `Pull` (cursor, member backfill), materialised reads, sharing scopes (`scope.go`) and membership (`members.go`), trash, history and purge, the post-commit observer and sinks, `Notifier` (per-user live wake-ups) |
@@ -110,8 +135,8 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `channels` | A person's delivery channels (ntfy, Pushover, Gotify, a signed webhook): a notify sink and a consumer of the reminder scheduler that queue one message per channel and firing, one worker through `outbound` with the webhooks' retries, secrets in `<data>/secrets/notification-channels.json`. See [notification-channels.md](notification-channels.md) |
 | `activity` | Pure derivation of attributed activity events from ops (fold by actor and entity within 5 s, classify by touched fields, page newest first); mirrored by `web/src/lib/activity.ts` and pinned by a shared fixture |
 | `webhook` | Maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See [webhooks.md](webhooks.md) |
-| `deliveryq` | The machinery of the two durable outbound queues, webhook deliveries and notification channel messages: the single worker loop, the parallel pass over due rows, pruning the log, and the next-due times a host indexes. Each queue keeps its payloads, its send and the recording of an attempt (the retry schedule is `webhook.Backoff`) |
-| `poll` | The shape shared by the subscription pollers (calendar feeds, issue connections): `Every` runs a pass on a ticker, `Each` handles the items due now with bounded concurrency |
+| `deliveryq` | The machinery of the two durable outbound queues, webhook deliveries and notification channel messages: the parallel pass over due rows (`Fanout`, `Drain`), pruning the log, and the next-due times of the webhooks job. Each queue keeps its payloads, its send and the recording of an attempt (the retry schedule is `webhook.Backoff`) |
+| `poll` | The pass shared by the subscription pollers (calendar feeds, issue connections): `Each` handles the items due now with bounded concurrency; when a pass runs is the jobs' business |
 | `push` | Web push for reminders with the standard library: VAPID key pair in `<data>/push_vapid.pem`, ES256 JWTs, RFC 8291 `aes128gcm`, per-device subscriptions and the scheduler. See [reminders.md](reminders.md) |
 | `recurrence` | Parser and next-occurrence calculator for recurrence rules; mirrored by `web/src/lib/recurrence.ts` against shared vectors. See [recurrence.md](recurrence.md) |
 | `quickadd` | Go port of the quick-add parser (`web/src/lib/nlp`): dates and times, `#project @label p1 +30m`, recurrence and reminder phrases in six languages, kept identical by shared vectors; used by the CLI and the importer |
@@ -185,7 +210,7 @@ The UI never talks to the server for task data. Views subscribe to IndexedDB wit
 
 ## Build and packaging
 
-`web/` builds into `internal/web/dist`, which `go:embed` compiles into the binary (`internal/web/dist/.gitkeep` keeps the embed compiling on a fresh clone). The Dockerfile runs both builds on the build platform, cross-compiles a static binary (`CGO_ENABLED=0`, `-trimpath -s -w`) and copies it into `gcr.io/distroless/static-debian12:nonroot`. CI publishes `linux/amd64` and `linux/arm64` images to GHCR and attaches the server and `ot` binaries, the browser extension zip, the agent skill and the **site bundle** (`opentodo-site-bundle-<version>.tar.gz`: the docs website, screenshots, colour tokens, icons, the brand mark, changelog and a feature manifest, which the website repository builds from) to releases; every CI run uploads the same bundle as an artefact. The server binary is about 27 MB (about 5 MB of it is the official Anthropic SDK for the in-app assistant, about 1.6 MB the five interface language catalogs). Nothing in the server may use `text/template`, `html/template` or `reflect.Value.MethodByName`: any of them stops the linker from pruning unused methods and adds about 13 MB.
+`web/` builds into `internal/web/dist`, which `go:embed` compiles into the binary (`internal/web/dist/.gitkeep` keeps the embed compiling on a fresh clone). The Dockerfile runs both builds on the build platform, cross-compiles a static binary (`CGO_ENABLED=0`, `-trimpath -s -w`) and copies it into `gcr.io/distroless/static-debian12:nonroot`. CI publishes `linux/amd64` and `linux/arm64` images to GHCR and attaches the server and `ot` binaries, the browser extension zip, the agent skill and the **site bundle** (`opentodo-site-bundle-<version>.tar.gz`: the docs website, screenshots, colour tokens, icons, the brand mark, changelog and a feature manifest, which the website repository builds from) to releases; every CI run uploads the same bundle as an artefact. The server binary is about 34 MB for linux/amd64, as released (about 5 MB of it is the official Anthropic SDK for the in-app assistant, about 1.6 MB the five interface language catalogs). Nothing in the server may use `text/template`, `html/template` or `reflect.Value.MethodByName`: any of them stops the linker from pruning unused methods and adds about 13 MB.
 
 ## Specs
 

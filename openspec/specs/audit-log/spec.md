@@ -85,11 +85,15 @@ Every signed-in user SHALL be able to read their own sign-in, sign-out, credenti
 - **THEN** the response is a 401 `unauthorized` error
 
 ### Requirement: Retention and pruning
-The owner SHALL set retention through `GET`/`PUT /api/v1/settings/audit` between 7 and 3650 days, default 90, and SHALL toggle address logging there. The server SHALL prune events older than the retention at least hourly and at startup. Retention is server configuration, not synced.
+The owner SHALL set retention through `GET`/`PUT /api/v1/settings/audit` between 7 and 3650 days, default 90, and SHALL toggle address logging there. The server SHALL prune events at startup and, while it runs, within a minute of the oldest event passing the retention; after the owner shortens the retention, the events it no longer covers SHALL be pruned within a minute. Retention is server configuration, not synced.
 
 #### Scenario: Shorter retention prunes
 - **WHEN** the owner lowers retention to 30 days while events older than that exist
-- **THEN** those events are gone within the next pruning run and the audit setting change itself is recorded
+- **THEN** those events are gone within a minute and the audit setting change itself is recorded
+
+#### Scenario: Event passes the retention
+- **WHEN** the oldest event in the log becomes older than the retention while the server runs
+- **THEN** it is pruned within a minute, without waiting for an hourly pass
 
 #### Scenario: Invalid retention or wrong role
 - **WHEN** retention is set to 3 days, or a member writes the settings
@@ -247,3 +251,18 @@ The server SHALL record `calendar_connection.created`, `calendar_connection.upda
 #### Scenario: Cycles are not events
 - **WHEN** a sync cycle moves tasks
 - **THEN** no audit event is recorded
+
+### Requirement: Membership invitation events
+The server SHALL record `member_invitation.created` when an add by email becomes an invitation, `member_invitation.accepted` and `member_invitation.declined` when the invitee answers, and `member_invitation.cancelled` when an owner or admin cancels one, each with the invitation id, the project or workspace id and the role, the acting account as actor and the other account as target when there is one. An invitation for an address without an account SHALL be recorded without a target. An accepted invitation SHALL also be recorded as `project.member_added` or `workspace.member_added` with the inviter as actor. The invited address, the project name and the workspace name SHALL never be recorded.
+
+#### Scenario: Invitation created
+- **WHEN** Alice adds the address of Dan, with whom she shares nothing, to a project
+- **THEN** the log contains `member_invitation.created` with Alice as actor, Dan as target, and the invitation id, project id and role in its details, and no address or name
+
+#### Scenario: Invitation accepted
+- **WHEN** Dan accepts Alice's invitation
+- **THEN** the log contains `member_invitation.accepted` with Dan as actor and Alice as target, and `project.member_added` with Alice as actor and Dan as target
+
+#### Scenario: Unknown address
+- **WHEN** Alice adds an address without an account
+- **THEN** the log contains `member_invitation.created` with Alice as actor and no target

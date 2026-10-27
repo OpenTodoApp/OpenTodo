@@ -67,9 +67,11 @@ func TestInAppStoresUnblocked(t *testing.T) {
 	}
 }
 
-// reliable-background-jobs: a self-hosted server applies the 90-day retention
-// periodically, not only when it starts; every kind is stored by one helper.
-func TestInAppRunSweeperAppliesRetention(t *testing.T) {
+// reliable-background-jobs, one-job-model: the 90-day retention is applied
+// when the oldest read notification passes it (NextSweep is the housekeeping
+// job's deadline), not only when the server starts; every kind is stored by
+// one helper.
+func TestInAppSweepAtTheRetentionDeadline(t *testing.T) {
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -88,27 +90,18 @@ func TestInAppRunSweeperAppliesRetention(t *testing.T) {
 	if _, err := db.Exec(`INSERT INTO notifications(id,user_id,kind,payload,created_at,read_at) VALUES('old-read','u','assigned','{}',?,?)`, old, old); err != nil {
 		t.Fatal(err)
 	}
-	done := make(chan struct{})
-	go func() {
-		n.RunSweeper(ctx, 10*time.Millisecond)
-		close(done)
-	}()
-	deadline := time.Now().Add(5 * time.Second)
-	for {
-		var c int
-		if err := db.QueryRow(`SELECT COUNT(*) FROM notifications WHERE id = 'old-read'`).Scan(&c); err != nil {
-			t.Fatal(err)
-		}
-		if c == 0 {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatal("the sweeper never removed the expired notification")
-		}
-		time.Sleep(10 * time.Millisecond)
+	at, ok, err := n.NextSweep(ctx)
+	if err != nil || !ok || !at.Equal(time.UnixMilli(old).Add(Retention)) {
+		t.Fatalf("next sweep %v %v %v, want 90 days after the read notification", at, ok, err)
+	}
+	if c, err := n.Sweep(ctx); err != nil || c != 1 {
+		t.Fatalf("swept %d, %v", c, err)
+	}
+	// Only the unread one is left: nothing to sweep, ever.
+	if _, ok, err := n.NextSweep(ctx); ok || err != nil {
+		t.Fatalf("unread notifications have a deadline: %v %v", ok, err)
 	}
 	cancel()
-	<-done
 	if list, _, _ := n.List(context.Background(), "u"); len(list) != 1 {
 		t.Fatalf("unread notification removed: %+v", list)
 	}

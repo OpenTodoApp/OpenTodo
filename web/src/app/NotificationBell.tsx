@@ -2,12 +2,13 @@ import { Icon, Popover } from '../ui'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { getProject, useNotifications, useTask } from '../lib/localData'
 import { markTaskNotificationsRead } from '../lib/notifications'
-import type { AppNotification, MentionedPayload, PagePayload } from '../lib/types'
+import type { AppNotification, MemberInvitationPayload, MentionedPayload, PagePayload } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
 import { notificationsOpen } from './signals'
 import { openTaskPage } from './taskTrail'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { InvitationAnswer, InvitationText } from './MemberInvitations'
 
 /** The phone drawer's slide-in, after which the list anchors to the bell. */
 const DRAWER_MS = 220
@@ -52,6 +53,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
   }), [])
 
   async function choose(n: AppNotification) {
+    if (!n.payload.taskId) return
     setOpen(false)
     await markTaskNotificationsRead(n.payload.taskId)
     // A task page's reply or completion opens the task itself (task-pages).
@@ -76,7 +78,11 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={t('Notifications')} width="sm:w-80" className="py-1">
           {list.length === 0 && <p className="px-3 py-2 text-meta text-faint">{t('No notifications.')}</p>}
           <ul>
-            {list.map((n) => (
+            {list.map((n) => n.kind === 'member_invitation' && 'invitationId' in n.payload ? (
+              <li key={n.id}>
+                <InvitationNotification n={n} payload={n.payload} when={dt.formatInstant(n.createdAt, 'datetime')} autofocus={n === list[0]} />
+              </li>
+            ) : (
               <li key={n.id}>
                 <button type="button" data-autofocus={n === list[0] ? '' : undefined} onClick={() => void choose(n)}
                   className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-canvas dark:hover:bg-raised ${n.readAt === null ? '' : 'text-faint'}`}>
@@ -92,7 +98,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                     ) : n.kind === 'unblocked' && 'blockerTitle' in n.payload ? (
                       <span className="block" data-kind="unblocked">{t.rich('<b>{actor}</b> completed <b2>{blocker}</b2>: <b3>{task}</b3> is ready to start', { actor: n.payload.actorName || t('Someone'), blocker: n.payload.blockerTitle || t('a task'), task: n.payload.taskTitle || t('your task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong>, b3: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : (
-                      <span className="block">{t.rich('<b>{actor}</b> assigned you <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}</span>
+                      <span className="block">{t.rich('<b>{actor}</b> assigned you <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: ('taskTitle' in n.payload && n.payload.taskTitle) || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}</span>
                     )}
                     <span className="block text-meta text-faint">
                       {n.payload.projectName ? `${n.payload.projectName} · ` : ''}{dt.formatInstant(n.createdAt, 'datetime')}
@@ -104,6 +110,26 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
           </ul>
       </Popover>
     </>
+  )
+}
+
+/**
+ * An invitation to join a project or workspace (member-add-consent): not a link
+ * to a task but Accept and Decline, shown while the notification is unread.
+ * Answering marks it read here and on the server.
+ */
+function InvitationNotification({ n, payload: p, when, autofocus }: { n: AppNotification; payload: MemberInvitationPayload; when: string; autofocus: boolean }) {
+  const unread = n.readAt === null
+  return (
+    <div className={`flex w-full items-start gap-2 px-3 py-2 text-left outline-none ${unread ? '' : 'text-faint'}`} data-kind="member_invitation"
+      data-autofocus={autofocus ? '' : undefined} tabIndex={autofocus ? -1 : undefined}>
+      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${unread ? 'bg-accent' : 'bg-transparent'}`} />
+      <span className="user-text min-w-0 flex-1">
+        <span className="block"><InvitationText inviter={p.inviterName} target={p.target} name={p.targetName} role={p.role} /></span>
+        <span className="block text-meta text-faint">{when}</span>
+        {unread && <InvitationAnswer invitationId={p.invitationId} notificationId={n.id} />}
+      </span>
+    </div>
   )
 }
 

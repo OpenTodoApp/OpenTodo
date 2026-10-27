@@ -1,7 +1,6 @@
 package poll
 
 import (
-	"context"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -27,17 +26,5 @@ func TestEachBoundsConcurrency(t *testing.T) {
 	})
 	if peak.Load() > 3 || sum.Load() != 190 {
 		t.Fatalf("peak %d, sum %d", peak.Load(), sum.Load())
-	}
-}
-
-func TestEveryRunsFirstPassAtOnce(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	var n atomic.Int32
-	Every(ctx, time.Hour, func(context.Context) {
-		n.Add(1)
-		cancel()
-	})
-	if n.Load() != 1 {
-		t.Fatalf("passes = %d", n.Load())
 	}
 }

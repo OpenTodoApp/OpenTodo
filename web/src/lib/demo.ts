@@ -1,8 +1,9 @@
-import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import type { AuthStatus, DemoInfo, User } from './types'
 import { t, msg } from './i18n'
 import { formatClock } from './dates'
+import { createStore } from './store'
+import { readJSON, readString, writeString } from './deviceStorage'
 
 /**
  * Demo instance state (OpenSpec `demo-mode`, `demo-sandboxes`): set from
@@ -44,40 +45,25 @@ export function demoDetailsText(info: Pick<DemoInfo, 'sandboxHours' | 'resetsAt'
 // The banner's dismissal (lean-chrome D2): this browser session only, on this device.
 // Nothing is synced or sent; a new session shows the banner again.
 const DISMISS_KEY = 'opentodo.demoBannerDismissed'
-const dismissListeners = new Set<() => void>()
-let dismissed = readDismissed()
+const dismissed = createStore('demoBannerDismissed', readDismissed())
 
 function readDismissed(): boolean {
-  try {
-    return sessionStorage.getItem(DISMISS_KEY) === '1'
-  } catch {
-    return false
-  }
+  return readString(DISMISS_KEY, 'session') === '1'
 }
 
 /** Hides the banner until the browser session ends. */
 export function dismissBanner(): void {
-  dismissed = true
-  try {
-    sessionStorage.setItem(DISMISS_KEY, '1')
-  } catch {
-    // Storage unavailable: hidden for this page load only.
-  }
-  for (const l of dismissListeners) l()
+  writeString(DISMISS_KEY, '1', 'session') // storage unavailable: hidden for this page load only
+  dismissed.set(true)
 }
 
 /** Re-reads the session's dismissal (a cleared session storage shows the banner again); for tests and a new session. */
 export function reloadBannerDismissed(): void {
-  const next = readDismissed()
-  if (next === dismissed) return
-  dismissed = next
-  for (const l of dismissListeners) l()
+  dismissed.set(readDismissed())
 }
 
 /** Whether the banner was dismissed in this browser session. */
-export function useBannerDismissed(): boolean {
-  return useSyncExternalStore((l) => { dismissListeners.add(l); return () => { dismissListeners.delete(l) } }, () => dismissed, () => false)
-}
+export const useBannerDismissed = dismissed.use
 
 /** The note shown in place of a control the demo instance refuses. */
 export const DEMO_RESTRICTED_NOTE = msg('Disabled on this demo instance.')
@@ -86,46 +72,26 @@ export const DEMO_RESTRICTED_NOTE = msg('Disabled on this demo instance.')
 export const DEMO_LIMIT_NOTICE = msg('This demo sandbox reached its limit of changes. Your latest edits stay on this device and are saved when the limit allows.')
 
 const KEY = 'opentodo.demo'
-const listeners = new Set<() => void>()
-let current: DemoInfo | null = read()
+const store = createStore<DemoInfo | null>('demo', read())
 
 function read(): DemoInfo | null {
-  try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? (JSON.parse(raw) as DemoInfo) : null
-  } catch {
-    return null
-  }
+  return readJSON<DemoInfo | null>(KEY, null)
 }
 
 /** Record the server's demo state (null when the instance is not a demo). */
 export function setDemo(info: DemoInfo | null | undefined): void {
   // The creation token changes on every read; only the stable part is kept.
   const next = info ? { ...info, token: '' } : null
-  if (JSON.stringify(next) === JSON.stringify(current)) return
-  current = next
-  try {
-    if (next) localStorage.setItem(KEY, JSON.stringify(next))
-    else localStorage.removeItem(KEY)
-  } catch {
-    // Storage unavailable (private mode): the state still lives in memory.
-  }
-  for (const l of listeners) l()
+  if (JSON.stringify(next) === JSON.stringify(store.get())) return
+  // Storage unavailable (private mode): the state still lives in memory.
+  writeString(KEY, next ? JSON.stringify(next) : null)
+  store.set(next)
 }
 
-export function getDemo(): DemoInfo | null {
-  return current
-}
-
-function subscribe(l: () => void): () => void {
-  listeners.add(l)
-  return () => listeners.delete(l)
-}
+export const getDemo = store.get
 
 /** The demo state, re-rendering when it changes. */
-export function useDemo(): DemoInfo | null {
-  return useSyncExternalStore(subscribe, getDemo, getDemo)
-}
+export const useDemo = store.use
 
 /** True for an API error the demo instance answers for a refused feature. */
 export function isDemoRestricted(err: unknown): boolean {
