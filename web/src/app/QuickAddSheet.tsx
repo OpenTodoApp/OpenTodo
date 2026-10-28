@@ -7,7 +7,7 @@ import { Popover } from '../ui'
 import type { RefObject } from 'react'
 import { useLabels, useProjects } from '../lib/localData'
 import { logicalToday } from '../lib/dates'
-import { createTask } from '../lib/ops'
+import { createTaskThenSuggest } from '../lib/assistantSuggest'
 import { taskDefaults } from './listActions'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
@@ -50,7 +50,7 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   const onAdd = async ({ labels: typed, ...rest }: QuickAddInput) => {
     const { labels: viewLabels, ...defaults } = taskDefaults(route, logicalToday(), userId)
     if (rest.due || rest.deadline) delete defaults.start
-    await createTask({ ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] })
+    await createTaskThenSuggest({ ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] })
     onClose()
   }
   return (

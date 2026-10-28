@@ -5461,5 +5461,8 @@
   "Now": "Maintenant",
   "Nothing else scheduled today.": "Rien d’autre de prévu aujourd’hui.",
   "{n} more today": "{n} de plus aujourd’hui",
-  "Open the calendar": "Ouvrir le calendrier"
+  "Open the calendar": "Ouvrir le calendrier",
+  "Suggest after adding": "Suggérer après l’ajout",
+  "This device: after an add, the assistant proposes a title, project, subtasks. You review.": "Cet appareil : après un ajout, l’assistant propose titre, projet, sous-tâches. Vous relisez.",
+  "Suggest after adding (this device)": "Suggérer après l’ajout (cet appareil)"
 }

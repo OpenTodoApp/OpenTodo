@@ -7,7 +7,7 @@ import { currentDateTime, logicalToday } from '../../lib/dates'
 import { loadQuickAddSettings, parse, resolveDayMonthOrder, resolveLanguages, toTaskInput, type LabelRef, type ProjectRef } from '../../lib/nlp'
 import { getProject, getTask } from '../../lib/localData'
 import { preferredLanguages, t } from '../../lib/i18n'
-import { createTask } from '../../lib/ops'
+import { createTaskThenSuggest } from '../../lib/assistantSuggest'
 import { VIEW_SCOPES } from '../../lib/shortcuts'
 import { addedWhere } from '../addedWhere'
 import { ACTION_TOAST_MS, showBulkToast } from '../bulk/toastStore'
@@ -30,7 +30,7 @@ export async function addFromBar({ labels: typed, ...rest }: QuickAddInput, rout
   const today = logicalToday()
   const { labels: viewLabels, ...defaults } = taskDefaults(defaultsRoute(route), today, userId)
   if (rest.due || rest.deadline) delete defaults.start
-  const id = await createTask({ ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] })
+  const id = await createTaskThenSuggest({ ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] })
   const task = await getTask(id)
   const project = task?.project_id ? await getProject(task.project_id) : undefined
   const where = task ? addedWhere(task, today, currentDateTime()) : null

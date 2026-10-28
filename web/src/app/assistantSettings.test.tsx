@@ -105,7 +105,7 @@ describe('OwnerAssistantSummary (settings-redesign)', () => {
 describe('UserAssistantSettings', () => {
   const render = (over: Partial<Parameters<typeof UserAssistantSettings>[0]> = {}) => renderToStaticMarkup(
     <UserAssistantSettings status={status} usage={{ month: '2026-10', input_tokens: 80000, output_tokens: 10000, total_tokens: 90000, turns: 12, cap: 500000, resets_at: '2026-11-01' }}
-      autoApply={false} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} {...over} />)
+      autoApply={false} suggestAfterAdd={false} onSuggestAfterAdd={noop} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} {...over} />)
   it('shows consent, usage, own key, auto-apply (off) and clearing conversations', () => {
     const html = render()
     expect(html).toContain('Withdraw consent')
@@ -151,7 +151,7 @@ describe('Owner: member keys and the cap', () => {
 
 describe('Which assistant you use', () => {
   const render = (s: AssistantStatus, over: Partial<Parameters<typeof UserAssistantSettings>[0]> = {}) => renderToStaticMarkup(
-    <UserAssistantSettings status={s} usage={null} autoApply={false} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop}
+    <UserAssistantSettings status={s} usage={null} autoApply={false} suggestAfterAdd={false} onSuggestAfterAdd={noop} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop}
       onAutoApply={noop} onClear={noop} onSaveOwn={async () => true} onTestOwn={noop} {...over} />)
   it('starts on the server’s assistant, naming the owner’s provider', () => {
     const html = render(serverStatus)
@@ -226,7 +226,7 @@ describe('Assistant card structure (settings-refresh D9; in-app-assistant "Assis
     expect(assistantStatusLine({ ...status, source: 'own' })).toBe('On, using your own key')
     const html = renderToStaticMarkup(
       <UserAssistantSettings status={status} usage={{ month: '2026-10', input_tokens: 1, output_tokens: 1, total_tokens: 90000, turns: 12, cap: 500000, resets_at: '2026-11-01' }}
-        autoApply={false} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} />)
+        autoApply={false} suggestAfterAdd={false} onSuggestAfterAdd={noop} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} />)
     expect(html).toContain('Withdraw consent')
     expect(html).toContain('data-usage-meter')
     expect(html).toContain('aria-valuenow="18"')

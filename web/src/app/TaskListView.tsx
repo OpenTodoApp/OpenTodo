@@ -15,7 +15,7 @@ import { briefingHidden, setBriefingShown, setTodayEventsShown } from '../lib/us
 import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { moveTask } from '../lib/move'
-import { createTask } from '../lib/ops'
+import { createTaskThenSuggest } from '../lib/assistantSuggest'
 import { getPlace, locationFromPlace } from '../lib/locations'
 import { dayTotalsText } from '../lib/time'
 import { useDayTotals } from '../lib/timeEntries'
@@ -210,7 +210,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     // In Someday a line with a date is scheduled, not parked (someday-and-evening).
     if (rest.due || rest.deadline) delete defaults.start
     const place = route.view === 'place' ? await getPlace(route.id) : undefined
-    const id = await createTask({
+    const id = await createTaskThenSuggest({
       ...defaults,
       ...rest,
       // In a place's list a new task happens there (task-locations).

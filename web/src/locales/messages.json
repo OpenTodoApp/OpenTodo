@@ -11498,6 +11498,7 @@
   ],
   "Shown as free": [
     "web/src/app/CalendarEvents.tsx",
+    "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Shown as {current}, the nearest palette colour. Pick one to store it.": [
@@ -12132,6 +12133,12 @@
   ],
   "Success": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Suggest after adding": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Suggest after adding (this device)": [
+    "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": [
     "web/src/lib/shortcuts.ts"
@@ -13419,6 +13426,9 @@
   ],
   "This device now opens on the Loop home.": [
     "web/src/app/method/MethodModeChooser.tsx"
+  ],
+  "This device: after an add, the assistant proposes a title, project, subtasks. You review.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.": [
     "web/src/lib/settingsCopy.ts"
