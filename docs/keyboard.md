@@ -349,7 +349,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 ## With the pointer
 
-Right-click a task row to open its menu at the cursor; tick a few rows to act on all of them.
+Right-click or press and hold a task row to open its menu at the pointer; tick a few rows to act at once.
 
 ## Vim keybindings
 

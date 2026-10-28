@@ -50,6 +50,7 @@ import { OriginChip } from './OriginChip'
 import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
+import { DRAG_THRESHOLD, TOUCH_HOLD_MS, swallowNextClick } from '../lib/dnd'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -490,6 +491,56 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
 }
 
 /**
+ * Touch hold on a row the drag does not own (task-row-context-menu "Touch: hold and
+ * release"): the hold arms after TOUCH_HOLD_MS with a tint on the row; a release then
+ * opens the actions menu at the finger, a move ends it as a scroll. A draggable row
+ * gets the same hold inside beginDrag, so exactly one owner per row.
+ */
+function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['onPointerDown'], open: TaskRowProps['onContextMenu']): void {
+  drag?.(e)
+  if (drag || e.pointerType !== 'touch' || !open) return
+  const fire = open
+  const li = e.currentTarget
+  const x0 = e.clientX
+  const y0 = e.clientY
+  const pointerId = e.pointerId
+  let timer = 0
+  let armed = false
+  let done = false
+  function stop() {
+    if (done) return
+    done = true
+    clearTimeout(timer)
+    window.removeEventListener('pointermove', move, true)
+    window.removeEventListener('pointerup', up)
+    window.removeEventListener('pointercancel', stop)
+    li.removeAttribute('data-touch-hold')
+  }
+  function move(ev: PointerEvent) {
+    if (ev.pointerId !== pointerId) return
+    // Before the hold, movement is the page's scroll; after it there is no drag here.
+    if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > DRAG_THRESHOLD) stop()
+  }
+  function up(ev: PointerEvent) {
+    if (ev.pointerId !== pointerId) return
+    const held = armed
+    const { clientX: x, clientY: y } = ev
+    stop()
+    if (!held) return
+    swallowNextClick()
+    // The menu reads only the point; a constructed event keeps one code path with right-click.
+    fire(new MouseEvent('contextmenu', { clientX: x, clientY: y, cancelable: true }) as unknown as React.MouseEvent<HTMLLIElement>)
+  }
+  timer = window.setTimeout(() => {
+    armed = true
+    li.setAttribute('data-touch-hold', '')
+  }, TOUCH_HOLD_MS)
+  window.addEventListener('pointermove', move, true)
+  window.addEventListener('pointerup', up)
+  window.addEventListener('pointercancel', stop)
+}
+
+/**
  * Memoized (large-list-performance D1): a list re-renders a row only when one of its
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
@@ -608,6 +659,13 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     </span>
   )
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => {
+    // The swipe takes the press first (rowSwipe), then the drag owner — or, with no
+    // drag, the row's own touch hold (task-row-context-menu "Touch: hold and release").
+    if (swipe) swiping.onPointerDown(e)
+    holdForRow(e, onPointerDown, onContextMenu)
+  }
+
   return (
     <li
       ref={rowRef}
@@ -628,7 +686,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       aria-level={card || setSize === undefined ? undefined : depth + 1}
       aria-posinset={card ? undefined : posInSet}
       aria-setsize={card ? undefined : setSize}
-      onPointerDown={swipe ? (e) => { swiping.onPointerDown(e); onPointerDown?.(e) } : onPointerDown}
+      onPointerDown={handlePointerDown}
       // The row's empty area opens the task under either "Click a task to" choice (row-and-cursor
       // D1): a pointer shortcut; the open button stays the keyboard path. Drags and swipes
       // swallow their click (lib/dnd.ts, rowSwipe.ts), so they never get here.
