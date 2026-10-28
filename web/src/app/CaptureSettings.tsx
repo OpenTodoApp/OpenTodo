@@ -9,6 +9,7 @@ import { bookmarklet } from '../lib/share'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
+import { copyText } from '../lib/clipboard'
 
 /**
  * Bookmarklet for this server. The href is set through the DOM because React refuses
@@ -25,7 +26,7 @@ export function CaptureSection() {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(code)
+      await copyText(code)
       setCopied('yes')
     } catch {
       setCopied('failed')

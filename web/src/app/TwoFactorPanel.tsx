@@ -17,6 +17,7 @@ import { t, msg, translatedMap, currentLanguage } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { readJSON, writeString } from '../lib/deviceStorage'
 import { relativeTime } from '../lib/dates'
+import { copyText } from '../lib/clipboard'
 
 // Settings → Two-factor authentication and the enrolment wizard (OpenSpec
 // `mfa-totp`). The server is authoritative; the last known status is cached
@@ -117,7 +118,7 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
   return (
     <RecoveryCodesView
       codes={codes} acknowledged={acknowledged} copied={copied} onAcknowledge={setAcknowledged} onDone={onDone}
-      onCopy={() => void navigator.clipboard?.writeText(text).then(() => setCopied(true), () => setCopied(false))}
+      onCopy={() => void copyText(text).then(() => setCopied(true), () => setCopied(false))}
       onDownload={() => {
         const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }))
         const a = document.createElement('a')
