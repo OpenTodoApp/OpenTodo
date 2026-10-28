@@ -2,9 +2,7 @@
 
 ## Purpose
 Defines how data enters OpenTodo from files: the accepted formats and their field mapping, the dry-run preview, duplicate detection, the import job with its limits and per-row error reporting, write-through to the operation log so imports sync everywhere, and undo of a whole import.
-
 ## Requirements
-
 ### Requirement: Accepted import formats
 The server SHALL import the app's own JSON export (`opentodo-export` version 1 and later), CSV with the documented column mapping, JSON exports of other task managers through named importer profiles, and the export files of named apps (`todoist-csv`, `todoist-backup`, `ticktick-csv`, `linear-csv`, `things-db`, `google-tasks-json`, `trello-json`, `asana-csv`, `microsoft-todo-json`, `apple-reminders-json`, `anydo-json`), all documented in `docs/import.md`. The format SHALL be detected from the file content and the detected format SHALL be shown and overridable before anything is written. A named format SHALL be detected only on a signature distinctive of that app's file, never on a product name alone, so that no file of one format is read as another and the generic JSON and CSV profiles keep every file they accepted before.
 
@@ -702,3 +700,19 @@ When the account has more than one workspace, the Import screen SHALL offer a Wo
 #### Scenario: Offline
 - **WHEN** the device is offline
 - **THEN** the Workspace choice is disabled with the rest of the form
+
+### Requirement: Rows without ids get content ids
+A row of a JSON file that carries no id of its own SHALL get a source id derived from its content (its title, description, project or list, section and parent) and its order among equal rows in the file, never from its position alone, so a different file is never reported as `already_imported` because of an earlier import, and the same file imported again still is.
+
+#### Scenario: A second file without ids
+- **WHEN** a user imports a JSON array of tasks without ids, then previews another JSON file without ids with other tasks
+- **THEN** every task of the second file is reported as `create`, none as `already_imported`
+
+#### Scenario: The same file again
+- **WHEN** the user previews the first file again
+- **THEN** every row is reported as `skip` with reason `already_imported`
+
+#### Scenario: Lists without ids
+- **WHEN** a user imports `{"lists": [{"title": "Work", …}]}` without ids, then a file whose list "Personal" has no id
+- **THEN** "Personal" becomes its own project, and its tasks are not put into "Work"
+
