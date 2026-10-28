@@ -2,9 +2,7 @@
 
 ## Purpose
 Lets one account keep separate rooms on one server, each with its own projects, labels, views, members and groups, so that work and home stay apart and a project can be shared with a group of people in one step, without changing how data syncs or who can see what.
-
 ## Requirements
-
 ### Requirement: Workspace entity
 A workspace SHALL have an id, a name of 1 to 60 characters, an optional icon from the app's icon set, an optional colour, an owner account, a creation time and an optional deletion time. Every account SHALL have exactly one *default workspace*, created by the server when the account is created (and once, at upgrade, for every existing account), named "Personal" until renamed, which SHALL NOT be deletable. Workspaces, their membership and their groups SHALL be server-side data: they are never written to the operation log, they change only through authenticated routes, and they are delivered to every device of each member through the sync exchange and cached locally, so the sidebar, pickers and counts work offline from the cache.
 
@@ -374,3 +372,23 @@ In a comment or in a task's notes on a task of a shared project in a created wor
 #### Scenario: Encrypted account
 - **WHEN** an account with end-to-end encryption mentions a group in a comment
 - **THEN** the body stays ciphertext on the server, the group entry is stored in plaintext beside the ids, and the group's members are notified exactly as for an account without encryption
+
+### Requirement: Moving a task out of its project keeps its workspace
+When a task leaves its project for no project (moved to the Inbox by drag, by Move, through the API or by an agent tool), the move SHALL write, in the same batch, the `workspace_id` of the workspace the task was in (null for the default workspace) when its own value differs, so the task stays in that workspace's Inbox. It works offline and converges like the move itself; subtasks follow the task.
+
+#### Scenario: Drag from a project to the Inbox
+- **WHEN** the user is in "Work" and drags a task from the Work project "Unsorted" onto the Inbox
+- **THEN** the task appears in Work's Inbox and in no view of the default workspace, on this device at once and on others after sync
+
+#### Scenario: Default workspace
+- **WHEN** a task of a project in the default workspace is moved to the Inbox
+- **THEN** it appears in the default workspace's Inbox and no `workspace_id` operation is written
+
+#### Scenario: Agent moves a task to the Inbox
+- **WHEN** an agent calls `move_tasks` with `project_id: null` for a task of a Work project
+- **THEN** the task's `workspace_id` becomes Work's id in the same change and it is listed in Work's Inbox
+
+#### Scenario: API move to no project
+- **WHEN** a script PATCHes `/api/v1/tasks/{id}` with `{"project_id": null}` for a task of a Work project
+- **THEN** the task's `workspace_id` becomes Work's id in the same write
+
