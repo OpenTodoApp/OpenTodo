@@ -479,6 +479,15 @@ func (r *Registry) planMoveTasks(ctx context.Context, c Caller, a args, overlay 
 		if parent := rawStr(t, "parent_id"); parent != "" && !moving[parent] && patch["project_id"] != nil {
 			patch["parent_id"] = nullRaw
 		}
+		// Leaving its project for the Inbox, the task keeps its workspace (#508).
+		if pid == "" && patch["project_id"] != nil {
+			if ws, ok := snap.keptWorkspace(id); ok && ws != rawStr(t, "workspace_id") {
+				patch["workspace_id"] = nullRaw
+				if ws != "" {
+					patch["workspace_id"] = raw(ws)
+				}
+			}
+		}
 		if len(patch) == 0 {
 			out = append(out, map[string]any{"id": id, "status": "unchanged"})
 			continue

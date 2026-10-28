@@ -145,6 +145,41 @@ describe('the partition on this device (task 5.1, 5.6, 5.7)', () => {
     expect(tasksIn(back, projects, await db.tasks.toArray()).map((t) => t.id)).toEqual([inboxHome])
   })
 
+  it('a task moved from a project to the Inbox stays in its workspace (#508)', async () => {
+    await twoWorkspaces()
+    const { createProject, createTask, updateTask } = await import('./ops')
+    const { moveManyUndoable } = await import('./undoActions')
+    const { undoBatch } = await import('./undo')
+    const { readWorkspaceState, tasksIn } = await import('./workspaces')
+    await switchTo('w-work')
+    const unsorted = await createProject({ name: 'Unsorted' })
+    const dragged = await createTask({ title: 'Dragged', project_id: unsorted })
+    const sub = await createTask({ title: 'Its step', project_id: unsorted, parent_id: dragged })
+    const edited = await createTask({ title: 'Edited', project_id: unsorted })
+    expect((await db.tasks.get(dragged))?.workspace_id ?? null).toBeNull()
+    // Dropped on the Inbox, and moved with the task panel's project picker.
+    const r = await moveManyUndoable([dragged], null, 'Inbox')
+    await updateTask(edited, { project_id: null })
+    const inbox = async () => {
+      const state = await readWorkspaceState()
+      return tasksIn(state, await db.projects.toArray(), await db.tasks.toArray()).filter((x) => !x.project_id && !x.deleted_at).map((x) => x.id).sort()
+    }
+    expect(await inbox()).toEqual([dragged, edited, sub].sort())
+    expect((await db.tasks.get(dragged))?.workspace_id).toBe('w-work')
+    // Undo puts it back in the project and takes the workspace back too.
+    await undoBatch(r.entry!.id)
+    expect(await db.tasks.get(dragged)).toMatchObject({ project_id: unsorted })
+    expect((await db.tasks.get(dragged))?.workspace_id ?? null).toBeNull()
+    // In the default workspace nothing extra is written.
+    await switchTo('w-p')
+    const home = await createProject({ name: 'Home' })
+    const milk = await createTask({ title: 'Milk', project_id: home })
+    await moveManyUndoable([milk], null, 'Inbox')
+    const ops = await db.outbox.filter((o) => o.entityId === milk && o.field === 'workspace_id').count()
+    expect(ops).toBe(0)
+    expect(await inbox()).toContain(milk)
+  })
+
   it('moving a project re-matches its labels by name in one batch', async () => {
     await twoWorkspaces()
     const { createProject, createTask } = await import('./ops')
