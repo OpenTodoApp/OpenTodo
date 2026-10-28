@@ -42,6 +42,17 @@ describe('revealRow', () => {
     expect(rows[20].getBoundingClientRect().top).toBe(60) // header bottom 56 + 4
   })
 
+  it('counts what is pinned right under the header (the selection bar)', () => {
+    const { sc, rows } = page()
+    const bar = document.createElement('div')
+    bar.style.position = 'sticky'
+    sc.prepend(bar)
+    box(bar, () => ({ top: 56, bottom: 100 }))
+    sc.scrollTop = 900
+    revealRow(rows[20])
+    expect(rows[20].getBoundingClientRect().top).toBe(104) // bar bottom 100 + 4
+  })
+
   it('scrolls a row below the bottom edge into view and leaves a visible one alone', () => {
     const { sc, rows } = page()
     revealRow(rows[30])
