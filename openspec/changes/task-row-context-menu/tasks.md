@@ -23,3 +23,11 @@
 - [x] 4.2 Mention the gesture in `docs/keyboard.md` (menu section) and `docs/work-from-the-list.md`; verify `make docs-check` passes
 - [x] 4.3 Add an Unreleased entry to `CHANGELOG.md`; verify `make repo-check` passes
 - [x] 4.4 Run `make openspec-validate` and verify the change validates with `--strict` — Verified: 121 changes pass, including this one.
+
+## 5. Touch: hold and release
+
+- [x] 5.1 In `web/src/lib/dnd.ts` make a touch hold *arm* instead of lifting: `onHoldChange` reports the armed state (held feedback on the row), movement after the hold lifts the drag as before, movement before it still cancels as a scroll, and a release while armed and unlifted calls a new `onHoldRelease(x, y)`; `lift()` ends the held feedback; export `swallowNextClick` so a held release never also opens the task
+- [x] 5.2 Thread `onHoldRelease` through `web/src/app/task-list/useListDrag.ts` (`DragSource.openRowMenu`, read from the drag ref) and close an open menu when a drag lifts (`onDragStart` → `clearContextMenu`, covering a native touch context menu); tint the pressed row with `data-touch-hold` (a rule in `web/src/index.css`)
+- [x] 5.3 Extract the menu rule to `rowMenuIds(task, ticked)` in `useListBindings.ts` and build `openRowMenu` in `useListUi(ticked)` so right-click, the keyboard and a touch hold share one rule; `useListBindings.context` delegates to it
+- [x] 5.4 Give rows without a drag the same hold in `web/src/app/TaskRow.tsx` (`holdForRow`, module scope): arm after `TOUCH_HOLD_MS`, a release synthesises the row's `contextmenu` event at the finger, a move ends the hold as a scroll, pointerId-guarded throughout
+- [x] 5.5 Add the touch cases to `web/src/app/task-row-contextmenu.test.tsx` (armed tint, release opens at the finger, hold-then-move drags with no menu, move-before-hold is a scroll); verify `npm run typecheck`, `eslint` (including `max-lines-per-function`) and `npm test -- task-row-contextmenu` pass

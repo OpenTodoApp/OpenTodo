@@ -58,7 +58,7 @@ You don't have to open a task to change it. Select it and press:
 | <kbd>s</kbd> | Schedule it on the Day calendar |
 | <kbd>Delete</kbd> | Move it to the Trash |
 
-Right-click opens a menu at the pointer; tick several to act at once.
+Right-click or hold a row: its menu opens at the pointer; tick several at once.
 
 ## Put things in order
 

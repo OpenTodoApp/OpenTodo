@@ -12,7 +12,7 @@ import { flush, mockFetch, noPublicLinks, render } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 import { useBulkList } from './bulk/useBulkList'
-import { useListBindings, type BindingContext } from './task-list/useListBindings'
+import { rowMenuIds, useListBindings, type BindingContext } from './task-list/useListBindings'
 
 beforeEach(() => mockFetch(noPublicLinks))
 afterEach(() => { vi.unstubAllGlobals(); document.body.innerHTML = '' })
@@ -131,28 +131,117 @@ describe('the list bindings', () => {
     ui: { pickerFor: null, setPickerFor: vi.fn(), assignFor: null, setAssignFor: vi.fn(), prompt: null, setPrompt: vi.fn(), addingUnder: null, setAddingUnder: vi.fn(), addingTo: null, setAddingTo: vi.fn(), openActions: vi.fn() },
     setSelectMode: vi.fn(), toggleComplete: vi.fn(), toggleCollapsed: vi.fn(), startDrag: vi.fn(),
     quickAddRef: { current: null }, insertAfter: { current: null }, listRoot: { current: null },
-    projectReadOnly: false, openContextMenu: vi.fn(), draggingId: null, ...over,
+    projectReadOnly: false, openContextMenu: vi.fn(), openRowMenu: vi.fn(), draggingId: null, ...over,
   } as BindingContext)
 
-  it('opens for the ticked selection, and stays silent while a drag is lifted', async () => {
-    const open = vi.fn()
+  it('delegates to the shared row-menu rule, and stays silent while a drag is lifted', async () => {
+    const openRowMenu = vi.fn()
     let actions: ReturnType<typeof useListBindings> | null = null
     function Harness({ c }: { c: BindingContext }) {
       actions = useListBindings(c)
       return null
     }
-    const r = await render(<Harness c={ctxOver({ openContextMenu: open })} />)
+    const r = await render(<Harness c={ctxOver({ openRowMenu })} />)
     const ev = (x: number, y: number) => new MouseEvent('contextmenu', { clientX: x, clientY: y, cancelable: true })
     const ok = ev(55, 66)
     act(() => { actions!.context(ok as never, task({ id: 'b' })) })
     expect(ok.defaultPrevented).toBe(true)
-    expect(open).toHaveBeenCalledWith(['a', 'b'], 55, 66)
+    expect(openRowMenu).toHaveBeenCalledTimes(1)
+    expect(openRowMenu.mock.calls[0][1]).toBe(55)
+    expect(openRowMenu.mock.calls[0][2]).toBe(66)
+    expect(openRowMenu.mock.calls[0][0]).toMatchObject({ id: 'b' })
     // A lifted drag wins: nothing opens (the native menu is still suppressed).
-    await r.rerender(<Harness c={ctxOver({ openContextMenu: open, draggingId: 'a' })} />)
+    await r.rerender(<Harness c={ctxOver({ openRowMenu, draggingId: 'a' })} />)
     const during = ev(70, 80)
     act(() => { actions!.context(during as never, task({ id: 'b' })) })
     expect(during.defaultPrevented).toBe(true)
-    expect(open).toHaveBeenCalledTimes(1)
+    expect(openRowMenu).toHaveBeenCalledTimes(1)
+    await r.unmount()
+  })
+
+  it('the shared rule: the ticked selection when the row is one of it, else the row', () => {
+    expect(rowMenuIds(task({ id: 'b' }), new Set(['a', 'b']))).toEqual(['a', 'b'])
+    expect(rowMenuIds(task({ id: 'z' }), new Set(['a', 'b']))).toEqual(['z'])
+    expect(rowMenuIds(task({ id: 'b' }), new Set())).toEqual(['b'])
+  })
+})
+
+// Touch: hold and release (task-row-context-menu). A mouse never sends this gesture:
+// the hold arms the row (tint feedback), a release opens the menu at the finger, a
+// move ends the hold — a scroll on a plain row, the drag itself on a draggable one.
+describe('touch hold', () => {
+  const TOUCH_ID = 3
+  const touch = (target: EventTarget, type: string, x: number, y: number) => act(() => {
+    target.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId: TOUCH_ID, pointerType: 'touch',
+      clientX: x, clientY: y, buttons: type === 'pointerup' ? 0 : 1, isPrimary: true,
+    }))
+  })
+  const release = (x: number, y: number) => touch(window, 'pointerup', x, y)
+
+  it('a held row arms, and releasing opens its menu at the finger; a move before the hold is a scroll', async () => {
+    const spy = vi.fn()
+    const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onContextMenu={spy} /></ul>)
+    const li = r.container.querySelector('li[data-task-id]')!
+    // Held still: the row tints (feedback), but nothing opens yet.
+    touch(li, 'pointerdown', 40, 60)
+    await flush(400)
+    expect(li.hasAttribute('data-touch-hold')).toBe(true)
+    expect(spy).not.toHaveBeenCalled()
+    release(44, 64)
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toMatchObject({ clientX: 44, clientY: 64 })
+    expect(li.hasAttribute('data-touch-hold')).toBe(false)
+    // Moved before the hold elapsed: the page scrolls, no menu.
+    touch(li, 'pointerdown', 40, 60)
+    touch(window, 'pointermove', 90, 60)
+    await flush(400)
+    expect(li.hasAttribute('data-touch-hold')).toBe(false)
+    release(90, 60)
+    expect(spy).toHaveBeenCalledTimes(1)
+    await r.unmount()
+  })
+
+  it('hold and release on a list row opens the actions menu anchored at the finger', async () => {
+    await createTask({ title: 'Call mum' })
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => r.container.textContent!.includes('Call mum'))
+    // Rows re-render on the first store ticks (as with right-click): hold until it opens.
+    for (let attempt = 0; attempt < 4 && !menuButton(r.container); attempt++) {
+      const li = r.container.querySelector('li[data-task-id]')
+      if (!li) { await flush(60); continue }
+      touch(li, 'pointerdown', 120, 200)
+      await flush(400)
+      release(120, 200)
+      await flush(60)
+    }
+    const trigger = menuButton(r.container)!
+    expect(trigger.getAttribute('aria-label')).toBe('Actions for 1 task')
+    expect(trigger.style.position).toBe('fixed')
+    expect(trigger.style.left).toBe('120px')
+    expect(trigger.style.top).toBe('200px')
+    escape()
+    await waitFor(() => !menuButton(r.container))
+    await r.unmount()
+  })
+
+  it('a held row that moves drags instead: the ghost lifts and no menu opens', async () => {
+    await createTask({ title: 'Call mum' })
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => r.container.textContent!.includes('Call mum'))
+    const li = r.container.querySelector('li[data-task-id]')!
+    touch(li, 'pointerdown', 100, 150)
+    await flush(400)
+    expect(li.hasAttribute('data-touch-hold')).toBe(true)
+    touch(window, 'pointermove', 150, 190)
+    await flush(60)
+    // The drag lifted and took over the feedback; the release is a drop, not a menu.
+    expect(!!document.querySelector('[data-drag-ghost]')).toBe(true)
+    expect(li.hasAttribute('data-touch-hold')).toBe(false)
+    release(150, 190)
+    await flush(150)
+    expect(menuButton(r.container)).toBeNull()
+    expect(!!document.querySelector('[data-drag-ghost]')).toBe(false)
     await r.unmount()
   })
 })

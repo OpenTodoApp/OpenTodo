@@ -24,6 +24,8 @@ export interface DragSource {
   ticked?: ReadonlySet<string>
   /** Touch: a hold on a row not yet ticked selects it (phone-v2 D8); moving on drags the selection. */
   onHold?: (task: Task) => void
+  /** Opens the row's actions menu for a task at a point (task-row-context-menu): a touch hold's release. */
+  openRowMenu: (task: Task, x: number, y: number) => void
 }
 
 /**
@@ -32,7 +34,7 @@ export interface DragSource {
  * onto a sidebar project, the Inbox or a label it moves or labels the task (and the
  * rest of the bulk selection with it). Escape or a drop elsewhere changes nothing.
  */
-export function useListDrag({ manual, source, moveToSection, onDropped, onReorder }: {
+export function useListDrag({ manual, source, moveToSection, onDropped, onReorder, onDragStart }: {
   manual: boolean
   /** A drop among rows while another order is shown: switch the list to manual order first (list-display-options D4). */
   onReorder?: () => void
@@ -41,6 +43,8 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
   moveToSection: (task: Task, key: string) => void
   /** The dropped task, to select it. */
   onDropped: (id: string) => void
+  /** A drag lifted: close anything the touch hold opened on the way (the row's menu). */
+  onDragStart?: () => void
 }) {
   const [dropAt, setDropAt] = useState<DropAt | null>(null)
   // The row being dragged lifts (task-list-presentation "Drag feedback").
@@ -53,6 +57,8 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
 
   const startDrag = useCallback((e: React.PointerEvent, task: Task) => {
     const st = dragState.current
+    // The pressed row: the touch hold tints it while armed (feedback without a render).
+    const row = e.currentTarget instanceof HTMLElement ? e.currentTarget : null
     const node = st.tree?.nodes.get(task.id)
     const own = new Set(node ? flattenTree([node]).map((n) => n.id) : [task.id])
     const height = (e.currentTarget as HTMLElement | null)?.offsetHeight ?? 0
@@ -73,7 +79,13 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
       label: task.title,
       taskDrops: true,
       onHold: hold && !st.ticked?.has(task.id) ? () => hold(task) : undefined,
-      onStart: () => setDraggingId(task.id),
+      onStart: () => {
+        setDraggingId(task.id)
+        // A hold may have opened the menu (a native touch context menu); the drag wins.
+        onDragStart?.()
+      },
+      onHoldChange: (held) => row?.toggleAttribute('data-touch-hold', held),
+      onHoldRelease: (x, y) => dragState.current.openRowMenu(task, x, y),
       onMove: (target, _x, y) => {
         // Over a sidebar target the list shows no drop line (the target shows its ring).
         const id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
@@ -108,7 +120,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
       },
       onEnd: () => { show(null); showColumn(null); setDraggingId(null) },
     })
-  }, [manual, moveToSection, onDropped, onReorder])
+  }, [manual, moveToSection, onDropped, onReorder, onDragStart])
 
   /** The section map of the latest render, for code that runs later (an `o` insertion). */
   const latestSectionMap = useCallback(() => dragState.current.sectionMap, [])

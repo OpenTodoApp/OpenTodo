@@ -1,8 +1,10 @@
 import { t } from './i18n'
 // Pointer-based drag and drop (OpenSpec `board-view`, design D6): native pointer
 // events, no library, works with mouse, pen and touch. A mouse or pen drag starts
-// after a few pixels of movement; touch starts after a short long-press so a plain
-// swipe still scrolls the board. A ghost label follows the pointer, the element
+// after a few pixels of movement; touch arms after a short long-press so a plain
+// swipe still scrolls the board — moving after the hold lifts the drag, releasing
+// still opens the row's actions menu (task-row-context-menu "Touch: hold and
+// release"). A ghost label follows the pointer, the element
 // under it carrying `data-drop-target` is the target and gets `data-drop-active`
 // for styling. The primitive knows nothing about tasks: callers decide what a drop
 // means (board-view moves a task to a section; `manual-ordering` will add
@@ -19,6 +21,13 @@ export interface DragOptions {
   onStart?: () => void
   /** Called after a drop or a cancel; the drag is over. */
   onEnd?: () => void
+  /**
+   * Touch only: the hold elapsed without the press moving (true) and ended without
+   * becoming a drag (false, from cleanup) — the pressed element's held feedback.
+   */
+  onHoldChange?: (held: boolean) => void
+  /** Touch only: a hold completed and the finger lifted without moving: open the row's menu here (task-row-context-menu). */
+  onHoldRelease?: (x: number, y: number) => void
   /**
    * Also resolve `data-task-drop` targets (OpenSpec change ux-feedback-2, D4: a
    * task dropped on a sidebar project, the Inbox or a label), reported as
@@ -83,8 +92,8 @@ function makeGhost(label: string): HTMLElement {
   return g
 }
 
-/** Swallow the click that follows a drop, so dropping never also opens the task. */
-function swallowNextClick(): void {
+/** Swallow the click that follows a drop (or a held release), so it never also opens the task. */
+export function swallowNextClick(): void {
   const stop = (e: Event) => {
     e.stopPropagation()
     e.preventDefault()
@@ -105,6 +114,8 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   const startY = e.clientY
   let lifted = false
   let held = false
+  /** phone-v2's hold selected this press: it belongs to the selection, not to the menu. */
+  let heldSelected = false
   let ghost: HTMLElement | null = null
   let target: string | null = null
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -112,6 +123,11 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   const lift = () => {
     if (lifted) return
     lifted = true
+    // The held tint hands over to the drag's own feedback.
+    if (held) {
+      held = false
+      opts.onHoldChange?.(false)
+    }
     ghost = makeGhost(opts.label)
     document.body.style.userSelect = 'none'
     opts.onStart?.()
@@ -127,6 +143,10 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   }
   const cleanup = () => {
     clearTimeout(timer)
+    if (held) {
+      held = false
+      opts.onHoldChange?.(false)
+    }
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', up)
     window.removeEventListener('pointercancel', cancel)
@@ -158,10 +178,18 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   const up = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return
     const wasLifted = lifted
+    const heldStill = held
     const at = wasLifted ? dropTargetAt(ev.clientX, ev.clientY, document, opts.taskDrops) ?? target : null
     cleanup()
     if (!wasLifted) {
-      if (held) swallowNextClick()
+      // A touch held still and released is a long press: the row's actions menu at
+      // the finger (task-row-context-menu "Touch: hold and release") — not a tap,
+      // and nothing was dropped. When phone-v2's hold selected instead, the press
+      // stays a selection (no menu).
+      if (heldStill && e.pointerType === 'touch') {
+        swallowNextClick()
+        if (!heldSelected) opts.onHoldRelease?.(ev.clientX, ev.clientY)
+      }
       return
     }
     swallowNextClick()
@@ -189,10 +217,17 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   window.addEventListener('keydown', key, true)
   window.addEventListener('touchmove', blockScroll, { passive: false })
   if (e.pointerType === 'touch') {
+    // The hold arms the drag instead of lifting it: moving afterwards drags,
+    // releasing still opens the row's menu, so neither gesture steals the other.
     timer = setTimeout(() => {
-      if (opts.onHold) { held = true; opts.onHold(); return }
-      lift()
-      place(startX, startY)
+      // The hold arms the drag: phone-v2's hold selects (and is remembered, so the
+      // release does not open the menu); otherwise the release opens the row's menu.
+      held = true
+      opts.onHoldChange?.(true)
+      if (opts.onHold) {
+        heldSelected = true
+        opts.onHold()
+      }
     }, TOUCH_HOLD_MS)
   }
   return cancel
