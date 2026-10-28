@@ -10,7 +10,7 @@ order: 15
 
 <picture><source srcset="images/quick-add-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/quick-add-light.webp" alt="Quick add with the line Call Sam about the tiles tomorrow at 4pm #Home @call p2 +15m, and chips for the date, project, label, priority and estimate below it."></picture>
 
-Most of the day happens in a list: the Inbox, Today or a project. You can do a lot there without opening a task.
+Most of the day happens in a list: the Inbox, Today or a project.
 
 ## Add a task
 
@@ -30,7 +30,7 @@ New tasks without a project land in the **Inbox**. Tasks added inside a project 
 
 Click a task's circle or press <kbd>c</kbd>. On a phone, swipe right to complete, left to schedule; hold to select. Completed tasks move to **Completed**, where you can reopen them.
 
-Deleting a task (the **Delete** button in the panel, or <kbd>Delete</kbd> in the list) moves it to the Trash, along with its subtasks. You can restore it from there. See [Trash and history](trash-and-history.md).
+Deleting a task (the **Delete** button in the panel, or <kbd>Delete</kbd> in the list) moves it to the Trash, along with its subtasks. See [Trash and history](trash-and-history.md).
 
 Completing, deleting, moving, rescheduling or parking a task shows a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes).
 
