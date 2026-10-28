@@ -4,7 +4,8 @@
 // like every other object menu. Moves and assignments go through the review (D6).
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { useMemo, useState, type RefObject } from 'react'
+import { useMemo, useRef, useState, type RefObject } from 'react'
+import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLiveSections, useProjects, useMembershipMap } from '../../lib/localData'
 import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
@@ -169,7 +170,7 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   )
 }
 
-/** "3 selected · Actions · Clear" above a list while tasks are ticked. */
+/** "3 selected · Actions · Clear" above a list while tasks are ticked, kept in sight while the list scrolls. */
 export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPicker, onDone }: {
   ids: readonly string[]
   onClear: () => void
@@ -179,9 +180,13 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
   /** Select mode on touch (phone-v2 D8): Done hides the checkboxes and keeps the ticks; the bar shows with nothing ticked. */
   onDone?: () => void
 }) {
-  if (ids.length === 0 && !onDone) return null
+  const bar = useRef<HTMLDivElement>(null)
+  const shown = ids.length > 0 || !!onDone
+  // Pinned below the page header, so it stays reachable anywhere in a long list (issue 518).
+  const top = useBelowStickyHeader(bar, shown)
+  if (!shown) return null
   return (
-    <div className="mb-2 flex items-center gap-2 rounded-control bg-selected px-3 py-1.5 text-body" data-selection-bar>
+    <div ref={bar} style={{ top }} className="sticky z-10 mb-2 flex items-center gap-2 rounded-control bg-selected px-3 py-1.5 text-body shadow-2" data-selection-bar>
       <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
       {ids.length > 0 && <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
         trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />}
