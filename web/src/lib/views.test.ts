@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { refreshViewerZone } from './dates'
 import { getMeta, useDatabase } from './db'
 import { applyOps, createProject, deleteProject, getDeviceId, resetDeviceId } from './ops'
-import type { Label, Op, Project, Task, View } from './types'
+import type { FieldDef, Label, Op, Project, Task, View } from './types'
 import {
   MAX_PANELS, START_VIEW_KEY, addPanel, compareTasks, createView, dashboardPanels, deleteView, displayOptions, evaluateViews, groupTasks,
-  movePanel, removePanel, reorderView, resolveStartView, runView, setOnDrop, setPanels, setPinned, setStartView, updateView, type ViewContext,
+  movePanel, removePanel, reorderView, resolveStartView, runView, setOnDrop, setPanels, setPinned, setStartView, updateView, viewOptions, type ViewContext,
 } from './views'
 
 let n = 0
@@ -251,6 +251,57 @@ describe('runView', () => {
     expect(ids([...ts].sort(compareTasks('position', 'desc')))).toEqual(['b', 'a', 'c'])
   })
 
+  it('sorts custom number fields by case-insensitive name across projects and keeps empty values last', () => {
+    const fields: FieldDef[] = [
+      { id: 'wsjf-work', name: 'WSJF', project_id: 'pw', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
+      { id: 'wsjf-home', name: 'wsjf', project_id: 'ph', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
+    ]
+    const tasks = [
+      task({ id: 'large', project_id: 'pw', labels: ['lw'], fields: { 'wsjf-work': 10 } }),
+      task({ id: 'small', project_id: 'ph', labels: ['lw'], fields: { 'wsjf-home': 2 } }),
+      task({ id: 'invalid', project_id: 'pw', labels: ['lw'], due: { date: '2026-10-09' }, fields: { 'wsjf-work': 'ten' } }),
+      task({ id: 'empty-later', project_id: 'pw', labels: ['lw'], due: { date: '2026-10-12' } }),
+      task({ id: 'empty-earlier', project_id: 'ph', labels: ['lw'], due: { date: '2026-10-11' } }),
+    ]
+    const context: ViewContext = { ...CTX, tasks, fields }
+    const asc = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'field:wsjf' }), context)
+    const desc = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'field:WSJF', sort_dir: 'desc' }), context)
+    expect(asc.ok && ids(asc.tasks)).toEqual(['small', 'large', 'invalid', 'empty-earlier', 'empty-later'])
+    expect(desc.ok && ids(desc.tasks)).toEqual(['large', 'small', 'invalid', 'empty-earlier', 'empty-later'])
+  })
+
+  it('sorts custom dates and gives mixed field types a deterministic order', () => {
+    const fields: FieldDef[] = [
+      { id: 'date', name: 'Order date', project_id: 'pw', type: 'date', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
+      { id: 'number', name: 'ORDER DATE', project_id: 'ph', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
+    ]
+    const dated = task({ id: 'dated', project_id: 'pw', fields: { date: '2026-10-20' } })
+    const numbered = task({ id: 'numbered', project_id: 'ph', fields: { number: 10 } })
+    const earlier = task({ id: 'earlier', project_id: 'pw', fields: { date: '2026-10-10' } })
+    const context = { projects: PROJECTS, fields }
+    expect([dated, numbered, earlier].sort(compareTasks('field:order date', 'asc', context)).map((x) => x.id)).toEqual(['earlier', 'dated', 'numbered'])
+    expect([earlier, numbered, dated].sort(compareTasks('field:order date', 'desc', context)).map((x) => x.id)).toEqual(['numbered', 'dated', 'earlier'])
+  })
+
+  it('sorts by a field inherited from a parent project', () => {
+    const fields: FieldDef[] = [{ id: 'parent-rank', name: 'Rank', project_id: 'pw', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} }]
+    const tasks = [
+      task({ id: 'inherited-high', project_id: 'pc', labels: ['lw'], fields: { 'parent-rank': 8 } }),
+      task({ id: 'inherited-low', project_id: 'pc', labels: ['lw'], fields: { 'parent-rank': 1 } }),
+      task({ id: 'unset', project_id: 'pc', labels: ['lw'] }),
+    ]
+    const result = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'field:Rank' }), { ...CTX, tasks, fields })
+    expect(result.ok && ids(result.tasks)).toEqual(['inherited-low', 'inherited-high', 'unset'])
+  })
+
+  it('uses the established fallback order when custom field values tie', () => {
+    const fields: FieldDef[] = [{ id: 'score', name: 'Score', project_id: 'pw', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} }]
+    const later = task({ id: 'later', project_id: 'pw', fields: { score: 4 }, due: { date: '2026-10-12' }, position: 1 })
+    const earlier = task({ id: 'earlier', project_id: 'pw', fields: { score: 4 }, due: { date: '2026-10-11' }, position: 9 })
+    const context = { projects: PROJECTS, fields }
+    expect([later, earlier].sort(compareTasks('field:Score', 'asc', context)).map((x) => x.id)).toEqual(['earlier', 'later'])
+  })
+
   it('groups, sorts and filters zoned dues by their date in the viewer zone (absolute-datetimes)', () => {
     const real = Intl.DateTimeFormat.prototype.resolvedOptions
     const spy = vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockImplementation(function (this: Intl.DateTimeFormat) {
@@ -276,6 +327,11 @@ describe('runView', () => {
     const r = runView(view({ id: 'v', query: '@work', group_by: 'colour', sort_by: 'mood' }), CTX)
     expect(r.ok && r.groups[0].heading).toBe('Inbox')
     expect(groupTasks([], 'none', CTX)).toEqual([])
+  })
+
+  it('preserves a custom field sort value in saved view options', () => {
+    expect(viewOptions(view({ id: 'v', query: '@work', sort_by: 'field:WSJF' })).sortBy).toBe('field:WSJF')
+    expect(viewOptions(view({ id: 'v', query: '@work', sort_by: 'field:' })).sortBy).toBe('due')
   })
 })
 
@@ -313,6 +369,24 @@ describe('display options (views-and-display)', () => {
 })
 
 describe('evaluateViews', () => {
+  it('sorts dashboard summaries with fields from the named workspace scope', () => {
+    const remoteProject = project({ id: 'remote', name: 'Remote', workspace_id: 'w-home' })
+    const fields: FieldDef[] = [{ id: 'remote-score', name: 'Score', project_id: 'remote', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} }]
+    const tasks = [
+      task({ id: 'remote-large', project_id: 'remote', fields: { 'remote-score': 10 } }),
+      task({ id: 'remote-small', project_id: 'remote', fields: { 'remote-score': 2 } }),
+    ]
+    const context: ViewContext = {
+      ...CTX, fields, workspaces: [{ id: 'w-home', name: 'Home' }],
+      workspaceOf: (item) => item.project_id === 'remote' ? 'w-home' : 'current',
+      everyWorkspace: { tasks, projects: [remoteProject], labels: [] },
+    }
+    const result = evaluateViews([
+      view({ id: 'home', query: 'workspace: Home', group_by: 'none', sort_by: 'field:Score' }),
+    ], context, 2).get('home')
+    expect(result?.ok && ids(result.tasks)).toEqual(['remote-small', 'remote-large'])
+  })
+
   it('counts match the runner results and panels list the first tasks in view order', () => {
     const views = [
       view({ id: 'work', query: '@work', group_by: 'due' }),

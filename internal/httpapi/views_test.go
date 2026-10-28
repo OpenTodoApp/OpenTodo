@@ -126,6 +126,30 @@ func TestViewsCrud(t *testing.T) {
 	}
 }
 
+func TestViewsAcceptCustomFieldSort(t *testing.T) {
+	e := registeredEnv(t)
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{
+		"name": "Highest score", "query": "p1", "sort_by": "field:WSJF",
+	})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	if out["sort_by"] != "field:WSJF" {
+		t.Fatalf("created view sort_by = %v, want field:WSJF", out["sort_by"])
+	}
+
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": "field:Target date"})
+	e.mustStatus(resp, 200, out)
+	if out["sort_by"] != "field:Target date" {
+		t.Fatalf("patched view sort_by = %v, want field:Target date", out["sort_by"])
+	}
+
+	resp, out = e.do("GET", "/api/v1/views/"+id, nil)
+	e.mustStatus(resp, 200, out)
+	if out["sort_by"] != "field:Target date" {
+		t.Fatalf("stored view sort_by = %v, want field:Target date", out["sort_by"])
+	}
+}
+
 func TestViewsRejectInvalidOption(t *testing.T) {
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "List", "query": "p1"})
@@ -141,6 +165,10 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 	}{
 		{map[string]any{"name": "x", "query": "p1", "group_by": "colour"}, "view.group_by must be one of"},
 		{map[string]any{"name": "x", "query": "p1", "sort_by": "mood"}, "view.sort_by must be one of"},
+		{map[string]any{"name": "x", "query": "p1", "sort_by": "field:"}, "view.sort_by must be one of"},
+		{map[string]any{"name": "x", "query": "p1", "sort_by": "field:   "}, "view.sort_by must be one of"},
+		{map[string]any{"name": "x", "query": "p1", "sort_by": "field: padded "}, "view.sort_by must be one of"},
+		{map[string]any{"name": "x", "query": "p1", "sort_by": "field:" + strings.Repeat("x", maxFieldName+1)}, "view.sort_by must be one of"},
 		{map[string]any{"name": "x", "query": "p1", "sort_dir": "up"}, "view.sort_dir must be one of"},
 		{map[string]any{"name": "x", "query": "p1", "kind": "board"}, "view.kind must be one of"},
 		{map[string]any{"query": "p1"}, "view.name is required"},
@@ -181,6 +209,7 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 	}{
 		{list, map[string]any{"group_by": "colour"}, "view.group_by must be one of"},
 		{list, map[string]any{"layout": "grid"}, "view.layout must be one of"},
+		{list, map[string]any{"sort_by": "field:"}, "view.sort_by must be one of"},
 		{list, map[string]any{"hidden_props": []string{"estimate", "colour"}}, "view.hidden_props"},
 		{list, map[string]any{"kind": "dashboard"}, "cannot be changed"},
 		{list, map[string]any{"name": ""}, "must not be empty"},
