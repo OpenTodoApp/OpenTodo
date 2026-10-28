@@ -3,6 +3,7 @@
 // panel (builder and formula) under it, the display panel for layout, grouping, order,
 // completed tasks and row properties, and live results from the view runner. A
 // dashboard is rendered by DashboardView instead.
+import { isFirstRow, revealRow } from './task-list/revealRow'
 import { blockedMap } from '../lib/dependencies'
 import { Button, EmptyState, IconButton, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -160,7 +161,9 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   useEffect(() => {
     if (!selected) return
     const i = selected.lastIndexOf(':')
-    document.querySelector(`[data-group="${CSS.escape(selected.slice(0, i))}"] [data-task-id="${CSS.escape(selected.slice(i + 1))}"]`)?.scrollIntoView({ block: 'nearest' })
+    const row = document.querySelector<HTMLElement>(`[data-group="${CSS.escape(selected.slice(0, i))}"] [data-task-id="${CSS.escape(selected.slice(i + 1))}"]`)
+    // Below the sticky header, and back to the very top on the first row (issue 514).
+    if (row) revealRow(row, { first: isFirstRow(row) })
   }, [selected])
 
   const message = draftError ?? (!dirty && !result.ok ? result.error : null)
