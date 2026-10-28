@@ -16,6 +16,7 @@ import { useEncryption } from '../lib/e2ee'
 import { useOnline } from '../lib/online'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { copyText } from '../lib/clipboard'
 
 export type CopyTarget = 'endpoint' | 'token' | 'snippet'
 
@@ -267,7 +268,7 @@ export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean;
         onTokenCreated?.()
       })}
       onCopy={(target, text) => {
-        navigator.clipboard.writeText(text).then(
+        copyText(text).then(
           () => setCopied(target),
           () => setError(t('Could not access the clipboard; select the text and copy it manually.')),
         )
