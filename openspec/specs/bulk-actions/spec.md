@@ -2,9 +2,7 @@
 
 ## Purpose
 Lets the user tick several tasks in a list and complete, prioritise, label, reschedule, move, assign or trash them in one step, written as one batch of operations that can be undone in one step.
-
 ## Requirements
-
 ### Requirement: Select tasks with the keyboard
 In a task list `x` or Space SHALL tick or untick the cursor row, `Shift+↓`/`Shift+↑` (also `Shift+J`/`Shift+K` without Vim keybindings) SHALL move the cursor and select the range from where ticking started, `Ctrl`/`⌘`+`A` SHALL tick every row once one is ticked, and Escape SHALL clear the ticks before the cursor. The cursor stays distinct from the ticked set; read-only tasks are never ticked. The selection is device interface state: no data, nothing synced.
 
@@ -174,3 +172,15 @@ An action offered on a list group header for every task of the group (Today's Ea
 #### Scenario: Concurrent edit converges
 - **WHEN** Reschedule… → Next week runs on five tasks while a phone retitles one of them offline, and both sync
 - **THEN** every device shows that task due next week with the new title
+
+### Requirement: The selection bar stays in sight
+While tasks are ticked, the selection bar SHALL stay visible as the list scrolls: pinned just below the page's sticky header, or at the top of the list where the header scrolls away, above the rows, which scroll under it. A row moved to with the keyboard SHALL be kept below the bar as well as below the header.
+
+#### Scenario: Ticking far down a long list
+- **WHEN** the user scrolls to the end of a 40-task project and Shift+clicks a range of tasks there
+- **THEN** the bar with the count, Actions and Clear shows right below the page header without scrolling back up
+
+#### Scenario: Keyboard cursor under the bar
+- **WHEN** tasks are ticked and the user moves up the list with the arrow keys
+- **THEN** every selected row stays fully visible below the selection bar
+
