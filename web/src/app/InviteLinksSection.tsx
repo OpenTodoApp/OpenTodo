@@ -10,6 +10,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
+import { copyText } from '../lib/clipboard'
 
 // "Invite with a link" in the share dialog (OpenSpec `project-invite-links`):
 // the project's owner and admins create single-use links that add whoever
@@ -204,7 +205,7 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
   async function copy() {
     if (!created) return
     try {
-      await navigator.clipboard.writeText(created.link)
+      await copyText(created.link)
       setCopied(true)
     } catch {
       setError(t('Could not access the clipboard; select the link and copy it manually.'))

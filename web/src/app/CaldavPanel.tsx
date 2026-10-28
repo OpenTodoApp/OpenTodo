@@ -19,6 +19,7 @@ import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { useSettingsPending } from './settingsPending'
+import { copyText } from '../lib/clipboard'
 
 // Settings → Calendar apps (OpenSpec change `caldav`): the owner's toggle, the
 // server address with per-client setup hints, and per-user app passwords. The
@@ -52,7 +53,7 @@ function CopyValue({ value, label }: { value: string; label: string }) {
     <span className="flex min-w-0 items-center gap-2">
       <code className="min-w-0 break-all rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-meta text-default">{value}</code>
       <IconButton icon={copied ? 'check' : 'copy'} label={t('Copy {label}', { label })} size="sm"
-        onClick={() => void navigator.clipboard?.writeText(value).then(() => setCopied(true), () => {})} />
+        onClick={() => void copyText(value).then(() => setCopied(true), () => {})} />
     </span>
   )
 }

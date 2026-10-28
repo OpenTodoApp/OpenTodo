@@ -24,6 +24,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { copyText } from '../lib/clipboard'
 
 /** Dispatched after the viewer's own role changed (ownership transfer): the app re-reads its profile. */
 export const ACCOUNT_CHANGED_EVENT = 'opentodo:account-changed'
@@ -148,7 +149,7 @@ export function UsersPanel({ user }: { user: User }) {
         }}
         onCopy={() => {
           if (!resetLink) return
-          navigator.clipboard.writeText(resetLink.link).then(() => setCopied(true), () => setError(t('Could not access the clipboard; select the link and copy it manually.')))
+          copyText(resetLink.link).then(() => setCopied(true), () => setError(t('Could not access the clipboard; select the link and copy it manually.')))
         }}
         onDismissLink={() => setResetLink(null)}
       />

@@ -18,6 +18,7 @@ import { t, msg } from '../lib/i18n'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
+import { copyText } from '../lib/clipboard'
 
 // Settings → End-to-end encryption (OpenSpec `e2ee`, task 4.1). The pure
 // EncryptionView renders every state from props (tested with static markup);
@@ -290,8 +291,10 @@ export function EncryptionPanel() {
         setMode({ kind: 'recovery', recoveryKey: prep.recoveryKey, copied: false, acknowledged: false })
       })}
       onCopy={() => {
-        void navigator.clipboard?.writeText(recoveryText)
-        if (mode.kind === 'recovery' || mode.kind === 'newRecovery') setMode({ ...mode, copied: true })
+        // "Copied" only once the key is really on the clipboard (issue 525).
+        void copyText(recoveryText).then(() => {
+          if (mode.kind === 'recovery' || mode.kind === 'newRecovery') setMode({ ...mode, copied: true })
+        }, () => undefined)
       }}
       onDownload={() => download(recoveryText)}
       onAcknowledge={(v) => mode.kind === 'recovery' && setMode({ ...mode, acknowledged: v })}

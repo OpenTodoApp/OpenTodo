@@ -10,6 +10,7 @@ import { useAction } from '../lib/useAction'
 import type { EmailInbox } from '../lib/types'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { copyText } from '../lib/clipboard'
 
 // Settings → Email to task (OpenSpec change `email-to-task`): the account's
 // secret inbox address with copy and rotate, the on/off switch and the sender
@@ -112,7 +113,7 @@ export function EmailInboxPanel() {
       <EmailInboxView inbox={inbox} draft={draft} copied={copied} error={error} busy={busy} onDraftChange={setDraft}
         onCopy={() => {
           if (!inbox?.address) return
-          navigator.clipboard?.writeText(inbox.address).then(() => setCopied(true),
+          copyText(inbox.address).then(() => setCopied(true),
             () => setError(t('Could not access the clipboard; select the address and copy it manually.')))
         }}
         onRotate={() => { if (!busy) setConfirmRotate(true) }}
