@@ -60,6 +60,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Reminders and web push notifications | `reminders` |
 | Recurring rules incl. "every last weekday", "every 3 days after completion" | `recurring-tasks` |
 | Duration estimates and time-blocking calendar grid | `time-blocking` |
+| Today's schedule at the bottom of the sidebar: the time now and the timed tasks and events still ahead | `sidebar-schedule` |
 | Absolute (time-zone aware) times next to floating dates | `absolute-datetimes` |
 | Date, time and week-start preferences, and when your day starts | `date-time-preferences`, `day-boundary` |
 
