@@ -1,4 +1,5 @@
-import { type ButtonHTMLAttributes, type ReactNode, type RefObject, useRef, useState } from 'react'
+import { type ButtonHTMLAttributes, type ReactNode, type RefObject, isValidElement, useRef, useState } from 'react'
+import { Icon } from '../Icon'
 import { MenuCloseContext, useRovingMenu } from '../Menu'
 import { Tooltip } from '../Tooltip'
 import { Popover } from './Popover'
@@ -24,7 +25,7 @@ export function Menu({ label, title, trigger, triggerClassName = '', triggerProp
   triggerClassName?: string
   /** Extra attributes for the trigger (`aria-current`, test hooks). */
   triggerProps?: ButtonHTMLAttributes<HTMLButtonElement> & Record<`data-${string}`, string | boolean | undefined>
-  /** A tooltip on the trigger (a truncated name, the icon rail). */
+  /** A tooltip on the trigger (a truncated name, the icon rail); an icon-only trigger shows `label` without it. */
   tip?: string
   tipSide?: 'top' | 'bottom' | 'right'
   /** The keys shown in the trigger's tooltip (rows-v2 D7: "Priority · 1 / 2 / 3 / 4"). */
@@ -50,9 +51,11 @@ export function Menu({ label, title, trigger, triggerClassName = '', triggerProp
     <button ref={ref} type="button" {...triggerProps} className={triggerClassName} aria-label={namedByContent ? undefined : label} aria-haspopup={kind} aria-expanded={open}
       onClick={() => set(!open)}>{trigger}</button>
   )
+  // An icon-only trigger is named by its tooltip, like IconButton (issue 528).
+  const tipText = tip ?? (isValidElement(trigger) && trigger.type === Icon ? label : undefined)
   return (
     <>
-      {tip ? <Tooltip label={tip} side={tipSide} shortcut={tipShortcut}>{button}</Tooltip> : button}
+      {tipText ? <Tooltip label={tipText} side={tipSide} shortcut={tipShortcut}>{button}</Tooltip> : button}
       <Popover open={open} onClose={close} anchor={anchor?.current ? anchor : ref} label={title ?? label} align={align} width={width} className={className} role={kind}>
         {kind === 'menu'
           ? <MenuCloseContext.Provider value={close}><div role="none" onKeyDown={roving}>{content}</div></MenuCloseContext.Provider>
