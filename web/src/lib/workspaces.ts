@@ -192,6 +192,25 @@ export function ownIn<T extends Label | View>(state: WorkspaceState, rows: reado
   return rows.filter((x) => p.own(x.workspace_id) === here)
 }
 
+/**
+ * For a task leaving its project for no project (the Inbox): the workspace_id
+ * that keeps it in the workspace it is in, null for the default workspace;
+ * undefined for an account with one workspace, which writes nothing (#508).
+ */
+export type KeepWorkspace = (task: TaskLike) => string | null | undefined
+
+/** The KeepWorkspace of this device's data. */
+export async function keepWorkspaceFor(): Promise<KeepWorkspace> {
+  const state = await readWorkspaceState()
+  if (!partitioned(state)) return () => undefined
+  const [projects, tasks] = await Promise.all([db.projects.toArray(), db.tasks.toArray()])
+  const p = new Partition(state.defaultId, state.list.map((w) => w.id), projects, tasks)
+  return (task) => {
+    const ws = p.taskRow(task)
+    return ws === p.defaultId ? null : ws
+  }
+}
+
 /** The workspace_id a new project, label, view or project-less task gets here: null in the default workspace. */
 export async function newWorkspaceId(): Promise<string | null> {
   const state = await readWorkspaceState()

@@ -18,7 +18,7 @@ import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { labelKey } from './labels'
-import { Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
+import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
 export interface UndoableResult {
   /** The undo entry (null when nothing changed). */
@@ -58,7 +58,7 @@ export async function moveUndoable(id: string, projectId: string | null, targetN
   const task = tasks[0]
   if (!task || (task.project_id ?? null) === projectId) return { entry: null, label: '', newId: id }
   const memberships = await membershipMap()
-  const changes = planMove([task], all, { projectId }, memberships, await currentUserId(), now)
+  const changes = planMove([task], all, { projectId }, memberships, await currentUserId(), now, await keepWorkspaceFor())
   const copy = changes.find((c) => c.entity === 'task' && c.entityId !== id && c.patch.title !== undefined && !c.patch.deleted_at && c.patch.parent_id === (task.parent_id ?? null))
   const r = await apply(changes, t('Moved to {target}', { target: targetName }))
   return { ...r, newId: copy?.entityId ?? id }
@@ -73,7 +73,7 @@ export async function moveManyUndoable(ids: readonly string[], projectId: string
   const { tasks, all } = await readTicked(ids)
   const moving = tasks.filter((task) => (task.project_id ?? null) !== projectId)
   if (!moving.length) return { entry: null, label: '' }
-  const changes = planMove(moving, all, { projectId }, await membershipMap(), await currentUserId(), now)
+  const changes = planMove(moving, all, { projectId }, await membershipMap(), await currentUserId(), now, await keepWorkspaceFor())
   return apply(changes, t('Moved to {target}', { target: targetName }))
 }
 

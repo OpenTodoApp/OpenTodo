@@ -61,6 +61,20 @@ func (snap *snapshot) defaultWorkspace() string {
 	return ""
 }
 
+// keptWorkspace is the workspace_id that keeps a task leaving its project for
+// the Inbox in the workspace it is in ("" for the default workspace, #508); ok
+// is false for an account with one workspace, which writes nothing.
+func (snap *snapshot) keptWorkspace(taskID string) (string, bool) {
+	if len(snap.workspaces) <= 1 {
+		return "", false
+	}
+	ws := snap.partition().Task(taskID)
+	if ws == snap.defaultWorkspace() {
+		ws = ""
+	}
+	return ws, true
+}
+
 // partition places the snapshot's projects and tasks in workspaces.
 func (snap *snapshot) partition() *opsync.Partition {
 	if snap.part != nil {
