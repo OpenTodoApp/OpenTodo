@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **Today's schedule at the bottom of the sidebar.** Open **Schedule** above your name to keep the time and the rest of today in sight while you work in a list with a task open beside it: today's timed tasks and calendar events that haven't ended, in order, with the current one highlighted. Click a task to open it in the side panel, or an event to see its details; **N more today** opens the Day calendar. Closed until you open it, and remembered on each device. ([Schedule in the sidebar](docs/sidebar-schedule.md), `sidebar-schedule`, closes #536)
 - **Sub-projects inherit their parent's custom fields.** A field defined on a project now applies to every sub-project below it: its tasks show, edit, filter by and export the field like their own, and the sub-project's **Fields…** dialog lists inherited fields first, read-only. Names stay unique across the tree, the 30-field limit counts inherited fields, and the API and assistant tools follow the same rules. No migration; values are stored as before. ([Custom fields](docs/custom-fields.md#fields-of-sub-projects), `inherited-custom-fields`, closes #405)
 
 ### Fixed
