@@ -4,6 +4,11 @@ package store
 
 import (
 	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -65,4 +70,36 @@ func TestJobsLockSingleHolder(t *testing.T) {
 		t.Fatalf("jobs lock after the leader stopped: %v", err)
 	}
 	next()
+}
+
+// self-hosting "An unwritable data directory is explained" (#511).
+func TestUnwritableDataDirIsExplained(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("root can write anywhere")
+	}
+	parent := t.TempDir()
+	dir := filepath.Join(parent, "data")
+	if err := os.Mkdir(dir, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) })
+	_, err := LockShared(dir)
+	if !errors.Is(err, fs.ErrPermission) {
+		t.Fatalf("err = %v, want a permission error", err)
+	}
+	want := fmt.Sprintf("not writable for user %d (group %d)", os.Getuid(), os.Getgid())
+	for _, part := range []string{want, fmt.Sprintf("chown -R %d:%d", os.Getuid(), os.Getgid()), dir, DataDirGuide} {
+		if !strings.Contains(err.Error(), part) {
+			t.Fatalf("message %q lacks %q", err, part)
+		}
+	}
+	// A writable directory starts as before.
+	if err := os.Chmod(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	release, err := LockShared(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release()
 }
