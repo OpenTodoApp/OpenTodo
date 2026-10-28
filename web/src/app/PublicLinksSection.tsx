@@ -13,6 +13,7 @@ import { useOnline } from '../lib/online'
 import type { PublicLink } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { copyText } from '../lib/clipboard'
 
 const EXPIRY: readonly (number | null)[] = [null, 1, 7, 30, 90]
 
@@ -82,7 +83,7 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
   async function copy() {
     if (!created) return
     try {
-      await navigator.clipboard.writeText(created)
+      await copyText(created)
       setCopied(true)
     } catch {
       setError(t('Could not access the clipboard; select the link and copy it manually.'))
