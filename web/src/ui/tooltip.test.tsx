@@ -3,6 +3,8 @@
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { IconButton } from './Button'
+import { Icon } from './Icon'
+import { Menu } from './overlay/Menu'
 import { render } from './test-utils'
 import { Tooltip } from './Tooltip'
 import { TruncatedText } from './TruncatedText'
@@ -94,6 +96,20 @@ describe('Tooltip', () => {
     expect(button.getAttribute('title')).toBeNull()
     await focus(button, 'focus')
     expect(tip()!.textContent).toBe('Close')
+    await r.unmount()
+  })
+
+  it('an icon-only menu trigger carries its name; a text trigger does not (issue 528)', async () => {
+    const r = await render(<><Menu kind="menu" label="Filter" trigger={<Icon name="filter" />}>{null}</Menu><Menu kind="menu" label="View actions" trigger="More">{null}</Menu></>)
+    const [icon, text] = r.container.querySelectorAll('button')
+    await pointer(icon, 'pointerenter')
+    await advance(500)
+    expect(tip()!.textContent).toBe('Filter')
+    await pointer(icon, 'pointerleave')
+    await advance(500)
+    await pointer(text, 'pointerenter')
+    await advance(500)
+    expect(tip()).toBeNull()
     await r.unmount()
   })
 })
