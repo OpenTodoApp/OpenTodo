@@ -10,6 +10,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **A task moved from a project to the Inbox stays in its workspace.** With several workspaces, dragging a task out of a project onto the Inbox (or moving it there with Move, the API, `ot` or an AI agent) used to put it in the first workspace's Inbox. It now lands in the Inbox of the workspace it was in. Tasks already moved to the wrong Inbox stay there; move them into a project of the right workspace to bring them back. ([Workspaces](docs/workspaces.md), `inbox-move-keeps-workspace`, fixes #508)
 - **An event saved to OpenTodo from iOS Calendar is no longer lost.** Calendar apps send events, and the CalDAV endpoint used to refuse them; iOS then dropped the item silently, and an event moved there from iCloud disappeared altogether. An event now becomes a task: due at its start, its length as the estimate, its alarms as reminders, its repeat rule where OpenTodo can express it. It then shows in Reminders and OpenTodo rather than in Calendar. ([Calendar apps](docs/caldav.md#apple-reminders-iphone-ipad-mac), `caldav-events-as-tasks`, fixes #500)
 
 ### Changed
