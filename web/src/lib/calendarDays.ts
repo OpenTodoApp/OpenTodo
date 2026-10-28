@@ -1,8 +1,8 @@
 // The Day and Week grids as data (OpenSpec `time-blocking`, split out of CalendarView
 // by web-component-structure): each day's unscheduled lane, its task blocks and the
 // subscribed calendars' events, laid out in lanes; and the keyboard order over them.
-import { allDayEvents, blockFor, eventBlocks, type Block, type EventBlock } from './calendar'
-import { layoutDay, type DayLayout } from './layout'
+import { allDayEvents, blockFor, eventBlocks, MIN_BLOCK_MINUTES, type Block, type EventBlock } from './calendar'
+import { layoutDay, MAX_LANES, type DayLayout } from './layout'
 import { compareByPosition } from './ordering'
 import type { CalendarEvent, Task } from './types'
 
@@ -35,7 +35,7 @@ export function calendarDays(dates: readonly string[], shown: readonly Task[], e
     }
     lane.sort((a, b) => a.priority - b.priority || compareByPosition(a, b))
     const evs = new Map(eventBlocks(events, d, zone).map((e) => [e.id, e]))
-    return { date: d, lane, blocks, events: evs, allDay: allDayEvents(events, d), layout: layoutDay([...blocks.values(), ...evs.values()]) }
+    return { date: d, lane, blocks, events: evs, allDay: allDayEvents(events, d), layout: layoutDay([...blocks.values(), ...evs.values()], MAX_LANES, MIN_BLOCK_MINUTES) }
   })
 }
 
