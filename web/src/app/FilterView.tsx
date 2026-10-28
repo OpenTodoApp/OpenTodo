@@ -118,8 +118,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     // Like the other cross-project views, tasks of archived projects stay out.
     const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
     const tasks = allTasks.filter((item) => !(item.project_id && archived.has(item.project_id)) && compiled.test(item))
-    return { tasks: tasks.sort(compareTasks(display.sortBy, display.sortDir)), warnings: compiled.warnings }
-  }, [compiled, allTasks, projects, display.sortBy, display.sortDir])
+    return { tasks: tasks.sort(compareTasks(display.sortBy, display.sortDir, ctx)), warnings: compiled.warnings }
+  }, [compiled, allTasks, projects, display.sortBy, display.sortDir, ctx])
   // After `origin:` the kinds and providers are offered (task-origin), else field names.
   const origins = useMemo(() => originSuggestions(query, allTasks), [query, allTasks])
   const suggestions = useMemo(() => (origins.length ? origins : fieldSuggestions(query, fieldDefs)), [origins, query, fieldDefs])
@@ -240,7 +240,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         <PageHeader title={<ViewsCrumb name={t('New view')} />} meta={count ?? undefined} help="filter"
           actions={<Button variant="secondary" size="sm" disabled={!canSave} onClick={() => setSaving(true)}>{t('Save as view')}</Button>} />
       )}
-      <ViewToolbar query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }}
+      <ViewToolbar sortFields={fieldDefs} query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }}
         onDisplay={(patch) => setDisplay((d) => ({ ...d, ...patch }))}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (

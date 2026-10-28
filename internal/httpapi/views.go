@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/filter"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -106,6 +107,12 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 	}
 	for field, allowed := range viewEnumSets {
 		if v, ok := str(field); ok && !slices.Contains(allowed, v) {
+			if field == "sort_by" {
+				if validViewSortBy(v) {
+					continue
+				}
+				return invalidView("view.sort_by must be one of %s or field:<name>", strings.Join(allowed, ", "))
+			}
 			return invalidView("view.%s must be one of %s", field, strings.Join(allowed, ", "))
 		}
 	}
@@ -171,6 +178,17 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 		}
 	}
 	return nil
+}
+
+// validViewSortBy accepts a named custom field after the built-in sort options.
+// Field names follow the custom-field definition rules: non-empty, trimmed and
+// bounded by maxFieldName (fields.go).
+func validViewSortBy(value string) bool {
+	name, ok := strings.CutPrefix(value, "field:")
+	if !ok || name == "" || name != strings.TrimSpace(name) {
+		return false
+	}
+	return utf8.RuneCountInString(name) <= maxFieldName
 }
 
 // checkOnDrop validates a view's on-drop rule against current state (OpenSpec

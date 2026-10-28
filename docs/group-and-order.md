@@ -24,6 +24,8 @@ Due date groups read *Earlier*, *Today*, *Tomorrow*, then each later date and *N
 
 **Manual order** (the default, the order you drag tasks into), **Priority**, **Due date**, **Created**, **Deadline** or **Title**. **More options** holds the direction; for priority, *descending* puts priority 1 first. Tasks without a date or deadline come last either way.
 
+Number and Date custom fields also appear in **Order by**. Tasks without a value come last in either direction. For a label spanning projects, fields with the same name are matched without regard to case. If matching fields have different types, dates come before numbers in ascending order.
+
 Subtasks stay under their parent in the order you gave them, and a project's **Later** and **Completed** groups stay at the end.
 
 ## Kept for each project and label

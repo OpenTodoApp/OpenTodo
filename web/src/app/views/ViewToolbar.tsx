@@ -4,6 +4,7 @@
 // toolbar, so the results stay in view while the count follows the edit: the builder,
 // then the formula line, which is the query input itself ("Edit as text" focuses it).
 import type { ReactNode, RefObject } from 'react'
+import type { FieldDef } from '../../lib/types'
 import { IconButton } from '../../ui'
 import { t } from '../../lib/i18n'
 import { FilterChips } from './FilterChips'
@@ -18,9 +19,10 @@ export interface ViewToolbarProps {
   onAdd?: () => void
   display: ViewDisplay
   onDisplay: (patch: Partial<ViewDisplay>) => void
+  sortFields?: readonly FieldDef[]
 }
 
-export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, onDisplay }: ViewToolbarProps) {
+export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, onDisplay, sortFields }: ViewToolbarProps) {
   return (
     <div className="mb-2 flex items-start gap-2" data-view-toolbar>
       <div className="min-w-0 flex-1">
@@ -32,7 +34,7 @@ export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, 
       <div className="flex shrink-0 items-center gap-1">
         <IconButton icon="filter" size="sm" label={filterOpen ? t('Hide the filter') : t('Show the filter')} aria-pressed={filterOpen} data-filter-toggle
           className={filterOpen ? 'bg-selected text-default' : ''} onClick={() => setFilterOpen(!filterOpen)} />
-        <DisplayPanel value={display} onChange={onDisplay} />
+        <DisplayPanel value={display} onChange={onDisplay} sortFields={sortFields} />
       </div>
     </div>
   )

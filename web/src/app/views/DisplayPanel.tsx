@@ -8,7 +8,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Icon, IconButton, Popover, type IconName } from '../../ui'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, VIEW_LAYOUTS,
-  type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout,
+  type FieldDef, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout,
 } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ListGroupBy } from '../../lib/listDisplay'
@@ -55,6 +55,7 @@ export interface DisplayPanelProps<V extends PanelValue = ViewDisplay> {
   groupOptions?: readonly V['groupBy'][]
   /** Order by choices, in order; a view's by default. */
   sortOptions?: readonly SortBy[]
+  sortFields?: readonly FieldDef[]
 }
 
 /** The toolbar's display button and its panel. */
@@ -73,7 +74,7 @@ export function DisplayPanel<V extends PanelValue = ViewDisplay>(props: DisplayP
 }
 
 /** The panel's content; also rendered on its own in stories and tests. */
-export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, onChange: change, groupOptions = GROUP_BY_OPTIONS as readonly V['groupBy'][], sortOptions = SORT_BY_OPTIONS }: DisplayPanelProps<V>) {
+export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, onChange: change, groupOptions = GROUP_BY_OPTIONS as readonly V['groupBy'][], sortOptions = SORT_BY_OPTIONS, sortFields = [] }: DisplayPanelProps<V>) {
   const [more, setMore] = useState(false)
   const onChange = (patch: Partial<PanelValue>) => change(patch as Partial<V>)
   const hiddenNow = value.hidden
@@ -82,6 +83,15 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
     const hidden = hiddenNow.includes(p) ? hiddenNow.filter((x) => x !== p) : [...hiddenNow, p]
     onChange({ hidden: ROW_PROPERTIES.filter((x) => hidden.includes(x)) })
   }
+  const names = new Map<string, string>()
+  for (const field of sortFields) {
+    if (!field.deleted_at && (field.type === 'number' || field.type === 'date')) {
+      const key = field.name.trim().toLocaleLowerCase()
+      if (!names.has(key)) names.set(key, field.name)
+    }
+  }
+  const selectedField = value.sortBy.startsWith('field:') ? value.sortBy.slice(6) : null
+  if (selectedField && !names.has(selectedField.trim().toLocaleLowerCase())) names.set(selectedField.trim().toLocaleLowerCase(), selectedField)
   const layout = value.layout
   return (
     <div data-display-panel className="text-meta">
@@ -102,6 +112,10 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Order by')} value={value.sortBy}
             onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}>
             {sortOptions.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
+            {[...names.values()].map((name) => {
+              const selected = selectedField?.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase()
+              return <option key={name.trim().toLocaleLowerCase()} value={selected ? value.sortBy : `field:${name}`}>{name}</option>
+            })}
           </select>
         </OptionRow>
         {value.showCompleted !== undefined && <OptionRow label={t('Completed tasks')}>
