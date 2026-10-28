@@ -17,15 +17,21 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
   return null
 }
 
-/** How far down from the scroller's top sticky elements pinned there reach (viewport y). */
+/**
+ * How far down from the scroller's top the sticky elements pinned there reach
+ * (viewport y), counting a stack: the page header, then what is pinned right
+ * under it (the selection bar, a group header).
+ */
 function pinnedBottom(scroller: HTMLElement, row: HTMLElement): number {
-  const top = scroller.getBoundingClientRect().top
-  let bottom = top
+  let bottom = scroller.getBoundingClientRect().top
+  const pinned: DOMRect[] = []
   for (const s of scroller.querySelectorAll<HTMLElement>('*')) {
     if (s.contains(row) || getComputedStyle(s).position !== 'sticky') continue
     const r = s.getBoundingClientRect()
-    if (r.height > 0 && r.top <= top + 1 && r.bottom > bottom) bottom = r.bottom
+    if (r.height > 0) pinned.push(r)
   }
+  pinned.sort((a, b) => a.top - b.top)
+  for (const r of pinned) if (r.top <= bottom + 1 && r.bottom > bottom) bottom = r.bottom
   return bottom
 }
 
