@@ -659,12 +659,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     </span>
   )
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => {
-    // The swipe takes the press first (rowSwipe), then the drag owner — or, with no
-    // drag, the row's own touch hold (task-row-context-menu "Touch: hold and release").
-    if (swipe) swiping.onPointerDown(e)
-    holdForRow(e, onPointerDown, onContextMenu)
-  }
+  // The swipe takes the press first (rowSwipe), then the drag owner — or, with no drag, the row's own touch hold (task-row-context-menu).
+  const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onContextMenu) }
 
   return (
     <li

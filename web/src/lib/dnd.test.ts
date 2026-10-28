@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
-// The long-press drag next to swipes and the long press that selects (OpenSpec change
-// phone-v2, design D3, D8): a hold without movement is a drag (or, with onHold, a
-// selection the next move drags); a move before the hold is a swipe or a scroll, never a drag.
+// The long-press next to swipes and selections (OpenSpec change phone-v2, design D3,
+// D8; task-row-context-menu "Touch: hold and release"): a hold without movement arms
+// the drag — a release then opens the row's menu at the finger, a move then lifts the
+// drag (with onHold, the hold selects instead); a move before the hold is a swipe or a
+// scroll, never a drag.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { beginDrag, TOUCH_HOLD_MS } from './dnd'
 
@@ -16,15 +18,30 @@ function spies() {
 }
 
 describe('touch: hold, swipe and drag', () => {
-  it('a hold without movement lifts the drag; a horizontal move after it still drags', () => {
+  it('a hold arms the drag: a move after it lifts, a release without moving opens the row menu', () => {
     const s = spies()
-    beginDrag(press, { label: 'Task', onStart: s.onStart, onDrop: s.onDrop, onEnd: s.onEnd })
+    const onHoldRelease = vi.fn()
+    beginDrag(press, { label: 'Task', onStart: s.onStart, onDrop: s.onDrop, onEnd: s.onEnd, onHoldRelease })
     vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    // Armed, not lifted: no ghost and no drop yet (task-row-context-menu).
+    expect(s.onStart).not.toHaveBeenCalled()
+    expect(document.querySelector('[data-drag-ghost]')).toBeNull()
+    expect(onHoldRelease).not.toHaveBeenCalled()
+    move(120)
     expect(s.onStart).toHaveBeenCalledTimes(1)
     expect(document.querySelector('[data-drag-ghost]')).toBeTruthy()
-    move(120)
     up(120)
     expect(s.onEnd).toHaveBeenCalledTimes(1)
+    expect(onHoldRelease).not.toHaveBeenCalled()
+
+    // The other half of the gesture: hold, then lift the finger where it rests.
+    const held = spies()
+    const release = vi.fn()
+    beginDrag(press, { label: 'Task', onStart: held.onStart, onDrop: held.onDrop, onEnd: held.onEnd, onHoldRelease: release })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    up(50, 50)
+    expect(held.onStart).not.toHaveBeenCalled()
+    expect(release).toHaveBeenCalledWith(50, 50)
   })
 
   it('a swipe that began before the hold is never a drag', () => {

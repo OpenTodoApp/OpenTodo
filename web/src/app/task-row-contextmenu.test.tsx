@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { flush, mockFetch, noPublicLinks, render } from '../ui/test-utils'
+import { mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 import { useBulkList } from './bulk/useBulkList'
@@ -21,11 +21,6 @@ beforeEach(async () => {
   await db.open()
   resetDeviceId()
 })
-
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
 
 /** A right-click at (x, y); returns the event so a test can read defaultPrevented. */
 function rightClick(el: Element, x: number, y: number): MouseEvent {
@@ -129,7 +124,7 @@ describe('the list bindings', () => {
     taskMap: new Map(), ticked: ['a', 'b'],
     selection: { ticked: new Set(['a', 'b']), toggle: vi.fn(), extendTo: vi.fn(), selectAll: vi.fn(), set: vi.fn(), clear: vi.fn() },
     ui: { pickerFor: null, setPickerFor: vi.fn(), assignFor: null, setAssignFor: vi.fn(), prompt: null, setPrompt: vi.fn(), addingUnder: null, setAddingUnder: vi.fn(), addingTo: null, setAddingTo: vi.fn(), openActions: vi.fn() },
-    setSelectMode: vi.fn(), toggleComplete: vi.fn(), toggleCollapsed: vi.fn(), startDrag: vi.fn(),
+    setSelectMode: vi.fn(), toggleComplete: vi.fn(), toggleCollapsed: vi.fn(), startDrag: vi.fn(), setExpandedId: vi.fn(),
     quickAddRef: { current: null }, insertAfter: { current: null }, listRoot: { current: null },
     projectReadOnly: false, openContextMenu: vi.fn(), openRowMenu: vi.fn(), draggingId: null, ...over,
   } as BindingContext)
@@ -185,8 +180,7 @@ describe('touch hold', () => {
     const li = r.container.querySelector('li[data-task-id]')!
     // Held still: the row tints (feedback), but nothing opens yet.
     touch(li, 'pointerdown', 40, 60)
-    await flush(400)
-    expect(li.hasAttribute('data-touch-hold')).toBe(true)
+    await waitFor(() => li.hasAttribute('data-touch-hold'), 'the row to arm')
     expect(spy).not.toHaveBeenCalled()
     release(44, 64)
     expect(spy).toHaveBeenCalledTimes(1)
@@ -195,7 +189,6 @@ describe('touch hold', () => {
     // Moved before the hold elapsed: the page scrolls, no menu.
     touch(li, 'pointerdown', 40, 60)
     touch(window, 'pointermove', 90, 60)
-    await flush(400)
     expect(li.hasAttribute('data-touch-hold')).toBe(false)
     release(90, 60)
     expect(spy).toHaveBeenCalledTimes(1)
@@ -205,43 +198,36 @@ describe('touch hold', () => {
   it('hold and release on a list row opens the actions menu anchored at the finger', async () => {
     await createTask({ title: 'Call mum' })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => r.container.textContent!.includes('Call mum'))
-    // Rows re-render on the first store ticks (as with right-click): hold until it opens.
-    for (let attempt = 0; attempt < 4 && !menuButton(r.container); attempt++) {
-      const li = r.container.querySelector('li[data-task-id]')
-      if (!li) { await flush(60); continue }
-      touch(li, 'pointerdown', 120, 200)
-      await flush(400)
-      release(120, 200)
-      await flush(60)
-    }
+    await waitFor(() => r.container.textContent!.includes('Call mum'), 'the task in the list')
+    const li = r.container.querySelector('li[data-task-id]')!
+    touch(li, 'pointerdown', 120, 200)
+    await waitFor(() => li.hasAttribute('data-touch-hold'), 'the row to arm')
+    release(120, 200)
+    await waitFor(() => !!menuButton(r.container), 'the menu to open at the finger')
     const trigger = menuButton(r.container)!
     expect(trigger.getAttribute('aria-label')).toBe('Actions for 1 task')
     expect(trigger.style.position).toBe('fixed')
     expect(trigger.style.left).toBe('120px')
     expect(trigger.style.top).toBe('200px')
     escape()
-    await waitFor(() => !menuButton(r.container))
+    await waitFor(() => !menuButton(r.container), 'the menu to close')
     await r.unmount()
   })
 
   it('a held row that moves drags instead: the ghost lifts and no menu opens', async () => {
     await createTask({ title: 'Call mum' })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => r.container.textContent!.includes('Call mum'))
+    await waitFor(() => r.container.textContent!.includes('Call mum'), 'the task in the list')
     const li = r.container.querySelector('li[data-task-id]')!
     touch(li, 'pointerdown', 100, 150)
-    await flush(400)
-    expect(li.hasAttribute('data-touch-hold')).toBe(true)
+    await waitFor(() => li.hasAttribute('data-touch-hold'), 'the row to arm')
     touch(window, 'pointermove', 150, 190)
-    await flush(60)
+    await waitFor(() => !!document.querySelector('[data-drag-ghost]'), 'the drag to lift')
     // The drag lifted and took over the feedback; the release is a drop, not a menu.
-    expect(!!document.querySelector('[data-drag-ghost]')).toBe(true)
     expect(li.hasAttribute('data-touch-hold')).toBe(false)
     release(150, 190)
-    await flush(150)
+    await waitFor(() => !document.querySelector('[data-drag-ghost]'), 'the drag to end')
     expect(menuButton(r.container)).toBeNull()
-    expect(!!document.querySelector('[data-drag-ghost]')).toBe(false)
     await r.unmount()
   })
 })
