@@ -5455,5 +5455,11 @@
   "The sub-project “{project}” already has a field named “{name}”.": "Il sottoprogetto «{project}» ha già un campo chiamato «{name}».",
   "The sub-project “{project}” would have more than {n} fields.": "Il sottoprogetto «{project}» avrebbe più di {n} campi.",
   "This project already inherits a field named “{name}” from “{project}”.": "Questo progetto eredita già un campo chiamato «{name}» da «{project}».",
-  "The server rejected the test request ({status}: {reason}). A reverse proxy or a redirect may have changed it on the way; the provider was not asked.": "Il server ha rifiutato la richiesta di prova ({status}: {reason}). Un reverse proxy o un reindirizzamento potrebbe averla modificata lungo il percorso; il fornitore non è stato interpellato."
+  "The server rejected the test request ({status}: {reason}). A reverse proxy or a redirect may have changed it on the way; the provider was not asked.": "Il server ha rifiutato la richiesta di prova ({status}: {reason}). Un reverse proxy o un reindirizzamento potrebbe averla modificata lungo il percorso; il fornitore non è stato interpellato.",
+  "Schedule|sidebar": "Programma",
+  "Now {time}": "Ora {time}",
+  "Now": "Ora",
+  "Nothing else scheduled today.": "Nient’altro in programma oggi.",
+  "{n} more today": "Altri {n} oggi",
+  "Open the calendar": "Apri il calendario"
 }

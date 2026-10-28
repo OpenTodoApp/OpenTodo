@@ -46,6 +46,7 @@ import { act } from './actionError'
 import { countInbox } from '../lib/inbox'
 import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
 import { readString, writeString } from '../lib/deviceStorage'
+import { SidebarSchedule } from './calendar/SidebarSchedule'
 import { useResetOnChange } from '../lib/useResetOnChange'
 
 
@@ -542,6 +543,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         })}
       </SidebarGroup>}
       </div>
+      {/* The day's schedule (sidebar-schedule, issue 536): pinned above the footer, outside the scroller; not in the rail or the phone drawer. */}
+      {!collapsed && !drawer && <SidebarSchedule />}
       <SidebarFooter route={route} user={user} collapsed={collapsed} onSearch={onSearch} onShortcuts={onShortcuts} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} onSignOut={onSignOut} />
     </div>
   )
