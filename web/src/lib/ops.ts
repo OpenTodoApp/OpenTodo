@@ -19,7 +19,7 @@ import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
 import { t } from './i18n'
 import { uuid } from './ids'
-import { keepWorkspaceFor, workspaceFields, type KeepWorkspace } from './workspaces'
+import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorkspace } from './workspaces'
 import { resettable } from './moduleState'
 
 let devicePromise: Promise<string> | null = null
@@ -576,7 +576,9 @@ export async function moveProject(id: string, parentId: string | null): Promise<
     if (!parent || parent.archived) throw new Error('parent project not found')
     if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the project'))
   }
-  await mutate('project', id, { parent_id: parentId, position: lastAmongProjectSiblings(all, id, parentId) })
+  // It stays in the workspace it is in when it becomes a top-level project (issue 544).
+  const ws = await keepProjectWorkspace(id)
+  await mutate('project', id, { parent_id: parentId, position: lastAmongProjectSiblings(all, id, parentId), ...(ws === undefined ? {} : { workspace_id: ws }) })
 }
 
 /** Archiving cascades to every descendant, one op each (design D3); unarchive does not cascade. */

@@ -18,6 +18,26 @@ func (s *Server) keepTaskWorkspace(ctx context.Context, uid string, body map[str
 	if !ok || !opsync.IsNull(moving) || idOf(existing["project_id"]) == "" {
 		return nil
 	}
+	return s.keepWorkspace(ctx, uid, body, existing, idOf(existing["project_id"]))
+}
+
+// keepProjectWorkspace adds, to a project PATCH that gives the project a new
+// parent, the workspace_id of the workspace it is in: a sub-project follows its
+// root ancestor and carries no value of its own, so once it is a top-level
+// project it would otherwise land in the default workspace (issue 544). The
+// same rules as keepTaskWorkspace.
+func (s *Server) keepProjectWorkspace(ctx context.Context, uid string, body map[string]json.RawMessage, existing opsync.Entity) error {
+	moving, ok := body["parent_id"]
+	if !ok || opsync.SameJSON(moving, existing["parent_id"]) {
+		return nil
+	}
+	return s.keepWorkspace(ctx, uid, body, existing, idOf(existing["id"]))
+}
+
+// keepWorkspace writes into body the workspace of project pid's root ancestor
+// (null for the default, an unknown or a foreign workspace), unless the body
+// names a workspace, the account has one workspace, or existing carries it.
+func (s *Server) keepWorkspace(ctx context.Context, uid string, body map[string]json.RawMessage, existing opsync.Entity, pid string) error {
 	if _, set := body["workspace_id"]; set {
 		return nil
 	}
@@ -31,7 +51,6 @@ func (s *Server) keepTaskWorkspace(ctx context.Context, uid string, body map[str
 			known[w.ID] = true
 		}
 	}
-	pid := idOf(existing["project_id"])
 	var root opsync.Entity
 	for i := 0; i < 64 && pid != ""; i++ {
 		p, err := s.sync.Get(ctx, uid, "project", pid)

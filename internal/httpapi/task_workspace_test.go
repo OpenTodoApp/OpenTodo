@@ -33,3 +33,34 @@ func TestTaskToInboxKeepsWorkspace(t *testing.T) {
 		t.Fatalf("default task workspace_id = %v", v)
 	}
 }
+
+// workspaces: a sub-project moved to the top level keeps its workspace (issue 544).
+func TestProjectToTopLevelKeepsWorkspace(t *testing.T) {
+	e := ownerEnv(t)
+	resp, out := e.do("POST", "/api/v1/workspaces", map[string]any{"name": "Work"})
+	e.mustStatus(resp, 201, out)
+	work := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Clients", "workspace_id": work})
+	e.mustStatus(resp, 201, out)
+	clients := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Acme", "parent_id": clients})
+	e.mustStatus(resp, 201, out)
+	acme := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/projects/"+acme, map[string]any{"parent_id": nil})
+	e.mustStatus(resp, 200, out)
+	if out["workspace_id"] != work || out["parent_id"] != nil {
+		t.Fatalf("moved project = %v", out)
+	}
+	// A project of the default workspace keeps null.
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Home"})
+	e.mustStatus(resp, 201, out)
+	home := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Shed", "parent_id": home})
+	e.mustStatus(resp, 201, out)
+	shed := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/projects/"+shed, map[string]any{"parent_id": nil})
+	e.mustStatus(resp, 200, out)
+	if v, ok := out["workspace_id"]; ok && v != nil {
+		t.Fatalf("default project workspace_id = %v", v)
+	}
+}
