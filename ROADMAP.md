@@ -1,8 +1,115 @@
 # Roadmap
 
-OpenTodo set out to replace commercial task managers for people who want to own their data, then go further with what a self-hosted, local-first platform makes possible. **The original roadmap is complete**: every capability below has shipped (see the [changelog](CHANGELOG.md)). Each one was built as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change; the change names are the folders under `openspec/changes/archive/`, and the resulting behaviour contracts live in `openspec/specs/`.
+OpenTodo set out to replace commercial task managers for people who want to own their data, then go further with what a self-hosted, local-first platform makes possible. **The original roadmap is complete**: every capability under Shipped is done (see the [changelog](CHANGELOG.md)). Each one was built as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change; the change names are the folders under `openspec/changes/archive/`, and the resulting behaviour contracts live in `openspec/specs/`.
 
-New work starts the same way: `openspec new change <name>` or `/opsx:propose "<idea>"`. See [Next](#next-five-more) for the latest five and [Future ideas](#future-ideas) for smaller ones.
+New work starts the same way: `openspec new change <name>` or `/opsx:propose "<idea>"`. The plan from here to 1.0 is [below](#the-road-to-10); what already shipped follows it, and the [earlier plans](#earlier-plans) are kept for the record.
+
+## The road to 1.0
+
+Planned on 2026-10-29 from a study of the task-manager market, the open issues and what OpenTodo already does. Each item below is an OpenSpec change with a proposal, a design, spec deltas and tasks, and a GitHub issue in its milestone. Pick one up: read the change, comment on its issue, open a pull request.
+
+What guides it:
+
+- **Calm by default.** Every new primitive is an opt-in under How you work, the display options or the More group. Someone who wants a simple list never meets it.
+- **You approve every change.** Re-planning, the assistant and rules propose; you confirm, and one Undo takes it back. No autopilot.
+- **No enterprise bloat.** No story points, velocity charts or permission matrices.
+- **Free forever.** No paid tier for the server, the apps or any feature.
+- **Everywhere it works today.** Each feature works offline, on end-to-end encrypted accounts and through the API, `ot` and MCP, or says clearly where it degrades.
+
+### [0.17 "Calm constraints"](https://github.com/OpenTodoApp/OpenTodo/milestone/1)
+
+Method primitives and the community's quick wins.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`project-flow-modes`](openspec/changes/project-flow-modes/) | Projects and sections that are Parallel, Sequential (only the next task is available) or an Area |  |
+| [`project-review-cadence`](openspec/changes/project-review-cadence/) | A review interval per project, so the weekly review shows only the projects that are due |  |
+| [`today-closed-list`](openspec/changes/today-closed-list/) | An optional Today limit with a "Waiting for a slot" drawer, a Done today list and Log a win |  |
+| [`day-parts`](openspec/changes/day-parts/) | Morning, Afternoon and Evening groups in Today |  |
+| [`paste-to-tasks`](openspec/changes/paste-to-tasks/) | Paste several lines, get one task per line |  |
+| [`add-position`](openspec/changes/add-position/) | Add new tasks at the top or the bottom; the Add row stays reachable | [#540](https://github.com/OpenTodoApp/OpenTodo/issues/540), [#541](https://github.com/OpenTodoApp/OpenTodo/issues/541) |
+| [`focus-everywhere`](openspec/changes/focus-everywhere/) | Focus in the sidebar, on tasks and in the task menu, with presets, +5/+15 min and optional noise | [#543](https://github.com/OpenTodoApp/OpenTodo/issues/543), [#553](https://github.com/OpenTodoApp/OpenTodo/issues/553), [#535](https://github.com/OpenTodoApp/OpenTodo/issues/535) |
+| [`sidebar-polish`](openspec/changes/sidebar-polish/) | Counts, reorderable destinations, icons for saved views, a kept draft | [#545](https://github.com/OpenTodoApp/OpenTodo/issues/545), [#562](https://github.com/OpenTodoApp/OpenTodo/issues/562), [#560](https://github.com/OpenTodoApp/OpenTodo/issues/560), [#559](https://github.com/OpenTodoApp/OpenTodo/issues/559) |
+| [`default-reminders`](openspec/changes/default-reminders/) | A default reminder for dated or timed tasks | [#546](https://github.com/OpenTodoApp/OpenTodo/issues/546) |
+| [`assistant-providers-fix`](openspec/changes/assistant-providers-fix/) | Gemini and other OpenAI-compatible providers | [#501](https://github.com/OpenTodoApp/OpenTodo/issues/501) |
+
+### [0.18 "The mindful daily planner"](https://github.com/OpenTodoApp/OpenTodo/milestone/2)
+
+What paid planners charge for, free.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`meeting-aware-capacity`](openspec/changes/meeting-aware-capacity/) | Busy calendar events count toward the day's capacity |  |
+| [`replan-the-day`](openspec/changes/replan-the-day/) | Re-plan the rest of the day: a preview, one confirm, one Undo |  |
+| [`calendar-frames`](openspec/changes/calendar-frames/) | Recurring background frames on the calendar (Deep work 9–11) | [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555) |
+| [`calendar-slots`](openspec/changes/calendar-slots/) | Several small tasks in one calendar block |  |
+| [`bento-daily-check`](openspec/changes/bento-daily-check/) | A Large, a Medium and a Small task in the Daily check |  |
+| [`task-energy`](openspec/changes/task-energy/) | An energy property (deep, medium, low) with a filter and quick-add token |  |
+| [`urgency-sort`](openspec/changes/urgency-sort/) | A deterministic urgency score sort, and sort by a custom field | [#404](https://github.com/OpenTodoApp/OpenTodo/issues/404) |
+| [`calendar-clarity`](openspec/changes/calendar-clarity/) | Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | [#554](https://github.com/OpenTodoApp/OpenTodo/issues/554), [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555), [#556](https://github.com/OpenTodoApp/OpenTodo/issues/556) |
+
+### [0.19 "Series and time"](https://github.com/OpenTodoApp/OpenTodo/milestone/3)
+
+Recurring depth and calendar range.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`series-occurrences`](openspec/changes/series-occurrences/) | Future occurrences of repeating tasks and habits in Day, Week and Month | [#550](https://github.com/OpenTodoApp/OpenTodo/issues/550), [#537](https://github.com/OpenTodoApp/OpenTodo/issues/537) |
+| [`series-exceptions`](openspec/changes/series-exceptions/) | Move, skip or edit one occurrence alone | [#551](https://github.com/OpenTodoApp/OpenTodo/issues/551) |
+| [`series-split`](openspec/changes/series-split/) | "This and following": edit from one occurrence onward | [#552](https://github.com/OpenTodoApp/OpenTodo/issues/552) |
+| [`multi-day-tasks`](openspec/changes/multi-day-tasks/) | Tasks that span days on the calendar | [#558](https://github.com/OpenTodoApp/OpenTodo/issues/558) |
+| [`year-view`](openspec/changes/year-view/) | Several months and a Year view | [#557](https://github.com/OpenTodoApp/OpenTodo/issues/557) |
+| [`board-polish`](openspec/changes/board-polish/) | Fold a board column, preview notes on cards | [#561](https://github.com/OpenTodoApp/OpenTodo/issues/561) |
+| [`accent-colour`](openspec/changes/accent-colour/) | Your own accent colour, with contrast guaranteed | [#563](https://github.com/OpenTodoApp/OpenTodo/issues/563) |
+
+### [0.20 "Everywhere"](https://github.com/OpenTodoApp/OpenTodo/milestone/4)
+
+Phones, Apple, Obsidian and voice.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`ios-distribution`](openspec/changes/ios-distribution/) | The iPhone app in TestFlight and the App Store | [#105](https://github.com/OpenTodoApp/OpenTodo/issues/105) |
+| [`apple-shortcuts`](openspec/changes/apple-shortcuts/) | Siri, Shortcuts, the Action Button and iOS widgets |  |
+| [`focus-live-activity`](openspec/changes/focus-live-activity/) | Focus as a Live Activity and in the Dynamic Island |  |
+| [`focus-session-readable`](openspec/changes/focus-session-readable/) | The running Focus session readable by the shells and agents |  |
+| [`obsidian-origin`](openspec/changes/obsidian-origin/) | An `obsidian` origin that links a task back to its note |  |
+| [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included |  |
+| [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian |  |
+| [`voice-ramble`](openspec/changes/voice-ramble/) | Speak a brain dump or drop a photo of notes; review the proposed tasks |  |
+| [`outlook-calendar-sync`](openspec/changes/outlook-calendar-sync/) | Microsoft 365 and Outlook in calendar sync |  |
+| [`play-production`](openspec/changes/play-production/) | Google Play production, F-Droid and reproducible builds |  |
+| [`agent-tools-complete`](openspec/changes/agent-tools-complete/) | Agent and MCP tools for reminders, project notes, sections, fields, time and Focus | [#565](https://github.com/OpenTodoApp/OpenTodo/issues/565) |
+
+### [0.21 "Horizons and home"](https://github.com/OpenTodoApp/OpenTodo/milestone/5)
+
+Longer horizons, and the household.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`time-sectors`](openspec/changes/time-sectors/) | This week, Next week, This month, Next quarter, without a fake due date |  |
+| [`plan-objectives`](openspec/changes/plan-objectives/) | Quarterly and weekly objectives as small cards in Plan and the weekly review |  |
+| [`reusable-lists`](openspec/changes/reusable-lists/) | Grocery mode: adding an existing item reopens it |  |
+| [`chore-rotation`](openspec/changes/chore-rotation/) | Recurring tasks that rotate between members of a group |  |
+| [`location-reminders`](openspec/changes/location-reminders/) | Reminders when you arrive at or leave a place |  |
+| [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
+| [`priority-names`](openspec/changes/priority-names/) | Rename the four priorities |  |
+| [`telegram-channel`](openspec/changes/telegram-channel/) | Telegram as a notification channel |  |
+
+### [1.0 "Trust"](https://github.com/OpenTodoApp/OpenTodo/milestone/6)
+
+The release that makes OpenTodo the default choice.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`stability-contract`](openspec/changes/stability-contract/) | A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee |  |
+| [`external-security-review`](openspec/changes/external-security-review/) | An independent security review, findings fixed before 1.0 |  |
+| [`accessibility-aa`](openspec/changes/accessibility-aa/) | WCAG 2.2 AA on every screen, with a conformance statement |  |
+| [`performance-10k`](openspec/changes/performance-10k/) | Budgets and tests for 10,000 tasks, on phones too |  |
+| [`migration-everywhere`](openspec/changes/migration-everywhere/) | A switch guide and checked importer for every competitor |  |
+| [`caldav-verified`](openspec/changes/caldav-verified/) | CalDAV verified on real clients | [#9](https://github.com/OpenTodoApp/OpenTodo/issues/9) |
+| [`docs-1-0`](openspec/changes/docs-1-0/) | Complete user, self-host and API docs and a contributor guide |  |
+
+Order inside the plan: `project-flow-modes` before `today-closed-list` and `time-sectors`; `calendar-frames` before `calendar-slots`; the three series changes in order, then `multi-day-tasks`; `ios-shell` before `ios-distribution` and `apple-shortcuts`. Each milestone ends with a release.
 
 ## Shipped
 
@@ -107,7 +214,11 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |
 | Optional end-to-end encryption of task content | `e2ee` |
 
-## Next: Bring your agent
+## Earlier plans
+
+The plans that came before the road to 1.0, kept for the change names and the reasoning.
+
+### Bring your agent
 
 In this order. Each starts as an OpenSpec change under `openspec/changes/`. The cross-cutting decisions (one agent tool registry shared by MCP and the in-app assistant, the `agent` token scope, the "Allow AI assistants to make changes" switch, and the prompt-injection threat model) are recorded in the `mcp-write-tools` design (archived under `openspec/changes/archive/`).
 
@@ -118,7 +229,7 @@ In this order. Each starts as an OpenSpec change under `openspec/changes/`. The 
 | 3 | **Shipped.** Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. End-to-end encrypted accounts run it on their own device with their own key when the owner allows it (`assistant-on-device`). Its own page, the composer tray and the change-set card: `assistant-surface` |
 | 4 | **Shipped.** A Claude Code plugin with an MCP agent skill | `claude-plugin` | Built in `deploy/claude-plugin/`, published to `OpenTodoApp/opentodo-claude` after each release. Asks for the server address and an agent token; checks keep the skills in step with the MCP tools |
 
-## Next: Design refresh
+### Design refresh
 
 One visual language, built in a workbench: friendly and roomy like TickTick, Todoist and Any.do, keeping OpenTodo's emerald and slate identity. Each step is an OpenSpec change.
 
@@ -136,7 +247,7 @@ One visual language, built in a workbench: friendly and roomy like TickTick, Tod
 
 Related usability fixes, independent of the refresh: your own date and time format (`date-time-preferences`), a test notification that proves delivery (`push-test-delivery`) and restoring a backup from the web app (`backup-restore-web`).
 
-## Next: Parity and depth
+### Parity and depth
 
 Nineteen candidates for after the design refresh, in a suggested order: the first ten close gaps with the apps people switch from, the next four add views and ways to share for households and small teams, and the last five deepen capture and projects. They come from four sources: what the named importers must drop today with a warning (`named-importers`, now shipped with `deadlines` and `someday-and-evening` mapped), the gaps the comparison pages on open-todo.app concede to Todoist, Things and Linear, the open issues, and what the code did not have yet at the time (search, multi-select, attachments, outgoing mail and other languages, all shipped since). Parity with the apps people switch from came first because the hosted offering (`multi-tenant-host`, now shipped as host mode) was scheduled after it. Each starts as an OpenSpec change; none is a commitment.
 
@@ -163,38 +274,37 @@ Nineteen candidates for after the design refresh, in a suggested order: the firs
 | 18 | **Shipped.** **Custom fields per project**: typed columns per project, such as cost, client, effort or a link, inherited by sub-projects | `custom-fields`, `inherited-custom-fields` | Field definitions on the project (text, number, date, choice, link, checkbox), values in an additive `fields` map on tasks, shown in the detail panel, as board badges and as table columns; filterable (`cost > 100`), exported and importable. Linear's and Asana's answer to "a task is more than a title", kept small by refusing formulas and rollups |
 | 19 | **Shipped.** **Habits with streaks and a month history**: recurring tasks that track streaks and allow a skip without breaking the chain | `habits` | An additive `habit` flag on a recurring task with a calendar rule; streaks and a month heat-map are computed on the device from the occurrence records the series already writes, and a skip of a habit leaves a record marked `skipped`, so "skip today" keeps the streak while missed days do not. A `habit` filter keyword lists them. TickTick's habit tracker without a second app |
 | 20 | **Shipped.** **Markdown vault**: a folder of Markdown files in two-way sync, one file per project, for Obsidian and plain-text people | `markdown-vault`, `vault-tasknotes` | `ot vault` is a sync device (`vault:<id>`) with a three-way merge per field, the Obsidian Tasks line format (`📅`, `🔁`, `🆔`, `⛔` and Dataview inline fields), conflict files instead of silent loss, and encryption on the user's machine. TaskNotes task notes sync too, one note per task (`vault-tasknotes`). CLI only: the server binary is unchanged. See [docs/vault.md](docs/vault.md) |
-| 21 | **In review.** **Calendar sync, two-way**: your dated tasks as events in iCloud, Fastmail, Nextcloud, Google Calendar or any CalDAV calendar, and moving an event there moves the task | `calendar-two-way` | The server as a CalDAV client of the user's own account (app password, or Google through OAuth with the owner's client), conditional writes with ETags, `sync-collection` reads, newest change wins; other calendars of the account shown in Day and Week through the calendar feeds event store. Outlook and Microsoft 365 need Microsoft Graph and are a separate change |
+| 21 | **Shipped.** **Calendar sync, two-way**: your dated tasks as events in iCloud, Fastmail, Nextcloud, Google Calendar or any CalDAV calendar, and moving an event there moves the task | `calendar-two-way` | The server as a CalDAV client of the user's own account (app password, or Google through OAuth with the owner's client), conditional writes with ETags, `sync-collection` reads, newest change wins; other calendars of the account shown in Day and Week through the calendar feeds event store. Outlook and Microsoft 365 follow in 0.20 (`outlook-calendar-sync`) |
 
 Considered and set aside for now, so they are not forgotten: ~~a focus timer with time tracking~~ (shipped as `focus-mode` and `time-tracking`), ~~groups~~ (shipped in 0.10 as `workspaces`), custom keyboard shortcuts, saved views shared with a project's members, board swimlanes and column limits, end-to-end encryption for shared projects, and scheduled assistant routines (an `assistant` action on an automation rule is the natural hook). Rules on events and timers shipped as `automation-rules`, after the drop rules of `rule-boards`. **Hosted OpenTodo** shipped as host mode (`multi-tenant-host`); running the service itself (control plane, pricing) is tracked outside this repository.
 
-## Next: five more
+### Five more
 
 **Workspaces and groups** (`workspaces`) shipped in 0.10: separate rooms for work and home, each with its own projects, labels, views and people, and sharing a project with a whole group in one step. The five changes below were started together, each as its own OpenSpec change.
 
 | # | Capability | Change name | Notes |
 | --- | --- | --- | --- |
-| 1 | **In progress.** **Expand a row in place**: open a task's details under its row without leaving the list | `row-expand` | The task page stays for the full view |
+| 1 | **Shipped.** **Expand a row in place**: open a task's details under its row without leaving the list | `row-expand` | The task page stays for the full view |
 | 2 | **Shipped.** **Group mentions and a workspace filter**: mention `@Family` to reach everyone in a group, and narrow any view with `workspace:` | `group-mentions` | The follow-ups named by `workspaces`: mentions resolve against the workspace's groups; the filter term joins the query language and the builder |
 | 3 | **Shipped.** **Rich comments**: write comments with the notes editor | `rich-comments` | Without losing the plain-text API for scripts and assistants |
 | 4 | **Shipped.** **Shell completion for `ot`**: `ot completion bash`, `zsh` or `fish` | `ot-completion` | Commands, flags and fixed values from the description `ot schema` prints, plus project, label and view names |
 | 5 | **Shipped.** **The in-app assistant for end-to-end encrypted accounts**, run from the device | `assistant-on-device` | The first assistant runs its loop on the server, which cannot read encrypted content; here the browser holds the key and calls the model provider itself. The cost: the model key reaches the browser, and the provider must allow calls from it |
 
-## Next: Native shells
+### Native shells
 
 Phone and desktop apps as thin shells around the same web app, loaded from your own server (decided in `native-shells`, design D1 to D3). Each is an OpenSpec change.
 
 | # | Shell | Change | Notes |
 | --- | --- | --- | --- |
-| 1 | **Built; waiting for the owner.** Android app: first-run server screen, reminders scheduled on the phone without a push service, the share menu, Today and quick-add widgets, fingerprint unlock of an encrypted account | `native-shells` | Hand-written Kotlin around a `WebView`, AndroidX only (APK about 1 MB), in `mobile/android` since 0.10. Waits for the owner: Play and F-Droid listings and the signing key, then instrumented emulator tests, a real-device smoke test |
-| 2 | **Built; waiting for the owner.** iOS app with the same bridge: first-run server screen, reminders scheduled on the phone without a push service, the share sheet, a Today widget, Face ID unlock, and an opt-in build setting that adds the installed web app's offline start | `ios-shell` | Hand-written Swift around a `WKWebView`, no third-party code, in `mobile/ios`. Not on the App Store (AGPL), so whoever wants it builds and signs it; waits for the owner to decide on distribution, and for a real-device run |
+| 1 | **In closed testing on Google Play.** Android app: first-run server screen, reminders scheduled on the phone without a push service, the share menu, Today and quick-add widgets, fingerprint unlock of an encrypted account | `native-shells` | Hand-written Kotlin around a `WebView`, AndroidX only (APK about 1 MB), in `mobile/android` since 0.10. Production, F-Droid and reproducible builds: `play-production` in 0.20 |
+| 2 | **Built; waiting for the owner.** iOS app with the same bridge: first-run server screen, reminders scheduled on the phone without a push service, the share sheet, a Today widget, Face ID unlock, and an opt-in build setting that adds the installed web app's offline start | `ios-shell` | Hand-written Swift around a `WKWebView`, no third-party code, in `mobile/ios`. Store distribution is `ios-distribution` in 0.20 |
 | 3 | Desktop app for macOS and Windows: the embedded server plus a window, a tray icon and native notifications | `desktop-shell` | Open: Wails v3 or the `webview/webview` binding (D2), code signing and notarisation, where the data directory lives |
 
-## Future ideas
+### Future ideas
 
 Not commitments, just honest next steps. Each would start as an OpenSpec change.
 
-- **Real-world verification.** Exercise the integrations that automated tests could only simulate: CalDAV with Apple Reminders, Thunderbird and DAVx⁵; single sign-on with Authentik and Keycloak; email to task with common IMAP providers; MCP with real assistant clients; voice capture, web push, passkeys and touch drag and drop on real devices; the Firefox share flow. Fix what they turn up and record the results in the docs.
-- **Reminders over CalDAV.** Map `VALARM` to OpenTodo reminders in both directions instead of only preserving alarms verbatim.
+- **Real-world verification** (CalDAV is `caldav-verified` in 1.0). Exercise the integrations that automated tests could only simulate: CalDAV with Apple Reminders, Thunderbird and DAVx⁵; single sign-on with Authentik and Keycloak; email to task with common IMAP providers; MCP with real assistant clients; voice capture, web push, passkeys and touch drag and drop on real devices; the Firefox share flow. Fix what they turn up and record the results in the docs.
 - **Built-in SMTP receiver** for email to task, for operators who own an MX record (`email-smtp-receiver`).
 - **Published browser extension** in the Chromium and Firefox stores. (File and image sharing through the share target is part of `attachments` above.)
 
