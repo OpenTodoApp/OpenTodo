@@ -285,9 +285,9 @@ describe('the list bindings', () => {
 })
 
 // Touch: hold and release (task-row-context-menu). A mouse never sends this gesture:
-// the hold arms the row (tint feedback), a release opens the menu at the finger on a
-// fine pointer, a move ends the hold — a scroll on a plain row, the drag itself on a
-// draggable one. On a coarse pointer (a phone) the hold never opens a menu at all.
+// the hold arms the row (tint feedback), a release opens the menu at the finger, a
+// move ends the hold — a scroll on a plain row, the drag itself on a draggable one —
+// on every pointer, coarse included: the row's grip took selection (bulk-actions).
 describe('touch hold', () => {
   const TOUCH_ID = 3
   const touch = (target: EventTarget, type: string, x: number, y: number) => act(() => {
@@ -358,7 +358,7 @@ describe('touch hold', () => {
     await r.unmount()
   })
 
-  it('on a coarse pointer (a phone) the hold never arms and never opens a menu', async () => {
+  it('on a coarse pointer (a phone) the hold arms and opens the menu — selection is the grip\'s', async () => {
     const spy = vi.fn()
     const restore = coarsePointer()
     try {
@@ -368,13 +368,13 @@ describe('touch hold', () => {
       try {
         touch(li, 'pointerdown', 40, 60)
         await vi.advanceTimersByTimeAsync(TOUCH_HOLD_MS + 50)
-        // The long press keeps bulk-actions' meaning on a phone: no arm, no menu.
-        expect(li.hasAttribute('data-touch-hold')).toBe(false)
+        // One rule on every device: the held row tints, and a release opens its menu.
+        expect(li.hasAttribute('data-touch-hold')).toBe(true)
         release(40, 60)
       } finally {
         vi.useRealTimers()
       }
-      expect(spy).not.toHaveBeenCalled()
+      expect(spy).toHaveBeenCalledTimes(1)
       await r.unmount()
     } finally {
       restore()

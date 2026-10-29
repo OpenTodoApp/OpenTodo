@@ -182,9 +182,9 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'list.move-down', keys: ['Alt+↓'], description: 'Move it one place down', section: 'tasks', scope: 'list' },
   { id: 'list.move-top', keys: ['Alt+Shift+↑'], description: 'Move it to the top of its list', section: 'tasks', scope: 'list' },
   { id: 'list.move-bottom', keys: ['Alt+Shift+↓'], description: 'Move it to the bottom of its list', section: 'tasks', scope: 'list' },
-  { id: 'note.drag', keys: ['Drag (touch: press and hold, then move)'], description: 'Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels', section: 'tasks', scope: 'list', note: true },
+  { id: 'note.drag', keys: ["Drag (touch: drag the row's grip, or press and hold the row, then move)"], description: 'Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels', section: 'tasks', scope: 'list', note: true },
   { id: 'note.swipe', keys: ['Swipe a task (touch)'], description: 'Right completes, left schedules; the same two actions start the task\'s menu', section: 'tasks', scope: 'list', note: true },
-  { id: 'note.hold', keys: ['Press and hold a task (touch)'], description: 'Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them', section: 'tasks', scope: 'list', note: true },
+  { id: 'note.hold', keys: ['Press and hold the grip (touch)'], description: "Tick the task and show every checkbox (a tap on the grip at the row's edge does the same); Select tasks in the page menu does the same, Done hides them", section: 'tasks', scope: 'list', note: true },
   { id: 'note.sorted-views', keys: ['Today, Upcoming, Assigned, Completed, labels, filters'], description: 'Sorted by date (or their own rule): no drag or Alt moves there', section: 'tasks', scope: 'list', note: true },
   // Expanded rows (row-expand D1): → shows more, ← shows less; the details open after folded subtasks unfold and close before they fold.
   { id: 'list.expand', keys: ['→'], label: 'Show details', description: 'Show the details of the selected task under its row (unfold its subtasks first when they are folded), or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },

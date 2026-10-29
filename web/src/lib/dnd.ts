@@ -26,7 +26,7 @@ export interface DragOptions {
    * becoming a drag (false, from cleanup) — the pressed element's held feedback.
    */
   onHoldChange?: (held: boolean) => void
-  /** Touch only: a hold completed and the finger lifted without moving: open the row's menu here (task-row-context-menu). */
+  /** Touch only: a hold completed and the finger lifted without moving: open the row's menu here (task-row-context-menu). Fires for every pointer now — selection lives on the grip, so the row body's hold is only ever the menu. */
   onHoldRelease?: (x: number, y: number) => void
   /**
    * Also resolve `data-task-drop` targets (OpenSpec change ux-feedback-2, D4: a
@@ -35,11 +35,19 @@ export interface DragOptions {
    */
   taskDrops?: boolean
   /**
-   * Touch: the hold itself means something (phone-v2 D8, long press selects). It is
-   * called when the hold elapses instead of lifting; the drag lifts only if the finger
-   * then moves, and a release without moving swallows the click (the task does not open).
+   * Touch: the hold itself means something (phone-v2 D8, long press selects — from the
+   * row's grip since the touch-row rework). It is called when the hold elapses instead
+   * of lifting; the drag lifts only if the finger then moves, and a release without
+   * moving swallows the click (the task does not open).
    */
   onHold?: () => void
+  /**
+   * The press began on the row's grip, not its body. A grip never scrolls (its own
+   * `touch-action: none`), so any movement past the threshold lifts the drag without
+   * waiting for the hold; the hold still means select, and a release without either
+   * falls through to the grip's own click (a tap ticks).
+   */
+  grip?: boolean
 }
 
 /** Pixels a mouse or pen must travel before a press becomes a drag. */
@@ -229,6 +237,14 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     if (!lifted) {
       const far = Math.hypot(ev.clientX - startX, ev.clientY - startY) > DRAG_THRESHOLD
       if (e.pointerType === 'touch') {
+        // A grip never scrolls: any movement past the threshold drags (task-row-context-menu follow-up).
+        if (opts.grip) {
+          if (!far) return
+          lift()
+          ev.preventDefault()
+          place(ev.clientX, ev.clientY)
+          return
+        }
         // Moving before the hold elapses is a scroll (or a swipe), not a drag; after a hold that selected, it carries the selection.
         if (!hold.armed()) { if (far) cancel(); return }
         if (!far) return
@@ -256,7 +272,9 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
       // keeps the press as phone-v2 gave it — a selection, or nothing.
       if (heldStill && e.pointerType === 'touch') {
         swallowNextClick()
-        if (!heldSelected && finePointer()) opts.onHoldRelease?.(ev.clientX, ev.clientY)
+        // Every pointer (the grip took selection): a held release on the row body opens
+        // its actions menu — on a phone as on a desktop. A grip press is never the menu's.
+        if (!heldSelected && !opts.grip) opts.onHoldRelease?.(ev.clientX, ev.clientY)
       }
       return
     }
