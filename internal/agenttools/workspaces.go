@@ -75,6 +75,22 @@ func (snap *snapshot) keptWorkspace(taskID string) (string, bool) {
 	return ws, true
 }
 
+// keptProjectWorkspace is the workspace_id that keeps a project getting a new
+// parent in the workspace it is in: a sub-project follows its root and carries
+// no value of its own, so as a top-level project it would land in the default
+// workspace (issue 544). "" for the default workspace; ok is false for an
+// account with one workspace, which writes nothing.
+func (snap *snapshot) keptProjectWorkspace(projectID string) (string, bool) {
+	if len(snap.workspaces) <= 1 {
+		return "", false
+	}
+	ws := snap.partition().Project(projectID)
+	if ws == snap.defaultWorkspace() {
+		ws = ""
+	}
+	return ws, true
+}
+
 // partition places the snapshot's projects and tasks in workspaces.
 func (snap *snapshot) partition() *opsync.Partition {
 	if snap.part != nil {

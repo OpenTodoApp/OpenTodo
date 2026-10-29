@@ -447,11 +447,16 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		s.parentError(w, err)
 		return
 	}
-	if entity == "task" {
-		if err := s.keepTaskWorkspace(r.Context(), userFrom(r.Context()).ID, body, existing); err != nil {
-			s.internal(w, err)
-			return
-		}
+	var keepErr error
+	switch entity {
+	case "task":
+		keepErr = s.keepTaskWorkspace(r.Context(), userFrom(r.Context()).ID, body, existing)
+	case "project":
+		keepErr = s.keepProjectWorkspace(r.Context(), userFrom(r.Context()).ID, body, existing)
+	}
+	if keepErr != nil {
+		s.internal(w, keepErr)
+		return
 	}
 	if entity == "view" {
 		if err := s.checkView(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing); err != nil {
