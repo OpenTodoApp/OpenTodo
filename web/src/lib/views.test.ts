@@ -274,13 +274,16 @@ describe('runView', () => {
     const fields: FieldDef[] = [
       { id: 'date', name: 'Order date', project_id: 'pw', type: 'date', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
       { id: 'number', name: 'ORDER DATE', project_id: 'ph', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
+      { id: 'text', name: 'order date', project_id: 'pt', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
     ]
     const dated = task({ id: 'dated', project_id: 'pw', fields: { date: '2026-10-20' } })
     const numbered = task({ id: 'numbered', project_id: 'ph', fields: { number: 10 } })
     const earlier = task({ id: 'earlier', project_id: 'pw', fields: { date: '2026-10-10' } })
-    const context = { projects: PROJECTS, fields }
-    expect([dated, numbered, earlier].sort(compareTasks('field:order date', 'asc', context)).map((x) => x.id)).toEqual(['earlier', 'dated', 'numbered'])
-    expect([earlier, numbered, dated].sort(compareTasks('field:order date', 'desc', context)).map((x) => x.id)).toEqual(['numbered', 'dated', 'earlier'])
+    const alpha = task({ id: 'alpha', project_id: 'pt', fields: { text: 'Alpha' } })
+    const beta = task({ id: 'beta', project_id: 'pt', fields: { text: 'beta' } })
+    const context = { projects: [...PROJECTS, project({ id: 'pt', name: 'Text' })], fields }
+    expect([dated, numbered, earlier, beta, alpha].sort(compareTasks('field:order date', 'asc', context)).map((x) => x.id)).toEqual(['earlier', 'dated', 'numbered', 'alpha', 'beta'])
+    expect([alpha, earlier, beta, numbered, dated].sort(compareTasks('field:order date', 'desc', context)).map((x) => x.id)).toEqual(['beta', 'alpha', 'numbered', 'dated', 'earlier'])
   })
 
   it('sorts by a field inherited from a parent project', () => {
@@ -294,12 +297,43 @@ describe('runView', () => {
     expect(result.ok && ids(result.tasks)).toEqual(['inherited-low', 'inherited-high', 'unset'])
   })
 
+  it('sorts a parent number field with inherited subproject values and same-named text fields', () => {
+    const fields: FieldDef[] = [
+      { id: 'parent-score', name: 'Score', project_id: 'pw', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
+      { id: 'text-score', name: 'score', project_id: 'pt', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
+    ]
+    const tasks = [
+      task({ id: 'parent-number', project_id: 'pw', labels: ['lw'], fields: { 'parent-score': 5 } }),
+      task({ id: 'child-number', project_id: 'pc', labels: ['lw'], fields: { 'parent-score': 2 } }),
+      task({ id: 'text', project_id: 'pt', labels: ['lw'], fields: { 'text-score': 'Alpha' } }),
+      task({ id: 'invalid-number', project_id: 'pc', labels: ['lw'], due: { date: '2026-10-08' }, fields: { 'parent-score': 'bad' } }),
+      task({ id: 'empty-text', project_id: 'pt', labels: ['lw'], due: { date: '2026-10-09' }, fields: { 'text-score': '' } }),
+      task({ id: 'unset', project_id: 'pw', labels: ['lw'], due: { date: '2026-10-10' } }),
+    ]
+    const context: ViewContext = {
+      ...CTX, projects: [...PROJECTS, project({ id: 'pt', name: 'Text' })], tasks, fields,
+    }
+    const asc = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'field:Score' }), context)
+    const desc = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'field:Score', sort_dir: 'desc' }), context)
+    expect(asc.ok && ids(asc.tasks)).toEqual(['child-number', 'parent-number', 'text', 'invalid-number', 'empty-text', 'unset'])
+    expect(desc.ok && ids(desc.tasks)).toEqual(['text', 'parent-number', 'child-number', 'invalid-number', 'empty-text', 'unset'])
+  })
+
   it('uses the established fallback order when custom field values tie', () => {
     const fields: FieldDef[] = [{ id: 'score', name: 'Score', project_id: 'pw', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} }]
     const later = task({ id: 'later', project_id: 'pw', fields: { score: 4 }, due: { date: '2026-10-12' }, position: 1 })
     const earlier = task({ id: 'earlier', project_id: 'pw', fields: { score: 4 }, due: { date: '2026-10-11' }, position: 9 })
     const context = { projects: PROJECTS, fields }
     expect([later, earlier].sort(compareTasks('field:Score', 'asc', context)).map((x) => x.id)).toEqual(['earlier', 'later'])
+  })
+
+  it('uses the existing fallback when text values differ only by case', () => {
+    const fields: FieldDef[] = [{ id: 'name', name: 'Name', project_id: 'pw', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} }]
+    const laterDue = task({ id: 'later-due', project_id: 'pw', fields: { name: 'apple' }, due: { date: '2026-10-12' } })
+    const earlierDue = task({ id: 'earlier-due', project_id: 'pw', fields: { name: 'Apple' }, due: { date: '2026-10-11' } })
+    const context = { projects: PROJECTS, fields }
+    expect([laterDue, earlierDue].sort(compareTasks('field:Name', 'asc', context)).map((x) => x.id)).toEqual(['earlier-due', 'later-due'])
+    expect([laterDue, earlierDue].sort(compareTasks('field:Name', 'desc', context)).map((x) => x.id)).toEqual(['earlier-due', 'later-due'])
   })
 
   it('groups, sorts and filters zoned dues by their date in the viewer zone (absolute-datetimes)', () => {

@@ -443,21 +443,29 @@ export interface FieldSortContext {
   fields?: readonly FieldDef[]
 }
 
-type FieldSortValue = { type: 'number'; value: number } | { type: 'date'; value: string }
+type FieldSortValue = { type: 'date'; value: string } | { type: 'number'; value: number } | { type: 'text'; value: string }
 
 function fieldSortValue(task: Task, fieldName: string, fieldsOf: (projectId: string | null | undefined) => FieldDef[]): FieldSortValue | null {
   const definition = fieldsOf(task.project_id).find((field) => field.name.trim().toLocaleLowerCase() === fieldName)
-  if (!definition || (definition.type !== 'number' && definition.type !== 'date')) return null
+  if (!definition || (definition.type !== 'number' && definition.type !== 'date' && definition.type !== 'text')) return null
   const value = task.fields?.[definition.id]
-  if (value === null || value === undefined || !matchesType(definition, value)) return null
+  if (value === null || value === undefined || value === '' || !matchesType(definition, value)) return null
   if (definition.type === 'number' && typeof value === 'number') return { type: 'number', value }
   if (definition.type === 'date' && typeof value === 'string') return { type: 'date', value }
+  if (definition.type === 'text' && typeof value === 'string') return { type: 'text', value }
   return null
 }
 
 function compareFieldValues(av: FieldSortValue, bv: FieldSortValue): number {
-  if (av.type !== bv.type) return av.type === 'date' ? -1 : 1
-  return av.value < bv.value ? -1 : av.value > bv.value ? 1 : 0
+  const rank = (value: FieldSortValue) => value.type === 'date' ? 0 : value.type === 'number' ? 1 : 2
+  if (av.type !== bv.type) return rank(av) - rank(bv)
+  if (av.type === 'date' && bv.type === 'date') return av.value < bv.value ? -1 : av.value > bv.value ? 1 : 0
+  if (av.type === 'number' && bv.type === 'number') return av.value - bv.value
+  if (av.type === 'text' && bv.type === 'text') {
+    const a = av.value.toLowerCase(), b = bv.value.toLowerCase()
+    return a < b ? -1 : a > b ? 1 : 0
+  }
+  return 0
 }
 
 export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortContext): (a: Task, b: Task) => number {
