@@ -5461,5 +5461,7 @@
   "Now": "Ahora",
   "Nothing else scheduled today.": "No hay nada más programado para hoy.",
   "{n} more today": "{n} más hoy",
-  "Open the calendar": "Abrir el calendario"
+  "Open the calendar": "Abrir el calendario",
+  "The provider answers, but this model does not support tool use, which the assistant needs. Choose another model.": "El proveedor responde, pero este modelo no admite el uso de herramientas, que el asistente necesita. Elige otro modelo.",
+  "The provider has no such model or endpoint. Check the model id and, for a model server, its address (it usually ends in /v1) with “Change provider or key” or in Settings → Integrations → Assistant.": "El proveedor no tiene ese modelo ni ese punto de acceso. Revisa el id del modelo y, para un servidor de modelos, su dirección (suele terminar en /v1) con «Cambiar proveedor o clave» o en Ajustes → Integraciones → Asistente."
 }

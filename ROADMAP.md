@@ -31,7 +31,7 @@ Method primitives and the community's quick wins.
 | [`focus-everywhere`](openspec/changes/focus-everywhere/) | Focus in the sidebar, on tasks and in the task menu, with presets, +5/+15 min and optional noise | [#543](https://github.com/OpenTodoApp/OpenTodo/issues/543), [#553](https://github.com/OpenTodoApp/OpenTodo/issues/553), [#535](https://github.com/OpenTodoApp/OpenTodo/issues/535) |
 | [`sidebar-polish`](openspec/changes/sidebar-polish/) | Counts, reorderable destinations, icons for saved views, a kept draft | [#545](https://github.com/OpenTodoApp/OpenTodo/issues/545), [#562](https://github.com/OpenTodoApp/OpenTodo/issues/562), [#560](https://github.com/OpenTodoApp/OpenTodo/issues/560), [#559](https://github.com/OpenTodoApp/OpenTodo/issues/559) |
 | [`default-reminders`](openspec/changes/default-reminders/) | A default reminder for dated or timed tasks | [#546](https://github.com/OpenTodoApp/OpenTodo/issues/546) |
-| [`assistant-providers-fix`](openspec/changes/assistant-providers-fix/) | Gemini and other OpenAI-compatible providers | [#501](https://github.com/OpenTodoApp/OpenTodo/issues/501) |
+| [`assistant-providers-fix`](openspec/changes/archive/2026-10-30-assistant-providers-fix/) | **Shipped.** Gemini and other OpenAI-compatible providers | [#501](https://github.com/OpenTodoApp/OpenTodo/issues/501) |
 
 ### [0.18 "The mindful daily planner"](https://github.com/OpenTodoApp/OpenTodo/milestone/2)
 

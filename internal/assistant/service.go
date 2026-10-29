@@ -108,7 +108,8 @@ func (s *Service) provider(name string, p ProviderSettings, key string, allowPri
 	case Gemini:
 		return &ChatProvider{Name: Gemini, BaseURL: or(s.GeminiBaseURL, GeminiBaseURL), Key: key, Model: p.Model, HTTP: s.fixed(), Retries: 2, Backoff: s.Backoff}, nil
 	case Compatible:
-		return &ChatProvider{Name: Compatible, BaseURL: p.BaseURL, Key: key, Model: p.Model, HTTP: s.Net.CompatibleClient(allowPrivate), Retries: 2, Backoff: s.Backoff}, nil
+		// Trimmed here too, for a URL saved before the trim existed.
+		return &ChatProvider{Name: Compatible, BaseURL: TrimBaseURL(p.BaseURL), Key: key, Model: p.Model, HTTP: s.Net.CompatibleClient(allowPrivate), Retries: 2, Backoff: s.Backoff}, nil
 	}
 	return nil, errors.New("unknown provider")
 }
@@ -161,6 +162,10 @@ func (s *Service) TestConnection(ctx context.Context, name string, set Settings,
 	}
 	if d.BaseURL != nil {
 		p.BaseURL = strings.TrimSpace(*d.BaseURL)
+	}
+	if name == Compatible {
+		// The same trim as a save, so the test checks what will be saved.
+		p.BaseURL = TrimBaseURL(p.BaseURL)
 	}
 	allowPrivate := set.AllowPrivateEndpoint
 	if d.AllowPrivateEndpoint != nil {
