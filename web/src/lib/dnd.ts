@@ -47,6 +47,70 @@ export const DRAG_THRESHOLD = 5
 /** Milliseconds a touch must rest before it becomes a drag. */
 export const TOUCH_HOLD_MS = 350
 
+/**
+ * True when the primary pointer is a fine one (a mouse, a trackpad, a precise pen).
+ * The row's hold menu is for a fine pointer only: a coarse one (a phone) keeps its
+ * own long-press meaning — tick the row, or scroll (task-row-context-menu).
+ */
+export function finePointer(): boolean {
+  return typeof window === 'undefined' || window.matchMedia?.('(pointer: fine)').matches !== false
+}
+
+/** The press a shared hold follows (task-row-context-menu). */
+export interface HoldPress {
+  pointerId: number
+  pointerType: string
+  clientX: number
+  clientY: number
+}
+
+export interface HoldOptions {
+  /** The hold elapsed without the press moving: the gesture is armed (its held feedback starts). */
+  onArmed: () => void
+  /** The armed hold ended without a release — `stop()`, called by the caller on movement or a cancel. */
+  onEnd: () => void
+}
+
+export interface Hold {
+  /** The hold elapsed and has not ended since. */
+  armed: () => boolean
+  /** End the hold now: `onEnd` runs once if it was armed, and never again. */
+  stop: () => void
+}
+
+/**
+ * The touch hold both row gestures share (task-row-context-menu, design D1): after
+ * TOUCH_HOLD_MS still it arms (`onArmed`, once), and `stop()` ends it (`onEnd`, once).
+ * The caller owns the rest — movement and release mean something different to a drag
+ * (lift) than to a row without one (end the hold), so each calls `stop()` when its own
+ * move passes DRAG_THRESHOLD. While armed the page must not scroll under the finger.
+ * A press that is not a touch never arms.
+ */
+export function trackHold(e: HoldPress, opts: HoldOptions): Hold {
+  if (e.pointerType !== 'touch') return { armed: () => false, stop: () => undefined }
+  let armed = false
+  let done = false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const blockScroll = (ev: TouchEvent) => { if (armed) ev.preventDefault() }
+  const stop = () => {
+    if (done) return
+    done = true
+    clearTimeout(timer)
+    window.removeEventListener('touchmove', blockScroll)
+    if (armed) {
+      armed = false
+      opts.onEnd()
+    }
+  }
+  timer = setTimeout(() => {
+    if (done) return
+    armed = true
+    opts.onArmed()
+  }, TOUCH_HOLD_MS)
+  window.addEventListener('touchmove', blockScroll, { passive: false })
+  return { armed: () => armed, stop }
+}
+
 const ACTIVE = 'data-drop-active'
 
 /** The drop target key at a point: the nearest ancestor with `data-drop-target` (or `data-task-drop`, as `drop:<value>`). */
@@ -113,21 +177,29 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   const startX = e.clientX
   const startY = e.clientY
   let lifted = false
-  let held = false
   /** phone-v2's hold selected this press: it belongs to the selection, not to the menu. */
   let heldSelected = false
   let ghost: HTMLElement | null = null
   let target: string | null = null
-  let timer: ReturnType<typeof setTimeout> | undefined
+  // The shared hold (task-row-context-menu): it arms the drag instead of lifting it.
+  const hold = trackHold(e, {
+    onArmed: () => {
+      // The hold arms: phone-v2's hold selects (and is remembered, so the release does
+      // not open the menu); otherwise the release opens the row's menu.
+      opts.onHoldChange?.(true)
+      if (opts.onHold) {
+        heldSelected = true
+        opts.onHold()
+      }
+    },
+    // Armed and not lifted any more: the tint hands over to the drag's own feedback (a lift), or simply ends (cleanup, a cancel).
+    onEnd: () => opts.onHoldChange?.(false),
+  })
 
   const lift = () => {
     if (lifted) return
     lifted = true
-    // The held tint hands over to the drag's own feedback.
-    if (held) {
-      held = false
-      opts.onHoldChange?.(false)
-    }
+    hold.stop()
     ghost = makeGhost(opts.label)
     document.body.style.userSelect = 'none'
     opts.onStart?.()
@@ -142,11 +214,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     opts.onMove?.(target, x, y)
   }
   const cleanup = () => {
-    clearTimeout(timer)
-    if (held) {
-      held = false
-      opts.onHoldChange?.(false)
-    }
+    hold.stop()
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', up)
     window.removeEventListener('pointercancel', cancel)
@@ -162,7 +230,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
       const far = Math.hypot(ev.clientX - startX, ev.clientY - startY) > DRAG_THRESHOLD
       if (e.pointerType === 'touch') {
         // Moving before the hold elapses is a scroll (or a swipe), not a drag; after a hold that selected, it carries the selection.
-        if (!held) { if (far) cancel(); return }
+        if (!hold.armed()) { if (far) cancel(); return }
         if (!far) return
         lift()
         ev.preventDefault()
@@ -178,17 +246,17 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   const up = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return
     const wasLifted = lifted
-    const heldStill = held
+    const heldStill = hold.armed()
     const at = wasLifted ? dropTargetAt(ev.clientX, ev.clientY, document, opts.taskDrops) ?? target : null
     cleanup()
     if (!wasLifted) {
-      // A touch held still and released is a long press: the row's actions menu at
-      // the finger (task-row-context-menu "Touch: hold and release") — not a tap,
-      // and nothing was dropped. When phone-v2's hold selected instead, the press
-      // stays a selection (no menu).
+      // A touch held still and released is a long press: not a tap, and nothing was
+      // dropped. On a fine pointer it opens the row's actions menu at the finger
+      // (task-row-context-menu "Touch: hold and release"); a coarse pointer (a phone)
+      // keeps the press as phone-v2 gave it — a selection, or nothing.
       if (heldStill && e.pointerType === 'touch') {
         swallowNextClick()
-        if (!heldSelected) opts.onHoldRelease?.(ev.clientX, ev.clientY)
+        if (!heldSelected && finePointer()) opts.onHoldRelease?.(ev.clientX, ev.clientY)
       }
       return
     }
@@ -206,9 +274,10 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     ev.stopPropagation()
     cancel()
   }
-  // While a touch drag is lifted (or held, ready to lift) the page must not scroll under the finger.
+  // While a touch drag is lifted the page must not scroll under the finger; while it
+  // is merely armed, trackHold blocks the scroll for both holders of a hold.
   const blockScroll = (ev: TouchEvent) => {
-    if (lifted || held) ev.preventDefault()
+    if (lifted) ev.preventDefault()
   }
 
   window.addEventListener('pointermove', move)
@@ -216,19 +285,5 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   window.addEventListener('pointercancel', cancel)
   window.addEventListener('keydown', key, true)
   window.addEventListener('touchmove', blockScroll, { passive: false })
-  if (e.pointerType === 'touch') {
-    // The hold arms the drag instead of lifting it: moving afterwards drags,
-    // releasing still opens the row's menu, so neither gesture steals the other.
-    timer = setTimeout(() => {
-      // The hold arms the drag: phone-v2's hold selects (and is remembered, so the
-      // release does not open the menu); otherwise the release opens the row's menu.
-      held = true
-      opts.onHoldChange?.(true)
-      if (opts.onHold) {
-        heldSelected = true
-        opts.onHold()
-      }
-    }, TOUCH_HOLD_MS)
-  }
   return cancel
 }

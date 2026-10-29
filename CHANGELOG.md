@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **Right-click a task row to get its menu, where you clicked.** Until now a right-click only offered the browser's menu, which knows nothing about a task: pointer users had to tick the row to raise the Selection bar or reach for `.`. Right-clicking a row in a list, board, filter, saved view or method list now opens the same **Actions** menu the keyboard opens, at the pointer, for the whole ticked selection when that row is ticked and for the row alone when it is not — and a touch hold opens it at the finger on a screen you can point at. Links, fields and selected text inside a row keep the browser's own menu, and on a phone a long press keeps ticking rows as it always did. ([Work from the list](docs/work-from-the-list.md), [Keyboard](docs/keyboard.md#with-the-pointer), `task-row-context-menu`)
 - **Sub-projects inherit their parent's custom fields.** A field defined on a project now applies to every sub-project below it: its tasks show, edit, filter by and export the field like their own, and the sub-project's **Fields…** dialog lists inherited fields first, read-only. Names stay unique across the tree, the 30-field limit counts inherited fields, and the API and assistant tools follow the same rules. No migration; values are stored as before. ([Custom fields](docs/custom-fields.md#fields-of-sub-projects), `inherited-custom-fields`, closes #405)
 
 ### Fixed

@@ -75,6 +75,27 @@ describe('touch: hold, swipe and drag', () => {
     window.dispatchEvent(click)
     expect(click.defaultPrevented).toBe(true)
   })
+
+  it('on a coarse pointer (a phone) a held release never opens the row menu', () => {
+    // task-row-context-menu: the hold menu is for a fine pointer; a phone's long press
+    // keeps bulk-actions' meaning (it ticks the row), so nothing opens on release.
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({
+      matches: false, media: q, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+    try {
+      const release = vi.fn()
+      beginDrag(press, { label: 'Task', onDrop: vi.fn(), onEnd: vi.fn(), onHoldRelease: release })
+      vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+      up(50, 50)
+      expect(release).not.toHaveBeenCalled()
+      // The held press still swallowed its click — consume it so a later test keeps its own.
+      window.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    } finally {
+      window.matchMedia = original
+    }
+  })
 })
 
 describe('the click after a drag (row-and-cursor D1)', () => {

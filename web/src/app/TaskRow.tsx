@@ -50,7 +50,7 @@ import { OriginChip } from './OriginChip'
 import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
-import { DRAG_THRESHOLD, TOUCH_HOLD_MS, swallowNextClick } from '../lib/dnd'
+import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -365,6 +365,8 @@ export interface TaskRowProps {
   onPointerDown?: (e: React.PointerEvent<HTMLLIElement>) => void
   /** A right-click: opens the row's actions menu at the pointer (task-row-context-menu). */
   onContextMenu?: (e: React.MouseEvent<HTMLLIElement>) => void
+  /** A touch hold's release: the same menu at those coordinates — no event, so no cast (task-row-context-menu). */
+  onRowMenu?: (x: number, y: number, row: HTMLElement) => void
   /** Drop target key for lib/dnd (manual-ordering): the row accepts drops before, after or inside it. */
   dropKey?: string
   /** Where the dragged task would land relative to this row (manual-ordering). */
@@ -492,29 +494,34 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
 
 /**
  * Touch hold on a row the drag does not own (task-row-context-menu "Touch: hold and
- * release"): the hold arms after TOUCH_HOLD_MS with a tint on the row; a release then
- * opens the actions menu at the finger, a move ends it as a scroll. A draggable row
- * gets the same hold inside beginDrag, so exactly one owner per row.
+ * release"): the hold arms with a tint on the row, a release then opens the actions
+ * menu at the finger, a move ends it as a scroll — one rule, so a long press means the
+ * same thing on every list of a device. Only a fine pointer holds for the menu; a
+ * coarse one (a phone) keeps its long press for ticking the row (bulk-actions) and
+ * never opens it here. A draggable row gets the same hold inside beginDrag, so
+ * exactly one owner per row.
  */
-function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['onPointerDown'], open: TaskRowProps['onContextMenu']): void {
+function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['onPointerDown'], open: TaskRowProps['onRowMenu']): void {
   drag?.(e)
-  if (drag || e.pointerType !== 'touch' || !open) return
+  if (drag || e.pointerType !== 'touch' || !open || !finePointer()) return
   const fire = open
   const li = e.currentTarget
   const x0 = e.clientX
   const y0 = e.clientY
   const pointerId = e.pointerId
-  let timer = 0
-  let armed = false
   let done = false
+  // The shared hold: the timer, the armed latch and the scroll block live in lib/dnd.
+  const hold = trackHold(e, {
+    onArmed: () => li.setAttribute('data-touch-hold', ''),
+    onEnd: () => li.removeAttribute('data-touch-hold'),
+  })
   function stop() {
     if (done) return
     done = true
-    clearTimeout(timer)
+    hold.stop()
     window.removeEventListener('pointermove', move, true)
     window.removeEventListener('pointerup', up)
     window.removeEventListener('pointercancel', stop)
-    li.removeAttribute('data-touch-hold')
   }
   function move(ev: PointerEvent) {
     if (ev.pointerId !== pointerId) return
@@ -523,18 +530,13 @@ function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['on
   }
   function up(ev: PointerEvent) {
     if (ev.pointerId !== pointerId) return
-    const held = armed
+    const held = hold.armed()
     const { clientX: x, clientY: y } = ev
     stop()
     if (!held) return
     swallowNextClick()
-    // The menu reads only the point; a constructed event keeps one code path with right-click.
-    fire(new MouseEvent('contextmenu', { clientX: x, clientY: y, cancelable: true }) as unknown as React.MouseEvent<HTMLLIElement>)
+    fire(x, y, li)
   }
-  timer = window.setTimeout(() => {
-    armed = true
-    li.setAttribute('data-touch-hold', '')
-  }, TOUCH_HOLD_MS)
   window.addEventListener('pointermove', move, true)
   window.addEventListener('pointerup', up)
   window.addEventListener('pointercancel', stop)
@@ -549,7 +551,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -660,7 +662,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   )
 
   // The swipe takes the press first (rowSwipe), then the drag owner — or, with no drag, the row's own touch hold (task-row-context-menu).
-  const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onContextMenu) }
+  const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onRowMenu) }
 
   return (
     <li
