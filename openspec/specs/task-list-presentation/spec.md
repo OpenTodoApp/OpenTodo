@@ -267,11 +267,15 @@ The selection checkbox SHALL take the place of the task checkbox only while a se
 - **THEN** every row shows the selection checkbox where the task checkbox was and no title moves
 
 ### Requirement: Drag feedback
-A dragged row SHALL lift with the popover elevation and a slight scale, the drop position SHALL show as a line with a dot at its start, and dropping on the middle of a row SHALL ring that row. Under reduced motion the lift is an opacity change.
+A dragged row SHALL lift with the popover elevation and a slight scale, the drop position SHALL show as a line with a dot at its start, and dropping on the middle of a row SHALL ring that row. Under reduced motion the lift is an opacity change. In the sidebar's project tree the line SHALL start at the indent of the level the dragged project lands on, and a dragged project SHALL show only this indicator: the ring a project row shows while a task is dragged onto it SHALL not appear.
 
 #### Scenario: Start a drag
 - **WHEN** the user drags a task in a project list
 - **THEN** the row lifts and the target line appears between rows as the pointer moves
+
+#### Scenario: Drag a project in the sidebar
+- **WHEN** the user drags the sub-project "Acme" over the top edge of the top-level project "Clients"
+- **THEN** one line with a dot appears above Clients at the top level's indent, no row is ringed, and dropping makes Acme a top-level project before Clients
 
 ### Requirement: Skeleton loading
 While a list, the panel or a settings page waits for local data, it SHALL show skeleton rows in the row's shape, never a spinner or a "Loading…" sentence; the skeleton SHALL be replaced in place. A screen SHALL draw what depends on its local data only once that data has been read, never an empty state, empty groups, a header that is replaced, or a sidebar group that opens and then folds first: a list, a project and Statistics draw nothing below the shell until then, and the Plan, Projects and Updates show their skeleton. A settings section whose cards ask the server SHALL draw its cards together once each has its first answer, waiting at most 600 ms, so a card that grows with its answer does not push the cards below it. On these screens the audit's layout shift (M12) SHALL stay at or below 0.1 at every width.
