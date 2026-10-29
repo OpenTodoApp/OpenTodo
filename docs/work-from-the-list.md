@@ -14,7 +14,7 @@ Most of the day happens in a list: the Inbox, Today or a project.
 
 ## Add a task
 
-Press <kbd>q</kbd> anywhere in a task list, type, and press <kbd>Enter</kbd>. The box stays focused so you can add several in a row.
+Press <kbd>q</kbd> in a task list, type, and press <kbd>Enter</kbd>. The box stays focused for the next one.
 
 You can fill in details as you type:
 
@@ -30,9 +30,9 @@ New tasks without a project land in the **Inbox**. Tasks added inside a project 
 
 Click a task's circle or press <kbd>c</kbd>. On a phone, swipe right to complete, left to schedule; hold to select. Completed tasks move to **Completed**, where you can reopen them.
 
-Deleting a task (the **Delete** button in the panel, or <kbd>Delete</kbd> in the list) moves it to the Trash, along with its subtasks. See [Trash and history](trash-and-history.md).
+Deleting a task (the **Delete** button in the panel, or <kbd>Delete</kbd> in the list) moves it to the Trash, along with its subtasks, where you can restore it. See [Trash and history](trash-and-history.md).
 
-Completing, deleting, moving, rescheduling or parking a task shows a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes).
+Most changes show a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes).
 
 ## What a row shows
 
@@ -58,7 +58,7 @@ You don't have to open a task to change it. Select it and press:
 | <kbd>s</kbd> | Schedule it on the Day calendar |
 | <kbd>Delete</kbd> | Move it to the Trash |
 
-Right-click or hold a row: its menu opens at the pointer; tick several at once.
+Right-click a row to open its menu there; with rows ticked, it acts on all of them.
 
 ## Put things in order
 
