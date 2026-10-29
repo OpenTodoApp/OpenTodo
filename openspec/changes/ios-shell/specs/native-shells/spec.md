@@ -47,6 +47,10 @@ On first start, and whenever no server is configured, a shell SHALL show a scree
 - **WHEN** a signed-in user chooses "Change server" and confirms
 - **THEN** the shell forgets the old server's storage, scheduled reminders and widget data, and shows the first-run screen
 
+#### Scenario: Behind a login page
+- **WHEN** the user enters the address of a server whose login wall redirects `/healthz` to its sign-in page
+- **THEN** the screen says the server is behind a login page and offers "Sign in here"; after signing in there, the check passes and the app opens the server
+
 ### Requirement: Offline start
 On Android, once the web app has been loaded once, the shell SHALL open offline and show the app from the service worker's precache with the local data, like the installed web app. On iOS the system gives a service worker to an app only for a host the app declares at build time, so the iOS shell SHALL offer two builds and say which one it is: a portable build for any server, which needs the network and SHALL show an offline screen naming the reason and offering a retry; and a one-server build, whose declared host gets the service worker, the precache and therefore the same offline start as Android. In both builds the first start SHALL need the network and SHALL say so when it is missing.
 
