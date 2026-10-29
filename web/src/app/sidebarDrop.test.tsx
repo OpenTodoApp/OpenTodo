@@ -10,6 +10,7 @@ import { db } from '../lib/db'
 import { setFavourite } from '../lib/favourites'
 import { createLabel } from '../lib/labels'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { toggleCollapsedProject } from '../lib/projects'
 import { saveViewMode } from '../lib/sections'
 import type { Task, User } from '../lib/types'
 import { addLabelUndoable, moveManyUndoable } from '../lib/undoActions'
@@ -172,5 +173,35 @@ describe('drop a task on a label', () => {
     const r = await addLabelUndoable(ids, waiting, 'waiting')
     for (const id of ids) expect((await task(id)).labels).toEqual([waiting])
     expect(r.entry?.count).toBe(2)
+  })
+})
+
+describe('drag a project in the sidebar (issue 544)', () => {
+  const projectRow = (id: string) => document.querySelector<HTMLElement>(`[data-project-row="${id}"]`)!
+
+  it('shows one indicator: the drop line at the level the project lands on, without the drop-target ring', async () => {
+    const clients = await createProject({ name: 'Clients' })
+    const acme = await createProject({ name: 'Acme', parent_id: clients })
+    await toggleCollapsedProject(clients, false)
+    const r = await shell({ view: 'inbox' })
+    await waitFor(() => !!projectRow(acme) && !!projectRow(clients))
+    // Without layout every row is zero high, so the pointer is in its top quarter: before Clients, at the top level.
+    document.elementFromPoint = () => projectRow(clients)
+    await act(async () => {
+      projectRow(acme).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: 10, clientY: 10 }))
+      window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: 40, clientY: 60 }))
+    })
+    await waitFor(() => !!document.querySelector('[data-drop-indicator]'), 'the drop line')
+    const lines = document.querySelectorAll<HTMLElement>('[data-drop-indicator]')
+    expect(lines).toHaveLength(1)
+    expect(lines[0].getAttribute('data-drop-indicator')).toBe('before')
+    expect(lines[0].getAttribute('data-drop-level')).toBe('0')
+    expect(projectRow(clients).className).not.toContain('data-drop-active:ring')
+    expect(projectRow(clients).className).not.toContain('ring-2')
+    await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType: 'mouse', clientX: 40, clientY: 60 })) })
+    await waitFor(async () => (await db.projects.get(acme))?.parent_id === null, 'Acme at the top level')
+    // A task dragged over a project still rings it.
+    await waitFor(() => projectRow(clients).className.includes('data-drop-active:ring-2'), 'the task-drop ring back')
+    await r.unmount()
   })
 })

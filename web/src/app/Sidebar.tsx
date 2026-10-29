@@ -37,7 +37,8 @@ import { beginDrag } from '../lib/dnd'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, canEditTasks, roleOf } from '../lib/sharing'
 import { taskDrop } from './taskDrop'
-import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
+import { dragFeedback, dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
+import { prefersReducedMotion } from './motion'
 import { formatUnread, useUnreadCounts } from '../lib/feed'
 import { matchSidebar } from '../lib/sidebarFind'
 import { sidebarFind } from './signals'
@@ -59,6 +60,12 @@ export const MORE_MENU_QUERY = '(min-width: 48rem) and (pointer: fine)'
 
 /** Indentation per level in the sidebar (16 px, ux-feedback-2 D6); capped so a deep tree still fits a 360 px screen. */
 const INDENT_REM = 1
+
+/** The indent level a project dropped before or after row `n` lands on (listDrop dropTarget): after an open parent it is its first child's. */
+function dropLevel(n: { depth: number; children: unknown[] }, zone: 'before' | 'after', isCollapsed: boolean, rail: boolean): number {
+  if (rail) return 0
+  return Math.min(zone === 'after' && n.children.length > 0 && !isCollapsed ? n.depth + 1 : n.depth, MAX_INDENT)
+}
 /** The Inbox destination takes dropped tasks (ux-feedback-2 D4): a task dropped on it leaves its project. */
 const INBOX_DROP = { 'data-task-drop': taskDrop.inbox, className: 'data-drop-active:ring-2 data-drop-active:ring-accent' }
 
@@ -311,6 +318,10 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   // places before / after it (among its siblings), the middle nests inside it
   // (project-hierarchy re-parenting). Keyboard alternatives: Alt+Up/Down, and `m`.
   const [dropAt, setDropAt] = useState<DropAt | null>(null)
+  // While a project is dragged, its drop position is the only indicator: the ring
+  // lib/dnd's drop-active state draws for tasks dropped on a project stays off (issue 544).
+  const [movingProject, setMovingProject] = useState(false)
+  const feedback = dragFeedback(prefersReducedMotion())
   const treeRef = useRef(tree)
   treeRef.current = tree
   const collapsedRef = useRef(collapsed_)
@@ -327,6 +338,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     beginDrag(e, {
       label: n.item.name,
       onMove: (target, _x, y) => {
+        setMovingProject(true)
         const id = target?.startsWith('project:') ? target.slice('project:'.length) : null
         const zone = id && !own.has(id) ? zoneUnder('data-project-row', id, y, true) : null
         show(id && zone ? { id, zone } : null)
@@ -339,7 +351,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         if (entry.parent_id) void toggleCollapsedProject(entry.parent_id, false)
         act(moveProjectTo(n.id, entry))
       },
-      onEnd: () => show(null),
+      onEnd: () => { show(null); setMovingProject(false) },
     })
   }
 
@@ -461,11 +473,13 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
               <li key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
                 data-project-row={n.id} data-drop-target={`project:${n.id}`} data-task-drop={canEditTasks(roleOf(n.id, memberMap)) ? taskDrop.project(n.id) : undefined}
                 onPointerDown={movable(n.id) ? (e) => startDrag(e, n) : undefined}
-                className={`group relative flex items-center rounded-control data-drop-active:ring-2 data-drop-active:ring-accent ${rowGap(shownRows, i)} ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: collapsed ? 0 : `${levels * INDENT_REM}rem` }}>
+                className={`group relative flex items-center rounded-control ${movingProject ? '' : 'data-drop-active:ring-2 data-drop-active:ring-accent'} ${rowGap(shownRows, i)} ${drop === 'inside' ? feedback.inside : ''}`} style={{ paddingLeft: collapsed ? 0 : `${levels * INDENT_REM}rem` }}>
                 <GuideLines levels={levels} />
                 {(drop === 'before' || drop === 'after') && (
-                  <span aria-hidden="true" data-drop-indicator={drop}
-                    className={`pointer-events-none absolute inset-x-0 h-0.5 rounded-control bg-accent ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
+                  // The task list's line with a dot, starting at the level the project lands on.
+                  <span aria-hidden="true" data-drop-indicator={drop} data-drop-level={dropLevel(n, drop, isCollapsed, collapsed)}
+                    className={`${feedback.line} ${drop === 'before' ? '-top-px' : '-bottom-px'}`}
+                    style={{ left: `${dropLevel(n, drop, isCollapsed, collapsed) * INDENT_REM + 0.25}rem` }} />
                 )}
                 {!collapsed && (
                   // On touch the slot widens with its 44 px chevron, which then reaches at most 4 px under the destination (ux-fixes-phone, audit M11).

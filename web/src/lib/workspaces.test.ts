@@ -180,6 +180,32 @@ describe('the partition on this device (task 5.1, 5.6, 5.7)', () => {
     expect(await inbox()).toContain(milk)
   })
 
+  it('a sub-project dragged or moved to the top level stays in its workspace (issue 544)', async () => {
+    await twoWorkspaces()
+    const { createProject, moveProject } = await import('./ops')
+    const { moveProjectTo } = await import('./move')
+    const { projectsIn, readWorkspaceState } = await import('./workspaces')
+    await switchTo('w-work')
+    const clients = await createProject({ name: 'Clients' })
+    const acme = await createProject({ name: 'Acme', parent_id: clients })
+    const beta = await createProject({ name: 'Beta', parent_id: clients })
+    expect((await db.projects.get(acme))?.workspace_id ?? null).toBeNull()
+    const work = async () => projectsIn(await readWorkspaceState(), await db.projects.toArray()).map((x) => x.id).sort()
+    // Dropped after Clients in the sidebar, and moved with the project's Move menu.
+    expect(await moveProjectTo(acme, { parent_id: null, at: { after: clients } })).toBe(true)
+    await moveProject(beta, null)
+    expect(await work()).toEqual([acme, beta, clients].sort())
+    expect(await db.projects.get(acme)).toMatchObject({ parent_id: null, workspace_id: 'w-work' })
+    expect(await db.projects.get(beta)).toMatchObject({ parent_id: null, workspace_id: 'w-work' })
+    // In the default workspace nothing extra is written.
+    await switchTo('w-p')
+    const home = await createProject({ name: 'Home' })
+    const shed = await createProject({ name: 'Shed', parent_id: home })
+    await moveProjectTo(shed, { parent_id: null, at: { after: home } })
+    expect(await db.outbox.filter((o) => o.entityId === shed && o.field === 'workspace_id').count()).toBe(0)
+    expect(await db.projects.get(shed)).toMatchObject({ parent_id: null })
+  })
+
   it('moving a project re-matches its labels by name in one batch', async () => {
     await twoWorkspaces()
     const { createProject, createTask } = await import('./ops')

@@ -223,6 +223,13 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 		return Plan{}, err
 	} else if has {
 		patch["workspace_id"] = v
+	} else if parent, moving := patch["parent_id"]; moving && !opsync.SameJSON(parent, p["parent_id"]) {
+		if ws, ok := snap.keptProjectWorkspace(id); ok {
+			patch["workspace_id"] = nullRaw
+			if ws != "" {
+				patch["workspace_id"] = raw(ws)
+			}
+		}
 	}
 	if len(patch) == 0 {
 		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position or workspace_id")
