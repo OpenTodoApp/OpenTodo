@@ -16,7 +16,7 @@ import { HUES } from '../../ui'
 import type { IconName } from '../../ui'
 import { labelMenuGroups } from '../LabelsView'
 import type { ListState } from '../listActions'
-import type { ActionGroup, ActionItem } from '../menus/ActionMenu'
+import { flatItems, type ActionGroup } from '../menus/ActionMenu'
 import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
 import { sectionMenuGroups } from '../Sections'
@@ -126,7 +126,8 @@ function rescheduleEarlierStep(ids: readonly string[]): Step {
 /** Commands from an object menu: every enabled item, run as the menu runs it. */
 function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Command[] {
   // A step (the icon grid, the colour swatches) runs here as its Combobox form; one without it is not listed.
-  return groups.flatMap((g) => g.items).filter((i) => !i.disabled && (i.kind !== 'step' || i.step.palette)).map((i: ActionItem): Command => ({
+  // A submenu's items are listed in its place.
+  return flatItems(groups).filter((i) => !i.disabled && (i.kind !== 'step' || i.step.palette)).map((i): Command => ({
     id: `${idPrefix}:${i.id}`, label: t('{object}: {action}', { object: prefix, action: i.label.replace(/…$/, '') }), icon: i.icon, shortcut: i.shortcut, menuLabel: i.kind === 'step' ? `${i.label}…` : i.label,
     run: () => (i.kind === 'picker' ? { kind: 'picker', picker: i.picker } as Step
       : i.kind === 'step' ? { kind: 'picker', picker: i.step.palette! } as Step
