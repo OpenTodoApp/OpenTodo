@@ -14,6 +14,10 @@ export interface RowActions {
   open: (id: string, e?: React.MouseEvent) => void
   tick: (id: string, range: boolean) => void
   drag: (e: React.PointerEvent, task: Task) => void
+  /** A press on the row's touch grip: hold selects, hold then move drags (bulk-actions on touch). */
+  grip: (e: React.PointerEvent, task: Task) => void
+  /** A tap on the grip: tick the row and enter Select mode. */
+  gripTap: (task: Task) => void
   /** Opens the row menu for the task, as `.` does (rows-v2: the revealed More action). */
   more: (id: string, from: HTMLElement) => void
   /** Shows or hides the task's details under its row (row-expand D4). */
@@ -24,7 +28,7 @@ export interface RowActions {
   contextAt: (task: Task, x: number, y: number, row: HTMLElement) => void
 }
 
-type TaskListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
+type TaskListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
   labelMap: Map<string, Label>
   /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
@@ -50,6 +54,8 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
       task={task}
       labels={labels}
       onPointerDown={draggable ? (e) => actions.drag(e, task) : undefined}
+      onGripDown={draggable ? (e) => actions.grip(e, task) : undefined}
+      onGripClick={draggable ? () => actions.gripTap(task) : undefined}
       onContextMenu={(e) => actions.context(e, task)}
       onRowMenu={(x, y, row) => actions.contextAt(task, x, y, row)}
       dropKey={reorderable ? `task:${task.id}` : undefined}
