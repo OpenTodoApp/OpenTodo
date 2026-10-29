@@ -11498,6 +11498,7 @@
   ],
   "Shown as free": [
     "web/src/app/CalendarEvents.tsx",
+    "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Shown as {current}, the nearest palette colour. Pick one to store it.": [
@@ -12824,11 +12825,17 @@
   "The position is not available right now.": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
+  "The provider answers, but this model does not support tool use, which the assistant needs. Choose another model.": [
+    "web/src/lib/assistant.ts"
+  ],
   "The provider changed while you were reading. Read the updated text and accept again.": [
     "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "The provider changed. Read the updated disclosure and accept again.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "The provider has no such model or endpoint. Check the model id and, for a model server, its address (it usually ends in /v1) with “Change provider or key” or in Settings → Integrations → Assistant.": [
+    "web/src/lib/assistant.ts"
   ],
   "The provider refused the token. Enter a new one.": [
     "web/src/app/IssuesPanel.tsx"

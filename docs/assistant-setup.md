@@ -31,6 +31,18 @@ The [assistant](assistant.md) is off until the server owner turns it on here. Me
 
 The model must support tool use. **Test connection** reports an endpoint that rejects tool definitions as `no_tool_support`. A model on your own network is set up as a compatible endpoint; see [A local model](assistant-owner-options.md#a-local-model).
 
+## When Test connection fails
+
+The result names the problem with a code; the provider's own error text is never shown.
+
+| Code | What to check |
+| --- | --- |
+| `provider_auth` | The key. Google Gemini reports a wrong key as HTTP 400, which OpenTodo reads as a rejected key too. |
+| `provider_not_found` | The provider's own 404, not OpenTodo's: check the model id and, for a compatible endpoint, the base URL, which usually ends in `/v1`. |
+| `no_tool_support` | Choose a model that supports tool use. |
+
+A compatible base URL pasted with `/chat/completions` at the end is shortened to its base when you test or save it; OpenTodo adds that path itself. If the test says the request never reached the provider, see [Behind a reverse proxy](self-hosting/docker.md#method-not-allowed-or-unknown-api-route-from-a-test-or-save).
+
 Changing the provider asks everyone to accept the disclosure again. Where keys are stored, and the switches for members' own keys and the monthly allowance, are in [Assistant owner options](assistant-owner-options.md#other-settings).
 
 Network details for operators are in [Running with Docker](self-hosting/docker.md#in-app-assistant); the routes are in the [API reference](api.md#in-app-assistant).

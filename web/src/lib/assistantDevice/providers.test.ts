@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { manifest } from './manifest'
-import { anthropicProvider, chatProvider, ProviderError, sseEvents, testConnection, type Fetch } from './providers'
+import { anthropicProvider, chatProvider, deviceCode, ProviderError, sseEvents, testConnection, type Fetch } from './providers'
+import vectors from './errors.vectors.json'
 import { checkSetup, originOf, baseUrlOf, ENDPOINTS } from './settings'
 
 function sse(events: unknown[], named = true): string {
@@ -142,5 +143,66 @@ describe('device setup checks', () => {
   it('names origins and base URLs', () => {
     expect(originOf('HTTPS://Models.Example.com:8443/v1')).toBe('https://models.example.com:8443')
     expect(baseUrlOf({ provider: 'openai' })).toBe('https://api.openai.com/v1')
+  })
+})
+
+describe('provider errors (shared vectors with internal/assistant)', () => {
+  it.each(vectors.map((v) => [v.name, v] as const))('%s', async (_, v) => {
+    const setup = { provider: v.provider as 'openai' | 'gemini' | 'compatible', model: 'm', key: 'k-SECRET', baseUrl: 'http://localhost:11434/v1', savedAt: 1 }
+    const { f } = fakeFetch([v.body], v.status)
+    const err = await chatProvider(setup, f).start({ system: '', messages: [], tools: [], maxTokens: 9 }).next(() => {}).catch((e) => e)
+    expect(err).toBeInstanceOf(ProviderError)
+    expect({ code: err.code, type: err.type, status: err.status }).toEqual({ code: v.code, type: v.type, status: v.status })
+    expect(err.message.includes('/v1')).toBe(v.hint)
+    for (const leak of ['Please pass', 'Incorrect API key', 'sk-abc', 'is not found', 'slow down', 'k-SECRET']) expect(err.message).not.toContain(leak)
+  })
+
+  it('reads a long error body only in part', async () => {
+    const body = `{"error":{"type":"invalid_request_error","message":"${'x'.repeat(10_000)}"}}`
+    const { f } = fakeFetch([body], 400)
+    const err = await chatProvider({ provider: 'openai', model: 'm', key: 'k', savedAt: 1 }, f).start({ system: '', messages: [], tools: [], maxTokens: 9 }).next(() => {}).catch((e) => e)
+    expect(err).toMatchObject({ code: 'provider_error', type: '' })
+  })
+})
+
+describe('test connection from the device', () => {
+  const gemini = { provider: 'gemini' as const, model: 'gemini-x', key: 'bad', savedAt: 1 }
+  const badKey = vectors.find((v) => v.code === 'provider_auth' && v.provider === 'gemini')!
+  const notFound = vectors.find((v) => v.code === 'provider_not_found' && v.provider === 'gemini')!
+
+  it('sends one request for a rejected key or a missing model', async () => {
+    for (const v of [badKey, notFound]) {
+      const { f, calls } = fakeFetch([v.body, v.body], v.status)
+      expect(await testConnection(gemini, f)).toMatchObject({ ok: false, code: v.code })
+      expect(calls).toHaveLength(1)
+    }
+  })
+
+  it('tries again without tools after a plain refusal', async () => {
+    const calls: string[] = []
+    const f: Fetch = async (_url, init) => {
+      const body = String(init!.body)
+      calls.push(body)
+      if (body.includes('"tools"')) return new Response('{"error":{"type":"invalid_request_error"}}', { status: 400 })
+      return new Response(sse([{ choices: [{ delta: { content: 'OK' }, finish_reason: 'stop' }] }, '[DONE]'], false), { status: 200 })
+    }
+    expect(await testConnection({ provider: 'compatible', model: 'm', baseUrl: 'http://localhost:11434/v1', savedAt: 1 }, f)).toMatchObject({ ok: false, code: 'no_tool_support' })
+    expect(calls).toHaveLength(2)
+  })
+
+  it('maps device failures to the panel codes', () => {
+    expect(['provider_auth', 'provider_not_found', 'no_tool_support', 'blocked', 'provider_error'].map(deviceCode))
+      .toEqual(['device_auth', 'device_not_found', 'device_no_tool_support', 'device_blocked', 'provider_error'])
+  })
+})
+
+describe('model server address', () => {
+  it('trims a pasted request path once', async () => {
+    expect(baseUrlOf({ provider: 'compatible', baseUrl: 'https://openrouter.ai/api/v1/chat/completions/' })).toBe('https://openrouter.ai/api/v1')
+    expect(baseUrlOf({ provider: 'compatible', baseUrl: 'http://192.168.1.20:11434/v1' })).toBe('http://192.168.1.20:11434/v1')
+    expect(baseUrlOf({ provider: 'compatible', baseUrl: 'http://localhost:11434/v1/' })).toBe('http://localhost:11434/v1')
+    const { f, calls } = fakeFetch([sse([{ choices: [{ delta: {}, finish_reason: 'stop' }] }, '[DONE]'], false)])
+    await chatProvider({ provider: 'compatible', model: 'm', baseUrl: 'http://localhost:11434/v1/chat/completions', savedAt: 1 }, f).start({ system: '', messages: [], tools: [], maxTokens: 9 }).next(() => {})
+    expect(calls[0].url).toBe('http://localhost:11434/v1/chat/completions')
   })
 })
