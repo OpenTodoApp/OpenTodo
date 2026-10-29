@@ -270,7 +270,7 @@ describe('runView', () => {
     expect(desc.ok && ids(desc.tasks)).toEqual(['large', 'small', 'invalid', 'empty-earlier', 'empty-later'])
   })
 
-  it('sorts custom dates and gives mixed field types a deterministic order', () => {
+  it('keeps Number, Date, Text type order fixed while reversing values within each type', () => {
     const fields: FieldDef[] = [
       { id: 'date', name: 'Order date', project_id: 'pw', type: 'date', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
       { id: 'number', name: 'ORDER DATE', project_id: 'ph', type: 'number', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} },
@@ -282,8 +282,8 @@ describe('runView', () => {
     const alpha = task({ id: 'alpha', project_id: 'pt', fields: { text: 'Alpha' } })
     const beta = task({ id: 'beta', project_id: 'pt', fields: { text: 'beta' } })
     const context = { projects: [...PROJECTS, project({ id: 'pt', name: 'Text' })], fields }
-    expect([dated, numbered, earlier, beta, alpha].sort(compareTasks('field:order date', 'asc', context)).map((x) => x.id)).toEqual(['earlier', 'dated', 'numbered', 'alpha', 'beta'])
-    expect([alpha, earlier, beta, numbered, dated].sort(compareTasks('field:order date', 'desc', context)).map((x) => x.id)).toEqual(['beta', 'alpha', 'numbered', 'dated', 'earlier'])
+    expect([dated, numbered, earlier, beta, alpha].sort(compareTasks('field:order date', 'asc', context)).map((x) => x.id)).toEqual(['numbered', 'earlier', 'dated', 'alpha', 'beta'])
+    expect([alpha, earlier, beta, numbered, dated].sort(compareTasks('field:order date', 'desc', context)).map((x) => x.id)).toEqual(['numbered', 'dated', 'earlier', 'beta', 'alpha'])
   })
 
   it('sorts by a field inherited from a parent project', () => {
@@ -316,7 +316,7 @@ describe('runView', () => {
     const asc = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'field:Score' }), context)
     const desc = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'field:Score', sort_dir: 'desc' }), context)
     expect(asc.ok && ids(asc.tasks)).toEqual(['child-number', 'parent-number', 'text', 'invalid-number', 'empty-text', 'unset'])
-    expect(desc.ok && ids(desc.tasks)).toEqual(['text', 'parent-number', 'child-number', 'invalid-number', 'empty-text', 'unset'])
+    expect(desc.ok && ids(desc.tasks)).toEqual(['parent-number', 'child-number', 'text', 'invalid-number', 'empty-text', 'unset'])
   })
 
   it('uses the established fallback order when custom field values tie', () => {
@@ -334,6 +334,15 @@ describe('runView', () => {
     const context = { projects: PROJECTS, fields }
     expect([laterDue, earlierDue].sort(compareTasks('field:Name', 'asc', context)).map((x) => x.id)).toEqual(['earlier-due', 'later-due'])
     expect([laterDue, earlierDue].sort(compareTasks('field:Name', 'desc', context)).map((x) => x.id)).toEqual(['earlier-due', 'later-due'])
+  })
+
+  it('uses the same accent-insensitive text comparison as Title sorting', () => {
+    const fields: FieldDef[] = [{ id: 'name', name: 'Name', project_id: 'pw', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} }]
+    const emile = task({ id: 'emile', project_id: 'pw', fields: { name: 'Émile' } })
+    const zoe = task({ id: 'zoe', project_id: 'pw', fields: { name: 'Zoe' } })
+    const context = { projects: PROJECTS, fields }
+    expect([zoe, emile].sort(compareTasks('field:Name', 'asc', context)).map((x) => x.id)).toEqual(['emile', 'zoe'])
+    expect([zoe, emile].sort(compareTasks('title', 'asc')).map((x) => x.id)).toEqual(['emile', 'zoe'])
   })
 
   it('groups, sorts and filters zoned dues by their date in the viewer zone (absolute-datetimes)', () => {

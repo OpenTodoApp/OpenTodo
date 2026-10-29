@@ -15,12 +15,13 @@ import { buildProjectTree } from './projects'
 import { ancestors, flattenTree } from './tree'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS, VIEW_LAYOUTS,
-  isFieldSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
+  fieldSortName, isFieldSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
 } from './types'
 import { t, msg } from './i18n'
 import { uuid } from './ids'
 import { workspaceFields } from './workspaces'
 import { applicableFieldsLookup } from './fieldTree'
+import { nameKey } from './fieldNames'
 import { matchesType } from './fields'
 
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
@@ -429,8 +430,12 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
   return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
 }
 
+function compareText(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { sensitivity: 'base' })
+}
+
 function byTitle(a: Task, b: Task): number {
-  return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+  return compareText(a.title, b.title)
 }
 
 /**
@@ -446,7 +451,7 @@ export interface FieldSortContext {
 type FieldSortValue = { type: 'date'; value: string } | { type: 'number'; value: number } | { type: 'text'; value: string }
 
 function fieldSortValue(task: Task, fieldName: string, fieldsOf: (projectId: string | null | undefined) => FieldDef[]): FieldSortValue | null {
-  const definition = fieldsOf(task.project_id).find((field) => field.name.trim().toLocaleLowerCase() === fieldName)
+  const definition = fieldsOf(task.project_id).find((field) => nameKey(field.name) === fieldName)
   if (!definition || (definition.type !== 'number' && definition.type !== 'date' && definition.type !== 'text')) return null
   const value = task.fields?.[definition.id]
   if (value === null || value === undefined || value === '' || !matchesType(definition, value)) return null
@@ -457,15 +462,18 @@ function fieldSortValue(task: Task, fieldName: string, fieldsOf: (projectId: str
 }
 
 function compareFieldValues(av: FieldSortValue, bv: FieldSortValue): number {
-  const rank = (value: FieldSortValue) => value.type === 'date' ? 0 : value.type === 'number' ? 1 : 2
-  if (av.type !== bv.type) return rank(av) - rank(bv)
-  if (av.type === 'date' && bv.type === 'date') return av.value < bv.value ? -1 : av.value > bv.value ? 1 : 0
   if (av.type === 'number' && bv.type === 'number') return av.value - bv.value
-  if (av.type === 'text' && bv.type === 'text') {
-    const a = av.value.toLowerCase(), b = bv.value.toLowerCase()
-    return a < b ? -1 : a > b ? 1 : 0
-  }
+  if (av.type === 'date' && bv.type === 'date') return av.value < bv.value ? -1 : av.value > bv.value ? 1 : 0
+  if (av.type === 'text' && bv.type === 'text') return compareText(av.value, bv.value)
   return 0
+}
+
+function fieldSortTypeRank(value: FieldSortValue): number {
+  switch (value.type) {
+    case 'number': return 0
+    case 'date': return 1
+    case 'text': return 2
+  }
 }
 
 export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortContext): (a: Task, b: Task) => number {
@@ -473,13 +481,21 @@ export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortCo
   const fallback = (a: Task, b: Task) =>
     compareDue(a.due, b.due) || a.priority - b.priority || a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
   if (isFieldSortBy(sortBy)) {
-    const fieldName = sortBy.slice('field:'.length).trim().toLocaleLowerCase()
+    const fieldName = fieldSortName(sortBy)
+    if (fieldName === null) return fallback
     const fieldsOf = context ? applicableFieldsLookup(context.projects, context.fields ?? []) : () => []
+    const values = new Map<string, FieldSortValue | null>()
+    const valueOf = (task: Task): FieldSortValue | null => {
+      if (values.has(task.id)) return values.get(task.id) ?? null
+      const value = fieldSortValue(task, fieldName, fieldsOf)
+      values.set(task.id, value)
+      return value
+    }
     return (a, b) => {
-      const av = fieldSortValue(a, fieldName, fieldsOf)
-      const bv = fieldSortValue(b, fieldName, fieldsOf)
+      const av = valueOf(a)
+      const bv = valueOf(b)
       if (!av || !bv) return !av && !bv ? fallback(a, b) : av ? -1 : 1
-      return sign * compareFieldValues(av, bv) || fallback(a, b)
+      return fieldSortTypeRank(av) - fieldSortTypeRank(bv) || sign * compareFieldValues(av, bv) || fallback(a, b)
     }
   }
   switch (sortBy) {
@@ -505,7 +521,8 @@ export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortCo
       }
     default: {
       const _exhaustive: never = sortBy
-      return () => _exhaustive
+      void _exhaustive
+      return fallback
     }
   }
 }

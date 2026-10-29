@@ -10,6 +10,7 @@ import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, VIEW_LAYOUTS,
   type FieldDef, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout,
 } from '../../lib/types'
+import { fieldSortOptions } from '../../lib/fieldSortOptions'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ListGroupBy } from '../../lib/listDisplay'
 import { ROW_LAYOUTS, type RowLayout } from '../../lib/rowLayout'
@@ -83,15 +84,7 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
     const hidden = hiddenNow.includes(p) ? hiddenNow.filter((x) => x !== p) : [...hiddenNow, p]
     onChange({ hidden: ROW_PROPERTIES.filter((x) => hidden.includes(x)) })
   }
-  const names = new Map<string, string>()
-  for (const field of sortFields) {
-    if (!field.deleted_at && (field.type === 'number' || field.type === 'date')) {
-      const key = field.name.trim().toLocaleLowerCase()
-      if (!names.has(key)) names.set(key, field.name)
-    }
-  }
-  const selectedField = value.sortBy.startsWith('field:') ? value.sortBy.slice(6) : null
-  if (selectedField && !names.has(selectedField.trim().toLocaleLowerCase())) names.set(selectedField.trim().toLocaleLowerCase(), selectedField)
+  const fieldOptions = fieldSortOptions(sortFields, value.sortBy)
   const layout = value.layout
   return (
     <div data-display-panel className="text-meta">
@@ -112,10 +105,7 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Order by')} value={value.sortBy}
             onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}>
             {sortOptions.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
-            {[...names.values()].map((name) => {
-              const selected = selectedField?.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase()
-              return <option key={name.trim().toLocaleLowerCase()} value={selected ? value.sortBy : `field:${name}`}>{name}</option>
-            })}
+            {fieldOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </OptionRow>
         {value.showCompleted !== undefined && <OptionRow label={t('Completed tasks')}>

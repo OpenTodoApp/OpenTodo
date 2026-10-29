@@ -1,3 +1,4 @@
+import { nameKey } from './fieldNames'
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
@@ -315,9 +316,21 @@ export const VIEW_KINDS: readonly ViewKind[] = ['list', 'dashboard']
 export const GROUP_BY_OPTIONS: readonly GroupBy[] = ['project', 'due', 'priority', 'label', 'none']
 export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'deadline', 'title']
 
+const FIELD_SORT_PREFIX = 'field:'
+
+/** Client parsing is deliberately tolerant: sync preserves strings that REST rejects. */
+export function fieldSortName(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.startsWith(FIELD_SORT_PREFIX)) return null
+  return nameKey(value.slice(FIELD_SORT_PREFIX.length)) || null
+}
+
+export function fieldSortBy(name: string): FieldSortBy {
+  return `${FIELD_SORT_PREFIX}${name.trim()}`
+}
+
 /** Whether a stored or selected sort value names a custom field. */
 export function isFieldSortBy(value: unknown): value is FieldSortBy {
-  return typeof value === 'string' && value.startsWith('field:') && value.slice('field:'.length).trim().length > 0
+  return fieldSortName(value) !== null
 }
 export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
 export type ViewLayout = 'list' | 'board'
