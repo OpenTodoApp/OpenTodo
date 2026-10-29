@@ -2,8 +2,9 @@
 // One component renders every object menu (views, labels, sections, projects) so
 // order, icons, disabled reasons and confirmations cannot drift apart. A picker item
 // swaps the items for a Combobox inside the same overlay; a confirm item closes the
-// menu and opens a confirmation dialog.
-import { useContext, useEffect, useState, type ReactNode, type RefObject } from 'react'
+// menu and opens a confirmation dialog; a submenu item swaps the items for its own
+// (Priority, Date), so a long list of choices costs the menu one row.
+import { useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Icon, type IconName, Menu } from '../../ui'
 import { Tooltip } from '../../ui'
 import { MenuCloseContext, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
@@ -55,6 +56,9 @@ export type ActionItem =
   // A step swaps the items for its own content in the same overlay (the icon picker,
   // a colour palette); `done` closes the menu, `back` returns to the items.
   | (ItemBase & { kind: 'step'; step: StepSpec })
+  // A submenu swaps the items for its own in the same menu (still a menu: arrow keys,
+  // type-ahead, an item closes it); its first item and Escape go back.
+  | (ItemBase & { kind: 'submenu'; items: ActionItem[] })
 
 export interface StepSpec {
   title: string
@@ -82,24 +86,32 @@ function NoClose({ children }: { children: ReactNode }) {
   return <MenuCloseContext.Provider value={() => {}}>{children}</MenuCloseContext.Provider>
 }
 
-function Items({ groups, onPicker, onStep, onConfirm }: {
+/** Every item of the groups, a submenu's items in its place (the command palette, shortcuts). */
+export function flatItems(groups: ActionGroup[]): Exclude<ActionItem, { kind: 'submenu' }>[] {
+  return groups.flatMap((g) => g.items).flatMap((i) => (i.kind === 'submenu' ? flatItems([{ items: i.items }]) : [i]))
+}
+
+function Items({ groups, onPicker, onStep, onConfirm, onSubmenu }: {
   groups: ActionGroup[]
   // `any`: a menu mixes pickers of different item types.
   onPicker: (id: string, p: PickerSpec<any>) => void
   onStep: (s: StepSpec) => void
   onConfirm: (c: ConfirmSpec) => void
+  onSubmenu: (id: string) => void
 }) {
   const close = useContext(MenuCloseContext)
   return (
     <>
+      {/* Keyed by the group's first item, not its index: a group that appears once the menu's
+          data loads (Start tracking) must not remount the ones after it and drop the focus. */}
       {orderGroups(groups).map((g, gi) => (
-        <div key={gi}>
+        <div key={g.items[0].id}>
           {gi > 0 && <MenuSeparator />}
           <MenuGroup label={g.label}>
             {g.items.map((item) => {
               const common = {
                 label: item.label, icon: item.icon, shortcut: item.shortcut, disabled: item.disabled,
-                description: item.disabled ? item.reason : undefined, danger: item.tone === 'danger',
+                description: item.disabled ? item.reason : undefined, danger: item.tone === 'danger', 'data-action': item.id,
               }
               switch (item.kind) {
                 case 'action':
@@ -112,6 +124,8 @@ function Items({ groups, onPicker, onStep, onConfirm }: {
                   return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => { close?.(); onConfirm(item.confirm) }} /></NoClose>
                 case 'step':
                   return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => onStep(item.step)} /></NoClose>
+                case 'submenu':
+                  return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => onSubmenu(item.id)} /></NoClose>
               }
             })}
           </MenuGroup>
@@ -206,6 +220,7 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
   const [picker, setPicker] = useState<{ id: string; spec: PickerSpec<any> } | null>(null)
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
   const [step, setStep] = useState<StepSpec | null>(null)
+  const [submenu, setSubmenu] = useState<string | null>(null)
   const setOpen = (v: boolean) => {
     if (openProp === undefined) setOwnOpen(v)
     onOpenChange?.(v)
@@ -221,6 +236,20 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
   // labels' common set) and after each pick show; the spec it opened with is the fallback.
   const live = picker ? groups.flatMap((g) => g.items).find((i) => i.kind === 'picker' && i.id === picker.id) : undefined
   const current = live?.kind === 'picker' ? live.picker : picker?.spec ?? null
+  const sub = submenu ? groups.flatMap((g) => g.items).find((i) => i.kind === 'submenu' && i.id === submenu) : undefined
+  const subItems = sub?.kind === 'submenu' ? sub : null
+  // Focus follows the swap: into the submenu's first choice, and back onto its item when it closes.
+  const body = useRef<HTMLDivElement>(null)
+  const leftSub = useRef<string | null>(null)
+  useLayoutEffect(() => {
+    const el = body.current
+    if (!el) return
+    const target = subItems
+      ? el.querySelectorAll<HTMLElement>('[role^="menuitem"]:not(:disabled)')[1]
+      : leftSub.current ? el.querySelector<HTMLElement>(`[data-action="${leftSub.current}"]`) : null
+    leftSub.current = subItems?.id ?? null
+    target?.focus({ preventScroll: true })
+  }, [subItems?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- only when a submenu opens or closes
   return (
     <>
       <Menu label={label} title={title} kind={current || step ? 'dialog' : 'menu'} align={align} width={width} className="p-1"
@@ -229,17 +258,21 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
         triggerProps={triggerProps}
         open={open} anchor={anchor}
         onOpenChange={(v) => {
-          // The first Escape (or outside tap) in a picker step goes back to the items.
-          if (!v && (current || step)) { setPicker(null); setStep(null); return }
+          // The first Escape (or outside tap) in a picker step or a submenu goes back to the items.
+          if (!v && (current || step || subItems)) { setPicker(null); setStep(null); setSubmenu(null); return }
           setPicker(null)
           setStep(null)
+          setSubmenu(null)
           setOpen(v)
         }}>
         {current
           ? <PickerStep picker={current} onBack={() => setPicker(null)} onDone={() => { setPicker(null); setOpen(false) }} onConfirm={setConfirm} />
           : step
             ? <StepFrame step={step} onBack={() => setStep(null)} onDone={() => { setStep(null); setOpen(false) }} />
-            : <>{header}{header && <MenuSeparator />}<Items groups={groups} onPicker={(id, spec) => setPicker({ id, spec })} onStep={setStep} onConfirm={setConfirm} /></>}
+            : subItems
+              ? <div ref={body}><NoClose><MenuItem label={subItems.label} icon="arrow-left" data-submenu-back onSelect={() => setSubmenu(null)} /></NoClose><MenuSeparator />
+                <Items groups={[{ items: subItems.items }]} onPicker={(id, spec) => setPicker({ id, spec })} onStep={setStep} onConfirm={setConfirm} onSubmenu={setSubmenu} /></div>
+              : <div ref={body}>{header}{header && <MenuSeparator />}<Items groups={groups} onPicker={(id, spec) => setPicker({ id, spec })} onStep={setStep} onConfirm={setConfirm} onSubmenu={setSubmenu} /></div>}
       </Menu>
       {confirm && <Confirmation spec={confirm} onClose={() => setConfirm(null)} />}
     </>
