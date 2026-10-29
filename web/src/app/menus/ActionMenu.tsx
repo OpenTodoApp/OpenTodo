@@ -189,7 +189,7 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
   groups: ActionGroup[]
   trigger?: ReactNode
   triggerClassName?: string
-  /** Extra attributes on the trigger button (`aria-current`, the right-click pointer position). */
+  /** Extra attributes on the trigger button (the right-click menu's fixed position at the pointer). */
   triggerProps?: React.ComponentProps<typeof Menu>['triggerProps']
   align?: 'start' | 'end'
   width?: string
