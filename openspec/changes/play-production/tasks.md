@@ -1,0 +1,36 @@
+# Tasks
+
+Android tasks are verified with `make android` (JDK 17 and the Android SDK) and the CI Android job. Repository checks run with `make repo-check`. The server and web app do not change, so `go test ./...` and `npm test` have nothing new to cover. `make check` runs before the last task.
+
+## 1. Reproducible build
+
+- [ ] 1.1 Pin the toolchain: `distributionSha256Sum` in `gradle-wrapper.properties`, the Android Gradle Plugin version, `build-tools` 36.0.0 and Temurin JDK 17 in CI (`actions/setup-java` with a pinned version). Name them in `mobile/README.md`. Verified by a case in `scripts/repo-checks.test.mjs` failing when the wrapper has no checksum.
+- [ ] 1.2 `build.gradle.kts`: `dependenciesInfo { includeInApk = false; includeInBundle = false }` and `vcsInfo { include = false }` on release. Verified by `unzip -l` of the release APK showing no `META-INF/version-control-info.textproto` and no dependency block (`apksigner`/`zipinfo` output attached to the pull request).
+- [ ] 1.3 `scripts/android-repro.sh <tag> [apk]`: check out the tag in a temporary directory, build `assembleRelease` unsigned with `OPENTODO_VERSION` from the tag, and compare with `apksigcopier compare` (pinned by hash in `scripts/release/requirements-repro.txt`) against the given APK or a second build. Verified by running it twice on the current commit locally (match) and once after touching a resource only in the second checkout (mismatch named).
+- [ ] 1.4 CI on tags: a second release build in a fresh checkout under another path, with another `SOURCE_DATE_EPOCH` and no Gradle cache, then `scripts/android-repro.sh`. A mismatch fails the job. Add a `workflow_dispatch` input to run it on any commit. Verified by the first tag after this change, and by a case in `scripts/repo-checks.test.mjs` that the step runs on tags.
+- [ ] 1.5 If 1.4 shows `assets/dexopt/baseline.prof` differing, exclude it from packaging and record that in design D4. Verified by 1.4 passing.
+
+## 2. Signing and Google Play upload
+
+- [ ] 2.1 Owner, once: enrol the app in Play App Signing with the existing release key (PEPK export), and register a separate upload key. Store `PLAY_UPLOAD_KEYSTORE_BASE64` (plus its password and alias) and `PLAY_SERVICE_ACCOUNT_JSON` (permission "Release apps to testing tracks" only) in a `release` environment that requires approval. Verified by the Play Console showing "Signing by Google Play: your key" with the release certificate's SHA-256.
+- [ ] 2.2 CI signs the AAB with the upload key and the APK with the release key, and publishes the release certificate's SHA-256 in the job summary. Verified by `apksigner verify --print-certs` in the job matching the documented fingerprint.
+- [ ] 2.3 `scripts/release/play-upload.mjs` (Node, no dependency, the service account's JWT signed with `node:crypto`): open an edit, upload the AAB, set the internal track with the CHANGELOG notes for the version cut to 500 characters, and commit. Final tags only. Missing secrets give `::warning::` and skip. Verified by `scripts/release/play-upload.test.mjs` against a fake Play API (`node --test`: the order of calls, the notes cut, the skip without secrets, no call for an `-rc` tag), added to `make repo-check`.
+- [ ] 2.4 `mobile/android/store/`: `play-review.md` (App access with the demo instance, the exact-alarm declaration text, the content rating answers) next to `data-safety.md`. Verified by `:app:checkStoreMetadata` extended to require the file.
+
+## 3. Google Play production
+
+- [ ] 3.1 Owner: answer owner questions 1 and 2 in design D6 (account type, developer verification), and record the answers there. Verified by the design file.
+- [ ] 3.2 If the account is a personal one created after November 2023: run the closed test with at least 12 testers for 14 days, recruited through #9, before applying for production. Verified by the Play Console's production access status.
+- [ ] 3.3 Owner: create the production listing from `listing/<lang>.txt`, the data-safety answers and the screenshots, promote the first internal build to production with a staged rollout, and register `app.opentodo` and the certificate for developer verification. Verified by the public Play listing URL answering.
+
+## 4. F-Droid
+
+- [ ] 4.1 Update `mobile/android/store/fdroid/app.opentodo.yml`: current version and code, `Binaries:` with the release asset pattern, `AllowedAPKSigningKeys:` with the certificate's SHA-256, the pinned JDK in `sudo`, `AutoUpdateMode: Version`, and `UpdateCheckMode: Tags ^v[0-9.]+$`. Verified by `fdroid lint` and `fdroid build --test app.opentodo` run locally in an `fdroidserver` container, with the output attached to the pull request.
+- [ ] 4.2 Owner: open the merge request in `fdroiddata` from the repository's metadata. Verified by the app's page on f-droid.org.
+
+## 5. Documentation and release flow
+
+- [ ] 5.1 `docs/android-app.md`: install from Google Play, F-Droid or the GitHub release; that all three share one certificate (with its SHA-256) and how to switch; how to verify an APK with `scripts/android-repro.sh`. `docs/install-phone.md` links the real listings. Verified by `npm run docs:check`.
+- [ ] 5.2 `RELEASING.md`: the Play promotion step (internal → staged production) and the F-Droid check (the new version appears after its build matched). `deploy/README.md`: the store table gains Google Play and F-Droid. Verified by `npm run docs:check`.
+- [ ] 5.3 `ROADMAP.md` "Native shells" row 1 marked shipped, and a CHANGELOG entry under Unreleased: the Android app on Google Play and F-Droid, reproducible builds, one certificate. Verified by `make check`.
+- [ ] 5.4 `make android`, `make openspec-validate`, `make repo-check` and `make check` pass. Verified by their exit codes.
