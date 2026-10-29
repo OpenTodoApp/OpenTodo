@@ -36,22 +36,105 @@ export interface Provider { start(req: Request): Conversation }
 
 /** A failed provider request: a code the panel describes, never the key or request content. */
 export class ProviderError extends Error {
-  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_error' | 'blocked', message: string, public status = 0) {
+  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked', message: string, public status = 0, public type = '') {
     super(message)
   }
 }
 
 export type Fetch = typeof fetch
 
-function statusError(status: number): ProviderError {
-  if (status === 401 || status === 403) return new ProviderError('provider_auth', 'the provider rejected the API key saved on this device', status)
-  if (status === 429) return new ProviderError('provider_rate_limited', 'the provider is rate limiting requests; try again in a moment', status)
-  if (status >= 500) return new ProviderError('provider_error', 'the provider had a problem; try again in a moment', status)
-  return new ProviderError('provider_error', `the provider refused the request (HTTP ${status})`, status)
+/** The panel's code for a device failure: the key and the model are this device's, and a block may need a reload. */
+export function deviceCode(code: string): string {
+  switch (code) {
+    case 'provider_auth': return 'device_auth'
+    case 'provider_not_found': return 'device_not_found'
+    case 'no_tool_support': return 'device_no_tool_support'
+    case 'blocked': return 'device_blocked'
+  }
+  return code
+}
+
+/** At most this much of an error answer is read (internal/assistant maxErrorBody). */
+const MAX_ERROR_BODY = 4096
+
+/**
+ * The type and invalid-key mark of an error body (readChatError in Go): an
+ * object {error} or an array whose first element is one. The type is the
+ * error's `type`, else its string `code`, else its `status`, clipped. The
+ * provider's message is read only to recognise an invalid key, then dropped.
+ */
+export function readChatError(body: string): { type: string; badKey: boolean } {
+  let v: unknown
+  try { v = JSON.parse(body) } catch { return { type: '', badKey: false } }
+  if (Array.isArray(v)) v = v[0]
+  const e = (v && typeof v === 'object' ? (v as { error?: unknown }).error : null) as Record<string, unknown> | null
+  if (!e || typeof e !== 'object' || Array.isArray(e)) return { type: '', badKey: false }
+  const str = (x: unknown) => (typeof x === 'string' ? x : '')
+  const code = str(e.code)
+  const type = clip(str(e.type) || code || str(e.status))
+  const details = Array.isArray(e.details) ? e.details : []
+  const badKey = details.some((d) => d && typeof d === 'object' && (d as { reason?: unknown }).reason === 'API_KEY_INVALID') ||
+    code === 'invalid_api_key' || (str(e.status) === 'INVALID_ARGUMENT' && str(e.message).toLowerCase().includes('api key'))
+  return { type, badKey }
+}
+
+/** A provider's error type kept short and on one line (clip in Go: 64 bytes, whole characters). */
+function clip(s: string): string {
+  const enc = new TextEncoder()
+  let out = ''
+  let n = 0
+  for (const ch of s) {
+    n += enc.encode(ch).length
+    if (n > 64) break
+    out += ch
+  }
+  return out.replace(/[\u0000-\u001f\u007f]/g, '')
+}
+
+/** Classify a failed request from its status and error body (chatError in Go). */
+export function statusError(status: number, body = '', provider = ''): ProviderError {
+  const { type, badKey } = provider === 'anthropic' ? { type: '', badKey: false } : readChatError(body)
+  if (status === 401 || status === 403 || (status === 400 && badKey)) return new ProviderError('provider_auth', 'the provider rejected the API key saved on this device', status, type)
+  if (status === 404 && provider !== 'anthropic') {
+    const where = provider === 'compatible' ? ' and the model server address (it usually ends in /v1)' : ''
+    return new ProviderError('provider_not_found', `the provider has no such model or endpoint (HTTP 404): check the model id${where}`, status, type)
+  }
+  if (status === 429) return new ProviderError('provider_rate_limited', 'the provider is rate limiting requests; try again in a moment', status, type)
+  if (status >= 500) return new ProviderError('provider_error', 'the provider had a problem; try again in a moment', status, type)
+  return new ProviderError('provider_error', `the provider refused the request (HTTP ${status})`, status, type)
+}
+
+/** Up to MAX_ERROR_BODY bytes of an error answer, as text. */
+async function errorBody(res: Response): Promise<string> {
+  if (!res.body) return ''
+  const reader = res.body.getReader()
+  const parts: Uint8Array[] = []
+  let n = 0
+  try {
+    while (n < MAX_ERROR_BODY) {
+      const { done, value } = await reader.read()
+      if (done) break
+      parts.push(value)
+      n += value.length
+    }
+  } catch {
+    return ''
+  } finally {
+    await reader.cancel().catch(() => {})
+  }
+  const all = new Uint8Array(Math.min(n, MAX_ERROR_BODY))
+  let off = 0
+  for (const p of parts) {
+    const take = p.subarray(0, all.length - off)
+    all.set(take, off)
+    off += take.length
+    if (off >= all.length) break
+  }
+  return new TextDecoder().decode(all)
 }
 
 /** POST and return the response, mapping failures that happen before the stream. */
-async function post(f: Fetch, url: string, headers: Record<string, string>, body: unknown, signal?: AbortSignal): Promise<Response> {
+async function post(f: Fetch, provider: string, url: string, headers: Record<string, string>, body: unknown, signal?: AbortSignal): Promise<Response> {
   let res: Response
   try {
     res = await f(url, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'text/event-stream', ...headers }, body: JSON.stringify(body), signal, credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer' })
@@ -60,10 +143,7 @@ async function post(f: Fetch, url: string, headers: Record<string, string>, body
     // fetch gives no detail on purpose: the page's policy, the provider's cross-origin rules or the network.
     throw new ProviderError('blocked', 'the provider could not be reached from this page: the network, the server owner\'s allowed providers or the provider\'s cross-origin rules blocked it')
   }
-  if (!res.ok || !res.body) {
-    await res.body?.cancel().catch(() => {})
-    throw statusError(res.status)
-  }
+  if (!res.ok || !res.body) throw statusError(res.status, await errorBody(res), provider)
   return res
 }
 
@@ -126,7 +206,7 @@ export function anthropicProvider(setup: DeviceSetup, f: Fetch = fetch): Provide
             model: setup.model, max_tokens: req.maxTokens, system: [{ type: 'text', text: req.system }], messages, tools, tool_choice: { type: 'auto' },
             thinking: { type: 'adaptive' }, output_config: { effort: 'medium' }, cache_control: { type: 'ephemeral' }, stream: true,
           }
-          const res = await post(f, baseUrlOf(setup) + '/messages', {
+          const res = await post(f, 'anthropic', baseUrlOf(setup) + '/messages', {
             'x-api-key': setup.key ?? '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true',
           }, body, signal)
           const blocks: Block[] = []
@@ -211,7 +291,7 @@ export function chatProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
           body[setup.provider === 'openai' ? 'max_completion_tokens' : 'max_tokens'] = req.maxTokens
           const headers: Record<string, string> = {}
           if (setup.key) headers.authorization = `Bearer ${setup.key}`
-          const res = await post(f, baseUrlOf(setup) + '/chat/completions', headers, body, signal)
+          const res = await post(f, setup.provider, baseUrlOf(setup) + '/chat/completions', headers, body, signal)
           const calls: { id: string; name: string; args: string }[] = []
           let text = ''
           let finish = ''
@@ -272,15 +352,27 @@ export function providerFor(setup: DeviceSetup, f: Fetch = fetch): Provider {
   return setup.provider === 'anthropic' ? anthropicProvider(setup, f) : chatProvider(setup, f)
 }
 
-/** "Test connection" from the device: one minimal request with one tool. */
+/**
+ * "Test connection" from the device: one minimal request with one tool. Only a
+ * plain refusal (provider_error, 4xx other than 404) is tried again without the
+ * tool, to tell missing tool support apart (Service.test in Go); a rejected key
+ * or a missing model sends one request.
+ */
 export async function testConnection(setup: DeviceSetup, f: Fetch = fetch, signal?: AbortSignal): Promise<{ ok: true } | { ok: false; code: string; message: string }> {
   const tool = manifest.tools.find((t) => t.name === 'today_summary')!
-  try {
-    const conv = providerFor(setup, f).start({ system: 'Connection test. Answer with the word OK.', messages: [{ role: 'user', text: 'Say OK.' }], tools: [tool], maxTokens: 512 })
+  const run = async (tools: ManifestTool[]) => {
+    const conv = providerFor(setup, f).start({ system: 'Connection test. Answer with the word OK.', messages: [{ role: 'user', text: 'Say OK.' }], tools, maxTokens: 512 })
     await conv.next(() => {}, signal)
+  }
+  try {
+    await run([tool])
     return { ok: true }
   } catch (err) {
-    if (err instanceof ProviderError) return { ok: false, code: err.code, message: err.message }
-    throw err
+    if (!(err instanceof ProviderError)) throw err
+    if (err.code === 'provider_error' && err.status >= 400 && err.status < 500 && err.status !== 404) {
+      const plain = await run([]).then(() => true, () => false)
+      if (plain) return { ok: false, code: 'no_tool_support', message: 'the provider answers, but it rejects tool definitions: this model does not support tool use, which the assistant needs' }
+    }
+    return { ok: false, code: err.code, message: err.message }
   }
 }

@@ -87,6 +87,9 @@ const (
 	CodeProviderError       = "provider_error"
 	CodeProviderAuth        = "provider_auth"
 	CodeProviderRateLimited = "provider_rate_limited"
+	// CodeProviderNotFound is the provider's own 404: no such model or endpoint
+	// (assistant-providers-fix D2), distinct from OpenTodo's not_found.
+	CodeProviderNotFound = "provider_not_found"
 	CodeNoToolSupport       = "no_tool_support"
 )
 
@@ -114,17 +117,48 @@ func (e *ProviderError) Error() string {
 	return s
 }
 
-// providerErr classifies an HTTP status into a ProviderError.
+// Fixed messages of provider_not_found (assistant-providers-fix D2). They
+// never carry the provider's own text.
+const (
+	notFoundMsg           = "the provider has no such model or endpoint (HTTP 404): check the model id"
+	notFoundCompatibleMsg = notFoundMsg + " and the base URL (it usually ends in /v1)"
+)
+
+// providerErr classifies an HTTP status into a ProviderError (the Anthropic
+// SDK's errors; Chat Completions providers go through chatError).
 func providerErr(status int, typ string) *ProviderError {
 	switch {
 	case status == 401 || status == 403:
-		return &ProviderError{Code: CodeProviderAuth, Status: status, Type: typ, Msg: "the provider rejected the API key; the server owner can check it in Settings → Integrations → Assistant"}
+		return authErr(status, typ)
 	case status == 429:
 		return &ProviderError{Code: CodeProviderRateLimited, Status: status, Type: typ, Msg: "the provider is rate limiting requests; try again in a moment"}
 	case status >= 500:
 		return &ProviderError{Code: CodeProviderError, Status: status, Type: typ, Msg: "the provider had a problem; try again in a moment"}
 	}
 	return &ProviderError{Code: CodeProviderError, Status: status, Type: typ, Msg: "the provider refused the request"}
+}
+
+func authErr(status int, typ string) *ProviderError {
+	return &ProviderError{Code: CodeProviderAuth, Status: status, Type: typ, Msg: "the provider rejected the API key; the server owner can check it in Settings → Integrations → Assistant"}
+}
+
+// chatError classifies a failed Chat Completions request of provider name
+// from its status and its error body (assistant-providers-fix D1): a 400 that
+// marks an invalid key is provider_auth, a 404 is provider_not_found, any
+// other answer as providerErr. The provider's message only classifies.
+func chatError(name string, status int, body []byte) *ProviderError {
+	typ, badKey := readChatError(body)
+	switch {
+	case status == 400 && badKey:
+		return authErr(status, typ)
+	case status == 404:
+		msg := notFoundMsg
+		if name == Compatible {
+			msg = notFoundCompatibleMsg
+		}
+		return &ProviderError{Code: CodeProviderNotFound, Status: status, Type: typ, Msg: msg}
+	}
+	return providerErr(status, typ)
 }
 
 // AsProviderError unwraps a ProviderError.

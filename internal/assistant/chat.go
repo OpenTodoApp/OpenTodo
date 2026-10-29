@@ -279,14 +279,14 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 		if resp.StatusCode == http.StatusOK {
 			return resp, nil
 		}
-		typ := errorType(resp.Body)
+		errBody, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBody))
 		resp.Body.Close()
 		retry := resp.StatusCode == 429 || resp.StatusCode >= 500
 		if resp.StatusCode >= 300 && resp.StatusCode < 400 {
 			return nil, &ProviderError{Code: CodeProviderError, Status: resp.StatusCode, Msg: "the endpoint answered with a redirect, which this server does not follow"}
 		}
 		if !retry || attempt >= c.p.Retries {
-			return nil, providerErr(resp.StatusCode, typ)
+			return nil, chatError(c.p.Name, resp.StatusCode, errBody)
 		}
 		select {
 		case <-ctx.Done():
@@ -296,24 +296,55 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 	}
 }
 
-// errorType reads the error type from an OpenAI-style error body (bounded).
-func errorType(r io.Reader) string {
-	b, _ := io.ReadAll(io.LimitReader(r, 4096))
-	var env struct {
-		Error struct {
-			Type string `json:"type"`
-			Code any    `json:"code"`
+// maxErrorBody bounds the part of an error answer that is read.
+const maxErrorBody = 4096
+
+// readChatError reads an error body as {"error":{…}} or as an array whose
+// first element is one (Google's form). typ is the error's type, else its
+// string code, else its status, clipped. badKey reports an error that marks an
+// invalid API key: a details reason API_KEY_INVALID, OpenAI's code
+// invalid_api_key, or INVALID_ARGUMENT with a message naming the API key. The
+// message is used for that test only and then dropped.
+func readChatError(b []byte) (typ string, badKey bool) {
+	type env struct {
+		Error *struct {
+			Type    string `json:"type"`
+			Code    any    `json:"code"`
+			Status  string `json:"status"`
+			Message string `json:"message"`
+			Details []struct {
+				Reason string `json:"reason"`
+			} `json:"details"`
 		} `json:"error"`
 	}
-	if json.Unmarshal(b, &env) == nil {
-		if env.Error.Type != "" {
-			return clip(env.Error.Type)
+	var e env
+	if json.Unmarshal(b, &e) != nil {
+		var arr []env
+		if json.Unmarshal(b, &arr) != nil || len(arr) == 0 {
+			return "", false
 		}
-		if s, ok := env.Error.Code.(string); ok {
-			return clip(s)
+		e = arr[0]
+	}
+	if e.Error == nil {
+		return "", false
+	}
+	er := e.Error
+	code, _ := er.Code.(string)
+	for _, s := range []string{er.Type, code, er.Status} {
+		if s != "" {
+			typ = clip(s)
+			break
 		}
 	}
-	return ""
+	for _, d := range er.Details {
+		if d.Reason == "API_KEY_INVALID" {
+			badKey = true
+		}
+	}
+	if code == "invalid_api_key" || (er.Status == "INVALID_ARGUMENT" && strings.Contains(strings.ToLower(er.Message), "api key")) {
+		badKey = true
+	}
+	return typ, badKey
 }
 
 // clip keeps a provider's error code or type short and on one line, cut

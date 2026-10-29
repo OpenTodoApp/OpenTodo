@@ -1,0 +1,110 @@
+[
+  {
+    "name": "Google invalid key (array, 400 INVALID_ARGUMENT)",
+    "provider": "gemini",
+    "status": 400,
+    "body": "[{\"error\":{\"code\":400,\"message\":\"Please pass a valid API key\",\"status\":\"INVALID_ARGUMENT\"}}]",
+    "code": "provider_auth",
+    "type": "INVALID_ARGUMENT",
+    "hint": false
+  },
+  {
+    "name": "Google invalid key with the API_KEY_INVALID reason",
+    "provider": "gemini",
+    "status": 400,
+    "body": "[{\"error\":{\"code\":400,\"message\":\"API key not valid.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\"}]}}]",
+    "code": "provider_auth",
+    "type": "INVALID_ARGUMENT",
+    "hint": false
+  },
+  {
+    "name": "Google unknown model (array, 404 NOT_FOUND)",
+    "provider": "gemini",
+    "status": 404,
+    "body": "[{\"error\":{\"code\":404,\"message\":\"models/gemini-nope is not found for API version v1main, or is not supported for generateContent.\",\"status\":\"NOT_FOUND\"}}]",
+    "code": "provider_not_found",
+    "type": "NOT_FOUND",
+    "hint": false
+  },
+  {
+    "name": "Google wrong path (404, empty body)",
+    "provider": "gemini",
+    "status": 404,
+    "body": "",
+    "code": "provider_not_found",
+    "type": "",
+    "hint": false
+  },
+  {
+    "name": "OpenAI invalid_api_key object (401)",
+    "provider": "openai",
+    "status": 401,
+    "body": "{\"error\":{\"message\":\"Incorrect API key provided: sk-abc.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":\"invalid_api_key\"}}",
+    "code": "provider_auth",
+    "type": "invalid_request_error",
+    "hint": false
+  },
+  {
+    "name": "OpenAI invalid_api_key with a 400",
+    "provider": "openai",
+    "status": 400,
+    "body": "{\"error\":{\"message\":\"Incorrect API key provided.\",\"code\":\"invalid_api_key\"}}",
+    "code": "provider_auth",
+    "type": "invalid_api_key",
+    "hint": false
+  },
+  {
+    "name": "Compatible 404 with an empty body",
+    "provider": "compatible",
+    "status": 404,
+    "body": "",
+    "code": "provider_not_found",
+    "type": "",
+    "hint": true
+  },
+  {
+    "name": "Rate limited",
+    "provider": "openai",
+    "status": 429,
+    "body": "{\"error\":{\"type\":\"rate_limit_exceeded\",\"message\":\"slow down\"}}",
+    "code": "provider_rate_limited",
+    "type": "rate_limit_exceeded",
+    "hint": false
+  },
+  {
+    "name": "Provider problem",
+    "provider": "gemini",
+    "status": 503,
+    "body": "[{\"error\":{\"code\":503,\"message\":\"The model is overloaded.\",\"status\":\"UNAVAILABLE\"}}]",
+    "code": "provider_error",
+    "type": "UNAVAILABLE",
+    "hint": false
+  },
+  {
+    "name": "Plain 400 schema refusal",
+    "provider": "compatible",
+    "status": 400,
+    "body": "{\"error\":{\"type\":\"invalid_request_error\",\"message\":\"tools are not supported\"}}",
+    "code": "provider_error",
+    "type": "invalid_request_error",
+    "hint": false
+  },
+  {
+    "name": "Google schema refusal is not a key problem",
+    "provider": "gemini",
+    "status": 400,
+    "body": "[{\"error\":{\"code\":400,\"message\":\"Invalid JSON payload received. Unknown name \\\"type\\\"\",\"status\":\"INVALID_ARGUMENT\"}}]",
+    "code": "provider_error",
+    "type": "INVALID_ARGUMENT",
+    "hint": false
+  },
+  {
+    "name": "Body that is not JSON",
+    "provider": "compatible",
+    "status": 400,
+    "body": "<html>Bad Request</html>",
+    "code": "provider_error",
+    "type": "",
+    "hint": false
+  }
+]
