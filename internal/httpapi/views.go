@@ -30,7 +30,7 @@ var (
 	viewLayouts = []string{"list", "board"}
 	// viewRowLayouts: one line or detailed rows; "" follows the account's choice (row-layouts D1).
 	viewRowLayouts = []string{"", "line", "detailed"}
-	viewEnumSets   = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_by": viewSortBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts}
+	viewEnumSets   = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts}
 	// viewRowProps are the row properties a view can hide (views-and-display D3).
 	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin"}
 	// viewDefaults are written on create for every field the caller leaves out.
@@ -105,14 +105,11 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 	if name, ok := str("name"); ok && strings.TrimSpace(name) == "" {
 		return invalidView("view.name must not be empty")
 	}
+	if sortBy, ok := str("sort_by"); ok && !slices.Contains(viewSortBy, sortBy) && !validViewSortBy(sortBy) {
+		return invalidView("view.sort_by must be one of %s or field:<name>", strings.Join(viewSortBy, ", "))
+	}
 	for field, allowed := range viewEnumSets {
 		if v, ok := str(field); ok && !slices.Contains(allowed, v) {
-			if field == "sort_by" {
-				if validViewSortBy(v) {
-					continue
-				}
-				return invalidView("view.sort_by must be one of %s or field:<name>", strings.Join(allowed, ", "))
-			}
 			return invalidView("view.%s must be one of %s", field, strings.Join(allowed, ", "))
 		}
 	}
