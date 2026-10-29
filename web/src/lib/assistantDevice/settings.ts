@@ -56,10 +56,16 @@ export const ENDPOINTS: Record<Exclude<DeviceProvider, 'compatible'>, string> = 
   gemini: 'https://generativelanguage.googleapis.com/v1beta/openai',
 }
 
-/** The base URL the device sends requests to. */
+/**
+ * The base URL the device sends requests to. A model server address pasted with
+ * the request path (`…/v1/chat/completions`) is trimmed to its base, as the
+ * server trims the compatible base URL (TrimBaseURL in internal/assistant).
+ */
 export function baseUrlOf(s: Pick<DeviceSetup, 'provider' | 'baseUrl'>): string {
-  if (s.provider === 'compatible') return (s.baseUrl ?? '').replace(/\/+$/, '')
-  return ENDPOINTS[s.provider]
+  if (s.provider !== 'compatible') return ENDPOINTS[s.provider]
+  const url = (s.baseUrl ?? '').trim().replace(/\/+$/, '')
+  if (/[?#]/.test(url)) return url
+  return url.replace(/\/chat\/completions$/, '').replace(/\/+$/, '')
 }
 
 export type SetupProblem = 'provider' | 'model' | 'key' | 'base_url' | 'origin'
