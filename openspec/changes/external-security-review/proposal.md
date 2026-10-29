@@ -6,8 +6,11 @@ OpenTodo asks people to put their whole working life on a server they run themse
 
 ## What Changes
 
+**Optional for 1.0 (owner decision, 2026-10-30).** The external review depends on outside funding and is not a 1.0 requirement. The threat model and the disclosure policy ship regardless. The review, its findings rule and the release gate apply once a review takes place.
+
+
 - **A threat model, published before the review:** `docs/security/threat-model.md`. It covers assets, trust boundaries, attacker profiles (anonymous internet, signed-in member of a shared project, viewer, guest on a task page, `read`/`agent`/`full`/`admin` token holder, malicious calendar, mail or issue server, malicious import file, a compromised AI provider, another tenant in host mode, a demo visitor) and the controls for each.
-- **One independent review of a pinned commit** before the 1.0 tag, by a reviewer with no contribution to the repository in the previous 12 months, arranged through OSTIF or a comparable funder (Sovereign Tech Fund, NLnet NGI Zero, Open Technology Fund Red Team Lab). It covers a **named scope**:
+- **One independent review of a pinned commit** (optional), ideally before the 1.0 tag, by a reviewer with no contribution to the repository in the previous 12 months, arranged through OSTIF or a comparable funder (Sovereign Tech Fund, NLnet NGI Zero, Open Technology Fund Red Team Lab). It covers a **named scope**:
   - authentication and sessions;
   - token scopes;
   - the route policy wrapper;
@@ -41,7 +44,7 @@ OpenTodo asks people to put their whole working life on a server they run themse
   - coordinated disclosure within 90 days, with GitHub security advisories and CVE ids;
   - credit and a good-faith safe-harbour statement;
   - supported versions after 1.0: the latest 1.x minor gets all fixes, the previous minor gets Critical and High fixes for 3 months, and the last 0.x gets Critical fixes for 3 months after 1.0.
-- **Recurring reviews.** A new external review happens before every new major version and at least every 24 months.
+- **Recurring reviews.** After a first review, a new one happens before every new major version and at least every 24 months.
 
 No new environment variable, no new dependency, no op schema change. Not **BREAKING**.
 
