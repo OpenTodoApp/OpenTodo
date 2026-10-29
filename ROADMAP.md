@@ -102,7 +102,7 @@ The release that makes OpenTodo the default choice.
 | Change | What | Issues |
 | --- | --- | --- |
 | [`stability-contract`](openspec/changes/stability-contract/) | A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee |  |
-| [`external-security-review`](openspec/changes/external-security-review/) | An independent security review, findings fixed before 1.0 |  |
+| [`external-security-review`](openspec/changes/external-security-review/) | A threat model and disclosure policy; an independent security review is optional, depending on funding |  |
 | [`accessibility-aa`](openspec/changes/accessibility-aa/) | WCAG 2.2 AA on every screen, with a conformance statement |  |
 | [`performance-10k`](openspec/changes/performance-10k/) | Budgets and tests for 10,000 tasks, on phones too |  |
 | [`migration-everywhere`](openspec/changes/migration-everywhere/) | A switch guide and checked importer for every competitor |  |

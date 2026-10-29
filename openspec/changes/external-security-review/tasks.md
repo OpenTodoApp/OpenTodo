@@ -4,12 +4,12 @@
 
 - [ ] 1.1 `docs/security/threat-model.md` with assets, entry points, attacker profiles, controls with their tests, accepted risks, one section per scope item; verify `make docs-check` and review by a second maintainer recorded in the PR
 - [ ] 1.2 `docs/security/README.md` (index, scope list, how findings are recorded); verify `make docs-check`
-- [ ] 1.3 Apply for funding (OSTIF first; Sovereign Tech Fund or NLnet NGI Zero as fallback), agree the scope and the 12-month independence rule in the engagement letter; verify the letter lists every scope item of the spec (checked by hand, noted in the PR that adds the review file)
+- [ ] 1.3 (Optional, owner decision) Apply for funding (OSTIF first; Sovereign Tech Fund or NLnet NGI Zero as fallback), agree the scope and the 12-month independence rule in the engagement letter; verify the letter lists every scope item of the spec (checked by hand, noted in the PR that adds the review file)
 
 ## 2. Checks
 
 - [ ] 2.1 `scripts/security-review.test.mjs`: parse review files (front matter, findings table), check scope items against threat model sections, check regression test paths exist; add to `make repo-check`; verify `node --test scripts/security-review.test.mjs` with valid and broken fixtures
-- [ ] 2.2 Release gate in `scripts/release/prepare.mjs` for versions ≥ 1.0.0 (review age, Critical/High retested, Medium rule, Low/Info issue links), naming each blocking finding; verify `node --test scripts/release/prepare.test.mjs` cases: open High, accepted Medium in target, Medium past target, review older than 24 months, new major without a fresh review
+- [ ] 2.2 Release gate in `scripts/release/prepare.mjs` for versions ≥ 1.0.0 (review age, Critical/High retested, Medium rule, Low/Info issue links), naming each blocking finding; verify `node --test scripts/release/prepare.test.mjs` cases: no review file passes, open High, accepted Medium in target, Medium past target, review older than 24 months, new major without a fresh review
 - [ ] 2.3 `SECURITY.md` sections (what to expect, fix targets, coordinated disclosure, safe harbour, supported versions table, security reviews) and a repo check for their headings and numbers; verify `make repo-check`
 
 ## 3. Review and fixes
