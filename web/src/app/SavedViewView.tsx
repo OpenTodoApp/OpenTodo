@@ -229,7 +229,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
                 expanded={expanded === key}
                 onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
-                {...bulk.rowProps(tk.id)}
+                {...bulk.rowProps(tk)}
               />
             )} />
           </div>

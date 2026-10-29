@@ -25,7 +25,7 @@ export interface DragSource {
   /** Touch: a hold on a row not yet ticked selects it (phone-v2 D8); moving on drags the selection. */
   onHold?: (task: Task) => void
   /** Opens the row's actions menu for a task at a point (task-row-context-menu): a touch hold's release. */
-  openRowMenu: (task: Task, x: number, y: number) => void
+  openRowMenu: (task: Task, x: number, y: number, row?: Element | null) => void
 }
 
 /**
@@ -85,7 +85,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         onDragStart?.()
       },
       onHoldChange: (held) => row?.toggleAttribute('data-touch-hold', held),
-      onHoldRelease: (x, y) => dragState.current.openRowMenu(task, x, y),
+      onHoldRelease: (x, y) => dragState.current.openRowMenu(task, x, y, row),
       onMove: (target, _x, y) => {
         // Over a sidebar target the list shows no drop line (the target shows its ring).
         const id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
