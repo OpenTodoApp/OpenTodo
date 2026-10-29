@@ -17,6 +17,47 @@ import type { RowActions } from './TaskListRow'
 import type { ListRoute } from './useListModel'
 import type { ListUi } from './useListShortcuts'
 
+/**
+ * The ids a row's actions menu acts on (task-row-context-menu): the ticked selection
+ * when the row is one of it, else just the row — in list order, so the review step
+ * lists the tasks the same way whichever trigger opened the menu (a right-click, a
+ * touch hold's release). The keyboard's own menu is a different rule: `.` opens for
+ * the whole ticked selection wherever the cursor is (`list.actions`).
+ */
+export function rowMenuIds(task: Task, ticked: ReadonlySet<string>, order: readonly string[]): string[] {
+  return ticked.has(task.id) ? order.filter((id) => ticked.has(id)) : [task.id]
+}
+
+/**
+ * The browser's own menu still wins here (task-row-context-menu): a link (open in a
+ * new tab, copy address), a field or editable text (paste, spelling suggestions) or
+ * a selection of the row's text to copy. Nothing is prevented, so the native menu
+ * appears as it would anywhere else.
+ */
+export function nativeMenuWins(e: React.MouseEvent): boolean {
+  const target = e.target
+  if (target instanceof Element && target.closest('a[href], input, textarea, [contenteditable]:not([contenteditable="false"])')) return true
+  const selection = document.getSelection()
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return false
+  const row = e.currentTarget instanceof Element ? e.currentTarget : null
+  const node = selection.getRangeAt(0).commonAncestorContainer
+  const inRow = node instanceof Element ? node : node.parentElement
+  return !!row && !!inRow && row.contains(inRow)
+}
+
+/**
+ * A `contextmenu` raised by touch — Chrome on Android fires one on a long press. It
+ * is suppressed (the browser's menu never covers the row) but never opens ours: the
+ * hold owns touch, so one gesture cannot both tick the row and open its menu, and
+ * iOS, which never fires one, behaves the same way.
+ */
+export function fromTouch(e: React.MouseEvent): boolean {
+  // React's synthetic event wraps the native one, which carries the pointer type; a
+  // handler invoked without an event's wrapper (a unit test) is the native event itself.
+  const native = (e.nativeEvent ?? (e as unknown as Event)) as PointerEvent
+  return native.pointerType === 'touch'
+}
+
 export interface BindingContext {
   route: ListRoute
   rows: ListRow[]
@@ -44,6 +85,10 @@ export interface BindingContext {
   startInline?: (id: string, e?: React.MouseEvent) => boolean
   /** The row whose details are shown (row-expand D4): one per list, closed when the list changes. */
   setExpandedId: (update: (id: string | null) => string | null) => void
+  /** Opens the row's actions menu for a task at a point: the right-click and a touch hold's release share this rule (useRowMenu owns it for every list). */
+  openRowMenu: (task: Task, x: number, y: number, row?: Element | null) => void
+  /** While a row drag is lifted the right-click is ignored (the drag wins, ux-feedback-2 D4). */
+  draggingId: string | null
 }
 
 export function useListBindings(c: BindingContext): RowActions {
@@ -169,6 +214,22 @@ export function useListBindings(c: BindingContext): RowActions {
     expand: (id) => {
       setSelectedId(id)
       live.current.setExpandedId((cur) => (cur === id ? null : id))
+    },
+    context: (e, task) => {
+      // Right-click: the row's actions menu at the pointer. A link, a field or the
+      // row's selected text keeps the browser's menu; a touch long press is the hold's
+      // gesture, not a right-click, so it is only suppressed (task-row-context-menu).
+      if (nativeMenuWins(e)) return
+      e.preventDefault()
+      if (fromTouch(e)) return
+      // A lifted drag wins: the drop completes on release.
+      if (live.current.draggingId) return
+      live.current.openRowMenu(task, e.clientX, e.clientY, e.currentTarget instanceof Element ? e.currentTarget : null)
+    },
+    // A touch hold's release: the same rule at the finger's point, with no event to guard.
+    contextAt: (task, x, y, row) => {
+      if (live.current.draggingId) return
+      live.current.openRowMenu(task, x, y, row)
     },
   }), [setSelectedId])
 }

@@ -181,7 +181,7 @@ export function Confirmation({ spec, onClose }: { spec: ConfirmSpec; onClose: ()
  * Renders a menu from groups. `picker` (with `open`) starts directly in that
  * picker step, as the project menu's `m` shortcut does.
  */
-export function ActionMenu({ label, title, groups, header, trigger, triggerClassName, align = 'end', width = 'sm:w-64', open: openProp, onOpenChange, startPicker, anchor }: {
+export function ActionMenu({ label, title, groups, header, trigger, triggerClassName, triggerProps, align = 'end', width = 'sm:w-64', open: openProp, onOpenChange, startPicker, anchor }: {
   label: string
   /** Content above the first group (the project colour swatches). */
   header?: ReactNode
@@ -189,6 +189,8 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
   groups: ActionGroup[]
   trigger?: ReactNode
   triggerClassName?: string
+  /** Extra attributes on the trigger button (`aria-current`, the right-click pointer position). */
+  triggerProps?: React.ComponentProps<typeof Menu>['triggerProps']
   align?: 'start' | 'end'
   width?: string
   open?: boolean
@@ -224,6 +226,7 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
       <Menu label={label} title={title} kind={current || step ? 'dialog' : 'menu'} align={align} width={width} className="p-1"
         trigger={trigger ?? <Icon name="ellipsis" />}
         triggerClassName={triggerClassName ?? 'ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-0.5 text-faint'}
+        triggerProps={triggerProps}
         open={open} anchor={anchor}
         onOpenChange={(v) => {
           // The first Escape (or outside tap) in a picker step goes back to the items.

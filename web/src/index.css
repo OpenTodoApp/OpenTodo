@@ -912,6 +912,10 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 .row-selected { background-color: var(--ot-selected-row); }
 .row-selected::before { content: ''; position: absolute; inset-block: 0.375rem; inset-inline-start: 0; width: 2px; border-radius: 9999px; background-color: var(--text-color-accent); }
 .row-hover:hover { background-color: var(--ot-hover); }
+/* A touch hold armed (task-row-context-menu "Touch: hold and release"): the pressed
+   row tints while the hold counts, so holding reads as feedback before the menu opens
+   on release. A plain attribute, so it survives the row's re-renders mid-hold. */
+li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--text-color-accent) 8%, transparent); }
 /* A narrow row's line is one run of muted text (rows-v2 D4): a faint middle dot between
    adjacent items, as generated content so it is never read out. A row's line holds two
    wrappers (the column's cells, then the rest), so its dots also cross from the first
