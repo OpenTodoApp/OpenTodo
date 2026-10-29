@@ -32,19 +32,26 @@ Open the **WebUI** from the container's menu. The first visitor creates the owne
 | Web UI port | `8080` | The port on your server. Change the left side only if 8080 is taken. |
 | Data | `/mnt/user/appdata/opentodo` | The database, attachments and backups. Everything OpenTodo stores is here. |
 | Base URL | empty | Leave empty when you open OpenTodo by the server's address. Behind a reverse proxy, set the https address people open, for example `https://todo.example.com`. |
-| Setup token | empty | Optional, 16+ characters. Set it when the server is reachable from the internet, so a stranger cannot create the owner account first. |
+| Setup token | empty | `OPENTODO_SETUP_TOKEN`. Optional, 16+ characters. Set it when the server is reachable from the internet, so a stranger cannot create the owner account first. |
 
 Under **Show more settings**: open sign-up, trusted proxies, push notifications, session length, trash retention, the largest import and the log level. Every other `OPENTODO_*` variable from the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration) can be added with **Add another Path, Port, Variable…**.
 
 ## Permissions
 
-The image runs as user 65532 and has no shell, so it does not use `PUID`, `PGID` or `UMASK`; adding them changes nothing. Unraid's appdata share is writable by everyone by default, which is all it needs. If the container stops right after it starts and its log mentions the database ("unable to open database file", "readonly database" or "permission denied"), the folder is not writable for it. Either give the folder to that user:
+The image runs as user 65532 and has no shell, so it does not use `PUID`, `PGID` or `UMASK`; adding them changes nothing. The appdata folder must be writable for that user. When the folder does not exist yet, Docker creates it owned by `root`, and the container stops right after it starts with this in its log:
+
+```text
+opentodo: /data: open lock file: open /data/opentodo.lock: permission denied: the data directory /data is not writable for user 65532 (group 65532) …
+```
+
+(Releases up to 0.16.0 print only the part up to `permission denied`; "unable to open database file" and "readonly database" mean the same.) Give the folder to that user in Unraid's terminal (**>_** in the top bar) and start the container again:
 
 ```bash
+mkdir -p /mnt/user/appdata/opentodo
 chown -R 65532:65532 /mnt/user/appdata/opentodo
 ```
 
-or run the container as Unraid's usual `nobody:users`: add `--user 99:100` under **Extra Parameters** (advanced view) and run `chown -R 99:100 /mnt/user/appdata/opentodo`.
+Or run the container as Unraid's usual `nobody:users`: add `--user 99:100` under **Extra Parameters** (advanced view) and run `chown -R 99:100 /mnt/user/appdata/opentodo`. Both are equally fine; pick one and keep it, since the folder must belong to the user the container runs as.
 
 ## https and reverse proxies
 
@@ -75,6 +82,9 @@ The template uses the `stable` image, which every release moves: **Check for Upd
 Back up `/mnt/user/appdata/opentodo` with the Appdata Backup plugin, or turn on scheduled backups in **Settings → Server** (they are written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
 
 ## Troubleshooting
+
+- **The container stops right after it starts and its log says `permission denied` on `/data`**: the appdata folder is not writable for the container's user. See [Permissions](#permissions).
+- **A setting is missing from the container's page** (the setup token, say): clicking **Remove** next to a setting deletes it from your copy of the template, and leaving it empty does not. Add it back with **Add another Path, Port, Variable…**: Config Type *Variable*, Key `OPENTODO_SETUP_TOKEN` (or the key from the [settings table](#settings) and the [configuration table](https://github.com/OpenTodoApp/OpenTodo#configuration)), and the value. To get the whole template back instead, remove the container (the appdata folder stays), delete `/boot/config/plugins/dockerMan/templates-user/my-OpenTodo.xml`, and install OpenTodo again from the Apps tab.
 
 - **The app says Offline and nothing you add is saved** on a plain-http address: OpenTodo 0.6.0 and earlier needed https for this. Update the container.
 - **The Web UI link opens the wrong port**: Unraid builds it from the Web UI port; check the left side of that setting.

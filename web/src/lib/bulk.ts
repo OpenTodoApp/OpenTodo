@@ -14,6 +14,7 @@ import { descendants } from './tree'
 import type { Membership, Priority, Task } from './types'
 import { applyBatch } from './undo'
 import { t } from './i18n'
+import { keepWorkspaceFor, type KeepWorkspace } from './workspaces'
 
 /** Changes merged by entity: a task reached twice (ticked and under a ticked parent) gets one patch. */
 export function mergeChanges(changes: Change[]): Change[] {
@@ -100,7 +101,7 @@ export type MoveTarget = { projectId: string | null; sectionId?: string | null }
 
 /** Per ticked (topmost) task, the changes that move it with its subtree. */
 export function planMoveGroups(tasks: readonly Task[], all: Task[], target: MoveTarget,
-  memberships: Map<string, Membership>, me: string | null, now = Date.now()): { task: Task; changes: Change[] }[] {
+  memberships: Map<string, Membership>, me: string | null, now = Date.now(), keep?: KeepWorkspace): { task: Task; changes: Change[] }[] {
   const out: { task: Task; changes: Change[] }[] = []
   for (const tk of topmost(tasks, all)) {
     const sameProject = (tk.project_id ?? null) === target.projectId
@@ -111,15 +112,15 @@ export function planMoveGroups(tasks: readonly Task[], all: Task[], target: Move
     const patch: Partial<Task> = { project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
     const cross = scopeOf(tk.project_id, memberships) !== scopeOf(target.projectId, memberships)
       ? { assignable: assignableIn(target.projectId, memberships, me) } : undefined
-    out.push({ task: tk, changes: planProjectChange(tk, all, patch, cross, now).changes })
+    out.push({ task: tk, changes: planProjectChange(tk, all, patch, cross, now, keep).changes })
   }
   return out
 }
 
 /** Move to a project (and optionally a section); across sharing scopes as copies plus tombstones. */
 export function planMove(tasks: readonly Task[], all: Task[], target: MoveTarget,
-  memberships: Map<string, Membership>, me: string | null, now = Date.now()): Change[] {
-  return mergeChanges(planMoveGroups(tasks, all, target, memberships, me, now).flatMap((g) => g.changes))
+  memberships: Map<string, Membership>, me: string | null, now = Date.now(), keep?: KeepWorkspace): Change[] {
+  return mergeChanges(planMoveGroups(tasks, all, target, memberships, me, now, keep).flatMap((g) => g.changes))
 }
 
 export function planAssign(tasks: readonly Task[], userId: string | null): Change[] {
@@ -240,13 +241,13 @@ export interface ReviewPlan {
 export async function planMoveFor(ids: readonly string[], target: MoveTarget): Promise<ProposedChange[]> {
   const { tasks, all } = await readTicked(ids)
   const memberships = await membershipMap()
-  return toProposed(planMove(tasks, all, target, memberships, await currentUserId()), memberships)
+  return toProposed(planMove(tasks, all, target, memberships, await currentUserId(), Date.now(), await keepWorkspaceFor()), memberships)
 }
 
 export async function reviewMove(ids: readonly string[], target: MoveTarget): Promise<ReviewPlan> {
   const { tasks, all } = await readTicked(ids)
   const memberships = await membershipMap()
-  const groups = planMoveGroups(tasks, all, target, memberships, await currentUserId())
+  const groups = planMoveGroups(tasks, all, target, memberships, await currentUserId(), Date.now(), await keepWorkspaceFor())
   const shared = !!target.projectId && memberships.has(target.projectId)
   const items = groups.map(({ task }): ProposedChange => {
     const patch: Record<string, unknown> = (task.project_id ?? null) === target.projectId ? { section_id: target.sectionId ?? null } : { project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }

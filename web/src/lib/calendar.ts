@@ -7,6 +7,11 @@ import { formatMinutes, MAX_ESTIMATE_MINUTES } from './duration'
 import type { CalendarEvent, CalendarWhen, Due, Project, Task } from './types'
 
 export const SLOT_MINUTES = 15
+/**
+ * The shortest a block is drawn, in minutes of the grid (20 px at 0.8 px a minute):
+ * room for its title. Blocks closer together than that sit side by side (issue 526).
+ */
+export const MIN_BLOCK_MINUTES = 25
 export const DAY_MINUTES = 24 * 60
 /** Visual length of an unestimated block; it does not count towards capacity. */
 export const DEFAULT_BLOCK_MINUTES = 30

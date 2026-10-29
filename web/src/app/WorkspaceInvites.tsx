@@ -12,6 +12,7 @@ import { roleName } from '../lib/roleNames'
 import type { Workspace, WorkspaceRole } from '../lib/types'
 import { workspaceApi, type WorkspaceInvite } from '../lib/workspaceApi'
 import { cardCopy } from '../lib/settingsCopy'
+import { copyText } from '../lib/clipboard'
 
 /** The offered expiries, in hours (the API accepts 1 to 720; 168 is its default). */
 export const INVITE_EXPIRIES = [1, 24, 168, 720] as const
@@ -70,7 +71,7 @@ export function WorkspaceInvites({ ws, online }: { ws: Workspace; online: boolea
         {link && (
           <div className="flex flex-wrap items-center gap-2" data-workspace-link>
             <Input readOnly value={link} aria-label={t('Invite link')} className="min-w-0 flex-1" onFocus={(e) => e.currentTarget.select()} />
-            <Button icon="copy" onClick={() => act(navigator.clipboard.writeText(link))}>{t('Copy')}</Button>
+            <Button icon="copy" onClick={() => act(copyText(link))}>{t('Copy')}</Button>
           </div>
         )}
       </div>

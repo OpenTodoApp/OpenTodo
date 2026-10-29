@@ -14,6 +14,7 @@ import { Button, Dialog, Field, Input, Select, Switch } from '../../ui'
 import { Notice } from '../../ui'
 import { act } from '../actionError'
 import { setTaskPageStatus } from './taskPageStatus'
+import { copyText } from '../../lib/clipboard'
 
 const RIGHTS: { value: TaskPageRights; label: () => string; hint: () => string }[] = [
   { value: 'view', label: () => t('Read'), hint: () => t('Guests can read the task.') },
@@ -65,7 +66,7 @@ export function TaskPageDialog({ task, status, onClose }: { task: Task; status: 
 
   const copy = () => {
     if (!created) return
-    void navigator.clipboard?.writeText(created.link).then(() => setCopied(true), () => {})
+    void copyText(created.link).then(() => setCopied(true), () => {})
   }
 
   if (created) {

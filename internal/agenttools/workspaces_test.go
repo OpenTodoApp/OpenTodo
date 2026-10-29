@@ -73,3 +73,55 @@ func TestWorkspacesInTools(t *testing.T) {
 		t.Fatalf("moved project workspace_id = %s", p["workspace_id"])
 	}
 }
+
+// workspaces: a sub-project moved to the top level keeps its workspace (issue 544).
+func TestProjectToTopLevelKeepsWorkspace(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	name := "Work"
+	work, err := f.sync.CreateWorkspace(ctx, "u1", opsync.WorkspaceInput{Name: &name})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.put("u1", "project", "clients", map[string]any{"name": "Clients", "workspace_id": work.ID})
+	f.put("u1", "project", "acme", map[string]any{"name": "Acme", "parent_id": "clients"})
+	f.put("u1", "project", "home", map[string]any{"name": "Home"})
+	f.put("u1", "project", "shed", map[string]any{"name": "Shed", "parent_id": "home"})
+	f.mustCall(agent("u1"), "update_project", map[string]any{"id": "acme", "parent_id": nil})
+	f.mustCall(agent("u1"), "update_project", map[string]any{"id": "shed", "parent_id": nil})
+	p, _ := f.sync.Get(ctx, "u1", "project", "acme")
+	if got := string(p["workspace_id"]); got != `"`+work.ID+`"` {
+		t.Fatalf("Work sub-project workspace_id = %s", got)
+	}
+	p, _ = f.sync.Get(ctx, "u1", "project", "shed")
+	if got, ok := p["workspace_id"]; ok && string(got) != "null" {
+		t.Fatalf("default sub-project workspace_id = %s", got)
+	}
+}
+
+// workspaces "Moving a task out of its project keeps its workspace" (#508).
+func TestMoveToInboxKeepsWorkspace(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	name := "Work"
+	work, err := f.sync.CreateWorkspace(ctx, "u1", opsync.WorkspaceInput{Name: &name})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.put("u1", "project", "unsorted", map[string]any{"name": "Unsorted", "workspace_id": work.ID})
+	f.put("u1", "project", "garden", map[string]any{"name": "Garden"})
+	f.task("u1", "t-work", "Write the report", map[string]any{"project_id": "unsorted"})
+	f.task("u1", "t-home", "Water the plants", map[string]any{"project_id": "garden"})
+	f.mustCall(agent("u1"), "move_tasks", map[string]any{"ids": []string{"t-work", "t-home"}, "project_id": nil})
+	if got := string(f.get("u1", "t-work")["workspace_id"]); got != `"`+work.ID+`"` {
+		t.Fatalf("Work task workspace_id = %s", got)
+	}
+	// A task of the default workspace writes no workspace_id.
+	if got, ok := f.get("u1", "t-home")["workspace_id"]; ok && string(got) != "null" {
+		t.Fatalf("default task workspace_id = %s", got)
+	}
+	inbox := f.mustCall(Caller{UserID: "u1", Scope: "read"}, "list_tasks", map[string]any{"view": "inbox", "workspace": work.ID})["tasks"]
+	if raw, _ := json.Marshal(inbox); !strings.Contains(string(raw), "t-work") || strings.Contains(string(raw), "t-home") {
+		t.Fatalf("Work inbox = %s", raw)
+	}
+}

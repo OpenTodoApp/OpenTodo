@@ -18,6 +18,7 @@ import {
 } from './NotificationChannelEditor'
 import { useSettingsPending } from './settingsPending'
 import { ago } from '../lib/dates'
+import { copyText } from '../lib/clipboard'
 
 /** The row's second line: why it is off, the last error, or when it last delivered. */
 export function channelStatus(c: NotificationChannel, now = Date.now()): string {
@@ -90,7 +91,7 @@ function SecretNotice({ secret, onSeen }: { secret: { name: string; value: strin
       <span className="block">{t('Signing secret of {name}. Copy it now; it is never shown again.', { name: secret.name })}</span>
       <span className="mt-2 flex flex-wrap items-center gap-2">
         <Input aria-label={t('Signing secret')} readOnly value={secret.value} className="font-mono" onFocus={(e) => e.currentTarget.select()} />
-        <Button size="sm" icon="copy" onClick={() => void navigator.clipboard?.writeText(secret.value).then(() => setCopied(true)).catch(() => undefined)}>
+        <Button size="sm" icon="copy" onClick={() => void copyText(secret.value).then(() => setCopied(true)).catch(() => undefined)}>
           {copied ? t('Copied') : t('Copy')}
         </Button>
       </span>
