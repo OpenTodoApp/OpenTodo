@@ -90,7 +90,7 @@ const (
 	// CodeProviderNotFound is the provider's own 404: no such model or endpoint
 	// (assistant-providers-fix D2), distinct from OpenTodo's not_found.
 	CodeProviderNotFound = "provider_not_found"
-	CodeNoToolSupport       = "no_tool_support"
+	CodeNoToolSupport    = "no_tool_support"
 )
 
 // ProviderError is a failed provider request, safe to show and log: status,
