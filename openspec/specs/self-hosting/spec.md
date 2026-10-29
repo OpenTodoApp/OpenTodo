@@ -2,7 +2,9 @@
 
 ## Purpose
 Defines the deployment contract: one small container, one data directory, configuration through optional environment variables, health reporting, how configuration problems are reported, security headers and compatibility with Coolify and plain Docker Compose.
+
 ## Requirements
+
 ### Requirement: Single container, single binary
 The server SHALL ship as one container image containing one statically linked binary that serves both the API and the web app. The image SHALL run as a non-root user, SHALL contain no shell or package manager, and the compressed image SHALL stay under 50 MB.
 
@@ -317,7 +319,7 @@ Each platform checker SHALL declare an image policy: `stable` (the image `ghcr.i
 - **THEN** the check requires the legacy name `ghcr.io/pixari/opentodo` for it, and after the next release it requires `ghcr.io/opentodoapp/opentodo`, which `scripts/deploy/pin.mjs` writes with the new digest
 
 ### Requirement: Client address from trusted proxies only
-The server SHALL believe `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Proto` and `CF-Connecting-IP` only from a trusted proxy peer: loopback, private and link-local networks when `OPENTODO_TRUSTED_PROXIES` is unset, otherwise the configured list. From any other peer, the peer is the client. From a trusted peer, the client SHALL be the nearest untrusted `X-Forwarded-For` hop read from the right (or `CF-Connecting-IP` at a trusted Cloudflare edge hop). Every limit and the audit log use it.
+The server SHALL believe `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Proto` and `CF-Connecting-IP` only from a trusted proxy peer: loopback, private and link-local networks when `OPENTODO_TRUSTED_PROXIES` is unset, otherwise the configured list. From any other peer, the peer is the client. From a trusted peer, the client SHALL be the nearest untrusted `X-Forwarded-For` hop read from the right (or `CF-Connecting-IP` at a trusted Cloudflare edge hop); when every hop is trusted, the client SHALL be the last `X-Forwarded-For` entry, the one the nearest proxy appended, never an earlier entry the client could write. Every limit and the audit log use it. The first request from a trusted peer other than loopback that carries no `X-Forwarded-For` SHALL log one warning per process saying that every client behind that address shares it.
 
 #### Scenario: Direct client forges the header
 - **WHEN** a client on a public address connects directly and sends `X-Forwarded-For: 192.168.1.5`
@@ -326,6 +328,14 @@ The server SHALL believe `X-Forwarded-For`, `X-Forwarded-Host`, `X-Forwarded-Pro
 #### Scenario: Local reverse proxy
 - **WHEN** the variable is unset and a proxy on a container network (`172.18.0.3`) forwards a request with `X-Forwarded-For: 6.6.6.6, 203.0.113.4`
 - **THEN** the client is `203.0.113.4`
+
+#### Scenario: Every hop trusted
+- **WHEN** the variable is unset and a proxy on a container network forwards a request with `X-Forwarded-For: 127.0.0.1, 192.168.1.20`
+- **THEN** the client is `192.168.1.20`
+
+#### Scenario: Forwarder that adds no header
+- **WHEN** the variable is unset and requests arrive from `172.17.0.1` without `X-Forwarded-For`
+- **THEN** the client is `172.17.0.1` and the log has one warning naming that address
 
 #### Scenario: Cloudflare edge vouches for the client
 - **WHEN** the value is `cloudflare` and a local proxy forwards a request whose nearest hop is a Cloudflare edge with `CF-Connecting-IP: 198.51.100.9`
@@ -664,3 +674,62 @@ When the server cannot create its data directory or a file in it because of perm
 - **WHEN** the data directory is writable
 - **THEN** the server starts as before and logs nothing about permissions
 
+### Requirement: CI tests the built app offline
+CI SHALL run the tests of the built web app (the precache and deny list of the service worker, the web app manifest, and the absence of workbench code in the build) after the build, and a missing build SHALL fail them rather than skip them. CI SHALL also start the built server on a fresh data directory and check in a browser that, once the service worker controls the page, a reload with the network off opens the app with the tasks stored on the device, that a request to `/api/*` is never answered from a cache, and that a task added offline reaches the server after the network returns.
+
+#### Scenario: The service worker caches the API
+- **WHEN** a change lets the service worker answer `/api/v1/tasks` from a cache
+- **THEN** the offline start check fails naming the API request
+
+#### Scenario: The app does not open offline
+- **WHEN** a change drops the app's start page from the precache
+- **THEN** the reload with the network off shows no app and the offline start check fails
+
+#### Scenario: The build is missing
+- **WHEN** the built-app tests run in CI without `internal/web/dist`
+- **THEN** they fail instead of being skipped
+
+### Requirement: Tiered CI
+CI SHALL run in tiers. A pull request SHALL run the repository checks and, when it changes code, the web, server and image checks and one server binary; the browser layout and end-to-end checks in one engine at every width when it changes the web app, the server or their scripts; the workbench accessibility and visual checks when it changes the web app's sources or the workbench; the Android, extension and skill jobs only when their own files change; and a change to the docs alone SHALL run the repository checks and the docs website check. A change to the CI workflow or its path filter SHALL run every pull request tier. A push to the default branch and a release tag SHALL run every job and every engine, width, language and platform, and SHALL publish only after all of them succeeded; a job skipped by a tier SHALL never be the reason a pull request fails.
+
+#### Scenario: A server-only pull request
+- **WHEN** a pull request changes only `internal/sync`
+- **THEN** CI runs the checks, web, server, image, one binary and the single Chromium layout and end-to-end job, and skips the workbench, WebKit, translated-layout, other binary, Android, extension and skill jobs
+
+#### Scenario: A docs-only pull request
+- **WHEN** a pull request changes only files under `docs/`
+- **THEN** CI runs the repository checks (including the docs check) and the docs website check, and nothing else
+
+#### Scenario: The push runs everything
+- **WHEN** that pull request is merged
+- **THEN** the push run runs every layout leg (Chromium and WebKit at each width, German and French), all six binaries and the workbench checks, and the image is published only if every one of them passed
+
+### Requirement: Nightly failures are reported
+The nightly checks SHALL report their result on the default branch as a GitHub issue labelled `ci-nightly`: a failed or timed-out nightly job SHALL open that issue, or comment on it when it is already open, naming the run and the failed jobs; a night on which every job passes SHALL close it. The report SHALL use only the workflow's own token.
+
+#### Scenario: A nightly job fails
+- **WHEN** the race detector finds a data race in the nightly run and no `ci-nightly` issue is open
+- **THEN** an issue labelled `ci-nightly` is opened with a link to the run and the failed job
+
+#### Scenario: Still failing the next night
+- **WHEN** the nightly run fails again while the `ci-nightly` issue is open
+- **THEN** a comment with the new run link is added to that issue and no second issue is opened
+
+#### Scenario: Green again
+- **WHEN** every nightly job passes while the `ci-nightly` issue is open
+- **THEN** the issue is closed with a link to the green run
+
+### Requirement: The sync client is tested against the server
+CI SHALL run the web app's sync client code, unmocked, against the server binary built in the same run, with several simulated devices that each have their own local database and session. The tests SHALL cover at least convergence of two devices of one account, offline edits on two devices converging on the later edit on every device and the server, a device clock far ahead being refused and corrected without losing the change, a refused edit of a viewer being reported and undone on the device, and a device's offline queue reaching the server after reconnecting.
+
+#### Scenario: The server changes a refusal reason
+- **WHEN** a change renames the `clock_skew` refusal on the server without changing the client
+- **THEN** the contract test of a fast device clock fails in CI
+
+#### Scenario: The client stops undoing refused edits
+- **WHEN** a change keeps a viewer's refused edit on the device
+- **THEN** the contract test of the viewer fails because the device still shows the refused value
+
+#### Scenario: Unit tests stay offline
+- **WHEN** a contributor runs `npm test` without a server binary
+- **THEN** the contract tests are not run, and `npm run test:contract` names the missing binary
