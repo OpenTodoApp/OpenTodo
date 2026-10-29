@@ -11,7 +11,7 @@ Issue #404: people can store a precise score such as WSJF, effort or cost in a c
 - Sort numbers numerically and dates chronologically. Tasks without a matching value come last in either direction. Ties use the existing default order: due date, priority, manual position, then task id.
 - Keep grouping, subtasks, Later and Completed behavior unchanged. Keep manual move behavior: a move in a project list switches back to manual order first.
 
-Only Number and Date are included. Text, Choice, Checkbox and Link sorting are out of scope.
+Only Number and Date definitions are offered as sort choices. When another project defines a same-named Text field, its present values participate after Number values ascending and before them descending; missing values stay last. Text-only choices, Choice, Checkbox and Link sorting are out of scope.
 
 This advances the Roadmap's section 3 item `custom-views` (saved views and display options) and the open request in issue #404.
 
@@ -22,12 +22,12 @@ Not breaking: the existing `sort_by` values carry the selection; no operation fi
 ## Out of scope
 
 - Sorting by custom field values in boards, timelines, built-in views or the CLI.
-- Adding sort support for Text, Choice, Checkbox or Link fields.
+- Offering Text-only, Choice, Checkbox or Link sort choices.
 - Changing custom field definitions, task values or query behavior.
 
 ## Impact
 
 - Web: sort option discovery, custom-field comparison and Display options for project lists, labels and saved views.
 - API: saved-view `sort_by` validation accepts the field-sort form.
-- Documentation: explain custom-field ordering in the project, label and saved-view guides.
+- Documentation: explain custom-field ordering in the project, label and saved-view guides, the API reference and the CLI guide.
 - No data migration or new dependency.

@@ -101,6 +101,8 @@ Every command acts on one [workspace](workspaces.md): the account's default work
 
 ## Tasks
 
+Saved views can store a custom-field order through the [views API](api.md#view-fields): use `"sort_by":"field:WSJF"` and `"sort_dir":"desc"` to rank by a Number field. Names match without regard to case, including inherited parent-project fields. Missing values stay last in either direction. These are saved-view display settings; `ot list` keeps its normal task order and has no custom-field sort flag.
+
 ```bash
 ot today                       # due today or earlier, overdue first
 ot inbox                       # the Inbox: no project and no date
