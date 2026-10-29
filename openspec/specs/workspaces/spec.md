@@ -2,7 +2,9 @@
 
 ## Purpose
 Lets one account keep separate rooms on one server, each with its own projects, labels, views, members and groups, so that work and home stay apart and a project can be shared with a group of people in one step, without changing how data syncs or who can see what.
+
 ## Requirements
+
 ### Requirement: Workspace entity
 A workspace SHALL have an id, a name of 1 to 60 characters, an optional icon from the app's icon set, an optional colour, an owner account, a creation time and an optional deletion time. Every account SHALL have exactly one *default workspace*, created by the server when the account is created (and once, at upgrade, for every existing account), named "Personal" until renamed, which SHALL NOT be deletable. Workspaces, their membership and their groups SHALL be server-side data: they are never written to the operation log, they change only through authenticated routes, and they are delivered to every device of each member through the sync exchange and cached locally, so the sidebar, pickers and counts work offline from the cache.
 
@@ -392,3 +394,17 @@ When a task leaves its project for no project (moved to the Inbox by drag, by Mo
 - **WHEN** a script PATCHes `/api/v1/tasks/{id}` with `{"project_id": null}` for a task of a Work project
 - **THEN** the task's `workspace_id` becomes Work's id in the same write
 
+### Requirement: Moving a project to the top level keeps its workspace
+When a project gets a new parent (dragged in the sidebar, moved with Move, through the API or by an agent tool), the move SHALL write, in the same batch, the `workspace_id` of the workspace the project is in (null for the default workspace) when its own value differs, so a sub-project that becomes a top-level project stays in that workspace. An account with one workspace SHALL write nothing extra. It works offline and converges like the move itself.
+
+#### Scenario: Drag a sub-project to the top level
+- **WHEN** the user is in "Work" and drags the sub-project "Acme" out of "Clients" to the top level
+- **THEN** Acme stays in Work's sidebar as a top-level project, on this device at once and on others after sync
+
+#### Scenario: Default workspace
+- **WHEN** a sub-project of the default workspace is moved to the top level
+- **THEN** it stays in the default workspace and no `workspace_id` operation is written
+
+#### Scenario: API and agents
+- **WHEN** a script PATCHes `/api/v1/projects/{id}` with `{"parent_id": null}`, or an agent calls `update_project` with `parent_id: null`, for a sub-project of a Work project
+- **THEN** the project's `workspace_id` becomes Work's id in the same change
