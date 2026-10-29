@@ -19,7 +19,7 @@ import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
 import { t } from './i18n'
 import { uuid } from './ids'
-import { workspaceFields } from './workspaces'
+import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorkspace } from './workspaces'
 import { resettable } from './moduleState'
 
 let devicePromise: Promise<string> | null = null
@@ -576,7 +576,9 @@ export async function moveProject(id: string, parentId: string | null): Promise<
     if (!parent || parent.archived) throw new Error('parent project not found')
     if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the project'))
   }
-  await mutate('project', id, { parent_id: parentId, position: lastAmongProjectSiblings(all, id, parentId) })
+  // It stays in the workspace it is in when it becomes a top-level project (issue 544).
+  const ws = await keepProjectWorkspace(id)
+  await mutate('project', id, { parent_id: parentId, position: lastAmongProjectSiblings(all, id, parentId), ...(ws === undefined ? {} : { workspace_id: ws }) })
 }
 
 /** Archiving cascades to every descendant, one op each (design D3); unarchive does not cascade. */
@@ -795,7 +797,7 @@ export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task,
   const task = await db.tasks.get(id)
   if (!task || task.deleted_at) throw new Error('task not found')
   const assignable = assignableIn(patch.project_id ?? null, await membershipMap(), await currentUserId())
-  const plan = planProjectChange(task, await liveTasks(), patch, { assignable })
+  const plan = planProjectChange(task, await liveTasks(), patch, { assignable }, Date.now(), await keepWorkspaceFor())
   await mutateMany(plan.changes)
   return plan.id
 }
@@ -807,8 +809,13 @@ export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task,
  * (`cross` set): copies in the destination plus tombstones on the originals.
  * Returns the task's id afterwards (the copy's id across scopes).
  */
-export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<Task, 'id' | '_clock'>>, cross?: { assignable: Set<string> }, now = Date.now()): { changes: Change[]; id: string } {
+export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<Task, 'id' | '_clock'>>, cross?: { assignable: Set<string> }, now = Date.now(), keep?: KeepWorkspace): { changes: Change[]; id: string } {
   const id = task.id
+  // Leaving its project for the Inbox, a task keeps the workspace it was in (#508).
+  if (keep && !patch.project_id && task.project_id && !('workspace_id' in patch)) {
+    const ws = keep(task)
+    if (ws !== undefined && ws !== (task.workspace_id ?? null)) patch = { ...patch, workspace_id: ws }
+  }
   if (cross) {
     const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((tk) => tk.id === d)).filter((item): item is Task => !!item)]
     const { project_id: projectId = null, parent_id: _parent, ...rest } = patch
@@ -858,7 +865,7 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
       if (scopeOf(task.project_id, memberships) !== scopeOf(patch.project_id, memberships)) {
         return moveTaskAcrossScopes(id, patch)
       }
-      await mutateMany(planProjectChange(task, await liveTasks(), patch).changes)
+      await mutateMany(planProjectChange(task, await liveTasks(), patch, undefined, Date.now(), await keepWorkspaceFor()).changes)
       return id
     }
   }

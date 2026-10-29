@@ -84,7 +84,7 @@ export function useTodayAgenda(active: boolean, today: string, zone?: string): {
 }
 
 /** One event as a button that toggles the calendar's details popover. */
-function AgendaEvent({ ev, sub, zone, className, data, children, extra }: {
+export function AgendaEvent({ ev, sub, zone, className, data, children, extra }: {
   ev: CalendarEvent
   sub?: CalendarSubscription
   zone?: string

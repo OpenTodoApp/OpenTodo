@@ -92,3 +92,42 @@ describe('layoutDay', () => {
     expect(layoutDay([input[2], input[0], input[4], input[1], input[3]])).toEqual(want)
   })
 })
+
+// Short blocks drawn taller than their time (issue 526): lanes follow the drawn
+// length, the overlap marker the real times.
+describe('layoutDay with a drawn minimum length', () => {
+  it('puts short blocks close together side by side without the overlap marker', () => {
+    // 13:30 for 15 min, then 5- and 10-minute tasks at 13:45, 13:50 and 14:00, drawn 25 minutes tall.
+    const { blocks } = layoutDay([
+      { id: 'hot', start: 810, end: 825 },
+      { id: 'etsy', start: 825, end: 830 },
+      { id: 'news', start: 830, end: 840 },
+      { id: 'plan', start: 840, end: 850 },
+    ], 4, 25)
+    const at = Object.fromEntries(blocks.map((b) => [b.id, b]))
+    expect(new Set(blocks.map((b) => b.lane)).size).toBeGreaterThan(1)
+    // No two blocks whose drawn boxes overlap share a lane.
+    for (const a of blocks) for (const b of blocks) {
+      if (a.id >= b.id || a.lane !== b.lane) continue
+      expect(a.start + 25 <= b.start || b.start + 25 <= a.start).toBe(true)
+    }
+    expect(blocks.every((b) => !b.overlap)).toBe(true)
+    expect(at.hot.lanes).toBe(at.etsy.lanes)
+  })
+
+  it('keeps the marker for blocks whose times overlap, and leaves long blocks alone', () => {
+    const { blocks } = layoutDay([
+      { id: 'a', start: 600, end: 660 },
+      { id: 'b', start: 630, end: 690 },
+      { id: 'c', start: 720, end: 780 },
+    ], 4, 25)
+    const at = Object.fromEntries(blocks.map((b) => [b.id, b]))
+    expect(at.a.overlap && at.b.overlap).toBe(true)
+    expect(at.c).toMatchObject({ lane: 0, lanes: 1, overlap: false })
+  })
+
+  it('is unchanged without a minimum', () => {
+    const { blocks } = layoutDay([{ id: 'x', start: 600, end: 605 }, { id: 'y', start: 605, end: 610 }])
+    expect(blocks.map((b) => [b.lane, b.lanes])).toEqual([[0, 1], [0, 1]])
+  })
+})

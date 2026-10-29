@@ -265,6 +265,17 @@ const shots = [
     if (!(await p.locator('[data-today-agenda]').count())) await toggleTodayEvents(p)
     await p.locator('[data-today-agenda]').waitFor(); await settle(p, 400)
   }, async after(p) { await toggleTodayEvents(p) } },
+  // The day's schedule in the sidebar (sidebar-schedule): opened, with the calendar's day from today-agenda.
+  { name: 'sidebar-schedule', server: D, async run(p) {
+    await p.route('**/api/v1/calendar-feeds/events**', (r) => r.fulfill({ json: agendaDay() }))
+    await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor())
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
+    if (!(await p.locator('[data-schedule-body]').count())) await p.locator('[data-sidebar-schedule] button[aria-expanded]').click()
+    await p.locator('[data-schedule-body]').waitFor(); await p.mouse.move(900, 300); await settle(p, 400)
+    // The sidebar alone: the demo's reminder card sits over the list.
+    const s = await p.locator('[data-sidebar-schedule]').boundingBox()
+    return { x: 0, y: 0, width: s.x + s.width, height: s.y + s.height + 64 }
+  } },
   { name: 'quick-add', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     const qa = p.getByRole('combobox', { name: 'Add a task' }); await qa.click()

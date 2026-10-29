@@ -2,6 +2,7 @@
 // web-component-structure): the panel, the Vim layer's list state, "open this task"
 // signals, focus that follows the cursor and the rows' stable handlers. Everything
 // reads the latest render through refs, so each registration happens once.
+import { isFirstRow, revealRow } from './revealRow'
 import { type RefObject, useEffect, useMemo, useRef } from 'react'
 import type { ListColumn, ListRow } from '../../lib/listGroups'
 import type { Task } from '../../lib/types'
@@ -175,8 +176,9 @@ export function useListBindings(c: BindingContext): RowActions {
   const { listRoot } = c
   useEffect(() => {
     if (!selectedId) return
-    const el = document.querySelector<HTMLElement>(`[data-task-id="${CSS.escape(selectedId)}"]`)
-    el?.scrollIntoView({ block: 'nearest' })
+    const el = document.querySelector<HTMLElement>(`li[data-task-id="${CSS.escape(selectedId)}"]`) ?? document.querySelector<HTMLElement>(`[data-task-id="${CSS.escape(selectedId)}"]`)
+    // Below the sticky header, and back to the very top on the first row (issue 514).
+    if (el) revealRow(el, { first: isFirstRow(el, listRoot.current) })
     const active = document.activeElement as HTMLElement | null
     const free = !active || active === document.body
       || (!!listRoot.current?.contains(active) && !!active.closest('li[data-task-id]') && !isTypingTarget(active))

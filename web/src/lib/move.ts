@@ -12,6 +12,7 @@ import { buildProjectTree } from './projects'
 import { effectiveSection } from './sections'
 import { canEditProject, canEditTasks, membershipMap, roleOf } from './sharing'
 import { buildTree, isDescendant, type Tree } from './tree'
+import { keepProjectWorkspace } from './workspaces'
 import type { Entity, Project, Section, Task } from './types'
 
 /** A keyboard step: one place up or down, or to the top or bottom of the list. */
@@ -156,6 +157,9 @@ export async function moveProjectTo(id: string, target: ProjectTarget): Promise<
   if (parent !== node.parent) {
     if (parent !== null && (parent === id || !ctx.tree.nodes.has(parent) || isDescendant(parent, id, ctx.all))) return false
     patch.parent_id = parent
+    // It stays in the workspace it is in when it becomes a top-level project (issue 544).
+    const ws = await keepProjectWorkspace(id)
+    if (ws !== undefined) patch.workspace_id = ws
   }
   const plan = planMove(projectSiblings(ctx, parent), id, target.at, { writable: ctx.writable })
   if (plan === null) return false

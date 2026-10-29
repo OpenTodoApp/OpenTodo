@@ -3,6 +3,7 @@ package store
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -40,11 +41,11 @@ func LockJobs(dataDir string) (release func(), err error) {
 
 func lockFile(dataDir, name string, shared bool) (func(), error) {
 	if err := os.MkdirAll(dataDir, 0o750); err != nil {
-		return nil, fmt.Errorf("create data dir: %w", err)
+		return nil, notWritable(dataDir, fmt.Errorf("create data dir: %w", err))
 	}
 	f, err := os.OpenFile(filepath.Join(dataDir, name), os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("open lock file: %w", err)
+		return nil, notWritable(dataDir, fmt.Errorf("open lock file: %w", err))
 	}
 	if err := tryLock(f, shared); err != nil {
 		f.Close()
@@ -54,4 +55,25 @@ func lockFile(dataDir, name string, shared bool) (func(), error) {
 		unlock(f)
 		f.Close()
 	}, nil
+}
+
+// DataDirGuide is where the guide explains data directory ownership.
+const DataDirGuide = "https://github.com/OpenTodoApp/OpenTodo/blob/main/docs/self-hosting/docker.md#bind-mounts"
+
+// notWritable explains a permission error on the data directory (OpenSpec
+// change unwritable-data-dir, issue #511): the lock file is the first thing the
+// server writes, so a folder the process cannot write always fails here. The
+// message names the user and group the process runs as and the command that
+// gives the folder to them; other errors are returned as they are.
+func notWritable(dataDir string, err error) error {
+	if !errors.Is(err, fs.ErrPermission) {
+		return err
+	}
+	uid, gid := os.Getuid(), os.Getgid()
+	if uid < 0 {
+		return fmt.Errorf("%w: the data directory %s is not writable for this process; give it write permission and start again (%s)", err, dataDir, DataDirGuide)
+	}
+	return fmt.Errorf("%w: the data directory %s is not writable for user %d (group %d), the user this process runs as. "+
+		"Give the folder mounted at %s to that user and start again, for example: chown -R %d:%d <that folder> (%s)",
+		err, dataDir, uid, gid, dataDir, uid, gid, DataDirGuide)
 }

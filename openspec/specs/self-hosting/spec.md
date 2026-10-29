@@ -2,9 +2,7 @@
 
 ## Purpose
 Defines the deployment contract: one small container, one data directory, configuration through optional environment variables, health reporting, how configuration problems are reported, security headers and compatibility with Coolify and plain Docker Compose.
-
 ## Requirements
-
 ### Requirement: Single container, single binary
 The server SHALL ship as one container image containing one statically linked binary that serves both the API and the web app. The image SHALL run as a non-root user, SHALL contain no shell or package manager, and the compressed image SHALL stay under 50 MB.
 
@@ -654,3 +652,15 @@ The process that runs the background jobs SHALL start each job when its work is 
 #### Scenario: Write served by the other process during a rolling update
 - **WHEN** during a rolling update the process that does not run the jobs saves a task change that queues a webhook delivery
 - **THEN** the process that runs the jobs sends it within a few seconds, exactly once, and the other process sends nothing
+
+### Requirement: An unwritable data directory is explained
+When the server cannot create its data directory or a file in it because of permissions, it SHALL stop with a message that names the directory, the numeric user and group the process runs as, and a command that gives the folder to that user (`chown -R <uid>:<gid> <host folder>`), with a link to the guide. It SHALL not start serving.
+
+#### Scenario: Host folder owned by root
+- **WHEN** the container starts with `/data` bound to a host folder owned by root
+- **THEN** it stops, and its log says that `/data` is not writable for user 65532 (group 65532) and shows `chown -R 65532:65532` with the folder mounted at `/data` and the guide's address
+
+#### Scenario: Writable directory
+- **WHEN** the data directory is writable
+- **THEN** the server starts as before and logs nothing about permissions
+

@@ -3,6 +3,7 @@
 // Parsing and evaluation are pure (lib/filter); results are a live query, so local edits
 // and synced ops update them without a reload, offline too. The grouping and order are
 // the saved view's (lib/views), so what is saved is what was seen.
+import { isFirstRow, revealRow } from './task-list/revealRow'
 import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
@@ -214,7 +215,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   useEffect(() => {
     if (!selected) return
     const i = selected.lastIndexOf(':')
-    document.querySelector(`[data-group="${CSS.escape(selected.slice(0, i))}"] [data-task-id="${CSS.escape(selected.slice(i + 1))}"]`)?.scrollIntoView({ block: 'nearest' })
+    const row = document.querySelector<HTMLElement>(`[data-group="${CSS.escape(selected.slice(0, i))}"] [data-task-id="${CSS.escape(selected.slice(i + 1))}"]`)
+    // Below the sticky header, and back to the very top on the first row (issue 514).
+    if (row) revealRow(row, { first: isFirstRow(row) })
   }, [selected])
 
   const error = parsed.ok ? (compiled && !compiled.ok && good.src === debounced ? compiled.error : null) : parsed.error

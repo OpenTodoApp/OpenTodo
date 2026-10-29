@@ -1044,3 +1044,25 @@ In the docked panel the notes SHALL be shown in full at rest, with no clamp, fad
 #### Scenario: Next task
 - **WHEN** the user reads a long note in the panel and presses `j`
 - **THEN** the next task's facet lines are at the top of the panel body and its note is shown in full
+
+### Requirement: The keyboard cursor stays in sight
+When the keyboard moves the selection in a task list (project lists, the standard views, saved views, the New view page), the selected row SHALL be scrolled fully into view below everything pinned at the top of the list, such as the sticky page header or a group header, and above the bottom edge, scrolling only as far as that needs. Moving to the first row SHALL scroll the list to its very top.
+
+#### Scenario: Moving up a long list
+- **WHEN** the user moves to the last of 40 tasks with the down arrow and then back up with the up arrow
+- **THEN** every selected row is fully visible below the page header, never behind it
+
+#### Scenario: Back at the first task
+- **WHEN** the user reaches the first task with the up arrow
+- **THEN** the list is scrolled to the top and the page header and quick add show again
+
+### Requirement: Copy buttons work without https
+Every Copy button SHALL put its text on the clipboard whether the app is opened over https, on localhost or over plain http at another address, using the Clipboard API where the browser offers it and the browser's copy command otherwise. A button SHALL confirm the copy only once the text is on the clipboard; when the browser refuses both ways, it SHALL say so and suggest copying by hand where the text is shown.
+
+#### Scenario: MCP address over plain http
+- **WHEN** the owner opens Settings → Integrations → AI assistants (MCP) at `http://192.168.1.10:8080` and clicks Copy URL
+- **THEN** pasting gives `http://192.168.1.10:8080/mcp` and the button reads "Copied"
+
+#### Scenario: Recovery key is not reported copied when it was not
+- **WHEN** the browser refuses every way of copying and the user clicks Copy on the encryption recovery key
+- **THEN** the panel does not mark the key as copied

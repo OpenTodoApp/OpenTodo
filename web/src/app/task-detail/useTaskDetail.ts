@@ -20,6 +20,7 @@ import { commitTitleEdit } from '../titleEdit'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { useTaskPageStatus } from './taskPageStatus'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { copyText } from '../../lib/clipboard'
 
 /** The link that opens a task in the app: its page (task-full-page). */
 export function taskLink(id: string, origin = typeof location === 'undefined' ? '' : location.origin): string {
@@ -116,7 +117,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
   const toggle = (tk: Task) => (onToggleComplete ? onToggleComplete(tk) : act(completeWithUndo(tk.id, !tk.completed_at)))
   const remove = () => { if (task) { act(deleteWithUndo(task.id)); onClose() } }
   const copyLink = () => {
-    if (task) void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})
+    if (task) void copyText(taskLink(task.id)).then(() => setCopied(true), () => {})
   }
   // assistant-skills: "Break this down" runs the skill with this task as its subject.
   const breakDown = () => { if (task) openAssistantWith({ skill: 'break-down', text: t('Break down “{title}”', { title: task.title }), selected: [task.id] }) }

@@ -19,6 +19,7 @@ import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { copyText } from '../lib/clipboard'
 
 const EXPIRY_OPTIONS: [number, string][] = [
   [1, '1 hour'],
@@ -92,7 +93,7 @@ export function MembersPanel() {
     const link = links[id]
     if (!link) return
     try {
-      await navigator.clipboard.writeText(link)
+      await copyText(link)
       setCopied(id)
       setTimeout(() => setCopied((c) => (c === id ? null : c)), 1500)
     } catch {

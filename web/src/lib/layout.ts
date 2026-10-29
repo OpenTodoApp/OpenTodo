@@ -3,6 +3,9 @@
 // inside a cluster each block takes the first free lane and the cluster is split into
 // as many equal columns as it needs lanes. Clusters needing more than `maxLanes` keep
 // `maxLanes - 1` lanes of blocks and use the last column for a "+N" overflow marker.
+// A block is drawn at least `minLength` minutes tall (room for its title), so lanes
+// follow the drawn length: short blocks close together sit side by side instead of
+// covering each other (issue 526). `overlap` (the marker) still means the times overlap.
 
 export interface BlockInput {
   id: string
@@ -41,11 +44,13 @@ export interface DayLayout {
 
 export const MAX_LANES = 4
 
-export function layoutDay(input: readonly BlockInput[], maxLanes = MAX_LANES): DayLayout {
+export function layoutDay(input: readonly BlockInput[], maxLanes = MAX_LANES, minLength = 0): DayLayout {
   const cap = Math.max(2, Math.floor(maxLanes))
   const sorted = input
     .map((b) => ({ id: b.id, start: b.start, end: b.end > b.start ? b.end : b.start + 1 }))
     .sort((a, b) => a.start - b.start || b.end - a.end || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  /** Where a block's drawn box ends. */
+  const drawnEnd = (b: BlockInput) => Math.max(b.end, b.start + minLength)
   const blocks: PlacedBlock[] = []
   const overflow: Overflow[] = []
 
@@ -56,15 +61,16 @@ export function layoutDay(input: readonly BlockInput[], maxLanes = MAX_LANES): D
   const flush = () => {
     if (cluster.length === 0) return
     const needed = laneEnds.length
-    const overlap = cluster.length > 1
+    // The marker: the block's own time overlaps another block's time.
+    const overlaps = (x: BlockInput) => cluster.some(({ b }) => b !== x && b.start < x.end && x.start < b.end)
     if (needed <= cap) {
-      for (const { b, lane } of cluster) blocks.push({ ...b, lane, lanes: needed, overlap, hidden: false })
+      for (const { b, lane } of cluster) blocks.push({ ...b, lane, lanes: needed, overlap: overlaps(b), hidden: false })
     } else {
       const markerLane = cap - 1
       const hidden: BlockInput[] = []
       for (const { b, lane } of cluster) {
         const hide = lane >= markerLane
-        blocks.push({ ...b, lane: hide ? markerLane : lane, lanes: cap, overlap, hidden: hide })
+        blocks.push({ ...b, lane: hide ? markerLane : lane, lanes: cap, overlap: overlaps(b), hidden: hide })
         if (hide) hidden.push(b)
       }
       overflow.push({
@@ -80,13 +86,14 @@ export function layoutDay(input: readonly BlockInput[], maxLanes = MAX_LANES): D
 
   for (const b of sorted) {
     if (b.start >= clusterEnd) flush()
-    let lane = laneEnds.findIndex((end) => end <= b.start)
+    const end = drawnEnd(b)
+    let lane = laneEnds.findIndex((e) => e <= b.start)
     if (lane === -1) {
       lane = laneEnds.length
-      laneEnds.push(b.end)
-    } else laneEnds[lane] = b.end
+      laneEnds.push(end)
+    } else laneEnds[lane] = end
     cluster.push({ b, lane })
-    clusterEnd = Math.max(clusterEnd, b.end)
+    clusterEnd = Math.max(clusterEnd, end)
   }
   flush()
   return { blocks, overflow }

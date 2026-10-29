@@ -32,7 +32,7 @@ Recurring rules, reminders, subtasks, sections and completed tasks come across w
 
 ## Duplicates
 
-Importing the same file twice won't double your tasks. OpenTodo recognises rows it imported before, and flags tasks that look like ones you already have (same title, project and due date). Those are skipped unless you choose **Import them anyway**.
+Importing the same file twice won't double your tasks. OpenTodo recognises rows it imported before (by id, or by content without one), and flags tasks that look like ones you already have (same title, project and due date). Those are skipped unless you choose **Import them anyway**.
 
 For an OpenTodo export, items that already exist on the server are kept as they are, unless you choose to overwrite changed fields.
 

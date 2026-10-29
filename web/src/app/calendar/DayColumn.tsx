@@ -1,7 +1,7 @@
 // The Day and Week grid columns (OpenSpec `time-blocking`): the hour gutter, each
 // day's header with capacity and unscheduled lane, and the day column with its
 // task blocks, calendar events, "+N" overflow lists, ghosts and the now line.
-import { DAY_MINUTES, dayLoad, DEFAULT_BLOCK_MINUTES, SLOT_MINUTES, type GridPrefs } from '../../lib/calendar'
+import { DAY_MINUTES, dayLoad, DEFAULT_BLOCK_MINUTES, MIN_BLOCK_MINUTES, SLOT_MINUTES, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { formatHour, formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
@@ -127,7 +127,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
         const ev = day.events.get(b.id)
         if (ev) {
           return <EventBlockView key={b.id} block={ev} lane={b.lane} lanes={b.lanes} overlap={b.overlap} pxPerMinute={PX_PER_MIN}
-            minHeight={SLOT_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} />
+            minHeight={MIN_BLOCK_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} />
         }
         const task = taskMap.get(b.id)
         const block = day.blocks.get(b.id)
@@ -176,7 +176,8 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
   onDragStart: DragStart
 }) {
   const top = b.start * PX_PER_MIN
-  const height = Math.max(SLOT_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN)
+  // At least one title line tall; the layout gives such blocks their own lane (issue 526).
+  const height = Math.max(MIN_BLOCK_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN)
   // Project colours render through the palette hue (design-system "Stored colours render through the palette").
   const hue = hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)
   const ghost = dragging ? 'opacity-40' : '' // tone-lint-allow: the dragged block's ghost

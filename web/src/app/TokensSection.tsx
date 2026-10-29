@@ -18,6 +18,7 @@ import { useOnline } from '../lib/online'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { useSettingsPending } from './settingsPending'
 import { messageOf } from '../lib/errorText'
+import { copyText } from '../lib/clipboard'
 
 /**
  * A secret shown once, with a copy action (API tokens, app passwords). The parent
@@ -27,7 +28,7 @@ export function SecretReveal({ what, secret, testId }: { what: string; secret: s
   const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
   async function copy() {
     try {
-      await navigator.clipboard.writeText(secret)
+      await copyText(secret)
       setCopied('yes')
     } catch {
       setCopied('failed')

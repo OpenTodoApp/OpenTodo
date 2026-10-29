@@ -333,6 +333,7 @@ func (genericProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		return nil, &FileError{"expected an array of tasks or an object with a tasks array"}
 	}
 	out := &Parsed{}
+	fallback := fallbackIDs{}
 	loc := opts.Location()
 	for i, p := range projects {
 		o := asObj(p)
@@ -343,10 +344,10 @@ func (genericProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			continue
 		}
 		row.SourceID = prefixed("project:", sourceID(o, "id", "uuid"))
-		if row.SourceID == "" {
-			row.SourceID = "project:#" + strconv.Itoa(i+1)
-		}
 		row.Title = o.str("name", "title")
+		if row.SourceID == "" {
+			row.SourceID = fallback.id("project:", row.Title, o.str("parent_id", "parentId", "parent"))
+		}
 		// A project's note (project-notes): created projects only.
 		row.Description = o.str("description", "notes", "note")
 		row.ParentSourceID = prefixed("project:", o.str("parent_id", "parentId", "parent"))
@@ -371,9 +372,6 @@ func (genericProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 				continue
 			}
 			row.SourceID = prefixed("task:", sourceID(o, "id", "uuid"))
-			if row.SourceID == "" {
-				row.SourceID = "task:#" + strconv.Itoa(n)
-			}
 			row.Title = o.str("title", "name", "content", "summary", "text")
 			if row.Title == "" {
 				row.fail("title is required")
@@ -389,6 +387,9 @@ func (genericProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			row.ParentSourceID = prefixed("task:", o.str("parent_id", "parentId", "parent"))
 			if parent != "" {
 				row.ParentSourceID = parent
+			}
+			if row.SourceID == "" {
+				row.SourceID = fallback.id("task:", row.Title, row.Description, row.ProjectSourceID, row.ProjectName, row.SectionName, row.ParentSourceID)
 			}
 			jsonPriority(&row, o, "priority")
 			o.schedule(&row, loc, o.due(&row, loc, "due", "due_date", "dueDate"))
@@ -617,6 +618,7 @@ func (listsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		return nil, &FileError{"expected a JSON object"}
 	}
 	out := &Parsed{}
+	fallback := fallbackIDs{}
 	loc := opts.Location()
 	n := 0
 	for li, l := range asList(top["lists"]) {
@@ -628,7 +630,7 @@ func (listsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		listName := lo.str("title", "name")
 		listID := "list:" + lo.str("id")
 		if lo.str("id") == "" {
-			listID = "list:#" + strconv.Itoa(li+1)
+			listID = fallback.id("list:", listName)
 		}
 		prow := Row{Line: li + 1, Kind: KindProject, SourceID: listID, Title: listName}
 		if listName == "" {
@@ -653,9 +655,6 @@ func (listsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 					continue
 				}
 				row.SourceID = "task:" + o.str("id")
-				if o.str("id") == "" {
-					row.SourceID = "task:#" + strconv.Itoa(n)
-				}
 				row.Title = o.str("title", "name")
 				if row.Title == "" {
 					row.fail("title is required")
@@ -666,6 +665,9 @@ func (listsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 				}
 				if parent != "" {
 					row.ParentSourceID = parent
+				}
+				if o.str("id") == "" {
+					row.SourceID = fallback.id("task:", row.Title, row.Description, listID, row.ParentSourceID)
 				}
 				o.schedule(&row, loc, o.due(&row, loc, "due"))
 				if o.boolean("starred", "important", "flagged") {

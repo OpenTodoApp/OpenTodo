@@ -1896,6 +1896,7 @@
   "Busy": [
     "web/src/app/CalendarEvents.tsx",
     "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Button label": [
@@ -8180,6 +8181,9 @@
   "Nothing due today.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Nothing else scheduled today.": [
+    "web/src/app/calendar/SidebarSchedule.tsx"
+  ],
   "Nothing estimated against a {minutes} day": [
     "web/src/lib/plan.ts"
   ],
@@ -8326,6 +8330,12 @@
   ],
   "Notify me": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Now": [
+    "web/src/app/calendar/SidebarSchedule.tsx"
+  ],
+  "Now {time}": [
+    "web/src/app/calendar/SidebarSchedule.tsx"
   ],
   "Number": [
     "web/src/lib/fields.ts"
@@ -8800,6 +8810,9 @@
   ],
   "Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Open the calendar": [
+    "web/src/app/calendar/SidebarSchedule.tsx"
   ],
   "Open the command line (Tab completes, Enter runs, Esc cancels)": [
     "web/src/lib/shortcuts.ts"
@@ -10884,6 +10897,9 @@
   ],
   "Scheduled|method": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Schedule|sidebar": [
+    "web/src/app/calendar/SidebarSchedule.tsx"
   ],
   "Schedule…": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -14554,6 +14570,7 @@
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/calendar/PlanRow.tsx",
+    "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
@@ -17883,6 +17900,9 @@
   ],
   "{n} min before": [
     "web/src/lib/nlp/reminders.ts"
+  ],
+  "{n} more today": [
+    "web/src/app/calendar/SidebarSchedule.tsx"
   ],
   "{n} moved to Someday": [
     "web/src/app/review/DoneForToday.tsx"
