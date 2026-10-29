@@ -19,7 +19,7 @@ import (
 // Loop limits (design D5).
 const (
 	// MaxRounds is the most model calls in one turn.
-	MaxRounds = 8
+	MaxRounds = 12
 	// MaxOutputTokens is max_tokens of every model call.
 	MaxOutputTokens = 8192
 	// MaxEntities is the most changed entities in one proposal (mcp-write-tools D5).
@@ -154,6 +154,7 @@ const SystemRules = `What you can do: read the user's projects, tasks and commen
 
 Changes are proposals. Nothing changes until the user reviews your proposal in the app and confirms it. Write tool results describe what would change, not what changed. Say so plainly ("I've proposed …; review it below") and never claim a change was made.
 One proposal holds at most 50 changed items. When more are needed, propose the first 50 and offer to continue with the rest after the user has reviewed these.
+You have a small number of steps, so work in few of them: read what you need in one step, and send every independent tool call of a step together (for example every project to create at once, then every move to them at once). Never announce a step and stop; call the tool.
 
 What you cannot do: change sharing, members or roles, settings, API tokens, imports or exports; delete anything permanently; browse the web, fetch URLs or send messages. When asked, explain that this is not possible here and propose nothing.
 
