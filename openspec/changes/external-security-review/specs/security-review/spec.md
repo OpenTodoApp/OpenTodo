@@ -12,7 +12,11 @@ The repository SHALL publish `docs/security/threat-model.md` before an external 
 - **THEN** the security review repo check fails naming the scope item
 
 ### Requirement: Independent review of a named scope
-Before the `v1.0.0` tag, an external reviewer SHALL review a pinned commit by source review and dynamic testing of instances built from it, one with demo mode and one with host mode. The reviewer SHALL have made no commits or paid contributions to the repository in the 12 months before the engagement. The scope SHALL include authentication and sessions, token scopes, the route policy wrapper, sync scopes and membership, end-to-end encryption (client cryptography and the device relay), CalDAV, MCP and the agent write gate, the assistant's tool loop, the outbound request policy, the importers' file parsers, attachments, public links and task pages, host mode isolation, demo mode, the web client's rendering of user content and its service worker, the Android and iOS bridges, and the container image. The review file SHALL record the reviewer, the commit, the scope and the delivery date.
+The external review is optional: OpenTodo MAY ship `v1.0.0` without one. When a review takes place, an external reviewer SHALL review a pinned commit by source review and dynamic testing of instances built from it, one with demo mode and one with host mode. The reviewer SHALL have made no commits or paid contributions to the repository in the 12 months before the engagement. The scope SHALL include authentication and sessions, token scopes, the route policy wrapper, sync scopes and membership, end-to-end encryption (client cryptography and the device relay), CalDAV, MCP and the agent write gate, the assistant's tool loop, the outbound request policy, the importers' file parsers, attachments, public links and task pages, host mode isolation, demo mode, the web client's rendering of user content and its service worker, the Android and iOS bridges, and the container image. The review file SHALL record the reviewer, the commit, the scope and the delivery date.
+
+#### Scenario: 1.0 without a review
+- **WHEN** no review file exists and a maintainer prepares 1.0.0
+- **THEN** the review requirements do not block the release, and the release notes do not claim an external review
 
 #### Scenario: Review record
 - **WHEN** a review is delivered
@@ -30,7 +34,7 @@ Every finding SHALL be recorded in the review file's findings table with an id, 
 - **THEN** the repo check fails naming the finding id and the path
 
 ### Requirement: Release gate on review findings
-`make release-prepare` for a version at or above 1.0.0 SHALL refuse when no review file has a delivery date within the 24 months before the release (or, for a new major version's `.0` release, after the previous major's last release), when a `Critical` or `High` finding is not `Fixed (retested)`, when a `Medium` finding is `Open` or `Accepted` without a reason or with a target version below the version being prepared, or when a `Low` or `Info` finding has neither an issue link nor a `Won't fix` reason. The refusal SHALL name each blocking finding.
+Once at least one review file exists, `make release-prepare` for a version at or above 1.0.0 SHALL refuse when no review file has a delivery date within the 24 months before the release (or, for a new major version's `.0` release, after the previous major's last release), when a `Critical` or `High` finding is not `Fixed (retested)`, when a `Medium` finding is `Open` or `Accepted` without a reason or with a target version below the version being prepared, or when a `Low` or `Info` finding has neither an issue link nor a `Won't fix` reason. The refusal SHALL name each blocking finding. With no review file, the gate SHALL pass.
 
 #### Scenario: Open High blocks 1.0
 - **WHEN** a maintainer runs `make release-prepare VERSION=1.0.0` and finding `OTD-04` is High and `Fixed`, not retested

@@ -81,6 +81,7 @@ Nothing in the app.
 
 ## Open questions for the owner
 
-- **Funding and route:** apply to OSTIF first (it also covers the Go supply chain), with the Sovereign Tech Fund or NLnet NGI Zero as fallbacks. The review must be booked about three months before the planned 1.0 date.
+- **Optional (owner, 2026-10-30):** the review is not required for 1.0; the gate passes with no review file.
+- **Funding and route (if done):** apply to OSTIF first (it also covers the Go supply chain), with the Sovereign Tech Fund or NLnet NGI Zero as fallbacks. The review must be booked about three months before the planned 1.0 date.
 - **Contact address:** `SECURITY.md` lists a personal email as the fallback channel. A project address (for example `security@` on the website domain) may be preferable before publishing response times.
 - **security.txt:** not served by instances (out of scope). Owner decision.
