@@ -22,6 +22,9 @@ type dateCtx struct {
 type dateMatch struct {
 	date     string
 	from, to int
+	// bare marks a month name alone ("September"): a later complete date
+	// phrase replaces it (quick-add-month-and-every-other D1).
+	bare bool
 }
 
 type timeMatch struct {
@@ -267,7 +270,7 @@ func matchDeadlineAt(tokens []token, i int, ctx *dateCtx) *dateMatch {
 			continue
 		}
 		if dm := matchDateAt(tokens, i+n, ctx); dm != nil && (best == nil || dm.to > best.to) {
-			best = &dateMatch{dm.date, i, dm.to}
+			best = &dateMatch{date: dm.date, from: i, to: dm.to}
 		}
 	}
 	return best
@@ -285,7 +288,7 @@ func matchDateAt(tokens []token, i int, ctx *dateCtx) *dateMatch {
 	}
 	for _, v := range ctx.vocabs {
 		if n, d, ok := lookupAt(tokens, i, v.DayWords); ok {
-			consider(&dateMatch{addDays(ctx.today, d), i, i + n})
+			consider(&dateMatch{date: addDays(ctx.today, d), from: i, to: i + n})
 		}
 		pre := phraseAt(tokens, i, v.Before)
 		starts := []int{i}
@@ -297,13 +300,22 @@ func matchDateAt(tokens []token, i int, ctx *dateCtx) *dateMatch {
 				if !ok {
 					return nil
 				}
-				return &dateMatch{date, i, j + n}
+				return &dateMatch{date: date, from: i, to: j + n}
 			}
 			consider(wrap(weekdayPhraseAt(tokens, j, v, ctx)))
 			consider(wrap(ordinalWeekdayAt(tokens, j, v, ctx)))
 			consider(wrap(nextPeriodAt(tokens, j, v, ctx)))
 			consider(wrap(inPeriodAt(tokens, j, v, ctx)))
-			consider(wrap(monthDayAt(tokens, j, v, ctx)))
+			// A month name alone is a weak date, and none at all right after
+			// "from", "since", "of", "for" ("invoices from September", D2).
+			if md := wrap(monthDayAt(tokens, j, v, ctx)); md != nil {
+				if md.to-j > 1 {
+					consider(md)
+				} else if j != i || !monthTextBefore(tokens, i, ctx) {
+					md.bare = true
+					consider(md)
+				}
+			}
 			consider(wrap(numericDateAt(tokens, j, ctx)))
 		}
 	}
@@ -486,6 +498,20 @@ func resolveMonthDay(today string, year, month, day int) string {
 		return ""
 	}
 	return nextOccurrence(today, month, day)
+}
+
+// monthTextBefore reports whether the token before i is a word after which a
+// month name alone stays text, in any active language.
+func monthTextBefore(tokens []token, i int, ctx *dateCtx) bool {
+	if i == 0 || tokens[i-1].quoted {
+		return false
+	}
+	for _, v := range ctx.vocabs {
+		if phraseAt(tokens, i-1, v.MonthTextBefore) == 1 {
+			return true
+		}
+	}
+	return false
 }
 
 func monthDayAt(tokens []token, j int, v *Vocab, ctx *dateCtx) (string, int, bool) {

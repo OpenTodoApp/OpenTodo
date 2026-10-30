@@ -16,6 +16,9 @@ type recMatch struct {
 	// quick-add-nth-weekday D3): it wins the longest-match comparison like any
 	// match but records no attribute, so it stays whole in the title.
 	literal bool
+	// start is the first date when the phrase names a weekday the rule cannot
+	// hold ("every other friday": the next Friday).
+	start string
 }
 
 // recPattern is a pattern after "every"; monthly patterns accept the "of the
@@ -211,79 +214,128 @@ func countWeekdayAt(tokens []token, k int, v *Vocab) int {
 	return 0
 }
 
+// everyOtherAt reads "every other" with a unit or a weekday at token i
+// (quick-add-month-and-every-other D3): "every other week" is every 2 weeks,
+// "every other friday" every 2 weeks from the first Friday on or after today.
+// Also the French form around the noun, "un vendredi sur deux". It returns the
+// token count, the pattern after "every" and the start date, or n == 0.
+func everyOtherAt(tokens []token, i int, v *Vocab, today string) (int, string, string) {
+	noun := func(k int) (int, string, string) {
+		if n, unit := recUnitAt(tokens, k, v); n > 0 {
+			return n, "2 " + unit + "s", ""
+		}
+		if wd := weekdayPluralAt(tokens, k, v); wd >= 0 {
+			r, _ := recurrence.Parse("every " + weekdayEN[wd])
+			d, _ := r.First(today)
+			return 1, "2 weeks", d
+		}
+		return 0, "", ""
+	}
+	if ev := phraseAt(tokens, i, v.EveryOther); ev > 0 {
+		n, pattern, start := noun(i + ev)
+		if n == 0 {
+			return 0, "", ""
+		}
+		return ev + n, pattern, start
+	}
+	pre := phraseAt(tokens, i, v.EveryOtherAround.Before)
+	if pre == 0 {
+		return 0, "", ""
+	}
+	n, pattern, start := noun(i + pre)
+	if n == 0 {
+		return 0, "", ""
+	}
+	post := phraseAt(tokens, i+pre+n, v.EveryOtherAround.After)
+	if post == 0 {
+		return 0, "", ""
+	}
+	return pre + n + post, pattern, start
+}
+
+// recTails reads the optional tails after a rule ending before token k (after
+// completion, until <date phrase>, for N times) in every active language and
+// returns the rule with them and the token after it.
+func recTails(tokens []token, rule string, k int, ctx *dateCtx) (string, int) {
+	tail := func(pick func(*Vocab) []string) int {
+		n := 0
+		for _, w := range ctx.vocabs {
+			n = max(n, phraseAt(tokens, k, pick(w)))
+		}
+		return n
+	}
+	if ac := tail(func(w *Vocab) []string { return w.AfterCompl }); ac > 0 {
+		if _, ok := canonical(rule + " after completion"); ok {
+			rule += " after completion"
+			k += ac
+		}
+	}
+	if until := tail(func(w *Vocab) []string { return w.UntilWords }); until > 0 {
+		if dm := matchDateAt(tokens, k+until, ctx); dm != nil {
+			if _, ok := canonical(rule + " until " + dm.date); ok {
+				rule += " until " + dm.date
+				k = dm.to
+			}
+		}
+		return rule, k
+	}
+	for _, w := range ctx.vocabs {
+		pre := phraseAt(tokens, k, w.TimesWords.Before)
+		cn, count, ok := countAt(tokens, k+pre, w)
+		if !ok || !digitsRE.MatchString(tokens[k+pre].norm) {
+			continue
+		}
+		post := phraseAt(tokens, k+pre+cn, w.TimesWords.After)
+		if post == 0 {
+			continue
+		}
+		if _, ok := canonical(fmt.Sprintf("%s for %d times", rule, count)); ok {
+			return fmt.Sprintf("%s for %d times", rule, count), k + pre + cn + post
+		}
+	}
+	return rule, k
+}
+
 func matchRecurrenceAt(tokens []token, i int, ctx *dateCtx) *recMatch {
 	if tok(tokens, i) == nil {
 		return nil
 	}
 	var best *recMatch
-	for _, v := range ctx.vocabs {
-		k := i
-		pattern := ""
-		if n, p, ok := lookupAt(tokens, i, v.EveryOne); ok {
-			pattern, k = p, i+n
-		} else {
-			ev := phraseAt(tokens, i, v.Every)
-			if ev == 0 {
-				continue
-			}
-			p := patternAt(tokens, i+ev, v)
-			if p == nil {
-				if n := countWeekdayAt(tokens, i+ev, v); n > 0 && (best == nil || i+ev+n > best.to) {
-					best = &recMatch{"", i, i + ev + n, true}
-				}
-				continue
-			}
-			pattern, k = p.text, i+ev+p.n
-			if p.monthly {
-				k += ofMonthAt(tokens, k, ctx)
-			}
-		}
-		rule := "every " + pattern
-		tail := func(pick func(*Vocab) []string) int {
-			n := 0
-			for _, w := range ctx.vocabs {
-				n = max(n, phraseAt(tokens, k, pick(w)))
-			}
-			return n
-		}
-		if ac := tail(func(w *Vocab) []string { return w.AfterCompl }); ac > 0 {
-			if _, ok := canonical(rule + " after completion"); ok {
-				rule += " after completion"
-				k += ac
-			}
-		}
-		if until := tail(func(w *Vocab) []string { return w.UntilWords }); until > 0 {
-			if dm := matchDateAt(tokens, k+until, ctx); dm != nil {
-				if _, ok := canonical(rule + " until " + dm.date); ok {
-					rule += " until " + dm.date
-					k = dm.to
-				}
-			}
-		} else {
-			for _, w := range ctx.vocabs {
-				pre := phraseAt(tokens, k, w.TimesWords.Before)
-				cn, count, ok := countAt(tokens, k+pre, w)
-				if !ok || !digitsRE.MatchString(tokens[k+pre].norm) {
-					continue
-				}
-				post := phraseAt(tokens, k+pre+cn, w.TimesWords.After)
-				if post == 0 {
-					continue
-				}
-				if _, ok := canonical(fmt.Sprintf("%s for %d times", rule, count)); ok {
-					rule = fmt.Sprintf("%s for %d times", rule, count)
-					k += pre + cn + post
-					break
-				}
-			}
-		}
+	// consider keeps a head (the pattern after "every", ending before token k)
+	// with its tails when it is longer than the best so far.
+	consider := func(pattern string, k int, start string) {
+		rule, k := recTails(tokens, "every "+pattern, k, ctx)
 		c, ok := canonical(rule)
-		if !ok {
+		if ok && (best == nil || k > best.to) {
+			best = &recMatch{rule: c, from: i, to: k, start: start}
+		}
+	}
+	for _, v := range ctx.vocabs {
+		// "every other" first: on a tie it wins over the ordinal reading of
+		// "jeden zweiten Freitag".
+		if n, pattern, start := everyOtherAt(tokens, i, v, ctx.today); n > 0 {
+			consider(pattern, i+n, start)
+		}
+		if n, p, ok := lookupAt(tokens, i, v.EveryOne); ok {
+			consider(p, i+n, "")
 			continue
 		}
-		if best == nil || k > best.to {
-			best = &recMatch{c, i, k, false}
+		ev := phraseAt(tokens, i, v.Every)
+		if ev == 0 {
+			continue
 		}
+		p := patternAt(tokens, i+ev, v)
+		if p == nil {
+			if n := countWeekdayAt(tokens, i+ev, v); n > 0 && (best == nil || i+ev+n > best.to) {
+				best = &recMatch{from: i, to: i + ev + n, literal: true}
+			}
+			continue
+		}
+		k := i + ev + p.n
+		if p.monthly {
+			k += ofMonthAt(tokens, k, ctx)
+		}
+		consider(p.text, k, "")
 	}
 	return best
 }

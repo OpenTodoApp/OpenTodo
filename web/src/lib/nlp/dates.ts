@@ -20,6 +20,8 @@ export interface DateMatch {
   date: string
   from: number
   to: number
+  /** A month name alone ("September"): a later complete date phrase replaces it (quick-add-month-and-every-other D1). */
+  bare?: true
 }
 
 export interface TimeMatch {
@@ -287,11 +289,21 @@ export function matchDateAt(tokens: readonly Token[], i: number, ctx: DateContex
       consider(wrap(ordinalWeekdayAt(tokens, j, v, ctx)))
       consider(wrap(nextPeriodAt(tokens, j, v, ctx)))
       consider(wrap(inPeriodAt(tokens, j, v, ctx)))
-      consider(wrap(monthDayAt(tokens, j, v, ctx)))
+      const md = monthDayAt(tokens, j, v, ctx)
+      // A month name alone is a weak date, and none at all right after "from",
+      // "since", "of", "for" ("invoices from September", D2).
+      if (md && md.n === 1 && !(j === i && monthTextBefore(tokens, i, ctx))) consider({ ...wrap(md)!, bare: true })
+      else if (md && md.n > 1) consider(wrap(md))
       consider(wrap(numericDateAt(tokens, j, ctx)))
     }
   }
   return best
+}
+
+/** The token before `i` is a word after which a month name alone stays text, in any active language. */
+function monthTextBefore(tokens: readonly Token[], i: number, ctx: DateContext): boolean {
+  const prev = tokens[i - 1]
+  return !!prev && !prev.quoted && ctx.vocabs.some((v) => phraseAt(tokens, i - 1, v.monthTextBefore, `${v.code}:mtb`) === 1)
 }
 
 function dayWordAt(tokens: readonly Token[], i: number, v: Vocabulary, ctx: DateContext): DateMatch | null {

@@ -151,6 +151,11 @@ type parser struct {
 	tokens         []token
 
 	date, deadline, project, rec found
+	// dateBare marks a date from a month name alone, which a later complete
+	// date phrase replaces; recStart is the first date of an "every other
+	// friday" rule (quick-add-month-and-every-other D1, D3).
+	dateBare bool
+	recStart string
 	// dayPart is Morning or Afternoon (day-parts D5); Evening is evening.
 	dayPart found
 	timeV   struct {
@@ -242,8 +247,8 @@ func (p *parser) attribute(i int) (int, bool) {
 		if n := wordsAt(tokens, i, dctx, func(v *Vocab) []string { return v.EveningWords }); n > 0 {
 			s := p.span(i, i+n)
 			p.evening = &s
-			if !p.date.set {
-				p.date = found{p.ctx.Today, s, true}
+			if !p.date.set || p.dateBare {
+				p.date, p.dateBare = found{p.ctx.Today, s, true}, false
 			}
 			return i + n, true
 		}
@@ -268,8 +273,8 @@ func (p *parser) thisPart(i int) (int, bool) {
 		if n := wordsAt(p.tokens, i, p.dctx, c.pick); n > 0 {
 			s := p.span(i, i+n)
 			p.dayPart = found{c.part, s, true}
-			if !p.date.set {
-				p.date = found{p.ctx.Today, s, true}
+			if !p.date.set || p.dateBare {
+				p.date, p.dateBare = found{p.ctx.Today, s, true}, false
 			}
 			return i + n, true
 		}
@@ -312,8 +317,12 @@ func (p *parser) phrase(i int) int {
 	var dm *dateMatch
 	var tm *timeMatch
 	var rm *recMatch
-	if !p.date.set {
+	if !p.date.set || p.dateBare {
 		dm = matchDateAt(tokens, i, dctx)
+		// After a bare month only a complete date phrase counts.
+		if p.date.set && dm != nil && dm.bare {
+			dm = nil
+		}
 	}
 	if !p.timeV.set {
 		tm = matchTimeAt(tokens, i, dctx)
@@ -325,7 +334,7 @@ func (p *parser) phrase(i int) int {
 	}
 	if rm == nil {
 		if n := ordinalOutOfRangeAt(tokens, i, dctx); n > 0 {
-			rm = &recMatch{"", i, i + n, true}
+			rm = &recMatch{from: i, to: i + n, literal: true}
 		}
 	}
 	mm := matchReminderAt(tokens, i, dctx)
@@ -341,6 +350,7 @@ func (p *parser) phrase(i int) int {
 		if rm != nil && rm.to == phraseEnd {
 			if !rm.literal {
 				p.rec = found{rm.rule, p.span(rm.from, rm.to), true}
+				p.recStart = rm.start
 			}
 			return rm.to
 		} else if mm != nil {
@@ -352,7 +362,7 @@ func (p *parser) phrase(i int) int {
 		}
 		return i
 	case dm != nil && (tm == nil || dm.to >= tm.to):
-		p.date = found{dm.date, p.span(dm.from, dm.to), true}
+		p.date, p.dateBare = found{dm.date, p.span(dm.from, dm.to), true}, dm.bare
 		return p.partAfter(dm.to)
 	case tm != nil:
 		p.timeV.value, p.timeV.date, p.timeV.span, p.timeV.set = tm.time, tm.date, p.span(tm.from, tm.to), true
@@ -379,6 +389,8 @@ func (p *parser) due() *Due {
 	d := p.date.value
 	if !p.date.set {
 		switch {
+		case p.rec.set && p.recStart != "":
+			d = p.recStart
 		case p.rec.set:
 			r, _ := recurrence.Parse(p.rec.value)
 			d, _ = r.First(p.ctx.Today)
