@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/flow"
 )
 
 // Resource payloads for the MCP server (mcp-server design D4): built from the
@@ -42,10 +43,6 @@ func (r *Registry) ProjectResource(ctx context.Context, userID, id string, loc *
 	if err != nil {
 		return nil, false, err
 	}
-	type sectionOut struct {
-		ID        string   `json:"id"`
-		Untrusted nameText `json:"untrusted_text"`
-	}
 	sections := []sectionOut{}
 	secs, err := r.list(ctx, userID, "section", false)
 	if err != nil {
@@ -53,7 +50,7 @@ func (r *Registry) ProjectResource(ctx context.Context, userID, id string, loc *
 	}
 	for _, sec := range secs {
 		if str(sec, "project_id") == id {
-			sections = append(sections, sectionOut{ID: str(sec, "id"), Untrusted: nameText{Name: str(sec, "name")}})
+			sections = append(sections, sectionOut{ID: str(sec, "id"), FlowMode: flow.SectionFlow(str(sec, "flow_mode")), Untrusted: nameText{Name: str(sec, "name")}})
 		}
 	}
 	return noticed(map[string]any{"project": snap.renderProject(proj, snap.openCounts()), "sections": sections,

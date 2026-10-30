@@ -13,7 +13,7 @@ import (
 // ---- create_project / create_label ----
 
 func (r *Registry) planCreateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "name", "color", "icon", "parent_id", "workspace_id", "client_request_id", "id"); err != nil {
+	if err := a.only("", "name", "color", "icon", "parent_id", "workspace_id", "flow_mode", "client_request_id", "id"); err != nil {
 		return Plan{}, err
 	}
 	name, _, err := a.contentText(c, "name", true, 200)
@@ -47,6 +47,11 @@ func (r *Registry) planCreateProject(ctx context.Context, c Caller, a args, over
 		return Plan{}, err
 	} else if has {
 		patch["icon"] = v
+	}
+	if v, has, err := a.flowMode("", "project"); err != nil {
+		return Plan{}, err
+	} else if has {
+		patch["flow_mode"] = v
 	}
 	if parent, err := a.str("parent_id"); err != nil {
 		return Plan{}, err
