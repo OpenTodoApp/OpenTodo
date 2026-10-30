@@ -10,4 +10,4 @@
 
 - [x] 2.1 Verify cross-mode persistence and reloads, phone layouts, live completion/reopening, zoned dues, overflow, unchanged capacity and recurring projections; run `npm test` and `npm run build` in web/ and `make bundle-budget`.
 - [x] 2.2 Run browser smoke and calendar layout/accessibility checks, capture affected core screens before/after at desktop/phone widths in light/dark, and review the images; deliver the screenshots with the PR.
-- [ ] 2.3 Run `make check` and `make openspec-validate`, review the final diff, then commit and publish the feature branch to the fork and open an English PR using the repository template, linking #624, the OpenSpec folder, validation and screenshots.
+- [x] 2.3 Run `make check` and `make openspec-validate`, review the final diff, then commit and publish the feature branch to the fork and open an English PR using the repository template, linking #624, the OpenSpec folder, validation and screenshots.
