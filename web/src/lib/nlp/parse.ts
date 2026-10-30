@@ -2,7 +2,7 @@
 // only on the line, the reference date and time, the languages, the project list and
 // the dismissed spans. No network, no clock reads, no randomness.
 import type { Due, Priority } from '../types'
-import { matchDuration, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
+import { matchDuration, matchEnergy, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
 import { firstOccurrence } from '../recurrence'
 import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, partWordAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
@@ -10,7 +10,7 @@ import { matchReminderAt, type ReminderMatch, type ReminderPhrase } from './remi
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
 import { vocabulariesFor, type DayMonthOrder } from './vocab'
 
-export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'daypart' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder'
+export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'daypart' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder' | 'energy'
 
 /** One recognised attribute; drives a preview chip. `spans` are removed from the title. */
 export interface Chip {
@@ -18,7 +18,7 @@ export interface Chip {
   /** Stable within one parse: kind plus the first span start. */
   key: string
   spans: Span[]
-  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, true (evening), the part (daypart), the canonical rule or a reminder. */
+  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, true (evening), the part (daypart), the canonical rule, a reminder or the energy. */
   value: Due | string | number | boolean | ReminderPhrase
 }
 
@@ -38,6 +38,8 @@ export interface ParseContext {
   weekStart?: number
   /** The account uses day parts (day-parts D5): the part phrases are read. */
   dayParts?: boolean
+  /** The account offers energy (task-energy D3): the `~deep` tokens are read. */
+  energy?: boolean
 }
 
 export interface ParseResult {
@@ -54,6 +56,8 @@ export interface ParseResult {
   projectId: string | null
   labels: string[]
   priority: Priority | null
+  /** Deep, Medium or Low from a `~` token (task-energy D4), only with `energy`; the last one wins. */
+  energy: 'deep' | 'medium' | 'low' | null
   estimateMinutes: number | null
   /** Minutes already spent from a `30m/2h` token (time-tracking D10): one closed time entry ending at creation. */
   spentMinutes: number | null
@@ -123,6 +127,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   let recurrence: { value: string; span: Span } | null = null
   const reminders: { value: ReminderPhrase; span: Span }[] = []
   const labels: { value: string; span: Span }[] = []
+  // Every energy token leaves the title; the last one is the value (task-energy D4).
+  const energies: { value: 'deep' | 'medium' | 'low'; span: Span }[] = []
   const unmatched: Unmatched[] = []
 
   let i = 0
@@ -151,6 +157,12 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       const label = matchLabel(tok.text)
       if (label !== null) {
         labels.push({ value: label, span: one })
+        i++
+        continue
+      }
+      const energy = ctx.energy ? matchEnergy(tok.text) : null
+      if (energy) {
+        energies.push({ value: energy, span: one })
         i++
         continue
       }
@@ -293,6 +305,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   if (project) chip('project', [project.span], project.id)
   for (const l of labels) chip('label', [l.span], l.value)
   if (priority) chip('priority', [priority.span], priority.value)
+  if (energies.length) chip('energy', energies.map((e) => e.span), energies[energies.length - 1].value)
   if (estimate) chip('estimate', [estimate.span], estimate.value)
   // The spent chip shares the token's span: dismissing either keeps the whole token as text.
   if (estimate && spent !== null) chip('spent', [estimate.span], spent)
@@ -308,6 +321,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     projectId: project?.id ?? null,
     labels: labels.map((l) => l.value),
     priority: priority?.value ?? null,
+    energy: energies.length ? energies[energies.length - 1].value : null,
     estimateMinutes: estimate?.value ?? null,
     spentMinutes: spent,
     recurrence: recurrence?.value ?? null,

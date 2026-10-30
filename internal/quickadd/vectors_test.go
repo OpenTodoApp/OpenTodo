@@ -32,6 +32,8 @@ func TestSharedVectors(t *testing.T) {
 				// DayPart and Evening are compared when a case states them (day-parts).
 				DayPart *string `json:"dayPart"`
 				Evening *bool   `json:"evening"`
+				// Energy is compared when a case states it (task-energy).
+				Energy *string `json:"energy"`
 			} `json:"expect"`
 		} `json:"cases"`
 	}
@@ -61,6 +63,11 @@ func TestSharedVectors(t *testing.T) {
 				want.Evening, want.DayPart = *c.Expect.Evening, deref(c.Expect.DayPart)
 			} else {
 				got.Evening, got.DayPart = false, ""
+			}
+			if c.Expect.Energy != nil {
+				want.Energy = *c.Expect.Energy
+			} else {
+				got.Energy = ""
 			}
 			if want.Reminders == nil {
 				want.Reminders = []Reminder{}

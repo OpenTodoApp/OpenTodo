@@ -167,6 +167,8 @@ func (s *Server) parseAccount(ctx context.Context, uid, acceptLanguage string) (
 	}
 	// The Day parts preference is the default of the request's day_parts.
 	a.ctx.DayParts = idOf(prefs["day_parts"]) == "on"
+	// The Energy levels preference turns the `~deep` tokens on (task-energy D3).
+	a.ctx.Energy = idOf(prefs["energy"]) == "on"
 	if ws, ok := map[string]int{"mon": 1, "sun": 0, "sat": 6}[idOf(prefs["week_start"])]; ok {
 		a.ctx.WeekStart = &ws
 	}
@@ -243,6 +245,9 @@ func parseLine(line string, a parseAccountData, today, now string) parseResponse
 	if r.ProjectID != "" {
 		fields["project_id"] = r.ProjectID
 	}
+	if r.Energy != "" {
+		fields["energy"] = r.Energy
+	}
 	if len(r.Labels) > 0 {
 		ls := make([]parseLabel, 0, len(r.Labels))
 		for _, name := range r.Labels {
@@ -299,7 +304,7 @@ func unmatchedOf(title string) []string {
 func chipsOf(line string, r quickadd.Result, marks []quickadd.Mark, a parseAccountData) []parseChip {
 	w := parseWordsFor(a.lang)
 	chips := []parseChip{}
-	labels := 0
+	labels, energies := 0, 0
 	for _, m := range marks {
 		c := parseChip{Kind: m.Kind, Start: utf16Index(line, m.Span.Start), End: utf16Index(line, m.Span.End)}
 		switch m.Kind {
@@ -324,6 +329,12 @@ func chipsOf(line string, r quickadd.Result, marks []quickadd.Mark, a parseAccou
 			}
 		case "someday":
 			c.Text = w.someday
+		case "energy":
+			// Every energy token is a mark; one chip, on the last one, names the value.
+			if energies++; energies < countKind(marks, "energy") {
+				continue
+			}
+			c.Text = w.energy[r.Energy]
 		case "project":
 			c.Text = a.names[r.ProjectID]
 		case "label":
@@ -354,13 +365,16 @@ func chipsOf(line string, r quickadd.Result, marks []quickadd.Mark, a parseAccou
 	return chips
 }
 
-func hasKind(marks []quickadd.Mark, kind string) bool {
+func hasKind(marks []quickadd.Mark, kind string) bool { return countKind(marks, kind) > 0 }
+
+func countKind(marks []quickadd.Mark, kind string) int {
+	n := 0
 	for _, m := range marks {
 		if m.Kind == kind {
-			return true
+			n++
 		}
 	}
-	return false
+	return n
 }
 
 func dueText(d *quickadd.Due, lang string) string {
@@ -395,15 +409,19 @@ func utf16Index(s string, byteOffset int) int {
 }
 
 // parseWords are the chip words the server writes, in the six shipped languages.
-type parseWords struct{ deadline, evening, someday, noProject, morning, afternoon string }
+// The energy chips (task-energy) are the web catalog's "Deep energy" lines.
+type parseWords struct {
+	deadline, evening, someday, noProject, morning, afternoon string
+	energy                                                    map[string]string
+}
 
 var parseWordTable = map[string]parseWords{
-	"en": {"Deadline", "This evening", "Someday", "No project named %s", "Morning", "Afternoon"},
-	"de": {"Frist", "Heute Abend", "Irgendwann", "Kein Projekt heißt %s", "Vormittag", "Nachmittag"},
-	"fr": {"Échéance", "Ce soir", "Un jour", "Aucun projet ne s’appelle %s", "Matin", "Après-midi"},
-	"es": {"Fecha límite", "Esta tarde", "Algún día", "Ningún proyecto se llama %s", "Mañana", "Tarde"},
-	"it": {"Scadenza", "Stasera", "Un giorno", "Nessun progetto si chiama %s", "Mattina", "Pomeriggio"},
-	"pt": {"Prazo", "Esta noite", "Um dia", "Nenhum projeto se chama %s", "Manhã", "Tarde"},
+	"en": {"Deadline", "This evening", "Someday", "No project named %s", "Morning", "Afternoon", map[string]string{"deep": "Deep energy", "medium": "Medium energy", "low": "Low energy"}},
+	"de": {"Frist", "Heute Abend", "Irgendwann", "Kein Projekt heißt %s", "Vormittag", "Nachmittag", map[string]string{"deep": "Energie: tief", "medium": "Energie: mittel", "low": "Energie: niedrig"}},
+	"fr": {"Échéance", "Ce soir", "Un jour", "Aucun projet ne s’appelle %s", "Matin", "Après-midi", map[string]string{"deep": "Énergie profonde", "medium": "Énergie moyenne", "low": "Énergie faible"}},
+	"es": {"Fecha límite", "Esta tarde", "Algún día", "Ningún proyecto se llama %s", "Mañana", "Tarde", map[string]string{"deep": "Energía profunda", "medium": "Energía media", "low": "Energía baja"}},
+	"it": {"Scadenza", "Stasera", "Un giorno", "Nessun progetto si chiama %s", "Mattina", "Pomeriggio", map[string]string{"deep": "Energia profonda", "medium": "Energia media", "low": "Energia bassa"}},
+	"pt": {"Prazo", "Esta noite", "Um dia", "Nenhum projeto se chama %s", "Manhã", "Tarde", map[string]string{"deep": "Energia profunda", "medium": "Energia média", "low": "Energia baixa"}},
 }
 
 func parseWordsFor(lang string) parseWords {

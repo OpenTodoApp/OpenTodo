@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -471,7 +472,9 @@ type taskOut struct {
 	Evening  bool    `json:"evening"`
 	// DayPart is "morning", "afternoon" or null (OpenSpec change day-parts);
 	// Evening stays the evening flag.
-	DayPart   *string      `json:"day_part"`
+	DayPart *string `json:"day_part"`
+	// Energy is "deep", "medium", "low" or null (OpenSpec change task-energy).
+	Energy    *string      `json:"energy"`
 	BlockedBy []string     `json:"blocked_by"`
 	Blocked   bool         `json:"blocked"`
 	Location  *locationOut `json:"location"`
@@ -533,6 +536,9 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	out.Evening = boolean(t, "evening")
 	if part := daypart.OfRow(t); daypart.Stored(part) {
 		out.DayPart = &part
+	}
+	if e := str(t, "energy"); slices.Contains(opsync.EnergyLevels, e) {
+		out.Energy = &e
 	}
 	out.BlockedBy = stringList(t, "blocked_by")
 	if out.BlockedBy == nil {

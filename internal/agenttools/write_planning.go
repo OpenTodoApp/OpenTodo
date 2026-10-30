@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -30,6 +31,8 @@ func planningProps() map[string]any {
 		"evening": map[string]any{"type": "boolean", "description": "true puts the task in This Evening of its day; false takes it out."},
 		"day_part": map[string]any{"type": []string{"string", "null"}, "enum": []any{"morning", "afternoon", "evening", nil},
 			"description": "The part of the day the task belongs to: morning, afternoon or evening (This Evening); null for any time. Sets evening too; wins over evening when both are sent."},
+		"energy": map[string]any{"type": []string{"string", "null"}, "enum": []any{"deep", "medium", "low", nil},
+			"description": "The energy the task asks for: deep (focused work), medium or low (routine); null for none."},
 		"blocked_by": map[string]any{"type": "array", "maxItems": opsync.MaxBlockedBy, "items": map[string]any{"type": "string"},
 			"description": "Ids of tasks this one waits for (same project sharing, never itself, no cycles); an empty array removes every blocker."},
 		"location": map[string]any{"type": []string{"object", "null"}, "additionalProperties": false,
@@ -103,6 +106,14 @@ func (snap *snapshot) planningPatch(p string, it args, c Caller, patch map[strin
 		for f, val := range daypart.Fields(part) {
 			patch[f] = val
 		}
+	}
+	// The energy (OpenSpec change task-energy): a level, or null or "" for none.
+	if v, ok := it["energy"]; ok {
+		var e string
+		if string(v) != "null" && (json.Unmarshal(v, &e) != nil || (e != "" && !slices.Contains(opsync.EnergyLevels, e))) {
+			return argErr(p + "energy: must be deep, medium, low or null")
+		}
+		patch["energy"] = raw(e)
 	}
 	if v, ok := it["blocked_by"]; ok {
 		var list []string

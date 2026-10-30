@@ -5,21 +5,30 @@
 import { foldName, matchProject, type ProjectRef } from './attributes'
 import { findLabel, type LabelRef } from './quickadd'
 
-/** The `#` or `@` token the caret is in, with the text typed after the symbol. */
-export interface TokenAtCaret { kind: 'project' | 'label'; start: number; end: number; query: string }
+/** The `#`, `@` or `~` token the caret is in, with the text typed after the symbol. */
+export interface TokenAtCaret { kind: 'project' | 'label' | 'energy'; start: number; end: number; query: string }
 
-/** The token at the caret, or null (no symbol at the word's start, or inside double quotes). */
-export function tokenAtCaret(value: string, caret: number): TokenAtCaret | null {
+/**
+ * The token at the caret, or null (no symbol at the word's start, or inside double
+ * quotes). A `~` token counts only with `energy` (task-energy D3, D4).
+ */
+export function tokenAtCaret(value: string, caret: number, opts: { energy?: boolean } = {}): TokenAtCaret | null {
   if (caret < 1 || caret > value.length) return null
   let start = caret
   while (start > 0 && !/\s/.test(value[start - 1])) start--
   const sym = value[start]
-  if (sym !== '#' && sym !== '@') return null
+  if (sym !== '#' && sym !== '@' && !(sym === '~' && opts.energy)) return null
   // An odd number of quotes before the token: it is quoted text.
   if ((value.slice(0, start).match(/"/g)?.length ?? 0) % 2 === 1) return null
   let end = caret
   while (end < value.length && !/\s/.test(value[end])) end++
-  return { kind: sym === '#' ? 'project' : 'label', start, end, query: value.slice(start + 1, caret) }
+  return { kind: sym === '#' ? 'project' : sym === '@' ? 'label' : 'energy', start, end, query: value.slice(start + 1, caret) }
+}
+
+/** The energy levels a `~` query starts (task-energy D4), in menu order; none for anything else (`~6`). */
+export function energySuggestions(query: string): { level: 'deep' | 'medium' | 'low'; token: string }[] {
+  const q = query.toLowerCase()
+  return (['deep', 'medium', 'low'] as const).filter((e) => e.startsWith(q)).map((level) => ({ level, token: `~${level}` }))
 }
 
 /** A project to suggest: its path of ancestor names, and the token picking it inserts. */

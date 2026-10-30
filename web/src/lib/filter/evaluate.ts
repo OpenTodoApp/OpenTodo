@@ -12,6 +12,7 @@ import { originMatches, originOf } from '../taskOrigin'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
 import { t } from '../i18n'
 import { dayPartOf } from '../dayParts'
+import { energyOf } from '../energy'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -362,6 +363,11 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
       }
       case 'origin':
         return (task) => originMatches(originOf(task), n.value)
+      // A value this client does not know reads as none (task-energy D5).
+      case 'energy': {
+        const want = n.value
+        return (task) => energyOf(task) === want
+      }
       case 'workspace': {
         const ids = new Set((ctx.workspaces ?? []).filter((w) => nameKey(w.name) === nameKey(n.name)).map((w) => w.id))
         const of = ctx.workspaceOf
@@ -403,6 +409,8 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'habit': return (task) => task.habit === true
           case 'origin': return (task) => originOf(task) !== null
           case 'no origin': return (task) => originOf(task) === null
+          case 'energy': return (task) => energyOf(task) !== null
+          case 'no energy': return (task) => energyOf(task) === null
           // At least one minute of live tracked time (time-tracking D9).
           case 'tracked': return (task) => (ctx.tracked?.get(task.id) ?? 0) >= 1
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
