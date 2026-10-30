@@ -6,7 +6,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta } from './db'
 import { cachedWindow, showEvents, type EventsWindow } from './calendarFeeds'
-import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
+import { CALENDAR_COMPLETED_META_KEY, DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { byPosition } from './ordering'
 import { loadCollapsedSections, loadListColumns, loadShowCompleted, loadViewMode, type ProjectViewMode } from './sections'
 import type { CalendarEvent, CalendarSubscription, ProjectPrefs, Section, Task } from './types'
@@ -94,6 +94,11 @@ export function useCalendarSubscriptions(): CalendarSubscription[] {
 /** Whether this device shows subscribed calendars in the grid (on unless turned off). */
 export function useShowEvents(): boolean {
   return useLiveQuery(showEvents, [], true)
+}
+
+/** Completed calendar tasks are hidden unless explicitly enabled on this device. */
+export function useCalendarShowCompleted(): boolean {
+  return useLiveQuery(async () => (await getMeta<unknown>(CALENDAR_COMPLETED_META_KEY, false)) === true, [], false)
 }
 
 /** The range of days the device cache of subscribed calendars covers, and when it was fetched. */

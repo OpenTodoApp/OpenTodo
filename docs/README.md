@@ -55,6 +55,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Default reminders](default-reminders.md) | A reminder added to every task that gets a date or a time, set once for all your devices, and when it is or isn't added. |
 | [Time blocking](time-blocking.md) | Estimate how long tasks take, then place them on the Day or Week calendar to see whether your plan fits the day. |
 | &nbsp;&nbsp;↳ [Day, Week and Month](calendar-views.md) | Open the calendar, read the Day and Week grids, and use the Month overview to see six weeks at once and move tasks between days. |
+| &nbsp;&nbsp;↳ [Completed tasks on the calendar](completed-on-the-calendar.md) | Show finished tasks with struck-through titles in Day, Week, Month and Plan, with a choice remembered on each device. |
 | &nbsp;&nbsp;↳ [Frames](frames.md) | Shade the hours you keep for one kind of work, such as deep work every weekday morning, behind Day and Week, and plan tasks into them. |
 | &nbsp;&nbsp;↳ [Slots](slots.md) | Put several small tasks into one block of Day and Week, such as Admin from 16:00 to 16:45, and tick them off from a checklist inside it. |
 | &nbsp;&nbsp;↳ [Place tasks on the calendar](place-tasks-on-the-calendar.md) | Drag tasks onto time slots or move them with the keyboard, change how long a block lasts, and read each day's planned hours against its capacity. |
