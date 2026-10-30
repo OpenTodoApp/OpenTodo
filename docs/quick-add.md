@@ -137,6 +137,29 @@ When a new task lands out of sight, at the end of a long list, a short note says
 
 From 768 px wide, the quick add stays under the page's title while the list scrolls under it, so you can add a task wherever you are in a long list without scrolling back up. On a phone the floating **+** button does the same, and the quick add scrolls with the list.
 
+## Paste a list
+
+Copy a list from a chat, a note or meeting minutes and paste it into an empty quick add. When the text has two or more lines, OpenTodo asks first: *Add 7 tasks, one per line?*, with the first five lines as they will be titled and how many more follow.
+
+- **Add 7 tasks** (or <kbd>Enter</kbd>) creates one task per line, in the pasted order.
+- **Paste as one line** puts the lines into the box joined by spaces, as before.
+- <kbd>Esc</kbd> closes the question and pastes nothing.
+
+Each line is cleaned first: spaces at either end and blank lines are dropped, and one list marker at the start is removed: `-`, `*`, `+`, `•`, `1.`, `1)`, `a)`, `[ ]`, `[x]`, `- [ ]`, `- [x]`, `☐` and `☑`. A ticked box does not complete the task; it starts open like the others.
+
+With parsing on, each line is read like a line you typed, with the [view's defaults](#views-and-defaults) for what it does not set. Pasting
+
+```
+Call Anna tomorrow 10am
+Send invoice #Work p1
+```
+
+into Today creates *Call Anna*, due tomorrow at 10:00, and *Send invoice*, due today in *Work* with priority 1. A line with only a date, such as `tomorrow`, keeps its text as the title.
+
+All the tasks of one paste are saved together, offline too, and a note says *7 tasks added* with **Undo**, which removes them all in one step. In the Inbox, the note also counts the lines that went elsewhere because they set a date or a project. If one line cannot be saved (in an [encrypted account](e2ee.md), a title too long to encrypt), none of them is, and the question says why.
+
+A paste into a box that already holds text goes in as text: OpenTodo assumes you are in the middle of a line. Up to 100 lines are added at once; for a longer list the question says so and offers [Import](import-export.md) and **Paste as one line**. Pasting works the same in a section's add row, the command bar's Add mode, the phone's add sheet, the [share screen](capture.md) and a calendar day's add dialog. To paste several subtasks, see [Break a task into subtasks](notes-and-subtasks.md#break-a-task-into-subtasks).
+
 ## Voice
 
 Quick add can also be dictated. Voice capture is **off by default** and is switched on per device in **Settings → Capture → Voice capture**; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.

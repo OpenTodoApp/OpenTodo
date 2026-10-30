@@ -1,4 +1,4 @@
-import { type FormEvent, forwardRef, type KeyboardEvent, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { type FormEvent, forwardRef, useCallback, type KeyboardEvent, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { keysOf } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 import { Tooltip } from '../ui'
@@ -8,7 +8,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
   chipAtCaret, type Chip, dismissChip, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, parse,
-  type ProjectRef, type QuickAddInput, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span, toTaskInput,
+  type ParseContext, type ProjectRef, type QuickAddInput, type QuickAddSettings, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span, toTaskInput,
 } from '../lib/nlp'
 import { useDictation } from './useDictation'
 import { useTokenSuggest } from './TokenSuggest'
@@ -18,6 +18,7 @@ import { t, preferredLanguages } from '../lib/i18n'
 import { chipRange, type FieldKind, fieldRows, type FieldRow, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
 import { SheetBar } from './quickadd/SheetBar'
+import { usePasteOffer } from './quickadd/PasteOffer'
 
 export type { QuickAddInput }
 
@@ -40,6 +41,39 @@ export async function createLabelByName(name: string): Promise<string> {
     if (err instanceof LabelExistsError) return err.existing.id
     throw err
   }
+}
+
+/**
+ * Pasted lines as quick-add inputs (paste-to-tasks D3): each line parsed on its own
+ * with the field's options and no dismissed chips; a line whose parse leaves no title
+ * (only "tomorrow") keeps its text as the title. `context` is null when parsing is off.
+ */
+export async function pastedInputs(lines: readonly string[], context: Omit<ParseContext, 'dismissed'> | null, labels: readonly LabelRef[] = []): Promise<QuickAddInput[]> {
+  const out: QuickAddInput[] = []
+  for (const line of lines) {
+    const parsed = context ? parse(line, { ...context, dismissed: [] }) : null
+    out.push(parsed && parsed.title ? await toTaskInput(parsed, { labels, createLabel: createLabelByName }) : { title: line })
+  }
+  return out
+}
+
+/** The parse options of a line typed now, or null while parsing is off. */
+function useParseContext(settings: QuickAddSettings, projects: readonly ProjectRef[]): () => Omit<ParseContext, 'dismissed'> | null {
+  // The user's date format fills the automatic numeric order, and their first day of
+  // the week decides "next week" (date-time-preferences D5, D6).
+  const { prefs: dtPrefs, resolved } = useDateTimeFormat()
+  return useCallback(() => {
+    if (!settings.enabled) return null
+    const langs = preferredLanguages()
+    return {
+      today: logicalToday(),
+      now: nowHHMM(),
+      languages: resolveLanguages(settings, langs),
+      dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs),
+      weekStart: resolved.weekStart,
+      projects,
+    }
+  }, [settings, projects, dtPrefs, resolved])
 }
 
 /**
@@ -74,7 +108,12 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   onAddAndOpen?: (input: QuickAddInput) => Promise<void> | void
   /** The palette footer's Escape: its label (Close or Back) and action. */
   escape?: { label: string; run: () => void }
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape }, ref) {
+  /**
+   * A pasted list confirmed as one task per line (paste-to-tasks D3): every input at
+   * once, so the screen writes them as one batch. Without it, `onAdd` runs per line.
+   */
+  onAddMany?: (inputs: QuickAddInput[]) => Promise<void> | void
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
@@ -88,23 +127,12 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const [highlight, setHighlight] = useState<number | null>(null)
   const [settings, setSettings] = useState(loadQuickAddSettings)
   useEffect(() => onQuickAddSettingsChange(() => setSettings(loadQuickAddSettings())), [])
-  // The user's date format fills the automatic numeric order, and their first day of
-  // the week decides "next week" (date-time-preferences D5, D6).
-  const { prefs: dtPrefs, resolved } = useDateTimeFormat()
-
+  const context = useParseContext(settings, projects)
   const parsed = useMemo(() => {
-    if (!settings.enabled || !value.trim()) return null
-    const langs = preferredLanguages()
-    return parse(value, {
-      today: logicalToday(),
-      now: nowHHMM(),
-      languages: resolveLanguages(settings, langs),
-      dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs),
-      weekStart: resolved.weekStart,
-      projects,
-      dismissed,
-    })
-  }, [value, dismissed, projects, settings, dtPrefs, resolved])
+    const ctx = context()
+    if (!ctx || !value.trim()) return null
+    return parse(value, { ...ctx, dismissed })
+  }, [value, dismissed, context])
   const chips = useMemo(() => parsed?.chips ?? [], [parsed])
   const emptyTitle = parsed !== null && parsed.title === ''
   // The palette's field rows and the one ↑/↓ highlighted (palette-quick-add D3).
@@ -180,6 +208,20 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     await (open && onAddAndOpen ? onAddAndOpen(input) : onAdd(input))
   }
 
+  // A pasted list (paste-to-tasks D1): offered as one task per line, or pasted as one line.
+  const paste = usePasteOffer({
+    field: inputRef,
+    kind: 'tasks',
+    onConfirm: async (lines) => {
+      const inputs = await pastedInputs(lines, context(), labels)
+      if (onAddMany) await onAddMany(inputs)
+      else for (const input of inputs) await onAdd(input)
+      change('')
+      setDismissed([])
+    },
+    onPasteAsLine: (text) => { change(text); caretTo(text.length) },
+  })
+
   const lineInfo = parsed ? { due: parsed.due, datedByPhrase: chips.some((x) => x.kind === 'due') } : undefined
   const palette = layout === 'palette'
 
@@ -225,6 +267,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           onChange={(e) => change(e.target.value)}
           onScroll={(e) => { if (tints.current) tints.current.scrollLeft = e.currentTarget.scrollLeft }}
           {...suggest.fieldProps}
+          onPaste={paste.onPaste}
           onKeyDown={(e) => {
             if (suggest.onKeyDown(e)) return
             if (palette && fieldKeys(e)) return
@@ -275,6 +318,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
         )}
         {!hideHint && hints && <span className="ui-kbd hidden sm:inline" data-quick-add-hint>{keysOf('list.quick-add')}</span>}
         {suggest.list}
+        {paste.offer}
       </div>
       {voice.enabled && (
         <>

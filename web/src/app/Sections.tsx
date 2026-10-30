@@ -10,6 +10,8 @@ import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
 import { createTask } from '../lib/ops'
 import { preferredPlacement } from '../lib/userPrefs'
 import { selectTask } from './signals'
+import { addTasksUndoable } from '../lib/pasteTasks'
+import { showBulkToast } from './bulk/toastStore'
 import { announceIfOutOfSight } from './task-list/announceAdded'
 import { createSection, deleteSection, renameSection, reorderSection, setSectionStyle } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
@@ -192,14 +194,26 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
     const list = root.current?.closest<HTMLElement>('[data-list-page]')
     if (target === project.id && list) void announceIfOutOfSight(id, { list: sectionName, placement, root: list, select: (x) => selectTask.request(x) })
   }
+  // A pasted list (paste-to-tasks D3): every line in this section unless it names a #project; one batch, one Undo.
+  const onAddMany = async (inputs: QuickAddInput[]) => {
+    const placement = await preferredPlacement()
+    const added = await addTasksUndoable(inputs.map(({ project_id, ...rest }) => {
+      const target = project_id ?? project.id
+      return { ...rest, project_id: target, section_id: target === project.id ? sectionId : null }
+    }), { placement })
+    showBulkToast(added.label, added.undoId)
+  }
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }
   return (
     <div ref={root} className="px-1 py-1" onKeyDown={onKeyDown} onBlur={(e) => {
-      if (!e.currentTarget.contains(e.relatedTarget as Node | null) && !(e.target as HTMLInputElement).value) onClose()
+      // Focus moving into the paste offer (an overlay) is not leaving the add row.
+      const to = e.relatedTarget as Element | null
+      if (to?.closest?.('[data-overlay-root]')) return
+      if (!e.currentTarget.contains(to) && !(e.target as HTMLInputElement).value) onClose()
     }}>
-      <QuickAdd onAdd={onAdd} projects={projects} labels={labels} hideHint autoFocus placeholder={t('Add a task to {sectionName}…', { sectionName })} label={t('Add a task to {sectionName}', { sectionName })} />
+      <QuickAdd onAdd={onAdd} onAddMany={onAddMany} projects={projects} labels={labels} hideHint autoFocus placeholder={t('Add a task to {sectionName}…', { sectionName })} label={t('Add a task to {sectionName}', { sectionName })} />
     </div>
   )
 }

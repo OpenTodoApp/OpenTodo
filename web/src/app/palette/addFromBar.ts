@@ -8,6 +8,7 @@ import { loadQuickAddSettings, parse, resolveDayMonthOrder, resolveLanguages, to
 import { getProject, getTask } from '../../lib/localData'
 import { preferredLanguages, t } from '../../lib/i18n'
 import { createTask } from '../../lib/ops'
+import { addTasksUndoable } from '../../lib/pasteTasks'
 import { preferredPlacement } from '../../lib/userPrefs'
 import { VIEW_SCOPES } from '../../lib/shortcuts'
 import { addedWhere } from '../addedWhere'
@@ -27,12 +28,17 @@ export function defaultsRoute(route: Route): Route {
  * Creates the task and shows where it went; returns its id. With `open` (Shift+Enter in
  * Add mode, palette-quick-add D3) it opens the task where it went instead of the toast.
  */
-export async function addFromBar({ labels: typed, ...rest }: QuickAddInput, route: Route, userId?: string, open = false): Promise<string> {
-  const today = logicalToday()
+/** A line's input with the defaults of the screen the bar was opened from. */
+function barInput({ labels: typed, ...rest }: QuickAddInput, route: Route, today: string, userId?: string) {
   const { labels: viewLabels, ...defaults } = taskDefaults(defaultsRoute(route), today, userId)
   if (rest.due || rest.deadline) delete defaults.start
+  return { ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] }
+}
+
+export async function addFromBar(input: QuickAddInput, route: Route, userId?: string, open = false): Promise<string> {
+  const today = logicalToday()
   // Top or bottom of the list it lands in (add-position D3).
-  const id = await createTask({ ...defaults, ...rest, placement: await preferredPlacement(), labels: [...new Set([...viewLabels, ...(typed ?? [])])] })
+  const id = await createTask({ ...barInput(input, route, today, userId), placement: await preferredPlacement() })
   const task = await getTask(id)
   const project = task?.project_id ? await getProject(task.project_id) : undefined
   const where = task ? addedWhere(task, today, currentDateTime()) : null
@@ -42,6 +48,14 @@ export async function addFromBar({ labels: typed, ...rest }: QuickAddInput, rout
   if (open) openAt(id, target)
   else showBulkToast(label, null, { ttl: ACTION_TOAST_MS, action: { label: t('Open'), run: show } })
   return id
+}
+
+/** A pasted list from the bar (paste-to-tasks D3): every line with the screen's defaults, one batch and one toast with Undo. */
+export async function addManyFromBar(inputs: QuickAddInput[], route: Route, userId?: string): Promise<string[]> {
+  const today = logicalToday()
+  const added = await addTasksUndoable(inputs.map((input) => barInput(input, route, today, userId)), { placement: await preferredPlacement() })
+  showBulkToast(added.label, added.undoId)
+  return added.ids
 }
 
 /** Opens the new task as its page; Esc goes to the list it went to (task-full-page). */

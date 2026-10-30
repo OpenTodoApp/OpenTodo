@@ -38,7 +38,7 @@ import { buildEntries, makeTaskEntry } from './index'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
 import { t } from '../../lib/i18n'
 import { useAssistantStatus } from '../../lib/assistantStatus'
-import { addFromBar, lineToInput } from './addFromBar'
+import { addFromBar, addManyFromBar, lineToInput } from './addFromBar'
 import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarParts'
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -223,7 +223,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       onEscape={escape}>
       <div data-combobox data-palette data-bar-mode-current={bar} onKeyDownCapture={onKeyDownCapture}>
         <ModeSwitch modes={modes} mode={bar} onMode={toMode} />
-        {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)}
+        {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)} onAddMany={(inputs) => addManyFromBar(inputs, route, user?.id)}
           onAddAndOpen={async (input) => { await addFromBar(input, route, user?.id, true); onClose() }}
           escape={{ label: closesFromAdd ? t('Close') : t('Back'), run: escape }} />}
         {bar === 'ask' && <AskPanel onSent={onClose} />}
