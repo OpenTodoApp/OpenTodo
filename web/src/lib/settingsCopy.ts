@@ -191,6 +191,10 @@ export const SETTINGS_COPY = {
       arranged: msg('The full Open Loops method arranges the sidebar; these choices apply in the other modes.'),
     },
     learnMore: 'settings/appearance',
+    rows: {
+      counts: { label: msg('Sidebar counts'), description: msg('Every list adds open-task numbers to each project, label and view.') },
+      destinations: { label: msg('Sidebar destinations'), description: msg("Drag or use a row's menu to reorder. Switched-on ones sit next to Inbox and Today.") },
+    },
   },
   // How a task opens from a list (task-side-panel D1): the synced user_prefs.task_open.
   'task-details': {

@@ -487,6 +487,12 @@ var Schema = map[string]map[string]Field{
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// Workspace of the view, null for the default (OpenSpec change workspaces).
 		"workspace_id": {Kind: kNullableString, Default: `null`},
+		// A name from the icon catalogue, or null for the default icon of the
+		// view's kind (OpenSpec change sidebar-polish, design D4). Not user text,
+		// so not content. Any string is accepted here so a newer catalogue stays
+		// additive; REST checks it with iconset.Valid and clients render an
+		// unknown name as the default icon.
+		"icon": {Kind: kNullableString, Default: `null`},
 	},
 	// reminder: fires relative to its task's due time or at an absolute instant
 	// (OpenSpec change reminders, docs/sync.md). fire_at is always the resolved
@@ -716,6 +722,16 @@ var Schema = map[string]map[string]Field{
 		// keep it. Settings, never content: not encrypted.
 		"reminder_default_timed": {Kind: kString, Default: `""`},
 		"reminder_default_dated": {Kind: kString, Default: `""`},
+		// Sidebar counts (OpenSpec change sidebar-polish, design D1): "" shows
+		// counts at rest on Inbox and Today only, "all" on every project, label
+		// and saved-view row; clients read an unknown value as "" and keep it.
+		"sidebar_counts": {Kind: kString, Default: `""`},
+		// The order of the primary sidebar destinations (sidebar-polish D3): a
+		// comma-separated list of destination ids (inbox, today, upcoming,
+		// calendar and promotable ids). Ids missing from it follow in the default
+		// order; clients ignore and keep ids they do not know. Separate from
+		// sidebar_destinations, which keeps meaning "promoted".
+		"sidebar_order": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

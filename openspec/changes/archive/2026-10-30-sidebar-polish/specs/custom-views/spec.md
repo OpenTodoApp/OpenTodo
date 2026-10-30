@@ -32,13 +32,13 @@ Every saved view SHALL be listed in a "Views" group in the sidebar, in the sideb
 ## ADDED Requirements
 
 ### Requirement: View icon
-A saved view SHALL have an optional icon from the app's icon catalogue, an additive field that is null by default. A view without an icon, or with a name this client does not know, SHALL show the default icon of its kind. "Icon…" in the view menu SHALL offer the same icon picker as projects, including "No icon". The icon SHALL be shown wherever the view is listed: the Views group, Favourites, the Views overview, the view's page header, the command palette and the Start view choice.
+A saved view SHALL have an optional icon from the app's icon catalogue, an additive field that is null by default. A view without an icon, or with a name this client does not know, SHALL show the default icon of its kind. "Icon…" in the view menu SHALL offer the same icon picker as projects, including "No icon". The icon SHALL be shown wherever the view is listed with an icon: the Views group, Favourites, the Views overview, the command palette, and the view's page header once the view has an icon of its own (a header without one keeps today's look). The Start view choice is a plain list of names and shows none.
 
 The icon is not content, so it is not encrypted. It is written offline through the outbox, converges by last-writer-wins on the field, and is included in the export. Sync SHALL accept any string, so a newer catalogue stays additive. The API SHALL accept `icon` on create and patch as null or a catalogue name, and reject anything else.
 
 #### Scenario: Choose an icon
 - **WHEN** the user opens the menu of "Waiting", chooses "Icon…" and picks "hourglass"
-- **THEN** the hourglass replaces the default icon in the Views group, the Views overview and the view's header on this device at once, and on the user's other devices after sync
+- **THEN** the hourglass replaces the default icon in the Views group and the Views overview and appears in the view's header on this device at once, and on the user's other devices after sync
 
 #### Scenario: Offline
 - **WHEN** the device is offline and the user sets an icon on a view

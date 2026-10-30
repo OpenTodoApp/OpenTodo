@@ -58,6 +58,68 @@ export async function setPromoted(row: Partial<UserPrefs> | null | undefined, id
   await mutate('user_prefs', USER_PREFS_ID, { sidebar_destinations: next.join(',') })
 }
 
+/**
+ * Sidebar counts (sidebar-polish D1, appearance-preferences "Sidebar counts
+ * preference"): `today` shows numbers at rest on Inbox and Today only (the quiet
+ * sidebar, stored as ''), `all` on every project, label and saved-view row.
+ */
+export const SIDEBAR_COUNTS = ['today', 'all'] as const
+export type SidebarCounts = (typeof SIDEBAR_COUNTS)[number]
+
+/** Reads the stored choice; an empty or unknown value (from a newer client) is the default. The row is not changed. */
+export function readSidebarCounts(row: Partial<UserPrefs> | null | undefined): SidebarCounts {
+  return row?.sidebar_counts === 'all' ? 'all' : 'today'
+}
+
+/** Writes the choice through the op log (offline-safe, synced); the default is stored as ''. */
+export function setSidebarCounts(value: SidebarCounts): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { sidebar_counts: value === 'all' ? 'all' : '' })
+}
+
+/** The destinations that are always primary outside Open Loops first, in the default order (app-shell "Sidebar structure"). */
+export const FIXED_DESTINATIONS = ['inbox', 'today', 'upcoming', 'calendar'] as const
+export type DestinationId = (typeof FIXED_DESTINATIONS)[number] | Promotable
+
+const splitIds = (s: string | null | undefined) => (s ?? '').split(',').map((x) => x.trim()).filter(Boolean)
+
+/**
+ * The primary destinations in the user's order (sidebar-polish D3): the ids of the
+ * stored order that are in `primary` come first, in the stored order; the others
+ * follow in their order in `primary` (the default order). Unknown stored ids are
+ * ignored here and kept in the row.
+ */
+export function orderDestinations<T extends string>(primary: readonly T[], stored: string | null | undefined): T[] {
+  const present = new Set<string>(primary)
+  const seen = new Set<string>()
+  const first: T[] = []
+  for (const id of splitIds(stored)) {
+    if (present.has(id) && !seen.has(id)) { seen.add(id); first.push(id as T) }
+  }
+  return [...first, ...primary.filter((id) => !seen.has(id))]
+}
+
+/** Every destination that can be primary, in the user's order: the fixed four and the promotable ones. */
+export function destinationOrder(row: Partial<UserPrefs> | null | undefined): DestinationId[] {
+  return orderDestinations<DestinationId>([...FIXED_DESTINATIONS, ...PROMOTABLE], row?.sidebar_order)
+}
+
+/**
+ * Moves one destination by `delta` places in the full order and stores it whole
+ * (last-writer-wins on the order). Ids this client does not know stay at the end.
+ * Resolves to false when the destination is already at that edge.
+ */
+export async function moveDestination(row: Partial<UserPrefs> | null | undefined, id: DestinationId, delta: number): Promise<boolean> {
+  const order = destinationOrder(row)
+  const from = order.indexOf(id)
+  const to = from + delta
+  if (from < 0 || to < 0 || to >= order.length) return false
+  order.splice(to, 0, ...order.splice(from, 1))
+  const known = new Set<string>(order)
+  const unknown = splitIds(row?.sidebar_order).filter((x) => !known.has(x))
+  await mutate('user_prefs', USER_PREFS_ID, { sidebar_order: [...order, ...unknown].join(',') })
+  return true
+}
+
 /** The light-mode bar colour of an accent. */
 export function lightBar(accent: AccentId): string {
   return ACCENTS.find((a) => a.id === accent)?.bar ?? ACCENTS[0].bar

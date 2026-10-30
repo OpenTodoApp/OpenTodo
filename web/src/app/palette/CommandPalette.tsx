@@ -24,7 +24,7 @@ import { workspaceLabel } from '../workspaceNav'
 import type { Task, User } from '../../lib/types'
 import { ComboboxField, ComboboxList, ComboboxPanel, Dialog } from '../../ui'
 import { useCombobox } from '../../ui'
-import { Icon } from '../../ui'
+import { CatalogueIcon, Icon } from '../../ui'
 import { currentFilter, listState } from '../listActions'
 import { Confirmation } from '../menus/ActionMenu'
 import { NamePrompt } from '../NamePrompt'
@@ -231,7 +231,10 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
           <ComboboxField state={field} look="palette" trailing={context} label={bar === 'commands' ? t('Run a command') : t('Search tasks, projects and commands')}
             placeholder={bar === 'commands' ? t('Type a command…') : t('Search or type a command…')} expanded autoFocus />
           <ComboboxList state={state} look="palette" label={t('Results')} emptyText={t('Nothing matches. Try fewer letters, or a filter query.')}
-            renderLeading={(e) => <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />}
+            renderLeading={(e) => {
+              const plain = <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />
+              return e.catalogueIcon ? <CatalogueIcon name={e.catalogueIcon} className="text-faint" fallback={plain} /> : plain
+            }}
             renderTrailing={(e) => (e.shortcut ? <ShortcutKeys keys={e.shortcut} /> : null)} />
           <BarFooter ask={askAvailable} />
         </>}

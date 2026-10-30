@@ -4,7 +4,7 @@
 // toolbar, so the results stay in view while the count follows the edit: the builder,
 // then the formula line, which is the query input itself ("Edit as text" focuses it).
 import type { ReactNode, RefObject } from 'react'
-import { IconButton } from '../../ui'
+import { Button, IconButton } from '../../ui'
 import { t } from '../../lib/i18n'
 import { FilterChips } from './FilterChips'
 import { DisplayPanel, type ViewDisplay } from './DisplayPanel'
@@ -42,6 +42,8 @@ export interface FilterPanelProps {
   /** Tasks the edited query matches, or null while unknown. */
   count: number | null
   onClose: () => void
+  /** Starts the New view page over (its draft, sidebar-polish D5); absent elsewhere. */
+  onClear?: () => void
   /** The builder, or the notice that replaces it. */
   builder: ReactNode
   /** The formula line: the query input. */
@@ -51,7 +53,7 @@ export interface FilterPanelProps {
   inputRef: RefObject<HTMLInputElement | null>
 }
 
-export function FilterPanel({ count, onClose, builder, formula, message, inputRef }: FilterPanelProps) {
+export function FilterPanel({ count, onClose, onClear, builder, formula, message, inputRef }: FilterPanelProps) {
   return (
     <section aria-label={t('Filter')} data-filter-panel className="mb-3 rounded-card border border-strong bg-pop">
       <header className="flex items-center gap-2 px-3 pt-2.5 pb-1">
@@ -61,7 +63,9 @@ export function FilterPanel({ count, onClose, builder, formula, message, inputRe
             {count === null ? '' : t('{n, plural, one {# task matches} other {# tasks match}}', { n: count })}
           </span>
         </h2>
-        <IconButton icon="x" size="sm" label={t('Close the filter')} className="ml-auto" onClick={onClose} />
+        {/* The New view page's draft starts over (filter-queries "New view keeps its draft"). */}
+        {onClear && <Button variant="ghost" size="sm" className="ml-auto" onClick={onClear} data-filter-clear>{t('Clear')}</Button>}
+        <IconButton icon="x" size="sm" label={t('Close the filter')} className={onClear ? undefined : 'ml-auto'} onClick={onClose} />
       </header>
       <div className="px-3">{builder}</div>
       <div className="mx-3 mb-3 rounded-control bg-sunken p-1.5" data-filter-formula>

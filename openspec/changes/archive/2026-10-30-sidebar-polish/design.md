@@ -75,7 +75,7 @@ In Open Loops first the list is disabled with the existing explanation, because 
 Views gain `icon` (nullable string, default null), which is not content.
 - **Null:** the view keeps today's default icon (filter for a list view, board for a board, dashboard for a dashboard).
 - **Setting it:** "Icon…" in the view menu (`custom-views` "View menu actions") uses the `iconPickerSpec` step picker that projects use, including "No icon". In the palette it runs as a Combobox.
-- **Where the icon shows:** the Views group, Favourites, the Views overview, the view's page header, the palette's view results and the Start view choice.
+- **Where the icon shows:** the Views group, Favourites, the Views overview, the palette's view results, and the view's page header once it has an icon of its own (a header without one keeps today's look, so no screen changes for views without an icon). The Start view choice is a native list of names, which cannot draw icons, so it shows none.
 - **Validation:** sync accepts any string, as for sections, so a newer catalogue stays additive; an unknown name renders the default icon. REST create and patch accept `icon` as null or a name for which `iconset.Valid` is true, else 400 `invalid_input` naming `icon`.
 - **MCP and CLI:** no saved-view write tool exists in either. `agent-tools-complete` (0.20) will reuse the same check.
 - **Export:** carries the field.

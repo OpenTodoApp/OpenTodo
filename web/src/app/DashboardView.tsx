@@ -19,7 +19,7 @@ import { useBoardDrop } from './useBoardDrop'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { navigate } from './router'
-import { ViewMenu } from './ViewsView'
+import { ViewMark, ViewMenu } from './ViewsView'
 import type { ViewData } from './useViews'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
@@ -120,7 +120,8 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
 
   return (
     <PageBody width="full">
-        <PageHeader title={dashboard.name} icon="kanban" meta={`${panels.length}/${MAX_PANELS}`} help="dashboard"
+        <PageHeader title={dashboard.name} icon={dashboard.icon ? undefined : 'kanban'}
+          leading={dashboard.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={dashboard} /></span> : undefined} meta={`${panels.length}/${MAX_PANELS}`} help="dashboard"
           actions={<>
             <select className="ui-input w-auto py-1 text-meta" aria-label={t('Add panel')} value="" disabled={panels.length >= MAX_PANELS || candidates.length === 0}
               onChange={(e) => { const id = e.target.value; if (id) run(() => addPanel(dashboard.id, id)) }}>
