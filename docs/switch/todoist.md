@@ -39,13 +39,14 @@ Projects that were boards in Todoist open as boards on this device. Your other d
 - Due dates and times, in the language you used Todoist in (English, German, French, Italian, Spanish or Portuguese). Dates without a year take the year of the backup.
 - Recurring dates such as `every monday` or `jeden Montag`, when OpenTodo's [recurrence rules](../recurrence.md) can express them.
 - Reminders with a time or an offset.
+- Deadlines, as the task's [deadline](../deadlines-and-start-dates.md#deadlines), read in the same language as due dates.
 
 The full mapping is in [Import formats](../import.md#todoist-todoist-csv-todoist-backup).
 
 ## What does not
 
 - **Comments** are added to the task's description under "Comments", because their authors cannot be kept.
-- **Deadlines** are kept as a "Deadline: …" line in the description; OpenTodo has no deadline field yet.
+- A **deadline** that cannot be read is kept as a "Deadline: …" line in the description, with a warning.
 - **Assignees** are dropped; invite people and [share the project](../sharing.md) instead.
 - Dates or rules OpenTodo cannot read leave the task without a due date, with a warning that quotes them.
 
