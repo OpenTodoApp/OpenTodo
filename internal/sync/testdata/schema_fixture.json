@@ -136,6 +136,16 @@
       "position",
       "project_id"
     ],
+    "slot": [
+      "color",
+      "created_at",
+      "date",
+      "deleted_at",
+      "minutes",
+      "start",
+      "task_ids",
+      "title"
+    ],
     "task": [
       "assignee_id",
       "blocked_by",
@@ -288,6 +298,9 @@
     ],
     "section": [
       "name"
+    ],
+    "slot": [
+      "title"
     ],
     "task": [
       "description",

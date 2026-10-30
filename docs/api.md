@@ -1931,6 +1931,18 @@ Frames (OpenSpec `calendar-frames`; guide: [frames.md](frames.md)) are the synce
 
 Writes are refused to `read` and `agent` tokens with `403 insufficient_scope`. An invalid value answers `422 invalid_input` with `field`: a title of 1 to 200 characters, a weekday list of distinct digits 1 to 7, times `HH:MM` with the end after the start, a hex colour, a source of the forms above (ids are not resolved: a source that no longer exists reads as none), dates with `until_date` not before `from_date`. On an encrypted account the title is returned as stored and a plaintext title is refused with `409 encryption_enabled`; a device encrypts it.
 
+## Calendar slots
+
+Slots (OpenSpec `calendar-slots`; guide: [slots.md](slots.md)) are the synced entity `slot`, personal like a frame: one block on the Day and Week grid that holds a checklist of small tasks, such as "Admin" on Wednesday from 16:00 for 45 minutes. Fields: `title` (content, encrypted for an encrypted account; empty reads as "Slot"), `date` (`YYYY-MM-DD`), `start` (floating wall time `HH:MM`), `minutes` (15 to 480 in steps of 15; the op log accepts 1 to 1440), `task_ids` (ordered task ids, at most 20, written as one whole list), `color` (hex), `created_at`, `deleted_at`. No field is added to tasks: a task is in a slot when the slot lists it and the task is open and due on the slot's date without a time (or has no due date). Devices write slots through `/api/v1/sync`; the REST routes below add the checks.
+
+| Method | Path | Auth | Body / answer |
+|---|---|---|---|
+| `GET` | `/api/v1/slots` | signed in, any token scope | `?from=&to=` (optional dates, inclusive) → `{slots: [{id, title, date, start, minutes, task_ids, color, created_at, encrypted}]}` by date and start |
+| `POST` | `/api/v1/slots` | signed in, write | `{date, title?, start?, minutes?, task_ids?, color?, move_tasks?}` → `201` slot (defaults 09:00, 30 minutes, `#64748b`) |
+| `GET` / `PATCH` / `DELETE` | `/api/v1/slots/{id}` | signed in (writes: write) | `PATCH` takes the same fields → `200` slot; `DELETE` → `204` (a tombstone; the tasks keep their date without a time); an unknown or deleted id answers `404 not_found` |
+
+With `"move_tasks": true` the same batch sets every listed task's `due` to `{date}` of the slot (time cleared) unless it already is, and takes the tasks out of the caller's other slots of that day, as adding a task in the app does. A listed id that is not a task the caller can see answers `422 invalid_input`; a task the caller may not edit (a viewer of its project) answers `403 forbidden` with its `task_id`; either way nothing is written. Writes are refused to `read` and `agent` tokens with `403 insufficient_scope`. An invalid value answers `422 invalid_input` with `field`: a title of at most 200 characters, a real date, a start `HH:MM`, a length of 15 to 480 minutes in steps of 15, at most 20 distinct task ids, a hex colour. On an encrypted account the title is returned as stored with `"encrypted": true` and a plaintext title is refused with `409 encryption_enabled`.
+
 ## Task pages
 
 One task published as a page people without an account open at `/t/<secret>[/<label>]` (OpenSpec `task-pages`). The secret is 22 characters (128 bits), stored as a hash; the label is decoration and never used to find the page. A task has at most one active page; publishing again revokes the previous one in the same request. Pages are server data, never ops.
@@ -2070,7 +2082,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | Code | Status | Where |
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, an unknown field, data after the JSON value, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
-| `invalid_input` | 400 | validation failure naming the field or parameter (422 on `/api/v1/frames`) |
+| `invalid_input` | 400 | validation failure naming the field or parameter (422 on `/api/v1/frames` and `/api/v1/slots`) |
 | `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:`, `caldav:`, `issues:` or `rule:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |

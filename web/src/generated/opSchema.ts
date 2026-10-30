@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Task, TaskLocation, TimeEntry, UserPrefs, View,
+  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, Task, TaskLocation, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -424,6 +424,29 @@ export interface FrameFields {
 }
 
 /**
+ * slot: several small tasks in one calendar block (OpenSpec change
+ * calendar-slots, design D1), such as "Admin" on Wednesday from 16:00 for 45
+ * minutes. Personal like a frame, with ids unique on the server; membership
+ * lives here, never on the task, so shared tasks are unchanged for other
+ * members. title is a content field.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface SlotFields {
+  title?: string
+  /** The day it is on (floating); a slot without a date is never drawn. */
+  date?: string | null
+  /** Floating wall time "HH:MM". */
+  start?: string
+  /** Length in minutes, never null and at most MaxSlotMinutes (clients offer 15 to 480 in 15-minute steps). */
+  minutes?: number | null
+  /** Ordered task ids, at most MaxSlotTasks, one whole-list value like task.blocked_by; ids of tasks not shown are kept. */
+  task_ids?: string[]
+  color?: string
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/**
  * The op fields of a place (sync.Schema).
  * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
  */
@@ -764,6 +787,9 @@ export const OP_DEFAULTS = {
   frame: {
     title: '', weekdays: '', start: '09:00', end: '10:00', color: '#64748b', source: '', from_date: null, until_date: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Frame, 'id' | '_clock'>,
+  slot: {
+    title: '', date: null, start: '09:00', minutes: 30, task_ids: [], color: '#64748b', created_at: 0, deleted_at: null,
+  } satisfies Omit<Slot, 'id' | '_clock'>,
   place: {
     name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Place, 'id' | '_clock'>,
@@ -791,6 +817,7 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   time_entry: ['note'],
   rule: ['name'],
   frame: ['title'],
+  slot: ['title'],
   place: ['name', 'address', 'geo'],
   review: ['tomorrow_note'],
 }

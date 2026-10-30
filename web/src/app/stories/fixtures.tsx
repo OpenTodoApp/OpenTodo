@@ -8,6 +8,7 @@ import type { Decorator, StoryObj } from '@storybook/react-vite'
 import { db, setMeta } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createFrame } from '../../lib/frames'
+import { createSlot } from '../../lib/slots'
 import { createLabel } from '../../lib/labels'
 import { createProject, createSubtask, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import { createSection, saveViewMode } from '../../lib/sections'
@@ -269,6 +270,24 @@ export async function seedCalendarWeek(): Promise<void> {
   await createTask({ title: 'Team retrospective', due: { date: '2026-10-16', time: '14:00' }, estimate_minutes: 60, project_id: seeded.work })
   await createTask({ title: 'Market', due: { date: '2026-10-17', time: '09:00' }, estimate_minutes: 90, project_id: seeded.home })
   await createTask({ title: 'Long run', due: { date: '2026-10-18', time: '08:00' }, estimate_minutes: 120, project_id: seeded.health })
+}
+
+/**
+ * Slots (calendar-slots): the calendar week with "Admin" today from 14:00 for two hours
+ * holding six small tasks (one done), so the block shows two rows and "+4", and an
+ * overfull "Errands" slot on Monday (past, dimmed): 50 minutes of tasks in 45.
+ */
+export async function seedCalendarSlots(): Promise<void> {
+  await seedCalendarWeek()
+  const small = ['Reply to Marco', 'Pay the invoice', 'Book the venue', 'Renew the domain', 'Send the slides', 'File the receipt']
+  const ids: string[] = []
+  for (const [i, title] of small.entries()) ids.push(await createTask({ title, due: { date: TODAY }, estimate_minutes: 5 + (i % 3) * 5, project_id: seeded.work }))
+  await updateTask(ids[0], { completed_at: Date.parse('2026-10-14T11:00:00Z') })
+  const admin = await createSlot({ date: TODAY, start: '14:00', minutes: 120, title: 'Admin', color: hue('teal') })
+  await db.slots.update(admin.id, { task_ids: ids })
+  const errands = [await createTask({ title: 'Post office', due: { date: '2026-10-12' }, estimate_minutes: 30 }), await createTask({ title: 'Pharmacy', due: { date: '2026-10-12' }, estimate_minutes: 20 })]
+  const late = await createSlot({ date: '2026-10-12', start: '17:00', minutes: 45, title: 'Errands', color: hue('orange') })
+  await db.slots.update(late.id, { task_ids: errands })
 }
 
 /**

@@ -19,6 +19,7 @@ var ContentFields = map[string][]string{
 	"time_entry": {"note"},
 	"rule":       {"name"},
 	"frame":      {"title"},
+	"slot":       {"title"},
 	"place":      {"name", "address", "geo"},
 	"review":     {"tomorrow_note"},
 }

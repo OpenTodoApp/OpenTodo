@@ -181,6 +181,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>u</kbd> | Unschedule the selected task (keep the date) |
 | <kbd>p</kbd> | Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels |
 | <kbd>Enter</kbd> | Open the selected task |
+| <kbd>Shift+Enter</kbd> | While placing over a slot: add the task to the slot |
 | <kbd>e</kbd> | Edit the estimate of the selected task |
 | <kbd>c</kbd> | Complete the selected task |
 | <kbd>[</kbd> | Previous day or week |
