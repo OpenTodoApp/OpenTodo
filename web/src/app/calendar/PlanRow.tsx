@@ -114,7 +114,7 @@ export function PlanDayRows({ day, today, selectedId, large, editable, projectMa
         ))}
       {day.deadlines?.map((task) => (
         <div key={`deadline:${task.id}`} className={large ? 'flex min-h-11 items-center' : undefined}>
-          <DeadlineMarker task={task} date={day.date} today={today} variant="row" focusable={!!large} onOpen={onOpen} />
+          <DeadlineMarker task={task} date={day.date} today={today} variant="row" onOpen={onOpen} />
         </div>
       ))}
     </div>

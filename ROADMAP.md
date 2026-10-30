@@ -46,7 +46,7 @@ What paid planners charge for, free.
 | [`bento-daily-check`](openspec/changes/archive/2026-10-30-bento-daily-check/) | **Shipped.** A Large, a Medium and a Small task in the Daily check | [#597](https://github.com/OpenTodoApp/OpenTodo/issues/597) |
 | [`task-energy`](openspec/changes/archive/2026-10-30-task-energy/) | **Shipped.** An energy property (deep, medium, low) with a filter and quick-add token |  |
 | [`urgency-sort`](openspec/changes/urgency-sort/) | A deterministic urgency score sort, and sort by a custom field | [#404](https://github.com/OpenTodoApp/OpenTodo/issues/404) |
-| [`calendar-clarity`](openspec/changes/calendar-clarity/) | **Shipped.** Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | [#554](https://github.com/OpenTodoApp/OpenTodo/issues/554), [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555), [#556](https://github.com/OpenTodoApp/OpenTodo/issues/556) |
+| [`calendar-clarity`](openspec/changes/archive/2026-10-30-calendar-clarity/) | **Shipped.** Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | [#554](https://github.com/OpenTodoApp/OpenTodo/issues/554), [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555), [#556](https://github.com/OpenTodoApp/OpenTodo/issues/556) |
 
 ### [0.19 "Series and time"](https://github.com/OpenTodoApp/OpenTodo/milestone/3)
 

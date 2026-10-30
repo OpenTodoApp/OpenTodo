@@ -51,6 +51,8 @@ export function screens(ids, base) {
     { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'when-popover', 'inline-editor', 'zone-control', 'location-editor', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
     { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
+    // A project's Calendar layout (calendar-clarity 4.4): the calendar's phone rules inside the project page.
+    { name: 'project-calendar', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Calendar' },
     // Custom fields (custom-fields): five columns at 768 px; below it the layout is not offered.
     { name: 'columns', path: `/project/${ids.work}`, widths: [768, 1280], overlays: ['fields-dialog'], ready: async (p) => {
       await row('Plan the team offsite')(p)
