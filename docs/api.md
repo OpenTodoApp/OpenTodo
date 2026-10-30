@@ -127,10 +127,10 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones; `?completed_after=…&completed_before=…` for [tasks completed in a range](#tasks-completed-in-a-range) |
-| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create) |
+| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create); `?default_reminder=true` adds your [default reminder](#default-reminders) |
 | POST | `/api/v1/quick-add/parse` | yes, every scope | read a quick-add line with the account's languages, projects and labels; writes nothing, so a `read` token may call it; see [Quick-add parse](#quick-add-parse) |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
-| PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
+| PATCH | `/api/v1/tasks/{id}` | yes | partial update → task; `?default_reminder=true` adds your [default reminder](#default-reminders) when the task gets a due date |
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete (to the Trash) → 204 |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects, see [Project fields](#project-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/sections…` | yes | same shape for sections, see [Sections](#sections) |
@@ -761,6 +761,17 @@ It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt
 `gone` means the push service reported the subscription expired and the server removed it; enable notifications again on that device. `failed` without `status` means the push service could not be reached. Errors: 400 `bad_request` without `deviceId`, 401 `unauthorized`, 403 `insufficient_scope` for read and agent tokens, 429 `rate_limited` after 5 tests per account in 10 minutes (counted before anything is sent), 404 `not_found` with `OPENTODO_PUSH=off`, 403 `demo_restricted` on a demo instance.
 
 `POST /api/v1/sync` accepts an optional `tzOffset` (minutes east of UTC, −840…840): the device's zone, used for the REST recomputation above.
+
+#### Default reminders
+
+Your [default reminders](default-reminders.md) are two `user_prefs` fields, written like any preference through `POST /api/v1/sync` (entity `user_prefs`, id `"me"`): `reminder_default_timed` for tasks with a time and `reminder_default_dated` for tasks with a date only. Each is the offset in minutes from the due time as a decimal string (`"-30"`, `"0"`, `"-1440"`; a date-only due counts from 09:00), or `""` for none. An empty, malformed or out-of-range value (beyond ±525600) reads as none.
+
+`POST /api/v1/tasks` and `PATCH /api/v1/tasks/{id}` take the optional query parameter `default_reminder=true|false` (default `false`, so scripts, n8n and Home Assistant behave as before). With `true`, a write that gives a task without a due date a due date adds one relative reminder with your default for that kind of due, in the same batch and with the same timestamp as the due op; its `fire_at` uses the zone your devices last reported. Nothing is added when the task is completed, deleted or a habit, already has a live relative reminder, or already had its default reminder (live or deleted). The reminder's id is derived from your account and the task, so it is added at most once per task. When a write switches the due between a date only and a time and the default reminder still has the old default's offset, it takes the other default. Any other value of the parameter answers **400 `invalid_input`** and writes nothing; the routes keep their policies (401 without credentials, 403 `insufficient_scope` for `read` tokens). `ot add`, `ot edit` and the browser extension send the parameter. With an `agent` token the [agent write tools](#agent-tokens) always apply your defaults, whatever the parameter says. CalDAV writes, calendar sync, issue import, the importer, the Markdown vault, automation rules and email capture never add one.
+
+```sh
+curl -s -X POST "$OT/api/v1/tasks?default_reminder=true" -H "Authorization: Bearer $TOKEN" \
+  -d '{"title":"Dentist","due":{"date":"2026-11-06","time":"09:00"}}'
+```
 
 ### Invitations
 

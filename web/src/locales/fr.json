@@ -5472,5 +5472,16 @@
   "At the top or the bottom of the list": "En haut ou en bas de la liste",
   "Lists sorted by date or priority keep their order.": "Les listes triées par date ou priorité gardent leur ordre.",
   "New tasks": "Nouvelles tâches",
-  "Where a task added from a list goes, on all your devices.": "Où va une tâche ajoutée depuis une liste, sur tous vos appareils."
+  "Where a task added from a list goes, on all your devices.": "Où va une tâche ajoutée depuis une liste, sur tous vos appareils.",
+  "Default reminders": "Rappels par défaut",
+  "A reminder added when a task gets a date or a time": "Un rappel ajouté quand une tâche reçoit une date ou une heure",
+  "Added when a task gets a date. You can remove it from any task.": "Ajouté quand une tâche reçoit une date. Vous pouvez le retirer de n’importe quelle tâche.",
+  "Tasks with a time": "Tâches avec une heure",
+  "Tasks with no time": "Tâches sans heure",
+  "Counted from the due time.": "Compté à partir de l’heure d’échéance.",
+  "Counted from 09:00 on the due date.": "Compté à partir de 09:00 le jour de l’échéance.",
+  "At the due time": "À l’heure d’échéance",
+  "On the day at 09:00": "Le jour même à 09:00",
+  "2 days before": "2 jours avant",
+  "At most one year before or after.": "Au plus un an avant ou après."
 }

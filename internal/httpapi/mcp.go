@@ -32,12 +32,13 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 		Audit: s.audit, Log: s.log, Exclusions: s.agentExclusions,
 		LocalToday: func() string { return localToday(s.now()) },
 		// Relative reminders follow a new due date (deadline reminders a new
-		// deadline), as for a REST write.
+		// deadline), as for a REST write, and a task that gets a due date gets
+		// the person's default reminder (default-reminders D6).
 		ExtraOps: func(ctx context.Context, uid string, c agenttools.Change, ts int64, device string) ([]opsync.Op, error) {
-			if c.Entity != "task" || c.Create {
+			if c.Entity != "task" {
 				return nil, nil
 			}
-			return s.reminderOpsForTaskAs(ctx, uid, c.EntityID, c.Patch, ts, device)
+			return s.agentReminderOps(ctx, uid, c.EntityID, c.Create, c.Patch, ts, device)
 		},
 	})
 	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log, Tools: s.agentTools, IssuesResource: s.issuesResource})

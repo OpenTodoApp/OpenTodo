@@ -179,6 +179,8 @@
       "language",
       "maps",
       "method_mode",
+      "reminder_default_dated",
+      "reminder_default_timed",
       "row_detail",
       "row_layout",
       "sidebar_destinations",

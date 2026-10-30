@@ -84,6 +84,11 @@
           "description": "a saved location's name or id, or lat,lon (edit: none clears)"
         },
         {
+          "name": "no-default-reminder",
+          "type": "bool",
+          "description": "add no default reminder when the task gets a due date (--remind also leaves it out)"
+        },
+        {
           "name": "remind",
           "type": "string_list",
           "description": "reminder without the reminder word: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)"
@@ -299,6 +304,11 @@
           "name": "location",
           "type": "string",
           "description": "a saved location's name or id, or lat,lon (edit: none clears)"
+        },
+        {
+          "name": "no-default-reminder",
+          "type": "bool",
+          "description": "add no default reminder when the task gets a due date (--remind also leaves it out)"
         }
       ],
       "writes": true,

@@ -522,6 +522,21 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 240 }
   } },
+  // Default reminders (default-reminders D8): 30 minutes before a time, 1 day before a date.
+  { name: 'settings-default-reminders', server: P, async run(p) {
+    await go(p, plainBase, '/settings/notifications/push', () => p.getByRole('heading', { name: 'Push notifications', level: 1 }).waitFor())
+    await p.evaluate(async () => {
+      const op = (field, value) => ({ id: `docs-${field}`, entity: 'user_prefs', entityId: 'me', field, value, ts: Date.now(), device: 'docs' })
+      await fetch('/api/v1/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device: 'docs', cursor: 0, ops: [op('reminder_default_timed', '-30'), op('reminder_default_dated', '-1440')] }) })
+    })
+    await go(p, plainBase, '/settings/notifications/push', () => p.locator('#default-reminder-timed').waitFor())
+    await p.waitForFunction(() => document.querySelector('#default-reminder-timed')?.value === '-30', null, { timeout: 20000 })
+    const h = p.getByRole('heading', { level: 2, name: 'Default reminders' }); await h.waitFor()
+    await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
+    const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
+    return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 230 }
+  } },
   // Delivery channels (notification-channels): one ntfy channel added through the API.
   { name: 'settings-notification-channels', server: P, async run(p) {
     await go(p, plainBase, '/settings/notifications/channels', () => p.getByRole('heading', { name: 'Delivery channels', level: 1 }).waitFor())
