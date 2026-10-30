@@ -11,7 +11,7 @@ import { loadSnapshot } from './data'
 import { manifest, manifestSkill, type ManifestTool } from './manifest'
 import { PLANNERS } from './plan'
 import { systemPrompt } from './prompt'
-import { providerFor, ProviderError, type Fetch, type Message, type Provider, type ToolCall } from './providers'
+import { deviceCode, providerFor, ProviderError, type Fetch, type Message, type Provider, type ToolCall } from './providers'
 import { getTask, listProjects, listTasks, searchTasks, todaySummary } from './read'
 import type { DeviceSetup } from './settings'
 
@@ -165,7 +165,7 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
     } catch (err) {
       if (signal?.aborted) throw err
       // The panel words device failures itself: the key is this device's, and a block may need a reload.
-      if (err instanceof ProviderError) return failed(err.code === 'provider_auth' ? 'device_auth' : err.code === 'blocked' ? 'device_blocked' : err.code, err.message)
+      if (err instanceof ProviderError) return failed(deviceCode(err.code), err.message)
       return failed('provider_error', 'the provider could not answer')
     }
     input += r.input

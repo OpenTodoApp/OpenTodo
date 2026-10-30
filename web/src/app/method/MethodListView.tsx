@@ -98,7 +98,7 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
                         blockedBy={blocked.get(task.id)} breadcrumb={g.notes?.get(task.id) ?? null}
                         onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
                         onOpen={(e) => { setSelected(key); openFromRow(task.id, e) }}
-                        {...bulk.rowProps(task.id)} />
+                        {...bulk.rowProps(task)} />
                     )
                   })}
                 </ul>

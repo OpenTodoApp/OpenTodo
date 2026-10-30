@@ -36,6 +36,13 @@ describe('OwnerAssistantSettings', () => {
       tests={{ compatible: { ok: false, code: 'no_tool_support', message: 'the endpoint rejects tool definitions' } }} onChange={noop} onSave={noop} onTest={noop} />)
     expect(html).toContain('no_tool_support')
   })
+  it('reports the provider\'s own 404 like any other provider result', () => {
+    const message = 'the provider has no such model or endpoint (HTTP 404): check the model id and the base URL (it usually ends in /v1)'
+    const html = renderToStaticMarkup(<OwnerAssistantSettings saved={saved} draft={draftFrom(saved)} connected busy={false} error={null} message={null}
+      tests={{ compatible: { ok: false, code: 'provider_not_found', status: 404, message } }} onChange={noop} onSave={noop} onTest={noop} />)
+    expect(html).toContain('provider_not_found')
+    expect(html).toContain('it usually ends in /v1')
+  })
   it('sends keys only when typed or removed', () => {
     const d = draftFrom(saved)
     expect(inputFrom(d).keys).toEqual({})

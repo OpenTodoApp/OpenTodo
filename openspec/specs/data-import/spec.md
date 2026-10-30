@@ -2,7 +2,9 @@
 
 ## Purpose
 Defines how data enters OpenTodo from files: the accepted formats and their field mapping, the dry-run preview, duplicate detection, the import job with its limits and per-row error reporting, write-through to the operation log so imports sync everywhere, and undo of a whole import.
+
 ## Requirements
+
 ### Requirement: Accepted import formats
 The server SHALL import the app's own JSON export (`opentodo-export` version 1 and later), CSV with the documented column mapping, JSON exports of other task managers through named importer profiles, and the export files of named apps (`todoist-csv`, `todoist-backup`, `ticktick-csv`, `linear-csv`, `things-db`, `google-tasks-json`, `trello-json`, `asana-csv`, `microsoft-todo-json`, `apple-reminders-json`, `anydo-json`), all documented in `docs/import.md`. The format SHALL be detected from the file content and the detected format SHALL be shown and overridable before anything is written. A named format SHALL be detected only on a signature distinctive of that app's file, never on a product name alone, so that no file of one format is read as another and the generic JSON and CSV profiles keep every file they accepted before.
 
@@ -136,7 +138,7 @@ Settings SHALL offer an Import section with a file picker, the detected format a
 - **THEN** the screen explains that import needs a connection, the file picker is disabled, and the previously loaded job list is still visible
 
 ### Requirement: Own export completeness
-Importing an own export SHALL also recreate its sections, reminders, saved views, attachments and time entries with their original ids, store recurrence canonical and carry every other schema field, and SHALL place every project, label, view and task in a workspace: an exported workspace the importing account owns (matched by id, then by name ignoring case) keeps its items; any other exported workspace is created for the importing account when it was the exporter's own and the account has room under its workspace limit, and otherwise its items go to the importing account's default workspace with a note naming the workspace. Members and groups are never imported; the preview notes their count. Time entries whose `user_id` is not the importing account SHALL be dropped with a warning that counts them, like another account as assignee; a running entry SHALL be imported as it is. File attachments SHALL come with their bytes from the ZIP export, within the account's limits, and be counted in a note for the JSON export alone. Comments SHALL NOT be imported; the preview notes their count. Another account as assignee SHALL be dropped with a warning. Writes are ops.
+Importing an own export SHALL also recreate its sections, reminders, saved views, attachments and time entries with their original ids, store recurrence canonical and carry every other schema field, and SHALL place every project, label, view and task in a workspace: an exported workspace the importing account owns (matched by id, then by name ignoring case) keeps its items; any other exported workspace is created for the importing account when it was the exporter's own and the account has room under its workspace limit, and otherwise its items go to the importing account's default workspace with a note naming the workspace. Members and groups are never imported; the preview notes their count. Time entries whose `user_id` is not the importing account SHALL be dropped with a warning that counts them, like another account as assignee; a running entry SHALL be imported as it is. File attachments SHALL come with their bytes from the ZIP export, within the account's limits, and be counted in a note for the JSON export alone. A file whose id already names a file stored on the server SHALL be linked only when the importing account itself sees that attachment, uploaded, with the same size and digest, and the stored bytes match; otherwise the row SHALL be refused with an error on its row, and the stored file and every other account's attachment stay unchanged. Comments SHALL NOT be imported; the preview notes their count. Another account as assignee SHALL be dropped with a warning. Writes are ops.
 
 #### Scenario: Round trip keeps sections, series and reminders
 - **WHEN** an export holding sections, a recurring task with occurrence records and future reminders is imported into an empty account
@@ -149,6 +151,10 @@ Importing an own export SHALL also recreate its sections, reminders, saved views
 #### Scenario: Offline device receives the restored data
 - **WHEN** the import finishes while a device of the account is offline and the device later syncs
 - **THEN** it receives the sections, reminders and recurring tasks as ordinary operations and converges under last-writer-wins
+
+#### Scenario: An attachment id of another account
+- **WHEN** a ZIP export is imported whose file attachment has the id of an uploaded file in another account's private task
+- **THEN** that row is refused with an error stating another file with this id is stored on this server, the importing account sees no attachment with that id, and the other account's file is unchanged
 
 #### Scenario: ZIP export restores files
 - **WHEN** a ZIP export holding 5 attachment files is imported into an empty account
@@ -406,7 +412,7 @@ A Linear issue SHALL be completed when it was completed or canceled, with cancel
 - **THEN** no definition is created and the values are written to the existing field
 
 ### Requirement: Things database
-The server SHALL accept the `main.sqlite` file of a Things 3 database, alone or inside a ZIP of the `Things Database.thingsdatabase` folder, and `docs/import.md` SHALL explain how to copy it with Things closed. The file SHALL be opened read-only, only Things' known tables SHALL be read, it SHALL be deleted after the preview or import, and a file that is not a Things database of a supported schema version SHALL be refused with a 400 error naming the reason.
+The server SHALL accept the `main.sqlite` file of a Things 3 database, alone or inside a ZIP of the `Things Database.thingsdatabase` folder, and `docs/import.md` SHALL explain how to copy it with Things closed. The file SHALL be opened read-only, only Things' known tables SHALL be read, it SHALL be deleted after the preview or import, and a file that is not a Things database of a supported schema version SHALL be refused with a 400 error naming the reason. Because the file is untrusted input, the server SHALL NOT run expressions stored in it: a file whose Things tables are virtual tables or have generated columns SHALL be refused with a 400 error before any row is read, a value longer than 1 MB SHALL end the read with a 400 error, and reading SHALL stop after 30 seconds. In every refusal nothing is written.
 
 #### Scenario: Copy of the database
 - **WHEN** the user uploads `main.sqlite` copied from Things with the app closed
@@ -415,6 +421,14 @@ The server SHALL accept the `main.sqlite` file of a Things 3 database, alone or 
 #### Scenario: Some other SQLite file
 - **WHEN** the user uploads a SQLite file without Things' tables
 - **THEN** the preview is refused with a 400 error stating it is not a Things database, and nothing is written
+
+#### Scenario: A table that computes its values
+- **WHEN** the user uploads a SQLite file with Things' tables in which `TMTag` has a generated column
+- **THEN** the preview is refused with a 400 error stating it is not a Things database because `TMTag` has generated columns, the column's expression never runs, and nothing is written
+
+#### Scenario: An oversized value
+- **WHEN** the user uploads a Things database in which one to-do's notes are longer than 1 MB
+- **THEN** the preview is refused with a 400 error, and nothing is written
 
 ### Requirement: Things structure
 A Things database SHALL map areas to parent projects, projects to projects, headings to sections, to-dos to tasks, checklist items to subtasks, tags to labels and notes to the description. Trashed items SHALL be skipped.
@@ -715,4 +729,3 @@ A row of a JSON file that carries no id of its own SHALL get a source id derived
 #### Scenario: Lists without ids
 - **WHEN** a user imports `{"lists": [{"title": "Work", …}]}` without ids, then a file whose list "Personal" has no id
 - **THEN** "Personal" becomes its own project, and its tasks are not put into "Work"
-

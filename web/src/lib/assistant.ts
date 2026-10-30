@@ -478,6 +478,8 @@ export function describeStreamError(code: string, message: string): string {
     case 'timeout': return t('The answer took too long and was stopped.')
     // On-device turns (assistant-on-device D9).
     case 'device_auth': return t('The provider rejected the API key saved on this device. Change it with “Change provider or key” or in Settings → Integrations → Assistant.')
+    case 'device_not_found': return t('The provider has no such model or endpoint. Check the model id and, for a model server, its address (it usually ends in /v1) with “Change provider or key” or in Settings → Integrations → Assistant.')
+    case 'device_no_tool_support': return t('The provider answers, but this model does not support tool use, which the assistant needs. Choose another model.')
     case 'device_blocked': return t('This page could not reach the provider. If the server owner allowed it a moment ago, reload the page. A model server must also allow requests from this app’s address.')
   }
   return message ? message.charAt(0).toUpperCase() + message.slice(1) + '.' : t('The model provider could not answer.')

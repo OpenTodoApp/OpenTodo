@@ -39,6 +39,7 @@ Some logic runs on the server and in the web app: the server needs it for REST, 
 | On-device assistant tools | `internal/assistant` | `web/src/lib/assistantDevice` | `web/src/lib/assistantDevice/manifest.json` | `internal/assistant/manifest_test.go` | `web/src/lib/assistantDevice/manifest.ts` | `go test ./internal/assistant -run Device -update` |
 | On-device assistant planners | `internal/assistant`, `internal/agenttools` | `web/src/lib/assistantDevice/plan.ts` | `web/src/lib/assistantDevice/plan.vectors.json` | `internal/assistant/manifest_test.go` | `web/src/lib/assistantDevice/tools.test.ts` | `go test ./internal/assistant -run Device -update` |
 | On-device assistant prompt | `internal/assistant` | `web/src/lib/assistantDevice/prompt.ts` | `web/src/lib/assistantDevice/prompt.vectors.json` | `internal/assistant/manifest_test.go` | `web/src/lib/assistantDevice/loop.test.ts` | `go test ./internal/assistant -run Device -update` |
+| Provider error reading (Chat Completions) | `internal/assistant` (`chatError`) | `web/src/lib/assistantDevice/providers.ts` (`statusError`) | `web/src/lib/assistantDevice/errors.vectors.json` | `internal/assistant/errors_test.go` | `web/src/lib/assistantDevice/providers.test.ts` | `go test ./internal/assistant -run Device -update` |
 
 Thin vector sets give false confidence: when you change one of these modules, add the case you fixed or added to its fixture first.
 

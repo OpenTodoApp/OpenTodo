@@ -18,6 +18,10 @@ export interface RowActions {
   more: (id: string, from: HTMLElement) => void
   /** Shows or hides the task's details under its row (row-expand D4). */
   expand: (id: string) => void
+  /** A right-click on this row: the actions menu at the pointer (task-row-context-menu). */
+  context: (e: React.MouseEvent, task: Task) => void
+  /** A touch hold's release: the same menu at the finger, with no event to guard (task-row-context-menu). */
+  contextAt: (task: Task, x: number, y: number, row: HTMLElement) => void
 }
 
 type TaskListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
@@ -46,6 +50,8 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
       task={task}
       labels={labels}
       onPointerDown={draggable ? (e) => actions.drag(e, task) : undefined}
+      onContextMenu={(e) => actions.context(e, task)}
+      onRowMenu={(x, y, row) => actions.contextAt(task, x, y, row)}
       dropKey={reorderable ? `task:${task.id}` : undefined}
       onToggle={() => actions.toggle(task)}
       onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}

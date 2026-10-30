@@ -69,8 +69,19 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
     ...(n === 1 ? [{ items: trackingItem(d.tasks[0], d.runningTask, d.memberships) }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
     // Beside a row its own Priority and Schedule buttons already offer these.
-    ...(besideRow ? [] : [{ label: t('Priority'), items: ([1, 2, 3, 4] as Priority[]).map((p) => ({ kind: 'action' as const, id: `p${p}`, label: t('Priority {p}', { p }), icon: 'flag' as const, shortcut: String(p), onSelect: run({ kind: 'priority', priority: p }) })) }]),
+    // Priority and Date are one row each (a submenu), so the menu fits on the screen;
+    // beside a row its own Priority and Schedule buttons already offer them.
     { items: [
+      ...(besideRow ? [] : [
+        { kind: 'submenu', id: 'priority', label: t('Priority'), icon: 'flag', items: ([1, 2, 3, 4] as Priority[]).map((p) => ({ kind: 'action' as const, id: `p${p}`, label: t('Priority {p}', { p }), icon: 'flag' as const, shortcut: String(p), onSelect: run({ kind: 'priority', priority: p }) })) },
+        { kind: 'submenu', id: 'date', label: t('Date'), icon: 'calendar-days', items: [
+          { kind: 'action', id: 'today', label: t('Today'), icon: 'calendar-check', onSelect: run({ kind: 'due', pick: 'today' }) },
+          { kind: 'action', id: 'tomorrow', label: t('Tomorrow'), icon: 'calendar-days', onSelect: run({ kind: 'due', pick: 'tomorrow' }) },
+          { kind: 'action', id: 'next-week', label: t('Next week'), icon: 'calendar-range', onSelect: run({ kind: 'due', pick: 'next-week' }) },
+          { kind: 'action', id: 'no-date', label: t('No date'), icon: 'x', onSelect: run({ kind: 'due', pick: null }) },
+          { kind: 'action', id: 'pick-date', label: t('Pick a date…'), icon: 'calendar-days', onSelect: a.pickDate },
+        ] },
+      ] as ActionItem[]),
       { kind: 'picker', id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels'), disabled: live.length === 0, reason: t('There are no labels yet'), picker: {
         title: t('Labels'), placeholder: t('Add to all, or remove from all…'), source: live, multiple: true, selected: common, rankContext: 'label',
         getKey: (l: Label) => l.id, getLabel: (l: Label) => l.name,
@@ -80,13 +91,6 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
         onPick: (l: Label) => { void labelToggle(ids, l.id) },
       } },
     ] },
-    ...(besideRow ? [] : [{ label: t('Date'), items: [
-      { kind: 'action', id: 'today', label: t('Today'), icon: 'calendar-check', onSelect: run({ kind: 'due', pick: 'today' }) },
-      { kind: 'action', id: 'tomorrow', label: t('Tomorrow'), icon: 'calendar-days', onSelect: run({ kind: 'due', pick: 'tomorrow' }) },
-      { kind: 'action', id: 'next-week', label: t('Next week'), icon: 'calendar-range', onSelect: run({ kind: 'due', pick: 'next-week' }) },
-      { kind: 'action', id: 'no-date', label: t('No date'), icon: 'x', onSelect: run({ kind: 'due', pick: null }) },
-      { kind: 'action', id: 'pick-date', label: t('Pick a date…'), icon: 'calendar-days', onSelect: a.pickDate },
-    ] }] as ActionGroup[]),
     { items: [
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
@@ -134,12 +138,14 @@ function useBulkData(ids: readonly string[]): Data {
  * The Actions menu for `ids`. `startPicker` opens it straight into a picker
  * ("labels" for `L`, "assign" for Shift+A on a selection).
  */
-export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, startPicker = null, onApplied, anchor }: {
+export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, onApplied, anchor }: {
   ids: readonly string[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
   trigger?: React.ReactNode
   triggerClassName?: string
+  /** Extra attributes on the trigger button (the pointer position of a right-click menu). */
+  triggerProps?: React.ComponentProps<typeof ActionMenu>['triggerProps']
   startPicker?: string | null
   onApplied?: () => void
   /** Opened from a row's More button: placed there, without the groups the row's own buttons offer. */
@@ -159,7 +165,7 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   return (
     <>
       <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} onOpenChange={onOpenChange}
-        trigger={trigger} triggerClassName={triggerClassName} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
+        trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
       {review && <BulkReview title={review.title} plan={review.plan} onClose={() => setReview(null)} onApplied={onApplied} />}
       {dating && (
         <Dialog title={t('Date for {tasks}', { tasks: tasksWord(n) })} onClose={() => setDating(false)}>

@@ -2,7 +2,9 @@
 
 ## Purpose
 Lets the user tick several tasks in a list and complete, prioritise, label, reschedule, move, assign or trash them in one step, written as one batch of operations that can be undone in one step.
+
 ## Requirements
+
 ### Requirement: Select tasks with the keyboard
 In a task list `x` or Space SHALL tick or untick the cursor row, `Shift+↓`/`Shift+↑` (also `Shift+J`/`Shift+K` without Vim keybindings) SHALL move the cursor and select the range from where ticking started, `Ctrl`/`⌘`+`A` SHALL tick every row once one is ticked, and Escape SHALL clear the ticks before the cursor. The cursor stays distinct from the ticked set; read-only tasks are never ticked. The selection is device interface state: no data, nothing synced.
 
@@ -27,7 +29,7 @@ In a task list `x` or Space SHALL tick or untick the cursor row, `Shift+↓`/`Sh
 - **THEN** nothing is ticked and the page scrolls as usual
 
 ### Requirement: Select with a pointer or on touch
-Each row SHALL show a selection checkbox whenever any row is ticked; it SHALL NOT appear on hover or on the cursor row alone. With a pointer, `Ctrl`/`⌘`+click on a row SHALL tick it without opening it and Shift+click SHALL select the range from where ticking started. On a touch screen a long press on a row SHALL tick it, show the checkboxes on every row and the selection bar, and give one short haptic pulse where the device supports it; "Select tasks" in the page's overflow menu SHALL show the checkboxes without ticking a row. A long press on a row that is already ticked, followed by movement, SHALL start the drag of the selection as before. The checkboxes SHALL stay shown until Done in the selection bar, or until the selection is cleared or used. Checkboxes SHALL be at least 48×48 px on touch screens and announce their state. Selection is device state and never an operation; it works offline and is never synced.
+Each row SHALL show a selection checkbox whenever any row is ticked; it SHALL NOT appear on hover or on the cursor row alone. With a pointer, `Ctrl`/`⌘`+click on a row SHALL tick it without opening it and Shift+click SHALL select the range from where ticking started. On a touch screen a long press on a row SHALL tick it, show the checkboxes on every row and the selection bar, and give one short haptic pulse where the device supports it; "Select tasks" in the page's overflow menu SHALL show the checkboxes without ticking a row. The press SHALL arm during the hold interval with held feedback on the row, and a long press on a row that is already ticked SHALL arm without ticking anything new. A long press on a row that is already ticked, followed by movement, SHALL start the drag of the selection once the hold has elapsed: movement before the hold is a scroll, and the drag lifts only on movement after it, never under a still finger. The checkboxes SHALL stay shown until Done in the selection bar, or until the selection is cleared or used. Checkboxes SHALL be at least 48×48 px on touch screens and announce their state. Selection is device state and never an operation; it works offline and is never synced.
 
 #### Scenario: Range by Shift+click
 - **WHEN** the user `Ctrl`+clicks the first row and Shift+clicks the fifth row
@@ -46,8 +48,12 @@ Each row SHALL show a selection checkbox whenever any row is ticked; it SHALL NO
 - **THEN** the checkboxes hide again, the two rows stay ticked and the bar stays shown until the selection is cleared or used
 
 #### Scenario: Hold and move drags the selection
-- **WHEN** two rows are ticked and the user presses and holds one of them, then moves the finger
-- **THEN** the drag of both tasks starts, as it did before this change, and no third row is ticked
+- **WHEN** two rows are ticked and the user presses and holds one of them, waits for the hold to elapse, then moves the finger
+- **THEN** the drag of both tasks starts with its usual feedback, as it did before this change, and no third row is ticked
+
+#### Scenario: A move before the hold is a scroll
+- **WHEN** a user on a phone presses a row and moves past the drag threshold before the hold interval elapses
+- **THEN** the page scrolls (or the swipe runs), the row is not ticked and no drag starts
 
 ### Requirement: Where selection is available
 Selection SHALL work in the Inbox, Today, Upcoming, Assigned to me, Completed, project lists and boards, label views, the Filter view and saved views. On a board `Shift+↓`/`↑` extend within the column. It SHALL NOT be offered on dashboards or in the Day and Week calendars. Navigating to another view SHALL clear the selection, and a ticked task that leaves the list (completed, moved, filtered out) SHALL leave the selection.
@@ -183,4 +189,3 @@ While tasks are ticked, the selection bar SHALL stay visible as the list scrolls
 #### Scenario: Keyboard cursor under the bar
 - **WHEN** tasks are ticked and the user moves up the list with the arrow keys
 - **THEN** every selected row stays fully visible below the selection bar
-
