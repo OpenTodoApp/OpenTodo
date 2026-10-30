@@ -1,5 +1,5 @@
 {
-  "about": "Shared vectors for the Open Loops rules (OpenSpec change open-loops-method, design D3): web/src/lib/method/rules.ts and internal/digest WithoutNextAction both evaluate this file. Change them together.",
+  "about": "Shared vectors for the Open Loops rules (OpenSpec change open-loops-method, design D3): web/src/lib/method/rules.ts and internal/digest WithoutNextAction both evaluate this file. Change them together. Projects carry flow_mode (OpenSpec change project-flow-modes): areas are never without a next action, and a sequential project offers one step at a time.",
   "me": "me",
   "today": "2026-10-18",
   "now": 1792324800000,
@@ -69,6 +69,30 @@
       "name": "Gone",
       "position": 12,
       "deleted_at": 1792238400000
+    },
+    {
+      "id": "moving",
+      "name": "Moving",
+      "position": 13,
+      "flow_mode": "sequential"
+    },
+    {
+      "id": "handover",
+      "name": "Handover",
+      "position": 14,
+      "flow_mode": "sequential"
+    },
+    {
+      "id": "finances",
+      "name": "Finances",
+      "position": 15,
+      "flow_mode": "area"
+    },
+    {
+      "id": "chores",
+      "name": "Chores",
+      "position": 16,
+      "flow_mode": "area"
     }
   ],
   "sections": [
@@ -333,6 +357,110 @@
       "assignee_id": null,
       "section_id": null,
       "deleted_at": 1792238400000
+    },
+    {
+      "id": "mv1",
+      "project_id": "moving",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "mv2",
+      "project_id": "moving",
+      "parent_id": null,
+      "position": 2,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "mv3",
+      "project_id": "moving",
+      "parent_id": null,
+      "position": 3,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "ho1",
+      "project_id": "handover",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": "ana",
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "ho2",
+      "project_id": "handover",
+      "parent_id": null,
+      "position": 2,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "fi1",
+      "project_id": "finances",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": 1792152000000,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "ch1",
+      "project_id": "chores",
+      "parent_id": null,
+      "position": 1,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": "someday",
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
+    },
+    {
+      "id": "ch2",
+      "project_id": "chores",
+      "parent_id": null,
+      "position": 2,
+      "created_at": 1791892800000,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null
     }
   ],
   "expected": {
@@ -349,7 +477,11 @@
       "taxes": "t1",
       "move": "m2",
       "fixed": "f1",
-      "mine": "me1"
+      "mine": "me1",
+      "moving": "mv1",
+      "handover": null,
+      "finances": null,
+      "chores": "ch2"
     },
     "stalled": [
       "taxes"
@@ -357,7 +489,8 @@
     "waiting": [
       "g1",
       "h1",
-      "i1"
+      "i1",
+      "ho1"
     ]
   }
 }

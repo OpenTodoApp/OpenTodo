@@ -1,0 +1,280 @@
+{
+  "about": "Shared vectors for the available-task rule (OpenSpec change project-flow-modes): web/src/lib/flow.ts and internal/flow both evaluate this file; change them together. Missing task fields read as their defaults. expected.available lists every available task; expected.waits maps every task waiting in sequence to what holds it (task:<id> or section:<id>); every other task is neither.",
+  "cases": [
+    {
+      "name": "sequential project: one step at a time, subtasks follow their step",
+      "today": "2026-10-30",
+      "projects": [{ "id": "move", "flow_mode": "sequential" }],
+      "sections": [],
+      "tasks": [
+        { "id": "van", "project_id": "move", "position": 1 },
+        { "id": "van-call", "project_id": "move", "parent_id": "van", "position": 1 },
+        { "id": "pack", "project_id": "move", "position": 2 },
+        { "id": "boxes", "project_id": "move", "parent_id": "pack", "position": 1 },
+        { "id": "keys", "project_id": "move", "position": 3 }
+      ],
+      "expected": {
+        "available": ["van", "van-call"],
+        "waits": { "pack": "task:van", "boxes": "task:van", "keys": "task:van" }
+      }
+    },
+    {
+      "name": "sequential project: completing a step offers the next",
+      "today": "2026-10-30",
+      "projects": [{ "id": "move", "flow_mode": "sequential" }],
+      "sections": [],
+      "tasks": [
+        { "id": "van", "project_id": "move", "position": 1, "completed_at": 1790000000000 },
+        { "id": "van-call", "project_id": "move", "parent_id": "van", "position": 1 },
+        { "id": "pack", "project_id": "move", "position": 2 },
+        { "id": "boxes", "project_id": "move", "parent_id": "pack", "position": 1 },
+        { "id": "keys", "project_id": "move", "position": 3 }
+      ],
+      "expected": {
+        "available": ["boxes", "pack", "van-call"],
+        "waits": { "keys": "task:pack" }
+      }
+    },
+    {
+      "name": "sequential project: a reorder decides, ties broken by id",
+      "today": "2026-10-30",
+      "projects": [{ "id": "move", "flow_mode": "sequential" }],
+      "sections": [],
+      "tasks": [
+        { "id": "van", "project_id": "move", "position": 1, "completed_at": 1790000000000 },
+        { "id": "pack", "project_id": "move", "position": 2 },
+        { "id": "keys", "project_id": "move", "position": 1.5 },
+        { "id": "b-same", "project_id": "move", "position": 7 },
+        { "id": "a-same", "project_id": "move", "position": 7 }
+      ],
+      "expected": {
+        "available": ["keys"],
+        "waits": { "pack": "task:keys", "a-same": "task:keys", "b-same": "task:keys" }
+      }
+    },
+    {
+      "name": "sequential project: a parallel section is one step, a following section is one by one",
+      "today": "2026-10-30",
+      "projects": [{ "id": "launch", "flow_mode": "sequential" }],
+      "sections": [
+        { "id": "prepare", "project_id": "launch", "position": 1, "flow_mode": "parallel" },
+        { "id": "ship", "project_id": "launch", "position": 2, "flow_mode": "" }
+      ],
+      "tasks": [
+        { "id": "p1", "project_id": "launch", "section_id": "prepare", "position": 1 },
+        { "id": "p2", "project_id": "launch", "section_id": "prepare", "position": 2 },
+        { "id": "p3", "project_id": "launch", "section_id": "prepare", "position": 3 },
+        { "id": "s1", "project_id": "launch", "section_id": "ship", "position": 1 },
+        { "id": "s2", "project_id": "launch", "section_id": "ship", "position": 2 }
+      ],
+      "expected": {
+        "available": ["p1", "p2", "p3"],
+        "waits": { "s1": "section:prepare", "s2": "section:prepare" }
+      }
+    },
+    {
+      "name": "sequential project: once the parallel section is done, the next section offers its first task",
+      "today": "2026-10-30",
+      "projects": [{ "id": "launch", "flow_mode": "sequential" }],
+      "sections": [
+        { "id": "prepare", "project_id": "launch", "position": 1, "flow_mode": "parallel" },
+        { "id": "ship", "project_id": "launch", "position": 2 }
+      ],
+      "tasks": [
+        { "id": "p1", "project_id": "launch", "section_id": "prepare", "position": 1, "completed_at": 1790000000000 },
+        { "id": "p2", "project_id": "launch", "section_id": "prepare", "position": 2, "completed_at": 1790000000000 },
+        { "id": "p3", "project_id": "launch", "section_id": "prepare", "position": 3, "deleted_at": 1790000000000 },
+        { "id": "s1", "project_id": "launch", "section_id": "ship", "position": 1 },
+        { "id": "s2", "project_id": "launch", "section_id": "ship", "position": 2 }
+      ],
+      "expected": {
+        "available": ["s1"],
+        "waits": { "s2": "task:s1" }
+      }
+    },
+    {
+      "name": "sequential project: a sequential section holds the sections after it; deleted sections do not count",
+      "today": "2026-10-30",
+      "projects": [{ "id": "trip", "flow_mode": "sequential" }],
+      "sections": [
+        { "id": "b", "project_id": "trip", "position": 2 },
+        { "id": "a", "project_id": "trip", "position": 1, "flow_mode": "sequential" },
+        { "id": "gone", "project_id": "trip", "position": 0, "deleted_at": 1790000000000 }
+      ],
+      "tasks": [
+        { "id": "a1", "project_id": "trip", "section_id": "a", "position": 1 },
+        { "id": "a2", "project_id": "trip", "section_id": "a", "position": 2 },
+        { "id": "b1", "project_id": "trip", "section_id": "b", "position": 1 },
+        { "id": "loose", "project_id": "trip", "section_id": "gone", "position": 9, "completed_at": 1790000000000 }
+      ],
+      "expected": {
+        "available": ["a1"],
+        "waits": { "a2": "task:a1", "b1": "section:a" }
+      }
+    },
+    {
+      "name": "parallel project: only a sequential section constrains",
+      "today": "2026-10-30",
+      "projects": [{ "id": "home", "flow_mode": "" }],
+      "sections": [
+        { "id": "paint", "project_id": "home", "position": 1, "flow_mode": "sequential" },
+        { "id": "misc", "project_id": "home", "position": 2 },
+        { "id": "odd", "project_id": "home", "position": 3, "flow_mode": "area" }
+      ],
+      "tasks": [
+        { "id": "h0", "project_id": "home", "position": 1 },
+        { "id": "h1", "project_id": "home", "position": 2 },
+        { "id": "buy", "project_id": "home", "section_id": "paint", "position": 1 },
+        { "id": "tape", "project_id": "home", "section_id": "paint", "position": 2 },
+        { "id": "roll", "project_id": "home", "section_id": "paint", "position": 3 },
+        { "id": "m1", "project_id": "home", "section_id": "misc", "position": 1 },
+        { "id": "m2", "project_id": "home", "section_id": "misc", "position": 2 },
+        { "id": "o1", "project_id": "home", "section_id": "odd", "position": 1 },
+        { "id": "o2", "project_id": "home", "section_id": "odd", "position": 2 }
+      ],
+      "expected": {
+        "available": ["buy", "h0", "h1", "m1", "m2", "o1", "o2"],
+        "waits": { "tape": "task:buy", "roll": "task:buy" }
+      }
+    },
+    {
+      "name": "area: works like a parallel project, following sections read as parallel",
+      "today": "2026-10-30",
+      "projects": [{ "id": "finances", "flow_mode": "area" }],
+      "sections": [
+        { "id": "bills", "project_id": "finances", "position": 1 },
+        { "id": "tax", "project_id": "finances", "position": 2, "flow_mode": "sequential" }
+      ],
+      "tasks": [
+        { "id": "f1", "project_id": "finances", "position": 1 },
+        { "id": "f2", "project_id": "finances", "position": 2 },
+        { "id": "bill1", "project_id": "finances", "section_id": "bills", "position": 1 },
+        { "id": "bill2", "project_id": "finances", "section_id": "bills", "position": 2 },
+        { "id": "tax1", "project_id": "finances", "section_id": "tax", "position": 1 },
+        { "id": "tax2", "project_id": "finances", "section_id": "tax", "position": 2 }
+      ],
+      "expected": {
+        "available": ["bill1", "bill2", "f1", "f2", "tax1"],
+        "waits": { "tax2": "task:tax1" }
+      }
+    },
+    {
+      "name": "unknown flow values read as the defaults",
+      "today": "2026-10-30",
+      "projects": [{ "id": "new", "flow_mode": "staged" }],
+      "sections": [{ "id": "s", "project_id": "new", "position": 1, "flow_mode": "checklist" }],
+      "tasks": [
+        { "id": "n1", "project_id": "new", "position": 1 },
+        { "id": "n2", "project_id": "new", "position": 2 },
+        { "id": "n3", "project_id": "new", "section_id": "s", "position": 1 },
+        { "id": "n4", "project_id": "new", "section_id": "s", "position": 2 }
+      ],
+      "expected": {
+        "available": ["n1", "n2", "n3", "n4"],
+        "waits": {}
+      }
+    },
+    {
+      "name": "skipped: recurring tasks, habits and Someday; deferred holds",
+      "today": "2026-10-30",
+      "projects": [{ "id": "plants", "flow_mode": "sequential" }],
+      "sections": [],
+      "tasks": [
+        { "id": "water", "project_id": "plants", "position": 1, "recurrence": { "freq": "weekly", "interval": 1 } },
+        { "id": "stretch", "project_id": "plants", "position": 2, "habit": true, "recurrence": { "freq": "daily", "interval": 1 } },
+        { "id": "maybe", "project_id": "plants", "position": 3, "start": "someday" },
+        { "id": "repot", "project_id": "plants", "position": 4, "start": "2026-11-02" },
+        { "id": "feed", "project_id": "plants", "position": 5 },
+        { "id": "water-later", "project_id": "plants", "position": 6, "recurrence": { "freq": "weekly", "interval": 1 } }
+      ],
+      "expected": {
+        "available": ["stretch", "water", "water-later"],
+        "waits": { "feed": "task:repot" }
+      }
+    },
+    {
+      "name": "deferred step becomes available on its start day",
+      "today": "2026-11-02",
+      "projects": [{ "id": "plants", "flow_mode": "sequential" }],
+      "sections": [],
+      "tasks": [
+        { "id": "repot", "project_id": "plants", "position": 4, "start": "2026-11-02" },
+        { "id": "feed", "project_id": "plants", "position": 5 },
+        { "id": "later", "project_id": "other", "position": 1, "start": "2026-11-03" }
+      ],
+      "expected": {
+        "available": ["repot"],
+        "waits": { "feed": "task:repot" }
+      }
+    },
+    {
+      "name": "blocked and delegated steps hold the sequence",
+      "today": "2026-10-30",
+      "projects": [{ "id": "seq", "flow_mode": "sequential" }, { "id": "par" }],
+      "sections": [],
+      "tasks": [
+        { "id": "quote", "project_id": "par", "position": 1 },
+        { "id": "order", "project_id": "seq", "position": 1, "blocked_by": ["quote"] },
+        { "id": "fit", "project_id": "seq", "position": 2 },
+        { "id": "ana", "project_id": "seq2", "position": 1, "assignee_id": "ana" },
+        { "id": "after-ana", "project_id": "seq2", "position": 2 },
+        { "id": "done-blocker", "project_id": "par", "position": 2, "blocked_by": ["closed", "unknown"] },
+        { "id": "closed", "project_id": "par", "position": 3, "completed_at": 1790000000000 }
+      ],
+      "expected": {
+        "available": ["ana", "after-ana", "done-blocker", "quote"],
+        "waits": { "fit": "task:order" }
+      }
+    },
+    {
+      "name": "delegated step in a sequential project holds it, but stays available itself",
+      "today": "2026-10-30",
+      "projects": [{ "id": "seq2", "flow_mode": "sequential" }],
+      "sections": [],
+      "tasks": [
+        { "id": "ana", "project_id": "seq2", "position": 1, "assignee_id": "ana" },
+        { "id": "after-ana", "project_id": "seq2", "position": 2 }
+      ],
+      "expected": {
+        "available": ["ana"],
+        "waits": { "after-ana": "task:ana" }
+      }
+    },
+    {
+      "name": "tasks without a project never wait",
+      "today": "2026-10-30",
+      "projects": [],
+      "sections": [],
+      "tasks": [
+        { "id": "loose1", "position": 1 },
+        { "id": "loose2", "position": 2, "blocked_by": ["loose1"] },
+        { "id": "loose3", "position": 3, "start": "someday" },
+        { "id": "loose4", "position": 4, "deleted_at": 1790000000000 }
+      ],
+      "expected": {
+        "available": ["loose1"],
+        "waits": {}
+      }
+    },
+    {
+      "name": "a subtask is available only when its own conditions hold",
+      "today": "2026-10-30",
+      "projects": [{ "id": "move", "flow_mode": "sequential" }],
+      "sections": [],
+      "tasks": [
+        { "id": "van", "project_id": "move", "position": 1 },
+        { "id": "sub-later", "project_id": "move", "parent_id": "van", "position": 1, "start": "2026-12-01" },
+        { "id": "sub-blocked", "project_id": "move", "parent_id": "van", "position": 2, "blocked_by": ["sub-ok"] },
+        { "id": "sub-ok", "project_id": "move", "parent_id": "van", "position": 3 },
+        { "id": "deep", "project_id": "move", "parent_id": "sub-ok", "position": 1 },
+        { "id": "pack", "project_id": "move", "position": 2 },
+        { "id": "deep-wait", "project_id": "move", "parent_id": "pack-sub", "position": 1 },
+        { "id": "pack-sub", "project_id": "move", "parent_id": "pack", "position": 1 }
+      ],
+      "expected": {
+        "available": ["deep", "sub-ok", "van"],
+        "waits": { "pack": "task:van", "pack-sub": "task:van", "deep-wait": "task:van" }
+      }
+    }
+  ]
+}

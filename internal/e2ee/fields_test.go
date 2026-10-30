@@ -78,3 +78,13 @@ func TestReactionsAndNoteMentionsArePlaintext(t *testing.T) {
 		t.Error("comment body and task description must stay content")
 	}
 }
+
+// Flow fields (OpenSpec project-flow-modes) are structure, not user text, so
+// availability can be computed by the server for encrypted accounts too.
+func TestFlowModeIsPlaintext(t *testing.T) {
+	for _, entity := range []string{"project", "section"} {
+		if IsContentField(entity, "flow_mode") {
+			t.Errorf("IsContentField(%s, flow_mode) = true, want false", entity)
+		}
+	}
+}
