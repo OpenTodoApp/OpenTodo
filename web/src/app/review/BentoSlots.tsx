@@ -10,24 +10,37 @@ import { SLOT_HINTS, SLOT_NAMES } from '../../lib/bentoSlots'
 import { ESTIMATE_PRESETS, formatMinutes, parseDuration } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
-import { Button, Dialog, Input } from '../../ui'
+import { Button, Dialog, Icon, Input } from '../../ui'
 
 // The slot's name lines up with the task titles (row padding, leading slot, check box and gaps).
 const LABEL = 'pl-15 pr-2 text-hint font-semibold uppercase tracking-wide text-faint'
 
 /**
  * The slot rows: each slot is its name over the held task (`row` renders a TaskRow),
- * or one faint 44 px row saying what fits in it; the Not sized tasks follow.
+ * or one faint 44 px row saying what fits in it (a button that asks for a task when
+ * `onFill` is given); the Not sized tasks follow.
  */
-export function BentoSlotRows({ read, order, row }: { read: BentoRead; order: BentoOrder; row: (task: Task) => ReactNode }) {
+export function BentoSlotRows({ read, order, row, onFill }: {
+  read: BentoRead
+  order: BentoOrder
+  row: (task: Task) => ReactNode
+  /** An empty slot is a button that asks for a task (phone-touch-focus); without it, plain text. */
+  onFill?: (slot: BentoSlot) => void
+}) {
   return (
     <ul data-bento-slots>
       {slotOrder(order).map((slot) => {
         const task = read.slots[slot]
         if (!task) {
           return (
-            <li key={slot} className="flex min-h-11 items-center pl-15 pr-2 text-body text-faint" data-bento-slot={slot} data-bento-empty={slot}>
-              {SLOT_HINTS[slot]}
+            <li key={slot} className="flex min-h-11 items-center text-body text-faint" data-bento-slot={slot} data-bento-empty={slot}>
+              {onFill ? (
+                <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-control pl-8 pr-2 text-left hover:bg-sunken hover:text-muted dark:hover:bg-raised"
+                  data-bento-fill={slot} onClick={() => onFill(slot)}>
+                  <span className="flex w-5 shrink-0 justify-center"><Icon name="plus" size="sm" /></span>
+                  {SLOT_HINTS[slot]}<span className="sr-only">{`, ${t('Choose a task')}`}</span>
+                </button>
+              ) : <span className="pl-15 pr-2">{SLOT_HINTS[slot]}</span>}
             </li>
           )
         }

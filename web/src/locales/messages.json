@@ -967,6 +967,12 @@
   "Add to all, or remove from all…": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
+  "Add to focus": [
+    "web/src/app/focus/FocusPicker.tsx",
+    "web/src/app/focus/focusRequest.tsx",
+    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/review/DailyCheck.tsx"
+  ],
   "Add to {app}": [
     "web/src/app/ShareCapture.tsx"
   ],
@@ -2438,6 +2444,7 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a slot": [
+    "web/src/app/focus/focusActions.ts",
     "web/src/app/review/BentoSlots.tsx",
     "web/src/app/review/DailyCheck.tsx"
   ],
@@ -2446,7 +2453,11 @@
   ],
   "Choose a task": [
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/focus/FocusView.tsx"
+    "web/src/app/focus/FocusView.tsx",
+    "web/src/app/review/BentoSlots.tsx"
+  ],
+  "Choose a task for the {slot} slot": [
+    "web/src/app/focus/FocusPicker.tsx"
   ],
   "Choose a task to focus on.": [
     "web/src/app/focus/FocusView.tsx"
@@ -4717,7 +4728,7 @@
     "web/src/app/review/BentoSlots.tsx"
   ],
   "Every slot is full. Take one out first.": [
-    "web/src/app/review/DailyCheck.tsx"
+    "web/src/lib/focusEdit.ts"
   ],
   "Every step is done. Finish the review to record it on all your devices.": [
     "web/src/app/review/ReviewView.tsx"
@@ -5115,6 +5126,7 @@
   ],
   "Find a task…": [
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusPicker.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
   "Find a workspace…": [
@@ -8321,6 +8333,7 @@
   ],
   "No open task matches.": [
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusPicker.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
   "No open task was moved later three times or more in the last 90 days, on this device.": [
@@ -9580,6 +9593,9 @@
   "Other edits": [
     "web/src/lib/activity.ts"
   ],
+  "Other tasks": [
+    "web/src/app/focus/FocusPicker.tsx"
+  ],
   "Out of Someday": [
     "web/src/lib/assistant.ts"
   ],
@@ -10459,6 +10475,9 @@
   "Push notifications for reminders on this device, delivery channels and the weekly digest": [
     "web/src/app/settingsSections.ts"
   ],
+  "Put in a slot": [
+    "web/src/app/focus/focusRequest.tsx"
+  ],
   "Put in maintenance": [
     "web/src/app/menus/reviewMenu.ts",
     "web/src/app/palette/registry.ts",
@@ -10759,6 +10778,9 @@
   ],
   "Remove filter: {name}": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Remove from focus": [
+    "web/src/app/focus/focusRequest.tsx"
   ],
   "Remove from this device": [
     "web/src/app/assistant/AssistantDevice.tsx"
@@ -14834,6 +14856,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/focus/FocusPicker.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx",
@@ -14867,7 +14890,7 @@
     "web/src/app/review/DailyCheck.tsx"
   ],
   "Today’s focus holds {n} tasks. Take one out first.": [
-    "web/src/app/review/DailyCheck.tsx"
+    "web/src/lib/focusEdit.ts"
   ],
   "Today’s focus is done.": [
     "web/src/app/focus/FocusView.tsx"
@@ -15439,6 +15462,7 @@
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusPicker.tsx",
     "web/src/app/focus/startFocus.ts",
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/app/palette/CommandPalette.tsx",
@@ -19098,13 +19122,13 @@
     "web/src/app/MonthView.tsx"
   ],
   "{title} is in the {slot} slot.": [
-    "web/src/app/review/DailyCheck.tsx"
+    "web/src/lib/focusEdit.ts"
   ],
   "{title} is in today’s focus.": [
-    "web/src/app/review/DailyCheck.tsx"
+    "web/src/lib/focusEdit.ts"
   ],
   "{title} left today’s focus.": [
-    "web/src/app/review/DailyCheck.tsx"
+    "web/src/lib/focusEdit.ts"
   ],
   "{title}, open task": [
     "web/src/app/Briefing.tsx"

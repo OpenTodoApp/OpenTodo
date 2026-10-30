@@ -29,6 +29,7 @@ import { useToday } from '../useViews'
 import { DoneState, FocusTask, LengthDialog, modeName, TaskPickerDialog, TimerCard, type DoneAction } from './FocusParts'
 import { useFocusClock } from './useFocusTimer'
 import { clearAskLength, startFocusOn, useAskLength } from './startFocus'
+import { FocusMenuItem } from './focusRequest'
 
 /** The done state's heading and next steps for the session that ended. */
 function doneContent(s: FocusState, nextOpen: boolean, run: { start: () => void; startBreak: () => void; complete: () => void; next: () => void; choose: () => void }): { heading: string; actions: DoneAction[] } {
@@ -158,6 +159,8 @@ export function FocusView({ id }: { id?: string }) {
       ))}
       <MenuSeparator />
       <MenuItem label={t('Change task')} icon="search" onSelect={choose} />
+      {/* In or out of today's focus by touch (phone-touch-focus). */}
+      {task && <FocusMenuItem task={task} />}
       {/* The noise toggle (focus-everywhere D6): Noise on chooses Brown; Settings offers the other kinds. */}
       <MenuItem label={prefs.noise === 'off' ? t('Noise on') : t('Noise off')} icon="audio-lines" data-focus-noise-toggle
         onSelect={() => act(setFocusPref({ field: 'focus_noise', value: prefs.noise === 'off' ? 'brown' : 'off' }))} />

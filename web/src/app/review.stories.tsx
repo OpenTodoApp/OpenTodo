@@ -5,6 +5,7 @@ import type { EmailDigest, Task, TimeEntry } from '../lib/types'
 import { DigestView, type DigestState } from './DigestCard'
 import { CloseDay } from './review/CloseDay'
 import { DailyCheck } from './review/DailyCheck'
+import FocusPicker from './focus/FocusPicker'
 import { DoneForToday } from './review/DoneForToday'
 import { PageBody, PageHeader } from '../ui'
 import { ReviewView } from './review/ReviewView'
@@ -179,6 +180,27 @@ export const DailyCheckBentoFull: StoryObj = {
   name: 'Daily check · Bento full',
   ...withSeed(seedBento(3)),
   render: () => <DailyCheck />,
+}
+
+/** Three tasks by touch (phone-touch-focus): one task in today's focus and the Add to focus row under it. */
+async function seedThreeWithRoom() {
+  await seedBento(0)()
+  await mutate('user_prefs', 'me', { focus_style: 'three' })
+  const first = (await db.tasks.toArray()).find((x) => x.title === 'Call the bank')!
+  await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', focus_date: TODAY, focus: first.id, _clock: {} })
+}
+
+export const DailyCheckThreeWithRoom: StoryObj = {
+  name: 'Daily check · Three tasks with room',
+  ...withSeed(seedThreeWithRoom),
+  render: () => <DailyCheck />,
+}
+
+/** The picker of an empty Large slot (phone-touch-focus D4): today's tasks, the long ones first. */
+export const FocusPickerLargeSlot: StoryObj = {
+  name: 'Focus picker · Large slot',
+  ...withSeed(seedBento(0)),
+  render: () => <FocusPicker request={{ mode: 'task', slot: 'L' }} onClose={() => {}} />,
 }
 
 async function seedCloseDay() {
