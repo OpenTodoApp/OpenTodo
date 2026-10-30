@@ -1,6 +1,6 @@
 ---
 title: Group and order a list
-summary: Group a project's or a label's tasks by section, date, priority or label and order them by priority, date, deadline, title or your own manual order, kept for each project, label and saved view.
+summary: Group a project's or a label's tasks by section, date, priority or label and order them by priority, date, deadline or title, kept for each project and label.
 audience: user
 section: Guides
 specs: [list-display-options, custom-views, manual-ordering, task-list-presentation]
