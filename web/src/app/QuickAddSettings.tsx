@@ -4,14 +4,18 @@ import { Checkbox, Switch } from '../ui'
 import {
   BUNDLED_LANGUAGES, loadQuickAddSettings, type QuickAddSettings, resolveLanguages, saveQuickAddSettings,
 } from '../lib/nlp'
-import { t, preferredLanguages } from '../lib/i18n'
+import { t, msg, preferredLanguages, translatedMap } from '../lib/i18n'
 import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
+import { useUserPrefsRow } from '../lib/localData'
+import { type AddPositionPref, readAddPosition, setAddPosition } from '../lib/userPrefs'
+import { act } from './actionError'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
 }
 
-
+const ADD_POSITIONS: readonly AddPositionPref[] = ['bottom', 'top']
+const ADD_POSITION_LABEL = translatedMap<AddPositionPref>({ bottom: msg('At the bottom of the list'), top: msg('At the top of the list') })
 
 /** Settings section for natural-language quick add; stored on this device only. */
 export function QuickAddSettingsSection() {
@@ -47,6 +51,34 @@ export function QuickAddSettingsSection() {
           ))}
         </div>
       </fieldset>
+    </SettingsSection>
+  )
+}
+
+/** Settings → Capture → Quick add → New tasks (add-position D1): the synced choice, written through ops. */
+export function AddPositionSection() {
+  const value = readAddPosition(useUserPrefsRow())
+  return <AddPositionView value={value} onChange={(v) => act(setAddPosition(v))} />
+}
+
+export function AddPositionView({ value, onChange }: { value: AddPositionPref; onChange: (v: AddPositionPref) => void }) {
+  const copy = rowCopy('add-position', 'place')
+  return (
+    <SettingsSection {...cardCopy('add-position')}>
+      <div id="add-position" tabIndex={-1} data-setting-row="add-position" className="py-3 outline-none focus-visible:rounded-control focus-visible:ring-2 focus-visible:ring-focus">
+        <fieldset>
+          <legend className="text-body font-medium text-default">{copy.label}</legend>
+          <p className="mt-0.5 text-meta text-muted">{copy.description}</p>
+          <div className="mt-2 flex flex-col gap-1.5 text-body text-default sm:flex-row sm:gap-5" data-testid="add-position">
+            {ADD_POSITIONS.map((p) => (
+              <label key={p} className="flex items-center gap-1.5 touch-target">
+                <input type="radio" className="accent-(--ot-accent)" name="add-position" value={p} checked={value === p} onChange={() => onChange(p)} />
+                {ADD_POSITION_LABEL[p]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </div>
     </SettingsSection>
   )
 }

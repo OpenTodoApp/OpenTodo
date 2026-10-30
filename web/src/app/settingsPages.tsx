@@ -15,7 +15,7 @@ import { DateTimeSection } from './DateTimeSettings'
 import { AssistantsPanel } from './AssistantsPanel'
 import { AppearanceSection, SidebarSection, TaskDetailsSection } from './AppearanceSection'
 import { BackupsPanel } from './BackupsPanel'
-import { QuickAddSettingsSection } from './QuickAddSettings'
+import { AddPositionSection, QuickAddSettingsSection } from './QuickAddSettings'
 import { VoiceSettingsSection } from './VoiceSettings'
 import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
@@ -92,7 +92,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'notifications/push': ({ demo }) => <DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,
-  'capture/quick-add': () => <QuickAddSettingsSection />,
+  'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /></>,
   'capture/voice': () => <VoiceSettingsSection />,
   'capture/browser': () => <CaptureSection />,
   'capture/email': ({ demo }) => <DemoDisabled on={demo}><EmailInboxPanel /></DemoDisabled>,

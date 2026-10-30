@@ -72,6 +72,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'about', label: msg('Welcome note'), description: msg('The thank-you shown the first time you opened this server.'), anchor: 'about-welcome', visible: owner, keywords: 'thanks welcome' },
   // Capture
   { section: 'capture', label: msg('Quick add'), description: msg('Natural-language parsing, its languages and the date order'), page: 'quick-add', anchor: 'quick-add-heading', keywords: 'natural language parsing' },
+  { section: 'capture', label: msg('Add new tasks'), description: msg('At the top or the bottom of the list'), page: 'quick-add', anchor: 'add-position', keywords: 'new tasks top bottom first last order position insert' },
   { section: 'capture', label: msg('Voice capture'), description: msg('Dictate tasks into quick add'), page: 'voice', anchor: 'voice-settings-heading', keywords: 'dictation microphone' },
   { section: 'capture', label: msg('Bookmarklet and extension'), description: msg('Save the page you are reading as a task'), page: 'browser', anchor: 'capture-heading', keywords: 'browser' },
   { section: 'capture', label: msg('Email to task'), description: msg('Your secret address; emails sent there become tasks'), page: 'email', anchor: 'email-inbox-heading', keywords: 'mail inbox' },
