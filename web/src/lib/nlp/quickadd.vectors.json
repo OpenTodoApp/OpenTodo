@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -3323,6 +3323,309 @@
     "reminders": [],
     "dayPart": null,
     "evening": true
+   }
+  },
+  {
+   "name": "Energy: a full line",
+   "line": "Draft the strategy #Work ~deep +2h",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Draft the strategy",
+    "due": null,
+    "projectId": "p-work",
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": 120,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": "deep"
+   }
+  },
+  {
+   "name": "Energy: prefix and German",
+   "line": "Rechnungen ablegen ~L",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Rechnungen ablegen",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": "low"
+   }
+  },
+  {
+   "name": "Energy: not a token",
+   "line": "Dinner for ~6 people",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Dinner for ~6 people",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": ""
+   }
+  },
+  {
+   "name": "Energy: switch off",
+   "line": "Call ~low",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Call ~low",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": ""
+   }
+  },
+  {
+   "name": "Energy: same in the CLI",
+   "line": "Sort receipts ~low",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Sort receipts",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": "low"
+   }
+  },
+  {
+   "name": "Energy: the last token wins",
+   "line": "Plan ~low the week ~Medium",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Plan the week",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": "medium"
+   }
+  },
+  {
+   "name": "Energy: a longer prefix, a comma and a priority",
+   "line": "Review ~me, p2",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Review",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": 2,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": "medium"
+   }
+  },
+  {
+   "name": "Energy: an unknown word stays",
+   "line": "Climb ~high tomorrow",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Climb ~high",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": ""
+   }
+  },
+  {
+   "name": "Energy: quoted stays",
+   "line": "Name it \"~deep\" ~d",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Name it ~deep",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": "deep"
+   }
+  },
+  {
+   "name": "Energy: French",
+   "line": "Trier le courrier ~m demain",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "energy": true
+   },
+   "expect": {
+    "title": "Trier le courrier",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "energy": "medium"
    }
   }
  ]

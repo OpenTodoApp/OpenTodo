@@ -12,6 +12,7 @@ import { addTasksUndoable } from '../../lib/pasteTasks'
 import { preferredPlacement } from '../../lib/userPrefs'
 import { canEditTasks, membershipMap, roleOf } from '../../lib/sharing'
 import { dayPartsPreferred } from '../../lib/dayParts'
+import { energyLevelsPreferred } from '../../lib/energy'
 import { VIEW_SCOPES } from '../../lib/shortcuts'
 import { addedWhere } from '../addedWhere'
 import { ACTION_TOAST_MS, showBulkToast } from '../bulk/toastStore'
@@ -94,6 +95,8 @@ export async function lineToInput(line: string, projects: readonly ProjectRef[],
     weekStart: currentDateTime().weekStart, projects, dismissed: [],
     // Part phrases only while the account uses day parts (day-parts D5).
     dayParts: await dayPartsPreferred(),
+    // The `~deep` tokens only while the account offers energy (task-energy D3).
+    energy: await energyLevelsPreferred(),
   })
   return parsed.title ? toTaskInput(parsed, { labels, createLabel: createLabelByName }) : { title: line }
 }

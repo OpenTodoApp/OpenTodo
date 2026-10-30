@@ -22,7 +22,7 @@ function chipWords(chip: Chip, projects: readonly ProjectRef[], labels: readonly
   return text
 }
 
-export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend }: {
+export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend, energy = false }: {
   chips: readonly Chip[]
   projects: readonly ProjectRef[]
   labels: readonly LabelRef[]
@@ -31,7 +31,10 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   /** Starts a field's token at the end of the line. */
   onStart: (kind: FieldKind) => void
   canSend: boolean
+  /** The account offers energy (task-energy D3): a tool starts `~`, so a phone reaches the levels by touch. */
+  energy?: boolean
 }) {
+  const tools: FieldKind[] = energy ? [...TOOLS, 'energy'] : TOOLS
   const set = new Set(chips.map((c) => fieldOf(c.kind)))
   const placeholders = (['project', 'label'] as const).filter((k) => !set.has(k))
   return (
@@ -61,7 +64,7 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
         ))}
       </div>
       <div className="flex items-center gap-1 border-t border-default px-2.5 py-2" role="toolbar" aria-label={t('Add details')}>
-        {TOOLS.map((k) => (
+        {tools.map((k) => (
           <button key={k} type="button" data-sheet-tool={k} onMouseDown={keepFocus} onClick={() => onStart(k)} aria-label={FIELD_NAME[k]}
             className="inline-flex h-[2.375rem] w-[2.375rem] items-center justify-center rounded-control text-muted hover:bg-hover hover:text-default">
             <Icon name={FIELD_ICON[k]} size={18} />

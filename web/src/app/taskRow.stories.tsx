@@ -128,6 +128,17 @@ export const Chips: StoryObj = {
   ),
 }
 
+/** The energy as one muted word after the estimate, only when set (task-energy D6); a task without one shows nothing. */
+export const Energy: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Draft the strategy', estimate_minutes: 120, energy: 'deep' })} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Sort the receipts', due: { date: TODAY }, energy: 'low' })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Reply to Mara', estimate_minutes: 15 })} />
+    </List>
+  ),
+}
+
 /** Blocked by open tasks: the title is muted and a lock item counts the blockers. */
 export const Blocked: StoryObj = {
   render: () => (

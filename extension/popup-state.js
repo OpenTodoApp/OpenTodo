@@ -94,7 +94,7 @@ export function taskBody({ line, parsed, projectId, labelIds, origin, descriptio
   const f = parsed?.fields ?? {}
   const title = (parsed ? parsed.title : line).trim() || line.trim()
   const body = { title }
-  for (const k of ['due', 'deadline', 'start', 'evening', 'priority', 'estimate_minutes', 'recurrence']) {
+  for (const k of ['due', 'deadline', 'start', 'evening', 'day_part', 'energy', 'priority', 'estimate_minutes', 'recurrence']) {
     if (f[k] !== undefined) body[k] = f[k]
   }
   if (projectId) body.project_id = projectId

@@ -6,6 +6,7 @@ import { Icon } from '../ui'
 import { logicalToday } from '../lib/dates'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { dayPartsOn } from '../lib/dayParts'
+import { energyLevelsOn } from '../lib/energy'
 import { useUserPrefsRow } from '../lib/localData'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
@@ -86,7 +87,10 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
   // the week decides "next week" (date-time-preferences D5, D6).
   const { prefs: dtPrefs, resolved } = useDateTimeFormat()
   // Part phrases only while the account uses day parts (day-parts D5).
-  const dayParts = dayPartsOn(useUserPrefsRow())
+  const prefs = useUserPrefsRow()
+  const dayParts = dayPartsOn(prefs)
+  // The `~deep` tokens only while the account offers energy (task-energy D3).
+  const energy = energyLevelsOn(prefs)
   return useCallback(() => {
     if (!settings.enabled) return null
     const langs = preferredLanguages()
@@ -98,8 +102,9 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
       weekStart: resolved.weekStart,
       projects,
       dayParts,
+      energy,
     }
-  }, [settings, projects, dtPrefs, resolved, dayParts])
+  }, [settings, projects, dtPrefs, resolved, dayParts, energy])
 }
 
 /**
@@ -174,7 +179,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   }
 
   // `#` and `@` suggestions (smart-title-tokens D1): a listbox under the field for the token at the caret.
-  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled })
+  const energyOn = energyLevelsOn(useUserPrefsRow())
+  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn })
   // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
   const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
 
@@ -208,7 +214,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     }
     const next = startToken(valueRef.current, r.kind)
     change(next.value)
-    if (r.kind === 'project' || r.kind === 'label') suggest.openAt(next.caret)
+    if (r.kind === 'project' || r.kind === 'label' || r.kind === 'energy') suggest.openAt(next.caret)
     else caretTo(next.caret)
   }
 
@@ -366,7 +372,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
       {layout === 'sheet' && (
         <div id="quick-add-preview" role="status" aria-live="polite">
           {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-3 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
-          <SheetBar chips={chips} projects={projects} labels={labels} line={lineInfo} onDismiss={dismiss} onStart={edit} canSend={!!value.trim() && !emptyTitle} />
+          <SheetBar chips={chips} projects={projects} labels={labels} line={lineInfo} onDismiss={dismiss} onStart={edit} canSend={!!value.trim() && !emptyTitle} energy={energyOn && settings.enabled} />
         </div>
       )}
       {layout === 'line' && <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">

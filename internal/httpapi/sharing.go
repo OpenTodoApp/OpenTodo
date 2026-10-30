@@ -289,6 +289,8 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 			if _, has := e["origin"]; e != nil && !has {
 				e["origin"] = json.RawMessage("null")
 			}
+			// And energy, null when none (task-energy D7).
+			presentEnergy(e)
 		}
 		return nil
 	}
