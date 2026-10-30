@@ -286,6 +286,8 @@ ot vault watch [<dir>]
 
 ## Scripting: JSON output and exit codes
 
+Saved views can store a custom-field order through the [views API](api.md#view-fields): use `"sort_by":"field:WSJF"` and `"sort_dir":"desc"` to rank by a Number field. Names match without regard to case, including inherited parent-project fields. Missing values stay last in either direction. These are saved-view display settings; `ot list` keeps its normal task order and has no custom-field sort flag.
+
 Every command accepts `--json`. Stdout then holds only JSON, with the same field names as the [REST API](api.md): an array for lists, the entity for single results, and the error envelope on failure. The shapes are documented as JSON Schemas with an **`output_version`** (currently `1`, reported by `ot version --json` and `ot schema`). Within a version fields are only added; a breaking change would need a new version you opt into.
 
 | Command | `--json` output (schema) |

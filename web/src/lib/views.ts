@@ -15,11 +15,14 @@ import { buildProjectTree } from './projects'
 import { ancestors, flattenTree } from './tree'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS, VIEW_LAYOUTS,
-  type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
+  fieldSortName, isFieldSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
 } from './types'
 import { t, msg } from './i18n'
 import { uuid } from './ids'
 import { workspaceFields } from './workspaces'
+import { applicableFieldsLookup } from './fieldTree'
+import { nameKey } from './fieldNames'
+import { matchesType } from './fields'
 
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
@@ -131,7 +134,7 @@ export function viewOptions(v: Pick<View, 'kind' | 'group_by' | 'sort_by' | 'sor
   return {
     kind: pick(v.kind, VIEW_KINDS, VIEW_DEFAULTS.kind as ViewKind),
     groupBy: pick(v.group_by, GROUP_BY_OPTIONS, VIEW_DEFAULTS.group_by as GroupBy),
-    sortBy: pick(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
+    sortBy: isFieldSortBy(v.sort_by) ? v.sort_by : pick(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
     sortDir: pick(v.sort_dir, SORT_DIR_OPTIONS, VIEW_DEFAULTS.sort_dir as SortDir),
   }
 }
@@ -427,8 +430,12 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
   return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
 }
 
+function compareText(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { sensitivity: 'base' })
+}
+
 function byTitle(a: Task, b: Task): number {
-  return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+  return compareText(a.title, b.title)
 }
 
 /**
@@ -436,10 +443,61 @@ function byTitle(a: Task, b: Task): number {
  * tasks always come last under a due-date sort. For priority, "descending" means the
  * most important first (p1 before p4). Ties fall back to due, priority, position, id.
  */
-export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) => number {
+export interface FieldSortContext {
+  projects: readonly Project[]
+  fields?: readonly FieldDef[]
+}
+
+type FieldSortValue = { type: 'date'; value: string } | { type: 'number'; value: number } | { type: 'text'; value: string }
+
+function fieldSortValue(task: Task, fieldName: string, fieldsOf: (projectId: string | null | undefined) => FieldDef[]): FieldSortValue | null {
+  const definition = fieldsOf(task.project_id).find((field) => nameKey(field.name) === fieldName)
+  if (!definition || (definition.type !== 'number' && definition.type !== 'date' && definition.type !== 'text')) return null
+  const value = task.fields?.[definition.id]
+  if (value === null || value === undefined || value === '' || !matchesType(definition, value)) return null
+  if (definition.type === 'number' && typeof value === 'number') return { type: 'number', value }
+  if (definition.type === 'date' && typeof value === 'string') return { type: 'date', value }
+  if (definition.type === 'text' && typeof value === 'string') return { type: 'text', value }
+  return null
+}
+
+function compareFieldValues(av: FieldSortValue, bv: FieldSortValue): number {
+  if (av.type === 'number' && bv.type === 'number') return av.value - bv.value
+  if (av.type === 'date' && bv.type === 'date') return av.value < bv.value ? -1 : av.value > bv.value ? 1 : 0
+  if (av.type === 'text' && bv.type === 'text') return compareText(av.value, bv.value)
+  return 0
+}
+
+function fieldSortTypeRank(value: FieldSortValue): number {
+  switch (value.type) {
+    case 'number': return 0
+    case 'date': return 1
+    case 'text': return 2
+  }
+}
+
+export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortContext): (a: Task, b: Task) => number {
   const sign = dir === 'desc' ? -1 : 1
   const fallback = (a: Task, b: Task) =>
     compareDue(a.due, b.due) || a.priority - b.priority || a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  if (isFieldSortBy(sortBy)) {
+    const fieldName = fieldSortName(sortBy)
+    if (fieldName === null) return fallback
+    const fieldsOf = context ? applicableFieldsLookup(context.projects, context.fields ?? []) : () => []
+    const values = new Map<string, FieldSortValue | null>()
+    const valueOf = (task: Task): FieldSortValue | null => {
+      if (values.has(task.id)) return values.get(task.id) ?? null
+      const value = fieldSortValue(task, fieldName, fieldsOf)
+      values.set(task.id, value)
+      return value
+    }
+    return (a, b) => {
+      const av = valueOf(a)
+      const bv = valueOf(b)
+      if (!av || !bv) return !av && !bv ? fallback(a, b) : av ? -1 : 1
+      return fieldSortTypeRank(av) - fieldSortTypeRank(bv) || sign * compareFieldValues(av, bv) || fallback(a, b)
+    }
+  }
   switch (sortBy) {
     case 'due':
       return (a, b) => {
@@ -461,6 +519,11 @@ export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) =
         if (!a.deadline || !b.deadline) return (a.deadline ? -1 : b.deadline ? 1 : 0) || fallback(a, b)
         return sign * (a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0) || fallback(a, b)
       }
+    default: {
+      const _exhaustive: never = sortBy
+      void _exhaustive
+      return fallback
+    }
   }
 }
 
@@ -540,7 +603,7 @@ export function runView(view: View, ctx: ViewContext): ViewResult {
   if (!c.ok) return c
   const { groupBy, sortBy, sortDir } = viewOptions(view)
   const scoped = viewScope(c, ctx)
-  const tasks = scoped.tasks.filter(c.test).sort(compareTasks(sortBy, sortDir))
+  const tasks = scoped.tasks.filter(c.test).sort(compareTasks(sortBy, sortDir, scoped))
   return { ok: true, tasks, groups: groupTasks(tasks, groupBy, scoped), warnings: c.warnings }
 }
 
@@ -570,12 +633,13 @@ export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TAS
   for (const tk of every.length ? ctx.everyWorkspace!.tasks : []) for (const l of every) if (l.test(tk)) l.matches.push(tk)
   for (const l of live) {
     const { groupBy, sortBy, sortDir } = viewOptions(l.view)
-    const sorted = l.matches.sort(compareTasks(sortBy, sortDir))
+    const scoped = l.every ? viewScope(l, ctx) : ctx
+    const sorted = l.matches.sort(compareTasks(sortBy, sortDir, scoped))
     const firstN: Task[] = []
     if (limit > 0) {
       // Grouping by label can list a task twice; a panel shows each task once.
       const seen = new Set<string>()
-      for (const g of groupTasks(sorted, groupBy, l.every ? viewScope(l, ctx) : ctx)) {
+      for (const g of groupTasks(sorted, groupBy, scoped)) {
         for (const item of g.tasks) {
           if (firstN.length >= limit) break
           if (!seen.has(item.id)) {

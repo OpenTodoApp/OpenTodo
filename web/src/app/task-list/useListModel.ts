@@ -22,7 +22,7 @@ import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
 import type { Route } from '../router'
-import { useApplicableFields } from '../useFields'
+import { useApplicableFields, useFieldDefs } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
 import { readJSON, writeJSON } from '../../lib/deviceStorage'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -172,13 +172,16 @@ export function useListModel(route: ListRoute, userId?: string) {
   const { groupBy: dGroup, sortBy: dSort, sortDir: dDir, rowLayout: dRows } = displayScope ? listDisplayOf(displayScope.kind, displayScope.kind === 'project' ? prefsRow : labelRow, account) : { groupBy: undefined, sortBy: undefined, sortDir: undefined, rowLayout: undefined }
   const display = useMemo(() => (dGroup && dSort && dDir && dRows ? { groupBy: dGroup, sortBy: dSort, sortDir: dDir, rowLayout: dRows } : undefined), [dGroup, dSort, dDir, dRows])
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
-  const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list')
+  const fieldsOf = useApplicableFields()
+  const fieldDefs = useFieldDefs()
+  const sortFields = useMemo(() => route.view === 'project' ? fieldsOf(route.id) : [...new Set(tasks.map((task) => task.project_id))].flatMap(fieldsOf), [route, fieldsOf, tasks])
+  const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list', sortFields)
 
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, fields: fieldDefs,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, fieldDefs])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
   const ownRows = useMemo(() => (planned.length ? groups.filter((g) => g.key !== 'planned').flatMap((g) => g.rows) : rows), [planned, groups, rows])

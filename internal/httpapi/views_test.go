@@ -126,6 +126,38 @@ func TestViewsCrud(t *testing.T) {
 	}
 }
 
+func TestViewsAcceptCustomFieldSort(t *testing.T) {
+	e := registeredEnv(t)
+	longFieldName := strings.Repeat("語", maxFieldName)
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{
+		"name": "Highest score", "query": "p1", "sort_by": "field:" + longFieldName,
+	})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	if out["sort_by"] != "field:"+longFieldName {
+		t.Fatalf("created view sort_by = %v, want field with %d-rune name", out["sort_by"], maxFieldName)
+	}
+
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": "field:Target date"})
+	e.mustStatus(resp, 200, out)
+	if out["sort_by"] != "field:Target date" {
+		t.Fatalf("patched view sort_by = %v, want field:Target date", out["sort_by"])
+	}
+
+	resp, out = e.do("GET", "/api/v1/views/"+id, nil)
+	e.mustStatus(resp, 200, out)
+	if out["sort_by"] != "field:Target date" {
+		t.Fatalf("stored view sort_by = %v, want field:Target date", out["sort_by"])
+	}
+
+	// The exact field-name limit is valid on updates too.
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": "field:" + longFieldName})
+	e.mustStatus(resp, 200, out)
+	if out["sort_by"] != "field:"+longFieldName {
+		t.Fatalf("patched view sort_by = %v, want field with %d-rune name", out["sort_by"], maxFieldName)
+	}
+}
+
 func TestViewsRejectInvalidOption(t *testing.T) {
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "List", "query": "p1"})
@@ -194,6 +226,32 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 		e.mustStatus(resp, 400, out)
 		if errCode(out) != "invalid_input" || !strings.Contains(errMessage(out), c.msg) {
 			t.Errorf("PATCH %v: error = %v, want message containing %q", c.body, out, c.msg)
+		}
+	}
+
+	for _, invalidSort := range []any{
+		"mood",
+		"field:",
+		"field:   ",
+		"field: padded",
+		"field:padded ",
+		"field:" + strings.Repeat("x", maxFieldName+1),
+		nil,
+		42,
+		[]string{"field:WSJF"},
+	} {
+		for _, target := range []struct {
+			method, path string
+			body         map[string]any
+		}{
+			{"POST", "/api/v1/views", map[string]any{"name": "bad sort", "query": "p1", "sort_by": invalidSort}},
+			{"PATCH", "/api/v1/views/" + list, map[string]any{"sort_by": invalidSort}},
+		} {
+			resp, out = e.do(target.method, target.path, target.body)
+			e.mustStatus(resp, 400, out)
+			if errCode(out) != "invalid_input" {
+				t.Errorf("%s sort_by %v: error = %v, want invalid_input", target.method, invalidSort, out)
+			}
 		}
 	}
 	resp, out = e.do("GET", "/api/v1/views/"+list, nil)

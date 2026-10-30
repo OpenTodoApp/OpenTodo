@@ -710,7 +710,7 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `query` | string | required on create for list views; must parse under the grammar in [`docs/filters.md`](filters.md), at most 4,096 characters and 64 levels of `(` and `!`; otherwise 400 with the parser's message (`view.query: Unknown term "urgent" at position 6`); may be empty for dashboards |
 | `kind` | `"list"` or `"dashboard"` | default `list`; cannot be changed after creation |
 | `group_by` | `"project"`, `"due"`, `"priority"`, `"label"` or `"none"` | default `project` |
-| `sort_by` | `"due"`, `"priority"`, `"position"`, `"created"`, `"deadline"` or `"title"` | default `due` (undated tasks last; tasks without a deadline last under `deadline`) |
+| `sort_by` | `"due"`, `"priority"`, `"position"`, `"created"`, `"deadline"`, `"title"` or `"field:<name>"` | default `due` (undated tasks last; tasks without a deadline last under `deadline`) |
 | `sort_dir` | `"asc"` or `"desc"` | default `asc`; for `priority`, `desc` lists priority 1 first |
 | `pinned` | boolean | shown in the sidebar's Favourites group (every view is listed in the Views group); default `false` |
 | `position` | number | sidebar order; defaults to the creation time |
@@ -723,7 +723,7 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `hidden_props` | string[] | list views: row properties the app leaves out, from `date`, `project`, `labels`, `estimate`, `assignee`, `deadline`, `start` and `origin`; absent until set, read as none; replaced as a whole on PATCH |
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
-Values outside the listed sets are rejected with 400 `invalid_input` on `POST` and `PATCH` and nothing is written. The sync endpoint, by contrast, accepts any string for `kind`, `group_by`, `sort_by`, `sort_dir` and `layout` so that a future option stays additive; clients show the default for a value they do not know (see `docs/sync.md`, "Saved views"). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a "View removed" placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.
+A `field:<name>` sort uses a trimmed, non-empty custom field name of at most 100 Unicode characters. Names match case-insensitively against each task's applicable definitions, including inherited parent-project fields. Number values compare numerically, Date values chronologically and Text values alphabetically. Across different types, Number values come before Date values, followed by Text values, in both directions; direction reverses values within each type. Missing or invalid values stay last in either direction. Values outside the listed sets are rejected with 400 `invalid_input` on `POST` and `PATCH` and nothing is written. The sync endpoint, by contrast, accepts any string for `kind`, `group_by`, `sort_by`, `sort_dir` and `layout` so that a future option stays additive; clients show the default for a value they do not know (see `docs/sync.md`, "Saved views"). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a "View removed" placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.
 
 ### Reminders and push
 

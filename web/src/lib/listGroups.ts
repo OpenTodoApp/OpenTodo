@@ -13,7 +13,7 @@ import { byPosition, compareByPosition, compareDueThenPriority } from './orderin
 import { effectiveSection, groupBySection } from './sections'
 import { breadcrumbOf } from './subtasks'
 import { flattenTree, type Tree, type TreeNode } from './tree'
-import type { Label, Project, Section, Task } from './types'
+import type { FieldDef, Label, Project, Section, Task } from './types'
 import { compareTasks, groupTasks, inAnytime, isSomeday } from './views'
 import type { ListDisplay } from './listDisplay'
 import { linkedPlaceId } from './locations'
@@ -188,11 +188,13 @@ export interface GroupInput {
   display?: ListDisplay
   /** Labels, for grouping by label. */
   labels?: readonly Label[]
+  /** Every field definition that can apply to a task in this list. */
+  fields?: readonly FieldDef[]
 }
 
 /** The comparator of a display's order, or null for manual order as stored (list-display-options D3). */
-function displayOrder(d: ListDisplay | undefined): ((a: Task, b: Task) => number) | null {
-  return d && !(d.sortBy === 'position' && d.sortDir === 'asc') ? compareTasks(d.sortBy, d.sortDir) : null
+function displayOrder(d: ListDisplay | undefined, projects: readonly Project[], fields: readonly FieldDef[]): ((a: Task, b: Task) => number) | null {
+  return d && !(d.sortBy === 'position' && d.sortDir === 'asc') ? compareTasks(d.sortBy, d.sortDir, { projects, fields }) : null
 }
 
 /** Top-level nodes in the display's order; subtasks keep their manual order under their parent. */
@@ -217,7 +219,7 @@ export function listGroups(p: GroupInput): ListGroup[] {
   const isCollapsed = (id: string) => p.collapsed.has(id)
   // Board: cards are top-level tasks, column by column (keyboard order).
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.cards.map((task) => flatRow(task)) }))
-  const order = displayOrder(p.display)
+  const order = displayOrder(p.display, p.projects, p.fields ?? [])
   const groupByKey = p.display?.groupBy
   if (p.tree && p.view === 'project' && groupByKey && groupByKey !== 'section' && groupByKey !== 'none' && groupByKey !== 'project') {
     // Grouped by a property of the top-level tasks (list-display-options D3); each brings its subtasks.
@@ -290,7 +292,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
   }
   if (p.view === 'label' && p.display && p.display.groupBy !== 'project') {
     // A label page with its own grouping (list-display-options D3): in its order, each task once.
-    const order = displayOrder(p.display)
+    const order = displayOrder(p.display, p.projects, p.fields ?? [])
     const tasks = order ? [...p.tasks].sort(order) : p.tasks
     if (p.display.groupBy === 'none' || p.display.groupBy === 'section') return [{ key: 'all', heading: null, rows: tasks.map(row) }]
     return groupTasks(tasks, p.display.groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true)
@@ -298,7 +300,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
   }
   if (p.view === 'label' || p.view === 'assigned' || p.view === 'someday' || p.view === 'anytime') {
     // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
-    const sort = p.view === 'label' ? displayOrder(p.display) : null
+    const sort = p.view === 'label' ? displayOrder(p.display, p.projects, p.fields ?? []) : null
     const byProject = groupBy(sort ? [...p.tasks].sort(sort) : p.tasks, (tk) => tk.project_id ?? '')
     const order = ['', ...p.projects.slice().sort(compareByPosition).map((pr) => pr.id)]
     const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined

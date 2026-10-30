@@ -8,8 +8,9 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Icon, IconButton, Popover, type IconName } from '../../ui'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, VIEW_LAYOUTS,
-  type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout,
+  type FieldDef, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout,
 } from '../../lib/types'
+import { fieldSortOptions } from '../../lib/fieldSortOptions'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ListGroupBy } from '../../lib/listDisplay'
 import { ROW_LAYOUTS, type RowLayout } from '../../lib/rowLayout'
@@ -55,6 +56,7 @@ export interface DisplayPanelProps<V extends PanelValue = ViewDisplay> {
   groupOptions?: readonly V['groupBy'][]
   /** Order by choices, in order; a view's by default. */
   sortOptions?: readonly SortBy[]
+  sortFields?: readonly FieldDef[]
 }
 
 /** The toolbar's display button and its panel. */
@@ -73,7 +75,7 @@ export function DisplayPanel<V extends PanelValue = ViewDisplay>(props: DisplayP
 }
 
 /** The panel's content; also rendered on its own in stories and tests. */
-export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, onChange: change, groupOptions = GROUP_BY_OPTIONS as readonly V['groupBy'][], sortOptions = SORT_BY_OPTIONS }: DisplayPanelProps<V>) {
+export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, onChange: change, groupOptions = GROUP_BY_OPTIONS as readonly V['groupBy'][], sortOptions = SORT_BY_OPTIONS, sortFields = [] }: DisplayPanelProps<V>) {
   const [more, setMore] = useState(false)
   const onChange = (patch: Partial<PanelValue>) => change(patch as Partial<V>)
   const hiddenNow = value.hidden
@@ -82,6 +84,7 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
     const hidden = hiddenNow.includes(p) ? hiddenNow.filter((x) => x !== p) : [...hiddenNow, p]
     onChange({ hidden: ROW_PROPERTIES.filter((x) => hidden.includes(x)) })
   }
+  const fieldOptions = fieldSortOptions(sortFields, value.sortBy)
   const layout = value.layout
   return (
     <div data-display-panel className="text-meta">
@@ -102,6 +105,7 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Order by')} value={value.sortBy}
             onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}>
             {sortOptions.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
+            {fieldOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </OptionRow>
         {value.showCompleted !== undefined && <OptionRow label={t('Completed tasks')}>

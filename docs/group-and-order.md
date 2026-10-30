@@ -24,6 +24,8 @@ Due date groups read *Earlier*, *Today*, *Tomorrow*, then each later date and *N
 
 **Manual order** (the default, the order you drag tasks into), **Priority**, **Due date**, **Created**, **Deadline** or **Title**. **More options** holds the direction; for priority, *descending* puts priority 1 first. Tasks without a date or deadline come last either way.
 
+Number and Date custom fields also appear in **Order by**. Tasks without a value come last in either direction. For a label spanning projects, fields with the same name are matched without regard to case. If matching fields have different types, numbers come before dates, followed by text, in either direction; direction reverses values within each type while missing values remain last. Text values from same-named fields in other projects participate even though the selector offers Number and Date fields.
+
 Subtasks stay under their parent in the order you gave them, and a project's **Later** and **Completed** groups stay at the end.
 
 A new task goes at the end of the manual order, or at the top if you chose **Add new tasks: At the top of the list** in Settings → Capture → Quick add (see [Where new tasks go](quick-add.md#where-new-tasks-go)). In any other order the task appears where that order puts it; the setting only decides which of two equal tasks comes first.
