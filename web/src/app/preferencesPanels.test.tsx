@@ -3,7 +3,8 @@
 // write the same per-device preferences as before.
 import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { click, render } from '../ui/test-utils'
+import { click, key, render, type } from '../ui/test-utils'
+import { ClosedListView } from './ClosedListSettings'
 import { CalendarSettingsView } from './CalendarSettings'
 import { KeyboardView, StartViewView } from './PreferencesPanels'
 import { AutoArchiveView } from './ProjectsSettings'
@@ -56,6 +57,36 @@ describe('Preferences rows', () => {
     expect(onSave).toHaveBeenLastCalledWith({ startHour: 9, endHour: 10 })
     await choose(container.querySelector('select[aria-label="Day length"]') as HTMLSelectElement, '360')
     expect(onSave).toHaveBeenLastCalledWith({ dayLength: 360 })
+    await unmount()
+  })
+
+  it('Today limit (today-closed-list D5): Off, the presets and Custom from 1 to 20; Done today is a switch', async () => {
+    const onLimit = vi.fn()
+    const onDone = vi.fn()
+    const { container, unmount } = await render(<ClosedListView limit={0} done={false} onLimit={onLimit} onDone={onDone} />)
+    const select = container.querySelector('[data-today-limit]') as HTMLSelectElement
+    expect([...select.options].map((o) => o.value)).toEqual(['0', '3', '5', '7', '10', 'custom'])
+    await choose(select, '5')
+    expect(onLimit).toHaveBeenLastCalledWith(5)
+    await choose(select, 'custom')
+    const custom = container.querySelector('[data-today-limit-custom]') as HTMLInputElement
+    await type(custom, '12')
+    await key(custom, 'Enter')
+    expect(onLimit).toHaveBeenLastCalledWith(12)
+    onLimit.mockClear()
+    await type(custom, '25')
+    await key(custom, 'Enter')
+    expect(onLimit).not.toHaveBeenCalled()
+    expect(container.querySelector('[data-today-limit-error]')!.textContent).toBe('Choose a whole number from 1 to 20.')
+    await click(container.querySelector('[data-today-done-switch] [role="switch"]')!)
+    expect(onDone).toHaveBeenCalledWith(true)
+    await unmount()
+  })
+
+  it('Today limit: a stored custom value opens on Custom', async () => {
+    const { container, unmount } = await render(<ClosedListView limit={12} done onLimit={() => {}} onDone={() => {}} />)
+    expect((container.querySelector('[data-today-limit]') as HTMLSelectElement).value).toBe('custom')
+    expect((container.querySelector('[data-today-limit-custom]') as HTMLInputElement).value).toBe('12')
     await unmount()
   })
 

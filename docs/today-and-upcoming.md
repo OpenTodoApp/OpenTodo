@@ -17,7 +17,7 @@ Today (<kbd>g</kbd> <kbd>t</kbd>) and Upcoming (<kbd>g</kbd> <kbd>u</kbd>) are t
 
 Today, under its [briefing](briefing.md), is where most people start. A task you add here with [quick add](quick-add.md) is due today. Tasks planned for an earlier day sit in **Earlier** at the top, each date in red. **Move all to today** and **Reschedule…** in its header move the whole group at once, with Undo. Above five tasks the group starts folded; this device remembers once you open or close it. Below are today's tasks, sorted by time; a timed task shows its time alone, since the heading already says Today.
 
-A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Earlier**. Each task is listed once, and the Today count in the sidebar counts the same tasks.
+A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Earlier**. Each task is listed once, and the sidebar's Today count agrees.
 
 A task whose start date has come shows up in Today too, with a **Started** chip, and stays until you complete it, give it a date or defer it again. Deferred and parked tasks stay out of Today, unless their due date or deadline has come: a hard date always wins. **This Evening** tasks get their own group below the day's tasks; [day parts](day-parts.md) add Morning and Afternoon.
 
@@ -25,7 +25,7 @@ Tasks [waiting for another task](tasks-and-projects.md#wait-for-another-task) ga
 
 To push a task to later, open it and change **Due**, or press <kbd>s</kbd> to place it on the Day calendar.
 
-Your appointments can show here too: [Calendar events in Today](calendar-events-in-today.md).
+Your appointments can show here too: [Calendar events in Today](calendar-events-in-today.md). Too many tasks? Set a [Today limit](today-limit.md).
 
 At the end of the list, **Close the day** moves what is left to tomorrow in one step ([Close the day](method/rhythms.md#close-the-day)); afterwards it reads **Day closed** with the time.
 

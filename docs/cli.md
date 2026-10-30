@@ -103,6 +103,7 @@ Every command acts on one [workspace](workspaces.md): the account's default work
 
 ```bash
 ot today                       # due today or earlier, overdue first
+ot today --all                 # with a Today limit: every task, no "Waiting for a slot" section
 ot inbox                       # the Inbox: no project and no date
 ot upcoming                    # due after today
 ot list                        # every open task, soonest first
@@ -124,6 +125,8 @@ ID        P   DUE                 PROJECT  TITLE
 3f1d7a22  P1  2026-10-10 09:00             Call the plumber
 ```
 
+With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on.
+
 ### Add and edit
 
 ```bash
@@ -140,6 +143,7 @@ ot add "Quarterly report" --start monday --deadline 2026-11-06
 ot edit 8c2a --start someday                         # park it, keep the due date
 ot add "Install shelves" --blocked-by 91f0 --location Home
 ot edit 8c2a --evening=false --blocked-by none --location none
+ot add --done "Fixed the printer"                    # log a win: created already completed
 ```
 
 | Flag | Meaning |
@@ -161,6 +165,7 @@ ot edit 8c2a --evening=false --blocked-by none --location none
 | `--location <where>` | A saved location's name (case-insensitive) or id, sent with its current name, address and coordinates; or `lat,lon`; `none` (edit) clears it. An unknown name exits 1 before any write |
 | `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
 | `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `30m/2h` (time spent and an estimate), `every …` rules and `remind me …` reminders, in six languages. Explicit flags win over what the line says; an unknown `#name` stays in the title |
+| `--done` | `ot add` only: [log a win](today-limit.md#log-a-win), a task created already completed now by you in the one request, so it counts in Completed and your statistics like any completion. `--repeat` and `--remind` are usage errors with it (a win does not repeat or remind), and with `--natural` a rule or reminder phrase in the title is left out |
 | `--lang <codes>` | Languages for `--natural` and `--remind`, e.g. `de,en`. Default: the language of `LC_ALL`, `LC_MESSAGES` or `LANG`; English is always active |
 | `--no-default-reminder` | `ot add` and `ot edit`: add no [default reminder](default-reminders.md). Without it, a command that sets a due date asks the server for your default reminder (`?default_reminder=true`); `--remind` (or a `remind me …` phrase with `--natural`) also leaves it out, since you chose your own. With an `agent` token the server always applies your defaults |
 | `--idempotency-key <key>` | `ot add` only: a retry with the same key returns the same task, see [Retry-safe creates](#retry-safe-creates). Reminders send `<key>.r1`, `<key>.r2`, …, so a retry also converges to one set of reminders |

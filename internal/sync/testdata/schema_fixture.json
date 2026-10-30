@@ -99,6 +99,8 @@
       "focus",
       "focus_date",
       "monthly_at",
+      "slots",
+      "slots_date",
       "tomorrow_note"
     ],
     "rule": [
@@ -199,7 +201,9 @@
       "theme_accent",
       "theme_mode",
       "time_format",
+      "today_done",
       "today_events",
+      "today_limit",
       "week_start",
       "welcome"
     ],

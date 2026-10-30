@@ -59,6 +59,27 @@ export async function pastedInputs(lines: readonly string[], context: Omit<Parse
   return out
 }
 
+/**
+ * The line as parsed. Logging a win (today-closed-list D6), recurrence and reminder
+ * phrases are refused: re-read as dismissed, so their words stay in the title.
+ */
+function parseLine(value: string, ctx: Omit<ParseContext, 'dismissed'> | null, dismissed: Span[], logDone: boolean) {
+  if (!ctx || !value.trim()) return { parsed: null, refused: false }
+  const first = parse(value, { ...ctx, dismissed })
+  const refuse = logDone ? first.chips.filter((c) => c.kind === 'recurrence' || c.kind === 'reminder') : []
+  if (!refuse.length) return { parsed: first, refused: false }
+  return { parsed: parse(value, { ...ctx, dismissed: refuse.reduce(dismissChip, dismissed) }), refused: true }
+}
+
+/** The note under a win whose line asked to repeat or remind. */
+function WinRefused() {
+  return (
+    <p className="flex items-center gap-1.5 px-4 pb-2 text-meta text-muted" data-win-refused>
+      <Icon name="repeat" size="xs" className="shrink-0" />{t('A win does not repeat or remind; the words stay in the title.')}
+    </p>
+  )
+}
+
 /** The parse options of a line typed now, or null while parsing is off. */
 function useParseContext(settings: QuickAddSettings, projects: readonly ProjectRef[]): () => Omit<ParseContext, 'dismissed'> | null {
   // The user's date format fills the automatic numeric order, and their first day of
@@ -118,7 +139,9 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
    * once, so the screen writes them as one batch. Without it, `onAdd` runs per line.
    */
   onAddMany?: (inputs: QuickAddInput[]) => Promise<void> | void
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany }, ref) {
+  /** Log a win (today-closed-list D6): recurrence and reminder phrases are refused with a note. */
+  logDone?: boolean
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
@@ -133,11 +156,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const [settings, setSettings] = useState(loadQuickAddSettings)
   useEffect(() => onQuickAddSettingsChange(() => setSettings(loadQuickAddSettings())), [])
   const context = useParseContext(settings, projects)
-  const parsed = useMemo(() => {
-    const ctx = context()
-    if (!ctx || !value.trim()) return null
-    return parse(value, { ...ctx, dismissed })
-  }, [value, dismissed, context])
+  const { parsed, refused } = useMemo(() => parseLine(value, context(), dismissed, !!logDone), [value, dismissed, context, logDone])
   const chips = useMemo(() => parsed?.chips ?? [], [parsed])
   const emptyTitle = parsed !== null && parsed.title === ''
   // The palette's field rows and the one ↑/↓ highlighted (palette-quick-add D3).
@@ -340,6 +359,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
         <div id="quick-add-preview" role="status" aria-live="polite">
           <FieldRows rows={rows} highlight={row} chipHighlight={highlight} projects={projects} labels={labels} line={lineInfo} onEdit={edit} onDismiss={(r) => r.chip && dismiss(r.chip)} />
           {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-4 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
+          {refused && <WinRefused />}
         </div>
         <QuickAddFooter title={parsed ? parsed.title : null} empty={emptyTitle} escape={escape} />
       </>}

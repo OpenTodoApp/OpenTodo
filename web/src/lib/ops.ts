@@ -630,6 +630,11 @@ export type NewTaskInput = {
    */
   reminders?: ReminderPhrase[]
   /**
+   * Created already done (today-closed-list D6, Log a win): `completed_at` is now and
+   * `completed_by` the signed-in account, in the creating batch.
+   */
+  completed?: boolean
+  /**
    * Where a top-level task lands in its manual list (add-position D2): 'top' above every
    * task, 'bottom' (the default) appended. Subtasks always append.
    */
@@ -670,7 +675,7 @@ export async function planTask(input: NewTaskInput, position?: number): Promise<
   return { id, change: { entity: 'task', entityId: id, patch: {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: at, created_at: now,
-    completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null, ...extra,
+    completed_at: input.completed ? now : null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null, ...extra,
   } } }
 }
 
