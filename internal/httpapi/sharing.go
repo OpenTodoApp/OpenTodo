@@ -301,6 +301,7 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 					e[f] = json.RawMessage("null")
 				}
 			}
+			defaultFlowMode(e)
 		}
 		return nil
 	}
@@ -318,6 +319,9 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 	}
 	if entity != "project" || len(list) == 0 {
 		return nil
+	}
+	for _, e := range list {
+		defaultFlowMode(e)
 	}
 	shared, err := s.sync.SharedProjects(ctx, userFrom(ctx).ID)
 	if err != nil || len(shared) == 0 {

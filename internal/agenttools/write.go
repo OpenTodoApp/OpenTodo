@@ -140,6 +140,7 @@ func init() {
 				"icon":              iconProp,
 				"parent_id":         map[string]any{"type": "string", "description": "Parent project id, optional."},
 				"workspace_id":      workspaceIDProp,
+				"flow_mode":         projectFlowProp,
 				"client_request_id": requestIDProp,
 				"id":                chosenIDProp,
 			}), false, false, []string{"name"}, true)

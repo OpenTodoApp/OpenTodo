@@ -33,7 +33,9 @@ type snapshot struct {
 	shared   map[string]opsync.ProjectAccess
 	// sectionProject maps a section id onto its project id (write validation).
 	sectionProject map[string]string
-	labelList      []opsync.Entity
+	// sectionRows are the live section rows, for the flow of their tasks (project-flow-modes).
+	sectionRows []opsync.Entity
+	labelList   []opsync.Entity
 	// fieldDefs maps a project id onto the custom fields that apply to it, its
 	// ancestors' first (custom-fields, inherited-custom-fields); fieldsFor fills
 	// it on first use from allFieldDefs.
@@ -118,6 +120,7 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 		}
 		snap.sections[str(sec, "id")] = str(sec, "name")
 		snap.sectionProject[str(sec, "id")] = rawStr(sec, "project_id")
+		snap.sectionRows = append(snap.sectionRows, sec)
 	}
 	defs, err := r.list(ctx, userID, "field", false)
 	if err != nil {
