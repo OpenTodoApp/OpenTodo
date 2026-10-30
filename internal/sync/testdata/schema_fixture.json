@@ -111,6 +111,7 @@
       "daily_at",
       "focus",
       "focus_date",
+      "focus_slots",
       "monthly_at",
       "slots",
       "slots_date",
@@ -191,6 +192,7 @@
     ],
     "user_prefs": [
       "add_position",
+      "bento_order",
       "briefing",
       "date_format",
       "day_parts",
@@ -207,6 +209,7 @@
       "focus_presets",
       "focus_short_break_minutes",
       "focus_sound",
+      "focus_style",
       "focus_work_minutes",
       "haptics",
       "language",

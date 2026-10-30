@@ -7,10 +7,10 @@
 // notification (hidden tab, permission granted, tagged per run so two tabs show
 // one), and the end of the session when its task is completed or trashed elsewhere.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getTask, useReviewRow } from '../../lib/localData'
+import { getTask, useReviewRow, useUserPrefsRow } from '../../lib/localData'
+import { orderedFocusIds } from '../../lib/bento'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { swRegistration } from '../../lib/push'
-import { storedFocus } from '../../lib/review'
 import { useFocusPrefs, useNoiseVolume, type FocusPrefs } from '../../lib/focus/prefs'
 import { nextFocusTask } from '../../lib/focus/select'
 import { completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
@@ -107,7 +107,8 @@ function useTaskGone(state: FocusState | null | undefined, prefs: FocusPrefs, no
   const tasks = useLiveTasks()
   const review = useReviewRow()
   const today = useToday()
-  const focusIds = useMemo(() => storedFocus(review, today), [review, today])
+  const userPrefs = useUserPrefsRow()
+  const focusIds = useMemo(() => orderedFocusIds(review, userPrefs, today, tasks ?? []), [review, userPrefs, today, tasks])
   const watching = state && inRun(state) ? state.taskId : null
   const task = watching && tasks ? tasks.find((x) => x.id === watching) : undefined
   const gone = !!watching && !!tasks && (!task || !!task.completed_at)
