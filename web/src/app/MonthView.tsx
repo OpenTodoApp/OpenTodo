@@ -16,7 +16,8 @@ import { canEditTasks, roleOf } from '../lib/sharing'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import type { Task } from '../lib/types'
 import { CalendarRangeSwitch } from './CalendarRange'
-import { useGridPrefs } from './CalendarView'
+import { useCalendarShowCompleted, useGridPrefs } from '../lib/liveData'
+import { CalendarCompletedToggle } from './calendar/CalendarCompletedToggle'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanPanel'
@@ -50,6 +51,7 @@ export function MonthView({ date }: { date?: string }) {
   const { resolved } = useDateTimeFormat()
   const zone = useViewerZone()
   const prefs = useGridPrefs()
+  const showCompleted = useCalendarShowCompleted()
   const narrow = useMediaQuery('(max-width: 39.99rem)')
   useEffect(() => rememberCalendarMode('month'), [])
 
@@ -60,14 +62,14 @@ export function MonthView({ date }: { date?: string }) {
   const memberMap = useMembershipMap()
   const rawTasks = useLiveTasks() ?? NO_TASKS
   const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
-  // The Day and Week selection (open, live, not archived) over the six weeks.
-  const shownIds = useMemo(() => new Set(calendarTasks(viewed, projects, days[0], days[days.length - 1]).map((tk) => tk.id)), [viewed, projects, days])
+  // The shared calendar visibility selection over the six weeks.
+  const shownIds = useMemo(() => new Set(calendarTasks(viewed, projects, days[0], days[days.length - 1], showCompleted).map((tk) => tk.id)), [viewed, projects, days, showCompleted])
   const shownRaw = useMemo(() => rawTasks.filter((item) => shownIds.has(item.id)), [rawTasks, shownIds])
   const shownViewed = useMemo(() => viewed.filter((task) => shownIds.has(task.id)), [viewed, shownIds])
   const cells = useMemo(() => new Map(days.map((d) => [d, cellTasks(shownRaw, d, zone)])), [days, shownRaw, zone])
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
   const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
-  const editable = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
+  const editable = useCallback((task: Task) => !task.completed_at && canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
 
   /** Selection order: the month's tasks in grid order (`j` / `k`). */
   const order = useMemo(() => days.flatMap((d) => (cells.get(d) ?? []).map((task) => task.id)), [days, cells])
@@ -94,7 +96,7 @@ export function MonthView({ date }: { date?: string }) {
   const move = useCallback((id: string, days: number) => {
     queue.current = queue.current.then(async () => {
       const raw = await getTask(id)
-      if (!raw || raw.deleted_at || !raw.due) return
+      if (!raw || raw.deleted_at || raw.completed_at || !raw.due) return
       const task = viewedTask(raw)
       if (!task.due) return
       const due = nudgeDue(task.due, { days })
@@ -107,7 +109,7 @@ export function MonthView({ date }: { date?: string }) {
   /** Dropped on a day: same time and zone, new date (one due edit, with Undo); a task from the planning list may have no date yet. */
   const dropOn = useCallback((id: string, d: string) => {
     const task = viewedMap.get(id)
-    if (!task || task.due?.date === d) return
+    if (!task || task.completed_at || task.due?.date === d) return
     act(setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due?.time ? { time: task.due.time } : {}) })))
     setSelectedId(id)
     setFocused(d)
@@ -131,7 +133,7 @@ export function MonthView({ date }: { date?: string }) {
   // shortcuts "One shortcut registry with scopes"): the dispatcher keeps them out
   // of text fields and dialogs and runs the `g` sequences first.
   const idx = selectedId ? order.indexOf(selectedId) : -1
-  const selectedTask = selectedId ? rawMap.get(selectedId) : undefined
+  const selectedTask = selectedId && order.includes(selectedId) ? rawMap.get(selectedId) : undefined
   const ARROWS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
   const step = (dir: 'next' | 'prev') => {
     const next = order[dir === 'next' ? Math.min(order.length - 1, idx + 1) : Math.max(0, idx - 1)] ?? null
@@ -147,7 +149,7 @@ export function MonthView({ date }: { date?: string }) {
     'month.focus': (e) => focusDay(addDaysISO(focused, ARROWS[e.key])),
     'month.next': () => step('next'),
     'month.prev': () => step('prev'),
-    'month.open': () => { if (!selectedId) return false; setPanelTaskId(selectedId) },
+    'month.open': () => { if (!selectedTask) return false; setPanelTaskId(selectedTask.id) },
     'month.escape': () => {
       if (expanded) setExpanded(null)
       else if (openId) setPanelTaskId(null)
@@ -188,11 +190,11 @@ export function MonthView({ date }: { date?: string }) {
         } : undefined}
         onClick={(e) => { e.stopPropagation(); setSelectedId(task.id); if (v?.due) setFocused(v.due.date) }}
         onDoubleClick={() => setPanelTaskId(task.id)}
-        className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${v?.due && v.due.date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canEdit ? 'cursor-grab' : ''}`}>
+        className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${task.completed_at || (v?.due && v.due.date < today) ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canEdit ? 'cursor-grab' : ''}`}>
         {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
-        <span className="sr-only">{[task.title || t('Untitled'), v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}</span>
+        <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}</span>
         {v?.due?.time && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(v.due.time)}</span>}
-        <span aria-hidden className="min-w-0 flex-1 truncate">{task.title || t('Untitled')}</span>
+        <span aria-hidden className={`min-w-0 flex-1 truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
         {task.priority < 4 && <span aria-hidden className="shrink-0 text-hint font-semibold" data-priority={task.priority}>P{task.priority}</span>}
       </button>
     )
@@ -208,9 +210,13 @@ export function MonthView({ date }: { date?: string }) {
             <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
             <Button variant="ghost" size="sm" icon="chevron-right" aria-label={t('Next month')} onClick={() => goTo(addMonthsISO(anchor, 1))} />
           </span>
+          <CalendarCompletedToggle shown={showCompleted} />
           <CalendarRangeSwitch mode="month" date={date} />
         </>}
-        overflow={<MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a day, or press s on one')} onSelect={togglePlan} />} />
+        overflow={<>
+            <CalendarCompletedToggle shown={showCompleted} menu />
+            <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a day, or press s on one')} onSelect={togglePlan} />
+          </>} />
       <div ref={gridRef} role="grid" aria-label={t('{title} calendar', { title })} aria-readonly={false} className="w-full min-w-0 select-none" data-month-grid>
         <div role="row" className="grid grid-cols-7 border-b border-default">
           {weekdays.map((w, i) => <div key={i} role="columnheader" className="px-1 py-1 text-center text-hint font-medium text-muted">{w}</div>)}

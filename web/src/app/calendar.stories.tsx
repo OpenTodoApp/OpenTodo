@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { CalendarView } from './CalendarView'
 import { PlanView } from './PlanView'
 import { seedCalendarPlan, seedCalendarWeek, withSeed } from './stories/fixtures'
+import { completeTask, createTask } from '../lib/ops'
+import { setCalendarShowCompleted } from '../lib/localData'
 
 // Core screen: the calendar (OpenSpec change ux-overhaul, task 8.7; time-blocking
 // "Day and Week calendar views", "Week on a phone"). The real view over a seeded
@@ -24,6 +26,19 @@ export const Day: StoryObj = {
 
 /** Week: Monday to Sunday from the frozen Wednesday; an agenda below 640 px. */
 export const Week: StoryObj = {
+  render: () => <Column><CalendarView mode="week" /></Column>,
+}
+
+/** Completed timed and all-day tasks stay visible without increasing the planned load. */
+export const Completed: StoryObj = {
+  ...withSeed(async () => {
+    await seedCalendarWeek()
+    const timed = await createTask({ title: 'Send the project update', due: { date: '2026-10-14', time: '08:00' }, estimate_minutes: 30 })
+    const allDay = await createTask({ title: 'Book the train tickets', due: { date: '2026-10-14' } })
+    await completeTask(timed)
+    await completeTask(allDay)
+    await setCalendarShowCompleted(true)
+  }),
   render: () => <Column><CalendarView mode="week" /></Column>,
 }
 

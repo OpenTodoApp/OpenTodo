@@ -30,10 +30,11 @@ export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, sel
     <li key={task.id}>
       <button type="button" data-cal-id={task.id} data-agenda-task={task.id} onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(task.id) } }}
-        className={`ui-block flex min-h-11 w-full items-center gap-2 px-2 py-1 text-left text-body ${past ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
+        className={`ui-block flex min-h-11 w-full items-center gap-2 px-2 py-1 text-left text-body ${past || task.completed_at ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
         data-hue={hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)}>
         <span className="w-14 shrink-0 text-meta tabular-nums">{time ?? t('all day')}</span>
-        <span className="min-w-0 flex-1 truncate">{task.title || t('Untitled')}</span>
+        <span className={`min-w-0 flex-1 truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+        {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
         {task.estimate_minutes ? <span className="shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
       </button>
     </li>

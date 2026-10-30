@@ -11,7 +11,7 @@ order: 61
 
 <picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
 
-The calendar shows your dated tasks by day, week, month or as a two-week plan. Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
+The calendar shows dated tasks. Moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
 
 ## Open the calendar
 
@@ -26,11 +26,17 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan*
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 
-Week starts on your first day of the week; the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → Language and region → Date and time** and follow you to all your devices.
+Week start and time format follow **Settings → Language and region → Date and time** on every device.
+
+## Show completed tasks
+
+Choose **Show completed** in the header (under **More actions** on smaller screens) to show finished tasks with struck-through titles on their scheduled date and time. This device remembers the choice across all four modes, reloads and offline use. **Hide completed** turns it off; the default is off.
+
+Completed tasks stay openable, but cannot be rescheduled from the calendar and do not add to remaining capacity or repeating projections. Deleted, undated and archived-project tasks stay excluded.
 
 ## See the month
 
-**Month** shows six weeks at a glance, starting on your first day of the week, with today marked and the days of other months dimmed. Each day lists its open tasks: the timed ones first by time, then the rest by priority. A crowded day shows the first few and **+N more**, which expands the day in place. When a day's tasks have estimates, the day shows the planned total against your day length, in red when it is over.
+**Month** shows six weeks, with today marked and other months dimmed. Each day lists visible tasks: timed ones first, then the rest by priority. **+N more** expands a crowded day. Estimated open tasks count towards the planned total, in red when over capacity.
 
 - Drag a task onto another day to move it. It keeps its time.
 - Select a task with <kbd>j</kbd> and <kbd>k</kbd>, or by clicking it. The arrows then move it a day (<kbd>←</kbd> <kbd>→</kbd>) or a week (<kbd>↑</kbd> <kbd>↓</kbd>), into the next month if needed. <kbd>Enter</kbd> opens it, and <kbd>Esc</kbd> clears the selection.

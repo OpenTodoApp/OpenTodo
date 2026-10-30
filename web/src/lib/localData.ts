@@ -14,7 +14,7 @@
 //   statistics, which must name or exclude what is in the Trash.
 // Snapshots are shared and read-only: sort a copy, never the array itself.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
+import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { db, getMeta, setMeta, type AttachmentBlob } from './db'
 import { rememberFieldNames } from './fieldNames'
 import { applicableFieldsLookup } from './fieldTree'
@@ -492,6 +492,10 @@ export function useReferenceNames(parents: readonly string[]): Map<string, strin
 const NO_NAMES = new Map<string, string>()
 
 // ---- device-local settings (the meta table, never synced) ----
+
+export function setCalendarShowCompleted(show: boolean): Promise<void> {
+  return setMeta(CALENDAR_COMPLETED_META_KEY, show)
+}
 
 /** Saves the Day and Week view preferences of this device (time-blocking D7). */
 export function saveGridPrefs(prefs: GridPrefs): Promise<void> {
