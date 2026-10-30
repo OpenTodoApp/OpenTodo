@@ -52,7 +52,8 @@ export function screens(ids, base) {
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
     { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
     // A project's Calendar layout (calendar-clarity 4.4): the calendar's phone rules inside the project page.
-    { name: 'project-calendar', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Calendar' },
+    // Ready on the project page in whatever layout this device left it, since the layout is chosen next.
+    { name: 'project-calendar', path: `/project/${ids.home}`, ready: (p) => p.locator('[data-page-project], [data-project-calendar]').first().waitFor(), layout: 'Calendar' },
     // Custom fields (custom-fields): five columns at 768 px; below it the layout is not offered.
     { name: 'columns', path: `/project/${ids.work}`, widths: [768, 1280], overlays: ['fields-dialog'], ready: async (p) => {
       await row('Plan the team offsite')(p)
