@@ -697,6 +697,18 @@ export interface UserPrefsFields {
    * companion and first and as hidden in lists.
    */
   today_done?: string
+  /**
+   * Today's focus style (OpenSpec change bento-daily-check, design D4):
+   * "bento" makes the focus a Large, a Medium and a Small slot; empty or
+   * unknown reads as Three tasks and is kept.
+   */
+  focus_style?: string
+  /**
+   * The Bento order (bento-daily-check D4, D6): "summit" lists Medium,
+   * Large, Small; empty or unknown reads as Frog (Large, Medium, Small)
+   * and is kept.
+   */
+  bento_order?: string
 }
 
 /**
@@ -747,6 +759,13 @@ export interface ReviewFields {
    */
   slots_date?: string
   slots?: string
+  /**
+   * The Bento slots of today's focus (OpenSpec change bento-daily-check,
+   * design D3): "L:<id>,M:<id>,S:<id>", any subset, written in the same
+   * batch as focus and focus_date; an entry counts only for an id in
+   * focus. Task ids and fixed letters only, never content.
+   */
+  focus_slots?: string
 }
 
 /** The row a field op creates when its entity is new: one key per op field, a family (`fields.<id>`) in one key named after its prefix. */
@@ -797,10 +816,10 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '',
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', bento_order: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   review: {
-    completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '',
+    completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',
   } satisfies Omit<Review, 'id' | '_clock'>,
 }
 

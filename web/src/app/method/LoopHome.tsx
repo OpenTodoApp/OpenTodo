@@ -8,13 +8,14 @@ import { formatDate, formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
-import { useAllLabels, useReviewRow, useReviewedAt } from '../../lib/localData'
+import { useAllLabels, useReviewRow, useReviewedAt, useUserPrefsRow } from '../../lib/localData'
+import { orderedFocusIds } from '../../lib/bento'
 import { move, PLACES, RHYTHMS, termDescription, termName, type MoveId, type RhythmId } from '../../lib/method'
 import { nextGroups } from '../../lib/method/groups'
 import { decided, INBOX_AGE_CAUTION_DAYS, inboxAge, lastDays, nextMove, PULSE_DAYS } from '../../lib/method/pulse'
 import { MethodRules, waitingTasks } from '../../lib/method/rules'
 import { createTask, setTaskCompleted } from '../../lib/ops'
-import { dailyDue, dayClosed, monthlyDue, reviewAgo, reviewDue, storedFocus } from '../../lib/review'
+import { dailyDue, dayClosed, monthlyDue, reviewAgo, reviewDue } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import { qualifies } from '../../lib/triage'
 import type { Label, Project, Task } from '../../lib/types'
@@ -59,6 +60,7 @@ export function LoopHome() {
   const input = useMethodInput()
   const labels = useAllLabels()
   const review = useReviewRow()
+  const prefs = useUserPrefsRow()
   const reviewedAt = useReviewedAt()
   const weekStart = useDateTimeFormat().resolved.weekStart
   const data = useMemo(() => {
@@ -75,7 +77,8 @@ export function LoopHome() {
     const rhythms = { daily: dailyDue(review?.daily_at, input.today), weekly: reviewDue(review?.completed_at, now), monthly: monthlyDue(review?.monthly_at, now) }
     const rhythmDue = rhythms.daily || rhythms.weekly || rhythms.monthly
     const byId = new Map(live.map((x) => [x.id, x]))
-    const focus = storedFocus(review, input.today).map((id) => byId.get(id)).filter((x): x is Task => !!x)
+    // Listed in the Bento order when Bento is on (bento-daily-check D6).
+    const focus = orderedFocusIds(review, prefs, input.today, live).map((id) => byId.get(id)).filter((x): x is Task => !!x)
     const stats = { tasks: input.tasks, projects: input.projects, shared: sharedIds([...input.memberships.values()]), me: input.me, today: input.today }
     const pulse = {
       week: compute(stats, periodFor('this-week', input.today, weekStart), weekStart).completed,
@@ -87,7 +90,7 @@ export function LoopHome() {
     const stamps = { weekly: review?.completed_at ?? null, monthly: review?.monthly_at ?? null }
     const closedAt = review && dayClosed(review, input.today) ? review.closed_at : null
     return { inbox, withoutNext, stalled, contexts, nextCount, waiting, rhythms, rhythmDue, stamps, closedAt, focus, pulse, up: nextMove({ inbox, withoutNext, rhythmDue, nextCount }) }
-  }, [input, labels, review, reviewedAt, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps -- reviewedAt: the walk's stamps change what Place counts
+  }, [input, labels, review, prefs, reviewedAt, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps -- reviewedAt: the walk's stamps change what Place counts
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const projectMap = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
   const projects = useMemo(() => (input?.projects ?? []).filter((p) => !p.deleted_at && !p.archived), [input])
