@@ -1113,6 +1113,135 @@
       }
     },
     {
+      "name": "slots add",
+      "aliases": [
+        "slots create"
+      ],
+      "summary": "create a calendar slot and print its id",
+      "args": [
+        {
+          "name": "title",
+          "required": true,
+          "repeatable": true
+        }
+      ],
+      "flags": [
+        {
+          "name": "date",
+          "type": "string",
+          "default": "today",
+          "description": "the day: YYYY-MM-DD, today, tomorrow or a weekday name"
+        },
+        {
+          "name": "at",
+          "type": "string",
+          "default": "09:00",
+          "description": "start time HH:MM"
+        },
+        {
+          "name": "for",
+          "type": "string",
+          "default": "30m",
+          "description": "length, 15m to 8h in 15-minute steps"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "description": "colour as #rrggbb (default: slate)"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/slot"
+      }
+    },
+    {
+      "name": "slots list",
+      "aliases": [
+        "slots ls"
+      ],
+      "summary": "list the account's calendar slots (blocks on the Day and Week grid that hold small tasks)",
+      "args": [],
+      "flags": [
+        {
+          "name": "from",
+          "type": "string",
+          "description": "first day: YYYY-MM-DD, today, tomorrow or a weekday name"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "last day"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/slot"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "slots put",
+      "summary": "add tasks to a calendar slot and date them to its day, as one batch",
+      "args": [
+        {
+          "name": "slot",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "name": "task",
+          "required": true,
+          "repeatable": true
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/slot"
+      }
+    },
+    {
+      "name": "slots rm",
+      "aliases": [
+        "slots delete"
+      ],
+      "summary": "delete a calendar slot (its tasks stay on its day without a time)",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "yes",
+          "short": "y",
+          "type": "bool",
+          "description": "confirm a destructive command (required off a terminal and with --json)"
+        }
+      ],
+      "writes": true,
+      "destructive": true,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/slot"
+      }
+    },
+    {
       "name": "time export",
       "summary": "download the server's time entries CSV in the local time zone",
       "args": [],
@@ -2651,6 +2780,58 @@
         "content": {
           "type": "string",
           "description": "the SKILL.md text"
+        }
+      }
+    },
+    "slot": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "slot",
+      "description": "A calendar slot exactly as the REST API returns it (OpenSpec calendar-slots). The title is ciphertext for an encrypted account (encrypted: true); an empty title reads as \"Slot\".",
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "date",
+        "start",
+        "minutes",
+        "task_ids"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "start": {
+          "type": "string",
+          "description": "HH:MM"
+        },
+        "minutes": {
+          "type": "integer"
+        },
+        "task_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ordered task ids, at most 20"
+        },
+        "color": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "number"
+        },
+        "encrypted": {
+          "type": "boolean"
         }
       }
     },

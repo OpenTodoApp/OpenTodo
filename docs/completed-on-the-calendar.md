@@ -26,3 +26,5 @@ Completed tasks do not add to the day's remaining planned time, tasks without es
 ## Open or edit a completed task
 
 Select and open a completed task as usual. You can edit or reopen it in its details when your project role allows it. Calendar dragging, resizing and scheduling shortcuts leave completed tasks unchanged.
+
+[Slots](slots.md) keep their own checklist, including checked tasks and their count. This control changes standalone calendar rows and blocks; it leaves a slot's checklist and container actions unchanged.

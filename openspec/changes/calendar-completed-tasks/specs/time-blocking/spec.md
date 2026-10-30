@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Optional completed tasks in the Calendar
-The Calendar SHALL have a keyboard-accessible Show completed tasks toggle control in its existing header actions (a button on wide screens, a checked item in More actions on smaller screens), off by default, shared by Day, Week, Month and Plan. Its label SHALL remain Show completed tasks in both states; the pressed or checked state SHALL communicate whether completed tasks are shown. The choice SHALL be remembered only on this device across navigation and reloads and SHALL work offline. Enabling it SHALL include live completed tasks on their due date and time in the viewer's zone, with a struck-through title and an accessible completed status in blocks, lanes, overflow lists and phone agendas. Deleted tasks, undated tasks and tasks in archived projects SHALL stay excluded. Completed tasks SHALL NOT count towards remaining planned capacity, unestimated work or recurring projection sources. They SHALL remain selectable and openable, but calendar drag, resize, placement and completion shortcuts SHALL NOT change them. Completion SHALL NOT change edit permissions or cause a task to be announced as read-only; that wording SHALL reflect project permissions. Changing visibility SHALL NOT create task operations; task completion and reopening SHALL continue through the ordinary op log, and devices with identical task rows and the same visibility choice SHALL show the same tasks after sync.
+The Calendar SHALL have a keyboard-accessible Show completed tasks toggle control in its existing header actions (a button on wide screens, a checked item in More actions on smaller screens), off by default, shared by Day, Week, Month and Plan. Its label SHALL remain Show completed tasks in both states; the pressed or checked state SHALL communicate whether completed tasks are shown. The choice SHALL be remembered only on this device across navigation and reloads and SHALL work offline. Enabling it SHALL include live completed tasks on their due date and time in the viewer's zone, with a struck-through title and an accessible completed status in blocks, lanes, overflow lists and phone agendas. Deleted tasks, undated tasks and tasks in archived projects SHALL stay excluded. Completed tasks SHALL NOT count towards remaining planned capacity, unestimated work or recurring projection sources. Completed tasks in standalone rows and blocks SHALL remain selectable and openable, but calendar drag, resize, placement and completion shortcuts SHALL NOT change them. The control SHALL apply to standalone calendar task rows and blocks; a slot SHALL retain its own checklist, checked rows, counts and container actions as specified by calendar-slots. Completion SHALL NOT change edit permissions or cause a task to be announced as read-only; that wording SHALL reflect project permissions. Changing visibility SHALL NOT create task operations; task completion and reopening SHALL continue through the ordinary op log, and devices with identical task rows and the same visibility choice SHALL show the same tasks after sync.
 
 #### Scenario: Default calendar
 - **WHEN** the user opens a calendar mode without a saved visibility choice
-- **THEN** the Show completed tasks button is not pressed and only open dated tasks appear
+- **THEN** the Show completed tasks button is not pressed and only open dated tasks appear as standalone rows or blocks
 
 #### Scenario: Toggle once for all modes, offline
 - **WHEN** the user enables Show completed tasks offline, switches through Day, Week, Month and Plan, and reloads
@@ -21,7 +21,7 @@ The Calendar SHALL have a keyboard-accessible Show completed tasks toggle contro
 
 #### Scenario: Hide completed work again
 - **WHEN** the user turns Show completed tasks off
-- **THEN** completed tasks disappear immediately from all calendar modes and their overflow counts without changing the task data or the remaining planned capacity
+- **THEN** standalone completed task rows disappear immediately from all calendar modes and their overflow counts without changing the task data or the remaining planned capacity
 
 #### Scenario: Completion received from another device
 - **WHEN** a completion or reopening operation arrives from another device
@@ -46,6 +46,10 @@ The Calendar SHALL have a keyboard-accessible Show completed tasks toggle contro
 #### Scenario: Re-plan ignores visible completed work
 - **WHEN** Show completed tasks is on and a day has one missed open block and one completed block
 - **THEN** Re-plan counts and moves only the open task, while the completed task stays unchanged
+
+#### Scenario: Slot checklist stays independent
+- **WHEN** the user toggles Show completed tasks with one open and one completed task held in a slot and another completed task outside it
+- **THEN** the slot keeps its checklist, checked status and capacity in both states, only the standalone completed task appears or disappears, and slot movement and resizing remain available
 
 ## MODIFIED Requirements
 

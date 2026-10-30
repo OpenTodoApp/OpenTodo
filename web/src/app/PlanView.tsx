@@ -14,6 +14,7 @@ import { beginDrag } from '../lib/dnd'
 import { getTask, saveGridPrefs, useMembershipMap } from '../lib/localData'
 import { useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
+import { slotCapacity, slotsByDate, useSlots } from '../lib/slots'
 import { useOnline } from '../lib/online'
 import { updateTask } from '../lib/ops'
 import { columnEntries, followAnchor, PLAN_SPANS, planLoad, planSeries, projectedOccurrences, spanDates } from '../lib/plan'
@@ -53,13 +54,16 @@ function usePlanDays(dates: string[], today: string, dayLength: number, showComp
   }, [rawTasks, viewed, projects, from, to, showCompleted])
   const series = useMemo(() => planSeries(rawTasks, projects), [rawTasks, projects])
   const projections = useMemo(() => projectedOccurrences(series, rawTasks, today, from, to, zone), [series, rawTasks, today, from, to, zone])
+  // Slots count once toward a day's load (calendar-slots D6); the Plan lists their tasks as usual.
+  const slotRows = useSlots()
+  const slotViews = useMemo(() => slotsByDate(slotRows, dates, new Map(viewed.map((task) => [task.id, task]))), [slotRows, dates, viewed])
   const days = useMemo<PlanDayData[]>(() => dates.map((date) => ({
     date,
     entries: columnEntries(shownRaw, projections, date, zone),
     events: eventBlocks(feeds.visibleEvents, date, zone),
     allDay: allDayEvents(feeds.visibleEvents, date),
-    load: planLoad(shownRaw, projections, feeds.visibleEvents, date, dayLength, zone),
-  })), [dates, shownRaw, projections, feeds.visibleEvents, zone, dayLength])
+    load: planLoad(shownRaw, projections, feeds.visibleEvents, date, dayLength, zone, slotCapacity(slotViews.get(date))),
+  })), [dates, shownRaw, projections, feeds.visibleEvents, zone, dayLength, slotViews])
   return { zone, projects, rawTasks, viewed, feeds, days, loading: live === undefined }
 }
 

@@ -7,6 +7,7 @@ import { formatHour, formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { PlacedFrame } from '../../lib/frames'
+import { slotCapacity, slotCount, slotName } from '../../lib/slots'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
 import type { CalendarSubscription, Project, Task } from '../../lib/types'
 import { Button, hueFor, Tooltip, TruncatedText } from '../../ui'
@@ -15,6 +16,7 @@ import type { useCalendarDrag } from '../calendarDrag'
 import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
 import { CapacityLine, capacityTooltip } from './CapacityLine'
 import { FrameBands } from './FrameBand'
+import { SlotBlock } from './SlotBlock'
 import type { DayMeetings } from './meetingCapacity'
 import { formatTime, GRID_HEIGHT, PX_PER_MIN, RESIZE_ZONE_PX, type Preview } from './grid'
 
@@ -49,7 +51,7 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
   onPointerDown: (e: React.PointerEvent, id: string) => void
   projectMap: Map<string, Project>
 }) {
-  const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0)
+  const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0, slotCapacity([...day.slots.values()]))
   const d = Number(day.date.slice(8))
   const weekdayName = formatDateParts(day.date, { weekday: 'short' })
   return (
@@ -99,7 +101,7 @@ export interface ReplanGhosts {
   movesTo: Map<string, number>
 }
 
-export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, replan, frames, onSelect, onOpen, onDragStart }: {
+export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, slotDrop = null, expanded, setExpanded, preview, replan, frames, onSelect, onOpen, onDragStart }: {
   day: DayData
   /** The day's frame occurrences (calendar-frames D3): background bands below every block. */
   frames?: readonly PlacedFrame[]
@@ -114,6 +116,8 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
   zone?: string
   selectedId: string | null
   draggingId: string | null
+  /** The slot a dragged task would be added to (calendar-slots D3). */
+  slotDrop?: string | null
   expanded: string | null
   setExpanded: (key: string | null) => void
   preview: Preview | null
@@ -145,6 +149,11 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
         if (ev) {
           return <EventBlockView key={b.id} block={ev} lane={b.lane} lanes={b.lanes} overlap={b.overlap} pxPerMinute={PX_PER_MIN}
             minHeight={MIN_BLOCK_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} />
+        }
+        const sv = day.slots.get(b.id)
+        if (sv) {
+          return <SlotBlock key={b.id} view={sv} b={b} past={isPast} selected={selectedId === b.id} dragging={draggingId === b.id}
+            dropTarget={slotDrop === sv.slot.id} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
         }
         const task = taskMap.get(b.id)
         const block = day.blocks.get(b.id)
@@ -299,6 +308,15 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                 <li key={id} data-overflow-event={ev.event.id} className="flex gap-1 truncate px-1 py-0.5 text-meta text-muted">
                   <span className="text-hint tabular-nums">{formatTime(ev.start)}</span>
                   <span className="truncate">{ev.event.summary || t('Busy')}</span>
+                </li>
+              )
+            }
+            const sv = day.slots.get(id)
+            if (sv) {
+              return (
+                <li key={id} data-overflow-slot={sv.slot.id} className="flex gap-1 truncate px-1 py-0.5 text-meta">
+                  <span className="text-hint tabular-nums text-muted">{formatTime(sv.start)}</span>
+                  <span className="truncate">{slotName(sv.slot)} · {slotCount(sv)}</span>
                 </li>
               )
             }

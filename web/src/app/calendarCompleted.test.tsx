@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY } from '../lib/calendar'
 import { db, getMeta, setMeta } from '../lib/db'
 import { setCalendarShowCompleted } from '../lib/localData'
+import { addTaskToSlot, createSlot } from '../lib/slots'
 import { completeTask, createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { click, key, render, waitFor } from '../ui/test-utils'
 import { PageActions, usePageBar } from '../ui'
@@ -259,5 +260,42 @@ it('keeps Re-plan and Frames available and never re-plans a visible completed ta
   await click(document.querySelector('[data-replan-apply]')!)
   await waitFor(async () => (await db.tasks.get(open))?.due?.time === '12:00')
   expect(await db.tasks.get(done)).toEqual(stored)
+  await r.unmount()
+})
+
+it.each(['day', 'week'] as const)('%s preserves Slots checklists, capacity and container movement while toggling standalone completed work', async (mode) => {
+  const open = await createTask({ title: 'In the slot', due: { date: DATE }, estimate_minutes: 15 })
+  const done = await createTask({ title: 'Finished in the slot', due: { date: DATE }, estimate_minutes: 60 })
+  const outside = await createTask({ title: 'Finished outside', due: { date: DATE, time: '14:00' }, estimate_minutes: 120 })
+  const { id } = await createSlot({ date: DATE, start: '09:00', minutes: 90, title: 'Admin' })
+  await addTaskToSlot(id, open)
+  await addTaskToSlot(id, done)
+  await completeTask(done)
+  await completeTask(outside)
+  const r = await render(modes[mode]())
+  await waitFor(() => r.container.querySelector('[data-slot-count]')?.textContent === '1 of 2 done')
+  const completedRow = () => r.container.querySelector(`[data-slot-row="${done}"]`)!
+  expect(completedRow().getAttribute('aria-checked')).toBe('true')
+  expect(completedRow().querySelector('.line-through')).toBeTruthy()
+  expect(taskRow(r.container, outside)).toBeNull()
+  const capacity = () => [...r.container.querySelectorAll('[data-capacity]')].map((e) => e.textContent)
+  const before = capacity()
+  const writes = await db.outbox.count()
+  await click(toggle(r.container))
+  await waitFor(() => !!taskRow(r.container, outside)?.querySelector('.line-through'))
+  expect(completedRow().getAttribute('aria-checked')).toBe('true')
+  expect(r.container.querySelector(`[data-lane-task="${done}"]`)).toBeNull()
+  expect(capacity()).toEqual(before)
+  expect(await db.outbox.count()).toBe(writes)
+  await click(toggle(r.container))
+  await waitFor(() => !taskRow(r.container, outside))
+  expect(completedRow().getAttribute('aria-checked')).toBe('true')
+  expect(capacity()).toEqual(before)
+  await click(r.container.querySelector(`[data-slot="${id}"]`)!)
+  await key(document.body, 'ArrowDown')
+  await waitFor(async () => (await db.slots.get(id))?.start === '09:15')
+  await key(document.body, 'ArrowDown', { shiftKey: true })
+  await waitFor(async () => (await db.slots.get(id))?.minutes === 105)
+  expect(r.container.querySelector('[data-slot-count]')?.textContent).toBe('1 of 2 done')
   await r.unmount()
 })

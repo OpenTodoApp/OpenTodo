@@ -23,7 +23,8 @@
 // The row is its own size container (`@container/row`), so every host gets the layout
 // its width allows; the rules are in index.css, "The property column".
 import { isSample } from '../lib/sampleTasks'
-import { hueFor, Icon, LabelChips, ReadAs, ToneText, TruncatedText, type IconName, type Tone } from '../ui'
+import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, type IconName, type Tone } from '../ui'
+import { slotName, useSlotOf } from '../lib/slots'
 import { lazy, memo, type ReactNode, Suspense, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
 import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logicalToday, zoneHint } from '../lib/dates'
@@ -115,11 +116,20 @@ export function RowCounts({ counts }: { counts: RowCount[] }) {
   )
 }
 
-/** The time column's value (rows-v2 D3): the due time in the date tone, else the deadline countdown in its tone. */
-function TimeCell({ time, timeTone, deadline, deadlineLabel }: { time: string | null; timeTone: Tone; deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string }) {
+/**
+ * The time column's value (rows-v2 D3): the due time in the date tone, else the start
+ * of the calendar slot that holds the task with the stack icon (calendar-slots D8),
+ * else the deadline countdown in its tone.
+ */
+function TimeCell({ time, timeTone, slot, deadline, deadlineLabel }: { time: string | null; timeTone: Tone; slot: { start: string; name: string } | null; deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string }) {
   return (
     <span data-row-time="" className="mt-0.5 flex h-5 w-(--row-time-w) shrink-0 items-center">
       {time ? <ToneText tone={timeTone} data-time="">{time}</ToneText>
+        : slot ? (
+          <Tooltip label={t('In the slot {slot}', { slot: slot.name })}>
+            <span data-row-slot="" className="inline-flex min-w-0"><ToneText tone={timeTone} icon="layers" data-time="" label={t('{time}, in the slot {slot}', { time: slot.start, slot: slot.name })}>{slot.start}</ToneText></span>
+          </Tooltip>
+        )
         : deadline ? <ToneText tone={DEADLINE_TONE[deadline.tone]} data-deadline="" label={deadlineLabel}>{deadline.label}</ToneText>
         : null}
     </span>
@@ -601,7 +611,10 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The column (rows-v2 D2, D3): the due time, else the deadline countdown; the line never repeats it.
   const column = timeColumn && !card && !hides('date') && !detailed
   const timeInColumn = column && !!due?.time
-  const deadlineInColumn = column && !due?.time && !!deadline
+  // A task a calendar slot holds shows the slot's start (calendar-slots D8).
+  const slotted = useSlotOf(task)
+  const slotInColumn = column && !due?.time && slotted ? { start: formatTime(slotted.start), name: slotName(slotted) } : null
+  const deadlineInColumn = column && !due?.time && !slotInColumn && !!deadline
   const comments = useCommentCount(task.id)
   const attachments = useAttachmentCount(task.id)
   // End-to-end encryption (OpenSpec e2ee): content the server still holds in
@@ -771,7 +784,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           </label>
         )}
       </span>
-      {column && <TimeCell time={due?.time ?? null} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
+      {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
         aria-expanded={canExpand ? showDetails : undefined} aria-controls={showDetails ? detailsId : undefined}
         onClick={(e) => {

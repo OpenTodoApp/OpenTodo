@@ -13,6 +13,8 @@ import { act, reportActionError } from '../actionError'
 import type { DropTarget } from '../calendarDrag'
 import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcuts'
 import { estimateFocus } from '../signals'
+import { addTaskToSlot, isSlotKey, moveSlot, resizeSlot, slotAt, type SlotView } from '../../lib/slots'
+import { runSlot } from './slotActions'
 import { completeWithUndo } from '../undoable'
 import type { Placement } from './grid'
 
@@ -59,6 +61,8 @@ export interface CalendarKeyContext {
   goTo: (date: string) => void
   /** Keep a moved task in view: follow it to another day or week. */
   follow: (date: string) => void
+  /** The shown slots by `slot:<id>` (calendar-slots): a selected slot moves and resizes with the arrows. */
+  slots?: Map<string, SlotView>
   /** While a re-plan preview is open (replan-the-day D4): Enter applies, Escape cancels, the other keys wait. */
   replan?: { apply: () => void; cancel: () => void } | null
 }
@@ -69,6 +73,18 @@ export function useCalendarKeys(c: CalendarKeyContext) {
   const idx = selectedId ? order.indexOf(selectedId) : -1
   const task = selectedId && order.includes(selectedId) ? c.taskMap.get(selectedId) : undefined
   const block = task ? c.days.find((d) => d.date === task.due?.date)?.blocks.get(task.id) : undefined
+  const slot = selectedId && isSlotKey(selectedId) ? c.slots?.get(selectedId) : undefined
+  /** A selected slot (calendar-slots D5): arrows move it, Shift+arrows change its length. */
+  const slotKeys = (e: KeyboardEvent): boolean => {
+    if (!slot || placing) return false
+    const dir = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 1
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const date = addDaysISO(slot.slot.date!, dir)
+      void runSlot(moveSlot(slot, date, slot.start)).then(() => c.follow(date))
+    } else if (e.shiftKey) void runSlot(resizeSlot(slot.slot, slot.slot.minutes + dir * SLOT_MINUTES))
+    else void runSlot(moveSlot(slot, slot.slot.date!, clamp(slot.start + dir * SLOT_MINUTES, 0, LAST_SLOT)))
+    return true
+  }
   const ghost = (next: Placement) => {
     setPlacing(next)
     c.follow(next.date)
@@ -76,6 +92,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
   /** Arrows with no selection pick the first item; with a dated task they run `move`. */
   const arrows = (move: (task: Task, due: NonNullable<Task['due']>, e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
     if (placing) return false
+    if (slotKeys(e)) return
     if (!task || !task.due) {
       if (!task && order.length) { setSelectedId(order[0]); return }
       return false
@@ -104,8 +121,17 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     },
     'calendar.open': (e) => {
       if (placing) { c.commit(placing.taskId, { type: 'slot', date: placing.date, start: placing.start }); setPlacing(null); return }
+      if (slot) return false
       if (!task || isActivationTarget(e.target)) return false
       c.setOpenId(task.id)
+    },
+    // Shift+Enter while placing over a slot: add the task to it (calendar-slots D7).
+    'calendar.add-to-slot': () => {
+      if (!placing) return false
+      const target = slotAt([...(c.slots?.values() ?? [])].filter((v) => v.slot.date === placing.date), placing.start)
+      if (!target) return false
+      void runSlot(addTaskToSlot(target.slot.id, placing.taskId))
+      setPlacing(null)
     },
     'calendar.nudge': (e) => {
       const dir = e.key === 'ArrowUp' ? -1 : 1
@@ -117,6 +143,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     'calendar.shift-day': (e) => {
       const days = e.key === 'ArrowLeft' ? -1 : 1
       if (placing) { ghost({ ...placing, date: addDaysISO(placing.date, days) }); return }
+      if (slotKeys(e)) return
       return arrows((tk) => {
         edit(tk.id, (x) => (x.due ? { due: nudgeDue(x.due, { days }) } : null), (_, patch) => patch.due && c.follow(patch.due.date))
       })(e)

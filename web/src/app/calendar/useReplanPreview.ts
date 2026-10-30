@@ -43,6 +43,8 @@ export function useReplanPreview(c: {
   projectMap: ReadonlyMap<string, Project>
   prefs: GridPrefs
   events: readonly CalendarEvent[]
+  /** Today's calendar slots, fixed obstacles of the proposal (calendar-slots D8). */
+  obstacles?: readonly { start: number; end: number }[]
   /** Subscriptions exist and the Calendars toggle shows them. */
   eventsUsed: boolean
   win: EventsWindow | null
@@ -61,8 +63,8 @@ export function useReplanPreview(c: {
   const base = useMemo(() => ({ today: c.today, now: c.nowMinutes, tasks: c.tasks, projects: c.projects, memberships, me, runningTaskId }),
     [c.today, c.nowMinutes, c.tasks, c.projects, memberships, me, runningTaskId])
   const missed = useMemo(() => (showsToday ? missedBlocks(base).length : 0), [showsToday, base])
-  const proposal = useMemo(() => (open && showsToday ? replan({ ...base, endHour: c.prefs.endHour, events: c.events, zone: c.zone }) : null),
-    [open, showsToday, base, c.prefs.endHour, c.events, c.zone])
+  const proposal = useMemo(() => (open && showsToday ? replan({ ...base, endHour: c.prefs.endHour, events: c.events, obstacles: c.obstacles, zone: c.zone }) : null),
+    [open, showsToday, base, c.prefs.endHour, c.events, c.obstacles, c.zone])
 
   const start = useCallback(() => { setChoice('leave'); setOpen(true) }, [])
   const cancel = useCallback(() => setOpen(false), [])

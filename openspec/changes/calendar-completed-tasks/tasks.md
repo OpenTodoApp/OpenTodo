@@ -14,7 +14,7 @@
 
 ## 3. Maintainer review fixes
 
-- [x] 3.1 Integrate current main while preserving Re-plan, Frames and completed-task guards; verify calendar/re-plan/frame interaction tests and regenerate conflicting baselines and help.
+- [x] 3.1 Integrate current main while preserving Re-plan, Frames, Slots and completed-task guards; verify calendar/re-plan/frame interaction tests and regenerate conflicting baselines and help.
 - [x] 3.2 Keep the translated Show completed tasks label constant in button and menu states, remove the superseded catalog keys and verify stable-name/pressed/checked assertions at desktop and phone widths.
 - [x] 3.3 Separate task permissions from calendar scheduling eligibility in Month and Plan; verify completed editable tasks are not announced as read-only, real viewers still are, and completed scheduling gestures remain blocked.
 - [x] 3.4 Restore existing calendar guidance and move completed-calendar instructions to a focused page; verify links, the 600-word limit and generated help with `make docs docs-check`.
