@@ -41,7 +41,7 @@ What paid planners charge for, free.
 | --- | --- | --- |
 | [`meeting-aware-capacity`](openspec/changes/archive/2026-10-30-meeting-aware-capacity/) | **Shipped.** Busy calendar events count toward the day's capacity |  |
 | [`replan-the-day`](openspec/changes/archive/2026-10-30-replan-the-day/) | **Shipped.** Re-plan the rest of the day: a preview, one confirm, one Undo |  |
-| [`calendar-frames`](openspec/changes/calendar-frames/) | Recurring background frames on the calendar (Deep work 9–11) | [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555) |
+| [`calendar-frames`](openspec/changes/archive/2026-10-30-calendar-frames/) | **Shipped.** Recurring background frames on the calendar (Deep work 9–11) | [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555) |
 | [`calendar-slots`](openspec/changes/calendar-slots/) | Several small tasks in one calendar block |  |
 | [`bento-daily-check`](openspec/changes/bento-daily-check/) | A Large, a Medium and a Small task in the Daily check |  |
 | [`task-energy`](openspec/changes/task-energy/) | An energy property (deep, medium, low) with a filter and quick-add token |  |

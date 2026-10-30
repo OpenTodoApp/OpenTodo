@@ -219,6 +219,18 @@ A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 bef
 0 18 * * 5  ot time export --from monday --to today -o "$HOME/time/week-$(date +\%F).csv"
 ```
 
+## Calendar frames
+
+Your [frames](frames.md), the recurring background windows of the Day and Week calendar:
+
+```bash
+ot frames                                                     # id, title, days, time, planning source
+ot frames add "Deep work" --days mon-fri --from 09:00 --to 11:00 [--color "#3b82f6"] [--source label:<id>]
+ot frames rm 7f3a [--yes]                                     # an id, id prefix or the exact title
+```
+
+`--days` takes `mon-fri`, `mon,wed,fri`, `weekdays`, `weekend`, `daily` or ISO digits (`1` Monday to `7` Sunday); without it a frame repeats on weekdays, from 09:00 to 10:00. The end must be after the start on the same day; the server refuses anything else with `invalid_input` (exit 1). `--source` is the list the app opens with Plan from this frame: `project:<id>`, `label:<id>` or `view:<id>`. `add` and `rm` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`frame`](#machine-readable-help-ot-schema) objects; an encrypted account's titles are ciphertext and the table shows `(encrypted)`.
+
 ## Issue connections
 
 Your [issue import](issue-import.md) connections, once the server owner has turned the feature on:

@@ -26,6 +26,7 @@ import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
+import { FramesHost } from './calendar/framesRequest'
 import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { notificationsOpen, sidebarFind } from './signals'
@@ -337,6 +338,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <DailyCheckToast />
       <TemplateDialogHost />
       <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} />
+      <FramesHost />
     </div>
   )
 }
