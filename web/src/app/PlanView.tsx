@@ -12,7 +12,7 @@ import { rememberCalendarMode } from '../lib/calendarMode'
 import { addDaysISO, dueFromView, formatShort, viewedTask, formatDateParts } from '../lib/dates'
 import { beginDrag } from '../lib/dnd'
 import { getTask, saveGridPrefs, useMembershipMap } from '../lib/localData'
-import { useGridPrefs, useLiveProjects } from '../lib/liveData'
+import { useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { useOnline } from '../lib/online'
 import { updateTask } from '../lib/ops'
@@ -23,6 +23,7 @@ import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
+import { CalendarCompletedToggle } from './calendar/CalendarCompletedToggle'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { PlanAgenda } from './calendar/PlanAgenda'
 import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanPanel'
@@ -37,7 +38,7 @@ import { useToday, useViewerZone } from './useViews'
 const ARROWS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
 
 /** The days of the span with their rows, events and load: everything the columns and the agenda draw. */
-function usePlanDays(dates: string[], today: string, dayLength: number) {
+function usePlanDays(dates: string[], today: string, dayLength: number, showCompleted: boolean) {
   const zone = useViewerZone()
   const projects = useLiveProjects()
   const live = useLiveTasks()
@@ -45,11 +46,11 @@ function usePlanDays(dates: string[], today: string, dayLength: number) {
   const from = dates[0], to = dates[dates.length - 1]
   const feeds = useCalendarFeeds(from, to)
   const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
-  // The Day, Week and Month selection (open, live, not archived) over the span, kept as stored rows so writes start from the original due.
+  // The shared calendar visibility selection over the span, kept as stored rows so writes start from the original due.
   const shownRaw = useMemo(() => {
-    const ids = new Set(calendarTasks(viewed, projects, from, to).map((task) => task.id))
+    const ids = new Set(calendarTasks(viewed, projects, from, to, showCompleted).map((task) => task.id))
     return rawTasks.filter((task) => ids.has(task.id))
-  }, [rawTasks, viewed, projects, from, to])
+  }, [rawTasks, viewed, projects, from, to, showCompleted])
   const series = useMemo(() => planSeries(rawTasks, projects), [rawTasks, projects])
   const projections = useMemo(() => projectedOccurrences(series, rawTasks, today, from, to, zone), [series, rawTasks, today, from, to, zone])
   const days = useMemo<PlanDayData[]>(() => dates.map((date) => ({
@@ -66,18 +67,19 @@ export function PlanView({ date }: { date?: string }) {
   const today = useToday()
   const anchor = date ?? today
   const prefs = useGridPrefs()
+  const showCompleted = useCalendarShowCompleted()
   const span = prefs.planDays
   const dates = useMemo(() => spanDates(anchor, span), [anchor, span])
   const wide = useWide()
   const online = useOnline()
   useEffect(() => rememberCalendarMode('plan'), [])
 
-  const { zone, projects, rawTasks, viewed, feeds, days, loading } = usePlanDays(dates, today, prefs.dayLength)
+  const { zone, projects, rawTasks, viewed, feeds, days, loading } = usePlanDays(dates, today, prefs.dayLength, showCompleted)
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const memberMap = useMembershipMap()
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
   const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
-  const editable = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
+  const editable = useCallback((task: Task) => !task.completed_at && canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
   /** Selection order: the span's task rows column by column; projected and event rows never take part. */
   const order = useMemo(() => days.flatMap((d) => d.entries.flatMap((e) => (e.kind === 'task' ? [e.task.id] : []))), [days])
 
@@ -106,7 +108,7 @@ export function PlanView({ date }: { date?: string }) {
   const move = useCallback((id: string, n: number) => {
     queue.current = queue.current.then(async () => {
       const raw = await getTask(id)
-      if (!raw || raw.deleted_at || !raw.due) return
+      if (!raw || raw.deleted_at || raw.completed_at || !raw.due) return
       const task = viewedTask(raw)
       if (!task.due) return
       const due = nudgeDue(task.due, { days: n })
@@ -118,7 +120,7 @@ export function PlanView({ date }: { date?: string }) {
   /** Dropped on a day: same time and zone, new date (one due edit, with Undo). */
   const dropOn = useCallback((id: string, d: string) => {
     const task = viewedMap.get(id)
-    if (!task || task.due?.date === d) return
+    if (!task || task.completed_at || task.due?.date === d) return
     act(setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due?.time ? { time: task.due.time } : {}) })))
     setSelectedId(id)
     setFocused(d)
@@ -128,7 +130,7 @@ export function PlanView({ date }: { date?: string }) {
     beginDrag(e, { label: task.title || t('Untitled'), onDrop: (key) => { if (key.startsWith('day:')) dropOn(task.id, key.slice(4)) } })
   }, [editable, dropOn])
 
-  const selectedTask = selectedId ? rawMap.get(selectedId) : undefined
+  const selectedTask = selectedId && order.includes(selectedId) ? rawMap.get(selectedId) : undefined
   const step = (dir: 1 | -1) => {
     const idx = selectedId ? order.indexOf(selectedId) : -1
     const next = order[dir === 1 ? Math.min(order.length - 1, idx + 1) : Math.max(0, idx - 1)] ?? null
@@ -144,7 +146,7 @@ export function PlanView({ date }: { date?: string }) {
     'plan.focus': (e) => show(addDaysISO(focused, ARROWS[e.key])),
     'plan.next': () => step(1),
     'plan.prev': () => step(-1),
-    'plan.open': () => { if (!selectedId) return false; setPanelTaskId(selectedId) },
+    'plan.open': () => { if (!selectedTask) return false; setPanelTaskId(selectedTask.id) },
     'plan.complete': () => {
       if (!selectedTask || !editable(selectedTask)) return false
       act(completeWithUndo(selectedTask.id, true))
@@ -196,9 +198,11 @@ export function PlanView({ date }: { date?: string }) {
             <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
             <Button variant="ghost" size="sm" icon="chevron-right" aria-label={t('Next week')} onClick={() => goTo(addDaysISO(anchor, 7))} />
           </span>
+          <CalendarCompletedToggle shown={showCompleted} />
           <CalendarRangeSwitch mode="plan" date={date} />
         </>}
         overflow={<>
+          <CalendarCompletedToggle shown={showCompleted} menu />
           {PLAN_SPANS.map((n) => (
             <MenuItem key={n} label={t('{n} days', { n })} icon="calendar-days" checked={span === n} data-plan-span={n}
               onSelect={() => act(saveGridPrefs({ ...prefs, planDays: n }))} />

@@ -172,11 +172,14 @@ export function allDayEvents(events: readonly CalendarEvent[], date: string): Ca
     .sort((a, b) => (a.start.date < b.start.date ? -1 : a.start.date > b.start.date ? 1 : a.summary.localeCompare(b.summary)))
 }
 
-/** Open, live tasks due in [from, to] (inclusive ISO dates), leaving out archived projects. */
-export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string): Task[] {
+/** Live tasks due in [from, to], optionally including completed work; archived projects stay excluded. */
+export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string, showCompleted = false): Task[] {
   const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-  return tasks.filter((t) => !t.deleted_at && !t.completed_at && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
+  return tasks.filter((t) => !t.deleted_at && (showCompleted || !t.completed_at) && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
 }
+
+/** Calendar visibility is a device-local display choice, independent of grid settings. */
+export const CALENDAR_COMPLETED_META_KEY = 'calendar.showCompleted'
 
 export interface DayLoad {
   /** Sum of estimates of the day's open tasks, timed and untimed. */

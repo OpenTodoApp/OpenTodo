@@ -12,6 +12,10 @@
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "(completed)": [
+    "web/src/app/MonthView.tsx",
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/task-detail/TaskHead.tsx"
   ],
   "(deleted)": [
@@ -5613,6 +5617,9 @@
   ],
   "Hide calendar events": [
     "web/src/app/TaskListView.tsx"
+  ],
+  "Hide completed": [
+    "web/src/app/calendar/CalendarCompletedToggle.tsx"
   ],
   "Hide delivery log": [
     "web/src/app/WebhooksPanel.tsx"
@@ -11724,6 +11731,9 @@
   ],
   "Show calendar events": [
     "web/src/app/TaskListView.tsx"
+  ],
+  "Show completed": [
+    "web/src/app/calendar/CalendarCompletedToggle.tsx"
   ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx"
