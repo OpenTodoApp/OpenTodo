@@ -162,6 +162,9 @@ func TestSlotsValidation(t *testing.T) {
 			t.Fatalf("%v: %d %v", c.body, resp.StatusCode, out)
 		}
 	}
+	if after := countOps(t, e); after != before {
+		t.Fatalf("invalid creates wrote ops: %d → %d", before, after)
+	}
 	// "Too many tasks" on a PATCH.
 	resp, out := e.do("POST", "/api/v1/slots", map[string]any{"date": "2026-11-04"})
 	e.mustStatus(resp, 201, out)
