@@ -10,7 +10,9 @@ import { t } from '../../lib/i18n'
 import { useProjects } from '../../lib/localData'
 import { descendants } from '../../lib/tree'
 import type { Project } from '../../lib/types'
-import { Icon, Menu } from '../../ui'
+import { Icon, Menu, useMediaQuery } from '../../ui'
+import type { ProjectViewMode } from '../../lib/sections'
+import { COMPACT_LAYOUT_QUERY, layoutGroup } from '../task-list/ListChrome'
 import { CalendarView } from '../CalendarView'
 import { MonthView } from '../MonthView'
 import { PlanView } from '../PlanView'
@@ -18,14 +20,17 @@ import { ProjectHeader } from '../ProjectHeader'
 import { useShortcutScope } from '../shortcuts'
 import { CalendarScopeProvider, type CalendarHeaderParts, type CalendarScope } from './scope'
 
-export default function ProjectCalendar({ project, userId, layout, onCycle }: {
+export default function ProjectCalendar({ project, userId, layout, onCycle, onChoose }: {
   project: Project
   userId?: string
   /** The project's List / Board / Timeline / Calendar switch. */
   layout: ReactNode
   /** `v`: the next layout. */
   onCycle: () => void
+  /** A layout chosen from the project menu (mid-size touch screens, where the switch is hidden). */
+  onChoose: (m: ProjectViewMode) => void
 }) {
+  const compact = useMediaQuery(COMPACT_LAYOUT_QUERY)
   const [range, setRange] = useState<{ mode: CalendarMode; date?: string }>(() => ({ mode: readCalendarMode() }))
   const projects = useProjects()
   const ids = useMemo(() => new Set([project.id, ...descendants(project.id, projects)]), [project.id, projects])
@@ -36,8 +41,8 @@ export default function ProjectCalendar({ project, userId, layout, onCycle }: {
     projectIds: ids,
     go: (mode, date) => setRange({ mode, date }),
     header: (parts: CalendarHeaderParts) => (
-      <ProjectHeader project={project} userId={userId} layout={layout} subtitle={parts.title} lead={parts.meta}
-        actions={<>
+      <ProjectHeader project={project} userId={userId} layout={layout} subtitle={parts.title} lead={parts.meta} extraGroups={compact ? [layoutGroup('calendar', onChoose)] : undefined}
+        secondary={<>
           {parts.actions}
           <Menu kind="menu" label={t('Calendar options')} trigger={<Icon name="sliders-horizontal" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-64"
             triggerProps={{ 'data-calendar-options': '' }}>
@@ -45,7 +50,7 @@ export default function ProjectCalendar({ project, userId, layout, onCycle }: {
           </Menu>
         </>} />
     ),
-  }), [project, userId, layout, ids])
+  }), [project, userId, layout, ids, compact, onChoose])
   const { mode, date } = range
   return (
     <CalendarScopeProvider scope={scope}>

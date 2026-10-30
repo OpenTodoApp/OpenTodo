@@ -271,7 +271,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   })
   const rowActions = useListBindings({ ...shared, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
 
-  const { edgeOf, boardGroups, queryControl: queryFilter, queryHost } = useListExtras(board, m.queryFilter) // Colour by on boards, Upcoming's query filter (calendar-clarity)
+  const { edgeOf, boardGroups, queryControl: queryFilter, queryHost } = useListExtras(board, m.queryFilter, projectId ? { mode: viewMode, onChoose: chooseViewMode } : null) // Colour by on boards, Upcoming's query filter (calendar-clarity)
   const renderRow = rowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
     habits: m.habits, isReadOnly, board, manual, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
@@ -313,7 +313,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
   if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
   if (!ready) return <div className="min-w-0 px-4 py-5 md:px-8" data-list-loading />
-  if (route.view === 'project' && currentProject && viewMode === 'calendar') return <ProjectCalendarLayout project={currentProject} userId={userId} onCycle={toggleViewMode} layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
+  if (route.view === 'project' && currentProject && viewMode === 'calendar') return <ProjectCalendarLayout project={currentProject} userId={userId} onCycle={toggleViewMode} onChoose={chooseViewMode} layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">

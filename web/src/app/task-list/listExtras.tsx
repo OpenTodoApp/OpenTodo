@@ -9,7 +9,9 @@ import type { HueName } from '../../ui'
 import { COLOR_BY_LABEL, useColorBy } from '../calendar/colorByControls'
 import { QueryFilterHost, type QueryFilter } from '../calendar/queryFilter'
 import type { ActionGroup } from '../menus/ActionMenu'
-import type { QueryFilterControl } from './ListChrome'
+import { COMPACT_LAYOUT_QUERY, layoutGroup, type QueryFilterControl } from './ListChrome'
+import type { ProjectViewMode } from '../../lib/sections'
+import { useMediaQuery } from '../../ui'
 import ProjectCalendar from '../calendar/ProjectCalendar'
 
 
@@ -24,21 +26,24 @@ export interface ListExtras {
   queryHost: ReactNode
 }
 
-export function useListExtras(board: boolean, filter: QueryFilter | null): ListExtras {
+/** `layout`: a project's layout and its choice, which join the project menu on mid-size touch screens. */
+export function useListExtras(board: boolean, filter: QueryFilter | null, layout: { mode: ProjectViewMode; onChoose: (m: ProjectViewMode) => void } | null): ListExtras {
+  const compact = useMediaQuery(COMPACT_LAYOUT_QUERY)
   // One device choice for every board; Project leaves cards as they were.
   const color = useColorBy(BOARD_COLOR_BY_KEY)
   const [open, setOpen] = useState(false)
   const boardGroups: ActionGroup[] | undefined = board ? [{ items: [{ kind: 'submenu', id: 'color-by', label: t('Colour by'), icon: 'palette',
     items: (['project', 'label', 'priority'] as const).map((mode) => ({ kind: 'check' as const, id: `color-by-${mode}`, label: COLOR_BY_LABEL[mode], checked: color.mode === mode, onSelect: () => color.setMode(mode) })) }] }] : undefined
+  const groups = [...(boardGroups ?? []), ...(compact && layout ? [layoutGroup(layout.mode, layout.onChoose)] : [])]
   return {
     edgeOf: board && color.mode !== 'project' ? color.hueOf : undefined,
-    boardGroups,
+    boardGroups: groups.length ? groups : undefined,
     queryControl: filter ? { query: filter.query, onOpen: () => setOpen(true), onClear: () => filter.setQuery('') } : null,
     queryHost: filter ? <QueryFilterHost open={open} filter={filter} title={t('Filter Upcoming')} onClose={() => setOpen(false)} /> : null,
   }
 }
 
 /** A project's Calendar layout in place of its list. */
-export function ProjectCalendarLayout(props: { project: Project; userId?: string; layout: ReactNode; onCycle: () => void }) {
+export function ProjectCalendarLayout(props: { project: Project; userId?: string; layout: ReactNode; onCycle: () => void; onChoose: (m: ProjectViewMode) => void }) {
   return <ProjectCalendar {...props} />
 }
