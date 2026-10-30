@@ -47,6 +47,13 @@ describe('index', () => {
     }
   })
 
+  it('"twitter" and "news" list the About › News and updates row (x-account-link)', () => {
+    for (const q of ['twitter', 'news']) {
+      const entries = searchSettings(q, member).flatMap((h) => h.entries)
+      expect(entries).toContainEqual(expect.objectContaining({ section: 'about', label: 'News and updates', anchor: 'about-news' }))
+    }
+  })
+
   it('shows a row only to the roles that see its section and the row itself', () => {
     const labels = (u: User) => visibleEntries(u).map((e) => e.label)
     expect(labels(member)).not.toContain('Users')

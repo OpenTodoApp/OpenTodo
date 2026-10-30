@@ -45,7 +45,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
 
   Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Unraid, Compose and plain binaries are in [Quick start](#quick-start).
 
-Questions, ideas and bug reports are welcome in [issues](https://github.com/OpenTodoApp/OpenTodo/issues). To talk to other people who use OpenTodo, [join the Discord server](https://discord.gg/Jmj7WuRQ).
+Questions, ideas and bug reports are welcome in [issues](https://github.com/OpenTodoApp/OpenTodo/issues). To talk to other people who use OpenTodo, [join the Discord server](https://discord.gg/Jmj7WuRQ); for releases and work in progress in a few lines, [follow OpenTodo on X](https://x.com/opentodoapp).
 
 
 <p align="center">
