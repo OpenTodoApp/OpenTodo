@@ -178,6 +178,8 @@ export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Pr
   return tasks.filter((t) => !t.deleted_at && !t.completed_at && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
 }
 
+const NO_SLOT_LOAD = { extra: 0, covered: 0 }
+
 export interface DayLoad {
   /** What the line shows: the task estimates plus the counted event minutes. */
   planned: number
@@ -198,16 +200,19 @@ export interface DayLoad {
 /**
  * The load of `date` against the day length (OpenSpec `time-blocking` "Overlap and
  * capacity"): the open tasks' estimates, plus `eventMinutes` when the device counts
- * meetings (meeting-aware-capacity D3).
+ * meetings (meeting-aware-capacity D3). `slots` is what the day's calendar slots
+ * change (calendar-slots D6, lib/slots `slotCapacity`): each slot counts once with
+ * the greater of its length and its tasks' estimates.
  */
-export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number, eventMinutes = 0): DayLoad {
-  let taskMinutes = 0
-  let unestimated = 0
+export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number, eventMinutes = 0, slots: { extra: number; covered: number } = NO_SLOT_LOAD): DayLoad {
+  let taskMinutes = slots.extra
+  let unestimated = -slots.covered
   for (const t of tasks) {
     if (t.completed_at || t.deleted_at || t.due?.date !== date) continue
     if (t.estimate_minutes) taskMinutes += t.estimate_minutes
     else unestimated++
   }
+  unestimated = Math.max(0, unestimated)
   const events = Math.max(0, eventMinutes)
   const planned = taskMinutes + events
   const overTasks = taskMinutes > dayLength

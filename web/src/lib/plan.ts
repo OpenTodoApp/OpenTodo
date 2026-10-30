@@ -129,9 +129,12 @@ export interface PlanLoad {
   over: boolean
 }
 
-/** The load of `date` against the day length, from the three sources. */
-export function planLoad(tasks: readonly Task[], projections: readonly Projection[], events: readonly CalendarEvent[], date: string, dayLength: number, zone?: string): PlanLoad {
-  let taskMinutes = 0, projected = 0, unestimated = 0
+/**
+ * The load of `date` against the day length, from the three sources; `slots` is
+ * what the day's calendar slots change (calendar-slots D6, lib/slots `slotCapacity`).
+ */
+export function planLoad(tasks: readonly Task[], projections: readonly Projection[], events: readonly CalendarEvent[], date: string, dayLength: number, zone?: string, slots = { extra: 0, covered: 0 }): PlanLoad {
+  let taskMinutes = slots.extra, projected = 0, unestimated = -slots.covered
   for (const task of tasks) {
     if (task.completed_at || task.deleted_at || localDueOf(task.due, zone)?.date !== date) continue
     if (task.estimate_minutes) taskMinutes += task.estimate_minutes
@@ -142,6 +145,7 @@ export function planLoad(tasks: readonly Task[], projections: readonly Projectio
     if (p.estimate_minutes) projected += p.estimate_minutes
     else unestimated++
   }
+  unestimated = Math.max(0, unestimated)
   const ev = eventMinutes(events, date, zone)
   const total = taskMinutes + ev + projected
   return { tasks: taskMinutes, events: ev, projected, unestimated, total, over: total > dayLength }

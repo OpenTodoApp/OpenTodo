@@ -16,6 +16,8 @@ export type DropTarget =
   | { type: 'resize'; estimate: number }
   /** The upper edge: a new start on the block's day, the end kept (GitHub issue 355). */
   | { type: 'resize-start'; date: string; start: number; estimate: number }
+  /** Over a calendar slot: the task is added to it (calendar-slots D3). */
+  | { type: 'into-slot'; slotId: string }
 
 export interface DragState {
   taskId: string
@@ -84,7 +86,12 @@ export function useCalendarDrag(opts: { pxPerMinute: number; scroller: React.Ref
       if (p.kind === 'resize') return { type: 'resize', estimate: resizeEstimate(p.blockStart, offset, pxPerMinute) }
       return { type: 'resize-start', date: p.blockDate, ...resizeStart(p.blockEnd, offset, pxPerMinute) }
     }
-    const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop-day],[data-drop-lane]')
+    let el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop-slot],[data-drop-day],[data-drop-lane]')
+    // A task over a slot is added to it (calendar-slots D3); a slot dragged over another lands on the grid.
+    if (el?.dataset.dropSlot) {
+      if (!p.taskId.startsWith('slot:')) return { type: 'into-slot', slotId: el.dataset.dropSlot }
+      el = el.closest<HTMLElement>('[data-drop-day]')
+    }
     if (!el) return null
     if (el.dataset.dropLane) return { type: 'lane', date: el.dataset.dropLane }
     const date = el.dataset.dropDay!

@@ -9,9 +9,11 @@ import type { Task } from '../../lib/types'
 import { formatTime, minutesOf, type Placement } from './grid'
 
 /** The header's status line: placement mode, or how fresh the subscribed calendars are. */
-export function CalendarStatus({ placing = null, placingTask, status, online, fetchedAt }: {
+export function CalendarStatus({ placing = null, placingTask, placingSlot, status, online, fetchedAt }: {
   placing?: Placement | null
   placingTask?: Task
+  /** The name of the slot under the placement: Shift+Enter adds the task to it (calendar-slots D7). */
+  placingSlot?: string
   status: ReturnType<typeof eventsStatus> | null
   online: boolean
   fetchedAt?: number
@@ -20,6 +22,7 @@ export function CalendarStatus({ placing = null, placingTask, status, online, fe
     return (
       <span role="status" className="rounded-control bg-success-soft px-2 py-0.5 text-meta text-on-success-soft">
         {t.rich('Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels', { title: placingTask?.title || t('task'), time: formatTime(placing.start), b: (chunks) => <strong>{chunks}</strong> })}
+        {placingSlot && <span data-placing-slot> · {t('Shift+Enter: add to {slot}', { slot: placingSlot })}</span>}
       </span>
     )
   }
