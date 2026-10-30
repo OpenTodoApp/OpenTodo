@@ -1,4 +1,9 @@
-## ADDED Requirements
+# task-energy Specification
+
+## Purpose
+Lets a task carry the energy it asks for (Deep, Medium or Low) so people can pick work that matches their stamina: entered and shown only when the user opts in, filterable everywhere, and carried by the API, the CLI, agents, CalDAV and the vault.
+
+## Requirements
 
 ### Requirement: Energy field
 A task SHALL have an optional energy, one of `deep`, `medium` or `low`, stored as the additive field `energy` with `""` meaning none. It SHALL be written through the operation log, editable offline, and converge per field by last-writer-wins. The server SHALL reject any other value as invalid. A client reading a value it does not know SHALL treat it as none and SHALL NOT rewrite it, and a client that does not know the field SHALL pass it through unchanged. The value SHALL NOT be content: it is never encrypted on an end-to-end encrypted account. It SHALL be included in the export.
@@ -58,7 +63,7 @@ While the switch is on, the task page and the docked panel SHALL offer Energy in
 - **THEN** the next value is chosen without a pointer
 
 ### Requirement: Energy through the API, CLI and agent tools
-The REST task shape SHALL carry `energy` as `"deep"`, `"medium"`, `"low"` or `null` when none. `POST` and `PATCH /api/v1/tasks` SHALL accept those values (`null` or `""` clears) and SHALL refuse anything else with a 400 error `invalid_energy` and no write; the routes keep their existing authentication and policies, and a viewer's write is refused as for any field. The CLI SHALL accept `--energy deep|medium|low|none` on `ot add` and `ot edit` and show the field in `--json` and the wide list. The agent tools' create and update tools SHALL accept `energy` and the read tools SHALL return it; writes go through the operation log like every agent write. CSV export SHALL include an `energy` column, and CSV import SHALL map a column named `energy`, ignoring letter case of the values and reporting any other value without setting it.
+The REST task shape SHALL carry `energy` as `"deep"`, `"medium"`, `"low"` or `null` when none. `POST` and `PATCH /api/v1/tasks` SHALL accept those values (`null` or `""` clears) and SHALL refuse anything else with a 400 error `invalid_energy` and no write; the routes keep their existing authentication and policies, and a viewer's write is refused as for any field. The CLI SHALL accept `--energy deep|medium|low|none` on `ot add` and `ot edit` and show the field in `--json` and as an `ENERGY` column of the list whenever a listed task has one. The agent tools' create and update tools SHALL accept `energy` and the read tools SHALL return it; writes go through the operation log like every agent write. The JSON export SHALL carry the field, and CSV import SHALL map a column named `energy`, ignoring letter case of the values and reporting any other value without setting it.
 
 #### Scenario: Set over REST
 - **WHEN** a client with a full token sends `PATCH /api/v1/tasks/<id>` with `{"energy":"low"}`
@@ -76,6 +81,6 @@ The REST task shape SHALL carry `energy` as `"deep"`, `"medium"`, `"low"` or `nu
 - **WHEN** the user runs `ot add "Inbox zero" --energy low`
 - **THEN** the task is created with energy Low
 
-#### Scenario: CSV round trip
-- **WHEN** the user exports tasks to CSV and imports the file into another account
-- **THEN** each task keeps its energy, and a row whose energy reads `HIGH` is imported without energy and reported
+#### Scenario: Export and CSV import
+- **WHEN** the user exports their data and imports the file into another account, and imports a CSV file with an `energy` column
+- **THEN** each exported task keeps its energy, each CSV row with `Deep` or `low` gets that energy, and a row whose energy reads `HIGH` is imported without energy and reported

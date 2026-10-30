@@ -14,14 +14,19 @@ func (a *App) renderTasks(tasks []task, projects []project, all []task, today st
 	}
 	// The origin's id or host as a column, only when a listed task has one (task-origin).
 	// The deadline as a BY column, likewise only when one is set (agent-planning-fields).
-	showOrigin, showBy := false, false
+	// The energy likewise (task-energy).
+	showOrigin, showBy, showEnergy := false, false, false
 	for _, t := range tasks {
 		showOrigin = showOrigin || t.originLabel() != ""
 		showBy = showBy || (t.Deadline != nil && *t.Deadline != "")
+		showEnergy = showEnergy || t.Energy != ""
 	}
 	headers := []string{"ID", "P", "DUE"}
 	if showBy {
 		headers = append(headers, "BY")
+	}
+	if showEnergy {
+		headers = append(headers, "ENERGY")
 	}
 	headers = append(headers, "PROJECT")
 	if showOrigin {
@@ -58,6 +63,9 @@ func (a *App) renderTasks(tasks []task, projects []project, all []task, today st
 		cells := []cell{{text: shortID(t.ID), style: styleCyan}, pr, dueCell}
 		if showBy {
 			cells = append(cells, deadlineCell(t, today))
+		}
+		if showEnergy {
+			cells = append(cells, plain(t.Energy))
 		}
 		cells = append(cells, plain(projName))
 		if showOrigin {

@@ -9,7 +9,8 @@ import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLiveSections, useProjects, useMembershipMap, useUserPrefsRow } from '../../lib/localData'
 import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
-import { dayPartUndoable } from '../../lib/undoActions'
+import { dayPartUndoable, energyUndoable } from '../../lib/undoActions'
+import { ENERGY_LEVELS, energyLevelsOn, energyName, energyOf, type Energy } from '../../lib/energy'
 import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
@@ -41,6 +42,8 @@ const itemLabel = (i: PickerItem) => i.label
 const itemPath = (i: PickerItem) => i.path
 
 interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: Section[]; memberships: Map<string, Membership>; runningTask?: string | null; dayParts?: boolean
+  /** Energy levels on (task-energy D3): the Energy submenu. */
+  energy?: boolean
   /** Today with a limit (today-closed-list D3): the one task's slot command. */
   slot?: SlotState }
 
@@ -92,6 +95,23 @@ export function dayPartItem(ids: readonly string[], d: Pick<Data, 'tasks' | 'mem
   })) }]
 }
 
+/**
+ * "Energy" (task-energy D6): while the account has Energy levels on, a submenu of
+ * Deep, Medium, Low and None, the tasks' common energy checked; nothing for a viewer's task.
+ */
+export function energyItem(ids: readonly string[], d: Pick<Data, 'tasks' | 'memberships' | 'energy'>): ActionItem[] {
+  if (!d.energy || d.tasks.length === 0 || d.tasks.some((task) => roleOf(task.project_id, d.memberships) === 'viewer')) return []
+  const levels = new Set(d.tasks.map((task) => energyOf(task)))
+  const common = levels.size === 1 ? [...levels][0] : undefined
+  const set = (e: Energy | null) => async () => {
+    const r = await energyUndoable(ids, e)
+    if (r.entry) showUndoToast(r.label, r.entry.id)
+  }
+  return [{ kind: 'submenu', id: 'energy', label: t('Energy'), icon: 'zap', items: ([...ENERGY_LEVELS, null] as (Energy | null)[]).map((e) => ({
+    kind: 'check' as const, id: `energy-${e ?? 'none'}`, label: e ? energyName(e) : t('No energy'), checked: common === e, onSelect: set(e),
+  })) }]
+}
+
 /** The menu's groups for the given tasks (exported for the palette and tests). */
 export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
@@ -124,6 +144,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
           { kind: 'action', id: 'pick-date', label: t('Pick a date…'), icon: 'calendar-days', onSelect: a.pickDate },
         ] },
       ] as ActionItem[]),
+      ...energyItem(ids, d),
       ...dayPartItem(ids, d),
       { kind: 'picker', id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels'), disabled: live.length === 0, reason: t('There are no labels yet'), picker: {
         title: t('Labels'), placeholder: t('Add to all, or remove from all…'), source: live, multiple: true, selected: common, rankContext: 'label',
@@ -174,9 +195,11 @@ function useBulkData(ids: readonly string[]): Data {
   const sections = useLiveSections()
   const memberships = useMembershipMap()
   const runningTask = useRunningEntry()?.task_id ?? null
-  const dayParts = dayPartsOn(useUserPrefsRow())
+  const prefs = useUserPrefsRow()
+  const dayParts = dayPartsOn(prefs)
+  const energy = energyLevelsOn(prefs)
   const slot = useSlotState(ids.length === 1 ? ids[0] : '')
-  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, slot }
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot }
 }
 
 /**

@@ -3544,6 +3544,12 @@
   "Declined": [
     "web/src/app/RelaySettings.tsx"
   ],
+  "Deep": [
+    "web/src/lib/energy.ts"
+  ],
+  "Deep energy": [
+    "web/src/lib/energy.ts"
+  ],
   "Deep work": [
     "web/src/app/calendar/FramesDialog.tsx"
   ],
@@ -4458,6 +4464,34 @@
   ],
   "Ends": [
     "web/src/app/calendar/FramesDialog.tsx"
+  ],
+  "Energy": [
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/TokenSuggest.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/task-detail/EnergyChoice.tsx",
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/facets.ts"
+  ],
+  "Energy cleared": [
+    "web/src/lib/undoActions.ts"
+  ],
+  "Energy is {level}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "Energy levels": [
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Energy must be deep, medium or low at position {pos}": [
+    "web/src/lib/filter/parse.ts"
+  ],
+  "Energy set to {level}": [
+    "web/src/lib/undoActions.ts"
   ],
   "English is always on.": [
     "web/src/app/QuickAddSettings.tsx"
@@ -5674,6 +5708,9 @@
   "Has a day: Today and Upcoming.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Has an energy": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Has an origin": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -6693,10 +6730,10 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Large": [
-    "web/src/lib/bento.ts"
+    "web/src/lib/bentoSlots.ts"
   ],
   "Large · 90 min or more": [
-    "web/src/lib/bento.ts"
+    "web/src/lib/bentoSlots.ts"
   ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
@@ -7144,6 +7181,12 @@
   "Lost both keys?": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Low": [
+    "web/src/lib/energy.ts"
+  ],
+  "Low energy": [
+    "web/src/lib/energy.ts"
+  ],
   "Made by": [
     "web/src/app/RestoreSection.tsx"
   ],
@@ -7258,6 +7301,9 @@
   "Mark as done": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Mark tasks Deep, Medium or Low and filter by the energy they need.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Mark {title} for This Evening": [
     "web/src/app/palette/registry.ts"
   ],
@@ -7274,10 +7320,14 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Medium": [
-    "web/src/lib/bento.ts"
+    "web/src/lib/bentoSlots.ts",
+    "web/src/lib/energy.ts"
+  ],
+  "Medium energy": [
+    "web/src/lib/energy.ts"
   ],
   "Medium · 31 to 89 min": [
-    "web/src/lib/bento.ts"
+    "web/src/lib/bentoSlots.ts"
   ],
   "Member": [
     "web/src/lib/roleNames.ts"
@@ -8092,6 +8142,10 @@
   "No effect yet: the server owner has not allowed assistants to make changes.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "No energy": [
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/filter/conditionText.ts"
+  ],
   "No estimate yet": [
     "web/src/lib/filters.ts"
   ],
@@ -8562,7 +8616,7 @@
     "web/src/app/ShareDirectory.tsx"
   ],
   "Not sized": [
-    "web/src/app/review/DailyCheck.tsx"
+    "web/src/app/review/BentoSlots.tsx"
   ],
   "Not supported": [
     "web/src/app/NotificationsSettings.tsx"
@@ -11788,6 +11842,9 @@
     "web/src/app/locations/MapsSettings.tsx",
     "web/src/app/rules/AutomationsSettings.tsx"
   ],
+  "Set energy": [
+    "web/src/app/task-detail/TaskFacts.tsx"
+  ],
   "Set estimate": [
     "web/src/app/review/BentoSlots.tsx"
   ],
@@ -12393,13 +12450,13 @@
     "web/src/app/DataSettings.tsx"
   ],
   "Small": [
-    "web/src/lib/bento.ts"
+    "web/src/lib/bentoSlots.ts"
   ],
   "Small changes without review": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Small · up to 30 min": [
-    "web/src/lib/bento.ts"
+    "web/src/lib/bentoSlots.ts"
   ],
   "Snooze 10 min": [
     "web/public/push-sw.js",
@@ -13344,6 +13401,9 @@
   ],
   "The endpoint answers “not found” until turned on.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "The energy must be deep, medium or low.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "The file could not be read: {detail}": [
     "web/src/lib/i18n/errors.ts"
@@ -18905,7 +18965,7 @@
     "web/src/app/LabelsView.tsx"
   ],
   "{slot} holds {title}.": [
-    "web/src/lib/bento.ts"
+    "web/src/lib/bentoSlots.ts"
   ],
   "{slot} moved": [
     "web/src/lib/slots.ts"

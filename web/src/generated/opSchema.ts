@@ -92,6 +92,12 @@ export interface TaskFields {
    */
   day_part?: string | null
   /**
+   * The energy the task asks for (OpenSpec change task-energy, design
+   * D1): "" (none), "deep", "medium" or "low". Chosen from a menu, never
+   * written text, so not content (D2); additive.
+   */
+  energy?: string
+  /**
    * The tasks this one waits for, in its own sharing scope (OpenSpec change
    * task-dependencies): one whole-list register; the resolver refuses ids of
    * other scopes and lists that close a cycle.
@@ -704,6 +710,12 @@ export interface UserPrefsFields {
    */
   focus_style?: string
   /**
+   * Energy levels (OpenSpec change task-energy, design D3): "on" offers
+   * a task's energy in the task page, the row menu and quick add; clients
+   * read an empty or unknown value as off and keep the stored value.
+   */
+  energy?: string
+  /**
    * The Bento order (bento-daily-check D4, D6): "summit" lists Medium,
    * Large, Small; empty or unknown reads as Frog (Large, Medium, Small)
    * and is kept.
@@ -774,7 +786,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',
@@ -816,7 +828,7 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '',
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', bento_order: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',

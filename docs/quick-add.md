@@ -99,6 +99,8 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 | Spanish | `algún día` | `esta noche` |
 | Portuguese | `algum dia` | `hoje à noite` |
 
+**Energy.** With **Energy levels** on ([Set up](method/set-up.md#energy-levels)), `~deep`, `~medium` and `~low`, or any start of them (`~d`, `~me`, `~L`), set the task's energy, in every language and in any letter case: `Draft the strategy #Work ~deep +2h` → *Draft the strategy*, in Work, 2 hours, Deep. The chip reads "Deep energy"; typing `~` suggests the three, and on a phone the lightning tool under the line starts one. The last one on the line wins. `~` followed by anything else stays in the title (`Dinner for ~6 people`), and with Energy levels off the token is not read.
+
 **Morning and afternoon.** With [day parts](day-parts.md) on, `this morning` and `this afternoon` make the task due today with that part, and a part word right after a date phrase gives that date the part: `Stretch tomorrow morning` → *Stretch*, due tomorrow, Morning; `Dinner fri evening` → due Friday, This Evening. A part word anywhere else stays in the title (`Morning run tomorrow` keeps *Morning run*), and with day parts off none of these are read. Each gets its own chip.
 
 | Language | This morning, this afternoon | After a date |

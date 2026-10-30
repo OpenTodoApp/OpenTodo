@@ -8,6 +8,7 @@ import { formatMinutes } from './duration'
 import { t } from './i18n'
 import type { Due, Label, Priority, Task } from './types'
 import { dayPartOf, dayPartWord } from './dayParts'
+import { energyName, energyOf } from './energy'
 
 export type FacetId = 'where' | 'when' | 'how' | 'who'
 
@@ -123,10 +124,13 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   if (!due && !when.some((p) => p.id !== 'evening')) when.unshift({ id: 'due', text: t('Not scheduled'), segment: 'due', empty: true })
   else if (!due) when.unshift({ id: 'due', text: t('No date'), segment: 'due', empty: true })
 
-  // How: priority, estimate, labels.
+  // How: priority, estimate, energy (task-energy), labels.
   const how: FacetPart[] = [{ id: 'priority', text: PRIORITY_TEXT[task.priority] ?? 'P4' }]
   if (task.estimate_minutes !== null) how.push({ id: 'estimate', text: formatMinutes(task.estimate_minutes) })
   else if (revealed.has('estimate')) how.push({ id: 'estimate', text: t('Estimate'), empty: true })
+  const energy = energyOf(task)
+  if (energy) how.push({ id: 'energy', text: energyName(energy) })
+  else if (revealed.has('energy')) how.push({ id: 'energy', text: t('Energy'), empty: true })
   if (ctx.labels.length) how.push({ id: 'labels', text: ctx.labels.map((l) => l.name).join(', '), labels: ctx.labels })
   else if (revealed.has('labels')) how.push({ id: 'labels', text: t('Labels'), empty: true })
 

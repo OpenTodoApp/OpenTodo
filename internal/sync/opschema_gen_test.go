@@ -46,7 +46,7 @@ var tsEntity = map[string]string{
 // may narrow it (a literal union, a required field).
 func tsKind(k kind) string {
 	switch k {
-	case kString, kID, kDoc, kClock, kWeekdays:
+	case kString, kID, kDoc, kClock, kWeekdays, kEnergy:
 		return "string"
 	case kNullableString, kRecurrence, kNullableText, kDate, kStart, kDayPart:
 		return "string | null"

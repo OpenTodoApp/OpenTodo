@@ -17,6 +17,9 @@ type Context struct {
 	// DayParts reads the part phrases (OpenSpec change day-parts, D5): the
 	// account's Day parts preference.
 	DayParts bool `json:"dayParts,omitempty"`
+	// Energy reads the `~deep` tokens (OpenSpec change task-energy, D4): the
+	// account's Energy levels preference.
+	Energy bool `json:"energy,omitempty"`
 }
 
 // Due is a floating due date with an optional time.
@@ -33,11 +36,14 @@ type Result struct {
 	Someday  bool   `json:"someday,omitempty"`
 	Evening  bool   `json:"evening,omitempty"`
 	// DayPart is "morning" or "afternoon" from a part phrase (day-parts D5).
-	DayPart         string   `json:"dayPart,omitempty"`
-	ProjectID       string   `json:"projectId,omitempty"`
-	Labels          []string `json:"labels"`
-	Priority        int      `json:"priority,omitempty"`
-	EstimateMinutes int      `json:"estimateMinutes,omitempty"`
+	DayPart   string   `json:"dayPart,omitempty"`
+	ProjectID string   `json:"projectId,omitempty"`
+	Labels    []string `json:"labels"`
+	Priority  int      `json:"priority,omitempty"`
+	// Energy is "deep", "medium" or "low" from a `~` token, the last one on
+	// the line (task-energy D4).
+	Energy          string `json:"energy,omitempty"`
+	EstimateMinutes int    `json:"estimateMinutes,omitempty"`
 	// SpentMinutes is time already spent from a `30m/2h` token (time-tracking
 	// D10): one closed time entry ending at creation.
 	SpentMinutes int        `json:"spentMinutes,omitempty"`
@@ -72,7 +78,7 @@ func Parse(line string, ctx Context) Result {
 // Mark is one recognised attribute and the span of the line it came from, in
 // line order: the chips a client previews (OpenSpec change extension-v2, D1).
 // Kind is date, time, deadline, evening, daypart, someday, project, label,
-// priority, estimate, recurrence or reminder.
+// priority, energy, estimate, recurrence or reminder.
 type Mark struct {
 	Kind string
 	Span Span
@@ -117,6 +123,9 @@ func (p *parser) marks(r Result) []Mark {
 		add("label", l.span, true)
 	}
 	add("priority", p.priority.span, p.priority.value > 0)
+	for _, e := range p.energies {
+		add("energy", e.span, true)
+	}
 	add("estimate", p.estimate.span, p.estimate.value > 0)
 	add("recurrence", p.rec.span, p.rec.set)
 	for _, m := range p.reminders {
@@ -156,7 +165,10 @@ type parser struct {
 	spent            int
 	evening, someday *Span
 	labels           []found
-	reminders        []struct {
+	// energies are the `~` tokens; every one leaves the title and the last
+	// one is the value (task-energy D4).
+	energies  []found
+	reminders []struct {
 		value Reminder
 		span  Span
 	}
@@ -190,6 +202,12 @@ func (p *parser) attribute(i int) (int, bool) {
 	if l, ok := matchLabel(t.text); ok {
 		p.labels = append(p.labels, found{l, one, true})
 		return i + 1, true
+	}
+	if p.ctx.Energy {
+		if e := matchEnergy(t.text); e != "" {
+			p.energies = append(p.energies, found{e, one, true})
+			return i + 1, true
+		}
 	}
 	if p.priority.value == 0 {
 		if pr := matchPriority(t.text); pr > 0 {
@@ -403,6 +421,10 @@ func (p *parser) result(quotes []Span) Result {
 	add(p.estimate.span, p.estimate.value > 0)
 	out := Result{Due: p.due(), Deadline: p.deadline.value, Someday: parked, Evening: p.evening != nil, DayPart: p.dayPart.value, ProjectID: p.project.value,
 		Priority: p.priority.value, EstimateMinutes: p.estimate.value, SpentMinutes: p.spent, Recurrence: p.rec.value, Labels: []string{}, Reminders: []Reminder{}}
+	for _, e := range p.energies {
+		remove = append(remove, e.span)
+		out.Energy = e.value
+	}
 	for _, l := range p.labels {
 		remove = append(remove, l.span)
 		out.Labels = append(out.Labels, l.value)

@@ -50,6 +50,7 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kDayPart:        orNull(checkDayPart),
 	kClock:          checkClock,
 	kWeekdays:       checkWeekdays,
+	kEnergy:         checkEnergy,
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -134,6 +135,18 @@ func checkDayPart(raw json.RawMessage) error {
 	var d string
 	if err := json.Unmarshal(raw, &d); err != nil || !slices.Contains(DayParts, d) {
 		return errors.New(`must be null, "morning" or "afternoon"`)
+	}
+	return nil
+}
+
+// EnergyLevels are the stored values of task.energy besides "" for none
+// (OpenSpec change task-energy, design D1).
+var EnergyLevels = []string{"deep", "medium", "low"}
+
+func checkEnergy(raw json.RawMessage) error {
+	var e string
+	if err := json.Unmarshal(raw, &e); err != nil || isNullValue(raw) || (e != "" && !slices.Contains(EnergyLevels, e)) {
+		return errors.New(`must be "", "deep", "medium" or "low"`)
 	}
 	return nil
 }
