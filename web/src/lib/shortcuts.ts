@@ -82,7 +82,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
  */
 export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   inbox: ['list'], today: ['list'], upcoming: ['list'], anytime: ['list'], someday: ['list'], completed: ['list'], assigned: ['list'],
-  project: ['list', 'board', 'timeline'], label: ['list'], filter: ['list'], view: ['list', 'board'], views: [], labels: [],
+  project: ['list', 'board', 'timeline', 'calendar'], label: ['list'], filter: ['list'], view: ['list', 'board'], views: [], labels: [],
   // The Month view keys are its own `view` entries (month-and-timeline-views): it hosts no lane-and-blocks calendar.
   dashboard: [], day: ['calendar'], week: ['calendar'], month: [], plan: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
   // Process the Inbox (inbox-triage): one card, no task list; its keys are `view` entries.
@@ -192,7 +192,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'project.move', keys: ['m'], description: 'Move the current project under another project or to the top level', section: 'trash', scope: 'view', views: ['project'] },
   // The Inbox's primary action (inbox-split D3): Process, one task at a time; `g p` still goes there from anywhere.
   { id: 'inbox.process', keys: ['p'], label: 'Process', description: 'In the Inbox: process its tasks one at a time', section: 'tasks', scope: 'view', views: ['inbox'] },
-  { id: 'project.view-mode', keys: ['v'], description: 'Cycle the current project through list, board and timeline (remembered per project on this device)', section: 'tasks', scope: 'view', views: ['project'] },
+  { id: 'project.view-mode', keys: ['v'], description: 'Cycle the current project through list, board, timeline and calendar (remembered per project on this device)', section: 'tasks', scope: 'view', views: ['project'] },
   { id: 'project.share', keys: ['Shift+S'], description: 'Share the current project: add members by email, change roles, remove, leave, transfer', section: 'tasks', scope: 'view', views: ['project'] },
   // Custom fields (custom-fields): define the project's fields; editors and above.
   { id: 'project.fields', keys: ['Shift+F'], description: 'Manage the custom fields of the current project: add, rename, reorder, delete', section: 'tasks', scope: 'view', views: ['project'] },
@@ -262,6 +262,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'calendar.add-to-slot', keys: ['Shift+Enter'], description: 'While placing over a slot: add the task to the slot', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.edit-estimate', keys: ['e'], description: 'Edit the estimate of the selected task', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.complete', keys: ['c'], description: 'Complete the selected task', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.quick-add', keys: ['q'], description: 'In Day and Week: add a task due on the focused day (the selected task\'s day, else today)', section: 'calendar', scope: 'calendar', overrides: ['list.quick-add'] },
   { id: 'calendar.range-prev', keys: ['['], description: 'Previous day or week', section: 'calendar', scope: 'calendar', overrides: ['global.sidebar'] },
   { id: 'calendar.range-next', keys: [']'], description: 'Next day or week', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.today', keys: ['t'], description: 'Back to today', section: 'calendar', scope: 'calendar' },

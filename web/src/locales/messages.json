@@ -886,6 +886,9 @@
   "Add frame": [
     "web/src/app/calendar/FramesDialog.tsx"
   ],
+  "Add here": [
+    "web/src/app/calendar/addHere.tsx"
+  ],
   "Add it to your assistant": [
     "web/src/app/AssistantsPanel.tsx"
   ],
@@ -943,6 +946,9 @@
   ],
   "Add task": [
     "web/src/app/quickadd/SheetBar.tsx"
+  ],
+  "Add task here…": [
+    "web/src/app/calendar/addHere.tsx"
   ],
   "Add tasks to": [
     "web/src/app/IssueEditor.tsx"
@@ -2039,6 +2045,7 @@
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Calendar accounts": [
@@ -2096,6 +2103,9 @@
   ],
   "Calendar name": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Calendar options": [
+    "web/src/app/calendar/ProjectCalendar.tsx"
   ],
   "Calendar range": [
     "web/src/app/CalendarRange.tsx"
@@ -2543,6 +2553,8 @@
     "web/src/app/EstimateField.tsx"
   ],
   "Clear filter": [
+    "web/src/app/calendar/QueryFilterDialog.tsx",
+    "web/src/app/calendar/queryFilter.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Clear the dashboard selection": [
@@ -2691,6 +2703,11 @@
     "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/menus/stylePickers.tsx"
+  ],
+  "Colour by": [
+    "web/src/app/calendar/colorByControls.tsx",
+    "web/src/app/task-list/listExtras.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Colour {name}": [
     "web/src/app/NewWorkspaceDialog.tsx",
@@ -3348,7 +3365,7 @@
   "Cut off: the answer reached its length limit.": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
-  "Cycle the current project through list, board and timeline (remembered per project on this device)": [
+  "Cycle the current project through list, board, timeline and calendar (remembered per project on this device)": [
     "web/src/lib/shortcuts.ts"
   ],
   "Daily": [
@@ -3492,6 +3509,7 @@
   ],
   "Deadline": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/quickadd/FieldRows.tsx",
@@ -3978,6 +3996,7 @@
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -5001,6 +5020,9 @@
     "web/src/app/views/FilterChips.tsx",
     "web/src/app/views/ViewToolbar.tsx"
   ],
+  "Filter Upcoming": [
+    "web/src/app/task-list/listExtras.tsx"
+  ],
   "Filter activity by kind": [
     "web/src/app/ProjectActivity.tsx"
   ],
@@ -5028,8 +5050,18 @@
   "Filter results": [
     "web/src/app/FilterView.tsx"
   ],
+  "Filter the calendar": [
+    "web/src/app/calendar/useCalendarChrome.tsx"
+  ],
+  "Filter: {words}. Edit the filter": [
+    "web/src/app/calendar/queryFilter.tsx"
+  ],
   "Filters": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Filter…": [
+    "web/src/app/calendar/useCalendarChrome.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "Find a calendar…": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -6055,6 +6087,9 @@
   "In 90 days": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "In Day and Week: add a task due on the focused day (the selected task's day, else today)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In Google Cloud, create an OAuth client of type “Web application”, enable the CalDAV API, and add this authorized redirect address:": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -6325,6 +6360,9 @@
   ],
   "Invalid date \"{date}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
+  ],
+  "Invalid query": [
+    "web/src/app/calendar/queryFilter.tsx"
   ],
   "Invitation": [
     "web/src/app/auditFormat.ts"
@@ -6638,6 +6676,7 @@
     "web/src/app/LabelPicker.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -6673,6 +6712,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/method/MethodListView.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/DailyCheck.tsx",
@@ -7850,6 +7890,9 @@
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/palette/registry.ts"
   ],
+  "New frame here…": [
+    "web/src/app/calendar/addHere.tsx"
+  ],
   "New group": [
     "web/src/app/WorkspaceGroups.tsx"
   ],
@@ -7920,6 +7963,9 @@
   "New slot": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/palette/registry.ts"
+  ],
+  "New slot here…": [
+    "web/src/app/calendar/addHere.tsx"
   ],
   "New task in {project}: {title}": [
     "web/src/lib/assistant.ts"
@@ -8495,6 +8541,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Not": [
+    "web/src/app/calendar/queryFilter.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/FilterBuilder.tsx",
     "web/src/app/views/FilterChips.tsx"
@@ -10057,6 +10104,7 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -10152,6 +10200,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/index.ts",
@@ -10413,6 +10462,9 @@
   ],
   "QR code to scan with your authenticator app": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Query": [
+    "web/src/app/calendar/QueryFilterDialog.tsx"
   ],
   "Query is too long: {count} characters, at most {max}": [
     "web/src/lib/filter/parse.ts"
@@ -12091,6 +12143,10 @@
   "Show on rows": [
     "web/src/app/views/DisplayPanel.tsx"
   ],
+  "Show only the tasks a query matches": [
+    "web/src/app/calendar/useCalendarChrome.tsx",
+    "web/src/app/task-list/ListChrome.tsx"
+  ],
   "Show or hide the project activity; Tab reaches the person and kind filters": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -13080,6 +13136,9 @@
   "Tasks with a time": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Tasks with any of the ticked labels.": [
+    "web/src/app/calendar/QueryFilterDialog.tsx"
+  ],
   "Tasks with no time": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -13416,6 +13475,9 @@
   ],
   "The file matches no supported format.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "The filter language of saved views, for example ##Work & p1 or @errand.": [
+    "web/src/app/calendar/QueryFilterDialog.tsx"
   ],
   "The five moves": [
     "web/src/app/method/LoopHome.tsx"
@@ -15357,6 +15419,7 @@
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
@@ -16727,6 +16790,8 @@
     "web/src/lib/rules/summary.ts"
   ],
   "deadline today": [
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/lib/facets.ts"
   ],
   "deadline {date}, {count}": [
@@ -18463,6 +18528,9 @@
   ],
   "{n, plural, one {# task completed} other {# tasks completed}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": [
+    "web/src/app/calendar/CapacityLine.tsx"
   ],
   "{n, plural, one {# task is still in Today.} other {# tasks are still in Today.}}": [
     "web/src/app/review/CloseDay.tsx"

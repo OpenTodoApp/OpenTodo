@@ -13,6 +13,8 @@ import {
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ListGroupBy } from '../../lib/listDisplay'
 import { ROW_LAYOUTS, type RowLayout } from '../../lib/rowLayout'
+import { COLOR_BY_MODES, type ColorByMode } from '../../lib/colorBy'
+import { COLOR_BY_LABEL } from '../calendar/colorByControls'
 
 export interface ViewDisplay {
   layout: ViewLayout
@@ -55,6 +57,8 @@ export interface DisplayPanelProps<V extends PanelValue = ViewDisplay> {
   groupOptions?: readonly V['groupBy'][]
   /** Order by choices, in order; a view's by default. */
   sortOptions?: readonly SortBy[]
+  /** A board's Colour by (calendar-clarity "Colour by on boards"): a device choice for every board, not part of the view. */
+  colorBy?: { mode: ColorByMode; onChange: (mode: ColorByMode) => void }
 }
 
 /** The toolbar's display button and its panel. */
@@ -73,7 +77,7 @@ export function DisplayPanel<V extends PanelValue = ViewDisplay>(props: DisplayP
 }
 
 /** The panel's content; also rendered on its own in stories and tests. */
-export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, onChange: change, groupOptions = GROUP_BY_OPTIONS as readonly V['groupBy'][], sortOptions = SORT_BY_OPTIONS }: DisplayPanelProps<V>) {
+export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, onChange: change, groupOptions = GROUP_BY_OPTIONS as readonly V['groupBy'][], sortOptions = SORT_BY_OPTIONS, colorBy }: DisplayPanelProps<V>) {
   const [more, setMore] = useState(false)
   const onChange = (patch: Partial<PanelValue>) => change(patch as Partial<V>)
   const hiddenNow = value.hidden
@@ -104,6 +108,14 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
             {sortOptions.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
           </select>
         </OptionRow>
+        {colorBy && (
+          <OptionRow label={t('Colour by')}>
+            <select className="ui-input w-full py-1 text-meta" aria-label={t('Colour by')} value={colorBy.mode} data-display-color-by
+              onChange={(e) => colorBy.onChange(e.target.value as ColorByMode)}>
+              {COLOR_BY_MODES.map((m) => <option key={m} value={m}>{COLOR_BY_LABEL[m]}</option>)}
+            </select>
+          </OptionRow>
+        )}
         {value.showCompleted !== undefined && <OptionRow label={t('Completed tasks')}>
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Completed tasks')} value={value.showCompleted ? 'show' : 'hide'}
             onChange={(e) => onChange({ showCompleted: e.target.value === 'show' })}>

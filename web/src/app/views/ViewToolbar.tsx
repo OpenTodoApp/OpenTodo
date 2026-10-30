@@ -7,7 +7,7 @@ import type { ReactNode, RefObject } from 'react'
 import { Button, IconButton } from '../../ui'
 import { t } from '../../lib/i18n'
 import { FilterChips } from './FilterChips'
-import { DisplayPanel, type ViewDisplay } from './DisplayPanel'
+import { DisplayPanel, type DisplayPanelProps, type ViewDisplay } from './DisplayPanel'
 
 export interface ViewToolbarProps {
   /** The query the chips read. */
@@ -18,9 +18,11 @@ export interface ViewToolbarProps {
   onAdd?: () => void
   display: ViewDisplay
   onDisplay: (patch: Partial<ViewDisplay>) => void
+  /** A board's Colour by (calendar-clarity), shown in the display panel. */
+  colorBy?: DisplayPanelProps['colorBy']
 }
 
-export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, onDisplay }: ViewToolbarProps) {
+export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, onDisplay, colorBy }: ViewToolbarProps) {
   return (
     <div className="mb-2 flex items-start gap-2" data-view-toolbar>
       <div className="min-w-0 flex-1">
@@ -32,7 +34,7 @@ export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, 
       <div className="flex shrink-0 items-center gap-1">
         <IconButton icon="filter" size="sm" label={filterOpen ? t('Hide the filter') : t('Show the filter')} aria-pressed={filterOpen} data-filter-toggle
           className={filterOpen ? 'bg-selected text-default' : ''} onClick={() => setFilterOpen(!filterOpen)} />
-        <DisplayPanel value={display} onChange={onDisplay} />
+        <DisplayPanel value={display} onChange={onDisplay} colorBy={colorBy} />
       </div>
     </div>
   )

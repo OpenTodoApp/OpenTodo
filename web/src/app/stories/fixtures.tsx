@@ -317,6 +317,26 @@ export async function seedCalendarPlan(): Promise<void> {
   await setMeta('calendar.events.window', { from: '2026-10-01', to: '2026-11-30', fetchedAt: Date.parse('2026-10-14T11:00:00') })
 }
 
+/**
+ * Calendar clarity (calendar-clarity D1, D3): the calendar week with labels and
+ * priorities on its tasks, a deadline on Friday for a task planned today ("Submit the
+ * grant"), a task due on its deadline day ("Pay the rent", Thursday), and the device's
+ * Colour by set to `mode`.
+ */
+export function seedCalendarClarity(mode: 'project' | 'label' | 'priority'): () => Promise<void> {
+  return async () => {
+    await seedCalendarWeek()
+    const byTitle = async (title: string) => (await db.tasks.toArray()).find((t) => t.title === title)!.id
+    await updateTask(await byTitle('Write the release notes'), { labels: [seeded.deepWork], priority: 1 })
+    await updateTask(await byTitle('Design review'), { labels: [seeded.waiting, seeded.deepWork], priority: 2 })
+    await updateTask(await byTitle('Lunch run'), { labels: [seeded.errand], priority: 3 })
+    await updateTask(await byTitle('Market'), { labels: [seeded.errand] })
+    await createTask({ title: 'Submit the grant', due: { date: TODAY, time: '15:00' }, estimate_minutes: 60, deadline: '2026-10-16', project_id: seeded.work, priority: 1 })
+    await createTask({ title: 'Pay the rent', due: { date: TOMORROW }, deadline: TOMORROW, project_id: seeded.home })
+    await setMeta('calendar.colorBy', mode)
+  }
+}
+
 /** A comment and an attachment on a task, for the count chips (fixture rows, not ops). */
 export async function seedCounts(taskId: string): Promise<void> {
   await db.comments.put({ id: `${taskId}-c1`, task_id: taskId, parent_id: null, body: 'Numbers land on Monday.', author_id: storyUser.id, mentions: [], created_at: 1, edited_at: null, deleted_at: null, _clock: {} })

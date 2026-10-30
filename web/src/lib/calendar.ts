@@ -178,6 +178,28 @@ export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Pr
   return tasks.filter((t) => !t.deleted_at && !t.completed_at && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
 }
 
+/**
+ * Deadlines on the calendar (OpenSpec change calendar-clarity, design D1): per date in
+ * [from, to], the open, live tasks of non-archived projects whose `deadline` falls on it
+ * (a floating date, no zone conversion). A task whose (viewed) due is on its deadline
+ * day is drawn there already and carries the diamond instead, so it is left out. Never
+ * part of capacity: markers are not tasks of the day.
+ */
+export function deadlineMarkers(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string): Map<string, Task[]> {
+  const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
+  const out = new Map<string, Task[]>()
+  for (const t of tasks) {
+    const d = t.deadline
+    if (!d || t.deleted_at || t.completed_at || d < from || d > to || (t.project_id && archived.has(t.project_id))) continue
+    if (t.due?.date === d) continue
+    const list = out.get(d)
+    if (list) list.push(t)
+    else out.set(d, [t])
+  }
+  for (const list of out.values()) list.sort((a, b) => a.priority - b.priority || a.title.localeCompare(b.title))
+  return out
+}
+
 const NO_SLOT_LOAD = { extra: 0, covered: 0 }
 
 export interface DayLoad {

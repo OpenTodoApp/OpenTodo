@@ -6,11 +6,12 @@ import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { PlacedFrame } from '../../lib/frames'
 import { slotCapacity, slotCount, slotName, type SlotView } from '../../lib/slots'
-import type { Project, Task } from '../../lib/types'
-import { Button, hueFor, Icon } from '../../ui'
+import type { Task } from '../../lib/types'
+import { Button, hueFor, Icon, type HueName } from '../../ui'
 import { act } from '../actionError'
 import { completeWithUndo } from '../undoable'
 import { CapacityLine } from './CapacityLine'
+import { DeadlineDiamond, deadlineMark, DeadlineMarker } from './DeadlineMarker'
 import { FrameHeading } from './FrameBand'
 import type { DayMeetings } from './meetingCapacity'
 import { formatTime } from './grid'
@@ -20,7 +21,7 @@ import { formatTime } from './grid'
  * unscheduled tasks and its timed blocks in time order; no seven-column grid. The
  * same selection, keyboard order and panel as the grid.
  */
-export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMap, projectMap, selectedId, onSelect, onOpen, onAdd }: {
+export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMap, hueOf, deadlines, selectedId, onSelect, onOpen, onAdd }: {
   days: DayData[]
   /** Frame occurrences per date (calendar-frames D6): headings among the day's timed tasks. */
   frames?: Map<string, PlacedFrame[]>
@@ -30,21 +31,25 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
   /** Counted meetings per day, or null when this device does not count them. */
   meetings: Map<string, DayMeetings> | null
   taskMap: Map<string, Task>
-  projectMap: Map<string, Project>
+  /** The hue of a task under Colour by (calendar-clarity D3). */
+  hueOf: (task: Task) => HueName
+  /** Deadline markers per date (calendar-clarity D1), after the day's tasks. */
+  deadlines?: Map<string, Task[]>
   selectedId: string | null
   onSelect: (id: string) => void
   onOpen: (id: string) => void
   /** An empty day's "Add a task": quick add with that day as the date. */
   onAdd: (date: string) => void
 }) {
-  const row = (task: Task, time: string | null, past: boolean) => (
+  const row = (task: Task, time: string | null, past: boolean, date: string) => (
     <li key={task.id}>
       <button type="button" data-cal-id={task.id} data-agenda-task={task.id} onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(task.id) } }}
         className={`ui-block flex min-h-11 w-full items-center gap-2 px-2 py-1 text-left text-body ${past ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
-        data-hue={hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)}>
+        data-hue={hueOf(task)}>
         <span className="w-14 shrink-0 text-meta tabular-nums">{time ?? t('all day')}</span>
         <span className="min-w-0 flex-1 truncate">{task.title || t('Untitled')}</span>
+        {task.deadline === date && <><DeadlineDiamond past={past} /><span className="sr-only">, {deadlineMark(task, date)}</span></>}
         {task.estimate_minutes ? <span className="shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
       </button>
     </li>
@@ -57,9 +62,10 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
         const load = dayLoad(tasks, d.date, prefs.dayLength, meetings?.get(d.date)?.minutes ?? 0, slotCapacity([...d.slots.values()]))
         const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
         const dayFrames = [...(frames?.get(d.date) ?? [])].sort((a, b) => a.start - b.start)
+        const dayDeadlines = deadlines?.get(d.date) ?? []
         // Each frame heading goes before the first timed task that starts at or after its start.
         const timed = [...dayFrames.map((f) => ({ at: f.start, order: 0, node: <FrameHeading key={`frame:${f.frame.id}`} occ={f} /> })),
-          ...blocks.map(({ b, t: item }) => ({ at: b.start, order: 1, node: row(item, formatTime(b.start), d.date < today) })),
+          ...blocks.map(({ b, t: item }) => ({ at: b.start, order: 1, node: row(item, formatTime(b.start), d.date < today, d.date) })),
           ...[...d.slots.values()].map((v) => ({ at: v.start, order: 1, node: <AgendaSlot key={v.key} view={v} past={d.date < today} onOpen={onOpen} /> }))]
           .sort((a, b) => a.at - b.at || a.order - b.order)
         return (
@@ -68,7 +74,7 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
               <h2 id={`agenda-${d.date}`} className={`text-body font-semibold ${d.date === today ? 'text-accent' : 'text-strong'}`}>{name} {dd}</h2>
               <CapacityLine load={load} dayLength={prefs.dayLength} />
             </div>
-            {d.lane.length === 0 && blocks.length === 0 && d.slots.size === 0
+            {d.lane.length === 0 && blocks.length === 0 && d.slots.size === 0 && !dayDeadlines.length
               // One quiet line per empty day, as on Plan (precision-polish D5): seven filled buttons outweighed the days that have tasks.
               ? (
                 <>
@@ -81,8 +87,9 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
               )
               : (
                 <ul className="mt-1 space-y-0.5">
-                  {d.lane.map((tk) => row(tk, null, d.date < today))}
+                  {d.lane.map((tk) => row(tk, null, d.date < today, d.date))}
                   {timed.map((x) => x.node)}
+                  {dayDeadlines.map((tk) => <li key={`deadline:${tk.id}`} className="min-h-11 flex items-center"><DeadlineMarker task={tk} date={d.date} today={today} variant="row" onOpen={onOpen} /></li>)}
                 </ul>
               )}
           </section>

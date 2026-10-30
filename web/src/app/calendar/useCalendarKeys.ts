@@ -65,6 +65,14 @@ export interface CalendarKeyContext {
   slots?: Map<string, SlotView>
   /** While a re-plan preview is open (replan-the-day D4): Enter applies, Escape cancels, the other keys wait. */
   replan?: { apply: () => void; cancel: () => void } | null
+  /** `q`: the add dialog for the focused day (calendar-clarity D2). */
+  onQuickAdd?: (date: string) => void
+}
+
+/** The focused day of Day and Week (calendar-clarity D2): the selected item's day, else today when shown, else the first day. */
+export function focusedDay(dates: readonly string[], today: string, selectedDate: string | null | undefined): string {
+  if (selectedDate && dates.includes(selectedDate)) return selectedDate
+  return dates.includes(today) ? today : dates[0]
 }
 
 export function useCalendarKeys(c: CalendarKeyContext) {
@@ -165,6 +173,10 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     'calendar.unschedule': unlessPlacing(() => { if (!task?.due || !block) return false; edit(task.id, (tk) => (tk.due ? { due: { date: tk.due.date } } : null)) }),
     'calendar.place': unlessPlacing(() => { if (!task?.due) return false; c.startPlacing(task, task.due.date) }),
     'calendar.edit-estimate': unlessPlacing(() => { if (!task?.due) return false; estimateFocus.request(task.id); c.setOpenId(task.id) }),
+    'calendar.quick-add': unlessPlacing(() => {
+      if (!c.onQuickAdd) return false
+      c.onQuickAdd(focusedDay(c.days.map((d) => d.date), today, task?.due?.date ?? slot?.slot.date))
+    }),
     'calendar.complete': unlessPlacing(() => {
       if (!task?.due) return false
       act(completeWithUndo(task.id, true))

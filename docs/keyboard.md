@@ -123,7 +123,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>→</kbd> | Show the details of the selected task under its row (unfold its subtasks first when they are folded), or the sub-projects of the focused sidebar project |
 | <kbd>←</kbd> | Hide the details of the selected task, else fold its subtasks (or go to its parent), or the sub-projects of the focused sidebar project |
 | <kbd>p</kbd> | In the Inbox: process its tasks one at a time |
-| <kbd>v</kbd> | Cycle the current project through list, board and timeline (remembered per project on this device) |
+| <kbd>v</kbd> | Cycle the current project through list, board, timeline and calendar (remembered per project on this device) |
 | <kbd>Shift+S</kbd> | Share the current project: add members by email, change roles, remove, leave, transfer |
 | <kbd>Shift+F</kbd> | Manage the custom fields of the current project: add, rename, reorder, delete |
 | <kbd>Shift+P</kbd> | Edit the current project’s note (Esc saves and closes it) |
@@ -184,6 +184,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+Enter</kbd> | While placing over a slot: add the task to the slot |
 | <kbd>e</kbd> | Edit the estimate of the selected task |
 | <kbd>c</kbd> | Complete the selected task |
+| <kbd>q</kbd> | In Day and Week: add a task due on the focused day (the selected task's day, else today) |
 | <kbd>[</kbd> | Previous day or week |
 | <kbd>]</kbd> | Next day or week |
 | <kbd>t</kbd> | Back to today |

@@ -5,7 +5,7 @@ The Calendar (Day, Week, Month and Plan together) and Upcoming SHALL each offer 
 
 #### Scenario: Only work in the week
 - **WHEN** the user opens Filter… in the Week and enters `##Work`
-- **THEN** only tasks of "Work" and its sub-projects are drawn, a "Work and sub-projects" chip shows in the header, and meetings are still drawn
+- **THEN** only tasks of "Work" and its sub-projects are drawn, a chip reading "Project is Work or a sub-project" (the condition words of saved views' toolbar) shows in the header, and meetings are still drawn
 
 #### Scenario: Label checkboxes
 - **WHEN** the user ticks the labels "errand" and "call" in Upcoming's filter

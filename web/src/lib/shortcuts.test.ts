@@ -89,7 +89,8 @@ describe('conflicts fail the build', () => {
     const trash: Shortcut = { id: 'trash.c', keys: ['c'], description: 'x', section: 'trash', scope: 'view', views: ['trash'] }
     expect(conflicts([...SHORTCUTS, trash])).toEqual([])
     const project: Shortcut = { id: 'project.c', keys: ['c'], description: 'x', section: 'tasks', scope: 'view', views: ['project'] }
-    expect(conflicts([...SHORTCUTS, project])).toEqual([expect.stringContaining('"list.complete"')])
+    // A project hosts a list and, in its Calendar layout (calendar-clarity D5), the calendar's keys.
+    expect(conflicts([...SHORTCUTS, project])).toEqual([expect.stringContaining('"list.complete"'), expect.stringContaining('"calendar.complete"')])
   })
 })
 
