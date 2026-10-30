@@ -3,6 +3,7 @@ package httpapi
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestFlowModeREST (OpenSpec change project-flow-modes, task 6.1): projects and
@@ -103,7 +104,10 @@ func TestFlowModeRoles(t *testing.T) {
 	se.alice.mustStatus(resp, 200, out)
 
 	// The sync endpoint accepts any string (a newer client's value is kept).
-	syncOnce(se.alice, "dev-a", 0, []map[string]any{syncOp("op-flow-1", "project", se.project, "flow_mode", "staged")})
+	// Stamped after the REST write above, so it wins by last-writer-wins whatever the clocks.
+	op := syncOp("op-flow-1", "project", se.project, "flow_mode", "staged")
+	op["ts"] = time.Now().Add(time.Minute).UnixMilli()
+	syncOnce(se.alice, "dev-a", 0, []map[string]any{op})
 	resp, out = se.alice.do("GET", p, nil)
 	se.alice.mustStatus(resp, 200, out)
 	if out["flow_mode"] != "staged" {
