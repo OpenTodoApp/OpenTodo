@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\"). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -3626,6 +3626,1238 @@
     "recurrence": null,
     "reminders": [],
     "energy": "medium"
+   }
+  },
+  {
+   "name": "Collect the invoices from September and send them to the accountant next monday at 10am (en)",
+   "line": "Collect the invoices from September and send them to the accountant next monday at 10am",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Collect the invoices from September and send them to the accountant",
+    "due": {
+     "date": "2026-11-02",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "September report tomorrow (en)",
+   "line": "September report tomorrow",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "September report",
+    "due": {
+     "date": "2026-10-29"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pay rent in September (en)",
+   "line": "Pay rent in September",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay rent in",
+    "due": {
+     "date": "2027-09-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "File the invoices from September (en)",
+   "line": "File the invoices from September",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "File the invoices from September",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Rechnungen seit März ablegen (de)",
+   "line": "Rechnungen seit März ablegen",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rechnungen seit März ablegen",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Rechnungen von September an den Steuerberater schicken nächsten Montag um 10 Uhr (de)",
+   "line": "Rechnungen von September an den Steuerberater schicken nächsten Montag um 10 Uhr",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rechnungen von September an den Steuerberater schicken",
+    "due": {
+     "date": "2026-11-02",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Miete zahlen im September (de)",
+   "line": "Miete zahlen im September",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Miete zahlen im",
+    "due": {
+     "date": "2027-09-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Rassembler les factures de septembre pour le comptable lundi prochain à 10h (fr)",
+   "line": "Rassembler les factures de septembre pour le comptable lundi prochain à 10h",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rassembler les factures de septembre pour le comptable",
+    "due": {
+     "date": "2026-11-02",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Payer le loyer en septembre (fr)",
+   "line": "Payer le loyer en septembre",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Payer le loyer en",
+    "due": {
+     "date": "2027-09-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Raccogliere le fatture di settembre per il commercialista lunedì prossimo alle 10 (it)",
+   "line": "Raccogliere le fatture di settembre per il commercialista lunedì prossimo alle 10",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Raccogliere le fatture di settembre per il commercialista",
+    "due": {
+     "date": "2026-11-02",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pagare l'affitto a settembre (it)",
+   "line": "Pagare l'affitto a settembre",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pagare l'affitto a",
+    "due": {
+     "date": "2027-09-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Reunir las facturas de septiembre para el contador el próximo lunes a las 10 (es)",
+   "line": "Reunir las facturas de septiembre para el contador el próximo lunes a las 10",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Reunir las facturas de septiembre para el contador",
+    "due": {
+     "date": "2026-11-02",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pagar el alquiler en septiembre (es)",
+   "line": "Pagar el alquiler en septiembre",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pagar el alquiler en",
+    "due": {
+     "date": "2027-09-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Juntar as faturas de setembro para o contador na próxima segunda às 10 (pt)",
+   "line": "Juntar as faturas de setembro para o contador na próxima segunda às 10",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Juntar as faturas de setembro para o contador",
+    "due": {
+     "date": "2026-11-02",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pagar o aluguel em setembro (pt)",
+   "line": "Pagar o aluguel em setembro",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pagar o aluguel em",
+    "due": {
+     "date": "2027-09-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Send timesheet every other friday (en)",
+   "line": "Send timesheet every other friday",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Send timesheet",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Review budget every other week (en)",
+   "line": "Review budget every other week",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Review budget",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pay invoice every other month (en)",
+   "line": "Pay invoice every other month",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay invoice",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 months",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Water ferns every other day (en)",
+   "line": "Water ferns every other day",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Water ferns",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 days",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Renew passport every other year (en)",
+   "line": "Renew passport every other year",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Renew passport",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 years",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Stundenzettel senden jeden zweiten Freitag (de)",
+   "line": "Stundenzettel senden jeden zweiten Freitag",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Stundenzettel senden",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Budget prüfen jede zweite Woche (de)",
+   "line": "Budget prüfen jede zweite Woche",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Budget prüfen",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Rechnung zahlen jeden zweiten Monat (de)",
+   "line": "Rechnung zahlen jeden zweiten Monat",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rechnung zahlen",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 months",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Farne gießen jeden zweiten Tag (de)",
+   "line": "Farne gießen jeden zweiten Tag",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Farne gießen",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 days",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Envoyer la feuille de temps un vendredi sur deux (fr)",
+   "line": "Envoyer la feuille de temps un vendredi sur deux",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Envoyer la feuille de temps",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Revoir le budget une semaine sur deux (fr)",
+   "line": "Revoir le budget une semaine sur deux",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Revoir le budget",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Payer la facture un mois sur deux (fr)",
+   "line": "Payer la facture un mois sur deux",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Payer la facture",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 months",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Arroser les fougères tous les deux jours (fr)",
+   "line": "Arroser les fougères tous les deux jours",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Arroser les fougères",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 days",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Inviare il foglio ore ogni due venerdì (it)",
+   "line": "Inviare il foglio ore ogni due venerdì",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Inviare il foglio ore",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Rivedere il budget ogni due settimane (it)",
+   "line": "Rivedere il budget ogni due settimane",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rivedere il budget",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pagare la fattura ogni due mesi (it)",
+   "line": "Pagare la fattura ogni due mesi",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pagare la fattura",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 months",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Annaffiare le felci ogni due giorni (it)",
+   "line": "Annaffiare le felci ogni due giorni",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Annaffiare le felci",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 days",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pulire le scale a settimane alterne (it)",
+   "line": "Pulire le scale a settimane alterne",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pulire le scale",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Enviar la hoja de horas cada dos viernes (es)",
+   "line": "Enviar la hoja de horas cada dos viernes",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Enviar la hoja de horas",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Revisar el presupuesto cada dos semanas (es)",
+   "line": "Revisar el presupuesto cada dos semanas",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Revisar el presupuesto",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pagar la factura cada dos meses (es)",
+   "line": "Pagar la factura cada dos meses",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pagar la factura",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 months",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Regar los helechos cada dos días (es)",
+   "line": "Regar los helechos cada dos días",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Regar los helechos",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 days",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Enviar a folha de horas a cada duas sextas (pt)",
+   "line": "Enviar a folha de horas a cada duas sextas",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Enviar a folha de horas",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Rever o orçamento a cada duas semanas (pt)",
+   "line": "Rever o orçamento a cada duas semanas",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rever o orçamento",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Pagar a fatura a cada dois meses (pt)",
+   "line": "Pagar a fatura a cada dois meses",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pagar a fatura",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 months",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Regar as samambaias a cada dois dias (pt)",
+   "line": "Regar as samambaias a cada dois dias",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Regar as samambaias",
+    "due": {
+     "date": "2026-10-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 days",
+    "reminders": []
    }
   }
  ]
