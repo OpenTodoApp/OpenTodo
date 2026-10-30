@@ -7,14 +7,11 @@
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { currentDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
-import { getTask } from '../lib/liveData'
 import { useMembership, useUserPrefsRow } from '../lib/localData'
-import { briefingHidden, setBriefingShown, setTodayEventsShown } from '../lib/userPrefs'
+import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown } from '../lib/userPrefs'
 import { completedOpenKey, flatRow, sectionOfRows } from '../lib/listGroups'
 import { LOGBOOK_PAGE } from '../lib/logbook'
-import { moveTask } from '../lib/move'
 import { createTask } from '../lib/ops'
 import { getPlace, locationFromPlace } from '../lib/locations'
 import { dayTotalsText } from '../lib/time'
@@ -24,10 +21,8 @@ import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Label, Task } from '../lib/types'
 import { Button, frameKind, hueFor, MenuItem, MenuSeparator, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
 import { act } from './actionError'
-import { addedWhere } from './addedWhere'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
-import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
-import { offerMoveToWorkspace, useWorkspaceName } from './workspaceNav'
+import { useWorkspaceName } from './workspaceNav'
 import { BoardView } from './BoardView'
 import { BriefingText, useBriefing } from './Briefing'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
@@ -45,9 +40,8 @@ import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
 import { holdSelect, useListSwipe } from './task-list/RowSwipe'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
-import { navigate, type Route } from './router'
+import type { Route } from './router'
 import { AddSection } from './Sections'
-import { selectTask } from './signals'
 import { useSelection } from './selection'
 import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
@@ -55,6 +49,8 @@ import { completeWithUndo } from './undoable'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
 import { useListSplit } from './task-list/useInboxSplit'
+import { STICKY_QUICK_ADD, useStickyQuickAdd } from './task-list/stickyQuickAdd'
+import { afterListAdd } from './task-list/afterListAdd'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useListModel, type ListRoute } from './task-list/useListModel'
@@ -150,6 +146,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const openId = usePanelTaskId()
   const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, openId, ticking: selection.ticked.size > 0 })
   const quickAddRef = useRef<HTMLInputElement>(null)
+  const quickAddRow = useRef<HTMLDivElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
   const fine = useFinePointer()
@@ -214,7 +211,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     // In Someday a line with a date is scheduled, not parked (someday-and-evening).
     if (rest.due || rest.deadline) delete defaults.start
     const place = route.view === 'place' ? await getPlace(route.id) : undefined
+    // Top or bottom (add-position D3); `o` keeps its anchor, so that entry appends before it moves.
+    const placement = insertAfter.current ? 'bottom' : await preferredPlacement()
     const id = await createTask({
+      placement,
       ...defaults,
       ...rest,
       // In a place's list a new task happens there (task-locations).
@@ -222,27 +222,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       // Labels are multi-valued: a label view's label is kept alongside typed @labels.
       labels: [...new Set([...viewLabels, ...(typed ?? [])])],
     })
-    const after = insertAfter.current
-    if (after) {
-      // Opened with `o`: place it right after the anchor, as its sibling; the next entry follows it.
-      insertAfter.current = id
-      const anchor = await getTask(after)
-      if (anchor) {
-        await moveTask(id, {
-          parent_id: anchor.parent_id,
-          ...(anchor.parent_id === null ? { section_id: effectiveSection(anchor, latestSectionMap()) } : {}),
-          at: { after },
-        })
-      }
-    }
-    // A line that scheduled the task took it out of the Inbox: say where it went (inbox-means-unplaced D5).
-    if (route.view === 'inbox') {
-      const created = await getTask(id)
-      const where = created ? addedWhere(created, today, currentDateTime()) : null
-      if (where) showBulkToast(where.label, null, { ttl: ACTION_TOAST_MS, action: { label: t('Open'), run: () => { selectTask.set(id); navigate({ view: where.view }) } } })
-      else offerMoveToWorkspace(id)
-    }
-  }, [route, today, userId, latestSectionMap])
+    // The `o` move, the Inbox's note, or the note for a row out of sight (add-position D5).
+    const list = listTitle(route.view, m.currentProject?.name, m.currentLabel?.name, m.currentPlace?.name)
+    await afterListAdd(id, { route, today, insertAfter, sectionMap: latestSectionMap, list, placement: manual ? placement : undefined, root: listRoot.current, select: setSelectedId })
+  }, [route, today, userId, latestSectionMap, manual, m.currentProject, m.currentLabel, m.currentPlace, setSelectedId])
 
   const { setPrompt } = ui
   /** Complete or reopen; after completing the last open subtask, offer the parent (design D5). */
@@ -307,6 +290,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const agenda = useTodayAgenda(route.view === 'today', today, m.zone)
   const frame = useListFrame(route.view === 'project', board || timeline, m.fieldColumns)
   const ready = useListReady(route, m.loaded, !!currentProject)
+  // Measured once the list (and its quick add row) is on screen.
+  const quickAddTop = useStickyQuickAdd(quickAddRow, ready && route.view !== 'completed')
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
   if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
@@ -325,7 +310,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
 
           {route.view !== 'completed' && (
-            <div className="mb-3 border-b border-default pb-2">
+            // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
+            <div ref={quickAddRow} style={{ top: quickAddTop }} className={`mb-3 border-b border-default pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName)} voiceShortcut />
               )}
