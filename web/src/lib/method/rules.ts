@@ -5,6 +5,7 @@
 // internal/digest (WithoutNextAction); both evaluate
 // internal/digest/testdata/next_action_fixture.json and must agree.
 import { openBlockers } from '../dependencies'
+import { availability, projectFlowOf, type FlowState } from '../flow'
 import { byPosition } from '../ordering'
 import { effectiveSection } from '../sections'
 import { canEditTasks, roleOf } from '../sharing'
@@ -42,7 +43,10 @@ export class MethodRules {
   private readonly byId: Map<string, Task>
   private readonly sectionMap: Map<string, Section>
   private readonly openTop = new Map<string, Task[]>()
+  /** Available and waiting in sequence (project-flow), from the same rows. */
+  readonly flow: FlowState
   constructor(readonly input: MethodInput) {
+    this.flow = availability({ tasks: input.tasks, projects: input.projects, sections: input.sections ?? [], today: input.today })
     this.working = workingProjects(input).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
     this.workingIds = new Set(this.working.map((p) => p.id))
     this.byId = new Map(input.tasks.map((t) => [t.id, t]))
@@ -66,18 +70,22 @@ export class MethodRules {
   }
 
   /**
-   * Actionable (method-views "Actionable tasks"): live, open, top-level, in a
-   * working project, not blocked, neither Someday nor deferred, and unassigned or
-   * assigned to the user.
+   * Actionable (method-views "Actionable tasks"): top-level, in a working project,
+   * available (project-flow: live, open, not blocked, not waiting in sequence,
+   * neither Someday nor deferred), and unassigned or assigned to the user.
    */
   actionable(t: Task): boolean {
-    return open(t) && !t.parent_id && !!t.project_id && this.workingIds.has(t.project_id) && !this.blocked(t) &&
-      !isSomeday(t) && !isDeferred(t, this.input.today) && !this.delegated(t)
+    return !t.parent_id && !!t.project_id && this.workingIds.has(t.project_id) && this.flow.available(t.id) && !this.delegated(t)
   }
 
-  /** Waiting (method-views "Waiting view"): live, open, and blocked or assigned to someone else. */
+  /** Waiting (method-views "Waiting view"): live, open, blocked or assigned to someone else, and not waiting in sequence. */
   waiting(t: Task): boolean {
-    return open(t) && (this.blocked(t) || this.delegated(t))
+    return open(t) && (this.blocked(t) || this.delegated(t)) && !this.flow.waits(t.id)
+  }
+
+  /** An area (project-flow "Areas") is never without a next action. */
+  isArea(projectId: string): boolean {
+    return projectFlowOf(this.working.find((p) => p.id === projectId)) === 'area'
   }
 
   /** The project's open top-level tasks in list order: no section first, then sections in order, manual order within. */
@@ -103,8 +111,9 @@ export class MethodRules {
     return (this.openTop.get(projectId) ?? []).filter((t) => isDeferred(t, this.input.today))
   }
 
-  /** Without a next action: nothing actionable, nothing waiting and nothing deferred. */
+  /** Without a next action: not an area, and nothing actionable, nothing waiting and nothing deferred. */
   needsNextAction(projectId: string): boolean {
+    if (this.isArea(projectId)) return false
     const list = this.openTop.get(projectId) ?? []
     return !list.some((t) => this.actionable(t) || this.waiting(t) || isDeferred(t, this.input.today))
   }

@@ -36,6 +36,13 @@ export interface ProjectFields {
    * only the owner may write it (CanWrite).
    */
   workspace_id?: string | null
+  /**
+   * How the project's tasks flow (OpenSpec change project-flow-modes):
+   * "parallel", "sequential" or "area"; empty, missing or unknown reads as
+   * parallel. Sync checks the kind only, so a later value stays additive;
+   * REST and the agent tools check the set. Not user text.
+   */
+  flow_mode?: string
 }
 
 /**
@@ -166,6 +173,12 @@ export interface SectionFields {
    */
   color?: string | null
   icon?: string | null
+  /**
+   * How the section's tasks flow (OpenSpec change project-flow-modes):
+   * "parallel" or "sequential"; empty, missing or unknown follows the
+   * project. Sync checks the kind only. Not user text.
+   */
+  flow_mode?: string
 }
 
 /**
@@ -640,13 +653,13 @@ export interface ReviewFields {
 /** The row a field op creates when its entity is new: one key per op field, a family (`fields.<id>`) in one key named after its prefix. */
 export const OP_DEFAULTS = {
   project: {
-    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null,
+    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
     title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
-    name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null,
+    name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',
   } satisfies Omit<Section, 'id' | '_clock'>,
   field: {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
