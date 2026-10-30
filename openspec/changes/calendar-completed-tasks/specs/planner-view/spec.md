@@ -16,7 +16,7 @@ Each column SHALL list the open tasks due that day in the viewer's zone with the
 - **THEN** nothing moves and no operation is queued
 
 ### Requirement: Capacity bar per day
-Each column header SHALL show a capacity bar and the planned total against the device's day length, summing three sources: the estimates of the day's open tasks, the minutes of the day's busy subscribed calendar events, and the estimates of projected occurrences of recurring tasks. Tasks and projections without an estimate SHALL count as zero and be reported. The bar SHALL mark the day when the sum exceeds the day length.
+Each column header SHALL show a capacity bar and the planned total against the device's day length, summing three sources: the estimates of the day's open tasks, the minutes of the day's busy subscribed calendar events, and the estimates of projected occurrences of recurring tasks. Tasks and projections without an estimate SHALL count as zero and be reported. The bar SHALL mark the day when the sum exceeds the day length. This calculation SHALL run on local data offline and SHALL reflect converged task rows after sync.
 
 #### Scenario: Three sources on one day
 - **WHEN** a day has open tasks estimated at 2 h 50, a 10:00 to 11:30 meeting from a subscribed calendar, a projected weekly task estimated at 45 minutes and five unestimated tasks, with an 8-hour day length
