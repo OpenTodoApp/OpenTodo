@@ -5709,6 +5709,7 @@
     "web/src/app/editorCommands.ts"
   ],
   "Import": [
+    "web/src/app/quickadd/PasteOffer.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -9246,6 +9247,9 @@
   "Paste a personal access token.": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Paste as one line": [
+    "web/src/app/quickadd/PasteOffer.tsx"
+  ],
   "Paste the application token.": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
@@ -12523,6 +12527,9 @@
   "That identity is already linked to another account on this server.": [
     "web/src/app/sso.ts"
   ],
+  "That is more than {max} lines. Use Import for long lists.": [
+    "web/src/app/quickadd/PasteOffer.tsx"
+  ],
   "That passkey is not registered on this server. Sign in with your password.": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -14193,6 +14200,9 @@
   ],
   "Too many invitations created recently. Try again later.": [
     "web/src/app/MembersPanel.tsx"
+  ],
+  "Too many lines": [
+    "web/src/app/quickadd/PasteOffer.tsx"
   ],
   "Too many links created recently. Try again later.": [
     "web/src/app/InviteLinksSection.tsx",
@@ -17657,8 +17667,17 @@
   "{n, plural, one {# stalled} other {# stalled}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "{n, plural, one {# subtask added} other {# subtasks added}}": [
+    "web/src/lib/pasteTasks.ts"
+  ],
   "{n, plural, one {# subtask} other {# subtasks}}": [
     "web/src/app/templates/TemplateLibrary.tsx"
+  ],
+  "{n, plural, one {# task added, {k} not in the Inbox} other {# tasks added, {k} not in the Inbox}}": [
+    "web/src/app/task-list/afterListAdd.ts"
+  ],
+  "{n, plural, one {# task added} other {# tasks added}}": [
+    "web/src/lib/pasteTasks.ts"
   ],
   "{n, plural, one {# task carried over} other {# tasks carried over}}": [
     "web/src/lib/review.ts"
@@ -17744,6 +17763,18 @@
   ],
   "{n, plural, one {+# more reminder} other {+# more reminders}}": [
     "web/src/app/ReminderToasts.tsx"
+  ],
+  "{n, plural, one {Add # subtask, one per line?} other {Add # subtasks, one per line?}}": [
+    "web/src/app/quickadd/PasteOffer.tsx"
+  ],
+  "{n, plural, one {Add # subtask} other {Add # subtasks}}": [
+    "web/src/app/quickadd/PasteOffer.tsx"
+  ],
+  "{n, plural, one {Add # task, one per line?} other {Add # tasks, one per line?}}": [
+    "web/src/app/quickadd/PasteOffer.tsx"
+  ],
+  "{n, plural, one {Add # task} other {Add # tasks}}": [
+    "web/src/app/quickadd/PasteOffer.tsx"
   ],
   "{n, plural, one {All of # condition} other {All of # conditions}}": [
     "web/src/app/views/FilterChips.tsx"
@@ -17831,6 +17862,9 @@
   ],
   "{n, plural, one {You have worked # minute without a break.} other {You have worked # minutes without a break.}}": [
     "web/src/app/focus/BreakReminder.tsx"
+  ],
+  "{n, plural, one {and # more} other {and # more}}": [
+    "web/src/app/quickadd/PasteOffer.tsx"
   ],
   "{n, plural, one {day} other {days}}": [
     "web/src/app/method/LoopHome.tsx"

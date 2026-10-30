@@ -26,7 +26,7 @@ Method primitives and the community's quick wins.
 | [`project-review-cadence`](openspec/changes/project-review-cadence/) | A review interval per project, so the weekly review shows only the projects that are due |  |
 | [`today-closed-list`](openspec/changes/today-closed-list/) | An optional Today limit with a "Waiting for a slot" drawer, a Done today list and Log a win |  |
 | [`day-parts`](openspec/changes/day-parts/) | Morning, Afternoon and Evening groups in Today |  |
-| [`paste-to-tasks`](openspec/changes/paste-to-tasks/) | Paste several lines, get one task per line |  |
+| [`paste-to-tasks`](openspec/changes/archive/2026-10-30-paste-to-tasks/) | **Shipped.** Paste several lines, get one task per line | [#578](https://github.com/OpenTodoApp/OpenTodo/issues/578) |
 | [`add-position`](openspec/changes/archive/2026-10-30-add-position/) | **Shipped.** Add new tasks at the top or the bottom; the Add row stays reachable | [#540](https://github.com/OpenTodoApp/OpenTodo/issues/540), [#541](https://github.com/OpenTodoApp/OpenTodo/issues/541) |
 | [`focus-everywhere`](openspec/changes/focus-everywhere/) | Focus in the sidebar, on tasks and in the task menu, with presets, +5/+15 min and optional noise | [#543](https://github.com/OpenTodoApp/OpenTodo/issues/543), [#553](https://github.com/OpenTodoApp/OpenTodo/issues/553), [#535](https://github.com/OpenTodoApp/OpenTodo/issues/535) |
 | [`sidebar-polish`](openspec/changes/sidebar-polish/) | Counts, reorderable destinations, icons for saved views, a kept draft | [#545](https://github.com/OpenTodoApp/OpenTodo/issues/545), [#562](https://github.com/OpenTodoApp/OpenTodo/issues/562), [#560](https://github.com/OpenTodoApp/OpenTodo/issues/560), [#559](https://github.com/OpenTodoApp/OpenTodo/issues/559) |

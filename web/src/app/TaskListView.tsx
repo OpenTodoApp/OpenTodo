@@ -50,7 +50,8 @@ import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwit
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
 import { useListSplit } from './task-list/useInboxSplit'
 import { STICKY_QUICK_ADD, useStickyQuickAdd } from './task-list/stickyQuickAdd'
-import { afterListAdd } from './task-list/afterListAdd'
+import { afterListAdd, afterListAddMany } from './task-list/afterListAdd'
+import { addTasksUndoable } from '../lib/pasteTasks'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useListModel, type ListRoute } from './task-list/useListModel'
@@ -205,27 +206,37 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const drag = useListDrag({ manual, onReorder: m.listDisplay.onReorder, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: fine ? undefined : (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
   const { latestSectionMap } = drag
   // The view supplies defaults; attributes typed in the quick-add line override them.
-  const onAdd = useCallback(async ({ labels: typed, ...rest }: QuickAddInput) => {
-    // In Assigned to me a new task is yours (Inbox unless a #project was typed).
-    const { labels: viewLabels, ...defaults } = taskDefaults(route, today, userId)
-    // In Someday a line with a date is scheduled, not parked (someday-and-evening).
-    if (rest.due || rest.deadline) delete defaults.start
+  const withDefaults = useCallback(async (inputs: QuickAddInput[]) => {
     const place = route.view === 'place' ? await getPlace(route.id) : undefined
+    return inputs.map(({ labels: typed, ...rest }) => {
+      // In Assigned to me a new task is yours (Inbox unless a #project was typed).
+      const { labels: viewLabels, ...defaults } = taskDefaults(route, today, userId)
+      // In Someday a line with a date is scheduled, not parked (someday-and-evening).
+      if (rest.due || rest.deadline) delete defaults.start
+      return {
+        ...defaults,
+        ...rest,
+        // In a place's list a new task happens there (task-locations).
+        ...(place && !place.deleted_at ? { location: locationFromPlace(place) } : {}),
+        // Labels are multi-valued: a label view's label is kept alongside typed @labels.
+        labels: [...new Set([...viewLabels, ...(typed ?? [])])],
+      }
+    })
+  }, [route, today, userId])
+  const onAdd = useCallback(async (input: QuickAddInput) => {
     // Top or bottom (add-position D3); `o` keeps its anchor, so that entry appends before it moves.
     const placement = insertAfter.current ? 'bottom' : await preferredPlacement()
-    const id = await createTask({
-      placement,
-      ...defaults,
-      ...rest,
-      // In a place's list a new task happens there (task-locations).
-      ...(place && !place.deleted_at ? { location: locationFromPlace(place) } : {}),
-      // Labels are multi-valued: a label view's label is kept alongside typed @labels.
-      labels: [...new Set([...viewLabels, ...(typed ?? [])])],
-    })
+    const [task] = await withDefaults([input])
+    const id = await createTask({ placement, ...task })
     // The `o` move, the Inbox's note, or the note for a row out of sight (add-position D5).
     const list = listTitle(route.view, m.currentProject?.name, m.currentLabel?.name, m.currentPlace?.name)
     await afterListAdd(id, { route, today, insertAfter, sectionMap: latestSectionMap, list, placement: manual ? placement : undefined, root: listRoot.current, select: setSelectedId })
-  }, [route, today, userId, latestSectionMap, manual, m.currentProject, m.currentLabel, m.currentPlace, setSelectedId])
+  }, [withDefaults, route, today, latestSectionMap, manual, m.currentProject, m.currentLabel, m.currentPlace, setSelectedId])
+  // A pasted list (paste-to-tasks D3): every line with the view's defaults, one batch, one Undo.
+  const onAddMany = useCallback(async (inputs: QuickAddInput[]) => {
+    const placement = insertAfter.current ? 'bottom' : await preferredPlacement()
+    await afterListAddMany(await addTasksUndoable(await withDefaults(inputs), { placement }), { route, today, insertAfter, sectionMap: latestSectionMap })
+  }, [withDefaults, route, today, latestSectionMap])
 
   const { setPrompt } = ui
   /** Complete or reopen; after completing the last open subtask, offer the parent (design D5). */
@@ -313,7 +324,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
             <div ref={quickAddRow} style={{ top: quickAddTop }} className={`mb-3 border-b border-default pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
-                <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName)} voiceShortcut />
+                <QuickAdd ref={quickAddRef} onAdd={onAdd} onAddMany={onAddMany} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName)} voiceShortcut />
               )}
             </div>
           )}

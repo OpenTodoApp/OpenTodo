@@ -6,6 +6,7 @@ import { currentDateTime } from '../../lib/dates'
 import { getTask } from '../../lib/liveData'
 import { moveTask } from '../../lib/move'
 import type { Placement } from '../../lib/ops'
+import type { AddedBatch } from '../../lib/pasteTasks'
 import { effectiveSection } from '../../lib/sections'
 import type { Section } from '../../lib/types'
 import { t } from '../../lib/i18n'
@@ -54,4 +55,43 @@ export async function afterListAdd(id: string, c: {
   // Not awaited, so the quick add is free for the next line at once.
   void announceIfOutOfSight(id, { list: c.list, placement: c.placement, root: c.root, select: c.select })
     .then((announced) => { if (!announced && inbox) void offerMoveToWorkspace(id) })
+}
+
+/**
+ * What follows a pasted list added from a list page (paste-to-tasks D3, D5): after an
+ * `o` anchor the block moves there in order, then one toast with Undo; in the Inbox
+ * it also counts the tasks the lines placed elsewhere, once, never per line.
+ */
+export async function afterListAddMany(added: AddedBatch, c: {
+  route: Route
+  today: string
+  insertAfter: { current: string | null }
+  sectionMap: () => Map<string, Section>
+}): Promise<void> {
+  let after = c.insertAfter.current
+  if (after) {
+    const anchor = await getTask(after)
+    if (anchor) {
+      for (const id of added.ids) {
+        await moveTask(id, {
+          parent_id: anchor.parent_id,
+          ...(anchor.parent_id === null ? { section_id: effectiveSection(anchor, c.sectionMap()) } : {}),
+          at: { after },
+        })
+        after = id
+      }
+      c.insertAfter.current = after
+    }
+  }
+  let label = added.label
+  if (c.route.view === 'inbox') {
+    const prefs = currentDateTime()
+    let elsewhere = 0
+    for (const id of added.ids) {
+      const task = await getTask(id)
+      if (task && addedWhere(task, c.today, prefs)) elsewhere++
+    }
+    if (elsewhere > 0) label = t('{n, plural, one {# task added, {k} not in the Inbox} other {# tasks added, {k} not in the Inbox}}', { n: added.ids.length, k: elsewhere })
+  }
+  showBulkToast(label, added.undoId)
 }

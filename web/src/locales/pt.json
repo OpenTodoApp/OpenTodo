@@ -5483,5 +5483,16 @@
   "At the due time": "À hora de vencimento",
   "On the day at 09:00": "No próprio dia às 09:00",
   "2 days before": "2 dias antes",
-  "At most one year before or after.": "No máximo um ano antes ou depois."
+  "At most one year before or after.": "No máximo um ano antes ou depois.",
+  "Paste as one line": "Colar como uma linha",
+  "That is more than {max} lines. Use Import for long lists.": "São mais de {max} linhas. Use Importar para listas longas.",
+  "Too many lines": "Linhas demais",
+  "{n, plural, one {# subtask added} other {# subtasks added}}": "{n, plural, one {# subtarefa adicionada} other {# subtarefas adicionadas}}",
+  "{n, plural, one {# task added, {k} not in the Inbox} other {# tasks added, {k} not in the Inbox}}": "{n, plural, one {# tarefa adicionada, {k} fora da Caixa de entrada} other {# tarefas adicionadas, {k} fora da Caixa de entrada}}",
+  "{n, plural, one {# task added} other {# tasks added}}": "{n, plural, one {# tarefa adicionada} other {# tarefas adicionadas}}",
+  "{n, plural, one {Add # subtask, one per line?} other {Add # subtasks, one per line?}}": "{n, plural, one {Adicionar # subtarefa, uma por linha?} other {Adicionar # subtarefas, uma por linha?}}",
+  "{n, plural, one {Add # subtask} other {Add # subtasks}}": "{n, plural, one {Adicionar # subtarefa} other {Adicionar # subtarefas}}",
+  "{n, plural, one {Add # task, one per line?} other {Add # tasks, one per line?}}": "{n, plural, one {Adicionar # tarefa, uma por linha?} other {Adicionar # tarefas, uma por linha?}}",
+  "{n, plural, one {Add # task} other {Add # tasks}}": "{n, plural, one {Adicionar # tarefa} other {Adicionar # tarefas}}",
+  "{n, plural, one {and # more} other {and # more}}": "{n, plural, one {e mais #} other {e mais #}}"
 }
