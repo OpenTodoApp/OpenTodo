@@ -114,8 +114,9 @@ export function SlotBlock({ view, b, past, selected, dragging, dropTarget, onSel
           ))}
         </ul>
       )}
-      {more > 0 && (
-        <button type="button" data-slot-more={more} className="min-h-6 shrink-0 self-start rounded-chip px-1 text-hint font-medium text-muted outline-none hover:text-strong focus-visible:ring-2 focus-visible:ring-focus"
+      {/* Only where a row fits: a short slot opens its full list from the title. */}
+      {more > 0 && room > 0 && (
+        <button type="button" data-slot-more={more} className="inline-flex min-h-6 min-w-6 shrink-0 items-center justify-center self-start rounded-chip px-1 text-hint font-medium text-muted outline-none hover:text-strong focus-visible:ring-2 focus-visible:ring-focus"
           aria-label={t('{n} more tasks in {title}', { n: more, title: name })}
           onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setOpen(true) }}>
           +{more}
