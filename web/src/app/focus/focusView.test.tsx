@@ -329,7 +329,8 @@ describe('focus everywhere', () => {
     const r = await panel(id)
     await waitFor(() => !!q('[data-panel-focus]'))
     await click(q('[data-panel-focus]')!)
-    await waitFor(async () => (await readFocus())?.phase === 'work')
+    // The session's time entry is linked asynchronously; compare once it has settled (a flake on loaded runners).
+    await waitFor(async () => { const f = await readFocus(); return f?.phase === 'work' && !!f.entryId }, 'running with its time entry')
     const before = await readFocus()
     vi.setSystemTime(T0 + 3 * MIN)
     await click(q('[data-panel-focus]')!)
