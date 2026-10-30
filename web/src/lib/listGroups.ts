@@ -15,6 +15,7 @@ import { breadcrumbOf } from './subtasks'
 import { flattenTree, type Tree, type TreeNode } from './tree'
 import type { Label, Project, Section, Task } from './types'
 import { compareTasks, groupTasks, inAnytime, isSomeday } from './views'
+import { compareManual } from './viewOrder'
 import type { ListDisplay } from './listDisplay'
 import type { DayPart } from './dayParts'
 import { linkedPlaceId } from './locations'
@@ -199,6 +200,8 @@ export interface GroupInput {
   display?: ListDisplay
   /** Labels, for grouping by label. */
   labels?: readonly Label[]
+  /** A label page's own manual order (view-manual-order): the rank of each placed task. */
+  manualOrder?: ReadonlyMap<string, number>
   /** Today: the account groups it by part of the day (day-parts D3). */
   dayParts?: boolean
   /**
@@ -210,8 +213,15 @@ export interface GroupInput {
   doneToday?: readonly Task[]
 }
 
-/** The comparator of a display's order, or null for manual order as stored (list-display-options D3). */
-function displayOrder(d: ListDisplay | undefined): ((a: Task, b: Task) => number) | null {
+/**
+ * The comparator of a display's order, or null for manual order as stored (list-display-options D3).
+ * A label page's manual order is its own (view-manual-order): `rank` of the label's placed tasks.
+ */
+function displayOrder(d: ListDisplay | undefined, rank?: ReadonlyMap<string, number>): ((a: Task, b: Task) => number) | null {
+  if (rank && d?.sortBy === 'position') {
+    const asc = compareManual(rank)
+    return d.sortDir === 'desc' ? (a, b) => asc(b, a) : asc
+  }
   return d && !(d.sortBy === 'position' && d.sortDir === 'asc') ? compareTasks(d.sortBy, d.sortDir) : null
 }
 
@@ -237,7 +247,7 @@ export function listGroups(p: GroupInput): ListGroup[] {
   const isCollapsed = (id: string) => p.collapsed.has(id)
   // Board: cards are top-level tasks, column by column (keyboard order).
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.cards.map((task) => flatRow(task)) }))
-  const order = displayOrder(p.display)
+  const order = displayOrder(p.display, p.manualOrder)
   const groupByKey = p.display?.groupBy
   if (p.tree && p.view === 'project' && groupByKey && groupByKey !== 'section' && groupByKey !== 'none' && groupByKey !== 'project') {
     // Grouped by a property of the top-level tasks (list-display-options D3); each brings its subtasks.
@@ -321,7 +331,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
   }
   if (p.view === 'label' && p.display && p.display.groupBy !== 'project') {
     // A label page with its own grouping (list-display-options D3): in its order, each task once.
-    const order = displayOrder(p.display)
+    const order = displayOrder(p.display, p.manualOrder)
     const tasks = order ? [...p.tasks].sort(order) : p.tasks
     if (p.display.groupBy === 'none' || p.display.groupBy === 'section') return [{ key: 'all', heading: null, rows: tasks.map(row) }]
     return groupTasks(tasks, p.display.groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true)
@@ -329,7 +339,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
   }
   if (p.view === 'label' || p.view === 'assigned' || p.view === 'someday' || p.view === 'anytime') {
     // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
-    const sort = p.view === 'label' ? displayOrder(p.display) : null
+    const sort = p.view === 'label' ? displayOrder(p.display, p.manualOrder) : null
     const byProject = groupBy(sort ? [...p.tasks].sort(sort) : p.tasks, (tk) => tk.project_id ?? '')
     const order = ['', ...p.projects.slice().sort(compareByPosition).map((pr) => pr.id)]
     const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined

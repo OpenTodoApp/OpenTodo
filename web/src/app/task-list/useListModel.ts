@@ -12,6 +12,7 @@ import { boardColumns, completedBySection, completedNewestFirst, completedOpenKe
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
 import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
 import { useListDisplay } from './useListDisplay'
+import { orderRank } from '../../lib/viewOrder'
 import { useAccountRowLayout } from '../../lib/rowLayout'
 import { useUserPrefsRow } from '../../lib/localData'
 import { dayPartsOn } from '../../lib/dayParts'
@@ -188,6 +189,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const display = useMemo(() => (dGroup && dSort && dDir && dRows ? { groupBy: dGroup, sortBy: dSort, sortDir: dDir, rowLayout: dRows } : undefined), [dGroup, dSort, dDir, dRows])
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
   const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list')
+  // A label page's own manual order (view-manual-order D1): the rank of each placed task.
+  const labelOrder = labelRow?.manual_order
+  const manualOrder = useMemo(() => (route.view === 'label' ? orderRank(labelOrder) : undefined), [route.view, labelOrder])
 
   // Today grouped by part of the day (day-parts D3): the account's synced choice.
   const dayParts = dayPartsOn(useUserPrefsRow())
@@ -201,9 +205,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const doneToday = closed.doneToday ?? undefined
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, dayParts, closedList, doneToday,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, manualOrder, dayParts, closedList, doneToday,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, dayParts, closedList, doneToday])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, manualOrder, dayParts, closedList, doneToday])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
   // Nor is Today's Done today group part of Today's open list (today-closed-list D6).

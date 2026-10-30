@@ -42,6 +42,8 @@ export interface RowContext {
   isReadOnly: (task: Task) => boolean
   board: boolean
   manual: boolean
+  /** The list has its own order (a label page, view-manual-order): every row can be picked up to place it. */
+  ownOrder?: boolean
   treeView: boolean
   dropAt: DropAt | null
   draggingId: string | null
@@ -150,7 +152,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           shape={c.board ? 'card' : 'row'}
           timeColumn={c.timeColumn}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && !c.isReadOnly(r.task)}
+          draggable={!ghost && !editing && (!!c.ownOrder || !c.isReadOnly(r.task))}
           reorderable={!ghost && c.manual}
           collapsible={tree}
           expandable={!c.board && !ghost}

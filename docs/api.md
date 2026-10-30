@@ -719,6 +719,8 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":"cheap"}}' $
 | `color` | string | CSS colour; picked from the palette when omitted on create |
 | `icon` | string or null | an icon name from the app's set, shown in the project's colour; null (the default) shows a colour dot. Clients that do not know the field ignore it |
 | `position` | number | sidebar order; defaults to the creation time |
+| `group_by`, `sort_by`, `sort_dir`, `row_layout` | string | the label page's display options as the app stores them (`""` reads as the default); not checked by the API |
+| `manual_order` | string[] | the label page's own manual order (OpenSpec change `view-manual-order`): task ids placed by hand, at most 500 distinct ids; absent or `[]` until the app places a task; replaced as a whole on PATCH; ids are not checked |
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
 Tasks reference labels by id, so renaming a label is one PATCH and never rewrites tasks. Deleting a label through the API only sets its tombstone; tasks that still carry the id keep it (the app hides ids of deleted labels), and the app's own delete additionally removes the id from every carrying task.
@@ -743,6 +745,7 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `layout` | `"list"` or `"board"` | list views: how the app shows the results (OpenSpec change `views-and-display`), a board being one column per group; absent until set, read as `list` |
 | `row_layout` | `"line"`, `"detailed"` or `""` | one-line or detailed rows (OpenSpec change `row-layouts`); absent or `""` follows the account's choice |
 | `show_completed` | boolean | list views: the app also lists completed matches, unless the query names a state itself; absent until set, read as `false` |
+| `manual_order` | string[] | list views: the view's own manual order (OpenSpec change `view-manual-order`), task ids placed by hand, at most 500 distinct ids; absent or `[]` until the app places a task; replaced as a whole on PATCH; ids are not checked |
 | `hidden_props` | string[] | list views: row properties the app leaves out, from `date`, `project`, `labels`, `estimate`, `assignee`, `deadline`, `start`, `origin` and `energy`; absent until set, read as none; replaced as a whole on PATCH |
 | `icon` | string or null | a name from the app's icon catalogue (OpenSpec change `sidebar-polish`), shown wherever the view is listed; `null` (the default) shows the default icon of its kind. Any other value, or a value that is not a string, is refused with 400 `invalid_input` naming `view.icon`; every representation and the export carry it, `null` when unset. Sync accepts any string, so a newer catalogue stays additive |
 | `created_at`, `deleted_at` | unix ms (or null) | |
