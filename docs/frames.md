@@ -51,4 +51,6 @@ Changing the start on one device and the end on another can leave the start afte
 - Frames are part of your [export](import-export.md). The [REST API](api.md#calendar-frames), the [command line](cli.md) (`ot frames`) and [MCP assistants](mcp.md) can read them; assistants cannot change them.
 - Frames stay inside OpenTodo. They are not published to CalDAV or calendar feeds.
 
+To batch small tasks inside a frame, choose **Make a slot here** in its details: see [Slots](slots.md).
+
 A frame can't skip or move a single day yet, and it can't run past midnight.

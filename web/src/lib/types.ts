@@ -1,10 +1,10 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot']
 
 export interface Op {
   id: string
@@ -251,6 +251,27 @@ export interface Frame extends FrameFields {
   from_date: string | null
   until_date: string | null
   position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A slot (OpenSpec change `calendar-slots`, design D1): one block on the Day
+ * and Week grid that holds a checklist of small tasks. Personal; `date` is the
+ * floating day, `start` a wall time "HH:MM", `minutes` the length, `task_ids`
+ * the ordered list (one whole value, at most 20). Which tasks it shows is
+ * derived in `lib/slots.ts`; no field is added to tasks.
+ */
+export interface Slot extends SlotFields {
+  id: string
+  title: string
+  date: string | null
+  start: string
+  minutes: number
+  task_ids: string[]
+  color: string
   created_at: number
   deleted_at: number | null
   _clock: Clock

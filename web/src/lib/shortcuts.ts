@@ -259,6 +259,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'calendar.unschedule', keys: ['u'], description: 'Unschedule the selected task (keep the date)', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.place', keys: ['p'], description: 'Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.open', keys: ['Enter'], description: 'Open the selected task', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.add-to-slot', keys: ['Shift+Enter'], description: 'While placing over a slot: add the task to the slot', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.edit-estimate', keys: ['e'], description: 'Edit the estimate of the selected task', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.complete', keys: ['c'], description: 'Complete the selected task', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.range-prev', keys: ['['], description: 'Previous day or week', section: 'calendar', scope: 'calendar', overrides: ['global.sidebar'] },
