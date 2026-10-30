@@ -15,6 +15,7 @@ The people most likely to switch to OpenTodo are heavy users leaving Todoist, Ti
   - 2,000 comments, 1,000 time entries and 8 saved views.
 
   An encrypted variant of the same account is included.
+- **A notes fixture** (`perfseed -notes`, nightly only) on top of the same account: 500 notes of about 10 KB each (250 standalone notes once `notes-overview` lands, task notes until then, and 250 task notes), each saved about 300 times over twelve months, so the log holds the full-state document history that `notes-compaction` removes. It measures the database after compaction, the first pull of a new device and the device's IndexedDB size (DECISIONS.md, "Notes storage safety", 2026-10-31).
 - **Published budgets with numbers** in `docs/performance.md`, kept as data in `scripts/perf/budgets.json`. They're measured in three settings:
   - **desktop:** the CI runner in Chromium;
   - **phone profile:** the same runner with 4× CPU throttling and a 412×915 viewport;
@@ -33,6 +34,13 @@ The people most likely to switch to OpenTodo are heavy users leaving Todoist, Ti
   - a 1,000-op pull page p95 ≤ 80 ms;
   - startup ≤ 2 s;
   - the full JSON export ≤ 3 s.
+- **Notes budgets** with the notes fixture:
+  - database file after compaction and incremental vacuum ≤ 250 MB, of which the notes' share ≤ 100 MB; a full compaction of the fixture ≤ 120 s, with no write waiting longer than 100 ms for it;
+  - first sync of a new device ≤ 45 s desktop / 110 s phone profile / 120 s on the reference phones;
+  - IndexedDB usage after that sync ≤ 120 MB desktop, recorded on the reference phones;
+  - opening the Notes page ≤ 400 ms / 1.2 s, and a note search keystroke p95 ≤ 50 / 150 ms (once `notes-overview` lands).
+
+  If the phone first-sync or IndexedDB budgets cannot be met, that is the signal for the deferred `notes-on-demand` change (note bodies fetched lazily on devices), not for raising the budget.
 - **Two kinds of check:**
   - **Every PR:** deterministic **count** assertions at 10,000 tasks in the existing "Web scale tests" job and the Go scale tests. These count reads per write, renders per keystroke, queries per pull page and allocations per op, and they can't flake on a slow runner.
   - **Nightly:** a **time** benchmark (`make perf`) runs the browser and server budgets five times and fails when a median exceeds its budget. The failure is reported through the existing nightly alert.
@@ -47,16 +55,17 @@ No new environment variable for the server, no runtime dependency, no op schema 
 - Many-tenant scale for host mode (`multi-tenant-host` has its own limits).
 - Network conditions: budgets are measured against a local server; the first-sync budget assumes local network speed. A slow-network figure is reported, not gated.
 - Battery use.
+- Lazy note bodies on devices (`notes-on-demand`): proposed separately only if the notes budgets fail on phones.
 
 ## Roadmap
 
-Advances ROADMAP-1.0 milestone 1.0 "Trust", item `performance-10k`.
+Advances ROADMAP-1.0 milestone 1.0 "Trust", item `performance-10k`. The notes fixture and budgets measure the 0.19 notes changes (`notes-compaction`, `notes-save-cadence`, `notes-overview`).
 
 ## Capabilities
 
 ### New Capabilities
 
-- `performance-budgets`: the 10k fixture, the numeric budgets and where they're published, the count checks on every PR, the nightly time benchmark, and the reference-device record with its release gate.
+- `performance-budgets`: the 10k fixture and the notes fixture, the numeric budgets and where they're published, the count checks on every PR, the nightly time benchmark, and the reference-device record with its release gate.
 
 ### Modified Capabilities
 
@@ -67,5 +76,5 @@ None. `task-list-presentation` "Large lists stay responsive", `self-hosting` "Re
 - **Data model, sync, op schema, E2EE:** none. Fixes may add IndexedDB indexes (Dexie schema version bump, local only) or SQLite indexes (a migration). Each is listed in tasks when found.
 - **API/CLI/MCP:** none.
 - **Web app:** `performance.mark` calls at a few milestones (list ready, search results, sync done). They're local to the browser and never sent anywhere (no telemetry).
-- **CI:** the web scale job grows from 2,000 to 10,000 rows (about +2 minutes). There's a new nightly `perf` workflow (about 20 minutes).
+- **CI:** the web scale job grows from 2,000 to 10,000 rows (about +2 minutes). There's a new nightly `perf` workflow (about 20 minutes, plus about 15 minutes and 5 GB of runner disk for the notes fixture).
 - **Binary and bundle size:** no change from the harness. Fixes are checked by `bundle-budget`.
