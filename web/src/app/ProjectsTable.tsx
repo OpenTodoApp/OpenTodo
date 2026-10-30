@@ -213,6 +213,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
                   {s?.progress != null && <span className="inline-flex items-center gap-1.5 text-body tabular-nums text-default">
                     <ProgressRing value={s.progress} /><ReadAs label={t('{n}% done', { n: Math.round(s.progress * 100) })}>{`${Math.round(s.progress * 100)}%`}</ReadAs>
                   </span>}
+                  {s?.area && <span className="text-body text-muted" data-area="">{t('Area')}</span>}
                 </td>
                 <td className={`${cellOf('open')} px-2 text-body tabular-nums text-default`}>
                   <ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: s?.open ?? 0 })}>{s?.open ? String(s.open) : ''}</ReadAs>

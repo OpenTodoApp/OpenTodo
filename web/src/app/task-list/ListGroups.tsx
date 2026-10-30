@@ -18,6 +18,7 @@ import { SectionHeader, SectionQuickAdd } from '../Sections'
 import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGhosts, type Departure } from '../motion'
 import { navigate } from '../router'
 import type { RowMotion } from '../TaskRow'
+import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
 import type { ListRoute } from './useListModel'
 
@@ -34,6 +35,8 @@ export interface RowContext {
   selectedId: string | null
   progress: Map<string, Progress>
   blocked: Map<string, number>
+  /** Steps waiting in sequence (project-flow-modes). */
+  flow?: FlowView
   habits: Map<string, HabitStats>
   isReadOnly: (task: Task) => boolean
   board: boolean
@@ -138,6 +141,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           selected={!ghost && r.task.id === c.selectedId}
           progress={c.progress.get(r.task.id)}
           blockedBy={c.blocked.get(r.task.id)}
+          waitsFor={c.flow?.waitsFor(r.task.id)}
           habit={c.habits.get(r.task.id)}
           readOnly={ghost || c.isReadOnly(r.task)}
           shape={c.board ? 'card' : 'row'}

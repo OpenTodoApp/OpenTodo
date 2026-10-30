@@ -7,6 +7,7 @@
 import { compareDue, localDate } from './dates'
 import type { Due, Project, Task } from './types'
 import { openCount } from './views'
+import { projectFlowOf } from './flow'
 
 /** The health words, most urgent first (design D2): the first rule that holds decides. */
 export type HealthWord = 'late' | 'slipping' | 'quiet' | 'on-track'
@@ -36,6 +37,8 @@ export interface ProjectSummary {
   done: number
   /** done / (done + every open task, deferred ones included), or null when the project holds no task. */
   progress: number | null
+  /** An area (project-flow-modes): no progress, never Quiet. */
+  area: boolean
   /** The earliest due date among open tasks. */
   nextDue: Due | null
   /** Whether that due date is before today. */
@@ -47,7 +50,7 @@ export interface ProjectSummary {
 
 type HealthTask = Pick<Task, 'id' | 'title' | 'project_id' | 'completed_at' | 'deleted_at' | 'due' | 'series_id' | '_clock'>
   & Partial<Pick<Task, 'deadline' | 'skipped' | 'sample' | 'start'>>
-type HealthProject = Pick<Project, 'id' | 'parent_id' | 'archived' | 'deleted_at' | '_clock'>
+type HealthProject = Pick<Project, 'id' | 'parent_id' | 'archived' | 'deleted_at' | '_clock'> & Partial<Pick<Project, 'flow_mode'>>
 
 export interface HealthInput {
   projects: readonly HealthProject[]
@@ -75,11 +78,12 @@ function counts(task: HealthTask): boolean {
 }
 
 /** The health word for a project's figures (design D2). */
-export function healthOf(f: { pending: number; pastDeadline: number; late: number; updated: number | null }, now: number): HealthWord | null {
+export function healthOf(f: { pending: number; pastDeadline: number; late: number; updated: number | null }, now: number, area = false): HealthWord | null {
   if (f.pending === 0) return null
   if (f.pastDeadline > 0) return 'late'
   if (f.late > 0) return 'slipping'
-  if (f.updated !== null && now - f.updated >= QUIET_DAYS * DAY_MS) return 'quiet'
+  // An area is ongoing (project-flow-modes, statistics "Areas in project health"): never Quiet.
+  if (!area && f.updated !== null && now - f.updated >= QUIET_DAYS * DAY_MS) return 'quiet'
   return 'on-track'
 }
 
@@ -120,11 +124,14 @@ export function summarizeProjects(input: HealthInput): Map<string, ProjectSummar
   for (const p of live) {
     const f = rollUp(p.id) ? subtree(p.id, new Set([p.id])) : own.get(p.id)!
     const total = f.pending + f.done
-    const word = healthOf(f, input.now)
+    const area = projectFlowOf(p) === 'area'
+    const word = healthOf(f, input.now, area)
     out.set(p.id, {
       open: f.open,
       done: f.done,
-      progress: total ? f.done / total : null,
+      // An area never finishes, so it shows no progress (the table reads "Area").
+      progress: total && !area ? f.done / total : null,
+      area,
       nextDue: f.nextDue,
       nextDueLate: !!f.nextDue && (localDate(f.nextDue, input.zone) ?? '') < input.today,
       updated: f.updated,

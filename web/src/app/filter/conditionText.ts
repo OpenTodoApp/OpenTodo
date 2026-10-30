@@ -29,6 +29,7 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   subtask: msg('Is a subtask'),
   blocked: msg('Waiting on another task'),
   unblocked: msg('Not waiting on another task'),
+  available: msg('Available now'),
   habit: msg('Habit'),
   origin: msg('Has an origin'),
   'no origin': msg('No origin'),
