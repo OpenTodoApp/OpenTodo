@@ -64,3 +64,8 @@ export function capacityTooltip(load: DayLoad, dayLength: number, meetings?: Day
   ].filter(Boolean)
   return [lead, [head, ...tail].join(' · ')].filter(Boolean).join(' ')
 }
+
+/** The capacity tooltip's note while the calendar's filter hides tasks of the day (calendar-clarity D4); capacity still counts them. */
+export function hiddenByFilter(n: number): string {
+  return n > 0 ? t('{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}', { n }) : ''
+}

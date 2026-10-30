@@ -19,6 +19,8 @@ A **deadline** is the day a task must be finished by, and the two are separate: 
 
 A task with a deadline shows a countdown on its row, next to an hourglass: `3d` for three days to go, `Today` on the day, and `2d over` once it has passed. It turns amber in the last week and red on the day and after. Hover it to see the full date. The countdown follows the calendar on your device, so it moves on at midnight even offline.
 
+On the [calendar](calendar-views.md#open-the-calendar), a deadline shows on its day with an amber diamond: a chip in the Day and Week strip under the day's name, a row at the end of a Month day, and a row at the end of a Plan column. When the task is planned on its deadline day, the diamond sits on the task instead. Click one to open the task. They never count toward the day's capacity.
+
 Deadlines also bring tasks into [Today and Upcoming](views.md#plan-your-day-with-today), and you can add a reminder before the deadline (see [Reminders](reminders.md)). In the panel, **Deadline** in the **When** editor offers **End of week**, **End of month** and **In 2 weeks**, a field and a calendar. From the list, <kbd>d</kbd> sets the deadline (`fri`, `2026-11-06`).
 
 ## When a task starts

@@ -41,8 +41,8 @@ The client SHALL open the palette with `Ctrl+K` (`⌘+K` on macOS) from every si
 - **THEN** the palette stays in Search mode with `?` in the field and no Ask segment is shown
 
 #### Scenario: q where there is no quick add
-- **WHEN** the user is in Settings or the Week view and presses `q` outside a text field
-- **THEN** the palette opens in Add mode with its field focused, and in Today `q` focuses the list's quick add as before
+- **WHEN** the user is in Settings and presses `q` outside a text field
+- **THEN** the palette opens in Add mode with its field focused, in Today `q` focuses the list's quick add as before, and in Day, Week, Month and Plan `q` opens the calendar's own add dialog for the focused day
 
 #### Scenario: Escape from Add depends on how it was reached
 - **WHEN** the palette was opened with `q` in Settings and the user presses Escape with no row highlighted and no suggestion list open
