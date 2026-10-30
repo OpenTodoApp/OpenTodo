@@ -11,9 +11,10 @@ import { NewBoardDialog } from './NewBoardDialog'
 import { navigate } from './router'
 import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { useStartView, useViewData, useViews } from './useViews'
-import { Button, Icon, type IconName, ListGroupHeader, PageBody, PageHeader } from '../ui'
+import { Button, CatalogueIcon, Icon, type IconName, type IconSize, IconPicker, ListGroupHeader, PageBody, PageHeader } from '../ui'
+import { iconPickerSpec } from './menus/stylePickers'
 import { Tooltip } from '../ui'
-import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
 import type { RuleDraft } from './rules/RuleDialog'
 import { useLabels, useProjects } from '../lib/localData'
 import { ruleDraftFromView } from './rules/convertDraft'
@@ -25,7 +26,18 @@ import { act } from './actionError'
 // The rule editor is its own chunk with the Rules page (automation-rules D11).
 const RuleDialog = lazy(() => import('./rules/RuleDialog').then((m) => ({ default: m.RuleDialog })))
 
+/** The default icon of a view's kind, shown while it has no icon of its own. */
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
+
+/**
+ * A view's mark (sidebar-polish D4, custom-views "View icon"): its catalogue icon, or
+ * the default icon of its kind for none, while the catalogue loads, and for a name
+ * this device does not know (written by a newer client, kept unchanged).
+ */
+export function ViewMark({ view, size = 'sm', className }: { view: Pick<View, 'kind' | 'icon'>; size?: IconSize; className?: string }) {
+  const fallback = <Icon name={viewIcon(view as View)} size={size} className={className} />
+  return <span className="inline-flex" data-view-mark={view.icon || undefined}>{view.icon ? <CatalogueIcon name={view.icon} size={size} className={className} fallback={fallback} /> : fallback}</span>
+}
 
 export interface ViewMenuActions {
   rename: () => void
@@ -37,6 +49,8 @@ export interface ViewMenuActions {
   display?: () => unknown
   /** Opens the rule editor prefilled from the view (automation-rules); list views only. */
   rule?: () => unknown
+  /** Sets the view's catalogue icon, null for the default (sidebar-polish D4). */
+  icon?: (name: string | null) => unknown
 }
 
 /**
@@ -50,7 +64,11 @@ export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: V
   const first = edges ? edges.first : i <= 0
   const last = edges ? edges.last : i < 0 || i === peers.length - 1
   return [
-    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename }] },
+    { items: [
+      { kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename },
+      // The project menu's icon picker (sidebar-polish D4), inside the same overlay; a Combobox in the palette.
+      ...(a.icon ? [iconStep(view, a.icon)] : []),
+    ] },
     { items: [
       pinItem(view.pinned, () => a.pin(!view.pinned)),
       { kind: 'check', id: 'start', label: t('Start view on this device'), icon: 'house', checked: isStart, disabled: isStart,
@@ -69,6 +87,17 @@ export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: V
       onConfirm: a.remove,
     } }] },
   ]
+}
+
+function iconStep(view: View, pick: (name: string | null) => unknown): ActionItem {
+  return { kind: 'step', id: 'icon', label: t('Icon'), icon: 'image', step: {
+    title: t('Icon'),
+    render: (done, back) => (
+      <IconPicker value={view.icon ?? null} onClose={back} noneMark={<Icon name={viewIcon(view)} />}
+        onPick={(name) => { act(Promise.resolve(pick(name))); done() }} />
+    ),
+    palette: iconPickerSpec(view.icon, (name) => act(Promise.resolve(pick(name)))),
+  } }
 }
 
 /**
@@ -94,6 +123,7 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
     remove: () => deleteView(view.id),
     display: () => navigate({ view: 'display', target: { kind: 'view', id: view.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }),
     rule: () => setRuleDraft(ruleDraftFromView(view, { labels, projects })),
+    icon: (icon) => updateView(view.id, { icon }),
   }, inFavourites ? favouriteEdges(favourites, 'view', view.id) : undefined)
   return (
     <>
@@ -121,7 +151,7 @@ export function ViewsView() {
     return (
       <li key={v.id} className="group flex items-center gap-2 rounded-control hover:bg-sunken dark:hover:bg-raised">
         <button className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left text-body" onClick={() => navigate({ view: 'view', id: v.id })}>
-          <span className="flex w-5 justify-center text-faint"><Icon name={viewIcon(v)} /></span>
+          <span className="flex w-5 justify-center text-faint"><ViewMark view={v} /></span>
           <span className="truncate font-medium">{v.name}</span>
           <code className="hidden truncate text-meta text-faint sm:inline">{isDashboard(v) ? t('{n, plural, one {# panel} other {# panels}}', { n: v.panels.length }) : v.query}</code>
           <span className="flex-1" />

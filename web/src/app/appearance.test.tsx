@@ -66,9 +66,12 @@ describe('AppearanceProvider', () => {
 describe('Appearance → Sidebar', () => {
   it('one switch per destination of the More group, each written as the synced list', async () => {
     const r = await render(<SidebarSection />)
-    await waitFor(() => document.querySelectorAll('[data-setting-row^="sidebar-"]').length === 10, 'the switches')
-    const ids = [...document.querySelectorAll('[data-setting-row^="sidebar-"]')].map((e) => e.getAttribute('data-setting-row'))
-    expect(ids).toEqual(['sidebar-loop', 'sidebar-next', 'sidebar-waiting', 'sidebar-anytime', 'sidebar-someday', 'sidebar-assigned', 'sidebar-completed', 'sidebar-feed', 'sidebar-trash', 'sidebar-filter'])
+    await waitFor(() => document.querySelectorAll('[data-destination-row] [role="switch"]').length === 10, 'the switches')
+    const ids = [...document.querySelectorAll('[data-destination-row]')].map((e) => e.getAttribute('data-destination-row'))
+    expect(ids).toEqual(['inbox', 'today', 'upcoming', 'calendar', 'loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter'])
+    // The fixed four have no switch; the promotable ones keep their setting row ids for links.
+    expect(document.querySelector('[data-destination-row="inbox"] [role="switch"]')).toBeNull()
+    expect(document.querySelector('[data-setting-row="sidebar-someday"]')?.getAttribute('data-destination-row')).toBe('someday')
     const someday = document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!
     expect(someday.getAttribute('aria-checked')).toBe('false')
     await click(someday)
@@ -81,6 +84,54 @@ describe('Appearance → Sidebar', () => {
     await click(document.querySelector<HTMLButtonElement>('#sidebar-switch-someday')!)
     await waitFor(async () => (await db.userPrefs.get('me'))?.sidebar_destinations === 'trash', 'someday removed')
     expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('trash')
+    await r.unmount()
+  })
+})
+
+describe('Appearance → Sidebar counts and destination order (sidebar-polish 2.1, 3.3)', () => {
+  const rows = () => [...document.querySelectorAll('[data-destination-row]')].map((e) => e.getAttribute('data-destination-row'))
+  const handle = (id: string) => document.querySelector<HTMLButtonElement>(`[data-destination-row="${id}"] [data-destination-handle]`)!
+
+  it('Default: "Inbox and Today" is selected; choosing "Every list" writes the synced preference', async () => {
+    const r = await render(<SidebarSection />)
+    const option = (name: string) => [...document.querySelectorAll<HTMLButtonElement>('[data-testid="sidebar-counts"] [role="radio"]')].find((b) => b.textContent === name)!
+    await waitFor(() => !!option('Inbox and Today'), 'the counts choice')
+    expect(option('Inbox and Today').getAttribute('aria-checked')).toBe('true')
+    await click(option('Every list'))
+    await waitFor(async () => (await db.userPrefs.get('me'))?.sidebar_counts === 'all', 'stored')
+    await waitFor(() => option('Every list').getAttribute('aria-checked') === 'true', 'selected')
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => [o.entity, o.field, o.value])).toEqual([['user_prefs', 'sidebar_counts', 'all']])
+    await r.unmount()
+  })
+
+  it('Keyboard: Alt+↑ twice on Calendar moves it above Today and Upcoming, announced, focus kept on its handle', async () => {
+    const r = await render(<SidebarSection />)
+    await waitFor(() => !!handle('calendar'), 'the list')
+    handle('calendar').focus()
+    await key(handle('calendar'), 'ArrowUp', { altKey: true })
+    await waitFor(() => rows()[2] === 'calendar', 'moved once')
+    await waitFor(() => document.activeElement === handle('calendar'), 'focus kept')
+    await key(handle('calendar'), 'ArrowUp', { altKey: true })
+    await waitFor(() => rows()[1] === 'calendar', 'moved twice')
+    expect(rows().slice(0, 4)).toEqual(['inbox', 'calendar', 'today', 'upcoming'])
+    expect((await db.userPrefs.get('me'))?.sidebar_order?.split(',').slice(0, 4)).toEqual(['inbox', 'calendar', 'today', 'upcoming'])
+    await waitFor(() => document.querySelector('[data-setting-row="sidebar-destinations"] [role="status"]')?.textContent === 'Calendar moved to position 2 of 14', 'announced')
+    await waitFor(() => document.activeElement === handle('calendar'), 'focus kept')
+    await r.unmount()
+  })
+
+  it('Move up from the row menu; an id this client does not know is kept in the stored order', async () => {
+    await applyOps([{ id: 'o1', entity: 'user_prefs', entityId: 'me', field: 'sidebar_order', value: 'inbox,today,hologram', ts: Date.now(), device: 'newer' }] as never)
+    const r = await render(<SidebarSection />)
+    await waitFor(() => !!document.querySelector('[data-destination-row="today"] button[aria-haspopup]'), 'the row menu')
+    await click(document.querySelector('[data-destination-row="today"] button[aria-haspopup]')!)
+    await waitFor(() => !!document.querySelector('[data-menu-label="Move up"]'), 'the menu')
+    await click(document.querySelector('[data-menu-label="Move up"]')!)
+    await waitFor(() => rows()[0] === 'today', 'Today first')
+    const stored = (await db.userPrefs.get('me'))?.sidebar_order?.split(',') ?? []
+    expect(stored.slice(0, 2)).toEqual(['today', 'inbox'])
+    expect(stored).toContain('hologram')
     await r.unmount()
   })
 })

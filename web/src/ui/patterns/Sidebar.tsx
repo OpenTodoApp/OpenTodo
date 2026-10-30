@@ -28,8 +28,11 @@ export interface SidebarItemProps extends Omit<ButtonHTMLAttributes<HTMLButtonEl
    * When the count is visible (quiet-sidebar D1): `always`, `hover` (while the row is
    * hovered or focused; it keeps its width, so the row never moves) or `hidden`
    * (for assistive technology only). `data-open-count` carries it in every mode.
+   * `swap` (sidebar-polish D2) shows it at rest in a slot as wide as the row's menu
+   * button, which takes the slot while the row (`ui-swap-row`) is hovered or focused
+   * with a fine pointer; the slot is kept while there is no count.
    */
-  countMode?: 'always' | 'hover' | 'hidden'
+  countMode?: 'always' | 'hover' | 'hidden' | 'swap'
   /** The count as words ("5 open tasks"), part of the row's accessible name. */
   countLabel?: string
   /** A badge (unread changes) or a small marker (shared), before the count. */
@@ -46,7 +49,7 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
   { label, icon, leading, count, countMode = 'always', countLabel, badge, active = false, depth, collapsed = false, className, type = 'button', ...rest },
   ref,
 ) {
-  const quiet = countMode === 'hover' ? ' ui-reveal' : countMode === 'hidden' ? ' sr-only' : ''
+  const quiet = countMode === 'hover' ? ' ui-reveal' : countMode === 'hidden' ? ' sr-only' : countMode === 'swap' ? ' ui-swap-count' : ''
   const button = (
     <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth} data-tone={active ? 'active' : 'quiet'}
       className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
@@ -54,7 +57,7 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
       {icon ? <span className="flex w-5 shrink-0 justify-center" aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
       <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>
       {!collapsed && badge}
-      {!collapsed && count ? <span className={`text-meta tabular-nums ${active ? 'text-muted' : 'text-faint'}${quiet}`} data-count data-open-count={count} aria-hidden={countLabel ? true : undefined}>{count}</span> : null}
+      {!collapsed && count ? <span className={`text-meta tabular-nums ${active ? 'text-muted' : 'text-faint'}${quiet}`} data-count data-open-count={count} aria-hidden={countLabel ? true : undefined}>{count}</span> : !collapsed && countMode === 'swap' ? <span className="ui-swap-count" aria-hidden="true" /> : null}
       {count && countLabel ? <span className="sr-only">{`, ${countLabel}`}</span> : null}
     </button>
   )

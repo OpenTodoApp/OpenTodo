@@ -45,6 +45,17 @@ describe('the phone drawer at 390 px', () => {
     await r.unmount()
   })
 
+  it('Reordered destinations (sidebar-polish 3.2): the drawer lists what the tab bar lacks in the stored order', async () => {
+    const { setPromoted } = await import('../lib/appearance')
+    const { applyOps } = await import('../lib/ops')
+    await setPromoted(null, 'someday', true)
+    await applyOps([{ id: 'o1', entity: 'user_prefs', entityId: 'me', field: 'sidebar_order', value: 'today,inbox,someday,upcoming,calendar', ts: Date.now() + 1000, device: 'laptop' }] as never)
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => primary().length >= 2 && primary()[0].startsWith('Someday'))
+    expect(primary().map((p) => p.split(',')[0])).toEqual(['Someday', 'Calendar'])
+    await r.unmount()
+  })
+
   it('Open Loops first: Loop home, Next, Waiting and Review', async () => {
     await setMethodMode('first')
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)

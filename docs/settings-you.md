@@ -40,6 +40,6 @@ Three pages, **Theme and density**, **Sidebar** and **Task details**. These choi
 - **Task rows**: [one line or detailed](row-layouts.md).
 - **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with a long press. On by default; turning it off on one device turns it off on all of them. Computers without vibration do not show the switch.
 - **Open tasks** (Task details): **As a page** (the default) or **In a side panel** beside every list, from 1024 px wide. See [The task page](task-panel.md#open-tasks-beside-the-list).
-- **Sidebar**: one switch per destination of the sidebar's **More** group (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter). A destination you switch on moves up next to Inbox, Today, Upcoming and Calendar. Under the full method the sidebar follows the method, so these switches wait, kept, until you choose another mode.
+- **Sidebar**: numbers on every list or only on Inbox and Today, the order of the main destinations, and which **More** destinations sit next to them. See [Sidebar counts and order](sidebar-counts-and-order.md).
 
 Mode and theme apply at once, without a reload. They never change other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme too; its splash screen stays neutral. Every theme meets the same contrast rules in light and dark.

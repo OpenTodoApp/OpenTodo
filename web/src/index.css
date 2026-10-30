@@ -1130,6 +1130,16 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   .ui-reveal { opacity: 0; transition: opacity var(--duration-ui); }
   :is(.group, [data-sidebar-item], [data-sidebar-group-header]):is(:hover, :focus-within) .ui-reveal, .ui-reveal:focus-within { opacity: 1; }
 }
+/* Every count on (sidebar-polish D2): the count sits in a slot as wide as the row's
+   menu button; with a fine pointer the button takes the slot while the row is hovered
+   or focused, so the row never grows. Touch keeps the count and the button side by side. */
+@media (hover: hover) and (pointer: fine) {
+  .ui-swap-row { position: relative; }
+  .ui-swap-count { min-width: 1.75rem; text-align: center; }
+  .ui-swap-menu { position: absolute; right: 0.25rem; top: 50%; translate: 0 -50%; opacity: 0; }
+  .ui-swap-row:is(:hover, :focus-within) .ui-swap-menu, .ui-swap-menu[aria-expanded="true"] { opacity: 1; }
+  .ui-swap-row:is(:hover, :focus-within) .ui-swap-count, .ui-swap-row:has(.ui-swap-menu[aria-expanded="true"]) .ui-swap-count { visibility: hidden; }
+}
 .ui-scroller:is([data-fade-top], [data-fade-bottom]) {
   mask-image: var(--fade), linear-gradient(black, black);
   mask-size: calc(100% - 10px) 100%, 10px 100%;

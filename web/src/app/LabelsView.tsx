@@ -265,7 +265,7 @@ export function useLabelDrag() {
   return { drop, start }
 }
 
-export function LabelRow({ label, labels, count, duplicate, route, drop, onDragStart, findActive = false, quiet = false }: {
+export function LabelRow({ label, labels, count, duplicate, route, drop, onDragStart, findActive = false, quiet = false, swap = false }: {
   label: Label
   labels: Label[]
   count?: number
@@ -277,6 +277,8 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
   findActive?: boolean
   /** The sidebar's row: the count is in the accessible name only (quiet-sidebar D2); the overview shows it. */
   quiet?: boolean
+  /** Every sidebar count on (sidebar-polish D2): the count at rest, the menu in its place on hover or focus. */
+  swap?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(label.name)
@@ -316,7 +318,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
 
   return (
     <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-task-drop={taskDrop.label(label.id)} data-active={active || undefined} data-find-active={findActive || undefined}
-      className={`group relative rounded-control data-drop-active:ring-2 data-drop-active:ring-accent ${active ? 'bg-selected-row' : 'hover:bg-hover'}${findActive ? ' ring-2 ring-focus' : ''}`}>
+      className={`group relative rounded-control ${swap ? 'ui-swap-row ' : ''}data-drop-active:ring-2 data-drop-active:ring-accent ${active ? 'bg-selected-row' : 'hover:bg-hover'}${findActive ? ' ring-2 ring-focus' : ''}`}>
       {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
       <div className="flex items-center gap-1 pr-1">
         {onDragStart && (
@@ -335,11 +337,12 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
             <span className="flex-1 truncate">{label.name}</span>
             {duplicate && <Badge hue="yellow" title={t('Another label has this name. Merge them from the menu or the banner on the labels page.')}>{t('duplicate')}</Badge>}
             {count && quiet ? <span className="sr-only" data-open-count={count}>{`, ${t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}`}</span> : null}
-            {count && !quiet ? <span className="text-meta text-faint" data-open-count={count}><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span> : null}
+            {count && !quiet ? <span className={`text-meta text-faint${swap ? ' ui-swap-count' : ''}`} data-open-count={count}><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span> : null}
+            {swap && !count ? <span className="ui-swap-count" aria-hidden="true" /> : null}
           </button>
         )}
         <ActionMenu label={t('Menu for label {name}', { name: label.name })} title={label.name} groups={groups} open={menuOpen} onOpenChange={setMenuOpen}
-          triggerClassName="hover-reveal touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised" />
+          triggerClassName={`${swap ? 'ui-swap-menu' : 'hover-reveal'} touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised`} />
       </div>
       {error && <p className="px-2 pb-1 text-meta text-danger">{error}</p>}
       <span role="status" aria-live="polite" className="sr-only">{announce}</span>

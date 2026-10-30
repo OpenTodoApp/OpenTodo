@@ -75,7 +75,8 @@ export function buildEntries(src: IndexSource): Entry[] {
     ...projects.filter((p) => p.archived).map(projectEntry),
     ...src.labels.filter((l) => !l.deleted_at).map((l): Entry => ({ kind: 'label', key: `label:${l.id}`, label: `@${l.name}`, run: () => navigate({ view: 'label', id: l.id }) })),
     ...src.views.filter((v) => !v.deleted_at).map((v): Entry => ({
-      kind: 'view', key: `view:${v.id}`, label: v.name, secondary: v.kind === 'dashboard' ? t('Dashboard') : t('Saved view'), run: () => navigate({ view: 'view', id: v.id }),
+      kind: 'view', key: `view:${v.id}`, label: v.name, secondary: v.kind === 'dashboard' ? t('Dashboard') : t('Saved view'),
+      ...(v.icon ? { catalogueIcon: v.icon } : {}), run: () => navigate({ view: 'view', id: v.id }),
     })),
     ...(src.user ? visibleSections(src.user) : []).map((s): Entry => ({
       kind: 'settings', key: `settings:${s.id}`, label: t('Settings: {section}', { section: s.label }), secondary: s.description(src.user!), icon: s.icon,

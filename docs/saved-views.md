@@ -17,7 +17,7 @@ When the built-in views aren't enough, describe the tasks you want with a filter
 
 Describe what you want on the **New view** page (<kbd>g</kbd> <kbd>f</kbd>), then save it. For example, `blocked` lists every task waiting for another one, and `due <= 7 days & p1` shows urgent tasks for the coming week. Build the query from conditions or type it: see [Labels and filters](labels-and-filters.md), and [Filter queries](filters.md) for ten examples.
 
-To save it, press <kbd>s</kbd> in the results or choose **Save as view**, type a name in the card that replaces the header and press <kbd>Enter</kbd>. The view keeps its display options, is listed in the **Views** group of the sidebar (folded on a new device), pinned to **Favourites**, and synced to all your devices. Its live count is on the views list (<kbd>g</kbd> <kbd>v</kbd>) and in its header, not in the sidebar.
+To save it, press <kbd>s</kbd> in the results or choose **Save as view**, type a name in the card that replaces the header and press <kbd>Enter</kbd>. The view keeps its display options, is listed in the **Views** group of the sidebar, pinned to **Favourites**, and synced to all your devices. Its live count is on the views list (<kbd>g</kbd> <kbd>v</kbd>), in its header and, with [every count on](sidebar-counts-and-order.md), in the sidebar.
 
 ## Conditions and display options
 
@@ -28,7 +28,8 @@ The **All** link next to **Views** (or <kbd>g</kbd> <kbd>v</kbd>) opens the list
 Every saved view has the same menu, wherever you open it: the **⋯** button on its row in the sidebar or the views list, its header, or a dashboard. With a row focused, <kbd>.</kbd> (or <kbd>Shift</kbd>+<kbd>F10</kbd>) opens it too.
 
 - **Rename**.
-- **Pin to sidebar** and **Start view on this device**: a check mark shows which apply. **Pin to sidebar** (called **Pinned to sidebar** before) adds the view to **Favourites** or takes it out; it stays in the **Views** group either way.
+- **Icon…**, picked as for projects.
+- **Pin to sidebar** and **Start view on this device**: a check mark shows which apply. **Pin to sidebar** adds the view to **Favourites** or takes it out; it stays in the **Views** group either way.
 - **Move up** and **Move down**: unavailable at the top or bottom of the list, with the reason shown. Opened from **Favourites**, they move the view among your favourites.
 - **Delete view…** asks for confirmation first. Deleting a view never touches your tasks.
 

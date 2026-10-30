@@ -248,6 +248,14 @@ export interface ViewFields {
   deleted_at?: number | null
   /** Workspace of the view, null for the default (OpenSpec change workspaces). */
   workspace_id?: string | null
+  /**
+   * A name from the icon catalogue, or null for the default icon of the
+   * view's kind (OpenSpec change sidebar-polish, design D4). Not user text,
+   * so not content. Any string is accepted here so a newer catalogue stays
+   * additive; REST checks it with iconset.Valid and clients render an
+   * unknown name as the default icon.
+   */
+  icon?: string | null
 }
 
 /**
@@ -556,6 +564,20 @@ export interface UserPrefsFields {
    */
   reminder_default_timed?: string
   reminder_default_dated?: string
+  /**
+   * Sidebar counts (OpenSpec change sidebar-polish, design D1): "" shows
+   * counts at rest on Inbox and Today only, "all" on every project, label
+   * and saved-view row; clients read an unknown value as "" and keep it.
+   */
+  sidebar_counts?: string
+  /**
+   * The order of the primary sidebar destinations (sidebar-polish D3): a
+   * comma-separated list of destination ids (inbox, today, upcoming,
+   * calendar and promotable ids). Ids missing from it follow in the default
+   * order; clients ignore and keep ids they do not know. Separate from
+   * sidebar_destinations, which keeps meaning "promoted".
+   */
+  sidebar_order?: string
 }
 
 /**
@@ -618,7 +640,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
   } satisfies Omit<Label, 'id' | '_clock'>,
   view: {
-    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null,
+    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null, icon: null,
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
     task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null,
@@ -642,7 +664,7 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '',

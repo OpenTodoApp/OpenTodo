@@ -5494,5 +5494,13 @@
   "{n, plural, one {Add # subtask} other {Add # subtasks}}": "{n, plural, one {Añadir # subtarea} other {Añadir # subtareas}}",
   "{n, plural, one {Add # task, one per line?} other {Add # tasks, one per line?}}": "{n, plural, one {¿Añadir # tarea, una por línea?} other {¿Añadir # tareas, una por línea?}}",
   "{n, plural, one {Add # task} other {Add # tasks}}": "{n, plural, one {Añadir # tarea} other {Añadir # tareas}}",
-  "{n, plural, one {and # more} other {and # more}}": "{n, plural, one {y # más} other {y # más}}"
+  "{n, plural, one {and # more} other {and # more}}": "{n, plural, one {y # más} other {y # más}}",
+  "Every list": "Cada lista",
+  "Inbox and Today": "Bandeja de entrada y Hoy",
+  "Menu for {name}": "Menú de {name}",
+  "New view cleared": "Nueva vista borrada",
+  "Numbers on Inbox and Today only, or on every project, label and view": "Números solo en Bandeja de entrada y Hoy, o en cada proyecto, etiqueta y vista",
+  "Sidebar counts": "Contadores de la barra lateral",
+  "Every list adds open-task numbers to each project, label and view.": "Cada lista añade el número de tareas abiertas a cada proyecto, etiqueta y vista.",
+  "Drag or use a row's menu to reorder. Switched-on ones sit next to Inbox and Today.": "Arrastra o usa el menú de una fila. Las activadas van junto a Bandeja de entrada y Hoy."
 }
