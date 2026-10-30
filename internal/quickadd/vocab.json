@@ -299,6 +299,19 @@
     "times"
    ]
   },
+  "everyOther": [
+   "every other"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "from",
+   "since",
+   "of",
+   "for"
+  ],
   "remindWords": [
    "remind me"
   ],
@@ -614,6 +627,23 @@
     "mal"
    ]
   },
+  "everyOther": [
+   "jeden zweiten",
+   "jede zweite",
+   "jedes zweite",
+   "alle zwei"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "seit",
+   "von",
+   "vom",
+   "ab",
+   "fur"
+  ],
   "remindWords": [
    "erinnere mich",
    "erinner mich"
@@ -909,6 +939,25 @@
     "fois"
    ]
   },
+  "everyOther": [
+   "tous les deux",
+   "toutes les deux"
+  ],
+  "everyOtherAround": {
+   "before": [
+    "un",
+    "une"
+   ],
+   "after": [
+    "sur deux"
+   ]
+  },
+  "monthTextBefore": [
+   "depuis",
+   "de",
+   "du",
+   "des"
+  ],
   "remindWords": [
    "rappelle-moi",
    "rappelle moi"
@@ -1164,7 +1213,11 @@
    "giornalmente": "day",
    "settimanalmente": "week",
    "mensilmente": "month",
-   "annualmente": "year"
+   "annualmente": "year",
+   "a giorni alterni": "2 days",
+   "a settimane alterne": "2 weeks",
+   "a mesi alterni": "2 months",
+   "ad anni alterni": "2 years"
   },
   "weekdayAll": [
    "giorno feriale",
@@ -1212,6 +1265,19 @@
     "volte"
    ]
   },
+  "everyOther": [
+   "ogni due"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "da",
+   "dal",
+   "di",
+   "del"
+  ],
   "remindWords": [
    "ricordamelo",
    "ricordami"
@@ -1512,6 +1578,18 @@
     "veces"
    ]
   },
+  "everyOther": [
+   "cada dos"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "desde",
+   "de",
+   "del"
+  ],
   "remindWords": [
    "recuerdame"
   ],
@@ -1820,6 +1898,21 @@
     "vezes"
    ]
   },
+  "everyOther": [
+   "a cada dois",
+   "a cada duas",
+   "cada dois",
+   "cada duas"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "desde",
+   "de",
+   "do"
+  ],
   "remindWords": [
    "lembre-me",
    "lembra-me",
