@@ -24,6 +24,8 @@ export interface FocusEnded {
   taskId?: string
   /** The task was completed or trashed on another device. */
   elsewhere?: boolean
+  /** The break after it started on its own ("Start breaks automatically"), so "+5 min" may still replace it (focus-everywhere D4). */
+  auto?: boolean
 }
 
 export interface FocusState {
@@ -136,7 +138,7 @@ export function finish(s: FocusState, prefs: FocusPrefs): FocusState {
   if (s.phase === 'work') {
     const nextBreak = s.mode === 'pomodoro' ? (s.cycle >= prefs.longBreakEvery ? 'long' : 'short') : undefined
     const ended: FocusEnded = { kind: 'work', workedMs: s.plannedMs ?? 0, at, runStartedAt: s.startedAt, ...(nextBreak ? { nextBreak } : {}) }
-    if (nextBreak && prefs.autoStartBreaks) return breakState(s, at, nextBreak, prefs, ended)
+    if (nextBreak && prefs.autoStartBreaks) return breakState(s, at, nextBreak, prefs, { ...ended, auto: true })
     return { ...s, phase: 'done', resumedAt: null, accumulatedMs: s.plannedMs ?? 0, entryId: null, ended }
   }
   const cycle = s.breakKind === 'long' ? 1 : s.cycle + 1

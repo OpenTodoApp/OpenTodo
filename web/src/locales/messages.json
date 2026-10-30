@@ -60,6 +60,9 @@
   "+{hidden} more": [
     "web/src/app/MonthView.tsx"
   ],
+  "+{n} min": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
   ", {n} repeating": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -1759,6 +1762,9 @@
   "Back up now": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Background noise": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Backing up…": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -1916,6 +1922,9 @@
   ],
   "Bring in tasks from an OpenTodo export, a CSV file or another task manager's JSON export. You see a preview first; nothing is written until you confirm, and every import can be undone. Import runs on your server, so it needs a connection. Help explains the formats and options.": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Brown": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Browser": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -3040,6 +3049,9 @@
   "Countdown": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/focus/prefs.ts"
+  ],
+  "Countdown presets": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Counted from 09:00 on the due date.": [
     "web/src/lib/settingsCopy.ts"
@@ -4952,15 +4964,14 @@
     "web/src/lib/focus/prefs.ts"
   ],
   "Focus": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/Sidebar.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Focus on this task": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
-  ],
-  "Focus on {title}": [
-    "web/src/app/palette/registry.ts"
   ],
   "Focus the first row": [
     "web/src/lib/shortcuts.ts"
@@ -5142,6 +5153,9 @@
   "General": [
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/settingsSections.ts"
+  ],
+  "Generated on this device; plays only while you work.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Get clear": [
     "web/src/lib/review.ts"
@@ -6575,6 +6589,9 @@
   ],
   "Leave “{project}”?": [
     "web/src/app/ShareDialog.tsx"
+  ],
+  "Left {title}": [
+    "web/src/app/focus/startFocus.ts"
   ],
   "Leisure|icon category": [
     "web/src/ui/icons/catalogue.ts"
@@ -8063,6 +8080,15 @@
   "Nobody matches.": [
     "web/src/app/TriageView.tsx"
   ],
+  "Noise off": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "Noise on": [
+    "web/src/app/focus/FocusView.tsx"
+  ],
+  "Noise volume": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "None": [
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/ProjectPickerField.tsx",
@@ -8465,6 +8491,7 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/focus/FocusSettings.tsx",
     "web/src/app/settingsStatus.ts",
     "web/src/lib/backups.ts"
   ],
@@ -9441,6 +9468,9 @@
   "Ping failed: {outcome}": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Pink": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -9550,6 +9580,12 @@
   "Preparing…": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Preset {n}": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "Presets": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
   "Press a key": [
     "web/src/app/shortcuts/Spotlight.tsx"
   ],
@@ -9558,7 +9594,8 @@
   ],
   "Preview": [
     "web/src/app/ImportScreen.tsx",
-    "web/src/app/RestoreSection.tsx"
+    "web/src/app/RestoreSection.tsx",
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Preview · {format}": [
     "web/src/app/ImportScreen.tsx"
@@ -10477,6 +10514,9 @@
   ],
   "Reschedule…": [
     "web/src/app/task-list/EarlierActions.tsx"
+  ],
+  "Reset": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Reset link created for {name}.": [
     "web/src/app/UsersPanel.tsx"
@@ -12033,6 +12073,13 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "Start focus": [
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-detail/TaskDetail.tsx"
+  ],
+  "Start focus on {title}": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Start from": [
     "web/src/app/NewBoardDialog.tsx"
   ],
@@ -13545,6 +13592,9 @@
   "This device now opens on the Loop home.": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
+  "This device only.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -14534,7 +14584,8 @@
     "web/src/app/ImportScreen.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
-    "web/src/app/bulk/UndoToast.tsx"
+    "web/src/app/bulk/UndoToast.tsx",
+    "web/src/app/focus/startFocus.ts"
   ],
   "Undo (Mod-Shift-z: redo)": [
     "web/src/lib/richtextEditor.ts"
@@ -14704,6 +14755,7 @@
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/startFocus.ts",
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/palette/index.ts",
@@ -14757,6 +14809,9 @@
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/DataSettings.tsx",
     "web/src/app/IssuesPanel.tsx"
+  ],
+  "Up to four lengths in minutes, offered when a countdown starts.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Up to {bytes} with the free space on the server.": [
     "web/src/app/RestoreSection.tsx"
@@ -15236,6 +15291,9 @@
   ],
   "While this is on, text an assistant asks for passes through your server to reach the assistant; the server never gets your key and keeps nothing. This device decrypts at most {hour} values an hour and {day} a day, and stops when you lock it or sign out.": [
     "web/src/app/RelaySettings.tsx"
+  ],
+  "White": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Who": [
     "web/src/app/task-detail/Facets.tsx",
@@ -17887,6 +17945,9 @@
   "{n, plural, one {Show # completed} other {Show # completed}}": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "{n, plural, one {Start # minute} other {Start # minutes}}": [
+    "web/src/app/focus/FocusParts.tsx"
+  ],
   "{n, plural, one {The # item it created will be deleted on every device. Items it updated are kept.} other {The # items it created will be deleted on every device. Items it updated are kept.}}": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -18057,7 +18118,8 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "{n} min": [
-    "web/src/app/ParseChips.tsx"
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "{n} min after": [
     "web/src/lib/nlp/reminders.ts"

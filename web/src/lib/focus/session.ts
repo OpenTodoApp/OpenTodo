@@ -128,3 +128,77 @@ export async function putOffBreak(now = Date.now()): Promise<void> {
   if (!row) return
   await transitionFocus(row.startedAt, (r) => (r.phase === 'work' ? { ...r, remindedAtMs: continuousWork(r, now) } : null))
 }
+
+/** A session that "Start focus" left for another task: its state at that moment (paused), and whether its clock ran. */
+export interface LeftSession {
+  taskId: string
+  state: FocusState
+  running: boolean
+}
+
+/** What `startFocus` did: the session already runs on the task, Countdown asks for its length first, or a session started (leaving `left`). */
+export type StartFocusResult =
+  | { kind: 'here' }
+  | { kind: 'ask' }
+  | { kind: 'started'; state: FocusState; left: LeftSession | null }
+
+/**
+ * "Start focus" on a task (focus-everywhere D2), shared by the panel's Focus
+ * button, the task Actions menu and "Focus on this task": nothing to do when the
+ * device's session is already on that task, a length first in Countdown (unless
+ * given), else a work session starts, leaving another task's session the way
+ * "Change task" does (its entry stops). `force` starts even on the same task (the
+ * Focus screen's own Start). The left session is returned so Undo can
+ * bring it back (`resumeLeft`).
+ */
+export async function startFocus(taskId: string, prefs: FocusPrefs, opts: { now?: number; lengthMinutes?: number; force?: boolean } = {}): Promise<StartFocusResult> {
+  const now = opts.now ?? Date.now()
+  const row = await readFocus()
+  if (!opts.force && row && row.taskId === taskId && (inRun(row) || row.phase === 'done')) return { kind: 'here' }
+  if (prefs.mode === 'countdown' && opts.lengthMinutes === undefined) return { kind: 'ask' }
+  const left: LeftSession | null = row && inRun(row) && row.taskId !== taskId ? { taskId: row.taskId, state: pause(row, now), running: isRunning(row) } : null
+  const state = await startSession(taskId, prefs, now, opts.lengthMinutes)
+  return { kind: 'started', state, left }
+}
+
+/** Undo of a left session: whatever runs now stops, and the left session comes back as it was (its clock running again, with a new entry, when it ran). */
+export async function resumeLeft(left: LeftSession, now = Date.now()): Promise<FocusState> {
+  const row = await readFocus()
+  if (row && inRun(row)) await stopEntry(row.entryId, now)
+  const next: FocusState = { ...left.state, resumedAt: left.running ? now : null, entryId: null, pausedReason: null }
+  await writeFocus(next)
+  await attachEntry(next, now)
+  return next
+}
+
+/** The extensions a finished work session offers (focus-everywhere D4), in minutes, for 10 minutes after its end. */
+export const EXTEND_MINUTES = [5, 15] as const
+export const EXTEND_WINDOW_MS = 10 * 60_000
+
+/**
+ * Whether the run shown may still be extended at `now`: a timed work session
+ * (Pomodoro or Countdown) that ended under 10 minutes ago, shown as the done
+ * state or as the break "Start breaks automatically" started at its end.
+ */
+export function canExtend(s: FocusState | null | undefined, now: number): boolean {
+  if (!s || !s.ended || s.ended.kind !== 'work' || (s.mode !== 'pomodoro' && s.mode !== 'countdown')) return false
+  if (now - s.ended.at >= EXTEND_WINDOW_MS) return false
+  return s.phase === 'done' || (s.phase === 'break' && !!s.ended.auto && s.startedAt === s.ended.at)
+}
+
+/**
+ * "+5 min" and "+15 min": the same session goes on for that long (focus-everywhere
+ * D4). It stays the same cycle, starts a new entry as resuming does (the time the
+ * done state was shown is not logged), and replaces a break that started on its
+ * own at the end.
+ */
+export async function extendSession(minutes: number, now = Date.now()): Promise<FocusState | null> {
+  const row = await readFocus()
+  if (!row) return null
+  const next = await transitionFocus(row.startedAt, (r) => (canExtend(r, now) ? {
+    ...r, phase: 'work', startedAt: now, resumedAt: now, accumulatedMs: 0, plannedMs: minutes * 60_000, breakKind: null,
+    entryId: null, pausedReason: null, remindedAtMs: 0, ended: null,
+  } : null))
+  if (next) await attachEntry(next, now)
+  return next
+}

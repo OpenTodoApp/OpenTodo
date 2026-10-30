@@ -732,6 +732,17 @@ var Schema = map[string]map[string]Field{
 		// order; clients ignore and keep ids they do not know. Separate from
 		// sidebar_destinations, which keeps meaning "promoted".
 		"sidebar_order": {Kind: kString, Default: `""`},
+		// Countdown presets (OpenSpec change focus-everywhere, design D5): a
+		// comma-separated list of up to four whole minutes (5-180) shown as
+		// chips in the Countdown dialog; clients read an empty or unreadable
+		// value as "10,20,40" and ignore entries out of range, keeping the
+		// stored value. Settings, never content: not encrypted.
+		"focus_presets": {Kind: kString, Default: `""`},
+		// Background noise during work sessions (focus-everywhere D6): "off",
+		// "white", "pink" or "brown", synthesized on the device; clients read
+		// an empty or unknown value as off and keep it. The volume is device
+		// storage and never synced.
+		"focus_noise": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

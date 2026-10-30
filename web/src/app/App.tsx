@@ -38,6 +38,7 @@ import { setBranding } from '../lib/branding'
 import { PanelBoundary } from './PanelBoundary'
 import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
+import { forgetNoiseVolume } from '../lib/focus/prefs'
 
 export { DemoBanner }
 
@@ -337,6 +338,8 @@ async function clearDeviceData() {
   localStorage.removeItem('opentodo.profile')
   clearOwnAvatar()
   cacheMfa(null)
+  // The background noise volume is per device (focus-everywhere D6).
+  forgetNoiseVolume()
 }
 
 /** The sandbox of this browser was deleted; the local copy is already gone (OpenSpec `demo-sandboxes`). */
