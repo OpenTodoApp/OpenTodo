@@ -27,7 +27,7 @@ All following your account:
 
 - **Language**: the language of the app. See [The app in your language](language.md).
 - **Date and time**: how dates and times look and where weeks start (see below).
-- **Calendar grid**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
+- **Calendar grid**: the Day and Week grid's hours, your day length, and whether meetings count toward it. See [Time blocking](time-blocking.md#adjust-the-grid).
 
 ### Date and time
 

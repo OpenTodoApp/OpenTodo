@@ -36,6 +36,7 @@ import { WeekAgenda } from './calendar/WeekAgenda'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
+import { meetingsByDay, type DayMeetings } from './calendar/meetingCapacity'
 import { useNowMinutes } from './calendar/useNowMinutes'
 
 /** Live preferences of this device (Dexie meta, never synced); MonthView and the settings read them too. */
@@ -96,6 +97,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const online = useOnline()
   const days = useMemo(() => calendarDays(dates, shown, feeds.visibleEvents, zone), [dates, shown, feeds.visibleEvents, zone])
   const order = useMemo(() => calendarOrder(days), [days])
+  // Busy event minutes per day, when this device counts meetings (meeting-aware-capacity).
+  const meetings = useMemo(() => meetingsByDay(dates, feeds.visibleEvents, {
+    count: prefs.countEvents, eventsShown: feeds.eventsShown, subscriptions: feeds.subs.length, win: feeds.win, online, zone,
+  }), [dates, feeds.visibleEvents, prefs.countEvents, feeds.eventsShown, feeds.subs.length, feeds.win, online, zone])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const openId = usePanelTaskId()
@@ -234,10 +239,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
           data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
-            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} taskMap={taskMap} projectMap={projectMap} selectedId={selectedId}
+            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} taskMap={taskMap} projectMap={projectMap} selectedId={selectedId}
               onSelect={select} onOpen={open} onAdd={setAdding} />
           ) : (
-            <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} taskMap={taskMap} projectMap={projectMap}
+            <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} meetings={meetings} taskMap={taskMap} projectMap={projectMap}
               subMap={feeds.subMap} zone={zone} selectedId={selectedId} expanded={expanded} setExpanded={setExpanded} drag={drag} dragTask={dragTask}
               placing={placing} placingTask={placingTask} onSelect={select} onOpen={open} onDragStart={startDrag} />
           )}
@@ -259,13 +264,14 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 }
 
 /** The Day or Week grid: a sticky header (day name, capacity, unscheduled lane) over the hour columns. */
-function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, taskMap, projectMap, subMap, zone, selectedId, expanded, setExpanded, drag, dragTask, placing, placingTask, onSelect, onOpen, onDragStart }: {
+function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, taskMap, projectMap, subMap, zone, selectedId, expanded, setExpanded, drag, dragTask, placing, placingTask, onSelect, onOpen, onDragStart }: {
   mode: 'day' | 'week'
   days: DayData[]
   today: string
   nowMinutes: number
   prefs: GridPrefs
   shown: Task[]
+  meetings: Map<string, DayMeetings> | null
   taskMap: Map<string, Task>
   projectMap: Map<string, Project>
   subMap: Map<string, CalendarSubscription>
@@ -300,7 +306,7 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, taskMap, pr
           <span className="pr-1">{t('all day')}</span>
         </div>
         {days.map((d) => (
-          <DayHeader key={d.date} day={d} today={today} tasks={shown} prefs={prefs} showName={mode === 'week'} selectedId={selectedId} subMap={subMap} zone={zone}
+          <DayHeader key={d.date} day={d} today={today} tasks={shown} meetings={meetings?.get(d.date) ?? null} prefs={prefs} showName={mode === 'week'} selectedId={selectedId} subMap={subMap} zone={zone}
             laneTarget={drag?.target?.type === 'lane' && drag.target.date === d.date} onSelect={onSelect} onOpen={onOpen}
             onPointerDown={(e, id) => onDragStart(e, { taskId: id, kind: 'move' })} projectMap={projectMap} />
         ))}
