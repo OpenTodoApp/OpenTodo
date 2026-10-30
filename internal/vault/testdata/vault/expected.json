@@ -30,6 +30,7 @@
     "t-home4": {"title": "Pay rent", "project_id": "p-home", "priority": 4, "due": {"date": "2026-11-01"}, "recurrence": "every month", "labels": ["l-bills"], "position": 3000},
     "t-home5": {"title": "Return the drill", "project_id": "p-home", "priority": 4, "completed_at": 1792411200000, "position": 4000},
     "t-home6": {"title": "Clean the windows", "project_id": "p-home", "section_id": "s-weekend", "priority": 4, "start": "someday", "evening": true, "position": 1000},
+    "t-home7": {"title": "Stretch", "project_id": "p-home", "section_id": "s-weekend", "priority": 4, "due": {"date": "2026-10-25"}, "day_part": "morning", "position": 2000},
     "t-work1": {"title": "Weekly report", "project_id": "p-work", "priority": 4, "due": {"date": "2026-10-23"}, "recurrence": "every week after completion", "labels": ["l-deep"], "position": 1000},
     "t-launch1": {"title": "Ship the beta", "project_id": "p-launch", "section_id": "s-next", "priority": 4, "due": {"date": "2026-10-28", "time": "14:00", "tz": "Europe/Rome"}, "fields.f-stage": "beta", "position": 1000},
     "t-hire1": {"title": "Interview Ada", "project_id": "p-hiring", "priority": 4, "position": 1000}

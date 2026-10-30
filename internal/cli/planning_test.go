@@ -134,3 +134,45 @@ func TestPlanningFlagsAgentToken(t *testing.T) {
 		t.Fatalf("agent ops = %d", n)
 	}
 }
+
+// TestPartFlag (OpenSpec change day-parts, cli-client "Part of the day in the
+// CLI"): --part writes the part paired with the evening flag, an unknown part
+// is a usage error that writes nothing, and --natural follows the account's
+// Day parts preference.
+func TestPartFlag(t *testing.T) {
+	h := newHarness(t)
+	h.seedViews()
+	h.login()
+	id := strings.TrimSpace(h.mustRun("add", "Read", "--evening"))
+	h.mustRun("edit", id, "--part", "afternoon")
+	if got := h.task(id); got["day_part"] != "afternoon" || got["evening"] != false {
+		t.Fatalf("afternoon = %v", got)
+	}
+	if out := h.mustRun("list", "--json"); !strings.Contains(out, `"day_part": "afternoon"`) && !strings.Contains(out, `"day_part":"afternoon"`) {
+		t.Fatalf("list --json lacks day_part:\n%s", out)
+	}
+	h.mustRun("edit", id, "--part", "evening")
+	if got := h.task(id); got["day_part"] != nil || got["evening"] != true {
+		t.Fatalf("evening = %v", got)
+	}
+	h.requestLog()
+	if code, _, _ := h.run("add", "Stretch", "--part", "night"); code != ExitUsage {
+		t.Fatalf("--part night = %d", code)
+	}
+	if w := writesIn(h.requestLog()); len(w) != 0 {
+		t.Fatalf("--part night wrote %v", w)
+	}
+
+	// Off: the words stay in the title. On: tomorrow morning sets the part.
+	off := strings.TrimSpace(h.mustRun("add", "Stretch tomorrow morning", "--natural"))
+	if got := h.task(off); got["title"] != "Stretch morning" || got["day_part"] != nil {
+		t.Fatalf("off = %v", got)
+	}
+	h.apiJSON("POST", "/api/v1/sync", map[string]any{"device": "seed", "cursor": 0, "ops": []map[string]any{
+		{"id": "prefs/day_parts", "entity": "user_prefs", "entityId": "me", "field": "day_parts", "value": "on", "ts": 1, "device": "seed"},
+	}})
+	on := strings.TrimSpace(h.mustRun("add", "Stretch tomorrow morning", "--natural"))
+	if got := h.task(on); got["title"] != "Stretch" || got["day_part"] != "morning" || got["evening"] != false {
+		t.Fatalf("on = %v", got)
+	}
+}

@@ -519,6 +519,17 @@ describe('evaluate: start, Someday and evening (OpenSpec someday-and-evening 4.1
   it('#Home & evening, whatever the date', () => {
     expect(ids('#Home & evening', L, ctx)).toEqual(['home-evening'])
   })
+  it('#Home & morning matches the stored part, not a morning due time (day-parts)', () => {
+    const M: Task[] = [
+      task('home-morning', { project_id: 'p-home', day_part: 'morning' }),
+      task('home-nine', { project_id: 'p-home', due: { date: '2026-10-14', time: '09:00' } }),
+      task('home-old-evening', { project_id: 'p-home', day_part: 'morning', evening: true }),
+      task('home-afternoon', { project_id: 'p-home', day_part: 'afternoon' }),
+    ]
+    expect(ids('#Home & morning', M, ctx)).toEqual(['home-morning'])
+    expect(ids('afternoon', M, ctx)).toEqual(['home-afternoon'])
+    expect(ids('evening', M, ctx)).toEqual(['home-old-evening'])
+  })
   it('someday, no start, and start never matching parked or empty starts', () => {
     expect(ids('someday', L, ctx)).toEqual(['wait-parked'])
     expect(ids('no start & @call', L, ctx)).toEqual(['wait-plain'])

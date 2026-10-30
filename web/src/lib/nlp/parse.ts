@@ -4,13 +4,13 @@
 import type { Due, Priority } from '../types'
 import { matchDuration, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
 import { firstOccurrence } from '../recurrence'
-import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, partWordAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
 import { matchReminderAt, type ReminderMatch, type ReminderPhrase } from './reminders'
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
 import { vocabulariesFor, type DayMonthOrder } from './vocab'
 
-export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder'
+export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'daypart' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder'
 
 /** One recognised attribute; drives a preview chip. `spans` are removed from the title. */
 export interface Chip {
@@ -18,7 +18,7 @@ export interface Chip {
   /** Stable within one parse: kind plus the first span start. */
   key: string
   spans: Span[]
-  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, true (evening), the canonical rule or a reminder. */
+  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, true (evening), the part (daypart), the canonical rule or a reminder. */
   value: Due | string | number | boolean | ReminderPhrase
 }
 
@@ -36,6 +36,8 @@ export interface ParseContext {
   dayMonthOrder?: DayMonthOrder
   /** First day of the week, 0 = Sunday … 6 = Saturday (date-time-preferences D5); Monday when absent. */
   weekStart?: number
+  /** The account uses day parts (day-parts D5): the part phrases are read. */
+  dayParts?: boolean
 }
 
 export interface ParseResult {
@@ -45,8 +47,10 @@ export interface ParseResult {
   deadline: string | null
   /** "someday" from a someday phrase on a line without a date (someday-and-evening), or null. */
   start: 'someday' | null
-  /** Set by "tonight" / "this evening" (the task is also due today). */
+  /** Set by "tonight" / "this evening" (the task is also due today), or by "evening" after a date with day parts on. */
   evening: boolean
+  /** Morning or Afternoon from a part phrase (day-parts D5), only with `dayParts`; null otherwise. */
+  dayPart: 'morning' | 'afternoon' | null
   projectId: string | null
   labels: string[]
   priority: Priority | null
@@ -102,6 +106,19 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   let spent: number | null = null
   let deadline: { value: string; span: Span } | null = null
   let evening: Span | null = null
+  let dayPart: { value: 'morning' | 'afternoon'; span: Span } | null = null
+  // A part phrase sets one part: the evening flag or a day part, never both.
+  const partFree = () => !evening && !dayPart
+  /** A part word directly after a date phrase ending at token `to` (day-parts D5); returns where reading goes on. */
+  const partAfter = (to: number): number => {
+    if (!ctx.dayParts || !partFree()) return to
+    const pw = partWordAt(tokens, to, dctx)
+    const span = pw ? spanOf(line, tokens, to, to + pw.n) : null
+    if (!pw || !span || overlaps(span, dismissed)) return to
+    if (pw.part === 'evening') evening = span
+    else dayPart = { value: pw.part, span }
+    return to + pw.n
+  }
   let someday: Span | null = null
   let recurrence: { value: string; span: Span } | null = null
   const reminders: { value: ReminderPhrase; span: Span }[] = []
@@ -187,6 +204,23 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       }
     }
 
+    // "this morning" / "this afternoon" (day-parts D5): like "tonight", only with day parts on.
+    if (ctx.dayParts && partFree()) {
+      let matched = false
+      for (const [field, part] of [['morningWords', 'morning'], ['afternoonWords', 'afternoon']] as const) {
+        const n = wordsAt(tokens, i, dctx, field)
+        const span = n ? spanOf(line, tokens, i, i + n) : null
+        if (span && !overlaps(span, dismissed)) {
+          dayPart = { value: part, span }
+          if (!date) date = { value: ctx.today, span }
+          i += n
+          matched = true
+          break
+        }
+      }
+      if (matched) continue
+    }
+
     // Date, time, recurrence and reminder phrases: the longest wins, a date on a
     // tie. The first date, time and rule win; reminders accumulate. A match whose
     // range overlaps a live dismissal is ignored.
@@ -220,7 +254,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       }
     } else if (dm && dSpan && (!tm || dm.to >= tm.to)) {
       date = { value: dm.date, span: dSpan }
-      i = dm.to
+      i = partAfter(dm.to)
     } else if (tm && tSpan) {
       time = { value: tm.time, date: tm.date, span: tSpan }
       i = tm.to
@@ -253,6 +287,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   if (recurrence) chip('recurrence', [recurrence.span], recurrence.value)
   for (const r of reminders) chip('reminder', [r.span], r.value)
   if (evening) chip('evening', [evening], true)
+  if (dayPart) chip('daypart', [dayPart.span], dayPart.value)
   if (parked && someday) chip('someday', [someday], 'someday')
   if (deadline) chip('deadline', [deadline.span], deadline.value)
   if (project) chip('project', [project.span], project.id)
@@ -269,6 +304,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     deadline: deadline?.value ?? null,
     start: parked ? 'someday' : null,
     evening: !!evening,
+    dayPart: dayPart?.value ?? null,
     projectId: project?.id ?? null,
     labels: labels.map((l) => l.value),
     priority: priority?.value ?? null,

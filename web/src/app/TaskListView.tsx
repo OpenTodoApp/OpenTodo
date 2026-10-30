@@ -59,6 +59,8 @@ import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
 import { noteTodayOpened } from '../lib/firstDay'
 import { InboxMenu } from './SampleNotice'
 import { TodayAgenda, useTodayAgenda } from './calendar/TodayAgenda'
+import { dayPartsOn, setDayParts } from '../lib/dayParts'
+import { readMethodMode } from '../lib/method/mode'
 
 export { BLOCKED_OPEN_KEY } from '../lib/listGroups'
 
@@ -414,6 +416,14 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
     <MenuItem icon={hidden ? 'eye' : 'eye-off'} label={hidden ? t('Show briefing') : t('Hide briefing')} data-briefing-toggle
       onSelect={() => act(setBriefingShown(hidden))} />
   )
+  // Day parts (day-parts D4): offered here in the method modes; Settings has it in every mode.
+  const prefs = useUserPrefsRow()
+  const mode = readMethodMode(prefs)
+  const partsOn = dayPartsOn(prefs)
+  const partsItem = route.view === 'today' && mode !== 'lists' && (
+    <MenuItem icon="sun" label={partsOn ? t('Stop grouping by part of the day') : t('Group by part of the day')} data-day-parts-toggle
+      onSelect={() => act(setDayParts(!partsOn))} />
+  )
   const agendaItem = agenda !== undefined && (
     <MenuItem icon="calendar-range" label={agenda ? t('Hide calendar events') : t('Show calendar events')} data-today-events-toggle
       onSelect={() => act(setTodayEventsShown(!agenda))} />
@@ -421,7 +431,7 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{agendaItem}</> : undefined}
+      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{agendaItem}{partsItem}</> : undefined}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />

@@ -544,10 +544,24 @@ describe('parse: escaping and dismissal', () => {
   })
 })
 
+describe('parse: day parts (day-parts D5)', () => {
+  it('a part after a date is a dismissable chip; dismissing it keeps the word', () => {
+    const line = 'Stretch tomorrow morning'
+    const r = parse(line, ctx({ dayParts: true }))
+    const chip = r.chips.find((c) => c.kind === 'daypart')!
+    expect(chip.value).toBe('morning')
+    expect(r).toMatchObject({ title: 'Stretch', dayPart: 'morning' })
+    expect(parse(line, ctx({ dayParts: true, dismissed: chip.spans }))).toMatchObject({ title: 'Stretch morning', dayPart: null })
+  })
+  it('quoted words stay in the title', () => {
+    expect(parse('"Stretch this morning"', ctx({ dayParts: true }))).toMatchObject({ dayPart: null, due: null })
+  })
+})
+
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {

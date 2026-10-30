@@ -231,6 +231,14 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/briefing',
     rows: { show: { label: msg('Show the briefing') } },
   },
+  // Today by part of the day (day-parts D4): the synced user_prefs.day_parts, as in Today's menu.
+  'day-parts': {
+    title: msg('Today'),
+    icon: 'sun',
+    description: msg('How Today lists the day, on all your devices.'),
+    learnMore: 'settings/day-parts',
+    rows: { group: { label: msg('Group by day part'), description: msg('Morning, Afternoon and This Evening; a task with a time goes to its part.') } },
+  },
   'date-time': {
     title: msg('Date and time'),
     icon: 'calendar-clock',

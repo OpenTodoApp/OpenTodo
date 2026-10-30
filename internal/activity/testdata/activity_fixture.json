@@ -670,6 +670,16 @@
       ]
     },
     {
+      "name": "a part of the day is one edited event with both fields (day-parts)",
+      "ops": [
+        {"id":"dp1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"day_part","value":"morning","ts":350000,"device":"da"},
+        {"id":"dp2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"evening","value":false,"ts":350000,"device":"da"}
+      ],
+      "events": [
+        {"id":"dp1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":350000,"opIds":["dp1","dp2"],"changes":[{"field":"day_part","from":null,"to":"morning"},{"field":"evening","from":null,"to":false}]}
+      ]
+    },
+    {
       "name": "attachment ops derive no event (attachments)",
       "ops": [
         {"id":"at1","seq":1,"actor":"alice","entity":"attachment","entityId":"a1","field":"task_id","value":"t1","ts":400000,"device":"da"},

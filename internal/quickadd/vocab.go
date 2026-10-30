@@ -17,34 +17,46 @@ import (
 //go:embed vocab.json
 var vocabJSON []byte
 
+// PartWords are the part words that may follow a date phrase ("tomorrow morning").
+type PartWords struct {
+	Morning   []string `json:"morning"`
+	Afternoon []string `json:"afternoon"`
+	Evening   []string `json:"evening"`
+}
+
 // Vocab is one language's vocabulary; every phrase is already folded by normalize.
 type Vocab struct {
-	Code          string            `json:"code"`
-	DayMonthOrder string            `json:"dayMonthOrder"`
-	DayWords      map[string]int    `json:"dayWords"`
-	Weekdays      [][]string        `json:"weekdays"`
-	Months        []MonthVocab      `json:"months"`
-	Before        []string          `json:"before"`
-	DeadlineWords []string          `json:"deadlineWords"`
-	SomedayWords  []string          `json:"somedayWords"`
-	EveningWords  []string          `json:"eveningWords"`
-	NextBefore    []string          `json:"nextBefore"`
-	NextAfter     []string          `json:"nextAfter"`
-	ThisBefore    []string          `json:"thisBefore"`
-	InWords       []string          `json:"inWords"`
-	OneWords      []string          `json:"oneWords"`
-	Units         Units             `json:"units"`
-	OfWords       []string          `json:"ofWords"`
-	AtWords       []string          `json:"atWords"`
-	HourWords     []string          `json:"hourWords"`
-	HourSuffixH   bool              `json:"hourSuffixH"`
-	TimeWords     map[string]string `json:"timeWords"`
-	Am            []string          `json:"am"`
-	Pm            []string          `json:"pm"`
-	Every         []string          `json:"every"`
-	EveryOne      map[string]string `json:"everyOne"`
-	WeekdayAll    []string          `json:"weekdayAll"`
-	Ordinals      map[string]int    `json:"ordinals"`
+	Code          string         `json:"code"`
+	DayMonthOrder string         `json:"dayMonthOrder"`
+	DayWords      map[string]int `json:"dayWords"`
+	Weekdays      [][]string     `json:"weekdays"`
+	Months        []MonthVocab   `json:"months"`
+	Before        []string       `json:"before"`
+	DeadlineWords []string       `json:"deadlineWords"`
+	SomedayWords  []string       `json:"somedayWords"`
+	EveningWords  []string       `json:"eveningWords"`
+	// MorningWords, AfternoonWords and PartWords are the day-part phrases
+	// (OpenSpec change day-parts, D5), read only with Context.DayParts.
+	MorningWords   []string          `json:"morningWords"`
+	AfternoonWords []string          `json:"afternoonWords"`
+	PartWords      PartWords         `json:"partWords"`
+	NextBefore     []string          `json:"nextBefore"`
+	NextAfter      []string          `json:"nextAfter"`
+	ThisBefore     []string          `json:"thisBefore"`
+	InWords        []string          `json:"inWords"`
+	OneWords       []string          `json:"oneWords"`
+	Units          Units             `json:"units"`
+	OfWords        []string          `json:"ofWords"`
+	AtWords        []string          `json:"atWords"`
+	HourWords      []string          `json:"hourWords"`
+	HourSuffixH    bool              `json:"hourSuffixH"`
+	TimeWords      map[string]string `json:"timeWords"`
+	Am             []string          `json:"am"`
+	Pm             []string          `json:"pm"`
+	Every          []string          `json:"every"`
+	EveryOne       map[string]string `json:"everyOne"`
+	WeekdayAll     []string          `json:"weekdayAll"`
+	Ordinals       map[string]int    `json:"ordinals"`
 	// OrdinalArticles, OrdinalOf, OfMonthWords and OrdinalsBeforeWeekday serve the
 	// ordinal weekdays (quick-add-nth-weekday D4).
 	OrdinalArticles       []string       `json:"ordinalArticles"`

@@ -47,8 +47,11 @@ type Task struct {
 	Deadline    string // "YYYY-MM-DD" or "" (OpenSpec change deadlines)
 	Start       string // "someday", "YYYY-MM-DD" or "" (OpenSpec change someday-and-evening)
 	Evening     bool
-	Categories  []string
-	ParentUID   string
+	// DayPart is "morning" or "afternoon" (OpenSpec change day-parts), served
+	// as X-OPENTODO-DAY-PART; Evening stays X-OPENTODO-EVENING only.
+	DayPart    string
+	Categories []string
+	ParentUID  string
 	// DependsOn are the UIDs of the task's blockers in the same calendar
 	// (OpenSpec change task-dependencies, design D10).
 	DependsOn   []string
@@ -113,8 +116,11 @@ type Inbound struct {
 	// Start and Evening come from X-OPENTODO-START and X-OPENTODO-EVENING
 	// (someday-and-evening D7); nil means the client did not send the property,
 	// which leaves the field alone.
-	Start       *string
-	Evening     *bool
+	Start   *string
+	Evening *bool
+	// DayPart comes from X-OPENTODO-DAY-PART (day-parts): "morning" or
+	// "afternoon"; nil when the client did not send a known value.
+	DayPart     *string
 	Completed   bool
 	CompletedAt *int64 // the COMPLETED time when the client sent one
 	Categories  []string
@@ -256,6 +262,8 @@ func Encode(t Task) []byte {
 	}
 	if t.Evening {
 		add("X-OPENTODO-EVENING", "TRUE")
+	} else if t.DayPart == "morning" || t.DayPart == "afternoon" {
+		add("X-OPENTODO-DAY-PART", strings.ToUpper(t.DayPart))
 	}
 	if p := AppToICalPriority(t.Priority); p != 0 {
 		add("PRIORITY", strconv.Itoa(p))

@@ -47,6 +47,7 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kRuleCondition:  orNull(ruleval.CheckCondition),
 	kRuleActions:    ruleval.CheckActions,
 	kReactions:      checkReactions,
+	kDayPart:        orNull(checkDayPart),
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -120,6 +121,17 @@ func checkStart(raw json.RawMessage) error {
 		if _, err := time.Parse("2006-01-02", d); err != nil {
 			return errors.New(`must be null, "someday" or a date "YYYY-MM-DD" that exists`)
 		}
+	}
+	return nil
+}
+
+// DayParts are the stored values of task.day_part (OpenSpec change day-parts).
+var DayParts = []string{"morning", "afternoon"}
+
+func checkDayPart(raw json.RawMessage) error {
+	var d string
+	if err := json.Unmarshal(raw, &d); err != nil || !slices.Contains(DayParts, d) {
+		return errors.New(`must be null, "morning" or "afternoon"`)
 	}
 	return nil
 }

@@ -51,6 +51,7 @@ import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
+import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -66,12 +67,14 @@ export const MAX_INDENT = 3
  * heading that names it, the time left out when the time column holds it, evening left
  * out under This Evening, no repeat suffix (the repeat is its own item).
  */
-export function rowDateText(due: { label: string; day: string; time: string | null } | null, dueDate: string | null, evening: boolean, implied: RowImplied | undefined, inColumn = false): string | null {
-  const eve = evening && !implied?.evening
-  if (!due) return eve ? t('This evening') : null
+export function rowDateText(due: { label: string; day: string; time: string | null } | null, dueDate: string | null, part: DayPart | null, implied: RowImplied | undefined, inColumn = false): string | null {
+  // The part of the day (day-parts) shares the evening's place, left out under the heading that states it.
+  const shown = part === 'evening' ? !implied?.evening : !!part && implied?.part !== part
+  const suffix = shown ? dayPartWord(part) : null
+  if (!due) return !shown ? null : part === 'evening' ? t('This evening') : dayPartName(part)
   const sameDay = !!implied?.date && dueDate === implied.date
   const words = sameDay ? (inColumn ? null : due.time) : inColumn ? due.day : due.label
-  return [words, eve ? t('evening') : null].filter(Boolean).join(' · ') || null
+  return [words, suffix].filter(Boolean).join(' · ') || null
 }
 
 /** One count of a row: subtask progress, notes, comments, attachments (calm-rows D7). */
@@ -625,7 +628,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const m: MetaValues = {
     sample: isSample(task),
     breadcrumb,
-    date: hides('date') ? null : rowDateText(due, dueDay, !!task.evening && !done, implied, timeInColumn),
+    date: hides('date') ? null : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
     dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : 'muted',
     hint, zone: task.due?.tz ?? '',
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,

@@ -13,6 +13,7 @@ import { LocationPreview } from '../locations/LocationPreview'
 import { ProjectMark } from '../Sidebar'
 import { OPTIONAL, PartEditor, type PropertiesProps, useFacetParts, usePartEditor } from './Facets'
 import { usePropertiesModel } from './usePropertiesModel'
+import { dayPartOf, dayPartWord } from '../../lib/dayParts'
 
 const TONE: Record<string, string> = {
   overdue: 'text-danger',
@@ -59,8 +60,9 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
   const tone = (id: string) => TONE[parts.get(id)?.tone ?? ''] ?? undefined
 
   const due = text('due')
+  const partWord = dayPartWord(dayPartOf(task))
   const schedule: Fact[] = [
-    { id: 'due', label: t('Do'), icon: 'sun', value: due && task.evening ? `${due} · ${t('evening')}` : due ?? (task.evening ? t('evening') : null), empty: t('Set a date'), tone: tone('due') },
+    { id: 'due', label: t('Do'), icon: 'sun', value: due && partWord ? `${due} · ${partWord}` : due ?? partWord, empty: t('Set a date'), tone: tone('due') },
     { id: 'when', label: t('Start'), icon: 'calendar-range', value: text('when'), empty: t('Set a start') },
     { id: 'deadline', label: t('Deadline'), icon: 'hourglass', value: text('deadline'), empty: t('Set a deadline'), tone: tone('deadline') },
     { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock', value: text('reminders'), empty: t('Add a reminder') },

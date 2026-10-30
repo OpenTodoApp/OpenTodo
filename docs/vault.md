@@ -53,6 +53,7 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 ## Weekend
 
 - [ ] Clean the windows [someday:: true] [evening:: true] 🆔 t-home6
+- [ ] Stretch 📅 2026-10-25 [daypart:: morning] 🆔 t-home7
 ```
 
 | Field | Meaning |
@@ -60,6 +61,7 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 | `📅` `[time:: ]` `[tz:: ]` | do-on date, time, zone |
 | `🛫` `[someday:: true]` `[deadline:: ]` | start, Someday, deadline |
 | `[estimate:: 45m]` `[evening:: true]` | estimate, This Evening |
+| `[daypart:: morning]` `[daypart:: afternoon]` | the part of the day; never beside `[evening:: true]`, which wins when both are there. Another value is reported and changes nothing |
 | `🔺` `⏫` `🔼` | priority 1–3 (`🔽` `⏬` read as 4) |
 | `🔁` | repeat rule (`when done`: after completion) |
 | `#tag` `⛔` `✅` `🆔` | label, blocked by, done date, id |
