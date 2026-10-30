@@ -5711,5 +5711,21 @@
   "Three tasks": "Tres tareas",
   "Three tasks of any size, or a Bento: one Large, one Medium and one Small.": "Tres tareas de cualquier tamaño, o un Bento: una grande, una mediana y una pequeña.",
   "{slot} holds {title}.": "{slot} contiene {title}.",
-  "{title} is in the {slot} slot.": "{title} está en el hueco {slot}."
+  "{title} is in the {slot} slot.": "{title} está en el hueco {slot}.",
+  "Deep": "Profunda",
+  "Low": "Baja",
+  "Deep energy": "Energía profunda",
+  "Medium energy": "Energía media",
+  "Low energy": "Energía baja",
+  "Energy": "Energía",
+  "Energy cleared": "Energía quitada",
+  "Energy is {level}": "La energía es {level}",
+  "Energy levels": "Niveles de energía",
+  "Energy must be deep, medium or low at position {pos}": "La energía debe ser deep, medium o low en la posición {pos}",
+  "Energy set to {level}": "Energía fijada en {level}",
+  "Has an energy": "Tiene energía",
+  "Mark tasks Deep, Medium or Low and filter by the energy they need.": "Marca tareas como Profunda, Mediana o Baja y filtra por la energía que piden.",
+  "No energy": "Sin energía",
+  "Set energy": "Definir energía",
+  "The energy must be deep, medium or low.": "La energía debe ser deep, medium o low."
 }

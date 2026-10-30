@@ -71,6 +71,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   integrity: msg('The archive is damaged: {detail}'),
   internal: msg('Something went wrong on the server. Try again.'),
   invalid_credentials: msg('The email or password is not correct.'),
+  invalid_energy: msg('The energy must be deep, medium or low.'),
   invalid_file: msg('The file could not be read: {detail}'),
   invalid_input: msg('The server did not accept this: {detail}'),
   invalid_op: msg('The server refused a change: {detail}'),

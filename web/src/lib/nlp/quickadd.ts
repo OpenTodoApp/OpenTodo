@@ -22,6 +22,8 @@ export interface QuickAddInput {
   evening?: boolean
   /** Morning or Afternoon (day-parts D5). */
   day_part?: 'morning' | 'afternoon'
+  /** Deep, Medium or Low from a `~` token (task-energy D4). */
+  energy?: 'deep' | 'medium' | 'low'
   /** The canonical rule (quick-add-recurrence). */
   recurrence?: string
   /** Typed reminders; createTask resolves them against the final due. */
@@ -104,6 +106,7 @@ export async function toTaskInput(
     if (ids.length) out.labels = ids
   }
   if (r.priority) out.priority = r.priority
+  if (r.energy) out.energy = r.energy
   if (r.estimateMinutes) out.estimate_minutes = r.estimateMinutes
   if (r.spentMinutes) out.spent_minutes = r.spentMinutes
   return out

@@ -283,6 +283,7 @@ UTF-8, with a header row. Comma, semicolon and tab separators are detected from 
 | `reminder` | `reminders` | one or more reminders separated by `;`, `,` or `\|`; see [Reminders](#reminders) |
 | `start` | `start_date` | `someday` parks the task, a date `YYYY-MM-DD` defers it until that day; with a `due_date` too, Someday is dropped with a warning |
 | `evening` | | `true`/`yes`/`x`/`1` marks the task for This Evening |
+| `energy` | | `deep`, `medium` or `low`, any letter case; another value is dropped with a warning on that row |
 | `deadline` | | the day the task must be finished by, `YYYY-MM-DD`; a date-time keeps its date (with a warning); anything else is a row error |
 | `attachment` | `attachments`, `files`, `links` | one or more `http(s)` addresses separated by `;`, `,` or `\|`, each kept as a link attachment; anything else is dropped with a warning |
 | `blocked_by` | `depends_on`, `waits_for` | the rows this task waits for, by `id` or by a unique title, separated by `;`, `,` or `\|`; a row that is not in the file, or one that would make tasks wait for each other, is dropped with a warning |

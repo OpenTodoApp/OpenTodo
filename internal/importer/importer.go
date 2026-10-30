@@ -116,6 +116,9 @@ type Row struct {
 	// Evening (OpenSpec change someday-and-evening).
 	Start   string
 	Evening bool
+	// Energy is "deep", "medium", "low" or "" (OpenSpec change task-energy):
+	// only the CSV column sets it; other apps' importers leave it empty.
+	Energy string
 	// Links are attachment references the file only gives as URLs; they become
 	// link attachments of the task (OpenSpec change attachments, design D12).
 	Links []Link

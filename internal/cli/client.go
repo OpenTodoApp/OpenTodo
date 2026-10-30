@@ -299,7 +299,9 @@ type task struct {
 	Deadline *string `json:"deadline"`
 	Evening  bool    `json:"evening"`
 	// DayPart is "morning", "afternoon" or null (day-parts); Evening stays the flag.
-	DayPart     *string         `json:"day_part"`
+	DayPart *string `json:"day_part"`
+	// Energy is "deep", "medium", "low", or "" or absent for none (task-energy).
+	Energy      string          `json:"energy,omitempty"`
 	BlockedBy   []string        `json:"blocked_by"`
 	Location    json.RawMessage `json:"location"`
 	Labels      []string        `json:"labels"`
@@ -512,14 +514,16 @@ func (c *client) meAuth(ctx context.Context) (*user, credential, error) {
 	return out.User, out.Auth, nil
 }
 
-// dayParts reports the account's Day parts preference (GET /api/v1/me
-// day_parts, OpenSpec change day-parts): quick-add parsing follows it.
-func (c *client) dayParts(ctx context.Context) (bool, error) {
+// quickPrefs reports the account's Day parts and Energy levels preferences
+// (GET /api/v1/me day_parts and energy_levels, OpenSpec changes day-parts and
+// task-energy): quick-add parsing follows them.
+func (c *client) quickPrefs(ctx context.Context) (dayParts, energy bool, err error) {
 	var out struct {
 		DayParts bool `json:"day_parts"`
+		Energy   bool `json:"energy_levels"`
 	}
-	err := c.getJSON(ctx, "/me", &out)
-	return out.DayParts, err
+	err = c.getJSON(ctx, "/me", &out)
+	return out.DayParts, out.Energy, err
 }
 
 // normalizeURL accepts "todo.example.com", "http://host:8080/" and friends.

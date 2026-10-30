@@ -6,7 +6,7 @@ People pick their next action by how much energy they have, not only by where th
 
 ## What Changes
 
-- A task gains an optional **energy**: Deep, Medium or Low (stored as `deep`, `medium`, `low`; empty means none). It is a new additive op field `task.energy`, written offline, converging by last-writer-wins, carried by export, the REST task shape, CSV import and export, the CLI and the agent tools and MCP.
+- A task gains an optional **energy**: Deep, Medium or Low (stored as `deep`, `medium`, `low`; empty means none). It is a new additive op field `task.energy`, written offline, converging by last-writer-wins, carried by export, the REST task shape, CSV import, the CLI and the agent tools and MCP.
 - **Settings › Account › How you work** gains an **Energy levels** switch (a synced `user_prefs.energy` preference, off by default). Only while it is on do the task page, the docked panel and the row menu offer **Energy**, and does quick add show the token's chip and suggestions. With it off, a value already set (by another device, an import, the API or a collaborator) is still shown where set, and filters still work, so nothing is hidden or lost.
 - Quick add recognises `~deep`, `~medium` and `~low` (and the prefixes `~d`, `~m`, `~l`), in every language, in the web and Go parsers with shared vectors.
 - The filter language gains `energy` (any energy set), `no energy` and `energy: deep|medium|low`; `energy` becomes a reserved word. The server's saved-view validation accepts them. A view `energy: low & unblocked & today` is the "end of the day" list the research describes.
