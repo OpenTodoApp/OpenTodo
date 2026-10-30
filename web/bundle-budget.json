@@ -1,5 +1,5 @@
 {
-  "$comment": "Gzip budget of the web app's first load, checked by scripts/bundle-budget.mjs after the web build (CI: Web build). Measured 2026-10-26: entry 296 KB, entry and its static imports 663 KB. Raise only on purpose, with the reason in the pull request.",
+  "$comment": "Gzip budget of the web app's first load, checked by scripts/bundle-budget.mjs after the web build (CI: Web build). Measured 2026-10-26: entry 296 KB, entry and its static imports 663 KB. Raised to 695 KB on 2026-10-30 for replan-the-day (the missed-block count and packer that Day, Week and Today need before the lazy preview). Raise only on purpose, with the reason in the pull request.",
   "entryGzipKB": 310,
-  "initialGzipKB": 690
+  "initialGzipKB": 695
 }
