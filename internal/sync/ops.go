@@ -834,6 +834,14 @@ var Schema = map[string]map[string]Field{
 		// "hidden"; empty or unknown reads as shown in the method modes
 		// companion and first and as hidden in lists.
 		"today_done": {Kind: kString, Default: `""`},
+		// Today's focus style (OpenSpec change bento-daily-check, design D4):
+		// "bento" makes the focus a Large, a Medium and a Small slot; empty or
+		// unknown reads as Three tasks and is kept.
+		"focus_style": {Kind: kString, Default: `""`},
+		// The Bento order (bento-daily-check D4, D6): "summit" lists Medium,
+		// Large, Small; empty or unknown reads as Frog (Large, Medium, Small)
+		// and is kept.
+		"bento_order": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
@@ -870,6 +878,11 @@ var Schema = map[string]map[string]Field{
 		// A list of another day reads as empty. Task ids only, never content.
 		"slots_date": {Kind: kString, Default: `""`},
 		"slots":      {Kind: kString, Default: `""`},
+		// The Bento slots of today's focus (OpenSpec change bento-daily-check,
+		// design D3): "L:<id>,M:<id>,S:<id>", any subset, written in the same
+		// batch as focus and focus_date; an entry counts only for an id in
+		// focus. Task ids and fixed letters only, never content.
+		"focus_slots": {Kind: kString, Default: `""`},
 	},
 }
 
