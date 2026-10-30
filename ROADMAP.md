@@ -43,7 +43,7 @@ What paid planners charge for, free.
 | [`replan-the-day`](openspec/changes/archive/2026-10-30-replan-the-day/) | **Shipped.** Re-plan the rest of the day: a preview, one confirm, one Undo |  |
 | [`calendar-frames`](openspec/changes/archive/2026-10-30-calendar-frames/) | **Shipped.** Recurring background frames on the calendar (Deep work 9–11) | [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555) |
 | [`calendar-slots`](openspec/changes/archive/2026-10-30-calendar-slots/) | **Shipped.** Several small tasks in one calendar block |  |
-| [`bento-daily-check`](openspec/changes/bento-daily-check/) | A Large, a Medium and a Small task in the Daily check |  |
+| [`bento-daily-check`](openspec/changes/archive/2026-10-30-bento-daily-check/) | **Shipped.** A Large, a Medium and a Small task in the Daily check | [#597](https://github.com/OpenTodoApp/OpenTodo/issues/597) |
 | [`task-energy`](openspec/changes/task-energy/) | An energy property (deep, medium, low) with a filter and quick-add token |  |
 | [`urgency-sort`](openspec/changes/urgency-sort/) | A deterministic urgency score sort, and sort by a custom field | [#404](https://github.com/OpenTodoApp/OpenTodo/issues/404) |
 | [`calendar-clarity`](openspec/changes/calendar-clarity/) | Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | [#554](https://github.com/OpenTodoApp/OpenTodo/issues/554), [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555), [#556](https://github.com/OpenTodoApp/OpenTodo/issues/556) |

@@ -239,6 +239,9 @@
   "A CSV of the period, made on this device": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "A Large, a Medium and a Small task": [
+    "web/src/app/review/DailyCheck.tsx"
+  ],
   "A Photon server; the public Photon by default.": [
     "web/src/app/locations/MapsSettings.tsx"
   ],
@@ -1879,6 +1882,10 @@
   "Before you start": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
+  "Bento": [
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/app/review/DailyCheck.tsx"
+  ],
   "Best: {n, plural, one {# day} other {# days}} in the last 53 weeks": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -2415,6 +2422,13 @@
   "Choose a project": [
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Choose a slot": [
+    "web/src/app/review/BentoSlots.tsx",
+    "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Choose a slot for {title}": [
+    "web/src/app/review/BentoSlots.tsx"
   ],
   "Choose a task": [
     "web/src/app/focus/FocusParts.tsx",
@@ -3353,6 +3367,10 @@
     "web/src/lib/method/vocabulary.json",
     "web/src/lib/shortcuts.ts"
   ],
+  "Daily focus": [
+    "web/src/app/review/DailyCheck.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Danger zone": [
     "web/src/app/LabelsView.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -3631,7 +3649,7 @@
     "web/src/app/Sections.tsx"
   ],
   "Delete slot": [
-    "web/src/app/calendar/SlotBlock.tsx"
+    "web/src/app/calendar/SlotDetails.tsx"
   ],
   "Delete table": [
     "web/src/app/editorCommands.ts"
@@ -4028,7 +4046,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Drag small tasks here, or press s on a task and Shift+Enter over the slot.": [
-    "web/src/app/calendar/SlotBlock.tsx"
+    "web/src/app/calendar/SlotDetails.tsx"
   ],
   "Drag tasks onto a day, or press s on one": [
     "web/src/app/MonthView.tsx",
@@ -4526,13 +4544,15 @@
     "web/src/app/EstimateField.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/review/BentoSlots.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts"
   ],
   "Estimate presets": [
-    "web/src/app/EstimateField.tsx"
+    "web/src/app/EstimateField.tsx",
+    "web/src/app/review/BentoSlots.tsx"
   ],
   "Estimate removed": [
     "web/src/lib/assistant.ts"
@@ -4635,6 +4655,12 @@
   ],
   "Every quarter": [
     "web/src/lib/reviewCadence.ts"
+  ],
+  "Every slot is full.": [
+    "web/src/app/review/BentoSlots.tsx"
+  ],
+  "Every slot is full. Take one out first.": [
+    "web/src/app/review/DailyCheck.tsx"
   ],
   "Every step is done. Finish the review to record it on all your devices.": [
     "web/src/app/review/ReviewView.tsx"
@@ -5239,6 +5265,13 @@
   "Friday": [
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts"
+  ],
+  "Frog does the Large task first; Summit warms up with the Medium one.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Frog: Large first": [
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/app/review/DailyCheck.tsx"
   ],
   "From": [
     "web/src/app/AuditPanel.tsx"
@@ -6659,6 +6692,12 @@
   "Languages for dates and times": [
     "web/src/app/QuickAddSettings.tsx"
   ],
+  "Large": [
+    "web/src/lib/bento.ts"
+  ],
+  "Large · 90 min or more": [
+    "web/src/lib/bento.ts"
+  ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -7233,6 +7272,12 @@
   ],
   "Maybe one day: parked without a date.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Medium": [
+    "web/src/lib/bento.ts"
+  ],
+  "Medium · 31 to 89 min": [
+    "web/src/lib/bento.ts"
   ],
   "Member": [
     "web/src/lib/roleNames.ts"
@@ -8516,6 +8561,9 @@
   "Not shared": [
     "web/src/app/ShareDirectory.tsx"
   ],
+  "Not sized": [
+    "web/src/app/review/DailyCheck.tsx"
+  ],
   "Not supported": [
     "web/src/app/NotificationsSettings.tsx"
   ],
@@ -9382,6 +9430,10 @@
   ],
   "Orange": [
     "web/src/lib/colourNames.ts"
+  ],
+  "Order": [
+    "web/src/app/review/DailyCheck.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Order by": [
     "web/src/app/views/DisplayPanel.tsx"
@@ -11545,6 +11597,9 @@
   "Select": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Select a task and press f to put it in a slot by its estimate. c completes, Enter opens.": [
+    "web/src/app/review/DailyCheck.tsx"
+  ],
   "Select a task and press f to put it in today’s focus, up to three. c completes, Enter opens.": [
     "web/src/app/review/DailyCheck.tsx"
   ],
@@ -11700,6 +11755,9 @@
   "Session started": [
     "web/src/lib/focus/timer.ts"
   ],
+  "Set": [
+    "web/src/app/review/BentoSlots.tsx"
+  ],
   "Set a date": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
@@ -11729,6 +11787,12 @@
     "web/src/app/SpeechServerPanel.tsx",
     "web/src/app/locations/MapsSettings.tsx",
     "web/src/app/rules/AutomationsSettings.tsx"
+  ],
+  "Set estimate": [
+    "web/src/app/review/BentoSlots.tsx"
+  ],
+  "Set estimate…": [
+    "web/src/app/review/BentoSlots.tsx"
   ],
   "Set it up in the assistant settings.": [
     "web/src/app/assistant/AskEntry.tsx"
@@ -12307,7 +12371,7 @@
     "web/src/app/review/MonthlyLook.tsx"
   ],
   "Slot": [
-    "web/src/app/calendar/SlotBlock.tsx",
+    "web/src/app/calendar/SlotDetails.tsx",
     "web/src/lib/slots.ts"
   ],
   "Slot changed": [
@@ -12320,7 +12384,7 @@
     "web/src/lib/slots.ts"
   ],
   "Slot name": [
-    "web/src/app/calendar/SlotBlock.tsx"
+    "web/src/app/calendar/SlotDetails.tsx"
   ],
   "Slot {title}, {times}, {count}": [
     "web/src/app/calendar/SlotBlock.tsx"
@@ -12328,8 +12392,14 @@
   "Slowed down": [
     "web/src/app/DataSettings.tsx"
   ],
+  "Small": [
+    "web/src/lib/bento.ts"
+  ],
   "Small changes without review": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Small · up to 30 min": [
+    "web/src/lib/bento.ts"
   ],
   "Snooze 10 min": [
     "web/public/push-sw.js",
@@ -12711,6 +12781,10 @@
   "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Summit: Medium first": [
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/app/review/DailyCheck.tsx"
+  ],
   "Sun": [
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -12826,7 +12900,7 @@
     "web/src/app/palette/registry.ts"
   ],
   "Take {title} out of the slot": [
-    "web/src/app/calendar/SlotBlock.tsx"
+    "web/src/app/calendar/SlotDetails.tsx"
   ],
   "Taken from OPENTODO_BASE_URL.": [
     "web/src/app/SsoPanel.tsx"
@@ -12928,6 +13002,7 @@
   ],
   "Tasks in {title}": [
     "web/src/app/calendar/SlotBlock.tsx",
+    "web/src/app/calendar/SlotDetails.tsx",
     "web/src/app/calendar/WeekAgenda.tsx"
   ],
   "Tasks must be in one shared project": [
@@ -14444,6 +14519,13 @@
   "This year": [
     "web/src/lib/stats.ts"
   ],
+  "Three tasks": [
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Three tasks of any size, or a Bento: one Large, one Medium and one Small.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Thu": [
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -15222,6 +15304,7 @@
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/SlotBlock.tsx",
+    "web/src/app/calendar/SlotDetails.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
@@ -15382,7 +15465,8 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Use minutes or hours, for example 20, 45m, 1h30 (up to one week).": [
-    "web/src/app/EstimateField.tsx"
+    "web/src/app/EstimateField.tsx",
+    "web/src/app/review/BentoSlots.tsx"
   ],
   "Use my location": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -16671,7 +16755,8 @@
     "web/src/app/LabelsView.tsx"
   ],
   "e.g. 45m, 1h30": [
-    "web/src/app/EstimateField.tsx"
+    "web/src/app/EstimateField.tsx",
+    "web/src/app/review/BentoSlots.tsx"
   ],
   "e.g. iPhone": [
     "web/src/app/CaldavPanel.tsx"
@@ -17896,8 +17981,8 @@
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "{done} of {total} done": [
-    "web/src/app/calendar/SlotBlock.tsx",
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/LoopHome.tsx",
+    "web/src/lib/slots.ts"
   ],
   "{done} of {total} subtasks completed": [
     "web/src/app/TaskRow.tsx"
@@ -17931,7 +18016,7 @@
     "web/src/app/LabelsView.tsx"
   ],
   "{estimate} in {length}": [
-    "web/src/app/calendar/SlotBlock.tsx"
+    "web/src/lib/slots.ts"
   ],
   "{field, select, title {This title} name {This name} other {This text}} is too long to encrypt (at most {max, number} bytes). Shorten it and try again.": [
     "web/src/lib/ops.ts"
@@ -18819,6 +18904,9 @@
   "{size} labels share a name. Merge “{name}” into “{name2}”?": [
     "web/src/app/LabelsView.tsx"
   ],
+  "{slot} holds {title}.": [
+    "web/src/lib/bento.ts"
+  ],
   "{slot} moved": [
     "web/src/lib/slots.ts"
   ],
@@ -18872,6 +18960,9 @@
   ],
   "{title} calendar": [
     "web/src/app/MonthView.tsx"
+  ],
+  "{title} is in the {slot} slot.": [
+    "web/src/app/review/DailyCheck.tsx"
   ],
   "{title} is in today’s focus.": [
     "web/src/app/review/DailyCheck.tsx"

@@ -70,6 +70,9 @@ export const SETTINGS_COPY = {
     },
     rows: {
       guide: { label: msg('Start guide'), description: msg('Add a first task, choose how you work, install the app.') },
+      // Today's focus style and Bento order (bento-daily-check D4): synced user_prefs, as in the Daily check's menu.
+      focus: { label: msg('Daily focus'), description: msg('Three tasks of any size, or a Bento: one Large, one Medium and one Small.') },
+      order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
     },
   },
   // Settings → Account → Invitations (member-add-consent).
