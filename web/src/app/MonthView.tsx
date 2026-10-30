@@ -241,7 +241,7 @@ export function MonthView({ date }: { date?: string }) {
     )
   }
 
-  const deadlineRow = (task: Task, d: string) => <DeadlineMarker key={`deadline:${task.id}`} task={task} date={d} today={today} variant="row" focusable={false} onOpen={(id) => setPanelTaskId(id)} />
+  const deadlineRow = (task: Task, d: string) => <DeadlineMarker key={`deadline:${task.id}`} task={task} date={d} today={today} variant="row" onOpen={(id) => setPanelTaskId(id)} />
   const focusedTasks = cells.get(focused) ?? []
   const focusedDeadlines = deadlines.get(focused) ?? []
   return (

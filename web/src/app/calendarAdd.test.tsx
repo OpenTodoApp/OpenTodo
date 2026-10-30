@@ -9,9 +9,10 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
+import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { CalendarView } from './CalendarView'
 import { PX_PER_MIN } from './calendar/grid'
+import { ADD_HOLD_MS } from './calendar/addHere'
 import { MonthView } from './MonthView'
 import { resetPanel } from './panel'
 import { openedTask, resetTaskPage } from './taskPage.testkit'
@@ -100,13 +101,13 @@ describe('Day and Week', () => {
     const press = (el: Element, minutes: number) => act(async () => {
       el.dispatchEvent(new PointerEvent('pointerdown', { ...at(minutes), pointerType: 'touch', pointerId: 7, button: 0 }))
     })
+    const t0 = performance.now()
     await press(r.container.querySelector(`[data-block="${id}"]`)!, 10 * 60 + 10)
-    await flush(600)
+    await waitFor(() => performance.now() - t0 > ADD_HOLD_MS + 100, 'longer than a long press')
     expect(menuItem('Add task here')).toBeUndefined()
     window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7 }))
 
     await press(column(r.container, '2026-11-18'), 15 * 60)
-    await flush(600)
     await waitFor(() => !!menuItem('Add task here'), 'the menu after a long press')
     await r.unmount()
   })

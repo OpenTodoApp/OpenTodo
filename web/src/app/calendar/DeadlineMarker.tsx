@@ -21,19 +21,17 @@ export function deadlineMark(task: Pick<Task, 'deadline'>, date: string): string
  * at the end of a Month cell or a Plan column (diamond last, faint). Named "Deadline:
  * title" (its visible title follows the hidden word, WCAG 2.5.3).
  */
-export function DeadlineMarker({ task, date, today, variant, focusable = true, onOpen }: {
+export function DeadlineMarker({ task, date, today, variant, onOpen }: {
   task: Task
   date: string
   today: string
   variant: 'chip' | 'row'
-  /** Off inside a grid with its own roving focus (Month, Plan columns). */
-  focusable?: boolean
   onOpen: (id: string) => void
 }) {
   const past = date < today
   const title = task.title || t('Untitled')
   return (
-    <button type="button" tabIndex={focusable ? 0 : -1} data-deadline-marker-for={task.id} data-deadline-date={date} data-past={past || undefined}
+    <button type="button" data-deadline-marker-for={task.id} data-deadline-date={date} data-past={past || undefined}
       // Never a drag or a grid gesture: the press, the double-click and the long press stay here.
       onPointerDown={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
