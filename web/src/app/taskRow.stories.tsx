@@ -139,6 +139,18 @@ export const Blocked: StoryObj = {
   ),
 }
 
+/** Waiting in sequence (project-flow-modes): dimmed in place with "After <step>"; a long step title truncates. */
+export const WaitingInSequence: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 's1', title: 'Book the van', due: { date: TODAY } })} />
+      <TaskRow {...base} waitsFor="Book the van" task={task({ id: 's2', title: 'Pack the kitchen', due: { date: TOMORROW } })} />
+      <TaskRow {...base} waitsFor="Renew the passport at the consulate before anything else" task={task({ id: 's3', title: 'Hand over the keys' })} />
+      <TaskCard {...base} waitsFor="Book the van" task={task({ id: 's4', title: 'Clean the flat' })} />
+    </List>
+  ),
+}
+
 /** A subtask tree: the chevron only on rows with children, indented children, a collapsed parent, and a breadcrumb outside the tree. */
 export const SubtaskTree: StoryObj = {
   render: () => (

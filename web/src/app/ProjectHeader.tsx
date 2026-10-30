@@ -34,6 +34,8 @@ import { act } from './actionError'
 import { setFavourite } from '../lib/favourites'
 import { useIsFavourite } from './useFavourites'
 import { pinItem } from './menus/pinItem'
+import { projectFlowItem } from './menus/flowMenu'
+import { useMethodMode, type MethodMode } from '../lib/method/mode'
 import { openTaskCount, useOpenTaskCount } from '../lib/liveTasks'
 import { useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
@@ -88,7 +90,7 @@ function ColourSwatches({ project }: { project: Project }) {
  * "Pin to sidebar" (sidebar-favourites) is offered to every role: it changes the
  * user's own preferences, never the project.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[] }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[]; mode?: MethodMode }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
   // A consequence naming the open tasks: from the count the caller holds, or, while
   // that has not loaded yet, read when the confirmation opens (never "0 open tasks").
@@ -106,6 +108,8 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
     { kind: 'action', id: 'fields', label: t('Fields…'), icon: 'list', shortcut: keysOf('project.fields'), onSelect: a.fields },
   ] }] : []
   if (!canEditProject(role)) return [...pin, ...copies, ...fields]
+  // "Flow…" (project-flow-modes D7): the menus pass the mode; the palette offers its own "Set project flow…".
+  const flow = o.mode ? projectFlowItem(project, { mode: o.mode, canEdit: true }) : null
   return [
     ...pin,
     ...copies,
@@ -134,6 +138,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         ),
         palette: iconPickerSpec(project.icon, (icon) => act(updateProject(project.id, { icon }))),
       } },
+      ...(flow ? [flow] : []),
       { kind: 'confirm', id: 'archive', label: subCount ? t('Archive with sub-projects') : t('Archive'), icon: 'archive', confirm: {
         title: t('Archive “{name}”?', { name: project.name }), tone: 'default', confirmLabel: t('Archive'),
         body: withCount((tasks) => subCount
@@ -227,6 +232,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
 
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const otherWorkspaces = useOtherWorkspaces()
+  const mode = useMethodMode()
   const panels: ActionGroup = { items: [
     ...(listLayout ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
@@ -236,7 +242,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
-    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces },
+    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode },
       { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
     panels,
   ]
