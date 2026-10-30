@@ -9,7 +9,9 @@ import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import { formatPlanLoad, planLoadTooltip, type PlanEntry, type PlanLoad, type Projection } from '../../lib/plan'
 import type { CalendarEvent, CalendarSubscription, Project, Task } from '../../lib/types'
-import { Icon, Tooltip } from '../../ui'
+import { Icon, Tooltip, type HueName } from '../../ui'
+import { hiddenByFilter } from './CapacityLine'
+import { DeadlineMarker } from './DeadlineMarker'
 import { EventChip, EventRow } from '../CalendarEvents'
 import { TaskRow } from '../TaskRow'
 
@@ -20,10 +22,14 @@ export interface PlanDayData {
   events: EventBlock[]
   allDay: CalendarEvent[]
   load: PlanLoad
+  /** Deadlines of tasks planned on other days (calendar-clarity D1), after the day's rows. */
+  deadlines?: Task[]
+  /** Tasks of the day the calendar's filter hides; the load still counts them. */
+  hidden?: number
 }
 
 /** A task in the Plan: the one row in its compact shape (rows-v2 D8), placed on the column's day. */
-export function PlanTaskRow({ task, date, time, today, selected, canEdit, project, large, onPointerDown, onSelect, onOpen }: {
+export function PlanTaskRow({ task, date, time, today, selected, canEdit, project, hue, large, onPointerDown, onSelect, onOpen }: {
   task: Task
   date: string
   time?: string
@@ -31,6 +37,8 @@ export function PlanTaskRow({ task, date, time, today, selected, canEdit, projec
   selected: boolean
   canEdit: boolean
   project?: Project
+  /** The row's hue under Colour by (calendar-clarity D3). */
+  hue?: HueName
   /** The phone agenda's 44 px rows. */
   large?: boolean
   onPointerDown?: (e: React.PointerEvent) => void
@@ -38,7 +46,7 @@ export function PlanTaskRow({ task, date, time, today, selected, canEdit, projec
   onOpen: () => void
 }) {
   return (
-    <TaskRow shape="compact" task={task} date={date} time={time} today={today} selected={selected} readOnly={!canEdit} project={project} large={large}
+    <TaskRow shape="compact" task={task} date={date} time={time} today={today} selected={selected} readOnly={!canEdit} project={project} hue={hue} large={large}
       onPointerDown={task.completed_at ? undefined : onPointerDown} onSelect={onSelect} onOpen={onOpen} attrs={{ 'data-plan-task': task.id }} />
   )
 }
@@ -57,7 +65,7 @@ export function ProjectedRow({ projection, large }: { projection: Projection; la
 }
 
 /** The day's capacity: three stacked segments against the day length, the figure and its tooltip carry the meaning. */
-export function CapacityBar({ load, dayLength, eventHue }: { load: PlanLoad; dayLength: number; eventHue?: string }) {
+export function CapacityBar({ load, dayLength, eventHue, hidden = 0 }: { load: PlanLoad; dayLength: number; eventHue?: string; hidden?: number }) {
   const pct = (m: number) => `${Math.min(100, (m / Math.max(1, dayLength)) * 100)}%`
   return (
     <div className="min-w-0" data-plan-capacity>
@@ -66,7 +74,7 @@ export function CapacityBar({ load, dayLength, eventHue }: { load: PlanLoad; day
         {load.events > 0 && <span className="h-full bg-hue-solid" data-hue={eventHue} style={{ width: pct(load.events) }} data-segment="events" />}
         {load.projected > 0 && <span className="h-full bg-accent-soft" style={{ width: pct(load.projected) }} data-segment="projected" />}
       </div>
-      <Tooltip label={planLoadTooltip(load, dayLength)}>
+      <Tooltip label={[planLoadTooltip(load, dayLength), hiddenByFilter(hidden)].filter(Boolean).join(' ')}>
         <span data-capacity data-over={load.over || undefined}
           className={`mt-0.5 block whitespace-nowrap text-hint tabular-nums ${load.over ? 'font-semibold text-danger' : 'text-muted'}`}>
           {formatPlanLoad(load, dayLength)}
@@ -78,13 +86,15 @@ export function CapacityBar({ load, dayLength, eventHue }: { load: PlanLoad; day
 }
 
 /** The rows of one day: all-day chips, timed events, then tasks and projections in the column's order. */
-export function PlanDayRows({ day, today, selectedId, large, canEdit, projectMap, subMap, zone, onPointerDown, onSelect, onOpen }: {
+export function PlanDayRows({ day, today, selectedId, large, canEdit, projectMap, hueOf, subMap, zone, onPointerDown, onSelect, onOpen }: {
   day: PlanDayData
   today: string
   selectedId: string | null
   large?: boolean
   canEdit: (task: Task) => boolean
   projectMap: Map<string, Project>
+  /** The hue of a task under Colour by (calendar-clarity D3); the project's when absent. */
+  hueOf?: (task: Task) => HueName
   subMap: Map<string, CalendarSubscription>
   zone?: string
   onPointerDown: (task: Task, e: React.PointerEvent) => void
@@ -99,9 +109,14 @@ export function PlanDayRows({ day, today, selectedId, large, canEdit, projectMap
         ? <ProjectedRow key={entry.projection.id} projection={entry.projection} large={large} />
         : (
           <PlanTaskRow key={entry.task.id} task={entry.task} date={day.date} time={entry.time} today={today} large={large}
-            selected={selectedId === entry.task.id} canEdit={canEdit(entry.task)} project={entry.task.project_id ? projectMap.get(entry.task.project_id) : undefined}
+            selected={selectedId === entry.task.id} canEdit={canEdit(entry.task)} project={entry.task.project_id ? projectMap.get(entry.task.project_id) : undefined} hue={hueOf?.(entry.task)}
             onPointerDown={(e) => onPointerDown(entry.task, e)} onSelect={() => onSelect(entry.task.id, day.date)} onOpen={() => onOpen(entry.task.id)} />
         ))}
+      {day.deadlines?.map((task) => (
+        <div key={`deadline:${task.id}`} className={large ? 'flex min-h-11 items-center' : undefined}>
+          <DeadlineMarker task={task} date={day.date} today={today} variant="row" onOpen={onOpen} />
+        </div>
+      ))}
     </div>
   )
 }

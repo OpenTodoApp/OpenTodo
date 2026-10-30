@@ -35,6 +35,8 @@ import { FilterBuilder } from './filter/FilterBuilder'
 import { useBuilderOpen } from './filter/builderToggle'
 import { ViewsCrumb } from './views/ViewsCrumb'
 import { FilterPanel, ViewToolbar } from './views/ViewToolbar'
+import { BOARD_COLOR_BY_KEY } from '../lib/colorBy'
+import { useColorBy } from './calendar/colorByControls'
 import { ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
@@ -76,6 +78,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const opts = viewOptions(view)
   const shown = displayOptions(view)
   const account = useAccountRowLayout()
+  // Colour by on boards (calendar-clarity): the device's one choice for every board.
+  const boardColor = useColorBy(BOARD_COLOR_BY_KEY)
   const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account) }
   const result = useMemo(() => runView(view, ctx), [view, ctx])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
@@ -180,6 +184,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
           <ViewToolbar query={view.query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={display}
             onDisplay={(patch) => act(updateView(view.id, displayPatch(patch)))}
+            colorBy={display.layout === 'board' ? { mode: boardColor.mode, onChange: boardColor.setMode } : undefined}
             onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
           {filterOpen && (
             <FilterPanel count={draftCount} onClose={() => setFilterOpen(false)} inputRef={inputRef}
@@ -225,6 +230,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 timeColumn={timeColumn}
                 hidden={display.hidden}
                 layout={display.rowLayout}
+                edge={shape === 'card' && boardColor.mode !== 'project' ? boardColor.hueOf(tk) : undefined}
                 onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                 selected={key === selected}
                 progress={progress.get(tk.id)}

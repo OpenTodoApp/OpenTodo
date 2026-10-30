@@ -23,7 +23,7 @@
 // The row is its own size container (`@container/row`), so every host gets the layout
 // its width allows; the rules are in index.css, "The property column".
 import { isSample } from '../lib/sampleTasks'
-import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, type IconName, type Tone } from '../ui'
+import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, type HueName, type IconName, type Tone } from '../ui'
 import { slotName, useSlotOf } from '../lib/slots'
 import { lazy, memo, type ReactNode, Suspense, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
@@ -451,6 +451,8 @@ export interface TaskRowProps {
   onExpand?: () => void
   /** One line or detailed (row-layouts); absent follows the account's choice. A card has its own shape. */
   layout?: RowLayout
+  /** A board card's 3 px leading edge in this hue (calendar-clarity "Colour by on boards"); none when absent. */
+  edge?: HueName
 }
 
 const NO_HIDDEN: readonly RowProperty[] = []
@@ -505,6 +507,8 @@ export interface CompactRowProps {
   onOpen: () => void
   /** Hooks of the screen that hosts the row (`data-plan-task`). */
   attrs?: Record<`data-${string}`, string>
+  /** The row's hue under the calendar's Colour by (calendar-clarity D3); the project's when absent. */
+  hue?: HueName
 }
 
 /** The row's own controls: a click on one of them is theirs, not the row's (row-and-cursor D1). */
@@ -512,11 +516,11 @@ const ROW_CONTROL = 'button, a, input, label, select, textarea, [role="button"],
 
 const TONE_TEXT: Partial<Record<Tone, string>> ={ danger: 'text-danger', accent: 'text-accent', default: 'text-default' }
 
-function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs }: CompactRowProps) {
+function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs, hue }: CompactRowProps) {
   const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
   const canDrag = !readOnly && onPointerDown !== undefined
   return (
-    <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hueFor(project?.color ?? null)} aria-pressed={selected}
+    <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hue ?? hueFor(project?.color ?? null)} aria-pressed={selected}
       onPointerDown={canDrag ? onPointerDown : undefined}
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
@@ -534,6 +538,8 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
         </span>
       )}
       {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
+      {/* The deadline diamond when the row is on its deadline day (calendar-clarity D1). */}
+      {task.deadline === date && !task.completed_at && <span className="inline-flex shrink-0 items-center"><span aria-hidden data-deadline-diamond className={`inline-block size-2 rotate-45 rounded-[1px] ${date < today ? 'bg-faint' : 'bg-warning'}`} /><span className="sr-only">{`, ${t('deadline today')}`}</span></span>}
       {readOnly && <span className="sr-only">{`, ${t('read-only')}`}</span>}
     </button>
   )
@@ -598,7 +604,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -747,8 +753,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       onContextMenu={onContextMenu}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
-      data-row-layout={detailed ? 'detailed' : undefined}
-      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
+      data-row-layout={detailed ? 'detailed' : undefined} {...(card && edge ? { 'data-hue': edge, 'data-card-edge': '' } : {})}
+      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
