@@ -11,6 +11,7 @@ import { effectiveSection } from '../sections'
 import { canEditTasks, roleOf } from '../sharing'
 import type { Label, Membership, Project, Section, Task } from '../types'
 import { isDeferred, isSomeday } from '../views'
+import { inMaintenance } from '../reviewCadence'
 
 /** A project with no completion for this long, and open tasks older than it, is stalled. */
 export const STALLED_DAYS = 21
@@ -88,6 +89,11 @@ export class MethodRules {
     return projectFlowOf(this.working.find((p) => p.id === projectId)) === 'area'
   }
 
+  /** In maintenance (project-review-cadence, method-views "Maintenance projects are not flagged"): never stalled, never without a next action. */
+  inMaintenance(projectId: string): boolean {
+    return inMaintenance(this.working.find((p) => p.id === projectId))
+  }
+
   /** The project's open top-level tasks in list order: no section first, then sections in order, manual order within. */
   inListOrder(projectId: string): Task[] {
     const sections = (this.input.sections ?? []).filter((s) => s.project_id === projectId && !s.deleted_at).sort(byPosition)
@@ -111,9 +117,9 @@ export class MethodRules {
     return (this.openTop.get(projectId) ?? []).filter((t) => isDeferred(t, this.input.today))
   }
 
-  /** Without a next action: not an area, and nothing actionable, nothing waiting and nothing deferred. */
+  /** Without a next action: not an area, not in maintenance, and nothing actionable, nothing waiting and nothing deferred. */
   needsNextAction(projectId: string): boolean {
-    if (this.isArea(projectId)) return false
+    if (this.isArea(projectId) || this.inMaintenance(projectId)) return false
     const list = this.openTop.get(projectId) ?? []
     return !list.some((t) => this.actionable(t) || this.waiting(t) || isDeferred(t, this.input.today))
   }
@@ -123,6 +129,7 @@ export class MethodRules {
    * than STALLED_DAYS ago, and no task of the project completed since then.
    */
   stalled(projectId: string, now: number): boolean {
+    if (this.inMaintenance(projectId)) return false
     const list = this.openTop.get(projectId) ?? []
     if (!list.length) return false
     const since = now - STALLED_DAYS * DAY_MS

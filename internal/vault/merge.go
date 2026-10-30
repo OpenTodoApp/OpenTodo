@@ -260,6 +260,8 @@ func (e *engine) projectEdits(m *mergeRun, p string, d *Doc) {
 		}
 		b()["flow_mode"] = v
 	}
+	// The status (project-review-cadence) merges the same way.
+	e.statusEdit(p, d, baseRow.Str("status"), appRow.Str("status"), b)
 }
 
 // projectCycle reports whether parent is the project or one of its descendants.

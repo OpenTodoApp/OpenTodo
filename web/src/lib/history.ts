@@ -56,7 +56,7 @@ export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_l
 export const RESTORABLE: Record<'task' | 'project', readonly string[]> = {
   task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
   // A project's note (project-notes): its Markdown projection; the device folds it into notes_doc.
-  project: ['name', 'color', 'archived', 'parent_id', 'deleted_at', 'description'],
+  project: ['name', 'color', 'archived', 'parent_id', 'deleted_at', 'description', 'status'],
 }
 
 export function canRestoreField(entity: 'task' | 'project', field: string): boolean {

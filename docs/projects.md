@@ -24,8 +24,8 @@ The **Project** menu at the top right of a project lets you:
 - **Move to…** another project, or back to the top level; <kbd>m</kbd> opens the menu straight at this step.
 - **Rename** it,
 - pick an **Icon…**: type to search, or **No icon** for the dot,
-- choose a **Flow…** ([flows](project-flows.md)),
-- **Archive…** it, which hides it and its sub-projects from the sidebar while keeping every task,
+- choose a **Flow…** ([flows](project-flows.md)), **Review every…** or **Put in maintenance** ([intervals](review-intervals.md)),
+- **Archive…** it: it and its sub-projects leave the sidebar, every task kept,
 - **Delete project…**, which moves it to the Trash.
 
 Archive and delete ask first.
@@ -48,9 +48,9 @@ Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more
 
 ## Duplicate a project or task
 
-**Duplicate…** in a project's menu makes a copy with the same sections, sub-projects and open tasks. Choose a parent and, optionally, a **Start on** day to shift every due date so the earliest lands on it. Completed tasks, comments, reminders and assignees aren't copied. You can duplicate any project you can see; the copy is yours alone.
+**Duplicate…** in a project's menu makes a copy with the same sections, sub-projects and open tasks. Choose a parent and, optionally, a **Start on** day to shift every due date so the earliest lands on it. Completed tasks, comments, reminders and assignees aren't copied. You can duplicate any project you see; the copy is yours.
 
-To duplicate one task with its open subtasks, select it and press <kbd>Shift</kbd>+<kbd>D</kbd>, or choose **Duplicate** in the task panel's **⋯** menu. The copy appears right below the original and is selected. A copy works offline and reaches your other devices with the next sync. To reuse a project later, save it as a [template](import-export.md#templates).
+To duplicate one task with its open subtasks, select it and press <kbd>Shift</kbd>+<kbd>D</kbd>, or choose **Duplicate** in the task panel's **⋯** menu. The copy appears right below the original and is selected. A copy works offline and syncs to your other devices. To reuse a project later, save it as a [template](import-export.md#templates).
 
 ## When a project is done
 

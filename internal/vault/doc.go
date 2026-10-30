@@ -20,7 +20,12 @@ type Doc struct {
 	// UnknownFlow is an opentodo-flow value the vault does not know: the line
 	// stays in Front as written and nothing is synced from it.
 	UnknownFlow string
-	Blocks      []*Block
+	// Status is "maintenance" while the project is in maintenance, else ""
+	// (project-review-cadence); UnknownStatus is an opentodo-status value the
+	// vault does not know, kept in Front as written.
+	Status        string
+	UnknownStatus string
+	Blocks        []*Block
 }
 
 // Block is the part of a file before the first section heading (Section "")
@@ -101,6 +106,11 @@ func ParseDoc(text string, isSection func(name string) bool) *Doc {
 						d.Flow = fileFlow(unquote(m[2]))
 					case m != nil && m[1] == keyFlow:
 						d.UnknownFlow = unquote(m[2])
+						d.Front = append(d.Front, l)
+					case m != nil && m[1] == keyStatus && fileStatus(unquote(m[2])) != "?":
+						d.Status = fileStatus(unquote(m[2]))
+					case m != nil && m[1] == keyStatus:
+						d.UnknownStatus = unquote(m[2])
 						d.Front = append(d.Front, l)
 					default:
 						d.Front = append(d.Front, l)
@@ -307,6 +317,9 @@ func (d *Doc) Print() string {
 		}
 		if d.Flow != "" {
 			b.WriteString(keyFlow + ": " + d.Flow + "\n")
+		}
+		if d.Status != "" {
+			b.WriteString(keyStatus + ": " + d.Status + "\n")
 		}
 		for _, l := range d.Front {
 			b.WriteString(l + "\n")

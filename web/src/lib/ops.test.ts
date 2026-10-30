@@ -17,6 +17,7 @@ import {
 } from './comments'
 import { visibleTasks } from './trash'
 import { projectFlowOf, sectionFlowOf } from './flow'
+import { projectStatusOf, reviewEveryOf } from './reviewCadence'
 import { publishEncryption } from './e2ee'
 import { MAX_PLAINTEXT_BYTES } from './crypto'
 import { createSection, deleteSection, moveTaskToSection, projectSections, renameSection, reorderSection } from './sections'
@@ -117,6 +118,25 @@ describe('applyOps', () => {
     expect(projectFlowOf(p)).toBe('parallel')
     expect((await db.projects.get('q'))?.flow_mode).toBe('')
     expect(sectionFlowOf(await db.sections.get('s'))).toBe('')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('keeps a status and a review interval it does not know and reads them as active and weekly (project-review-cadence)', async () => {
+    const db = useDatabase(`cadence-${Date.now()}`)
+    await applyOps([
+      { id: 'c1', entity: 'project', entityId: 'p', field: 'name', value: 'Garden', ts: 1, device: 'A' },
+      { id: 'c2', entity: 'project', entityId: 'p', field: 'status', value: 'on-hold', ts: 1, device: 'A' },
+      { id: 'c3', entity: 'project_prefs', entityId: 'p', field: 'review_every', value: 'days:10', ts: 1, device: 'A' },
+      { id: 'c4', entity: 'project', entityId: 'q', field: 'name', value: 'Car', ts: 1, device: 'A' },
+      { id: 'c5', entity: 'project_prefs', entityId: 'q', field: 'reviewed_at', value: 5, ts: 1, device: 'A' },
+    ])
+    const p = await db.projects.get('p')
+    expect(p?.status).toBe('on-hold')
+    expect(projectStatusOf(p)).toBe('active')
+    expect((await db.prefs.get('p'))?.review_every).toBe('days:10')
+    expect(reviewEveryOf((await db.prefs.get('p'))?.review_every)).toBe('week')
+    expect((await db.projects.get('q'))?.status).toBe('')
+    expect((await db.prefs.get('q'))?.review_every).toBe('')
     expect(await db.outbox.count()).toBe(0)
   })
 

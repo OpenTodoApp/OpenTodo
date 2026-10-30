@@ -12,7 +12,7 @@ import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
-import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading } from '../../lib/localData'
+import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
 import { isFavourite } from '../../lib/favourites'
 import { earlierIds } from '../../lib/dayLists'
 import { usePickScores } from '../../lib/pickRank'
@@ -87,6 +87,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   }, [typed])
 
   const agentExclusions = useAgentExclusions()
+  const reviewEvery = useReviewEvery()
   const ctx = useMemo<PaletteContext>(() => {
     const projectId = route.view === 'project' ? route.id : null
     const project = projectId ? projects.find((p) => p.id === projectId) : undefined
@@ -104,13 +105,14 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
         openTasks: tasks.filter((task) => task.project_id === project.id && !task.completed_at).length,
         pinned: isFavourite(prefs, 'project', project.id),
         keptAway: agentExclusions.has(project.id),
+        reviewEvery: reviewEvery.get(project.id),
       } : undefined,
       view: view ? { row: view, peers: sorted, isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
       earlier: earlierIds(tasks, projects, today),
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, workspaceState])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   // Tasks and projects of every workspace: picking one elsewhere switches the device (workspaces).

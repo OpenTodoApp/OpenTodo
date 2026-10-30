@@ -68,11 +68,13 @@
       "notes_doc",
       "parent_id",
       "position",
+      "status",
       "workspace_id"
     ],
     "project_prefs": [
       "feed_seen_at",
       "group_by",
+      "review_every",
       "reviewed_at",
       "row_layout",
       "sort_by",
