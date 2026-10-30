@@ -25,6 +25,7 @@ import { showBulkToast, showUndoToast } from './toastStore'
 import { startFocusOn } from '../focus/startFocus'
 import { t } from '../../lib/i18n'
 import { withListTransition } from '../motion'
+import { slotAction, slotLabel, useSlotState, type SlotState } from '../task-list/slotActions'
 
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
@@ -39,7 +40,9 @@ const itemKey = (i: PickerItem) => i.key
 const itemLabel = (i: PickerItem) => i.label
 const itemPath = (i: PickerItem) => i.path
 
-interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: Section[]; memberships: Map<string, Membership>; runningTask?: string | null; dayParts?: boolean }
+interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: Section[]; memberships: Map<string, Membership>; runningTask?: string | null; dayParts?: boolean
+  /** Today with a limit (today-closed-list D3): the one task's slot command. */
+  slot?: SlotState }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -60,6 +63,16 @@ export function trackingItem(task: Task | undefined, runningTask: string | null 
 export function focusItem(task: Task | undefined, memberships: Map<string, Membership>): ActionGroup['items'] {
   if (!task || task.deleted_at || task.completed_at || roleOf(task.project_id, memberships) === 'viewer') return []
   return [{ kind: 'action', id: 'focus', label: t('Start focus'), icon: 'clock', onSelect: () => act(startFocusOn(task.id)) }]
+}
+
+/**
+ * Take a slot / Give back the slot (today-closed-list D3): on Today with a limit, for a
+ * waiting task or one let in. The list is personal, so a viewer of a shared project may too.
+ */
+export function slotItem(task: Task | undefined, slot: SlotState | undefined): ActionItem[] {
+  const run = task && slot ? slotAction(task.id, slot) : null
+  if (!task || !slot || !run) return []
+  return [{ kind: 'action', id: 'slot', label: slotLabel(slot), icon: slot === 'waiting' ? 'arrow-up' : 'undo-2', onSelect: run }]
 }
 
 /**
@@ -95,7 +108,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const swipeTwins = n === 1 && a.schedule
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
-    ...(n === 1 ? [{ items: [...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
+    ...(n === 1 ? [{ items: [...slotItem(d.tasks[0], d.slot), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
     // Beside a row its own Priority and Schedule buttons already offer these.
     // Priority and Date are one row each (a submenu), so the menu fits on the screen;
@@ -162,7 +175,8 @@ function useBulkData(ids: readonly string[]): Data {
   const memberships = useMembershipMap()
   const runningTask = useRunningEntry()?.task_id ?? null
   const dayParts = dayPartsOn(useUserPrefsRow())
-  return { tasks, labels, projects, sections, memberships, runningTask, dayParts }
+  const slot = useSlotState(ids.length === 1 ? ids[0] : '')
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, slot }
 }
 
 /**

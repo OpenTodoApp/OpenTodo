@@ -59,6 +59,9 @@ export const locationFocus = channel()
 /** `Shift+N` on a selected row: the detail panel opens its start date field (someday-and-evening). */
 export const deferFocus = channel()
 
+/** "Log a win" (today-closed-list D6): the command bar opens in Add with "Log as done" on. */
+export const logWinRequest = channel()
+
 /** `b` on a selected row: the detail panel opens its Blocked by picker (task-dependencies). */
 export const blockedByFocus = channel()
 

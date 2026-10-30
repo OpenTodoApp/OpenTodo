@@ -13,6 +13,7 @@ import { keysOf } from '../../lib/shortcuts'
 import type { Priority, Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon, IconButton, Menu, MenuItem } from '../../ui'
+import { slotAction, slotLabel, useSlotState } from './slotActions'
 
 const RowSchedule = lazy(() => import('./RowSchedule'))
 
@@ -36,6 +37,9 @@ export function RowActionCluster({ task, onMore, force = false, editable = true,
 }) {
   const [scheduling, setScheduling] = useState(false)
   const schedule = useRef<HTMLButtonElement>(null)
+  // Take a slot / Give back the slot on Today with a limit (today-closed-list D3); personal, so viewers too.
+  const slot = useSlotState(task.id)
+  const slotRun = slotAction(task.id, slot)
   // Esc on an action goes back to the row's open control.
   const onKeyDown = (e: KeyboardEvent<HTMLSpanElement>) => {
     if (e.key !== 'Escape' || scheduling) return
@@ -55,6 +59,9 @@ export function RowActionCluster({ task, onMore, force = false, editable = true,
           shortcut={keysOf(details.expanded ? 'list.collapse' : 'list.expand')} aria-expanded={details.expanded}
           aria-controls={details.expanded ? details.controls : undefined} data-row-action="details" onClick={details.onToggle}
           className={details.expanded ? '[&_svg]:rotate-180' : undefined} />
+      )}
+      {slot && slotRun && (
+        <IconButton icon={slot === 'waiting' ? 'arrow-up' : 'undo-2'} size="sm" label={slotLabel(slot)} data-row-action="slot" onClick={slotRun} />
       )}
       {editable && <>
       <IconButton ref={schedule} icon="calendar-days" size="sm" label={t('Schedule')} aria-haspopup="dialog" aria-expanded={scheduling}

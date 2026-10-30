@@ -83,7 +83,7 @@ When the Done today preference reads shown, Today SHALL end with a folded **Done
 - **THEN** no Done today group is shown
 
 ### Requirement: Log a win
-The user SHALL be able to add a task that is already done: from the add row at the end of the Done today group, from the command palette ("Log a win"), and from quick add with its "Log as done" switch on. The task SHALL be created in one batch of operations with its completion time set to now and completed by the user, through the same path as every write, offline included, and SHALL then be listed in Done today and Completed and counted in statistics and Close the day like any completion. The quick-add grammar SHALL apply, except that recurrence and reminder phrases SHALL be refused with a chip saying a win does not repeat or remind; the default project SHALL be the Inbox or the current project, and projects the user can only view SHALL not be offered. Automation rules and webhooks SHALL see an ordinary creation and completion. On an encrypted account the title SHALL be encrypted like any title.
+The user SHALL be able to add a task that is already done: from the "Log a win" button on the Done today heading, from the command palette ("Log a win"), and from quick add with its "Log as done" switch on. The task SHALL be created in one batch of operations with its completion time set to now and completed by the user, through the same path as every write, offline included, and SHALL then be listed in Done today and Completed and counted in statistics and Close the day like any completion. The quick-add grammar SHALL apply, except that recurrence and reminder phrases SHALL be refused with a chip saying a win does not repeat or remind; the default project SHALL be the Inbox or the current project, and projects the user can only view SHALL not be offered. Automation rules and webhooks SHALL see an ordinary creation and completion. On an encrypted account the title SHALL be encrypted like any title.
 
 #### Scenario: Unplanned win
 - **WHEN** the user activates "Log a win" and enters "Helped Ana with the release #Work"
@@ -98,14 +98,14 @@ The user SHALL be able to add a task that is already done: from the add row at t
 - **THEN** it is shown in Done today at once and reaches the other devices on the next sync as a completed task
 
 ### Requirement: Where the closed list is set
-Settings → Preferences SHALL offer a Today card with the Today limit (Off, 3, 5, 7, 10, Custom from 1 to 20) and the Done today switch, for every mode. Today's overflow menu SHALL offer "Limit Today…" and "Show done today" only in the modes "Lists with method hints" and "Full Open Loops method", or while a limit is set. The palette SHALL list "Limit Today…", "Take a slot", "Give back the slot" and "Log a win" without default keys. Viewers of a shared project SHALL be able to take a slot for its tasks, since the list is personal.
+Settings → General → Start view and briefing SHALL offer a Today limit card with the limit (Off, 3, 5, 7, 10, Custom from 1 to 20) and the Done today switch, for every mode. Today's overflow menu SHALL offer "Limit Today…" and "Show done today" only in the modes "Lists with method hints" and "Full Open Loops method", or while a limit is set. The palette SHALL list "Limit Today…", "Take a slot", "Give back the slot" and "Log a win" without default keys. Viewers of a shared project SHALL be able to take a slot for its tasks, since the list is personal.
 
 #### Scenario: Simple lists see nothing new
 - **WHEN** a user in "Simple lists" opens Today's overflow menu
 - **THEN** it has no Today limit item, and Today looks as before
 
 #### Scenario: Custom limit
-- **WHEN** the user picks Custom and types 12 in Settings → Preferences → Today
+- **WHEN** the user picks Custom and types 12 in Settings → General → Start view and briefing → Today limit
 - **THEN** the limit is 12; typing 25 is refused with a message and the stored value is unchanged
 
 #### Scenario: Phone

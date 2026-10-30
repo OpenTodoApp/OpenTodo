@@ -275,6 +275,9 @@
   "A file with “{name}”, its sections and open tasks, to start new projects from later or share.": [
     "web/src/app/TemplateDialogs.tsx"
   ],
+  "A folded list of what you completed today, at the end of Today.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "A forgotten passphrase cannot be recovered.": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -493,6 +496,9 @@
   ],
   "A view needs a name": [
     "web/src/lib/views.ts"
+  ],
+  "A win does not repeat or remind; the words stay in the title.": [
+    "web/src/app/QuickAdd.tsx"
   ],
   "A workspace has its own projects, labels and views, and its own people. Projects stay private until you share them.": [
     "web/src/app/NewWorkspaceDialog.tsx"
@@ -2384,6 +2390,9 @@
   "Choose a type.": [
     "web/src/lib/fields.ts"
   ],
+  "Choose a whole number from 1 to 20.": [
+    "web/src/app/ClosedListSettings.tsx"
+  ],
   "Choose a workspace": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -3248,6 +3257,9 @@
   "Current password": [
     "web/src/app/PasswordSection.tsx"
   ],
+  "Custom": [
+    "web/src/app/ClosedListSettings.tsx"
+  ],
   "Custom before the deadline…": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -3259,6 +3271,9 @@
   ],
   "Custom fields": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "Custom limit": [
+    "web/src/app/ClosedListSettings.tsx"
   ],
   "Custom query": [
     "web/src/app/views/FilterChips.tsx"
@@ -3903,7 +3918,8 @@
     "web/src/app/method/LoopHome.tsx"
   ],
   "Done today": [
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/lib/listGroups.ts"
   ],
   "Done today, {instant}": [
     "web/src/app/review/DailyCheck.tsx"
@@ -5241,6 +5257,12 @@
   "GitHub’s public service.": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Give back the slot": [
+    "web/src/app/task-list/slotActions.ts"
+  ],
+  "Give back the slot of {title}": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Give every item one home: a project, a date, Waiting or Someday.": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -5622,6 +5644,9 @@
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
+  "Hide done today": [
+    "web/src/app/task-list/ClosedListActions.tsx"
+  ],
   "Hide other calendars on this device": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
@@ -5721,6 +5746,9 @@
     "web/src/app/settingsIndex.ts"
   ],
   "How long the audit log keeps events, and whether it records addresses.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "How many tasks Today holds, and what you got done. On all your devices.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "How much of the Open Loops method the app shows. Synced; never changes a task.": [
@@ -6718,6 +6746,10 @@
   "Light or dark, colour theme, density, the sidebar and how tasks open": [
     "web/src/app/settingsSections.ts"
   ],
+  "Limit Today…": [
+    "web/src/app/palette/registry.ts",
+    "web/src/app/task-list/ClosedListActions.tsx"
+  ],
   "Limits": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -6927,6 +6959,17 @@
   ],
   "Locked on this device": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Log a win": [
+    "web/src/app/palette/BarParts.tsx",
+    "web/src/app/palette/registry.ts",
+    "web/src/app/task-list/ListGroups.tsx"
+  ],
+  "Log as done": [
+    "web/src/app/palette/BarParts.tsx"
+  ],
+  "Logged as done": [
+    "web/src/app/palette/addFromBar.ts"
   ],
   "Logged as time on this task": [
     "web/src/app/focus/FocusParts.tsx"
@@ -8599,6 +8642,7 @@
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncPanel.tsx",
+    "web/src/app/ClosedListSettings.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
@@ -11733,6 +11777,11 @@
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
+  "Show done today": [
+    "web/src/app/ClosedListSettings.tsx",
+    "web/src/app/task-list/ClosedListActions.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Show in Assigned to me": [
     "web/src/app/task-detail/Facets.tsx"
   ],
@@ -12582,6 +12631,12 @@
   "Take a break now, or end the break": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Take a slot": [
+    "web/src/app/task-list/slotActions.ts"
+  ],
+  "Take a slot for {title}": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Taken from OPENTODO_BASE_URL.": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -13231,6 +13286,9 @@
   ],
   "The request was rejected because it came from another site.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "The rest wait for a slot and come in, first come, first served, when you finish one.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The restore of <span>{archive}</span> on {instant} failed, and the server kept its previous data. {error}": [
     "web/src/app/RestoreSection.tsx"
@@ -14363,8 +14421,20 @@
     "web/src/lib/shortcuts.ts",
     "web/src/lib/views.ts"
   ],
+  "Today holds": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Today holds {n}. The next one comes in when you finish one.": [
+    "web/src/lib/listGroups.ts"
+  ],
   "Today is done: nothing to carry over.": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "Today is full: complete a task or give one back": [
+    "web/src/app/task-list/slotActions.ts"
+  ],
+  "Today limit": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Today’s focus": [
     "web/src/app/method/LoopHome.tsx",
@@ -15258,6 +15328,9 @@
   "Waiting for": [
     "web/src/lib/activity.ts"
   ],
+  "Waiting for a slot": [
+    "web/src/lib/listGroups.ts"
+  ],
   "Waiting for an answer": [
     "web/src/app/PendingInvitations.tsx"
   ],
@@ -15383,6 +15456,9 @@
   ],
   "What changed on the server and who did it": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "What did you get done?": [
+    "web/src/app/palette/BarParts.tsx"
   ],
   "What else is on your mind? Read each prompt and catch whatever comes up. Process it in the Inbox step afterwards.": [
     "web/src/app/review/ReviewView.tsx"
@@ -17803,6 +17879,7 @@
     "web/src/lib/facets.ts"
   ],
   "{n, plural, one {# done} other {# done}}": [
+    "web/src/app/task-list/useClosedList.ts",
     "web/src/lib/listGroups.ts"
   ],
   "{n, plural, one {# earlier version deleted.} other {# earlier versions deleted.}}": [
@@ -18022,6 +18099,7 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "{n, plural, one {# task} other {# tasks}}": [
+    "web/src/app/ClosedListSettings.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/TemplateDialogs.tsx",
@@ -18559,6 +18637,9 @@
   ],
   "{unit, select, day {{n, plural, one {# day} other {# days}}} hour {{n, plural, one {# hour} other {# hours}}} other {{n, plural, one {# minute} other {# minutes}}}} {when, select, before {before} other {after}}": [
     "web/src/lib/reminderTime.ts"
+  ],
+  "{used} of {limit}": [
+    "web/src/app/task-list/useClosedList.ts"
   ],
   "{used} of {total} used": [
     "web/src/app/DataSettings.tsx"

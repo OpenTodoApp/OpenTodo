@@ -102,7 +102,7 @@ func init() {
 	})
 	register(tool{
 		def: readDef("today_summary", "Today summary",
-			"One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project.",
+			"One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting.",
 			object(nil, map[string]any{
 				"timezone": timezoneProp,
 			})),
@@ -674,6 +674,7 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 	}
 	today := r.today(loc)
 	var overdueItems, todayItems []keyed[taskOut]
+	var todayRows []opsync.Entity
 	inbox := 0
 	perProject := map[string]int{}
 	inInbox := snap.inboxRule()
@@ -697,9 +698,20 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 		case date < today:
 			item.v = snap.render(t, loc, today, false)
 			overdueItems = append(overdueItems, item)
+			todayRows = append(todayRows, t)
 		case date == today:
 			item.v = snap.render(t, loc, today, false)
 			todayItems = append(todayItems, item)
+			todayRows = append(todayRows, t)
+		}
+	}
+	// Today's closed list (today-closed-list): which of these wait for a slot.
+	limit, rev := r.todayLimit(ctx, userID)
+	waiting := snap.waitingForSlot(limit, rev, today, loc, todayRows)
+	for _, list := range [][]keyed[taskOut]{overdueItems, todayItems} {
+		for i := range list {
+			w := waiting[list[i].id]
+			list[i].v.WaitingForSlot = &w
 		}
 	}
 	overdue, _, _ := page(overdueItems, "", MaxItems)
@@ -719,6 +731,7 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 	out := map[string]any{
 		"timezone": loc.String(), "today": today,
 		"overdue": overdue, "due_today": dueToday,
+		"today_limit": nullableInt(limit),
 		"counts": map[string]any{
 			"overdue": len(overdueItems), "due_today": len(todayItems), "inbox": inbox, "per_project": counts,
 		},

@@ -10,6 +10,7 @@ import { preferredLanguages, t } from '../../lib/i18n'
 import { createTask } from '../../lib/ops'
 import { addTasksUndoable } from '../../lib/pasteTasks'
 import { preferredPlacement } from '../../lib/userPrefs'
+import { canEditTasks, membershipMap, roleOf } from '../../lib/sharing'
 import { dayPartsPreferred } from '../../lib/dayParts'
 import { VIEW_SCOPES } from '../../lib/shortcuts'
 import { addedWhere } from '../addedWhere'
@@ -48,6 +49,25 @@ export async function addFromBar(input: QuickAddInput, route: Route, userId?: st
   const show = () => { selectTask.set(id); navigate(target) }
   if (open) openAt(id, target)
   else showBulkToast(label, null, { ttl: ACTION_TOAST_MS, action: { label: t('Open'), run: show } })
+  return id
+}
+
+/**
+ * Log a win (today-closed-list D6): a task created already completed, now, by the user,
+ * in one batch. A win never repeats or reminds; its project is the typed one, else the
+ * current project when the user may add to it, else the Inbox. No view defaults (a win
+ * from Today is not "due today" unless a date was typed).
+ */
+export async function logWinFromBar(input: QuickAddInput, route: Route, open = false): Promise<string> {
+  const { recurrence: _repeat, reminders: _remind, ...rest } = input
+  void _repeat
+  void _remind
+  const here = route.view === 'project' ? route.id : null
+  const project = rest.project_id ?? (here && canEditTasks(roleOf(here, await membershipMap())) ? here : null)
+  const id = await createTask({ ...rest, project_id: project, completed: true })
+  const target: Route = { view: 'today' }
+  if (open) openAt(id, target)
+  else showBulkToast(t('Logged as done'), null, { ttl: ACTION_TOAST_MS, action: { label: t('Open'), run: () => { selectTask.set(id); navigate(target) } } })
   return id
 }
 
