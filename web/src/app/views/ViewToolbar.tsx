@@ -20,9 +20,11 @@ export interface ViewToolbarProps {
   onDisplay: (patch: Partial<ViewDisplay>) => void
   /** A board's Colour by (calendar-clarity), shown in the display panel. */
   colorBy?: DisplayPanelProps['colorBy']
+  /** Order by choices; a saved view's by default (the New view page has no Manual order, view-manual-order D7). */
+  sortOptions?: DisplayPanelProps['sortOptions']
 }
 
-export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, onDisplay, colorBy }: ViewToolbarProps) {
+export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, onDisplay, colorBy, sortOptions }: ViewToolbarProps) {
   return (
     <div className="mb-2 flex items-start gap-2" data-view-toolbar>
       <div className="min-w-0 flex-1">
@@ -34,7 +36,7 @@ export function ViewToolbar({ query, filterOpen, setFilterOpen, onAdd, display, 
       <div className="flex shrink-0 items-center gap-1">
         <IconButton icon="filter" size="sm" label={filterOpen ? t('Hide the filter') : t('Show the filter')} aria-pressed={filterOpen} data-filter-toggle
           className={filterOpen ? 'bg-selected text-default' : ''} onClick={() => setFilterOpen(!filterOpen)} />
-        <DisplayPanel value={display} onChange={onDisplay} colorBy={colorBy} />
+        <DisplayPanel value={display} onChange={onDisplay} colorBy={colorBy} sortOptions={sortOptions} />
       </div>
     </div>
   )

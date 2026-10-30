@@ -60,7 +60,7 @@ func tsKind(k kind) string {
 		return "Priority"
 	case kDue:
 		return "Due | null"
-	case kStringList, kIDList:
+	case kStringList, kIDList, kOrderList:
 		return "string[]"
 	case kReminderKind:
 		return "ReminderKind"

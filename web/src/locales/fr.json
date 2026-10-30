@@ -5220,6 +5220,7 @@
   "Open as a new view": "Ouvrir comme nouvelle vue",
   "Open as a new view: {query}": "Ouvrir comme nouvelle vue : {query}",
   "Order by": "Trier par",
+  "Order changed": "Ordre modifié",
   "Save as view": "Enregistrer comme vue",
   "Save the query as a view, pinned to the sidebar": "Enregistrer la requête comme vue, épinglée dans la barre latérale",
   "Saved with its conditions and display options, in the sidebar under Views.": "Enregistrée avec ses conditions et ses options d’affichage, dans la barre latérale sous Vues.",

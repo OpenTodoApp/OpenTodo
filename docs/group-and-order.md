@@ -1,6 +1,6 @@
 ---
 title: Group and order a list
-summary: Group a project's or a label's tasks by section, date, priority or label and order them by priority, date, deadline or title, kept for each project and label.
+summary: Group a project's or a label's tasks by section, date, priority or label and order them by priority, date, deadline, title or your own manual order, kept for each project, label and saved view.
 audience: user
 section: Guides
 specs: [list-display-options, custom-views, manual-ordering, task-list-presentation]
@@ -34,4 +34,15 @@ The choice is kept for each project and each label, follows you to your other de
 
 ## Drag while another order is shown
 
-Dragging a task between others in a project, or moving it with <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, while another order is shown switches the project back to **Manual order**, then moves the task. The grouping stays. A project's board and timeline keep their own layout; the button shows in the list layout only.
+Dragging a task between others in a project or on a label's page, or moving it with <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, while another order is shown switches the page back to **Manual order**, then moves the task. The grouping stays. A project's board and timeline keep their own layout; the button shows in the list layout only.
+
+## Your own order on a label page or saved view
+
+A label's page and a [saved view](saved-views.md) keep their **own** manual order, separate from your projects: putting *Post office* above *Pharmacy* on the *errand* label never moves either task in its project. In a shared project you only view, you can still order its tasks on your own label pages and views.
+
+- Drag a task above or below another one in the same group (on a phone, press and hold, then move), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> for the top or bottom of its group. With Vim keys on, <kbd>Shift</kbd>+<kbd>J</kbd> / <kbd>K</kbd> work too.
+- Each move shows **Order changed** with **Undo**.
+- Tasks you never moved follow the ones you placed, in their project order, so a new task appears after them.
+- The order is kept for up to 500 tasks per page, follows you to your other devices and works offline. If you reorder the same page on two devices while offline, the device that syncs last wins.
+
+Today, Upcoming, Anytime, Someday, Assigned to me, Completed and places have their own fixed order and no **Manual order**. The **New view** page offers it only once you have saved the view.

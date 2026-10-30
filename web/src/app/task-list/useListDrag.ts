@@ -12,6 +12,7 @@ import { act } from '../actionError'
 import { withListTransition } from '../motion'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from '../listDrop'
 import { dropTasks } from '../taskDrop'
+import type { ViewPlacement } from '../../lib/viewOrder'
 
 /** What a drag session reads at drop time; the latest render's values. */
 export interface DragSource {
@@ -26,6 +27,15 @@ export interface DragSource {
   onHold?: (task: Task) => void
   /** Opens the row's actions menu for a task at a point (task-row-context-menu): a touch hold's release. */
   openRowMenu: (task: Task, x: number, y: number, row?: Element | null) => void
+  /**
+   * A list with its own order (a label page, view-manual-order D4): a drop among rows
+   * places the task before or after a row of the same group (`groupOf`), never inside
+   * it, and never writes a project position.
+   */
+  reorder?: (taskId: string, at: ViewPlacement) => void
+  groupOf?: ReadonlyMap<string, string>
+  /** A task the user may not change: it can still be ordered in its own list, never dropped on the sidebar. */
+  readOnly?: (task: Task) => boolean
 }
 
 /**
@@ -88,21 +98,28 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
       onHoldRelease: (x, y) => dragState.current.openRowMenu(task, x, y, row),
       onMove: (target, _x, y) => {
         // Over a sidebar target the list shows no drop line (the target shows its ring).
-        const id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
-        const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, !dragState.current.board) : null
+        const now = dragState.current
+        let id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
+        // An own order moves within the task's group only (view-manual-order D4).
+        if (id && now.groupOf && now.groupOf.get(id) !== now.groupOf.get(task.id)) id = null
+        const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, !now.board && !now.reorder) : null
         show(id && zone ? { id, zone } : null)
         // A drop on a column lands last in it, so the placeholder follows its last card.
         showColumn(manual && dragState.current.board && target?.startsWith('section:') ? target.slice('section:'.length) : null)
       },
       onDrop: (target) => {
-        const { rows: rs, sectionOfRow: secs, board: b, ticked } = dragState.current
+        const { rows: rs, sectionOfRow: secs, board: b, ticked, reorder, readOnly } = dragState.current
         if (target.startsWith('drop:')) {
+          if (readOnly?.(task)) return
           const ids = ticked?.has(task.id) ? [...ticked] : [task.id]
           act(withListTransition(ids.length, () => dropTasks(target.slice('drop:'.length), ids)))
           return
         }
         if (!manual) return
-        if (target.startsWith('task:')) {
+        if (target.startsWith('task:') && reorder) {
+          if (!current || current.zone === 'inside') return
+          reorder(task.id, current.zone === 'before' ? { before: current.id } : { after: current.id })
+        } else if (target.startsWith('task:')) {
           const r = current ? rs.find((x) => x.task.id === current?.id) : undefined
           if (!r || !current) return
           const entry = dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)

@@ -40,6 +40,14 @@ export interface ListState {
   readOnly(t: Task): boolean
   /** Whether the view is manually ordered (manual-ordering). */
   manual(): boolean
+  /**
+   * A list with its own order (a label page or saved view, view-manual-order): one
+   * step of the task within its group; false at the edge. Lists without it move
+   * project positions when manual() is true.
+   */
+  moveBy?(id: string, step: -1 | 1): Promise<boolean>
+  /** True while moveBy applies (the list has its own order). */
+  ownOrder?(): boolean
   /** Focus the quick-add line, remembering the task to insert after; false when there is none. */
   focusQuickAdd(after: string | null): boolean
   /** Complete or reopen, with the list's follow-ups (parent prompt, archive offer). */

@@ -41,7 +41,10 @@ const (
 	MaxValueBytes    = 64 * 1024
 	MaxIDLen         = 64
 	// MaxBlockedBy caps a task's blockers (OpenSpec change task-dependencies).
-	MaxBlockedBy    = 50
+	MaxBlockedBy = 50
+	// MaxManualOrder caps the task ids of a label's or view's own manual order
+	// (OpenSpec change view-manual-order, design D2): about 19 KB of UUIDs.
+	MaxManualOrder  = 500
 	MaxFutureSkewMs = 5 * 60 * 1000
 	// MaxDocBytes caps a kDoc value (OpenSpec change collaborative-rich-text): the
 	// length of the envelope string, i.e. 256 KB of base64 text. Every other kind
@@ -181,6 +184,11 @@ const (
 	// change task-energy, design D1). A later value is a spec change; older
 	// clients read it as none and keep it.
 	kEnergy
+	// kOrderList is an array of at most MaxManualOrder distinct, non-empty ids of
+	// at most MaxIDLen characters (label.manual_order and view.manual_order,
+	// OpenSpec change view-manual-order, design D2). Unknown ids are accepted:
+	// the order is a personal preference and a task may arrive later.
+	kOrderList
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -497,6 +505,11 @@ var Schema = map[string]map[string]Field{
 		"sort_dir": {Kind: kString, Default: `""`},
 		// The label page's row layout (row-layouts D1); "" follows the account's.
 		"row_layout": {Kind: kString, Default: `""`},
+		// The label page's own manual order (OpenSpec change view-manual-order,
+		// design D1, D2): the ids of the tasks placed by hand, in order; tasks
+		// not listed follow by position. One whole-list register like
+		// view.panels, never a task's position. Not content.
+		"manual_order": {Kind: kOrderList, Default: `[]`},
 	},
 	// view: a saved filter query with presentation options (OpenSpec `custom-views`).
 	// kind, group_by, sort_by and sort_dir are enumerations carried as plain strings so
@@ -533,6 +546,10 @@ var Schema = map[string]map[string]Field{
 		// additive; REST checks it with iconset.Valid and clients render an
 		// unknown name as the default icon.
 		"icon": {Kind: kNullableString, Default: `null`},
+		// A list view's own manual order (OpenSpec change view-manual-order,
+		// design D1, D2): the ids of the tasks placed by hand, in order; tasks
+		// not listed follow by position. One whole-list register. Not content.
+		"manual_order": {Kind: kOrderList, Default: `[]`},
 	},
 	// reminder: fires relative to its task's due time or at an absolute instant
 	// (OpenSpec change reminders, docs/sync.md). fire_at is always the resolved
