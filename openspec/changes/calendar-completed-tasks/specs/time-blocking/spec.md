@@ -27,6 +27,10 @@ The Calendar SHALL have a keyboard-accessible Show completed toggle control in i
 - **WHEN** a completion or reopening operation arrives from another device
 - **THEN** the task's visibility and title update from the converged local row according to this device's visibility choice
 
+#### Scenario: Completed work with counted meetings
+- **WHEN** Count meetings in capacity is on, a day has 1 hour of open task estimates, 3 hours of completed task estimates and 2 hours of busy meetings, and the user toggles Show completed
+- **THEN** Day, Week and Month keep the total at `3h / 8h`, with the completed tasks visible only when Show completed is on
+
 ## MODIFIED Requirements
 
 ### Requirement: Tasks as calendar blocks

@@ -2,7 +2,7 @@
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CALENDAR_COMPLETED_META_KEY } from '../lib/calendar'
+import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY } from '../lib/calendar'
 import { db, getMeta, setMeta } from '../lib/db'
 import { setCalendarShowCompleted } from '../lib/localData'
 import { completeTask, createTask, resetDeviceId, updateTask } from '../lib/ops'
@@ -97,6 +97,31 @@ describe.each([1280, 390])('completed calendar tasks at %i px', (width) => {
     expect(await db.outbox.count()).toBe(writes)
     await r.unmount()
   })
+})
+
+it.each(['day', 'week', 'month'] as const)('%s keeps counted meetings in capacity while showing or hiding completed work', async (mode) => {
+  await db.calendarSubscriptions.put({ id: 'work', name: 'Work', color: '#2563eb', enabled: true, lastSuccessAt: Date.now() })
+  await db.calendarEvents.put({
+    id: 'meeting', subscriptionId: 'work', uid: 'meeting', summary: 'Planning', location: '',
+    start: { date: DATE, time: '09:00' }, end: { date: DATE, time: '11:00' }, allDay: false, free: false,
+  })
+  await setMeta('calendar.events.window', { from: '2026-09-01', to: '2026-11-30', fetchedAt: Date.now() })
+  await setMeta(GRID_PREFS_META_KEY, { countEvents: true })
+  await createTask({ title: 'Still to do', due: { date: DATE, time: '12:00' }, estimate_minutes: 60 })
+  const done = await createTask({ title: 'Already done', due: { date: DATE, time: '14:00' }, estimate_minutes: 180 })
+  await completeTask(done)
+  const r = await render(modes[mode]())
+  const capacity = () => r.container.querySelector(`[data-day-header="${DATE}"] [data-capacity], [data-month-day="${DATE}"] [data-capacity]`)
+  await waitFor(() => capacity()?.textContent === '3h / 8h')
+  const writes = await db.outbox.count()
+  await click(toggle(r.container))
+  await waitFor(() => !!taskRow(r.container, done)?.querySelector('.line-through'))
+  expect(capacity()?.textContent).toBe('3h / 8h')
+  await click(toggle(r.container))
+  await waitFor(() => !taskRow(r.container, done))
+  expect(capacity()?.textContent).toBe('3h / 8h')
+  expect(await db.outbox.count()).toBe(writes)
+  await r.unmount()
 })
 
 it('remembers the preference through all modes and remounts without overwriting grid preferences or queuing ops', async () => {

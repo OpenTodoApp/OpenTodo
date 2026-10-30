@@ -12,7 +12,8 @@ import { Button, hueFor, Tooltip, TruncatedText } from '../../ui'
 import { EventBlockView, EventChip } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
 import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
-import { CapacityLine } from './CapacityLine'
+import { CapacityLine, capacityTooltip } from './CapacityLine'
+import type { DayMeetings } from './meetingCapacity'
 import { formatTime, GRID_HEIGHT, PX_PER_MIN, RESIZE_ZONE_PX, type Preview } from './grid'
 
 type DragStart = ReturnType<typeof useCalendarDrag>['start']
@@ -29,10 +30,12 @@ export function HourGutter() {
   )
 }
 
-export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, projectMap }: {
+export function DayHeader({ day, today, tasks, meetings, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, projectMap }: {
   day: DayData
   today: string
   tasks: Task[]
+  /** Counted meetings of the day, or null when this device does not count them. */
+  meetings: DayMeetings | null
   prefs: GridPrefs
   showName: boolean
   selectedId: string | null
@@ -44,7 +47,7 @@ export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subM
   onPointerDown: (e: React.PointerEvent, id: string) => void
   projectMap: Map<string, Project>
 }) {
-  const load = dayLoad(tasks, day.date, prefs.dayLength)
+  const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0)
   const d = Number(day.date.slice(8))
   const weekdayName = formatDateParts(day.date, { weekday: 'short' })
   return (
@@ -53,7 +56,7 @@ export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subM
         {showName ? (
           <TruncatedText className={`text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`} text={`${weekdayName} ${d}`} />
         ) : <span />}
-        <Tooltip label={[load.over ? t('Over capacity.') : '', t('Planned estimates against a {minutes} day', { minutes: formatMinutes(prefs.dayLength) }) + (load.unestimated ? t('; {n} unestimated (counted as 0)', { n: load.unestimated }) : '')].filter(Boolean).join(' ')}>
+        <Tooltip label={capacityTooltip(load, prefs.dayLength, meetings)}>
           <CapacityLine load={load} dayLength={prefs.dayLength} unestimated focusable />
         </Tooltip>
       </div>

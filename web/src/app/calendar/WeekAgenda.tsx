@@ -6,6 +6,7 @@ import { t } from '../../lib/i18n'
 import type { Project, Task } from '../../lib/types'
 import { Button, hueFor } from '../../ui'
 import { CapacityLine } from './CapacityLine'
+import type { DayMeetings } from './meetingCapacity'
 import { formatTime } from './grid'
 
 /**
@@ -13,11 +14,13 @@ import { formatTime } from './grid'
  * unscheduled tasks and its timed blocks in time order; no seven-column grid. The
  * same selection, keyboard order and panel as the grid.
  */
-export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId, onSelect, onOpen, onAdd }: {
+export function WeekAgenda({ days, today, prefs, tasks, meetings, taskMap, projectMap, selectedId, onSelect, onOpen, onAdd }: {
   days: DayData[]
   today: string
   prefs: GridPrefs
   tasks: Task[]
+  /** Counted meetings per day, or null when this device does not count them. */
+  meetings: Map<string, DayMeetings> | null
   taskMap: Map<string, Task>
   projectMap: Map<string, Project>
   selectedId: string | null
@@ -44,7 +47,7 @@ export function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, sel
       {days.map((d) => {
         const dd = Number(d.date.slice(8))
         const name = formatDateParts(d.date, { weekday: 'long' })
-        const load = dayLoad(tasks, d.date, prefs.dayLength)
+        const load = dayLoad(tasks, d.date, prefs.dayLength, meetings?.get(d.date)?.minutes ?? 0)
         const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
         return (
           <section key={d.date} data-agenda-day={d.date} aria-labelledby={`agenda-${d.date}`}>
