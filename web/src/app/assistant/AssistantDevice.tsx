@@ -29,10 +29,10 @@ type TestState = { ok: true } | { ok: false; message: string } | 'running' | nul
 
 /** Test connection from this device: one request to the provider, nothing saved. */
 async function runTest(s: DeviceSetup): Promise<TestState> {
-  const { testConnection } = await import('../../lib/assistantDevice/providers')
+  const { deviceCode, testConnection } = await import('../../lib/assistantDevice/providers')
   const r = await testConnection(s)
   if (r.ok) return { ok: true }
-  return { ok: false, message: describeStreamError(r.code === 'blocked' ? 'device_blocked' : r.code === 'provider_auth' ? 'device_auth' : r.code, r.message) }
+  return { ok: false, message: describeStreamError(deviceCode(r.code), r.message) }
 }
 
 export interface DeviceSetupFormProps {

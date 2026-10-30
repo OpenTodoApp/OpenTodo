@@ -1,0 +1,71 @@
+# Design
+
+## Context
+
+- `ot vault` (`internal/vault`, spec `markdown-vault`) syncs a folder of project files as device `vault:<id>` over `POST /api/v1/sync`, with a `full` token, encrypting content on the user's machine (`internal/e2ee/crypt`). It is desktop-only by nature.
+- Obsidian plugins are JavaScript loaded by Obsidian on desktop (Electron) and mobile (Capacitor web view). On mobile there is no Node, no child process and no file-system access outside the vault API; `fetch` from the app origin is subject to CORS, while Obsidian's `requestUrl` is not.
+- Obsidian's community directory lists a plugin by a GitHub repository whose root holds `manifest.json`, and installs the `main.js`, `manifest.json` and `styles.css` attached to the release whose tag equals the manifest's version. Any OSI licence is accepted; the developer policies forbid telemetry without consent, obfuscated code and undisclosed network use, and ask that network use be stated in the README.
+- `obsidian-origin` adds `{kind: "obsidian", id, url: "obsidian://open?vault=…&file=…", title?}`.
+
+## Goals / Non-Goals
+
+**Goals:** capture from any note on any platform Obsidian runs on, in one keystroke plus a confirmation; a link back to the note; offline and encrypted accounts work; the plugin is small, auditable, and contacts only the user's server.
+
+**Non-Goals:** mirroring task state into notes (that is the vault sync's job), a task view inside Obsidian, editing tasks from Obsidian outside the vault.
+
+## Decisions
+
+**D1. Where the code lives: `obsidian/` in this repository, published through a mirror.** Alternatives: (a) a separate repository; (b) `manifest.json` at this repository's root; (c) a folder here plus a release mirror. (a) would copy the line grammar, the quick-add parser and the envelope code out of their tests and vectors, and they would drift. (b) would put the plugin's version tags (`0.20.0`, no `v`) and assets into the server's releases and a stray manifest at the root. (c) keeps one source of truth: `obsidian/` imports `web/src/lib/nlp`, the envelope module and the line grammar at build time, and a tag job pushes the three built files plus a README and LICENSE to `OpenTodoApp/obsidian-opentodo` and creates the release there. The plugin's version is OpenTodo's release version, so a user can tell which server it was built with.
+
+**D2. Licence: AGPL-3.0-only, like the rest.** The plugin bundles AGPL code from `web/src/lib`, so it is AGPL by construction; Obsidian's directory accepts it (it accepts any OSI licence) and Obsidian's own licence does not restrict plugin licences. No relicensing is needed, unlike the iOS store question in `ios-distribution`.
+
+**D3. Credential: a `full` API token, stored per device.** Options: `read` (refused on `/api/v1/sync`), `agent` (writes only through the agent routes, meant for AI assistants and switched off by the user's "Allow AI assistants to make changes"; using it here would mislabel human captures as AI changes in history), an app password (CalDAV only), `full`. Chosen: `full`, the same as `ot vault`. Settings → Integrations → API tokens gains a one-line hint "For the Obsidian plugin, create a full token named after the device". The token is stored with `App.saveLocalStorage` (per device, per vault, outside the vault folder), never in `data.json`, which Obsidian Sync, iCloud or git carry to other devices and other people. Each device therefore has its own token and can be revoked alone. *Owner question:* a narrower `capture` scope (create tasks, read projects and labels, nothing else) would fit this plugin, the browser extension and Shortcuts better than `full`; it touches `account-access` and every route's policy, so it is not part of this change. Recommendation: propose it separately if `apple-shortcuts` also wants it.
+
+**D4. One write path: the sync exchange, with a new `push_only` feature.** REST writes cannot serve encrypted accounts (the server refuses plaintext content for them with `encryption_enabled`), and two write paths would mean two behaviours. So the plugin builds ops on the device (ids from `crypto.randomUUID`, HLC from `web/src/lib/hlc.ts` following the server time of the last answer) and pushes them through `POST /api/v1/sync` as device `obsidian:<install id>`. A device that only writes does not want the account's op log: the request gains the optional feature `push_only`, and the server then applies the ops and answers with `applied`, `rejected`, `cursor` (the head), `serverTime` and empty `ops`, `memberships` and `workspaces` lists. An older server ignores the unknown feature and answers with a page of ops, which the plugin discards. Alternative rejected: a new `POST /api/v1/ops` route — a second write route with its own policy for the same thing.
+
+**D5. Reading projects and labels.** For the project picker and label matching the plugin reads `GET /api/v1/projects` and `GET /api/v1/labels` (with `If-None-Match` when the server sends an ETag, else at most every five minutes and on demand), decrypting names on an encrypted account, and caches them in per-device storage so the sheet works offline with the last known list. Shared projects the user may add to are included, as the routes already list them; a viewer's project is not offered, and a refused op (`rejected`) is shown as a notice naming the reason, with the line left unlinked.
+
+**D6. Parsing: checkbox lines speak Tasks, other lines speak quick add.** A line starting with `- [ ]` (or `* [ ]`, any indent) is read with the vault line grammar (`📅` do-on, `⏫` priority, `#tag` labels, `[time:: 09:00]`, `[estimate:: 45m]`, `🆔` refused as "already a task"). Any other line, or a plain bullet, is read with the quick-add parser in the account's quick-add language (`#project`, `@label`, `p1`, dates in words). The two are the grammars people already use in each context; mixing them (a `#tag` meaning a label in one place and a project in the other) is resolved by the sheet showing the result before sending. The line grammar is a TypeScript port of `internal/vault/line.go` and `task.go` in `obsidian/src/vault/line.ts`, pinned by the fixture vault (`internal/vault/testdata/vault`, parsed to `expected.json`) and a new `internal/vault/testdata/lines.vectors.json` that both Go and TypeScript read. `obsidian-vault-sync` reuses it.
+
+**D7. The confirmation sheet.** A modal with the title (editable), the recognised fields as chips that can be removed, and a project combobox (default: the plugin's "Default project", else Inbox); Enter sends, Escape cancels. For a selection it lists each line as one row with a checkbox, so lines can be left out. "Send without asking" (off by default) skips it. This follows the anti-roadmap's "no change without approval" and keeps mobile safe from a mistaken toolbar tap.
+
+**D8. After sending.** Default: the line keeps its text and gains `[opentodo:: <server>/?task=<id>]`, a Dataview-readable inline field whose link opens the task in the web app (the same address the shells open). Settings → "After sending": add a link (default), mark the line done (`- [x]`, Tasks' own done date added only if the line already uses Tasks fields), or remove the line. A line that already has `[opentodo:: …]` or `🆔` is never sent again: the command says it is already in OpenTodo and offers to open it. A notice "Sent to OpenTodo · Undo" stays ten seconds; Undo restores the line and pushes a trash op for the task (restorable from the Trash, like any trash).
+
+**D9. Offline outbox.** Ops are encrypted (when needed) and queued in per-device storage before the line is changed, so the link is written at once and survives a restart; the queue is pushed on load, on network regain (`online` event), every 60 seconds while non-empty, and by "Send pending to OpenTodo". Ops are idempotent by id, so a push interrupted after the server applied it is harmless. The status bar item (desktop) and the settings tab (both) show "n waiting". A refused op is removed from the queue and reported, as the web app does.
+
+**D10. Encrypted accounts.** The plugin reads the account's encryption status and key record (`GET /api/v1/encryption/keys`, `signedIn`, allowed for `full` tokens) and asks for the passphrase in a modal; the derived account key lives in memory until Obsidian closes. "Remember on this device" (off by default) stores it in per-device storage, the equivalent of `ot encryption unlock`, with a sentence saying so. While locked, sending is refused before anything is queued, with "Unlock OpenTodo" offered. The envelope code is moved from `web/src/lib/e2ee.ts` into `web/src/lib/e2eeEnvelope.ts` (no Dexie, no API client), which both the web app and the plugin import; `web/src/lib/e2ee.vectors.json` already pins it. Daily notes are plaintext in the vault anyway; the plugin adds no new plaintext copy except the remembered key when the user asks for it.
+
+**D11. Renamed notes.** The plugin listens to the vault's `rename` event on this device and, for lines in the renamed note carrying `[opentodo:: …?task=<id>]`, pushes a new `origin` for those tasks (an ordinary LWW write). Renames made on another device and synced by a file-sync service are not seen as renames, so the command "Fix OpenTodo links in this note" does the same on demand. The origin's `vault` member is the vault's name at sending time; renaming the vault breaks old links, which the fix command also repairs.
+
+**D12. Version checks.** On connect the plugin reads the server version from `/healthz` and refuses a server older than the release that ships `obsidian-origin` and `push_only`, naming the minimum version. The server refusing the `obsidian` kind would otherwise reject every send.
+
+**D13. Network and privacy.** Requests go only to the configured server through `requestUrl`; addresses follow the shells' rules (`https`, or `http` for `localhost` and private ranges after a warning). No analytics, no update check of its own (Obsidian updates plugins). The README states all of this, as Obsidian's policies ask.
+
+## Data model impact
+
+None. Ordinary task ops (and a time-entry op when quick add's `30m/2h` is used), device `obsidian:<install id>`, origin of kind `obsidian`. The server's sync handler gains one branch for `push_only`.
+
+## Progressive disclosure
+
+Nothing changes in OpenTodo for anyone who does not install the plugin, apart from the hint next to API tokens. In Obsidian, the plugin adds one command, one context-menu entry, one mobile toolbar action (which the user can remove in Obsidian's toolbar settings), a settings tab and, on desktop, a status-bar item shown only while sends are waiting.
+
+## Interface budget
+
+No OpenTodo screen changes beyond one line of help text in the API tokens section. The origin chip is `obsidian-origin`'s.
+
+## Size
+
+- Server: a few lines in `internal/httpapi/sync_handlers.go`.
+- Web bundle: neutral (the envelope code moves, it does not grow).
+- Plugin: target ≤ 250 KB minified `main.js`, measured by `make obsidian` and failed above the budget: the line grammar (~25 KB), quick-add parser with its six vocabularies (~60 KB), envelope and HLC (~15 KB), UI (~20 KB). No runtime dependency; dev dependencies `obsidian` (types) and `esbuild` (already in the repository's toolchain through Vite).
+
+## Risks
+
+- **Obsidian API changes.** `minAppVersion` is pinned to the oldest version tested; CI type-checks against the `obsidian` package version pinned in `obsidian/package.json`.
+- **Directory review delay.** The plugin can be installed with BRAT or by hand from the mirror's release meanwhile; the docs say how.
+- **A `full` token on a phone.** Mitigated by per-device storage, per-device tokens and the hint to name the token after the device; the scope question is open (D3).
+
+## Open questions for the owner
+
+1. Create `OpenTodoApp/obsidian-opentodo` and a deploy key for the tag job, and submit the plugin to `obsidianmd/obsidian-releases` (only a maintainer can open that pull request on the project's behalf).
+2. Whether to propose a narrower `capture` token scope (D3).

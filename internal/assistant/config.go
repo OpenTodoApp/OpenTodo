@@ -271,8 +271,35 @@ func validateProvider(name string, p ProviderSettings, noModel string) error {
 	return nil
 }
 
+// chatCompletionsPath is the request path the Chat Completions adapter appends.
+const chatCompletionsPath = "/chat/completions"
+
+// TrimBaseURL removes a pasted request path from a compatible base URL
+// (assistant-providers-fix D4): a URL whose path ends in /chat/completions,
+// with or without a trailing slash, becomes the part before it. Any other
+// value is returned as typed.
+func TrimBaseURL(raw string) string {
+	if strings.ContainsAny(raw, "?#") {
+		return raw
+	}
+	s := strings.TrimRight(strings.TrimSpace(raw), "/")
+	if base, ok := strings.CutSuffix(s, chatCompletionsPath); ok && strings.Contains(base, "://") {
+		return strings.TrimRight(base, "/")
+	}
+	return raw
+}
+
+// trimCompatible applies TrimBaseURL to the compatible provider's settings.
+func (s *Settings) trimCompatible() {
+	if c, ok := s.Providers[Compatible]; ok {
+		c.BaseURL = TrimBaseURL(c.BaseURL)
+		s.Providers[Compatible] = c
+	}
+}
+
 func (st *Store) SaveSettings(ctx context.Context, actorID string, next Settings, keys KeyChange, check func(ctx context.Context, rawURL string, allowPrivate bool) error, rec *audit.Recorder) (Settings, error) {
 	next.normalise()
+	next.trimCompatible()
 	if err := next.validateStatic(); err != nil {
 		return Settings{}, err
 	}
