@@ -29,7 +29,7 @@ export function useQueuedEdit() {
   return useCallback((id: string, fn: (task: Task) => Patch | null, after?: (task: Task, patch: Partial<Task>) => void) => {
     queue.current = queue.current.then(async () => {
       const raw = await getTask(id)
-      if (!raw || raw.deleted_at) return
+      if (!raw || raw.deleted_at || raw.completed_at) return
       const task = viewedTask(raw)
       const patch = fn(task)
       if (!patch) return
@@ -71,7 +71,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
   const { placing, setPlacing, selectedId, setSelectedId, order, mode, anchor, today } = c
   const edit = useQueuedEdit()
   const idx = selectedId ? order.indexOf(selectedId) : -1
-  const task = selectedId ? c.taskMap.get(selectedId) : undefined
+  const task = selectedId && order.includes(selectedId) ? c.taskMap.get(selectedId) : undefined
   const block = task ? c.days.find((d) => d.date === task.due?.date)?.blocks.get(task.id) : undefined
   const slot = selectedId && isSlotKey(selectedId) ? c.slots?.get(selectedId) : undefined
   /** A selected slot (calendar-slots D5): arrows move it, Shift+arrows change its length. */
@@ -97,6 +97,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
       if (!task && order.length) { setSelectedId(order[0]); return }
       return false
     }
+    if (task.completed_at) return false
     move(task, task.due, e)
   }
   const unlessPlacing = (fn: () => boolean | void) => () => (placing ? false : fn())
@@ -162,11 +163,11 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     'calendar.range-next': unlessPlacing(() => c.goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))),
     'calendar.today': unlessPlacing(() => c.goTo(today)),
     // Keyboard twin of dropping on the lane: keep the date, clear the time.
-    'calendar.unschedule': unlessPlacing(() => { if (!task?.due || !block) return false; edit(task.id, (tk) => (tk.due ? { due: { date: tk.due.date } } : null)) }),
-    'calendar.place': unlessPlacing(() => { if (!task?.due) return false; c.startPlacing(task, task.due.date) }),
-    'calendar.edit-estimate': unlessPlacing(() => { if (!task?.due) return false; estimateFocus.request(task.id); c.setOpenId(task.id) }),
+    'calendar.unschedule': unlessPlacing(() => { if (!task?.due || task.completed_at || !block) return false; edit(task.id, (tk) => (tk.due ? { due: { date: tk.due.date } } : null)) }),
+    'calendar.place': unlessPlacing(() => { if (!task?.due || task.completed_at) return false; c.startPlacing(task, task.due.date) }),
+    'calendar.edit-estimate': unlessPlacing(() => { if (!task?.due || task.completed_at) return false; estimateFocus.request(task.id); c.setOpenId(task.id) }),
     'calendar.complete': unlessPlacing(() => {
-      if (!task?.due) return false
+      if (!task?.due || task.completed_at) return false
       act(completeWithUndo(task.id, true))
       setSelectedId(order[idx + 1] ?? order[idx - 1] ?? null)
     }),

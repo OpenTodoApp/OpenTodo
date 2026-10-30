@@ -95,8 +95,12 @@ async function setLayout(p, layout) {
 async function demoState() {
   const c = await context('light', 'desktop'); const p = await c.newPage()
   await p.goto(base)
-  await p.getByRole('button', { name: /Try the demo/i }).click()
-  await p.getByRole('heading', { level: 1 }).first().waitFor({ timeout: 20000 })
+  const [started] = await Promise.all([
+    p.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/demo/sandbox' && r.request().method() === 'POST'),
+    p.getByRole('button', { name: /Try the demo/i }).click(),
+  ])
+  if (!started.ok()) throw new Error(`Start demo sandbox → ${started.status()}`)
+  await p.locator('[data-testid="demo-banner"]').waitFor({ state: 'attached', timeout: 20000 })
   await settle(p, 1500)
   const r = await c.request.get(base + '/api/v1/projects')
   if (!r.ok()) throw new Error(`GET /api/v1/projects → ${r.status()}`)
@@ -123,6 +127,8 @@ const screens = [
     async after(p) { await setLayout(p, 'List').catch(() => {}) } },
   { name: 'calendar-day', entry: 'day', async run(p) { await go(p, '/day', () => p.getByRole('region', { name: 'Day calendar' }).waitFor()) } },
   { name: 'calendar-week', entry: 'week', async run(p) { await go(p, '/week', () => p.getByRole('region', { name: 'Week calendar' }).waitFor()) } },
+  { name: 'calendar-month', entry: 'month', async run(p) { await go(p, '/month', () => p.locator('[data-month-grid]').waitFor()) } },
+  { name: 'calendar-plan', entry: 'plan', async run(p) { await go(p, '/plan', () => p.locator('[data-plan-grid], [data-plan-agenda]').waitFor()) } },
   { name: 'task-panel', entry: 'task-panel', async run(p, { ids }) {
     await go(p, `/project/${ids.home}`, h1(p, 'Home renovation')); await openTask(p, 'Get three quotes for the kitchen')
   } },
@@ -154,6 +160,8 @@ for (const screen of screens) {
       const p = await ctx.newPage()
       try {
         await screen.run(p, { ctx, ids: demo.ids, device })
+        // A calendar shell can render before the fresh context's first sync delivers its tasks.
+        if (screen.name.startsWith('calendar-')) await p.locator('[data-cal-id], [data-month-task], [data-month-count], [data-plan-task]').first().waitFor()
         const png = await p.screenshot()
         writeFileSync(join(OUT, file), png); written.push(file)
         console.log(`  ${file} ${(png.length / 1024).toFixed(0)} KB`)
