@@ -27,7 +27,7 @@ func (l *stringList) Set(v string) error { *l = append(*l, v); return nil }
 
 type listOptions struct {
 	inbox, today, upcoming, completed, all bool
-	someday, anytime, blocked              bool
+	someday, anytime, blocked, available   bool
 	project                                string
 	limit                                  int
 	// Completion range (OpenSpec change completed-date-filters, design D6).
@@ -44,6 +44,7 @@ func (o *listOptions) bind(fs *flag.FlagSet) {
 	fs.BoolVar(&o.someday, "someday", false, "open tasks parked in Someday")
 	fs.BoolVar(&o.anytime, "anytime", false, "open tasks with no due date, deadline or start")
 	fs.BoolVar(&o.blocked, "blocked", false, "open tasks waiting for an open task")
+	fs.BoolVar(&o.available, "available", false, "open tasks that can be done now (not blocked, not waiting for an earlier step, not in Someday or starting later)")
 	fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
 	fs.StringVar(&o.completedAfter, "completed-after", "", "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 	fs.StringVar(&o.completedBefore, "completed-before", "", "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
@@ -198,7 +199,17 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		tasks = filterTasks(all, projects, view, selected, today)
 	}
 	if planning != "" {
-		tasks = filterPlanning(tasks, all, planning)
+		var available func(task) bool
+		if planning == "available" {
+			var out struct {
+				Sections []json.RawMessage `json:"sections"`
+			}
+			if err := c.getJSON(ctx, "/sections", &out); err != nil {
+				return err
+			}
+			available = availableRule(all, projects, out.Sections, today)
+		}
+		tasks = filterPlanning(tasks, all, planning, available)
 	}
 	// One workspace's tasks (workspaces); a named project is shown wherever it is.
 	if view != "project" {

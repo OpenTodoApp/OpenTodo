@@ -579,6 +579,11 @@
           "description": "open tasks waiting for an open task (combines with --project)"
         },
         {
+          "name": "available",
+          "type": "bool",
+          "description": "open tasks that can be done now: not blocked, not waiting for an earlier step, neither in Someday nor starting later (combines with --project)"
+        },
+        {
           "name": "completed-after",
           "type": "string",
           "description": "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"
