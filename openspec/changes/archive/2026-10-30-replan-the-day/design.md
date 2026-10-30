@@ -59,6 +59,6 @@ The packer runs only in the web app and the native shells (which load it). The C
 
 ## D8. Phone
 
-Below 640 px the Week is the agenda and the Day keeps its grid. On either, Re-plan opens a bottom sheet: one row per move, "10:00 → 14:30" in tabular figures then the title, then the unfit tasks with the Leave them / Move to tomorrow choice, then Apply (primary) and Cancel. Targets are at least 48 px. The grid shows no ghosts while the sheet is open.
+Below 768 px the page header's lead line lives in the shell's bar, too narrow for the bar's controls (amended during implementation; it was 640 px). There, in Day and in Week (an agenda below 640 px), Re-plan opens a bottom sheet: one row per move, "10:00 → 14:30" in tabular figures then the title, then the unfit tasks with the Leave them / Move to tomorrow choice, then Apply (primary) and Cancel. Targets are at least 48 px. The grid shows no ghosts while the sheet is open.
 
 Data model impact: none. Image size and memory: unchanged.

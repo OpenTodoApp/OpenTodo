@@ -41,6 +41,7 @@ import { t } from '../../lib/i18n'
 import { useAssistantStatus } from '../../lib/assistantStatus'
 import { addFromBar, addManyFromBar, lineToInput, logWinFromBar } from './addFromBar'
 import { slotStateOf } from '../task-list/slotActions'
+import { useMissedBlocks } from '../calendar/useMissedBlocks'
 import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarParts'
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -92,6 +93,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
 
   const agentExclusions = useAgentExclusions()
   const reviewEvery = useReviewEvery()
+  const missedBlocks = useMissedBlocks().length
   const ctx = useMemo<PaletteContext>(() => {
     const projectId = route.view === 'project' ? route.id : null
     const project = projectId ? projects.find((p) => p.id === projectId) : undefined
@@ -117,8 +119,9 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       earlier: earlierIds(tasks, projects, today),
       dayParts: dayPartsOn(prefs),
       slot: task ? slotStateOf(task.id) : null,
+      missedBlocks,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   // Tasks and projects of every workspace: picking one elsewhere switches the device (workspaces).

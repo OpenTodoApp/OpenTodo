@@ -5613,5 +5613,21 @@
   "Count meetings in capacity": "Contar reuniones en la capacidad",
   "Over with meetings.": "Por encima con las reuniones.",
   "over with meetings": "por encima con las reuniones",
-  "{minutes} in meetings": "{minutes} en reuniones"
+  "{minutes} in meetings": "{minutes} en reuniones",
+  "After its deadline": "Después de su fecha límite",
+  "Calendars unavailable offline": "Calendarios no disponibles sin conexión",
+  "Doesn’t fit today": "No cabe hoy",
+  "Leave them": "Dejarlas",
+  "Move to tomorrow": "Mover a mañana",
+  "Moves": "Movimientos",
+  "Nothing to re-plan": "Nada que replanificar",
+  "Re-plan": "Replanificar",
+  "Re-plan the rest of the day": "Replanificar el resto del día",
+  "Tasks that don’t fit": "Tareas que no caben",
+  "moves to {time}": "se mueve a las {time}",
+  "{moved} moved · {skipped} changed meanwhile": "{moved} movidas · {skipped} cambiadas mientras tanto",
+  "{n, plural, one {# block behind} other {# blocks behind}}": "{n, plural, one {# bloque atrasado} other {# bloques atrasados}}",
+  "{n, plural, one {# doesn’t fit} other {# don’t fit}}": "{n, plural, one {# no cabe} other {# no caben}}",
+  "{n, plural, one {# task moved} other {# tasks moved}}": "{n, plural, one {# tarea movida} other {# tareas movidas}}",
+  "{n, plural, one {# task moves} other {# tasks move}}": "{n, plural, one {# tarea se mueve} other {# tareas se mueven}}"
 }
