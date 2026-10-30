@@ -36,14 +36,17 @@ var (
 
 // Subscription is one calendar a user subscribes to, with its status.
 type Subscription struct {
-	ID              string   `json:"id"`
-	UserID          string   `json:"-"`
-	URL             string   `json:"url"`
-	Name            string   `json:"name"`
-	Color           string   `json:"color"`
-	Enabled         bool     `json:"enabled"`
-	ETag            string   `json:"-"`
-	LastModified    string   `json:"-"`
+	ID           string `json:"id"`
+	UserID       string `json:"-"`
+	URL          string `json:"url"`
+	Name         string `json:"name"`
+	Color        string `json:"color"`
+	Enabled      bool   `json:"enabled"`
+	ETag         string `json:"-"`
+	LastModified string `json:"-"`
+	// BrowserAgent: the feed only answered a browser-compatible User-Agent, so
+	// fetches send BrowserUserAgent first (server-side state, never shown).
+	BrowserAgent    bool     `json:"-"`
 	RefreshSeconds  *int64   `json:"refreshSeconds"`
 	IntervalSeconds int64    `json:"intervalSeconds"`
 	NextFetchAt     int64    `json:"nextFetchAt"`
@@ -67,7 +70,8 @@ type Store struct {
 func NewStore(db *sql.DB) *Store { return &Store{db: db, now: time.Now} }
 
 const subColumns = `id, user_id, url, name, color, enabled, etag, last_modified, refresh_seconds, interval_seconds, next_fetch_at,
-	last_fetch_at, last_success_at, last_error, COALESCE(stopped_reason,''), warnings, event_count, created_at, updated_at`
+	last_fetch_at, last_success_at, last_error, COALESCE(stopped_reason,''), warnings, event_count, created_at, updated_at,
+	EXISTS(SELECT 1 FROM calendar_feed_browser_agents b WHERE b.subscription_id = calendar_subscriptions.id)`
 
 func scanSub(row interface{ Scan(...any) error }) (*Subscription, error) {
 	var s Subscription
@@ -75,7 +79,7 @@ func scanSub(row interface{ Scan(...any) error }) (*Subscription, error) {
 	var warns string
 	var refresh, lastFetch, lastSuccess sql.NullInt64
 	if err := row.Scan(&s.ID, &s.UserID, &s.URL, &s.Name, &s.Color, &enabled, &s.ETag, &s.LastModified, &refresh, &s.IntervalSeconds, &s.NextFetchAt,
-		&lastFetch, &lastSuccess, &s.LastError, &s.StoppedReason, &warns, &s.EventCount, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		&lastFetch, &lastSuccess, &s.LastError, &s.StoppedReason, &warns, &s.EventCount, &s.CreatedAt, &s.UpdatedAt, &s.BrowserAgent); err != nil {
 		return nil, err
 	}
 	s.Enabled = enabled == 1
@@ -198,6 +202,11 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Subscr
 	if _, err := s.db.ExecContext(ctx, `UPDATE calendar_subscriptions SET `+strings.Join(set, ", ")+` WHERE id = ? AND user_id = ?`, args...); err != nil {
 		return nil, err
 	}
+	if p.URL != nil { // a new address starts over with the OpenTodo User-Agent
+		if _, err := s.db.ExecContext(ctx, `DELETE FROM calendar_feed_browser_agents WHERE subscription_id = ?`, id); err != nil {
+			return nil, err
+		}
+	}
 	return s.Get(ctx, userID, id)
 }
 
@@ -270,6 +279,11 @@ func (s *Store) Success(ctx context.Context, id string, r *Result) error {
 	args = append(args, id)
 	if _, err := tx.ExecContext(ctx, q+` WHERE id = ?`, args...); err != nil {
 		return err
+	}
+	if r.BrowserAgent {
+		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO calendar_feed_browser_agents(subscription_id, created_at) VALUES(?, ?)`, id, now.UnixMilli()); err != nil {
+			return err
+		}
 	}
 	return tx.Commit()
 }

@@ -21,6 +21,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **Calendars published from Exchange on-premises load.** Outlook on the web on an organisation's own Exchange server answers 400 to any client that isn't a desktop browser, so its `.ics` addresses failed with **http_400**. Calendar feeds still identify as OpenTodo first; when a calendar answers 400, 403 or 406, the fetch is tried once more with a desktop browser's User-Agent, and a calendar that only answers that way keeps getting it until its address changes. No other error is retried. Thanks to @osenchenko for the diagnosis. New server-side table (migration 0050), no op field or API change. ([Calendar feeds](docs/calendar-feeds.md#exchange-on-premises), `calendar-feed-user-agent`, closes #622)
 - **List rows on wide touch screens line up again.** On a touch screen 768 px or wider (a tablet in landscape, a touch laptop), a list row's title and its property column sat 10 px below the completion circle, because the row's 44 px touch height centred them; they now stay on the circle's line.
 
 ## [0.17.0] - 2026-10-30
