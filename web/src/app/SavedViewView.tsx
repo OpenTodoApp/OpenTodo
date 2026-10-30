@@ -5,6 +5,7 @@
 // dashboard is rendered by DashboardView instead.
 import { isFirstRow, revealRow } from './task-list/revealRow'
 import { blockedMap } from '../lib/dependencies'
+import { useFlowView } from '../lib/useFlow'
 import { Button, EmptyState, IconButton, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { parse } from '../lib/filter'
@@ -82,6 +83,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const taskMap = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])
   const progress = useMemo(() => progressMap(tasks), [tasks])
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
+  const flow = useFlowView(tasks, ctx.today)
   const habits = useMemo(() => habitStatsMap(tasks, ctx.today), [tasks, ctx.today])
 
   // ---- query editing: the input holds a draft; Enter (or Save) confirms it ----
@@ -227,6 +229,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 selected={key === selected}
                 progress={progress.get(tk.id)}
                 blockedBy={blocked.get(tk.id)}
+                waitsFor={flow.waitsFor(tk.id)}
                 habit={habits.get(tk.id)}
                 breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
                 onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}

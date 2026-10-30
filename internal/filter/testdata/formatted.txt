@@ -99,12 +99,12 @@ tracked >= 1h30
 @"x|y" & #"a(b)" & search: "a & b"
 search: \
 @a\b
-someday & (#no | created = 5 days | p4 | ##"follow up") & @back\slash & origin: "my tracker"
+deferred & (#no | created = 5 days | p4 | ##"follow up") & @back\slash & origin: "my tracker"
 "cost" < true
 no origin & created < tomorrow & ##today & ("no" > "Acme Inc" | "x\"y" > 2026-02-28 | search: #tag | !start = last month)
 "due" >= "Acme Inc"
 (@today | tracked > 30m | origin: "my tracker" | "cost" > "Acme Inc") & ("no" >= "Acme Inc" & no "Order date")
-search: "x|y" | p2 | @"follow up" | @"follow up" & blocked & start >= last month & tracked = 1h30
+search: "x|y" | p2 | @"follow up" | @"follow up" & unblocked & start >= last month & tracked = 1h30
 tracked = 1h & p2 & "due" > true & search: Café | no "date" | origin: "my tracker" | ##today
 created < this week
 created < this week
@@ -169,13 +169,13 @@ search: "a\"b"
 search: #tag
 (!no "Order date" & @today & "no" < tomorrow) & tracked = 10h & search: no
 !no "cost"
-someday
+deferred
 origin: url
 ##p1
 search: back\slash
 origin: url
 no date
-no time | @"x|y" | p3
+no deadline | @"x|y" | p3
 p2 & @"a\"b" & origin: "my tracker" | #p1 | (search: #tag | no "date" | !tracked >= 30m)
 (deadline > this week | p2) | created >= today
 deadline <= last month
@@ -187,15 +187,15 @@ completed > last month
 (p4 | tracked < 1h30) | (p2 | #"#tag" | search: work)
 start >= 5 days
 p3 & created > 2026-02-28 & search: today
-tracked = 0m | blocked | origin: "my tracker" & origin: url & @Café | p1 & search: p1
+tracked = 0m | unblocked | origin: "my tracker" & origin: url & @Café | p1 & search: p1
 due = 12 days ago & no "Order date"
 tracked <= 1h
 !origin: github
 (@"follow up" | #no | ##"follow up") & (tracked < 1h | p4 | tracked >= 1h) & (blocked & #p1 & origin: github & no "date")
-open | search: "follow up" & !"cost" >= 100 & search: "a\"b"
+subtask | search: "follow up" & !"cost" >= 100 & search: "a\"b"
 @"x|y"
 tracked < 1h
 !(tracked = 30m | ##"a\"b" | tracked <= 10h)
-no project
+no labels
 search: back\slash
-(!"due" >= true | !habit) | "due" >= -2.5 | (no "cost" | !!tracked <= 1h30 | !"cost" < true | #back\slash) | (!tracked = 0m | p1 | evening | deadline = next week)
+(!"due" >= true | !habit) | "due" >= -2.5 | (no "cost" | !!tracked <= 1h30 | !"cost" < true | #back\slash) | (!tracked = 0m | p1 | completed | deadline = next week)

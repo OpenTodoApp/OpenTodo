@@ -11,7 +11,7 @@ import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect
 import { orderDestinations, readAppearance, readSidebarCounts, type DestinationId, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
-import { allProjectRows, useMembershipMap, useProjects, useReviewRow, useSidebarRowsLoaded, useUserPrefsRow } from '../lib/localData'
+import { allProjectRows, useLiveSections, useMembershipMap, useProjects, useReviewRow, useSidebarRowsLoaded, useUserPrefsRow } from '../lib/localData'
 import { createProject } from '../lib/ops'
 import { dailyDue, dayClosed, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
 import { formatInstant } from '../lib/dates'
@@ -121,7 +121,8 @@ function useViewCounts(views: View[], today: string, labels: Label[], projects: 
   const tracked = useTrackedTotals()
   // A view that names a workspace counts every workspace's tasks (group-mentions D6).
   const ws = useWorkspaceFilter()
-  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks, tracked, ...ws }, 0), [views, today, labels, projects, tasks, tracked, ws])
+  const sections = useLiveSections()
+  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks, sections, tracked, ...ws }, 0), [views, today, labels, projects, tasks, sections, tracked, ws])
 }
 
 export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {

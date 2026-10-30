@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePlace } from '../../lib/locations'
 import { blockedMap } from '../../lib/dependencies'
+import { useFlowView } from '../../lib/useFlow'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { habitStatsMap } from '../../lib/habits'
 import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
@@ -132,6 +133,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
+  // Steps waiting in sequence (project-flow-modes): dimmed rows, and Today folds them with the blocked ones.
+  const flow = useFlowView(allTasks, today)
+  const held = useMemo(() => flow.held(blocked), [flow, blocked])
   // Streaks of habits (OpenSpec habits D5): once per list, from the rows it holds.
   const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
@@ -175,10 +179,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list')
 
   const groups = useMemo<ListGroup[]>(() => listGroups({
-    view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked, taskMap,
+    view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
     projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
   const ownRows = useMemo(() => (planned.length ? groups.filter((g) => g.key !== 'planned').flatMap((g) => g.rows) : rows), [planned, groups, rows])
@@ -208,7 +212,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     currentPlace,
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
-    allTasks, taskMap, progress, blocked, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
+    allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, ownRows, siblingPos, timeColumn, doneBySection,
     showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay,
   }
