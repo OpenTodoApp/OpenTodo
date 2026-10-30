@@ -155,6 +155,23 @@
    "tonight",
    "this evening"
   ],
+  "morningWords": [
+   "this morning"
+  ],
+  "afternoonWords": [
+   "this afternoon"
+  ],
+  "partWords": {
+   "morning": [
+    "morning"
+   ],
+   "afternoon": [
+    "afternoon"
+   ],
+   "evening": [
+    "evening"
+   ]
+  },
   "nextBefore": [
    "next"
   ],
@@ -447,6 +464,26 @@
   "eveningWords": [
    "heute abend"
   ],
+  "morningWords": [
+   "heute morgen",
+   "heute fruh",
+   "heute vormittag"
+  ],
+  "afternoonWords": [
+   "heute nachmittag"
+  ],
+  "partWords": {
+   "morning": [
+    "fruh",
+    "vormittag"
+   ],
+   "afternoon": [
+    "nachmittag"
+   ],
+   "evening": [
+    "abend"
+   ]
+  },
   "nextBefore": [
    "nachsten",
    "nachste",
@@ -737,6 +774,24 @@
   "eveningWords": [
    "ce soir"
   ],
+  "morningWords": [
+   "ce matin"
+  ],
+  "afternoonWords": [
+   "cet apres-midi",
+   "cette apres-midi"
+  ],
+  "partWords": {
+   "morning": [
+    "matin"
+   ],
+   "afternoon": [
+    "apres-midi"
+   ],
+   "evening": [
+    "soir"
+   ]
+  },
   "nextBefore": [],
   "nextAfter": [
    "prochain",
@@ -1017,6 +1072,26 @@
   "eveningWords": [
    "stasera"
   ],
+  "morningWords": [
+   "stamattina",
+   "stamani",
+   "questa mattina"
+  ],
+  "afternoonWords": [
+   "oggi pomeriggio",
+   "questo pomeriggio"
+  ],
+  "partWords": {
+   "morning": [
+    "mattina"
+   ],
+   "afternoon": [
+    "pomeriggio"
+   ],
+   "evening": [
+    "sera"
+   ]
+  },
   "nextBefore": [
    "prossimo",
    "prossima"
@@ -1295,6 +1370,23 @@
   "eveningWords": [
    "esta noche"
   ],
+  "morningWords": [
+   "esta manana"
+  ],
+  "afternoonWords": [
+   "esta tarde"
+  ],
+  "partWords": {
+   "morning": [
+    "por la manana"
+   ],
+   "afternoon": [
+    "por la tarde"
+   ],
+   "evening": [
+    "por la noche"
+   ]
+  },
   "nextBefore": [
    "proximo",
    "proxima"
@@ -1579,6 +1671,25 @@
   "eveningWords": [
    "hoje a noite"
   ],
+  "morningWords": [
+   "esta manha",
+   "hoje de manha"
+  ],
+  "afternoonWords": [
+   "esta tarde",
+   "hoje a tarde"
+  ],
+  "partWords": {
+   "morning": [
+    "de manha"
+   ],
+   "afternoon": [
+    "a tarde"
+   ],
+   "evening": [
+    "a noite"
+   ]
+  },
   "nextBefore": [
    "proxima",
    "proximo"

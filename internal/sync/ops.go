@@ -166,6 +166,11 @@ const (
 	// kReactions is one account's reactions on a comment (OpenSpec change
 	// editor-everywhere, design D8): a list of distinct names from ReactionNames.
 	kReactions
+	// kDayPart is null, "morning" or "afternoon" (task.day_part, OpenSpec
+	// change day-parts, design D1). Evening stays the task's evening flag; a
+	// later part is a new value behind a schema note, read by older clients as
+	// no part.
+	kDayPart
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -369,6 +374,11 @@ var Schema = map[string]map[string]Field{
 		// someday-and-evening); additive.
 		"start":   {Kind: kStart, Default: `null`},
 		"evening": {Kind: kBool, Default: `false`},
+		// The part of the day besides Evening (OpenSpec change day-parts,
+		// design D1): null, "morning" or "afternoon". Evening stays the evening
+		// flag; clients write both fields in one batch (D2), and a task with the
+		// flag set reads as Evening whatever this holds. Not content; additive.
+		"day_part": {Kind: kDayPart, Default: `null`},
 		// The tasks this one waits for, in its own sharing scope (OpenSpec change
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
@@ -764,6 +774,11 @@ var Schema = map[string]map[string]Field{
 		// an empty or unknown value as off and keep it. The volume is device
 		// storage and never synced.
 		"focus_noise": {Kind: kString, Default: `""`},
+		// Today grouped by part of the day (OpenSpec change day-parts, design
+		// D3): "on" groups Today into Morning, Afternoon and This Evening and
+		// turns on the part phrases of quick add; clients read an empty or
+		// unknown value as off and keep the stored value.
+		"day_parts": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

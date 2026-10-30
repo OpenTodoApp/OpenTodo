@@ -13,6 +13,7 @@ import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
 import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
+import { dayPartsOn } from '../../lib/dayParts'
 import { isFavourite } from '../../lib/favourites'
 import { earlierIds } from '../../lib/dayLists'
 import { usePickScores } from '../../lib/pickRank'
@@ -111,6 +112,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
       earlier: earlierIds(tasks, projects, today),
+      dayParts: dayPartsOn(prefs),
     }
   }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState])
 

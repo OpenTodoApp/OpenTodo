@@ -7,6 +7,7 @@ import { daysBetweenISO, describeDeadline, describeDue, formatDate, formatTime, 
 import { formatMinutes } from './duration'
 import { t } from './i18n'
 import type { Due, Label, Priority, Task } from './types'
+import { dayPartOf, dayPartWord } from './dayParts'
 
 export type FacetId = 'where' | 'when' | 'how' | 'who'
 
@@ -104,7 +105,9 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
     const label = ctx.local?.time && task.estimate_minutes ? `${due.label}–${formatTime(blockEnd(ctx.local.time, task.estimate_minutes), ctx.dateTime)}` : due.label
     when.push({ id: 'due', text: ctx.zoneCity ? `${label} ${ctx.zoneCity}` : label, tone: due.tone, segment: 'due' })
   }
-  if (task.evening) when.push({ id: 'evening', text: t('evening'), segment: 'due' })
+  // The part of the day (day-parts): evening, morning or afternoon, in the evening's slot.
+  const part = dayPartWord(dayPartOf(task))
+  if (part) when.push({ id: 'evening', text: part, segment: 'due' })
   if (task.recurrence) when.push({ id: 'repeat', text: task.recurrence, segment: 'repeat' })
   else if (revealed.has('repeat')) when.push({ id: 'repeat', text: t('Repeat'), segment: 'repeat', empty: true })
   if (task.deadline) {

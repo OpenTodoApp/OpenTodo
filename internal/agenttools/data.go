@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/inbox"
 	"github.com/OpenTodoApp/opentodo/internal/location"
@@ -465,9 +466,12 @@ type taskOut struct {
 	// deadline and start as stored (start may be "someday"), evening, the ids
 	// the task waits for and blocked, true while any of them is open. Location
 	// is null when unset or encrypted; its name and address are in untrusted_text.
-	Deadline  *string      `json:"deadline"`
-	Start     *string      `json:"start"`
-	Evening   bool         `json:"evening"`
+	Deadline *string `json:"deadline"`
+	Start    *string `json:"start"`
+	Evening  bool    `json:"evening"`
+	// DayPart is "morning", "afternoon" or null (OpenSpec change day-parts);
+	// Evening stays the evening flag.
+	DayPart   *string      `json:"day_part"`
 	BlockedBy []string     `json:"blocked_by"`
 	Blocked   bool         `json:"blocked"`
 	Location  *locationOut `json:"location"`
@@ -523,6 +527,9 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	}
 	out.Deadline, out.Start = strPtr(t, "deadline"), strPtr(t, "start")
 	out.Evening = boolean(t, "evening")
+	if part := daypart.OfRow(t); daypart.Stored(part) {
+		out.DayPart = &part
+	}
 	out.BlockedBy = stringList(t, "blocked_by")
 	if out.BlockedBy == nil {
 		out.BlockedBy = []string{}

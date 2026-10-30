@@ -71,6 +71,7 @@ The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use
 | `VALARM` | reminders | See [Alarms and reminders](#alarms-and-reminders). |
 | `X-OPENTODO-START` | [start date or Someday](tasks-and-projects.md#when-a-task-starts) | `SOMEDAY` or a date `YYYYMMDD`; iCalendar has no property for a deferral. A client that drops the property leaves the task as it is; an unknown value is kept as client data. |
 | `X-OPENTODO-EVENING` | This Evening | `TRUE` when set, absent otherwise. |
+| `X-OPENTODO-DAY-PART` | [part of the day](day-parts.md) | `MORNING` or `AFTERNOON`, absent otherwise; Evening is only `X-OPENTODO-EVENING`. A client that sends it sets the part and clears This Evening (`X-OPENTODO-EVENING:TRUE` beside it wins). A client that drops it leaves the part as it is; an unknown value is kept as client data. |
 | `PRIORITY` | priority | Out: 1→1, 2→5, 3→9, 4→none. In: 1–3→1, 4–6→2, 7–9→3, 0 or absent→4. |
 | `STATUS`, `COMPLETED`, `PERCENT-COMPLETE` | completed time | `COMPLETED` (or `CANCELLED`) sets it, `NEEDS-ACTION` reopens. `IN-PROCESS` and a partial `PERCENT-COMPLETE` are kept as client data. Completed tasks stay listed. |
 | `CATEGORIES` | labels | By name, case-insensitive; an unknown name creates a label. Labels of other members on a shared task are kept. |

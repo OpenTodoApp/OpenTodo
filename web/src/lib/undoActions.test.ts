@@ -4,7 +4,7 @@ import { db, useDatabase } from './db'
 import { createTask, resetDeviceId, updateTask } from './ops'
 import type { OnDropRule } from './types'
 import { undoBatch } from './undo'
-import { dropOnPanel } from './undoActions'
+import { dropOnPanel, dropUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -59,5 +59,27 @@ describe('dropOnPanel', () => {
     expect(r.matches).toBe(false)
     expect(r.label).toBe('Moved to Important, not urgent: priority 2, due next week It does not match the column’s filter.')
     expect((await db.tasks.get(id))!.priority).toBe(2)
+  })
+})
+
+// OpenSpec change day-parts, D4: a task dropped on a part heading of Today gets
+// that part, both fields in one batch, and Undo puts it back.
+describe('part headings', () => {
+  it('a drop on Afternoon writes the pair with Undo; Any time clears it; the same part writes nothing', async () => {
+    const id = await createTask({ title: 'Stretch', evening: true })
+    await db.outbox.clear()
+    const r = (await dropUndoable('part:afternoon', [id]))!
+    expect(r.label).toBe('Moved to Afternoon')
+    expect(await db.tasks.get(id)).toMatchObject({ day_part: 'afternoon', evening: false })
+    expect(new Set((await db.outbox.toArray()).map((o) => `${o.ts}|${o.device}`)).size).toBe(1)
+    expect((await dropUndoable('part:afternoon', [id]))!.entry).toBeNull()
+    await undoBatch(r.entry!.id)
+    expect(await db.tasks.get(id)).toMatchObject({ evening: true })
+    expect((await db.tasks.get(id))?.day_part ?? null).toBeNull()
+    await dropUndoable('part:morning', [id])
+    const none = (await dropUndoable('part:none', [id]))!
+    expect(none.label).toBe('Moved to Any time')
+    expect(await db.tasks.get(id)).toMatchObject({ day_part: null, evening: false })
+    expect(await dropUndoable('part:night', [id])).toBeNull()
   })
 })

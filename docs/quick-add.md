@@ -99,6 +99,17 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 | Spanish | `algún día` | `esta noche` |
 | Portuguese | `algum dia` | `hoje à noite` |
 
+**Morning and afternoon.** With [day parts](day-parts.md) on, `this morning` and `this afternoon` make the task due today with that part, and a part word right after a date phrase gives that date the part: `Stretch tomorrow morning` → *Stretch*, due tomorrow, Morning; `Dinner fri evening` → due Friday, This Evening. A part word anywhere else stays in the title (`Morning run tomorrow` keeps *Morning run*), and with day parts off none of these are read. Each gets its own chip.
+
+| Language | This morning, this afternoon | After a date |
+| --- | --- | --- |
+| English | `this morning`, `this afternoon` | `morning`, `afternoon`, `evening` |
+| German | `heute Morgen`, `heute früh`, `heute Vormittag`, `heute Nachmittag` | `früh`, `Vormittag`, `Nachmittag`, `Abend` |
+| French | `ce matin`, `cet après-midi` | `matin`, `après-midi`, `soir` |
+| Italian | `stamattina`, `stamani`, `questa mattina`, `oggi pomeriggio`, `questo pomeriggio` | `mattina`, `pomeriggio`, `sera` |
+| Spanish | `esta mañana`, `esta tarde` | `por la mañana`, `por la tarde`, `por la noche` |
+| Portuguese | `esta manhã`, `hoje de manhã`, `esta tarde`, `hoje à tarde` | `de manhã`, `à tarde`, `à noite` |
+
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, deadline, project, priority or estimate.
 
 **Day/month order.** Numeric dates follow your date format in **Settings → Language and region → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, they follow your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The date format syncs, so every device reads a line the same way. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.

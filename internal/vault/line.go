@@ -48,7 +48,7 @@ var priorityMarker = map[int]string{1: markHighest, 2: markHigh, 3: markMedium}
 // The inline fields (Dataview `[key:: value]`) the vault maps, and the
 // read-only ones it writes from the app and never pushes.
 var (
-	inlineFields   = map[string]bool{"time": true, "tz": true, "deadline": true, "estimate": true, "someday": true, "evening": true}
+	inlineFields   = map[string]bool{"time": true, "tz": true, "deadline": true, "estimate": true, "someday": true, "evening": true, "daypart": true}
 	readOnlyFields = map[string]bool{"origin": true, "location": true, "tracked": true}
 )
 
@@ -85,6 +85,9 @@ type Line struct {
 	Deadline string
 	Estimate string
 	Evening  bool
+	// DayPart is [daypart:: …] as written (OpenSpec change day-parts); checked
+	// by the merge, which reports a value it does not know.
+	DayPart string
 	// ReadOnly holds the read-only inline fields as written: origin, location,
 	// tracked and field:<name>.
 	ReadOnly map[string]string
@@ -338,6 +341,8 @@ func ParseLine(indent string, done bool, content string) Line {
 			}
 		case "evening":
 			l.Evening = strings.EqualFold(tok.value, "true")
+		case "daypart":
+			l.DayPart = tok.value
 		default:
 			if strings.HasPrefix(tok.kind, "ro:") {
 				l.ReadOnly[strings.TrimPrefix(tok.kind, "ro:")] = tok.value
@@ -426,6 +431,8 @@ func PrintLine(l Line) string {
 	}
 	if l.Evening {
 		parts = append(parts, "[evening:: true]")
+	} else if l.DayPart != "" {
+		parts = append(parts, "[daypart:: "+l.DayPart+"]")
 	}
 	if m := priorityMarker[l.Priority]; m != "" {
 		parts = append(parts, m)

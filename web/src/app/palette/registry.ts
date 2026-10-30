@@ -37,6 +37,8 @@ import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
+import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayParts'
+import { dayPartUndoable } from '../../lib/undoActions'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -64,6 +66,8 @@ export interface PaletteContext {
   focusQuickAdd: () => boolean
   /** The tasks of Today's Earlier group (page-rhythm D6); its two commands are offered while it is not empty. */
   earlier?: readonly string[]
+  /** The account groups Today by part of the day (day-parts D4): the part commands are offered. */
+  dayParts?: boolean
 }
 
 interface Command {
@@ -180,7 +184,12 @@ export function commands(ctx: PaletteContext): Command[] {
         tk.start === 'someday'
           ? { id: 'task:unpark', label: t('Bring back {title} from Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => unparkTask(tk.id) }
           : { id: 'task:park', label: t('Park {title} in Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => parkTask(tk.id) },
-        { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(tk.id, { evening: !tk.evening }) },
+        { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(tk.id, dayPartFields(tk.evening ? null : 'evening')) },
+        // Day parts (day-parts D4): the parts the task is not in, while the account uses them.
+        ...(ctx.dayParts ? ([...DAY_PARTS, null] as const).filter((part) => dayPartOf(tk) !== part).map((part): Command => ({
+          id: `task:part:${part ?? 'none'}`, label: part ? t('Move {title} to {part}', { title, part: dayPartName(part) }) : t('Move {title} to Any time', { title }),
+          icon: part === 'evening' ? 'moon' : 'sun', keywords: 'day part morning afternoon evening', run: () => dayPartUndoable([tk.id], part).then(() => {}),
+        })) : []),
         { id: 'task:schedule', label: t('Schedule {title} in the Day view', { title }), icon: 'clock', shortcut: keysOf('list.schedule'), run: () => placeInDay(tk, ctx.today) },
       )
       // A task without a project moves to another workspace's Inbox (workspaces "Move an Inbox task").

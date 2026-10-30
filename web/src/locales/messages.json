@@ -1051,6 +1051,11 @@
   "After {title}": [
     "web/src/app/TaskRow.tsx"
   ],
+  "Afternoon": [
+    "web/src/app/ParseChips.tsx",
+    "web/src/lib/dayParts.ts",
+    "web/src/lib/listGroups.ts"
+  ],
   "All": [
     "web/src/app/Sidebar.tsx",
     "web/src/ui/Combobox/useCombobox.ts"
@@ -1303,7 +1308,8 @@
     "web/src/app/filter/FilterBuilder.tsx"
   ],
   "Any time": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/lib/dayParts.ts"
   ],
   "Any.do (JSON from a data request)": [
     "web/src/app/ImportScreen.tsx"
@@ -3373,6 +3379,9 @@
   "Day of the week": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
+  "Day part": [
+    "web/src/app/bulk/BulkActions.tsx"
+  ],
   "Day reopened": [
     "web/src/lib/review.ts"
   ],
@@ -4463,7 +4472,8 @@
   ],
   "Evening": [
     "web/src/app/ParseChips.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/dayParts.ts"
   ],
   "Event": [
     "web/src/app/AuditPanel.tsx",
@@ -5451,8 +5461,17 @@
     "web/src/app/filter/FilterBuilder.tsx",
     "web/src/app/review/StatsView.tsx"
   ],
+  "Group Today by part of the day": [
+    "web/src/app/PreferencesPanels.tsx"
+  ],
   "Group by": [
     "web/src/app/views/DisplayPanel.tsx"
+  ],
+  "Group by day part": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Group by part of the day": [
+    "web/src/app/TaskListView.tsx"
   ],
   "Group chat": [
     "web/src/app/PublicLinksSection.tsx"
@@ -5682,6 +5701,9 @@
   "How": [
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/RowDetails.tsx"
+  ],
+  "How Today lists the day, on all your devices.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "How a task opens from a list, on all your devices.": [
     "web/src/lib/settingsCopy.ts"
@@ -5976,6 +5998,9 @@
   "In the Trash: select the previous item": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the afternoon": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "In the command bar's Add mode: add the task and open it": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5984,6 +6009,9 @@
   ],
   "In the command bar: add what you typed as a task": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "In the morning": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "In the notes and comments: bold, italic, strikethrough, inline code, link (⌘ on a Mac)": [
     "web/src/lib/shortcuts.ts"
@@ -7253,6 +7281,14 @@
   "More properties": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "Morning": [
+    "web/src/app/ParseChips.tsx",
+    "web/src/lib/dayParts.ts",
+    "web/src/lib/listGroups.ts"
+  ],
+  "Morning, Afternoon and This Evening; a task with a time goes to its part.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Most tasks take {ratio} their estimate ({n} tasks).": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -7404,10 +7440,16 @@
   "Move {tasks} to “No section”": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
+  "Move {title} to Any time": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Move {title} to the Trash": [
     "web/src/app/palette/registry.ts"
   ],
   "Move {title} to workspace {name}": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Move {title} to {part}": [
     "web/src/app/palette/registry.ts"
   ],
   "Moved": [
@@ -7415,6 +7457,9 @@
   ],
   "Moved from {from} to {to}": [
     "web/src/lib/assistant.ts"
+  ],
+  "Moved to Any time": [
+    "web/src/lib/undoActions.ts"
   ],
   "Moved to Someday": [
     "web/src/lib/undoActions.ts"
@@ -7432,6 +7477,9 @@
     "web/src/app/TriageView.tsx"
   ],
   "Moved to {column}: {changes}": [
+    "web/src/lib/undoActions.ts"
+  ],
+  "Moved to {part}": [
     "web/src/lib/undoActions.ts"
   ],
   "Moved to {project}.": [
@@ -9303,6 +9351,10 @@
   ],
   "Parse natural language in quick add": [
     "web/src/app/QuickAddSettings.tsx"
+  ],
+  "Part of the day": [
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Part of the link is missing or changed. Open the complete link you were sent, including everything after the # sign.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -12333,6 +12385,9 @@
   "Stop encrypting future backups": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Stop grouping by part of the day": [
+    "web/src/app/TaskListView.tsx"
+  ],
   "Stop repeating": [
     "web/src/app/RecurrenceField.tsx"
   ],
@@ -14304,6 +14359,7 @@
     "web/src/lib/dates.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/logbook.ts",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
     "web/src/lib/views.ts"
   ],
@@ -16050,6 +16106,9 @@
     "web/src/app/RemindersField.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
   ],
+  "afternoon": [
+    "web/src/lib/dayParts.ts"
+  ],
   "against {time} estimated": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -16375,9 +16434,7 @@
     "web/src/lib/rules/summary.ts"
   ],
   "evening": [
-    "web/src/app/TaskRow.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/dayParts.ts"
   ],
   "every day": [
     "web/src/lib/rules/summary.ts"
@@ -16606,6 +16663,9 @@
   ],
   "more than": [
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "morning": [
+    "web/src/lib/dayParts.ts"
   ],
   "moved the due date to {date}": [
     "web/src/lib/activity.ts"
@@ -16876,6 +16936,9 @@
   "parent task": [
     "web/src/lib/activityRuns.ts"
   ],
+  "part of the day": [
+    "web/src/lib/history.ts"
+  ],
   "partial, the rest follows": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -17141,6 +17204,9 @@
     "web/src/lib/activity.ts"
   ],
   "the parent task": [
+    "web/src/lib/activity.ts"
+  ],
+  "the part of the day": [
     "web/src/lib/activity.ts"
   ],
   "the passphrase must have at least {n} characters": [

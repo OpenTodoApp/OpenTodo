@@ -176,6 +176,10 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	if string(merged["evening"]) == "true" {
 		record["evening"] = json.RawMessage("true")
 	}
+	// And the part of the day (OpenSpec change day-parts, design D2).
+	if part := idValue(merged["day_part"]); part != "" {
+		record["day_part"] = JSONOf(part)
+	}
 	nd := recurringDue{Date: next}
 	if cur != nil {
 		nd.Time, nd.TZ = cur.Time, cur.TZ

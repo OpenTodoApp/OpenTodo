@@ -3,6 +3,7 @@
 // (app/display) both call these, so a display can never disagree with the list.
 import { addDaysISO, currentDayStart, logicalDay } from './dates'
 import { blockedMap } from './dependencies'
+import { placedPart } from './dayParts'
 import { compareDueThenPriority } from './ordering'
 import type { Project, Task } from './types'
 import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
@@ -38,21 +39,31 @@ export function projectOpenList(tasks: readonly Task[], projectId: string): Task
 
 export interface TodayGroups {
   overdue: Task[]
-  /** Today's tasks that are not in the evening. */
+  /** Today's tasks that are not in the evening (with day parts on: no part and no due time). */
   day: Task[]
-  /** This Evening (someday-and-evening). */
+  /** Morning and Afternoon (day-parts D3): empty unless day parts are on. */
+  morning: Task[]
+  afternoon: Task[]
+  /** This Evening (someday-and-evening; with day parts on also an untagged task due from 18:00). */
   evening: Task[]
   /** Blocked tasks (task-dependencies D7), kept apart at the end. */
   blocked: Task[]
 }
 
-/** Split Today's list (already sorted) into Earlier (`overdue`), the day, This Evening and Blocked. */
-export function groupToday(list: readonly Task[], today: string, blocked: { has(id: string): boolean } = new Set<string>()): TodayGroups {
+/**
+ * Split Today's list (already sorted) into Earlier (`overdue`), the day, This Evening
+ * and Blocked. With `parts` (the account's day parts, day-parts D3) the day is split
+ * further into Morning and Afternoon, a task without a part placed by its due time.
+ */
+export function groupToday(list: readonly Task[], today: string, blocked: { has(id: string): boolean } = new Set<string>(), parts = false): TodayGroups {
   const waiting = list.filter((t) => blocked.has(t.id))
   const ready = waiting.length ? list.filter((t) => !blocked.has(t.id)) : [...list]
   const overdue = ready.filter((t) => overdueInToday(t, today))
   const rest = ready.filter((t) => !overdueInToday(t, today))
-  return { overdue, day: rest.filter((t) => !t.evening), evening: rest.filter((t) => t.evening), blocked: waiting }
+  if (!parts) return { overdue, day: rest.filter((t) => !t.evening), morning: [], afternoon: [], evening: rest.filter((t) => t.evening), blocked: waiting }
+  const of = new Map(rest.map((t) => [t.id, placedPart(t)]))
+  const where = (part: ReturnType<typeof placedPart>) => rest.filter((t) => of.get(t.id) === part)
+  return { overdue, day: where(null), morning: where('morning'), afternoon: where('afternoon'), evening: where('evening'), blocked: waiting }
 }
 
 /**

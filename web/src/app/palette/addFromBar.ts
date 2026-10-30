@@ -10,6 +10,7 @@ import { preferredLanguages, t } from '../../lib/i18n'
 import { createTask } from '../../lib/ops'
 import { addTasksUndoable } from '../../lib/pasteTasks'
 import { preferredPlacement } from '../../lib/userPrefs'
+import { dayPartsPreferred } from '../../lib/dayParts'
 import { VIEW_SCOPES } from '../../lib/shortcuts'
 import { addedWhere } from '../addedWhere'
 import { ACTION_TOAST_MS, showBulkToast } from '../bulk/toastStore'
@@ -71,6 +72,8 @@ export async function lineToInput(line: string, projects: readonly ProjectRef[],
   const parsed = parse(line, {
     today: logicalToday(), now: nowHHMM(), languages: resolveLanguages(settings, langs), dayMonthOrder: resolveDayMonthOrder(settings, langs, null),
     weekStart: currentDateTime().weekStart, projects, dismissed: [],
+    // Part phrases only while the account uses day parts (day-parts D5).
+    dayParts: await dayPartsPreferred(),
   })
   return parsed.title ? toTaskInput(parsed, { labels, createLabel: createLabelByName }) : { title: line }
 }

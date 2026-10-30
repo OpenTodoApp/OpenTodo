@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/location"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -27,6 +28,8 @@ func planningProps() map[string]any {
 		"start": map[string]any{"type": []string{"string", "null"},
 			"description": "Do not show before this date (YYYY-MM-DD), or \"someday\" to park the task without a date; null makes it active. Written as sent: parking does not clear the do-on date, send due null too (schedule_tasks) if you mean that."},
 		"evening": map[string]any{"type": "boolean", "description": "true puts the task in This Evening of its day; false takes it out."},
+		"day_part": map[string]any{"type": []string{"string", "null"}, "enum": []any{"morning", "afternoon", "evening", nil},
+			"description": "The part of the day the task belongs to: morning, afternoon or evening (This Evening); null for any time. Sets evening too; wins over evening when both are sent."},
 		"blocked_by": map[string]any{"type": "array", "maxItems": opsync.MaxBlockedBy, "items": map[string]any{"type": "string"},
 			"description": "Ids of tasks this one waits for (same project sharing, never itself, no cycles); an empty array removes every blocker."},
 		"location": map[string]any{"type": []string{"object", "null"}, "additionalProperties": false,
@@ -85,6 +88,21 @@ func (snap *snapshot) planningPatch(p string, it args, c Caller, patch map[strin
 			return argErr(p + "evening: must be true or false")
 		}
 		patch["evening"] = raw(b)
+	}
+	// The part of the day (OpenSpec change day-parts): both fields, paired.
+	if v, ok := it["day_part"]; ok {
+		var part string
+		if string(v) != "null" && (json.Unmarshal(v, &part) != nil || part == "") {
+			return argErr(p + "day_part: must be morning, afternoon, evening or null")
+		}
+		if string(v) != "null" {
+			if _, ok := daypart.Parse(part); !ok {
+				return argErr(p + "day_part: must be morning, afternoon, evening or null")
+			}
+		}
+		for f, val := range daypart.Fields(part) {
+			patch[f] = val
+		}
 	}
 	if v, ok := it["blocked_by"]; ok {
 		var list []string

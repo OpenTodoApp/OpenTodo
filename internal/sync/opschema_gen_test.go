@@ -48,7 +48,7 @@ func tsKind(k kind) string {
 	switch k {
 	case kString, kID, kDoc:
 		return "string"
-	case kNullableString, kRecurrence, kNullableText, kDate, kStart:
+	case kNullableString, kRecurrence, kNullableText, kDate, kStart, kDayPart:
 		return "string | null"
 	case kNumber:
 		return "number"

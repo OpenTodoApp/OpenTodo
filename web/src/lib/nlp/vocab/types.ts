@@ -34,6 +34,15 @@ export interface Vocabulary {
   somedayWords: string[]
   /** Words that make a task due today and for This Evening ("tonight"). */
   eveningWords: string[]
+  /**
+   * Day parts (OpenSpec change day-parts, D5), only while the account uses them:
+   * "this morning" and "this afternoon" make a task due today with that part, and a
+   * part word directly after a date phrase ("tomorrow morning") gives that date the
+   * part. A part word anywhere else stays in the title ("Morning run").
+   */
+  morningWords: string[]
+  afternoonWords: string[]
+  partWords: { morning: string[]; afternoon: string[]; evening: string[] }
   /** "next" placed before the noun ("next Wed", "nächsten Mittwoch"). */
   nextBefore: string[]
   /** "next" placed after the noun ("mardi prochain", "martes que viene"). */

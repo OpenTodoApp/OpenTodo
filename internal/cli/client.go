@@ -296,8 +296,10 @@ type task struct {
 	Start *string `json:"start"`
 	// Planning fields (agent-planning-fields): deadline, This Evening, the tasks
 	// it waits for and the location as stored.
-	Deadline    *string         `json:"deadline"`
-	Evening     bool            `json:"evening"`
+	Deadline *string `json:"deadline"`
+	Evening  bool    `json:"evening"`
+	// DayPart is "morning", "afternoon" or null (day-parts); Evening stays the flag.
+	DayPart     *string         `json:"day_part"`
 	BlockedBy   []string        `json:"blocked_by"`
 	Location    json.RawMessage `json:"location"`
 	Labels      []string        `json:"labels"`
@@ -508,6 +510,16 @@ func (c *client) meAuth(ctx context.Context) (*user, credential, error) {
 		return nil, credential{}, serverErr("unexpected response from server: missing user")
 	}
 	return out.User, out.Auth, nil
+}
+
+// dayParts reports the account's Day parts preference (GET /api/v1/me
+// day_parts, OpenSpec change day-parts): quick-add parsing follows it.
+func (c *client) dayParts(ctx context.Context) (bool, error) {
+	var out struct {
+		DayParts bool `json:"day_parts"`
+	}
+	err := c.getJSON(ctx, "/me", &out)
+	return out.DayParts, err
 }
 
 // normalizeURL accepts "todo.example.com", "http://host:8080/" and friends.

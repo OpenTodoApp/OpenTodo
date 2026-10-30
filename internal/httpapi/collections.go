@@ -155,6 +155,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if entity == "task" {
 		canonicalizeRecurrence(body)
+		pairDayPart(body)
 		// Custom field values become fields.<id> keys before an idempotent
 		// replay compares the planned ops (custom-fields D3).
 		if msg, err := s.checkTaskFields(r.Context(), uid, body, nil); err != nil {
@@ -496,6 +497,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	}
 	if entity == "task" {
 		canonicalizeRecurrence(body)
+		pairDayPart(body)
 		// Completing a recurring task records the occurrence and moves the series.
 		recordID, record, ok, err := s.recurringCompletion(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing, localToday(s.now()))
 		if err != nil {

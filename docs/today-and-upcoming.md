@@ -19,7 +19,7 @@ Today, under its [briefing](briefing.md), is where most people start. A task you
 
 A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Earlier**. Each task is listed once, and the Today count in the sidebar counts the same tasks.
 
-A task whose start date has come shows up in Today too, with a **Started** chip, and stays until you complete it, give it a date or defer it again. Deferred and parked tasks stay out of Today, unless their due date or deadline has come: a hard date always wins. Tasks you marked for **This Evening** are listed in their own group below the day's tasks.
+A task whose start date has come shows up in Today too, with a **Started** chip, and stays until you complete it, give it a date or defer it again. Deferred and parked tasks stay out of Today, unless their due date or deadline has come: a hard date always wins. **This Evening** tasks get their own group below the day's tasks; [day parts](day-parts.md) add Morning and Afternoon.
 
 Tasks [waiting for another task](tasks-and-projects.md#wait-for-another-task) gather in a **Blocked** group at the end, folded so they don't crowd the day; select the heading to open it (your choice is kept on this device). When the task they wait for is completed, they move up among today's tasks by themselves. In Upcoming and other lists, blocked tasks stay in place, dimmed, with a lock.
 

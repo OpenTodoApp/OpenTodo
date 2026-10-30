@@ -12,6 +12,8 @@ import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects
 import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
 import { useListDisplay } from './useListDisplay'
 import { useAccountRowLayout } from '../../lib/rowLayout'
+import { useUserPrefsRow } from '../../lib/localData'
+import { dayPartsOn } from '../../lib/dayParts'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
@@ -178,11 +180,13 @@ export function useListModel(route: ListRoute, userId?: string) {
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
   const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list')
 
+  // Today grouped by part of the day (day-parts D3): the account's synced choice.
+  const dayParts = dayPartsOn(useUserPrefsRow())
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, dayParts,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, dayParts])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
   const ownRows = useMemo(() => (planned.length ? groups.filter((g) => g.key !== 'planned').flatMap((g) => g.rows) : rows), [planned, groups, rows])
@@ -214,7 +218,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, ownRows, siblingPos, timeColumn, doneBySection,
-    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay,
+    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts,
   }
 }
 

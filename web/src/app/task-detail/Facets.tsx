@@ -32,6 +32,7 @@ import type { Optional } from './usePropertyEditing'
 import { WhenControl, WhenSegmentPicker } from './WhenControl'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
+import { dayPartFields } from '../../lib/dayParts'
 
 export const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   // Priority colours come from the p1–p4 tokens (borders, 3:1); the labels use the
@@ -278,7 +279,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
     { title: t('When'), offers: [
       { id: 'deadline', label: t('Deadline'), icon: 'hourglass', shortcut: keysOf('list.deadline') },
       { id: 'when', label: t('Start'), icon: 'calendar-range', shortcut: keysOf('list.defer') },
-      { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(updateTask(task.id, { evening: true })) },
+      { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(updateTask(task.id, dayPartFields('evening'))) },
       { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock' },
       { id: 'repeat', label: t('Repeat'), icon: 'repeat' },
     ] },

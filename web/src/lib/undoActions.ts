@@ -18,6 +18,7 @@ import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { labelKey } from './labels'
+import { dayPartFields, dayPartName, dayPartOf, type DayPart } from './dayParts'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
 export interface UndoableResult {
@@ -103,6 +104,12 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
     const label = await db.labels.get(target.slice('label:'.length))
     return label && !label.deleted_at ? addLabelUndoable(ids, label.id, label.name) : null
   }
+  // Today's part headings (day-parts D4).
+  if (target.startsWith('part:')) {
+    const part = target.slice('part:'.length)
+    if (part === 'none') return dayPartUndoable(ids, null)
+    return part === 'morning' || part === 'afternoon' || part === 'evening' ? dayPartUndoable(ids, part) : null
+  }
   return null
 }
 
@@ -146,6 +153,20 @@ export async function parkUndoable(id: string): Promise<UndoableResult> {
   if (task.due) patch.due = null
   if (task.evening) patch.evening = false
   return apply([{ entity: 'task', entityId: id, patch }], t('Moved to Someday'))
+}
+
+/**
+ * Set the part of the day of tasks (day-parts D2): both fields in one batch per
+ * task, with Undo; a task already in that part writes nothing.
+ */
+export async function dayPartUndoable(ids: readonly string[], part: DayPart | null): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const fields = dayPartFields(part)
+  const changes: Change[] = tasks
+    .filter((task) => dayPartOf(task) !== part || (task.day_part ?? null) !== fields.day_part)
+    .map((task) => ({ entity: 'task', entityId: task.id, patch: { ...fields } }))
+  if (!changes.length) return { entry: null, label: '' }
+  return apply(changes, part ? t('Moved to {part}', { part: dayPartName(part) }) : t('Moved to Any time'))
 }
 
 export interface DropResult extends UndoableResult {

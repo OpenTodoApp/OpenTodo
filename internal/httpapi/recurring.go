@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -28,6 +29,20 @@ func canonicalizeRecurrence(body map[string]json.RawMessage) {
 	}
 	if c, err := recurrence.Canonicalize(s); err == nil {
 		body["recurrence"], _ = json.Marshal(c)
+	}
+}
+
+// pairDayPart completes a task body that sets Morning or Afternoon without the
+// evening flag with evening false, the pairing of OpenSpec change day-parts
+// (design D2), so the part is the one written. A body that names both is kept
+// as sent; an invalid value is left for op validation to reject.
+func pairDayPart(body map[string]json.RawMessage) {
+	if _, has := body["evening"]; has {
+		return
+	}
+	var part string
+	if raw, ok := body["day_part"]; ok && json.Unmarshal(raw, &part) == nil && daypart.Stored(part) {
+		body["evening"] = json.RawMessage("false")
 	}
 }
 

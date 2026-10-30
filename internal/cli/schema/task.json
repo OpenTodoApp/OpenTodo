@@ -34,6 +34,7 @@
     "deadline": {"type": ["string", "null"], "description": "YYYY-MM-DD: the day the task must be finished by, separate from due"},
     "start": {"type": ["string", "null"], "description": "\"someday\" (parked) or YYYY-MM-DD (deferred until that day)"},
     "evening": {"type": "boolean", "description": "in This Evening"},
+    "day_part": {"type": ["string", "null"], "enum": ["morning", "afternoon", null], "description": "the part of the day: morning or afternoon; evening is the evening flag"},
     "blocked_by": {"type": "array", "items": {"type": "string"}, "description": "ids of the tasks this one waits for"},
     "location": {
       "type": ["object", "string", "null"],
