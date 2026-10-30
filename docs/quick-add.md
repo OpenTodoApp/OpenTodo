@@ -3,7 +3,7 @@ title: Quick add syntax
 summary: Every word quick add understands: dates, times, projects, labels, priorities, estimates, six languages and voice capture.
 audience: user
 section: Reference
-specs: [natural-language-capture, voice-capture]
+specs: [natural-language-capture, voice-capture, manual-ordering, task-list-presentation]
 screens: [settings/quick-add, settings/voice]
 order: 10
 ---
@@ -124,6 +124,18 @@ Accents are optional (`manana`, `nachsten`, `fevrier` work too). Two-letter Germ
 ## Views and defaults
 
 Quick add still takes the view's context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view, the current label in a label view. Anything the line does set wins, so `Plan trip next Monday #travel` typed in Today goes to *Travel* on Monday. Labels add up instead: `@call` typed in the *errand* label view gives the task both labels, so it stays in the view you added it from. A task added in **Someday** is parked, unless the line sets a date (`Read Proust tomorrow` is due tomorrow instead).
+
+## Where new tasks go
+
+Settings → Capture → Quick add → **Add new tasks** decides where a task added from a list lands: **At the bottom of the list** (the default) or **At the top of the list**. The choice is kept for your account, so all your devices follow it, and it works offline like any change.
+
+It applies to the quick add of a project and the Inbox, to a section's **+** row, to a board column's add row, and to the command bar and the phone's add sheet. With *top*, the task is first in its project, section or column, right under the quick add, so you see it arrive. Lists ordered by date, priority or anything other than manual order keep their order: there the setting only decides which of two equal tasks comes first, so Today and Upcoming look the same either way.
+
+Some adds keep their own place: a subtask goes below its siblings, a task added with <kbd>o</kbd> goes right after the selected task, and duplicates, templates, imports and tasks created through the API, the [CLI](cli.md) or [MCP](mcp.md) are appended (see [Task fields](api.md#task-fields)).
+
+When a new task lands out of sight, at the end of a long list, a short note says where it went, such as *Added to the bottom of Inbox*, with **Show**, which scrolls to the task and selects it.
+
+From 768 px wide, the quick add stays under the page's title while the list scrolls under it, so you can add a task wherever you are in a long list without scrolling back up. On a phone the floating **+** button does the same, and the quick add scrolls with the list.
 
 ## Voice
 

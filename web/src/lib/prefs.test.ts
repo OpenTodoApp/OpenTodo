@@ -3,6 +3,7 @@ import { db, useDatabase } from './db'
 import { flushSeen, markSeen } from './feed'
 import { applyOps, resetDeviceId } from './ops'
 import { removeLocally } from './trash'
+import { readAddPosition, setAddPosition, USER_PREFS_ID } from './userPrefs'
 
 let n = 0
 beforeEach(() => {
@@ -69,5 +70,22 @@ describe('project_prefs seen marker', () => {
     expect(await db.prefs.get('p')).toBeUndefined()
     expect(await db.projects.get('p')).toBeUndefined()
     expect(await db.outbox.count()).toBe(0)
+  })
+})
+
+describe('add position preference (add-position 1.2)', () => {
+  it('reads empty or unknown as bottom without rewriting the row', () => {
+    expect(readAddPosition(null)).toBe('bottom')
+    expect(readAddPosition({ add_position: '' })).toBe('bottom')
+    expect(readAddPosition({ add_position: 'middle' })).toBe('bottom')
+    expect(readAddPosition({ add_position: 'bottom' })).toBe('bottom')
+    expect(readAddPosition({ add_position: 'top' })).toBe('top')
+  })
+
+  it('writes one op on the synced row', async () => {
+    await setAddPosition('top')
+    expect(readAddPosition(await db.userPrefs.get(USER_PREFS_ID))).toBe('top')
+    const queued = (await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs' && o.field === 'add_position')
+    expect(queued.map((o) => o.value)).toEqual(['top'])
   })
 })
