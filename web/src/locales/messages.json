@@ -17829,7 +17829,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "{moved} moved · {skipped} changed meanwhile": [
-    "web/src/app/calendar/replanApply.ts"
+    "web/src/lib/undoActions.ts"
   ],
   "{moved} of {n, plural, one {# task moved to today} other {# tasks moved to today}}": [
     "web/src/lib/bulk.ts"
@@ -18156,7 +18156,7 @@
     "web/src/lib/bulk.ts"
   ],
   "{n, plural, one {# task moved} other {# tasks moved}}": [
-    "web/src/app/calendar/replanApply.ts"
+    "web/src/lib/undoActions.ts"
   ],
   "{n, plural, one {# task moves} other {# tasks move}}": [
     "web/src/app/calendar/ReplanPreview.tsx"
