@@ -236,14 +236,14 @@ describe('a running session', () => {
     await r.unmount()
   })
 
-  it('Menu: the three modes with the current one checked, Change task, the noise toggle, Settings and Help; modes disabled while running', async () => {
+  it('Menu: the three modes with the current one checked, Change task, Remove from focus (phone-touch-focus), the noise toggle, Settings and Help; modes disabled while running', async () => {
     await focusList('A')
     const r = await shell()
     await waitFor(() => shownTask() === 'A')
     await click(q('button[aria-label="More actions"]')!)
     await waitFor(() => !!q('[data-menu-label="Pomodoro"]'))
     const labels = [...document.querySelectorAll('[role="menu"] [data-menu-label]')].map((x) => x.getAttribute('data-menu-label'))
-    expect(labels).toEqual(['Pomodoro', 'Flowtime', 'Countdown', 'Change task', 'Noise on', 'Settings', 'Help'])
+    expect(labels).toEqual(['Pomodoro', 'Flowtime', 'Countdown', 'Change task', 'Remove from focus', 'Noise on', 'Settings', 'Help'])
     expect(q('[data-menu-label="Pomodoro"]')?.getAttribute('aria-checked')).toBe('true')
     await key(document.body, 'Escape')
     await click(q('[data-focus-toggle]')!)

@@ -4,26 +4,30 @@
 // the check on the synced personal `review` row. Yesterday's line for tomorrow
 // (close-the-day D7) is shown first, read-only, until the day is closed again.
 // In Bento style (bento-daily-check D5) the focus is a Large, a Medium and a Small
-// slot, and `f` places a task by its estimate or opens the slot menu.
+// slot, and `f` places a task by its estimate or opens the slot menu. By touch
+// (phone-touch-focus) an empty slot, and in Three tasks the Add to focus row, open
+// the focus picker; `f` and the picker follow one set of rules (lib/focusEdit).
 import { useEffect, useMemo, useState } from 'react'
-import { bentoList, readBento, readBentoOrder, readFocusStyle, setBentoOrder, setFocusStyle, type BentoRead, type BentoSlot } from '../../lib/bento'
-import { bentoPress, freeSlots, SLOT_NAMES, takenMessage, withPlaced, withRemoved, writeBento } from '../../lib/bentoSlots'
+import { bentoList, readBento, readBentoOrder, readFocusStyle, setBentoOrder, setFocusStyle } from '../../lib/bento'
+import { freeSlots, withRemoved } from '../../lib/bentoSlots'
+import { estimateAndPlace, placeFocus, pressFocus, type FocusContext, type FocusOutcome } from '../../lib/focusEdit'
 import { todayList } from '../../lib/dayLists'
 import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
 import { useAllLabels, useReviewRow, useUserPrefsRow } from '../../lib/localData'
-import { setTaskCompleted, updateTask } from '../../lib/ops'
-import { dailyDue, finishDailyCheck, FOCUS_MAX, focusTasks, toggleFocus, yesterdaysNote } from '../../lib/review'
+import { setTaskCompleted } from '../../lib/ops'
+import { dailyDue, finishDailyCheck, FOCUS_MAX, focusTasks, yesterdaysNote } from '../../lib/review'
 import { canEditTask } from '../../lib/sharing'
 import { qualifies } from '../../lib/triage'
 import type { Membership, Task } from '../../lib/types'
 import { overdueInToday } from '../../lib/views'
-import { Button, Dialog, MenuGroup, MenuItem, Notice, PageBody, PageHeader, Skeleton } from '../../ui'
+import { Button, Dialog, Icon, MenuGroup, MenuItem, Notice, PageBody, PageHeader, Skeleton } from '../../ui'
 import { act } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 import { BriefingText, useBriefing } from '../Briefing'
+import { requestFocusPick } from '../focus/focusRequest'
 import { useWithMethod } from '../help/MethodLink'
 import { LabelPicker } from '../LabelPicker'
 import { useMethodInput } from '../method/useMethodInput'
@@ -56,6 +60,7 @@ export function DailyCheck() {
     // Completed or deleted tasks leave the Bento as they leave the focus: without a write.
     const bento = readBento(review, input.today, live.filter((x) => !x.completed_at))
     return {
+      live,
       inbox: live.filter(qualifies).length,
       focus: bentoOn ? bentoList(bento, order) : focusTasks(review, input.today, live),
       bento,
@@ -76,47 +81,17 @@ export function DailyCheck() {
   const focusIds = new Set(groups?.focus.map((x) => x.id) ?? [])
   const editable = (task: Task) => !!input && canEditTask(task, input.memberships as Map<string, Membership>)
 
-  /** Writes a Bento change as one batch with Undo (D5). */
-  const writeSlots = async (next: BentoRead, text: string) => {
-    if (!input) return
-    const entry = await writeBento(review, next, order, input.today, text)
-    if (entry) showUndoToast(text, entry.id)
-    setMessage({ text })
-  }
-  const place = (read: BentoRead, task: Task, slot: BentoSlot) => {
-    const next = withPlaced(read, task, slot)
-    if (!next) { setMessage({ text: takenMessage(slot, read.slots[slot]!), choose: task }); return Promise.resolve() }
-    return writeSlots(next, t('{title} is in the {slot} slot.', { title: task.title, slot: SLOT_NAMES[slot] }))
-  }
-  const pressBento = async (task: Task) => {
-    if (!groups) return
-    const read = groups.bento
-    const press = bentoPress(read, task)
-    switch (press.kind) {
-      case 'remove': return writeSlots(withRemoved(read, task.id), t('{title} left today’s focus.', { title: task.title }))
-      case 'place': return place(read, task, press.slot)
-      case 'taken': setMessage({ text: takenMessage(press.slot, press.occupant), choose: task }); return
-      case 'choose': setChooseFor(task); return
-      case 'full': setMessage({ text: t('Every slot is full. Take one out first.') })
-    }
+  // The rules read the check's own rows: completed, deleted and archived tasks are out.
+  const focusCtx = (): FocusContext | null => (input && groups ? { review, prefs, today: input.today, tasks: groups.live } : null)
+  /** Shows an outcome of the focus rules (D5): the status line, Undo, Choose a slot, or the slot menu. */
+  const settle = (outcome: FocusOutcome) => {
+    if (outcome.kind === 'choose') { setChooseFor(outcome.task); return }
+    if (outcome.kind === 'done' && outcome.undoId) showUndoToast(outcome.text, outcome.undoId)
+    setMessage(outcome.kind === 'refused' ? { text: outcome.text, choose: outcome.choose } : { text: outcome.text })
   }
   const toggle = async (task: Task) => {
-    if (!input) return
-    if (bentoOn) return pressBento(task)
-    const outcome = await toggleFocus(review, input.today, input.tasks, task.id)
-    setMessage({ text: outcome === 'full' ? t('Today’s focus holds {n} tasks. Take one out first.', { n: FOCUS_MAX })
-      : outcome === 'added' ? t('{title} is in today’s focus.', { title: task.title }) : t('{title} left today’s focus.', { title: task.title }) })
-  }
-  /** Set estimate… then place by the new estimate (D5); a taken slot gets the message. */
-  const estimateThenPlace = async (task: Task, minutes: number) => {
-    setChooseFor(null)
-    await updateTask(task.id, { estimate_minutes: minutes })
-    if (!groups) return
-    const sized = { ...task, estimate_minutes: minutes }
-    const press = bentoPress(groups.bento, sized)
-    if (press.kind === 'place') return place(groups.bento, sized, press.slot)
-    if (press.kind === 'taken') setMessage({ text: takenMessage(press.slot, press.occupant), choose: sized })
-    else if (press.kind === 'full') setMessage({ text: t('Every slot is full. Take one out first.') })
+    const ctx = focusCtx()
+    if (ctx) settle(await pressFocus(ctx, task))
   }
   useShortcutScope('view', {
     'review.focus': () => {
@@ -189,24 +164,31 @@ export function DailyCheck() {
           {bentoOn && (
             <section data-group="focus" data-bento className="mb-4" aria-labelledby="daily-focus">
               <h2 id="daily-focus" className="mb-1 px-2 text-meta font-semibold text-faint">{t('Today’s focus')}</h2>
-              <BentoSlotRows read={groups.bento} order={order} row={(task) => renderRow('focus', task, null)} />
+              <BentoSlotRows read={groups.bento} order={order} row={(task) => renderRow('focus', task, null)} onFill={(slot) => requestFocusPick({ mode: 'task', slot })} />
             </section>
           )}
           {groups.overdue.length === 0 && groups.today.length === 0 && <Notice tone="info">{t('Nothing is due today. Pick your focus from Next.')}</Notice>}
-          {sections.filter((s) => s.tasks.length > 0 && !(bentoOn && s.key === 'focus')).map((s) => (
+          {sections.filter((s) => (s.tasks.length > 0 || (s.key === 'focus' && !bentoOn)) && !(bentoOn && s.key === 'focus')).map((s) => (
             <section key={s.key} data-group={s.key} className="mb-4" aria-labelledby={`daily-${s.key}`}>
               <h2 id={`daily-${s.key}`} className="mb-1 px-2 text-meta font-semibold text-faint">{s.heading}</h2>
               <ul>
                 {s.tasks.map((task) => renderRow(s.key, task, s.key !== 'focus' && focusIds.has(task.id) ? t('In today’s focus') : null))}
               </ul>
+              {/* Three tasks by touch (phone-touch-focus): the free places open the focus picker. */}
+              {s.key === 'focus' && s.tasks.length < FOCUS_MAX && (
+                <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-control pl-8 pr-2 text-left text-body text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised"
+                  data-focus-add onClick={() => requestFocusPick({ mode: 'task', slot: null })}>
+                  <span className="flex w-5 shrink-0 justify-center"><Icon name="plus" size="sm" /></span>{t('Add to focus')}
+                </button>
+              )}
             </section>
           ))}
         </>
       )}
       {chooseFor && groups && (
         <SlotChooser task={chooseFor} free={freeSlots(withRemoved(groups.bento, chooseFor.id))} editable={editable(chooseFor)}
-          onPick={(slot) => { const task = chooseFor; setChooseFor(null); act(place(groups.bento, task, slot)) }}
-          onEstimate={(minutes) => act(estimateThenPlace(chooseFor, minutes))}
+          onPick={(slot) => { const task = chooseFor, ctx = focusCtx(); setChooseFor(null); if (ctx) act(placeFocus(ctx, task, slot).then(settle)) }}
+          onEstimate={(minutes) => { const task = chooseFor, ctx = focusCtx(); setChooseFor(null); if (ctx) act(estimateAndPlace(ctx, task, minutes).then(settle)) }}
           onClose={() => setChooseFor(null)} />
       )}
       {pickerFor && (

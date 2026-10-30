@@ -27,6 +27,7 @@ import { SettingsView } from './SettingsView'
 import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
 import { FramesHost } from './calendar/framesRequest'
+import { FocusPickerHost } from './focus/focusRequest'
 import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { notificationsOpen, sidebarFind } from './signals'
@@ -338,7 +339,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <DailyCheckToast />
       <TemplateDialogHost />
       <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} />
-      <FramesHost />
+      <FramesHost /><FocusPickerHost />
     </div>
   )
 }

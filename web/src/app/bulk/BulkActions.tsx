@@ -7,7 +7,7 @@ import { Kbd } from '../shortcuts/Kbd'
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
-import { useAllLabels, useLiveSections, useProjects, useMembershipMap, useUserPrefsRow } from '../../lib/localData'
+import { useAllLabels, useLiveSections, useProjects, useMembershipMap, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
 import { dayPartUndoable, energyUndoable } from '../../lib/undoActions'
 import { ENERGY_LEVELS, energyLevelsOn, energyName, energyOf, type Energy } from '../../lib/energy'
@@ -27,6 +27,8 @@ import { startFocusOn } from '../focus/startFocus'
 import { t } from '../../lib/i18n'
 import { withListTransition } from '../motion'
 import { slotAction, slotLabel, useSlotState, type SlotState } from '../task-list/slotActions'
+import { focusMenuLabel, focusMenuState, runFocusPress, type FocusMenuState } from '../focus/focusRequest'
+import { useToday } from '../useViews'
 
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
@@ -45,7 +47,9 @@ interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: 
   /** Energy levels on (task-energy D3): the Energy submenu. */
   energy?: boolean
   /** Today with a limit (today-closed-list D3): the one task's slot command. */
-  slot?: SlotState }
+  slot?: SlotState
+  /** Today's focus (phone-touch-focus D3): the one task's focus command. */
+  focus?: FocusMenuState }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -76,6 +80,15 @@ export function slotItem(task: Task | undefined, slot: SlotState | undefined): A
   const run = task && slot ? slotAction(task.id, slot) : null
   if (!task || !slot || !run) return []
   return [{ kind: 'action', id: 'slot', label: slotLabel(slot), icon: slot === 'waiting' ? 'arrow-up' : 'undo-2', onSelect: run }]
+}
+
+/**
+ * Add to focus / Put in a slot / Remove from focus (phone-touch-focus D3): today's focus
+ * is personal, so a viewer of a shared project may too.
+ */
+export function todayFocusItem(task: Task | undefined, state: FocusMenuState | undefined): ActionItem[] {
+  if (!task || !state) return []
+  return [{ kind: 'action', id: 'today-focus', label: focusMenuLabel(state), icon: state === 'remove' ? 'x' : 'sun', onSelect: () => runFocusPress(task.id) }]
 }
 
 /**
@@ -128,7 +141,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const swipeTwins = n === 1 && a.schedule
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
-    ...(n === 1 ? [{ items: [...slotItem(d.tasks[0], d.slot), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
+    ...(n === 1 ? [{ items: [...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
     // Beside a row its own Priority and Schedule buttons already offer these.
     // Priority and Date are one row each (a submenu), so the menu fits on the screen;
@@ -199,7 +212,10 @@ function useBulkData(ids: readonly string[]): Data {
   const dayParts = dayPartsOn(prefs)
   const energy = energyLevelsOn(prefs)
   const slot = useSlotState(ids.length === 1 ? ids[0] : '')
-  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot }
+  const review = useReviewRow()
+  const today = useToday()
+  const focus = tasks.length === 1 ? focusMenuState(tasks[0], review, prefs, today) : null
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot, focus }
 }
 
 /**

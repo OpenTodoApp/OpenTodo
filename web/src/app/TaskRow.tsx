@@ -782,8 +782,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           checkbox, replaced by the selection box only while a selection is in progress
           (a row is ticked, or touch Select mode), in the same 20 px square, so the title
           never moves. Hover and focus never swap them: a click on the circle always
-          completes (row-checkbox-completes). */}
-      <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
+          completes (row-checkbox-completes); on touch its 44 px button is stacked above the row (phone-touch-focus D1). */}
+      <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start pointer-coarse:z-1" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
         <button
           type="button"
           aria-label={done ? t('Reopen {title}', { title: name }) : t('Complete {title}', { title: name })}
