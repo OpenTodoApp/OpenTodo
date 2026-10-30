@@ -71,3 +71,37 @@ func TestQuickAddParseDayParts(t *testing.T) {
 		t.Fatalf("chips %v", kinds)
 	}
 }
+
+// TestQuickAddParseDayPartsDefault (quick-add-day-parts-default): without
+// day_parts the route follows the account's Day parts preference; an explicit
+// day_parts wins either way.
+func TestQuickAddParseDayPartsDefault(t *testing.T) {
+	e := ownerEnv(t)
+	c := e.bearerClient()
+	h := bearer(e.token("full"))
+	check := func(pref string, param any, on bool) {
+		t.Helper()
+		b := parseBody("Stretch tomorrow morning")
+		if param != nil {
+			b["day_parts"] = param
+		}
+		resp, out := c.do("POST", parsePath, b, h...)
+		c.mustStatus(resp, 200, out)
+		f := out["fields"].(map[string]any)
+		if on && (out["title"] != "Stretch" || f["day_part"] != "morning") {
+			t.Fatalf("pref %s, day_parts %v: want parts read, got %v", pref, param, out)
+		}
+		if !on && (out["title"] != "Stretch morning" || f["day_part"] != nil) {
+			t.Fatalf("pref %s, day_parts %v: want parts not read, got %v", pref, param, out)
+		}
+	}
+	// Preference off (the default).
+	check("off", nil, false)
+	check("off", true, true)
+	check("off", false, false)
+	// Preference on.
+	e.syncOps("devA", rop("p1", "user_prefs", "me", "day_parts", "on", 1))
+	check("on", nil, true)
+	check("on", true, true)
+	check("on", false, false)
+}

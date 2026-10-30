@@ -34,7 +34,7 @@ Each one can be undone. <kbd>Shift</kbd>+<kbd>E</kbd> still toggles This Evening
 
 ## Type it
 
-With day parts on, [quick add](quick-add.md) reads **this morning** and **this afternoon** (today, with that part) and a part right after a date: **tomorrow morning**, **fri afternoon**, **sat evening**. A part word anywhere else stays in the title, so **Morning run tomorrow** keeps its name. **tonight** and **this evening** work whether day parts are on or not. Each phrase becomes a chip you can dismiss.
+With day parts on, [quick add](quick-add.md) reads **this morning** and **this afternoon** (today, with that part) and a part right after a date: **tomorrow morning**, **fri afternoon**, **sat evening**. A part word anywhere else stays in the title, so **Morning run tomorrow** keeps its name. **tonight** and **this evening** work whether day parts are on or not. Each phrase becomes a chip you can dismiss. The browser extension's [Quick save](capture.md#browser-extension) reads the same phrases while day parts are on.
 
 ## Find them
 
