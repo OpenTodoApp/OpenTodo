@@ -1037,7 +1037,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-props] :is([data-date], [data-estimate], [data-progress]) > svg { display: none; }
 }
 @container row (width >= 40rem) {
-  [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 0.75rem; row-gap: 0.125rem; }
+  /* align-content: on touch the open control is at least 44 px tall (the coarse-pointer
+     button rule); the lines stay at its top, on the circle's line, not in its middle. */
+  [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: start; column-gap: 0.75rem; row-gap: 0.125rem; }
   [data-row-head] { grid-area: 1 / 1; }
   [data-row-meta="row"] { display: contents; }
   [data-row-props] {

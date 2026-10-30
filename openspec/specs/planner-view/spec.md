@@ -21,7 +21,7 @@ The client SHALL provide a Plan mode of the Calendar destination, reachable by `
 - **THEN** the Day view of the 5th opens, and choosing Plan from the Week of the 18th opens a span starting on the 18th
 
 ### Requirement: Column contents
-Each column SHALL list the open tasks due that day in the viewer's zone with the same selection as Day, Week and Month (deleted, completed and archived-project tasks left out), timed tasks first in time order, then the others by priority and position. Each row SHALL show its time when it has one, its title, its estimate and its priority. Columns SHALL NOT be manually ordered.
+Each column SHALL list the open tasks due that day in the viewer's zone with the same selection as Day, Week and Month (deleted and archived-project tasks left out, completed tasks included only when the Calendar's Show completed tasks choice is on), timed tasks first in time order, then the others by priority and position. Each row SHALL show its time when it has one, its title, its estimate and its priority. Completed titles SHALL be struck through and announce their completed status, in both the columns and the phone agenda; completed rows SHALL be selectable and openable but SHALL NOT be rescheduled or completed again from the calendar. Columns SHALL NOT be manually ordered. The selection SHALL work offline; identical task rows and the same visibility choice SHALL produce identical columns after sync.
 
 #### Scenario: Zoned due on the viewer's day
 - **WHEN** a task is due `02:00 Asia/Tokyo` on the 12th and the user views the Plan from Berlin
@@ -47,7 +47,7 @@ From 640 px the columns SHALL be laid out seven per row with no horizontal scrol
 - **THEN** three rows of seven columns are shown and the content column scrolls vertically when they do not fit
 
 ### Requirement: Capacity bar per day
-Each column header SHALL show a capacity bar and the planned total against the device's day length, summing three sources: the estimates of the day's open tasks, the minutes of the day's busy subscribed calendar events, and the estimates of projected occurrences of recurring tasks. Tasks and projections without an estimate SHALL count as zero and be reported. The bar SHALL mark the day when the sum exceeds the day length.
+Each column header SHALL show a capacity bar and the planned total against the device's day length, summing three sources: the estimates of the day's open tasks, the minutes of the day's busy subscribed calendar events, and the estimates of projected occurrences of recurring tasks. Tasks and projections without an estimate SHALL count as zero and be reported. The bar SHALL mark the day when the sum exceeds the day length. This calculation SHALL run on local data offline and SHALL reflect converged task rows after sync.
 
 #### Scenario: Three sources on one day
 - **WHEN** a day has open tasks estimated at 2 h 50, a 10:00 to 11:30 meeting from a subscribed calendar, a projected weekly task estimated at 45 minutes and five unestimated tasks, with an 8-hour day length
@@ -59,7 +59,11 @@ Each column header SHALL show a capacity bar and the planned total against the d
 
 #### Scenario: Completing a task
 - **WHEN** a task listed in a column is completed
-- **THEN** its row leaves the column and the day's total decreases by its estimate
+- **THEN** the day's total decreases by its estimate; its row leaves the column when Show completed tasks is off, or stays with a struck-through title when it is on
+
+#### Scenario: Completed work does not add future work
+- **WHEN** Show completed tasks is on and the span contains a completed recurring occurrence
+- **THEN** its stored row is visible, but contributes neither estimated nor unestimated remaining work and does not produce recurring projections
 
 ### Requirement: Event minutes in the capacity
 The event minutes of a day SHALL be the minutes inside that day, in the viewer's zone, of the busy timed occurrences of enabled subscribed calendars shown on this device, with overlapping events counted once; all-day and free events SHALL NOT count. A day without shown events SHALL count zero event minutes.
