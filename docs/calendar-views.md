@@ -30,7 +30,7 @@ Week starts on your first day of the week; the hours and block times follow your
 
 ## See the month
 
-**Month** shows six weeks at a glance, starting on your first day of the week, with today marked and the days of other months dimmed. Each day lists its open tasks: the timed ones first by time, then the rest by priority. A crowded day shows the first few and **+N more**, which expands the day in place. When a day's tasks have estimates, the day shows the planned total against your day length, in red when it is over.
+**Month** shows six weeks at a glance, starting on your first day of the week, with today marked and the days of other months dimmed. Each day lists its open tasks: the timed ones first by time, then the rest by priority. A crowded day shows the first few and **+N more**, which expands the day in place. When its tasks have estimates, a day shows the planned total against your day length: red when over, amber when [counted meetings](place-tasks-on-the-calendar.md#see-whether-the-day-fits) tip it over.
 
 - Drag a task onto another day to move it. It keeps its time.
 - Select a task with <kbd>j</kbd> and <kbd>k</kbd>, or by clicking it. The arrows then move it a day (<kbd>←</kbd> <kbd>→</kbd>) or a week (<kbd>↑</kbd> <kbd>↓</kbd>), into the next month if needed. <kbd>Enter</kbd> opens it, and <kbd>Esc</kbd> clears the selection.

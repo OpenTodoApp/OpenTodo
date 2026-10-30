@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Meetings can count toward the day's capacity.** Settings → Language and region → Calendar grid → **Count meetings in capacity** (shown once this device knows a subscribed or connected calendar, off by default) adds the busy meetings Day, Week and Month draw to each day's planned total: `6h 45m / 8h`, with "4h 15m of tasks, 2h 30m in meetings" in the header's tooltip. Meetings are counted as the Plan counts them: timed busy events of enabled calendars, overlaps once, split at midnight; free and all-day events never, and nothing while the toolbar's **Calendars** button hides events. A day whose tasks alone go over stays red (**Over capacity**); one whose tasks fit but not around its meetings turns amber (**Over with meetings**), and both are said to screen readers. Offline, a day outside the device's event cache counts no meetings and its tooltip says so. The setting belongs to each device, like the day length; no op field, no server change. The capacity tooltip of the Day and Week headers, which never opened, now opens on hover and focus. ([Place tasks on the calendar](docs/place-tasks-on-the-calendar.md#see-whether-the-day-fits), `meeting-aware-capacity`)
+
 ## [0.17.0] - 2026-10-30
 
 OpenTodo 0.17.0 adds calm limits to a busy day, each off by default: an optional **Today limit** with **Done today** and **Log a win**, **Morning, Afternoon and This Evening** in Today, **sequential projects** and **areas**, and a **review interval per project** with a Maintenance status for projects on low burn. Focus is one tap away from every task, new tasks can get a **default reminder** and can be **added at the top**, a pasted list becomes **one task per line**, the sidebar shows counts on every list in your own order, and a right-click on a task opens its menu. Sub-projects inherit their parent's custom fields, and a round of fixes covers Gemini and compatible assistant providers, CalDAV events from iOS Calendar, the selection bar, short calendar items and copying over plain http.
