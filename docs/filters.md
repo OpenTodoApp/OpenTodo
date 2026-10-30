@@ -190,6 +190,7 @@ You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</
 - Results are grouped and ordered as a saved view would show them: by project (Inbox first, then projects in sidebar order, each heading showing the project's path, `Work › Client A`), then by due date and priority. **Display options** changes the grouping, the order, the layout, completed tasks and what rows show before you save.
 - **Enter** in the input runs the query at once and moves to the first result; **Esc** returns to the input. In the list, the usual keys work: `j` / `k`, Enter to open, `c` to complete, `1`–`4` for priority, `L` for labels, Delete.
 - **↑ / ↓** in the input step through the last 20 distinct queries you ran on this device. The history lives in the browser's local storage for the app, is never synced, and is cleared when you sign out.
+- **The draft is kept.** The query and the display options stay on this device, per workspace, while you look at another page and across a reload. Saving the view clears the draft. A link with a query (`/views/new?q=p1`) replaces the draft's query; ↑ then recalls the one it replaced. **Clear** in the filter panel's header empties the query and resets the options, with **Undo** while its message is shown. Like the history, the draft is never synced or exported and is cleared when you sign out.
 
 ### Build a filter without typing
 

@@ -352,6 +352,8 @@ export interface View extends ViewFields {
   deleted_at: number | null
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
   workspace_id?: string | null
+  /** A catalogue icon name (sidebar-polish D4); null, absent or unknown shows the default icon of the view's kind. */
+  icon?: string | null
   _clock: Clock
 }
 
@@ -662,6 +664,10 @@ export interface UserPrefs extends UserPrefsFields {
   reminder_default_timed?: string
   /** Default reminder for tasks with a date only (default-reminders D1): minutes from 09:00 on the due date; '' or anything malformed reads as none. */
   reminder_default_dated?: string
+  /** Sidebar counts (sidebar-polish D1): 'all' shows every list's count at rest; '' and anything else read as Inbox and Today only. */
+  sidebar_counts?: string
+  /** Primary destination order (sidebar-polish D3): comma-separated destination ids; unknown ids are ignored and kept. */
+  sidebar_order?: string
   _clock: Clock
 }
 

@@ -24,6 +24,8 @@ export interface Entry {
   /** "completed", "archived": shown as a badge, ranked after the rest of its kind. */
   marker?: string
   icon?: IconName
+  /** A catalogue icon drawn instead of `icon` once known (a saved view's own, sidebar-polish D4); `icon` is the fallback. */
+  catalogueIcon?: string
   shortcut?: string
   /** Words the entry also matches on, never shown (the old name of a renamed page). */
   keywords?: string

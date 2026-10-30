@@ -66,7 +66,7 @@ Opening a saved view SHALL show its conditions as chips in the toolbar (see "Too
 - **THEN** the filter panel shows how many tasks the changed query matches, while the list still shows the saved query's results
 
 ### Requirement: Pinned views in the sidebar
-Every saved view SHALL be listed in a "Views" group in the sidebar, in the sidebar's single scroller, ordered by position, and SHALL be reorderable from its menu. A sidebar view row SHALL show no count; its open-task count, computed locally, SHALL be in the row's accessible name ("Waiting, 2 open tasks"), on the Views overview opened with `g v` and the group's "All" action, and in the view's page header. A saved view whose query no longer parses SHALL keep an error mark on its row with the message in its accessible name. The Views group SHALL start closed on a device that has not stored a state for it, and SHALL be hidden until the user has a saved view. A pinned saved view SHALL also appear in the sidebar's Favourites group, where "Pin to sidebar" sets its pinned flag and its favourites entry together and unpinning clears both; the Favourites row shows no count either. The sidebar SHALL reflect pins, order and renames from other devices after sync, and counts in the accessible names SHALL update live from local data without a reload.
+Every saved view SHALL be listed in a "Views" group in the sidebar, in the sidebar's single scroller, ordered by position, and SHALL be reorderable from its menu. With the default sidebar counts preference a sidebar view row SHALL show no count; with every count on (`appearance-preferences` "Sidebar counts preference") a list view's row SHALL show its open-match count, as `app-shell` "Sidebar structure" describes, and a dashboard's row none. The open-task count, computed locally, SHALL always be in the row's accessible name ("Waiting, 2 open tasks"), on the Views overview opened with `g v` and the group's "All" action, and in the view's page header. A saved view whose query no longer parses SHALL keep an error mark on its row with the message in its accessible name, in place of any count. The Views group SHALL start closed on a device that has not stored a state for it, and SHALL be hidden until the user has a saved view. A pinned saved view SHALL also appear in the sidebar's Favourites group, where "Pin to sidebar" sets its pinned flag and its favourites entry together and unpinning clears both; the Favourites row follows the same count rule. The sidebar SHALL reflect pins, order and renames from other devices after sync, and counts SHALL update live from local data without a reload.
 
 #### Scenario: Count and order
 - **WHEN** the user has saved "Work tomorrow" (4 open matches) and "Waiting" (2) and moves "Waiting" first
@@ -87,6 +87,10 @@ Every saved view SHALL be listed in a "Views" group in the sidebar, in the sideb
 #### Scenario: Closed on a new device
 - **WHEN** a user with three saved views signs in on a new device
 - **THEN** the Views group header reads "Views 3" with no rows under it, opening it lists the three rows, and the choice is remembered on that device only
+
+#### Scenario: Every count on
+- **WHEN** every sidebar count is on and the user completes one of the 4 matches of "Work tomorrow"
+- **THEN** its sidebar row changes from "4" to "3" without a reload, and the board "Week" in the same group shows no number
 
 ### Requirement: Saved filters and boards in the user interface
 The user interface SHALL call saved views "views" and dashboards "boards": the sidebar group and the overview are "Views", the overview's sections are "Saved views" and "Boards", the page that builds a new query is "New view", and a view's header reads "Views › <name>", where "Views" opens the overview. The addresses SHALL be `/views` (the overview), `/views/new` (the New view page, with an optional `?q=` query) and `/views/<id>` (a view or a board). The earlier addresses `/filter` and `/view/<id>` SHALL keep working and SHALL be replaced in place by the new ones without adding a history entry. Data, operations, the API and the export keep their names (`view`, `/api/v1/views`); the query language stays "filter queries", and the conditions of a view are its filter.
@@ -357,3 +361,36 @@ Under the header of a list view and of the New view page, a toolbar SHALL show t
 #### Scenario: Chips follow sync
 - **WHEN** another device adds `& p1` to the view's query and this device syncs
 - **THEN** a chip "Priority is P1" appears without a reload
+
+### Requirement: View icon
+A saved view SHALL have an optional icon from the app's icon catalogue, an additive field that is null by default. A view without an icon, or with a name this client does not know, SHALL show the default icon of its kind. "Icon…" in the view menu SHALL offer the same icon picker as projects, including "No icon". The icon SHALL be shown wherever the view is listed with an icon: the Views group, Favourites, the Views overview, the command palette, and the view's page header once the view has an icon of its own (a header without one keeps today's look). The Start view choice is a plain list of names and shows none.
+
+The icon is not content, so it is not encrypted. It is written offline through the outbox, converges by last-writer-wins on the field, and is included in the export. Sync SHALL accept any string, so a newer catalogue stays additive. The API SHALL accept `icon` on create and patch as null or a catalogue name, and reject anything else.
+
+#### Scenario: Choose an icon
+- **WHEN** the user opens the menu of "Waiting", chooses "Icon…" and picks "hourglass"
+- **THEN** the hourglass replaces the default icon in the Views group and the Views overview and appears in the view's header on this device at once, and on the user's other devices after sync
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user sets an icon on a view
+- **THEN** it shows at once, survives a reload, and reaches the other devices when the network returns
+
+#### Scenario: Unknown icon from a newer client
+- **WHEN** a device receives a view whose icon is a name its catalogue does not have
+- **THEN** it shows the view's default icon and keeps the stored name unchanged
+
+#### Scenario: Set through the API
+- **WHEN** a script PATCHes `{"icon":"hourglass"}` on a view with a bearer token
+- **THEN** the response is 200 with the view carrying the icon, and devices show it after their next sync
+
+#### Scenario: Invalid icon
+- **WHEN** a patch body sets `icon` to `"not-an-icon"` or to `42`
+- **THEN** the response is 400 `invalid_input` naming `icon` and nothing is written
+
+#### Scenario: Unauthenticated
+- **WHEN** a request without credentials patches a view's icon
+- **THEN** the response is 401 `unauthorized` and nothing is written
+
+#### Scenario: In the export
+- **WHEN** the user downloads the export
+- **THEN** each view in `views` carries `icon`, null for views without one
