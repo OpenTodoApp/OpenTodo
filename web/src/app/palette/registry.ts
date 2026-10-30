@@ -26,7 +26,7 @@ import { reviewEveryPicker, setMaintenance } from '../menus/reviewMenu'
 import { inMaintenance } from '../../lib/reviewCadence'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, placeInDay, sidebarFind } from '../signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
 import { switchWorkspace, workspaceLabel } from '../workspaceNav'
@@ -71,6 +71,8 @@ export interface PaletteContext {
   dayParts?: boolean
   /** The selected task's slot command on Today with a limit (today-closed-list D3). */
   slot?: SlotState
+  /** Today's missed blocks (replan-the-day D4): "Re-plan the rest of the day" is offered while there are any. */
+  missedBlocks?: number
 }
 
 interface Command {
@@ -298,6 +300,12 @@ export function commands(ctx: PaletteContext): Command[] {
       { id: 'earlier:today', label: t('Move earlier tasks to today'), icon: 'calendar-check', keywords: 'earlier overdue late reschedule', run: () => runGroupDue(ids, 'today') },
       { id: 'earlier:reschedule', label: t('Reschedule earlier tasks…'), icon: 'calendar-days', keywords: 'earlier overdue late tomorrow next week', run: () => rescheduleEarlierStep(ids) },
     )
+  }
+
+  // Re-plan the rest of the day (replan-the-day D4): no key; in place on Day and Week, else on the Day view.
+  if (ctx.missedBlocks && ctx.missedBlocks > 0) {
+    out.push({ id: 'replan:day', label: t('Re-plan the rest of the day'), icon: 'calendar-clock', keywords: 'replan reschedule behind missed blocks time blocking afternoon',
+      run: () => openReplan(ctx.route.view === 'day' || ctx.route.view === 'week') })
   }
 
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
