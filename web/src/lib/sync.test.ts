@@ -28,7 +28,8 @@ vi.mock('./api', async (orig) => ({
 
 import { clearLocalData, db, getMeta, setMeta } from './db'
 import { useDatabase } from './db'
-import { applyOps, mutate, resetDeviceId } from './ops'
+import { applyOps, createTask, mutate, resetDeviceId } from './ops'
+import { compareByPosition } from './ordering'
 import { ApiError } from './api'
 import { markTaskNotificationsRead, unreadCount, unreadNotifications } from './notifications'
 import { describeRejected } from './sharing'
@@ -848,5 +849,36 @@ describe('listeners (client-sync-robustness)', () => {
     doc.dispatchEvent(new Event('visibilitychange'))
     await tick(1_000)
     expect(syncCalls).not.toHaveBeenCalled()
+  })
+})
+
+describe('add at the top offline (add-position 2.3)', () => {
+  it('two devices adding at the top offline converge on one order, both above the earlier tasks', async () => {
+    const shared = [
+      { id: 's1', entity: 'project', entityId: 'p1', field: 'name', value: 'Home', ts: 100, device: 'seed' },
+      ...['old1', 'old2'].flatMap((t, i) => [
+        { id: `${t}-a`, entity: 'task', entityId: t, field: 'title', value: t, ts: 101 + i, device: 'seed' },
+        { id: `${t}-b`, entity: 'task', entityId: t, field: 'project_id', value: 'p1', ts: 101 + i, device: 'seed' },
+        { id: `${t}-c`, entity: 'task', entityId: t, field: 'position', value: 1000 * (i + 1), ts: 101 + i, device: 'seed' },
+      ]),
+    ]
+    const written: unknown[] = []
+    for (const title of ['From A', 'From B']) {
+      // Each device starts from the same synced state and adds offline (nothing is sent).
+      useDatabase(`sync-top-${Date.now()}-${n++}`)
+      resetDeviceId()
+      await applyOps(shared as never)
+      await createTask({ title, project_id: 'p1', placement: 'top' })
+      written.push(...await db.outbox.toArray())
+    }
+    const orders: string[][] = []
+    for (const ops of [[...shared, ...written], [...shared, ...[...written].reverse()]]) {
+      useDatabase(`sync-top-merge-${Date.now()}-${n++}`)
+      await applyOps(ops as never)
+      orders.push((await db.tasks.toArray()).filter((t) => t.project_id === 'p1').sort(compareByPosition).map((t) => t.title))
+    }
+    expect(orders[0]).toEqual(orders[1])
+    expect(orders[0].slice(2)).toEqual(['old1', 'old2'])
+    expect([...orders[0].slice(0, 2)].sort()).toEqual(['From A', 'From B'])
   })
 })

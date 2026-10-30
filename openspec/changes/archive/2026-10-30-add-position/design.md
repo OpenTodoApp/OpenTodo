@@ -43,5 +43,5 @@ One additive `user_prefs` string field (`add_position`) in `internal/sync/ops.go
 ## Risks / Trade-offs
 
 - [Two devices add at the top offline and pick the same position] → the id tie-break gives one order on every device; both tasks are at the top.
-- [A sticky quick add covers a focused row] → rows get a scroll padding equal to the sticky area, like the sticky header (WCAG 2.2 2.4.11 is already asserted for row actions); a test checks a focused row is not obscured.
+- [A sticky quick add covers a focused row] → rows get a scroll padding equal to the sticky area, like the sticky header (WCAG 2.2 2.4.11 is already asserted for row actions); a test checks a focused row is not obscured. *As built:* the keyboard cursor's row is kept below every pinned element by `revealRow`; a scroll padding on the scroller was dropped because Chrome then treats the stuck field itself as covered and scrolls the list back up whenever the field takes focus.
 - [API users expect "top" too] → documented in `docs/api.md`: pass a `position` smaller than the list's first; a server-side preference can follow later without changing this design.

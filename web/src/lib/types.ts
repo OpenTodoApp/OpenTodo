@@ -656,6 +656,8 @@ export interface UserPrefs extends UserPrefsFields {
   row_layout?: string
   /** Today's agenda of calendar events (today-agenda D1): 'shown' shows it; '' and anything else read as hidden. */
   today_events?: string
+  /** Where new tasks are added from a list's quick add (add-position D1): 'top' or 'bottom'; '' and anything else read as 'bottom'. */
+  add_position?: string
   _clock: Clock
 }
 

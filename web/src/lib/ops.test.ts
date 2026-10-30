@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, getMeta, useDatabase } from './db'
 import {
   applyOps, archiveProject, createProject, createSubtask, createTask, deleteProject, deleteTask, getDeviceId, moveProject, mutate,
-  resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
+  mutateMany, planTasks, resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
 } from './ops'
+import { compareByPosition } from './ordering'
+import { inboxTasks } from './inbox'
 import { HLC_META, hlcLast, wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
 import type { Comment, Op } from './types'
@@ -225,6 +227,53 @@ describe('task positions', () => {
     // One more after they are written still goes last.
     const d = await createTask({ title: 'D' })
     expect((await db.tasks.get(d))!.position).toBeGreaterThan(Math.max(...positions))
+  })
+})
+
+describe('add position (add-position 2.1)', () => {
+  const titles = async (filter: (t: { project_id: string | null; section_id?: string | null; parent_id: string | null; deleted_at: number | null }) => boolean) =>
+    (await db.tasks.toArray()).filter(filter).sort(compareByPosition).map((t) => t.title)
+
+  it('a top task sorts first in a project, a section and the Inbox; bottom is unchanged', async () => {
+    const p = await createProject({ name: 'Home' })
+    const s = await createSection(p, 'Doing')
+    await createTask({ title: 'p1', project_id: p })
+    await createTask({ title: 'p2', project_id: p })
+    await createTask({ title: 's1', project_id: p, section_id: s })
+    await createTask({ title: 'i1' })
+    await createTask({ title: 'i2' })
+    await createTask({ title: 'p-top', project_id: p, placement: 'top' })
+    await createTask({ title: 's-top', project_id: p, section_id: s, placement: 'top' })
+    await createTask({ title: 'i-top', placement: 'top' })
+    await createTask({ title: 'i-bottom', placement: 'bottom' })
+    await createTask({ title: 'i-default' })
+    expect(await titles((t) => t.project_id === p && !t.section_id)).toEqual(['p-top', 'p1', 'p2'])
+    expect(await titles((t) => t.section_id === s)).toEqual(['s-top', 's1'])
+    const inbox = inboxTasks((await db.tasks.toArray()).filter((t) => !t.deleted_at)).sort(compareByPosition).map((t) => t.title)
+    expect(inbox).toEqual(['i-top', 'i1', 'i2', 'i-bottom', 'i-default'])
+  })
+
+  it('a batch of three keeps its order at the top', async () => {
+    await createTask({ title: 'old' })
+    const planned = await planTasks([{ title: 'A' }, { title: 'B' }, { title: 'C' }], 'top')
+    await mutateMany(planned.map((p) => p.change))
+    expect(await titles(() => true)).toEqual(['A', 'B', 'C', 'old'])
+  })
+
+  it('quick adds at the top before either is written: the later one is above', async () => {
+    await createTask({ title: 'old' })
+    const [a, b] = await Promise.all([createTask({ title: 'A', placement: 'top' }), createTask({ title: 'B', placement: 'top' })])
+    const pa = (await db.tasks.get(a))!.position
+    const pb = (await db.tasks.get(b))!.position
+    expect(pa).not.toBe(pb)
+    expect((await titles(() => true)).at(-1)).toBe('old')
+  })
+
+  it('a subtask appends even with top', async () => {
+    const parent = await createTask({ title: 'parent' })
+    await createTask({ title: 'sub1', parent_id: parent })
+    await createTask({ title: 'sub2', parent_id: parent, placement: 'top' })
+    expect(await titles((t) => t.parent_id === parent)).toEqual(['sub1', 'sub2'])
   })
 })
 
