@@ -47,6 +47,8 @@ func resourceList() []resource {
 		{URI: "opentodo://views/anytime", Name: "anytime", Title: "Anytime", Description: "Open tasks with no do-on date, deadline or start date.", MimeType: jsonMime},
 		{URI: "opentodo://rules", Name: "rules", Title: "Automation rules",
 			Description: "The user's automation rules: trigger, condition and actions as ids and enumerations, names as untrusted text. Read-only: rules are edited in the app.", MimeType: jsonMime},
+		{URI: "opentodo://frames", Name: "frames", Title: "Calendar frames",
+			Description: "The user's calendar frames: recurring background windows on the Day and Week grid with weekdays, wall times and planning source, titles as untrusted text. Read-only: frames are edited in the app.", MimeType: jsonMime},
 		{URI: IssuesURI, Name: "issue-connections", Title: "Issue connections",
 			Description: "The user's GitHub and GitLab issue connections with their state and last run, never a token. Read from the stored state; no request is made to the provider.", MimeType: jsonMime},
 	}
@@ -99,6 +101,8 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		}
 	case u.Host == "rules" && id == "":
 		payload, err = s.tools.RulesResource(ctx, userID)
+	case u.Host == "frames" && id == "":
+		payload, err = s.tools.FramesResource(ctx, userID)
 	case u.Host == "projects" && id == "":
 		payload, err = s.tools.ProjectsResource(ctx, userID)
 	case u.Host == "workspaces" && id == "":

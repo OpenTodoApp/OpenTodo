@@ -6,6 +6,7 @@ import type { DayData } from '../../lib/calendarDays'
 import { formatHour, formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
+import type { PlacedFrame } from '../../lib/frames'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
 import type { CalendarSubscription, Project, Task } from '../../lib/types'
 import { Button, hueFor, Tooltip, TruncatedText } from '../../ui'
@@ -13,6 +14,7 @@ import { EventBlockView, EventChip } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
 import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
 import { CapacityLine, capacityTooltip } from './CapacityLine'
+import { FrameBands } from './FrameBand'
 import type { DayMeetings } from './meetingCapacity'
 import { formatTime, GRID_HEIGHT, PX_PER_MIN, RESIZE_ZONE_PX, type Preview } from './grid'
 
@@ -96,8 +98,10 @@ export interface ReplanGhosts {
   movesTo: Map<string, number>
 }
 
-export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, replan, onSelect, onOpen, onDragStart }: {
+export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, replan, frames, onSelect, onOpen, onDragStart }: {
   day: DayData
+  /** The day's frame occurrences (calendar-frames D3): background bands below every block. */
+  frames?: readonly PlacedFrame[]
   prefs: GridPrefs
   isToday: boolean
   /** The day is before the logical today: its blocks are dimmed (surfaces-v2 D3). */
@@ -133,6 +137,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
       {/* Outside the configured hours: shaded but still usable. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 bg-sunken" style={{ height: startPx }} />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-sunken" style={{ top: endPx }} />
+      {frames && frames.length > 0 && <FrameBands frames={frames} past={isPast} />}
 
       {day.layout.blocks.filter((b) => !b.hidden).map((b) => {
         const ev = day.events.get(b.id)

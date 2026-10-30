@@ -221,6 +221,38 @@
       }
     },
     {
+      "name": "list_frames",
+      "title": "List frames",
+      "description": "List the occurrences of the user's calendar frames (recurring windows such as \"Deep work\" on weekdays 09:00-11:00) on the days from..to, with floating wall times and the planning source (project:, label: or view: id) that says which tasks belong in each. Default: the seven days from today in timezone; at most 31 days. Frames guide planning: propose ordinary due dates and times inside them.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "description": "First day (YYYY-MM-DD). Default: today in timezone.",
+            "format": "date",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Last day (YYYY-MM-DD), at most 30 days after from. Default: six days after from.",
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List frames"
+      }
+    },
+    {
       "name": "list_icons",
       "title": "List icons",
       "description": "List the icons a project or section can have, best matches first. query searches names, keywords and categories (e.g. \"plant\", \"money\", \"travel\"); without it the whole catalogue is returned in pages of limit. Pass a name to update_project, create_sections or update_sections.",

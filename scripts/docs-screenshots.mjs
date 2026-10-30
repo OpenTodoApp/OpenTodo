@@ -423,6 +423,23 @@ const shots = [
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
   }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   { name: 'day', server: D, async run(p) { await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor()) } },
+  // Frames (calendar-frames 5.2): "Deep work" on weekday mornings and "Admin" late in the afternoon behind the Week's blocks.
+  { name: 'frames', server: D, async run(p) {
+    const api = async (method, body) => {
+      const r = await p.request.fetch(demoBase + '/api/v1/frames', { method, headers: { Origin: demoBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} /api/v1/frames → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    // Once for both themes: the second run finds them there.
+    if (!(await api('GET')).frames.length) {
+      await api('POST', { title: 'Deep work', weekdays: '1,2,3,4,5', start: '09:00', end: '11:00', color: '#7c3aed' })
+      await api('POST', { title: 'Admin', weekdays: '1,2,3,4', start: '16:00', end: '16:45', color: '#0d9488' })
+    }
+    await go(p, demoBase, '/week', () => p.locator('[data-frame-band]').first().waitFor())
+    // The demo's reminder toast would cover the late afternoon.
+    await p.addStyleTag({ content: '[aria-label^="Reminder:"] { display: none !important }' })
+    await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
+  }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   // The Plan (planner-view 5.2): two rows of columns with their capacity bars and a dimmed projected row.
   { name: 'plan', server: D, async run(p) { await go(p, demoBase, '/plan', () => p.locator('[data-plan-grid]').waitFor()); await settle(p, 300) } },
   { name: 'comments', server: D, card: true, async run(p) {

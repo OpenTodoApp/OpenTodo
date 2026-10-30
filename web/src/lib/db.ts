@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
 import { forgetShellData } from './shell'
-import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
+import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type Frame, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
 import { createStore } from './store'
 
 export interface OutboxOp extends Op {
@@ -132,6 +132,8 @@ class OpenTodoDB extends Dexie {
   places!: Table<Place, string>
   /** Automation rules (OpenSpec automation-rules): a synced entity, ordered by position. */
   rules!: Table<Rule, string>
+  /** Calendar frames (OpenSpec calendar-frames): a synced entity, ordered by position. */
+  frames!: Table<Frame, string>
   /** The focus timer's state (focus-mode D2): one row "current" on this device, never synced, cleared at sign-out. */
   focus!: Table<FocusState, string>
   /** The account's workspaces, their members and groups (workspaces D8): replaced from every sync response, never ops. */
@@ -427,6 +429,7 @@ class OpenTodoDB extends Dexie {
     this.version(23).stores({ rules: 'id, position' })
     // v24 (workspaces D8): the cached directory, and a workspace_id index on the four entities that carry the field.
     this.version(24).stores({ projects: 'id, position, workspace_id', tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id, workspace_id', labels: 'id, position, workspace_id', views: 'id, position, workspace_id', workspaces: 'id', workspaceMembers: 'id, workspaceId', groups: 'id, workspaceId' })
+    this.version(25).stores({ frames: 'id, position' }) // v25 (calendar-frames): the synced `frame` entity.
   }
 }
 
@@ -505,7 +508,7 @@ function tableMap(d: OpenTodoDB) {
   return {
     project: d.projects, task: d.tasks, label: d.labels, view: d.views, reminder: d.reminders, section: d.sections,
     field: d.fields, comment: d.comments, project_prefs: d.prefs, user_prefs: d.userPrefs, attachment: d.attachments, review: d.review,
-    time_entry: d.timeEntries, place: d.places, rule: d.rules,
+    time_entry: d.timeEntries, place: d.places, rule: d.rules, frame: d.frames,
   } satisfies Record<Entity, Table<unknown, string>>
 }
 

@@ -343,6 +343,8 @@ func TestUserExportExcludesAudit(t *testing.T) {
 			"places",
 			// automation rules (automation-rules).
 			"rules",
+			// calendar frames (calendar-frames).
+			"frames",
 			// the caller's workspaces (workspaces).
 			"workspaces":
 		default:
