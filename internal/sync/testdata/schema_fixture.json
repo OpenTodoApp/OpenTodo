@@ -172,6 +172,8 @@
       "focus_long_break_every",
       "focus_long_break_minutes",
       "focus_mode",
+      "focus_noise",
+      "focus_presets",
       "focus_short_break_minutes",
       "focus_sound",
       "focus_work_minutes",

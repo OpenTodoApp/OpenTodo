@@ -20,6 +20,7 @@ import { ActionMenu, type ActionGroup, type ActionItem } from '../menus/ActionMe
 import { openRowSchedule } from '../task-list/RowSwipe'
 import { BulkReview } from './BulkReview'
 import { showBulkToast } from './toastStore'
+import { startFocusOn } from '../focus/startFocus'
 import { t } from '../../lib/i18n'
 import { withListTransition } from '../motion'
 
@@ -50,6 +51,15 @@ export function trackingItem(task: Task | undefined, runningTask: string | null 
     onSelect: () => act(toggleTracking(task.id)) }]
 }
 
+/**
+ * Start focus for one open task the user may edit (focus-everywhere D2): opens
+ * the Focus screen on it with a session running (Countdown asks for the length).
+ */
+export function focusItem(task: Task | undefined, memberships: Map<string, Membership>): ActionGroup['items'] {
+  if (!task || task.deleted_at || task.completed_at || roleOf(task.project_id, memberships) === 'viewer') return []
+  return [{ kind: 'action', id: 'focus', label: t('Start focus'), icon: 'clock', onSelect: () => act(startFocusOn(task.id)) }]
+}
+
 /** The menu's groups for the given tasks (exported for the palette and tests). */
 export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
@@ -66,7 +76,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const swipeTwins = n === 1 && a.schedule
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
-    ...(n === 1 ? [{ items: trackingItem(d.tasks[0], d.runningTask, d.memberships) }] : []),
+    ...(n === 1 ? [{ items: [...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
     // Beside a row its own Priority and Schedule buttons already offer these.
     // Priority and Date are one row each (a submenu), so the menu fits on the screen;

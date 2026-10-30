@@ -1,12 +1,13 @@
 // @vitest-environment happy-dom
 // Settings → General → Focus (OpenSpec change focus-mode, task 6.1): the defaults,
-// bounds checked before a write, the card in the General section and in search.
+// bounds checked before a write, the card in the General section and in search;
+// the presets, the noise and the device volume (focus-everywhere).
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { resetDeviceId } from '../../lib/ops'
-import { FOCUS_DEFAULTS } from '../../lib/focus/prefs'
+import { FOCUS_DEFAULTS, forgetNoiseVolume, NOISE_VOLUME_KEY, readNoiseVolume, writeNoiseVolume } from '../../lib/focus/prefs'
 import type { User } from '../../lib/types'
 import { click, render, waitFor } from '../../ui/test-utils'
 import { searchSettings } from '../settingsIndex'
@@ -82,3 +83,62 @@ describe('the Focus card', () => {
     await r.unmount()
   })
 })
+
+// Presets, background noise and the device volume (OpenSpec focus-everywhere,
+// tasks 1.2, 3.2 and 3.4).
+describe('presets and noise', () => {
+  const presetFields = () => [...document.querySelectorAll<HTMLInputElement>('[data-focus-presets-edit] input')]
+
+  it('Edit the presets: 15, 45 and 90 are stored; 200 is refused with the range and nothing is written; Reset goes back to 10, 20, 40', async () => {
+    const r = await render(<FocusSection />)
+    await waitFor(() => presetFields().length === 4, 'four fields')
+    expect(presetFields().map((i) => i.value)).toEqual(['10', '20', '40', ''])
+    await typeInto(presetFields()[2], '200')
+    expect(document.querySelector('[data-focus-range="focus_presets"]')?.textContent).toBe('From 5 to 180 minutes')
+    expect(await db.outbox.count()).toBe(0)
+    await typeInto(presetFields()[0], '15')
+    expect(await db.outbox.count()).toBe(0)
+    await typeInto(presetFields()[2], '90')
+    await typeInto(presetFields()[1], '45')
+    await waitFor(async () => (await db.userPrefs.get('me'))?.focus_presets === '15,45,90', 'stored')
+    await click(document.querySelector<HTMLButtonElement>('[data-focus-presets-reset]')!)
+    await waitFor(async () => (await db.userPrefs.get('me'))?.focus_presets === '', 'reset')
+    await waitFor(() => presetFields()[0].value === '10', 'fields reset')
+    await r.unmount()
+  })
+
+  it('Noise: Off by default with no volume; choosing Brown writes it and shows this device\'s volume (never synced) with Preview', async () => {
+    localStorage.removeItem(NOISE_VOLUME_KEY)
+    const r = await render(<FocusSection />)
+    const select = () => document.getElementById('focus-noise') as HTMLSelectElement
+    await waitFor(() => !!select(), 'the choice')
+    expect(select().value).toBe('off')
+    expect(document.querySelector('[data-focus-noise-volume]')).toBeNull()
+    await act(async () => {
+      select().value = 'brown'
+      select().dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await waitFor(async () => (await db.userPrefs.get('me'))?.focus_noise === 'brown', 'stored')
+    await waitFor(() => !!document.querySelector('[data-focus-noise-volume]'), 'volume')
+    const slider = document.querySelector<HTMLInputElement>('[data-focus-noise-volume]')!
+    expect(slider.value).toBe('40')
+    await typeInto(slider, '10')
+    expect(localStorage.getItem(NOISE_VOLUME_KEY)).toBe('10')
+    expect(readNoiseVolume()).toBe(10)
+    expect((await db.outbox.toArray()).map((o) => o.field)).toEqual(['focus_noise'])
+    await r.unmount()
+  })
+
+  it('Volume: 40 by default, clamped to 0-100, removed at sign-out', () => {
+    localStorage.removeItem(NOISE_VOLUME_KEY)
+    expect(readNoiseVolume()).toBe(40)
+    writeNoiseVolume(250)
+    expect(readNoiseVolume()).toBe(100)
+    localStorage.setItem(NOISE_VOLUME_KEY, 'loud')
+    expect(readNoiseVolume()).toBe(40)
+    writeNoiseVolume(10)
+    forgetNoiseVolume()
+    expect(localStorage.getItem(NOISE_VOLUME_KEY)).toBeNull()
+  })
+})
+

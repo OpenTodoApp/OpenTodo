@@ -32,7 +32,7 @@ const TASK_OPEN_LABEL = translatedMap<TaskOpenPref>({ page: msg('As a page'), pa
 /** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
 export const PROMOTABLE_LABEL = translatedMap<Promotable>({
   loop: msg('Loop home'), next: msg('Next actions'), waiting: msg('Waiting'),
-  anytime: msg('Anytime'), someday: msg('Someday'), assigned: msg('Assigned to me'), completed: msg('Completed'), feed: msg('Updates'), trash: msg('Trash'), filter: msg('New view'),
+  anytime: msg('Anytime'), someday: msg('Someday'), assigned: msg('Assigned to me'), completed: msg('Completed'), feed: msg('Updates'), trash: msg('Trash'), filter: msg('New view'), focus: msg('Focus'),
 })
 
 export interface AppearanceViewProps {

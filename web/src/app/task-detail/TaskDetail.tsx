@@ -17,6 +17,8 @@ import { Facets } from './Facets'
 import { FieldsGroup } from './FieldsGroup'
 import { Subtasks } from './Subtasks'
 import { TaskActionsMenu } from './TaskActionsMenu'
+import { startFocusOn } from '../focus/startFocus'
+import { act } from '../actionError'
 import { ReadOnlyNote, TaskHead, TaskRelations } from './TaskHead'
 import { TaskNotes } from './TaskNotes'
 import { TaskPageDialog } from './TaskPageDialog'
@@ -67,6 +69,10 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
       <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <TaskHead m={m} readOnly={readOnly} projects={projects} size="panel" />
+        {/* Start focus in one tap (focus-everywhere D2): beside the menu, for an open task the user can edit. */}
+        {!readOnly && !task.completed_at && !task.deleted_at && (
+          <IconButton icon="clock" label={t('Start focus')} onClick={() => act(startFocusOn(task.id))} data-panel-focus className="touch-target" />
+        )}
         <TaskActionsMenu m={m} page={false} readOnly={readOnly} onOpen={onOpen} />
         <IconButton icon="x" label={t('Close')} onClick={onDismiss ?? onClose} data-overlay-close className="touch-target" />
       </div>

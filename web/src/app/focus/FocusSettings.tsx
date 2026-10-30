@@ -1,13 +1,14 @@
 // Settings → General → Focus (OpenSpec change focus-mode, design D5; settings-
 // navigation "Account and General section contents", screen id settings/focus):
 // the timer mode, the three lengths, the long-break cycle, the two auto-start
-// switches, the break reminder and the sound. Each row writes one synced
+// switches, the break reminder and the sound; since focus-everywhere (D5, D6)
+// also the Countdown presets, the background noise and this device's volume. Each row writes one synced
 // `user_prefs` field after its bounds check; a value out of range is refused with
 // the allowed range and nothing is written.
 import { useState } from 'react'
-import { Input, Select, SettingRow, SettingsSection, Switch } from '../../ui'
-import { autoStartValue, DEFAULT_BREAK_AFTER, FOCUS_BOUNDS, FOCUS_MODES, inBounds, modeName, setFocusPref, useFocusPrefs, type FocusMode, type FocusNumberField, type FocusPrefs } from '../../lib/focus/prefs'
-import { t } from '../../lib/i18n'
+import { Button, Input, Select, SettingRow, SettingsSection, Switch } from '../../ui'
+import { autoStartValue, COUNTDOWN_BOUNDS, DEFAULT_BREAK_AFTER, FOCUS_BOUNDS, FOCUS_MODES, FOCUS_NOISES, inBounds, MAX_PRESETS, modeName, presetInBounds, presetsValue, setFocusPref, useFocusPrefs, useNoiseVolume, writeNoiseVolume, type FocusMode, type FocusNoise, type FocusNumberField, type FocusPrefs } from '../../lib/focus/prefs'
+import { msg, t, translatedMap } from '../../lib/i18n'
 import { act } from '../actionError'
 import { cardCopy, rowCopy } from '../../lib/settingsCopy'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -38,6 +39,62 @@ function NumberRow({ field, label, value, unit = 'minutes', description }: { fie
   )
 }
 
+const NOISE_LABEL = translatedMap<FocusNoise>({ off: msg('Off'), white: msg('White'), pink: msg('Pink'), brown: msg('Brown') })
+
+const padPresets = (list: readonly number[]): string[] => Array.from({ length: MAX_PRESETS }, (_, i) => (list[i] !== undefined ? String(list[i]) : ''))
+
+/** The Countdown presets (focus-everywhere D5): four fields, empty ones skipped; a value out of range is refused with the range and nothing is written. */
+function PresetsRow({ presets }: { presets: readonly number[] }) {
+  const [texts, setTexts] = useState(() => padPresets(presets))
+  useResetOnChange([presets.join(',')], () => setTexts(padPresets(presets)))
+  const [min, max] = COUNTDOWN_BOUNDS
+  const bad = (text: string) => text.trim() !== '' && !presetInBounds(Number(text))
+  const invalid = texts.some(bad)
+  const commit = (next: string[]) => {
+    setTexts(next)
+    if (next.some(bad)) return
+    const list = next.filter((x) => x.trim() !== '').map(Number)
+    const value = list.length ? presetsValue(list) : ''
+    if (value !== presets.join(',')) act(setFocusPref({ field: 'focus_presets', value }))
+  }
+  return (
+    <SettingRow {...rowCopy('focus', 'presets')} description={invalid ? undefined : rowCopy('focus', 'presets').description}
+      status={invalid ? <span className="text-danger" role="alert" data-focus-range="focus_presets">{t('From {min} to {max} minutes', { min, max })}</span> : undefined} control={
+        <div className="flex flex-wrap items-center gap-1.5" data-focus-presets-edit>
+          {texts.map((text, i) => (
+            <Input key={i} type="number" inputMode="numeric" min={min} max={max} className="w-16" value={text} aria-invalid={bad(text) || undefined}
+              aria-label={t('Preset {n}', { n: i + 1 })} onChange={(e) => commit(texts.map((x, j) => (j === i ? e.target.value : x)))} />
+          ))}
+          <Button size="sm" variant="ghost" onClick={() => act(setFocusPref({ field: 'focus_presets', value: '' }))} data-focus-presets-reset>{t('Reset')}</Button>
+        </div>
+      } />
+  )
+}
+
+/** The noise choice, and under it this device's volume with Preview (focus-everywhere D6). */
+function NoiseRows({ noise }: { noise: FocusNoise }) {
+  const volume = useNoiseVolume()
+  const preview = () => { void import('../../lib/focus/noise').then((m) => m.previewNoise(noise === 'off' ? 'brown' : noise, volume)) }
+  return (
+    <>
+      <SettingRow {...rowCopy('focus', 'noise')} htmlFor="focus-noise" control={
+        <Select id="focus-noise" className="sm:w-40" value={noise} onChange={(e) => act(setFocusPref({ field: 'focus_noise', value: e.target.value as FocusNoise }))}>
+          {FOCUS_NOISES.map((n) => <option key={n} value={n}>{NOISE_LABEL[n]}</option>)}
+        </Select>
+      } />
+      {noise !== 'off' && (
+        <SettingRow {...rowCopy('focus', 'volume')} htmlFor="focus-noise-volume" control={
+          <div className="flex items-center gap-2">
+            <input id="focus-noise-volume" type="range" min={0} max={100} step={5} value={volume} className="min-w-0 flex-1 accent-(--ot-accent) sm:w-32"
+              onChange={(e) => writeNoiseVolume(Number(e.target.value))} data-focus-noise-volume />
+            <Button size="sm" variant="secondary" onClick={preview} data-focus-noise-preview>{t('Preview')}</Button>
+          </div>
+        } />
+      )}
+    </>
+  )
+}
+
 export function FocusSettingsView({ prefs }: { prefs: FocusPrefs }) {
   const setAuto = (breaks: boolean, work: boolean) => act(setFocusPref({ field: 'focus_auto_start', value: autoStartValue(breaks, work) }))
   const reminderOn = prefs.breakAfterMinutes > 0
@@ -63,6 +120,8 @@ export function FocusSettingsView({ prefs }: { prefs: FocusPrefs }) {
       <SettingRow {...rowCopy('focus', 'sound')} control={
         <Switch checked={prefs.sound} onChange={(on) => act(setFocusPref({ field: 'focus_sound', value: on ? 'on' : 'off' }))} label={t('Sound at the end of a session')} hideLabel />
       } />
+      <PresetsRow presets={prefs.presets} />
+      <NoiseRows noise={prefs.noise} />
     </SettingsSection>
   )
 }

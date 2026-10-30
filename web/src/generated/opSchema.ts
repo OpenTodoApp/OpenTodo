@@ -578,6 +578,21 @@ export interface UserPrefsFields {
    * sidebar_destinations, which keeps meaning "promoted".
    */
   sidebar_order?: string
+  /**
+   * Countdown presets (OpenSpec change focus-everywhere, design D5): a
+   * comma-separated list of up to four whole minutes (5-180) shown as
+   * chips in the Countdown dialog; clients read an empty or unreadable
+   * value as "10,20,40" and ignore entries out of range, keeping the
+   * stored value. Settings, never content: not encrypted.
+   */
+  focus_presets?: string
+  /**
+   * Background noise during work sessions (focus-everywhere D6): "off",
+   * "white", "pink" or "brown", synthesized on the device; clients read
+   * an empty or unknown value as off and keep it. The volume is device
+   * storage and never synced.
+   */
+  focus_noise?: string
 }
 
 /**
@@ -664,7 +679,7 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '',
