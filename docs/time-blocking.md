@@ -57,6 +57,6 @@ In **Settings → Language and region → Calendar grid** you can set when the g
 ## Tips
 
 - Estimate generously at first. After a week you'll know how long "quick" things really take.
-- Leave gaps. A day planned to the minute falls apart at the first phone call.
+- Leave gaps. When the morning slips anyway, [re-plan the rest of the day](replan-the-day.md).
 - **Quick wins**, under the **Filter** action in a list's header, shows tasks of 15 minutes or less, good for filling a short gap.
 - Dates and times you set on the calendar are ordinary due dates, so they show up in Today and Upcoming as well, and in calendar apps connected over [CalDAV](caldav.md), estimate included.

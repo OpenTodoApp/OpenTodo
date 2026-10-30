@@ -1051,6 +1051,9 @@
   "Admins can invite people and manage members.": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "After its deadline": [
+    "web/src/app/calendar/ReplanPreview.tsx"
+  ],
   "After signing out here, people who signed in with the provider are sent to its sign-out page.": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -1385,7 +1388,8 @@
     "web/src/app/rules/RuleHistory.tsx"
   ],
   "Apply": [
-    "web/src/app/RelayConfirm.tsx"
+    "web/src/app/RelayConfirm.tsx",
+    "web/src/app/calendar/ReplanPreview.tsx"
   ],
   "Apply small changes without review (this device)": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -2086,6 +2090,9 @@
   "Calendars of {name}": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
+  "Calendars unavailable offline": [
+    "web/src/app/calendar/ReplanPreview.tsx"
+  ],
   "Calendars unavailable offline for these days": [
     "web/src/app/calendar/CalendarStatus.tsx"
   ],
@@ -2142,6 +2149,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/locations/LocationEditor.tsx",
@@ -3886,6 +3894,9 @@
   ],
   "Does not repeat (e.g. {example})": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Doesn’t fit today": [
+    "web/src/app/calendar/ReplanPreview.tsx"
   ],
   "Doesn’t repeat": [
     "web/src/app/task-detail/TaskFacts.tsx"
@@ -6707,6 +6718,9 @@
   "Leave the shared page without saving it as a task": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Leave them": [
+    "web/src/app/calendar/ReplanPreview.tsx"
+  ],
   "Leave workspace": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -7444,6 +7458,9 @@
   "Move to the next occurrence without completing": [
     "web/src/app/RecurrenceField.tsx"
   ],
+  "Move to tomorrow": [
+    "web/src/app/calendar/ReplanPreview.tsx"
+  ],
   "Move to workspace": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -7543,6 +7560,9 @@
   ],
   "Moved to {target}": [
     "web/src/lib/undoActions.ts"
+  ],
+  "Moves": [
+    "web/src/app/calendar/ReplanPreview.tsx"
   ],
   "Must include openid; email is needed to match existing accounts.": [
     "web/src/app/SsoPanel.tsx"
@@ -8564,6 +8584,9 @@
   ],
   "Nothing stands out today.": [
     "web/src/app/Briefing.tsx"
+  ],
+  "Nothing to re-plan": [
+    "web/src/app/calendar/useReplanPreview.ts"
   ],
   "Nothing waiting for a free moment.": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -10238,6 +10261,15 @@
   ],
   "Re-enter your passphrase to restore the key record from this device": [
     "web/src/app/UnlockScreen.tsx"
+  ],
+  "Re-plan": [
+    "web/src/app/CalendarView.tsx"
+  ],
+  "Re-plan the rest of the day": [
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/calendar/ReplanMenuItem.tsx",
+    "web/src/app/calendar/ReplanPreview.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "Re-syncing after restore…": [
     "web/src/app/SyncStatus.tsx"
@@ -12752,6 +12784,9 @@
   "Tasks on {focused}": [
     "web/src/app/MonthView.tsx"
   ],
+  "Tasks that don’t fit": [
+    "web/src/app/calendar/ReplanPreview.tsx"
+  ],
   "Tasks to plan": [
     "web/src/app/calendar/PlanPanel.tsx"
   ],
@@ -15017,6 +15052,7 @@
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/calendar/PlanRow.tsx",
+    "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
@@ -16772,6 +16808,9 @@
   "moves to Someday": [
     "web/src/lib/rules/index.ts"
   ],
+  "moves to {time}": [
+    "web/src/app/calendar/DayColumn.tsx"
+  ],
   "must start with \"every\"": [
     "web/src/lib/recurrence.ts"
   ],
@@ -17789,6 +17828,9 @@
   "{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "{moved} moved · {skipped} changed meanwhile": [
+    "web/src/lib/undoActions.ts"
+  ],
   "{moved} of {n, plural, one {# task moved to today} other {# tasks moved to today}}": [
     "web/src/lib/bulk.ts"
   ],
@@ -17836,6 +17878,10 @@
   "{n, plural, one {# attachment} other {# attachments}}": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/task-list/RowDetails.tsx"
+  ],
+  "{n, plural, one {# block behind} other {# blocks behind}}": [
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/calendar/ReplanMenuItem.tsx"
   ],
   "{n, plural, one {# caught into the Inbox.} other {# caught into the Inbox.}}": [
     "web/src/app/review/ReviewView.tsx"
@@ -17897,6 +17943,9 @@
     "web/src/app/TimelineView.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/lib/facets.ts"
+  ],
+  "{n, plural, one {# doesn’t fit} other {# don’t fit}}": [
+    "web/src/app/calendar/ReplanPreview.tsx"
   ],
   "{n, plural, one {# done} other {# done}}": [
     "web/src/app/task-list/useClosedList.ts",
@@ -18105,6 +18154,12 @@
   ],
   "{n, plural, one {# task moved to today} other {# tasks moved to today}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {# task moved} other {# tasks moved}}": [
+    "web/src/lib/undoActions.ts"
+  ],
+  "{n, plural, one {# task moves} other {# tasks move}}": [
+    "web/src/app/calendar/ReplanPreview.tsx"
   ],
   "{n, plural, one {# task reopened} other {# tasks reopened}}": [
     "web/src/lib/bulk.ts"
