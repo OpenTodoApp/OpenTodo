@@ -322,6 +322,7 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 	}
 	for _, e := range list {
 		defaultFlowMode(e)
+		defaultProjectStatus(e)
 	}
 	shared, err := s.sync.SharedProjects(ctx, userFrom(ctx).ID)
 	if err != nil || len(shared) == 0 {

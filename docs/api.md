@@ -626,6 +626,17 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"flow_mode":"serial"}' $BASE/ap
 # 400 {"error":{"code":"invalid_input","message":"project.flow_mode must be parallel, sequential or area, got \"serial\""}}
 ```
 
+`status` (string) is `active` or `maintenance` (OpenSpec change `project-review-cadence`, guide: [Review intervals and maintenance](review-intervals.md)). A project in maintenance is never stalled or without a next action, and its health reads Maintenance unless a deadline has passed; its tasks are unchanged. It is shared with the project's members and, like the other project fields, written by the owner and admins (`403` for editors and viewers). Every representation carries it, `active` when it was never set; a value a newer client wrote is returned as stored and reads as `active`. REST accepts only the two values on create and patch and refuses anything else with `400 invalid_input` naming `project.status`; the sync endpoint accepts any string.
+
+```sh
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"status":"maintenance"}' $BASE/api/v1/projects/$PROJECT
+# 200 {…,"status":"maintenance"}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"status":"paused"}' $BASE/api/v1/projects/$PROJECT
+# 400 {"error":{"code":"invalid_input","message":"project.status must be active or maintenance, got \"paused\""}}
+```
+
+How often each person reviews a project (`review_every`: `week`, `2weeks`, `month`, `quarter` or `paused`) is a personal preference next to their review stamp. It has no REST collection: it syncs as an ordinary `project_prefs` op through `POST /api/v1/sync` (see [Sync protocol](sync.md)).
+
 ### Sub-projects
 
 A project becomes a sub-project by setting `parent_id` to another project's id, to any depth. On `POST /projects` and `PATCH /projects/{id}` the server checks the value and answers `400 invalid_input` when:

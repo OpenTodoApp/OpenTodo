@@ -35,9 +35,11 @@ import { setFavourite } from '../lib/favourites'
 import { useIsFavourite } from './useFavourites'
 import { pinItem } from './menus/pinItem'
 import { projectFlowItem } from './menus/flowMenu'
+import { maintenanceItem, reviewEveryItem } from './menus/reviewMenu'
+import { inMaintenance } from '../lib/reviewCadence'
 import { useMethodMode, type MethodMode } from '../lib/method/mode'
 import { openTaskCount, useOpenTaskCount } from '../lib/liveTasks'
-import { useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
+import { useProjectPrefsRow, useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
 
 /** A "Move to" target: a project, or the top level (id ''). */
@@ -90,7 +92,7 @@ function ColourSwatches({ project }: { project: Project }) {
  * "Pin to sidebar" (sidebar-favourites) is offered to every role: it changes the
  * user's own preferences, never the project.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[]; mode?: MethodMode }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[]; mode?: MethodMode; reviewEvery?: string }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
   // A consequence naming the open tasks: from the count the caller holds, or, while
   // that has not loaded yet, read when the confirmation opens (never "0 open tasks").
@@ -107,13 +109,19 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
   const fields: ActionGroup[] = a.fields && canEditTasks(role) ? [{ items: [
     { kind: 'action', id: 'fields', label: t('Fields…'), icon: 'list', shortcut: keysOf('project.fields'), onSelect: a.fields },
   ] }] : []
-  if (!canEditProject(role)) return [...pin, ...copies, ...fields]
+  // "Review every…" (project-review-cadence D6): personal, for whoever is in the walk (editors and up).
+  const every = o.mode && canEditTasks(role) ? reviewEveryItem(project.id, o.reviewEvery, { mode: o.mode }) : null
+  const review: ActionGroup[] = every ? [{ items: [every] }] : []
+  if (!canEditProject(role)) return [...pin, ...copies, ...fields, ...review]
   // "Flow…" (project-flow-modes D7): the menus pass the mode; the palette offers its own "Set project flow…".
   const flow = o.mode ? projectFlowItem(project, { mode: o.mode, canEdit: true }) : null
+  // "Put in maintenance" / "End maintenance" (project-review-cadence D6): owner and admins, like the flow.
+  const maintenance = o.mode ? maintenanceItem(project, { mode: o.mode, canEdit: true }) : null
   return [
     ...pin,
     ...copies,
     ...fields,
+    ...review,
     { items: [
       { kind: 'picker', id: 'move', label: t('Move to'), icon: 'folder-input', shortcut: keysOf('project.move'), picker: {
         title: t('Move to'), placeholder: t('Find a project…'), emptyText: t('No other project can hold this one'),
@@ -139,6 +147,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         palette: iconPickerSpec(project.icon, (icon) => act(updateProject(project.id, { icon }))),
       } },
       ...(flow ? [flow] : []),
+      ...(maintenance ? [maintenance] : []),
       { kind: 'confirm', id: 'archive', label: subCount ? t('Archive with sub-projects') : t('Archive'), icon: 'archive', confirm: {
         title: t('Archive “{name}”?', { name: project.name }), tone: 'default', confirmLabel: t('Archive'),
         body: withCount((tasks) => subCount
@@ -233,6 +242,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const otherWorkspaces = useOtherWorkspaces()
   const mode = useMethodMode()
+  const reviewEvery = useProjectPrefsRow(project.id)?.review_every
   const panels: ActionGroup = { items: [
     ...(listLayout ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
@@ -242,7 +252,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
-    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode },
+    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
       { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
     panels,
   ]
@@ -275,6 +285,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
         </button>
       )}
       {role === 'viewer' && <span role="note" className="rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted">{t('Read-only')}</span>}
+      {/* project-review-cadence: the shared status, inside the existing lead line. */}
+      {inMaintenance(project) && <span role="note" data-project-maintenance className="inline-flex items-center gap-1 rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted"><Icon name="wrench" size="xs" />{t('In maintenance')}</span>}
       {online && managesLinks && publicLinks > 0 && (
         <button type="button" data-public-badge onClick={() => setSharing('public')}
           aria-label={t('{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}', { n: publicLinks })}
@@ -291,6 +303,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const phoneMeta = [
     membership ? `${membership.members.length} · ${roleName(role)}` : '',
     role === 'viewer' ? t('Read-only') : '',
+    inMaintenance(project) ? t('In maintenance') : '',
     online && managesLinks && publicLinks > 0 ? t('Public') : '',
   ].filter(Boolean).join(' · ')
 

@@ -43,6 +43,15 @@ export interface ProjectFields {
    * REST and the agent tools check the set. Not user text.
    */
   flow_mode?: string
+  /**
+   * The project's status (OpenSpec change project-review-cadence, design
+   * D1): "active" or "maintenance"; empty, missing or unknown reads as
+   * active. Shared with the project's members and written by those who may
+   * change its other fields. Maintenance mutes the health words, the stalled
+   * marker and "without a next action"; a passed deadline still shows. Sync
+   * checks the kind only; REST and the agent tools check the set. Not user text.
+   */
+  status?: string
 }
 
 /**
@@ -422,6 +431,13 @@ export interface ProjectPrefsFields {
   sort_dir?: string
   /** The project list's row layout (row-layouts D1); "" follows the account's. */
   row_layout?: string
+  /**
+   * How often this user reviews the project in the weekly review's walk
+   * (OpenSpec change project-review-cadence, design D2): "week", "2weeks",
+   * "month", "quarter" or "paused"; empty, missing or unknown reads as week.
+   * Personal like reviewed_at, also on a shared project; derives no activity.
+   */
+  review_every?: string
 }
 
 /**
@@ -653,7 +669,7 @@ export interface ReviewFields {
 /** The row a field op creates when its entity is new: one key per op field, a family (`fields.<id>`) in one key named after its prefix. */
 export const OP_DEFAULTS = {
   project: {
-    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '',
+    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
     title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {},
@@ -689,7 +705,7 @@ export const OP_DEFAULTS = {
     name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Place, 'id' | '_clock'>,
   project_prefs: {
-    feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
+    feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '',
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
     date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '',

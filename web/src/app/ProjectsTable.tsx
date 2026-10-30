@@ -38,6 +38,8 @@ const HEALTH: Record<HealthWord, { label: () => string; icon: IconName; tone: To
   slipping: { label: () => t('Overdue'), icon: 'activity', tone: 'warning' },
   quiet: { label: () => t('Quiet'), icon: 'clock', tone: 'muted' },
   'on-track': { label: () => t('On track'), icon: 'trending-up', tone: 'success' },
+  // project-review-cadence: deliberately on low burn; Late still wins.
+  maintenance: { label: () => t('Maintenance'), icon: 'wrench', tone: 'muted' },
 }
 
 /** The detail after the health word: the late count, the task past its deadline, or the quiet days. */

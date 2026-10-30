@@ -57,6 +57,8 @@ export interface Project extends ProjectFields {
   workspace_id?: string | null
   /** The stored flow (project-flow-modes), kept as received; read it with `projectFlowOf` from lib/flow.ts. */
   flow_mode?: string
+  /** The stored status (project-review-cadence), kept as received; read it with `projectStatusOf` from lib/reviewCadence.ts. */
+  status?: string
   _clock: Clock
 }
 
@@ -597,6 +599,8 @@ export interface ProjectPrefs extends ProjectPrefsFields {
   sort_dir?: string
   /** The project list's row layout (row-layouts D1); '' or absent follows the account's. */
   row_layout?: string
+  /** The review interval (project-review-cadence D2), kept as received; read it with `reviewEveryOf` from lib/reviewCadence.ts. */
+  review_every?: string
   _clock: Clock
 }
 

@@ -339,6 +339,13 @@ var Schema = map[string]map[string]Field{
 		// parallel. Sync checks the kind only, so a later value stays additive;
 		// REST and the agent tools check the set. Not user text.
 		"flow_mode": {Kind: kString, Default: `""`},
+		// The project's status (OpenSpec change project-review-cadence, design
+		// D1): "active" or "maintenance"; empty, missing or unknown reads as
+		// active. Shared with the project's members and written by those who may
+		// change its other fields. Maintenance mutes the health words, the stalled
+		// marker and "without a next action"; a passed deadline still shows. Sync
+		// checks the kind only; REST and the agent tools check the set. Not user text.
+		"status": {Kind: kString, Default: `""`},
 	},
 	"task": {
 		"title":        {Kind: kString, Default: `""`, Content: true},
@@ -620,6 +627,11 @@ var Schema = map[string]map[string]Field{
 		"sort_dir": {Kind: kString, Default: `""`},
 		// The project list's row layout (row-layouts D1); "" follows the account's.
 		"row_layout": {Kind: kString, Default: `""`},
+		// How often this user reviews the project in the weekly review's walk
+		// (OpenSpec change project-review-cadence, design D2): "week", "2weeks",
+		// "month", "quarter" or "paused"; empty, missing or unknown reads as week.
+		// Personal like reviewed_at, also on a shared project; derives no activity.
+		"review_every": {Kind: kString, Default: `""`},
 	},
 	// user_prefs: one user's date and time preferences (OpenSpec change
 	// `date-time-preferences`, design D1). Clients write a single row with the
