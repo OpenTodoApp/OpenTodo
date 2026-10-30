@@ -612,6 +612,8 @@ export type NewTaskInput = {
   /** "someday" or a date (someday-and-evening); only sent when set. */
   start?: string | null
   evening?: boolean
+  /** Morning or Afternoon (day-parts); only sent when set. Evening is `evening`. */
+  day_part?: 'morning' | 'afternoon' | null
   /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
   recurrence?: string | null
   /** Assignee account id (task-assignment); only sent when set. */
@@ -659,6 +661,7 @@ export async function planTask(input: NewTaskInput, position?: number): Promise<
   // Only parked, deferred or evening tasks carry these (someday-and-evening).
   if (input.start) extra.start = input.start
   if (input.evening) extra.evening = true
+  else if (input.day_part) extra.day_part = input.day_part
   // Only captured, mailed or imported tasks carry the field (task-origin).
   if (input.origin) extra.origin = input.origin
   if (input.location) extra.location = input.location
@@ -827,7 +830,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * different project, and changing a task's project clears its section (board-view).
  */
 // blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'day_part', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -849,6 +852,8 @@ function copyTasks(
     // field existed hold undefined, which must never be sent).
     // A copy carries the note's document only when there is one (collaborative-rich-text).
     if (typeof patch.notes_doc !== 'string' || !patch.notes_doc) delete patch.notes_doc
+    // The copy keeps its part of the day (day-parts); none needs no op.
+    if (typeof patch.day_part !== 'string') delete patch.day_part
     // The copy keeps where the task came from (task-origin); none needs no op.
     if (!patch.origin || typeof patch.origin !== 'object') delete patch.origin
     // Custom field values travel with the copy (custom-fields), one op each.

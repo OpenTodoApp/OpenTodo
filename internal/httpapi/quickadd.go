@@ -41,6 +41,9 @@ type parseRequest struct {
 	URL   string  `json:"url"`
 	Today string  `json:"today"`
 	Now   string  `json:"now"`
+	// DayParts turns on the part phrases ("tomorrow morning", OpenSpec change
+	// day-parts D5); the client sends the account's Day parts preference.
+	DayParts bool `json:"day_parts"`
 }
 
 // parseLabel is a label the line names: id is absent when no label has that name.
@@ -119,6 +122,7 @@ func (s *Server) handleQuickAddParse(w http.ResponseWriter, r *http.Request) {
 			now = t.Format("15:04")
 		}
 	}
+	acct.ctx.DayParts = in.DayParts
 	out := parseLine(*in.Line, acct, today, now)
 	if strings.TrimSpace(in.URL) != "" {
 		if o, err := origin.FromURL(in.URL, ""); err == nil {
@@ -228,6 +232,9 @@ func parseLine(line string, a parseAccountData, today, now string) parseResponse
 	if r.Evening {
 		fields["evening"] = true
 	}
+	if r.DayPart != "" {
+		fields["day_part"] = r.DayPart
+	}
 	if r.ProjectID != "" {
 		fields["project_id"] = r.ProjectID
 	}
@@ -305,6 +312,11 @@ func chipsOf(line string, r quickadd.Result, marks []quickadd.Mark, a parseAccou
 			c.Text = w.deadline + " " + mail.FormatDay(r.Deadline, a.lang)
 		case "evening":
 			c.Text = w.evening
+		case "daypart":
+			c.Text = w.morning
+			if r.DayPart == "afternoon" {
+				c.Text = w.afternoon
+			}
 		case "someday":
 			c.Text = w.someday
 		case "project":
@@ -378,15 +390,15 @@ func utf16Index(s string, byteOffset int) int {
 }
 
 // parseWords are the chip words the server writes, in the six shipped languages.
-type parseWords struct{ deadline, evening, someday, noProject string }
+type parseWords struct{ deadline, evening, someday, noProject, morning, afternoon string }
 
 var parseWordTable = map[string]parseWords{
-	"en": {"Deadline", "This evening", "Someday", "No project named %s"},
-	"de": {"Frist", "Heute Abend", "Irgendwann", "Kein Projekt heißt %s"},
-	"fr": {"Échéance", "Ce soir", "Un jour", "Aucun projet ne s’appelle %s"},
-	"es": {"Fecha límite", "Esta tarde", "Algún día", "Ningún proyecto se llama %s"},
-	"it": {"Scadenza", "Stasera", "Un giorno", "Nessun progetto si chiama %s"},
-	"pt": {"Prazo", "Esta noite", "Um dia", "Nenhum projeto se chama %s"},
+	"en": {"Deadline", "This evening", "Someday", "No project named %s", "Morning", "Afternoon"},
+	"de": {"Frist", "Heute Abend", "Irgendwann", "Kein Projekt heißt %s", "Vormittag", "Nachmittag"},
+	"fr": {"Échéance", "Ce soir", "Un jour", "Aucun projet ne s’appelle %s", "Matin", "Après-midi"},
+	"es": {"Fecha límite", "Esta tarde", "Algún día", "Ningún proyecto se llama %s", "Mañana", "Tarde"},
+	"it": {"Scadenza", "Stasera", "Un giorno", "Nessun progetto si chiama %s", "Mattina", "Pomeriggio"},
+	"pt": {"Prazo", "Esta noite", "Um dia", "Nenhum projeto se chama %s", "Manhã", "Tarde"},
 }
 
 func parseWordsFor(lang string) parseWords {

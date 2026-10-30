@@ -15,6 +15,7 @@ export const CHIP_HUE: Record<Chip['kind'], HueName> = {
   deadline: 'red',
   someday: 'slate',
   evening: 'indigo',
+  daypart: 'indigo',
   project: 'slate',
   label: 'cyan',
   priority: 'orange',
@@ -66,6 +67,8 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
       return t('Someday')
     case 'evening':
       return t('This Evening')
+    case 'daypart':
+      return chip.value === 'morning' ? t('Morning') : t('Afternoon')
     case 'deadline':
       return t('Deadline {date}', { date: dueInWords({ date: chip.value as string }) })
     case 'project':
@@ -81,7 +84,7 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
   }
 }
 
-const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder') })
+const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), daypart: msg('Part of the day'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder') })
 
 
 export interface ParseChipsProps {

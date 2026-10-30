@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/flow"
 	"github.com/OpenTodoApp/opentodo/internal/inbox"
 )
@@ -19,14 +20,17 @@ import (
 
 type planningFlags struct {
 	deadline, start, location string
-	evening                   bool
-	blockedBy                 stringList
+	// part is --part: morning, afternoon, evening or none (day-parts).
+	part      string
+	evening   bool
+	blockedBy stringList
 }
 
 func (f *planningFlags) bind(fs *flag.FlagSet) {
 	fs.StringVar(&f.deadline, "deadline", "", "the day it must be finished by: YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
 	fs.StringVar(&f.start, "start", "", "someday parks it; a date defers it: YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
 	fs.BoolVar(&f.evening, "evening", false, "put it in This Evening (edit: --evening=false takes it out)")
+	fs.StringVar(&f.part, "part", "", "the part of the day: morning, afternoon, evening or none")
 	fs.Var(&f.blockedBy, "blocked-by", "a task this one waits for, id or unique id prefix (repeatable; edit replaces the list)")
 	fs.StringVar(&f.location, "location", "", "a saved location's name or id, or lat,lon (edit: `none` clears)")
 }
@@ -59,6 +63,9 @@ func (f *planningFlags) validateLocal(set map[string]bool, now time.Time, edit b
 			return err
 		}
 	}
+	if _, ok := daypart.Parse(f.part); set["part"] && (!ok || strings.TrimSpace(f.part) == "") {
+		return usageErr("invalid --part %q: use morning, afternoon, evening or none", f.part)
+	}
 	if set["location"] && !none(f.location) && strings.TrimSpace(f.location) == "" {
 		return usageErr("--location needs a saved location's name or id, lat,lon or none")
 	}
@@ -69,7 +76,7 @@ func (f *planningFlags) validateLocal(set map[string]bool, now time.Time, edit b
 }
 
 func (f *planningFlags) any(set map[string]bool) bool {
-	return set["deadline"] || set["start"] || set["evening"] || set["blocked-by"] || set["location"]
+	return set["deadline"] || set["start"] || set["evening"] || set["part"] || set["blocked-by"] || set["location"]
 }
 
 // parseLatLon reads "lat,lon"; ok is false when v does not look like a pair.
@@ -113,6 +120,13 @@ func (f *planningFlags) fill(ctx context.Context, a *App, c *client, set map[str
 	}
 	if set["evening"] {
 		out["evening"] = f.evening
+	}
+	// --part writes both fields, paired (day-parts D2); it wins over --evening.
+	if set["part"] {
+		p, _ := daypart.Parse(f.part)
+		for k, v := range daypart.Fields(p) {
+			out[k] = v
+		}
 	}
 	if set["blocked-by"] {
 		all, err := tasks()
@@ -314,6 +328,8 @@ func planningSuffix(t task, today string, blocked bool) string {
 	}
 	if t.Evening {
 		parts = append(parts, "evening")
+	} else if t.DayPart != nil && daypart.Stored(*t.DayPart) {
+		parts = append(parts, *t.DayPart)
 	}
 	if blocked {
 		parts = append(parts, "waiting")

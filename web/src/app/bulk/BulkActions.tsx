@@ -7,7 +7,9 @@ import { Kbd } from '../shortcuts/Kbd'
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
-import { useAllLabels, useLiveSections, useProjects, useMembershipMap } from '../../lib/localData'
+import { useAllLabels, useLiveSections, useProjects, useMembershipMap, useUserPrefsRow } from '../../lib/localData'
+import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
+import { dayPartUndoable } from '../../lib/undoActions'
 import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
@@ -19,7 +21,7 @@ import { DateField } from '../datetime/DateField'
 import { ActionMenu, type ActionGroup, type ActionItem } from '../menus/ActionMenu'
 import { openRowSchedule } from '../task-list/RowSwipe'
 import { BulkReview } from './BulkReview'
-import { showBulkToast } from './toastStore'
+import { showBulkToast, showUndoToast } from './toastStore'
 import { startFocusOn } from '../focus/startFocus'
 import { t } from '../../lib/i18n'
 import { withListTransition } from '../motion'
@@ -37,7 +39,7 @@ const itemKey = (i: PickerItem) => i.key
 const itemLabel = (i: PickerItem) => i.label
 const itemPath = (i: PickerItem) => i.path
 
-interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: Section[]; memberships: Map<string, Membership>; runningTask?: string | null }
+interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: Section[]; memberships: Map<string, Membership>; runningTask?: string | null; dayParts?: boolean }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -58,6 +60,23 @@ export function trackingItem(task: Task | undefined, runningTask: string | null 
 export function focusItem(task: Task | undefined, memberships: Map<string, Membership>): ActionGroup['items'] {
   if (!task || task.deleted_at || task.completed_at || roleOf(task.project_id, memberships) === 'viewer') return []
   return [{ kind: 'action', id: 'focus', label: t('Start focus'), icon: 'clock', onSelect: () => act(startFocusOn(task.id)) }]
+}
+
+/**
+ * "Day part…" (day-parts D4): while the account uses day parts, a submenu of the
+ * four parts, the tasks' common part checked; nothing for a viewer's task.
+ */
+export function dayPartItem(ids: readonly string[], d: Pick<Data, 'tasks' | 'memberships' | 'dayParts'>): ActionItem[] {
+  if (!d.dayParts || d.tasks.length === 0 || d.tasks.some((task) => roleOf(task.project_id, d.memberships) === 'viewer')) return []
+  const parts = new Set(d.tasks.map((task) => dayPartOf(task)))
+  const common = parts.size === 1 ? [...parts][0] : undefined
+  const set = (part: DayPart | null) => async () => {
+    const r = await dayPartUndoable(ids, part)
+    if (r.entry) showUndoToast(r.label, r.entry.id)
+  }
+  return [{ kind: 'submenu', id: 'day-part', label: t('Day part'), icon: 'sun', items: ([null, ...DAY_PARTS] as (DayPart | null)[]).map((part) => ({
+    kind: 'check' as const, id: `part-${part ?? 'none'}`, label: dayPartName(part), checked: common === part, onSelect: set(part),
+  })) }]
 }
 
 /** The menu's groups for the given tasks (exported for the palette and tests). */
@@ -92,6 +111,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
           { kind: 'action', id: 'pick-date', label: t('Pick a date…'), icon: 'calendar-days', onSelect: a.pickDate },
         ] },
       ] as ActionItem[]),
+      ...dayPartItem(ids, d),
       { kind: 'picker', id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels'), disabled: live.length === 0, reason: t('There are no labels yet'), picker: {
         title: t('Labels'), placeholder: t('Add to all, or remove from all…'), source: live, multiple: true, selected: common, rankContext: 'label',
         getKey: (l: Label) => l.id, getLabel: (l: Label) => l.name,
@@ -141,7 +161,8 @@ function useBulkData(ids: readonly string[]): Data {
   const sections = useLiveSections()
   const memberships = useMembershipMap()
   const runningTask = useRunningEntry()?.task_id ?? null
-  return { tasks, labels, projects, sections, memberships, runningTask }
+  const dayParts = dayPartsOn(useUserPrefsRow())
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts }
 }
 
 /**

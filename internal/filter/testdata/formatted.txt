@@ -100,12 +100,12 @@ tracked >= 1h30
 @"x|y" & #"a(b)" & search: "a & b"
 search: \
 @a\b
-deferred & (#no | created = 5 days | p4 | ##"follow up") & @back\slash & origin: "my tracker"
+evening & (#no | created = 5 days | p4 | ##"follow up") & @back\slash & origin: "my tracker"
 "cost" < true
 no origin & created < tomorrow & ##today & ("no" > "Acme Inc" | "x\"y" > 2026-02-28 | search: #tag | !start = last month)
 "due" >= "Acme Inc"
 (@today | tracked > 30m | origin: "my tracker" | "cost" > "Acme Inc") & ("no" >= "Acme Inc" & no "Order date")
-search: "x|y" | p2 | @"follow up" | @"follow up" & unblocked & start >= last month & tracked = 1h30
+search: "x|y" | p2 | @"follow up" | @"follow up" & blocked & start >= last month & tracked = 1h30
 tracked = 1h & p2 & "due" > true & search: Café | no "date" | origin: "my tracker" | ##today
 created < this week
 created < this week
@@ -119,7 +119,7 @@ p2
 tracked <= 10h
 @"follow up"
 !(p4 | @"x|y")
-!(p2 & !evening & tracked <= 2h05 & @"follow up")
+!(p2 & !afternoon & tracked <= 2h05 & @"follow up")
 p4
 @"follow up"
 p3
@@ -139,9 +139,9 @@ search: today
 "x\"y" >= 100
 !search: #tag | origin: github & !no "cost"
 (search: back\slash | start <= 12 days ago) & search: no & p1 & tracked < 30m
-tracked > 0m & (##"x|y" & !!no time & !tracked > 1h30) & no "Order date" & tracked > 2h05
+tracked > 0m & (##"x|y" & !!no deadline & !tracked > 1h30) & no "Order date" & tracked > 2h05
 start <= last month
-p1 & overdue & !#today | tracked = 10h | no "date"
+p1 & today & !#today | tracked = 10h | no "date"
 p2 | start >= 2026-02-28 | "cost" >= -2.5 | tracked = 1h
 ##today
 search: "x|y"
@@ -153,7 +153,7 @@ origin: url
 @Café
 !origin: url
 origin: url
-open & !!"x\"y" > true & (##"follow up" & p3) & @back\slash
+completed & !!"x\"y" > true & (##"follow up" & p3) & @back\slash
 "due" >= "today"
 (!no labels & tracked <= 10h & p3 & no "date") & (@"x|y" | search: work | "cost" < 2026-02-28 | "x\"y" <= 100) & "due" = "today"
 !#"x|y"
@@ -170,7 +170,7 @@ search: "a\"b"
 search: #tag
 (!no "Order date" & @today & "no" < tomorrow) & tracked = 10h & search: no
 !no "cost"
-deferred
+evening
 origin: url
 ##p1
 search: back\slash
@@ -188,15 +188,15 @@ completed > last month
 (p4 | tracked < 1h30) | (p2 | #"#tag" | search: work)
 start >= 5 days
 p3 & created > 2026-02-28 & search: today
-tracked = 0m | unblocked | origin: "my tracker" & origin: url & @Café | p1 & search: p1
+tracked = 0m | blocked | origin: "my tracker" & origin: url & @Café | p1 & search: p1
 due = 12 days ago & no "Order date"
 tracked <= 1h
 !origin: github
 (@"follow up" | #no | ##"follow up") & (tracked < 1h | p4 | tracked >= 1h) & (blocked & #p1 & origin: github & no "date")
-subtask | search: "follow up" & !"cost" >= 100 & search: "a\"b"
+open | search: "follow up" & !"cost" >= 100 & search: "a\"b"
 @"x|y"
 tracked < 1h
 !(tracked = 30m | ##"a\"b" | tracked <= 10h)
 no labels
 search: back\slash
-(!"due" >= true | !habit) | "due" >= -2.5 | (no "cost" | !!tracked <= 1h30 | !"cost" < true | #back\slash) | (!tracked = 0m | p1 | completed | deadline = next week)
+(!"due" >= true | !habit) | "due" >= -2.5 | (no "cost" | !!tracked <= 1h30 | !"cost" < true | #back\slash) | (!tracked = 0m | p1 | afternoon | deadline = next week)

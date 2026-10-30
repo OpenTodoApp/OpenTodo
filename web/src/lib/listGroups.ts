@@ -16,6 +16,7 @@ import { flattenTree, type Tree, type TreeNode } from './tree'
 import type { Label, Project, Section, Task } from './types'
 import { compareTasks, groupTasks, inAnytime, isSomeday } from './views'
 import type { ListDisplay } from './listDisplay'
+import type { DayPart } from './dayParts'
 import { linkedPlaceId } from './locations'
 
 /** The list views TaskListView renders, as the router names them. */
@@ -46,6 +47,8 @@ export interface RowImplied {
   date?: string
   /** This Evening: the "evening" suffix is left out. */
   evening?: true
+  /** Morning or Afternoon (day-parts D3): the part chip is left out. */
+  part?: 'morning' | 'afternoon'
   /** The Someday view: the "Someday" chip is left out. */
   someday?: true
 }
@@ -72,6 +75,8 @@ export interface ListGroup {
   note?: string
   /** Named by the user's own content (a project): the label keeps its case (page-rhythm D2). */
   named?: true
+  /** Today with day parts on (day-parts D4): the part a task dropped on the heading gets ('none' = Any time). */
+  dropPart?: DayPart | 'none'
 }
 
 /** A board column: a section ('' = "No section") and its top-level cards. */
@@ -188,6 +193,8 @@ export interface GroupInput {
   display?: ListDisplay
   /** Labels, for grouping by label. */
   labels?: readonly Label[]
+  /** Today: the account groups it by part of the day (day-parts D3). */
+  dayParts?: boolean
 }
 
 /** The comparator of a display's order, or null for manual order as stored (list-display-options D3). */
@@ -267,12 +274,19 @@ function flatGroups(p: GroupInput): ListGroup[] {
   if (p.view === 'today') {
     // Blocked tasks wait in their own group at the end (task-dependencies D7);
     // This Evening below the day's tasks (someday-and-evening).
-    const { overdue: earlier, day, evening, blocked: waiting } = groupToday(p.tasks, p.today, p.blocked)
+    // With day parts on, Morning and Afternoon between them (day-parts D3); their headings take drops (D4).
+    const parts = !!p.dayParts
+    const { overdue: earlier, day, morning, afternoon, evening, blocked: waiting } = groupToday(p.tasks, p.today, p.blocked, parts)
     const g: ListGroup[] = []
+    const drop = (part: DayPart | 'none') => (parts ? { dropPart: part } : {})
     // Earlier and Blocked imply nothing: how late a task is stays visible on its row (calm-rows D3, page-rhythm D5).
     if (earlier.length) g.push({ key: 'earlier', heading: t('Earlier'), rows: earlier.map(row) })
-    g.push({ key: 'today', heading: earlier.length || evening.length ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }) })
-    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }) })
+    const others = earlier.length || morning.length || afternoon.length || evening.length
+    // With day parts on an empty Today group is left out, unless the list would be empty without it.
+    if (!parts || day.length || !others) g.push({ key: 'today', heading: others ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }), ...drop('none') })
+    if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(morning.map(row), { date: p.today, part: 'morning' }), ...drop('morning') })
+    if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(afternoon.map(row), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
+    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }), ...drop('evening') })
     if (waiting.length) {
       const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
       g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, openKey: BLOCKED_OPEN_KEY, rows: folded ? [] : waiting.map(row) })

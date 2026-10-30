@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -2865,6 +2865,464 @@
     "spentMinutes": null,
     "recurrence": null,
     "reminders": []
+   }
+  },
+  {
+   "name": "day parts: Stretch tomorrow morning",
+   "line": "Stretch tomorrow morning",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Stretch",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "morning",
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: Call Ana this afternoon",
+   "line": "Call Ana this afternoon",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Call Ana",
+    "due": {
+     "date": "2026-10-14"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "afternoon",
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: Dinner fri evening",
+   "line": "Dinner fri evening",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Dinner",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": true
+   }
+  },
+  {
+   "name": "day parts: Morning run tomorrow stays literal",
+   "line": "Morning run tomorrow",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Morning run",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: tonight works with day parts on",
+   "line": "Read tonight",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Read",
+    "due": {
+     "date": "2026-10-14"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": true
+   }
+  },
+  {
+   "name": "day parts off: Call Ana this morning",
+   "line": "Call Ana this morning",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Call Ana this morning",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts off: Stretch tomorrow morning keeps the word",
+   "line": "Stretch tomorrow morning",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Stretch morning",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: German Einkaufen heute Nachmittag",
+   "line": "Einkaufen heute Nachmittag",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Einkaufen",
+    "due": {
+     "date": "2026-10-14"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "afternoon",
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: German Joggen morgen früh",
+   "line": "Joggen morgen früh",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Joggen",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "morning",
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: French Courir demain matin",
+   "line": "Courir demain matin",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Courir",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "morning",
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: Italian Correre domani mattina",
+   "line": "Correre domani mattina",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Correre",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "morning",
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: Spanish Correr mañana por la tarde",
+   "line": "Correr mañana por la tarde",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Correr",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "afternoon",
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: Portuguese Correr amanhã de manhã",
+   "line": "Correr amanhã de manhã",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Correr",
+    "due": {
+     "date": "2026-10-15"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "morning",
+    "evening": false
+   }
+  },
+  {
+   "name": "day parts: Italian Leggere venerdì sera",
+   "line": "Leggere venerdì sera",
+   "ctx": {
+    "today": "2026-10-14",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Leggere",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": true
    }
   }
  ]

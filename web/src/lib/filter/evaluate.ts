@@ -11,6 +11,7 @@ import { availability, type FlowState } from '../flow'
 import { originMatches, originOf } from '../taskOrigin'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
 import { t } from '../i18n'
+import { dayPartOf } from '../dayParts'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -392,6 +393,9 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'someday': return (task) => task.start === 'someday'
           case 'deferred': return (task) => !!task.start && task.start !== 'someday' && task.start > today
           case 'evening': return (task) => !!task.evening
+          // The stored part of the day (day-parts), never the part a due time places it in.
+          case 'morning': return (task) => dayPartOf(task) === 'morning'
+          case 'afternoon': return (task) => dayPartOf(task) === 'afternoon'
           // A habit's skipped occurrence record is not a completion (OpenSpec habits, D6).
           case 'completed': return (task) => task.completed_at !== null && !task.skipped
           case 'open': return (task) => task.completed_at === null

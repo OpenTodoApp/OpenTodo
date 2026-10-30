@@ -21,6 +21,10 @@ import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
+import { useUserPrefsRow } from '../../lib/localData'
+import { dayPartUndoable } from '../../lib/undoActions'
+import { showUndoToast } from '../bulk/toastStore'
 
 export type WhenSegment = 'due' | 'start' | 'deadline' | 'evening' | 'repeat' | 'reminders'
 
@@ -69,10 +73,35 @@ export function WhenSegmentPicker({ value, onChange }: { value: WhenSegmentId; o
   )
 }
 
+/**
+ * The Evening switch, or with day parts on the four-way part control (day-parts D4):
+ * Any time, Morning, Afternoon, Evening, each writing both fields with Undo. A
+ * reader sees the part as text.
+ */
 function EveningSwitch({ task, readOnly }: { task: Task; readOnly: boolean }) {
+  const parts = dayPartsOn(useUserPrefsRow())
+  if (parts) return <DayPartControl task={task} readOnly={readOnly} />
   return (
     <Switch label={t('This Evening')} description={t('Listed in the evening group of Today')} checked={!!task.evening} disabled={readOnly}
-      onChange={(on) => act(updateTask(task.id, { evening: on }))} />
+      onChange={(on) => act(updateTask(task.id, dayPartFields(on ? 'evening' : null)))} />
+  )
+}
+
+function DayPartControl({ task, readOnly }: { task: Task; readOnly: boolean }) {
+  const current = dayPartOf(task)
+  if (readOnly) return <p className="text-body text-default" data-day-part-text>{dayPartName(current)}</p>
+  const set = async (part: DayPart | null) => {
+    const r = await dayPartUndoable([task.id], part)
+    if (r.entry) showUndoToast(r.label, r.entry.id)
+  }
+  return (
+    <div role="radiogroup" aria-label={t('Part of the day')} className="flex flex-wrap gap-1" data-day-part-control>
+      {([null, ...DAY_PARTS] as (DayPart | null)[]).map((part) => (
+        <button key={part ?? 'none'} type="button" role="radio" aria-checked={current === part} data-day-part={part ?? 'none'}
+          className={`min-h-8 rounded-control border px-2 py-1 text-meta ${current === part ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}
+          onClick={() => act(set(part))}>{dayPartName(part)}</button>
+      ))}
+    </div>
   )
 }
 
@@ -190,6 +219,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
     // eslint-disable-next-line react-hooks/exhaustive-deps -- on mount and when the shown segment changes
   }, [segment])
   const shows = (id: WhenSegment) => !segment || id === segment || (segment === 'due' && id === 'evening')
+  const parts = dayPartsOn(useUserPrefsRow())
 
   return (
     <div ref={root} data-when-control data-when-shown={segment} className="space-y-3">
@@ -213,7 +243,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
           onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
       </Segment>}
 
-      {shows('evening') && !segment && <Segment id="evening" icon="moon" label={t('Evening')}>
+      {shows('evening') && !segment && <Segment id="evening" icon="moon" label={parts ? t('Part of the day') : t('Evening')}>
         <EveningSwitch task={task} readOnly={readOnly} />
       </Segment>}
 

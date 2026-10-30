@@ -74,6 +74,17 @@
           "description": "put the task in This Evening (edit: --evening=false takes it out)"
         },
         {
+          "name": "part",
+          "type": "string",
+          "enum": [
+            "morning",
+            "afternoon",
+            "evening",
+            "none"
+          ],
+          "description": "the part of the day; sets This Evening too (evening) or clears it"
+        },
+        {
           "name": "blocked-by",
           "type": "string_list",
           "description": "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"
@@ -294,6 +305,17 @@
           "name": "evening",
           "type": "bool",
           "description": "put the task in This Evening (edit: --evening=false takes it out)"
+        },
+        {
+          "name": "part",
+          "type": "string",
+          "enum": [
+            "morning",
+            "afternoon",
+            "evening",
+            "none"
+          ],
+          "description": "the part of the day; sets This Evening too (evening) or clears it"
         },
         {
           "name": "blocked-by",
@@ -2611,6 +2633,18 @@
         "evening": {
           "type": "boolean",
           "description": "in This Evening"
+        },
+        "day_part": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "morning",
+            "afternoon",
+            null
+          ],
+          "description": "the part of the day: morning or afternoon; evening is the evening flag"
         },
         "blocked_by": {
           "type": "array",

@@ -235,10 +235,23 @@ function unitAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number
  * Ties go to the earlier vocabulary (the user's preferred language).
  */
 /** Tokens at `i` consumed by the longest phrase of a vocabulary word list in any active language, or 0. */
-export function wordsAt(tokens: readonly Token[], i: number, ctx: DateContext, field: 'somedayWords' | 'eveningWords'): number {
+export function wordsAt(tokens: readonly Token[], i: number, ctx: DateContext, field: 'somedayWords' | 'eveningWords' | 'morningWords' | 'afternoonWords'): number {
   if (!tokens[i] || tokens[i].quoted) return 0
   let best = 0
   for (const v of ctx.vocabs) best = Math.max(best, phraseAt(tokens, i, v[field], `${v.code}:${field}`))
+  return best
+}
+
+/** A part word at `i` ("morning" after "tomorrow", day-parts D5): the longest in any active language, or null. */
+export function partWordAt(tokens: readonly Token[], i: number, ctx: DateContext): { n: number; part: 'morning' | 'afternoon' | 'evening' } | null {
+  if (!tokens[i] || tokens[i].quoted) return null
+  let best: { n: number; part: 'morning' | 'afternoon' | 'evening' } | null = null
+  for (const v of ctx.vocabs) {
+    for (const part of ['morning', 'afternoon', 'evening'] as const) {
+      const n = phraseAt(tokens, i, v.partWords[part], `${v.code}:part:${part}`)
+      if (n > (best?.n ?? 0)) best = { n, part }
+    }
+  }
   return best
 }
 
