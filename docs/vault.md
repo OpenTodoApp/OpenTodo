@@ -69,6 +69,8 @@ A line without `🆔` creates a task. Indented lines are subtasks, other indente
 
 A [sequential project or an area](project-flows.md) has `opentodo-flow: sequential` or `opentodo-flow: area` in its frontmatter; a parallel project has no key. Change the key to change the project's flow. A value the vault doesn't know stays in the file and isn't synced. A section's flow isn't in the file.
 
+A project [in maintenance](review-intervals.md#maintenance) has `opentodo-status: maintenance` in its frontmatter; an active project has no key. Add the key to put the project in maintenance, remove it to end maintenance. A value the vault doesn't know stays in the file and isn't synced. How often you review a project is not in the file.
+
 ## In Obsidian
 
 Make the vault a sub-folder of your Obsidian vault and install Tasks. With Dataview:

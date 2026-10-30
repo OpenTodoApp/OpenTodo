@@ -82,6 +82,9 @@ func checkSectionStyle(body map[string]json.RawMessage) string {
 func (s *Server) checkSections(ctx context.Context, uid, entity string, body map[string]json.RawMessage, existing opsync.Entity) (string, error) {
 	switch entity {
 	case "project":
+		if msg := checkProjectStatus(body); msg != "" {
+			return msg, nil
+		}
 		return checkFlowMode(entity, body), nil
 	case "section":
 		if msg := checkFlowMode(entity, body); msg != "" {

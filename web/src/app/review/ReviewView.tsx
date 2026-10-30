@@ -7,7 +7,7 @@
 // writes the synced `review` row; the menu opens the Daily check and the Monthly look.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Badge, Button, Card, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
-import { useAllLabels, useAllProjects, useReviewRow, useReviewedAt } from '../../lib/localData'
+import { useAllLabels, useAllProjects, useProjectPrefsLoaded, useReviewEvery, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
 import { createTask, setTaskCompleted } from '../../lib/ops'
 import { resolveLabels } from '../../lib/labels'
@@ -40,13 +40,16 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const projects = useAllProjects()
   const labels = useAllLabels()
   const reviewedAt = useReviewedAt()
+  const reviewEvery = useReviewEvery()
+  // The walk's queue is fixed when it opens, so it waits for the stamps and intervals (project-review-cadence).
+  const prefsLoaded = useProjectPrefsLoaded()
   const review = useReviewRow()
   const [now, setNow] = useState(() => Date.now())
   const steps = useMemo(() => {
-    if (!input) return null
+    if (!input || !prefsLoaded) return null
     const thisWeek = compute({ tasks: input.tasks, projects: input.projects, shared: sharedIds([...input.memberships.values()]), me: input.me, today: input.today }, periodFor('this-week', input.today, weekStart), weekStart)
-    return reviewSteps({ ...input, completedThisWeek: thisWeek.completed, reviewedAt, now })
-  }, [input, reviewedAt, now, weekStart])
+    return reviewSteps({ ...input, completedThisWeek: thisWeek.completed, reviewedAt, reviewEvery, now })
+  }, [input, prefsLoaded, reviewedAt, reviewEvery, now, weekStart])
 
   const initial = (STEP_IDS as readonly string[]).includes(routeStep ?? '') ? (routeStep as StepId) : null
   const [step, setStep] = useState<StepId | null>(initial)
@@ -133,7 +136,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
             next={next ? { label: t('Next: {step}', { step: STEP_TITLES[next] }), onClick: () => go(next) } : { label: t('Finish review'), onClick: finish, finish: true }}>
             <StepIntro step={step} steps={steps} />
             {step === 'projects' ? (
-              <ProjectWalk walk={steps.walk} now={now} paused={!!addTo || !!openId} onAdd={(w: WalkProject) => setAddTo(w.project)} />
+              <ProjectWalk walk={steps.walk} notDue={steps.notDue} now={now} paused={!!addTo || !!openId} onAdd={(w: WalkProject) => setAddTo(w.project)} />
             ) : step === 'sweep' ? (
               <MindSweep projects={projects} labels={labels} />
             ) : taskRows.length > 0 && (
@@ -233,7 +236,7 @@ function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
     case 'waiting':
       return <p className="mb-3 text-body text-muted">{steps.waiting.length ? t('Assigned to someone else or blocked by another task. Open one to follow up in its comments.') : t('Nothing is waiting.')}</p>
     case 'projects':
-      return <p className="mb-3 text-body text-muted">{t('One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action.')}</p>
+      return <p className="mb-3 text-body text-muted">{t('One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.')}</p>
     case 'someday':
       return <p className="mb-3 text-body text-muted">{steps.someday.length ? t('Anything you now want to do? n brings a task back from Someday, c completes it, Delete trashes it.') : t('Nothing is parked in Someday.')}</p>
     default:

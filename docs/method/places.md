@@ -35,4 +35,4 @@ Every task lives in exactly one Place. The Place says what the task is waiting f
 
 ## Projects without a next action
 
-A project is **without a next action** when none of its open tasks can be done now, waits for someone or another task, or starts later. A project is **stalled** when it has open tasks, the oldest created more than three weeks ago, and nothing in it was completed in the last three weeks. The weekly review and the Loop home show both, and the weekly email digest lists the first.
+A project is **without a next action** when none of its open tasks can be done now, waits for someone or another task, or starts later. A project is **stalled** when it has open tasks, the oldest created more than three weeks ago, and nothing in it was completed in the last three weeks. The weekly review and the Loop home show both, and the weekly email digest lists the first. A project [in maintenance](../review-intervals.md#maintenance) is neither.

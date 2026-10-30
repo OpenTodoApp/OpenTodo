@@ -22,6 +22,8 @@ import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
 import { sectionMenuGroups } from '../Sections'
 import { projectFlowPicker } from '../menus/flowMenu'
+import { reviewEveryPicker, setMaintenance } from '../menus/reviewMenu'
+import { inMaintenance } from '../../lib/reviewCadence'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, placeInDay, sidebarFind } from '../signals'
@@ -46,7 +48,7 @@ export interface PaletteContext {
   /** The selected (or open) task, when the list has one. */
   task?: Task
   /** The project, saved view or label of the current route, and the selected task's section. */
-  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; keptAway?: boolean }
+  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; keptAway?: boolean; reviewEvery?: string }
   view?: { row: View; peers: View[]; isStart: boolean }
   label?: { row: Label; labels: Label[]; pinned?: boolean }
   section?: { row: Section; first: boolean; last: boolean; layout: 'list' | 'board'; count: number }
@@ -216,6 +218,17 @@ export function commands(ctx: PaletteContext): Command[] {
     if (p.role === 'owner' || p.role === 'admin') {
       out.push({ id: 'project:flow', icon: 'list-ordered', label: t('Project “{name}”: Set project flow…', { name }), menuLabel: t('Flow'),
         keywords: 'flow sequential parallel area steps', run: () => ({ kind: 'picker', picker: projectFlowPicker(p.row) }) as Step })
+    }
+    // Review every… (personal) and maintenance (owner and admins), project-review-cadence D6: in every mode.
+    if (p.role !== 'viewer') {
+      out.push({ id: 'project:review-every', icon: 'calendar-sync', label: t('Project “{name}”: Review every…', { name }), menuLabel: t('Review every'),
+        keywords: 'review interval weekly monthly quarterly paused cadence', run: () => ({ kind: 'picker', picker: reviewEveryPicker(p.row.id, p.reviewEvery) }) as Step })
+    }
+    if (p.role === 'owner' || p.role === 'admin') {
+      const on = inMaintenance(p.row)
+      out.push({ id: on ? 'project:maintenance-end' : 'project:maintenance-start', icon: 'wrench',
+        label: on ? t('Project “{name}”: End maintenance', { name }) : t('Project “{name}”: Put in maintenance', { name }),
+        menuLabel: on ? t('End maintenance') : t('Put in maintenance'), keywords: 'maintenance low burn status health mute', run: () => setMaintenance(p.row, !on) })
     }
     // Keep away from AI assistants (agent-planning-fields D9): owner and admins.
     if (p.role === 'owner' || p.role === 'admin') {

@@ -76,6 +76,8 @@ const activeOf = derived((all: Label[]) => activeLabels(all))
 const memberMapOf = derived((all: Membership[]) => new Map(all.map((m) => [m.projectId, m])))
 const reviewedAtOf = derived((all: ProjectPrefs[]) => new Map(all.filter((p) => p.reviewed_at > 0).map((p) => [p.id, p.reviewed_at])))
 const NO_STAMPS = new Map<string, number>()
+const reviewEveryOf = derived((all: ProjectPrefs[]) => new Map(all.filter((p) => !!p.review_every).map((p) => [p.id, p.review_every!])))
+const NO_INTERVALS = new Map<string, string>()
 
 const NO_WORKSPACES: WorkspaceState = { current: '', defaultId: '', list: [] }
 
@@ -174,6 +176,17 @@ export function useUserPrefsRow(): UserPrefs | null | undefined {
 export function useReviewedAt(): ReadonlyMap<string, number> {
   const rows = projectPrefRows.use()
   return rows ? reviewedAtOf(rows) : NO_STAMPS
+}
+
+/** Whether the personal project preferences have been read once (the walk's queue waits for them). */
+export function useProjectPrefsLoaded(): boolean {
+  return projectPrefRows.use() !== undefined
+}
+
+/** This user's stored review interval per project (project_prefs.review_every, project-review-cadence); empty while loading. */
+export function useReviewEvery(): ReadonlyMap<string, string> {
+  const rows = projectPrefRows.use()
+  return rows ? reviewEveryOf(rows) : NO_INTERVALS
 }
 
 /** The weekly review row: undefined while loading, null when there is none yet. */

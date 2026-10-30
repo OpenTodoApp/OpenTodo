@@ -96,6 +96,9 @@ func projectList(a *App, ctx context.Context, g *globalFlags, args []string) err
 		status := ""
 		if p.Archived {
 			status = "archived"
+		} else if p.Status == "maintenance" {
+			// A project deliberately on low burn (project-review-cadence).
+			status = "maintenance"
 		}
 		tbl.add(cell{text: shortID(p.ID), style: styleCyan}, plain(p.Name), plain(names[s.project(byID, p.ID)]), plain(p.Color), plain(flow.ProjectFlow(p.FlowMode)), cell{text: status, style: styleDim})
 	}
