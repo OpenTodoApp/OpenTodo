@@ -837,6 +837,13 @@ select.ui-input:not([multiple]) {
   border-inline-start-color: color-mix(in oklab, var(--hue-solid) 60%, var(--ot-surface));
   color: var(--ot-faint);
 }
+/* A re-plan preview's proposed place (replan-the-day D4): the block recipe with a dashed accent outline. */
+.ui-block--ghost {
+  background: color-mix(in oklab, var(--hue-soft) 70%, var(--ot-surface));
+  border: 1.5px dashed var(--ot-accent);
+  border-inline-start: 3px dashed var(--ot-accent);
+  color: var(--ot-text-strong);
+}
 .ui-block--late {
   background: var(--ot-danger-soft);
   border-inline-start-color: var(--ot-danger);
@@ -851,6 +858,16 @@ select.ui-input:not([multiple]) {
   color: var(--ot-muted);
 }
 .ui-block-dot { @apply inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-hue-solid; }
+/* A frame's band behind the Day and Week blocks (calendar-frames D3): a tint lighter
+   than a block's fill, a hairline top in the hue, no other edge; dimmed on past days. */
+.ui-frame-band {
+  background: color-mix(in oklab, var(--hue-soft) 70%, transparent);
+  border-top: 1px solid color-mix(in oklab, var(--hue-solid) 70%, transparent);
+}
+.ui-frame-band--past {
+  background: color-mix(in oklab, var(--hue-soft) 40%, transparent);
+  border-top-color: color-mix(in oklab, var(--hue-solid) 35%, transparent);
+}
 /* An event of Today's agenda that already ended (OpenSpec change today-agenda, D6): dimmed by mixing, never by opacity. */
 .ui-event-past {
   color: var(--ot-faint);

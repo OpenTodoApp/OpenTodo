@@ -59,6 +59,8 @@ export interface CalendarKeyContext {
   goTo: (date: string) => void
   /** Keep a moved task in view: follow it to another day or week. */
   follow: (date: string) => void
+  /** While a re-plan preview is open (replan-the-day D4): Enter applies, Escape cancels, the other keys wait. */
+  replan?: { apply: () => void; cancel: () => void } | null
 }
 
 export function useCalendarKeys(c: CalendarKeyContext) {
@@ -82,7 +84,16 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     move(task, task.due, e)
   }
   const unlessPlacing = (fn: () => boolean | void) => () => (placing ? false : fn())
-  useShortcutScope('calendar', {
+  const replan = c.replan
+  useShortcutScope('calendar', replan ? {
+    'calendar.escape': (e) => {
+      const target = e.target as HTMLElement | null
+      if (isTypingTarget(target)) { target!.blur(); return }
+      replan.cancel()
+    },
+    // A focused button (Apply, Cancel) or the choice keeps its own Enter.
+    'calendar.open': (e) => { if (isActivationTarget(e.target) || isTypingTarget(e.target as HTMLElement | null)) return false; replan.apply() },
+  } : {
     'calendar.escape': (e) => {
       const target = e.target as HTMLElement | null
       if (isTypingTarget(target)) { target!.blur(); return }

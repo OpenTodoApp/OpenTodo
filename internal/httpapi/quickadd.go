@@ -41,9 +41,10 @@ type parseRequest struct {
 	URL   string  `json:"url"`
 	Today string  `json:"today"`
 	Now   string  `json:"now"`
-	// DayParts turns on the part phrases ("tomorrow morning", OpenSpec change
-	// day-parts D5); the client sends the account's Day parts preference.
-	DayParts bool `json:"day_parts"`
+	// DayParts turns the part phrases ("tomorrow morning", OpenSpec change
+	// day-parts D5) on or off; absent, the account's Day parts preference
+	// decides (quick-add-day-parts-default).
+	DayParts *bool `json:"day_parts"`
 }
 
 // parseLabel is a label the line names: id is absent when no label has that name.
@@ -122,7 +123,9 @@ func (s *Server) handleQuickAddParse(w http.ResponseWriter, r *http.Request) {
 			now = t.Format("15:04")
 		}
 	}
-	acct.ctx.DayParts = in.DayParts
+	if in.DayParts != nil {
+		acct.ctx.DayParts = *in.DayParts
+	}
 	out := parseLine(*in.Line, acct, today, now)
 	if strings.TrimSpace(in.URL) != "" {
 		if o, err := origin.FromURL(in.URL, ""); err == nil {
@@ -162,6 +165,8 @@ func (s *Server) parseAccount(ctx context.Context, uid, acceptLanguage string) (
 	case "month-day":
 		a.ctx.DayMonthOrder = "MD"
 	}
+	// The Day parts preference is the default of the request's day_parts.
+	a.ctx.DayParts = idOf(prefs["day_parts"]) == "on"
 	if ws, ok := map[string]int{"mon": 1, "sun": 0, "sat": 6}[idOf(prefs["week_start"])]; ok {
 		a.ctx.WeekStart = &ws
 	}

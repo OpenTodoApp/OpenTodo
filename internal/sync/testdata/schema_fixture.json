@@ -36,6 +36,19 @@
       "project_id",
       "type"
     ],
+    "frame": [
+      "color",
+      "created_at",
+      "deleted_at",
+      "end",
+      "from_date",
+      "position",
+      "source",
+      "start",
+      "title",
+      "until_date",
+      "weekdays"
+    ],
     "label": [
       "color",
       "created_at",
@@ -250,6 +263,9 @@
     "field": [
       "name",
       "options"
+    ],
+    "frame": [
+      "title"
     ],
     "label": [
       "name"

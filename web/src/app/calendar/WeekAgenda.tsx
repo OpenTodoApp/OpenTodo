@@ -3,9 +3,11 @@ import type { DayData } from '../../lib/calendarDays'
 import { formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
+import type { PlacedFrame } from '../../lib/frames'
 import type { Project, Task } from '../../lib/types'
 import { Button, hueFor } from '../../ui'
 import { CapacityLine } from './CapacityLine'
+import { FrameHeading } from './FrameBand'
 import type { DayMeetings } from './meetingCapacity'
 import { formatTime } from './grid'
 
@@ -14,8 +16,10 @@ import { formatTime } from './grid'
  * unscheduled tasks and its timed blocks in time order; no seven-column grid. The
  * same selection, keyboard order and panel as the grid.
  */
-export function WeekAgenda({ days, today, prefs, tasks, meetings, taskMap, projectMap, selectedId, onSelect, onOpen, onAdd }: {
+export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMap, projectMap, selectedId, onSelect, onOpen, onAdd }: {
   days: DayData[]
+  /** Frame occurrences per date (calendar-frames D6): headings among the day's timed tasks. */
+  frames?: Map<string, PlacedFrame[]>
   today: string
   prefs: GridPrefs
   tasks: Task[]
@@ -49,6 +53,11 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, taskMap, proje
         const name = formatDateParts(d.date, { weekday: 'long' })
         const load = dayLoad(tasks, d.date, prefs.dayLength, meetings?.get(d.date)?.minutes ?? 0)
         const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
+        const dayFrames = [...(frames?.get(d.date) ?? [])].sort((a, b) => a.start - b.start)
+        // Each frame heading goes before the first timed task that starts at or after its start.
+        const timed = [...dayFrames.map((f) => ({ at: f.start, order: 0, node: <FrameHeading key={`frame:${f.frame.id}`} occ={f} /> })),
+          ...blocks.map(({ b, t: item }) => ({ at: b.start, order: 1, node: row(item, formatTime(b.start), d.date < today) }))]
+          .sort((a, b) => a.at - b.at || a.order - b.order)
         return (
           <section key={d.date} data-agenda-day={d.date} aria-labelledby={`agenda-${d.date}`}>
             <div className="flex items-baseline justify-between gap-2 border-b border-default px-2 pb-1">
@@ -58,15 +67,18 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, taskMap, proje
             {d.lane.length === 0 && blocks.length === 0
               // One quiet line per empty day, as on Plan (precision-polish D5): seven filled buttons outweighed the days that have tasks.
               ? (
-                <div className="mt-1 flex items-center justify-between gap-2 px-1" data-agenda-empty>
-                  <span className="text-meta text-faint">{t('Nothing planned.')}</span>
-                  <Button variant="ghost" size="sm" icon="plus" onClick={() => onAdd(d.date)}>{t('Add a task')}</Button>
-                </div>
+                <>
+                  {dayFrames.length > 0 && <ul className="mt-1 space-y-0.5">{dayFrames.map((f) => <FrameHeading key={f.frame.id} occ={f} />)}</ul>}
+                  <div className="mt-1 flex items-center justify-between gap-2 px-1" data-agenda-empty>
+                    <span className="text-meta text-faint">{t('Nothing planned.')}</span>
+                    <Button variant="ghost" size="sm" icon="plus" onClick={() => onAdd(d.date)}>{t('Add a task')}</Button>
+                  </div>
+                </>
               )
               : (
                 <ul className="mt-1 space-y-0.5">
                   {d.lane.map((tk) => row(tk, null, d.date < today))}
-                  {blocks.map(({ b, t: item }) => row(item, formatTime(b.start), d.date < today))}
+                  {timed.map((x) => x.node)}
                 </ul>
               )}
           </section>

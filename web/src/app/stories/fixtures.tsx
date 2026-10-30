@@ -7,6 +7,7 @@
 import type { Decorator, StoryObj } from '@storybook/react-vite'
 import { db, setMeta } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
+import { createFrame } from '../../lib/frames'
 import { createLabel } from '../../lib/labels'
 import { createProject, createSubtask, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import { createSection, saveViewMode } from '../../lib/sections'
@@ -268,6 +269,19 @@ export async function seedCalendarWeek(): Promise<void> {
   await createTask({ title: 'Team retrospective', due: { date: '2026-10-16', time: '14:00' }, estimate_minutes: 60, project_id: seeded.work })
   await createTask({ title: 'Market', due: { date: '2026-10-17', time: '09:00' }, estimate_minutes: 90, project_id: seeded.home })
   await createTask({ title: 'Long run', due: { date: '2026-10-18', time: '08:00' }, estimate_minutes: 120, project_id: seeded.health })
+}
+
+/**
+ * Frames (calendar-frames): the calendar week with "Deep work" on weekdays from 09:00
+ * to 11:00 planning from the Website project, "Admin" Monday to Thursday late in the
+ * afternoon and "Calls" on Wednesday overlapping it, so one column splits two bands.
+ */
+export async function seedCalendarFrames(): Promise<void> {
+  await seedCalendarWeek()
+  const none = { source: '', from_date: null, until_date: null }
+  await createFrame({ ...none, title: 'Deep work', weekdays: '1,2,3,4,5', start: '09:00', end: '11:00', color: hue('violet'), source: `project:${seeded.website}` })
+  await createFrame({ ...none, title: 'Admin', weekdays: '1,2,3,4', start: '16:00', end: '16:45', color: hue('teal') })
+  await createFrame({ ...none, title: 'Calls', weekdays: '3', start: '16:30', end: '17:30', color: hue('orange') })
 }
 
 /**

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY } from '../lib/calendar'
 import { db, getMeta, setMeta } from '../lib/db'
 import { setCalendarShowCompleted } from '../lib/localData'
-import { completeTask, createTask, resetDeviceId, updateTask } from '../lib/ops'
+import { completeTask, createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { click, key, render, waitFor } from '../ui/test-utils'
 import { PageActions, usePageBar } from '../ui'
 import { CalendarView } from './CalendarView'
@@ -59,11 +59,11 @@ function PhoneMenu() {
   const bar = usePageBar()
   return bar ? <PageActions overflow={bar.overflow} /> : null
 }
-async function toggleAtWidth(root: ParentNode) {
-  if (toggle(root)) return click(toggle(root))
+async function controlAtWidth(root: ParentNode) {
+  if (toggle(root)) return toggle(root)
   await click(root.querySelector('[aria-label="More actions"]')!)
   await waitFor(() => !!document.querySelector('[data-calendar-completed-toggle]'))
-  await click(document.querySelector('[data-calendar-completed-toggle]')!)
+  return document.querySelector<HTMLButtonElement>('[data-calendar-completed-toggle]')!
 }
 
 describe.each([1280, 390])('completed calendar tasks at %i px', (width) => {
@@ -81,20 +81,48 @@ describe.each([1280, 390])('completed calendar tasks at %i px', (width) => {
     const capacity = () => [...r.container.querySelectorAll('[data-capacity]')].map((e) => e.textContent)
     const before = capacity()
     const writes = await db.outbox.count()
-    await toggleAtWidth(r.container)
+    const control = await controlAtWidth(r.container)
+    expect(control.textContent?.trim()).toBe('Show completed tasks')
+    expect(control.getAttribute(width === 1280 ? 'aria-pressed' : 'aria-checked')).toBe('false')
+    await click(control)
     await waitFor(() => !!taskRow(r.container, done) && !!taskRow(r.container, lane))
     expect(await getMeta(CALENDAR_COMPLETED_META_KEY, false)).toBe(true)
     for (const id of [done, lane]) {
       expect(taskRow(r.container, id)!.querySelector('.line-through')).toBeTruthy()
       expect(taskRow(r.container, id)!.textContent).toContain('(completed)')
+      expect(taskRow(r.container, id)!.textContent).not.toContain('read-only')
+      expect(taskRow(r.container, id)!.classList.contains('cursor-grab')).toBe(false)
     }
     expect(taskRow(r.container, done)!.querySelector('[data-resize-handle]')).toBeNull()
     expect(capacity()).toEqual(before)
     expect(await db.outbox.count()).toBe(writes)
-    await toggleAtWidth(r.container)
+    const active = await controlAtWidth(r.container)
+    expect(active.textContent?.trim()).toBe('Show completed tasks')
+    expect(active.getAttribute(width === 1280 ? 'aria-pressed' : 'aria-checked')).toBe('true')
+    await click(active)
     await waitFor(() => !taskRow(r.container, done) && !taskRow(r.container, lane))
     expect(taskRow(r.container, open)).toBeTruthy()
     expect(await db.outbox.count()).toBe(writes)
+    await r.unmount()
+  })
+})
+
+describe.each(['month', 'plan'] as const)('%s completed-task permissions', (mode) => {
+  it.each(['editor', 'viewer'] as const)('announces read-only only for a real viewer, with role %s', async (role) => {
+    const project = await createProject({ name: 'Shared' })
+    const id = await createTask({ title: 'Finished shared task', due: { date: DATE }, project_id: project })
+    await completeTask(id)
+    await db.memberships.put({ projectId: project, role, ownerId: 'someone', members: [] })
+    await setCalendarShowCompleted(true)
+    const r = await render(modes[mode]())
+    await waitFor(() => {
+      const row = taskRow(r.container, id)
+      return !!row?.querySelector('.line-through') && row.textContent?.includes('read-only') === (role === 'viewer')
+    })
+    const row = taskRow(r.container, id)!
+    expect(row.textContent).toContain('(completed)')
+    expect(row.textContent?.includes('read-only')).toBe(role === 'viewer')
+    expect(row.classList.contains('cursor-grab')).toBe(false)
     await r.unmount()
   })
 })
@@ -210,5 +238,26 @@ it('marks completed titles in the expanded overlap list and removes its overflow
   expect([...r.container.querySelectorAll('[data-cal-id]')].every((e) => e.textContent?.includes('(completed)'))).toBe(true)
   await click(toggle(r.container))
   await waitFor(() => !r.container.querySelector('[data-overflow], [data-cal-id]'))
+  await r.unmount()
+})
+
+it('keeps Re-plan and Frames available and never re-plans a visible completed task', async () => {
+  const open = await createTask({ title: 'Still behind', due: { date: DATE, time: '09:00' }, estimate_minutes: 30 })
+  const done = await createTask({ title: 'Already finished', due: { date: DATE, time: '10:00' }, estimate_minutes: 30 })
+  await completeTask(done)
+  await setCalendarShowCompleted(true)
+  const stored = await db.tasks.get(done)
+  const r = await render(modes.day())
+  await waitFor(() => r.container.querySelector('[data-replan-entry]')?.textContent?.includes('1 block behind') ?? false)
+  await click(r.container.querySelector('[aria-label="More actions"]')!)
+  await waitFor(() => !!document.querySelector('[data-replan-item]'))
+  expect(document.querySelector('[data-frames-item]')).toBeTruthy()
+  await click(document.querySelector('[data-replan-item]')!)
+  await waitFor(() => !!document.querySelector('[data-replan-apply]'))
+  expect(document.querySelector('[data-replan-summary]')!.textContent).toBe('1 task moves')
+  expect(taskRow(r.container, done)!.hasAttribute('data-replan-from')).toBe(false)
+  await click(document.querySelector('[data-replan-apply]')!)
+  await waitFor(async () => (await db.tasks.get(open))?.due?.time === '12:00')
+  expect(await db.tasks.get(done)).toEqual(stored)
   await r.unmount()
 })

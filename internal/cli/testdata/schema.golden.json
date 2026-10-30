@@ -425,6 +425,105 @@
       }
     },
     {
+      "name": "frames add",
+      "aliases": [
+        "frames create"
+      ],
+      "summary": "create a calendar frame and print its id",
+      "args": [
+        {
+          "name": "title",
+          "required": true,
+          "repeatable": true
+        }
+      ],
+      "flags": [
+        {
+          "name": "days",
+          "type": "string",
+          "default": "weekdays",
+          "description": "days it repeats on: mon-fri, mon,wed,fri, weekdays, weekend, daily or ISO digits 1 (Monday) to 7 (Sunday)"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "default": "09:00",
+          "description": "start time HH:MM"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "default": "10:00",
+          "description": "end time HH:MM, after --from"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "description": "colour as #rrggbb (default: slate)"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "description": "planning source: project:<id>, label:<id> or view:<id>"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/frame"
+      }
+    },
+    {
+      "name": "frames list",
+      "aliases": [
+        "frames ls"
+      ],
+      "summary": "list the account's calendar frames (recurring background windows on the Day and Week grid)",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/frame"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "frames rm",
+      "aliases": [
+        "frames delete"
+      ],
+      "summary": "delete a calendar frame",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "yes",
+          "short": "y",
+          "type": "bool",
+          "description": "confirm a destructive command (required off a terminal and with --json)"
+        }
+      ],
+      "writes": true,
+      "destructive": true,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/frame"
+      }
+    },
+    {
       "name": "help",
       "summary": "show help for a command (--json: same as `ot schema`)",
       "args": [
@@ -1977,6 +2076,67 @@
         },
         "exportedAt": {
           "type": "string"
+        }
+      }
+    },
+    "frame": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "frame",
+      "description": "A calendar frame exactly as the REST API returns it (OpenSpec calendar-frames). The title is ciphertext for an encrypted account (encrypted: true).",
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "weekdays",
+        "start",
+        "end"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "weekdays": {
+          "type": "string",
+          "description": "ISO weekdays, a sorted comma list such as \"1,2,3,4,5\""
+        },
+        "start": {
+          "type": "string",
+          "description": "HH:MM"
+        },
+        "end": {
+          "type": "string",
+          "description": "HH:MM"
+        },
+        "color": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "\"\", project:<id>, label:<id> or view:<id>"
+        },
+        "from_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "until_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "position": {
+          "type": "number"
+        },
+        "created_at": {
+          "type": "number"
+        },
+        "encrypted": {
+          "type": "boolean"
         }
       }
     },

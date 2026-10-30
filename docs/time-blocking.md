@@ -22,7 +22,7 @@ The estimate shows on the task row, like `45m` or `1h 30m`.
 
 ## Open the calendar
 
-Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan**, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> or <kbd>g</kbd> <kbd>Shift+C</kbd>. Timed tasks are blocks as tall as their estimate; dated tasks without a time wait in the **Unscheduled** lane. The sidebar opens the calendar the way you last left it on this device. See [Day, Week and Month](calendar-views.md#open-the-calendar).
+Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan**, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> or <kbd>g</kbd> <kbd>Shift+C</kbd>. Timed tasks are blocks as tall as their estimate; dated tasks without a time wait in the **Unscheduled** lane. See [Day, Week and Month](calendar-views.md#open-the-calendar).
 
 ## See the month
 
@@ -57,6 +57,7 @@ In **Settings → Language and region → Calendar grid** you can set when the g
 ## Tips
 
 - Estimate generously at first. After a week you'll know how long "quick" things really take.
-- Leave gaps. A day planned to the minute falls apart at the first phone call.
+- Leave gaps. When the morning slips anyway, [re-plan the rest of the day](replan-the-day.md).
+- Keep weekday mornings for deep work with [frames](frames.md).
 - **Quick wins**, under the **Filter** action in a list's header, shows tasks of 15 minutes or less, good for filling a short gap.
 - Dates and times you set on the calendar are ordinary due dates, so they show up in Today and Upcoming as well, and in calendar apps connected over [CalDAV](caldav.md), estimate included.

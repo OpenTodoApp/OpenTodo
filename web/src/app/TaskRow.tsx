@@ -492,13 +492,14 @@ const TONE_TEXT: Partial<Record<Tone, string>> ={ danger: 'text-danger', accent:
 
 function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs }: CompactRowProps) {
   const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
+  const canDrag = !readOnly && onPointerDown !== undefined
   return (
     <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hueFor(project?.color ?? null)} aria-pressed={selected}
-      onPointerDown={readOnly ? undefined : onPointerDown}
+      onPointerDown={canDrag ? onPointerDown : undefined}
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
       onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
-      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${task.completed_at || date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${readOnly ? '' : 'cursor-grab'}`}>
+      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${task.completed_at || date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canDrag ? 'cursor-grab' : ''}`}>
       {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
       {time && <span data-plan-time className={`shrink-0 tabular-nums ${TONE_TEXT[ladderTone(date, today)] ?? 'text-muted'}`}>{formatTime(time)}</span>}
       {/* In a narrow column the title takes the first line and the time, estimate and priority the second. */}

@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Column contents
-Each column SHALL list the open tasks due that day in the viewer's zone with the same selection as Day, Week and Month (deleted and archived-project tasks left out, completed tasks included only when the Calendar's Show completed choice is on), timed tasks first in time order, then the others by priority and position. Each row SHALL show its time when it has one, its title, its estimate and its priority. Completed titles SHALL be struck through and announce their completed status, in both the columns and the phone agenda; completed rows SHALL be selectable and openable but SHALL NOT be rescheduled or completed again from the calendar. Columns SHALL NOT be manually ordered. The selection SHALL work offline; identical task rows and the same visibility choice SHALL produce identical columns after sync.
+Each column SHALL list the open tasks due that day in the viewer's zone with the same selection as Day, Week and Month (deleted and archived-project tasks left out, completed tasks included only when the Calendar's Show completed tasks choice is on), timed tasks first in time order, then the others by priority and position. Each row SHALL show its time when it has one, its title, its estimate and its priority. Completed titles SHALL be struck through and announce their completed status, in both the columns and the phone agenda; completed rows SHALL be selectable and openable but SHALL NOT be rescheduled or completed again from the calendar. Columns SHALL NOT be manually ordered. The selection SHALL work offline; identical task rows and the same visibility choice SHALL produce identical columns after sync.
 
 #### Scenario: Zoned due on the viewer's day
 - **WHEN** a task is due `02:00 Asia/Tokyo` on the 12th and the user views the Plan from Berlin
@@ -28,8 +28,8 @@ Each column header SHALL show a capacity bar and the planned total against the d
 
 #### Scenario: Completing a task
 - **WHEN** a task listed in a column is completed
-- **THEN** the day's total decreases by its estimate; its row leaves the column when Show completed is off, or stays with a struck-through title when it is on
+- **THEN** the day's total decreases by its estimate; its row leaves the column when Show completed tasks is off, or stays with a struck-through title when it is on
 
 #### Scenario: Completed work does not add future work
-- **WHEN** Show completed is on and the span contains a completed recurring occurrence
+- **WHEN** Show completed tasks is on and the span contains a completed recurring occurrence
 - **THEN** its stored row is visible, but contributes neither estimated nor unestimated remaining work and does not produce recurring projections

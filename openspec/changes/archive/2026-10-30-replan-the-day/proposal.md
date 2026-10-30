@@ -10,7 +10,7 @@ Time-blocking fails when the morning slips and the plan is never redrawn. Cal Ne
 - **Re-plan** computes a proposal with a deterministic packer: the missed blocks, in their original order, go first-fit into the free time between now (rounded up to the next 15 minutes) and the end of the grid, around other open timed tasks and busy calendar events. Each keeps its length (its estimate, or the 30-minute default).
 - The proposal is a **preview**: the new places as ghost blocks with the old places faint, and a bar under the header: "4 tasks move · 1 doesn't fit", **Apply** and **Cancel**. Tasks that do not fit are listed with one choice for all of them: **Leave them** (default) or **Move to tomorrow** (same time, next day).
 - **Apply** writes all moves as one batch of ordinary due edits, offered with one Undo. Cancel or Escape writes nothing.
-- Below 640 px the preview is a bottom sheet listing "10:00 → 14:30 Write report" rows with the same Apply and Cancel.
+- Below 768 px (where the header's lead line moves into the shell's bar) the preview is a bottom sheet listing "10:00 → 14:30 Write report" rows with the same Apply and Cancel.
 
 Not **BREAKING**: no op field, no route, no environment variable, no server change.
 

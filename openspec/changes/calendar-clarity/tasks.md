@@ -10,7 +10,7 @@ Each group can land as its own PR, in any order.
 ## 2. Add with the pointer (#555)
 
 - [ ] 2.1 `AddOnDayDialog` takes an optional time; existing Month `q` and Plan tests pass
-- [ ] 2.2 Day and Week: double-click on empty grid and lane, the context menu (Add task here…, an extension point for New frame here… and New slot here…), touch long press, the slot highlight; `calendarAdd.test.tsx`
+- [ ] 2.2 Day and Week: double-click on empty grid and lane, the context menu (Add task here…, an extension point for New frame here… and New slot here…; New frame here… calls `requestFrameAt(weekday, start)` from `app/calendar/framesRequest.tsx`, shipped with `calendar-frames`), touch long press, the slot highlight; `calendarAdd.test.tsx`
 - [ ] 2.3 Month: double-click, context menu, hover surface; double-click on a row still opens the task; tests in `calendarAdd.test.tsx`
 - [ ] 2.4 `q` in the `calendar` scope for Day and Week; the shortcut registry test passes with no conflict; cheat sheet lists it
 

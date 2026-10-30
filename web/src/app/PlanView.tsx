@@ -79,7 +79,8 @@ export function PlanView({ date }: { date?: string }) {
   const memberMap = useMembershipMap()
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
   const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
-  const editable = useCallback((task: Task) => !task.completed_at && canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
+  const canEdit = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
+  const editable = useCallback((task: Task) => !task.completed_at && canEdit(task), [canEdit])
   /** Selection order: the span's task rows column by column; projected and event rows never take part. */
   const order = useMemo(() => days.flatMap((d) => d.entries.flatMap((e) => (e.kind === 'task' ? [e.task.id] : []))), [days])
 
@@ -179,7 +180,7 @@ export function PlanView({ date }: { date?: string }) {
   const from = dates[0], to = dates[dates.length - 1]
   const title = `${anchor === today ? t('Next {n} days', { n: span }) : t('{n} days', { n: span })} · ${formatShort(from)} – ${formatShort(to)}`
   const eventHue = hueFor(feeds.subs[0]?.color ?? null)
-  const rowProps = { today, selectedId, editable, projectMap, subMap: feeds.subMap, zone, onPointerDown: startDrag, onOpen: (id: string) => { setSelectedId(id); setPanelTaskId(id) } }
+  const rowProps = { today, selectedId, canEdit, projectMap, subMap: feeds.subMap, zone, onPointerDown: startDrag, onOpen: (id: string) => { setSelectedId(id); setPanelTaskId(id) } }
 
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="plan">

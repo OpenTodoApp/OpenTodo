@@ -26,6 +26,7 @@ import { startFakeLLM } from './fake-llm.mjs'
 
 const OUT = 'docs/images'
 let eisenhowerPath = null
+let completedCalendarFixture = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -423,6 +424,49 @@ const shots = [
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
   }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   { name: 'day', server: D, async run(p) { await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor()) } },
+  { name: 'completed-calendar', server: P, async run(p, { ctx }) {
+    const api = async (method, path, body) => {
+      const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    if (!completedCalendarFixture) {
+      const date = new Date().toISOString().slice(0, 10)
+      const project = await api('POST', '/api/v1/projects', { name: 'Website launch', color: '#3b82f6' })
+      const task = (title, time, estimate_minutes) => api('POST', '/api/v1/tasks', { title, project_id: project.id, due: { date, ...(time ? { time } : {}) }, estimate_minutes })
+      const timed = await task('Send the project update', '09:00', 30)
+      const allDay = await task('Book the train tickets', undefined, 15)
+      const open = await task('Review the launch checklist', '14:00', 60)
+      for (const done of [timed, allDay]) await api('PATCH', `/api/v1/tasks/${done.id}`, { completed_at: Date.now() })
+      completedCalendarFixture = { date, timed: timed.id, allDay: allDay.id, open: open.id }
+    }
+    const fixture = completedCalendarFixture
+    await p.setViewportSize({ width: 1280, height: 800 })
+    await p.clock.setFixedTime(new Date(`${fixture.date}T12:00:00Z`))
+    await go(p, plainBase, `/day/${fixture.date}`, () => p.locator(`[data-block="${fixture.open}"]`).waitFor())
+    await p.getByRole('button', { name: 'Show completed tasks', exact: true }).click()
+    await p.locator(`[data-block="${fixture.timed}"] .line-through`).waitFor()
+    await p.locator(`[data-lane-task="${fixture.allDay}"] .line-through`).waitFor()
+    await p.locator('[data-calendar-completed-toggle][aria-pressed="true"]').waitFor()
+    await p.mouse.move(0, 0)
+  } },
+  // Frames (calendar-frames 5.2): "Deep work" on weekday mornings and "Admin" late in the afternoon behind the Week's blocks.
+  { name: 'frames', server: D, async run(p) {
+    const api = async (method, body) => {
+      const r = await p.request.fetch(demoBase + '/api/v1/frames', { method, headers: { Origin: demoBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} /api/v1/frames → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    // Once for both themes: the second run finds them there.
+    if (!(await api('GET')).frames.length) {
+      await api('POST', { title: 'Deep work', weekdays: '1,2,3,4,5', start: '09:00', end: '11:00', color: '#7c3aed' })
+      await api('POST', { title: 'Admin', weekdays: '1,2,3,4', start: '16:00', end: '16:45', color: '#0d9488' })
+    }
+    await go(p, demoBase, '/week', () => p.locator('[data-frame-band]').first().waitFor())
+    // The demo's reminder toast would cover the late afternoon.
+    await p.addStyleTag({ content: '[aria-label^="Reminder:"] { display: none !important }' })
+    await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
+  }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   // The Plan (planner-view 5.2): two rows of columns with their capacity bars and a dimmed projected row.
   { name: 'plan', server: D, async run(p) { await go(p, demoBase, '/plan', () => p.locator('[data-plan-grid]').waitFor()); await settle(p, 300) } },
   { name: 'comments', server: D, card: true, async run(p) {

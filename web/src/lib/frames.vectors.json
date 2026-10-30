@@ -1,0 +1,443 @@
+{
+  "_comment": "Frame occurrences (OpenSpec change calendar-frames, design D2): shared by web/src/lib/frames.ts and internal/frames. A frame occurs on each date of [from, to] whose ISO weekday is in its weekday list (entries other than 1-7 are ignored), on or after from_date and on or before until_date when set, unless it is deleted or its times are not two valid HH:MM wall times with end after start. Occurrences are ordered by date, then start, then position, then id.",
+  "cases": [
+    {
+      "name": "weekdays Monday to Friday over one week",
+      "frames": [
+        {
+          "id": "deep",
+          "weekdays": "1,2,3,4,5",
+          "start": "09:00",
+          "end": "11:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-08",
+      "occurrences": [
+        {
+          "id": "deep",
+          "date": "2026-11-02",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "id": "deep",
+          "date": "2026-11-03",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "id": "deep",
+          "date": "2026-11-04",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "id": "deep",
+          "date": "2026-11-05",
+          "start": "09:00",
+          "end": "11:00"
+        },
+        {
+          "id": "deep",
+          "date": "2026-11-06",
+          "start": "09:00",
+          "end": "11:00"
+        }
+      ]
+    },
+    {
+      "name": "Tuesday and Thursday within a date range",
+      "frames": [
+        {
+          "id": "t",
+          "weekdays": "2,4",
+          "start": "09:00",
+          "end": "10:00",
+          "from_date": "2026-11-03",
+          "until_date": "2026-11-12",
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-01",
+      "to": "2026-11-15",
+      "occurrences": [
+        {
+          "id": "t",
+          "date": "2026-11-03",
+          "start": "09:00",
+          "end": "10:00"
+        },
+        {
+          "id": "t",
+          "date": "2026-11-05",
+          "start": "09:00",
+          "end": "10:00"
+        },
+        {
+          "id": "t",
+          "date": "2026-11-10",
+          "start": "09:00",
+          "end": "10:00"
+        },
+        {
+          "id": "t",
+          "date": "2026-11-12",
+          "start": "09:00",
+          "end": "10:00"
+        }
+      ]
+    },
+    {
+      "name": "Sunday is weekday 7",
+      "frames": [
+        {
+          "id": "sun",
+          "weekdays": "7",
+          "start": "18:00",
+          "end": "19:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-01",
+      "to": "2026-11-08",
+      "occurrences": [
+        {
+          "id": "sun",
+          "date": "2026-11-01",
+          "start": "18:00",
+          "end": "19:00"
+        },
+        {
+          "id": "sun",
+          "date": "2026-11-08",
+          "start": "18:00",
+          "end": "19:00"
+        }
+      ]
+    },
+    {
+      "name": "end before start is not drawn",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "1,2,3,4,5",
+          "start": "12:00",
+          "end": "11:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-08",
+      "occurrences": []
+    },
+    {
+      "name": "end equal to start is not drawn",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "1",
+          "start": "10:00",
+          "end": "10:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-02",
+      "occurrences": []
+    },
+    {
+      "name": "no weekdays never occurs",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "",
+          "start": "09:00",
+          "end": "10:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-08",
+      "occurrences": []
+    },
+    {
+      "name": "a deleted frame never occurs",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "1,2,3,4,5,6,7",
+          "start": "09:00",
+          "end": "10:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": 1700000000000
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-03",
+      "occurrences": []
+    },
+    {
+      "name": "a malformed time is not drawn",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "1",
+          "start": "9:5",
+          "end": "10:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-02",
+      "occurrences": []
+    },
+    {
+      "name": "unreadable weekday entries are ignored",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "1,x,8,1",
+          "start": "09:00",
+          "end": "10:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-04",
+      "occurrences": [
+        {
+          "id": "x",
+          "date": "2026-11-02",
+          "start": "09:00",
+          "end": "10:00"
+        }
+      ]
+    },
+    {
+      "name": "first date after the range",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "1,2,3,4,5",
+          "start": "09:00",
+          "end": "10:00",
+          "from_date": "2026-12-01",
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-08",
+      "occurrences": []
+    },
+    {
+      "name": "last date before the range",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "1,2,3,4,5",
+          "start": "09:00",
+          "end": "10:00",
+          "from_date": null,
+          "until_date": "2026-11-01",
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-08",
+      "occurrences": []
+    },
+    {
+      "name": "one day frame on its first and last date",
+      "frames": [
+        {
+          "id": "x",
+          "weekdays": "1,2,3,4,5,6,7",
+          "start": "09:00",
+          "end": "10:00",
+          "from_date": "2026-11-04",
+          "until_date": "2026-11-04",
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-02",
+      "to": "2026-11-08",
+      "occurrences": [
+        {
+          "id": "x",
+          "date": "2026-11-04",
+          "start": "09:00",
+          "end": "10:00"
+        }
+      ]
+    },
+    {
+      "name": "same day ordered by start, then position, then id",
+      "frames": [
+        {
+          "id": "calls",
+          "weekdays": "3",
+          "start": "16:30",
+          "end": "17:30",
+          "from_date": null,
+          "until_date": null,
+          "position": 1,
+          "deleted_at": null
+        },
+        {
+          "id": "admin",
+          "weekdays": "3",
+          "start": "16:00",
+          "end": "17:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 2,
+          "deleted_at": null
+        },
+        {
+          "id": "b",
+          "weekdays": "3",
+          "start": "08:00",
+          "end": "09:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 5,
+          "deleted_at": null
+        },
+        {
+          "id": "a",
+          "weekdays": "3",
+          "start": "08:00",
+          "end": "09:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 5,
+          "deleted_at": null
+        },
+        {
+          "id": "early",
+          "weekdays": "3",
+          "start": "08:00",
+          "end": "08:30",
+          "from_date": null,
+          "until_date": null,
+          "position": 9,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-04",
+      "to": "2026-11-04",
+      "occurrences": [
+        {
+          "id": "a",
+          "date": "2026-11-04",
+          "start": "08:00",
+          "end": "09:00"
+        },
+        {
+          "id": "b",
+          "date": "2026-11-04",
+          "start": "08:00",
+          "end": "09:00"
+        },
+        {
+          "id": "early",
+          "date": "2026-11-04",
+          "start": "08:00",
+          "end": "08:30"
+        },
+        {
+          "id": "admin",
+          "date": "2026-11-04",
+          "start": "16:00",
+          "end": "17:00"
+        },
+        {
+          "id": "calls",
+          "date": "2026-11-04",
+          "start": "16:30",
+          "end": "17:30"
+        }
+      ]
+    },
+    {
+      "name": "last minute of the day",
+      "frames": [
+        {
+          "id": "late",
+          "weekdays": "6",
+          "start": "22:00",
+          "end": "23:59",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-11-07",
+      "to": "2026-11-07",
+      "occurrences": [
+        {
+          "id": "late",
+          "date": "2026-11-07",
+          "start": "22:00",
+          "end": "23:59"
+        }
+      ]
+    },
+    {
+      "name": "across a month and year boundary",
+      "frames": [
+        {
+          "id": "nye",
+          "weekdays": "4",
+          "start": "10:00",
+          "end": "11:00",
+          "from_date": null,
+          "until_date": null,
+          "position": 0,
+          "deleted_at": null
+        }
+      ],
+      "from": "2026-12-28",
+      "to": "2027-01-03",
+      "occurrences": [
+        {
+          "id": "nye",
+          "date": "2026-12-31",
+          "start": "10:00",
+          "end": "11:00"
+        }
+      ]
+    }
+  ]
+}

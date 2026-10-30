@@ -72,7 +72,8 @@ export function MonthView({ date }: { date?: string }) {
   const cells = useMemo(() => new Map(days.map((d) => [d, cellTasks(shownRaw, d, zone)])), [days, shownRaw, zone])
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
   const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
-  const editable = useCallback((task: Task) => !task.completed_at && canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
+  const canEdit = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
+  const editable = useCallback((task: Task) => !task.completed_at && canEdit(task), [canEdit])
   // Meetings count toward a cell's capacity only when this device counts them
   // (meeting-aware-capacity D5); the events are fetched for the six weeks only then.
   const feeds = useCalendarFeeds(days[0], days[days.length - 1], prefs.countEvents)
@@ -189,20 +190,20 @@ export function MonthView({ date }: { date?: string }) {
 
   const row = (task: Task, compact: boolean) => {
     const v = viewedMap.get(task.id)
-    const canEdit = editable(task)
+    const canMove = editable(task)
     const selected = selectedId === task.id
     const hue = hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)
     return (
       <button key={task.id} type="button" tabIndex={-1} data-month-task={task.id} data-hue={hue} aria-pressed={selected}
-        onPointerDown={canEdit ? (e) => {
+        onPointerDown={canMove ? (e) => {
           if (e.button !== 0) return
           beginDrag(e, { label: task.title, onDrop: (key) => { if (key.startsWith('day:')) dropOn(task.id, key.slice(4)) } })
         } : undefined}
         onClick={(e) => { e.stopPropagation(); setSelectedId(task.id); if (v?.due) setFocused(v.due.date) }}
         onDoubleClick={() => setPanelTaskId(task.id)}
-        className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${task.completed_at || (v?.due && v.due.date < today) ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canEdit ? 'cursor-grab' : ''}`}>
+        className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${task.completed_at || (v?.due && v.due.date < today) ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canMove ? 'cursor-grab' : ''}`}>
         {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
-        <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit ? '' : t('read-only')].filter(Boolean).join(', ')}</span>
+        <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', canEdit(task) ? '' : t('read-only')].filter(Boolean).join(', ')}</span>
         {v?.due?.time && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(v.due.time)}</span>}
         <span aria-hidden className={`min-w-0 flex-1 truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
         {task.priority < 4 && <span aria-hidden className="shrink-0 text-hint font-semibold" data-priority={task.priority}>P{task.priority}</span>}
