@@ -707,6 +707,15 @@ var Schema = map[string]map[string]Field{
 		// add-position, design D1): "bottom" or "top"; clients read an empty
 		// or unknown value as "bottom" and keep the stored value.
 		"add_position": {Kind: kString, Default: `""`},
+		// Default reminders (OpenSpec change default-reminders, design D1): the
+		// offset in minutes from the due time, as a decimal string ("-30", "0",
+		// "-1440"), of the reminder added when a task with a time
+		// (reminder_default_timed) or with a date only (reminder_default_dated)
+		// gets a due date; empty is none. Clients and the server read an empty,
+		// malformed or out-of-range (beyond MaxReminderOffset) value as none and
+		// keep it. Settings, never content: not encrypted.
+		"reminder_default_timed": {Kind: kString, Default: `""`},
+		"reminder_default_dated": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

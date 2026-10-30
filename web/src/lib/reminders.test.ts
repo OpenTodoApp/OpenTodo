@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
-import { applyOps, completeTask, createTask, resetDeviceId, setRecurrence, skipOccurrence, updateTask } from './ops'
+import { applyOps, completeTask, createTask, mutate, resetDeviceId, setRecurrence, skipOccurrence, updateTask } from './ops'
+import { defaultReminderId } from './defaultReminder'
+import { dueUndoable } from './undoActions'
+import { undoBatch } from './undo'
+import { applyBulk } from './bulk'
 import { dueInstant, isDelivered, isDismissed, offsetLabel, relativeFireAt, snoozeUntil } from './reminderTime'
 import { addReminder, deleteReminder, dismissReminder, followSharedDueChanges, snoozeReminder, updateReminder } from './reminders'
 import type { Op } from './types'
@@ -222,5 +226,104 @@ describe('personal reminders on shared tasks', () => {
     expect((await db.reminders.get(r2))?.fire_at).toBe(local('2026-10-11', '09:30'))
     expect((await db.outbox.toArray()).every((o) => o.entity === 'reminder' && o.entityId === r1)).toBe(true)
     expect(await followSharedDueChanges(remote)).toBe(0) // idempotent
+  })
+})
+
+describe('default reminders (default-reminders D3-D6)', () => {
+  const ME = 'u-me'
+  async function prefs(timed: string, dated = '') {
+    await db.meta.put({ key: 'userId', value: ME })
+    await mutate('user_prefs', 'me', { reminder_default_timed: timed, reminder_default_dated: dated })
+  }
+  const live = async (task: string) => (await db.reminders.where('task_id').equals(task).toArray()).filter((r) => !r.deleted_at)
+
+  it('scheduling an undated task adds the default reminder in the same batch', async () => {
+    await prefs('-30')
+    const t = await createTask({ title: 'meeting' })
+    await db.outbox.clear()
+    await updateTask(t, { due: { date: '2026-11-06', time: '15:00' } })
+    const [r] = await live(t)
+    expect(r).toMatchObject({ id: defaultReminderId(ME, t), kind: 'relative', offset_minutes: -30, fire_at: local('2026-11-06', '14:30') })
+    // One batch: the reminder's ops share the due op's timestamp.
+    const ops = await db.outbox.toArray()
+    expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
+    expect(ops.some((o) => o.entity === 'reminder' && o.entityId === r.id)).toBe(true)
+  })
+
+  it('creating a dated task adds it; none without a default; date-only counts from 09:00', async () => {
+    const none = await createTask({ title: 'a', due: { date: '2026-11-06', time: '15:00' } })
+    expect(await live(none)).toHaveLength(0)
+    await prefs('-30', '-1440')
+    const t = await createTask({ title: 'rent', due: { date: '2026-11-06' } })
+    expect((await live(t))[0]).toMatchObject({ offset_minutes: -1440, fire_at: local('2026-11-05', '09:00') })
+  })
+
+  it('a quick-add reminder wins over the default', async () => {
+    await prefs('-30')
+    const t = await createTask({ title: 'call', due: { date: '2026-11-06', time: '10:00' }, reminders: [{ kind: 'offset', minutes: -5 }] })
+    const list = await live(t)
+    expect(list).toHaveLength(1)
+    expect(list[0].offset_minutes).toBe(-5)
+  })
+
+  it('rescheduling adds nothing and moves the one reminder; a deleted default stays deleted', async () => {
+    await prefs('-30')
+    const t = await createTask({ title: 'x', due: { date: '2026-11-02', time: '15:00' } })
+    await updateTask(t, { due: { date: '2026-11-04', time: '15:00' } })
+    const list = await live(t)
+    expect(list).toHaveLength(1)
+    expect(list[0].fire_at).toBe(local('2026-11-04', '14:30'))
+    await deleteReminder(list[0].id)
+    await updateTask(t, { due: null })
+    await updateTask(t, { due: { date: '2026-11-05', time: '15:00' } })
+    expect(await live(t)).toHaveLength(0)
+  })
+
+  it('follows the kind of due when untouched, and leaves an edited one alone', async () => {
+    await prefs('-30', '-1440')
+    const t = await createTask({ title: 'x', due: { date: '2026-11-06' } })
+    await updateTask(t, { due: { date: '2026-11-06', time: '15:00' } })
+    const [r] = await live(t)
+    expect(r).toMatchObject({ offset_minutes: -30, fire_at: local('2026-11-06', '14:30') })
+    await updateReminder(r.id, { kind: 'relative', offset_minutes: -120 })
+    await updateTask(t, { due: { date: '2026-11-06' } })
+    expect((await live(t))[0]).toMatchObject({ offset_minutes: -120, fire_at: local('2026-11-06', '07:00') })
+  })
+
+  it('habits, completed tasks and restores get none', async () => {
+    await prefs('-30')
+    const habit = await createTask({ title: 'h' })
+    await updateTask(habit, { habit: true })
+    await updateTask(habit, { due: { date: '2026-11-06', time: '07:00' } })
+    expect(await live(habit)).toHaveLength(0)
+    const done = await createTask({ title: 'd' })
+    await updateTask(done, { completed_at: 1 })
+    await updateTask(done, { due: { date: '2026-11-06', time: '07:00' } })
+    expect(await live(done)).toHaveLength(0)
+    const restored = await createTask({ title: 'r' })
+    await updateTask(restored, { due: { date: '2026-11-06', time: '07:00' } }, { restore: true })
+    expect(await live(restored)).toHaveLength(0)
+  })
+
+  it('Undo removes it with the date, and a new date adds it again', async () => {
+    await prefs('-30')
+    const t = await createTask({ title: 'x' })
+    const { entry } = await dueUndoable(t, { date: '2026-11-06', time: '15:00' })
+    expect(await live(t)).toHaveLength(1)
+    const res = await undoBatch(entry!.id)
+    expect(res).toEqual({ restored: 1, skipped: [] })
+    expect((await db.tasks.get(t))?.due).toBeNull()
+    expect(await live(t)).toHaveLength(0)
+    await updateTask(t, { due: { date: '2026-11-07', time: '15:00' } })
+    expect((await live(t))[0]).toMatchObject({ id: defaultReminderId(ME, t), offset_minutes: -30, fire_at: local('2026-11-07', '14:30') })
+  })
+
+  it('bulk Set date on three undated tasks adds three, and one Undo removes them', async () => {
+    await prefs('', '0')
+    const ids = [await createTask({ title: 'a' }), await createTask({ title: 'b' }), await createTask({ title: 'c' })]
+    const res = await applyBulk(ids, { kind: 'due', pick: '2026-11-06' })
+    for (const id of ids) expect((await live(id))[0]).toMatchObject({ offset_minutes: 0, fire_at: local('2026-11-06', '09:00') })
+    await undoBatch(res.undoId!)
+    for (const id of ids) expect(await live(id)).toHaveLength(0)
   })
 })

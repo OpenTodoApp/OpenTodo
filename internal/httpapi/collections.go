@@ -92,6 +92,10 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "unknown collection")
 		return
 	}
+	withDefault, ok := defaultReminderFlag(w, r, entity)
+	if !ok {
+		return
+	}
 	var body map[string]json.RawMessage
 	if err := readJSON(r, &body); err != nil {
 		badBody(w, err)
@@ -212,16 +216,21 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		s.parentError(w, err)
 		return
 	}
+	ts := s.opTS()
+	extra, err := s.createDefaultReminder(r.Context(), uid, id, body, ts, withDefault, keyed)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
 	if keyed {
-		ts := s.opTS()
 		ops := make([]opsync.Op, 0, len(body))
 		for field, value := range body {
 			ops = append(ops, opsync.Op{ID: idemOpID(id, field), Entity: entity, EntityID: id, Field: field, Value: value, TS: ts, Device: serverDevice})
 		}
-		s.writeOps(w, r, entity, id, ops, http.StatusCreated, body)
+		s.writeOps(w, r, entity, id, append(ops, extra...), http.StatusCreated, body)
 		return
 	}
-	s.writeFields(w, r, entity, id, body, http.StatusCreated)
+	s.writeFieldsAt(w, r, entity, id, body, http.StatusCreated, extra, ts)
 }
 
 // labelPalette gives API-created labels a colour when the caller sets none.
@@ -389,6 +398,10 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "unknown collection")
 		return
 	}
+	withDefault, ok := defaultReminderFlag(w, r, entity)
+	if !ok {
+		return
+	}
 	var body map[string]json.RawMessage
 	if err := readJSON(r, &body); err != nil {
 		badBody(w, err)
@@ -492,9 +505,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		if ok {
 			extra = fieldOps("task", recordID, record, ts)
 		}
-		// Relative reminders follow the due date and deadline reminders the
-		// deadline, stamped like the task op (reminders D2, deadlines D5).
-		rops, err := s.reminderOpsForTask(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, ts)
+		rops, err := s.patchReminderOps(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), existing, body, ts, withDefault)
 		if err != nil {
 			s.internal(w, err)
 			return
@@ -532,11 +543,6 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 	s.writeFieldsAt(w, r, entity, r.PathValue("id"), body, http.StatusNoContent, extra, ts)
 }
 
-// writeFields turns a REST body into ops stamped with server time and applies them.
-func (s *Server) writeFields(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int) {
-	s.writeFieldsWith(w, r, entity, id, body, status, nil)
-}
-
 // fieldOps turns the fields of one entity into server-stamped ops.
 func fieldOps(entity, id string, body map[string]json.RawMessage, ts int64) []opsync.Op {
 	ops := make([]opsync.Op, 0, len(body))
@@ -546,13 +552,9 @@ func fieldOps(entity, id string, body map[string]json.RawMessage, ts int64) []op
 	return ops
 }
 
-// writeFieldsWith is writeFields plus extra ops (other entities) applied in the
-// same batch; the response still describes entity/id.
-func (s *Server) writeFieldsWith(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int, extra []opsync.Op) {
-	s.writeFieldsAt(w, r, entity, id, body, status, extra, s.opTS())
-}
-
-// writeFieldsAt is writeFieldsWith with the body's op timestamp chosen by the caller.
+// writeFieldsAt turns a REST body into ops stamped with ts and applies them
+// with extra ops (other entities) in the same batch; the response still
+// describes entity/id.
 func (s *Server) writeFieldsAt(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int, extra []opsync.Op, ts int64) {
 	s.writeOps(w, r, entity, id, append(fieldOps(entity, id, body, ts), extra...), status, nil)
 }

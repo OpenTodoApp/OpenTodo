@@ -51,6 +51,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Recurring tasks and reminders](recurring-and-reminders.md) | Make a task repeat every week, month or weekday, skip an occurrence, and get reminded at the right moment. |
 | &nbsp;&nbsp;↳ [Repeat rules](repeat-rules.md) | Every rule you can type into Repeat, the after-completion and end options, and what completing, skipping or splitting off one occurrence does. |
 | &nbsp;&nbsp;↳ [Task reminders](task-reminders.md) | Every kind of reminder you can add to a task, how reminders follow the due date, the deadline and a repeat rule, and what happens when one goes off. |
+| &nbsp;&nbsp;↳ [Default reminders](default-reminders.md) | A reminder added to every task that gets a date or a time, set once for all your devices, and when it is or isn't added. |
 | [Time blocking](time-blocking.md) | Estimate how long tasks take, then place them on the Day or Week calendar to see whether your plan fits the day. |
 | &nbsp;&nbsp;↳ [Day, Week and Month](calendar-views.md) | Open the calendar, read the Day and Week grids, and use the Month overview to see six weeks at once and move tasks between days. |
 | &nbsp;&nbsp;↳ [Place tasks on the calendar](place-tasks-on-the-calendar.md) | Drag tasks onto time slots or move them with the keyboard, change how long a block lasts, and read each day's planned hours against its capacity. |

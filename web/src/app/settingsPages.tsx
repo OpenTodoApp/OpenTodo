@@ -16,6 +16,7 @@ import { AssistantsPanel } from './AssistantsPanel'
 import { AppearanceSection, SidebarSection, TaskDetailsSection } from './AppearanceSection'
 import { BackupsPanel } from './BackupsPanel'
 import { AddPositionSection, QuickAddSettingsSection } from './QuickAddSettings'
+import { DefaultRemindersSection } from './DefaultRemindersSettings'
 import { VoiceSettingsSection } from './VoiceSettings'
 import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
@@ -89,7 +90,8 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'appearance/theme': () => <AppearanceSection />,
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
-  'notifications/push': ({ demo }) => <DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled>,
+  // Default reminders touch no server feature, so they stay usable on the demo (default-reminders D8).
+  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled></>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,
   'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /></>,

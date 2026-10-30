@@ -79,6 +79,7 @@ var (
 		{Name: "evening", Type: "bool", Description: "put the task in This Evening (edit: --evening=false takes it out)"},
 		{Name: "blocked-by", Type: "string_list", Description: "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"},
 		{Name: "location", Type: "string", Description: "a saved location's name or id, or lat,lon (edit: none clears)"},
+		{Name: "no-default-reminder", Type: "bool", Description: "add no default reminder when the task gets a due date (--remind also leaves it out)"},
 	}
 	// addOnlyFields are the quick-add flags of `ot add` (quick-add-recurrence D6).
 	addOnlyFields = []flagSpec{

@@ -17,6 +17,10 @@ You can also type reminders in quick add: `Dentist tomorrow at 15:00 remind me 3
 - **Deadline** reminders fire a number of minutes before or after 09:00 on the task's [deadline](tasks-and-projects.md#deadlines) ("1 day before the deadline"), in your device's time zone. They follow the deadline when it changes, on any device or through the API, and never move with the due date. Without a deadline the reminder is kept but does not fire. A device on an older version leaves them untouched.
 - **Absolute** reminders fire at a moment you pick and never move with the due date. They work on undated tasks and are shown in each device's local time.
 
+## Default reminders
+
+**Settings → Notifications → Default reminders** holds two synced preferences, one for tasks with a time and one for tasks with a date only (counted from 09:00). When a write gives a task that had no due date a due date, the device (or, for agents and REST calls that ask for it, the server) adds one ordinary relative reminder with the matching default in the same batch, unless the task is completed, deleted or a habit, already has a live relative reminder, gets one in the same write, or already had its default reminder. The reminder's id is derived from your account and the task, so two devices scheduling the same task offline end with one reminder, and a default reminder you deleted is not added again. A task whose due switches between a date only and a time takes the other default while its default reminder is unchanged. Undo, redo, restoring a version and restoring from the Trash never add one; Undo removes the one it added. See [Task reminders](default-reminders.md) and the [API](api.md#default-reminders).
+
 ## Shared projects
 
 Reminders are personal. On a task in a shared project your reminders are yours alone: other members never see or receive them, and you can add them with any role, viewer included. When someone else moves the task, your relative reminders follow as soon as one of your devices syncs.

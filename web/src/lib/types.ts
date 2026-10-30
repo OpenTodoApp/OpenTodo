@@ -658,6 +658,10 @@ export interface UserPrefs extends UserPrefsFields {
   today_events?: string
   /** Where new tasks are added from a list's quick add (add-position D1): 'top' or 'bottom'; '' and anything else read as 'bottom'. */
   add_position?: string
+  /** Default reminder for tasks with a time (default-reminders D1): minutes from the due time as a decimal string; '' or anything malformed reads as none. */
+  reminder_default_timed?: string
+  /** Default reminder for tasks with a date only (default-reminders D1): minutes from 09:00 on the due date; '' or anything malformed reads as none. */
+  reminder_default_dated?: string
   _clock: Clock
 }
 

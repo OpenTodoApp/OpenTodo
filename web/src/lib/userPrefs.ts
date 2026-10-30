@@ -4,6 +4,7 @@
 // other devices and converges per field by last-writer-wins.
 import { db } from './db'
 import { mutate, USER_PREFS_DEFAULTS } from './ops'
+import { formatDefaultReminder, MAX_DEFAULT_OFFSET } from './defaultReminder'
 import type { DateFormatPref, LanguagePref, TimeFormatPref, UserPrefs, WeekStartPref } from './types'
 
 export const USER_PREFS_ID = 'me'
@@ -140,4 +141,13 @@ export function setAddPosition(value: AddPositionPref): Promise<void> {
 /** The account's choice read at the moment of an add (one keyed read), for the list entry points (add-position D3). */
 export async function preferredPlacement(): Promise<AddPositionPref> {
   return readAddPosition(await db.userPrefs.get(USER_PREFS_ID))
+}
+
+/** The two default reminders (OpenSpec change default-reminders, D1); empty, malformed or out of range reads as none. */
+export { readDefaultReminders, type DefaultReminders } from './defaultReminder'
+
+/** Sets one default reminder (minutes from the due time, null for none); an ordinary op, so it works offline and syncs. */
+export function setDefaultReminder(kind: 'timed' | 'dated', minutes: number | null): Promise<void> {
+  if (minutes !== null && (!Number.isInteger(minutes) || Math.abs(minutes) > MAX_DEFAULT_OFFSET)) return Promise.reject(new Error('reminder offset out of range'))
+  return mutate('user_prefs', USER_PREFS_ID, { [kind === 'timed' ? 'reminder_default_timed' : 'reminder_default_dated']: formatDefaultReminder(minutes) })
 }
