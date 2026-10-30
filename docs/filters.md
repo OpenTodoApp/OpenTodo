@@ -45,7 +45,7 @@ period   := ("this" | "last" | "next") ("week" | "month")
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
-          | "someday" | "deferred" | "evening" | "blocked" | "unblocked" | "available" | "habit"
+          | "someday" | "deferred" | "evening" | "morning" | "afternoon" | "blocked" | "unblocked" | "available" | "habit"
           | "origin" | "no origin" | "tracked"
 duration := INT ("m" | "min" | "mins" | "minutes")? | NUM "h" (INT ("m" | "min")?)?
 name     := word | '"' chars '"'
@@ -88,6 +88,7 @@ text     := word | '"' chars '"'
 | `someday` | parked tasks |
 | `deferred` | tasks whose start date is after today |
 | `evening` | tasks marked for This Evening |
+| `morning`, `afternoon` | tasks set to that [part of the day](day-parts.md), whatever their date; a task placed in Today only by its time does not match |
 | `blocked` | tasks waiting for another task that is still open ([Blocked by](tasks-and-projects.md#wait-for-another-task)) |
 | `unblocked` | tasks not waiting for any open task |
 | `available` | tasks you can do now: not blocked, not waiting for an earlier step of a [sequential project or section](project-flows.md), not parked and not starting later. `!available` lists the other open tasks |

@@ -23,6 +23,7 @@ import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, placeInDay } 
 import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcuts'
 import { deleteWithUndo, parkWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
+import { dayPartFields } from '../../lib/dayParts'
 
 /** The list's transient UI state the keys open and close. */
 export interface ListUi {
@@ -260,7 +261,7 @@ export function useListShortcuts(c: ShortcutContext) {
     'list.blocked-by': openFor(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
     'list.park': () => { if (!row || !writable) return false; act(row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id)) },
-    'list.evening': () => { if (!row || !writable) return false; act(updateTask(row.task.id, { evening: !row.task.evening })) },
+    'list.evening': () => { if (!row || !writable) return false; act(updateTask(row.task.id, dayPartFields(row.task.evening ? null : 'evening'))) },
     // Duplicate the task and its open subtasks right below it (project-templates D6).
     'list.duplicate': () => { if (!row || !writable) return false; act(duplicateTask(row.task.id).then((id) => setSelectedId(id))) },
   })

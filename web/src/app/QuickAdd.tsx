@@ -5,6 +5,8 @@ import { Tooltip } from '../ui'
 import { Icon } from '../ui'
 import { logicalToday } from '../lib/dates'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { dayPartsOn } from '../lib/dayParts'
+import { useUserPrefsRow } from '../lib/localData'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
   chipAtCaret, type Chip, dismissChip, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, parse,
@@ -62,6 +64,8 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
   // The user's date format fills the automatic numeric order, and their first day of
   // the week decides "next week" (date-time-preferences D5, D6).
   const { prefs: dtPrefs, resolved } = useDateTimeFormat()
+  // Part phrases only while the account uses day parts (day-parts D5).
+  const dayParts = dayPartsOn(useUserPrefsRow())
   return useCallback(() => {
     if (!settings.enabled) return null
     const langs = preferredLanguages()
@@ -72,8 +76,9 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
       dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs),
       weekStart: resolved.weekStart,
       projects,
+      dayParts,
     }
-  }, [settings, projects, dtPrefs, resolved])
+  }, [settings, projects, dtPrefs, resolved, dayParts])
 }
 
 /**

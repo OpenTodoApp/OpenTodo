@@ -341,6 +341,11 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	// Whether automation rules run on this server and whether this user paused
 	// theirs (automation-rules D9).
 	out["automations"] = s.automationsStatus(r.Context(), u.ID)
+	// The Day parts preference (day-parts D5), so a client without the synced
+	// preferences (the CLI) reads quick-add lines as the app does.
+	if prefs, err := s.sync.Get(r.Context(), u.ID, "user_prefs", "me"); err == nil {
+		out["day_parts"] = idOf(prefs["day_parts"]) == "on"
+	}
 	// Configuration problems the server started despite (trusted-proxies-lenient):
 	// for the owner's own session only, never for members, admins or API tokens.
 	if u.Role == auth.RoleOwner && tokenFrom(r.Context()).ID == "" {

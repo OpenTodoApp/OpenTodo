@@ -40,7 +40,7 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		"created > 7 days ago", "due before monday", "due after 2026-02-28", "P2", `@"a \"quoted\" name"`,
 		"no date | no time | no labels", "@Café & #プロジェクト",
 		"deadline <= 3 days", "#Work & no deadline", "deadline >= today & no date", "deadline before friday",
-		"@waiting & !someday", "deferred & start <= 6 days", "#Home & evening", "no start", "start after 2026-10-20",
+		"@waiting & !someday", "deferred & start <= 6 days", "#Home & evening", "#Home & morning", "today & afternoon", "no start", "start after 2026-10-20",
 		"completed = last week", "completed >= this month & p1", "completed before yesterday", "due = next week",
 		"created = 2 months ago", "deadline < 1 week ago", "start <= next month", "!(completed > 3 weeks ago) | open",
 		"completed", "p1 & completed", "COMPLETED AFTER 2026-10-01",

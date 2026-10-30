@@ -7,7 +7,8 @@ import 'fake-indexeddb/auto'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
-import { createTask } from '../../lib/ops'
+import { createTask, mutate } from '../../lib/ops'
+import { USER_PREFS_ID } from '../../lib/userPrefs'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { setupTaskDetailTests } from './taskDetail.testkit'
 import { WhenControl } from './WhenControl'
@@ -101,13 +102,29 @@ describe('WhenControl', () => {
     await unmount()
   })
 
-  it('Evening writes evening only', async () => {
+  it('Evening writes the evening flag with no part of the day (day-parts D2)', async () => {
     const id = await createTask({ title: 'Plan' })
     const { seg, unmount } = await mount(id, 'evening')
+    expect(seg('evening').querySelector('[data-day-part-control]')).toBeNull()
     const from = await mark()
     await click(seg('evening').querySelector('[role="switch"]')!)
     await queued(id, from)
-    expect(await queuedFields(id, from)).toEqual({ evening: true })
+    expect(await queuedFields(id, from)).toEqual({ evening: true, day_part: null })
+    await unmount()
+  })
+
+  it('with day parts on, the part control writes the pair with Undo (day-parts D4)', async () => {
+    await mutate('user_prefs', USER_PREFS_ID, { day_parts: 'on' })
+    const id = await createTask({ title: 'Stretch', evening: true })
+    const { seg, unmount } = await mount(id, 'evening')
+    await waitFor(() => !!seg('evening').querySelector('[data-day-part-control]'), 'the part control')
+    expect(seg('evening').querySelector('[role="switch"]')).toBeNull()
+    const from = await mark()
+    await click(seg('evening').querySelector('[data-day-part="morning"]')!)
+    await waitFor(async () => (await db.tasks.get(id))?.day_part === 'morning', 'Morning written')
+    expect(await queuedFields(id, from)).toEqual({ day_part: 'morning', evening: false })
+    await waitFor(() => seg('evening').querySelector('[data-day-part="morning"]')?.getAttribute('aria-checked') === 'true', 'Morning checked')
+    await mutate('user_prefs', USER_PREFS_ID, { day_parts: '' })
     await unmount()
   })
 

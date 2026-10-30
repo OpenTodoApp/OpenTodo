@@ -24,3 +24,4 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 ## Weekend
 
 - [ ] Clean the windows [someday:: true] [evening:: true] 🆔 t-home6
+- [ ] Stretch 📅 2026-10-25 [daypart:: morning] 🆔 t-home7

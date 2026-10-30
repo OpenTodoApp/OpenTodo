@@ -264,14 +264,20 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={g.key === 'planned' ? <PlannedActions /> : undefined} actionsAlwaysVisible={g.key === 'planned'} />
-      ) : g.heading && (
+      ) : g.heading && partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
           collapsed={collapsed} onToggle={toggle}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
-      )}
+      ))}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
     </section>
   )
+}
+
+/** Today's part headings take a dragged task (day-parts D4), resolved by the drag as `drop:part:<part>`. */
+function partDrop(part: ListGroup['dropPart'], header: ReactNode): ReactNode {
+  if (!part) return header
+  return <div className="rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-task-drop={`part:${part}`} data-part-heading={part}>{header}</div>
 }
 
 /** The Inbox's "Planned, no project" group header action (inbox-planned-group D3): the same tasks in Filter. */

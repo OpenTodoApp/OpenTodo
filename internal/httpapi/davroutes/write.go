@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -273,6 +274,14 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	}
 	if in.Evening != nil && (*in.Evening || string(current["evening"]) == "true") {
 		f["evening"] = mustJSON(*in.Evening)
+	}
+	// X-OPENTODO-DAY-PART (day-parts D6): Morning or Afternoon with the evening
+	// flag cleared, written only when it changes the task's part; Evening sent
+	// beside it wins, as the served form never carries both.
+	if in.DayPart != nil && (in.Evening == nil || !*in.Evening) && daypart.OfRow(current) != *in.DayPart {
+		for k, v := range daypart.Fields(*in.DayPart) {
+			f[k] = v
+		}
 	}
 	extra := in.Extra
 	alarms, err := d.alarmWrites(v, in, current, id, f, ts)

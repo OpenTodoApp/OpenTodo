@@ -11,6 +11,7 @@ import { originLabel } from './taskOrigin'
 import { formatDate, formatInstant } from './dates'
 import { fieldValueLabel } from './fieldNames'
 import { t, msg, translatedMap } from './i18n'
+import { dayPartName } from './dayParts'
 
 /** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
 export async function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
@@ -54,7 +55,7 @@ export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_l
 
 /** Fields whose old value can be put back from the timeline. */
 export const RESTORABLE: Record<'task' | 'project', readonly string[]> = {
-  task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
+  task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'day_part', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
   // A project's note (project-notes): its Markdown projection; the device folds it into notes_doc.
   project: ['name', 'color', 'archived', 'parent_id', 'deleted_at', 'description', 'status'],
 }
@@ -79,7 +80,7 @@ export async function restoreValue(entity: 'task' | 'project', id: string, field
 /** Reference fields whose ids the timeline shows by name, and their labels. */
 const REF_LABELS = translatedMap<string>({ assignee_id: msg('assignee'), project_id: msg('project'), section_id: msg('section'), parent_id: msg('parent') })
 /** Labels of fields whose name alone reads badly. */
-const FIELD_LABELS = translatedMap<string>({ blocked_by: msg('waiting for'), description: msg('notes'), notes_doc: msg('notes'), origin: msg('origin') })
+const FIELD_LABELS = translatedMap<string>({ blocked_by: msg('waiting for'), description: msg('notes'), notes_doc: msg('notes'), origin: msg('origin'), day_part: msg('part of the day') })
 
 /** The label of a field in the timeline (`assignee_id` reads as "assignee"). */
 export function fieldLabel(field: string): string {
@@ -102,6 +103,7 @@ export function formatValue(field: string, value: unknown, names?: (field: strin
   if (field === 'deadline' && typeof value === 'string') return formatDate(value, 'compact')
   if (field === 'start' && typeof value === 'string') return value === 'someday' ? t('Someday') : formatDate(value, 'compact')
   if (field === 'evening' && typeof value === 'boolean') return value ? t('on') : t('off')
+  if (field === 'day_part' && (value === 'morning' || value === 'afternoon')) return dayPartName(value)
   if (field === 'priority') return `P${String(value)}`
   // A task's origin (task-origin D12): its id or host, "Email" for a mail.
   if (field === 'origin' && typeof value === 'object') return originLabel(value as Origin) || t('Email')

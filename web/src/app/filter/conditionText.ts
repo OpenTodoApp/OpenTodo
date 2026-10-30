@@ -24,6 +24,8 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   someday: msg('Someday'),
   deferred: msg('Starts later'),
   evening: msg('This evening'),
+  morning: msg('In the morning'),
+  afternoon: msg('In the afternoon'),
   open: msg('Open'),
   completed: msg('Completed'),
   subtask: msg('Is a subtask'),

@@ -10,6 +10,8 @@ import { dismissChip, type Chip, type LabelRef, loadQuickAddSettings, onQuickAdd
 import { editPlan, parseEdit, type EditPlan } from '../lib/nlp/edit'
 import { preferredLanguages } from '../lib/i18n'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { dayPartsOn } from '../lib/dayParts'
+import { useUserPrefsRow } from '../lib/localData'
 import { ParseChips } from './ParseChips'
 import { useTokenSuggest } from './TokenSuggest'
 
@@ -56,15 +58,16 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
   useEffect(() => onQuickAddSettingsChange(() => setSettings(loadQuickAddSettings())), [])
   const { prefs: dtPrefs, resolved } = useDateTimeFormat()
   const parsing = settings.enabled && !readOnly
+  const dayParts = dayPartsOn(useUserPrefsRow())
 
   const parsed = useMemo(() => {
     if (!parsing || !focused || value === base.current) return null
     const langs = preferredLanguages()
     return parseEdit(base.current, value, {
       today: logicalToday(), now: nowHHMM(), languages: resolveLanguages(settings, langs),
-      dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs), weekStart: resolved.weekStart, projects, dismissed,
+      dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs), weekStart: resolved.weekStart, projects, dismissed, dayParts,
     })
-  }, [parsing, focused, value, settings, dtPrefs, resolved, projects, dismissed])
+  }, [parsing, focused, value, settings, dtPrefs, resolved, projects, dismissed, dayParts])
 
   const change = (next: string) => {
     const clean = multiline ? next.replace(/\n/g, ' ') : next

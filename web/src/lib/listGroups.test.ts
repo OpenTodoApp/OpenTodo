@@ -67,6 +67,32 @@ describe('listGroups', () => {
     expect(titles(open[3])).toEqual(['Wait'])
   })
 
+  it('Today with day parts (day-parts D3): Today, Morning, Afternoon, This Evening; the time places a task without a part', () => {
+    const untimed = task({ title: 'Untimed', due: { date: TODAY } })
+    const habit = task({ title: 'Habit', due: { date: TODAY }, habit: true, recurrence: 'every day', day_part: 'morning' })
+    const two = task({ title: 'Two', due: { date: TODAY, time: '14:00' } })
+    const eve = task({ title: 'Eve', due: { date: TODAY }, evening: true })
+    const late = task({ title: 'Twenty', due: { date: TODAY, time: '20:00' }, day_part: 'morning' })
+    const night = task({ title: 'Night', due: { date: TODAY, time: '18:00' } })
+    const tasks = [untimed, habit, two, eve, late, night]
+    const on = listGroups(input({ view: 'today', tasks, dayParts: true }))
+    expect(on.map((g) => [g.key, g.heading, g.dropPart])).toEqual([
+      ['today', 'Today', 'none'], ['morning', 'Morning', 'morning'], ['afternoon', 'Afternoon', 'afternoon'], ['evening', 'This Evening', 'evening'],
+    ])
+    expect(on.map(titles)).toEqual([['Untimed'], ['Habit', 'Twenty'], ['Two'], ['Eve', 'Night']])
+    expect(on[1].rows[0].implied).toEqual({ date: TODAY, part: 'morning' })
+    // Off: exactly as before, the 14:00 task back in the day group, nothing to drop on.
+    const off = listGroups(input({ view: 'today', tasks }))
+    expect(off.map((g) => g.key)).toEqual(['today', 'evening'])
+    expect(off.map(titles)).toEqual([['Untimed', 'Habit', 'Two', 'Twenty', 'Night'], ['Eve']])
+    expect(off.every((g) => g.dropPart === undefined)).toBe(true)
+  })
+
+  it('Today with day parts and only one part has no Today heading', () => {
+    const g = listGroups(input({ view: 'today', tasks: [task({ due: { date: TODAY }, day_part: 'afternoon' })], dayParts: true }))
+    expect(g.map((x) => [x.key, x.heading])).toEqual([['afternoon', 'Afternoon']])
+  })
+
   it('a today without overdue or evening tasks has no heading', () => {
     const g = listGroups(input({ view: 'today', tasks: [task({ due: { date: TODAY } })] }))
     expect(g).toHaveLength(1)

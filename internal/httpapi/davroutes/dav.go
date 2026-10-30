@@ -16,6 +16,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -430,6 +431,7 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 	ct.Deadline = idOf(t["deadline"])
 	ct.Start = idOf(t["start"])
 	ct.Evening = string(t["evening"]) == "true"
+	ct.DayPart = daypart.OfRow(t)
 	if !isNullish(t["completed_at"]) {
 		c := int64(numberOf(t["completed_at"]))
 		ct.CompletedAt = &c
