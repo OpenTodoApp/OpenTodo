@@ -48,6 +48,7 @@
   "integrity",
   "internal",
   "invalid_credentials",
+  "invalid_energy",
   "invalid_file",
   "invalid_input",
   "invalid_op",

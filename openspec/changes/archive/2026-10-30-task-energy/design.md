@@ -47,9 +47,9 @@ Interface budget (docs/interface-guide.md): no chrome row, no sidebar destinatio
 ## D7. Everywhere a task travels
 
 - **REST:** `energy` in the task shape; `POST` and `PATCH` accept `"deep"`, `"medium"`, `"low"` or `null`/`""` to clear, and refuse anything else with `400 invalid_energy`. Viewers of a shared project are refused like any task write (403). `docs/api.md`.
-- **CLI:** `ot add --energy deep`, `ot edit <id> --energy none`, an `Energy` column in `ot list --wide` and the field in `--json`.
+- **CLI:** `ot add --energy deep`, `ot edit <id> --energy none`, an `ENERGY` column in `ot list` whenever a listed task has an energy (the list has no `--wide`; the column appears like `BY` and `ORIGIN`) and the field in `--json`.
 - **Agent tools and MCP:** `energy` joins the planning properties of the create and update tools (`write_planning.go`) and the task read shape; writes go through `ApplyStrict` as today.
-- **Export and import:** the JSON export carries the field; CSV export gets an `energy` column, and CSV import maps a column named `energy` (values matched ignoring case; anything else ignored and reported). Other apps' importers leave it empty.
+- **Export and import:** the JSON export carries the field (OpenTodo has no task CSV export; the only CSV export is tracked time), and CSV import maps a column named `energy` (values matched ignoring case; anything else ignored and reported). Other apps' importers leave it empty.
 - **CalDAV:** `X-OPENTODO-ENERGY:DEEP|MEDIUM|LOW`, omitted when unset, read back like `X-OPENTODO-EVENING`; an invalid value is kept in `ical_extra`.
 - **Vault:** `[energy:: deep]` after `[evening:: true]`; an invalid value is reported for the line.
 

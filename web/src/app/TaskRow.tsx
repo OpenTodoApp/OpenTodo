@@ -53,6 +53,7 @@ import { RowActionCluster } from './task-list/RowActionCluster'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
+import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -155,6 +156,8 @@ interface MetaValues {
   startText: string | null
   someday: boolean
   estimate: { text: string; label: string; tracked: boolean } | null
+  /** The task's energy as one muted word (task-energy D6), only when set. */
+  energy: Energy | null
   blockedBy: number
   /** The holding step's title while the task waits in sequence (project-flow-modes); the blocked marker wins. */
   waitsFor: string | null
@@ -171,7 +174,7 @@ interface MetaValues {
 
 /** How many items the line has to show (the project and the repeat mark are placed apart). */
 function metaItems(m: MetaValues): number {
-  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0 || !!m.waitsFor, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts, m.progress].filter(Boolean).length
+  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.energy, m.blockedBy > 0 || !!m.waitsFor, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts, m.progress].filter(Boolean).length
 }
 
 /**
@@ -190,6 +193,11 @@ function BlockMark({ m, rowItem = false }: { m: MetaValues; rowItem?: boolean })
   )
 }
 
+/** The energy as one muted word, read as "Deep energy" (task-energy D6). */
+function EnergyWord({ energy, rowItem = false }: { energy: Energy; rowItem?: boolean }) {
+  return <ToneText data-energy={energy} data-row-item={rowItem ? '' : undefined} label={energyChipLabel(energy)}>{energyName(energy)}</ToneText>
+}
+
 /**
  * A card's property row (precision-boards-timeline D3): the date, the estimate and the
  * subtask progress lead with their icons, the other facts and the label chips follow,
@@ -202,6 +210,7 @@ function CardMeta({ m }: { m: MetaValues }) {
       {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
       {m.estimate && <ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
       {m.progress && <ToneText icon="circle-check-big" data-progress="" label={m.progress.label}>{m.progress.text}</ToneText>}
+      {m.energy && <EnergyWord energy={m.energy} />}
       {m.sample && <ToneText data-sample="">{t('Sample')}</ToneText>}
       {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="">{m.breadcrumb}</ToneText>}
       {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
@@ -269,6 +278,7 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
       </span>
     ),
     m.estimate && <ToneText key="estimate" icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>,
+    m.energy && <EnergyWord key="energy" energy={m.energy} />,
     m.assignee && <span key="assignee" data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>,
     m.sample && <ToneText key="sample" data-sample="">{t('Sample')}</ToneText>,
     (m.blockedBy > 0 || m.waitsFor) && <BlockMark key="blocked" m={m} />,
@@ -315,6 +325,8 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
   const keep = (cell: Exclude<PhoneCell, null>) => (phone === cell ? { 'data-row-phone': '' } : {})
   const deadline = m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" data-row-item="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>
   const rest = [
+    // After the column, so it reads right after the estimate; a phone row hides the rest (precision-phone D2).
+    m.energy && <EnergyWord key="energy" energy={m.energy} rowItem />,
     m.sample && <ToneText key="sample" data-sample="" data-row-item="">{t('Sample')}</ToneText>,
     m.breadcrumb && <ToneText key="crumb" icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="" data-row-item="">{m.breadcrumb}</ToneText>,
     extra !== 'deadline' && deadline && <span key="deadline" className="contents">{deadline}</span>,
@@ -647,7 +659,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,
     startText, someday: start === 'someday',
-    estimate, blockedBy: done ? 0 : blockedBy, waitsFor: done ? null : waitsFor, streak: habit && !done ? habit : null,
+    estimate, energy: hides('energy') ? null : energyOf(task), blockedBy: done ? 0 : blockedBy, waitsFor: done ? null : waitsFor, streak: habit && !done ? habit : null,
     badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved, fieldsOf),
     assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
     origin: null,

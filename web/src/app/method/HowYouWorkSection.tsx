@@ -12,7 +12,8 @@ import { useMethodMode } from '../../lib/method/mode'
 import { openStartGuide } from '../../lib/startGuide'
 import { firstRunDone } from '../../lib/userPrefs'
 import { readBentoOrder, readFocusStyle, setBentoOrder, setFocusStyle, type BentoOrder, type FocusStyle } from '../../lib/bento'
-import { Button, Select, SettingRow, SettingsSection } from '../../ui'
+import { energyLevelsOn, setEnergyLevels } from '../../lib/energy'
+import { Button, Select, SettingRow, SettingsSection, Switch } from '../../ui'
 import { act } from '../actionError'
 import { navigate } from '../router'
 import { MethodModeChooser } from './MethodModeChooser'
@@ -59,6 +60,9 @@ export function HowYouWorkSection() {
       <div className="py-3 first:pt-0"><MethodModeChooser value={mode} /></div>
       <DailyFocusRows style={readFocusStyle(prefs)} order={readBentoOrder(prefs)}
         onStyle={(s) => act(setFocusStyle(s))} onOrder={(o) => act(setBentoOrder(o))} />
+      {/* Off by default in every mode; turning it off hides the choice, never a value (task-energy D3). */}
+      <SettingRow {...rowCopy('how-you-work', 'energy')} id="energy-levels" htmlFor="energy-levels-switch"
+        control={<span data-energy-levels-switch><Switch id="energy-levels-switch" checked={energyLevelsOn(prefs)} onChange={(on) => act(setEnergyLevels(on))} label={t('Energy levels')} hideLabel /></span>} />
       {!demo && (
         <SettingRow {...rowCopy('how-you-work', 'guide')} id="start-guide"
           status={prefs === undefined ? null : <span data-start-guide-state>{firstRunDone(prefs) ? t('Finished') : t('Not finished')}</span>}

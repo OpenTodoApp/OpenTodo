@@ -368,8 +368,8 @@ export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
 export type ViewLayout = 'list' | 'board'
 export const VIEW_LAYOUTS: readonly ViewLayout[] = ['list', 'board']
 /** What a row can show beside its title (views-and-display D3), in the display panel's order. */
-export type RowProperty = 'date' | 'project' | 'labels' | 'estimate' | 'assignee' | 'deadline' | 'start' | 'origin'
-export const ROW_PROPERTIES: readonly RowProperty[] = ['date', 'project', 'labels', 'estimate', 'assignee', 'deadline', 'start', 'origin']
+export type RowProperty = 'date' | 'project' | 'labels' | 'estimate' | 'assignee' | 'deadline' | 'start' | 'origin' | 'energy'
+export const ROW_PROPERTIES: readonly RowProperty[] = ['date', 'project', 'labels', 'estimate', 'assignee', 'deadline', 'start', 'origin', 'energy']
 
 /**
  * A saved view (OpenSpec `custom-views`): a filter query plus presentation options.

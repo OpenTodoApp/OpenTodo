@@ -194,7 +194,7 @@ describe('parse: errors', () => {
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
     expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1')
-    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', 'field name'])
+    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', '"energy"', 'field name'])
   })
 
   it('reports incomplete date terms', () => {
@@ -564,6 +564,39 @@ describe('evaluate: habits (OpenSpec habits 4.3)', () => {
     expect(show('habit&!overdue')).toBe('(habit & !overdue)')
     const ast = parse('habit | @call')!
     expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
+  })
+})
+
+describe('evaluate: energy terms (OpenSpec task-energy 2.3)', () => {
+  const L: Task[] = [
+    task('deep-work', { project_id: 'p-work', energy: 'deep' }),
+    task('deep-done', { energy: 'deep', completed_at: at('2026-10-09') }),
+    task('low-today', { energy: 'low', due: { date: '2026-10-10' } }),
+    task('low-later', { energy: 'low', due: { date: '2026-10-20' } }),
+    task('medium', { energy: 'medium' }),
+    task('none', { energy: '' }),
+    task('future', { energy: 'high' }),
+    task('legacy'),
+  ]
+  it('energy: value matches the open tasks with that energy, case ignored', () => {
+    expect(ids('energy: deep', L)).toEqual(['deep-work'])
+    expect(ids('energy:DEEP & #Work', L)).toEqual(['deep-work'])
+    expect(ids('energy: "low" & today', L)).toEqual(['low-today'])
+  })
+  it('energy and no energy; an unknown value reads as none', () => {
+    expect(ids('energy', L)).toEqual(sorted('deep-work', 'low-today', 'low-later', 'medium'))
+    expect(ids('no energy', L)).toEqual(sorted('none', 'future', 'legacy'))
+  })
+  it('an unknown value is an error naming the three', () => {
+    expect(() => parse('energy: high')).toThrow('Energy must be deep, medium or low at position 1')
+  })
+  it('energy is a reserved word: a field named energy needs its quoted name', () => {
+    expect(parse('energy')).toEqual({ kind: 'keyword', keyword: 'energy' })
+    expect(() => parse('energy = x')).toThrow(FilterSyntaxError)
+    expect(parse('"energy" = x')).toMatchObject({ kind: 'field', name: 'energy' })
+  })
+  it('round-trips through printing', () => {
+    expect(printQuery(parse('energy:Low & no energy')!)).toBe('(energy: low & no energy)')
   })
 })
 

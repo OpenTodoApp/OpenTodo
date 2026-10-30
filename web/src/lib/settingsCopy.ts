@@ -73,6 +73,8 @@ export const SETTINGS_COPY = {
       // Today's focus style and Bento order (bento-daily-check D4): synced user_prefs, as in the Daily check's menu.
       focus: { label: msg('Daily focus'), description: msg('Three tasks of any size, or a Bento: one Large, one Medium and one Small.') },
       order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
+      // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
+      energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
     },
   },
   // Settings → Account → Invitations (member-add-consent).

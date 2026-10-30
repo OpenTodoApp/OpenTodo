@@ -177,6 +177,10 @@ const (
 	// kWeekdays is "" or a comma list of distinct ISO weekdays "1" (Monday) to
 	// "7" (Sunday), e.g. "1,2,3,4,5" (frame.weekdays, calendar-frames D1).
 	kWeekdays
+	// kEnergy is "" (none), "deep", "medium" or "low" (task.energy, OpenSpec
+	// change task-energy, design D1). A later value is a spec change; older
+	// clients read it as none and keep it.
+	kEnergy
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -385,6 +389,10 @@ var Schema = map[string]map[string]Field{
 		// flag; clients write both fields in one batch (D2), and a task with the
 		// flag set reads as Evening whatever this holds. Not content; additive.
 		"day_part": {Kind: kDayPart, Default: `null`},
+		// The energy the task asks for (OpenSpec change task-energy, design
+		// D1): "" (none), "deep", "medium" or "low". Chosen from a menu, never
+		// written text, so not content (D2); additive.
+		"energy": {Kind: kEnergy, Default: `""`},
 		// The tasks this one waits for, in its own sharing scope (OpenSpec change
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
@@ -838,6 +846,10 @@ var Schema = map[string]map[string]Field{
 		// "bento" makes the focus a Large, a Medium and a Small slot; empty or
 		// unknown reads as Three tasks and is kept.
 		"focus_style": {Kind: kString, Default: `""`},
+		// Energy levels (OpenSpec change task-energy, design D3): "on" offers
+		// a task's energy in the task page, the row menu and quick add; clients
+		// read an empty or unknown value as off and keep the stored value.
+		"energy": {Kind: kString, Default: `""`},
 		// The Bento order (bento-daily-check D4, D6): "summit" lists Medium,
 		// Large, Small; empty or unknown reads as Frog (Large, Medium, Small)
 		// and is kept.
