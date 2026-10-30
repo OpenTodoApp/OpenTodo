@@ -685,8 +685,9 @@ export function planReminders(taskId: string, due: Task['due'], phrases: readonl
   })
 }
 
-export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
-  const { id, change } = await planTask(input)
+/** A planned task with what quick add asked for alongside it: its reminders and the time already spent. */
+async function withCompanions(input: NewTaskInput, planned: { id: string; change: Change }, now: Date): Promise<Change[]> {
+  const { id, change } = planned
   const changes: Change[] = [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders, now)]
   // Time already spent (quick add `30m/2h`, time-tracking D10): one closed entry ending now.
   const me = input.spent_minutes ? await currentUserId() : null
@@ -696,9 +697,37 @@ export async function createTask(input: NewTaskInput, now = new Date()): Promise
       task_id: id, user_id: me, started_at: end - input.spent_minutes * 60000, ended_at: end, device_id: await getDeviceId(), note: '', created_at: end, deleted_at: null,
     } })
   }
+  return changes
+}
+
+export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
+  const planned = await planTask(input)
   // One batch: the task never syncs without its reminders and its time entry.
-  await mutateMany(changes)
-  return id
+  await mutateMany(await withCompanions(input, planned, now))
+  return planned.id
+}
+
+/**
+ * The changes of several new tasks in their given order (paste-to-tasks D3, D4): each
+ * with its quick-add reminders and time entry, positions increasing in input order
+ * (at the top as one block, or appended). Nothing is written.
+ */
+export async function planNewTasks(inputs: readonly NewTaskInput[], placement: Placement = 'bottom', now = new Date()): Promise<{ ids: string[]; changes: Change[] }> {
+  const planned = await planTasks(inputs, placement)
+  const changes: Change[] = []
+  for (const [i, p] of planned.entries()) changes.push(...(await withCompanions(inputs[i], p, now)))
+  return { ids: planned.map((p) => p.id), changes }
+}
+
+/**
+ * Creates several tasks as one batch (a pasted list, paste-to-tasks D3): applied
+ * locally first and uploaded together; a title too long to encrypt refuses the whole
+ * batch before any op exists. Returns the new ids in input order.
+ */
+export async function createTasks(inputs: readonly NewTaskInput[], placement: Placement = 'bottom', now = new Date()): Promise<string[]> {
+  const { ids, changes } = await planNewTasks(inputs, placement, now)
+  if (ids.length) await mutateMany(changes)
+  return ids
 }
 
 /**

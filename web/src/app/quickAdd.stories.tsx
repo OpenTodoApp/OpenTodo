@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { QuickAdd } from './QuickAdd'
+import { PasteOfferPanel } from './quickadd/PasteOffer'
 import { HEX, label, withClock } from './stories/fixtures'
 
 // Core screen: quick add (OpenSpec change ux-overhaul, task 8.7; natural-language
@@ -96,4 +97,18 @@ export const PhoneSheet: StoryObj = {
       <QuickAdd layout="sheet" placeholder="Add a task…" projects={projects} labels={labels} onAdd={noop} hideHint initialValue="Call the bank tomorrow 3pm #Home" />
     </div>
   ),
+}
+
+/** A pasted list (paste-to-tasks D1): the offer under the empty field, five lines as they will be titled and how many more. */
+export const PasteOffer: StoryObj = {
+  render: function PasteOfferStory() {
+    const field = useRef<HTMLDivElement>(null)
+    return (
+      <Frame>
+        <div ref={field}><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></div>
+        <PasteOfferPanel anchor={field} kind="tasks" lines={['Milk', 'Eggs', 'Bread', 'Butter', 'Strawberry jam', 'Tea', 'Rice']}
+          onClose={() => {}} onConfirm={noop} onPasteAsLine={() => {}} />
+      </Frame>
+    )
+  },
 }

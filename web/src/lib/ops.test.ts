@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, getMeta, useDatabase } from './db'
 import {
   applyOps, archiveProject, createProject, createSubtask, createTask, deleteProject, deleteTask, getDeviceId, moveProject, mutate,
-  mutateMany, planTasks, resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
+  createTasks, mutateMany, planTasks, PlaintextTooLongError, resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
 } from './ops'
 import { compareByPosition } from './ordering'
 import { inboxTasks } from './inbox'
@@ -16,6 +16,8 @@ import {
   threadOrder, threadVisible,
 } from './comments'
 import { visibleTasks } from './trash'
+import { publishEncryption } from './e2ee'
+import { MAX_PLAINTEXT_BYTES } from './crypto'
 import { createSection, deleteSection, moveTaskToSection, projectSections, renameSection, reorderSection } from './sections'
 
 let n = 0
@@ -854,5 +856,53 @@ describe('mutateMany origin (in-app-assistant)', () => {
     expect(ops.map((o) => o.device)).toEqual([`assistant:${device}`, device])
     const t = await db.tasks.get(id)
     expect(t!._clock.priority.device).toBe(device)
+  })
+})
+
+describe('createTasks (paste-to-tasks 2.1)', () => {
+  const byPosition = async () => (await db.tasks.toArray()).filter((t) => !t.deleted_at).sort(compareByPosition)
+
+  it('positions increase in input order, appended after existing tasks, ids returned in order', async () => {
+    await createTask({ title: 'old' })
+    const ids = await createTasks([{ title: 'A' }, { title: 'B' }, { title: 'C' }])
+    const rows = await byPosition()
+    expect(rows.map((t) => t.title)).toEqual(['old', 'A', 'B', 'C'])
+    expect(rows.slice(1).map((t) => t.id)).toEqual(ids)
+  })
+
+  it('at the top the block keeps its reading order above every task', async () => {
+    await createTask({ title: 'old' })
+    await createTasks([{ title: 'A' }, { title: 'B' }], 'top')
+    expect((await byPosition()).map((t) => t.title)).toEqual(['A', 'B', 'old'])
+  })
+
+  it('writes every task and its typed reminders as one batch: one clock across the outbox', async () => {
+    const ids = await createTasks([
+      { title: 'Call Anna', due: { date: '2030-01-02', time: '10:00' }, reminders: [{ kind: 'offset', minutes: 30 }] },
+      { title: 'Send invoice', priority: 1 },
+    ])
+    const ops = await db.outbox.toArray()
+    expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
+    expect(new Set(ops.filter((o) => o.entity === 'task').map((o) => o.entityId))).toEqual(new Set(ids))
+    expect(ops.some((o) => o.entity === 'reminder' && o.field === 'task_id' && o.value === ids[0])).toBe(true)
+    expect((await db.tasks.get(ids[1]))!.priority).toBe(1)
+  })
+
+  it('subtasks of one parent keep the pasted order', async () => {
+    const parent = await createTask({ title: 'Plan trip' })
+    await createTasks(['Passport', 'Charger', 'Tickets'].map((title) => ({ title, parent_id: parent })))
+    expect((await byPosition()).filter((t) => t.parent_id === parent).map((t) => t.title)).toEqual(['Passport', 'Charger', 'Tickets'])
+  })
+
+  it('an over-long encrypted title refuses the whole batch before any op exists', async () => {
+    publishEncryption({ enabled: true })
+    try {
+      const before = await db.outbox.count()
+      await expect(createTasks([{ title: 'Fine' }, { title: 'x'.repeat(MAX_PLAINTEXT_BYTES + 1) }, { title: 'Also fine' }])).rejects.toBeInstanceOf(PlaintextTooLongError)
+      expect(await db.outbox.count()).toBe(before)
+      expect(await db.tasks.count()).toBe(0)
+    } finally {
+      publishEncryption({ enabled: false })
+    }
   })
 })
