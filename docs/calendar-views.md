@@ -11,7 +11,7 @@ order: 61
 
 <picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
 
-The calendar shows your dated tasks by day, week, month or as a two-week plan. Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
+The calendar shows dated tasks by day, week, month or as a two-week plan. Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
 
 [Completed](completed-on-the-calendar.md "Show completed tasks on the calendar").
 
@@ -24,8 +24,8 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan*
 - Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day.
 - Past days are dimmed.
 - A red line marks the current time, in today's column.
-- **+N** shows a day's other all-day events.
-- Tinted bands are your [frames](frames.md).
+- **+N** shows more all-day events.
+- Tinted bands are [frames](frames.md); checklist blocks are [slots](slots.md).
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 

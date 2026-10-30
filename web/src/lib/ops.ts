@@ -12,7 +12,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -82,11 +82,13 @@ export const PLACE_DEFAULTS: Omit<Place, 'id' | '_clock'> = OP_DEFAULTS.place
 export const RULE_DEFAULTS: Omit<Rule, 'id' | '_clock'> = OP_DEFAULTS.rule
 /** A frame (calendar-frames D1): no weekdays, so never drawn, until its ops arrive. */
 export const FRAME_DEFAULTS: Omit<Frame, 'id' | '_clock'> = OP_DEFAULTS.frame
+/** A slot (calendar-slots D1): no date, so never drawn, until its ops arrive. */
+export const SLOT_DEFAULTS: Omit<Slot, 'id' | '_clock'> = OP_DEFAULTS.slot
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
 export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
-  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS, rule: RULE_DEFAULTS, frame: FRAME_DEFAULTS,
+  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS, rule: RULE_DEFAULTS, frame: FRAME_DEFAULTS, slot: SLOT_DEFAULTS,
 }
 
 /**

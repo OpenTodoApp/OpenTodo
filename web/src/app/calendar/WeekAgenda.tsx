@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import { dayLoad, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { PlacedFrame } from '../../lib/frames'
+import { slotCapacity, slotCount, slotName, type SlotView } from '../../lib/slots'
 import type { Project, Task } from '../../lib/types'
-import { Button, hueFor } from '../../ui'
+import { Button, hueFor, Icon } from '../../ui'
+import { act } from '../actionError'
+import { completeWithUndo } from '../undoable'
 import { CapacityLine } from './CapacityLine'
 import { FrameHeading } from './FrameBand'
 import type { DayMeetings } from './meetingCapacity'
@@ -51,12 +55,13 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
       {days.map((d) => {
         const dd = Number(d.date.slice(8))
         const name = formatDateParts(d.date, { weekday: 'long' })
-        const load = dayLoad(tasks, d.date, prefs.dayLength, meetings?.get(d.date)?.minutes ?? 0)
+        const load = dayLoad(tasks, d.date, prefs.dayLength, meetings?.get(d.date)?.minutes ?? 0, slotCapacity([...d.slots.values()]))
         const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
         const dayFrames = [...(frames?.get(d.date) ?? [])].sort((a, b) => a.start - b.start)
         // Each frame heading goes before the first timed task that starts at or after its start.
         const timed = [...dayFrames.map((f) => ({ at: f.start, order: 0, node: <FrameHeading key={`frame:${f.frame.id}`} occ={f} /> })),
-          ...blocks.map(({ b, t: item }) => ({ at: b.start, order: 1, node: row(item, formatTime(b.start), d.date < today) }))]
+          ...blocks.map(({ b, t: item }) => ({ at: b.start, order: 1, node: row(item, formatTime(b.start), d.date < today) })),
+          ...[...d.slots.values()].map((v) => ({ at: v.start, order: 1, node: <AgendaSlot key={v.key} view={v} past={d.date < today} onOpen={onOpen} /> }))]
           .sort((a, b) => a.at - b.at || a.order - b.order)
         return (
           <section key={d.date} data-agenda-day={d.date} aria-labelledby={`agenda-${d.date}`}>
@@ -64,7 +69,7 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
               <h2 id={`agenda-${d.date}`} className={`text-body font-semibold ${d.date === today ? 'text-accent' : 'text-strong'}`}>{name} {dd}</h2>
               <CapacityLine load={load} dayLength={prefs.dayLength} />
             </div>
-            {d.lane.length === 0 && blocks.length === 0
+            {d.lane.length === 0 && blocks.length === 0 && d.slots.size === 0
               // One quiet line per empty day, as on Plan (precision-polish D5): seven filled buttons outweighed the days that have tasks.
               ? (
                 <>
@@ -85,5 +90,42 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
         )
       })}
     </div>
+  )
+}
+
+/**
+ * A slot on the phone's week agenda (calendar-slots D10): one row "Admin · 16:00–16:45 ·
+ * 2 of 5" that expands in place to its checklist.
+ */
+function AgendaSlot({ view, past, onOpen }: { view: SlotView; past: boolean; onOpen: (id: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const rows = [...view.open, ...view.done]
+  const name = slotName(view.slot)
+  return (
+    <li data-agenda-slot={view.slot.id}>
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
+        className={`ui-block flex min-h-11 w-full items-center gap-2 px-2 py-1 text-left text-body ${past ? 'ui-block--past' : ''}`} data-hue={hueFor(view.slot.color)}>
+        <span className="w-14 shrink-0 text-meta tabular-nums">{formatTime(view.start)}</span>
+        <Icon name="layers" size="xs" className="shrink-0" />
+        <span className="min-w-0 flex-1 truncate">{name} · <span className="tabular-nums">{formatTime(view.start)}–{formatTime(view.end)}</span> · <span className={view.overfull ? 'text-warning' : ''}>{view.overfull ? slotCount(view) : t('{done} of {total}', { done: view.done.length, total: rows.length })}</span></span>
+        <Icon name="chevron-down" size="xs" className={`shrink-0 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <ul className="ml-16 mt-0.5 space-y-0.5" aria-label={t('Tasks in {title}', { title: name })}>
+          {rows.length === 0 && <li className="px-1 text-meta text-faint">{t('No tasks yet.')}</li>}
+          {rows.map((task) => (
+            <li key={task.id} data-agenda-slot-task={task.id} className="flex min-h-11 items-center gap-2 text-body">
+              <button type="button" role="checkbox" aria-checked={!!task.completed_at} aria-label={task.title || t('Untitled')}
+                className="touch-target inline-flex shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                onClick={() => act(completeWithUndo(task.id, !task.completed_at))}>
+                <Icon name={task.completed_at ? 'check' : 'circle'} size="sm" />
+              </button>
+              <button type="button" className={`min-h-11 min-w-0 flex-1 truncate text-left ${task.completed_at ? 'text-faint line-through' : ''}`} onClick={() => onOpen(task.id)}>{task.title || t('Untitled')}</button>
+              {task.estimate_minutes ? <span className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
   )
 }

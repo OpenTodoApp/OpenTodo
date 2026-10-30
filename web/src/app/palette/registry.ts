@@ -41,6 +41,8 @@ import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayP
 import { dayPartUndoable } from '../../lib/undoActions'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
 import { requestFrames } from '../calendar/framesRequest'
+import { newSlotNow } from '../calendar/slotActions'
+import { act } from '../actionError'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -325,6 +327,8 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'new:dashboard', label: t('New dashboard'), icon: 'list', keywords: 'add create', run: () => prompt(t('New dashboard'), t('Dashboard name'), '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
     // Frames (calendar-frames D5): the form of the Frames dialog; no default key.
     { id: 'new:frame', label: t('New frame'), icon: 'rows-2', keywords: 'frame calendar time block window deep work focus add create', run: () => requestFrames({ mode: 'new' }) },
+    // Slots (calendar-slots "Create slots"): today at the next free quarter hour; no default key.
+    { id: 'new:slot', label: t('New slot'), icon: 'layers', keywords: 'slot calendar batch small tasks admin errands checklist add create', run: () => act(newSlotNow()) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: t('Open Settings: {section}', { section: s.label }), icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
     // Workspaces (workspaces D6): one switch command per other workspace and New workspace; no keys.

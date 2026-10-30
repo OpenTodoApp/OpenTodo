@@ -133,6 +133,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerPlaceRoutes(mux)
 	// Calendar frames (OpenSpec change calendar-frames).
 	s.registerFrameRoutes(mux)
+	// Calendar slots (OpenSpec change calendar-slots).
+	s.registerSlotRoutes(mux)
 	s.registerQuickAddRoutes(mux)
 	// Automation rules (OpenSpec `automation-rules`).
 	s.registerRuleRoutes(mux)

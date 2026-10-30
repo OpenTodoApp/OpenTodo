@@ -432,6 +432,9 @@
   "A six-digit code from an authenticator app after your password.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "A slot holds up to {n} tasks.": [
+    "web/src/lib/slots.ts"
+  ],
   "A source that no longer exists": [
     "web/src/app/calendar/FramesDialog.tsx"
   ],
@@ -961,6 +964,12 @@
   "Add to {name}": [
     "web/src/app/WorkspaceGroups.tsx"
   ],
+  "Add to {slot} {time}": [
+    "web/src/app/task-list/RowSwipe.tsx"
+  ],
+  "Add to {slot} {time}, {day}": [
+    "web/src/app/task-list/RowSwipe.tsx"
+  ],
   "Add to {workspace}…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -1021,6 +1030,9 @@
   ],
   "Added to {project}": [
     "web/src/app/palette/addFromBar.ts"
+  ],
+  "Added to {slot}": [
+    "web/src/lib/slots.ts"
   ],
   "Added when a task gets a date. You can remove it from any task.": [
     "web/src/lib/settingsCopy.ts"
@@ -3622,6 +3634,9 @@
   "Delete section “{name}”?": [
     "web/src/app/Sections.tsx"
   ],
+  "Delete slot": [
+    "web/src/app/calendar/SlotDetails.tsx"
+  ],
   "Delete table": [
     "web/src/app/editorCommands.ts"
   ],
@@ -4015,6 +4030,9 @@
   ],
   "Drag or use a row's menu to reorder. Switched-on ones sit next to Inbox and Today.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Drag small tasks here, or press s on a task and Shift+Enter over the slot.": [
+    "web/src/app/calendar/SlotDetails.tsx"
   ],
   "Drag tasks onto a day, or press s on one": [
     "web/src/app/MonthView.tsx",
@@ -6131,6 +6149,9 @@
   "In the scheduling sheet of a task with a deadline: on the deadline, 1 day, 3 days, 1 week, 2 weeks or 1 month before": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the slot {slot}": [
+    "web/src/app/TaskRow.tsx"
+  ],
   "In today’s focus": [
     "web/src/app/review/DailyCheck.tsx"
   ],
@@ -7110,6 +7131,9 @@
     "web/src/app/menus/reviewMenu.ts",
     "web/src/app/review/ProjectWalk.tsx"
   ],
+  "Make a slot here": [
+    "web/src/app/calendar/FrameBand.tsx"
+  ],
   "Make a standalone copy of this occurrence and move the series on": [
     "web/src/app/RecurrenceField.tsx"
   ],
@@ -7802,6 +7826,10 @@
   "New signing secret": [
     "web/src/app/NotificationChannels.tsx"
   ],
+  "New slot": [
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
   "New task in {project}: {title}": [
     "web/src/lib/assistant.ts"
   ],
@@ -8296,6 +8324,9 @@
   ],
   "No tasks match this panel.": [
     "web/src/app/DashboardView.tsx"
+  ],
+  "No tasks yet.": [
+    "web/src/app/calendar/WeekAgenda.tsx"
   ],
   "No template matches. Try another word, or upload a template file.": [
     "web/src/app/templates/TemplateLibrary.tsx"
@@ -8984,6 +9015,9 @@
   ],
   "One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters mistakes and casual spam; the secret address is the real protection.": [
     "web/src/app/EmailInboxPanel.tsx"
+  ],
+  "One block for several small tasks": [
+    "web/src/app/CalendarView.tsx"
   ],
   "One line": [
     "web/src/app/views/DisplayPanel.tsx"
@@ -11864,6 +11898,9 @@
   "Sharing projects": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "Shift+Enter: add to {slot}": [
+    "web/src/app/calendar/CalendarStatus.tsx"
+  ],
   "Short break": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -12273,6 +12310,25 @@
   ],
   "Slipped": [
     "web/src/app/review/MonthlyLook.tsx"
+  ],
+  "Slot": [
+    "web/src/app/calendar/SlotDetails.tsx",
+    "web/src/lib/slots.ts"
+  ],
+  "Slot changed": [
+    "web/src/lib/slots.ts"
+  ],
+  "Slot created": [
+    "web/src/lib/slots.ts"
+  ],
+  "Slot deleted": [
+    "web/src/lib/slots.ts"
+  ],
+  "Slot name": [
+    "web/src/app/calendar/SlotDetails.tsx"
+  ],
+  "Slot {title}, {times}, {count}": [
+    "web/src/app/calendar/SlotBlock.tsx"
   ],
   "Slowed down": [
     "web/src/app/DataSettings.tsx"
@@ -12774,8 +12830,14 @@
   "Take a slot for {title}": [
     "web/src/app/palette/registry.ts"
   ],
+  "Take {title} out of the slot": [
+    "web/src/app/calendar/SlotDetails.tsx"
+  ],
   "Taken from OPENTODO_BASE_URL.": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Taken out of {slot}": [
+    "web/src/lib/slots.ts"
   ],
   "Target URL": [
     "web/src/app/WebhooksPanel.tsx"
@@ -12868,6 +12930,11 @@
   ],
   "Tasks in a list": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Tasks in {title}": [
+    "web/src/app/calendar/SlotBlock.tsx",
+    "web/src/app/calendar/SlotDetails.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx"
   ],
   "Tasks must be in one shared project": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -15160,6 +15227,8 @@
     "web/src/app/calendar/PlanRow.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/SidebarSchedule.tsx",
+    "web/src/app/calendar/SlotBlock.tsx",
+    "web/src/app/calendar/SlotDetails.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
@@ -15707,6 +15776,9 @@
   "Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and New view sit next to Inbox, Today, Upcoming and Calendar": [
     "web/src/app/settingsIndex.ts"
   ],
+  "While placing over a slot: add the task to the slot": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "While this is on, text an assistant asks for passes through your server to reach the assistant; the server never gets your key and keeps nothing. This device decrypts at most {hour} values an hour and {day} a day, and stops when you lock it or sign out.": [
     "web/src/app/RelaySettings.tsx"
   ],
@@ -15983,6 +16055,9 @@
   ],
   "You can view this project but not change dates.": [
     "web/src/app/TimelineView.tsx"
+  ],
+  "You can't change this task's date": [
+    "web/src/lib/slots.ts"
   ],
   "You cannot do this to your own account.": [
     "web/src/app/UsersPanel.tsx",
@@ -17824,10 +17899,12 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "{done} of {total}": [
+    "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "{done} of {total} done": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/LoopHome.tsx",
+    "web/src/lib/slots.ts"
   ],
   "{done} of {total} subtasks completed": [
     "web/src/app/TaskRow.tsx"
@@ -17859,6 +17936,9 @@
   ],
   "{error}. The name stays “{name}”.": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "{estimate} in {length}": [
+    "web/src/lib/slots.ts"
   ],
   "{field, select, title {This title} name {This name} other {This text}} is too long to encrypt (at most {max, number} bytes). Shorten it and try again.": [
     "web/src/lib/ops.ts"
@@ -18600,6 +18680,9 @@
   "{n} min before": [
     "web/src/lib/nlp/reminders.ts"
   ],
+  "{n} more tasks in {title}": [
+    "web/src/app/calendar/SlotBlock.tsx"
+  ],
   "{n} more today": [
     "web/src/app/calendar/SidebarSchedule.tsx"
   ],
@@ -18743,6 +18826,12 @@
   "{size} labels share a name. Merge “{name}” into “{name2}”?": [
     "web/src/app/LabelsView.tsx"
   ],
+  "{slot} moved": [
+    "web/src/lib/slots.ts"
+  ],
+  "{slot} resized": [
+    "web/src/lib/slots.ts"
+  ],
   "{tasks, plural, one {It leaves the sidebar with # open task.} other {It leaves the sidebar with # open tasks.}} You can unarchive it from Settings → Data.": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -18781,6 +18870,9 @@
   ],
   "{time} worked": [
     "web/src/app/focus/FocusParts.tsx"
+  ],
+  "{time}, in the slot {slot}": [
+    "web/src/app/TaskRow.tsx"
   ],
   "{time}, no estimate": [
     "web/src/app/calendar/DayColumn.tsx"

@@ -14,6 +14,7 @@ import { cellTasks, monthGrid, visibleRows } from '../lib/month'
 import { updateTask } from '../lib/ops'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
+import { slotCapacity, slotsByDate, useSlots } from '../lib/slots'
 import type { Task } from '../lib/types'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useCalendarShowCompleted, useGridPrefs } from '../lib/liveData'
@@ -71,6 +72,9 @@ export function MonthView({ date }: { date?: string }) {
   const shownViewed = useMemo(() => viewed.filter((task) => shownIds.has(task.id)), [viewed, shownIds])
   const cells = useMemo(() => new Map(days.map((d) => [d, cellTasks(shownRaw, d, zone)])), [days, shownRaw, zone])
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
+  // Slots count once toward a cell's capacity (calendar-slots D6); Month lists their tasks as usual.
+  const slotRows = useSlots()
+  const slotViews = useMemo(() => slotsByDate(slotRows, days, viewedMap), [slotRows, days, viewedMap])
   const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
   const canEdit = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
   const editable = useCallback((task: Task) => !task.completed_at && canEdit(task), [canEdit])
@@ -237,7 +241,7 @@ export function MonthView({ date }: { date?: string }) {
             {week.map((d) => {
               const list = cells.get(d) ?? []
               const outside = d.slice(0, 7) !== month
-              const load = dayLoad(shownViewed, d, prefs.dayLength, meetings?.get(d)?.minutes ?? 0)
+              const load = dayLoad(shownViewed, d, prefs.dayLength, meetings?.get(d)?.minutes ?? 0, slotCapacity(slotViews.get(d)))
               const open = expanded === d
               const { shown, hidden } = open ? { shown: list, hidden: 0 } : visibleRows(list, CELL_ROWS)
               const isFocused = d === focused
