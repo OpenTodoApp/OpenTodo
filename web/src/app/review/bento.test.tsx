@@ -41,10 +41,8 @@ afterEach(() => {
 })
 
 const message = () => document.querySelector('[data-daily-message]')?.textContent ?? ''
-const slotTitle = (slot: 'L' | 'M' | 'S') => {
-  const rows = [...document.querySelectorAll<HTMLElement>('[data-bento-slots] [data-task-id]')]
-  return rows.find((r) => (r.querySelector('[data-breadcrumb]')?.textContent ?? '').includes({ L: 'Large', M: 'Medium', S: 'Small' }[slot]))?.textContent ?? null
-}
+const slotTitle = (slot: 'L' | 'M' | 'S') =>
+  document.querySelector(`[data-bento-slot="${slot}"] [data-task-id]`)?.textContent ?? null
 const review = () => db.review.get('me')
 
 /** Moves the cursor to the row of `title` in the Today group. */

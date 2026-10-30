@@ -12,20 +12,38 @@ import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
 import { Button, Dialog, Input } from '../../ui'
 
-/** The slot rows: `row` renders a held task (a TaskRow), an empty slot is a faint 44 px row. */
-export function BentoSlotRows({ read, order, row }: { read: BentoRead; order: BentoOrder; row: (task: Task, slot: BentoSlot | null) => ReactNode }) {
+// The slot's name lines up with the task titles (row padding, leading slot, check box and gaps).
+const LABEL = 'pl-15 pr-2 text-hint font-semibold uppercase tracking-wide text-faint'
+
+/**
+ * The slot rows: each slot is its name over the held task (`row` renders a TaskRow),
+ * or one faint 44 px row saying what fits in it; the Not sized tasks follow.
+ */
+export function BentoSlotRows({ read, order, row }: { read: BentoRead; order: BentoOrder; row: (task: Task) => ReactNode }) {
   return (
     <ul data-bento-slots>
       {slotOrder(order).map((slot) => {
         const task = read.slots[slot]
-        if (task) return row(task, slot)
+        if (!task) {
+          return (
+            <li key={slot} className="flex min-h-11 items-center pl-15 pr-2 text-body text-faint" data-bento-slot={slot} data-bento-empty={slot}>
+              {SLOT_HINTS[slot]}
+            </li>
+          )
+        }
         return (
-          <li key={`empty:${slot}`} className="flex min-h-11 items-center rounded-control px-2 text-body text-faint" data-bento-empty={slot}>
-            {SLOT_HINTS[slot]}
+          <li key={slot} className="pt-1" data-bento-slot={slot}>
+            <p className={LABEL} aria-hidden="true">{SLOT_NAMES[slot]}</p>
+            <ul aria-label={SLOT_NAMES[slot]}>{row(task)}</ul>
           </li>
         )
       })}
-      {read.unsized.map((task) => row(task, null))}
+      {read.unsized.length > 0 && (
+        <li className="pt-1" data-bento-slot="none">
+          <p className={LABEL} aria-hidden="true">{t('Not sized')}</p>
+          <ul aria-label={t('Not sized')}>{read.unsized.map((task) => row(task))}</ul>
+        </li>
+      )}
     </ul>
   )
 }

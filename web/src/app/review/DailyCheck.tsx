@@ -189,7 +189,7 @@ export function DailyCheck() {
           {bentoOn && (
             <section data-group="focus" data-bento className="mb-4" aria-labelledby="daily-focus">
               <h2 id="daily-focus" className="mb-1 px-2 text-meta font-semibold text-faint">{t('Today’s focus')}</h2>
-              <BentoSlotRows read={groups.bento} order={order} row={(task, slot) => renderRow('focus', task, slot ? SLOT_NAMES[slot] : t('Not sized'))} />
+              <BentoSlotRows read={groups.bento} order={order} row={(task) => renderRow('focus', task, null)} />
             </section>
           )}
           {groups.overdue.length === 0 && groups.today.length === 0 && <Notice tone="info">{t('Nothing is due today. Pick your focus from Next.')}</Notice>}
