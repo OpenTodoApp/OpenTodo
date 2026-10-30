@@ -11,6 +11,7 @@ import { Icon, Menu, MenuItem, MenuSeparator } from '../../ui'
 import { act } from '../actionError'
 import { navigate } from '../router'
 import { requestAttach } from './attachRequest'
+import { startFocusOn } from '../focus/startFocus'
 import { TrackMenuItem } from './TimeTab'
 import type { TaskDetailModel } from './useTaskDetail'
 
@@ -26,7 +27,7 @@ export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailMo
       {parent && <MenuItem label={t('Open parent task')} icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
       {series && <MenuItem label={t('Open recurring task')} icon="repeat" onSelect={() => onOpen?.(series.id)} />}
       {!readOnly && <TrackMenuItem task={task} />}
-      {!readOnly && !done && <MenuItem label={t('Focus on this task')} icon="clock" description={t('One task, a timer, a break when you need one')} onSelect={() => navigate({ view: 'focus', id: task.id })} />}
+      {!readOnly && !done && !task.deleted_at && <MenuItem label={t('Focus on this task')} icon="clock" description={t('One task, a timer, a break when you need one')} onSelect={() => act(startFocusOn(task.id))} />}
       {m.canPublish && <MenuItem label={m.pageStatus ? t('Task page…') : t('Publish task page…')} icon="globe"
         description={m.online ? t('A page anyone with the link can open, reply to and tick') : t('Task pages need a connection')}
         disabled={!m.online} onSelect={() => m.setPageDialog(true)} data-publish-page />}

@@ -134,6 +134,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
 | user_prefs | `sidebar_counts` | string: `"all"` shows the open-task count of every project, label and view row in the sidebar at rest; `""` or unknown keeps them on Inbox and Today only |
 | user_prefs | `sidebar_order` | string: a comma-separated order of the primary sidebar destinations (`inbox`, `today`, `upcoming`, `calendar` and promotable ids); missing ids follow in the default order, unknown ids are ignored and kept |
+| user_prefs | `focus_presets` | string: up to four comma-separated whole minutes (5-180), the Countdown presets; empty or unreadable reads as `10,20,40`, entries out of range are ignored and the value is kept |
+| user_prefs | `focus_noise` | string: `"off"`, `"white"`, `"pink"` or `"brown"`, background noise during work sessions (empty or unknown reads as off and is kept); the volume is device storage, never synced |
 | user_prefs | `favourites` | string: an ordered, comma-separated list of `kind:id` entries (`project:<id>`, `label:<id>`, `view:<id>`), the sidebar's Favourites group; entries of an unknown kind or for a missing, archived or deleted item are ignored and kept |
 | review | `completed_at` | number (Unix ms: when the last weekly review was finished; personal scope only) |
 | review | `daily_at`, `monthly_at` | number (Unix ms: the last Daily check and Monthly look) |

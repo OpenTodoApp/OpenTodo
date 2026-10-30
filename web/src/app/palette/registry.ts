@@ -17,6 +17,7 @@ import type { IconName } from '../../ui'
 import { labelMenuGroups } from '../LabelsView'
 import type { ListState } from '../listActions'
 import { flatItems, type ActionGroup } from '../menus/ActionMenu'
+import { startFocusOn } from '../focus/startFocus'
 import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
 import { sectionMenuGroups } from '../Sections'
@@ -194,7 +195,8 @@ export function commands(ctx: PaletteContext): Command[] {
           { id: 'task:detach', label: t('This occurrence only: {title}', { title }), icon: 'repeat', shortcut: keysOf('list.detach'), run: () => detachOccurrence(tk.id) },
         )
       }
-      if (!tk.completed_at) out.push({ id: 'task:focus', label: t('Focus on {title}', { title }), icon: 'clock', keywords: 'focus timer pomodoro session', run: () => navigate({ view: 'focus', id: tk.id }) })
+      // Start focus (focus-everywhere D2): the same as the Actions menu's item.
+      if (!tk.completed_at && !tk.deleted_at) out.push({ id: 'task:focus', label: t('Start focus on {title}', { title }), icon: 'clock', keywords: 'focus timer pomodoro session start', run: () => startFocusOn(tk.id) })
       out.push({ id: 'task:trash', label: t('Move {title} to the Trash', { title }), icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteTask(tk.id) })
     }
   }

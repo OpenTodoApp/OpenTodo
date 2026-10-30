@@ -99,7 +99,7 @@ Each user SHALL have a density preference, `comfortable` (default) or `compact`,
 - **THEN** rows are 32 px tall there at once and on the user's tablet after sync, where touch targets remain 44 px
 
 ### Requirement: Sidebar destinations preference
-Each user SHALL have a synced list of promoted destinations, shown among the primary sidebar items. Any of these can be promoted: Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter. The default is empty. Settings → Appearance SHALL offer one switch per destination. A client SHALL ignore unknown entries and keep the stored value unchanged. While the user's "How you work" preference is `first`, the switches SHALL be shown disabled with a sentence explaining that Open Loops first arranges the sidebar, and the stored list SHALL be kept.
+Each user SHALL have a synced list of promoted destinations, shown among the primary sidebar items. Any of these can be promoted: Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter, Focus. The default is empty. Settings → Appearance SHALL offer one switch per destination. A client SHALL ignore unknown entries and keep the stored value unchanged. While the user's "How you work" preference is `first`, the switches SHALL be shown disabled with a sentence explaining that Open Loops first arranges the sidebar, and the stored list SHALL be kept.
 
 #### Scenario: Promote Someday
 - **WHEN** the user turns on Someday in Settings → Appearance
@@ -116,6 +116,10 @@ Each user SHALL have a synced list of promoted destinations, shown among the pri
 #### Scenario: Open Loops first
 - **WHEN** a user in `first` mode opens Settings → Appearance
 - **THEN** the destination switches are disabled with the explanation, and switching back to `companion` restores the promotions they show
+
+#### Scenario: Promote Focus
+- **WHEN** the user turns on Focus in Settings → Appearance
+- **THEN** Focus is listed among the primary items on every device after sync, and a client that predates this change ignores the `focus` entry and keeps the stored value unchanged
 
 ### Requirement: Favourites preference
 Each user SHALL have a synced, ordered list of favourites, each an entry naming a kind (project, label or saved filter) and an id, stored and synced like the promoted destinations as an additive preference; the default is empty. A client SHALL ignore entries of an unknown kind or whose item is missing, archived or deleted, and keep the stored value unchanged. A saved filter whose own pinned flag is set SHALL be treated as a favourite even when the list does not name it, after the listed entries.

@@ -13,6 +13,7 @@ import { sectionMenuGroups } from '../Sections'
 import { viewMenuGroups } from '../ViewsView'
 import { HUES } from '../../ui'
 import { commands, type PaletteContext } from './registry'
+import { readFocus } from '../../lib/focus/state'
 
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -83,11 +84,17 @@ describe('Focus commands (focus-mode D8)', () => {
   const base: PaletteContext = { ...ctx, project: undefined, view: undefined, label: undefined, section: undefined, route: { view: 'inbox' } }
   const focusLabels = (c: PaletteContext) => commands(c).filter((x) => /focus/i.test(x.label)).map((x) => x.label)
 
-  it('lists "Focus on <title>" for the selected task, running the same navigation as the panel menu', () => {
+  it('lists "Start focus on <title>" for the selected task, doing the same as the menu item (focus-everywhere D2)', async () => {
     const cmds = commands({ ...base, list, task })
-    expect(focusLabels({ ...base, list, task })).toEqual(['Focus on “Write the report”', 'Go to Focus'])
-    cmds.find((x) => x.id === 'task:focus')!.run()
+    expect(focusLabels({ ...base, list, task })).toEqual(['Start focus on “Write the report”', 'Go to Focus'])
+    await cmds.find((x) => x.id === 'task:focus')!.run()
     expect(location.pathname).toBe('/focus/t1')
+    expect((await readFocus())?.taskId).toBe('t1')
+  })
+
+  it('a completed or trashed task has no Start focus', () => {
+    expect(commands({ ...base, list, task: { ...task, completed_at: 1 } as Task }).some((x) => x.id === 'task:focus')).toBe(false)
+    expect(commands({ ...base, list, task: { ...task, deleted_at: 1 } as Task }).some((x) => x.id === 'task:focus')).toBe(false)
   })
 
   it('without a selected task only "Go to Focus", with its shortcut', () => {
