@@ -867,6 +867,10 @@
   "Add location": [
     "web/src/app/locations/PlacesView.tsx"
   ],
+  "Add new tasks": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Add notes": [
     "web/src/app/focus/FocusParts.tsx"
   ],
@@ -968,10 +972,17 @@
   "Added to a group": [
     "web/src/app/auditFormat.ts"
   ],
+  "Added to the bottom of {list}": [
+    "web/src/app/task-list/announceAdded.ts"
+  ],
+  "Added to the top of {list}": [
+    "web/src/app/task-list/announceAdded.ts"
+  ],
   "Added to {day}": [
     "web/src/app/addedWhere.ts"
   ],
   "Added to {name}": [
+    "web/src/app/task-list/announceAdded.ts",
     "web/src/app/workspaceNav.ts"
   ],
   "Added to {project}": [
@@ -1599,6 +1610,15 @@
   ],
   "At sign-in the server fetches the picture the provider names and makes it the profile picture. A picture someone uploaded themselves is never replaced.": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "At the bottom of the list": [
+    "web/src/app/QuickAddSettings.tsx"
+  ],
+  "At the top of the list": [
+    "web/src/app/QuickAddSettings.tsx"
+  ],
+  "At the top or the bottom of the list": [
+    "web/src/app/settingsIndex.ts"
   ],
   "At {place}": [
     "web/src/lib/assistant.ts"
@@ -6608,6 +6628,9 @@
   "Lists": [
     "web/src/app/calendar/PlanPanel.tsx"
   ],
+  "Lists sorted by date or priority keep their order.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Lists with method hints": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -7456,6 +7479,9 @@
   ],
   "New task in {project}: {title}": [
     "web/src/lib/assistant.ts"
+  ],
+  "New tasks": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "New token": [
     "web/src/app/TokensSection.tsx",
@@ -11384,6 +11410,7 @@
   "Show": [
     "web/src/app/Sections.tsx",
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/task-list/announceAdded.ts",
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "Show a local notification": [
@@ -15079,6 +15106,9 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/RowDetails.tsx",
     "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Where a task added from a list goes, on all your devices.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Where does my time go?": [
     "web/src/app/review/StatsView.tsx"

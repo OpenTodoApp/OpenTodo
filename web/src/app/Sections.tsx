@@ -6,8 +6,11 @@ import { hueName } from '../lib/colourNames'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 import { colourPickerSpec, iconPickerSpec } from './menus/stylePickers'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
-import { type FormEvent, type KeyboardEvent, useState } from 'react'
+import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
 import { createTask } from '../lib/ops'
+import { preferredPlacement } from '../lib/userPrefs'
+import { selectTask } from './signals'
+import { announceIfOutOfSight } from './task-list/announceAdded'
 import { createSection, deleteSection, renameSection, reorderSection, setSectionStyle } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
@@ -178,16 +181,22 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
   labels: Label[]
   onClose: () => void
 }) {
+  const root = useRef<HTMLDivElement>(null)
   const onAdd = async ({ project_id, ...rest }: QuickAddInput) => {
     // A #project typed in the line wins; the section only applies inside this project.
     const target = project_id ?? project.id
-    await createTask({ ...rest, project_id: target, section_id: target === project.id ? sectionId : null })
+    // Top or bottom of the section or column (add-position D3).
+    const placement = await preferredPlacement()
+    const id = await createTask({ ...rest, placement, project_id: target, section_id: target === project.id ? sectionId : null })
+    // Out of sight in a long section or column: say where it went (add-position D5).
+    const list = root.current?.closest<HTMLElement>('[data-list-page]')
+    if (target === project.id && list) void announceIfOutOfSight(id, { list: sectionName, placement, root: list, select: (x) => selectTask.request(x) })
   }
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }
   return (
-    <div className="px-1 py-1" onKeyDown={onKeyDown} onBlur={(e) => {
+    <div ref={root} className="px-1 py-1" onKeyDown={onKeyDown} onBlur={(e) => {
       if (!e.currentTarget.contains(e.relatedTarget as Node | null) && !(e.target as HTMLInputElement).value) onClose()
     }}>
       <QuickAdd onAdd={onAdd} projects={projects} labels={labels} hideHint autoFocus placeholder={t('Add a task to {sectionName}…', { sectionName })} label={t('Add a task to {sectionName}', { sectionName })} />

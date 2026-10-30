@@ -703,6 +703,10 @@ var Schema = map[string]map[string]Field{
 		// design D1): "shown" or "hidden"; clients read an empty or unknown
 		// value as hidden and keep the stored value.
 		"today_events": {Kind: kString, Default: `""`},
+		// Where new tasks are added from a list's quick add (OpenSpec change
+		// add-position, design D1): "bottom" or "top"; clients read an empty
+		// or unknown value as "bottom" and keep the stored value.
+		"add_position": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

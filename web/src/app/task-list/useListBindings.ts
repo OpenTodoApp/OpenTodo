@@ -115,6 +115,11 @@ export function useListBindings(c: BindingContext): RowActions {
     setSelectedId(id)
     setOpenId(id)
   }), [setSelectedId])
+  // Show on "Added to the bottom of …" from a section's add row (add-position D5): select the new row.
+  useEffect(() => selectTask.subscribe((id) => {
+    selectTask.take(id)
+    setSelectedId(id)
+  }), [setSelectedId])
 
   // The prompt only makes sense while the parent is still open.
   const { prompt, setPrompt } = ui

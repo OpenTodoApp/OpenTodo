@@ -2,6 +2,7 @@
 // one synced `user_prefs` row with the id "me" in the personal scope. Written
 // through ops like any other data, so a change works offline, reaches the user's
 // other devices and converges per field by last-writer-wins.
+import { db } from './db'
 import { mutate, USER_PREFS_DEFAULTS } from './ops'
 import type { DateFormatPref, LanguagePref, TimeFormatPref, UserPrefs, WeekStartPref } from './types'
 
@@ -121,4 +122,22 @@ export function readTaskOpen(row: Partial<UserPrefs> | null | undefined): TaskOp
 /** Chooses how tasks open; an ordinary op, so it works offline and reaches the account's other devices. */
 export function setTaskOpen(value: TaskOpenPref): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { task_open: value })
+}
+
+/** Where new tasks are added from a list's quick add (OpenSpec change add-position, D1). */
+export type AddPositionPref = 'bottom' | 'top'
+
+/** The stored choice; empty or unknown (a newer client) reads as 'bottom' without rewriting the row. */
+export function readAddPosition(row: Partial<UserPrefs> | null | undefined): AddPositionPref {
+  return row?.add_position === 'top' ? 'top' : 'bottom'
+}
+
+/** Chooses where new tasks go; an ordinary op, so it works offline and reaches the account's other devices. */
+export function setAddPosition(value: AddPositionPref): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { add_position: value })
+}
+
+/** The account's choice read at the moment of an add (one keyed read), for the list entry points (add-position D3). */
+export async function preferredPlacement(): Promise<AddPositionPref> {
+  return readAddPosition(await db.userPrefs.get(USER_PREFS_ID))
 }
