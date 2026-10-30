@@ -108,4 +108,4 @@ Additive fields, no backfill. Rolling back the web app leaves the stored values 
 
 ## Open Questions
 
-- The Monthly look already has an "Areas" step: top-level projects with sub-projects (weekly-review "Monthly look"). This change leaves that step as it is, and an Area project with sub-projects appears there as before. Should an Area without sub-projects also be listed there? That is copy and one filter, and does not change the rules here.
+- Resolved (owner decision, 0.17): a top-level Area without sub-projects is also listed in the Monthly look's "Areas" step, reading "Area" (weekly-review "Monthly look", modified by this change).

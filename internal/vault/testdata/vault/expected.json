@@ -2,7 +2,7 @@
   "project": {
     "p-home": {"name": "Home", "color": "#22c55e", "icon": "house", "position": 1000, "archived": false, "parent_id": null, "deleted_at": null},
     "p-work": {"name": "Work", "color": "#3b82f6", "icon": null, "position": 2000, "archived": false, "parent_id": null, "deleted_at": null},
-    "p-launch": {"name": "Launch", "color": "#8b5cf6", "icon": null, "position": 1000, "archived": false, "parent_id": "p-work", "deleted_at": null},
+    "p-launch": {"name": "Launch", "color": "#8b5cf6", "icon": null, "flow_mode": "sequential", "position": 1000, "archived": false, "parent_id": "p-work", "deleted_at": null},
     "p-hiring": {"name": "Hiring", "color": "#ec4899", "icon": null, "position": 2000, "archived": false, "parent_id": "p-work", "deleted_at": null}
   },
   "section": {

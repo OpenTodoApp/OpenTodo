@@ -3841,7 +3841,6 @@
   "Daily check: put the selected task in today's focus (up to three), or take it out": "Point du jour : mettre la tâche sélectionnée dans le focus du jour (jusqu’à trois), ou l’en retirer",
   "Done for today": "Terminé pour aujourd’hui",
   "Done today, {instant}": "Fait aujourd’hui, {instant}",
-  "Each top-level project that holds sub-projects, and those of them without a next action or stalled.": "Chaque projet de premier niveau qui contient des sous-projets, et ceux d’entre eux sans prochaine action ou à l’arrêt.",
   "Errands and shopping": "Courses et achats",
   "Every project walked": "Tous les projets passés en revue",
   "Finish monthly look": "Terminer le bilan du mois",
@@ -5539,5 +5538,6 @@
   "Sequential": "Séquentiel",
   "Set project flow": "Choisir le déroulement",
   "Waits for the previous step: {title}": "Attend l’étape précédente : {title}",
-  "Works like the project": "Fonctionne comme le projet"
+  "Works like the project": "Fonctionne comme le projet",
+  "Each top-level project that holds sub-projects or is an area, and the sub-projects without a next action or stalled.": "Chaque projet de premier niveau qui contient des sous-projets ou est un domaine, et les sous-projets sans prochaine action ou à l’arrêt."
 }

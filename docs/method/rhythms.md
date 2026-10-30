@@ -45,7 +45,7 @@ Thirty minutes, on a day that suits you (<kbd>g</kbd> <kbd>r</kbd>). Seven steps
 
 Twenty minutes, once a month, from the Review screen's menu or the Loop home:
 
-- **Areas**: each top-level project that holds sub-projects, with how many of them need attention.
+- **Areas**: each top-level project that holds sub-projects or is an [area](../project-flows.md), with how many of its sub-projects need attention.
 - **Old someday**: Someday tasks older than three months. Promote, complete or trash them.
 - **Trend**: what you completed, created and let slip over the last four weeks.
 

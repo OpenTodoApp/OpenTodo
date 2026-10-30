@@ -3841,7 +3841,6 @@
   "Daily check: put the selected task in today's focus (up to three), or take it out": "Repaso diario: poner la tarea seleccionada en el foco de hoy (hasta tres), o quitarla",
   "Done for today": "Listo por hoy",
   "Done today, {instant}": "Hecho hoy, {instant}",
-  "Each top-level project that holds sub-projects, and those of them without a next action or stalled.": "Cada proyecto de primer nivel con subproyectos, y los que no tienen siguiente acción o están estancados.",
   "Errands and shopping": "Recados y compras",
   "Every project walked": "Todos los proyectos repasados",
   "Finish monthly look": "Terminar el repaso mensual",
@@ -5539,5 +5538,6 @@
   "Sequential": "En secuencia",
   "Set project flow": "Definir el flujo",
   "Waits for the previous step: {title}": "Espera el paso anterior: {title}",
-  "Works like the project": "Funciona como el proyecto"
+  "Works like the project": "Funciona como el proyecto",
+  "Each top-level project that holds sub-projects or is an area, and the sub-projects without a next action or stalled.": "Cada proyecto de primer nivel que contiene subproyectos o es un área, y los subproyectos sin próxima acción o estancados."
 }
