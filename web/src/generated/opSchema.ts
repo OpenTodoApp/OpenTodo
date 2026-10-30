@@ -245,6 +245,13 @@ export interface LabelFields {
   sort_dir?: string
   /** The label page's row layout (row-layouts D1); "" follows the account's. */
   row_layout?: string
+  /**
+   * The label page's own manual order (OpenSpec change view-manual-order,
+   * design D1, D2): the ids of the tasks placed by hand, in order; tasks
+   * not listed follow by position. One whole-list register like
+   * view.panels, never a task's position. Not content.
+   */
+  manual_order?: string[]
 }
 
 /**
@@ -291,6 +298,12 @@ export interface ViewFields {
    * unknown name as the default icon.
    */
   icon?: string | null
+  /**
+   * A list view's own manual order (OpenSpec change view-manual-order,
+   * design D1, D2): the ids of the tasks placed by hand, in order; tasks
+   * not listed follow by position. One whole-list register. Not content.
+   */
+  manual_order?: string[]
 }
 
 /**
@@ -795,10 +808,10 @@ export const OP_DEFAULTS = {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<FieldDef, 'id' | '_clock'>,
   label: {
-    name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
+    name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '', manual_order: [],
   } satisfies Omit<Label, 'id' | '_clock'>,
   view: {
-    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null, icon: null,
+    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
     task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null,

@@ -224,6 +224,35 @@ func TestViewDisplayOptions(t *testing.T) {
 	}
 }
 
+func TestViewAndLabelManualOrder(t *testing.T) {
+	// view-manual-order: the page's own order is replaced whole on PATCH and bounded by the op schema.
+	e := registeredEnv(t)
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Waiting", "query": "@waiting"})
+	e.mustStatus(resp, 201, out)
+	view := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/views/"+view, map[string]any{"manual_order": []string{"t2", "t1"}})
+	e.mustStatus(resp, 200, out)
+	if fmt.Sprint(out["manual_order"]) != "[t2 t1]" {
+		t.Fatalf("patched view = %v", out)
+	}
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 201, out)
+	label := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/labels/"+label, map[string]any{"manual_order": []string{"t1"}})
+	e.mustStatus(resp, 200, out)
+	if fmt.Sprint(out["manual_order"]) != "[t1]" {
+		t.Fatalf("patched label = %v", out)
+	}
+	tooMany := make([]string, 501)
+	for i := range tooMany {
+		tooMany[i] = fmt.Sprintf("t%d", i)
+	}
+	resp, out = e.do("PATCH", "/api/v1/labels/"+label, map[string]any{"manual_order": tooMany})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("PATCH", "/api/v1/views/"+view, map[string]any{"manual_order": []string{"t1", "t1"}})
+	e.mustStatus(resp, 400, out)
+}
+
 func TestViewsSyncAcceptsUnknownOptionValues(t *testing.T) {
 	// Sync is never refused for an enumeration value (additive, design D1); only REST is.
 	e := registeredEnv(t)

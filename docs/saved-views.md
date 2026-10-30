@@ -3,7 +3,7 @@ title: Saved views
 summary: Turn a filter query into a view in the sidebar, choose how it looks (list or board, grouping, completed tasks, what rows show), and put up to six views on one board.
 audience: user
 section: Guides
-specs: [custom-views]
+specs: [custom-views, manual-ordering]
 screens: [filters#save-your-own-views, saved-filter#save-your-own-views, dashboard#build-a-dashboard]
 order: 23
 ---

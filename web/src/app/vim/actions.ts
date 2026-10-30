@@ -66,6 +66,11 @@ export function makeListActions(s: ListState): ListActions {
     },
     async moveSelectedBy(n) {
       const { task } = selectedRow()
+      // A label page or saved view orders its own list: any task listed there may move (view-manual-order).
+      if (task && s.moveBy && s.ownOrder?.()) {
+        for (let i = 0; i < Math.abs(n); i++) if (!(await s.moveBy(task.id, n < 0 ? -1 : 1))) break
+        return
+      }
       if (!writable(task) || !s.manual()) return
       for (let i = 0; i < Math.abs(n); i++) if (!(await moveTaskBy(task.id, n < 0 ? -1 : 1))) break
     },

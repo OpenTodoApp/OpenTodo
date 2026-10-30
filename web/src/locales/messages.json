@@ -9543,6 +9543,9 @@
   "Order by": [
     "web/src/app/views/DisplayPanel.tsx"
   ],
+  "Order changed": [
+    "web/src/lib/viewOrderMove.ts"
+  ],
   "Organize": [
     "web/src/app/LabelsView.tsx"
   ],
