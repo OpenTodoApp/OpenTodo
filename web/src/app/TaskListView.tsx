@@ -59,6 +59,9 @@ import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
 import { noteTodayOpened } from '../lib/firstDay'
 import { InboxMenu } from './SampleNotice'
 import { TodayAgenda, useTodayAgenda } from './calendar/TodayAgenda'
+import { closedListMeta } from './task-list/useClosedList'
+import { ClosedListMenuItems } from './task-list/ClosedListActions'
+import { closedListOffered } from '../lib/closedListPrefs'
 import { dayPartsOn, setDayParts } from '../lib/dayParts'
 import { readMethodMode } from '../lib/method/mode'
 
@@ -293,9 +296,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
   // Today's planned and tracked totals sit in the header's meta, not a new row (time-tracking D4).
-  const listedTasks = useMemo(() => (route.view === 'today' ? rows.map((r) => r.task) : []), [route.view, rows])
+  const listedTasks = useMemo(() => (route.view === 'today' ? m.ownRows.map((r) => r.task) : []), [route.view, m.ownRows])
   const totals = useDayTotals(listedTasks, today, route.view === 'today')
-  const todayMeta = [m.dt.formatDate(today, 'heading'), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
+  const todayMeta /* with the closed list's "3 of 5 · 4 done" (today-closed-list D1, D6) */ = [m.dt.formatDate(today, 'heading'), closedListMeta(m.closed), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
   const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : route.view === 'inbox' ? inbox.meta : undefined)
   const methodSubtitle = useWithMethod(methodMove, undefined)
   const title = listTitle(route.view, currentProject?.name, currentLabel?.name, currentPlace?.name)
@@ -424,6 +427,8 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
     <MenuItem icon="sun" label={partsOn ? t('Stop grouping by part of the day') : t('Group by part of the day')} data-day-parts-toggle
       onSelect={() => act(setDayParts(!partsOn))} />
   )
+  // The closed list (today-closed-list D5): in the method modes, or once a limit is set.
+  const closedItems = route.view === 'today' && closedListOffered(prefs) && <ClosedListMenuItems prefs={prefs} />
   const agendaItem = agenda !== undefined && (
     <MenuItem icon="calendar-range" label={agenda ? t('Hide calendar events') : t('Show calendar events')} data-today-events-toggle
       onSelect={() => act(setTodayEventsShown(!agenda))} />
@@ -431,7 +436,7 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{agendaItem}{partsItem}</> : undefined}
+      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{agendaItem}{partsItem}{closedItems}</> : undefined}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />

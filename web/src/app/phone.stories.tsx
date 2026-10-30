@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { HEX, project, seeded, seedInbox, seedToday, storyUser, task, withClock, withSeed } from './stories/fixtures'
+import { HEX, project, seeded, seedInbox, seedToday, storyUser, task, TODAY, withClock, withSeed } from './stories/fixtures'
+import { setTodayLimit } from '../lib/closedListPrefs'
+import { createTask, setTaskCompleted } from '../lib/ops'
 import { navigate } from './router'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
@@ -50,6 +52,23 @@ export const Today: StoryObj = {
   name: 'Today',
   ...withSeed(async () => {
     await seedToday()
+    navigate({ view: 'today' })
+  }),
+  render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
+}
+
+/**
+ * Today with a limit of three on a phone (today-closed-list D1, D6): the lead line
+ * "3 of 3 · 1 done", the slots in Today's usual groups, then the folded Waiting for a
+ * slot and Done today groups; no new row of chrome.
+ */
+export const TodayClosedList: StoryObj = {
+  name: 'Today with a limit',
+  ...withSeed(async () => {
+    await seedToday()
+    await setMethodMode('companion')
+    await setTodayLimit(3)
+    await setTaskCompleted(await createTask({ title: 'Answer Mia about the tiles', due: { date: TODAY } }), true)
     navigate({ view: 'today' })
   }),
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,

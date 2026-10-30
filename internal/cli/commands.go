@@ -87,6 +87,7 @@ var (
 		{Name: "remind", Type: "string_list", Description: "reminder without the reminder word: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)"},
 		{Name: "natural", Type: "bool", Description: "parse the title like the app's quick add: dates, #project, @label, p1, +30m, every …, remind me …"},
 		{Name: "lang", Type: "string", Description: "languages for --natural and --remind, e.g. de,en (default: the locale; English always)"},
+		{Name: "done", Type: "bool", Description: "log a win: create the task already completed now (refuses --repeat and --remind)"},
 	}
 	refsArg = []argSpec{{Name: "ref", Required: true, Repeatable: true}}
 )
@@ -112,7 +113,9 @@ var cmdSpecs = []cmdSpec{
 		{Name: "completed-before", Type: "string", Description: "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		limitFlag,
 	}, Output: arrayOf("task")},
-	{Name: "today", Summary: "alias for `ot list --today`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
+	{Name: "today", Summary: "alias for `ot list --today`; with a Today limit, the tasks waiting for a slot follow under their own heading", Flags: []flagSpec{
+		{Name: "all", Type: "bool", Description: "with a Today limit: every task in one list, without the waiting heading"}, limitFlag,
+	}, Output: arrayOf("task")},
 	{Name: "inbox", Summary: "alias for `ot list --inbox`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
 	{Name: "upcoming", Summary: "alias for `ot list --upcoming`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
 	{Name: "add", Summary: "create a task and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},

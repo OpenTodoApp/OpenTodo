@@ -2,7 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, PLANNED_OPEN_KEY, plannedOrder, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, PLANNED_OPEN_KEY, plannedOrder, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import type { Project, Section, Task } from './types'
 
@@ -86,6 +86,40 @@ describe('listGroups', () => {
     expect(off.map((g) => g.key)).toEqual(['today', 'evening'])
     expect(off.map(titles)).toEqual([['Untimed', 'Habit', 'Two', 'Twenty', 'Night'], ['Eve']])
     expect(off.every((g) => g.dropPart === undefined)).toBe(true)
+  })
+
+  it('Today with a limit (today-closed-list D1): waiting tasks leave the day groups for a folded group after Blocked, in fill order', () => {
+    const a = task({ title: 'A', due: { date: TODAY } })
+    const b = task({ title: 'B', due: { date: TODAY }, day_part: 'morning' })
+    const f = task({ title: 'F', due: { date: TODAY }, day_part: 'morning' })
+    const g = task({ title: 'G', due: { date: TODAY } })
+    const wait = task({ title: 'Wait', due: { date: TODAY } })
+    const base = input({ view: 'today', tasks: [a, b, f, g, wait], blocked: new Set([wait.id]), closedList: { limit: 2, waiting: [g, f] } })
+    const folded = listGroups(base)
+    expect(folded.map((x) => x.key)).toEqual(['today', 'blocked', 'waiting'])
+    expect(folded.map(titles)).toEqual([['A', 'B'], [], []])
+    expect(folded[2]).toMatchObject({ heading: 'Waiting for a slot', folded: true, count: 2, openKey: WAITING_OPEN_KEY })
+    const open = listGroups({ ...base, collapsed: new Set([WAITING_OPEN_KEY]) })
+    expect(titles(open[2])).toEqual(['G', 'F'])
+    expect(open[2].hint).toBe('Today holds 2. The next one comes in when you finish one.')
+    // With day parts on the slots keep their parts; the waiting ones still wait.
+    const parts = listGroups({ ...base, dayParts: true })
+    expect(parts.map((x) => x.key)).toEqual(['today', 'morning', 'blocked', 'waiting'])
+    expect(parts.map(titles)).toEqual([['A'], ['B'], [], []])
+  })
+
+  it('Today ends with a folded Done today group, newest first (today-closed-list D6)', () => {
+    const open = task({ title: 'Open', due: { date: TODAY } })
+    const done1 = task({ title: 'Done 1', completed_at: 5 })
+    const done2 = task({ title: 'Done 2', completed_at: 9 })
+    const base = input({ view: 'today', tasks: [open], doneToday: [done2, done1] })
+    const folded = listGroups(base)
+    expect(folded.map((x) => x.key)).toEqual(['today', 'done'])
+    expect(folded[1]).toMatchObject({ heading: 'Done today', folded: true, count: 2, openKey: DONE_OPEN_KEY, rows: [] })
+    expect(titles(listGroups({ ...base, collapsed: new Set([DONE_OPEN_KEY]) })[1])).toEqual(['Done 2', 'Done 1'])
+    // Hidden: no group; an empty group still shows its zero count.
+    expect(listGroups({ ...base, doneToday: undefined }).map((x) => x.key)).toEqual(['today'])
+    expect(listGroups({ ...base, doneToday: [] })[1]).toMatchObject({ key: 'done', count: 0 })
   })
 
   it('Today with day parts and only one part has no Today heading', () => {

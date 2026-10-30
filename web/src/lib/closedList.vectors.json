@@ -1,0 +1,169 @@
+{
+  "_comment": "Today's closed list (OpenSpec change today-closed-list): the slot fill rule shared by web/src/lib/closedList.ts and internal/closedlist. A task's `available` is the injected availability predicate's answer (project-flow-modes) when the case's predicate is \"flow\"; with predicate \"none\" the fallback rule (not blocked) applies. `take` checks Take a slot on the case's fill.",
+  "today": "2026-10-30",
+  "cases": [
+    {
+      "name": "limit off lists every counted task",
+      "limit": 0,
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "b", "created_at": 2 },
+        { "id": "c", "created_at": 3 }
+      ],
+      "expect": { "limit": 0, "slots": ["a", "b", "c"], "waiting": [], "chosen": 0 }
+    },
+    {
+      "name": "seven tasks, five slots, by creation",
+      "limit": 5,
+      "tasks": [
+        { "id": "g", "created_at": 7 },
+        { "id": "a", "created_at": 1 },
+        { "id": "c", "created_at": 3 },
+        { "id": "b", "created_at": 2 },
+        { "id": "e", "created_at": 5 },
+        { "id": "f", "created_at": 6 },
+        { "id": "d", "created_at": 4 }
+      ],
+      "expect": { "limit": 5, "slots": ["a", "b", "c", "d", "e"], "waiting": ["f", "g"], "chosen": 0 },
+      "take": { "id": "g", "taken": ["g"] }
+    },
+    {
+      "name": "focus first",
+      "limit": 3,
+      "review": { "focus_date": "2026-10-30", "focus": "g" },
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "b", "created_at": 2 },
+        { "id": "c", "created_at": 3 },
+        { "id": "g", "created_at": 7 }
+      ],
+      "expect": { "limit": 3, "slots": ["g", "a", "b"], "waiting": ["c"], "chosen": 1 }
+    },
+    {
+      "name": "taken tasks in the order taken, after the focus",
+      "limit": 4,
+      "review": { "focus_date": "2026-10-30", "focus": "e", "slots_date": "2026-10-30", "slots": "g,f" },
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "b", "created_at": 2 },
+        { "id": "e", "created_at": 5 },
+        { "id": "f", "created_at": 6 },
+        { "id": "g", "created_at": 7 }
+      ],
+      "expect": { "limit": 4, "slots": ["e", "g", "f", "a"], "waiting": ["b"], "chosen": 3 },
+      "take": { "id": "b", "taken": ["g", "f", "b"] }
+    },
+    {
+      "name": "earlier oldest due first, before the day's tasks",
+      "limit": 3,
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "late2", "created_at": 9, "earlier": true, "due": "2026-10-28" },
+        { "id": "late1", "created_at": 10, "earlier": true, "due": "2026-10-20" },
+        { "id": "late3", "created_at": 8, "earlier": true, "due": "2026-10-28" }
+      ],
+      "expect": { "limit": 3, "slots": ["late1", "late3", "late2"], "waiting": ["a"], "chosen": 0 }
+    },
+    {
+      "name": "same creation time, ties by id",
+      "limit": 1,
+      "tasks": [
+        { "id": "b", "created_at": 5 },
+        { "id": "a", "created_at": 5 }
+      ],
+      "expect": { "limit": 1, "slots": ["a"], "waiting": ["b"], "chosen": 0 }
+    },
+    {
+      "name": "blocked and habit tasks never take a slot",
+      "limit": 3,
+      "predicate": "none",
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "blocked", "created_at": 0, "blocked": true },
+        { "id": "habit", "created_at": 0, "habit": true },
+        { "id": "b", "created_at": 2 }
+      ],
+      "expect": { "limit": 3, "slots": ["a", "b"], "waiting": [], "chosen": 0 }
+    },
+    {
+      "name": "a waiting step of a sequential project is excluded through the injected predicate",
+      "limit": 3,
+      "predicate": "flow",
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "step2", "created_at": 0, "available": false },
+        { "id": "blocked", "created_at": 0, "blocked": true, "available": false },
+        { "id": "b", "created_at": 2 }
+      ],
+      "expect": { "limit": 3, "slots": ["a", "b"], "waiting": [], "chosen": 0 }
+    },
+    {
+      "name": "without the predicate only blocked tasks are excluded",
+      "limit": 3,
+      "predicate": "none",
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "step2", "created_at": 0, "available": false },
+        { "id": "blocked", "created_at": 0, "blocked": true, "available": false },
+        { "id": "b", "created_at": 2 }
+      ],
+      "expect": { "limit": 3, "slots": ["step2", "a", "b"], "waiting": [], "chosen": 0 }
+    },
+    {
+      "name": "a list of another day is ignored",
+      "limit": 1,
+      "review": { "focus_date": "2026-10-29", "focus": "b", "slots_date": "2026-10-29", "slots": "c" },
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "b", "created_at": 2 },
+        { "id": "c", "created_at": 3 }
+      ],
+      "expect": { "limit": 1, "slots": ["a"], "waiting": ["b", "c"], "chosen": 0 }
+    },
+    {
+      "name": "completed and deleted ids drop out",
+      "limit": 2,
+      "review": { "focus_date": "2026-10-30", "focus": "done", "slots_date": "2026-10-30", "slots": "gone, c" },
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "b", "created_at": 2 },
+        { "id": "c", "created_at": 3 }
+      ],
+      "expect": { "limit": 2, "slots": ["c", "a"], "waiting": ["b"], "chosen": 1 },
+      "take": { "id": "b", "taken": ["c", "b"] }
+    },
+    {
+      "name": "every slot chosen refuses Take a slot",
+      "limit": 2,
+      "review": { "focus_date": "2026-10-30", "focus": "x,y,z" },
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "x", "created_at": 2 },
+        { "id": "y", "created_at": 3 },
+        { "id": "z", "created_at": 4 }
+      ],
+      "expect": { "limit": 2, "slots": ["x", "y"], "waiting": ["z", "a"], "chosen": 2 },
+      "take": { "id": "a", "taken": "full" }
+    },
+    {
+      "name": "an out-of-range limit reads as off",
+      "limit": 40,
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "b", "created_at": 2 }
+      ],
+      "expect": { "limit": 0, "slots": ["a", "b"], "waiting": [], "chosen": 0 }
+    },
+    {
+      "name": "a fractional limit reads as off",
+      "limit": 2.5,
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "b", "created_at": 2 },
+        { "id": "c", "created_at": 3 }
+      ],
+      "expect": { "limit": 0, "slots": ["a", "b", "c"], "waiting": [], "chosen": 0 }
+    }
+  ],
+  "limits": [[0, 0], [1, 1], [20, 20], [21, 0], [-3, 0], [2.5, 0], ["5", 0], [null, 0]]
+}

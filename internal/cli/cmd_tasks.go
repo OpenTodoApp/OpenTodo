@@ -32,6 +32,8 @@ type listOptions struct {
 	limit                                  int
 	// Completion range (OpenSpec change completed-date-filters, design D6).
 	completedAfter, completedBefore string
+	// todayAll is `ot today --all` (today-closed-list D7): no waiting heading.
+	todayAll bool
 }
 
 func (o *listOptions) bind(fs *flag.FlagSet) {
@@ -133,6 +135,9 @@ func viewAlias(name string) func(a *App, ctx context.Context, g *globalFlags, ar
 	return func(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		fs := a.flagSet(name, g)
 		var o listOptions
+		if name == "today" {
+			fs.BoolVar(&o.todayAll, "all", false, "with a Today limit: every task in one list, without the waiting heading")
+		}
 		fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
 		pos, err := a.parse(g, fs, name, args)
 		if err != nil {
@@ -215,13 +220,21 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	if view != "project" {
 		tasks = scope.filterTasks(projects, all, tasks)
 	}
+	// Today's closed list (today-closed-list D7): the slots first, then the waiting tasks.
+	var split *todaySplit
+	if view == "today" && planning == "" && !o.ranged() {
+		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today); err != nil {
+			return err
+		}
+		tasks = split.ordered(tasks)
+	}
 	if o.limit > 0 && len(tasks) > o.limit {
 		tasks = tasks[:o.limit]
 	}
 	if g.json {
 		raws := make([]json.RawMessage, 0, len(tasks))
 		for _, t := range tasks {
-			raws = append(raws, t.Raw)
+			raws = append(raws, split.raw(t))
 		}
 		return a.printRawList(raws)
 	}
@@ -229,64 +242,15 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		fmt.Fprintln(a.Stdout, "No tasks.")
 		return nil
 	}
-	byID := map[string]project{}
-	for _, p := range projects {
-		byID[p.ID] = p
+	if split.heading(o.todayAll) {
+		slots, waiting := split.parts(tasks)
+		a.renderTasks(slots, projects, all, today)
+		fmt.Fprintln(a.Stdout)
+		fmt.Fprintln(a.Stdout, "Waiting for a slot")
+		a.renderTasks(waiting, projects, all, today)
+		return nil
 	}
-	// The origin's id or host as a column, only when a listed task has one (task-origin).
-	// The deadline as a BY column, likewise only when one is set (agent-planning-fields).
-	showOrigin, showBy := false, false
-	for _, t := range tasks {
-		showOrigin = showOrigin || t.originLabel() != ""
-		showBy = showBy || (t.Deadline != nil && *t.Deadline != "")
-	}
-	headers := []string{"ID", "P", "DUE"}
-	if showBy {
-		headers = append(headers, "BY")
-	}
-	headers = append(headers, "PROJECT")
-	if showOrigin {
-		headers = append(headers, "ORIGIN")
-	}
-	headers = append(headers, "TITLE")
-	blocked := blockedRule(all)
-	tbl := newTable(headers...)
-	for _, t := range tasks {
-		dueText, overdue := describeDue(t.Due, today)
-		if sfx := planningSuffix(t, today, t.CompletedAt == nil && blocked(t)); sfx != "" {
-			dueText = strings.TrimSpace(dueText + " " + sfx)
-		}
-		dueCell := plain(dueText)
-		if overdue {
-			dueCell.style = styleRed
-		} else if t.Due != nil && t.Due.Date == today {
-			dueCell.style = styleBold
-		}
-		pr := plain(fmt.Sprintf("P%d", t.Priority))
-		if t.Priority == 1 {
-			pr.style = styleRed
-		}
-		projName := ""
-		if t.ProjectID != nil {
-			if p, ok := byID[*t.ProjectID]; ok {
-				projName = p.Name
-			}
-		}
-		title := t.Title
-		if t.CompletedAt != nil {
-			title = "[done] " + title
-		}
-		cells := []cell{{text: shortID(t.ID), style: styleCyan}, pr, dueCell}
-		if showBy {
-			cells = append(cells, deadlineCell(t, today))
-		}
-		cells = append(cells, plain(projName))
-		if showOrigin {
-			cells = append(cells, plain(t.originLabel()))
-		}
-		tbl.add(append(cells, plain(title))...)
-	}
-	tbl.render(a.Stdout, a.color())
+	a.renderTasks(tasks, projects, all, today)
 	return nil
 }
 
@@ -433,6 +397,8 @@ type taskFlags struct {
 	remind  stringList
 	natural bool
 	lang    string
+	// done is --done (today-closed-list D6): log a win, created already completed.
+	done bool
 }
 
 func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
@@ -453,6 +419,7 @@ func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 		fs.Var(&f.remind, "remind", "reminder: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)")
 		fs.BoolVar(&f.natural, "natural", false, "parse the title like the app's quick add (dates, #project, @label, p1, every …, remind me …)")
 		fs.StringVar(&f.lang, "lang", "", "languages for --natural and --remind, e.g. de,en (default: the locale, English always)")
+		fs.BoolVar(&f.done, "done", false, "log a win: create the task already completed now (refuses --repeat and --remind)")
 	}
 }
 
@@ -552,6 +519,10 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err := f.plan.validateLocal(set, a.Now(), false); err != nil {
 		return err
 	}
+	// A win does not repeat or remind (today-closed-list D6).
+	if f.done && (set["repeat"] || set["remind"]) {
+		return usageErr("--done logs a win, which does not repeat or remind; drop --repeat and --remind")
+	}
 	headers, err := idempotencyHeaders(set["idempotency-key"], *key)
 	if err != nil {
 		return err
@@ -636,7 +607,14 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err := f.plan.fill(ctx, a, c, set, body, func() ([]task, error) { return c.tasks(ctx) }); err != nil {
 		return err
 	}
-	raw, _, err := c.do(ctx, "POST", "/tasks"+defaultReminderQuery(body, f.noDefault || len(phrases) > 0), body, headers)
+	if f.done {
+		// Created completed now in the one request; the server records who completed it.
+		// Recurrence and reminder phrases a --natural title held stay out.
+		delete(body, "recurrence")
+		phrases = nil
+		body["completed_at"] = a.Now().UnixMilli()
+	}
+	raw, _, err := c.do(ctx, "POST", "/tasks"+defaultReminderQuery(body, f.noDefault || len(phrases) > 0 || f.done), body, headers)
 	if err != nil {
 		return err
 	}
