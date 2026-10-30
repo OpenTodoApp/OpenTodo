@@ -51,6 +51,7 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kClock:          checkClock,
 	kWeekdays:       checkWeekdays,
 	kEnergy:         checkEnergy,
+	kOrderList:      checkOrderList,
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -230,13 +231,20 @@ func checkStringList(raw json.RawMessage) error {
 	return nil
 }
 
-func checkIDList(raw json.RawMessage) error {
+func checkIDList(raw json.RawMessage) error { return checkIDs(raw, MaxBlockedBy) }
+
+// checkOrderList accepts a manual order (view-manual-order D2): at most
+// MaxManualOrder distinct ids of 1 to MaxIDLen characters.
+func checkOrderList(raw json.RawMessage) error { return checkIDs(raw, MaxManualOrder) }
+
+// checkIDs accepts an array of at most limit distinct ids of 1 to MaxIDLen characters.
+func checkIDs(raw json.RawMessage, limit int) error {
 	var l []string
 	if err := json.Unmarshal(raw, &l); err != nil || l == nil {
 		return errors.New("must be an array of task ids")
 	}
-	if len(l) > MaxBlockedBy {
-		return fmt.Errorf("may hold at most %d ids", MaxBlockedBy)
+	if len(l) > limit {
+		return fmt.Errorf("may hold at most %d ids", limit)
 	}
 	seen := make(map[string]bool, len(l))
 	for _, id := range l {

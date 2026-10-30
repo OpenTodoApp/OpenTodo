@@ -5220,6 +5220,7 @@
   "Open as a new view": "Abrir como nova visualização",
   "Open as a new view: {query}": "Abrir como nova visualização: {query}",
   "Order by": "Ordenar por",
+  "Order changed": "Ordem alterada",
   "Save as view": "Salvar como visualização",
   "Save the query as a view, pinned to the sidebar": "Salvar a consulta como visualização, fixada na barra lateral",
   "Saved with its conditions and display options, in the sidebar under Views.": "Salva com as condições e as opções de exibição, na barra lateral em Visualizações.",

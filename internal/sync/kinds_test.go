@@ -2,13 +2,14 @@ package sync
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 )
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kWeekdays; k++ {
+	for k := kString; k <= kOrderList; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
@@ -51,6 +52,15 @@ func TestCheckKindTable(t *testing.T) {
 		{"energy capitalised", kEnergy, `"Deep"`, `must be "", "deep", "medium" or "low"`},
 		{"energy number", kEnergy, `2`, `must be "", "deep", "medium" or "low"`},
 		{"energy null", kEnergy, `null`, `must be "", "deep", "medium" or "low"`},
+		{"order list", kOrderList, `["t1","t2"]`, ""},
+		{"order list empty", kOrderList, `[]`, ""},
+		{"order list full", kOrderList, orderListOf(MaxManualOrder), ""},
+		{"order list too long", kOrderList, orderListOf(MaxManualOrder + 1), "at most 500 ids"},
+		{"order list twice", kOrderList, `["t1","t1"]`, `lists "t1" twice`},
+		{"order list empty id", kOrderList, `[""]`, "ids must be 1 to 64 characters"},
+		{"order list long id", kOrderList, `["` + strings.Repeat("a", MaxIDLen+1) + `"]`, "ids must be 1 to 64 characters"},
+		{"order list null", kOrderList, `null`, "must be an array of task ids"},
+		{"order list string", kOrderList, `"t1"`, "must be an array of task ids"},
 		{"day part morning", kDayPart, `"morning"`, ""},
 		{"day part afternoon", kDayPart, `"afternoon"`, ""},
 		{"day part null", kDayPart, `null`, ""},
@@ -172,4 +182,14 @@ func TestCheckKindTable(t *testing.T) {
 			}
 		})
 	}
+}
+
+// orderListOf is a JSON array of n distinct ids (view-manual-order).
+func orderListOf(n int) string {
+	ids := make([]string, n)
+	for i := range ids {
+		ids[i] = fmt.Sprintf("%036d", i)
+	}
+	b, _ := json.Marshal(ids)
+	return string(b)
 }
