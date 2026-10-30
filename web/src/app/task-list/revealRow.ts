@@ -22,7 +22,7 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
  * (viewport y), counting a stack: the page header, then what is pinned right
  * under it (the selection bar, a group header).
  */
-function pinnedBottom(scroller: HTMLElement, row: HTMLElement): number {
+export function pinnedBottom(scroller: HTMLElement, row: HTMLElement): number {
   let bottom = scroller.getBoundingClientRect().top
   const pinned: DOMRect[] = []
   for (const s of scroller.querySelectorAll<HTMLElement>('*')) {

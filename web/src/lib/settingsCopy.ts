@@ -346,6 +346,16 @@ export const SETTINGS_COPY = {
       parse: { label: msg('Parse natural language'), description: msg('Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; "quotes" keep text as is.') },
     },
   },
+  // Where new tasks are added (add-position D1): the synced user_prefs.add_position.
+  'add-position': {
+    title: msg('New tasks'),
+    icon: 'list-ordered',
+    description: msg('Where a task added from a list goes, on all your devices.'),
+    learnMore: 'settings/quick-add',
+    rows: {
+      place: { label: msg('Add new tasks'), description: msg('Lists sorted by date or priority keep their order.') },
+    },
+  },
   'voice-settings': {
     title: msg('Voice capture'),
     icon: 'mic',

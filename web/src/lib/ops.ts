@@ -616,12 +616,21 @@ export type NewTaskInput = {
    * task's final due and written in the same batch as the task.
    */
   reminders?: ReminderPhrase[]
+  /**
+   * Where a top-level task lands in its manual list (add-position D2): 'top' above every
+   * task, 'bottom' (the default) appended. Subtasks always append.
+   */
+  placement?: Placement
 }
 
+/** Where a new task lands in its manual list (add-position). */
+export type Placement = 'top' | 'bottom'
+
 /** The ops of a new task without writing them, for a batch with other changes (a shared file's attachments). */
-export async function planTask(input: NewTaskInput): Promise<{ id: string; change: Change }> {
+export async function planTask(input: NewTaskInput, position?: number): Promise<{ id: string; change: Change }> {
   const id = uuid()
   const now = Date.now()
+  const at = position ?? (input.placement === 'top' && !input.parent_id ? (await topTaskPositions(1))[0] : await nextTaskPosition(now))
   let due = input.due ?? null
   const extra: Record<string, unknown> = {}
   if (input.recurrence) {
@@ -646,7 +655,7 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
   if (!input.project_id && !input.parent_id) Object.assign(extra, await workspaceFields())
   return { id, change: { entity: 'task', entityId: id, patch: {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
-    priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,
+    priority: input.priority ?? 4, due, labels: input.labels ?? [], position: at, created_at: now,
     completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null, ...extra,
   } } }
 }
@@ -697,6 +706,37 @@ async function nextTaskPosition(now: number): Promise<number> {
   if (issued !== undefined && issued > top && position <= issued && issued - position < GAP) position = issued + 1
   return remember(position)
 }
+
+/**
+ * Positions above every task (add-position D2): one indexed read of the smallest
+ * position, then a block of `count` increasing positions ending at smallest − GAP, so
+ * several tasks planned together keep their reading order at the top. The smallest
+ * position anywhere is below every task of every list, so the block is first in
+ * whichever manual list (project, section, column, Inbox) the tasks land in.
+ */
+export async function topTaskPositions(count: number): Promise<number[]> {
+  const first = await db.tasks.orderBy('position').first()
+  const low = first && Number.isFinite(first.position) ? first.position : Date.now()
+  let end = low - GAP
+  // Two adds at the top in quick succession both read the table before either is
+  // written: the later one goes above the earlier, as if the first had been stored.
+  const issued = issuedTopPositions.get(db)
+  if (issued !== undefined && issued < low && end >= issued) end = issued - GAP
+  const positions = Array.from({ length: count }, (_, i) => end - (count - 1 - i) * GAP)
+  if (positions.length > 0) issuedTopPositions.set(db, positions[0])
+  return positions
+}
+
+/** Plans several new tasks as one block in their given order (a pasted list), at the top or appended. */
+export async function planTasks(inputs: readonly NewTaskInput[], placement: Placement = 'bottom'): Promise<{ id: string; change: Change }[]> {
+  const top = placement === 'top' ? await topTaskPositions(inputs.length) : []
+  const out: { id: string; change: Change }[] = []
+  for (const [i, input] of inputs.entries()) out.push(await planTask({ ...input, placement: 'bottom' }, input.parent_id ? undefined : top[i]))
+  return out
+}
+
+/** The smallest position handed out at the top per database, not yet necessarily written. */
+const issuedTopPositions = new WeakMap<object, number>()
 
 /** The last position handed out per database, not yet necessarily written. */
 const issuedPositions = new WeakMap<object, number>()

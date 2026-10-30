@@ -5463,5 +5463,14 @@
   "{n} more today": "{n} más hoy",
   "Open the calendar": "Abrir el calendario",
   "The provider answers, but this model does not support tool use, which the assistant needs. Choose another model.": "El proveedor responde, pero este modelo no admite el uso de herramientas, que el asistente necesita. Elige otro modelo.",
-  "The provider has no such model or endpoint. Check the model id and, for a model server, its address (it usually ends in /v1) with “Change provider or key” or in Settings → Integrations → Assistant.": "El proveedor no tiene ese modelo ni ese punto de acceso. Revisa el id del modelo y, para un servidor de modelos, su dirección (suele terminar en /v1) con «Cambiar proveedor o clave» o en Ajustes → Integraciones → Asistente."
+  "The provider has no such model or endpoint. Check the model id and, for a model server, its address (it usually ends in /v1) with “Change provider or key” or in Settings → Integrations → Assistant.": "El proveedor no tiene ese modelo ni ese punto de acceso. Revisa el id del modelo y, para un servidor de modelos, su dirección (suele terminar en /v1) con «Cambiar proveedor o clave» o en Ajustes → Integraciones → Asistente.",
+  "Add new tasks": "Añadir tareas nuevas",
+  "Added to the bottom of {list}": "Añadida al final de {list}",
+  "Added to the top of {list}": "Añadida al principio de {list}",
+  "At the bottom of the list": "Al final de la lista",
+  "At the top of the list": "Al principio de la lista",
+  "At the top or the bottom of the list": "Al principio o al final de la lista",
+  "Lists sorted by date or priority keep their order.": "Las listas ordenadas por fecha o prioridad mantienen su orden.",
+  "New tasks": "Tareas nuevas",
+  "Where a task added from a list goes, on all your devices.": "Dónde va una tarea añadida desde una lista, en todos tus dispositivos."
 }
