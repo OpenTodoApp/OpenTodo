@@ -36,7 +36,7 @@ Completed tasks stay openable, but cannot be rescheduled from the calendar and d
 
 ## See the month
 
-**Month** shows six weeks, with today marked and other months dimmed. Each day lists visible tasks: timed ones first, then the rest by priority. **+N more** expands a crowded day. Estimated open tasks count towards the planned total: red when over capacity, amber when [counted meetings](place-tasks-on-the-calendar.md#see-whether-the-day-fits) tip it over.
+**Month** shows six weeks, with today marked and other months dimmed. Tasks appear by time, then priority. **+N more** expands a crowded day. Open task estimates count towards capacity: red when over, amber when [counted meetings](place-tasks-on-the-calendar.md#see-whether-the-day-fits) tip it over.
 
 - Drag a task onto another day to move it. It keeps its time.
 - Select a task with <kbd>j</kbd> and <kbd>k</kbd>, or by clicking it. The arrows then move it a day (<kbd>←</kbd> <kbd>→</kbd>) or a week (<kbd>↑</kbd> <kbd>↓</kbd>), into the next month if needed. <kbd>Enter</kbd> opens it, and <kbd>Esc</kbd> clears the selection.
