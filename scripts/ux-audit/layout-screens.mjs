@@ -173,18 +173,20 @@ async function openProperty(p, field, label) {
   const more = panel.locator('[data-facts-more]')
   if (await part.count() === 0 && await more.count() > 0) { await more.scrollIntoViewIfNeeded(); await more.click() }
   const shown = await part.waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false)
+  // With the keyboard: on a wide touch screen the reminder toast can sit over the panel's
+  // last line (Project, at 1280 px), which a click would wait on for good.
+  const press = async (l) => { await l.scrollIntoViewIfNeeded(); await l.focus(); await l.press('Enter') }
   if (shown) {
-    await part.scrollIntoViewIfNeeded()
-    await part.click()
+    await press(part)
   } else {
     const add = panel.getByRole('button', { name: 'Add a property' })
-    await add.scrollIntoViewIfNeeded()
-    await add.click()
+    await press(add)
     await p.getByRole('menuitem', { name: label }).click()
   }
   const editor = p.locator('[data-overlay]').filter({ has: p.locator('[data-facet-editor]') }).last()
   await editor.waitFor()
-  return { editor, trigger: shown ? part : undefined }
+  // The check opens it again the same way (`reopen`), not with a click on the trigger.
+  return { editor, trigger: shown ? part : undefined, reopen: shown ? () => press(part) : undefined }
 }
 
 export const OVERLAYS = {
@@ -344,9 +346,9 @@ export const OVERLAYS = {
   // Blocked by (task-dependencies, ux-overhaul chips): the chip when set, else Add › Blocked by.
   async 'blocked-by-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().locator('[data-row-open]').press('Enter')
-    const { editor, trigger } = await openProperty(p, 'blocked-by', 'Blocked by')
+    const { editor, trigger, reopen } = await openProperty(p, 'blocked-by', 'Blocked by')
     await editor.getByRole('combobox').first().waitFor()
-    return { overlay: editor, trigger, kind: 'popover' }
+    return { overlay: editor, trigger, reopen, kind: 'popover' }
   },
   async 'mention-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
@@ -368,9 +370,9 @@ export const OVERLAYS = {
   // part; a property without a value has no part yet and is reached through Add.
   ...Object.fromEntries([['project', 'Project'], ['parent', 'Parent task'], ['section', 'Section']].map(([field, label]) => [`${field}-picker`, async (p) => {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
-    const { editor, trigger } = await openProperty(p, field, label)
+    const { editor, trigger, reopen } = await openProperty(p, field, label)
     await editor.getByRole('combobox').first().waitFor()
-    return { overlay: editor, trigger, kind: 'popover' }
+    return { overlay: editor, trigger, reopen, kind: 'popover' }
   }])),
   // A row edited in place (inline-task-editing): a mouse click on the title, from 768 px.
   async 'inline-editor'(p, ctx) {
@@ -384,16 +386,16 @@ export const OVERLAYS = {
   // The When popover, one segment at a time (task-panel-facets D3).
   async 'when-popover'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
-    const { editor, trigger } = await openProperty(p, 'due', 'Do on')
-    return { overlay: editor, trigger, kind: 'popover' }
+    const { editor, trigger, reopen } = await openProperty(p, 'due', 'Do on')
+    return { overlay: editor, trigger, reopen, kind: 'popover' }
   },
   // A task's location editor (task-locations "Setting a location"): search, coordinates,
   // "Use my location" and the saved locations; no map until "Pick on the map".
   async 'location-editor'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
-    const { editor, trigger } = await openProperty(p, 'location', 'Location')
+    const { editor, trigger, reopen } = await openProperty(p, 'location', 'Location')
     await editor.locator('[data-location-editor]').waitFor()
-    return { overlay: editor, trigger, kind: 'popover' }
+    return { overlay: editor, trigger, reopen, kind: 'popover' }
   },
   // The Locations page's new-location form (task-locations "Locations page").
   async 'new-location'(p) {

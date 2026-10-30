@@ -19,6 +19,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **The quick-add parse route follows your Day parts preference.** `POST /api/v1/quick-add/parse` without `day_parts` now reads the part phrases (`tomorrow morning`, `this afternoon`) when the account's **Group by day part** is on; an explicit `day_parts` still wins either way. The browser extension's Quick save, which never sends the field, now previews and saves part phrases for accounts with day parts on. ([API](docs/api.md#quick-add-parse), [Day parts](docs/day-parts.md#type-it), `quick-add-day-parts-default`)
 
+### Fixed
+
+- **List rows on wide touch screens line up again.** On a touch screen 768 px or wider (a tablet in landscape, a touch laptop), a list row's title and its property column sat 10 px below the completion circle, because the row's 44 px touch height centred them; they now stay on the circle's line.
+
 ## [0.17.0] - 2026-10-30
 
 OpenTodo 0.17.0 adds calm limits to a busy day, each off by default: an optional **Today limit** with **Done today** and **Log a win**, **Morning, Afternoon and This Evening** in Today, **sequential projects** and **areas**, and a **review interval per project** with a Maintenance status for projects on low burn. Focus is one tap away from every task, new tasks can get a **default reminder** and can be **added at the top**, a pasted list becomes **one task per line**, the sidebar shows counts on every list in your own order, and a right-click on a task opens its menu. Sub-projects inherit their parent's custom fields, and a round of fixes covers Gemini and compatible assistant providers, CalDAV events from iOS Calendar, the selection bar, short calendar items and copying over plain http.
