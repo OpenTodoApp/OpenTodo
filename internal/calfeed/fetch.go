@@ -20,6 +20,21 @@ const (
 	MaxRedirects = 3
 )
 
+// BrowserUserAgent is sent instead of "OpenTodo/<version>" to a feed that
+// refused the OpenTodo User-Agent with 400, 403 or 406. Microsoft Exchange
+// on-premises (OWA published calendars) answers 400 to any User-Agent that is
+// not a full desktop browser string: it wants "Mozilla/5.0", a platform in
+// parentheses, an engine token and a browser version, so a short "Mozilla/5.0"
+// or an app name in front is refused too (#622). OpenTodo still identifies
+// itself first; this string is only the fallback, kept in this one place.
+const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+
+// refusesAgent reports whether a status may mean the server rejected the
+// User-Agent, so the fetch is tried once more with BrowserUserAgent.
+func refusesAgent(status int) bool {
+	return status == http.StatusBadRequest || status == http.StatusForbidden || status == http.StatusNotAcceptable
+}
+
 // Result is what a fetch brought.
 type Result struct {
 	// Replaced is true when new content was read (200); false when unchanged (304).
@@ -31,6 +46,9 @@ type Result struct {
 	RefreshSeconds *int64
 	// Name is the calendar's X-WR-CALNAME, adopted when the subscription has none.
 	Name string
+	// BrowserAgent is true when the answer came to BrowserUserAgent; the
+	// subscription then remembers it.
+	BrowserAgent bool
 }
 
 // FetchError is a failed fetch with the reason stored on the subscription.
@@ -77,31 +95,29 @@ func StoreWindow(now time.Time) Window {
 	return Window{From: d.AddDate(0, 0, -62), To: d.AddDate(0, 0, 400)}
 }
 
-// Fetch reads one subscription with conditional headers.
+// Fetch reads one subscription with conditional headers. It identifies as
+// OpenTodo unless the subscription is known to need BrowserUserAgent; a 400,
+// 403 or 406 to the OpenTodo User-Agent is retried once with the browser one.
 func (f *Fetcher) Fetch(ctx context.Context, sub *Subscription) (*Result, error) {
 	target, err := FetchURL(sub.URL)
 	if err != nil {
 		return nil, &FetchError{"invalid_url"}
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	browser := sub.BrowserAgent
+	resp, err := f.get(ctx, target, sub, browser)
 	if err != nil {
-		return nil, &FetchError{"invalid_url"}
+		return nil, err
 	}
-	req.Header.Set("Accept", "text/calendar, */*;q=0.5")
-	req.Header.Set("User-Agent", "OpenTodo/"+f.Version)
-	if sub.ETag != "" {
-		req.Header.Set("If-None-Match", sub.ETag)
-	}
-	if sub.LastModified != "" {
-		req.Header.Set("If-Modified-Since", sub.LastModified)
-	}
-	resp, err := f.Client.Do(req)
-	if err != nil {
-		return nil, &FetchError{reasonOf(err)}
+	if !browser && refusesAgent(resp.StatusCode) {
+		resp.Body.Close()
+		browser = true
+		if resp, err = f.get(ctx, target, sub, browser); err != nil {
+			return nil, err
+		}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotModified {
-		return &Result{ETag: sub.ETag, LastModified: sub.LastModified}, nil
+		return &Result{ETag: sub.ETag, LastModified: sub.LastModified, BrowserAgent: browser}, nil
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, &FetchError{fmt.Sprintf("http_%d", resp.StatusCode)}
@@ -125,12 +141,37 @@ func (f *Fetcher) Fetch(ctx context.Context, sub *Subscription) (*Result, error)
 	occ, warns := ExpandContext(ectx, cal.Events, StoreWindow(now()), MaxOccurrences)
 	cancel()
 	r := &Result{Replaced: true, Occurrences: occ, Warnings: append(cal.Warnings, warns...), ETag: resp.Header.Get("ETag"),
-		LastModified: resp.Header.Get("Last-Modified"), Name: cal.Name}
+		LastModified: resp.Header.Get("Last-Modified"), Name: cal.Name, BrowserAgent: browser}
 	if cal.Refresh > 0 {
 		s := int64(cal.Refresh / time.Second)
 		r.RefreshSeconds = &s
 	}
 	return r, nil
+}
+
+// get sends one conditional GET with the OpenTodo or the browser User-Agent.
+func (f *Fetcher) get(ctx context.Context, target string, sub *Subscription, browser bool) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return nil, &FetchError{"invalid_url"}
+	}
+	req.Header.Set("Accept", "text/calendar, */*;q=0.5")
+	if browser {
+		req.Header.Set("User-Agent", BrowserUserAgent)
+	} else {
+		req.Header.Set("User-Agent", "OpenTodo/"+f.Version)
+	}
+	if sub.ETag != "" {
+		req.Header.Set("If-None-Match", sub.ETag)
+	}
+	if sub.LastModified != "" {
+		req.Header.Set("If-Modified-Since", sub.LastModified)
+	}
+	resp, err := f.Client.Do(req)
+	if err != nil {
+		return nil, &FetchError{reasonOf(err)}
+	}
+	return resp, nil
 }
 
 // reasonOf maps a transport error to a stored reason.
