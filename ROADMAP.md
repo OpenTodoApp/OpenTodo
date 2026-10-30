@@ -24,7 +24,7 @@ Method primitives and the community's quick wins.
 | --- | --- | --- |
 | [`project-flow-modes`](openspec/changes/archive/2026-10-30-project-flow-modes/) | **Shipped.** Projects and sections that are Parallel, Sequential (only the next task is available) or an Area | [#574](https://github.com/OpenTodoApp/OpenTodo/issues/574) |
 | [`project-review-cadence`](openspec/changes/archive/2026-10-30-project-review-cadence/) | **Shipped.** A review interval per project, so the weekly review shows only the projects that are due | [#575](https://github.com/OpenTodoApp/OpenTodo/issues/575) |
-| [`today-closed-list`](openspec/changes/today-closed-list/) | An optional Today limit with a "Waiting for a slot" drawer, a Done today list and Log a win |  |
+| [`today-closed-list`](openspec/changes/archive/2026-10-30-today-closed-list/) | **Shipped.** An optional Today limit with a "Waiting for a slot" drawer, a Done today list and Log a win |  |
 | [`day-parts`](openspec/changes/archive/2026-10-30-day-parts/) | **Shipped.** Morning, Afternoon and Evening groups in Today |  |
 | [`paste-to-tasks`](openspec/changes/archive/2026-10-30-paste-to-tasks/) | **Shipped.** Paste several lines, get one task per line | [#578](https://github.com/OpenTodoApp/OpenTodo/issues/578) |
 | [`add-position`](openspec/changes/archive/2026-10-30-add-position/) | **Shipped.** Add new tasks at the top or the bottom; the Add row stays reachable | [#540](https://github.com/OpenTodoApp/OpenTodo/issues/540), [#541](https://github.com/OpenTodoApp/OpenTodo/issues/541) |

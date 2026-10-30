@@ -77,6 +77,8 @@ export interface ListGroup {
   named?: true
   /** Today with day parts on (day-parts D4): the part a task dropped on the heading gets ('none' = Any time). */
   dropPart?: DayPart | 'none'
+  /** One line under an open folded group's heading (today-closed-list: the Waiting hint). */
+  hint?: string
 }
 
 /** A board column: a section ('' = "No section") and its top-level cards. */
@@ -96,6 +98,10 @@ export interface SectionBucket {
 
 /** Set in the per-device collapse set when Today's Blocked group is open (it starts folded). */
 export const BLOCKED_OPEN_KEY = 'today:blocked:open'
+/** Set in the same store when Today's "Waiting for a slot" group is open (today-closed-list D1). */
+export const WAITING_OPEN_KEY = 'today:waiting:open'
+/** Set in the same store when Today's "Done today" group is open (today-closed-list D6). */
+export const DONE_OPEN_KEY = 'today:done:open'
 /** Set in the same store when the Inbox's "Planned, no project" group is open (inbox-planned-group D1). */
 export const PLANNED_OPEN_KEY = 'inbox:planned:open'
 
@@ -195,6 +201,13 @@ export interface GroupInput {
   labels?: readonly Label[]
   /** Today: the account groups it by part of the day (day-parts D3). */
   dayParts?: boolean
+  /**
+   * Today with a limit (today-closed-list D1, D2): the limit, and the tasks waiting for
+   * a slot in fill order (left out of the day's groups, listed in a folded group).
+   */
+  closedList?: { limit: number; waiting: readonly Task[] }
+  /** Today's Done today group (today-closed-list D6): the tasks completed today, newest first; absent when hidden. */
+  doneToday?: readonly Task[]
 }
 
 /** The comparator of a display's order, or null for manual order as stored (list-display-options D3). */
@@ -276,7 +289,11 @@ function flatGroups(p: GroupInput): ListGroup[] {
     // This Evening below the day's tasks (someday-and-evening).
     // With day parts on, Morning and Afternoon between them (day-parts D3); their headings take drops (D4).
     const parts = !!p.dayParts
-    const { overdue: earlier, day, morning, afternoon, evening, blocked: waiting } = groupToday(p.tasks, p.today, p.blocked, parts)
+    // Tasks waiting for a slot leave the day's groups (today-closed-list D1); the slots keep Today's order and groups.
+    const slotWaiting = p.closedList?.waiting ?? []
+    const out = slotWaiting.length ? new Set(slotWaiting.map((x) => x.id)) : null
+    const listed = out ? p.tasks.filter((x) => !out.has(x.id)) : p.tasks
+    const { overdue: earlier, day, morning, afternoon, evening, blocked: waiting } = groupToday(listed, p.today, p.blocked, parts)
     const g: ListGroup[] = []
     const drop = (part: DayPart | 'none') => (parts ? { dropPart: part } : {})
     // Earlier and Blocked imply nothing: how late a task is stays visible on its row (calm-rows D3, page-rhythm D5).
@@ -291,7 +308,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
       const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
       g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, openKey: BLOCKED_OPEN_KEY, rows: folded ? [] : waiting.map(row) })
     }
-    return g
+    return [...g, ...closedListGroups(p, row)]
   }
   if (p.logbook) {
     // Completed as a logbook: one group per local completion day, newest first.
@@ -321,6 +338,24 @@ function flatGroups(p: GroupInput): ListGroup[] {
     }))
   }
   return [{ key: 'all', heading: null, rows: p.tasks.map(row) }]
+}
+
+/** Today's Waiting for a slot and Done today groups (today-closed-list D1, D6): folded unless opened on this device. */
+function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGroup[] {
+  const g: ListGroup[] = []
+  const waiting = p.closedList?.waiting ?? []
+  if (p.closedList && waiting.length) {
+    const folded = !p.collapsed.has(WAITING_OPEN_KEY)
+    g.push({
+      key: 'waiting', heading: t('Waiting for a slot'), count: waiting.length, folded, openKey: WAITING_OPEN_KEY, rows: folded ? [] : waiting.map(row),
+      hint: t('Today holds {n}. The next one comes in when you finish one.', { n: p.closedList.limit }),
+    })
+  }
+  if (p.doneToday) {
+    const folded = !p.collapsed.has(DONE_OPEN_KEY)
+    g.push({ key: 'done', heading: t('Done today'), count: p.doneToday.length, folded, openKey: DONE_OPEN_KEY, rows: folded ? [] : p.doneToday.map(row) })
+  }
+  return g
 }
 
 /**
