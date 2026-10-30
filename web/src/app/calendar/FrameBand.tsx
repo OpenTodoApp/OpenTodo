@@ -36,7 +36,7 @@ function FrameBand({ occ, past }: { occ: PlacedFrame; past: boolean }) {
       }}>
       <button ref={anchor} type="button" data-frame-name={occ.frame.id} aria-haspopup="dialog" aria-expanded={open}
         aria-label={t('Frame {title}, {times}', { title, times })}
-        className="pointer-events-auto block max-w-full truncate rounded-chip px-1.5 pt-0.5 text-left text-hint text-faint outline-none hover:text-muted focus-visible:ring-2 focus-visible:ring-focus"
+        className="pointer-events-auto block min-h-6 max-w-full truncate rounded-chip px-1.5 pt-0.5 text-left text-hint text-faint outline-none hover:text-muted focus-visible:ring-2 focus-visible:ring-focus"
         onPointerDown={(e) => e.stopPropagation()} onClick={() => setOpen(true)}>
         {title} · <span className="tabular-nums">{times}</span>
       </button>
