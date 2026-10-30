@@ -6,10 +6,10 @@
 // the shell (BreakReminder), so leaving this screen keeps it running.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, EmptyState, MenuItem, MenuSeparator, Notice, PageBody, PageHeader } from '../../ui'
-import { useReviewRow } from '../../lib/localData'
+import { useReviewRow, useUserPrefsRow } from '../../lib/localData'
+import { orderedFocusIds } from '../../lib/bento'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { methodShown, useMethodMode } from '../../lib/method/mode'
-import { storedFocus } from '../../lib/review'
 import { FOCUS_MODES, setFocusPref, useFocusPrefs } from '../../lib/focus/prefs'
 import { focusTarget, nextFocusTask } from '../../lib/focus/select'
 import { breakSession, canExtend, completeSession, extendSession, leaveSession, pauseSession, resumeSession, stopSession } from '../../lib/focus/session'
@@ -67,7 +67,9 @@ export function FocusView({ id }: { id?: string }) {
   const today = useToday()
   const method = useMethodMode()
   const openId = usePanelTaskId()
-  const focusIds = useMemo(() => storedFocus(review, today), [review, today])
+  const userPrefs = useUserPrefsRow()
+  // Opens on the first task of today's focus in the Bento order (bento-daily-check D6).
+  const focusIds = useMemo(() => orderedFocusIds(review, userPrefs, today, tasks ?? []), [review, userPrefs, today, tasks])
   const list = tasks ?? []
   const target = useMemo(() => focusTarget({ routeId: id, state, focusIds, tasks: tasks ?? [] }), [id, state, focusIds, tasks])
   const task = target.taskId ? list.find((x) => x.id === target.taskId) : undefined
