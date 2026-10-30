@@ -16,6 +16,14 @@ import { click, flush, render, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { navigate } from '../router'
 import { Shell } from '../Shell'
+import { breakSession, pauseSession, resumeSession } from '../../lib/focus/session'
+
+// The background noise's generator, recorded (focus-everywhere 3.3): the shell's
+// timer controller decides when it plays.
+const noiseCalls = vi.hoisted(() => [] as [string | null, number][])
+vi.mock('../../lib/focus/noise', () => ({
+  setSessionNoise: async (kind: string | null, volume: number) => { noiseCalls.push([kind, volume]) },
+}))
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const T0 = new Date(2026, 9, 14, 9, 0).getTime()
@@ -101,3 +109,42 @@ describe('break reminder', () => {
     await r.unmount()
   })
 })
+
+describe('background noise (focus-everywhere D6)', () => {
+  const last = () => noiseCalls.at(-1)
+  beforeEach(() => { noiseCalls.length = 0 })
+
+  it('Off by default: a session runs and the generator is never loaded', async () => {
+    const r = await working()
+    await at(1)
+    expect(noiseCalls).toEqual([])
+    await r.unmount()
+  })
+
+  it('Plays only while working: on from the start on any screen, off on pause, back on resume, off in the break and on sign-out', async () => {
+    await mutate('user_prefs', 'me', { focus_noise: 'brown' })
+    const r = await working()
+    await waitFor(() => last()?.[0] === 'brown', 'playing')
+    expect(last()).toEqual(['brown', 40])
+    await pauseSession(T0 + MIN)
+    await waitFor(() => last()?.[0] === null, 'paused')
+    await resumeSession(T0 + 2 * MIN)
+    await waitFor(() => last()?.[0] === 'brown', 'resumed')
+    await breakSession(flowtime, T0 + 3 * MIN)
+    await waitFor(() => last()?.[0] === null, 'break')
+    await r.unmount()
+    expect(last()?.[0]).toBeNull()
+  })
+
+  it('Volume stays on the device: a lower volume reaches the generator, nothing is synced', async () => {
+    await mutate('user_prefs', 'me', { focus_noise: 'pink' })
+    const r = await working()
+    await waitFor(() => last()?.[0] === 'pink', 'playing')
+    const { writeNoiseVolume } = await import('../../lib/focus/prefs')
+    writeNoiseVolume(10)
+    await waitFor(() => last()?.[1] === 10, 'quieter')
+    expect((await db.outbox.toArray()).some((o) => /volume/.test(o.field))).toBe(false)
+    await r.unmount()
+  })
+})
+

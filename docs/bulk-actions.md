@@ -21,7 +21,7 @@ Tick tasks, then act on all of them in one go.
 
 ## Choose an action
 
-While tasks are ticked, a bar above the list says how many and offers **Actions** (or press <kbd>.</kbd>): complete or reopen, priority, labels (added to all, or removed from all), a date (today, tomorrow, next week, none, or one you pick), move to a project or section, assign, and move to the Trash. The usual keys work on the whole selection too: <kbd>c</kbd>, <kbd>1</kbd> to <kbd>4</kbd>, <kbd>L</kbd>, <kbd>Shift</kbd>+<kbd>A</kbd> and <kbd>Delete</kbd>. With nothing ticked, <kbd>.</kbd> opens the same menu for the selected task. It works in projects, the Inbox, Today, Upcoming, the Filter view and saved views, also offline.
+While tasks are ticked, a bar above the list says how many and offers **Actions** (or press <kbd>.</kbd>): complete or reopen, priority, labels (added to all, or removed from all), a date (today, tomorrow, next week, none, or one you pick), move to a project or section, assign, and move to the Trash. The usual keys work on the whole selection too: <kbd>c</kbd>, <kbd>1</kbd> to <kbd>4</kbd>, <kbd>L</kbd>, <kbd>Shift</kbd>+<kbd>A</kbd> and <kbd>Delete</kbd>. With nothing ticked, <kbd>.</kbd> opens the same menu for the selected task. With one task ticked, **Actions** is that task's full menu, including **Start tracking** and **Start focus** ([Focus](focus.md)): on a phone, hold the task, then tap **Actions**. The hold vibrates only while haptic feedback is on. It works in projects, the Inbox, Today, Upcoming, the Filter view and saved views, also offline.
 
 ## Preview and undo
 

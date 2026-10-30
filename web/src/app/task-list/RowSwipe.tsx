@@ -12,7 +12,7 @@ import type { Task } from '../../lib/types'
 import { Dialog, Icon } from '../../ui'
 import { act } from '../actionError'
 import { DateField } from '../datetime/DateField'
-import { prefersReducedMotion } from '../motion'
+import { prefersReducedMotion, tick } from '../motion'
 import { beginSwipe, revealed, SWIPE, type SwipeDir } from '../rowSwipe'
 import { showBulkToast } from '../bulk/toastStore'
 import { createStore } from '../../lib/store'
@@ -198,10 +198,11 @@ export function useSwipeCue(root: React.RefObject<HTMLElement | null>, enabled: 
 
 /**
  * A long press selects on touch (phone-v2 D8): the row is ticked, every checkbox and
- * the selection bar show, and the device ticks once where it can vibrate.
+ * the selection bar show, and the device ticks once where it can vibrate and the
+ * haptics preference is on (focus-everywhere D3: the shared `tick`).
  */
 export function holdSelect(id: string, selection: { ticked: ReadonlySet<string>; toggle: (id: string) => void }, setSelectMode: (on: boolean) => void): void {
   if (!selection.ticked.has(id)) selection.toggle(id)
   setSelectMode(true)
-  navigator.vibrate?.(10)
+  tick()
 }

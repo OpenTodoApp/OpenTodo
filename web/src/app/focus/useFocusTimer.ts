@@ -11,7 +11,7 @@ import { getTask, useReviewRow } from '../../lib/localData'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { swRegistration } from '../../lib/push'
 import { storedFocus } from '../../lib/review'
-import { useFocusPrefs, type FocusPrefs } from '../../lib/focus/prefs'
+import { useFocusPrefs, useNoiseVolume, type FocusPrefs } from '../../lib/focus/prefs'
 import { nextFocusTask } from '../../lib/focus/select'
 import { completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
 import { useEntryRunning } from '../../lib/focus/live'
@@ -118,6 +118,25 @@ function useTaskGone(state: FocusState | null | undefined, prefs: FocusPrefs, no
 }
 
 /**
+ * Background noise (focus-everywhere D6): while a noise is chosen it plays only
+ * while a work phase runs, on any screen; every other state fades it out, and so
+ * does unmounting the shell (sign-out). The generator is loaded on first use.
+ */
+function useNoise(state: FocusState | null | undefined, prefs: FocusPrefs): void {
+  const volume = useNoiseVolume()
+  const kind = prefs.noise !== 'off' && state?.phase === 'work' && isRunning(state) ? prefs.noise : null
+  const loaded = useRef(false)
+  useEffect(() => {
+    if (!kind && !loaded.current) return
+    loaded.current = true
+    void import('../../lib/focus/noise').then((m) => m.setSessionNoise(kind, volume)).catch(() => undefined)
+  }, [kind, volume])
+  useEffect(() => () => {
+    if (loaded.current) void import('../../lib/focus/noise').then((m) => m.setSessionNoise(null, 0)).catch(() => undefined)
+  }, [])
+}
+
+/**
  * The engine: the stored state, the focus preferences and the clock. Returns them
  * for the break reminder, which mounts it.
  */
@@ -137,5 +156,6 @@ export function useFocusTimer(): { state: FocusState | null | undefined; prefs: 
   }, [entryId, entryRuns])
   useEndEffects(state, prefs)
   useTaskGone(state, prefs, now)
+  useNoise(state, prefs)
   return { state, prefs, now }
 }

@@ -668,6 +668,10 @@ export interface UserPrefs extends UserPrefsFields {
   sidebar_counts?: string
   /** Primary destination order (sidebar-polish D3): comma-separated destination ids; unknown ids are ignored and kept. */
   sidebar_order?: string
+  /** Countdown presets (focus-everywhere D5): comma-separated minutes (5-180, at most four); '' or unreadable reads as 10,20,40. */
+  focus_presets?: string
+  /** Background noise (focus-everywhere D6): off | white | pink | brown; '' and anything else read as off. */
+  focus_noise?: string
   _clock: Clock
 }
 
