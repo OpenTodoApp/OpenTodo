@@ -7,7 +7,7 @@ import { act } from '../actionError'
 export function CalendarCompletedToggle({ shown, menu = false }: { shown: boolean; menu?: boolean }) {
   const wide = useMediaQuery('(min-width: 80rem)')
   if (wide === menu) return null
-  const label = shown ? t('Hide completed') : t('Show completed')
+  const label = t('Show completed tasks')
   const toggle = () => act(setCalendarShowCompleted(!shown))
   if (menu) return <MenuItem label={label} icon="circle-check-big" checked={shown} data-calendar-completed-toggle onSelect={toggle} />
   return (

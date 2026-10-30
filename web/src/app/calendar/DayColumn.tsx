@@ -6,6 +6,7 @@ import type { DayData } from '../../lib/calendarDays'
 import { formatHour, formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
+import type { PlacedFrame } from '../../lib/frames'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
 import type { CalendarSubscription, Project, Task } from '../../lib/types'
 import { Button, hueFor, Tooltip, TruncatedText } from '../../ui'
@@ -13,6 +14,7 @@ import { EventBlockView, EventChip } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
 import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
 import { CapacityLine, capacityTooltip } from './CapacityLine'
+import { FrameBands } from './FrameBand'
 import type { DayMeetings } from './meetingCapacity'
 import { formatTime, GRID_HEIGHT, PX_PER_MIN, RESIZE_ZONE_PX, type Preview } from './grid'
 
@@ -90,8 +92,17 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
   )
 }
 
-export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, onSelect, onOpen, onDragStart }: {
+/** The re-plan preview on a day (replan-the-day D4): ghosts at the new places, the originals faint. */
+export interface ReplanGhosts {
+  ghosts: (Preview & { hue?: string })[]
+  /** Task id → its proposed start. */
+  movesTo: Map<string, number>
+}
+
+export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, replan, frames, onSelect, onOpen, onDragStart }: {
   day: DayData
+  /** The day's frame occurrences (calendar-frames D3): background bands below every block. */
+  frames?: readonly PlacedFrame[]
   prefs: GridPrefs
   isToday: boolean
   /** The day is before the logical today: its blocks are dimmed (surfaces-v2 D3). */
@@ -106,6 +117,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
   expanded: string | null
   setExpanded: (key: string | null) => void
   preview: Preview | null
+  replan?: ReplanGhosts | null
   onSelect: (id: string) => void
   onOpen: (id: string) => void
   onDragStart: DragStart
@@ -126,6 +138,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
       {/* Outside the configured hours: shaded but still usable. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 bg-sunken" style={{ height: startPx }} />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-sunken" style={{ top: endPx }} />
+      {frames && frames.length > 0 && <FrameBands frames={frames} past={isPast} />}
 
       {day.layout.blocks.filter((b) => !b.hidden).map((b) => {
         const ev = day.events.get(b.id)
@@ -137,8 +150,16 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
         const block = day.blocks.get(b.id)
         if (!task || !block) return null
         return <TaskBlock key={b.id} b={b} block={block} task={task} date={day.date} past={isPast} projectMap={projectMap} selected={selectedId === b.id}
-          dragging={draggingId === b.id} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
+          dragging={draggingId === b.id} movesTo={replan?.movesTo.get(b.id)} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
       })}
+
+      {replan?.ghosts.map((g) => (
+        <div key={g.id} data-replan-ghost={g.id} data-hue={g.hue} aria-hidden
+          className="ui-block ui-block--ghost pointer-events-none absolute inset-x-0.5 z-30 overflow-hidden px-1.5 py-0.5 text-meta"
+          style={{ top: g.start * PX_PER_MIN, height: Math.max(MIN_BLOCK_MINUTES, Math.min(g.length, DAY_MINUTES - g.start)) * PX_PER_MIN }}>
+          <span className="text-hint tabular-nums">{formatTime(g.start)}</span> <span className="truncate font-medium">{g.title || t('Untitled')}</span>
+        </div>
+      ))}
 
       {day.layout.overflow.map((o) => (
         <OverflowStack key={`${day.date}:${o.start}`} o={o} day={day} taskMap={taskMap} selectedId={selectedId} expanded={expanded} setExpanded={setExpanded}
@@ -166,7 +187,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
 }
 
 /** One task block: drag to move, drag its upper edge to change the start or its lower edge the end, double-click to open. */
-function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging, onSelect, onOpen, onDragStart }: {
+function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging, movesTo, onSelect, onOpen, onDragStart }: {
   b: PlacedBlock
   block: NonNullable<ReturnType<DayData['blocks']['get']>>
   task: Task
@@ -175,6 +196,8 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
   projectMap: Map<string, Project>
   selected: boolean
   dragging: boolean
+  /** The start a re-plan preview proposes: the block is drawn in the faint past tone. */
+  movesTo?: number
   onSelect: (id: string) => void
   onOpen: (id: string) => void
   onDragStart: DragStart
@@ -192,6 +215,7 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       data-overlap={b.overlap || undefined}
       data-estimated={block.estimated || undefined}
       data-hue={hue}
+      data-replan-from={movesTo === undefined ? undefined : formatTime(movesTo)}
       role="button"
       tabIndex={-1}
       onPointerDown={(e) => {
@@ -206,7 +230,7 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       onClick={() => onSelect(b.id)}
       onDoubleClick={() => onOpen(b.id)}
       // Filled, not outlined (surfaces-v2 D1): the project's soft fill, a hue edge, strong text; dashed edge without an estimate.
-      className={`ui-block absolute z-10 ${task.completed_at ? '' : 'cursor-grab'} touch-manipulation overflow-hidden px-1.5 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? '' : 'ui-block--dashed'} ${past || task.completed_at ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${ghost}`}
+      className={`ui-block absolute z-10 ${task.completed_at ? '' : 'cursor-grab'} touch-manipulation overflow-hidden px-1.5 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? '' : 'ui-block--dashed'} ${past || task.completed_at || movesTo !== undefined ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${ghost}`}
       style={{
         top, height,
         left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
@@ -214,7 +238,7 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       }}
     >
       {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
-      <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : ''].filter(Boolean).join(', ')}</span>
+      <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : '', movesTo !== undefined ? t('moves to {time}', { time: formatTime(movesTo) }) : ''].filter(Boolean).join(', ')}</span>
       <div aria-hidden className="flex items-start gap-1">
         <span className={`min-w-0 flex-1 truncate font-medium ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
         {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}

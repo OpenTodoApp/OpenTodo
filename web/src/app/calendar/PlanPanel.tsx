@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { formatShort, formatTime } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
+import { clockOf, frameSourceRequest, frameTarget } from '../../lib/frames'
 import { t } from '../../lib/i18n'
 import { useLabels } from '../../lib/localData'
-import { ComboboxPanel, EmptyState, hueFor, Icon, Popover, useMediaQuery, type IconName } from '../../ui'
+import { Button, ComboboxPanel, EmptyState, hueFor, Icon, Popover, useMediaQuery, type IconName } from '../../ui'
 import { closePanel, openPanel, panelOccupant, SPLIT_QUERY, usePanelOccupantKey } from '../panel'
 import { PanelFrame } from '../PanelFrame'
 import { useViewData } from '../useViews'
@@ -65,10 +67,16 @@ export function usePlanPanel(): { planOpen: boolean; togglePlan: () => void } {
   }, [wide])
   const togglePlan = () => {
     if (planOpen) return closePlan()
-    savePlanOpen(true)
-    openPanel(PLAN_PANEL, () => <PlanPanel />)
+    openPlanPanel()
   }
   return { planOpen, togglePlan }
+}
+
+/** Opens the planning list (remembered open), unless it is open already. */
+export function openPlanPanel(): void {
+  savePlanOpen(true)
+  const o = panelOccupant()
+  if (o?.kind !== 'custom' || o.key !== PLAN_PANEL) openPanel(PLAN_PANEL, () => <PlanPanel />)
 }
 
 /**
@@ -86,6 +94,18 @@ export function PlanPanel() {
   const chosen = resolveSource(source, sources)
   const list = useMemo(() => planSourceTasks(chosen, { projects, labels, views, tasks, today: ctx.today, ctx }), [chosen, projects, labels, views, tasks, ctx])
   const group: Record<PlanSourceKind, string> = { list: t('Lists'), project: t('Projects'), label: t('Labels'), view: t('Saved views') }
+  // Plan from this frame (calendar-frames D4): the frame's source when it exists, the
+  // current one otherwise; the frame's occurrence is the placement target while open.
+  const request = frameSourceRequest.use()
+  const applied = useRef(0)
+  useEffect(() => {
+    if (!request || request.n === applied.current || !sources.some((s) => s.key === request.key)) return
+    applied.current = request.n
+    setSource(request.key)
+    saveTray(request.key)
+  }, [request, sources])
+  useEffect(() => () => { frameTarget.set(null); frameSourceRequest.set(null) }, [])
+  const target = frameTarget.use()
   return (
     <PanelFrame title={t('Plan')} testId="calendar-plan" onClose={closePlan} onEscape={() => current()?.onEscape?.() ?? false}
       actions={(
@@ -118,6 +138,12 @@ export function PlanPanel() {
         </>
       )}>
       <p className="mb-2 text-meta text-faint">{t.rich('Drag a task onto a time, or focus one and press {key}.', { key: <span className="ui-kbd">s</span> })}</p>
+      {target && (
+        <p className="mb-2 flex items-center gap-1 text-meta text-muted" data-frame-target={target.frameId}>
+          <span className="min-w-0 flex-1">{t('Placing into the frame on {date}, {from}–{to}', { date: formatShort(target.date), from: formatTime(clockOf(target.start)), to: formatTime(clockOf(target.end)) })}</span>
+          <Button variant="ghost" size="sm" icon="x" aria-label={t('Stop placing into the frame')} onClick={() => frameTarget.set(null)} />
+        </p>
+      )}
       <ul className="space-y-0.5" aria-label={t('Tasks to plan')}>
         {/* The empty-state pattern with the sentence the panel needs (ux-audit-three-widths F2, F13). */}
         {list.length === 0 && <li><EmptyState compact title={t('Every task of these days is placed.')} /></li>}

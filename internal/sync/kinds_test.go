@@ -8,7 +8,7 @@ import (
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kGeo; k++ {
+	for k := kString; k <= kWeekdays; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
@@ -48,6 +48,20 @@ func TestCheckKindTable(t *testing.T) {
 		{"day part null", kDayPart, `null`, ""},
 		{"day part night", kDayPart, `"night"`, `must be null, "morning" or "afternoon"`},
 		{"day part evening", kDayPart, `"evening"`, `must be null, "morning" or "afternoon"`},
+		{"clock", kClock, `"09:00"`, ""},
+		{"clock last minute", kClock, `"23:59"`, ""},
+		{"clock short", kClock, `"9:5"`, "between 00:00 and 23:59"},
+		{"clock hour 24", kClock, `"24:00"`, "between 00:00 and 23:59"},
+		{"clock minute 60", kClock, `"10:60"`, "between 00:00 and 23:59"},
+		{"clock null", kClock, `null`, "between 00:00 and 23:59"},
+		{"weekdays", kWeekdays, `"1,2,3,4,5"`, ""},
+		{"weekdays empty", kWeekdays, `""`, ""},
+		{"weekdays sunday", kWeekdays, `"7"`, ""},
+		{"weekdays eight", kWeekdays, `"1,8"`, "distinct weekdays 1 to 7"},
+		{"weekdays zero", kWeekdays, `"0,1"`, "distinct weekdays 1 to 7"},
+		{"weekdays twice", kWeekdays, `"1,1"`, "distinct weekdays 1 to 7"},
+		{"weekdays spaces", kWeekdays, `"1, 2"`, "distinct weekdays 1 to 7"},
+		{"weekdays number", kWeekdays, `12`, "distinct weekdays 1 to 7"},
 		{"date", kDate, `"2026-01-01"`, ""},
 		{"date null", kDate, `null`, ""},
 		{"date missing", kDate, `"2026-13-01"`, "that exists"},

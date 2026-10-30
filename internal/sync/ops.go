@@ -171,6 +171,12 @@ const (
 	// later part is a new value behind a schema note, read by older clients as
 	// no part.
 	kDayPart
+	// kClock is a wall time "HH:MM" from "00:00" to "23:59" with no date or
+	// zone (frame.start and frame.end, OpenSpec change calendar-frames, design D1).
+	kClock
+	// kWeekdays is "" or a comma list of distinct ISO weekdays "1" (Monday) to
+	// "7" (Sunday), e.g. "1,2,3,4,5" (frame.weekdays, calendar-frames D1).
+	kWeekdays
 )
 
 // FieldValuePrefix starts the name of a task's custom field value op
@@ -608,6 +614,28 @@ var Schema = map[string]map[string]Field{
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
+	// frame: a recurring background window on the Day and Week grid (OpenSpec
+	// change calendar-frames, design D1), such as "Deep work" on weekdays from
+	// 09:00 to 11:00. Personal like a rule, with ids unique on the server
+	// (entity-id-ownership). Occurrences are derived on the device (web
+	// src/lib/frames.ts, internal/frames) and never stored. title is a content field.
+	"frame": {
+		"title": {Kind: kString, Default: `""`, Content: true},
+		// ISO weekdays it repeats on, a comma list such as "1,2,3,4,5"; "" never occurs.
+		"weekdays": {Kind: kWeekdays, Default: `""`},
+		// Floating wall times "HH:MM"; a frame whose end is not after its start is kept and not drawn.
+		"start": {Kind: kClock, Default: `"09:00"`},
+		"end":   {Kind: kClock, Default: `"10:00"`},
+		"color": {Kind: kString, Default: `"#64748b"`},
+		// Planning source: "project:<id>", "label:<id>", "view:<id>" or "" (none). Ids only, never content.
+		"source": {Kind: kString, Default: `""`},
+		// First and last day it applies (inclusive); null is open-ended.
+		"from_date":  {Kind: kDate, Default: `null`},
+		"until_date": {Kind: kDate, Default: `null`},
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+	},
 	"place": {
 		"name":       {Kind: kString, Default: `""`, Content: true},
 		"address":    {Kind: kString, Default: `""`, Content: true},
@@ -827,7 +855,7 @@ var Schema = map[string]map[string]Field{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")

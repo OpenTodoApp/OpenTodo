@@ -26,7 +26,7 @@ import { reviewEveryPicker, setMaintenance } from '../menus/reviewMenu'
 import { inMaintenance } from '../../lib/reviewCadence'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, placeInDay, sidebarFind } from '../signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
 import { switchWorkspace, workspaceLabel } from '../workspaceNav'
@@ -40,6 +40,7 @@ import { t, msg, translatedList } from '../../lib/i18n'
 import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayParts'
 import { dayPartUndoable } from '../../lib/undoActions'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
+import { requestFrames } from '../calendar/framesRequest'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -71,6 +72,8 @@ export interface PaletteContext {
   dayParts?: boolean
   /** The selected task's slot command on Today with a limit (today-closed-list D3). */
   slot?: SlotState
+  /** Today's missed blocks (replan-the-day D4): "Re-plan the rest of the day" is offered while there are any. */
+  missedBlocks?: number
 }
 
 interface Command {
@@ -300,6 +303,12 @@ export function commands(ctx: PaletteContext): Command[] {
     )
   }
 
+  // Re-plan the rest of the day (replan-the-day D4): no key; in place on Day and Week, else on the Day view.
+  if (ctx.missedBlocks && ctx.missedBlocks > 0) {
+    out.push({ id: 'replan:day', label: t('Re-plan the rest of the day'), icon: 'calendar-clock', keywords: 'replan reschedule behind missed blocks time blocking afternoon',
+      run: () => openReplan(ctx.route.view === 'day' || ctx.route.view === 'week') })
+  }
+
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
     const q = ctx.filterQuery
     out.push({ id: 'filter:save', label: t('Save as view'), icon: 'filter', shortcut: keysOf('filter.save'), run: () => prompt(t('Save view'), t('View name'), '', async (name) => {
@@ -314,6 +323,8 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'new:from-template', label: t('New project from a template'), icon: 'copy', keywords: t('template library add create'), run: () => requestTemplateDialog() },
     { id: 'new:label', label: t('New label'), icon: 'tag', keywords: 'add create', run: () => prompt(t('New label'), t('Label name'), '', async (name) => navigate({ view: 'label', id: await createLabel({ name }) })) },
     { id: 'new:dashboard', label: t('New dashboard'), icon: 'list', keywords: 'add create', run: () => prompt(t('New dashboard'), t('Dashboard name'), '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
+    // Frames (calendar-frames D5): the form of the Frames dialog; no default key.
+    { id: 'new:frame', label: t('New frame'), icon: 'rows-2', keywords: 'frame calendar time block window deep work focus add create', run: () => requestFrames({ mode: 'new' }) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: t('Open Settings: {section}', { section: s.label }), icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
     // Workspaces (workspaces D6): one switch command per other workspace and New workspace; no keys.

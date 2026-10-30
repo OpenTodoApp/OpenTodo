@@ -6,11 +6,11 @@ Completing a dated task removes it from the Calendar, so reviewing finished work
 
 ## What Changes
 
-- Add a Show completed toggle button to the existing Calendar header, off by default and remembered on this device across Day, Week, Month and Plan.
+- Add a Show completed tasks toggle button to the existing Calendar header, off by default and remembered on this device across Day, Week, Month and Plan.
 - Show completed tasks on their scheduled due date and time with struck-through titles and an accessible completed status, including phone layouts and overflow lists.
 - Keep completed tasks out of remaining planned capacity and recurring projection sources. They can be selected and opened, but scheduling gestures and completion shortcuts do not change them.
 - Keep deleted tasks, undated tasks and archived-project tasks excluded; render entirely from local data, including offline.
-- Update the calendar guide, all shipped message catalogs, regression coverage and review screenshots.
+- Add a focused completed-calendar guide without trimming the existing calendar guide, reuse the existing translated toggle label, and update regression coverage and review screenshots.
 
 Out of scope: calendar feeds/exports, completion-date analytics, account-wide synced display preferences, new task fields, new calendar filters and reopening tasks directly in the calendar. This increment improves the Calendar area of ROADMAP.md (shipped Month view and timeline, item 11); it does not implement the broader planned `calendar-clarity` change.
 
@@ -22,7 +22,7 @@ None.
 
 ### Modified Capabilities
 
-- `time-blocking`: optional completed-task visibility shared by all calendar modes and read-only completed blocks and lane entries.
+- `time-blocking`: optional completed-task visibility shared by all calendar modes and completed blocks and lane entries with calendar scheduling disabled and editing permissions preserved.
 - `month-view`: include completed tasks when opted in, preserving the cell ordering, narrow layout and open-task capacity.
 - `planner-view`: include completed task rows when opted in, preserving open-series projections and capacity calculations.
 

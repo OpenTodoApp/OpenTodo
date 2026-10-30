@@ -39,7 +39,7 @@ export function PlanTaskRow({ task, date, time, today, selected, canEdit, projec
 }) {
   return (
     <TaskRow shape="compact" task={task} date={date} time={time} today={today} selected={selected} readOnly={!canEdit} project={project} large={large}
-      onPointerDown={onPointerDown} onSelect={onSelect} onOpen={onOpen} attrs={{ 'data-plan-task': task.id }} />
+      onPointerDown={task.completed_at ? undefined : onPointerDown} onSelect={onSelect} onOpen={onOpen} attrs={{ 'data-plan-task': task.id }} />
   )
 }
 
@@ -78,12 +78,12 @@ export function CapacityBar({ load, dayLength, eventHue }: { load: PlanLoad; day
 }
 
 /** The rows of one day: all-day chips, timed events, then tasks and projections in the column's order. */
-export function PlanDayRows({ day, today, selectedId, large, editable, projectMap, subMap, zone, onPointerDown, onSelect, onOpen }: {
+export function PlanDayRows({ day, today, selectedId, large, canEdit, projectMap, subMap, zone, onPointerDown, onSelect, onOpen }: {
   day: PlanDayData
   today: string
   selectedId: string | null
   large?: boolean
-  editable: (task: Task) => boolean
+  canEdit: (task: Task) => boolean
   projectMap: Map<string, Project>
   subMap: Map<string, CalendarSubscription>
   zone?: string
@@ -99,7 +99,7 @@ export function PlanDayRows({ day, today, selectedId, large, editable, projectMa
         ? <ProjectedRow key={entry.projection.id} projection={entry.projection} large={large} />
         : (
           <PlanTaskRow key={entry.task.id} task={entry.task} date={day.date} time={entry.time} today={today} large={large}
-            selected={selectedId === entry.task.id} canEdit={editable(entry.task)} project={entry.task.project_id ? projectMap.get(entry.task.project_id) : undefined}
+            selected={selectedId === entry.task.id} canEdit={canEdit(entry.task)} project={entry.task.project_id ? projectMap.get(entry.task.project_id) : undefined}
             onPointerDown={(e) => onPointerDown(entry.task, e)} onSelect={() => onSelect(entry.task.id, day.date)} onOpen={() => onOpen(entry.task.id)} />
         ))}
     </div>

@@ -603,7 +603,7 @@ curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H '
 
 ### Quick-add parse
 
-`POST /api/v1/quick-add/parse` reads one line with the grammar of the app's quick add (OpenSpec `extension-v2`), so a client without the web parser can preview and save a line the same way. Body: `{"line": "…", "url"?: "…", "today"?: "YYYY-MM-DD", "now"?: "HH:MM", "day_parts"?: true}`; `day_parts` (default false) reads the [part phrases](day-parts.md#type-it), send the account's preference (`GET /api/v1/me` `day_parts`); send `today` and `now` from the device, which wins over the server's clock (that falls back to the email digest's time zone, else UTC). The line is read in the account's interface language, then the request's `Accept-Language`, then English, with the account's date order, week start and its projects and labels (encrypted names cannot be matched).
+`POST /api/v1/quick-add/parse` reads one line with the grammar of the app's quick add (OpenSpec `extension-v2`), so a client without the web parser can preview and save a line the same way. Body: `{"line": "…", "url"?: "…", "today"?: "YYYY-MM-DD", "now"?: "HH:MM", "day_parts"?: true}`; `day_parts` turns the [part phrases](day-parts.md#type-it) on or off, and when it is absent the account's Day parts preference decides (`GET /api/v1/me` `day_parts`), so a client that leaves it out reads lines like the app; send `today` and `now` from the device, which wins over the server's clock (that falls back to the email digest's time zone, else UTC). The line is read in the account's interface language, then the request's `Accept-Language`, then English, with the account's date order, week start and its projects and labels (encrypted names cannot be matched).
 
 The answer is `{title, fields, chips, unmatched, origin}`:
 
@@ -1919,6 +1919,18 @@ Rules (OpenSpec `automation-rules`; guide: [automations.md](automations.md)) are
 
 A rule's batch is written with device `rule:<rule-id>` (reserved: `/api/v1/sync` refuses it from devices) and the author as actor; the history labels it `Rule (<name>)` for its author. Limits: 60 runs a minute and 2,000 a day per account, 500 tasks per run; a rule refused three times in an hour by the per-minute limit is paused (`paused_reason: "runaway"`) until it is turned on again.
 
+## Calendar frames
+
+Frames (OpenSpec `calendar-frames`; guide: [frames.md](frames.md)) are the synced entity `frame`, personal like a rule: recurring background windows on the Day and Week grid such as "Deep work" on weekdays from 09:00 to 11:00. Fields: `title` (content, encrypted for an encrypted account), `weekdays` (ISO weekdays as a sorted comma list, `"1,2,3,4,5"`; 1 is Monday, 7 Sunday), `start` and `end` (floating wall times `HH:MM`, end after start), `color` (hex), `source` (the planning source: `""`, `project:<id>`, `label:<id>` or `view:<id>`), `from_date` and `until_date` (optional first and last day, `YYYY-MM-DD`), `position`, `created_at`, `deleted_at`. Occurrences are derived on the device and never stored. Devices write frames through `/api/v1/sync`; the REST routes below add the checks.
+
+| Method | Path | Auth | Body / answer |
+|---|---|---|---|
+| `GET` | `/api/v1/frames` | signed in, any token scope | `{frames: [{id, title, weekdays, start, end, color, source, from_date, until_date, position, created_at, encrypted}]}` in their order; `encrypted` is true when the title is ciphertext |
+| `POST` | `/api/v1/frames` | signed in, write | `{title, weekdays, start?, end?, color?, source?, from_date?, until_date?, position?}` → `201` frame (defaults 09:00 to 10:00, `#64748b`, no source); a 51st live frame answers `422 limit_reached` |
+| `GET` / `PATCH` / `DELETE` | `/api/v1/frames/{id}` | signed in (writes: write) | `PATCH` takes the same fields, checked against the merged frame → `200` frame; `DELETE` → `204` (a tombstone); an unknown or deleted id answers `404 not_found` |
+
+Writes are refused to `read` and `agent` tokens with `403 insufficient_scope`. An invalid value answers `422 invalid_input` with `field`: a title of 1 to 200 characters, a weekday list of distinct digits 1 to 7, times `HH:MM` with the end after the start, a hex colour, a source of the forms above (ids are not resolved: a source that no longer exists reads as none), dates with `until_date` not before `from_date`. On an encrypted account the title is returned as stored and a plaintext title is refused with `409 encryption_enabled`; a device encrypts it.
+
 ## Task pages
 
 One task published as a page people without an account open at `/t/<secret>[/<label>]` (OpenSpec `task-pages`). The secret is 22 characters (128 bits), stored as a hash; the label is decoration and never used to find the page. A task has at most one active page; publishing again revokes the previous one in the same request. Pages are server data, never ops.
@@ -2058,7 +2070,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | Code | Status | Where |
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, an unknown field, data after the JSON value, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
-| `invalid_input` | 400 | validation failure naming the field or parameter |
+| `invalid_input` | 400 | validation failure naming the field or parameter (422 on `/api/v1/frames`) |
 | `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:`, `caldav:`, `issues:` or `rule:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
@@ -2139,7 +2151,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `unsupported_format` | 400 | import file in no supported format |
 | `invalid_file` | 400 | import file recognised but unreadable |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
-| `limit_reached` | 409 | more than 20 webhooks, 5 issue connections or 50 automation rules on one account; a workspace limit (20 owned workspaces, 200 members, 50 groups, 100 per group) |
+| `limit_reached` | 409 | more than 20 webhooks, 5 issue connections or 50 automation rules on one account; a workspace limit (20 owned workspaces, 200 members, 50 groups, 100 per group); 422 for a 51st calendar frame |
 | `destination_error` | 502 | `POST /backups/test`, the archive list or preparing a restore when the destination refuses or cannot be reached |
 | `passphrase_required` | 422 | preparing an encrypted archive without a passphrase when the stored one is missing |
 | `passphrase_invalid` | 422 | preparing an encrypted archive with a passphrase that does not open it |
@@ -2149,7 +2161,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `email_disabled` | 409 | changing or rotating the email-to-task address when the operator has not configured email capture |
 | `encryption_disabled` | 404/409 | 404 for `GET`/`DELETE /api/v1/encryption/keys` without a key record; 409 for the history purge without one |
 | `encryption_conflict` | 409 | `PUT /api/v1/encryption/keys` with a version that is not the stored version + 1 (another device created or changed the record) |
-| `encryption_enabled` | 409 | sharing a project for the first time, creating a CalDAV app password, or creating or enabling an issue connection, while the account uses end-to-end encryption |
+| `encryption_enabled` | 409 | sharing a project for the first time, creating a CalDAV app password, creating or enabling an issue connection, or writing a plaintext calendar frame title, while the account uses end-to-end encryption |
 | `method_not_allowed` | 405 | `/mcp` with a method other than `POST` |
 | `not_acceptable` | 406 | `/mcp` with an `Accept` header that admits only `text/event-stream` |
 | `unsupported_protocol_version` | 400 | `/mcp` with an `MCP-Protocol-Version` header naming an unsupported version |

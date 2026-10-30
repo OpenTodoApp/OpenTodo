@@ -19,6 +19,7 @@ import { t } from './i18n'
 import { uuid } from './ids'
 import { labelKey } from './labels'
 import { dayPartFields, dayPartName, dayPartOf, type DayPart } from './dayParts'
+import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
 export interface UndoableResult {
@@ -132,6 +133,21 @@ export async function projectStatusUndoable(projectId: string, status: 'active' 
   await getDeviceId()
   const entry = await applyBatch([{ entity: 'project', entityId: projectId, patch: { status }, base: { status: '' } }], { source: 'action', label })
   return { entry, label }
+}
+
+/**
+ * Apply a re-plan (replan-the-day D4): every move, and with "Move to tomorrow" every
+ * unfit task, as one batch of `due` edits with one Undo. Each task is checked again
+ * right before writing; those that changed meanwhile are skipped and the label says how many.
+ */
+export async function replanUndoable(proposal: ReplanProposal, opts: { today: string; choice: UnfitChoice; stored: ReadonlyMap<string, Task['due']>; zone?: string }): Promise<UndoableResult> {
+  const ids = [...proposal.moves, ...(opts.choice === 'tomorrow' ? proposal.unfit : [])].map((m) => m.id)
+  const { tasks } = await readTicked(ids)
+  const { changes, skipped } = replanChanges(proposal, { ...opts, live: new Map(tasks.map((tk) => [tk.id, tk])), memberships: await membershipMap() })
+  const label = skipped > 0
+    ? t('{moved} moved · {skipped} changed meanwhile', { moved: changes.length, skipped })
+    : t('{n, plural, one {# task moved} other {# tasks moved}}', { n: changes.length })
+  return changes.length ? apply(changes, label) : { entry: null, label }
 }
 
 /** Set or clear the due of one task (the value is already in the task's own zone). */
