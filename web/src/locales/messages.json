@@ -1048,6 +1048,9 @@
   "After signing out here, people who signed in with the provider are sent to its sign-out page.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "After {title}": [
+    "web/src/app/TaskRow.tsx"
+  ],
   "All": [
     "web/src/app/Sidebar.tsx",
     "web/src/ui/Combobox/useCombobox.ts"
@@ -1068,6 +1071,9 @@
   ],
   "All events": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "All its tasks together, as one step": [
+    "web/src/app/menus/flowMenu.ts"
   ],
   "All labels": [
     "web/src/app/Sidebar.tsx",
@@ -1242,6 +1248,9 @@
   ],
   "An invitation is a single-use link that lets one person create an account here.": [
     "web/src/app/MembersPanel.tsx"
+  ],
+  "An ongoing list that never finishes": [
+    "web/src/app/menus/flowMenu.ts"
   ],
   "An option has at most {n} characters.": [
     "web/src/lib/fields.ts"
@@ -1431,6 +1440,10 @@
   ],
   "Archives in the destination": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Area": [
+    "web/src/app/ProjectsTable.tsx",
+    "web/src/app/menus/flowMenu.ts"
   ],
   "Areas": [
     "web/src/app/review/MonthlyLook.tsx"
@@ -1716,6 +1729,9 @@
   ],
   "Automations are off on this server.": [
     "web/src/app/rules/RulesView.tsx"
+  ],
+  "Available now": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Back": [
     "web/src/app/AuthScreen.tsx",
@@ -4515,6 +4531,9 @@
   "Every stored client address will be erased from the audit log. This cannot be undone.": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "Every task can be done at any time": [
+    "web/src/app/menus/flowMenu.ts"
+  ],
   "Every task has a decision. Change one below, or move on.": [
     "web/src/app/review/CloseDay.tsx"
   ],
@@ -4844,6 +4863,9 @@
   "Find a colour…": [
     "web/src/app/menus/stylePickers.tsx"
   ],
+  "Find a flow…": [
+    "web/src/app/menus/flowMenu.ts"
+  ],
   "Find a label…": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/RuleEditor.tsx"
@@ -4960,6 +4982,13 @@
   "Floating:": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
+  "Flow": [
+    "web/src/app/menus/flowMenu.ts",
+    "web/src/app/palette/registry.ts"
+  ],
+  "Flow set to {flow}": [
+    "web/src/app/menus/flowMenu.ts"
+  ],
   "Flowtime": [
     "web/src/lib/focus/prefs.ts"
   ],
@@ -4991,6 +5020,9 @@
   ],
   "Follow browser languages ({join})": [
     "web/src/app/QuickAddSettings.tsx"
+  ],
+  "Follow project ({flow})": [
+    "web/src/app/menus/flowMenu.ts"
   ],
   "Follow quick add ({language})": [
     "web/src/app/VoiceSettings.tsx"
@@ -6195,6 +6227,9 @@
   ],
   "Its events disappear from Day and Week on every device. The calendar itself is not changed.": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Its tasks one at a time, in list order": [
+    "web/src/app/menus/flowMenu.ts"
   ],
   "Its tokens are removed from the server and nothing more is sent to it.": [
     "web/src/app/NotificationChannels.tsx"
@@ -8756,6 +8791,9 @@
   "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action.": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "One step at a time, in list order": [
+    "web/src/app/menus/flowMenu.ts"
+  ],
   "One task, a timer, a break when you need one": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
@@ -9194,6 +9232,9 @@
   ],
   "Ownership transferred": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Parallel": [
+    "web/src/app/menus/flowMenu.ts"
   ],
   "Parent project": [
     "web/src/app/Sidebar.tsx",
@@ -9831,6 +9872,9 @@
     "web/src/app/palette/registry.ts"
   ],
   "Project “{name}”: Keep away from AI assistants": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Project “{name}”: Set project flow…": [
     "web/src/app/palette/registry.ts"
   ],
   "Project, label, priority, estimate": [
@@ -11139,6 +11183,9 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx"
   ],
+  "Section flow changed": [
+    "web/src/app/menus/flowMenu.ts"
+  ],
   "Section menu for {title}": [
     "web/src/app/Sections.tsx"
   ],
@@ -11278,6 +11325,9 @@
   "Sent. It appears here once the owner’s device picks it up.": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Sequential": [
+    "web/src/app/menus/flowMenu.ts"
+  ],
   "Server": [
     "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
@@ -11366,6 +11416,9 @@
   ],
   "Set priority {p} on {title}": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Set project flow": [
+    "web/src/app/menus/flowMenu.ts"
   ],
   "Set the deadline of the selected task (type fri, 2026-11-06; Enter)": [
     "web/src/lib/shortcuts.ts"
@@ -14777,6 +14830,7 @@
     "web/src/lib/subtasks.ts",
     "web/src/lib/trash.ts",
     "web/src/lib/undoActions.ts",
+    "web/src/lib/useFlow.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Untitled location": [
@@ -15103,6 +15157,9 @@
   "Waits for someone or something else first.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Waits for the previous step: {title}": [
+    "web/src/app/TaskRow.tsx"
+  ],
   "Waits for {tasks}": [
     "web/src/lib/assistant.ts"
   ],
@@ -15366,6 +15423,9 @@
   ],
   "Working…": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Works like the project": [
+    "web/src/app/menus/flowMenu.ts"
   ],
   "Workspace": [
     "web/src/app/ImportScreen.tsx",

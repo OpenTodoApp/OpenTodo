@@ -106,6 +106,13 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
   return null
 }
 
+/** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */
+export async function flowUndoable(entity: 'project' | 'section', id: string, flow: string, label: string): Promise<UndoableResult> {
+  await getDeviceId()
+  const entry = await applyBatch([{ entity, entityId: id, patch: { flow_mode: flow }, base: { flow_mode: '' } }], { source: 'action', label })
+  return { entry, label }
+}
+
 /** Set or clear the due of one task (the value is already in the task's own zone). */
 export async function dueUndoable(id: string, due: Task['due']): Promise<UndoableResult> {
   return apply([{ entity: 'task', entityId: id, patch: { due } }], due ? t('Date changed') : t('Date removed'))

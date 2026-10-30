@@ -44,7 +44,7 @@ async function menuLabels(groups: ActionGroup[], header?: React.ReactNode): Prom
 
 const noop = () => {}
 const menus: [string, () => Promise<string[]>][] = [
-  ['project', () => menuLabels(projectMenuGroups(project, ctx.project!, { rename: noop, pin: noop }), <>{HUES.map((h) => <button key={h.name} data-menu-label={`Colour ${h.name}`} />)}</>)],
+  ['project', () => menuLabels(projectMenuGroups(project, { ...ctx.project!, mode: 'companion' }, { rename: noop, pin: noop }), <>{HUES.map((h) => <button key={h.name} data-menu-label={`Colour ${h.name}`} />)}</>)],
   ['view', () => menuLabels(viewMenuGroups(other, ctx.view!.peers, false, { rename: noop, move: noop, pin: noop, startView: noop, remove: noop }))],
   ['label', () => menuLabels(labelMenuGroups(label2, ctx.label!.labels, { edit: noop, rename: noop, move: noop, pin: { checked: false, toggle: noop } }))],
   ['section', () => menuLabels(sectionMenuGroups('Backlog', ctx.section!, { rename: noop, move: noop, remove: noop }))],
