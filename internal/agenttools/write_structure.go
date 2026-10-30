@@ -32,7 +32,7 @@ var (
 func init() {
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_project", "Update a project",
-			"Rename, recolour or give an icon to a project, set its flow, move it under another project (parent_id, null for the top level) or change its position. Archiving, deleting and the project's description are not available.",
+			"Rename, recolour or give an icon to a project, set its flow or status (maintenance), move it under another project (parent_id, null for the top level) or change its position. Archiving, deleting and the project's description are not available.",
 			object([]string{"id"}, map[string]any{
 				"id":           map[string]any{"type": "string", "description": "Project id."},
 				"name":         map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},
@@ -42,6 +42,7 @@ func init() {
 				"position":     positionProp,
 				"workspace_id": map[string]any{"type": []string{"string", "null"}, "description": "Move the project to this workspace (see list_workspaces), or null for the default workspace. Only the project's owner may."},
 				"flow_mode":    projectFlowProp,
+				"status":       projectStatusProp,
 			}), false, true, []string{"name"}, false)
 	}, plan: (*Registry).planUpdateProject})
 
@@ -172,7 +173,7 @@ func (r *Registry) claimIDs(ctx context.Context, c Caller, cs ChangeSet, chosen 
 // ---- update_project ----
 
 func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id", "flow_mode"); err != nil {
+	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id", "flow_mode", "status"); err != nil {
 		return Plan{}, err
 	}
 	id, err := a.str("id")
@@ -210,6 +211,11 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 	} else if has {
 		patch["flow_mode"] = v
 	}
+	if v, has, err := a.projectStatus(); err != nil {
+		return Plan{}, err
+	} else if has {
+		patch["status"] = v
+	}
 	snap, err := r.loadFor(ctx, c, overlay)
 	if err != nil {
 		return Plan{}, err
@@ -238,7 +244,7 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 		}
 	}
 	if len(patch) == 0 {
-		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position, workspace_id or flow_mode")
+		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position, workspace_id, flow_mode or status")
 	}
 	role := snap.role(id)
 	for f := range patch {

@@ -344,6 +344,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'review.walk-add', keys: ['q'], description: 'Project walk: add a next action to the project', section: 'review', scope: 'view', views: ['review'], overrides: ['list.quick-add'] },
   { id: 'review.walk-open', keys: ['Enter'], description: 'Project walk: open the project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-archive', keys: ['a'], description: 'Project walk: archive the project, then the next one', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'review.walk-every', keys: ['e'], description: 'Project walk: choose how often you review the project', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'review.walk-maintenance', keys: ['m'], description: 'Project walk: put the project in maintenance or end it', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-skip', keys: ['j', 'Space'], description: 'Project walk: skip to the next project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-back', keys: ['k'], description: 'Project walk: back to the previous project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.focus', keys: ['f'], description: 'Daily check: put the selected task in today\'s focus (up to three), or take it out', section: 'review', scope: 'view', views: ['review'] },

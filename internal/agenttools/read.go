@@ -139,7 +139,9 @@ type projectOut struct {
 	Color     string `json:"color,omitempty"`
 	Archived  bool   `json:"archived"`
 	// FlowMode is how the project's tasks flow: parallel, sequential or area (project-flow-modes).
-	FlowMode  string  `json:"flow_mode"`
+	FlowMode string `json:"flow_mode"`
+	// Status is active or maintenance (project-review-cadence).
+	Status    string  `json:"status"`
 	ParentID  *string `json:"parent_id,omitempty"`
 	Shared    bool    `json:"shared"`
 	Role      string  `json:"role,omitempty"`
@@ -175,7 +177,7 @@ func (snap *snapshot) openCounts() map[string]int {
 func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) projectOut {
 	id := str(p, "id")
 	out := projectOut{ID: id, Untrusted: projectText{Name: str(p, "name"), Description: str(p, "description")}, Color: str(p, "color"),
-		Archived: boolean(p, "archived"), FlowMode: flow.ProjectFlow(str(p, "flow_mode")), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id], Fields: snap.renderFields(id),
+		Archived: boolean(p, "archived"), FlowMode: flow.ProjectFlow(str(p, "flow_mode")), Status: statusOf(str(p, "status")), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id], Fields: snap.renderFields(id),
 		Encrypted: e2ee.IsCiphertext(rawStr(p, "name")) || e2ee.IsCiphertext(rawStr(p, "description"))}
 	if acc, ok := snap.shared[id]; ok {
 		out.Shared, out.Role = true, acc.Role

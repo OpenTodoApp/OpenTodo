@@ -27,7 +27,7 @@ describe('shared vectors (internal/digest/testdata/next_action_fixture.json)', (
     for (const [projectId, want] of Object.entries(fixture.expected.nextAction)) {
       expect(rules.nextActionOf(projectId)?.id ?? null, projectId).toBe(want)
     }
-    expect(nextActions(input).map((n) => n.task.id)).toEqual(['g2', 't1', 'm2', 'f1', 'me1', 'mv1', 'ch2'])
+    expect(nextActions(input).map((n) => n.task.id)).toEqual(['g2', 't1', 'm2', 'f1', 'me1', 'mv1', 'ch2', 'ro1'])
   })
 
   it('marks stalled projects', () => {
@@ -119,7 +119,7 @@ describe('Next and Waiting groups', () => {
     const groups = nextGroups(input, labels)
     expect(groups.map((g) => g.heading)).toEqual(['@calls', '@errands', 'Anywhere'])
     expect(groups[0].tasks.map((x) => x.id)).toEqual(['g2'])
-    expect(groups[2].tasks.map((x) => x.id)).toEqual(['t1', 'm2', 'f1', 'me1', 'mv1', 'ch2'])
+    expect(groups[2].tasks.map((x) => x.id)).toEqual(['t1', 'm2', 'f1', 'me1', 'mv1', 'ch2', 'ro1'])
   })
 
   it('Waiting groups by person, then blocked tasks with their first open blocker', async () => {

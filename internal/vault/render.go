@@ -63,6 +63,7 @@ func (v *view) render(in renderInput) *Doc {
 		d.Color = r.Str("color")
 		d.Icon = r.Str("icon")
 		d.Flow = renderedFlow(r.Str("flow_mode"), in.tmpl)
+		d.Status = renderedStatus(r.Str("status"), in.tmpl)
 		d.HasFront = true
 	}
 	if in.tmpl != nil {

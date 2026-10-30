@@ -113,6 +113,20 @@ export async function flowUndoable(entity: 'project' | 'section', id: string, fl
   return { entry, label }
 }
 
+/** Set this user's review interval for a project (project-review-cadence): one personal op, with Undo. */
+export async function reviewEveryUndoable(projectId: string, every: string, label: string): Promise<UndoableResult> {
+  await getDeviceId()
+  const entry = await applyBatch([{ entity: 'project_prefs', entityId: projectId, patch: { review_every: every }, base: { review_every: '' } }], { source: 'action', label })
+  return { entry, label }
+}
+
+/** Put a project in maintenance or end it (project-review-cadence): one shared op, with Undo. */
+export async function projectStatusUndoable(projectId: string, status: 'active' | 'maintenance', label: string): Promise<UndoableResult> {
+  await getDeviceId()
+  const entry = await applyBatch([{ entity: 'project', entityId: projectId, patch: { status }, base: { status: '' } }], { source: 'action', label })
+  return { entry, label }
+}
+
 /** Set or clear the due of one task (the value is already in the task's own zone). */
 export async function dueUndoable(id: string, due: Task['due']): Promise<UndoableResult> {
   return apply([{ entity: 'task', entityId: id, patch: { due } }], due ? t('Date changed') : t('Date removed'))

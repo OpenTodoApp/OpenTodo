@@ -4320,6 +4320,11 @@
   "End": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "End maintenance": [
+    "web/src/app/menus/reviewMenu.ts",
+    "web/src/app/palette/registry.ts",
+    "web/src/app/review/ProjectWalk.tsx"
+  ],
   "End of month": [
     "web/src/lib/dates.ts"
   ],
@@ -4474,6 +4479,9 @@
   "Events of these calendars appear next to your tasks, read-only.": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
+  "Every 2 weeks": [
+    "web/src/lib/reviewCadence.ts"
+  ],
   "Every account can connect an assistant with its own token.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -4514,6 +4522,9 @@
     "web/src/app/AgentAccessRow.tsx",
     "web/src/app/palette/registry.ts"
   ],
+  "Every month": [
+    "web/src/lib/reviewCadence.ts"
+  ],
   "Every month on day {day}": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -4525,6 +4536,9 @@
   ],
   "Every project walked": [
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Every quarter": [
+    "web/src/lib/reviewCadence.ts"
   ],
   "Every step is done. Finish the review to record it on all your devices.": [
     "web/src/app/review/ReviewView.tsx"
@@ -4540,6 +4554,9 @@
   ],
   "Every task of these days is placed.": [
     "web/src/app/calendar/PlanPanel.tsx"
+  ],
+  "Every week": [
+    "web/src/lib/reviewCadence.ts"
   ],
   "Every week at {time}": [
     "web/src/lib/backups.ts"
@@ -4909,6 +4926,9 @@
   ],
   "Find a workspace…": [
     "web/src/app/ProjectHeader.tsx"
+  ],
+  "Find an interval…": [
+    "web/src/app/menus/reviewMenu.ts"
   ],
   "Find an option…": [
     "web/src/app/task-detail/FieldsGroup.tsx"
@@ -5931,6 +5951,10 @@
   "In a task's notes: make the check-list line a subtask (Ctrl+Z takes it back)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In maintenance": [
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/review/ProjectWalk.tsx"
+  ],
   "In shared projects this includes text other members wrote. Changes are only proposed: nothing in your tasks changes until you review and apply them, and you can undo them. Conversations stay on this device. You can withdraw consent in Settings → Integrations → Assistant.": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
@@ -6932,6 +6956,13 @@
   "Mail to your address becomes a task. Turn it off to pause and keep the address.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Maintenance": [
+    "web/src/app/ProjectsTable.tsx"
+  ],
+  "Maintenance ended for {name}": [
+    "web/src/app/menus/reviewMenu.ts",
+    "web/src/app/review/ProjectWalk.tsx"
+  ],
   "Make a standalone copy of this occurrence and move the series on": [
     "web/src/app/RecurrenceField.tsx"
   ],
@@ -7414,6 +7445,9 @@
   ],
   "Must include openid; email is needed to match existing accounts.": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Mutes the health warnings; deadlines still show": [
+    "web/src/app/menus/reviewMenu.ts"
   ],
   "My day starts at": [
     "web/src/app/settingsIndex.ts",
@@ -8789,7 +8823,7 @@
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": [
     "web/src/app/CaldavPanel.tsx"
   ],
-  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action.": [
+  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": [
     "web/src/app/review/ReviewView.tsx"
   ],
   "One step at a time, in list order": [
@@ -9379,6 +9413,7 @@
   "Paused": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/rules/RulesView.tsx",
+    "web/src/lib/reviewCadence.ts",
     "web/src/lib/webhooks.ts"
   ],
   "Paused: it ran too often": [
@@ -9851,10 +9886,16 @@
   "Project walk: back to the previous project": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Project walk: choose how often you review the project": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Project walk: mark the project reviewed, then the next one": [
     "web/src/lib/shortcuts.ts"
   ],
   "Project walk: open the project": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Project walk: put the project in maintenance or end it": [
     "web/src/lib/shortcuts.ts"
   ],
   "Project walk: skip to the next project": [
@@ -9872,7 +9913,16 @@
   "Project “{name}”: Colour {colour}": [
     "web/src/app/palette/registry.ts"
   ],
+  "Project “{name}”: End maintenance": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Project “{name}”: Keep away from AI assistants": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Project “{name}”: Put in maintenance": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Project “{name}”: Review every…": [
     "web/src/app/palette/registry.ts"
   ],
   "Project “{name}”: Set project flow…": [
@@ -10008,6 +10058,11 @@
   ],
   "Push notifications for reminders on this device, delivery channels and the weekly digest": [
     "web/src/app/settingsSections.ts"
+  ],
+  "Put in maintenance": [
+    "web/src/app/menus/reviewMenu.ts",
+    "web/src/app/palette/registry.ts",
+    "web/src/app/review/ProjectWalk.tsx"
   ],
   "Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a>command line</a>.": [
     "web/src/app/RestoreSection.tsx"
@@ -10708,8 +10763,19 @@
   "Review due · {details}": [
     "web/src/app/Sidebar.tsx"
   ],
+  "Review every": [
+    "web/src/app/menus/reviewMenu.ts",
+    "web/src/app/palette/registry.ts"
+  ],
+  "Review every…": [
+    "web/src/app/menus/reviewMenu.ts",
+    "web/src/app/review/ProjectWalk.tsx"
+  ],
   "Review finished {instant}.": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Review interval: {every}": [
+    "web/src/app/menus/reviewMenu.ts"
   ],
   "Review on a rhythm|method": [
     "web/src/lib/method/vocabulary.json"
@@ -10717,14 +10783,20 @@
   "Review progress": [
     "web/src/app/review/ReviewProgress.tsx"
   ],
-  "Reviewed this week": [
+  "Review them too": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Reviewed {ago}": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
+  "Reviewed, not due yet": [
+    "web/src/app/review/ProjectWalk.tsx"
+  ],
   "Reviews": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Reviews paused": [
+    "web/src/app/menus/reviewMenu.ts"
   ],
   "Review|method": [
     "web/src/lib/method/vocabulary.json"
@@ -17735,6 +17807,12 @@
   "{n, plural, one {# new section} other {# new sections}}": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "{n, plural, one {# not due yet, {paused} of them paused} other {# not due yet, {paused} of them paused}}": [
+    "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "{n, plural, one {# not due yet} other {# not due yet}}": [
+    "web/src/app/review/ProjectWalk.tsx"
+  ],
   "{n, plural, one {# open task and its subtasks are copied; completed work, comments and reminders are not.} other {# open tasks and their subtasks are copied; completed work, comments and reminders are not.}}": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -18093,6 +18171,10 @@
   ],
   "{name} is empty": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "{name} is in maintenance": [
+    "web/src/app/menus/reviewMenu.ts",
+    "web/src/app/review/ProjectWalk.tsx"
   ],
   "{name} is less than {value}": [
     "web/src/app/filter/conditionText.ts"

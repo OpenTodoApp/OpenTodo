@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { createProject, createTask, REVIEW_DEFAULTS, setTaskCompleted } from '../lib/ops'
+import { createProject, createTask, mutate, REVIEW_DEFAULTS, setTaskCompleted, updateProject } from '../lib/ops'
 import { db } from '../lib/db'
 import type { EmailDigest, Task, TimeEntry } from '../lib/types'
 import { DigestView, type DigestState } from './DigestCard'
@@ -117,6 +117,23 @@ export const WeeklyReviewMindSweep: StoryObj = {
 /** The project walk inside the step card: one project at a time. */
 export const WeeklyReviewProjects: StoryObj = {
   ...withSeed(seedReview),
+  render: () => <ReviewView userId="u-ada" step="projects" />,
+}
+
+/**
+ * A walk card with an interval and Maintenance (project-review-cadence): Garden is
+ * reviewed every month, is due and in maintenance; Car, reviewed every quarter, waits
+ * for the end of the walk.
+ */
+export const WeeklyReviewProjectsMaintenance: StoryObj = {
+  ...withSeed(async () => {
+    seeded.garden = await createProject({ name: 'Garden', color: HEX.green })
+    seeded.car = await createProject({ name: 'Car', color: HEX.blue })
+    await createTask({ title: 'Water the roses', project_id: seeded.garden })
+    await updateProject(seeded.garden, { status: 'maintenance' })
+    await mutate('project_prefs', seeded.garden, { reviewed_at: new Date('2026-09-10T18:00:00').getTime(), review_every: 'month' })
+    await mutate('project_prefs', seeded.car, { reviewed_at: new Date('2026-10-01T18:00:00').getTime(), review_every: 'quarter' })
+  }),
   render: () => <ReviewView userId="u-ada" step="projects" />,
 }
 

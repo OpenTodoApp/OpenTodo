@@ -267,6 +267,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>q</kbd> | Project walk: add a next action to the project |
 | <kbd>Enter</kbd> | Project walk: open the project |
 | <kbd>a</kbd> | Project walk: archive the project, then the next one |
+| <kbd>e</kbd> | Project walk: choose how often you review the project |
+| <kbd>m</kbd> | Project walk: put the project in maintenance or end it |
 | <kbd>j</kbd> / <kbd>Space</kbd> | Project walk: skip to the next project |
 | <kbd>k</kbd> | Project walk: back to the previous project |
 | <kbd>f</kbd> | Daily check: put the selected task in today's focus (up to three), or take it out |

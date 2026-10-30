@@ -1,5 +1,5 @@
 {
-  "about": "Shared vectors for the Open Loops rules (OpenSpec change open-loops-method, design D3): web/src/lib/method/rules.ts and internal/digest WithoutNextAction both evaluate this file. Change them together. Projects carry flow_mode (OpenSpec change project-flow-modes): areas are never without a next action, and a sequential project offers one step at a time.",
+  "about": "Shared vectors for the Open Loops rules (OpenSpec change open-loops-method, design D3): web/src/lib/method/rules.ts and internal/digest WithoutNextAction both evaluate this file. Change them together. Projects carry flow_mode (OpenSpec change project-flow-modes): areas are never without a next action, and a sequential project offers one step at a time. Projects carry status (OpenSpec change project-review-cadence): a project in maintenance is never stalled or without a next action, its next action is still listed, and an unknown status reads as active.",
   "me": "me",
   "today": "2026-10-18",
   "now": 1792324800000,
@@ -93,6 +93,24 @@
       "name": "Chores",
       "position": 16,
       "flow_mode": "area"
+    },
+    {
+      "id": "lawn",
+      "name": "Lawn",
+      "position": 17,
+      "status": "maintenance"
+    },
+    {
+      "id": "roses",
+      "name": "Roses",
+      "position": 18,
+      "status": "maintenance"
+    },
+    {
+      "id": "shed",
+      "name": "Shed",
+      "position": 19,
+      "status": "on-hold"
     }
   ],
   "sections": [
@@ -461,12 +479,65 @@
       "assignee_id": null,
       "section_id": null,
       "deleted_at": null
+    },
+    {
+      "parent_id": null,
+      "completed_at": null,
+      "start": "someday",
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null,
+      "id": "la1",
+      "project_id": "lawn",
+      "position": 1,
+      "created_at": 1787140800000
+    },
+    {
+      "parent_id": null,
+      "completed_at": null,
+      "start": "someday",
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null,
+      "id": "la2",
+      "project_id": "lawn",
+      "position": 2,
+      "created_at": 1787140800000
+    },
+    {
+      "parent_id": null,
+      "completed_at": null,
+      "start": null,
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null,
+      "id": "ro1",
+      "project_id": "roses",
+      "position": 1,
+      "created_at": 1787140800000
+    },
+    {
+      "parent_id": null,
+      "completed_at": null,
+      "start": "someday",
+      "blocked_by": [],
+      "assignee_id": null,
+      "section_id": null,
+      "deleted_at": null,
+      "id": "sh1",
+      "project_id": "shed",
+      "position": 1,
+      "created_at": 1791892800000
     }
   ],
   "expected": {
     "withoutNextAction": [
       "learn",
-      "garden"
+      "garden",
+      "shed"
     ],
     "nextAction": {
       "garage": "g2",
@@ -481,7 +552,10 @@
       "moving": "mv1",
       "handover": null,
       "finances": null,
-      "chores": "ch2"
+      "chores": "ch2",
+      "lawn": null,
+      "roses": "ro1",
+      "shed": null
     },
     "stalled": [
       "taxes"

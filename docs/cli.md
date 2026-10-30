@@ -192,7 +192,7 @@ ot project archive Garden [--undo]
 ot project rm Garden [--yes]
 ```
 
-Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column and each project's FLOW (`parallel`, `sequential` or `area`, see [Sequential projects and areas](project-flows.md)); `--workspace` narrows it to one.
+Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column and each project's FLOW (`parallel`, `sequential` or `area`, see [Sequential projects and areas](project-flows.md)), and STATUS `archived` or `maintenance` ([Review intervals and maintenance](review-intervals.md)); `--workspace` narrows it to one.
 
 ## Time
 
