@@ -14,6 +14,7 @@ import { useListDisplay } from './useListDisplay'
 import { useAccountRowLayout } from '../../lib/rowLayout'
 import { useUserPrefsRow } from '../../lib/localData'
 import { dayPartsOn } from '../../lib/dayParts'
+import { useClosedList } from './useClosedList'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
@@ -182,14 +183,23 @@ export function useListModel(route: ListRoute, userId?: string) {
 
   // Today grouped by part of the day (day-parts D3): the account's synced choice.
   const dayParts = dayPartsOn(useUserPrefsRow())
+  // Today's closed list (today-closed-list): slots from the whole of Today, before the duration filter.
+  const closed = useClosedList(route.view === 'today', viewTasks, allTasks, today, flow, blocked)
+  const closedList = useMemo(() => {
+    if (!closed.fill.limit) return undefined
+    const shown = new Set(tasks.map((x) => x.id))
+    return { limit: closed.fill.limit, waiting: closed.fill.waiting.filter((id) => shown.has(id)).map((id) => taskMap.get(id)!).filter(Boolean) }
+  }, [closed.fill, tasks, taskMap])
+  const doneToday = closed.doneToday ?? undefined
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, dayParts,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, dayParts, closedList, doneToday,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, dayParts])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, dayParts, closedList, doneToday])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
-  const ownRows = useMemo(() => (planned.length ? groups.filter((g) => g.key !== 'planned').flatMap((g) => g.rows) : rows), [planned, groups, rows])
+  // Nor is Today's Done today group part of Today's open list (today-closed-list D6).
+  const ownRows = useMemo(() => (planned.length || doneToday?.length ? groups.filter((g) => g.key !== 'planned' && g.key !== 'done').flatMap((g) => g.rows) : rows), [planned, doneToday, groups, rows])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
   const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task)), [board, rows])
@@ -218,7 +228,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, ownRows, siblingPos, timeColumn, doneBySection,
-    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts,
+    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed,
   }
 }
 

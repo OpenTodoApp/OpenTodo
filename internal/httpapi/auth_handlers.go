@@ -346,6 +346,9 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	if prefs, err := s.sync.Get(r.Context(), u.ID, "user_prefs", "me"); err == nil {
 		out["day_parts"] = idOf(prefs["day_parts"]) == "on"
 	}
+	// Today's closed list (today-closed-list D7): the limit and today's chosen
+	// tasks, so the CLI fills Today's slots as the app does.
+	out["closed_list"] = s.closedListInfo(r.Context(), u.ID)
 	// Configuration problems the server started despite (trusted-proxies-lenient):
 	// for the owner's own session only, never for members, admins or API tokens.
 	if u.Role == auth.RoleOwner && tokenFrom(r.Context()).ID == "" {

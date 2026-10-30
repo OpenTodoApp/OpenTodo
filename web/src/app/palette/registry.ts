@@ -26,7 +26,7 @@ import { reviewEveryPicker, setMaintenance } from '../menus/reviewMenu'
 import { inMaintenance } from '../../lib/reviewCadence'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, placeInDay, sidebarFind } from '../signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
 import { switchWorkspace, workspaceLabel } from '../workspaceNav'
@@ -39,6 +39,7 @@ import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
 import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayParts'
 import { dayPartUndoable } from '../../lib/undoActions'
+import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -68,6 +69,8 @@ export interface PaletteContext {
   earlier?: readonly string[]
   /** The account groups Today by part of the day (day-parts D4): the part commands are offered. */
   dayParts?: boolean
+  /** The selected task's slot command on Today with a limit (today-closed-list D3). */
+  slot?: SlotState
 }
 
 interface Command {
@@ -172,6 +175,9 @@ export function commands(ctx: PaletteContext): Command[] {
     const title = `“${tk.title || t('Untitled')}”`
     const list = ctx.list
     out.push({ id: 'task:open', label: t('Open {title}', { title }), icon: 'chevron-right', shortcut: keysOf('list.open'), run: () => list.open(tk.id) })
+    // Take a slot / Give back the slot (today-closed-list D3): personal, so also for a viewer's task.
+    if (ctx.slot === 'waiting') out.push({ id: 'task:take-slot', label: t('Take a slot for {title}', { title }), icon: 'arrow-up', keywords: 'today limit slot waiting', run: () => runTakeSlot(tk.id) })
+    if (ctx.slot === 'taken') out.push({ id: 'task:give-back-slot', label: t('Give back the slot of {title}', { title }), icon: 'undo-2', keywords: 'today limit slot', run: () => runGiveBackSlot(tk.id) })
     if (writable) {
       out.push(
         { id: 'task:complete', label: tk.completed_at ? t('Reopen {title}', { title }) : t('Complete {title}', { title }), icon: 'check', shortcut: keysOf('list.complete'), keywords: 'done finish', run: () => list.toggleComplete(tk.id, !tk.completed_at) },
@@ -320,6 +326,12 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
     { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
+    // Today's closed list (today-closed-list D5, D6): no default keys.
+    { id: 'today:log-win', label: t('Log a win'), icon: 'party-popper', keywords: 'done today completed logged win record unplanned',
+      // After the box has closed, so the bar opens again in Add with "Log as done" on.
+      run: () => { setTimeout(() => logWinRequest.request('palette'), 0) } },
+    { id: 'today:limit', label: t('Limit Today…'), icon: 'list-checks', keywords: 'today limit slots closed list wip cap',
+      run: () => navigate({ view: 'settings', section: 'general', page: 'start', anchor: 'today-limit' }) },
   )
   if (ctx.query.trim()) {
     const q = ctx.query.trim()

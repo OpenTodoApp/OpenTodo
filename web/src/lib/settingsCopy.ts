@@ -239,6 +239,17 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/day-parts',
     rows: { group: { label: msg('Group by day part'), description: msg('Morning, Afternoon and This Evening; a task with a time goes to its part.') } },
   },
+  // Today's closed list (today-closed-list D5): the synced user_prefs.today_limit and today_done, as in Today's menu.
+  'today-limit': {
+    title: msg('Today limit'),
+    icon: 'list-checks',
+    description: msg('How many tasks Today holds, and what you got done. On all your devices.'),
+    learnMore: 'settings/today-limit',
+    rows: {
+      limit: { label: msg('Today holds'), description: msg('The rest wait for a slot and come in, first come, first served, when you finish one.') },
+      done: { label: msg('Show done today'), description: msg('A folded list of what you completed today, at the end of Today.') },
+    },
+  },
   'date-time': {
     title: msg('Date and time'),
     icon: 'calendar-clock',
