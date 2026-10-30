@@ -116,3 +116,12 @@ test('api.js is the only module that calls fetch', async () => {
     assert.doesNotMatch(readFileSync(new URL(f, dir), 'utf8'), /\bfetch\(|XMLHttpRequest|WebSocket|sendBeacon/, f)
   }
 })
+
+test('a dated task asks for the default reminder unless the line has its own', async () => {
+  const { calls, fetchImpl } = stub(() => ({ status: 201, body: { id: 'x' } }))
+  const api = createApi({ server, token: 't', fetchImpl, key: 'ext-abc' })
+  await api.createTask({ title: 'Call', due: { date: '2026-11-06' } })
+  await api.createTask({ title: 'Call', due: { date: '2026-11-06' } }, { ownReminders: true })
+  await api.createTask({ title: 'Call' })
+  assert.deepEqual(calls.map((c) => c.url.replace(`${server}/api/v1`, '')), ['/tasks?default_reminder=true', '/tasks', '/tasks'])
+})

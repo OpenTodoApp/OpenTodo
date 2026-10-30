@@ -71,7 +71,7 @@ export function canRestoreField(entity: 'task' | 'project', field: string): bool
  */
 export async function restoreValue(entity: 'task' | 'project', id: string, field: string, value: unknown): Promise<string> {
   if (!canRestoreField(entity, field)) throw new Error(t('{field} cannot be restored', { field }))
-  if (entity === 'task') return updateTask(id, { [field]: value } as Partial<Omit<Task, 'id' | '_clock'>>)
+  if (entity === 'task') return updateTask(id, { [field]: value } as Partial<Omit<Task, 'id' | '_clock'>>, { restore: true })
   await updateProject(id, { [field]: value } as Partial<Omit<Project, 'id' | '_clock'>>)
   return id
 }

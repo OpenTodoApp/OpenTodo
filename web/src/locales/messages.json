@@ -73,6 +73,7 @@
     "web/src/app/WorkspaceInvites.tsx"
   ],
   "1 day before": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/lib/relativeDoOn.ts",
     "web/src/lib/reminderTime.ts"
   ],
@@ -84,6 +85,7 @@
     "web/src/app/WorkspaceInvites.tsx"
   ],
   "1 hour before": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/lib/reminderTime.ts"
   ],
   "1 month before": [
@@ -93,9 +95,11 @@
     "web/src/app/SecurityPanel.tsx"
   ],
   "1 week before": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/lib/relativeDoOn.ts"
   ],
   "10 minutes before": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/lib/reminderTime.ts"
   ],
   "12-hour": [
@@ -104,6 +108,9 @@
   "12-hour or 24-hour": [
     "web/src/app/settingsIndex.ts"
   ],
+  "2 days before": [
+    "web/src/app/DefaultRemindersSettings.tsx"
+  ],
   "2 weeks before": [
     "web/src/lib/relativeDoOn.ts"
   ],
@@ -111,12 +118,14 @@
     "web/src/app/DateTimeSettings.tsx"
   ],
   "3 days before": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/lib/relativeDoOn.ts"
   ],
   "30 days": [
     "web/src/app/WorkspaceInvites.tsx"
   ],
   "30 minutes before": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/lib/reminderTime.ts"
   ],
   "45m, 1h30 or 90 (minutes); it ends now, or at 17:00 on another day": [
@@ -361,6 +370,9 @@
   ],
   "A project can have at most {n} fields.": [
     "web/src/lib/fields.ts"
+  ],
+  "A reminder added when a task gets a date or a time": [
+    "web/src/app/settingsIndex.ts"
   ],
   "A repository or project was not found.": [
     "web/src/app/IssuesPanel.tsx"
@@ -988,6 +1000,9 @@
   "Added to {project}": [
     "web/src/app/palette/addFromBar.ts"
   ],
+  "Added when a task gets a date. You can remove it from any task.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Added {label}": [
     "web/src/lib/undoActions.ts"
   ],
@@ -1599,6 +1614,9 @@
   "At least {MIN_PASSPHRASE_LENGTH} characters.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "At most one year before or after.": [
+    "web/src/app/DefaultRemindersSettings.tsx"
+  ],
   "At most {MAX_FIELDS} fields": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -1613,6 +1631,9 @@
   ],
   "At the bottom of the list": [
     "web/src/app/QuickAddSettings.tsx"
+  ],
+  "At the due time": [
+    "web/src/app/DefaultRemindersSettings.tsx"
   ],
   "At the top of the list": [
     "web/src/app/QuickAddSettings.tsx"
@@ -1781,6 +1802,7 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "Before or after": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
   "Before the deadline": [
@@ -2042,6 +2064,7 @@
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncDialogs.tsx",
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/FieldsDialog.tsx",
@@ -3014,6 +3037,12 @@
     "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/focus/prefs.ts"
   ],
+  "Counted from 09:00 on the due date.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Counted from the due time.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Create": [
     "web/src/app/NewBoardDialog.tsx",
     "web/src/app/NewWorkspaceDialog.tsx",
@@ -3200,6 +3229,7 @@
   ],
   "Custom…": [
     "web/src/app/AuditPanel.tsx",
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -3397,6 +3427,10 @@
   ],
   "Default": [
     "web/src/app/WorkspacesSettings.tsx"
+  ],
+  "Default reminders": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Defer the selected task: type its start date, Enter": [
     "web/src/lib/shortcuts.ts"
@@ -4306,6 +4340,7 @@
     "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Enter a whole number.": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
   "Enter an address that starts with https://, http:// or mailto:.": [
@@ -8001,6 +8036,7 @@
     "web/src/app/TriageView.tsx"
   ],
   "None": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -8497,9 +8533,11 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Offset amount": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
   "Offset unit": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
   "Often your full email address. Leave empty for a relay without sign-in.": [
@@ -8581,6 +8619,9 @@
   ],
   "On macOS, check System Settings → Notifications → your browser (allow notifications, banners or alerts), and Focus.": [
     "web/src/lib/push.ts"
+  ],
+  "On the day at 09:00": [
+    "web/src/app/DefaultRemindersSettings.tsx"
   ],
   "On the deadline": [
     "web/src/lib/relativeDoOn.ts",
@@ -8706,12 +8747,12 @@
     "web/src/app/ConfigWarnings.tsx"
   ],
   "Open": [
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/palette/addFromBar.ts",
-    "web/src/app/review/ProjectWalk.tsx"
+    "web/src/app/review/ProjectWalk.tsx",
+    "web/src/app/task-list/afterListAdd.ts"
   ],
   "Open Account settings": [
     "web/src/app/EmailScreens.tsx"
@@ -10763,6 +10804,7 @@
     "web/src/app/BrandingPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncDialogs.tsx",
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
@@ -12378,6 +12420,12 @@
   ],
   "Tasks waiting for this one": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Tasks with a time": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Tasks with no time": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Tasks with only a date become all-day events.": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -15758,6 +15806,7 @@
     "web/src/lib/roleNames.ts"
   ],
   "after": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -15840,6 +15889,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "before": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -15917,6 +15967,7 @@
     "web/src/lib/templateLibrary.ts"
   ],
   "days": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
   "deactivated": [
@@ -16176,6 +16227,7 @@
     "web/src/app/ShortcutHelp.tsx"
   ],
   "hours": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
   "http://192.168.1.20:11434/v1": [
@@ -16300,6 +16352,7 @@
     "web/src/lib/roleNames.ts"
   ],
   "minutes": [
+    "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
   "missed": [

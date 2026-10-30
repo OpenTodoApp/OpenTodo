@@ -63,7 +63,9 @@ export function createApi({ server, token, fetchImpl = globalThis.fetch, timeout
     labels: () => call('GET', '/labels').then((d) => d?.labels ?? []),
     parse: (line, url, today, now) => call('POST', '/quick-add/parse', { line, url: url || undefined, today, now }),
     createLabel: (name, n) => call('POST', '/labels', { name }, `${key}.l${n}`),
-    createTask: (body) => call('POST', '/tasks', body, key),
+    // A dated task gets the account's default reminder (default-reminders D6),
+    // unless the line carries its own reminders.
+    createTask: (body, { ownReminders = false } = {}) => call('POST', body.due && !ownReminders ? '/tasks?default_reminder=true' : '/tasks', body, key),
     createReminder: (body, n) => call('POST', '/reminders', body, `${key}.r${n}`),
     createTimeEntry: (body) => call('POST', '/time-entries', body, `${key}.t`),
   }

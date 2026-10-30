@@ -130,7 +130,7 @@ export async function quickSave(api, { line, parsed, picks = {}, origin, descrip
     if (l.id) ids.push(l.id)
     else ids.push((await api.createLabel(l.name, ++n)).id)
   }
-  const task = await api.createTask(taskBody({ line, parsed, projectId: projectFor(parsed, picks.projectId), labelIds: ids, origin, description }))
+  const task = await api.createTask(taskBody({ line, parsed, projectId: projectFor(parsed, picks.projectId), labelIds: ids, origin, description }), { ownReminders: (parsed?.fields?.reminders ?? []).length > 0 })
   try {
     let r = 0
     for (const rem of parsed?.fields?.reminders ?? []) await api.createReminder(reminderBody(task.id, rem), ++r)

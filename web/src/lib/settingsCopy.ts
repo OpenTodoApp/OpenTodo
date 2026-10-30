@@ -346,6 +346,17 @@ export const SETTINGS_COPY = {
       parse: { label: msg('Parse natural language'), description: msg('Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; "quotes" keep text as is.') },
     },
   },
+  // Default reminders (default-reminders D8): the synced user_prefs.reminder_default_*.
+  'default-reminders': {
+    title: msg('Default reminders'),
+    icon: 'bell',
+    description: msg('Added when a task gets a date. You can remove it from any task.'),
+    learnMore: 'settings/default-reminders',
+    rows: {
+      timed: { label: msg('Tasks with a time'), description: msg('Counted from the due time.') },
+      dated: { label: msg('Tasks with no time'), description: msg('Counted from 09:00 on the due date.') },
+    },
+  },
   // Where new tasks are added (add-position D1): the synced user_prefs.add_position.
   'add-position': {
     title: msg('New tasks'),

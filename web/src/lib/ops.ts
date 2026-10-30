@@ -7,6 +7,7 @@ import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
 import { CLOCK_OFFSET_META, HLC_META, hlcLast, hlcNow, hlcReceive, hlcSeed, hlcSeedOffset, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
+import { defaultReminderChanges } from './defaultReminder'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
@@ -254,6 +255,11 @@ export interface Change {
 export interface MutateOptions {
   /** 'assistant' stamps device assistant:<device-id> (in-app-assistant D1): history labels it "Assistant". */
   origin?: 'assistant'
+  /**
+   * The batch puts back earlier values (Undo, restoring a version or from the
+   * Trash): it adds no default reminder (default-reminders D6).
+   */
+  restore?: boolean
 }
 
 /** The op device of a batch with this origin. */
@@ -349,6 +355,8 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
   changes = unfoldFieldPatches(changes)
   checkEncryptedSize(changes)
   const device = await deviceFor(opts)
+  // A task that gets a due date gets the person's default reminder (default-reminders D3).
+  if (!opts.restore) changes = [...changes, ...(await defaultReminderChanges(changes))]
   changes = [...changes, ...(await reminderFollowUps(changes))]
   if (!changes.some((c) => Object.keys(c.patch).length > 0)) return
   const rt = await richTextFor(changes)
@@ -479,11 +487,14 @@ export async function foldNote(entityOrTaskId: string, id?: string): Promise<boo
  */
 async function reminderFollowUps(changes: Change[]): Promise<Change[]> {
   const out: Change[] = []
+  // A reminder whose firing time the batch already writes (a default reminder
+  // switching kind, default-reminders D5) keeps that value.
+  const written = new Set(changes.filter((c) => c.entity === 'reminder' && 'fire_at' in c.patch).map((c) => c.entityId))
   for (const { entity, entityId, patch } of changes) {
     if (entity !== 'task' || !('due' in patch || 'deadline' in patch)) continue
     const reminders = await db.reminders.where('task_id').equals(entityId).toArray()
     for (const r of reminders) {
-      if (r.deleted_at) continue
+      if (r.deleted_at || written.has(r.id)) continue
       let fireAt: number | null
       if (r.kind === 'relative' && 'due' in patch) fireAt = relativeFireAt((patch.due ?? null) as Task['due'], r.offset_minutes)
       else if (r.kind === 'deadline' && 'deadline' in patch) fireAt = deadlineFireAt((patch.deadline ?? null) as string | null, r.offset_minutes)
@@ -525,8 +536,8 @@ function checkEncryptedSize(changes: Change[]): void {
 }
 
 /** Record field changes for one entity: apply locally and enqueue for the server. */
-export async function mutate(entity: Entity, entityId: string, patch: Record<string, unknown>): Promise<void> {
-  await mutateMany([{ entity, entityId, patch }])
+export async function mutate(entity: Entity, entityId: string, patch: Record<string, unknown>, opts?: MutateOptions): Promise<void> {
+  await mutateMany([{ entity, entityId, patch }], opts)
 }
 
 /** Every non-deleted project; the tree helpers take the whole set so cycles are handled. */
@@ -833,12 +844,12 @@ function copyTasks(
  * on every original, in one batch, so it works offline and converges by LWW.
  * Returns the id of the copy.
  */
-export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<string> {
+export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>, opts?: MutateOptions): Promise<string> {
   const task = await db.tasks.get(id)
   if (!task || task.deleted_at) throw new Error('task not found')
   const assignable = assignableIn(patch.project_id ?? null, await membershipMap(), await currentUserId())
   const plan = planProjectChange(task, await liveTasks(), patch, { assignable }, Date.now(), await keepWorkspaceFor())
-  await mutateMany(plan.changes)
+  await mutateMany(plan.changes, opts)
   return plan.id
 }
 
@@ -887,7 +898,7 @@ export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<T
  * stays behind, so a subtask is always in its parent's project. A move into another
  * sharing scope becomes copy + tombstone and returns the copy's id.
  */
-export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<string> {
+export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>, opts?: MutateOptions): Promise<string> {
   // Scheduling a parked task un-parks it in the same batch (someday-and-evening D3).
   if (!('start' in patch) && patch.due) {
     const task = await db.tasks.get(id)
@@ -903,13 +914,13 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
     if (task && patch.project_id !== task.project_id) {
       const memberships = await membershipMap()
       if (scopeOf(task.project_id, memberships) !== scopeOf(patch.project_id, memberships)) {
-        return moveTaskAcrossScopes(id, patch)
+        return moveTaskAcrossScopes(id, patch, opts)
       }
-      await mutateMany(planProjectChange(task, await liveTasks(), patch, undefined, Date.now(), await keepWorkspaceFor()).changes)
+      await mutateMany(planProjectChange(task, await liveTasks(), patch, undefined, Date.now(), await keepWorkspaceFor()).changes, opts)
       return id
     }
   }
-  await mutate('task', id, patch)
+  await mutate('task', id, patch, opts)
   return id
 }
 
@@ -1133,7 +1144,7 @@ export async function restoreTask(id: string): Promise<string> {
     const memberships = await membershipMap()
     if (scopeOf(task.project_id, memberships) !== 'personal') {
       const { changes, ids } = copyTasks(subtree, null, assignableIn(null, memberships, await currentUserId()), { [id]: { position: Date.now() } })
-      await mutateMany(changes)
+      await mutateMany(changes, { restore: true })
       return ids.get(id) as string
     }
   }
@@ -1143,7 +1154,7 @@ export async function restoreTask(id: string): Promise<string> {
   // A task whose parent stays in the Trash is restored at the top level.
   const parent = task.parent_id ? all.find((tVar) => tVar.id === task.parent_id) : undefined
   if (projectGone || (parent && parent.deleted_at)) changes[0].patch.parent_id = null
-  await mutateMany(changes)
+  await mutateMany(changes, { restore: true })
   return id
 }
 

@@ -85,6 +85,7 @@ var agentTaskFields = map[string]bool{"title": true, "description": true, "prior
 
 // agentRouteAllowed mirrors the server's agent content routes.
 func agentRouteAllowed(method, path string, body any) bool {
+	path, _, _ = strings.Cut(path, "?")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 	switch {
 	case method == http.MethodPost && len(parts) == 1:

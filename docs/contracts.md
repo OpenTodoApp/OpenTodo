@@ -23,6 +23,7 @@ Some logic runs on the server and in the web app: the server needs it for REST, 
 | Time-zone-fixed due values | `internal/zoned` | `web/src/lib/dates.ts` | `web/src/lib/zoned.vectors.json` | `internal/zoned/zoned_test.go` | `web/src/lib/dates.test.ts` | hand |
 | Inherited custom fields | `internal/sync/fields.go` | `web/src/lib/fieldTree.ts` | `web/src/lib/fields.vectors.json` | `internal/sync/fields_vectors_test.go` | `web/src/lib/fields.test.ts` | hand |
 | Inbox membership | `internal/inbox/inbox.go` | `web/src/lib/inbox.ts` | `web/src/lib/inbox.vectors.json` | `internal/inbox/inbox_test.go` | `web/src/lib/inbox.test.ts` | hand |
+| Default reminders | `internal/defaultreminder` | `web/src/lib/defaultReminder.ts` | `web/src/lib/defaultReminder.vectors.json` | `internal/defaultreminder/defaultreminder_test.go` | `web/src/lib/defaultReminder.test.ts` | hand |
 | Built-in view rules | `internal/inbox/views.go` | `web/src/lib/viewRules.ts` | `web/src/lib/views.vectors.json` | `internal/inbox/views_test.go` | `web/src/lib/viewRules.test.ts` | hand |
 | Filter query parser | `internal/filter` | `web/src/lib/filter/parse.ts` | `docs/filters.md` (its examples) | `internal/filter/filter_test.go` | `web/src/lib/filter/filter.test.ts` | hand |
 | Quick-add parser | `internal/quickadd` | `web/src/lib/nlp` | `web/src/lib/nlp/quickadd.vectors.json` | `internal/quickadd/vectors_test.go` | `web/src/lib/nlp/vectors.test.ts` | hand |
