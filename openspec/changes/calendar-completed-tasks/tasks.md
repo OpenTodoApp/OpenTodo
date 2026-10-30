@@ -18,4 +18,4 @@
 - [x] 3.2 Keep the translated Show completed tasks label constant in button and menu states, remove the superseded catalog keys and verify stable-name/pressed/checked assertions at desktop and phone widths.
 - [x] 3.3 Separate task permissions from calendar scheduling eligibility in Month and Plan; verify completed editable tasks are not announced as read-only, real viewers still are, and completed scheduling gestures remain blocked.
 - [x] 3.4 Restore existing calendar guidance and move completed-calendar instructions to a focused page; verify links, the 600-word limit and generated help with `make docs docs-check`.
-- [ ] 3.5 Run `make check`, production build, bundle budget, browser smoke, layout/accessibility and relevant pinned-image visual checks; refresh review screenshots and publish the review fixes with an updated English PR description.
+- [x] 3.5 Run `make check`, production build, bundle budget, browser smoke, layout/accessibility and relevant pinned-image visual checks; refresh review screenshots and publish the review fixes with an updated English PR description.
