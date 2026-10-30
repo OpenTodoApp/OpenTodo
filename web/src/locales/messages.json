@@ -1170,6 +1170,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Already first": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
@@ -1185,6 +1186,7 @@
     "web/src/app/AuthScreen.tsx"
   ],
   "Already last": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
@@ -1961,6 +1963,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Calendar": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -2425,7 +2428,8 @@
   "Clear": [
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
-    "web/src/app/task-detail/FieldsGroup.tsx"
+    "web/src/app/task-detail/FieldsGroup.tsx",
+    "web/src/app/views/ViewToolbar.tsx"
   ],
   "Clear conversations": [
     "web/src/app/assistant/AssistantPage.tsx",
@@ -3911,6 +3915,9 @@
   "Drag a task onto a time, or focus one and press {key}.": [
     "web/src/app/calendar/PlanPanel.tsx"
   ],
+  "Drag or use a row's menu to reorder. Switched-on ones sit next to Inbox and Today.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Drag tasks onto a day, or press s on one": [
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
@@ -4467,6 +4474,12 @@
   ],
   "Every hour at :{minute}": [
     "web/src/lib/backups.ts"
+  ],
+  "Every list": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
+  "Every list adds open-task numbers to each project, label and view.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Every member’s assistants can see and, where allowed, change this project again.": [
     "web/src/app/AgentAccessRow.tsx",
@@ -5673,6 +5686,7 @@
   "Icon": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sections.tsx",
+    "web/src/app/ViewsView.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/menus/stylePickers.tsx",
     "web/src/ui/IconPicker.tsx"
@@ -5928,6 +5942,7 @@
     "web/src/app/ArchivedProjects.tsx"
   ],
   "Inbox": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/PreferencesPanels.tsx",
@@ -5958,6 +5973,9 @@
     "web/src/lib/trash.ts",
     "web/src/lib/undoActions.ts",
     "web/src/lib/views.ts"
+  ],
+  "Inbox and Today": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Inbox menu": [
     "web/src/app/SampleNotice.tsx"
@@ -7023,6 +7041,9 @@
   "Menu for view {name}": [
     "web/src/app/ViewsView.tsx"
   ],
+  "Menu for {name}": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Merge": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -7158,6 +7179,7 @@
     "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Move down": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
@@ -7259,6 +7281,7 @@
     "web/src/app/workspaceNav.ts"
   ],
   "Move up": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
@@ -7273,6 +7296,7 @@
     "web/src/app/DashboardView.tsx"
   ],
   "Move {name} (Alt+Up or Alt+Down)": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/FieldsDialog.tsx"
   ],
   "Move {name} down": [
@@ -7531,6 +7555,9 @@
     "web/src/app/ViewsView.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
+  ],
+  "New view cleared": [
+    "web/src/app/FilterView.tsx"
   ],
   "New webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -8415,6 +8442,9 @@
   "Numbered list": [
     "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
+  ],
+  "Numbers on Inbox and Today only, or on every project, label and view": [
+    "web/src/app/settingsIndex.ts"
   ],
   "OK": [
     "web/src/app/NotificationsSettings.tsx"
@@ -11590,8 +11620,14 @@
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Sidebar counts": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Sidebar destinations": [
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Sign in": [
     "web/src/app/AuthScreen.tsx"
@@ -14065,6 +14101,7 @@
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "Today": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/CalendarView.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/MonthView.tsx",
@@ -14493,6 +14530,7 @@
   ],
   "Undo": [
     "web/src/app/ArchivePrompt.tsx",
+    "web/src/app/FilterView.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
@@ -14727,6 +14765,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Upcoming": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
@@ -17955,6 +17994,7 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "{name} moved to position {n} of {count}": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx"
   ],
   "{name} replied": [

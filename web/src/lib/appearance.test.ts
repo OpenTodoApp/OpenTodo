@@ -2,7 +2,7 @@
 // Appearance preference (OpenSpec change theming, tasks 3.1 and 3.3).
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyAppearance, CACHE_KEY, readAppearance, setAppearance } from './appearance'
+import { applyAppearance, CACHE_KEY, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
 import { db } from './db'
 import { applyOps, resetDeviceId } from './ops'
 
@@ -33,6 +33,52 @@ describe('readAppearance', () => {
       ['user_prefs', 'me', 'theme_mode', 'dark'],
     ])
     expect(readAppearance(await db.userPrefs.get('me'))).toEqual({ mode: 'dark', accent: 'teal', density: 'comfortable', sidebar: [] })
+  })
+})
+
+describe('sidebar counts (sidebar-polish 2.1)', () => {
+  it('defaults to Inbox and Today; an unknown value reads as the default and is kept', async () => {
+    expect(readSidebarCounts(null)).toBe('today')
+    expect(readSidebarCounts({ sidebar_counts: 'all' } as never)).toBe('all')
+    await applyOps([{ id: 'c1', entity: 'user_prefs', entityId: 'me', field: 'sidebar_counts', value: 'rainbow', ts: Date.now(), device: 'newer' }] as never)
+    const row = await db.userPrefs.get('me')
+    expect(readSidebarCounts(row)).toBe('today')
+    expect(row?.sidebar_counts).toBe('rainbow')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('writes one op; the default is stored as empty', async () => {
+    await setSidebarCounts('all')
+    await setSidebarCounts('today')
+    expect((await db.outbox.toArray()).map((o) => [o.field, o.value])).toEqual([['sidebar_counts', 'all'], ['sidebar_counts', '']])
+  })
+})
+
+describe('orderDestinations (sidebar-polish 3.1)', () => {
+  const primary = ['inbox', 'today', 'upcoming', 'calendar', 'someday'] as const
+  it('no stored order: the default order', () => {
+    expect(orderDestinations(primary, '')).toEqual([...primary])
+    expect(orderDestinations(primary, undefined)).toEqual([...primary])
+  })
+  it('stored ids first in the stored order, the rest after in the default order', () => {
+    expect(orderDestinations(primary, 'today,inbox,someday,upcoming,calendar')).toEqual(['today', 'inbox', 'someday', 'upcoming', 'calendar'])
+    expect(orderDestinations(primary, 'calendar')).toEqual(['calendar', 'inbox', 'today', 'upcoming', 'someday'])
+  })
+  it('a newly promoted destination missing from the order lands last', () => {
+    expect(orderDestinations(primary, 'today,inbox,upcoming,calendar')).toEqual(['today', 'inbox', 'upcoming', 'calendar', 'someday'])
+  })
+  it('unknown, duplicate and not-primary ids are ignored', () => {
+    expect(orderDestinations(primary, 'hologram, today ,today,trash,inbox')).toEqual(['today', 'inbox', 'upcoming', 'calendar', 'someday'])
+  })
+  it('a move stores the whole order and keeps unknown ids', async () => {
+    await applyOps([{ id: 'o1', entity: 'user_prefs', entityId: 'me', field: 'sidebar_order', value: 'today,hologram', ts: Date.now(), device: 'newer' }] as never)
+    const row = await db.userPrefs.get('me')
+    expect(destinationOrder(row).slice(0, 3)).toEqual(['today', 'inbox', 'upcoming'])
+    expect(await moveDestination(row, 'today', -1)).toBe(false)
+    expect(await moveDestination(row, 'calendar', -3)).toBe(true)
+    const stored = (await db.userPrefs.get('me'))!.sidebar_order!.split(',')
+    expect(stored.slice(0, 4)).toEqual(['calendar', 'today', 'inbox', 'upcoming'])
+    expect(stored.at(-1)).toBe('hologram')
   })
 })
 

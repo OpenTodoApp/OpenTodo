@@ -31,7 +31,7 @@ Archive and delete ask first and say what they affect.
 
 <picture><source srcset="images/project-move-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-move-light.webp" alt="The Move to step of the project menu: a search field above the possible targets, Top level first, each project shown with the projects it sits in."></picture>
 
-A project's open-task count shows in the sidebar on hover or focus (always on touch). A folded project counts its sub-projects.
+A project's open-task count shows in the sidebar on hover or focus (always on touch, or with [every count on](sidebar-counts-and-order.md)). A folded project counts its sub-projects.
 
 Inside a project you can also group tasks into sections and show them as a board: see [Sections and boards](sections-and-boards.md). Other groupings: [Group and order a list](group-and-order.md).
 

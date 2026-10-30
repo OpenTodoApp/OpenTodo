@@ -86,6 +86,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | view | `pinned` | boolean |
 | view | `panels` | array of strings (view ids) |
 | view | `on_drop` | null or an on-drop rule object (see "Saved views") |
+| view | `icon` | null or a name from the icon catalogue (not content; any string is accepted so a newer catalogue stays additive, and a name a client does not know shows the default icon) |
 | view | `position`, `created_at` | number |
 | view | `deleted_at` | number or null |
 | reminder | `task_id` | string (task id, required) |
@@ -131,6 +132,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | user_prefs | `language` | string: `"system"` or a shipped interface language (`"en"`, `"de"`, `"fr"`, `"es"`, `"it"`, `"pt"`) |
 | user_prefs | `row_layout` | string: `"line"` or `"detailed"`, the row layout of every list without its own (unknown or empty reads as `"line"`) |
 | user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
+| user_prefs | `sidebar_counts` | string: `"all"` shows the open-task count of every project, label and view row in the sidebar at rest; `""` or unknown keeps them on Inbox and Today only |
+| user_prefs | `sidebar_order` | string: a comma-separated order of the primary sidebar destinations (`inbox`, `today`, `upcoming`, `calendar` and promotable ids); missing ids follow in the default order, unknown ids are ignored and kept |
 | user_prefs | `favourites` | string: an ordered, comma-separated list of `kind:id` entries (`project:<id>`, `label:<id>`, `view:<id>`), the sidebar's Favourites group; entries of an unknown kind or for a missing, archived or deleted item are ignored and kept |
 | review | `completed_at` | number (Unix ms: when the last weekly review was finished; personal scope only) |
 | review | `daily_at`, `monthly_at` | number (Unix ms: the last Daily check and Monthly look) |

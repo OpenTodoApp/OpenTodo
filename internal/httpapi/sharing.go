@@ -305,11 +305,13 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 		return nil
 	}
 	if entity == "view" {
-		// Every view representation carries on_drop, null when unset
-		// (OpenSpec change rule-boards, "Views API and export").
+		// Every view representation carries on_drop and icon, null when unset
+		// (OpenSpec changes rule-boards, "Views API and export", and sidebar-polish).
 		for _, e := range list {
-			if _, has := e["on_drop"]; e != nil && !has {
-				e["on_drop"] = json.RawMessage("null")
+			for _, f := range []string{"on_drop", "icon"} {
+				if _, has := e[f]; e != nil && !has {
+					e[f] = json.RawMessage("null")
+				}
 			}
 		}
 		return nil

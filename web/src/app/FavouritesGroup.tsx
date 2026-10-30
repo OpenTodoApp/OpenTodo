@@ -9,7 +9,7 @@ import { projectPath, subtreeOpenCounts, type ProjectTree } from '../lib/project
 import type { Project, Task } from '../lib/types'
 import { isDashboard, openCount, type ViewSummary } from '../lib/views'
 import { t } from '../lib/i18n'
-import { hueFor, Icon, ReadAs, SidebarGroup, SidebarItem } from '../ui'
+import { hueFor, ReadAs, SidebarGroup, SidebarItem } from '../ui'
 import { act } from './actionError'
 import { taskDrop } from './taskDrop'
 import { useMembershipMap } from '../lib/localData'
@@ -18,11 +18,11 @@ import { LabelMenu } from './LabelsView'
 import { ProjectRowMenu } from './ProjectRowMenu'
 import { navigate, type Route } from './router'
 import { openTasksLabel, ProjectMark } from './Sidebar'
-import { ViewMenu, viewIcon } from './ViewsView'
+import { ViewMark, ViewMenu } from './ViewsView'
 
 const keyOf = (f: Pick<Favourite, 'kind' | 'id'>) => `${f.kind}:${f.id}`
 
-export function FavouritesGroup({ favourites, route, collapsed, projects, tree, openTasks, today, labelCounts, viewCounts, projectCountMode = 'hover' }: {
+export function FavouritesGroup({ favourites, route, collapsed, projects, tree, openTasks, today, labelCounts, viewCounts, projectCountMode = 'hover', countsAll = false }: {
   favourites: Favourite[]
   route: Route
   /** The icon rail. */
@@ -37,6 +37,8 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
   viewCounts: Map<string, ViewSummary>
   /** `always` where there is no hover (a coarse pointer). */
   projectCountMode?: 'always' | 'hover'
+  /** Every sidebar count on (sidebar-polish D1): each row's count at rest, the menu in its place on hover. */
+  countsAll?: boolean
 }) {
   const memberships = useMembershipMap()
   const pinsProject = favourites.some((f) => f.kind === 'project')
@@ -61,6 +63,7 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
     refocus.current = keyOf(f)
     act(moveFavourite(f.kind, f.id, e.key === 'ArrowUp' ? -1 : 1))
   }
+  const menuClass = countsAll ? 'ui-swap-menu' : 'hover-reveal'
   const isActive = (f: Favourite) => (route.view === f.kind && 'id' in route && route.id === f.id)
 
   return (
@@ -74,24 +77,24 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
         let menu
         if (f.kind === 'project') {
           item = <SidebarItem {...common} label={f.item.name} title={pathOf(f.item)} leading={<ProjectMark project={f.item} />}
-            count={projectCounts.get(f.id)} countMode={projectCountMode} countLabel={openTasksLabel(projectCounts.get(f.id))} />
-          menu = <ProjectRowMenu project={f.item} within="favourites" className="hover-reveal" />
+            count={projectCounts.get(f.id)} countMode={countsAll ? 'swap' : projectCountMode} countLabel={openTasksLabel(projectCounts.get(f.id))} />
+          menu = <ProjectRowMenu project={f.item} within="favourites" className={menuClass} />
         } else if (f.kind === 'label') {
           const n = labelCounts.get(f.id)
-          item = <SidebarItem {...common} label={f.item.name} count={n} countMode="hidden" countLabel={openTasksLabel(n)}
+          item = <SidebarItem {...common} label={f.item.name} count={n} countMode={countsAll ? 'swap' : 'hidden'} countLabel={openTasksLabel(n)}
             leading={<span data-hue={hueFor(f.item.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />} />
-          menu = <LabelMenu label={f.item} within="favourites" className="hover-reveal" />
+          menu = <LabelMenu label={f.item} within="favourites" className={menuClass} />
         } else {
           const c = viewCounts.get(f.id)
           const list = !isDashboard(f.item)
           item = <SidebarItem {...common} label={f.item.name}
-            leading={<span style={{ color: f.item.color }}><Icon name={viewIcon(f.item)} /></span>}
-            count={list && c && c.ok ? c.count : undefined} countMode="hidden" countLabel={openTasksLabel(list && c && c.ok ? c.count : undefined)}
+            leading={<span style={{ color: f.item.color }}><ViewMark view={f.item} /></span>}
+            count={list && c && c.ok ? c.count : undefined} countMode={countsAll ? 'swap' : 'hidden'} countLabel={openTasksLabel(list && c && c.ok ? c.count : undefined)}
             badge={list && c && !c.ok ? <span className="text-meta text-danger"><ReadAs label={c.error}>!</ReadAs></span> : undefined} />
-          menu = <ViewMenu view={f.item} within="favourites" className="hover-reveal" />
+          menu = <ViewMenu view={f.item} within="favourites" className={menuClass} />
         }
         return (
-          <div key={keyOf(f)} className="group flex items-center rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-favourite-row={keyOf(f)}
+          <div key={keyOf(f)} className={`group flex items-center rounded-control${countsAll ? ' ui-swap-row' : ''} data-drop-active:ring-2 data-drop-active:ring-accent`} data-favourite-row={keyOf(f)}
             data-task-drop={f.kind === 'project' ? (canEditTasks(roleOf(f.id, memberships)) ? taskDrop.project(f.id) : undefined) : f.kind === 'label' ? taskDrop.label(f.id) : undefined}>
             {item}
             {!collapsed && menu}
