@@ -22,3 +22,5 @@ web/src/ui/icons/Brand.tsx: OpenTodo
 web/src/app/BrandingPanel.tsx: OpenTodo
 # On-device assistant (assistant-on-device): a sample model server origin.
 web/src/app/assistant/AssistantDevice.tsx: http://localhost:11434
+# The calendar's filter (calendar-clarity D4): a sample query in the filter language, which is not translated.
+web/src/app/calendar/QueryFilterDialog.tsx: ##Work & p1

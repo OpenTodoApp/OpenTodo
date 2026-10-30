@@ -58,6 +58,8 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Frames](frames.md) | Shade the hours you keep for one kind of work, such as deep work every weekday morning, behind Day and Week, and plan tasks into them. |
 | &nbsp;&nbsp;↳ [Slots](slots.md) | Put several small tasks into one block of Day and Week, such as Admin from 16:00 to 16:45, and tick them off from a checklist inside it. |
 | &nbsp;&nbsp;↳ [Place tasks on the calendar](place-tasks-on-the-calendar.md) | Drag tasks onto time slots or move them with the keyboard, change how long a block lasts, and read each day's planned hours against its capacity. |
+| &nbsp;&nbsp;↳ [Add and colour on the calendar](calendar-add-and-colour.md) | Add a task by double-clicking a time or a day, and colour the calendar and boards by project, label or priority. |
+| &nbsp;&nbsp;↳ [Filter the calendar](calendar-filter.md) | Show only the tasks a query matches in the calendar and in Upcoming, and show one project as a calendar. |
 | [Calendar feeds](calendar-feeds.md) | Show your other calendars next to your tasks in Day and Week, and subscribe to your tasks from Google Calendar, Outlook or Apple Calendar. |
 | &nbsp;&nbsp;↳ [Other calendars in Day and Week](other-calendars.md) | Subscribe to a Google, Outlook, Apple, Fastmail or Nextcloud calendar so its events appear next to your tasks: the steps per app, refreshing, what you see, and the limits. |
 | [Sharing and comments](sharing.md) | Share a project with people on your server, choose what they can do, assign tasks, and talk it through in comments with @mentions. |

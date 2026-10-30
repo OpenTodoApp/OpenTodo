@@ -38,16 +38,18 @@ async function timeline() {
 }
 
 describe('layout cycle', () => {
-  it('cycles list → board → timeline → list and reads unknown values as the list', async () => {
+  it('cycles list → board → timeline → calendar → list and reads unknown values as the list', async () => {
     expect(nextViewMode('list')).toBe('board')
     expect(nextViewMode('board')).toBe('timeline')
-    expect(nextViewMode('timeline')).toBe('list')
+    // Calendar joins the cycle after Timeline (calendar-clarity D5).
+    expect(nextViewMode('timeline')).toBe('calendar')
+    expect(nextViewMode('calendar')).toBe('list')
     const p = await createProject({ name: 'P' })
     await db.meta.put({ key: `view-mode:${p}`, value: 'gantt' } as never)
     expect(await loadViewMode(p)).toBe('list')
   })
 
-  it('v twice from the board lands on the list', async () => {
+  it('v three times from the board lands on the list, through the timeline and the calendar', async () => {
     const p = await createProject({ name: 'P' })
     await saveViewMode(p, 'board')
     const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
@@ -55,7 +57,9 @@ describe('layout cycle', () => {
     await key(document.body, 'v')
     await waitFor(() => r.container.querySelector('[data-timeline]') !== null)
     await key(document.body, 'v')
-    await waitFor(() => r.container.querySelector('[data-timeline]') === null && r.container.querySelector('[role="group"][aria-label="Project layout"] [aria-pressed="true"]')?.textContent === 'List')
+    await waitFor(() => r.container.querySelector('[data-project-calendar]') !== null, 'the calendar layout')
+    await key(document.body, 'v')
+    await waitFor(() => r.container.querySelector('[data-project-calendar]') === null && r.container.querySelector('[role="group"][aria-label="Project layout"] [aria-pressed="true"]')?.textContent === 'List')
     expect(await loadViewMode(p)).toBe('list')
     await r.unmount()
   })

@@ -7,6 +7,7 @@
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { useMembership, useUserPrefsRow } from '../lib/localData'
 import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown } from '../lib/userPrefs'
@@ -191,9 +192,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   const insertAfter = useRef<string | null>(null)
 
-  const toggleViewMode = useCallback(() => {
-    if (projectId) void saveViewMode(projectId, nextViewMode(viewMode))
-  }, [projectId, viewMode])
+  const toggleViewMode = useCallback(() => { if (projectId) void saveViewMode(projectId, nextViewMode(viewMode)) }, [projectId, viewMode])
   const chooseViewMode = useCallback((mode: ProjectViewMode) => {
     if (projectId && mode !== viewMode) void saveViewMode(projectId, mode)
   }, [projectId, viewMode])
@@ -272,11 +271,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   })
   const rowActions = useListBindings({ ...shared, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
 
+  const { edgeOf, boardGroups, queryControl: queryFilter, queryHost } = useListExtras(board, m.queryFilter) // Colour by on boards, Upcoming's query filter (calendar-clarity)
   const renderRow = rowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
     habits: m.habits, isReadOnly, board, manual, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
-    timeColumn: m.timeColumn, rowLayout: m.display?.rowLayout, actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null),
+    timeColumn: m.timeColumn, rowLayout: m.display?.rowLayout, actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null), edgeOf,
     inlineId: inline?.id ?? null, renderInline, departures, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
   })
 
@@ -287,12 +287,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const showCompleted = projectId ? () => act(saveShowCompleted(projectId, true)) : undefined
   const pageActions = (
     <ListPageActions route={route} userRole={userRole} rowCount={own.length} extra={m.listDisplay.control}
-      selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} />
+      selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} queryFilter={queryFilter} />
   )
   const { currentProject, currentLabel, currentPlace } = m
   // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1).
   const { phone, ...phoneActions } = usePhoneListActions({ route, userRole, rowCount: own.length, topLevelCount: own.filter((r) => r.depth === 0).length,
-    onSelectMode: () => setSelectMode(true), extraSlot: m.listDisplay.control, filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration,
+    onSelectMode: () => setSelectMode(true), extraSlot: m.listDisplay.control, filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration, queryFilter,
     project: currentProject && { row: currentProject, editable: m.projectEditable, viewMode, onViewMode: chooseViewMode } })
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
@@ -313,13 +313,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
   if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
   if (!ready) return <div className="min-w-0 px-4 py-5 md:px-8" data-list-loading />
+  if (route.view === 'project' && currentProject && viewMode === 'calendar') return <ProjectCalendarLayout project={currentProject} userId={userId} onCycle={toggleViewMode} layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
 
   return (
     <div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
         <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page
           data-page-project={route.view === 'project' ? '' : undefined}>
           {route.view === 'project' && currentProject ? (
-            <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
+            <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined} extraGroups={boardGroups}
               phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
           ) : (
@@ -342,7 +343,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <BulkActionsMenu ids={[selectedId]} open onOpenChange={onActionsOpen} startPicker={actionsPicker} anchor={actionsFrom}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
-          {rowMenu.element}
+          {rowMenu.element}{queryHost}
 
           {route.view === 'project' && currentProject && <ProjectNote project={currentProject} phone={phone} />}
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
@@ -356,8 +357,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               </Button>
             </div>
           )}
-          {own.length === 0 && !(board || m.liveSections.length > 0) && (m.duration
-            ? <FilteredEmpty onClear={() => m.chooseDuration(null)} />
+          {own.length === 0 && !(board || m.liveSections.length > 0) && (m.duration || m.queryFilter?.query
+            ? <FilteredEmpty onClear={() => { m.chooseDuration(null); m.queryFilter?.setQuery('') }} />
             : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly}
                 completed={hiddenDone} onShowCompleted={showCompleted} compact={route.view === 'inbox' && groups.some((g) => g.key === 'planned' && (g.count ?? 0) > 0)} />)}
 

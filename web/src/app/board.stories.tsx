@@ -4,6 +4,7 @@ import type { Task } from '../lib/types'
 import { BoardView, type BoardColumn } from './BoardView'
 import { HEX, label, project, seeded, seedProjectWithSections, storyUser, task, TODAY, TOMORROW, withClock, withSeed } from './stories/fixtures'
 import { TaskCard } from './TaskRow'
+import { hueFor } from '../ui'
 import { TaskListView } from './TaskListView'
 
 // Core screen: the board (OpenSpec change ux-overhaul, task 8.7; sections-and-boards
@@ -57,6 +58,26 @@ export const Columns: StoryObj = {
         <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={t.id === 'b4'} showProject={false} blockedBy={t.id === 'b7' ? 1 : 0}
           progress={t.id === 'b6' ? { done: 1, total: 2 } : undefined} onToggle={noop} onOpen={noop} />
       )} />
+  ),
+}
+
+/** Colour by Label on a board (calendar-clarity "Colour by on boards"): a leading edge in the first coloured label's hue, grey without one. */
+export const ColourByLabel: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={columns} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels}
+      renderCard={(t) => <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} onToggle={noop} onOpen={noop}
+        edge={labelsOf(t).find((l) => l.color !== HEX.slate) ? hueFor(labelsOf(t).find((l) => l.color !== HEX.slate)!.color) : 'slate'} />} />
+  ),
+}
+
+/** Colour by Priority on a board: P1 red, P2 orange, P3 blue, P4 grey. */
+export const ColourByPriority: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={columns} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels}
+      renderCard={(t) => <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} onToggle={noop} onOpen={noop}
+        edge={t.priority === 1 ? 'red' : t.priority === 2 ? 'orange' : t.priority === 3 ? 'blue' : 'slate'} />} />
   ),
 }
 

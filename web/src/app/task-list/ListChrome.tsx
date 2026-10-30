@@ -17,21 +17,31 @@ import type { ActionGroup, ActionItem } from '../menus/ActionMenu'
 import { Dialog, Menu } from '../../ui'
 import { navigate } from '../router'
 import { requestProjectNote } from '../ProjectNote'
+import { FilterQueryChip } from '../calendar/queryFilter'
 import { RowScheduleHost } from './RowSwipe'
 import { Kbd } from '../shortcuts/Kbd'
 import type { ListRoute } from './useListModel'
 
 /** The project layouts, in `v` order (month-and-timeline-views). */
-export const LAYOUT_LABEL = translatedMap<ProjectViewMode>({ list: msg('List'), board: msg('Board'), timeline: msg('Timeline') })
+export const LAYOUT_LABEL = translatedMap<ProjectViewMode>({ list: msg('List'), board: msg('Board'), timeline: msg('Timeline'), calendar: msg('Calendar') })
+/** The layouts in `v` order; Calendar since calendar-clarity D5. */
+export const LAYOUTS = ['list', 'board', 'timeline', 'calendar'] as const
 
-/** The project header's List / Board / Timeline switch. */
+/** Upcoming's query filter in the header (calendar-clarity D4): the active query, Filter…, clear. */
+export interface QueryFilterControl {
+  query: string
+  onOpen: () => void
+  onClear: () => void
+}
+
+/** The project header's List / Board / Timeline / Calendar switch. */
 export function LayoutSwitch({ mode, onChoose }: { mode: ProjectViewMode; onChoose: (m: ProjectViewMode) => void }) {
   return (
     <span className="flex rounded-control border border-default text-meta" role="group" aria-label={t('Project layout')}>
-      {(['list', 'board', 'timeline'] as const).map((m) => (
+      {LAYOUTS.map((m) => (
         <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut={keysOf('project.view-mode')}>
-          <button type="button" aria-pressed={mode === m} onClick={() => onChoose(m)}
-            className={`${m === 'list' ? 'rounded-l-control' : m === 'timeline' ? 'rounded-r-control' : ''} px-2 py-1 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+          <button type="button" aria-pressed={mode === m} onClick={() => onChoose(m)} data-layout={m}
+            className={`${m === 'list' ? 'rounded-l-control' : m === 'calendar' ? 'rounded-r-control' : ''} px-2 py-1 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
             {LAYOUT_LABEL[m]}
           </button>
         </Tooltip>
@@ -45,7 +55,7 @@ export function LayoutSwitch({ mode, onChoose }: { mode: ProjectViewMode; onChoo
  * nothing sits between the quick add and the first task. Touch screens have no
  * hover: the Select button shows every checkbox (bulk-edit D3).
  */
-export function ListPageActions({ route, userRole, rowCount, selectMode, onSelectMode, filterKey, duration, onDuration, extra }: {
+export function ListPageActions({ route, userRole, rowCount, selectMode, onSelectMode, filterKey, duration, onDuration, extra, queryFilter }: {
   route: ListRoute
   /** The page's own last action: a project's or label's display options (list-display-options). */
   extra?: ReactNode
@@ -56,6 +66,8 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
   filterKey: string | null
   duration: DurationFilter | null
   onDuration: (kind: DurationFilter | null) => void
+  /** Upcoming's query filter (calendar-clarity D4). */
+  queryFilter?: QueryFilterControl | null
 }) {
   return (
     <>
@@ -74,7 +86,8 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
           {selectMode ? t('Done') : t('Select')}
         </button>
       )}
-      {filterKey && <DurationFilterControl active={duration} onChange={onDuration} />}
+      {queryFilter?.query && <FilterQueryChip query={queryFilter.query} onOpen={queryFilter.onOpen} onClear={queryFilter.onClear} />}
+      {filterKey && <DurationFilterControl active={duration} onChange={onDuration} onQuery={queryFilter?.onOpen} />}
       {(route.view === 'today' || route.view === 'upcoming') && (
         // Display mode (display-mode D6): this view in large type, for a tablet or an e-ink panel.
         <IconButton size="sm" icon="monitor" label={t('Display mode')} data-display-mode
@@ -94,7 +107,7 @@ export interface PhoneItem { id: string; label: string; icon?: IconName; checked
  * as overflow items: Select tasks, Display mode, and the duration filter when it
  * had no slot (its active choice then shows as a chip in the bar).
  */
-export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project, extraSlot }: {
+export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project, extraSlot, queryFilter }: {
   route: ListRoute
   /** A last slot of the bar: a project's or label's display options (list-display-options). */
   extraSlot?: ReactNode
@@ -105,6 +118,8 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
   filterKey: string | null
   duration: DurationFilter | null
   onDuration: (kind: DurationFilter | null) => void
+  /** Upcoming's query filter (calendar-clarity D4). */
+  queryFilter?: QueryFilterControl | null
   /** A project page: its layout choice and, when empty, "Add a note" join the project menu. */
   project?: { row: Project; editable: boolean; viewMode: ProjectViewMode; onViewMode: (m: ProjectViewMode) => void }
 }): { phone: boolean; slots: ReactNode; items: PhoneItem[]; projectItems: PhoneItem[] } {
@@ -121,6 +136,7 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
   if (filterKey && !filterSlot) {
     for (const f of DURATION_FILTERS) items.push({ id: `duration-${f.kind}`, label: f.label, checked: duration === f.kind, group: t('Filter by duration'), onSelect: () => onDuration(duration === f.kind ? null : f.kind) })
   }
+  if (queryFilter && !filterSlot) items.push({ id: 'query-filter', label: t('Filter…'), icon: 'filter', onSelect: queryFilter.onOpen })
   const current = DURATION_FILTERS.find((f) => f.kind === duration)
   const slots = (
     <>
@@ -131,13 +147,14 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
           <span className="max-[21rem]:sr-only">{t.rich('Process {count}', { count: <span className="tabular-nums text-muted">{topLevelCount}</span> })}</span>
         </Button>
       )}
-      {filterSlot && <DurationFilterControl active={duration} onChange={onDuration} />}
+      {queryFilter?.query && <FilterQueryChip query={queryFilter.query} onOpen={queryFilter.onOpen} onClear={queryFilter.onClear} />}
+      {filterSlot && <DurationFilterControl active={duration} onChange={onDuration} onQuery={queryFilter?.onOpen} />}
       {!filterSlot && current && <DurationChip label={current.label} onClear={() => onDuration(null)} />}
       {extraSlot}
     </>
   )
   const projectItems: PhoneItem[] = project ? [
-    ...(['list', 'board', 'timeline'] as const).map((mode) => ({ id: `layout-${mode}`, label: LAYOUT_LABEL[mode], checked: project.viewMode === mode, group: t('Layout'), onSelect: () => project.onViewMode(mode) })),
+    ...LAYOUTS.map((mode) => ({ id: `layout-${mode}`, label: LAYOUT_LABEL[mode], checked: project.viewMode === mode, group: t('Layout'), onSelect: () => project.onViewMode(mode) })),
     ...(project.editable && !project.row.description?.trim() ? [{ id: 'note', label: t('Add a note'), icon: 'pencil' as const, onSelect: () => requestProjectNote(project.row.id) }] : []),
     ...items,
   ] : items
@@ -186,7 +203,7 @@ function DurationChip({ label, onClear }: { label: string; onClear: () => void }
  * The duration filter as a page action (ux-overhaul, time-blocking "Duration filter"):
  * a Filter menu in the header, and one chip with a clear control while a filter is on.
  */
-function DurationFilterControl({ active, onChange }: { active: DurationFilter | null; onChange: (kind: DurationFilter | null) => void }) {
+function DurationFilterControl({ active, onChange, onQuery }: { active: DurationFilter | null; onChange: (kind: DurationFilter | null) => void; onQuery?: () => void }) {
   const current = DURATION_FILTERS.find((f) => f.kind === active)
   return (
     <span className="flex items-center gap-1" data-duration-filter>
@@ -197,6 +214,9 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
         ))}
         {active && <MenuSeparator />}
         {active && <MenuItem label={t('Clear filter')} icon="x" onSelect={() => onChange(null)} />}
+        {/* Upcoming's query filter sits under the duration filter (calendar-clarity D4). */}
+        {onQuery && <MenuSeparator />}
+        {onQuery && <MenuItem label={t('Filter…')} icon="filter" description={t('Show only the tasks a query matches')} data-query-filter-open onSelect={onQuery} />}
       </Menu>
     </span>
   )

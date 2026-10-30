@@ -6,6 +6,7 @@ import { usePlace } from '../../lib/locations'
 import { blockedMap } from '../../lib/dependencies'
 import { useFlowView } from '../../lib/useFlow'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
+import { UPCOMING_FILTER_KEY, useQueryFilter } from '../calendar/queryFilter'
 import { habitStatsMap } from '../../lib/habits'
 import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
@@ -147,7 +148,13 @@ export function useListModel(route: ListRoute, userId?: string) {
   const { duration, filterKey } = filter
   // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   const viewTasks = useMemo(() => tasksForView(route, allTasks, projects, today, userId), [allTasks, projects, route, today, zone, userId])
-  const tasks = useMemo(() => (!duration || !filterKey ? viewTasks : viewTasks.filter(durationPredicate(duration))), [viewTasks, duration, filterKey])
+  // Upcoming's query filter (calendar-clarity D4), under the duration filter; per device, on local rows.
+  const upcoming = useQueryFilter(UPCOMING_FILTER_KEY, allTasks)
+  const queryTest = route.view === 'upcoming' ? upcoming.test : null
+  const tasks = useMemo(() => {
+    const byDuration = !duration || !filterKey ? viewTasks : viewTasks.filter(durationPredicate(duration))
+    return queryTest ? byDuration.filter(queryTest) : byDuration
+  }, [viewTasks, duration, filterKey, queryTest])
 
   // Completed renders a page of the logbook at a time; a new route starts again.
   const [logbookLimit, setLogbookLimit] = useState(LOGBOOK_PAGE)
@@ -232,6 +239,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, ownRows, siblingPos, timeColumn, doneBySection,
     showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed,
+    queryFilter: route.view === 'upcoming' ? upcoming : null,
   }
 }
 

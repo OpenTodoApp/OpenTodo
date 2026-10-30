@@ -170,9 +170,13 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
 const ACTIVITY_PANEL = 'project-activity'
 const HISTORY_PANEL = 'project-history'
 
-export function ProjectHeader({ project, userId, actions, layout, subtitle, phone }: {
+export function ProjectHeader({ project, userId, actions, layout, subtitle, phone, extraGroups, lead }: {
   project: Project
   userId?: string
+  /** Items the layout adds to the project menu (a board's Colour by, calendar-clarity D3). */
+  extraGroups?: ActionGroup[]
+  /** The layout's part of the lead line (the Calendar layout's filter chip, calendar-clarity D5). */
+  lead?: ReactNode
   /** Below 768 px, a line under the title in the shell's bar (the board's current column). */
   subtitle?: ReactNode
   /** Page actions rendered after Share (the duration filter, touch Select). */
@@ -254,6 +258,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
       { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
+    ...(extraGroups ?? []),
     panels,
   ]
 
@@ -287,6 +292,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
       {role === 'viewer' && <span role="note" className="rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted">{t('Read-only')}</span>}
       {/* project-review-cadence: the shared status, inside the existing lead line. */}
       {inMaintenance(project) && <span role="note" data-project-maintenance className="inline-flex items-center gap-1 rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted"><Icon name="wrench" size="xs" />{t('In maintenance')}</span>}
+      {lead}
       {online && managesLinks && publicLinks > 0 && (
         <button type="button" data-public-badge onClick={() => setSharing('public')}
           aria-label={t('{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}', { n: publicLinks })}

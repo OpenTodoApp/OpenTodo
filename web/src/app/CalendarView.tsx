@@ -4,9 +4,9 @@
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op). Since
 // web-component-structure the days come from lib/calendarDays, the live reads from
 // lib/liveData, and the columns, agenda, planning list and keys live in ./calendar.
-import { Button, DESKTOP_HEADER_QUERY, MenuItem, PageBody, PageHeader, Tooltip, useMediaQuery } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, MenuItem, PageBody, Tooltip, useMediaQuery } from '../ui'
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { calendarTasks, DEFAULT_BLOCK_MINUTES, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
+import { calendarTasks, deadlineMarkers, DEFAULT_BLOCK_MINUTES, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
 import { fitInFrame, frameTarget, framesByDate, useFrames, type PlacedFrame } from '../lib/frames'
 import { clampSlotMinutes, slotAt, slotKey, slotName, type SlotView } from '../lib/slots'
 import { calendarDays, calendarOrder, type DayData } from '../lib/calendarDays'
@@ -16,11 +16,10 @@ import { addDaysISO, dueFromView, formatDate, formatShort, viewedTask } from '..
 import { formatMinutes } from '../lib/duration'
 import { getTask, readGridPrefs, useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { updateTask } from '../lib/ops'
-import type { CalendarSubscription, Project, Task } from '../lib/types'
+import type { CalendarSubscription, Task } from '../lib/types'
 import { useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
 import { rescheduleWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { navigate } from './router'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { placement as placementSignal } from './signals'
 import { useWide } from '../ui'
@@ -36,7 +35,9 @@ import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanP
 import { useCalendarKeys } from './calendar/useCalendarKeys'
 import { WeekAgenda } from './calendar/WeekAgenda'
 import { requestFrames } from './calendar/framesRequest'
-import { AddOnDayDialog } from './calendar/AddOnDayDialog'
+import { CalendarPageHeader, useCalendarChrome } from './calendar/useCalendarChrome'
+import { useCalendarGo } from './calendar/scope'
+import type { AddGestures, HueOf } from './calendar/DayColumn'
 import { commitSlotDrop, newSlotFor, useSlotIndex, useSlotViews } from './calendar/useCalendarSlots'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
@@ -110,8 +111,6 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const prefs = useGridPrefs()
 
   const projects = useLiveProjects()
-  /** The day an empty day's "Add a task" adds to (the week's agenda, lean-chrome D7). */
-  const [adding, setAdding] = useState<string | null>(null)
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const liveTasks = useLiveTasks()
   const rawTasks = liveTasks ?? NO_TASKS
@@ -121,14 +120,21 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const allTasks = useMemo(() => rawTasks.map((tk) => viewedTask(tk, zone)), [rawTasks, zone])
   const rawMap = useMemo(() => new Map(rawTasks.map((item) => [item.id, item])), [rawTasks])
   const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
+  // Colour by, the filter, the project scope and adding with the pointer (calendar-clarity).
+  const chrome = useCalendarChrome(allTasks, projects)
+  const { keeps, inScope } = chrome
+  // Capacity counts every task of the day; the grid draws the ones the scope and the filter keep (design D4).
   const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1]), [allTasks, projects, dates])
+  const drawn = useMemo(() => shown.filter(keeps), [shown, keeps])
+  const hidden = useMemo(() => countBy(shown.filter((tk) => inScope(tk) && !keeps(tk)), (tk) => tk.due!.date), [shown, inScope, keeps])
+  const deadlines = useMemo(() => deadlineMarkers(allTasks.filter(keeps), projects, dates[0], dates[dates.length - 1]), [allTasks, keeps, projects, dates])
 
   const from = dates[0], to = dates[dates.length - 1]
   const feeds = useCalendarFeeds(from, to)
   const online = useOnline()
   // Slots (calendar-slots): one block per slot with the tasks it shows, which are not drawn again.
   const { slotViews, obstacles } = useSlotViews(dates, taskMap, today)
-  const days = useMemo(() => calendarDays(dates, shown, feeds.visibleEvents, zone, slotViews), [dates, shown, feeds.visibleEvents, zone, slotViews])
+  const days = useMemo(() => calendarDays(dates, drawn, feeds.visibleEvents, zone, slotViews), [dates, drawn, feeds.visibleEvents, zone, slotViews])
   const { slotIndex, heldBy } = useSlotIndex(days)
   const order = useMemo(() => calendarOrder(days), [days])
   // Frames (calendar-frames): background bands of the shown days, never part of the order or capacity.
@@ -204,7 +210,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   usePlanActions(planActions)
   const { planOpen, togglePlan } = usePlanPanel()
 
-  const goTo = useCallback((d: string) => navigate({ view: mode, date: d === today ? undefined : d }), [mode, today])
+  const go = useCalendarGo()
+  const goTo = useCallback((d: string) => go(mode, d === today ? undefined : d), [go, mode, today])
   /** Keep a moved task in view: follow it to another day or week. */
   const follow = useCallback((d: string) => {
     if (!dates.includes(d)) goTo(d)
@@ -223,6 +230,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     mode, anchor, today, nowMinutes, prefs, days, order, taskMap, selectedId, setSelectedId, openId, setOpenId,
     placing, setPlacing, expanded, setExpanded, commit, startPlacing, goTo, follow, slots: slotIndex,
     replan: previewing ? { apply: rp.apply, cancel: rp.cancel } : null,
+    // `q` adds on the focused day without a time (calendar-clarity D2).
+    onQuickAdd: (d) => chrome.add.add({ date: d }),
   })
 
   // Keep the selection (or the placement ghost) on screen.
@@ -272,18 +281,26 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const select = (id: string) => setSelectedId(id)
   const open = (id: string) => { setSelectedId(id); setOpenId(id) }
   const step = (dir: 1 | -1) => goTo(addDaysISO(anchor, (mode === 'day' ? 1 : 7) * dir))
+  const hueOf: HueOf = chrome.color.hueOf
+  const gestures: AddGestures | undefined = previewing ? undefined : chrome.add
 
-  return (
-    <PageBody width="full" flush className="flex h-full select-none flex-col" data-calendar-page={mode}>
-        <PageHeader title={title} help="calendar"
-          meta={previewing && desktopHead
-            ? <Suspense fallback={null}><ReplanPreview variant="bar" {...previewProps(rp, taskMap, today)} /></Suspense>
-            : rp.missed > 0 && !placing ? <span className="inline-flex max-w-full items-center gap-3">
-              <CalendarStatus status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />
-              <ReplanEntry count={rp.missed} onStart={rp.start} />
-            </span>
-              : <CalendarStatus placing={placing} placingTask={placingTask} placingSlot={placingSlot ? slotName(placingSlot.slot) : undefined} status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />}
-          actions={<>
+  const status = previewing && desktopHead
+    ? <Suspense fallback={null}><ReplanPreview variant="bar" {...previewProps(rp, taskMap, today)} /></Suspense>
+    : rp.missed > 0 && !placing ? <span className="inline-flex max-w-full items-center gap-3">
+      <CalendarStatus status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />
+      <ReplanEntry count={rp.missed} onStart={rp.start} />
+    </span>
+      : <CalendarStatus placing={placing} placingTask={placingTask} placingSlot={placingSlot ? slotName(placingSlot.slot) : undefined} status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />
+  // The active filter is one chip in the lead line, beside the status (design D4: no new row).
+  const meta = chrome.chip ? <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-2">{chrome.chip}{status}</span> : status
+  const overflow = <>
+    <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a time, or press s on one')} onSelect={() => chrome.plan(planOpen, togglePlan)} />
+    {rp.missed > 0 && !previewing && <MenuItem label={t('Re-plan the rest of the day')} icon="calendar-clock" data-replan-item onSelect={rp.start} />}
+    <MenuItem label={t('Frames…')} icon="rows-2" description={t('Shade the hours you keep for one kind of work')} data-frames-item onSelect={() => requestFrames()} />
+    <MenuItem label={t('New slot')} icon="layers" description={t('One block for several small tasks')} data-new-slot onSelect={newSlotHere} />
+    {chrome.overflow}
+  </>
+  const rangeActions = <>
             {feeds.subs.length > 0 && (
               <Tooltip label={feeds.eventsShown ? t('Hide other calendars on this device') : t('Show other calendars on this device')}>
                 <Button variant="ghost" size="sm" icon="calendar-range" aria-pressed={feeds.eventsShown} data-calendars-toggle
@@ -297,23 +314,21 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
               <Button variant="ghost" size="sm" icon="chevron-right" aria-label={mode === 'day' ? t('Next day') : t('Next week')} onClick={() => step(1)} />
             </span>
             <CalendarRangeSwitch mode={mode} date={date} />
-          </>}
-          overflow={<>
-            <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a time, or press s on one')} onSelect={togglePlan} />
-            {rp.missed > 0 && !previewing && <MenuItem label={t('Re-plan the rest of the day')} icon="calendar-clock" data-replan-item onSelect={rp.start} />}
-            <MenuItem label={t('Frames…')} icon="rows-2" description={t('Shade the hours you keep for one kind of work')} data-frames-item onSelect={() => requestFrames()} />
-            <MenuItem label={t('New slot')} icon="layers" description={t('One block for several small tasks')} data-new-slot onSelect={newSlotHere} />
-          </>} />
+  </>
+
+  return (
+    <PageBody width="full" flush className="flex h-full select-none flex-col" data-calendar-page={mode}>
+        <CalendarPageHeader chrome={chrome} title={title} meta={meta} actions={rangeActions} overflow={overflow} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
         {/* Focusable, so the grid scrolls with the keyboard even when no block is in view (axe scrollable-region-focusable). */}
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
           data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
-            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} frames={frames} taskMap={taskMap} projectMap={projectMap} selectedId={selectedId}
-              onSelect={select} onOpen={open} onAdd={setAdding} />
+            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} deadlines={deadlines} selectedId={selectedId}
+              onSelect={select} onOpen={open} onAdd={(d) => chrome.add.add({ date: d })} />
           ) : (
-            <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} meetings={meetings} frames={frames} taskMap={taskMap} projectMap={projectMap} dragSlot={dragSlot}
+            <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} deadlines={deadlines} hidden={hidden} gestures={gestures} dragSlot={dragSlot}
               subMap={feeds.subMap} zone={zone} selectedId={selectedId} expanded={expanded} setExpanded={setExpanded} drag={drag} dragTask={dragTask}
               placing={placing} placingTask={placingTask} replanFor={previewing && desktopHead ? rp.ghostsFor : undefined} onSelect={select} onOpen={open} onDragStart={dragStart} />
           )}
@@ -322,7 +337,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
       {previewing && !desktopHead && <Suspense fallback={null}><ReplanPreview variant="sheet" {...previewProps(rp, taskMap, today)} /></Suspense>}
 
-      {adding && <AddOnDayDialog date={adding} projects={projects} onClose={() => setAdding(null)} />}
+      {chrome.element}
       {drag && (dragTask || dragSlot) && (
         <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-control bg-accent px-2 py-1 text-meta text-on-accent shadow-2" style={{ left: drag.x + 12, top: drag.y + 12 }}>
           {dragSlot ? slotName(dragSlot.slot) : dragTask!.title || t('Untitled')}
@@ -337,7 +352,13 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   )
 }
 
-/** The Day or Week grid: a sticky header (day name, capacity, unscheduled lane) over the hour columns. */
+/** How many items fall on each key. */
+function countBy<T>(items: readonly T[], key: (item: T) => string): Map<string, number> {
+  const out = new Map<string, number>()
+  for (const item of items) out.set(key(item), (out.get(key(item)) ?? 0) + 1)
+  return out
+}
+
 /** "3 blocks behind · Re-plan" in the header's lead line (replan-the-day D4). */
 function ReplanEntry({ count, onStart }: { count: number; onStart: () => void }) {
   return (
@@ -356,7 +377,7 @@ function previewProps(rp: ReplanPreviewState, taskMap: Map<string, Task>, today:
   }
 }
 
-function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, frames, taskMap, projectMap, subMap, zone, selectedId, expanded, setExpanded, drag, dragTask, dragSlot, placing, placingTask, replanFor, onSelect, onOpen, onDragStart }: {
+function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, frames, taskMap, hueOf, deadlines, hidden, gestures, subMap, zone, selectedId, expanded, setExpanded, drag, dragTask, dragSlot, placing, placingTask, replanFor, onSelect, onOpen, onDragStart }: {
   /** The slot being dragged or resized (calendar-slots D5). */
   dragSlot?: SlotView
   mode: 'day' | 'week'
@@ -368,7 +389,12 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
   meetings: Map<string, DayMeetings> | null
   frames: Map<string, PlacedFrame[]>
   taskMap: Map<string, Task>
-  projectMap: Map<string, Project>
+  hueOf: HueOf
+  /** Deadline markers per date (calendar-clarity D1). */
+  deadlines: Map<string, Task[]>
+  /** Tasks the filter hides per date. */
+  hidden: Map<string, number>
+  gestures?: AddGestures
   subMap: Map<string, CalendarSubscription>
   zone?: string
   selectedId: string | null
@@ -411,14 +437,15 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
         {days.map((d) => (
           <DayHeader key={d.date} day={d} today={today} tasks={shown} meetings={meetings?.get(d.date) ?? null} prefs={prefs} showName={mode === 'week'} selectedId={selectedId} subMap={subMap} zone={zone}
             laneTarget={drag?.target?.type === 'lane' && drag.target.date === d.date} onSelect={onSelect} onOpen={onOpen}
-            onPointerDown={(e, id) => onDragStart(e, { taskId: id, kind: 'move' })} projectMap={projectMap} />
+            onPointerDown={(e, id) => onDragStart(e, { taskId: id, kind: 'move' })} hueOf={hueOf}
+            deadlines={deadlines.get(d.date)} hidden={hidden.get(d.date) ?? 0} gestures={gestures} />
         ))}
       </div>
 
       <div className="flex">
         <HourGutter />
         {days.map((d) => (
-          <DayColumn key={d.date} day={d} prefs={prefs} isToday={d.date === today} isPast={d.date < today} nowMinutes={nowMinutes} taskMap={taskMap} projectMap={projectMap}
+          <DayColumn key={d.date} day={d} prefs={prefs} isToday={d.date === today} isPast={d.date < today} nowMinutes={nowMinutes} taskMap={taskMap} hueOf={hueOf} gestures={gestures}
             subMap={subMap} zone={zone} selectedId={selectedId} draggingId={drag?.taskId ?? null} slotDrop={drag?.target?.type === 'into-slot' ? drag.target.slotId : null} expanded={expanded} setExpanded={setExpanded}
             preview={previewFor(d)} replan={replanFor?.(d.date)} frames={frames.get(d.date)} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
         ))}
