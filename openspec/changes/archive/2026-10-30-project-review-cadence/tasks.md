@@ -33,4 +33,4 @@
 
 ## 6. Integration
 
-- [ ] 6.1 Run `make check`. Then, in the built app, set a shared project to monthly on one account and leave it weekly on another, put it in maintenance from the owner, and check that both members see the same health word and their own walk
+- [x] 6.1 Run `make check`. Then, in the built app, set a shared project to monthly on one account and leave it weekly on another, put it in maintenance from the owner, and check that both members see the same health word and their own walk
