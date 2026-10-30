@@ -1,6 +1,7 @@
 ---
 opentodo-id: p-launch
 opentodo-color: "#8b5cf6"
+opentodo-flow: sequential
 ---
 
 ## Next week

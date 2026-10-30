@@ -690,3 +690,39 @@ func TestReadOnlyAndDryRun(t *testing.T) {
 		t.Error("pending edit not pushed later")
 	}
 }
+
+// TestProjectFlowInFrontMatter (OpenSpec change project-flow-modes, task 7.1):
+// the app's flow is written as opentodo-flow (left out for Parallel), an edit in
+// the file reaches the app, and an unknown value stays in the file unwritten.
+func TestProjectFlowInFrontMatter(t *testing.T) {
+	s := newServer(t)
+	move := s.create("projects", map[string]any{"name": "Move house"})
+	s.create("tasks", map[string]any{"title": "Book van", "project_id": move})
+	v := s.vault(t)
+	if strings.Contains(v.read(t, "Move house.md"), "opentodo-flow") {
+		t.Fatalf("a parallel project has the key:\n%s", v.read(t, "Move house.md"))
+	}
+	before := v.read(t, "Move house.md")
+	s.do("PATCH", "/api/v1/projects/"+move, map[string]any{"flow_mode": "sequential"})
+	v.sync(t)
+	after := v.read(t, "Move house.md")
+	if !strings.Contains(after, "\nopentodo-flow: sequential\n") {
+		t.Fatalf("flow not written:\n%s", after)
+	}
+	if strings.Replace(after, "opentodo-flow: sequential\n", "", 1) != before {
+		t.Fatalf("other lines changed:\n%s\n--- before ---\n%s", after, before)
+	}
+	v.edit(t, "Move house.md", "opentodo-flow: sequential", "opentodo-flow: area")
+	v.sync(t)
+	if got := s.get("projects", move)["flow_mode"]; got != "area" {
+		t.Fatalf("flow in the app = %v", got)
+	}
+	v.edit(t, "Move house.md", "opentodo-flow: area", "opentodo-flow: staged")
+	v.sync(t)
+	if got := s.get("projects", move)["flow_mode"]; got != "area" {
+		t.Fatalf("an unknown value was written: %v", got)
+	}
+	if !strings.Contains(v.read(t, "Move house.md"), "opentodo-flow: staged") {
+		t.Fatalf("the unknown value left the file:\n%s", v.read(t, "Move house.md"))
+	}
+}

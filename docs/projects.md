@@ -24,10 +24,11 @@ The **Project** menu at the top right of a project lets you:
 - **Move to…** another project, or back to the top level; <kbd>m</kbd> opens the menu straight at this step.
 - **Rename** it,
 - pick an **Icon…**: type to search, or **No icon** for the dot,
+- choose a **Flow…** ([flows](project-flows.md)),
 - **Archive…** it, which hides it and its sub-projects from the sidebar while keeping every task,
 - **Delete project…**, which moves it to the Trash.
 
-Archive and delete ask first and say what they affect.
+Archive and delete ask first.
 
 <picture><source srcset="images/project-move-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-move-light.webp" alt="The Move to step of the project menu: a search field above the possible targets, Top level first, each project shown with the projects it sits in."></picture>
 

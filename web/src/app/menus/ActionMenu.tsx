@@ -22,6 +22,8 @@ interface ItemBase {
   /** Disabled items keep their place and say why (spec: "Disabled items say why"). */
   disabled?: boolean
   reason?: string
+  /** A one-line description under the label (a submenu's choices); a disabled item's reason wins. */
+  description?: string
   tone?: 'danger'
 }
 
@@ -111,7 +113,7 @@ function Items({ groups, onPicker, onStep, onConfirm, onSubmenu }: {
             {g.items.map((item) => {
               const common = {
                 label: item.label, icon: item.icon, shortcut: item.shortcut, disabled: item.disabled,
-                description: item.disabled ? item.reason : undefined, danger: item.tone === 'danger', 'data-action': item.id,
+                description: item.disabled ? item.reason : item.description, danger: item.tone === 'danger', 'data-action': item.id,
               }
               switch (item.kind) {
                 case 'action':

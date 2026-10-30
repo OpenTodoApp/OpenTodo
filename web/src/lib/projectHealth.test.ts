@@ -57,6 +57,29 @@ describe('project health rules', () => {
   })
 })
 
+describe('areas (project-flow-modes, statistics "Areas in project health")', () => {
+  it('A quiet area is fine: On track, no progress', () => {
+    const s = summary([project('home', { flow_mode: 'area' })], [task('a', 'home', { _clock: clock(NOW - 30 * DAY) }), done('b', 'home', { _clock: clock(NOW - 30 * DAY) })]).get('home')!
+    expect(s.health.word).toBe('on-track')
+    expect(s.health.quietDays).toBeNull()
+    expect(s.progress).toBeNull()
+    expect(s.area).toBe(true)
+  })
+
+  it('Overdue in an area', () => {
+    const s = summary([project('home', { flow_mode: 'area' })], [task('a', 'home', { due: { date: '2026-10-13' } })]).get('home')!
+    expect(s.health).toMatchObject({ word: 'slipping', late: 1 })
+  })
+
+  it('a sub-project of an area keeps its progress, and areas sort after projects with one', () => {
+    const map = summary([project('home', { flow_mode: 'area' }), project('kitchen', { parent_id: 'home', flow_mode: 'sequential' })], [task('a', 'kitchen'), done('b', 'kitchen')])
+    expect(map.get('kitchen')!.progress).toBe(0.5)
+    expect(map.get('home')!.progress).toBeNull()
+    const rows = [{ name: 'Home', summary: map.get('home') }, { name: 'Kitchen', summary: map.get('kitchen') }]
+    for (const dir of [1, -1] as const) expect(rows.slice().sort((a, b) => compareProjects('progress', dir, a, b)).map((r) => r.name)).toEqual(['Kitchen', 'Home'])
+  })
+})
+
 describe('project summary', () => {
   it('progress, open, next due and updated', () => {
     const s = summary([project('p')], [

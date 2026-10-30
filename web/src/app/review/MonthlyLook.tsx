@@ -61,7 +61,7 @@ export function MonthlyLook() {
           {finished && <p role="status" className="mb-3 text-meta text-muted">{t('Monthly look finished {instant}.', { instant: formatInstant(finished, 'long') })}</p>}
           <section className="mb-6" aria-labelledby="monthly-areas" data-monthly-areas>
             <h2 id="monthly-areas" className="mb-1 text-h3 font-semibold">{t('Areas')}</h2>
-            <p className="mb-2 text-meta text-muted">{t('Each top-level project that holds sub-projects, and those of them without a next action or stalled.')}</p>
+            <p className="mb-2 text-meta text-muted">{t('Each top-level project that holds sub-projects or is an area, and the sub-projects without a next action or stalled.')}</p>
             {data.areas.length === 0 ? <p className="text-body text-faint">{t('No area yet: nest projects under a top-level project to make one.')}</p> : (
               <ul className="divide-y divide-(--ot-border)">
                 {data.areas.map((a) => (
@@ -71,7 +71,7 @@ export function MonthlyLook() {
                         <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: a.project.color }} />
                         <span className="user-text truncate">{a.project.name}</span>
                       </button>
-                      <span className="text-meta text-muted">{t('{n, plural, one {# project} other {# projects}}, {k} need attention', { n: a.children.length, k: a.attention.length })}</span>
+                      <span className="text-meta text-muted">{a.children.length ? t('{n, plural, one {# project} other {# projects}}, {k} need attention', { n: a.children.length, k: a.attention.length }) : t('Area')}</span>
                     </div>
                     {a.attention.length > 0 && (
                       <ul className="mt-1 flex flex-wrap gap-2 pl-5">

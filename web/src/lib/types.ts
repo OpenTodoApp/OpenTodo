@@ -55,6 +55,8 @@ export interface Project extends ProjectFields {
   notes_doc?: string
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
   workspace_id?: string | null
+  /** The stored flow (project-flow-modes), kept as received; read it with `projectFlowOf` from lib/flow.ts. */
+  flow_mode?: string
   _clock: Clock
 }
 
@@ -284,6 +286,8 @@ export interface Section extends SectionFields {
   color?: string | null
   /** A name from the icon catalogue, or null (icons-and-section-style). */
   icon?: string | null
+  /** The stored flow (project-flow-modes), kept as received; read it with `sectionFlowOf` from lib/flow.ts. */
+  flow_mode?: string
   _clock: Clock
 }
 

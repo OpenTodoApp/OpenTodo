@@ -113,6 +113,7 @@ ot list --completed-after 2026-10-05 --completed-before 2026-10-12   # completed
 ot list --someday              # parked in Someday
 ot list --anytime              # no due date, deadline or start
 ot list --blocked --project Home   # waiting for an open task
+ot list --available                # what can be done now: not blocked, not waiting for an earlier step
 ```
 
 Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from) and a `BY` column with the deadline when one has a deadline (a passed deadline is marked overdue). The due cell adds `(someday)`, `starts <date>`, `evening` and `waiting` when they apply. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
@@ -191,7 +192,7 @@ ot project archive Garden [--undo]
 ot project rm Garden [--yes]
 ```
 
-Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column; `--workspace` narrows it to one.
+Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column and each project's FLOW (`parallel`, `sequential` or `area`, see [Sequential projects and areas](project-flows.md)); `--workspace` narrows it to one.
 
 ## Time
 

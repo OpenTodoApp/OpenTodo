@@ -2,12 +2,14 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/flow"
 	"github.com/OpenTodoApp/opentodo/internal/inbox"
 )
 
@@ -197,10 +199,10 @@ func (f *planningFlags) locationValue(ctx context.Context, c *client) (any, erro
 
 // ---- list ----
 
-// planningView reports the --someday, --anytime and --blocked filter chosen ("" for none).
+// planningView reports the --someday, --anytime, --blocked and --available filter chosen ("" for none).
 func (o *listOptions) planningView() (string, error) {
 	var on []string
-	for name, set := range map[string]bool{"someday": o.someday, "anytime": o.anytime, "blocked": o.blocked} {
+	for name, set := range map[string]bool{"someday": o.someday, "anytime": o.anytime, "blocked": o.blocked, "available": o.available} {
 		if set {
 			on = append(on, name)
 		}
@@ -214,7 +216,7 @@ func (o *listOptions) planningView() (string, error) {
 		}
 		return on[0], nil
 	}
-	return "", usageErr("choose one of --someday, --anytime, --blocked")
+	return "", usageErr("choose one of --someday, --anytime, --blocked, --available")
 }
 
 func plannedOf(t task) inbox.Planned {
@@ -242,8 +244,31 @@ func blockedRule(all []task) func(task) bool {
 	}
 }
 
-// filterPlanning keeps the tasks of one planning filter.
-func filterPlanning(tasks, all []task, which string) []task {
+// availableRule reports whether a task can be done now (OpenSpec change
+// project-flow-modes): the shared rule of internal/flow over the account's rows.
+func availableRule(all []task, projects []project, sections []json.RawMessage, today string) func(task) bool {
+	in := flow.Input{Today: today}
+	for _, p := range projects {
+		in.Projects = append(in.Projects, flow.Project{ID: p.ID, FlowMode: p.FlowMode})
+	}
+	for _, raw := range sections {
+		var row flow.Row
+		if json.Unmarshal(raw, &row) == nil {
+			in.Sections = append(in.Sections, flow.SectionOf(row))
+		}
+	}
+	for _, t := range all {
+		var row flow.Row
+		if json.Unmarshal(t.Raw, &row) == nil {
+			in.Tasks = append(in.Tasks, flow.TaskOf(row))
+		}
+	}
+	states := flow.Compute(in)
+	return func(t task) bool { return states.Available(t.ID) }
+}
+
+// filterPlanning keeps the tasks of one planning filter; available is needed only for "available".
+func filterPlanning(tasks, all []task, which string, available func(task) bool) []task {
 	blocked := blockedRule(all)
 	out := tasks[:0]
 	for _, t := range tasks {
@@ -255,6 +280,8 @@ func filterPlanning(tasks, all []task, which string) []task {
 			keep = inbox.Anytime(plannedOf(t))
 		case "blocked":
 			keep = t.CompletedAt == nil && blocked(t)
+		case "available":
+			keep = available(t)
 		}
 		if keep {
 			out = append(out, t)

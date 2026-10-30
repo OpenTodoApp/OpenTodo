@@ -6,7 +6,8 @@ import { blockedMap } from '../dependencies'
 import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
 import { applicableFieldsLookup } from '../fieldTree'
-import type { FieldDef, FieldValue, Label, Project, Task } from '../types'
+import type { FieldDef, FieldValue, Label, Project, Section, Task } from '../types'
+import { availability, type FlowState } from '../flow'
 import { originMatches, originOf } from '../taskOrigin'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
 import { t } from '../i18n'
@@ -18,6 +19,8 @@ export interface FilterContext {
   projects: readonly Project[]
   /** Every live task, for `blocked` and `unblocked` (task-dependencies D6). */
   tasks?: readonly Task[]
+  /** Every live section, for the sequences of `available` (project-flow-modes). */
+  sections?: readonly Section[]
   /**
    * First day of the week for `this week` and friends, 0 = Sunday. Defaults to the
    * user's date-time preference snapshot (completed-date-filters D2).
@@ -260,6 +263,15 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
     }
     return blocked
   }
+  // The flow state (project-flow-modes), built once when the query asks for `available`.
+  let flow: FlowState | null = null
+  const flowState = () => {
+    if (!flow) {
+      if (!ctx.tasks) warn(t('Blocked tasks cannot be told apart here'))
+      flow = availability({ tasks: ctx.tasks ?? [], projects: ctx.projects, sections: ctx.sections ?? [], today })
+    }
+    return flow
+  }
 
   const build = (n: Node): Pred => {
     switch (n.kind) {
@@ -391,6 +403,8 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'tracked': return (task) => (ctx.tracked?.get(task.id) ?? 0) >= 1
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
           case 'unblocked': { const b = blockedSet(); return (task) => !b.has(task.id) }
+          // Available now (project-flow-modes): not blocked, not waiting in sequence, neither Someday nor deferred.
+          case 'available': { const f = flowState(); return (task) => f.available(task.id) }
         }
     }
   }

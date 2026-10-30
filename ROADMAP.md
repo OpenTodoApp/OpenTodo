@@ -22,7 +22,7 @@ Method primitives and the community's quick wins.
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`project-flow-modes`](openspec/changes/project-flow-modes/) | Projects and sections that are Parallel, Sequential (only the next task is available) or an Area |  |
+| [`project-flow-modes`](openspec/changes/archive/2026-10-30-project-flow-modes/) | **Shipped.** Projects and sections that are Parallel, Sequential (only the next task is available) or an Area | [#574](https://github.com/OpenTodoApp/OpenTodo/issues/574) |
 | [`project-review-cadence`](openspec/changes/project-review-cadence/) | A review interval per project, so the weekly review shows only the projects that are due |  |
 | [`today-closed-list`](openspec/changes/today-closed-list/) | An optional Today limit with a "Waiting for a slot" drawer, a Done today list and Log a win |  |
 | [`day-parts`](openspec/changes/day-parts/) | Morning, Afternoon and Evening groups in Today |  |

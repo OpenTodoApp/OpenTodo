@@ -487,7 +487,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 | `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `location`, `recurrence`, `origin` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
-| `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon` (`archived: false` is accepted) |
+| `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon`, `flow_mode` (`archived: false` is accepted) |
 | `PATCH /api/v1/projects/{id}` | `name`, `color` |
 | `POST /api/v1/labels` | `name`, `color` (an existing label of that name is returned with 200) |
 | `POST /api/v1/tasks/{id}/comments` | `body`, `parent_id` (`mentions` is accepted and dropped: assistant comments notify nobody) |
@@ -617,6 +617,15 @@ Errors: `400 invalid_input` for a body that is not an object, a missing `line`, 
 
 `name` (string), `color` (string, CSS colour), `position` (number, sort order among siblings), `archived` (boolean), `parent_id` (string or null, see [Sub-projects](#sub-projects)), `created_at`, `deleted_at`, and the project's note: `description` (Markdown) and `notes_doc` (its mergeable document), exactly as on tasks (see [Mergeable documents](sync.md#mergeable-documents)). A `PATCH` of `description` alone is folded into the document by the next device that opens the note. Editors of a shared project may write the two note fields; every other project field needs an admin or the owner.
 
+`flow_mode` (string) is how the project's tasks flow (OpenSpec change `project-flow-modes`, guide: [Sequential projects and areas](project-flows.md)): `parallel`, `sequential` (one step at a time in list order) or `area` (an ongoing list: no progress, never without a next action). Every representation carries it, `""` when it was never set, which reads as `parallel` like any value a client does not know. REST accepts only the three values and refuses anything else with `400 invalid_input` naming `project.flow_mode`; the sync endpoint accepts any string, so a newer client's value is kept.
+
+```sh
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"flow_mode":"sequential"}' $BASE/api/v1/projects/$PROJECT
+# 200 {…,"flow_mode":"sequential"}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"flow_mode":"serial"}' $BASE/api/v1/projects/$PROJECT
+# 400 {"error":{"code":"invalid_input","message":"project.flow_mode must be parallel, sequential or area, got \"serial\""}}
+```
+
 ### Sub-projects
 
 A project becomes a sub-project by setting `parent_id` to another project's id, to any depth. On `POST /projects` and `PATCH /projects/{id}` the server checks the value and answers `400 invalid_input` when:
@@ -647,6 +656,7 @@ A section is a named, ordered container inside one project (OpenSpec change `boa
 | `position` | number | ascending order within the project; defaults to now (last) |
 | `color` | string or null | a `#rrggbb` colour shown before the name, `null` for none (the default); anything else is `400 invalid_input` |
 | `icon` | string or null | a name from the icon catalogue (`web/src/ui/icons/catalogue.json`, such as `hourglass`), `null` for none (the default); an unknown name is `400 invalid_input`. Responses always carry both fields |
+| `flow_mode` | string | `""` follows the project's flow (the default), `parallel` offers the section's tasks together and `sequential` one at a time (OpenSpec change `project-flow-modes`); anything else is `400 invalid_input`. Responses always carry it |
 | `created_at` | number | set by the server when omitted |
 | `deleted_at` | number or null | set by `DELETE` |
 
@@ -655,7 +665,7 @@ A section is a named, ordered container inside one project (OpenSpec change `boa
 ```sh
 # Create a section, put a task in it, then move the task back to "No section"
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"<project>"}' $BASE/api/v1/sections
-# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000,"color":null,"icon":null}
+# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000,"color":null,"icon":null,"flow_mode":""}
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":"<section>"}' $BASE/api/v1/tasks/$TASK
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":null}' $BASE/api/v1/tasks/$TASK
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"missing"}' $BASE/api/v1/sections
