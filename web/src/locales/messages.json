@@ -281,6 +281,9 @@
   "A forgotten passphrase cannot be recovered.": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "A frame needs a title": [
+    "web/src/lib/frames.ts"
+  ],
   "A group with this name already exists in the workspace.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -424,6 +427,9 @@
   ],
   "A six-digit code from an authenticator app after your password.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "A source that no longer exists": [
+    "web/src/app/calendar/FramesDialog.tsx"
   ],
   "A specific date": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -870,6 +876,9 @@
   ],
   "Add four context labels, {names}? A context is where or how you can do a task; any label starting with @ is one.": [
     "web/src/app/method/MethodModeChooser.tsx"
+  ],
+  "Add frame": [
+    "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Add it to your assistant": [
     "web/src/app/AssistantsPanel.tsx"
@@ -2149,6 +2158,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
@@ -2431,6 +2441,9 @@
   "Choose another task": [
     "web/src/app/focus/FocusView.tsx"
   ],
+  "Choose at least one day": [
+    "web/src/lib/frames.ts"
+  ],
   "Choose at least one event.": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
@@ -2650,6 +2663,7 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/menus/stylePickers.tsx"
   ],
   "Colour {name}": [
@@ -3500,6 +3514,9 @@
   "Declined": [
     "web/src/app/RelaySettings.tsx"
   ],
+  "Deep work": [
+    "web/src/app/calendar/FramesDialog.tsx"
+  ],
   "Default": [
     "web/src/app/WorkspacesSettings.tsx"
   ],
@@ -3539,6 +3556,7 @@
     "web/src/app/RestoreSection.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
+    "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
@@ -3637,7 +3655,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Delete {name}": [
-    "web/src/app/FieldsDialog.tsx"
+    "web/src/app/FieldsDialog.tsx",
+    "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Delete {name}?": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -4130,6 +4149,7 @@
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
@@ -4147,6 +4167,9 @@
   ],
   "Edit delivery channel": [
     "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "Edit frame": [
+    "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Edit in place": [
     "web/src/app/PreferencesPanels.tsx",
@@ -4364,6 +4387,7 @@
     "web/src/lib/e2ee.ts"
   ],
   "End": [
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
   "End maintenance": [
@@ -4395,6 +4419,9 @@
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Ends": [
+    "web/src/app/calendar/FramesDialog.tsx"
   ],
   "English is always on.": [
     "web/src/app/QuickAddSettings.tsx"
@@ -4453,6 +4480,9 @@
   ],
   "Enter the six-digit code from your authenticator app.": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Enter times as hours and minutes": [
+    "web/src/lib/frames.ts"
   ],
   "Enter toggles or creates · Esc closes": [
     "web/src/app/FilterView.tsx",
@@ -4539,7 +4569,8 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Every day": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/frames.ts"
   ],
   "Every day at {time}": [
     "web/src/lib/backups.ts"
@@ -4949,6 +4980,7 @@
   ],
   "Find a project, label or view…": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Find a project…": [
@@ -5161,6 +5193,21 @@
   ],
   "Four views over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
     "web/src/lib/boardTemplates.ts"
+  ],
+  "Frame deleted": [
+    "web/src/lib/frames.ts"
+  ],
+  "Frame {title}, {times}": [
+    "web/src/app/calendar/FrameBand.tsx"
+  ],
+  "Frames": [
+    "web/src/app/calendar/FramesDialog.tsx"
+  ],
+  "Frames shade the hours you keep for one kind of work.": [
+    "web/src/app/calendar/FramesDialog.tsx"
+  ],
+  "Frames…": [
+    "web/src/app/CalendarView.tsx"
   ],
   "Free and open source · no tracking, no telemetry.": [
     "web/src/lib/settingsCopy.ts"
@@ -6533,6 +6580,7 @@
     "web/src/app/TokenSuggest.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/method/MethodListView.tsx",
     "web/src/app/palette/entries.ts",
@@ -7343,6 +7391,7 @@
   ],
   "More options": [
     "web/src/app/IssueEditor.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "More properties": [
@@ -7678,6 +7727,10 @@
   "New email": [
     "web/src/app/profile/ProfileSection.tsx"
   ],
+  "New frame": [
+    "web/src/app/calendar/FramesDialog.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
   "New group": [
     "web/src/app/WorkspaceGroups.tsx"
   ],
@@ -7943,6 +7996,9 @@
     "web/src/lib/facets.ts",
     "web/src/lib/views.ts"
   ],
+  "No days": [
+    "web/src/lib/frames.ts"
+  ],
   "No deadline": [
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
@@ -8197,6 +8253,9 @@
   ],
   "No shortcut matches “{q}”.": [
     "web/src/app/ShortcutHelp.tsx"
+  ],
+  "No source": [
+    "web/src/app/calendar/FramesDialog.tsx"
   ],
   "No start date": [
     "web/src/app/filter/conditionText.ts",
@@ -8551,6 +8610,7 @@
   "Nothing matches.": [
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Nothing matches. Try fewer letters, or a filter query.": [
@@ -9690,6 +9750,9 @@
   "Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels": [
     "web/src/app/calendar/CalendarStatus.tsx"
   ],
+  "Placing into the frame on {date}, {from}–{to}": [
+    "web/src/app/calendar/PlanPanel.tsx"
+  ],
   "Plain http: app passwords would travel unencrypted. Use HTTPS outside your home network.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -9708,12 +9771,16 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Plan from": [
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Plan from a list": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
+  ],
+  "Plan from this frame": [
+    "web/src/app/calendar/FrameBand.tsx"
   ],
   "Plan today": [
     "web/src/app/FirstDay.tsx"
@@ -9729,6 +9796,9 @@
   ],
   "Planned, no project": [
     "web/src/lib/listGroups.ts"
+  ],
+  "Plans from {source}": [
+    "web/src/app/calendar/FrameBand.tsx"
   ],
   "Please enter a name": [
     "web/src/app/NamePrompt.tsx",
@@ -10069,6 +10139,7 @@
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TokenSuggest.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/lib/review.ts",
@@ -10676,6 +10747,9 @@
   "Repeat it": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Repeat on": [
+    "web/src/app/calendar/FramesDialog.tsx"
+  ],
   "Repeat rule": [
     "web/src/app/RecurrenceField.tsx"
   ],
@@ -11154,6 +11228,7 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/profile/ProfileSection.tsx",
@@ -11236,6 +11311,7 @@
   "Saved views": [
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ViewsView.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Saved with its conditions and display options, in the sidebar under Views.": [
@@ -11729,6 +11805,9 @@
   ],
   "Setup token": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Shade the hours you keep for one kind of work": [
+    "web/src/app/CalendarView.tsx"
   ],
   "Shapes and symbols|icon category": [
     "web/src/ui/icons/catalogue.ts"
@@ -12316,6 +12395,7 @@
   ],
   "Start": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/method/DailyCheckToast.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -12427,6 +12507,9 @@
   "Started {date}": [
     "web/src/app/TaskRow.tsx"
   ],
+  "Starts": [
+    "web/src/app/calendar/FramesDialog.tsx"
+  ],
   "Starts later": [
     "web/src/app/filter/conditionText.ts",
     "web/src/app/review/ProjectWalk.tsx"
@@ -12482,6 +12565,9 @@
   ],
   "Stop grouping by part of the day": [
     "web/src/app/TaskListView.tsx"
+  ],
+  "Stop placing into the frame": [
+    "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Stop repeating": [
     "web/src/app/RecurrenceField.tsx"
@@ -13112,6 +13198,9 @@
   "The end is before the start; edit it to repair": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "The end must be after the start": [
+    "web/src/lib/frames.ts"
+  ],
   "The endpoint answers “not found” until turned on.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -13183,6 +13272,9 @@
   ],
   "The last attempt hit the sending limit; it is retried": [
     "web/src/app/DigestCard.tsx"
+  ],
+  "The last day must not be before the first day": [
+    "web/src/lib/frames.ts"
   ],
   "The last four weeks": [
     "web/src/app/review/MonthlyLook.tsx"
@@ -13271,6 +13363,9 @@
   ],
   "The picture could not be saved. Try again.": [
     "web/src/app/profile/PictureDialog.tsx"
+  ],
+  "The planning list opens on it when you plan from this frame.": [
+    "web/src/app/calendar/FramesDialog.tsx"
   ],
   "The position is not available right now.": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -14385,6 +14480,9 @@
   "Times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
+  "Times need fixing": [
+    "web/src/app/calendar/FramesDialog.tsx"
+  ],
   "Time|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
@@ -14394,6 +14492,7 @@
   "Title": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RelayConfirm.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/views/DisplayPanel.tsx"
@@ -15050,6 +15149,8 @@
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/FrameBand.tsx",
+    "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/calendar/PlanRow.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
@@ -15864,6 +15965,10 @@
   ],
   "You can have at most {n} rules": [
     "web/src/lib/rules/store.ts"
+  ],
+  "You can keep up to {n} frames.": [
+    "web/src/app/calendar/FramesDialog.tsx",
+    "web/src/lib/frames.ts"
   ],
   "You can only view tasks in this shared project, so it stays in Today.": [
     "web/src/app/review/CarryOver.tsx"
