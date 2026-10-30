@@ -475,6 +475,10 @@ type taskOut struct {
 	BlockedBy []string     `json:"blocked_by"`
 	Blocked   bool         `json:"blocked"`
 	Location  *locationOut `json:"location"`
+	// WaitingForSlot is set by today_summary only (OpenSpec change
+	// today-closed-list): true when the user's Today limit keeps the task
+	// waiting for a slot.
+	WaitingForSlot *bool `json:"waiting_for_slot,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc

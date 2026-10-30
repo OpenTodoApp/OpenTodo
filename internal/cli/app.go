@@ -164,7 +164,7 @@ func init() {
 		{"login", "sign in with email and password and store an API token", "ot login <server-url> [--email <email>] [--profile <name>]", cmdLogin},
 		{"auth", "manage the stored credentials: set-token, status, logout", "ot auth set-token <token> [--server <url>]\not auth status\not auth logout [--yes]", cmdAuth},
 		{"list", "list tasks (default: all open tasks)", "ot list [--inbox|--today|--upcoming|--project <name-or-id>|--completed|--all] [--limit <n>]", cmdList},
-		{"today", "alias for `ot list --today`", "ot today [--limit <n>]", viewAlias("today")},
+		{"today", "alias for `ot list --today`", "ot today [--all] [--limit <n>]", viewAlias("today")},
 		{"inbox", "alias for `ot list --inbox`", "ot inbox [--limit <n>]", viewAlias("inbox")},
 		{"upcoming", "alias for `ot list --upcoming`", "ot upcoming [--limit <n>]", viewAlias("upcoming")},
 		{"add", "create a task and print its id", "ot add <title> [--project <name-or-id>] [--due <when>] [--time HH:MM] [--priority 1-4] [--label <l>]... [--note <text>] [--idempotency-key <key>]", cmdAdd},

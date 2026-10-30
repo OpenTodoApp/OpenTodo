@@ -779,6 +779,14 @@ var Schema = map[string]map[string]Field{
 		// turns on the part phrases of quick add; clients read an empty or
 		// unknown value as off and keep the stored value.
 		"day_parts": {Kind: kString, Default: `""`},
+		// The Today limit (OpenSpec change today-closed-list, design D5): 0 =
+		// off, else the number of slots Today fills; clients read a non-integer
+		// or a value outside 1-20 as off and keep the stored value.
+		"today_limit": {Kind: kNumber, Default: `0`},
+		// The Done today group (today-closed-list D5, D6): "shown" or
+		// "hidden"; empty or unknown reads as shown in the method modes
+		// companion and first and as hidden in lists.
+		"today_done": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
@@ -809,6 +817,12 @@ var Schema = map[string]map[string]Field{
 		// before, after}]} so Reopen the day can put it back on any device; "" =
 		// none. Task ids, field names and dates only, never user-written text.
 		"carry_over": {Kind: kString, Default: `""`},
+		// Take a slot (OpenSpec change today-closed-list, design D3): the
+		// logical date (YYYY-MM-DD) the list was chosen on and up to twenty
+		// comma-separated task ids let into Today's slots, in the order taken.
+		// A list of another day reads as empty. Task ids only, never content.
+		"slots_date": {Kind: kString, Default: `""`},
+		"slots":      {Kind: kString, Default: `""`},
 	},
 }
 

@@ -39,7 +39,8 @@ import { buildEntries, makeTaskEntry } from './index'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
 import { t } from '../../lib/i18n'
 import { useAssistantStatus } from '../../lib/assistantStatus'
-import { addFromBar, addManyFromBar, lineToInput } from './addFromBar'
+import { addFromBar, addManyFromBar, lineToInput, logWinFromBar } from './addFromBar'
+import { slotStateOf } from '../task-list/slotActions'
 import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarParts'
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -49,10 +50,12 @@ export const PALETTE_LIMIT = 50
 const DEBOUNCE_MS = 150
 const RECENT = 10
 
-export default function CommandPalette({ user, onClose, showShortcuts, initialMode = 'search', initialText }: {
+export default function CommandPalette({ user, onClose, showShortcuts, initialMode = 'search', initialText, logWin }: {
   user: User | null; onClose: () => void; showShortcuts: () => void; initialMode?: BarMode
   /** Text Add mode starts with (the workbench shows the chips with it). */
   initialText?: string
+  /** Opened by "Log a win" (today-closed-list D6): Add mode with "Log as done" on. */
+  logWin?: boolean
 }) {
   const route = useRoute()
   const today = useToday()
@@ -113,6 +116,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
       earlier: earlierIds(tasks, projects, today),
       dayParts: dayPartsOn(prefs),
+      slot: task ? slotStateOf(task.id) : null,
     }
   }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState])
 
@@ -229,6 +233,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
         <ModeSwitch modes={modes} mode={bar} onMode={toMode} />
         {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)} onAddMany={(inputs) => addManyFromBar(inputs, route, user?.id)}
           onAddAndOpen={async (input) => { await addFromBar(input, route, user?.id, true); onClose() }}
+          win={logWin ? { onLog: (input, open) => logWinFromBar(input, route, open).then(() => { if (open) onClose() }) } : undefined}
           escape={{ label: closesFromAdd ? t('Close') : t('Back'), run: escape }} />}
         {bar === 'ask' && <AskPanel onSent={onClose} />}
         {(bar === 'search' || bar === 'commands') && <>

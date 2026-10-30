@@ -206,7 +206,7 @@
         "readOnlyHint": true,
         "title": "Today summary"
       },
-      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project.",
+      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {

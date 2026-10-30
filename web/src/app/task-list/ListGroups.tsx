@@ -11,6 +11,7 @@ import type { HabitStats } from '../../lib/habits'
 import type { RowLayout } from '../../lib/rowLayout'
 import type { FieldDef, Label, Membership, Project, Task } from '../../lib/types'
 import { Button, ListGroupHeader } from '../../ui'
+import { logWinRequest } from '../signals'
 import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
@@ -263,12 +264,14 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
     <section className="mb-4" data-group={g.key}>
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
-          actions={g.key === 'planned' ? <PlannedActions /> : undefined} actionsAlwaysVisible={g.key === 'planned'} />
+          actions={g.key === 'planned' ? <PlannedActions /> : view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
+          actionsAlwaysVisible={g.key === 'planned' || g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
           collapsed={collapsed} onToggle={toggle}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       ))}
+      {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
     </section>
   )
@@ -285,6 +288,15 @@ function PlannedActions() {
   return (
     <Button variant="ghost" size="sm" className="text-meta" onClick={() => navigate({ view: 'filter', q: 'no project' })} data-planned-filter>
       {t('Open as a new view')}
+    </Button>
+  )
+}
+
+/** Today's Done today header action (today-closed-list D6): quick add with "Log as done" on. */
+function LogWinAction() {
+  return (
+    <Button variant="ghost" size="sm" icon="plus" className="text-meta" onClick={() => logWinRequest.request('today')} data-log-win>
+      {t('Log a win')}
     </Button>
   )
 }
