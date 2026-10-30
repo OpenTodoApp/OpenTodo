@@ -170,13 +170,15 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
 const ACTIVITY_PANEL = 'project-activity'
 const HISTORY_PANEL = 'project-history'
 
-export function ProjectHeader({ project, userId, actions, layout, subtitle, phone, extraGroups, lead }: {
+export function ProjectHeader({ project, userId, actions, layout, subtitle, phone, extraGroups, lead, secondary }: {
   project: Project
   userId?: string
   /** Items the layout adds to the project menu (a board's Colour by, calendar-clarity D3). */
   extraGroups?: ActionGroup[]
   /** The layout's part of the lead line (the Calendar layout's filter chip, calendar-clarity D5). */
   lead?: ReactNode
+  /** A second row under the title (the Calendar layout's range controls, calendar-clarity D5). */
+  secondary?: ReactNode
   /** Below 768 px, a line under the title in the shell's bar (the board's current column). */
   subtitle?: ReactNode
   /** Page actions rendered after Share (the duration filter, touch Select). */
@@ -329,7 +331,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
         </>}
         menu={<ActionMenu label={t('Project menu')} title={project.name} groups={phone ? [...phone.groups, { items: [shareItem] }, ...groups] : groups} header={editable ? <ColourSwatches project={project} /> : undefined}
           trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
-          open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
+          open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />}>
+        {secondary}
+      </PageHeader>
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership ?? undefined} section={sharing === 'public' ? 'public' : undefined}
         onPublicLinks={setPublicLinks} onClose={() => setSharing(false)} />}
       {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}

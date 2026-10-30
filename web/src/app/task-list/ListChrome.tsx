@@ -24,6 +24,7 @@ import type { ListRoute } from './useListModel'
 
 /** The project layouts, in `v` order (month-and-timeline-views). */
 export const LAYOUT_LABEL = translatedMap<ProjectViewMode>({ list: msg('List'), board: msg('Board'), timeline: msg('Timeline'), calendar: msg('Calendar') })
+const LAYOUT_ICON: Record<ProjectViewMode, IconName> = { list: 'list', board: 'kanban', timeline: 'calendar-range', calendar: 'calendar-days' }
 /** The layouts in `v` order; Calendar since calendar-clarity D5. */
 export const LAYOUTS = ['list', 'board', 'timeline', 'calendar'] as const
 
@@ -34,15 +35,27 @@ export interface QueryFilterControl {
   onClear: () => void
 }
 
+/**
+ * Touch screens from 768 to 1023 px: four 44 px layout buttons do not fit beside Share
+ * and the page's actions (calendar-clarity), so the layouts move into the project menu.
+ */
+export const COMPACT_LAYOUT_QUERY = '(min-width: 48rem) and (max-width: 63.99rem) and (pointer: coarse)'
+
+/** The layouts as a group of the project menu (COMPACT_LAYOUT_QUERY). */
+export function layoutGroup(mode: ProjectViewMode, onChoose: (m: ProjectViewMode) => void): ActionGroup {
+  return { label: t('Layout'), items: LAYOUTS.map((m) => ({ kind: 'check' as const, id: `layout-${m}`, label: LAYOUT_LABEL[m], checked: mode === m, onSelect: () => onChoose(m) })) }
+}
+
 /** The project header's List / Board / Timeline / Calendar switch. */
 export function LayoutSwitch({ mode, onChoose }: { mode: ProjectViewMode; onChoose: (m: ProjectViewMode) => void }) {
   return (
-    <span className="flex rounded-control border border-default text-meta" role="group" aria-label={t('Project layout')}>
+    <span className="flex rounded-control border border-default text-meta md:max-lg:pointer-coarse:hidden" role="group" aria-label={t('Project layout')}>
       {LAYOUTS.map((m) => (
         <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut={keysOf('project.view-mode')}>
           <button type="button" aria-pressed={mode === m} onClick={() => onChoose(m)} data-layout={m}
-            className={`${m === 'list' ? 'rounded-l-control' : m === 'calendar' ? 'rounded-r-control' : ''} px-2 py-1 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
-            {LAYOUT_LABEL[m]}
+            className={`${m === 'list' ? 'rounded-l-control' : m === 'calendar' ? 'rounded-r-control' : ''} touch-target flex items-center px-2 py-1 max-lg:px-1.5 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+            {/* Below 1024 px the four layouts are icons (named by the hidden word and the tooltip), so the header fits at 768 px. */}
+            <Icon name={LAYOUT_ICON[m]} className="hidden max-lg:inline-block" /><span className="max-lg:sr-only">{LAYOUT_LABEL[m]}</span>
           </button>
         </Tooltip>
       ))}
