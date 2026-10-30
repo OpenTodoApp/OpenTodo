@@ -20,6 +20,8 @@ OpenTodo can let an AI assistant read your projects and tasks through the [Model
 
 `opentodo://frames` is a read-only resource listing your [calendar frames](frames.md): weekdays, wall times, dates, colour and planning source, with `drawn: false` for a frame whose times need fixing and titles as untrusted text ("Encrypted frame" when the server cannot read them). There is no tool that changes frames.
 
+`opentodo://slots` is a read-only resource listing your [calendar slots](slots.md) from yesterday on: date, wall time, length, colour and the tasks each holds in order, titles as untrusted text ("Encrypted slot" when the server cannot read them). There is no tool that changes slots.
+
 ## 1. Enable it (owner)
 
 **Settings → Integrations → AI assistants → Allow AI assistants**. The change applies at once, without a restart, and is recorded in the audit log as `settings.changed` (`mcp.enabled`).
@@ -134,6 +136,7 @@ The read tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `op
 | `list_workspaces` | none | `{workspaces:[{id,untrusted_text:{name,members?,groups?},role,default}], server_time, _notice}`: the [workspaces](workspaces.md) you belong to; `members` and `groups` (names) only for the ones you own. A `workspace` argument naming none of them is a `-32602` error listing their names |
 | `list_time_entries` | `task_id`, `from`, `to` (local days YYYY-MM-DD in `timezone`), `running` (default false), `timezone`, `limit` (≤200), `cursor` | `{time_entries:[{id,task_id,user_id,tracked_by_you,untrusted_text:{note,task},started_at,ended_at,minutes}], total_minutes, next_cursor, timezone, server_time, _notice}`, newest first: the [time entries](time-tracking.md) you can read, other members' on shared tasks included; `ended_at` is null and `minutes` counts to the server time while an entry runs; an encrypted note reads `[encrypted]` |
 | `list_frames` | `from`, `to` (YYYY-MM-DD; default the seven days from today in `timezone`, at most 31 days), `timezone` | `{occurrences:[{frame_id,untrusted_text:{title},date,start,end,source,color}], from, to, timezone, server_time}`: each day a [frame](frames.md) occurs on, ordered by date and start; `start` and `end` are floating wall times `HH:MM`, `source` the planning source (`project:<id>`, `label:<id>`, `view:<id>` or empty); an unreadable encrypted title reads "Encrypted frame". Frames guide planning: propose ordinary due dates and times inside them |
+| `list_slots` | `from`, `to` (YYYY-MM-DD; default the seven days from today in `timezone`, at most 31 days), `timezone` | `{slots:[{id,untrusted_text:{title},date,start,minutes,color,tasks:[{id,untrusted_text:{title},done,estimate_minutes}]}], from, to, timezone, server_time}`: your [slots](slots.md) by date and start, each with the tasks it shows (open first, then done; a listed task moved to another day or deleted is left out); an unreadable encrypted title reads "Encrypted slot", an empty one "Slot". A task in a slot is an ordinary task due on that day without a time |
 
 `today` lists open tasks due today or earlier, overdue first; `upcoming` lists open tasks due after today. Tasks are ordered by due date and time (undated last), then priority. Tasks in archived projects are left out unless `project_id` names that project.
 
