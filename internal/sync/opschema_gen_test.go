@@ -39,7 +39,7 @@ const (
 var tsEntity = map[string]string{
 	"project": "Project", "task": "Task", "label": "Label", "view": "View", "reminder": "Reminder", "section": "Section",
 	"comment": "Comment", "project_prefs": "ProjectPrefs", "user_prefs": "UserPrefs", "attachment": "Attachment",
-	"field": "FieldDef", "review": "Review", "time_entry": "TimeEntry", "place": "Place", "rule": "Rule", "frame": "Frame",
+	"field": "FieldDef", "review": "Review", "time_entry": "TimeEntry", "place": "Place", "rule": "Rule", "frame": "Frame", "slot": "Slot",
 }
 
 // tsKind is the web type of a field of each kind. A hand-written entity type

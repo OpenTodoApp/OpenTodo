@@ -22,8 +22,8 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan*
 - Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day.
 - Past days are dimmed.
 - A red line marks the current time, in today's column.
-- **+N** shows a day's other all-day events.
-- Tinted bands are your [frames](frames.md).
+- **+N** shows more all-day events.
+- Tinted bands are [frames](frames.md); checklist blocks are [slots](slots.md).
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 

@@ -25,6 +25,7 @@ import { inLater } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
+import { useSlotted } from '../../lib/slots'
 import type { Route } from '../router'
 import { useApplicableFields } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
@@ -202,7 +203,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const ownRows = useMemo(() => (planned.length || doneToday?.length ? groups.filter((g) => g.key !== 'planned' && g.key !== 'done').flatMap((g) => g.rows) : rows), [planned, doneToday, groups, rows])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
-  const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task)), [board, rows])
+  // A task a calendar slot holds shows the slot's start there (calendar-slots D8).
+  const slotted = useSlotted()
+  const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task), slotted), [board, rows, slotted])
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups").
   const doneBySection = useMemo(() => completedBySection(allTasks, projectId, layout.sectionMap), [allTasks, projectId, layout.sectionMap])

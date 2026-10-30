@@ -25,8 +25,8 @@ import (
 // the project child, comment, attachment and time entry rules) whose ids are
 // unique on the server: projects, whose id names a sharing scope, automation
 // rules, whose id keys the server's run log and state, and calendar frames
-// (calendar-frames D1).
-var uniqueIDs = map[string]bool{"project": true, "rule": true, "frame": true}
+// (calendar-frames D1) and calendar slots (calendar-slots D1).
+var uniqueIDs = map[string]bool{"project": true, "rule": true, "frame": true, "slot": true}
 
 // homeScope picks, among holders (the scopes that hold fields of one entity
 // id), the scope acc reads and writes the entity in, or "" when acc may not
