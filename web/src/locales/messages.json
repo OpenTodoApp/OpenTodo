@@ -144,7 +144,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "; {n} unestimated (counted as 0)": [
-    "web/src/app/calendar/DayColumn.tsx"
+    "web/src/app/calendar/CapacityLine.tsx"
   ],
   "<b>{actor}</b> assigned you <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
@@ -1981,6 +1981,9 @@
     "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/TodayAgenda.tsx"
   ],
+  "Busy calendar events add to each day in Day, Week and Month.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Button label": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -2085,6 +2088,9 @@
   ],
   "Calendars unavailable offline for these days": [
     "web/src/app/calendar/CalendarStatus.tsx"
+  ],
+  "Calendars unavailable offline for this day": [
+    "web/src/app/calendar/CapacityLine.tsx"
   ],
   "Call the dentist tomorrow at 3pm": [
     "web/src/app/FirstRun.tsx"
@@ -3071,6 +3077,10 @@
   ],
   "Could not save the note: {reason}": [
     "web/src/app/NotesEditor.tsx"
+  ],
+  "Count meetings in capacity": [
+    "web/src/app/CalendarSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Count members’ own keys toward the monthly limit": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -8462,6 +8472,7 @@
     "web/src/app/calendar/SidebarSchedule.tsx"
   ],
   "Nothing estimated against a {minutes} day": [
+    "web/src/app/calendar/CapacityLine.tsx",
     "web/src/lib/plan.ts"
   ],
   "Nothing fetched yet.": [
@@ -9338,11 +9349,14 @@
     "web/src/lib/filters.ts"
   ],
   "Over capacity.": [
-    "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/CapacityLine.tsx",
     "web/src/lib/plan.ts"
   ],
   "Over the limit": [
     "web/src/app/RelaySettings.tsx"
+  ],
+  "Over with meetings.": [
+    "web/src/app/calendar/CapacityLine.tsx"
   ],
   "Overdue": [
     "web/src/app/ProjectsTable.tsx"
@@ -9685,7 +9699,7 @@
     "web/src/lib/sampleTasks.ts"
   ],
   "Planned estimates against a {minutes} day": [
-    "web/src/app/calendar/DayColumn.tsx"
+    "web/src/app/calendar/CapacityLine.tsx"
   ],
   "Planned estimates against a {minutes} day.": [
     "web/src/app/MonthView.tsx"
@@ -16986,10 +17000,12 @@
     "web/src/app/settingsSections.ts"
   ],
   "over capacity": [
-    "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/calendar/CapacityLine.tsx",
     "web/src/app/calendar/PlanRow.tsx"
+  ],
+  "over with meetings": [
+    "web/src/app/calendar/CapacityLine.tsx"
   ],
   "overlaps another item": [
     "web/src/app/calendar/DayColumn.tsx"
@@ -17760,7 +17776,11 @@
   "{minutes} in calendar events": [
     "web/src/lib/plan.ts"
   ],
+  "{minutes} in meetings": [
+    "web/src/app/calendar/CapacityLine.tsx"
+  ],
   "{minutes} of tasks": [
+    "web/src/app/calendar/CapacityLine.tsx",
     "web/src/lib/plan.ts"
   ],
   "{minutes} repeating": [
@@ -18111,6 +18131,7 @@
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "{n, plural, one {# task} other {# tasks}} without estimate": [
+    "web/src/app/calendar/CapacityLine.tsx",
     "web/src/lib/plan.ts"
   ],
   "{n, plural, one {# template} other {# templates}}": [
