@@ -1443,7 +1443,8 @@
   ],
   "Area": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/menus/flowMenu.ts"
+    "web/src/app/menus/flowMenu.ts",
+    "web/src/app/review/MonthlyLook.tsx"
   ],
   "Areas": [
     "web/src/app/review/MonthlyLook.tsx"
@@ -4057,7 +4058,7 @@
   "Each restore keeps the database it replaced. Delete old ones to free space.": [
     "web/src/app/RestoreSection.tsx"
   ],
-  "Each top-level project that holds sub-projects, and those of them without a next action or stalled.": [
+  "Each top-level project that holds sub-projects or is an area, and the sub-projects without a next action or stalled.": [
     "web/src/app/review/MonthlyLook.tsx"
   ],
   "Each workspace has its own projects, labels and views, and its own people.": [

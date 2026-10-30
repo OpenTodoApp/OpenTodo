@@ -329,8 +329,8 @@ type project struct {
 	CreatedAt float64  `json:"created_at"`
 	DeletedAt *float64 `json:"deleted_at"`
 	// ParentID and WorkspaceID place the project in a workspace (workspaces).
-	ParentID    *string         `json:"parent_id"`
-	WorkspaceID *string         `json:"workspace_id"`
+	ParentID    *string `json:"parent_id"`
+	WorkspaceID *string `json:"workspace_id"`
 	// FlowMode is the stored flow (project-flow-modes); read it with flow.ProjectFlow.
 	FlowMode string          `json:"flow_mode"`
 	Raw      json.RawMessage `json:"-"`

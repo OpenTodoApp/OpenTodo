@@ -176,6 +176,12 @@ describe('rhythms (open-loops-method D5)', () => {
     const areas = areasOf(inputOf([task('g', { project_id: 'garden', created_at: NOW - DAY })], projects))
     expect(areas.map((a) => [a.project.name, a.children.length, a.attention.map((w) => w.project.name)])).toEqual([['Home', 2, ['Garage']]])
   })
+
+  it('Areas: a top-level project whose flow is Area is listed without sub-projects (project-flow-modes)', () => {
+    const projects = [project('home', 'Home'), project('garage', 'Garage', { parent_id: 'home' }), project('money', 'Finances', { flow_mode: 'area', position: 2 }), project('work', 'Work', { position: 3 })]
+    const areas = areasOf(inputOf([], projects))
+    expect(areas.map((a) => [a.project.name, a.children.length])).toEqual([['Home', 1], ['Finances', 0]])
+  })
 })
 
 describe('Close the day (close-the-day 2.1–2.4)', () => {

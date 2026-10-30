@@ -13,6 +13,8 @@ export interface FlowView {
   waitsFor(id: string): string | null
   /** Blocked or waiting in sequence: what Today folds into its Blocked group. */
   held(blocked: { has(id: string): boolean }): { has(id: string): boolean }
+  /** The live sections it was computed from (a filter context needs them too). */
+  sections: readonly Section[]
 }
 
 const NO_TASKS: Task[] = []
@@ -22,7 +24,7 @@ export function flowView(tasks: readonly Task[], state: FlowState, sections: rea
   const byId = new Map(tasks.map((x) => [x.id, x]))
   const sectionById = new Map(sections.map((s) => [s.id, s]))
   return {
-    state,
+    state, sections,
     waitsFor(id) {
       const held = state.get(id).heldBy
       if (!held) return null

@@ -50,6 +50,7 @@ A query combines small pieces:
 | `due <= 7 days` | due within the next week | `due before friday` |
 | `search: text` | words in the title or notes | `search: invoice` |
 | `blocked`, `unblocked` | waiting for an open task, or not | `unblocked & today` |
+| `available` | can be done now: not blocked, not waiting for an earlier step, not parked or starting later | `available & @phone` |
 | `completed` | include completed tasks | `#Home & completed` |
 
 Join them with `&` (and), `|` (or) and `!` (not), and use brackets to group:

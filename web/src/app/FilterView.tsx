@@ -8,7 +8,7 @@ import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { useFlowView } from '../lib/useFlow'
-import { useAllLabels, useLiveSections, useProjects } from '../lib/localData'
+import { useAllLabels, useProjects } from '../lib/localData'
 import { addFilterHistory, clearFilterDraft, compile, getFilterDraft, saveFilterDraft, type FilterDraft, fieldSuggestions, getFilterHistory, mentionsState, namesWorkspace, originSuggestions, parse, withCompletedTasks, type Node } from '../lib/filter'
 import { useWorkspaceFilter } from './useWorkspaceFilter'
 import { useFieldDefs } from './useFields'
@@ -131,9 +131,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
   const fieldDefs = useFieldDefs(), tracked = useTrackedTotals()
-  const sections = useLiveSections()
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
-    [today, labels, projects, allTasks, sections, weekStart, fieldDefs, tracked, ws])
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
+    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, ws])
   const compiled = useMemo(() => {
     if (!good.ast) return null
     // "Completed tasks: Show" (views-and-display D4) reads the query as `(query) & (open | completed)`.
