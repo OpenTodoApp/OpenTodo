@@ -102,7 +102,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   const dismissed = liveDismissals(line, ctx.dismissed)
   const { tokens, quoteSpans } = tokenize(line)
 
-  let date: { value: string; span: Span } | null = null
+  // A bare month ("September") is replaced by a later complete date phrase (quick-add-month-and-every-other D1).
+  let date: { value: string; span: Span; bare?: true } | null = null
   let time: { value: string; date?: string; span: Span } | null = null
   let project: { id: string; span: Span } | null = null
   let priority: { value: Priority; span: Span } | null = null
@@ -124,7 +125,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     return to + pw.n
   }
   let someday: Span | null = null
-  let recurrence: { value: string; span: Span } | null = null
+  let recurrence: { value: string; span: Span; start?: string } | null = null
   const reminders: { value: ReminderPhrase; span: Span }[] = []
   const labels: { value: string; span: Span }[] = []
   // Every energy token leaves the title; the last one is the value (task-energy D4).
@@ -210,7 +211,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       const span = n ? spanOf(line, tokens, i, i + n) : null
       if (span && !overlaps(span, dismissed)) {
         evening = span
-        if (!date) date = { value: ctx.today, span }
+        if (!date || date.bare) date = { value: ctx.today, span }
         i += n
         continue
       }
@@ -224,7 +225,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
         const span = n ? spanOf(line, tokens, i, i + n) : null
         if (span && !overlaps(span, dismissed)) {
           dayPart = { value: part, span }
-          if (!date) date = { value: ctx.today, span }
+          if (!date || date.bare) date = { value: ctx.today, span }
           i += n
           matched = true
           break
@@ -236,7 +237,9 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     // Date, time, recurrence and reminder phrases: the longest wins, a date on a
     // tie. The first date, time and rule win; reminders accumulate. A match whose
     // range overlaps a live dismissal is ignored.
-    let dm: DateMatch | null = date ? null : matchDateAt(tokens, i, dctx)
+    let dm: DateMatch | null = date && !date.bare ? null : matchDateAt(tokens, i, dctx)
+    // After a bare month only a complete date phrase counts; another bare month stays text.
+    if (date && dm?.bare) dm = null
     let tm: TimeMatch | null = time ? null : matchTimeAt(tokens, i, dctx)
     let rm: RecurrenceMatch | null = matchRecurrenceAt(tokens, i, dctx)
     // After the first rule only a literal match still counts (it keeps "cada 2 lunes" whole).
@@ -258,14 +261,14 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     if (phraseEnd > Math.max(dm?.to ?? 0, tm?.to ?? 0)) {
       if (rm && rSpan && rm.to === phraseEnd) {
         // A literal match (quick-add-nth-weekday D3) is skipped as a unit and stays in the title.
-        if (!rm.literal) recurrence = { value: rm.rule, span: rSpan }
+        if (!rm.literal) recurrence = { value: rm.rule, span: rSpan, start: rm.start }
         i = rm.to
       } else if (mm && mSpan) {
         reminders.push({ value: mm.reminder, span: mSpan })
         i = mm.to
       }
     } else if (dm && dSpan && (!tm || dm.to >= tm.to)) {
-      date = { value: dm.date, span: dSpan }
+      date = { value: dm.date, span: dSpan, bare: dm.bare }
       i = partAfter(dm.to)
     } else if (tm && tSpan) {
       time = { value: tm.time, date: tm.date, span: tSpan }
@@ -284,10 +287,11 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   }
   const parked = !!someday && !date && !time && !deadline && !recurrence
 
-  // A rule without a date phrase starts on its first occurrence on or after today.
+  // A rule without a date phrase starts on its first occurrence on or after today,
+  // or on the weekday it was typed with ("every other friday", D3).
   let due: Due | null = null
   if (date || time || recurrence) {
-    due = { date: date?.value ?? (recurrence ? firstOccurrence(recurrence.value, ctx.today) : time?.date ?? ctx.today) }
+    due = { date: date?.value ?? (recurrence ? recurrence.start ?? firstOccurrence(recurrence.value, ctx.today) : time?.date ?? ctx.today) }
     if (time) due.time = time.value
   }
 
