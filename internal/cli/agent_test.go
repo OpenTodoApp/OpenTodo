@@ -578,6 +578,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 	h.mustRun("token", "create", "victim")
 	issueConn := h.seedIssueConnection()
 	h.seedRule()
+	h.seedFrame()
 	cfgBefore, _ := os.ReadFile(h.configPath)
 	schemas := loadSchemas(t)
 	cases := [][]string{
@@ -602,6 +603,8 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"issues", "sync", issueConn[:6]},
 		{"rules", "enable", "Sweep"},
 		{"rules", "disable", "Sweep"},
+		{"frames", "add", "Dry frame", "--days", "mon-fri"},
+		{"frames", "rm", "Admin"},
 		{"import", writeTemp(t, "dry.csv", "title\nDry import\n")},
 	}
 	covered := map[string]bool{}

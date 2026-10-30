@@ -1,10 +1,10 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, LabelFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame']
 
 export interface Op {
   id: string
@@ -226,6 +226,30 @@ export interface Place extends PlaceFields {
   name: string
   address: string
   geo: Geo | string | null
+  position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A frame (OpenSpec change `calendar-frames`, design D1): a recurring
+ * background window on the Day and Week grid. Personal; `weekdays` is a comma
+ * list of ISO weekdays ("1,2,3,4,5"), `start` and `end` floating wall times
+ * "HH:MM", `source` a planning source key (`project:<id>`, `label:<id>`,
+ * `view:<id>` or ""). Occurrences are derived in `lib/frames.ts`.
+ */
+export interface Frame extends FrameFields {
+  id: string
+  title: string
+  weekdays: string
+  start: string
+  end: string
+  color: string
+  source: string
+  from_date: string | null
+  until_date: string | null
   position: number
   created_at: number
   deleted_at: number | null

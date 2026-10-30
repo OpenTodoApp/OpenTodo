@@ -48,6 +48,8 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kRuleActions:    ruleval.CheckActions,
 	kReactions:      checkReactions,
 	kDayPart:        orNull(checkDayPart),
+	kClock:          checkClock,
+	kWeekdays:       checkWeekdays,
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -132,6 +134,34 @@ func checkDayPart(raw json.RawMessage) error {
 	var d string
 	if err := json.Unmarshal(raw, &d); err != nil || !slices.Contains(DayParts, d) {
 		return errors.New(`must be null, "morning" or "afternoon"`)
+	}
+	return nil
+}
+
+// checkClock accepts a wall time "HH:MM" from "00:00" to "23:59" (calendar-frames D1).
+func checkClock(raw json.RawMessage) error {
+	var c string
+	if err := json.Unmarshal(raw, &c); err != nil || !isClock(c) || c[:2] > "23" || c[3:] > "59" {
+		return errors.New(`must be a time "HH:MM" between 00:00 and 23:59`)
+	}
+	return nil
+}
+
+// checkWeekdays accepts "" or a comma list of distinct ISO weekdays 1-7 (calendar-frames D1).
+func checkWeekdays(raw json.RawMessage) error {
+	var w string
+	if err := json.Unmarshal(raw, &w); err != nil {
+		return errors.New(`must be "" or a comma list of distinct weekdays 1 to 7`)
+	}
+	if w == "" {
+		return nil
+	}
+	seen := map[string]bool{}
+	for _, d := range strings.Split(w, ",") {
+		if len(d) != 1 || d[0] < '1' || d[0] > '7' || seen[d] {
+			return errors.New(`must be "" or a comma list of distinct weekdays 1 to 7`)
+		}
+		seen[d] = true
 	}
 	return nil
 }

@@ -40,6 +40,7 @@ import { t, msg, translatedList } from '../../lib/i18n'
 import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayParts'
 import { dayPartUndoable } from '../../lib/undoActions'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
+import { requestFrames } from '../calendar/framesRequest'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -322,6 +323,8 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'new:from-template', label: t('New project from a template'), icon: 'copy', keywords: t('template library add create'), run: () => requestTemplateDialog() },
     { id: 'new:label', label: t('New label'), icon: 'tag', keywords: 'add create', run: () => prompt(t('New label'), t('Label name'), '', async (name) => navigate({ view: 'label', id: await createLabel({ name }) })) },
     { id: 'new:dashboard', label: t('New dashboard'), icon: 'list', keywords: 'add create', run: () => prompt(t('New dashboard'), t('Dashboard name'), '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
+    // Frames (calendar-frames D5): the form of the Frames dialog; no default key.
+    { id: 'new:frame', label: t('New frame'), icon: 'rows-2', keywords: 'frame calendar time block window deep work focus add create', run: () => requestFrames({ mode: 'new' }) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: t('Open Settings: {section}', { section: s.label }), icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
     // Workspaces (workspaces D6): one switch command per other workspace and New workspace; no keys.

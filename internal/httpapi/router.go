@@ -131,6 +131,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Map proxy and its switches (OpenSpec `task-locations`).
 	s.mapRoutes.Register(mux)
 	s.registerPlaceRoutes(mux)
+	// Calendar frames (OpenSpec change calendar-frames).
+	s.registerFrameRoutes(mux)
 	s.registerQuickAddRoutes(mux)
 	// Automation rules (OpenSpec `automation-rules`).
 	s.registerRuleRoutes(mux)

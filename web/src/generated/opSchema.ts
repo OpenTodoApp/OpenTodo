@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, Due, Entity, FieldDef, Geo, Label, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Task, TaskLocation, TimeEntry, UserPrefs, View,
+  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Task, TaskLocation, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -398,6 +398,32 @@ export interface RuleFields {
 }
 
 /**
+ * frame: a recurring background window on the Day and Week grid (OpenSpec
+ * change calendar-frames, design D1), such as "Deep work" on weekdays from
+ * 09:00 to 11:00. Personal like a rule, with ids unique on the server
+ * (entity-id-ownership). Occurrences are derived on the device (web
+ * src/lib/frames.ts, internal/frames) and never stored. title is a content field.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface FrameFields {
+  title?: string
+  /** ISO weekdays it repeats on, a comma list such as "1,2,3,4,5"; "" never occurs. */
+  weekdays?: string
+  /** Floating wall times "HH:MM"; a frame whose end is not after its start is kept and not drawn. */
+  start?: string
+  end?: string
+  color?: string
+  /** Planning source: "project:<id>", "label:<id>", "view:<id>" or "" (none). Ids only, never content. */
+  source?: string
+  /** First and last day it applies (inclusive); null is open-ended. */
+  from_date?: string | null
+  until_date?: string | null
+  position?: number
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/**
  * The op fields of a place (sync.Schema).
  * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
  */
@@ -735,6 +761,9 @@ export const OP_DEFAULTS = {
   rule: {
     name: '', enabled: false, trigger: null, condition: null, actions: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Rule, 'id' | '_clock'>,
+  frame: {
+    title: '', weekdays: '', start: '09:00', end: '10:00', color: '#64748b', source: '', from_date: null, until_date: null, position: 0, created_at: 0, deleted_at: null,
+  } satisfies Omit<Frame, 'id' | '_clock'>,
   place: {
     name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Place, 'id' | '_clock'>,
@@ -761,6 +790,7 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   attachment: ['name', 'mime', 'url'],
   time_entry: ['note'],
   rule: ['name'],
+  frame: ['title'],
   place: ['name', 'address', 'geo'],
   review: ['tomorrow_note'],
 }

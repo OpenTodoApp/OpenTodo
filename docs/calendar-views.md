@@ -15,7 +15,7 @@ The calendar shows your dated tasks by day, week, month or as a two-week plan. D
 
 ## Open the calendar
 
-Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> or <kbd>g</kbd> <kbd>Shift+C</kbd>. The sidebar opens the calendar the way you last left it on this device.
+Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> or <kbd>g</kbd> <kbd>Shift+C</kbd>. The sidebar remembers Day or Week on each device.
 
 - Tasks with a date **and** a time appear as blocks at that time, filled in their project's colour. The block is as tall as the estimate.
 - A timed task without an estimate gets a 30-minute block with a dashed edge.
@@ -23,6 +23,7 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan*
 - Past days are dimmed.
 - A red line marks the current time, in today's column.
 - **+N** shows a day's other all-day events.
+- Tinted bands are your [frames](frames.md).
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 

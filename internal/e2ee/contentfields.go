@@ -18,6 +18,7 @@ var ContentFields = map[string][]string{
 	"attachment": {"name", "mime", "url"},
 	"time_entry": {"note"},
 	"rule":       {"name"},
+	"frame":      {"title"},
 	"place":      {"name", "address", "geo"},
 	"review":     {"tomorrow_note"},
 }
