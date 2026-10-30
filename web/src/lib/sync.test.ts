@@ -29,6 +29,7 @@ vi.mock('./api', async (orig) => ({
 import { clearLocalData, db, getMeta, setMeta } from './db'
 import { useDatabase } from './db'
 import { applyOps, createTask, mutate, resetDeviceId } from './ops'
+import { followSharedDueChanges } from './reminders'
 import { compareByPosition } from './ordering'
 import { ApiError } from './api'
 import { markTaskNotificationsRead, unreadCount, unreadNotifications } from './notifications'
@@ -880,5 +881,50 @@ describe('add at the top offline (add-position 2.3)', () => {
     expect(orders[0]).toEqual(orders[1])
     expect(orders[0].slice(2)).toEqual(['old1', 'old2'])
     expect([...orders[0].slice(0, 2)].sort()).toEqual(['From A', 'From B'])
+  })
+})
+
+describe('default reminders offline (default-reminders 3.2)', () => {
+  const seed = [
+    { id: 'dr-t', entity: 'task', entityId: 'undated', field: 'title', value: 'Pay rent', ts: 100, device: 'seed' },
+    { id: 'dr-p1', entity: 'user_prefs', entityId: 'me', field: 'reminder_default_timed', value: '-30', ts: 100, device: 'seed' },
+  ]
+
+  it('two devices scheduling the same task offline end with one default reminder, timed from the winning due', async () => {
+    const written: unknown[] = []
+    for (const date of ['2026-11-06', '2026-11-07']) {
+      useDatabase(`sync-dr-${Date.now()}-${n++}`)
+      resetDeviceId()
+      await setMeta('userId', 'alice')
+      await applyOps(seed as never)
+      await mutate('task', 'undated', { due: { date, time: '15:00' } })
+      written.push(...await db.outbox.toArray())
+    }
+    const states: string[] = []
+    for (const ops of [[...seed, ...written], [...seed, ...[...written].reverse()]]) {
+      useDatabase(`sync-dr-merge-${Date.now()}-${n++}`)
+      await applyOps(ops as never)
+      const reminders = (await db.reminders.toArray()).filter((r) => !r.deleted_at)
+      expect(reminders).toHaveLength(1)
+      const task = (await db.tasks.get('undated'))!
+      const [y, m, d] = task.due!.date.split('-').map(Number)
+      expect(reminders[0].fire_at).toBe(new Date(y, m - 1, d, 14, 30).getTime())
+      states.push(JSON.stringify({ due: task.due, fire: reminders[0].fire_at, id: reminders[0].id }))
+    }
+    expect(states[0]).toBe(states[1])
+  })
+
+  it("a member scheduling a shared task gives no reminder to the other members", async () => {
+    await setMeta('userId', 'bob')
+    await db.memberships.put({ projectId: 'shared', role: 'editor', ownerId: 'alice', members: [] })
+    await applyOps([
+      ...seed,
+      { id: 'dr-sp', entity: 'task', entityId: 'undated', field: 'project_id', value: 'shared', ts: 100, device: 'seed' },
+    ] as never)
+    // Alice's due op arrives; her reminder lives in her personal scope and never reaches Bob.
+    const pulled = [{ id: 'dr-due', entity: 'task', entityId: 'undated', field: 'due', value: { date: '2026-11-06', time: '15:00' }, ts: 200, device: 'alice-phone' }]
+    await applyOps(pulled as never)
+    await followSharedDueChanges(pulled as never)
+    expect(await db.reminders.count()).toBe(0)
   })
 })

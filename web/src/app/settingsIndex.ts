@@ -62,6 +62,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'language', label: msg('Calendar grid'), description: msg('When the Day and Week grid starts and ends, and your day length'), page: 'calendar', anchor: 'calendar-heading', keywords: 'capacity hours' },
   // Notifications
   { section: 'notifications', label: msg('Push notifications'), description: msg('Reminders delivered to this device, and a test'), page: 'push', anchor: 'notifications-heading', keywords: 'reminders' },
+  { section: 'notifications', label: msg('Default reminders'), description: msg('A reminder added when a task gets a date or a time'), page: 'push', anchor: 'default-reminders-heading', keywords: 'reminder default automatic alarm due time all-day before' },
   { section: 'notifications', label: msg('Delivery channels'), description: msg('Send notifications to ntfy, Pushover, Gotify or any address you choose.'), page: 'channels', anchor: 'notification-channels-heading', keywords: 'ntfy pushover gotify webhook phone' },
   { section: 'notifications', label: msg('Weekly digest'), description: msg('An email on your review day with last week\'s numbers'), page: 'digest', anchor: 'email-digest-heading', keywords: 'email summary review statistics' },
   // About (welcome-note)

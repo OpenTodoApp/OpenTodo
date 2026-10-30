@@ -416,6 +416,8 @@ type taskFlags struct {
 	// originURL is --origin-url (task-origin): the page or issue the task comes from.
 	originURL string
 	plan      planningFlags
+	// noDefault is --no-default-reminder (default-reminders D6).
+	noDefault bool
 	// add only (quick-add-recurrence D6)
 	remind  stringList
 	natural bool
@@ -435,6 +437,7 @@ func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 	fs.StringVar(&f.repeat, "repeat", "", "recurrence rule, e.g. \"every monday\" (edit: `none` clears)")
 	fs.StringVar(&f.originURL, "origin-url", "", "http(s) URL the task comes from; GitHub, GitLab, Jira and Linear issues are recognised (edit: `none` clears)")
 	f.plan.bind(fs)
+	fs.BoolVar(&f.noDefault, "no-default-reminder", false, "add no default reminder when the task gets a due date (--remind also leaves it out)")
 	if !edit {
 		fs.Var(&f.remind, "remind", "reminder: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)")
 		fs.BoolVar(&f.natural, "natural", false, "parse the title like the app's quick add (dates, #project, @label, p1, every …, remind me …)")
@@ -622,7 +625,7 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err := f.plan.fill(ctx, a, c, set, body, func() ([]task, error) { return c.tasks(ctx) }); err != nil {
 		return err
 	}
-	raw, _, err := c.do(ctx, "POST", "/tasks", body, headers)
+	raw, _, err := c.do(ctx, "POST", "/tasks"+defaultReminderQuery(body, f.noDefault || len(phrases) > 0), body, headers)
 	if err != nil {
 		return err
 	}
@@ -643,6 +646,16 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		fmt.Fprintf(a.Stderr, "%d reminder(s) will fire once the task has a due date\n", waiting)
 	}
 	return nil
+}
+
+// defaultReminderQuery asks the server to add the account's default reminder
+// (default-reminders D6) when the write sets a due date, unless the caller left
+// it out with --no-default-reminder or gave its own reminders with --remind.
+func defaultReminderQuery(body map[string]any, off bool) string {
+	if v, has := body["due"]; off || !has || v == nil {
+		return ""
+	}
+	return "?default_reminder=true"
 }
 
 // createReminders posts one reminder per phrase after the task, resolved
@@ -816,7 +829,7 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	}
 	a.target(pos[0], t.ID, t.Title, "")
 	var raw json.RawMessage
-	if err := c.patchJSON(ctx, "/tasks/"+t.ID, patch, &raw); err != nil {
+	if err := c.patchJSON(ctx, "/tasks/"+t.ID+defaultReminderQuery(patch, f.noDefault), patch, &raw); err != nil {
 		return err
 	}
 	if g.json {

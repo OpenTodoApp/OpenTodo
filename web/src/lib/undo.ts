@@ -6,6 +6,7 @@
 // the last 20 batches, from the assistant and from bulk actions alike.
 import { db, tableOf, type AssistantUndo } from './db'
 import { mutateMany, readField, unfoldFieldPatches, type Change } from './ops'
+import { defaultReminderChanges } from './defaultReminder'
 import type { ProposedChange } from './assistantTypes'
 import type { Entity } from './types'
 import { uuid } from './ids'
@@ -39,9 +40,22 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
     inverse.push({ entity: c.entity, entityId: c.entityId, patch })
   }
   const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))
+  // Default reminders join the batch here, so one Undo removes them with the dates
+  // (default-reminders D3); mutateMany then finds them in the batch and adds none.
+  const switched: ProposedChange[] = []
+  for (const d of await defaultReminderChanges(batch)) {
+    batch.push(d)
+    const local = (await tableOf('reminder').get(d.entityId)) as Record<string, unknown> | undefined
+    if (!local || local.deleted_at) {
+      inverse.push({ entity: 'reminder', entityId: d.entityId, patch: { deleted_at: Date.now(), offset_minutes: null }, created: true, followUp: true })
+    } else {
+      inverse.push({ entity: 'reminder', entityId: d.entityId, patch: Object.fromEntries(Object.keys(d.patch).map((f) => [f, norm(readField(local, f))])), followUp: true })
+      switched.push({ entity: 'reminder', entityId: d.entityId, patch: d.patch })
+    }
+  }
   await mutateMany(batch, opts.origin ? { origin: opts.origin } : undefined)
   const clocks: AssistantUndo['clocks'] = []
-  for (const c of changes) {
+  for (const c of [...changes, ...switched]) {
     if (c.create) continue
     const row = (await tableOf(c.entity).get(c.entityId)) as { _clock?: Record<string, { ts: number; device: string }> } | undefined
     for (const f of Object.keys(c.patch)) {
@@ -78,13 +92,15 @@ export async function undoBatch(id: string): Promise<UndoResult> {
   if (!entry || entry.undone_at) return { restored: 0, skipped: [] }
   const batch: Change[] = []
   const skipped: string[] = []
+  let followUps = 0
   for (const inv of entry.inverse) {
     const row = (await tableOf(inv.entity as Entity).get(inv.entityId)) as (Record<string, unknown> & { _clock?: Record<string, { ts: number; device: string }> }) | undefined
     const patch: Record<string, unknown> = {}
     let skippedHere = false
     if (inv.created) {
-      // Created by the batch: undo moves it to the Trash (restorable).
-      if (row && !row.deleted_at) patch.deleted_at = Date.now()
+      // Created by the batch: undo moves it to the Trash (restorable). A default
+      // reminder also loses its offset, so a later due date may add it again (default-reminders D4).
+      if (row && !row.deleted_at) Object.assign(patch, inv.patch, { deleted_at: Date.now() })
     } else {
       for (const [f, v] of Object.entries(inv.patch)) {
         const applied = entry.clocks.find((c) => c.entityId === inv.entityId && c.entity === inv.entity && c.field === f)
@@ -96,12 +112,14 @@ export async function undoBatch(id: string): Promise<UndoResult> {
         patch[f] = v
       }
     }
-    if (skippedHere && inv.entity !== 'review') skipped.push(String(row?.title ?? row?.name ?? `a ${inv.entity}`))
+    if (skippedHere && inv.entity !== 'review' && !inv.followUp) skipped.push(String(row?.title ?? row?.name ?? `a ${inv.entity}`))
     if (Object.keys(patch).length) batch.push({ entity: inv.entity as Entity, entityId: inv.entityId, patch })
+    if (inv.followUp && Object.keys(patch).length) followUps++
   }
   const assistant = (entry.source ?? 'assistant') === 'assistant'
-  if (batch.length) await mutateMany(batch, assistant ? { origin: 'assistant' } : undefined)
+  // Undo puts back earlier values: no default reminder (default-reminders D6).
+  if (batch.length) await mutateMany(batch, assistant ? { origin: 'assistant', restore: true } : { restore: true })
   await db.assistantUndo.update(id, { undone_at: Date.now() })
   // The review row in a Close/Reopen the day batch is bookkeeping, not an item the person changed.
-  return { restored: batch.filter((c) => c.entity !== 'review').length, skipped }
+  return { restored: batch.filter((c) => c.entity !== 'review').length - followUps, skipped }
 }
