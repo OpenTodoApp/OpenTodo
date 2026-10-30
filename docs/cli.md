@@ -231,6 +231,19 @@ ot frames rm 7f3a [--yes]                                     # an id, id prefix
 
 `--days` takes `mon-fri`, `mon,wed,fri`, `weekdays`, `weekend`, `daily` or ISO digits (`1` Monday to `7` Sunday); without it a frame repeats on weekdays, from 09:00 to 10:00. The end must be after the start on the same day; the server refuses anything else with `invalid_input` (exit 1). `--source` is the list the app opens with Plan from this frame: `project:<id>`, `label:<id>` or `view:<id>`. `add` and `rm` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`frame`](#machine-readable-help-ot-schema) objects; an encrypted account's titles are ciphertext and the table shows `(encrypted)`.
 
+## Calendar slots
+
+Your [slots](slots.md), blocks of the Day and Week calendar that hold a checklist of small tasks:
+
+```bash
+ot slots [--from monday --to friday]                          # id, title, date, time, number of tasks
+ot slots add "Admin" --date 2026-11-04 --at 16:00 --for 45m [--color "#14b8a6"]
+ot slots put 7f3a 9c1e 4b20                                    # a slot (id, id prefix or title), then tasks
+ot slots rm 7f3a [--yes]                                      # its tasks stay on that day without a time
+```
+
+`--date` takes `YYYY-MM-DD`, `today`, `tomorrow` or a weekday name (default today); `--for` a length from 15 minutes to 8 hours in 15-minute steps (default `30m`). `put` adds the tasks at the end of the slot and, in the same batch, sets each one's date to the slot's day without a time and takes it out of your other slots of that day; a slot holds at most 20 tasks, and a task you may not edit (a viewer of its project) is refused with `forbidden` and nothing changes. `add`, `put` and `rm` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`slot`](#machine-readable-help-ot-schema) objects; an encrypted account's titles are ciphertext and the table shows `(encrypted)`.
+
 ## Issue connections
 
 Your [issue import](issue-import.md) connections, once the server owner has turned the feature on:

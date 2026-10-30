@@ -636,6 +636,25 @@ var Schema = map[string]map[string]Field{
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
+	// slot: several small tasks in one calendar block (OpenSpec change
+	// calendar-slots, design D1), such as "Admin" on Wednesday from 16:00 for 45
+	// minutes. Personal like a frame, with ids unique on the server; membership
+	// lives here, never on the task, so shared tasks are unchanged for other
+	// members. title is a content field.
+	"slot": {
+		"title": {Kind: kString, Default: `""`, Content: true},
+		// The day it is on (floating); a slot without a date is never drawn.
+		"date": {Kind: kDate, Default: `null`},
+		// Floating wall time "HH:MM".
+		"start": {Kind: kClock, Default: `"09:00"`},
+		// Length in minutes, never null and at most MaxSlotMinutes (clients offer 15 to 480 in 15-minute steps).
+		"minutes": {Kind: kPositiveInt, Default: `30`},
+		// Ordered task ids, at most MaxSlotTasks, one whole-list value like task.blocked_by; ids of tasks not shown are kept.
+		"task_ids":   {Kind: kIDList, Default: `[]`},
+		"color":      {Kind: kString, Default: `"#64748b"`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+	},
 	"place": {
 		"name":       {Kind: kString, Default: `""`, Content: true},
 		"address":    {Kind: kString, Default: `""`, Content: true},
@@ -855,7 +874,7 @@ var Schema = map[string]map[string]Field{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
@@ -901,6 +920,35 @@ func Validate(op Op) error {
 	if op.Entity == "attachment" {
 		if err := checkAttachment(op.Field, op.Value); err != nil {
 			return fmt.Errorf("%w: attachment.%s %v", ErrInvalidOp, op.Field, err)
+		}
+	}
+	if op.Entity == "slot" {
+		if err := checkSlot(op.Field, op.Value); err != nil {
+			return fmt.Errorf("%w: slot.%s %v", ErrInvalidOp, op.Field, err)
+		}
+	}
+	return nil
+}
+
+// MaxSlotTasks caps the tasks one slot lists (calendar-slots D1).
+const MaxSlotTasks = 20
+
+// MaxSlotMinutes is the longest slot the server accepts (calendar-slots D1:
+// clients offer 15 to 480 minutes; the server checks the kind and one day).
+const MaxSlotMinutes = 1440
+
+// checkSlot adds the slot rules to the kinds: at most MaxSlotTasks task ids
+// and a length that is set and at most one day.
+func checkSlot(field string, raw json.RawMessage) error {
+	switch field {
+	case "task_ids":
+		if len(idList(raw)) > MaxSlotTasks {
+			return fmt.Errorf("may hold at most %d tasks", MaxSlotTasks)
+		}
+	case "minutes":
+		var n int64
+		if json.Unmarshal(raw, &n) != nil || n < 1 || n > MaxSlotMinutes {
+			return fmt.Errorf("must be an integer from 1 to %d", MaxSlotMinutes)
 		}
 	}
 	return nil

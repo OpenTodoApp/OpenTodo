@@ -282,6 +282,38 @@
       }
     },
     {
+      "name": "list_slots",
+      "title": "List slots",
+      "description": "List the user's calendar slots (one block on the Day and Week grid holding a checklist of small tasks, such as \"Admin\" on Wednesday 16:00-16:45) on the days from..to, with floating wall times, the length in minutes and the tasks each holds in order (open first). Default: the seven days from today in timezone; at most 31 days. A task in a slot is an ordinary task due on the slot's day without a time.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "description": "First day (YYYY-MM-DD). Default: today in timezone.",
+            "format": "date",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Last day (YYYY-MM-DD), at most 30 days after from. Default: six days after from.",
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List slots"
+      }
+    },
+    {
       "name": "list_time_entries",
       "title": "List time entries",
       "description": "List the time entries the user can read (their own and other members' on shared tasks), newest first, with minutes and the task. from and to are local days in timezone; running: true returns only the entry that is running now. Paged: pass next_cursor back as cursor.",

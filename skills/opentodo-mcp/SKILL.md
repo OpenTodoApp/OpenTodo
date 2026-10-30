@@ -27,11 +27,12 @@ The connection is `https://<their server>/mcp` over streamable HTTP with `Author
 | Workspaces | `list_workspaces`; pass `workspace` to the list tools to look in another one |
 | Tracked time | `list_time_entries` |
 | The user's calendar frames ("when is my deep work?"), to propose times inside them | `list_frames` with `from`, `to` |
+| The user's calendar slots (one block holding a checklist of small tasks) and what is in them | `list_slots` with `from`, `to` |
 | An icon for a project | `list_icons` |
 
 Results are paged: when a result has `next_cursor`, pass it back as `cursor` for more. Lists stop at 200 items.
 
-For context you may also read the resources `opentodo://views/today`, `opentodo://views/inbox`, `opentodo://views/upcoming`, `opentodo://views/someday`, `opentodo://views/anytime`, `opentodo://projects`, `opentodo://projects/{id}`, `opentodo://tasks/{id}`, `opentodo://workspaces`, `opentodo://rules` (the user's automation rules, read-only) and `opentodo://frames` (the user's calendar frames, read-only).
+For context you may also read the resources `opentodo://views/today`, `opentodo://views/inbox`, `opentodo://views/upcoming`, `opentodo://views/someday`, `opentodo://views/anytime`, `opentodo://projects`, `opentodo://projects/{id}`, `opentodo://tasks/{id}`, `opentodo://workspaces`, `opentodo://rules` (the user's automation rules, read-only), `opentodo://frames` (the user's calendar frames, read-only) and `opentodo://slots` (the user's calendar slots and their tasks, read-only).
 
 ## Rules
 
