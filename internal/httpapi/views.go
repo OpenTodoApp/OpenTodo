@@ -32,7 +32,7 @@ var (
 	viewRowLayouts = []string{"", "line", "detailed"}
 	viewEnumSets   = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_by": viewSortBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts}
 	// viewRowProps are the row properties a view can hide (views-and-display D3).
-	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin"}
+	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin", "energy"}
 	// viewDefaults are written on create for every field the caller leaves out.
 	viewDefaults = map[string]json.RawMessage{
 		"kind":     json.RawMessage(`"list"`),

@@ -10,14 +10,15 @@ import { ancestors } from '../../lib/tree'
 import type { FieldDef, Label, Project } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { KEYWORD_NAME } from './conditionText'
+import { ENERGY_LEVELS, energyName, type Energy } from '../../lib/energy'
 
-export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'search' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield'
+export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'search' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy'
 
 const KIND_NAME = translatedMap<ConditionKind>({
   label: msg('Label'), project: msg('Project'), priority: msg('Priority'),
   due: msg('Due date'), deadline: msg('Deadline'), start: msg('Start date'), created: msg('Created'), completed: msg('Completed date'),
   state: msg('State'), search: msg('Title or notes'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
-  field: msg('Custom field'), nofield: msg('Custom field is empty'),
+  field: msg('Custom field'), nofield: msg('Custom field is empty'), energy: msg('Energy'),
 })
 
 type When = 'today' | 'tomorrow' | 'yesterday' | 'this-week' | 'next-week' | 'last-week' | 'this-month' | 'next-month' | 'last-month' | 'days-ahead' | 'days-ago' | 'weeks-ago' | 'months-ago' | 'weekday' | 'date'
@@ -50,6 +51,8 @@ export interface Draft {
   text: string
   duration: string
   value: string
+  /** `energy: value` (task-energy D5). */
+  energy: Energy
 }
 
 const DATE_KINDS: readonly string[] = ['due', 'deadline', 'start', 'created', 'completed']
@@ -97,7 +100,7 @@ function dateOf(d: Draft): DateExpr | null {
 export function draftOf(leaf: Leaf | null): Draft {
   const d: Draft = {
     kind: 'label', name: '', descendants: false, priority: 1, op: '<=', when: 'today', n: '3', weekday: 1, iso: '',
-    keyword: 'overdue', text: '', duration: '', value: '',
+    keyword: 'overdue', text: '', duration: '', value: '', energy: 'deep',
   }
   if (!leaf) return d
   switch (leaf.kind) {
@@ -108,6 +111,7 @@ export function draftOf(leaf: Leaf | null): Draft {
     case 'keyword': return { ...d, kind: 'state', keyword: leaf.keyword }
     case 'search': return { ...d, kind: 'search', text: leaf.text }
     case 'origin': return { ...d, kind: 'origin', text: leaf.value }
+    case 'energy': return { ...d, kind: 'energy', energy: leaf.value }
     case 'workspace': return { ...d, kind: 'workspace', name: leaf.name }
     case 'tracked': return { ...d, kind: 'tracked', op: leaf.op, duration: formatMinutes(leaf.minutes) }
     case 'field': {
@@ -133,6 +137,7 @@ export function leafOf(d: Draft): Leaf | null {
     case 'state': return { kind: 'keyword', keyword: d.keyword }
     case 'search': return d.text.trim() ? { kind: 'search', text: d.text.trim() } : null
     case 'origin': return d.text.trim() ? { kind: 'origin', value: d.text.trim() } : null
+    case 'energy': return { kind: 'energy', value: d.energy }
     case 'workspace': return name ? { kind: 'workspace', name, pos: 0 } : null
     case 'tracked': {
       const minutes = durationMinutes(d.duration)
@@ -181,7 +186,7 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
   const result = leafOf(draft)
   const fieldNames = useMemo(() => [...new Set(fields.filter((f) => !f.deleted_at).map((f) => f.name))].sort((a, b) => a.localeCompare(b)), [fields])
-  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'search', 'origin', 'tracked']
+  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'search', 'origin', 'tracked', 'energy']
   if (workspaces.length > 1 || draft.kind === 'workspace') kinds.splice(kinds.indexOf('origin') + 1, 0, 'workspace')
   if (fieldNames.length || draft.kind === 'field' || draft.kind === 'nofield') kinds.push('field', 'nofield')
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
@@ -220,6 +225,16 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
             {([1, 2, 3, 4] as Priority[]).map((p) => (
               <Button key={p} variant={draft.priority === p ? 'primary' : 'secondary'} aria-pressed={draft.priority === p} onClick={() => set({ priority: p })}>
                 {`P${p}`}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {draft.kind === 'energy' && (
+          <div role="group" aria-label={t('Energy')} className="flex flex-wrap gap-2">
+            {ENERGY_LEVELS.map((e) => (
+              <Button key={e} variant={draft.energy === e ? 'primary' : 'secondary'} aria-pressed={draft.energy === e} onClick={() => set({ energy: e })}>
+                {energyName(e)}
               </Button>
             ))}
           </div>

@@ -154,6 +154,9 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if entity == "task" {
+		if !energyOK(w, body) {
+			return
+		}
 		canonicalizeRecurrence(body)
 		pairDayPart(body)
 		// Custom field values become fields.<id> keys before an idempotent
@@ -421,6 +424,9 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	}
 	if existing == nil {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
+		return
+	}
+	if entity == "task" && !energyOK(w, body) {
 		return
 	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {

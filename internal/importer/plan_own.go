@@ -162,6 +162,11 @@ func (pl *planner) ownTask(fields []field, res *RowResult) []field {
 					f.value = raw(c)
 				}
 			}
+		case "energy":
+			// The export writes null for none, as the REST shape does (task-energy D7).
+			if opsync.IsNull(f.value) {
+				f.value = raw("")
+			}
 		case "assignee_id":
 			var who string
 			if json.Unmarshal(f.value, &who) == nil && who != "" && who != pl.st.UserID {

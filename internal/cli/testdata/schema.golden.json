@@ -85,6 +85,17 @@
           "description": "the part of the day; sets This Evening too (evening) or clears it"
         },
         {
+          "name": "energy",
+          "type": "string",
+          "enum": [
+            "deep",
+            "medium",
+            "low",
+            "none"
+          ],
+          "description": "the energy the task asks for (edit: none clears)"
+        },
+        {
           "name": "blocked-by",
           "type": "string_list",
           "description": "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"
@@ -321,6 +332,17 @@
             "none"
           ],
           "description": "the part of the day; sets This Evening too (evening) or clears it"
+        },
+        {
+          "name": "energy",
+          "type": "string",
+          "enum": [
+            "deep",
+            "medium",
+            "low",
+            "none"
+          ],
+          "description": "the energy the task asks for (edit: none clears)"
         },
         {
           "name": "blocked-by",
@@ -2996,6 +3018,19 @@
             null
           ],
           "description": "the part of the day: morning or afternoon; evening is the evening flag"
+        },
+        "energy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "deep",
+            "medium",
+            "low",
+            null
+          ],
+          "description": "the energy the task asks for; null for none"
         },
         "waiting_for_slot": {
           "type": "boolean",

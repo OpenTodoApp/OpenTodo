@@ -45,7 +45,7 @@ export const ROW_LAYOUT_LABEL = translatedMap<RowLayout>({ line: msg('One line')
 const ROW_LAYOUT_ICON: Record<RowLayout, IconName> = { line: 'rows-3', detailed: 'rows-2' }
 export const PROPERTY_LABEL = translatedMap<RowProperty>({
   date: msg('Date'), project: msg('Project'), labels: msg('Labels'), estimate: msg('Estimate'), assignee: msg('Assignee'),
-  deadline: msg('Deadline'), start: msg('Start'), origin: msg('Origin'),
+  deadline: msg('Deadline'), start: msg('Start'), origin: msg('Origin'), energy: msg('Energy'),
 })
 
 export interface DisplayPanelProps<V extends PanelValue = ViewDisplay> {

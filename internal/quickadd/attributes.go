@@ -104,6 +104,25 @@ func matchLabel(token string) (string, bool) {
 
 var priorityRE = regexp.MustCompile(`(?i)^p([1-4])$`)
 
+var energyRE = regexp.MustCompile(`^~([A-Za-z]+)$`)
+
+// matchEnergy reads `~deep`, `~medium`, `~low` or any shorter prefix, any
+// case, a trailing comma dropped (OpenSpec change task-energy, D4); ""
+// otherwise, so `~6` stays text.
+func matchEnergy(token string) string {
+	m := energyRE.FindStringSubmatch(trimPunct(token))
+	if m == nil {
+		return ""
+	}
+	w := strings.ToLower(m[1])
+	for _, e := range []string{"deep", "medium", "low"} {
+		if strings.HasPrefix(e, w) {
+			return e
+		}
+	}
+	return ""
+}
+
 func matchPriority(token string) int {
 	if m := priorityRE.FindStringSubmatch(trimPunct(token)); m != nil {
 		n, _ := strconv.Atoi(m[1])
