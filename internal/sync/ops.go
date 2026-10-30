@@ -334,6 +334,11 @@ var Schema = map[string]map[string]Field{
 		// user text, so it is not an encrypted content field; on a shared project
 		// only the owner may write it (CanWrite).
 		"workspace_id": {Kind: kNullableString, Default: `null`},
+		// How the project's tasks flow (OpenSpec change project-flow-modes):
+		// "parallel", "sequential" or "area"; empty, missing or unknown reads as
+		// parallel. Sync checks the kind only, so a later value stays additive;
+		// REST and the agent tools check the set. Not user text.
+		"flow_mode": {Kind: kString, Default: `""`},
 	},
 	"task": {
 		"title":        {Kind: kString, Default: `""`, Content: true},
@@ -423,6 +428,10 @@ var Schema = map[string]map[string]Field{
 		// newer client may write an icon this server does not know yet.
 		"color": {Kind: kNullableString, Default: `null`},
 		"icon":  {Kind: kNullableString, Default: `null`},
+		// How the section's tasks flow (OpenSpec change project-flow-modes):
+		// "parallel" or "sequential"; empty, missing or unknown follows the
+		// project. Sync checks the kind only. Not user text.
+		"flow_mode": {Kind: kString, Default: `""`},
 	},
 	// field: a custom field definition of one project (OpenSpec change
 	// custom-fields, design D1). Like a section it lives in its project's sharing

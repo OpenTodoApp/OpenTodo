@@ -7,6 +7,7 @@ import { isFirstRow, revealRow } from './task-list/revealRow'
 import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
+import { useFlowView } from '../lib/useFlow'
 import { useAllLabels, useProjects } from '../lib/localData'
 import { addFilterHistory, clearFilterDraft, compile, getFilterDraft, saveFilterDraft, type FilterDraft, fieldSuggestions, getFilterHistory, mentionsState, namesWorkspace, originSuggestions, parse, withCompletedTasks, type Node } from '../lib/filter'
 import { useWorkspaceFilter } from './useWorkspaceFilter'
@@ -124,13 +125,14 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const taskMap = useMemo(() => new Map(allTasks.map((tk) => [tk.id, tk])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
+  const flow = useFlowView(allTasks, today)
   const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
   const fieldDefs = useFieldDefs(), tracked = useTrackedTotals()
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
-    [today, labels, projects, allTasks, weekStart, fieldDefs, tracked, ws])
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
+    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, ws])
   const compiled = useMemo(() => {
     if (!good.ast) return null
     // "Completed tasks: Show" (views-and-display D4) reads the query as `(query) & (open | completed)`.
@@ -325,6 +327,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             selected={key === selected}
             progress={progress.get(tk.id)}
             blockedBy={blocked.get(tk.id)}
+            waitsFor={flow.waitsFor(tk.id)}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
             onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}

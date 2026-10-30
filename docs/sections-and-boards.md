@@ -32,6 +32,7 @@ Use the **⋯** menu on a section heading (or press <kbd>.</kbd> with the headin
 
 - **Rename** (<kbd>F2</kbd>)
 - **Colour…** and **Icon…** mark the section before its name.
+- **Flow…**: one at a time or together ([flows](project-flows.md)).
 - **Move** it up or down (left or right on the board).
 - **Delete section…** asks first and says how many open tasks move to **No section**. The tasks aren't deleted.
 

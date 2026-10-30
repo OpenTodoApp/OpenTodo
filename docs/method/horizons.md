@@ -14,7 +14,7 @@ You can look at your work from three heights. Each answers a different question,
 | --- | --- | --- | --- |
 | **Next step** | What do I do now? | a task, the project's next action | Next, the Daily check |
 | **Project** | What am I trying to finish? | a project, its note holds the outcome | the weekly review's project walk |
-| **Area** | What do I keep up? | a top-level project that holds sub-projects | the Monthly look |
+| **Area** | What do I keep up? | a top-level project that holds sub-projects, or one whose flow is Area | the Monthly look |
 
 ## Write the outcome
 
@@ -22,4 +22,4 @@ Open a project's note (<kbd>Shift+P</kbd>) and write in one sentence what done l
 
 ## Areas are projects that hold projects
 
-Make "Home", "Work" or "Health" a project and nest the projects that belong to it ([Projects and sub-projects](../projects.md)). An area itself rarely has tasks; it is finished never, but its projects are. The Monthly look lists each area with how many of its projects need attention.
+Make "Home", "Work" or "Health" a project and nest the projects that belong to it ([Projects and sub-projects](../projects.md)), or give a list of ongoing tasks the [Area flow](../project-flows.md). An area itself rarely has tasks; it is finished never, but its projects are. The Monthly look lists each area with how many of its projects need attention.

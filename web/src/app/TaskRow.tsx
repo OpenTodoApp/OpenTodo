@@ -143,6 +143,8 @@ interface MetaValues {
   someday: boolean
   estimate: { text: string; label: string; tracked: boolean } | null
   blockedBy: number
+  /** The holding step's title while the task waits in sequence (project-flow-modes); the blocked marker wins. */
+  waitsFor: string | null
   streak: HabitStats | null
   badges: FieldBadge[]
   assignee?: ReactNode
@@ -156,7 +158,23 @@ interface MetaValues {
 
 /** How many items the line has to show (the project and the repeat mark are placed apart). */
 function metaItems(m: MetaValues): number {
-  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts, m.progress].filter(Boolean).length
+  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0 || !!m.waitsFor, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts, m.progress].filter(Boolean).length
+}
+
+/**
+ * The marker in the blocked slot: the lock with the number of open blockers, or,
+ * for a step waiting in sequence (project-flow-modes D6), "After <step>", whose
+ * title truncates on a narrow row. An explicit blocker is the more specific reason.
+ */
+function BlockMark({ m, rowItem = false }: { m: MetaValues; rowItem?: boolean }) {
+  const item = rowItem ? { 'data-row-item': '' } : {}
+  if (m.blockedBy > 0) return <ToneText icon="lock" data-blocked="" {...item} label={t('Blocked by {blockedBy}', { blockedBy: m.blockedBy })}>{m.blockedBy}</ToneText>
+  if (!m.waitsFor) return null
+  return (
+    <ToneText icon="list-ordered" data-waits="" {...item} className="max-w-48" label={t('Waits for the previous step: {title}', { title: m.waitsFor })}>
+      {t('After {title}', { title: m.waitsFor })}
+    </ToneText>
+  )
 }
 
 /**
@@ -177,7 +195,7 @@ function CardMeta({ m }: { m: MetaValues }) {
       {m.repeat && <ToneText icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined}>{m.repeat}</ToneText>}
       {m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>}
       {m.startText && <ToneText icon={m.someday ? 'archive' : 'calendar-days'} data-start="">{m.startText}</ToneText>}
-      {m.blockedBy > 0 && <ToneText icon="lock" data-blocked="" label={t('Blocked by {blockedBy}', { blockedBy: m.blockedBy })}>{m.blockedBy}</ToneText>}
+      <BlockMark m={m} />
       {m.streak && <ToneText icon="flame" data-streak="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>}
       {m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id}>{b.text}</ToneText>)}
       {more.length > 0 && (
@@ -240,7 +258,7 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
     m.estimate && <ToneText key="estimate" icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>,
     m.assignee && <span key="assignee" data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>,
     m.sample && <ToneText key="sample" data-sample="">{t('Sample')}</ToneText>,
-    m.blockedBy > 0 && <ToneText key="blocked" icon="lock" data-blocked="" label={t('Blocked by {blockedBy}', { blockedBy: m.blockedBy })}>{m.blockedBy}</ToneText>,
+    (m.blockedBy > 0 || m.waitsFor) && <BlockMark key="blocked" m={m} />,
     m.streak && <ToneText key="streak" icon="flame" data-streak="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
     ...m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id}>{b.text}</ToneText>),
     more.length > 0 && <ToneText key="more" data-field-more="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>,
@@ -288,7 +306,7 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
     m.breadcrumb && <ToneText key="crumb" icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="" data-row-item="">{m.breadcrumb}</ToneText>,
     extra !== 'deadline' && deadline && <span key="deadline" className="contents">{deadline}</span>,
     m.startText && <ToneText key="start" icon={m.someday ? 'archive' : 'calendar-days'} data-start="" data-row-item="">{m.startText}</ToneText>,
-    m.blockedBy > 0 && <ToneText key="blocked" icon="lock" data-blocked="" data-row-item="" label={t('Blocked by {blockedBy}', { blockedBy: m.blockedBy })}>{m.blockedBy}</ToneText>,
+    (m.blockedBy > 0 || m.waitsFor) && <BlockMark key="blocked" m={m} rowItem />,
     m.streak && <ToneText key="streak" icon="flame" data-streak="" data-row-item="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
     ...m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id} data-row-item="">{b.text}</ToneText>),
     more.length > 0 && <ToneText key="more" data-field-more="" data-row-item="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>,
@@ -333,6 +351,8 @@ export interface TaskRowProps {
   progress?: Progress
   /** Open blockers (task-dependencies): above 0 the row is dimmed with a lock marker. */
   blockedBy?: number
+  /** The title of the step this task waits for in sequence (project-flow-modes): the row is dimmed with "After <step>". */
+  waitsFor?: string | null
   /** The streak of a habit (OpenSpec habits), computed once by the list: an item after the repeat. */
   habit?: HabitStats | null
   /** Title of the parent when the task is shown outside its parent's subtree. */
@@ -551,7 +571,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -611,7 +631,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,
     startText, someday: start === 'someday',
-    estimate, blockedBy: done ? 0 : blockedBy, streak: habit && !done ? habit : null,
+    estimate, blockedBy: done ? 0 : blockedBy, waitsFor: done ? null : waitsFor, streak: habit && !done ? habit : null,
     badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved, fieldsOf),
     assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
     origin: null,
@@ -755,7 +775,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           onOpen(e)
         }}>
         <div className={card ? '' : 'flex min-w-0 items-center gap-2'} data-row-head>
-        <div className={`user-text text-body ${card || detailed ? 'line-clamp-2' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
+        <div className={`user-text text-body ${card || detailed ? 'line-clamp-2' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''}`} data-row-title data-waiting={waitsFor && !done ? '' : undefined}>
           {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{task.title}</ReadAs></span>
             : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
           {unencrypted && (

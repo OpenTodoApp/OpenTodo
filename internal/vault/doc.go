@@ -15,7 +15,12 @@ type Doc struct {
 	ID       string
 	Color    string
 	Icon     string
-	Blocks   []*Block
+	// Flow is the project's flow when it is not Parallel: sequential or area (project-flow-modes).
+	Flow string
+	// UnknownFlow is an opentodo-flow value the vault does not know: the line
+	// stays in Front as written and nothing is synced from it.
+	UnknownFlow string
+	Blocks      []*Block
 }
 
 // Block is the part of a file before the first section heading (Section "")
@@ -46,6 +51,7 @@ const (
 	keyID    = "opentodo-id"
 	keyColor = "opentodo-color"
 	keyIcon  = "opentodo-icon"
+	keyFlow  = "opentodo-flow"
 )
 
 var (
@@ -90,6 +96,12 @@ func ParseDoc(text string, isSection func(name string) bool) *Doc {
 						d.Color = unquote(m[2])
 					case m != nil && m[1] == keyIcon:
 						d.Icon = unquote(m[2])
+					// A flow the vault knows; an unknown value stays in the file as written.
+					case m != nil && m[1] == keyFlow && fileFlow(unquote(m[2])) != "?":
+						d.Flow = fileFlow(unquote(m[2]))
+					case m != nil && m[1] == keyFlow:
+						d.UnknownFlow = unquote(m[2])
+						d.Front = append(d.Front, l)
 					default:
 						d.Front = append(d.Front, l)
 					}
@@ -293,6 +305,9 @@ func (d *Doc) Print() string {
 		if d.Icon != "" {
 			b.WriteString(keyIcon + ": " + d.Icon + "\n")
 		}
+		if d.Flow != "" {
+			b.WriteString(keyFlow + ": " + d.Flow + "\n")
+		}
 		for _, l := range d.Front {
 			b.WriteString(l + "\n")
 		}
@@ -369,4 +384,17 @@ func (d *Doc) Walk(fn func(b *Block, parent, n *Node)) {
 			}
 		}
 	}
+}
+
+// fileFlow maps a project flow onto the opentodo-flow value (project-flow-modes):
+// "" for Parallel (the key is left out), sequential or area, and "?" for a
+// value the vault does not know.
+func fileFlow(v string) string {
+	switch v {
+	case "", "parallel":
+		return ""
+	case "sequential", "area":
+		return v
+	}
+	return "?"
 }

@@ -21,6 +21,7 @@ import { startFocusOn } from '../focus/startFocus'
 import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
 import { sectionMenuGroups } from '../Sections'
+import { projectFlowPicker } from '../menus/flowMenu'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, placeInDay, sidebarFind } from '../signals'
@@ -210,6 +211,11 @@ export function commands(ctx: PaletteContext): Command[] {
     }), 'project'))
     if (p.role !== 'viewer') {
       out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => updateProject(p.row.id, { color: h.hex }) })))
+    }
+    // Set project flow (project-flow-modes D7): in every mode, for the owner and admins.
+    if (p.role === 'owner' || p.role === 'admin') {
+      out.push({ id: 'project:flow', icon: 'list-ordered', label: t('Project “{name}”: Set project flow…', { name }), menuLabel: t('Flow'),
+        keywords: 'flow sequential parallel area steps', run: () => ({ kind: 'picker', picker: projectFlowPicker(p.row) }) as Step })
     }
     // Keep away from AI assistants (agent-planning-fields D9): owner and admins.
     if (p.role === 'owner' || p.role === 'admin') {

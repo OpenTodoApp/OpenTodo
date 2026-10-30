@@ -45,7 +45,7 @@ period   := ("this" | "last" | "next") ("week" | "month")
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
-          | "someday" | "deferred" | "evening" | "blocked" | "unblocked" | "habit"
+          | "someday" | "deferred" | "evening" | "blocked" | "unblocked" | "available" | "habit"
           | "origin" | "no origin" | "tracked"
 duration := INT ("m" | "min" | "mins" | "minutes")? | NUM "h" (INT ("m" | "min")?)?
 name     := word | '"' chars '"'
@@ -90,6 +90,7 @@ text     := word | '"' chars '"'
 | `evening` | tasks marked for This Evening |
 | `blocked` | tasks waiting for another task that is still open ([Blocked by](tasks-and-projects.md#wait-for-another-task)) |
 | `unblocked` | tasks not waiting for any open task |
+| `available` | tasks you can do now: not blocked, not waiting for an earlier step of a [sequential project or section](project-flows.md), not parked and not starting later. `!available` lists the other open tasks |
 | `habit` | recurring tasks tracked as a [habit](recurring-and-reminders.md#track-a-habit); save `habit` as a view to list every habit with its streak |
 | `no project` | Inbox tasks (no project) |
 | `no labels` | tasks with no label |
@@ -375,4 +376,10 @@ tracked > 1h & due <= today
 
 ```filter
 workspace: "Side projects" & p1
+```
+
+### 27. What I can do now with a phone
+
+```filter
+available & @phone
 ```

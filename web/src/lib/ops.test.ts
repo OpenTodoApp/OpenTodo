@@ -16,6 +16,7 @@ import {
   threadOrder, threadVisible,
 } from './comments'
 import { visibleTasks } from './trash'
+import { projectFlowOf, sectionFlowOf } from './flow'
 import { publishEncryption } from './e2ee'
 import { MAX_PLAINTEXT_BYTES } from './crypto'
 import { createSection, deleteSection, moveTaskToSection, projectSections, renameSection, reorderSection } from './sections'
@@ -100,6 +101,22 @@ describe('applyOps', () => {
     expect(viewOptions(row!)).toEqual({ kind: 'list', groupBy: 'project', sortBy: 'title', sortDir: 'asc' })
     expect(viewOptions({ kind: 'grid', group_by: 'label', sort_by: 'mood', sort_dir: 'desc' })).toEqual({ kind: 'list', groupBy: 'label', sortBy: 'due', sortDir: 'desc' })
     expect(await db.tasks.count()).toBe(0)
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('keeps a flow value it does not know and reads it as the default (project-flow-modes)', async () => {
+    const db = useDatabase(`flow-${Date.now()}`)
+    await applyOps([
+      { id: 'f1', entity: 'project', entityId: 'p', field: 'name', value: 'Move house', ts: 1, device: 'A' },
+      { id: 'f2', entity: 'project', entityId: 'p', field: 'flow_mode', value: 'staged', ts: 1, device: 'A' },
+      { id: 'f3', entity: 'section', entityId: 's', field: 'project_id', value: 'p', ts: 1, device: 'A' },
+      { id: 'f4', entity: 'project', entityId: 'q', field: 'name', value: 'Old', ts: 1, device: 'A' },
+    ])
+    const p = await db.projects.get('p')
+    expect(p?.flow_mode).toBe('staged')
+    expect(projectFlowOf(p)).toBe('parallel')
+    expect((await db.projects.get('q'))?.flow_mode).toBe('')
+    expect(sectionFlowOf(await db.sections.get('s'))).toBe('')
     expect(await db.outbox.count()).toBe(0)
   })
 

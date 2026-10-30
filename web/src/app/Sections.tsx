@@ -3,7 +3,10 @@
 // lib/sections, so all of it works offline and converges like any other edit.
 import { CatalogueIcon, HUES, hueFor, Icon, IconButton, IconPicker, isCatalogueIcon, ListGroupHeader } from '../ui'
 import { hueName } from '../lib/colourNames'
-import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
+import { sectionFlowItem } from './menus/flowMenu'
+import { useMethodMode } from '../lib/method/mode'
+import { useProjects } from '../lib/localData'
 import { colourPickerSpec, iconPickerSpec } from './menus/stylePickers'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
@@ -21,7 +24,7 @@ import { act } from './actionError'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
-  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown; section?: Section }): ActionGroup[] {
+  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown; section?: Section; flow?: ActionItem | null }): ActionGroup[] {
   const board = o.layout === 'board'
   const section = a.section
   // Colour and icon (icons-and-section-style): steps inside the same overlay.
@@ -42,7 +45,7 @@ export function sectionMenuGroups(title: string, o: { first: boolean; last: bool
     } },
   ] : []
   return [
-    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename }, ...style] },
+    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename }, ...style, ...(a.flow ? [a.flow] : [])] },
     { items: [
       { kind: 'action', id: 'before', label: board ? t('Move left') : t('Move up'), icon: 'arrow-up', disabled: o.first, reason: t('Already first'), onSelect: () => a.move(-1) },
       { kind: 'action', id: 'after', label: board ? t('Move right') : t('Move down'), icon: 'arrow-down', disabled: o.last, reason: t('Already last'), onSelect: () => a.move(1) },
@@ -123,8 +126,12 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   }
   const [menuOpen, setMenuOpen] = useState(false)
   const startRename = () => { if (section) { setName(section.name); setRenaming(true) } }
+  // "Flow…" (project-flow-modes D7): for whoever may rename the section.
+  const mode = useMethodMode()
+  const project = useProjects().find((p) => p.id === section?.project_id)
   const groups = section ? sectionMenuGroups(title, { first, last, layout, count }, {
     section,
+    flow: sectionFlowItem(section, project, { mode, canEdit: editable }),
     rename: startRename,
     move: (d) => reorderSection(section.id, d),
     remove: () => deleteSection(section.id),

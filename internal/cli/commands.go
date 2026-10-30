@@ -106,6 +106,7 @@ var cmdSpecs = []cmdSpec{
 		{Name: "someday", Type: "bool", Description: "open tasks parked in Someday (combines with --project)"},
 		{Name: "anytime", Type: "bool", Description: "open tasks with no due date, deadline or start (combines with --project)"},
 		{Name: "blocked", Type: "bool", Description: "open tasks waiting for an open task (combines with --project)"},
+		{Name: "available", Type: "bool", Description: "open tasks that can be done now: not blocked, not waiting for an earlier step, neither in Someday nor starting later (combines with --project)"},
 		{Name: "completed-after", Type: "string", Description: "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		{Name: "completed-before", Type: "string", Description: "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		limitFlag,

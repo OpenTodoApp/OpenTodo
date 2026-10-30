@@ -782,3 +782,30 @@ describe('blocked and unblocked (task-dependencies)', () => {
     expect(compile(parse('blocked')!, CTX).warnings).toEqual(['Blocked tasks cannot be told apart here'])
   })
 })
+
+describe('available (project-flow-modes)', () => {
+  const projects = [...PROJECTS, project('p-move', 'Move house', null, { flow_mode: 'sequential' })]
+  const tasks: Task[] = [
+    task('van', { title: 'Book van', project_id: 'p-move', position: 1, labels: ['l-call'] }),
+    task('pack', { title: 'Pack kitchen', project_id: 'p-move', position: 2, labels: ['l-call'], due: { date: TODAY } }),
+    task('keys', { title: 'Hand over keys', project_id: 'p-move', position: 3 }),
+    task('phone', { title: 'Phone bank', labels: ['l-call'] }),
+    task('parked', { title: 'Parked', start: 'someday', labels: ['l-call'] }),
+  ]
+  const ctx: FilterContext = { ...CTX, projects, tasks }
+  it('What can be done now: only the current step of a sequential project', () => {
+    expect(ids('available & @Call', tasks, ctx)).toEqual(['phone', 'van'])
+  })
+  it('Waiting step is not blocked', () => {
+    expect(ids('!available & unblocked & !someday', tasks, ctx)).toEqual(['keys', 'pack'])
+    expect(ids('blocked', tasks, ctx)).toEqual([])
+  })
+  it('completing the current step makes the next one available at the next evaluation', () => {
+    const after = tasks.map((t) => (t.id === 'van' ? { ...t, completed_at: at('2026-10-10') } : t))
+    expect(ids('available & today', after, { ...ctx, tasks: after })).toEqual(['pack'])
+  })
+  it('round-trips through printQuery', () => {
+    const ast = parse('available & !available')!
+    expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
+  })
+})

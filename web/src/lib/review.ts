@@ -5,6 +5,7 @@
 // and the synced personal `review` row and per-project review stamps that record
 // them. Pure apart from the writers at the end, each one op set.
 import { bulkLabel, mergeChanges, planComplete, planDue, toProposed } from './bulk'
+import { projectFlowOf } from './flow'
 import { todayList } from './dayLists'
 import { addDaysISO, currentDayStart, daysBetweenISO, logicalDay } from './dates'
 import { mutate, type Change } from './ops'
@@ -187,13 +188,13 @@ export interface Area {
   attention: WalkProject[]
 }
 
-/** Areas (open-loops-method "Monthly look"): live top-level projects with live child projects, in sidebar order. */
+/** Areas (open-loops-method "Monthly look"): live top-level projects with live child projects, and top-level projects whose flow is Area (project-flow-modes), in sidebar order. */
 export function areasOf(input: ReviewInput): Area[] {
   const walk = new Map(walkProjects(input).map((w) => [w.project.id, w]))
   const live = input.projects.filter((p) => !p.deleted_at && !p.archived)
   return live.filter((p) => !p.parent_id).sort((a, b) => a.position - b.position).flatMap((project) => {
     const children = live.filter((c) => c.parent_id === project.id).sort((a, b) => a.position - b.position)
-    if (!children.length) return []
+    if (!children.length && projectFlowOf(project) !== 'area') return []
     const attention = children.map((c) => walk.get(c.id)).filter((w): w is WalkProject => !!w && (w.needsNext || w.stalled))
     return [{ project, children, attention }]
   })
