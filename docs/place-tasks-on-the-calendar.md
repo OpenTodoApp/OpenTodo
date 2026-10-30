@@ -17,15 +17,13 @@ Once tasks have [estimates](time-blocking.md#estimate-how-long-a-task-takes), th
 
 Drag a task from the Unscheduled lane onto a time slot. Its due date and time become that slot. The grid works in 15-minute steps.
 
-To plan from your lists, open the side list with **Plan from a list** (in the header's **More actions** menu of Day, Week, Month and Plan) and drag tasks from there onto the calendar, or focus one and press <kbd>s</kbd>: in Day and Week the arrows then move it, <kbd>Enter</kbd> places it and <kbd>Esc</kbd> cancels, and focus goes back to the list; in Month and Plan it goes straight onto the focused day. Its button at the top picks what it lists: the Inbox, tasks without a date, earlier tasks, a project, a label or a saved view; type to find one. Label the tasks for this week "week", for example, and plan from that label. This device remembers the choice. The list stays open while you move to other days, weeks or months and switch between Day, Week, Month and Plan; close it with its close button or <kbd>Esc</kbd>. On a wide screen it opens again the next time you come to the Calendar, until you close it.
+To plan from your lists, open the side list with **Plan from a list** (in the header's **More actions** menu of Day, Week, Month and Plan) and drag tasks from there onto the calendar, or focus one and press <kbd>s</kbd>: in Day and Week the arrows then move it, <kbd>Enter</kbd> places it and <kbd>Esc</kbd> cancels, and focus goes back to the list; in Month and Plan it goes straight onto the focused day. Its button at the top picks what it lists: the Inbox, tasks without a date, earlier tasks, a project, a label or a saved view; type to find one. This device remembers the choice. The list stays open while you move to other days, weeks or months and switch between Day, Week, Month and Plan; close it with its close button or <kbd>Esc</kbd>. On a wide screen it opens again the next time you come to the Calendar, until you close it.
 
 To change how long something takes, drag the bottom edge of its block: the start stays and the end moves. Drag the top edge to start earlier or later while the end stays; the estimate grows or shrinks to match, never below 15 minutes, and **Undo** puts back both. Dragging the middle of a block moves it and keeps its length. Dropping a block back on the Unscheduled lane keeps the date and removes the time.
 
 The time you place a task at is its **Do** time. In the task's details, **Do** shows the block the calendar draws, for example `Today 12:00–13:30` for a 90-minute estimate. **Start** is something else: the date from which the task is available (see [Deadlines and start dates](deadlines-and-start-dates.md)).
 
 ### With the keyboard
-
-Every move works without a mouse.
 
 1. In Today, a project or any list, select a task and press <kbd>s</kbd>. The Day view opens with the task ready to place.
 2. Move it with the arrow keys: <kbd>↑</kbd> / <kbd>↓</kbd> by 15 minutes, <kbd>←</kbd> / <kbd>→</kbd> by a day.
@@ -35,10 +33,10 @@ On the calendar itself, <kbd>j</kbd> / <kbd>k</kbd> select tasks, the arrows mov
 
 ## See whether the day fits
 
-Each day's header adds up the estimates of its open tasks and compares them with your day length, for example `4h 15m / 8h`. When you've planned more than the day holds, the header is marked as over capacity. That's your cue to move something.
+Each day's header adds up the estimates of its open tasks and compares them with your day length, for example `4h 15m / 8h`. When you've planned more than the day holds, the header is marked as over capacity in red.
+
+With **Count meetings in capacity** on, busy [meetings](other-calendars.md) join the total (the tooltip splits the two), and a day whose tasks fit but not around its meetings turns amber: **Over with meetings**.
 
 Tasks that overlap in time are shown side by side, with a marker, so nothing hides behind something else.
-
-Completing a task removes its block and lowers the day's total.
 
 Your day length and the hours the grid shows are set per device in **Settings → Language and region → Calendar grid**; see [Adjust the grid](time-blocking.md#adjust-the-grid).

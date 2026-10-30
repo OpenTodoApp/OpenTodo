@@ -29,7 +29,10 @@ import { setDueWithUndo } from './undoable'
 import { useToday, useViewerZone } from './useViews'
 import { t } from '../lib/i18n'
 import { act, reportActionError } from './actionError'
-import { CapacityLine } from './calendar/CapacityLine'
+import { CapacityLine, capacityState } from './calendar/CapacityLine'
+import { meetingsByDay } from './calendar/meetingCapacity'
+import { useCalendarFeeds } from './calendar/useCalendarFeeds'
+import { useOnline } from '../lib/online'
 import { useResetOnChange } from '../lib/useResetOnChange'
 
 /** Task rows a desktop cell shows before "+N more". */
@@ -70,6 +73,13 @@ export function MonthView({ date }: { date?: string }) {
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
   const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
   const editable = useCallback((task: Task) => !task.completed_at && canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
+  // Meetings count toward a cell's capacity only when this device counts them
+  // (meeting-aware-capacity D5); the events are fetched for the six weeks only then.
+  const feeds = useCalendarFeeds(days[0], days[days.length - 1], prefs.countEvents)
+  const online = useOnline()
+  const meetings = useMemo(() => meetingsByDay(days, feeds.visibleEvents, {
+    count: prefs.countEvents, eventsShown: feeds.eventsShown, subscriptions: feeds.subs.length, win: feeds.win, online, zone,
+  }), [days, feeds.visibleEvents, prefs.countEvents, feeds.eventsShown, feeds.subs.length, feeds.win, online, zone])
 
   /** Selection order: the month's tasks in grid order (`j` / `k`). */
   const order = useMemo(() => days.flatMap((d) => (cells.get(d) ?? []).map((task) => task.id)), [days, cells])
@@ -226,7 +236,7 @@ export function MonthView({ date }: { date?: string }) {
             {week.map((d) => {
               const list = cells.get(d) ?? []
               const outside = d.slice(0, 7) !== month
-              const load = dayLoad(shownViewed, d, prefs.dayLength)
+              const load = dayLoad(shownViewed, d, prefs.dayLength, meetings?.get(d)?.minutes ?? 0)
               const open = expanded === d
               const { shown, hidden } = open ? { shown: list, hidden: 0 } : visibleRows(list, CELL_ROWS)
               const isFocused = d === focused
@@ -237,7 +247,7 @@ export function MonthView({ date }: { date?: string }) {
                   onFocus={(e) => { if (e.target === e.currentTarget) setFocused(d) }}
                   className={`relative min-w-0 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${narrow ? 'min-h-14' : 'min-h-28'} ${outside ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
                   {/* Named by its content (WCAG 2.5.3 Label in Name): the date and counts first, then the tasks' own names. */}
-                  <span className="sr-only">{[d, list.length ? t('{n, plural, one {# task} other {# tasks}}', { n: list.length }) : '', load.over ? t('over capacity') : ''].filter(Boolean).join(', ')}</span>
+                  <span className="sr-only">{[d, list.length ? t('{n, plural, one {# task} other {# tasks}}', { n: list.length }) : '', capacityState(load)].filter(Boolean).join(', ')}</span>
                   <div aria-hidden className="mb-0.5 flex items-center justify-between gap-1">
                     <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-meta tabular-nums ${d === today ? 'bg-accent font-semibold text-on-accent' : ''}`}>{Number(d.slice(8))}</span>
                     {!narrow && load.planned > 0 && (

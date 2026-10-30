@@ -5609,5 +5609,11 @@
   "Today limit": "Límite de Hoy",
   "Waiting for a slot": "Esperando un hueco",
   "What did you get done?": "¿Qué has hecho?",
-  "{used} of {limit}": "{used} de {limit}"
+  "{used} of {limit}": "{used} de {limit}",
+  "Busy calendar events add to each day in Day, Week and Month.": "Los eventos ocupados del calendario suman a cada día en Día, Semana y Mes.",
+  "Calendars unavailable offline for this day": "Calendarios no disponibles sin conexión para este día",
+  "Count meetings in capacity": "Contar reuniones en la capacidad",
+  "Over with meetings.": "Por encima con las reuniones.",
+  "over with meetings": "por encima con las reuniones",
+  "{minutes} in meetings": "{minutes} en reuniones"
 }

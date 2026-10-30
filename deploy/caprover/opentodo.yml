@@ -15,7 +15,7 @@ caproverOneClickApp:
     variables:
         - id: $$cap_opentodo_version
           label: OpenTodo version
-          defaultValue: '0.16.0'
+          defaultValue: '0.17.0'
           description: The image tag of ghcr.io/opentodoapp/opentodo. Releases are listed at https://github.com/OpenTodoApp/OpenTodo/releases
           validRegex: /^[0-9]+\.[0-9]+(\.[0-9]+)?$/
         - id: $$cap_opentodo_base_url

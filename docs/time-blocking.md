@@ -12,7 +12,7 @@ card: week
 
 <picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
 
-A to-do list tells you what to do. A calendar tells you when. Time blocking puts the two together: give tasks an estimate, drop them on the Day or Week calendar, and you can see at a glance whether your day is realistic.
+Time blocking puts your list on the calendar: give tasks an estimate, drop them on the Day or Week calendar, and see at a glance whether your day is realistic.
 
 ## Estimate how long a task takes
 
@@ -22,7 +22,7 @@ The estimate shows on the task row, like `45m` or `1h 30m`.
 
 ## Open the calendar
 
-Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> or <kbd>g</kbd> <kbd>Shift+C</kbd>. Timed tasks are blocks as tall as their estimate; dated tasks without a time wait in the **Unscheduled** lane. The sidebar opens the calendar the way you last left it on this device. See [Day, Week and Month](calendar-views.md#open-the-calendar).
+Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan**, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> or <kbd>g</kbd> <kbd>Shift+C</kbd>. Timed tasks are blocks as tall as their estimate; dated tasks without a time wait in the **Unscheduled** lane. The sidebar opens the calendar the way you last left it on this device. See [Day, Week and Month](calendar-views.md#open-the-calendar).
 
 ## See the month
 
@@ -46,13 +46,13 @@ Each day's header adds up the estimates of its open tasks against your day lengt
 
 ## See your other calendars
 
-When the server owner has turned on [calendar feeds](calendar-feeds.md), events from your Google, Outlook or Apple calendars appear in Day and Week beside your tasks: read-only, marked when they overlap a task, and never counted in the day's total. See [Other calendars in Day and Week](other-calendars.md).
+When the server owner has turned on [calendar feeds](calendar-feeds.md), events from your Google, Outlook or Apple calendars appear in Day and Week beside your tasks: read-only, marked when they overlap a task, and counted in the day's total only if you choose (below). See [Other calendars in Day and Week](other-calendars.md).
 
 ## Adjust the grid
 
 On a phone the Week is a list: each day with its unscheduled tasks and its timed tasks in order, so nothing is squeezed into seven columns. Tap a task to select it, tap again (or press Enter) to open it.
 
-In **Settings → Language and region → Calendar grid** you can set when the grid starts and ends (6:00 to 22:00 by default, scrollable beyond) and how long your working day is (8 hours by default). These settings belong to each device, so your phone and laptop can differ.
+In **Settings → Language and region → Calendar grid** you can set when the grid starts and ends (6:00 to 22:00 by default) and how long your working day is (8 hours by default). **Count meetings in capacity** adds busy meetings to each day's total. These settings belong to each device, so your phone and laptop can differ.
 
 ## Tips
 
