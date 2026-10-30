@@ -1,7 +1,8 @@
 import { saveGridPrefs } from '../lib/localData'
 import { type GridPrefs } from '../lib/calendar'
 import { formatMinutes } from '../lib/duration'
-import { Select } from '../ui'
+import { useCalendarSubscriptions } from '../lib/liveData'
+import { Select, Switch } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { useGridPrefs } from './CalendarView'
 import { t } from '../lib/i18n'
@@ -14,10 +15,12 @@ const hour = (h: number) => `${String(h).padStart(2, '0')}:00`
 /** Day and Week view preferences (OpenSpec `time-blocking`, design D7): this device only, never synced. */
 export function CalendarSettingsSection() {
   const prefs = useGridPrefs()
-  return <CalendarSettingsView prefs={prefs} onSave={(patch) => void saveGridPrefs({ ...prefs, ...patch })} />
+  // "Count meetings in capacity" is offered only while the device knows a calendar (meeting-aware-capacity D2).
+  const hasCalendars = useCalendarSubscriptions().length > 0
+  return <CalendarSettingsView prefs={prefs} hasCalendars={hasCalendars} onSave={(patch) => void saveGridPrefs({ ...prefs, ...patch })} />
 }
 
-export function CalendarSettingsView({ prefs, onSave }: { prefs: GridPrefs; onSave: (patch: Partial<GridPrefs>) => void }) {
+export function CalendarSettingsView({ prefs, hasCalendars = false, onSave }: { prefs: GridPrefs; hasCalendars?: boolean; onSave: (patch: Partial<GridPrefs>) => void }) {
   const lengths = DAY_LENGTHS.includes(prefs.dayLength) ? DAY_LENGTHS : [...DAY_LENGTHS, prefs.dayLength].sort((a, b) => a - b)
   return (
     <SettingsSection {...cardCopy('calendar')}>
@@ -37,6 +40,10 @@ export function CalendarSettingsView({ prefs, onSave }: { prefs: GridPrefs; onSa
           {lengths.map((m) => <option key={m} value={m}>{formatMinutes(m)}</option>)}
         </Select>
       } />
+      {hasCalendars && (
+        <SettingRow {...rowCopy('calendar', 'countEvents')} htmlFor="count-events"
+          control={<span data-count-events-switch><Switch id="count-events" checked={prefs.countEvents} onChange={(on) => onSave({ countEvents: on })} label={t('Count meetings in capacity')} hideLabel /></span>} />
+      )}
     </SettingsSection>
   )
 }
