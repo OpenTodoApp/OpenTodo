@@ -8,7 +8,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { commitFiles, formatBytes, isImage, planFiles, useAttachmentLimits } from '../lib/attachments'
 import { useAllLabels, useProjects } from '../lib/localData'
 import { useDemo } from '../lib/demo'
-import { createTask, planReminders, planTask } from '../lib/ops'
+import { createTask, planNewTasks, planReminders, planTask } from '../lib/ops'
+import { addTasksUndoable } from '../lib/pasteTasks'
+import { showBulkToast } from './bulk/toastStore'
 import { captureFiles, type CapturedFile, isEmptyShare, parseShare, proposedDescription, proposedOrigin, proposedTitle, titleFromFiles, type SharePayload } from '../lib/share'
 import { deleteInboxEntry, getInboxEntry, type SharedFile } from '../lib/shareInbox'
 import type { Task } from '../lib/types'
@@ -164,6 +166,35 @@ export function ShareCapture() {
     }
   }
 
+  /**
+   * A pasted list (paste-to-tasks D3): one task per line, each with the picked project
+   * (unless its line names one) and the share as its origin; the description and the
+   * files go with the first, as they would with a single task. One batch; a refused
+   * line leaves the offer open with the reason.
+   */
+  async function saveMany(inputs: QuickAddInput[]) {
+    if (saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      const picked = projectId || null
+      const origin = proposedOrigin(payload)
+      const tasks = inputs.map((input, i) => ({ ...input, project_id: input.project_id ?? picked, origin, ...(i === 0 ? { description: description.trim() } : {}) }))
+      if (attach.length) {
+        const { ids, changes } = await planNewTasks(tasks)
+        const asFiles = await Promise.all(attach.map(async (f) => new File([await f.blob.arrayBuffer()], f.name, { type: f.type })))
+        await commitFiles(await planFiles(ids[0], asFiles, { projectId: tasks[0].project_id }), changes)
+      } else {
+        const added = await addTasksUndoable(tasks)
+        showBulkToast(added.label, added.undoId)
+      }
+      leave(picked ? { view: 'project', id: picked } : { view: 'inbox' })
+    } catch (err) {
+      setSaving(false)
+      throw err
+    }
+  }
+
   return (
     <div className="flex min-h-full justify-center bg-canvas p-4 sm:items-center">
       <div className="w-full max-w-lg rounded-card border border-default bg-surface p-5 shadow-1">
@@ -186,6 +217,7 @@ export function ShareCapture() {
             projects={projects}
             labels={labels}
             onAdd={save}
+            onAddMany={saveMany}
           />
         </div>
         )}

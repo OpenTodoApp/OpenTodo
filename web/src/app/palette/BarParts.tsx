@@ -77,8 +77,10 @@ export function BarFooter({ ask: withAsk }: { ask: boolean }) {
  * Add mode: the quick-add palette (field rows, the title and the keys). Enter adds and
  * keeps the field, empty and focused; Shift+Enter adds and opens the task.
  */
-export function AddPanel({ onAdd, onAddAndOpen, initial, escape }: {
+export function AddPanel({ onAdd, onAddMany, onAddAndOpen, initial, escape }: {
   onAdd: (input: QuickAddInput) => Promise<unknown>
+  /** A pasted list confirmed as one task per line (paste-to-tasks). */
+  onAddMany?: (inputs: QuickAddInput[]) => Promise<unknown>
   onAddAndOpen: (input: QuickAddInput) => Promise<unknown>
   initial?: string
   escape: { label: string; run: () => void }
@@ -88,7 +90,7 @@ export function AddPanel({ onAdd, onAddAndOpen, initial, escape }: {
   return (
     <div data-bar-add>
       <QuickAdd layout="palette" autoFocus hideHint initialValue={initial} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels}
-        onAdd={async (input) => { await onAdd(input) }} onAddAndOpen={async (input) => { await onAddAndOpen(input) }} escape={escape} />
+        onAdd={async (input) => { await onAdd(input) }} onAddMany={onAddMany && (async (inputs) => { await onAddMany(inputs) })} onAddAndOpen={async (input) => { await onAddAndOpen(input) }} escape={escape} />
     </div>
   )
 }

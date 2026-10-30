@@ -5483,5 +5483,16 @@
   "At the due time": "All’orario di scadenza",
   "On the day at 09:00": "Il giorno stesso alle 09:00",
   "2 days before": "2 giorni prima",
-  "At most one year before or after.": "Al massimo un anno prima o dopo."
+  "At most one year before or after.": "Al massimo un anno prima o dopo.",
+  "Paste as one line": "Incolla come una riga",
+  "That is more than {max} lines. Use Import for long lists.": "Sono più di {max} righe. Usa Importa per gli elenchi lunghi.",
+  "Too many lines": "Troppe righe",
+  "{n, plural, one {# subtask added} other {# subtasks added}}": "{n, plural, one {# sottoattività aggiunta} other {# sottoattività aggiunte}}",
+  "{n, plural, one {# task added, {k} not in the Inbox} other {# tasks added, {k} not in the Inbox}}": "{n, plural, one {# attività aggiunta, {k} fuori da In arrivo} other {# attività aggiunte, {k} fuori da In arrivo}}",
+  "{n, plural, one {# task added} other {# tasks added}}": "{n, plural, one {# attività aggiunta} other {# attività aggiunte}}",
+  "{n, plural, one {Add # subtask, one per line?} other {Add # subtasks, one per line?}}": "{n, plural, one {Aggiungere # sottoattività, una per riga?} other {Aggiungere # sottoattività, una per riga?}}",
+  "{n, plural, one {Add # subtask} other {Add # subtasks}}": "{n, plural, one {Aggiungi # sottoattività} other {Aggiungi # sottoattività}}",
+  "{n, plural, one {Add # task, one per line?} other {Add # tasks, one per line?}}": "{n, plural, one {Aggiungere # attività, una per riga?} other {Aggiungere # attività, una per riga?}}",
+  "{n, plural, one {Add # task} other {Add # tasks}}": "{n, plural, one {Aggiungi # attività} other {Aggiungi # attività}}",
+  "{n, plural, one {and # more} other {and # more}}": "{n, plural, one {e # altra} other {e altre #}}"
 }
