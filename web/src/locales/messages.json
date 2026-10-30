@@ -12,6 +12,10 @@
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "(completed)": [
+    "web/src/app/MonthView.tsx",
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/task-detail/TaskHead.tsx"
   ],
   "(deleted)": [
@@ -12105,7 +12109,8 @@
     "web/src/app/TaskListView.tsx"
   ],
   "Show completed tasks": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/calendar/CalendarCompletedToggle.tsx"
   ],
   "Show details": [
     "web/src/app/TaskRow.tsx",

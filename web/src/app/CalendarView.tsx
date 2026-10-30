@@ -6,7 +6,7 @@
 // lib/liveData, and the columns, agenda, planning list and keys live in ./calendar.
 import { Button, DESKTOP_HEADER_QUERY, MenuItem, PageBody, Tooltip, useMediaQuery } from '../ui'
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { calendarTasks, deadlineMarkers, DEFAULT_BLOCK_MINUTES, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
+import { calendarTasks, DEFAULT_BLOCK_MINUTES, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
 import { fitInFrame, frameTarget, framesByDate, useFrames, type PlacedFrame } from '../lib/frames'
 import { clampSlotMinutes, slotAt, slotKey, slotName, type SlotView } from '../lib/slots'
 import { calendarDays, calendarOrder, type DayData } from '../lib/calendarDays'
@@ -14,7 +14,7 @@ import { useOnline } from '../lib/online'
 import { setShowEvents } from '../lib/calendarFeeds'
 import { addDaysISO, dueFromView, formatDate, formatShort, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
-import { getTask, readGridPrefs, useGridPrefs, useLiveProjects } from '../lib/liveData'
+import { getTask, readGridPrefs, useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { updateTask } from '../lib/ops'
 import type { CalendarSubscription, Task } from '../lib/types'
 import { useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
@@ -35,9 +35,10 @@ import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanP
 import { useCalendarKeys } from './calendar/useCalendarKeys'
 import { WeekAgenda } from './calendar/WeekAgenda'
 import { requestFrames } from './calendar/framesRequest'
-import { CalendarPageHeader, useCalendarChrome } from './calendar/useCalendarChrome'
+import { CalendarPageHeader, useCalendarChrome, useDrawn } from './calendar/useCalendarChrome'
 import { useCalendarGo } from './calendar/scope'
 import type { AddGestures, HueOf } from './calendar/DayColumn'
+import { CalendarCompletedToggle } from './calendar/CalendarCompletedToggle'
 import { commitSlotDrop, newSlotFor, useSlotIndex, useSlotViews } from './calendar/useCalendarSlots'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
@@ -70,6 +71,7 @@ function frameFit(task: Task, days: readonly DayData[]): { date: string; start: 
 function usePlacement(dates: string[], today: string, prefs: GridPrefs, date: string | undefined, setSelectedId: (id: string) => void, inFrame: (task: Task) => { date: string; start: number } | null) {
   const [placing, setPlacing] = useState<Placement | null>(null)
   const startPlacing = useCallback((task: Task, onDate?: string, gridPrefs: GridPrefs = prefs) => {
+    if (task.completed_at) return
     // Plan from this frame (calendar-frames D4): the first free start inside the frame that fits.
     const framed = onDate ? null : inFrame(task)
     if (framed) {
@@ -109,6 +111,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const { resolved } = useDateTimeFormat()
   const dates = useMemo(() => (mode === 'day' ? [anchor] : weekDates(anchor, resolved.weekStart)), [mode, anchor, resolved.weekStart])
   const prefs = useGridPrefs()
+  const showCompleted = useCalendarShowCompleted()
 
   const projects = useLiveProjects()
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
@@ -120,14 +123,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const allTasks = useMemo(() => rawTasks.map((tk) => viewedTask(tk, zone)), [rawTasks, zone])
   const rawMap = useMemo(() => new Map(rawTasks.map((item) => [item.id, item])), [rawTasks])
   const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
-  // Colour by, the filter, the project scope and adding with the pointer (calendar-clarity).
-  const chrome = useCalendarChrome(allTasks, projects)
-  const { keeps, inScope } = chrome
-  // Capacity counts every task of the day; the grid draws the ones the scope and the filter keep (design D4).
-  const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1]), [allTasks, projects, dates])
-  const drawn = useMemo(() => shown.filter(keeps), [shown, keeps])
-  const hidden = useMemo(() => countBy(shown.filter((tk) => inScope(tk) && !keeps(tk)), (tk) => tk.due!.date), [shown, inScope, keeps])
-  const deadlines = useMemo(() => deadlineMarkers(allTasks.filter(keeps), projects, dates[0], dates[dates.length - 1]), [allTasks, keeps, projects, dates])
+  const chrome = useCalendarChrome(allTasks, projects) // Colour by, the filter, the project scope, adding with the pointer (calendar-clarity)
+  const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1], showCompleted), [allTasks, projects, dates, showCompleted])
+  const { drawn, hidden, deadlines } = useDrawn(chrome, shown, allTasks, projects, dates[0], dates[dates.length - 1]) // capacity counts `shown`, the grid draws `drawn` (D4)
 
   const from = dates[0], to = dates[dates.length - 1]
   const feeds = useCalendarFeeds(from, to)
@@ -169,6 +167,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const placeFrom = useRef<{ id: string; next: string | null; placed: boolean } | null>(null)
   const commit = useCallback((taskId: string, target: DropTarget) => {
     const task = taskMap.get(taskId)
+    if (task?.completed_at) return
     const stored = rawMap.get(taskId)?.due
     // Slots (calendar-slots D3, D5): a slot moved or resized, a task dropped on one, a row dragged out.
     if (commitSlotDrop(taskId, target, { slotIndex, heldBy, task, stored, zone })) {
@@ -203,7 +202,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     back?.focus({ preventScroll: true })
   }, [placing])
 
-  const { drag, start: startDrag } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: commit })
+  const { drag, start } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: commit })
+  const startDrag = useCallback<typeof start>((event, info) => {
+    if (!taskMap.get(info.taskId)?.completed_at) start(event, info)
+  }, [taskMap, start])
   // The planning list lives in the shell's panel slot (time-blocking, app-shell): its
   // actions read the latest handlers through this ref.
   const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })
@@ -268,7 +270,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     onPointerDown: (e, id) => dragStart(e, { taskId: id, kind: 'move' }),
     onPlace: (id) => {
       const task = taskMap.get(id)
-      if (!task || previewing) return
+      if (!task || task.completed_at || previewing) return
       const row = document.querySelector(`[data-tray-task="${id}"]`)?.closest('li')
       const next = (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>('[data-tray-task]')?.dataset.trayTask ?? null
       placeFrom.current = { id, next, placed: false }
@@ -281,8 +283,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const select = (id: string) => setSelectedId(id)
   const open = (id: string) => { setSelectedId(id); setOpenId(id) }
   const step = (dir: 1 | -1) => goTo(addDaysISO(anchor, (mode === 'day' ? 1 : 7) * dir))
-  const hueOf: HueOf = chrome.color.hueOf
-  const gestures: AddGestures | undefined = previewing ? undefined : chrome.add
+  const { color: { hueOf } } = chrome, gestures: AddGestures | undefined = previewing ? undefined : chrome.add
 
   const status = previewing && desktopHead
     ? <Suspense fallback={null}><ReplanPreview variant="bar" {...previewProps(rp, taskMap, today)} /></Suspense>
@@ -291,9 +292,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       <ReplanEntry count={rp.missed} onStart={rp.start} />
     </span>
       : <CalendarStatus placing={placing} placingTask={placingTask} placingSlot={placingSlot ? slotName(placingSlot.slot) : undefined} status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />
-  // The active filter is one chip in the lead line, beside the status (design D4: no new row).
   const meta = chrome.chip ? <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-2">{chrome.chip}{status}</span> : status
   const overflow = <>
+    <CalendarCompletedToggle shown={showCompleted} menu />
     <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a time, or press s on one')} onSelect={() => chrome.plan(planOpen, togglePlan)} />
     {rp.missed > 0 && !previewing && <MenuItem label={t('Re-plan the rest of the day')} icon="calendar-clock" data-replan-item onSelect={rp.start} />}
     <MenuItem label={t('Frames…')} icon="rows-2" description={t('Shade the hours you keep for one kind of work')} data-frames-item onSelect={() => requestFrames()} />
@@ -313,6 +314,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
               <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
               <Button variant="ghost" size="sm" icon="chevron-right" aria-label={mode === 'day' ? t('Next day') : t('Next week')} onClick={() => step(1)} />
             </span>
+            <CalendarCompletedToggle shown={showCompleted} />
             <CalendarRangeSwitch mode={mode} date={date} />
   </>
 
@@ -350,13 +352,6 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       )}
     </PageBody>
   )
-}
-
-/** How many items fall on each key. */
-function countBy<T>(items: readonly T[], key: (item: T) => string): Map<string, number> {
-  const out = new Map<string, number>()
-  for (const item of items) out.set(key(item), (out.get(key(item)) ?? 0) + 1)
-  return out
 }
 
 /** "3 blocks behind · Re-plan" in the header's lead line (replan-the-day D4). */

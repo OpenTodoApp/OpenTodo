@@ -518,17 +518,18 @@ const TONE_TEXT: Partial<Record<Tone, string>> ={ danger: 'text-danger', accent:
 
 function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs, hue }: CompactRowProps) {
   const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
+  const canDrag = !readOnly && onPointerDown !== undefined
   return (
     <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hue ?? hueFor(project?.color ?? null)} aria-pressed={selected}
-      onPointerDown={readOnly ? undefined : onPointerDown}
+      onPointerDown={canDrag ? onPointerDown : undefined}
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
       onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
-      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${readOnly ? '' : 'cursor-grab'}`}>
+      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${task.completed_at || date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canDrag ? 'cursor-grab' : ''}`}>
       {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
       {time && <span data-plan-time className={`shrink-0 tabular-nums ${TONE_TEXT[ladderTone(date, today)] ?? 'text-muted'}`}>{formatTime(time)}</span>}
       {/* In a narrow column the title takes the first line and the time, estimate and priority the second. */}
-      <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{task.title || t('Untitled')}</span>
+      <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'} ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
       {task.estimate_minutes ? <span data-estimate className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
       {/* The row's priority ring: coloured for P1 and P2, neutral for P3; read as "P1". */}
       {priority && (
@@ -536,8 +537,9 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
           <span aria-hidden data-priority-dot className={`h-2.5 w-2.5 rounded-full border-2 ${priority}`} /><span className="sr-only">P{task.priority}</span>
         </span>
       )}
+      {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
       {/* The deadline diamond when the row is on its deadline day (calendar-clarity D1). */}
-      {task.deadline === date && <span className="inline-flex shrink-0 items-center"><span aria-hidden data-deadline-diamond className={`inline-block size-2 rotate-45 rounded-[1px] ${date < today ? 'bg-faint' : 'bg-warning'}`} /><span className="sr-only">{`, ${t('deadline today')}`}</span></span>}
+      {task.deadline === date && !task.completed_at && <span className="inline-flex shrink-0 items-center"><span aria-hidden data-deadline-diamond className={`inline-block size-2 rotate-45 rounded-[1px] ${date < today ? 'bg-faint' : 'bg-warning'}`} /><span className="sr-only">{`, ${t('deadline today')}`}</span></span>}
       {readOnly && <span className="sr-only">{`, ${t('read-only')}`}</span>}
     </button>
   )
