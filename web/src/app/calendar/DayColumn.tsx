@@ -78,13 +78,14 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
             type="button"
             data-cal-id={task.id}
             data-lane-task={task.id}
-            onPointerDown={(e) => onPointerDown(e, task.id)}
+            onPointerDown={task.completed_at ? undefined : (e) => onPointerDown(e, task.id)}
             onClick={() => onSelect(task.id)}
             onDoubleClick={() => onOpen(task.id)}
-            className={`ui-block ui-block--row flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-left text-meta ${day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
+            className={`ui-block ui-block--row flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-left text-meta ${task.completed_at || day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
             data-hue={hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)}
           >
-            <span className="truncate">{task.title || t('Untitled')}</span>
+            <span className={`truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+            {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
             {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
           </button>
         ))}
@@ -227,6 +228,7 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       role="button"
       tabIndex={-1}
       onPointerDown={(e) => {
+        if (task.completed_at) return
         // The lowest few pixels resize the end, the highest few the start (GitHub issue 355); the rest moves the block.
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
         const zone = Math.min(RESIZE_ZONE_PX, rect.height / 3)
@@ -237,7 +239,7 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       onClick={() => onSelect(b.id)}
       onDoubleClick={() => onOpen(b.id)}
       // Filled, not outlined (surfaces-v2 D1): the project's soft fill, a hue edge, strong text; dashed edge without an estimate.
-      className={`ui-block absolute z-10 cursor-grab touch-manipulation overflow-hidden px-1.5 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? '' : 'ui-block--dashed'} ${past || movesTo !== undefined ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${ghost}`}
+      className={`ui-block absolute z-10 ${task.completed_at ? '' : 'cursor-grab'} touch-manipulation overflow-hidden px-1.5 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? '' : 'ui-block--dashed'} ${past || task.completed_at || movesTo !== undefined ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${ghost}`}
       style={{
         top, height,
         left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
@@ -245,9 +247,9 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       }}
     >
       {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
-      <span className="sr-only">{[task.title || t('Untitled'), block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : '', movesTo !== undefined ? t('moves to {time}', { time: formatTime(movesTo) }) : ''].filter(Boolean).join(', ')}</span>
+      <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : '', movesTo !== undefined ? t('moves to {time}', { time: formatTime(movesTo) }) : ''].filter(Boolean).join(', ')}</span>
       <div aria-hidden className="flex items-start gap-1">
-        <span className="min-w-0 flex-1 truncate font-medium">{task.title || t('Untitled')}</span>
+        <span className={`min-w-0 flex-1 truncate font-medium ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
         {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
       </div>
       {height >= 30 && (
@@ -256,16 +258,16 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
           {block.estimated && <span className="ml-1">{formatMinutes(task.estimate_minutes!)}</span>}
         </div>
       )}
-      <div
+      {!task.completed_at && <div
         data-resize-start-handle
         aria-hidden
         className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize touch-none hover:bg-accent/30"
-      />
-      <div
+      />}
+      {!task.completed_at && <div
         data-resize-handle
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize touch-none hover:bg-accent/30"
-      />
+      />}
     </div>
   )
 }
@@ -325,13 +327,14 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                 <button
                   type="button"
                   data-cal-id={id}
-                  onPointerDown={(e) => onDragStart(e, { taskId: id, kind: 'move' })}
+                  onPointerDown={tk?.completed_at ? undefined : (e) => onDragStart(e, { taskId: id, kind: 'move' })}
                   onClick={() => onSelect(id)}
                   onDoubleClick={() => onOpen(id)}
                   className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-selected-row' : 'hover:bg-hover'}`}
                 >
                   <span className="text-hint tabular-nums text-muted">{blk ? formatTime(blk.start) : ''}</span>
-                  <span className="truncate">{tk?.title || t('Untitled')}</span>
+                  <span className={`truncate ${tk?.completed_at ? 'line-through' : ''}`}>{tk?.title || t('Untitled')}</span>
+                  {tk?.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
                 </button>
               </li>
             )

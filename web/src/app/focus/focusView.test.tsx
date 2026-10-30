@@ -329,7 +329,10 @@ describe('focus everywhere', () => {
     const r = await panel(id)
     await waitFor(() => !!q('[data-panel-focus]'))
     await click(q('[data-panel-focus]')!)
-    await waitFor(async () => (await readFocus())?.phase === 'work')
+    await waitFor(async () => {
+      const session = await readFocus()
+      return session?.phase === 'work' && !!session.entryId
+    }, 'initial focus entry created')
     const before = await readFocus()
     vi.setSystemTime(T0 + 3 * MIN)
     await click(q('[data-panel-focus]')!)

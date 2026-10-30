@@ -14,7 +14,7 @@ import { useOnline } from '../lib/online'
 import { setShowEvents } from '../lib/calendarFeeds'
 import { addDaysISO, dueFromView, formatDate, formatShort, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
-import { getTask, readGridPrefs, useGridPrefs, useLiveProjects } from '../lib/liveData'
+import { getTask, readGridPrefs, useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { updateTask } from '../lib/ops'
 import type { CalendarSubscription, Project, Task } from '../lib/types'
 import { useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
@@ -37,6 +37,7 @@ import { useCalendarKeys } from './calendar/useCalendarKeys'
 import { WeekAgenda } from './calendar/WeekAgenda'
 import { requestFrames } from './calendar/framesRequest'
 import { AddOnDayDialog } from './calendar/AddOnDayDialog'
+import { CalendarCompletedToggle } from './calendar/CalendarCompletedToggle'
 import { commitSlotDrop, newSlotFor, useSlotIndex, useSlotViews } from './calendar/useCalendarSlots'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
@@ -69,6 +70,7 @@ function frameFit(task: Task, days: readonly DayData[]): { date: string; start: 
 function usePlacement(dates: string[], today: string, prefs: GridPrefs, date: string | undefined, setSelectedId: (id: string) => void, inFrame: (task: Task) => { date: string; start: number } | null) {
   const [placing, setPlacing] = useState<Placement | null>(null)
   const startPlacing = useCallback((task: Task, onDate?: string, gridPrefs: GridPrefs = prefs) => {
+    if (task.completed_at) return
     // Plan from this frame (calendar-frames D4): the first free start inside the frame that fits.
     const framed = onDate ? null : inFrame(task)
     if (framed) {
@@ -108,6 +110,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const { resolved } = useDateTimeFormat()
   const dates = useMemo(() => (mode === 'day' ? [anchor] : weekDates(anchor, resolved.weekStart)), [mode, anchor, resolved.weekStart])
   const prefs = useGridPrefs()
+  const showCompleted = useCalendarShowCompleted()
 
   const projects = useLiveProjects()
   /** The day an empty day's "Add a task" adds to (the week's agenda, lean-chrome D7). */
@@ -121,7 +124,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const allTasks = useMemo(() => rawTasks.map((tk) => viewedTask(tk, zone)), [rawTasks, zone])
   const rawMap = useMemo(() => new Map(rawTasks.map((item) => [item.id, item])), [rawTasks])
   const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
-  const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1]), [allTasks, projects, dates])
+  const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1], showCompleted), [allTasks, projects, dates, showCompleted])
 
   const from = dates[0], to = dates[dates.length - 1]
   const feeds = useCalendarFeeds(from, to)
@@ -163,6 +166,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const placeFrom = useRef<{ id: string; next: string | null; placed: boolean } | null>(null)
   const commit = useCallback((taskId: string, target: DropTarget) => {
     const task = taskMap.get(taskId)
+    if (task?.completed_at) return
     const stored = rawMap.get(taskId)?.due
     // Slots (calendar-slots D3, D5): a slot moved or resized, a task dropped on one, a row dragged out.
     if (commitSlotDrop(taskId, target, { slotIndex, heldBy, task, stored, zone })) {
@@ -197,7 +201,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     back?.focus({ preventScroll: true })
   }, [placing])
 
-  const { drag, start: startDrag } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: commit })
+  const { drag, start } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: commit })
+  const startDrag = useCallback<typeof start>((event, info) => {
+    if (!taskMap.get(info.taskId)?.completed_at) start(event, info)
+  }, [taskMap, start])
   // The planning list lives in the shell's panel slot (time-blocking, app-shell): its
   // actions read the latest handlers through this ref.
   const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })
@@ -259,7 +266,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     onPointerDown: (e, id) => dragStart(e, { taskId: id, kind: 'move' }),
     onPlace: (id) => {
       const task = taskMap.get(id)
-      if (!task || previewing) return
+      if (!task || task.completed_at || previewing) return
       const row = document.querySelector(`[data-tray-task="${id}"]`)?.closest('li')
       const next = (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>('[data-tray-task]')?.dataset.trayTask ?? null
       placeFrom.current = { id, next, placed: false }
@@ -296,9 +303,11 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
               <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
               <Button variant="ghost" size="sm" icon="chevron-right" aria-label={mode === 'day' ? t('Next day') : t('Next week')} onClick={() => step(1)} />
             </span>
+            <CalendarCompletedToggle shown={showCompleted} />
             <CalendarRangeSwitch mode={mode} date={date} />
           </>}
           overflow={<>
+            <CalendarCompletedToggle shown={showCompleted} menu />
             <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a time, or press s on one')} onSelect={togglePlan} />
             {rp.missed > 0 && !previewing && <MenuItem label={t('Re-plan the rest of the day')} icon="calendar-clock" data-replan-item onSelect={rp.start} />}
             <MenuItem label={t('Frames…')} icon="rows-2" description={t('Shade the hours you keep for one kind of work')} data-frames-item onSelect={() => requestFrames()} />

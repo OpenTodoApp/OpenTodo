@@ -6,7 +6,7 @@ import {
   blockFor, calendarTasks, dayLoad, DEFAULT_GRID_PREFS, eventMinutes, dropStart, formatLoad, formatTime, normalizeGridPrefs, nudgeDue, parseTime,
   placementStart, resizeEstimate, resizeStart, slotFromOffset, stepEstimate, stepStart, weekDates,
 } from './calendar'
-import { formatHour, formatTime as formatWallTime, resolveDateTime } from './dates'
+import { formatHour, formatTime as formatWallTime, resolveDateTime, viewedTask } from './dates'
 import type { CalendarEvent, Task } from './types'
 
 function task(p: Partial<Task> = {}): Task {
@@ -150,7 +150,16 @@ describe('blocks', () => {
     ]
     const ids = calendarTasks(tasks, [{ id: 'old', archived: true }, { id: 'live', archived: false }], '2026-10-13', '2026-10-19').map((t) => t.id)
     expect(ids).toEqual(['a', 'b', 'g'])
+    expect(calendarTasks(tasks, [{ id: 'old', archived: true }, { id: 'live', archived: false }], '2026-10-13', '2026-10-19', true).map((t) => t.id)).toEqual(['a', 'b', 'c', 'g'])
   })
+})
+
+it('places completed work on its due date in the viewer zone, regardless of the completion date', () => {
+  const completed = task({ id: 'done', due: { date: '2026-10-14', time: '02:00', tz: 'Asia/Tokyo' }, completed_at: Date.UTC(2026, 9, 15) })
+  const viewed = viewedTask(completed, 'Europe/Berlin')
+  expect(viewed.due?.date).toBe('2026-10-13')
+  expect(calendarTasks([viewed], [], '2026-10-13', '2026-10-13', true)).toEqual([viewed])
+  expect(calendarTasks([viewed], [], '2026-10-14', '2026-10-15', true)).toEqual([])
 })
 
 describe('capacity', () => {
