@@ -6,7 +6,7 @@ A month grid of due dates: which open tasks appear on which day, how a crowded d
 ## Requirements
 
 ### Requirement: Month grid
-The client SHALL provide a Month view, reachable by `g m`, from the sidebar and from the Day | Week | Month switch, showing the weeks of the anchor month starting on the user's first day of the week, with days outside the month dimmed and today marked. Each day SHALL list the open tasks due that day in the viewer's zone, with the same selection as Day and Week: deleted, completed and archived-project tasks left out. The view SHALL render from local data and work offline.
+The client SHALL provide a Month view, reachable by `g m`, from the sidebar and from the Day | Week | Month switch, showing the weeks of the anchor month starting on the user's first day of the week, with days outside the month dimmed and today marked. Each day SHALL list the open tasks due that day in the viewer's zone, with the same selection as Day and Week: deleted and archived-project tasks left out, completed tasks included only when the Calendar's Show completed tasks choice is on. Completed titles SHALL be struck through and announce their completed status, including the focused-day list on a phone, and SHALL be counted in visible task counts and overflow controls but not planned capacity. Completed tasks SHALL be selectable and openable, but SHALL NOT be rescheduled from the calendar. Identical task rows and the same visibility choice SHALL produce identical cells after sync. The view SHALL render from local data and work offline.
 
 #### Scenario: Open the month offline
 - **WHEN** the device is offline and the user presses `g m`
@@ -19,6 +19,10 @@ The client SHALL provide a Month view, reachable by `g m`, from the sidebar and 
 #### Scenario: Range switch keeps the date
 - **WHEN** the user is on the Week view of 2026-11-18 and chooses Month
 - **THEN** November 2026 opens, and choosing Day from there opens 2026-11-18
+
+#### Scenario: Completed work in a month cell
+- **WHEN** Show completed tasks is on and an open task and a completed task are due on the same day
+- **THEN** both appear in the existing order, the completed title is struck through, only the open task counts towards capacity, and on a phone the count includes both and the focused-day list shows both
 
 ### Requirement: Cell contents
 A day cell SHALL list timed tasks first in time order, then the others by priority and position, each showing its time when it has one, its title and its priority. Each task row in a cell SHALL be drawn as a soft fill of its project's palette hue with a 3 px solid hue edge on its leading side and the strong text tone, like a calendar block; rows in cells of days before today SHALL be dimmed to the faint tone with a lightened fill. When a cell holds more tasks than fit, it SHALL show the first ones and a "+N more" control that expands the cell. A cell whose tasks carry estimates SHALL show the planned total against the device's day length in the muted tone with tabular figures, marked in the danger tone when over capacity, like a Day column. With the device's "Count meetings in capacity" option on (OpenSpec `time-blocking` "Grid preferences"), the total SHALL add the day's event minutes, a cell with counted event minutes SHALL show the line even without estimated tasks, and a cell over only with meetings SHALL be marked in the warning tone with "Over with meetings", exactly as a Day column.
