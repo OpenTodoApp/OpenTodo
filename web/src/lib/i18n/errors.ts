@@ -50,6 +50,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   not_in_workspace: msg('This person is not a member of the workspace. Ask the workspace owner to add them first.'),
   not_opted_in: msg('This device does not answer AI connectors from this session.'),
   not_recurring: msg('This task does not repeat.'),
+  not_an_occurrence: msg('That date is not a coming occurrence of this repeating task.'),
   encryption_enabled: msg('Not available with end-to-end encryption: {detail}'),
   feeds_disabled: msg('Calendar feeds are not enabled on this server.'),
   issues_disabled: msg('Issue connections are not enabled on this server.'),

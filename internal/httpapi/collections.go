@@ -582,6 +582,8 @@ var collectionRefusals = refusals{
 		writeError(w, http.StatusBadRequest, "invalid_input",
 			fmt.Sprintf("task.blocked_by: %q is not in the same project sharing as this task (blockers must be shared the same way)", rej.Detail))
 	},
+	opsync.ReasonInvalidOccurrence: refuse(http.StatusBadRequest, "invalid_input",
+		"task.occurrence_date: only an occurrence record (a task with series_id) has one, and it never changes once set"),
 	opsync.ReasonNotAMember: refuse(http.StatusBadRequest, "not_a_member",
 		"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)"),
 	otherRefusal: func(w http.ResponseWriter, rej *opsync.RejectedError) {

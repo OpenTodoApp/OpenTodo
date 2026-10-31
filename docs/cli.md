@@ -193,9 +193,14 @@ A task that is already in the requested state (`ot done` on a completed task, `o
 ```bash
 ot task occurrences 8c2a                                # today and the 30 days after
 ot task occurrences 8c2a --from 2026-10-12 --to 2026-10-18 --json
+ot task occurrence 8c2a 2026-10-19 skip                 # skip one occurrence
+ot task occurrence 8c2a 2026-10-14 edit --time 19:00   # move one occurrence alone
+ot task occurrence 8c2a 2026-10-15 complete            # complete one early
 ```
 
-`ot task occurrences <ref>` lists a repeating task's current occurrence and the [projected](recurrence.md#projected-occurrences) ones after it in a range, as a table of DATE, TIME and STATE (`current` or `projected`). `--from` and `--to` take `YYYY-MM-DD`, `today`, `yesterday` or a weekday; the range is at most 366 days and lists at most 31 projected dates. The dates are the ones the app draws on the calendar ([`GET /api/v1/tasks/{id}/occurrences`](api.md#a-series-dates-ahead)); it only reads, so a `read` token will do. A task without a rule exits 1 with `not_recurring`.
+`ot task occurrences <ref>` lists a repeating task's current occurrence and the [projected](recurrence.md#projected-occurrences) ones after it in a range, as a table of DATE, TIME and STATE (`current`, `projected`, or `open`, `done` and `skipped` for an occurrence that has a record). `--from` and `--to` take `YYYY-MM-DD`, `today`, `yesterday` or a weekday; the range is at most 366 days and lists at most 31 projected dates. The dates are the ones the app draws on the calendar ([`GET /api/v1/tasks/{id}/occurrences`](api.md#a-series-dates-ahead)); it only reads, so a `read` token will do. A task without a rule exits 1 with `not_recurring`.
+
+`ot task occurrence <ref> <date> complete|skip|edit` acts on one occurrence alone ([one occurrence alone](recurrence.md#one-occurrence-alone)): `complete` and `skip` that date, `edit` moves it (`--due <day>`, `--time HH:MM` or `none`) or renames it (`--title`); a new day without `--time` keeps the series' time. `<date>` takes `YYYY-MM-DD`, `today`, `tomorrow` or a weekday. It prints the occurrence's record (`--json`: the task). A date that is not an occurrence exits 1 with `not_an_occurrence`. It writes through [`POST /api/v1/tasks/{id}/occurrences/{date}/complete`](api.md#one-occurrence-alone) and its siblings, so it needs a `full` token.
 
 ## Projects
 
@@ -372,7 +377,8 @@ Every command accepts `--json`. Stdout then holds only JSON, with the same field
 | `notes list`, `notes search` | array of `note`: `{kind, id, title, project_id, project, label_ids, updated_at, body_version, encrypted}`, `search` adds `snippet` (`[{text, mark}]`) |
 | `notes show`, `add`, `edit`, `task note` | `note_text`: `{kind, id, title, text, appends, body_version, project_id, label_ids, encrypted}` |
 | `notes append`, `task note --append` | `note_append`: `{entity, entity_id, append_id, body_version}` |
-| `task occurrences` | `occurrences`: `{series_id, rule, capped, occurrences: [{date, time?, tz?, state}]}` |
+| `task occurrences` | `occurrences`: `{series_id, rule, capped, occurrences: [{date, time?, tz?, state, record_id?, due?}]}` |
+| `task occurrence` | `task`: the occurrence's record |
 | `notes rm` / `notes to-task` | `note_result` (the `note` plus `ref` and `status`) or an array of them / `task` |
 | any write command with `--dry-run` | `dry_run` |
 | any failure | `error`: `{"error":{"code":"…","message":"…","exit":N}}` |

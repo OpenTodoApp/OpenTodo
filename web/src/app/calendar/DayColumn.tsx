@@ -130,7 +130,7 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
             {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
           </button>
         ))}
-        {day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" />)}
+        {day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" onDrag={(e) => onPointerDown(e, p.id)} />)}
       </div>
     </div>
   )
@@ -213,7 +213,9 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
         const pj = day.projected.get(b.id)
         if (pj) {
           // A projected occurrence (series-occurrences D3): read-only, in the overlap layout like an event.
-          return <ProjectedItem key={b.id} p={pj.projection} hue={projectionHue?.(pj.projection)} variant="block" style={{
+          // Dragged by an editor, it moves this occurrence alone (series-exceptions D4).
+          return <ProjectedItem key={b.id} p={pj.projection} hue={projectionHue?.(pj.projection)} variant="block"
+            onDrag={(e) => onDragStart(e, { taskId: pj.projection.id, kind: 'move', grabOffset: e.clientY - e.currentTarget.getBoundingClientRect().top })} style={{
             top: b.start * PX_PER_MIN, height: Math.max(MIN_BLOCK_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN),
             left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`, width: `calc(${100 / b.lanes}% - 4px)`,
           }} />

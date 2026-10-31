@@ -7,7 +7,8 @@ import { formatShort, logicalToday, weekday } from '../lib/dates'
 import { habitRule, habitStats } from '../lib/habits'
 import { detachOccurrence, mutate, setRecurrence, skipOccurrence } from '../lib/ops'
 import { firstOccurrence, parseRule, previewOccurrences, RULE_SUGGESTIONS } from '../lib/recurrence'
-import { completedOccurrences } from '../lib/recurring'
+import { seriesBudget } from '../lib/recurring'
+import { walkOccurrences } from '../lib/occurrences'
 import type { Task } from '../lib/types'
 import { HabitHistory } from './HabitHistory'
 import { t } from '../lib/i18n'
@@ -31,17 +32,20 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
     setError(null)
   }, [task.id, task.recurrence])
 
-  // Occurrence records of this series, for the `for N times` count in the preview.
+  // Occurrence records of this series: the `for N times` count and the exception
+  // dates the preview leaves out (series-exceptions).
   const related = useSeriesRecords(task.id)
-  const done = useMemo(() => completedOccurrences(task.id, related, task.due?.date), [task.id, related, task.due?.date])
+  const budget = useMemo(() => seriesBudget(task.id, related, task.due?.date), [task.id, related, task.due?.date])
 
   const today = logicalToday()
   const parsed = useMemo(() => (draft.trim() ? parseRule(draft) : null), [draft])
   const preview = useMemo(() => {
     if (!parsed?.ok) return []
     const due = task.due?.date ?? firstOccurrence(parsed.rule, today)
-    return previewOccurrences(parsed.rule, due, today, done, 3)
-  }, [parsed, task.due?.date, today, done])
+    // A completion-relative rule counts from today's completion; a calendar rule leaves the exceptions out.
+    if (parsed.rule.afterCompletion) return previewOccurrences(parsed.rule, due, today, budget.taken, 3)
+    return walkOccurrences(parsed.rule, due, today, budget.taken, due, '9999-12-31', (d) => d, budget.except).dates.slice(0, 3)
+  }, [parsed, task.due?.date, today, budget])
 
   const commit = async () => {
     setNotice(null)
@@ -107,7 +111,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           <Tooltip label={t('Move to the next occurrence without completing')} shortcut={keysOf('list.skip')}>
             <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => act(skip())}>{t('⤼ Skip')}</button>
           </Tooltip>
-          <Tooltip label={t('Make a standalone copy of this occurrence and move the series on')} shortcut={keysOf('list.detach')}>
+          <Tooltip label={t('Edit this occurrence alone and move the series on')} shortcut={keysOf('list.detach')}>
             <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => void detach()}>{t('This occurrence only')}</button>
           </Tooltip>
         </div>

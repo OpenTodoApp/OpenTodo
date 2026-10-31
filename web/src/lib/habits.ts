@@ -6,8 +6,8 @@
 // Dates are floating YYYY-MM-DD strings and all arithmetic runs on day numbers
 // (Date.UTC), never on local `Date` values, so time zones and daylight saving
 // changes cannot shift a day.
-import { occurrenceId } from './ids'
 import { parseRule, type Rule } from './recurrence'
+import { isRecordOf, recordDate } from './recurring'
 import type { Task } from './types'
 import { t } from './i18n'
 
@@ -114,16 +114,25 @@ export function scheduled(rule: Rule, dueDate: string | null, date: string): boo
   }
 }
 
-/** The occurrence records of a series by date: done or skipped. Detached copies and reopened records are not records. */
-export function recordsByDate(seriesId: string, tasks: Iterable<Task>): Map<string, 'done' | 'skipped'> {
-  const out = new Map<string, 'done' | 'skipped'>()
+/**
+ * The occurrence records of a series by the date they stand for: done, skipped or
+ * open (moved or edited, still to do). A record's date is its occurrence date,
+ * even when it was moved to another day (series-exceptions); detached copies made
+ * before records carried one are not records.
+ */
+export function recordsByDate(seriesId: string, tasks: Iterable<Task>): Map<string, RecordMark> {
+  const out = new Map<string, RecordMark>()
   for (const task of tasks) {
-    if (task.series_id !== seriesId || !task.completed_at || task.deleted_at || !task.due) continue
-    if (task.id !== occurrenceId(seriesId, task.due.date)) continue
-    out.set(task.due.date, task.skipped ? 'skipped' : 'done')
+    if (task.deleted_at || !isRecordOf(seriesId, task)) continue
+    out.set(recordDate(task) as string, task.completed_at ? (task.skipped ? 'skipped' : 'done') : 'open')
   }
   return out
 }
+
+export type RecordMark = 'done' | 'skipped' | 'open'
+
+/** Done and skipped records; an open one is not (yet) a record of its day. */
+const marks = (r: RecordMark | undefined): r is 'done' | 'skipped' => r === 'done' || r === 'skipped'
 
 /** The first day of the habit's history: its earliest record, or the current occurrence. */
 function firstDay(dueDate: string, records: Map<string, unknown>): string {
@@ -178,21 +187,21 @@ export function habitStats(series: Task, tasks: Iterable<Task>, today: string): 
   let run = 0
   for (const date of past) {
     const r = records.get(date)
-    if (!r) run = 0
+    if (!marks(r)) run = 0
     else if (r === 'done') best = Math.max(best, ++run)
   }
   // Current: the run that reaches the day before the current occurrence.
   let current = 0
   for (let i = past.length - 1; i >= 0; i--) {
     const r = records.get(past[i])
-    if (!r) break
+    if (!marks(r)) break
     if (r === 'done') current++
   }
   // A concurrent completion on another device can leave a record on the current day.
   const own = records.get(dueDate)
   if (own === 'done') current++
   best = Math.max(best, current)
-  return { current, best, pending: !own, atRisk: !own && dueDate < today }
+  return { current, best, pending: !marks(own), atRisk: !marks(own) && dueDate < today }
 }
 
 /**
@@ -242,8 +251,10 @@ export function monthGrid(series: Task, tasks: Iterable<Task>, year: number, mon
   return out
 }
 
-function dayState(rule: Rule | null, dueDate: string | null, first: string | null, records: Map<string, 'done' | 'skipped'>, date: string): DayState {
+function dayState(rule: Rule | null, dueDate: string | null, first: string | null, records: Map<string, RecordMark>, date: string): DayState {
   const r = records.get(date)
+  // An open record is pending until it is done or skipped, missed once the series is past it.
+  if (r === 'open') return dueDate && date < dueDate ? 'missed' : 'pending'
   if (r) return r
   if (!rule || !dueDate || !first) return 'blank'
   if (date === dueDate) return 'pending'

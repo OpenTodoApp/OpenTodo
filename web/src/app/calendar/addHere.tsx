@@ -12,6 +12,7 @@ import { Menu, MenuItem } from '../../ui'
 import { AddOnDayDialog } from './AddOnDayDialog'
 import { requestFrameAt } from './framesRequest'
 import { newSlotAt } from './slotActions'
+import { HOLD_MS, startHold } from './hold'
 
 /** A place to add at: a day, and on the Day and Week grid the quarter hour (minutes from midnight). */
 export interface AddPlace {
@@ -20,8 +21,7 @@ export interface AddPlace {
 }
 
 /** How long a finger rests on an empty place before the menu opens (design D2). */
-export const ADD_HOLD_MS = 500
-const HOLD_SLOP_PX = 8
+export const ADD_HOLD_MS = HOLD_MS
 
 /** Things on the grid that have their own meaning under the pointer: never an empty place. */
 const OCCUPIED = '[data-cal-id],[data-event],[data-event-chip],[data-frame-name],[data-overflow],[data-deadline-marker-for],[data-month-task],[data-month-more],button,a,input,[role="button"]'
@@ -37,23 +37,7 @@ export function isEmptyPlace(target: EventTarget | null, root: Element): boolean
  * A long press of a finger on an empty place: `onHold(x, y)` after ADD_HOLD_MS when the
  * finger has not moved; any movement (a scroll) or a release ends it. Other pointers never hold.
  */
-export function startAddHold(e: React.PointerEvent, onHold: (x: number, y: number) => void): void {
-  if (e.pointerType !== 'touch') return
-  const { clientX: x0, clientY: y0, pointerId } = e
-  const timer = setTimeout(() => { stop(); onHold(x0, y0) }, ADD_HOLD_MS)
-  function stop() {
-    clearTimeout(timer)
-    window.removeEventListener('pointermove', move, true)
-    window.removeEventListener('pointerup', stop, true)
-    window.removeEventListener('pointercancel', stop, true)
-  }
-  function move(ev: PointerEvent) {
-    if (ev.pointerId === pointerId && Math.hypot(ev.clientX - x0, ev.clientY - y0) > HOLD_SLOP_PX) stop()
-  }
-  window.addEventListener('pointermove', move, true)
-  window.addEventListener('pointerup', stop, true)
-  window.addEventListener('pointercancel', stop, true)
-}
+export const startAddHold = startHold
 
 export interface AddHere {
   /** Opens the add dialog for a place. */

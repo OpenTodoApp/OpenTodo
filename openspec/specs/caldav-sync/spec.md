@@ -97,7 +97,7 @@ Each task SHALL be one VTODO resource, by default `<task-id>.ics` with UID equal
 - **THEN** the VTODO carries `ESTIMATED-DURATION:PT45M` and one VALARM with `TRIGGER:-PT30M`, and neither appears a second time as preserved client data
 
 ### Requirement: Due forms and recurrence
-A task without a deadline SHALL be served with DUE = its due date: DATE for a due without time, floating DATE-TIME for a floating due with time, and DATE-TIME with TZID (served with a VTIMEZONE) for a zoned due. A due with a time SHALL also be served with DTSTART equal to DUE, so clients that schedule by DTSTART show it as scheduled; a due without time SHALL be served without DTSTART. Inbound, a VTODO with only DUE SHALL set the due date of a task without a deadline, and a VTODO with DTSTART and a duration (`ESTIMATED-DURATION` or `DURATION`) and no DUE SHALL set the due date from DTSTART (see "Inbound date shapes"). RRULE SHALL map to the task's recurrence rule where the recurrence grammar expresses it, and completing a recurring task through CalDAV SHALL behave as completing it in the app. A recurring task SHALL keep its due date when a client sends back the served DTSTART without the DUE. A client that completes one occurrence as an override (a VTODO with RECURRENCE-ID and STATUS:COMPLETED next to the unchanged series) SHALL complete the task's current occurrence when the override's date is the task's due date, as completing it in the app does; an override of any other date SHALL complete nothing.
+A task without a deadline SHALL be served with DUE = its due date: DATE for a due without time, floating DATE-TIME for a floating due with time, and DATE-TIME with TZID (served with a VTIMEZONE) for a zoned due. A due with a time SHALL also be served with DTSTART equal to DUE, so clients that schedule by DTSTART show it as scheduled; a due without time SHALL be served without DTSTART. Inbound, a VTODO with only DUE SHALL set the due date of a task without a deadline, and a VTODO with DTSTART and a duration (`ESTIMATED-DURATION` or `DURATION`) and no DUE SHALL set the due date from DTSTART (see "Inbound date shapes"). RRULE SHALL map to the task's recurrence rule where the recurrence grammar expresses it, and completing a recurring task through CalDAV SHALL behave as completing it in the app. A rule with `for N times` SHALL be served with `UNTIL` set to the date of its last remaining occurrence instead of `COUNT`, and an inbound RRULE equal to the one served SHALL leave the rule unchanged. A recurring task SHALL be served with one `EXDATE` listing every exception date of the series (OpenSpec `recurring-tasks`, "Exceptions come from the records") on or after its due date, in the form of its DTSTART, and each open occurrence record SHALL be served as its own VTODO. A recurring task SHALL keep its due date when a client sends back the served DTSTART without the DUE. A client that completes one occurrence as an override (a VTODO with RECURRENCE-ID and STATUS:COMPLETED next to the unchanged series) SHALL complete that occurrence as completing it in the app does: when the override's date is the task's due date, the current occurrence and the series moves on; when it is a later occurrence date, that occurrence alone. An override with `STATUS:CANCELLED`, and a date added to the series' `EXDATE`, SHALL skip that occurrence; a date removed from `EXDATE` SHALL turn its skipped record into an open occurrence. An override that changes `DUE`, `DTSTART`, `SUMMARY` or `PRIORITY` SHALL move or edit that occurrence alone. An override of a date that is not an occurrence date of the series, or is before its due date, SHALL change nothing. Overrides SHALL NOT be stored; the next fetch serves the series with the EXDATE and any open record as its own object.
 
 #### Scenario: Zoned due
 - **WHEN** a client sends `DUE;TZID=Europe/Berlin:20261011T093000` and no DTSTART
@@ -121,7 +121,7 @@ A task without a deadline SHALL be served with DUE = its due date: DATE for a du
 
 #### Scenario: Override of another day
 - **WHEN** the same client sends a completed override for 5 November while the task is due 2 November
-- **THEN** nothing is completed and the task stays due 2 November
+- **THEN** the occurrence of 5 November is added to Completed, the task stays due 2 November, and it is served back with `EXDATE;VALUE=DATE:20261105` and without the override
 
 #### Scenario: Due date with time
 - **WHEN** a task due `2026-10-11` at `09:30` and without a deadline is fetched
@@ -130,6 +130,22 @@ A task without a deadline SHALL be served with DUE = its due date: DATE for a du
 #### Scenario: Due date without time
 - **WHEN** a task due `2026-10-11` without a time and without a deadline is fetched
 - **THEN** the VTODO carries `DUE;VALUE=DATE:20261011` and no DTSTART
+
+#### Scenario: Exceptions served
+- **WHEN** a task with `every monday` due 2026-10-12 at 09:00 has a skipped record for the 19th and an open record of the 26th moved to the 27th
+- **THEN** it is served with `EXDATE:20261019T090000,20261026T090000`, and the moved occurrence is served as its own VTODO due 2026-10-27
+
+#### Scenario: Client deletes one occurrence
+- **WHEN** a client adds `20261019T090000` to the series' `EXDATE`
+- **THEN** the occurrence of the 19th is skipped, every device stops showing it, and the series keeps its due date
+
+#### Scenario: Counted rule served with an end date
+- **WHEN** a task with `every day for 5 times` and two done records is due 2026-10-12 and is fetched
+- **THEN** its RRULE is `FREQ=DAILY;UNTIL=20261014`, and sending that RRULE back leaves the rule `every day for 5 times`
+
+#### Scenario: Override for a date that is not an occurrence
+- **WHEN** a client sends a completed override for a Tuesday of a series with `every monday`
+- **THEN** nothing is completed and the series is unchanged
 
 ### Requirement: Deadline mapping
 A task with a deadline SHALL be served with DUE = the deadline as a DATE and, when it has a due date, DTSTART = the due date in the forms above. Inbound, DTSTART and DUE that differ SHALL set the due date from DTSTART and the deadline from the date of DUE, except when the task has no deadline and the DUE is exactly its current due date, time and zone (the DUE this server served): then the client moved the task and the due date follows DTSTART with no deadline written. Equal DTSTART and DUE SHALL set the due date only. A DUE without DTSTART on a task that has a deadline SHALL set the deadline and clear the due date. A VTODO without DUE SHALL never clear the deadline: on a task that has one, DTSTART with a duration sets the due date and keeps the deadline, and a VTODO with neither DUE nor DTSTART keeps both dates as they are (see "Inbound date shapes").

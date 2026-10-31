@@ -8,7 +8,7 @@ import type { ProposedChange } from './assistantTypes'
 import { addDaysISO, logicalToday, weekStartOf } from './dates'
 import { db } from './db'
 import { getDeviceId, planCompletePlain, planProjectChange, type Change } from './ops'
-import { planCompletion, seriesRule } from './recurring'
+import { planCompletion, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, canEditTask, currentUserId, membershipMap, scopeOf } from './sharing'
 import { descendants } from './tree'
 import type { Membership, Priority, Task } from './types'
@@ -88,7 +88,14 @@ export function planTrash(tasks: readonly Task[], all: Task[], now: number): Cha
     ids.add(task.id)
     for (const d of descendants(task.id, all)) ids.add(d)
   }
-  return [...ids].map((id) => ({ entity: 'task', entityId: id, patch: { deleted_at: now } }))
+  const byId = new Map(all.map((tk) => [tk.id, tk]))
+  return [...ids].map((id) => {
+    const task = byId.get(id)
+    // Deleting an open occurrence of a live series skips it, never trashes it
+    // (series-exceptions D3): a trashed record would free the date at purge.
+    if (task && skipsInstead(task, byId)) return { entity: 'task', entityId: id, patch: { completed_at: now, skipped: true } }
+    return { entity: 'task', entityId: id, patch: { deleted_at: now } }
+  })
 }
 
 /** Ticked tasks whose ancestor is also ticked move with it, not on their own. */

@@ -179,6 +179,7 @@
       "location",
       "note_mentions",
       "notes_doc",
+      "occurrence_date",
       "origin",
       "parent_id",
       "position",

@@ -189,7 +189,10 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
 | GET | `/api/v1/time-entries` | yes | time entries you can read, newest first; `task`, `from`, `to`, `tz`, `running`, `limit`, `cursor`, `format=csv`, see [Time entries](#time-entries) |
 | GET | `/api/v1/tasks/{id}/time-entries` | yes | one task's live time entries, newest first |
-| GET | `/api/v1/tasks/{id}/occurrences` | yes | a recurring task's current and projected occurrence dates; `from`, `to` (at most 366 days), see [A series' dates ahead](#a-series-dates-ahead) |
+| GET | `/api/v1/tasks/{id}/occurrences` | yes | a recurring task's current, projected and recorded occurrence dates; `from`, `to` (at most 366 days), see [A series' dates ahead](#a-series-dates-ahead) |
+| POST | `/api/v1/tasks/{id}/occurrences/{date}/complete` | yes (not `read`, not `agent`) | complete one occurrence alone, `{completed_at?}` → its record; see [One occurrence alone](#one-occurrence-alone) |
+| POST | `/api/v1/tasks/{id}/occurrences/{date}/skip` | yes (not `read`, not `agent`) | skip one occurrence → its record (the series for a plain series' current occurrence) |
+| PATCH | `/api/v1/tasks/{id}/occurrences/{date}` | yes (not `read`, not `agent`) | move or edit one occurrence alone, with task fields (`due`, `title`, `priority`, `labels`, `estimate_minutes`, `description`, …) → its record |
 | POST | `/api/v1/time-entries` | yes (not `read`, not `agent`) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
 | POST | `/api/v1/time-entries/stop` | yes (not `read`, not `agent`) | stop your running entry → the entry; 404 when none runs |
 | PATCH | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`), author only | `{startedAt?, endedAt?, note?}` → the entry |
@@ -547,7 +550,8 @@ The owner of a project, or an admin of a shared one, can keep it and its sub-pro
 | `energy` | `"deep"`, `"medium"`, `"low"` or null | the energy the task asks for ([Energy levels](method/set-up.md#energy-levels)); null when none. `POST` and `PATCH` accept the three levels, or `null` or `""` to clear; anything else is refused with `400 invalid_energy` and nothing is written. Not end-to-end encrypted, like `priority`. CalDAV serves it as `X-OPENTODO-ENERGY`, the vault as `[energy:: …]` |
 | `blocked_by` | array of task ids | the tasks this one waits for (at most 50, distinct, never its own id), in the same project sharing; a list that would make the task wait for itself, or an id of a task shared differently, is refused with `400 invalid_input` naming the id. See [Dependencies](sync.md#dependencies) |
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
-| `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
+| `series_id` | string or null | on an occurrence record (or a detached copy made before `occurrence_date` existed): the id of its recurring series |
+| `occurrence_date` | `YYYY-MM-DD` or null | on an occurrence record: the date of the occurrence it stands for, kept when the record is moved (iCalendar `RECURRENCE-ID`; OpenSpec `series-exceptions`). Written once with `series_id`; refused (`400 invalid_input`) on a task without `series_id` and when it would change. A record without it stands for its due date |
 | `habit` | boolean | the recurring task is tracked as a habit: the app shows its streak and month history, computed on each device. Settable like any field; `400 invalid_input` for anything but `true` or `false`. Completing a habit through the API records a done day like any recurring task. See [recurrence.md](recurrence.md#habits) |
 | `skipped` | boolean | set by the app on the occurrence record a skipped habit day writes (that record also has `series_id` and `completed_at`). Such records are returned in lists and the export like any task but are not completions: the app hides them from Completed and `completed` filters, and they never count towards `for N times` |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
@@ -593,11 +597,11 @@ curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: 
 
 `POST` and `PATCH` store `recurrence` in canonical form (`"Every  2nd  Tuesday"` is stored as `"every 2nd tuesday"`). A `PATCH` that sets a non-null `completed_at` on an open recurring task behaves like completing it in the app:
 
-- a completed *occurrence record* is created (id derived from the series id and the occurrence date, `series_id` set, `recurrence: null`, other fields copied from the task after the rest of the PATCH is applied),
-- the task stays open and its `due` moves to the next occurrence (time and `tz` kept); the response is the task with the new `due`,
+- a completed *occurrence record* is created (id derived from the series id and the occurrence date, `series_id` and `occurrence_date` set, `recurrence: null`, other fields copied from the task after the rest of the PATCH is applied; on an encrypted account without title and notes, which the next unlocked device fills in),
+- the task stays open and its `due` moves to the next occurrence that has no record (time and `tz` kept); the response is the task with the new `due`,
 - when the end condition (`until` or `for N times`) is reached, the task is completed normally instead.
 
-"Today" for catch-up and completion-relative rules is the server's local date (the container's time zone, UTC by default); the user's day start (`user_prefs.day_start`) is not applied here. The occurrence record is keyed by the occurrence's due date, never by the clock, so a completion between midnight and the day start records the same day as one made in the app; only where a completion-relative rule counts from can differ by a day in that window. Reopening a record (`completed_at: null`) turns it into a standalone task; the series is not moved back. Skip and "this occurrence only" are client actions: a script skips by PATCHing `due`.
+"Today" for catch-up and completion-relative rules is the server's local date (the container's time zone, UTC by default); the user's day start (`user_prefs.day_start`) is not applied here. The occurrence record is keyed by the occurrence's due date, never by the clock, so a completion between midnight and the day start records the same day as one made in the app; only where a completion-relative rule counts from can differ by a day in that window. Reopening a record (`completed_at: null`) turns it into an open occurrence of its date; the series is not moved back. To skip or move one occurrence, or complete a later one early, use the [occurrence routes](#one-occurrence-alone). A `PATCH` of the series changes the series only: the app's carry of a rename to moved occurrences that still had the old title is a client behaviour.
 
 ```bash
 # Make a task repeat, then complete the current occurrence
@@ -611,13 +615,32 @@ curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H '
 
 `GET /api/v1/tasks/{id}/occurrences?from=YYYY-MM-DD&to=YYYY-MM-DD` lists a recurring task's occurrences in the inclusive range, the dates the app draws as [projected occurrences](recurrence.md#projected-occurrences), computed with the server's port of the same calculation (pinned by `web/src/lib/occurrences.vectors.json`). `from` defaults to today (the server's local date, as for completions) and `to` to 30 days after `from`; a range is at most 366 days. Every token scope that can read may call it; it writes nothing.
 
-The answer is `{"series_id", "rule", "capped", "occurrences": [{"date", "time"?, "tz"?, "state"}]}`: floating dates with the series' time and zone, `state` `current` for the task's own due date and `projected` for the ones after it. At most 31 projected dates are listed per range; `capped` is `true` when the range holds more. Only dates, never content, so an encrypted account needs nothing.
+The answer is `{"series_id", "rule", "capped", "occurrences": [{"date", "time"?, "tz"?, "state", "record_id"?, "due"?}]}`: floating dates with the series' time and zone, `state` `current` for the task's own due date and `projected` for the ones after it, in date order. A date with an [occurrence record](#one-occurrence-alone) is listed by the date it stands for with `state` `open` (moved or edited, still to do), `done` or `skipped`, its `record_id`, the record's time, and `due` when it was moved to another day; no projection is listed on such a date. At most 31 projected dates are listed per range; `capped` is `true` when the range holds more. Only dates, never content, so an encrypted account needs nothing.
 
 Errors: `400 invalid_input` for a malformed date, `from` after `to` or a range over 366 days; `400 not_recurring` for a task without a rule, or a completed or deleted one; `404 not_found` for a task you can't see; `401` without credentials.
 
 ```bash
 curl -sS "$OT/api/v1/tasks/<id>/occurrences?from=2026-10-12&to=2026-10-18" -H "Authorization: Bearer $TOKEN"
 # {"series_id":"<id>","rule":"every weekday","capped":false,"occurrences":[{"date":"2026-10-12","time":"18:00","state":"current"},{"date":"2026-10-13","time":"18:00","state":"projected"}, ...]}
+```
+
+### One occurrence alone
+
+Act on one occurrence of a recurring task as the app does ([one occurrence alone](recurrence.md#one-occurrence-alone)), through the op log:
+
+- `POST /api/v1/tasks/{id}/occurrences/{date}/complete` (body optional: `{"completed_at": <ms>}`) completes it. On the current occurrence the series moves to its next free date (or completes at its end condition); on a later date only that occurrence's record is written and the series keeps its date. A done occurrence counts towards `for N times`.
+- `POST /api/v1/tasks/{id}/occurrences/{date}/skip` skips it: a record with `completed_at` and `skipped: true`, which never counts towards `for N times`. Skipping a plain series' current occurrence moves the series on and writes no record, as in the app (the answer is then the series).
+- `PATCH /api/v1/tasks/{id}/occurrences/{date}` with task fields moves (`due`) or edits it alone: an open record that keeps `occurrence_date`. On the current occurrence the series moves on, as "This occurrence only" does. `id`, `series_id`, `occurrence_date`, `recurrence`, `completed_at`, `skipped`, `deleted_at`, `created_at`, `habit` and `parent_id` are refused with `400 invalid_input`.
+
+`{date}` is the occurrence date (`YYYY-MM-DD`, the series' floating calendar). The answer is the occurrence's record as a task. A date that already has a record updates that record. A new open record gets copies of your relative reminders of the series, firing from its own due. On an encrypted account the server cannot read the series' title, so the record it writes carries none; the next unlocked device fills it in.
+
+The routes are ordinary task writes: a signed-in session or a `full` or `admin` token; `read` and `agent` tokens are refused with `403 insufficient_scope`. Errors: `400 not_an_occurrence` for a date the series does not produce from its current occurrence on and that has no record, a date before the current occurrence, or a series that repeats after completion; `400 not_recurring` for a task without a rule (or a completed or deleted one); `400 invalid_input` for a malformed date or field; `403 forbidden` for a viewer of the shared project; `404 not_found` for a task you can't see; `401` without credentials.
+
+```bash
+# Skip next Monday's report, then move Wednesday's session to 19:00
+curl -sS -X POST "$OT/api/v1/tasks/<report>/occurrences/2026-10-19/skip" -H "Authorization: Bearer $TOKEN"
+curl -sS -X PATCH "$OT/api/v1/tasks/<study>/occurrences/2026-10-14" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"due":{"date":"2026-10-14","time":"19:00"}}'
 ```
 
 ### Quick-add parse

@@ -39,7 +39,7 @@ import { useOnline } from '../lib/online'
 import { useResetOnChange } from '../lib/useResetOnChange'
 import { columnEntries } from '../lib/plan'
 import { projectionsByDate, type Projection } from '../lib/occurrences'
-import { isProjectionTarget, ProjectedItem, useCalendarProjections } from './calendar/projections'
+import { dayDrag, isProjectionTarget, ProjectedItem, useCalendarProjections } from './calendar/projections'
 
 /** Task rows a desktop cell shows before "+N more". */
 const CELL_ROWS = 3
@@ -311,7 +311,7 @@ export function MonthView({ date }: { date?: string }) {
                     list.length > 0 && <span aria-hidden data-month-count className="block text-center text-meta font-medium text-default">{list.length}</span>
                   ) : (
                     <div className="space-y-0.5">
-                      {shown.map((e) => (e.kind === 'task' ? row(e.task, false) : e.kind === 'projected' ? <ProjectedItem key={e.projection.id} p={e.projection} hue={projectionHue(e.projection)} variant="row" className="px-1" /> : deadlineRow(e.task, d)))}
+                      {shown.map((e) => (e.kind === 'task' ? row(e.task, false) : e.kind === 'projected' ? <ProjectedItem key={e.projection.id} p={e.projection} hue={projectionHue(e.projection)} variant="row" className="px-1" onDrag={dayDrag(e.projection)} /> : deadlineRow(e.task, d)))}
                       {hidden > 0 && (
                         <button type="button" tabIndex={-1} data-month-more={hidden} aria-expanded={false}
                           onClick={(e) => { e.stopPropagation(); setExpanded(d) }}

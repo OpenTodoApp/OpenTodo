@@ -1,9 +1,9 @@
 ---
 title: Repeating tasks on the calendar
-summary: See the coming dates of repeating tasks and habits in Day, Week and Month, and optionally in Upcoming.
+summary: See the coming dates of repeating tasks and habits in Day, Week and Month, and complete, skip or move one of them alone.
 audience: user
 section: Guides
-specs: [recurring-tasks, planner-view]
+specs: [recurring-tasks, planner-view, habits]
 screens: []
 order: 64
 ---
@@ -25,12 +25,39 @@ or Friday's habit is already on the grid.
   shows them after its tasks.
 - **Capacity:** each day's planned total adds their estimates, and its tooltip names
   them ("45m repeating").
-- They can't be dragged, completed or selected with <kbd>j</kbd> and <kbd>k</kbd>.
-  Tab reaches them, and a click or <kbd>Enter</kbd> opens the task with the date
-  named under its title. The calendar's [filter](calendar-filter.md), Colour by and a
-  project's Calendar layout apply to them as to their task.
+- They are not selected with <kbd>j</kbd> and <kbd>k</kbd>. Tab reaches them, and a
+  click or <kbd>Enter</kbd> opens the occurrence panel for that date. The calendar's
+  [filter](calendar-filter.md), Colour by and a project's Calendar layout apply to them
+  as to their task.
 - Turn them off with **Show repeating occurrences** in the calendar's **More actions**
   menu. Each device keeps its own choice; the Plan always shows them, as its bar counts them.
+
+## Change one occurrence
+
+Finish Thursday's session early, skip next Monday's report for a holiday, or move
+Wednesday's study session to 19:00 without touching the others:
+
+- **Right-click** a coming occurrence, **long-press** it on a touch screen, or focus it
+  and press <kbd>Shift</kbd>+<kbd>F10</kbd>: **Open**, **Complete this occurrence**,
+  **Skip this occurrence** (**Skip this day** for a habit) or **Move to…** a day and
+  time.
+- **Drag** it with the mouse to another day in Month and Plan, or to another time in
+  Day and Week. Only that occurrence moves, and a toast offers Undo. Dragging the
+  task's own block still moves the whole series.
+- **Open** it: the panel shows **This occurrence** under the title, with the date, the
+  task's values and **Complete**, **Skip**, **Move to…** and **Edit this occurrence**.
+  Edit this occurrence opens the occurrence as its own task: change its title, notes,
+  time or anything else, and the series stays as it is. **All occurrences** switches
+  to the series.
+
+A moved or edited occurrence is an ordinary task row on its new date, marked with the
+repeat icon ("One occurrence of …"); deleting it skips it. A completed one is in
+Completed, and the series never stands on a date that has one: completing the series
+jumps over it. Renaming the series renames the moved ones that still had the old
+title. Viewers of a shared project and tasks that repeat after completion get Open
+only. More: [One occurrence alone](recurrence.md#one-occurrence-alone).
+
+## In Upcoming
 
 **Upcoming** has the same item in its menu, off by default. Turned on, it lists the
 coming occurrences of the next 14 days under their days, after each day's tasks, and

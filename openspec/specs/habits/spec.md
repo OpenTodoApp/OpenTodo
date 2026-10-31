@@ -55,7 +55,7 @@ A skipped occurrence record SHALL NOT appear in Completed, SHALL NOT match `comp
 - **THEN** the skipped record is present as a task with `series_id`, `completed_at` and `skipped: true`
 
 ### Requirement: Streak derived from the schedule and the records
-A habit's scheduled dates SHALL be the dates its calendar rule matches plus any date with an occurrence record. The current streak SHALL count consecutive scheduled dates with a record (done or skipped), walking back from the date before the current occurrence. The current occurrence SHALL be pending, never missed; an earlier scheduled date without a record ends the streak. The best streak is the longest such run. Both SHALL be computed on the device only. Where the computation compares with "today" (the occurrence is at risk once its date is before today; the month grid marks today), today SHALL be the user's logical today (OpenSpec `date-time-preferences`, "Logical today"). A record's date stays the occurrence's due date, whatever the clock said when it was written.
+A habit's scheduled dates SHALL be the dates its calendar rule matches plus any date with an occurrence record. The current streak SHALL count consecutive scheduled dates with a record (done or skipped), walking back from the date before the current occurrence. The current occurrence SHALL be pending, never missed; an earlier scheduled date without a record ends the streak. The best streak is the longest such run. Both SHALL be computed on the device only. Where the computation compares with "today" (the occurrence is at risk once its date is before today; the month grid marks today), today SHALL be the user's logical today (OpenSpec `date-time-preferences`, "Logical today"). A record's date stays the occurrence's due date, whatever the clock said when it was written; for a record that carries `occurrence_date` (OpenSpec `recurring-tasks`, "Occurrence records") its date SHALL be that occurrence date, even when the record was moved to another day. An open record SHALL read as pending on its date until it is done or skipped, and as missed once its date is before the current occurrence and it is still open. A record done or skipped ahead of time SHALL count on its date once that date is before the current occurrence.
 
 #### Scenario: Three days in a row
 - **WHEN** a habit with `every day` has records for the 11th, 12th and 13th and is due on the 14th, not yet done
@@ -84,6 +84,14 @@ A habit's scheduled dates SHALL be the dates its calendar rule matches plus any 
 #### Scenario: Midnight default is unchanged
 - **WHEN** the day start is `00:00`
 - **THEN** "at risk" and the month grid's today are those of the calendar date, as before
+
+#### Scenario: Moved occurrence counts on its own day
+- **WHEN** a habit with `every mon, wed, fri` had Wednesday's occurrence moved to Thursday and completed there, and is now due Friday
+- **THEN** the month grid shows Wednesday as done and Thursday as unscheduled, and the streak counts Wednesday
+
+#### Scenario: Done ahead of time
+- **WHEN** a habit with `every day` is due the 14th and the user completes the 15th's occurrence early
+- **THEN** the 15th shows as done in the grid, the streak is unchanged until the 14th is done, and completing the 14th moves the series to the 16th
 
 ### Requirement: Month history
 The detail panel of a habit SHALL show a grid of one month's days, starting with the current month, navigable to other months with buttons and the keyboard. Each scheduled day SHALL read as done, skipped, missed (scheduled before the current occurrence, no record), pending or upcoming; unscheduled days are blank. Colours SHALL come from the design tokens, states SHALL also differ by glyph, and each day's state SHALL be exposed to assistive technology. The grid is read-only and local.

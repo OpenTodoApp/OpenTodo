@@ -323,6 +323,10 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       // Reminders are personal: another member moving a shared task does not move ours.
       await followSharedDueChanges(res.ops)
       alive()
+      // Series standing on an exception move on; empty records on an encrypted
+      // account get their series' content (series-exceptions M5, D12).
+      if (incoming.ops.some((o) => o.entity === 'task')) await (await import('./seriesRepair')).afterPullSeries(incoming.ops)
+      alive()
       // Encrypt-on-sight (OpenSpec e2ee, design D7): queued re-writes upload in
       // the next round of this loop.
       await normalizeOnSight(incoming)

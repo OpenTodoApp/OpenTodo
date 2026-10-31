@@ -261,11 +261,11 @@ func TestCompletedOccurrences(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if in.Completed || len(in.CompletedOccurrences) != 1 || in.CompletedOccurrences[0] != "2026-11-02" || in.Rule != "every day" {
-		t.Fatalf("decoded: completed=%v occurrences=%v rule=%q", in.Completed, in.CompletedOccurrences, in.Rule)
+	if in.Completed || len(in.CompletedOccurrences()) != 1 || in.CompletedOccurrences()[0] != "2026-11-02" || in.Rule != "every day" {
+		t.Fatalf("decoded: completed=%v occurrences=%v rule=%q", in.Completed, in.CompletedOccurrences(), in.Rule)
 	}
 	open := strings.NewReplacer("STATUS:COMPLETED", "STATUS:NEEDS-ACTION", "COMPLETED:2026", "X-WAS:2026").Replace(string(raw))
-	if in, err = Decode([]byte(open)); err != nil || len(in.CompletedOccurrences) != 0 {
-		t.Fatalf("open override listed: %v %v", in.CompletedOccurrences, err)
+	if in, err = Decode([]byte(open)); err != nil || len(in.CompletedOccurrences()) != 0 {
+		t.Fatalf("open override listed: %v %v", in.CompletedOccurrences(), err)
 	}
 }
