@@ -9452,9 +9452,6 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Open as a new view": [
-    "web/src/app/task-list/ListGroups.tsx"
-  ],
   "Open as a new view: {query}": [
     "web/src/app/palette/filterEntries.ts"
   ],
@@ -10133,9 +10130,6 @@
   ],
   "Planned estimates against a {minutes} day.": [
     "web/src/app/MonthView.tsx"
-  ],
-  "Planned, no project": [
-    "web/src/lib/listGroups.ts"
   ],
   "Plans from {source}": [
     "web/src/app/calendar/FrameBand.tsx"
