@@ -137,6 +137,17 @@ describe('the grip (bulk-actions on touch)', () => {
     window.dispatchEvent(click)
     expect(click.defaultPrevented).toBe(false)
   })
+
+  it('a grip that drags before the hold elapses never selects: the hold dies with the lift', () => {
+    const s = spies()
+    beginDrag(press, { label: 'Task', grip: true, ...s })
+    move(60) // lifts at once, well before TOUCH_HOLD_MS (the Android repro)
+    vi.advanceTimersByTime(TOUCH_HOLD_MS * 2) // a hold timer that survived the lift would fire here
+    expect(s.onHold).not.toHaveBeenCalled()
+    up(60)
+    expect(s.onHold).not.toHaveBeenCalled()
+    expect(s.onStart).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('the click after a drag (row-and-cursor D1)', () => {
