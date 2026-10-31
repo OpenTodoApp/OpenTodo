@@ -38,6 +38,16 @@ describe('a chunk of the previous release is gone', () => {
     expect(second.defaultPrevented).toBe(false)
     expect(updateReason()).toBe('release')
   })
+
+  it('offline, neither reloads nor asks: the chunk is not gone, the network is', () => {
+    const win = fakeWindow()
+    watchAppUpdates(win, undefined, () => 1_000_000, () => false)
+    const ev = new Event('vite:preloadError', { cancelable: true })
+    win.dispatchEvent(ev)
+    expect(win.location.reload).not.toHaveBeenCalled()
+    expect(ev.defaultPrevented).toBe(false)
+    expect(updateReason()).toBeNull()
+  })
 })
 
 describe('a new service worker takes over', () => {

@@ -50,10 +50,13 @@ interface UpdateTarget {
  * Listens for the signs of a newer release. A missing chunk reloads at once
  * (the screen that needed it cannot open otherwise), at most once in ten
  * seconds; a new service worker or database version shows the reload prompt,
- * so nothing being typed is lost.
+ * so nothing being typed is lost. Offline, a chunk that fails to load says
+ * nothing about a release: the error reaches its caller and the page stays
+ * (a reload would open an empty page while the service worker is not in control).
  */
-export function watchAppUpdates(win: UpdateTarget = window, sw: Pick<ServiceWorkerContainer, 'addEventListener' | 'controller'> | undefined = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined, now: () => number = Date.now): void {
+export function watchAppUpdates(win: UpdateTarget = window, sw: Pick<ServiceWorkerContainer, 'addEventListener' | 'controller'> | undefined = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined, now: () => number = Date.now, online: () => boolean = () => typeof navigator === 'undefined' || navigator.onLine !== false): void {
   win.addEventListener('vite:preloadError', (ev) => {
+    if (!online()) return
     const at = now()
     if (at - readReloadedAt() < RELOAD_GUARD_MS) {
       // Reloaded a moment ago and still missing: show the prompt (and let the
