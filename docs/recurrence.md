@@ -123,8 +123,8 @@ Any occurrence from the current one on can be acted on alone, as calendars do wi
 "this event only": complete it early, skip it, move it to another day or time, or
 edit its title, notes or anything else. Doing so writes the occurrence's *record*:
 a task with the id derived from the series and the date, `series_id` set and
-`occurrence_date` holding the date it stands for, even after it is moved (iCalendar's
-RECURRENCE-ID). The record can be open (moved or edited, still to do), done or
+`occurrence_date` holding the date it stands for, even after it is moved (the
+override date of [CalDAV](caldav.md#one-occurrence-alone)). The record can be open (moved or edited, still to do), done or
 skipped.
 
 - **From the calendar**: right-click a projected occurrence, long-press it, or focus
