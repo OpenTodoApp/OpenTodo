@@ -21,6 +21,8 @@ ot vault tasknotes <folder>     # also sync a TaskNotes folder (see below)
 
 It needs a `full` token, and it is the one part of `ot` that keeps data locally: the files and `.opentodo/state.json`.
 
+To send single lines from daily and meeting notes instead, on a phone too, use the [Obsidian plugin](obsidian.md): it reads checkbox lines with the same grammar and links each task back to its note.
+
 ## The files
 
 `Inbox.md` holds tasks without a project; each project is `<name>.md`, or the folder note `<name>/<name>.md` beside its sub-projects. Renaming a file renames the project, moving it into a folder nests it, a new `.md` file is a new project. A deleted file is written again.

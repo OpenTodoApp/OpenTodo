@@ -5,6 +5,8 @@
 !/internal/web/dist/.gitkeep
 /web/dist/
 /web/dev-dist/
+/obsidian/dist/
+/obsidian/node_modules/
 
 # Dependencies
 /web/node_modules/
