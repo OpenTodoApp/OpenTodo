@@ -5436,6 +5436,9 @@
   "For scripts, the ot command and AI assistants. Sent as {header}.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "For the Obsidian plugin, create a full token named after the device.": [
+    "web/src/app/TokensSection.tsx"
+  ],
   "For you": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],

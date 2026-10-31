@@ -185,7 +185,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/pages/{secret}/maps/…` | none | the page's map style, tiles, fonts and sprites, see [Maps](#maps) |
 | GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
-| POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
+| POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation`; with `"features": ["push_only"]` the ops are applied and nothing is pulled (for devices that only write) |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
 | GET | `/api/v1/time-entries` | yes | time entries you can read, newest first; `task`, `from`, `to`, `tz`, `running`, `limit`, `cursor`, `format=csv`, see [Time entries](#time-entries) |
 | GET | `/api/v1/time-entries/running` | yes | your own running entry with its Focus details, or `null`: `{entry, serverTime}`, see [The running entry](#the-running-entry) |

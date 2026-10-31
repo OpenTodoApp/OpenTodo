@@ -368,6 +368,8 @@ Server-side writers (REST, assistant tools, CalDAV, public links, push delivery 
 
 `features` (optional, additive) names the protocol additions the device handles: `clock_skew` (see [Clocks](#clocks)) and `backfill_ack` (see "Catch-up for a new member" under [Sharing scopes](#sharing-scopes)). `backfillAck` echoes the `backfillSeq` of the last replay page the device applied.
 
+A device that only writes, such as the [Obsidian plugin](obsidian.md), sends the feature `push_only`. The server applies its ops exactly as in an ordinary exchange (validation, refusals, duplicates, waking the other devices) and skips the pull: the answer carries the `applied` and `duplicates` counts, `rejected`, `cursor` set to the head of the caller's log, `serverTime`, `hasMore: false`, and empty `ops`, `memberships`, `workspaces` and `purged` lists. The server's values of refused fields are not sent back, because such a device keeps no rows. A server older than the feature ignores it and answers with an ordinary page, which a push-only device discards.
+
 Response:
 
 ```json

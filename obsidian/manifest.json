@@ -1,0 +1,10 @@
+{
+  "id": "opentodo",
+  "name": "OpenTodo",
+  "version": "0.19.0",
+  "minAppVersion": "1.8.7",
+  "description": "Send a line or a selection from any note to your own OpenTodo server as tasks that link back to the note. Works offline and with encrypted accounts.",
+  "author": "OpenTodo",
+  "authorUrl": "https://github.com/OpenTodoApp",
+  "isDesktopOnly": false
+}
