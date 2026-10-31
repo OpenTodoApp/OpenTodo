@@ -33,4 +33,4 @@ sources:
 - https://github.com/OpenTodoApp/OpenTodo/pkgs/container/opentodo
 title: OpenTodo
 train: community
-version: 1.0.0
+version: 1.0.3

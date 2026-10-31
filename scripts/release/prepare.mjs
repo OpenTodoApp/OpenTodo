@@ -8,6 +8,8 @@
 //   - the release in every template under deploy/ and docs/self-hosting/, the bug report form,
 //     web/package.json, the root entries of web/package-lock.json and web/src/generated/help.json;
 //   - Runtipi's tipi_version + 1, and on a new minor the release line (`:0.15`) in the docs;
+//   - the store fields a version alone does not move: CasaOS's update_at (the date), an Easypanel
+//     changeLog entry, and TrueNAS's own app version (a patch bump, as their Renovate does);
 //   - a "## <version>" entry in the Home Assistant add-on's CHANGELOG;
 //   - "## [<version>] - <date>" under Unreleased in CHANGELOG.md, and its compare links;
 //   - then the upstream/ copies (scripts/deploy/mirror.mjs).
@@ -32,6 +34,9 @@ const WHOLE = new Set(['deploy/runtipi/upstream/scripts/__tests__/update-config.
 const HA_CHANGELOG = 'deploy/homeassistant/upstream/opentodo/CHANGELOG.md'
 const HA_DOCKERFILE = 'deploy/homeassistant/upstream/opentodo/Dockerfile'
 const RUNTIPI_CONFIG = 'deploy/runtipi/config.json'
+const CASAOS_COMPOSE = 'deploy/casaos/docker-compose.yml'
+const EASYPANEL_META = 'deploy/easypanel/meta.yaml'
+const TRUENAS_APP = 'deploy/truenas/opentodo/app.yaml'
 
 /** Every text file prepare may edit: deploy/ (but not the generated copies) and the self-hosting docs. */
 export function scannedFiles(root = ROOT) {
@@ -93,6 +98,25 @@ export function haChangelogText(text, to, repository) {
   return at < 0 ? `${text.trimEnd()}\n\n${entry}` : text.slice(0, at) + entry + text.slice(at)
 }
 
+/** CasaOS's x-casaos.update_at becomes the release date. */
+export function casaosText(text, date) {
+  return text.replace(/^(  update_at: ")\d{4}-\d{2}-\d{2}(")$/m, `$1${date}$2`)
+}
+
+/** Easypanel's changeLog gets an entry for the release, after the last one (once). */
+export function easypanelText(text, to, date) {
+  const m = /^changeLog:\n((?:  [- ].*\n)+)/m.exec(text)
+  if (!m) throw new Error(`${EASYPANEL_META}: no changeLog list`)
+  if (m[1].includes(`description: Update to ${to}\n`)) return text
+  const at = m.index + m[0].length
+  return `${text.slice(0, at)}  - date: ${date}\n    description: Update to ${to}\n${text.slice(at)}`
+}
+
+/** TrueNAS's app.yaml: the catalogue's own `version` gets a patch bump, as truenas/apps' Renovate does. */
+export function truenasText(text) {
+  return text.replace(/^(version: )(\d+)\.(\d+)\.(\d+)$/m, (_, k, a, b, c) => `${k}${a}.${b}.${Number(c) + 1}`)
+}
+
 /** Runs the whole preparation in `root`; returns the files it changed, relative to root. */
 export function prepare(to, { root = ROOT, date = new Date().toISOString().slice(0, 10) } = {}) {
   if (!VERSION.test(to)) throw new Error(`the version must be x.y.z, got ${to}`)
@@ -121,6 +145,9 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
     })
   }
   edit(RUNTIPI_CONFIG, (t) => t.replace(/("tipi_version":\s*)(\d+)/, (_, k, n) => `${k}${Number(n) + 1}`))
+  edit(CASAOS_COMPOSE, (t) => casaosText(t, date))
+  edit(EASYPANEL_META, (t) => easypanelText(t, to, date))
+  edit(TRUENAS_APP, truenasText)
   edit(HA_CHANGELOG, (t) => haChangelogText(t, to, facts.repository))
   // The add-on copies the binary from the image the release is published under (as its scripts/bump.sh does).
   edit(HA_DOCKERFILE, (t) => t.replace(/^FROM ghcr\.io\/[\w-]+\/opentodo:(\$\{OPENTODO_VERSION\} AS opentodo)$/m, `FROM ${imageFor(facts, to)}:$1`))
