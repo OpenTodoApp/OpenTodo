@@ -4,9 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-10-31
+
+OpenTodo 0.18.1 is a fix release. A device whose clock runs fast no longer loses an edit when it has more than 500 changes waiting to upload, and the browser extension 0.6.2 shortens its store description so the Chrome Web Store accepts it. Nothing to do when upgrading.
+
 ### Fixed
 
 - **A device whose clock ran fast no longer loses its later edit when it has many changes to upload.** When the server refused a fast clock's changes in more than one batch of an exchange, the device set its clock back to the server's time for each batch, so a change in a later batch could be stamped before an earlier change of the same field: the server kept the earlier value while the device showed the later one. The clock now restarts only when it is more than 2.5 minutes ahead of the server, so the changes keep their order. ([Sync](docs/sync.md#clocks), closes #651)
+- **The browser extension 0.6.2 can be published in the Chrome Web Store.** The store refused 0.6.1 because its description was longer than 132 characters in every language. Each language now has a shorter description with the same meaning, and a test keeps the name and description within the store's limits. ([Capture](docs/capture.md))
 
 ## [0.18.0] - 2026-10-30
 
@@ -1073,7 +1078,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.18.1...HEAD
+[0.18.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.15.0...v0.16.0
