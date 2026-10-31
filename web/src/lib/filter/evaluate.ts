@@ -3,7 +3,6 @@
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
 import { nameKey } from '../fieldNames'
-export { nameKey } from '../fieldNames'
 import { blockedMap } from '../dependencies'
 import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
@@ -66,7 +65,6 @@ export type FilterResult =
 type Pred = (task: Task) => boolean
 
 const NEVER: Pred = () => false
-
 
 /**
  * True when the query mentions `completed` or `open`, or compares the completion
