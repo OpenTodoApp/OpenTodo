@@ -47,6 +47,13 @@ describe('index', () => {
     }
   })
 
+  it('"twitter" and "news" list the About › News and updates row (x-account-link)', () => {
+    for (const q of ['twitter', 'news']) {
+      const entries = searchSettings(q, member).flatMap((h) => h.entries)
+      expect(entries).toContainEqual(expect.objectContaining({ section: 'about', label: 'News and updates', anchor: 'about-news' }))
+    }
+  })
+
   it('"formatting" and "toolbar" list the Formatting button row of How you work (notes-toolbar-desktop)', () => {
     for (const q of ['formatting', 'toolbar']) {
       const entries = searchSettings(q, member).flatMap((h) => h.entries)
