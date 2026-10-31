@@ -54,6 +54,7 @@ export async function afterListAdd(id: string, c: {
   // Not awaited, so the quick add is free for the next line at once.
   // Loaded with the first add: not needed on first load (web/bundle-budget.json).
   void import('./announceAdded').then((m) => m.announceIfOutOfSight(id, { list: c.list, placement: c.placement, root: c.root, select: c.select }))
+    .catch(() => false) // offline before it was cached: no announcement
     .then((announced) => { if (!announced && inbox) void offerMoveToWorkspace(id) })
 }
 
