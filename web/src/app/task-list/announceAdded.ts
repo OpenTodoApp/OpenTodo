@@ -16,15 +16,31 @@ export function rowInSight(row: HTMLElement): boolean {
   return r.top >= top - 1 && r.bottom <= bottom + 1
 }
 
-/** The rendered row of a task, waiting a few frames for the list to show it; null when it never appears here. */
-async function renderedRow(id: string, root: ParentNode, frames = 12): Promise<HTMLElement | null> {
+/**
+ * How long the list may take to show a new row before the announcement is dropped.
+ * A time, not a number of frames: the write, the live query and the render take a
+ * varying number of frames (about seven on a fast machine), more on a busy one.
+ */
+export const ROW_WAIT_MS = 3000
+
+/** The rendered row of a task, as soon as the list shows it; null when it does not appear here within `timeout` ms. */
+function renderedRow(id: string, root: ParentNode, timeout = ROW_WAIT_MS): Promise<HTMLElement | null> {
   const selector = `li[data-task-id="${CSS.escape(id)}"], [data-task-id="${CSS.escape(id)}"]`
-  for (let i = 0; i < frames; i++) {
-    const row = root.querySelector<HTMLElement>(selector)
-    if (row) return row
-    await new Promise<void>((done) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(() => done()) : setTimeout(done, 16)))
-  }
-  return null
+  const found = root.querySelector<HTMLElement>(selector)
+  if (found) return Promise.resolve(found)
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => {
+      const row = root.querySelector<HTMLElement>(selector)
+      if (row) finish(row)
+    })
+    const timer = setTimeout(() => finish(root.querySelector<HTMLElement>(selector)), timeout)
+    function finish(row: HTMLElement | null) {
+      observer.disconnect()
+      clearTimeout(timer)
+      resolve(row)
+    }
+    observer.observe(root as Node, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-task-id'] })
+  })
 }
 
 /**
@@ -39,8 +55,10 @@ export async function announceIfOutOfSight(id: string, opts: {
   root?: ParentNode | null
   select: (id: string) => void
   inSight?: (row: HTMLElement) => boolean
+  /** How long to wait for the row to show (ms). */
+  wait?: number
 }): Promise<boolean> {
-  const row = await renderedRow(id, opts.root ?? document)
+  const row = await renderedRow(id, opts.root ?? document, opts.wait)
   if (!row || (opts.inSight ?? rowInSight)(row)) return false
   const label = opts.placement === 'top' ? t('Added to the top of {list}', { list: opts.list })
     : opts.placement === 'bottom' ? t('Added to the bottom of {list}', { list: opts.list })
