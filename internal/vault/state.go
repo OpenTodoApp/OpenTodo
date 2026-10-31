@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
@@ -52,6 +53,80 @@ type State struct {
 	Initialized bool `json:"initialized"`
 	// TaskNotes is the linked TaskNotes folder, nil when none is linked.
 	TaskNotes *TaskNotesState `json:"tasknotes,omitempty"`
+	// Owner is the installation that syncs the folder and LeaseUntil (Unix
+	// ms) the end of its lease, renewed by every sync (OpenSpec change
+	// obsidian-vault-sync, design D4). Both are absent in a state written
+	// before that change: the next installation to sync becomes the owner.
+	Owner      *Owner `json:"owner,omitempty"`
+	LeaseUntil int64  `json:"lease_until,omitempty"`
+}
+
+// Owner names the installation that syncs a vault folder: `ot` on a machine
+// (kind cli) or the Obsidian plugin on a device (kind obsidian), a random id
+// per installation and a label people recognise (a host name, "Obsidian on
+// iPhone").
+type Owner struct {
+	Kind    string `json:"kind"`
+	Install string `json:"install"`
+	Label   string `json:"label"`
+}
+
+// Lease is how long a sync keeps the folder's lease (design D4); `ot vault
+// watch` and the plugin renew it on every cycle.
+const Lease = 5 * time.Minute
+
+// OwnedError is a sync refused because another installation owns the folder
+// (error code vault_owned). Nothing was read from the server or written.
+type OwnedError struct {
+	Owner      Owner
+	LeaseUntil int64
+	Now        time.Time
+}
+
+func (e *OwnedError) Error() string {
+	label := e.Owner.Label
+	if label == "" {
+		label = "another device"
+	}
+	until := time.UnixMilli(e.LeaseUntil).In(e.Now.Location()).Format("2006-01-02 15:04")
+	if e.Running() {
+		return fmt.Sprintf("this folder is synced by %s, whose lease runs until %s", label, until)
+	}
+	return fmt.Sprintf("this folder is synced by %s, whose lease ended at %s (it may only be asleep)", label, until)
+}
+
+// Running reports whether the owner's lease has not ended yet.
+func (e *OwnedError) Running() bool { return e.LeaseUntil > e.Now.UnixMilli() }
+
+// newDevice makes the device id of a new or taken-over vault; tests pin it.
+var newDevice = func() string { return "vault:" + ids.Hex(12) }
+
+// CheckOwner reports an OwnedError when the state names an installation other
+// than o (design D4). A state without an owner, or a nil o, is never refused.
+func (st *State) CheckOwner(o *Owner, now time.Time) error {
+	if o == nil || st.Owner == nil || st.Owner.Install == o.Install {
+		return nil
+	}
+	return &OwnedError{Owner: *st.Owner, LeaseUntil: st.LeaseUntil, Now: now}
+}
+
+// takeOver makes the state a fresh vault device of the folder (design D5): a
+// new device id, no cursor, no base and nothing recorded about the files, so
+// the next sync compares every line with the server. A linked TaskNotes
+// folder stays linked; its notes are read again.
+func (st *State) takeOver() {
+	st.Device = newDevice()
+	st.Cursor, st.Generation, st.BackfillAck, st.Clock, st.Offset = 0, "", 0, 0, 0
+	st.Shared = nil
+	st.Store = Store{}
+	st.Files = map[string]FileState{}
+	st.Printed = map[string]string{}
+	st.Extra = map[string]string{}
+	st.Initialized = false
+	st.Owner, st.LeaseUntil = nil, 0
+	if st.TaskNotes != nil {
+		st.TaskNotes.Hashes = map[string]string{}
+	}
 }
 
 // TaskNotesState is a linked TaskNotes folder (design D1): where it is, which
@@ -87,7 +162,7 @@ type FileState struct {
 
 // NewState makes the state of a new vault with a fresh device id.
 func NewState(profile, server string) *State {
-	return &State{Version: StateVersion, Device: "vault:" + ids.Hex(12), Profile: profile, Server: server,
+	return &State{Version: StateVersion, Device: newDevice(), Profile: profile, Server: server,
 		Store: Store{}, Files: map[string]FileState{}, Printed: map[string]string{}, Extra: map[string]string{}}
 }
 

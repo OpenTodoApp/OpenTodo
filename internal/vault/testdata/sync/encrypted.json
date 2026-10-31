@@ -1,0 +1,1345 @@
+{
+  "name": "encrypted",
+  "description": "an encrypted account: content is opened in the files and sealed when sent, a value that does not open is the placeholder and never sent, a shared project is never sealed",
+  "loc": "UTC",
+  "user": "user-1",
+  "encrypted": true,
+  "shared": [
+    "p-shared"
+  ],
+  "steps": [
+    {
+      "name": "init",
+      "now": 1793610060000,
+      "init": true,
+      "server": [
+        {
+          "id": "app-p-home-archived-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-color-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-created_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-deleted_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-name-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "name",
+          "value": "enc:v1:p-home:SG9tZQ",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-parent_id-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-position-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-shared-archived-1793606400002",
+          "entity": "project",
+          "entityId": "p-shared",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-shared-color-1793606400002",
+          "entity": "project",
+          "entityId": "p-shared",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-shared-created_at-1793606400002",
+          "entity": "project",
+          "entityId": "p-shared",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-shared-deleted_at-1793606400002",
+          "entity": "project",
+          "entityId": "p-shared",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-shared-name-1793606400002",
+          "entity": "project",
+          "entityId": "p-shared",
+          "field": "name",
+          "value": "Shared",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-shared-parent_id-1793606400002",
+          "entity": "project",
+          "entityId": "p-shared",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-shared-position-1793606400002",
+          "entity": "project",
+          "entityId": "p-shared",
+          "field": "position",
+          "value": 2000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-completed_at-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-created_at-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-deleted_at-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-description-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "description",
+          "value": "enc:v1:t-pass:QnJpbmcgcGhvdG9z",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-labels-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-position-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-priority-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-project_id-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-pass-title-1793606400003",
+          "entity": "task",
+          "entityId": "t-pass",
+          "field": "title",
+          "value": "enc:v1:t-pass:UmVuZXcgcGFzc3BvcnQ",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bad-completed_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-bad",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bad-created_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-bad",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bad-deleted_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-bad",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bad-labels-1793606400004",
+          "entity": "task",
+          "entityId": "t-bad",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bad-position-1793606400004",
+          "entity": "task",
+          "entityId": "t-bad",
+          "field": "position",
+          "value": 2000,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bad-priority-1793606400004",
+          "entity": "task",
+          "entityId": "t-bad",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bad-project_id-1793606400004",
+          "entity": "task",
+          "entityId": "t-bad",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bad-title-1793606400004",
+          "entity": "task",
+          "entityId": "t-bad",
+          "field": "title",
+          "value": "enc:v1:other:V3JvbmcgYmluZGluZw",
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ours-completed_at-1793606400005",
+          "entity": "task",
+          "entityId": "t-ours",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ours-created_at-1793606400005",
+          "entity": "task",
+          "entityId": "t-ours",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ours-deleted_at-1793606400005",
+          "entity": "task",
+          "entityId": "t-ours",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ours-labels-1793606400005",
+          "entity": "task",
+          "entityId": "t-ours",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ours-position-1793606400005",
+          "entity": "task",
+          "entityId": "t-ours",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ours-priority-1793606400005",
+          "entity": "task",
+          "entityId": "t-ours",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ours-project_id-1793606400005",
+          "entity": "task",
+          "entityId": "t-ours",
+          "field": "project_id",
+          "value": "p-shared",
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ours-title-1793606400005",
+          "entity": "task",
+          "entityId": "t-ours",
+          "field": "title",
+          "value": "Shared task",
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-l-x-color-1793606400006",
+          "entity": "label",
+          "entityId": "l-x",
+          "field": "color",
+          "value": "#64748b",
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-l-x-deleted_at-1793606400006",
+          "entity": "label",
+          "entityId": "l-x",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-l-x-name-1793606400006",
+          "entity": "label",
+          "entityId": "l-x",
+          "field": "name",
+          "value": "enc:v1:l-x:RXJyYW5k",
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-l-x-position-1793606400006",
+          "entity": "label",
+          "entityId": "l-x",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400006,
+          "device": "app"
+        }
+      ],
+      "device": "vault:vectors",
+      "want": {
+        "pushed": [],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Renew passport 🆔 t-pass\n  Bring photos\n- [ ] Encrypted item 🆔 t-bad\n",
+          "Inbox.md": "",
+          "Shared.md": "---\nopentodo-id: p-shared\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Shared task 🆔 t-ours\n"
+        },
+        "report": {
+          "written": 3,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 43,
+          "events": [
+            {
+              "kind": "written",
+              "file": "Inbox.md",
+              "text": "wrote Inbox.md"
+            },
+            {
+              "kind": "written",
+              "file": "Home.md",
+              "text": "wrote Home.md"
+            },
+            {
+              "kind": "written",
+              "file": "Shared.md",
+              "text": "wrote Shared.md"
+            }
+          ],
+          "projects": 2,
+          "tasks": 3
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 43,
+          "clock": 1793606400006,
+          "offset": 0,
+          "shared": [
+            "p-shared"
+          ],
+          "store": {
+            "label": {
+              "l-x": {
+                "color": {
+                  "v": "#64748b",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "enc:v1:l-x:RXJyYW5k",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400006,
+                  "d": "app"
+                }
+              }
+            },
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "enc:v1:p-home:SG9tZQ",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "p-shared": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Shared",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-bad": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "enc:v1:other:V3JvbmcgYmluZGluZw",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "t-ours": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-shared",
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Shared task",
+                  "t": 1793606400005,
+                  "d": "app"
+                }
+              },
+              "t-pass": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "description": {
+                  "v": "enc:v1:t-pass:QnJpbmcgcGhvdG9z",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "enc:v1:t-pass:UmVuZXcgcGFzc3BvcnQ",
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "62c4dc4e75c6e644017a2c11fd6d5eacdfe287496e55c558df7cafc6a4f5625e"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "Shared.md": {
+              "project": "p-shared",
+              "hash": "b049965c78400bb0006ec8d6e2d3a79aa5b139ae950b71fcaa5fd21f081e5e3f"
+            }
+          },
+          "printed": {
+            "t-bad": "Home.md",
+            "t-ours": "Shared.md",
+            "t-pass": "Home.md"
+          },
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "edits",
+      "now": 1793610120000,
+      "files": {
+        "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Renew passports #errand 🆔 t-pass\n  Bring photos\n- [ ] Encrypted item 🔺 🆔 t-bad\n- [ ] New secret\n",
+        "Shared.md": "---\nopentodo-id: p-shared\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Shared task edited 🆔 t-ours\n"
+      },
+      "want": {
+        "pushed": [
+          {
+            "id": "v-356c3842342478a35c2f147eebacd00778ba16a2",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "blocked_by",
+            "value": [],
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-5326de413e53f8235ddd2b71890a41e71e8aa832",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "completed_at",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-4d5118a0edac839a6ca6d8460047f739f06c46bf",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "completed_by",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ea3cc88460418ab60abaff5978e03e9157ce745b",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-3956d8717386806777f20bc7a7ce29246b7ae117",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "deadline",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-17447ec89b815001d90e474662ebe40a59cf957e",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-43731fee62055ab6c55dce09be0bbf130b460c5c",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "description",
+            "value": "enc:v1:d2fe5403-5540-88a8-8f26-896045d23d27:",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-929da9852d64802eaa43b47d57dce0e7882d9fce",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "due",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-46fcb43482ecf609ce394138f631c900aea3252b",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "estimate_minutes",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-5587ab96a2df216a52a65a682021cabecec99269",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "evening",
+            "value": false,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-edb2e88dde7ee9c90b2b4063e41be2166e2f5714",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-381c4709348d14f987493a0b05f3ce6f504836f1",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "parent_id",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-9c7ef4ae5b8aa4864490162b00ea4d0ca6c2770c",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "position",
+            "value": 3000,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-6046c74138dfcc6aa88de929472a6eb240bb8762",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-1ca2a1f8f27b40eff9e611bf97c31996cf6851ea",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "project_id",
+            "value": "p-home",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-7320f16eb1ff9eb5aa2ef6ee7efa6597f96330ef",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a2192d36374f1b375707711840ed59bd848a0de4",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "section_id",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-41862802e367df7e76964a7c06ff48f907f63a1c",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "start",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-9567fa1a510c57026f9232e1e493d739960fb2b7",
+            "entity": "task",
+            "entityId": "d2fe5403-5540-88a8-8f26-896045d23d27",
+            "field": "title",
+            "value": "enc:v1:d2fe5403-5540-88a8-8f26-896045d23d27:TmV3IHNlY3JldA",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-214ad6be94b8bd48b3819206bc3771e8eb2b783f",
+            "entity": "task",
+            "entityId": "t-bad",
+            "field": "priority",
+            "value": 1,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-e514fbb2b1e3637f22cb10860087b25d644bc1f8",
+            "entity": "task",
+            "entityId": "t-ours",
+            "field": "title",
+            "value": "Shared task edited",
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-fbceb3153d0933f39d60d173b1896dd47569ad38",
+            "entity": "task",
+            "entityId": "t-pass",
+            "field": "labels",
+            "value": [
+              "l-x"
+            ],
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-1fff7af02f03122eb08febb648f616eca1d1a2fb",
+            "entity": "task",
+            "entityId": "t-pass",
+            "field": "title",
+            "value": "enc:v1:t-pass:UmVuZXcgcGFzc3BvcnRz",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          }
+        ],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Renew passports #errand 🆔 t-pass\n  Bring photos\n- [ ] Encrypted item 🔺 🆔 t-bad\n- [ ] New secret 🆔 d2fe5403-5540-88a8-8f26-896045d23d27\n",
+          "Inbox.md": "",
+          "Shared.md": "---\nopentodo-id: p-shared\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Shared task edited 🆔 t-ours\n"
+        },
+        "report": {
+          "written": 1,
+          "created": 1,
+          "updated": 3,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 66,
+          "events": [
+            {
+              "kind": "created",
+              "file": "Home.md",
+              "task": "d2fe5403-5540-88a8-8f26-896045d23d27",
+              "text": "created \"New secret\" in Home.md"
+            },
+            {
+              "kind": "updated",
+              "file": "Home.md",
+              "task": "t-bad",
+              "text": "updated \"Encrypted item\" (priority)"
+            },
+            {
+              "kind": "updated",
+              "file": "Shared.md",
+              "task": "t-ours",
+              "text": "updated \"Shared task\" (title)"
+            },
+            {
+              "kind": "updated",
+              "file": "Home.md",
+              "task": "t-pass",
+              "text": "updated \"Renew passport\" (title, labels)"
+            },
+            {
+              "kind": "written",
+              "file": "Home.md",
+              "text": "wrote Home.md"
+            }
+          ],
+          "projects": 2,
+          "tasks": 4
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 66,
+          "clock": 1793610120003,
+          "offset": 0,
+          "shared": [
+            "p-shared"
+          ],
+          "store": {
+            "label": {
+              "l-x": {
+                "color": {
+                  "v": "#64748b",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "enc:v1:l-x:RXJyYW5k",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400006,
+                  "d": "app"
+                }
+              }
+            },
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "enc:v1:p-home:SG9tZQ",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "p-shared": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Shared",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "d2fe5403-5540-88a8-8f26-896045d23d27": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "enc:v1:d2fe5403-5540-88a8-8f26-896045d23d27:",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "enc:v1:d2fe5403-5540-88a8-8f26-896045d23d27:TmV3IHNlY3JldA",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                }
+              },
+              "t-bad": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 1,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "enc:v1:other:V3JvbmcgYmluZGluZw",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "t-ours": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-shared",
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Shared task edited",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                }
+              },
+              "t-pass": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "description": {
+                  "v": "enc:v1:t-pass:QnJpbmcgcGhvdG9z",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [
+                    "l-x"
+                  ],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "enc:v1:t-pass:UmVuZXcgcGFzc3BvcnRz",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "82c362643fb6bfdf9c450189828ca1b78d6ffb594194a7732eb2f97f5d89185e"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "Shared.md": {
+              "project": "p-shared",
+              "hash": "972f9000d85e6af91c041f516fdf0fc890f8e45c85b0a67808fbd7790f6b497c"
+            }
+          },
+          "printed": {
+            "d2fe5403-5540-88a8-8f26-896045d23d27": "Home.md",
+            "t-bad": "Home.md",
+            "t-ours": "Shared.md",
+            "t-pass": "Home.md"
+          },
+          "initialized": true
+        }
+      }
+    }
+  ]
+}

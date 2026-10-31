@@ -2,7 +2,9 @@
 // End-to-end against a real server (obsidian-plugin task 5.3, `make obsidian-e2e`):
 // ../bin/opentodo on a throwaway data directory, a full token, one line sent from a
 // fake vault through the loaded plugin, the task read back over REST with its
-// obsidian origin; then the same for an encrypted account.
+// obsidian origin; then the same for an encrypted account. The vault sync
+// (obsidian-vault-sync task 3.3): a task made on the server becomes a line, a
+// ticked line completes it, plainly and on an encrypted account.
 import { spawn, type ChildProcess } from 'node:child_process'
 import { request as httpRequest } from 'node:http'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -127,5 +129,47 @@ describe('against a real server', () => {
     expect(task.body.priority).toBe(2)
     expect(await openValue(key, 'task', id, 'title', task.body.title)).toBe('Renew passport')
     expect(await openValue(key, 'task', id, 'origin', task.body.origin)).toMatchObject({ kind: 'obsidian', id: 'Admin/Papers.md' })
+  }, 60_000)
+
+  it('vault sync: a task made on the server becomes a line, and a ticked line completes it', async () => {
+    const { token } = await account('cy@example.com')
+    const h = await connected({})
+    setRequestHandler(realRequest)
+    h.plugin.disconnect()
+    await h.plugin.connectWith(BASE, token)
+    const project = await api('POST', '/api/v1/projects', { name: 'Home' }, { token })
+    expect(project.status).toBe(201)
+    const created = await api('POST', '/api/v1/tasks', { title: 'Water the plants', project_id: project.body.id }, { token })
+    expect(created.status).toBe(201)
+    expect((await h.plugin.vault.enable('OpenTodo')).kind).toBe('synced')
+    const home = h.app.files.get('OpenTodo/Home.md')!
+    expect(home).toContain(`- [ ] Water the plants 🆔 ${created.body.id}`)
+    h.app.files.set('OpenTodo/Home.md', home.replace('- [ ] Water the plants', '- [x] Water the plants'))
+    expect((await h.plugin.vault.run('command')).kind).toBe('synced')
+    const task = await api('GET', `/api/v1/tasks/${created.body.id}`, undefined, { token })
+    expect(task.body.completed_at).toBeTypeOf('number')
+    const st = JSON.parse(h.app.files.get('OpenTodo/.opentodo/state.json')!)
+    expect(st.device).toMatch(/^vault:/)
+    expect(st.owner).toMatchObject({ kind: 'obsidian' })
+  })
+
+  it('vault sync on an encrypted account: plaintext in the file, ciphertext on the server', async () => {
+    const { cookie, token } = await account('dee@example.com')
+    const { record, key } = await createKeyRecord('correct horse battery', { iterations: 600_000 })
+    expect((await api('PUT', '/api/v1/encryption/keys', record, { cookie })).status).toBe(201)
+    const h = await connected({})
+    setRequestHandler(realRequest)
+    h.plugin.disconnect()
+    await h.plugin.connectWith(BASE, token)
+    await h.plugin.keys.unlock(await h.plugin.client()!.keyRecord(), 'correct horse battery', false)
+    expect((await h.plugin.vault.enable('OpenTodo')).kind).toBe('synced')
+    h.app.files.set('OpenTodo/Inbox.md', (h.app.files.get('OpenTodo/Inbox.md') ?? '') + '- [ ] Renew passport 📅 2026-11-05\n')
+    expect((await h.plugin.vault.run('command')).kind).toBe('synced')
+    const line = h.app.files.get('OpenTodo/Inbox.md')!
+    const id = /Renew passport 📅 2026-11-05 🆔 (\S+)/.exec(line)![1]
+    const task = await api('GET', `/api/v1/tasks/${id}`, undefined, { token })
+    expect(isEnvelope(task.body.title)).toBe(true)
+    expect(await openValue(key, 'task', id, 'title', task.body.title)).toBe('Renew passport')
+    expect(h.app.files.get('OpenTodo/.opentodo/state.json')).not.toContain('Renew passport')
   }, 60_000)
 })

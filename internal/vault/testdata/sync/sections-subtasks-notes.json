@@ -1,0 +1,2806 @@
+{
+  "name": "sections-subtasks-notes",
+  "description": "a heading makes a section, an indented line a subtask, indented prose a note; prose stays where it is",
+  "loc": "UTC",
+  "user": "user-1",
+  "steps": [
+    {
+      "name": "init",
+      "now": 1793610060000,
+      "init": true,
+      "server": [
+        {
+          "id": "app-p-home-archived-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-color-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-created_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-deleted_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-name-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "name",
+          "value": "Home",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-parent_id-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-position-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-completed_at-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-created_at-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-deleted_at-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-labels-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-position-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-priority-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-project_id-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-title-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "title",
+          "value": "Water the plants",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-rent-completed_at-1793606400003",
+          "entity": "task",
+          "entityId": "t-rent",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-rent-created_at-1793606400003",
+          "entity": "task",
+          "entityId": "t-rent",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-rent-deleted_at-1793606400003",
+          "entity": "task",
+          "entityId": "t-rent",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-rent-labels-1793606400003",
+          "entity": "task",
+          "entityId": "t-rent",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-rent-position-1793606400003",
+          "entity": "task",
+          "entityId": "t-rent",
+          "field": "position",
+          "value": 2000,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-rent-priority-1793606400003",
+          "entity": "task",
+          "entityId": "t-rent",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-rent-project_id-1793606400003",
+          "entity": "task",
+          "entityId": "t-rent",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-rent-title-1793606400003",
+          "entity": "task",
+          "entityId": "t-rent",
+          "field": "title",
+          "value": "Pay rent",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-call-completed_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-call",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-call-created_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-call",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-call-deleted_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-call",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-call-labels-1793606400004",
+          "entity": "task",
+          "entityId": "t-call",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-call-position-1793606400004",
+          "entity": "task",
+          "entityId": "t-call",
+          "field": "position",
+          "value": 3000,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-call-priority-1793606400004",
+          "entity": "task",
+          "entityId": "t-call",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-call-project_id-1793606400004",
+          "entity": "task",
+          "entityId": "t-call",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-call-title-1793606400004",
+          "entity": "task",
+          "entityId": "t-call",
+          "field": "title",
+          "value": "Call the plumber",
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-inbox-completed_at-1793606400005",
+          "entity": "task",
+          "entityId": "t-inbox",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-inbox-created_at-1793606400005",
+          "entity": "task",
+          "entityId": "t-inbox",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-inbox-deleted_at-1793606400005",
+          "entity": "task",
+          "entityId": "t-inbox",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-inbox-labels-1793606400005",
+          "entity": "task",
+          "entityId": "t-inbox",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-inbox-position-1793606400005",
+          "entity": "task",
+          "entityId": "t-inbox",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-inbox-priority-1793606400005",
+          "entity": "task",
+          "entityId": "t-inbox",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-inbox-project_id-1793606400005",
+          "entity": "task",
+          "entityId": "t-inbox",
+          "field": "project_id",
+          "value": null,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-inbox-title-1793606400005",
+          "entity": "task",
+          "entityId": "t-inbox",
+          "field": "title",
+          "value": "Buy stamps",
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-s-weekend-deleted_at-1793606400006",
+          "entity": "section",
+          "entityId": "s-weekend",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-s-weekend-name-1793606400006",
+          "entity": "section",
+          "entityId": "s-weekend",
+          "field": "name",
+          "value": "Weekend",
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-s-weekend-position-1793606400006",
+          "entity": "section",
+          "entityId": "s-weekend",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-s-weekend-project_id-1793606400006",
+          "entity": "section",
+          "entityId": "s-weekend",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-completed_at-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-created_at-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-deleted_at-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-description-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "description",
+          "value": "Bring water\n\n- [ ] boots",
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-labels-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-position-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-priority-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-project_id-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-section_id-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "section_id",
+          "value": "s-weekend",
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-hike-title-1793606400007",
+          "entity": "task",
+          "entityId": "t-hike",
+          "field": "title",
+          "value": "Hike",
+          "ts": 1793606400007,
+          "device": "app"
+        }
+      ],
+      "device": "vault:vectors",
+      "want": {
+        "pushed": [],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Water the plants 🆔 t-water\n- [ ] Pay rent 🆔 t-rent\n- [ ] Call the plumber 🆔 t-call\n\n## Weekend\n\n- [ ] Hike 🆔 t-hike\n  Bring water\n\n  * [ ] boots\n",
+          "Inbox.md": "- [ ] Buy stamps 🆔 t-inbox\n"
+        },
+        "report": {
+          "written": 2,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 53,
+          "events": [
+            {
+              "kind": "written",
+              "file": "Inbox.md",
+              "text": "wrote Inbox.md"
+            },
+            {
+              "kind": "written",
+              "file": "Home.md",
+              "text": "wrote Home.md"
+            }
+          ],
+          "projects": 1,
+          "tasks": 5
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 53,
+          "clock": 1793606400007,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              }
+            },
+            "section": {
+              "s-weekend": {
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Weekend",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400006,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-call": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Call the plumber",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "t-hike": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "description": {
+                  "v": "Bring water\n\n- [ ] boots",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "section_id": {
+                  "v": "s-weekend",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Hike",
+                  "t": 1793606400007,
+                  "d": "app"
+                }
+              },
+              "t-inbox": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Buy stamps",
+                  "t": 1793606400005,
+                  "d": "app"
+                }
+              },
+              "t-rent": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Pay rent",
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "t-water": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water the plants",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "b4ba0d66f32a61751e3cda82182c22b4a124853d4a5aa8ca29957bc6b459dddf"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+            }
+          },
+          "printed": {
+            "t-call": "Home.md",
+            "t-hike": "Home.md",
+            "t-inbox": "Inbox.md",
+            "t-rent": "Home.md",
+            "t-water": "Home.md"
+          },
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "structure",
+      "now": 1793610120000,
+      "files": {
+        "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\nThings for the flat.\n\n- [ ] Water the plants 🆔 t-water\n  - [ ] Fill the can\n  Use rain water.\n- [ ] Pay rent 🆔 t-rent\n- [ ] Call the plumber 🆔 t-call\n\n## Weekend\n\n- [ ] Hike 🆔 t-hike\n  Bring water\n\n  * [ ] boots\n\n## Garden\n\n- [ ] Rake leaves\n- [ ] Plant bulbs\n"
+      },
+      "want": {
+        "pushed": [
+          {
+            "id": "v-9207f9ee4744b59c10688c8ccf5a8dbffcd65df1",
+            "entity": "section",
+            "entityId": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "field": "color",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-382b0af15390bacc8297f4cab319ff0936ed28a9",
+            "entity": "section",
+            "entityId": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a2d9a1b7e333d2b5b9c31e496a871467f354374b",
+            "entity": "section",
+            "entityId": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-b95834926c721f1568a82b9e2d21ddfbea9ed82e",
+            "entity": "section",
+            "entityId": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "field": "icon",
+            "value": null,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-5a7fbbe6e3878ed3728b1bae458afbc68119ebf6",
+            "entity": "section",
+            "entityId": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "field": "name",
+            "value": "Garden",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-b511c80729a16363f7bbe1b14ec18d7ee3862b8a",
+            "entity": "section",
+            "entityId": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "field": "position",
+            "value": 2000,
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ba756be8e23e813bb37dc6061f96ab9cb0ec887c",
+            "entity": "section",
+            "entityId": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "field": "project_id",
+            "value": "p-home",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-800b6cb0f400f519ad27c2cddc1d6cb5cc86adfb",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "blocked_by",
+            "value": [],
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-f5e960c206a8d75bf1753fd335614354b7dc65ab",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "completed_at",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-e700117f61fb6d710916c75da6ba23eec0b375af",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "completed_by",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-964285bf20cc8775a4377e39a6b5e3976386a103",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-3549038d9a0816920b3bf0ff72c215a9f485c4c7",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "deadline",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-550e122030294542ef7550ca014ef95bcbea5612",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-b1d951bdd19f28ca9a0621bea5f8e7deedb82187",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "description",
+            "value": "",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c1b07629723dc1dea392aa3dddbfc5754cd129f2",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "due",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-85b10bf5c202bdda8034885f9c4e370e3c4d491c",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "estimate_minutes",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-d7ef24eb17a4755910a92b4a1ff309455c5a1943",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "evening",
+            "value": false,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-cbc933a632f0793fd478818f5fdea628acfba0d9",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-fbc3825c4f61e947b036bc2bd52791bda179e728",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "parent_id",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-0e778d33e338ec019b03f2416821a17bf99ed20c",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "position",
+            "value": 1000,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-70346d1eea78ce30e80893e23a9c19dcf2044a38",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-4469b0bbf066633fba79e83bdfbab19ae19eec0e",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "project_id",
+            "value": "p-home",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-1154513cf99a7afb7e81130a041f8bff9fc77b4a",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-b18ec904093bb4374528ff81d84d446688ee8dbe",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "section_id",
+            "value": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-e7a5333b3920aaa270be8520fef8369ef550a7d7",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "start",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-8d5ff9f1541b6338e76c171a88befc134aef15ac",
+            "entity": "task",
+            "entityId": "0b60f5c3-9776-8f55-b901-984aec709d40",
+            "field": "title",
+            "value": "Rake leaves",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-f0a39d8f0ca9b05381559828cd533108819f7462",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "blocked_by",
+            "value": [],
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-87544d37e2e1b1c8e3d8aa025a6b30a4ffa77120",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "completed_at",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-3ca5803945f89fef0082e220ae2db038a41fca59",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "completed_by",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-34c37d2e1e1567dd7bc0e3c26d8c6e92db70c9b6",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-0a16ebccf6dbca3317aec2ca46b3f2552541a8c7",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "deadline",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-9277587fbd9e8bfb09e74dfe57da0caa0fa89cbc",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ff3363c25afaef98469196a1cd71a29fc5675a34",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "description",
+            "value": "",
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-0ba83934f2181e4dc92166df616700732d9379b0",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "due",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-45798364d7dfb174fa164cfac73f17325031cb43",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "estimate_minutes",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c8fe2dbfca88d06792c6c2a1a35d5dfa8cf78f9e",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "evening",
+            "value": false,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-3c8a8ccf2580a3510bce7965f5c6ea60c77657fe",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-841355aa6705535f24e9b295c9dd64ff991bacf4",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "parent_id",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-f1a7f48bca4bf3f31e4d07d15005cf451c661e28",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "position",
+            "value": 2000,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-8344d609294ff55160cfe5fa7d1faa38bd6a0e09",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a0e36aa32d268dae961f9ad24d0ab734cc800a40",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "project_id",
+            "value": "p-home",
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-7c0e1463e0e159ad2e38405e137b81f34536b21c",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-f0aab0df0046f936395b9a2e12142c8ab866f3a9",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "section_id",
+            "value": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-1c2a5e385ba3841c8d39f84ff92ebc000ca38e26",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "start",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-599cfe6da1de794e317dc379e0982bed69c14ad1",
+            "entity": "task",
+            "entityId": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+            "field": "title",
+            "value": "Plant bulbs",
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-3bb20730bbe498d4f12650c08e44827032d9c74b",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "blocked_by",
+            "value": [],
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-d2153251a63af2e8bc61f93f45ffb1b0c00810e2",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "completed_at",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ab7137c6b328e154a6e33d0f14c79752ebbf879e",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "completed_by",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-23fb9215c95a7b9f14be85f08bf4c77a79d99aeb",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-f509480a3f88a4582383d8c82b5b77eac823c789",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "deadline",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-24747512f9bd498633299bbe5ed8670d1e2f5950",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-92f33e259a39175bc037122272d737ca0c01933a",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "description",
+            "value": "",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-39c50cc19ae972b50e175e348bc1550315bff12c",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "due",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-8b80b2ee08ac71c063c0682f8b49d42b63e4f7bc",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "estimate_minutes",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-8aee35bb083e481a6a418b33219d0c8875a27fe1",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "evening",
+            "value": false,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-0a9c5195cc7c26ff01c1b4e89ccfbaecca2d48e8",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-968ad02978979ae22825c274330e25bf35ee68aa",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "parent_id",
+            "value": "t-water",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ff2605454671136f935c9a47d0e11f1d00cd2233",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "position",
+            "value": 1000,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ff009bded840fa0d200e71e12a5c2b7cbd6f95b7",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-0f244fb4a155dc165abf9e41fd4e013f4e916a79",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "project_id",
+            "value": "p-home",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-6428522fd4f085248f471115360ab1b0490dbdd0",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-851dfa1123b738a79d62f231504be944d1825fda",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "section_id",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-90cfd4a683d7734d3dd885c954ecca382c1a12cb",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "start",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-08c80ac088644dbb80214315952ab9db48729ce5",
+            "entity": "task",
+            "entityId": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+            "field": "title",
+            "value": "Fill the can",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-0f0207628ddb3efafca0a156e8eb81428e7d21ba",
+            "entity": "task",
+            "entityId": "t-water",
+            "field": "description",
+            "value": "Use rain water.",
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          }
+        ],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\nThings for the flat.\n\n- [ ] Water the plants 🆔 t-water\n  Use rain water.\n  - [ ] Fill the can 🆔 f22ab89d-f0b5-825d-a334-4d2e6df23a88\n- [ ] Pay rent 🆔 t-rent\n- [ ] Call the plumber 🆔 t-call\n\n## Weekend\n\n- [ ] Hike 🆔 t-hike\n  Bring water\n\n  * [ ] boots\n\n## Garden\n\n- [ ] Rake leaves 🆔 0b60f5c3-9776-8f55-b901-984aec709d40\n- [ ] Plant bulbs 🆔 81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7\n",
+          "Inbox.md": "- [ ] Buy stamps 🆔 t-inbox\n"
+        },
+        "report": {
+          "written": 1,
+          "created": 3,
+          "updated": 1,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 118,
+          "events": [
+            {
+              "kind": "section",
+              "text": "created section \"Garden\""
+            },
+            {
+              "kind": "created",
+              "file": "Home.md",
+              "task": "0b60f5c3-9776-8f55-b901-984aec709d40",
+              "text": "created \"Rake leaves\" in Home.md"
+            },
+            {
+              "kind": "created",
+              "file": "Home.md",
+              "task": "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7",
+              "text": "created \"Plant bulbs\" in Home.md"
+            },
+            {
+              "kind": "created",
+              "file": "Home.md",
+              "task": "f22ab89d-f0b5-825d-a334-4d2e6df23a88",
+              "text": "created \"Fill the can\" in Home.md"
+            },
+            {
+              "kind": "updated",
+              "file": "Home.md",
+              "task": "t-water",
+              "text": "updated \"Water the plants\" (note)"
+            },
+            {
+              "kind": "written",
+              "file": "Home.md",
+              "text": "wrote Home.md"
+            }
+          ],
+          "projects": 1,
+          "tasks": 8
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 118,
+          "clock": 1793610120004,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              }
+            },
+            "section": {
+              "6d654e74-c223-8a94-a2b3-07b75bb77b14": {
+                "color": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "icon": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "name": {
+                  "v": "Garden",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                }
+              },
+              "s-weekend": {
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Weekend",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400006,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "0b60f5c3-9776-8f55-b901-984aec709d40": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Rake leaves",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                }
+              },
+              "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Plant bulbs",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                }
+              },
+              "f22ab89d-f0b5-825d-a334-4d2e6df23a88": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": "t-water",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Fill the can",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                }
+              },
+              "t-call": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Call the plumber",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "t-hike": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "description": {
+                  "v": "Bring water\n\n- [ ] boots",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "section_id": {
+                  "v": "s-weekend",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Hike",
+                  "t": 1793606400007,
+                  "d": "app"
+                }
+              },
+              "t-inbox": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Buy stamps",
+                  "t": 1793606400005,
+                  "d": "app"
+                }
+              },
+              "t-rent": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Pay rent",
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "t-water": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "description": {
+                  "v": "Use rain water.",
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water the plants",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "09c5e7b5a31d5d7c5890c80b7b900a591d1a3ce9202966b2338a87fc64b990c8"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+            }
+          },
+          "printed": {
+            "0b60f5c3-9776-8f55-b901-984aec709d40": "Home.md",
+            "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7": "Home.md",
+            "f22ab89d-f0b5-825d-a334-4d2e6df23a88": "Home.md",
+            "t-call": "Home.md",
+            "t-hike": "Home.md",
+            "t-inbox": "Inbox.md",
+            "t-rent": "Home.md",
+            "t-water": "Home.md"
+          },
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "idle",
+      "now": 1793610180000,
+      "want": {
+        "pushed": [],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\nThings for the flat.\n\n- [ ] Water the plants 🆔 t-water\n  Use rain water.\n  - [ ] Fill the can 🆔 f22ab89d-f0b5-825d-a334-4d2e6df23a88\n- [ ] Pay rent 🆔 t-rent\n- [ ] Call the plumber 🆔 t-call\n\n## Weekend\n\n- [ ] Hike 🆔 t-hike\n  Bring water\n\n  * [ ] boots\n\n## Garden\n\n- [ ] Rake leaves 🆔 0b60f5c3-9776-8f55-b901-984aec709d40\n- [ ] Plant bulbs 🆔 81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7\n",
+          "Inbox.md": "- [ ] Buy stamps 🆔 t-inbox\n"
+        },
+        "report": {
+          "written": 0,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 118,
+          "events": [],
+          "projects": 1,
+          "tasks": 8
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 118,
+          "clock": 1793610120004,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              }
+            },
+            "section": {
+              "6d654e74-c223-8a94-a2b3-07b75bb77b14": {
+                "color": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "icon": {
+                  "v": null,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "name": {
+                  "v": "Garden",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                }
+              },
+              "s-weekend": {
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Weekend",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400006,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "0b60f5c3-9776-8f55-b901-984aec709d40": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Rake leaves",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                }
+              },
+              "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": "6d654e74-c223-8a94-a2b3-07b75bb77b14",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Plant bulbs",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                }
+              },
+              "f22ab89d-f0b5-825d-a334-4d2e6df23a88": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": "t-water",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Fill the can",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                }
+              },
+              "t-call": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Call the plumber",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "t-hike": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "description": {
+                  "v": "Bring water\n\n- [ ] boots",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "section_id": {
+                  "v": "s-weekend",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Hike",
+                  "t": 1793606400007,
+                  "d": "app"
+                }
+              },
+              "t-inbox": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Buy stamps",
+                  "t": 1793606400005,
+                  "d": "app"
+                }
+              },
+              "t-rent": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Pay rent",
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "t-water": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "description": {
+                  "v": "Use rain water.",
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water the plants",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "09c5e7b5a31d5d7c5890c80b7b900a591d1a3ce9202966b2338a87fc64b990c8"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+            }
+          },
+          "printed": {
+            "0b60f5c3-9776-8f55-b901-984aec709d40": "Home.md",
+            "81c8c7b4-fe25-8f85-b89f-a9a51ee8d9b7": "Home.md",
+            "f22ab89d-f0b5-825d-a334-4d2e6df23a88": "Home.md",
+            "t-call": "Home.md",
+            "t-hike": "Home.md",
+            "t-inbox": "Inbox.md",
+            "t-rent": "Home.md",
+            "t-water": "Home.md"
+          },
+          "initialized": true
+        }
+      }
+    }
+  ]
+}

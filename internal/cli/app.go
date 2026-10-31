@@ -178,7 +178,7 @@ func init() {
 		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name> [--scope full|read|agent]\not token revoke <id-or-name> [--yes]", cmdToken},
 		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token] [--decrypt]", cmdMCP},
 		{"encryption", "end-to-end encryption on this machine: unlock, lock, status", "ot encryption unlock [--recovery] [--passphrase-file <path>]\not encryption lock\not encryption status", cmdEncryption},
-		{"vault", "Markdown vault: a folder of project files in two-way sync", "ot vault init <dir> [--adopt]\not vault sync [<dir>]\not vault status [<dir>]\not vault watch [<dir>]\not vault tasknotes <folder> [--vault <dir>] [--inside] | --off", cmdVault},
+		{"vault", "Markdown vault: a folder of project files in two-way sync", "ot vault init <dir> [--adopt]\not vault sync [<dir>] [--take-over]\not vault status [<dir>]\not vault watch [<dir>] [--take-over]\not vault tasknotes <folder> [--vault <dir>] [--inside] | --off", cmdVault},
 		{"issues", "issue connections: list, sync", "ot issues list\not issues sync [<id>]", cmdIssues},
 		{"rules", "automation rules: list, enable, disable, runs", "ot rules list\not rules enable <id>\not rules disable <id>\not rules runs <id>", cmdRules},
 		{"frames", "calendar frames: list, add, rm", "ot frames\not frames add <title> [--days mon-fri] [--from HH:MM] [--to HH:MM] [--color #rrggbb] [--source label:<id>]\not frames rm <id> [--yes]", cmdFrames},
