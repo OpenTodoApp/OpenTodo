@@ -125,7 +125,7 @@ Below 640 px the Week agenda SHALL list a span under each day it covers with its
 - **THEN** Tuesday, Wednesday and Thursday each list it with "Day 1 of 3", "Day 2 of 3" and "Day 3 of 3", and nothing overflows horizontally
 
 ### Requirement: Spans through the API, CLI and agents
-The REST API SHALL accept and return `span` as a boolean task field, refusing anything else with `400 invalid_input`. The CLI SHALL accept `--span` and `--no-span` on `ot add` and `ot edit` and SHALL print a span's range in `ot show`. Assistant and MCP task results SHALL carry `span: true` for a span, and the create and update tools SHALL accept `span`. No new route SHALL be added.
+The REST API SHALL accept and return `span` as a boolean task field, refusing anything else with `400 invalid_input`. The CLI SHALL accept `--span` and `--no-span` on `ot add` and `ot edit` and SHALL print a span's range in the due column of `ot list`. Assistant and MCP task results SHALL carry `span: true` for a span, and the create and update tools SHALL accept `span`. No new route SHALL be added.
 
 #### Scenario: Create a span through the API
 - **WHEN** a script POSTs a task with `"start": "2026-11-03"`, `"due": {"date": "2026-11-05"}` and `"span": true` with a full token
@@ -137,4 +137,4 @@ The REST API SHALL accept and return `span` as a boolean task field, refusing an
 
 #### Scenario: CLI
 - **WHEN** the user runs `ot edit <id> --start 2026-11-03 --due 2026-11-05 --span`
-- **THEN** the task is a span from 3 to 5 November and `ot show <id>` prints "3–5 Nov"
+- **THEN** the task is a span from 3 to 5 November and `ot list` prints "3–5 Nov" in its due column

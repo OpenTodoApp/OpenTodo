@@ -3,11 +3,13 @@ package davroutes
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // FeedTasks lists the user's visible open tasks with a due date, as the
@@ -39,10 +41,14 @@ func (s *Server) FeedTasks(r *http.Request, uid string) ([]calfeed.FeedTask, err
 		ft := calfeed.FeedTask{ID: id, Title: idOf(t["title"]), Description: idOf(t["description"]), Date: due.Date, Time: due.Time, TZ: due.TZ, Modified: v.modified[id]}
 		_ = json.Unmarshal(t["estimate_minutes"], &ft.Estimate)
 		_ = json.Unmarshal(t["priority"], &ft.Priority)
+		ft.Start = spanStart(t, due.Date)
 		var rule string
 		if json.Unmarshal(t["recurrence"], &rule) == nil && rule != "" {
 			if parsed, err := recurrence.Parse(rule); err == nil {
 				ft.RRULE = parsed.RRULE()
+				if ft.Start != "" {
+					ft.RRULE, ft.RDates = spanRecurrence(parsed, ft.Start, due.Date, v.today)
+				}
 			}
 		}
 		var labels []string
@@ -55,4 +61,34 @@ func (s *Server) FeedTasks(r *http.Request, uid string) ([]calfeed.FeedTask, err
 		out = append(out, ft)
 	}
 	return out, nil
+}
+
+// spanStart is the first day of a task drawn as a span (calfeed.SpanStart).
+func spanStart(t opsync.Entity, dueDate string) string {
+	return calfeed.SpanStart(string(t["span"]) == "true", idOf(t["start"]), dueDate)
+}
+
+// spanRecurrence gives a recurring span's first days (design D7): the RRULE of
+// the do-on dates moved by the span's length when an RRULE can say it, else
+// the first days of the occurrences in the feed window as RDATEs.
+func spanRecurrence(rule recurrence.Rule, start, dueDate, today string) (string, []string) {
+	days := 0
+	if a, err := time.Parse(time.DateOnly, start); err == nil {
+		if b, err := time.Parse(time.DateOnly, dueDate); err == nil {
+			days = int(b.Sub(a).Hours() / 24)
+		}
+	}
+	if rr, ok := rule.RRULEEarlier(days); ok {
+		return rr, nil
+	}
+	to := recurrence.AddDays(today, calfeed.FeedFutureDays)
+	dates, _, err := rule.Occurrences(dueDate, today, 0, dueDate, to)
+	if err != nil {
+		return "", nil
+	}
+	firsts := make([]string, len(dates))
+	for i, d := range dates {
+		firsts[i] = recurrence.AddDays(d, -days)
+	}
+	return "", firsts
 }

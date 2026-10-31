@@ -88,7 +88,7 @@ function labelIds(snap: Snapshot, prefix: string, v: unknown): string[] {
   return out
 }
 
-/** deadline, start, evening and blocked_by as sent (planningPatch). */
+/** deadline, start, evening, span and blocked_by as sent (planningPatch). */
 function planningPatch(prefix: string, it: Args, patch: Record<string, unknown>): void {
   if ('deadline' in it) {
     const v = it.deadline
@@ -105,6 +105,11 @@ function planningPatch(prefix: string, it: Args, patch: Record<string, unknown>)
   if ('evening' in it) {
     if (typeof it.evening !== 'boolean') throw new ArgError(`${prefix}evening: must be true or false`)
     patch.evening = it.evening
+  }
+  // Drawn from start to due (multi-day-tasks), as the server's tools take it.
+  if ('span' in it) {
+    if (typeof it.span !== 'boolean') throw new ArgError(`${prefix}span: must be true or false`)
+    patch.span = it.span
   }
   if ('blocked_by' in it) {
     const v = it.blocked_by
@@ -193,7 +198,7 @@ export function createTasks(ctx: PlanContext, a: Args): Plan {
   const created = new Map<string, string>()
   list0.forEach((it, i) => {
     const p = `items[${i}].`
-    only(it, p, 'id', 'title', 'description', 'project_id', 'section_id', 'parent_id', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'blocked_by')
+    only(it, p, 'id', 'title', 'description', 'project_id', 'section_id', 'parent_id', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'blocked_by')
     let title: string, desc: string
     try {
       title = text(it, 'title', true, 500)!
@@ -261,7 +266,7 @@ export function updateTasks(ctx: PlanContext, a: Args): Plan {
   const blockers: BlockerEntry[] = []
   list0.forEach((it, i) => {
     const p = `updates[${i}].`
-    only(it, p, 'id', 'title', 'description', 'priority', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'blocked_by')
+    only(it, p, 'id', 'title', 'description', 'priority', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'blocked_by')
     const id = typeof it.id === 'string' ? it.id : ''
     if (!id) throw new ArgError(`${p}id: the task id is required`)
     if (seen.has(id)) throw new ArgError(`${p}id: each task may appear only once per call`)

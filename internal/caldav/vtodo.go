@@ -48,6 +48,9 @@ type Task struct {
 	Deadline    string // "YYYY-MM-DD" or "" (OpenSpec change deadlines)
 	Start       string // "someday", "YYYY-MM-DD" or "" (OpenSpec change someday-and-evening)
 	Evening     bool
+	// Span draws the task from Start to its due date (OpenSpec change
+	// multi-day-tasks), served as X-OPENTODO-SPAN:TRUE; false serves nothing.
+	Span bool
 	// DayPart is "morning" or "afternoon" (OpenSpec change day-parts), served
 	// as X-OPENTODO-DAY-PART; Evening stays X-OPENTODO-EVENING only.
 	DayPart string
@@ -130,6 +133,9 @@ type Inbound struct {
 	// which leaves the field alone.
 	Start   *string
 	Evening *bool
+	// Span comes from X-OPENTODO-SPAN (multi-day-tasks D7): TRUE or FALSE;
+	// nil when the client did not send a known value.
+	Span *bool
 	// DayPart comes from X-OPENTODO-DAY-PART (day-parts): "morning" or
 	// "afternoon"; nil when the client did not send a known value.
 	DayPart *string
@@ -296,6 +302,9 @@ func Encode(t Task) []byte {
 		add("X-OPENTODO-START", "SOMEDAY")
 	case t.Start != "":
 		add("X-OPENTODO-START", dateValue(t.Start))
+	}
+	if t.Span {
+		add("X-OPENTODO-SPAN", "TRUE")
 	}
 	if t.Evening {
 		add("X-OPENTODO-EVENING", "TRUE")

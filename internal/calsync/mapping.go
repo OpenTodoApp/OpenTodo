@@ -22,17 +22,32 @@ type Snapshot struct {
 	TZ      string `json:"tz,omitempty"`
 	Minutes int    `json:"minutes,omitempty"`
 	AllDay  bool   `json:"all_day,omitempty"`
-	Title   string `json:"title"`
+	// Start is the first day of a span's all-day event (OpenSpec change
+	// multi-day-tasks), Date its last; "" for every other event. Time and TZ
+	// of a span are the task's due time, which the event does not show.
+	Start string `json:"start,omitempty"`
+	Title string `json:"title"`
 }
 
 // SameTimes reports whether two snapshots place the event the same way.
 func (s Snapshot) SameTimes(o Snapshot) bool {
-	return s.Date == o.Date && s.Time == o.Time && s.TZ == o.TZ && s.AllDay == o.AllDay && s.Minutes == o.Minutes
+	return s.Date == o.Date && s.Time == o.Time && s.TZ == o.TZ && s.AllDay == o.AllDay && s.Minutes == o.Minutes && s.Start == o.Start
 }
 
-// TaskSnapshot is the event a task should have.
+// TaskSnapshot is the event a task should have: a span is all-day from its
+// start to its due date whatever its due time (multi-day-tasks D7).
 func TaskSnapshot(t calfeed.FeedTask, encrypted bool) Snapshot {
 	s := Snapshot{Date: t.Date, Title: hash16(calfeed.EventTitle(t, encrypted))}
+	if t.Start != "" {
+		s.Start, s.AllDay = t.Start, true
+		if t.Time != nil {
+			s.Time = *t.Time
+		}
+		if t.TZ != nil {
+			s.TZ = *t.TZ
+		}
+		return s
+	}
 	if t.Time == nil {
 		s.AllDay = true
 		return s
@@ -56,6 +71,10 @@ func EventSnapshot(ev calfeed.Event, prev Snapshot, calZone *time.Location) Snap
 	start := ev.Start
 	if start.AllDay {
 		s.Date, s.AllDay = start.T.Format("2006-01-02"), true
+		if prev.Start != "" {
+			// A span's event that stays all-day: its first and last day.
+			s.Start, s.Date, s.Time, s.TZ = s.Date, lastDay(ev), prev.Time, prev.TZ
+		}
 		return s
 	}
 	t := start.T
@@ -76,6 +95,21 @@ func EventSnapshot(ev calfeed.Event, prev Snapshot, calZone *time.Location) Snap
 		s.Minutes = int(d / time.Minute)
 	}
 	return s
+}
+
+// lastDay is the last day an all-day event covers: the day before its
+// exclusive DTEND, or the last of its DURATION days; its first day when
+// neither says more.
+func lastDay(ev calfeed.Event) string {
+	first := ev.Start.T
+	last := first
+	switch {
+	case ev.End != nil && ev.End.AllDay && ev.End.T.After(first):
+		last = ev.End.T.AddDate(0, 0, -1)
+	case ev.End == nil && ev.DurationDays > 1:
+		last = first.AddDate(0, 0, ev.DurationDays-1)
+	}
+	return last.Format("2006-01-02")
 }
 
 // length is a timed event's duration from DTEND or DURATION.
@@ -99,7 +133,7 @@ func length(ev calfeed.Event) (time.Duration, bool) {
 // Due is the task's due for a snapshot.
 func (s Snapshot) Due() json.RawMessage {
 	d := map[string]string{"date": s.Date}
-	if !s.AllDay && s.Time != "" {
+	if (!s.AllDay || s.Start != "") && s.Time != "" {
 		d["time"] = s.Time
 		if s.TZ != "" {
 			d["tz"] = s.TZ
@@ -142,6 +176,16 @@ func EventOps(connID, taskID, version string, from, to Snapshot, summary string,
 	add := func(field string, value json.RawMessage) {
 		ops = append(ops, opsync.Op{ID: opID(connID, taskID, field, version), Entity: "task", EntityID: taskID, Field: field,
 			Value: value, TS: ts, Device: Device(connID)})
+	}
+	if to.Start != "" {
+		// A span's all-day event (multi-day-tasks D7): its first day is the
+		// start, its last the due date with the task's own time and zone.
+		to.Time, to.TZ = from.Time, from.TZ
+		if to.Start != from.Start {
+			b, _ := json.Marshal(to.Start)
+			add("start", b)
+			ch.Moved = true
+		}
 	}
 	if from.Date != to.Date || from.Time != to.Time || from.TZ != to.TZ || from.AllDay != to.AllDay {
 		add("due", to.Due())

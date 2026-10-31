@@ -3,7 +3,7 @@
 // (Anytime, a date, Someday), Deadline, Evening, Repeat and Reminders as segments
 // under a shared header and footer. Every segment is the editor it replaces and
 // writes exactly the fields it wrote before.
-import { type KeyboardEvent, useEffect, useRef, useState, type ReactNode } from 'react'
+import { type KeyboardEvent, type RefObject, useEffect, useRef, useState, type ReactNode } from 'react'
 import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
 import { setRecurrence, unparkTask, updateTask } from '../../lib/ops'
 import { parseRule } from '../../lib/recurrence'
@@ -25,6 +25,7 @@ import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf, dayPartsOn, type DayP
 import { useUserPrefsRow } from '../../lib/localData'
 import { dayPartUndoable } from '../../lib/undoActions'
 import { showUndoToast } from '../bulk/toastStore'
+import { formatSpan, multiDayOnPatch, spanOf } from '../../lib/span'
 
 export type WhenSegment = 'due' | 'start' | 'deadline' | 'evening' | 'repeat' | 'reminders'
 
@@ -101,6 +102,29 @@ function DayPartControl({ task, readOnly }: { task: Task; readOnly: boolean }) {
           className={`min-h-8 rounded-control border px-2 py-1 text-meta ${current === part ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}
           onClick={() => act(set(part))}>{dayPartName(part)}</button>
       ))}
+    </div>
+  )
+}
+
+/**
+ * The Multi-day switch of the Start segment (multi-day-tasks D2): on writes the flag
+ * and, without a start before the do-on date, the day before it, in one batch, then
+ * focuses the start date to pick the first day; off writes only the flag. A reader
+ * sees the range as text.
+ */
+function MultiDaySwitch({ task, readOnly, root }: { task: Task; readOnly: boolean; root: RefObject<HTMLDivElement | null> }) {
+  const span = spanOf(task)
+  if (readOnly) return span ? <p className="text-body text-default" data-span-text>{t('Multi-day: {range}', { range: formatSpan(span) })}</p> : null
+  const turn = async (on: boolean) => {
+    const patch = on ? multiDayOnPatch(task) : { span: false }
+    if (!patch) return
+    await updateTask(task.id, patch)
+    if (on) root.current?.querySelector<HTMLElement>('[data-when-segment="start"] input:not([disabled])')?.focus()
+  }
+  return (
+    <div data-multi-day>
+      <Switch label={t('Multi-day')} description={span ? formatSpan(span) : t('Show it across the days from its start to its do-on date')}
+        checked={!!task.span} onChange={(on) => act(turn(on))} />
     </div>
   )
 }
@@ -236,6 +260,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
           validate={(iso) => (local && iso > local.date ? t('The start must be on or before the due date.') : null)}
           onChoice={(c) => { if (c.date === 'someday') act(parkWithUndo(task.id)) }}
           onChange={(start) => (start ? act(updateTask(task.id, { start })) : void unparkTask(task.id))} />
+        {task.due && <MultiDaySwitch task={task} readOnly={readOnly} root={root} />}
       </Segment>}
 
       {shows('deadline') && <Segment id="deadline" icon="hourglass" label={t('Deadline')} bare={!!segment}>

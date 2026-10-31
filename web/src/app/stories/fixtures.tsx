@@ -337,6 +337,20 @@ export function seedCalendarClarity(mode: 'project' | 'label' | 'priority'): () 
   }
 }
 
+/**
+ * Tasks that span days (multi-day-tasks): the seeded week plus a trip from Monday to
+ * Wednesday (partly past, dimmed), a conference from Friday into next week, a weekly
+ * two-day shift whose next occurrences are projected, and a deferred task that is
+ * not a span (drawn on its due day only).
+ */
+export async function seedCalendarSpans(): Promise<void> {
+  await seedCalendarWeek()
+  await createTask({ title: 'Lisbon trip', start: '2026-10-12', due: { date: '2026-10-14' }, span: true, project_id: seeded.home })
+  await createTask({ title: 'Design conference', start: '2026-10-16', due: { date: '2026-10-20' }, span: true, estimate_minutes: 240, project_id: seeded.work })
+  await createTask({ title: 'Weekend shift', start: '2026-10-17', due: { date: '2026-10-18' }, span: true, recurrence: 'every sunday', project_id: seeded.health })
+  await createTask({ title: 'Quarterly report', start: '2026-10-13', due: { date: '2026-10-16' }, project_id: seeded.work })
+}
+
 /** A comment and an attachment on a task, for the count chips (fixture rows, not ops). */
 export async function seedCounts(taskId: string): Promise<void> {
   await db.comments.put({ id: `${taskId}-c1`, task_id: taskId, parent_id: null, body: 'Numbers land on Monday.', author_id: storyUser.id, mentions: [], created_at: 1, edited_at: null, deleted_at: null, _clock: {} })

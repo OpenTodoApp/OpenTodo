@@ -63,6 +63,33 @@ func (r Rule) RRULEUntil(until string) string {
 	return c.RRULE()
 }
 
+// RRULEEarlier is the RRULE whose dates are each of r's dates moved days
+// earlier: the first days of a recurring span whose do-on dates follow r
+// (OpenSpec change multi-day-tasks, design D7), UNTIL moved with them. ok is
+// false when an RRULE cannot say it exactly (rules by month or year).
+func (r Rule) RRULEEarlier(days int) (rrule string, ok bool) {
+	c := r
+	switch r.kind {
+	case kInterval:
+		if r.unit != uDay && r.unit != uWeek {
+			return "", false
+		}
+	case kWeekday, kWeekdays:
+		c.days = 0
+		for wd := 1; wd <= 7; wd++ {
+			if r.days&(1<<wd) != 0 {
+				c.days |= 1 << ((((wd-1-days)%7)+7)%7 + 1)
+			}
+		}
+	default:
+		return "", false
+	}
+	if c.until != "" {
+		c.until = AddDays(c.until, -days)
+	}
+	return c.RRULE(), true
+}
+
 func dayList(mask uint8) string {
 	var out []string
 	for wd := 1; wd <= 7; wd++ {

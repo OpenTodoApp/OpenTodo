@@ -190,6 +190,7 @@
       "section_id",
       "series_id",
       "skipped",
+      "span",
       "split_from",
       "start",
       "title",

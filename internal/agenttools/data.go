@@ -484,6 +484,9 @@ type taskOut struct {
 	Deadline *string `json:"deadline"`
 	Start    *string `json:"start"`
 	Evening  bool    `json:"evening"`
+	// Span is true when the task is drawn across the days from start to its
+	// due date (OpenSpec change multi-day-tasks); left out otherwise.
+	Span bool `json:"span,omitempty"`
 	// DayPart is "morning", "afternoon" or null (OpenSpec change day-parts);
 	// Evening stays the evening flag.
 	DayPart *string `json:"day_part"`
@@ -554,7 +557,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		}
 	}
 	out.Deadline, out.Start = strPtr(t, "deadline"), strPtr(t, "start")
-	out.Evening = boolean(t, "evening")
+	out.Evening, out.Span = boolean(t, "evening"), boolean(t, "span")
 	if part := daypart.OfRow(t); daypart.Stored(part) {
 		out.DayPart = &part
 	}

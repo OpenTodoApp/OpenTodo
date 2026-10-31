@@ -6,11 +6,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Button, EmptyState, MenuItem, PageBody, useMediaQuery } from '../ui'
 import { calendarTasks, dayLoad, nudgeDue } from '../lib/calendar'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { addDaysISO, dueFromView, formatTime, viewedTask, formatDateParts, monthName } from '../lib/dates'
+import { addDaysISO, dueFromView, viewedTask, formatDateParts, monthName } from '../lib/dates'
 import { getTask, useMembershipMap, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import { formatMinutes } from '../lib/duration'
-import { cellTasks, monthGrid, visibleRows } from '../lib/month'
+import { monthGrid, visibleRows } from '../lib/month'
 import { updateTask } from '../lib/ops'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
@@ -25,7 +25,7 @@ import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanP
 import { CalendarPageHeader, useCalendarChrome, useDrawn } from './calendar/useCalendarChrome'
 import { useCalendarGo } from './calendar/scope'
 import { addHandlers } from './calendar/DayColumn'
-import { DeadlineDiamond, deadlineMark, DeadlineMarker } from './calendar/DeadlineMarker'
+import { DeadlineMarker } from './calendar/DeadlineMarker'
 import { keysOf } from '../lib/shortcuts'
 import { useShortcutScope } from './shortcuts'
 import { setDueWithUndo } from './undoable'
@@ -40,6 +40,10 @@ import { useResetOnChange } from '../lib/useResetOnChange'
 import { columnEntries } from '../lib/plan'
 import { projectionsByDate, type Projection } from '../lib/occurrences'
 import { dayDrag, isProjectionTarget, ProjectedItem, useCalendarProjections } from './calendar/projections'
+import { moveSpanPatch, spanCovers, spanOf } from '../lib/span'
+import { bandLayout } from './calendar/spanModel'
+import { MonthRow } from './calendar/MonthRow'
+import { MonthWeekBand, monthOrder, monthSpanKeys, useMonthSpans } from './calendar/monthSpans'
 
 /** Task rows a desktop cell shows before "+N more". */
 const CELL_ROWS = 3
@@ -114,9 +118,10 @@ export function MonthView({ date }: { date?: string }) {
   const shownRaw = useMemo(() => rawTasks.filter((item) => shownIds.has(item.id)), [rawTasks, shownIds])
   const shownViewed = useMemo(() => viewed.filter((task) => shownIds.has(task.id)), [viewed, shownIds])
   const { drawn: drawnRaw, deadlines } = useDrawn(chrome, shownRaw, viewed, projects, days[0], days[days.length - 1])
-  const cells = useMemo(() => new Map(days.map((d) => [d, cellTasks(drawnRaw, d, zone)])), [days, drawnRaw, zone])
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
   const { projections, hue: projectionHue } = useCalendarProjections({ raw: rawTasks, viewed: viewedMap, projects, keeps: chrome.keeps, hueOf: chrome.color.hueOf, today, from: days[0], to: days[days.length - 1], zone })
+  // Spans (multi-day-tasks D3): bars across each week row, never rows of a cell; capacity stays on the due day.
+  const { spans, spanIds, cells } = useMonthSpans(drawnRaw, viewedMap, projections, days, zone)
   const projected = useMemo(() => projectionsByDate(projections), [projections])
   // Slots count once toward a cell's capacity (calendar-slots D6); Month lists their tasks as usual.
   const slotRows = useSlots()
@@ -133,7 +138,7 @@ export function MonthView({ date }: { date?: string }) {
   }), [days, feeds.visibleEvents, prefs.countEvents, feeds.eventsShown, feeds.subs.length, feeds.win, online, zone])
 
   /** Selection order: the month's tasks in grid order (`j` / `k`). */
-  const order = useMemo(() => days.flatMap((d) => (cells.get(d) ?? []).map((task) => task.id)), [days, cells])
+  const order = useMemo(() => monthOrder(days, cells, spans), [days, cells, spans])
 
   const [focused, setFocused] = useState(anchor)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -160,8 +165,10 @@ export function MonthView({ date }: { date?: string }) {
       if (!raw || raw.deleted_at || raw.completed_at || !raw.due) return
       const task = viewedTask(raw)
       if (!task.due) return
-      const due = nudgeDue(task.due, { days })
-      await updateTask(id, { due: dueFromView(raw.due, due) })
+      // A span moves whole, start and due by the same days (multi-day-tasks D4).
+      const whole = spanOf(task) ? moveSpanPatch(task, days) : null
+      const due = whole ? whole.due : nudgeDue(task.due, { days })
+      await updateTask(id, whole ? { start: whole.start, due: dueFromView(raw.due, due) } : { due: dueFromView(raw.due, due) })
       setFocused(due.date)
       if (due.date.slice(0, 7) !== month) goTo(due.date)
     }).catch(reportActionError)
@@ -208,6 +215,8 @@ export function MonthView({ date }: { date?: string }) {
       if (selectedTask) { if (editable(selectedTask)) move(selectedTask.id, ARROWS[e.key]) } else focusDay(addDaysISO(focused, ARROWS[e.key]))
     },
     'month.focus': (e) => focusDay(addDaysISO(focused, ARROWS[e.key])),
+    // A selected span's ends; anything else falls through to moving the focused day (multi-day-tasks D4).
+    ...monthSpanKeys({ selected: selectedTask, viewed: viewedMap, editable, queue, focus: setFocused }),
     'month.next': () => step('next'),
     'month.prev': () => step('prev'),
     // A focused button (a projected occurrence, series-occurrences D6) keeps its own Enter.
@@ -233,40 +242,24 @@ export function MonthView({ date }: { date?: string }) {
   useEffect(() => {
     if (!selectedId) return
     const d = viewedMap.get(selectedId)?.due?.date
+    if (spanIds.has(selectedId)) return
     const entries = d ? cellEntries(cells.get(d) ?? [], deadlines.get(d) ?? [], projected.get(d), d, zone) : []
     if (d && entries.length > CELL_ROWS && !visibleRows(entries, CELL_ROWS).shown.some((e) => e.kind === 'task' && e.task.id === selectedId)) setExpanded(d)
-  }, [selectedId, viewedMap, cells, deadlines, projected, zone])
+  }, [selectedId, viewedMap, cells, deadlines, projected, zone, spanIds])
 
   const title = monthName(month, 'long', true)
   const weekdays = grid[0].map((d) => formatDateParts(d, { weekday: narrow ? 'narrow' : 'short' }))
 
-  const row = (task: Task, compact: boolean) => {
-    const v = viewedMap.get(task.id)
-    const canMove = editable(task)
-    const selected = selectedId === task.id
-    const hue = chrome.color.hueOf(task)
-    const onDeadline = !!v?.due && task.deadline === v.due.date
-    return (
-      <button key={task.id} type="button" tabIndex={-1} data-month-task={task.id} data-hue={hue} aria-pressed={selected}
-        onPointerDown={canMove ? (e) => {
-          if (e.button !== 0) return
-          beginDrag(e, { label: task.title, onDrop: (key) => { if (key.startsWith('day:')) dropOn(task.id, key.slice(4)) } })
-        } : undefined}
-        onClick={(e) => { e.stopPropagation(); setSelectedId(task.id); if (v?.due) setFocused(v.due.date) }}
-        onDoubleClick={() => setPanelTaskId(task.id)}
-        className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${task.completed_at || (v?.due && v.due.date < today) ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canMove ? 'cursor-grab' : ''}`}>
-        {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
-        <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? t('priority {n}', { n: task.priority }) : '', onDeadline ? deadlineMark(task, v!.due!.date) : '', canEdit(task) ? '' : t('read-only')].filter(Boolean).join(', ')}</span>
-        {v?.due?.time && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(v.due.time)}</span>}
-        <span aria-hidden className={`min-w-0 flex-1 truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
-        {task.priority < 4 && <span aria-hidden className="shrink-0 text-hint font-semibold" data-priority={task.priority}>P{task.priority}</span>}
-        {onDeadline && <DeadlineDiamond past={v!.due!.date < today} />}
-      </button>
-    )
-  }
+  const row = (task: Task, compact: boolean) => (
+    <MonthRow key={task.id} task={task} v={viewedMap.get(task.id)} compact={compact} today={today} selected={selectedId === task.id} hue={chrome.color.hueOf(task)}
+      canMove={editable(task)} readOnly={!canEdit(task)} extend={!narrow} onDrop={dropOn} onOpen={setPanelTaskId}
+      onSelect={(id, d) => { setSelectedId(id); if (d) setFocused(d) }} />
+  )
 
   const deadlineRow = (task: Task, d: string) => <DeadlineMarker key={`deadline:${task.id}`} task={task} date={d} today={today} variant="row" onOpen={(id) => setPanelTaskId(id)} />
-  const focusedTasks = cells.get(focused) ?? []
+  // The focused day's list on a phone: the spans covering it first, with their range (multi-day-tasks D8).
+  const spansOn = (d: string) => spans.flatMap((x) => (x.kind === 'task' && spanCovers(x.span, d) ? [rawMap.get(x.id) ?? x.task] : []))
+  const focusedTasks = [...spansOn(focused), ...(cells.get(focused) ?? [])]
   const focusedDeadlines = deadlines.get(focused) ?? []
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="month">
@@ -280,16 +273,23 @@ export function MonthView({ date }: { date?: string }) {
         <div role="row" className="grid grid-cols-7 border-b border-default">
           {weekdays.map((w, i) => <div key={i} role="columnheader" className="px-1 py-1 text-center text-hint font-medium text-muted">{w}</div>)}
         </div>
-        {grid.map((week) => (
-          <div key={week[0]} role="row" className="grid grid-cols-7">
+        {grid.map((week) => {
+          // The week row's span bars (multi-day-tasks D3), above the cells' rows; on a phone the cells count them instead.
+          const weekOpen = !!expanded && week.includes(expanded)
+          const band = narrow ? null : bandLayout(week, spans, weekOpen ? Infinity : CELL_ROWS)
+          const lanes = band?.lanes ?? 0
+          return (
+          <div key={week[0]} role="row" className="relative grid grid-cols-7">
             {week.map((d) => {
               const list = cells.get(d) ?? []
               const dayProjected = projected.get(d) ?? NO_PROJECTIONS
-              const entries = cellEntries(list, deadlines.get(d) ?? [], dayProjected, d, zone)
+              const entries = cellEntries(list, deadlines.get(d) ?? [], dayProjected.filter((p) => !p.spanFirst), d, zone)
+              const daySpans = narrow ? spans.filter((x) => x.kind === 'task' && spanCovers(x.span, d)).length : 0
               const outside = d.slice(0, 7) !== month
               const load = dayLoad(shownViewed, d, prefs.dayLength, meetings?.get(d)?.minutes ?? 0, slotCapacity(slotViews.get(d)), dayProjected)
               const open = expanded === d
-              const { shown, hidden } = open ? { shown: entries, hidden: 0 } : visibleRows(entries, CELL_ROWS)
+              const rows = open ? { shown: entries, hidden: 0 } : visibleRows(entries, Math.max(0, CELL_ROWS - lanes))
+              const shown = rows.shown, hidden = rows.hidden + (open ? 0 : band?.hiddenOn.get(d) ?? 0)
               const isFocused = d === focused
               return (
                 <div key={d} role="gridcell" tabIndex={isFocused ? 0 : -1} data-month-day={d} data-drop-target={`day:${d}`}
@@ -300,7 +300,7 @@ export function MonthView({ date }: { date?: string }) {
                   onFocus={(e) => { if (e.target === e.currentTarget) setFocused(d) }}
                   className={`relative min-w-0 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${narrow ? 'min-h-14' : 'min-h-28'} ${outside ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : 'pointer-fine:hover:bg-hover'}`}>
                   {/* Named by its content (WCAG 2.5.3 Label in Name): the date and counts first, then the tasks' own names. */}
-                  <span className="sr-only">{[d, list.length ? t('{n, plural, one {# task} other {# tasks}}', { n: list.length }) : '', capacityState(load)].filter(Boolean).join(', ')}</span>
+                  <span className="sr-only">{[d, list.length + daySpans ? t('{n, plural, one {# task} other {# tasks}}', { n: list.length + daySpans }) : '', capacityState(load)].filter(Boolean).join(', ')}</span>
                   <div aria-hidden className="mb-0.5 flex items-center justify-between gap-1">
                     <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-meta tabular-nums ${d === today ? 'bg-accent font-semibold text-on-accent' : ''}`}>{Number(d.slice(8))}</span>
                     {!narrow && load.planned > 0 && (
@@ -308,9 +308,10 @@ export function MonthView({ date }: { date?: string }) {
                     )}
                   </div>
                   {narrow ? (
-                    list.length > 0 && <span aria-hidden data-month-count className="block text-center text-meta font-medium text-default">{list.length}</span>
+                    list.length + daySpans > 0 && <span aria-hidden data-month-count className="block text-center text-meta font-medium text-default">{list.length + daySpans}</span>
                   ) : (
                     <div className="space-y-0.5">
+                      {lanes > 0 && <div aria-hidden data-span-spacer style={{ height: lanes * 26 }} />}
                       {shown.map((e) => (e.kind === 'task' ? row(e.task, false) : e.kind === 'projected' ? <ProjectedItem key={e.projection.id} p={e.projection} hue={projectionHue(e.projection)} variant="row" className="px-1" onDrag={dayDrag(e.projection)} /> : deadlineRow(e.task, d)))}
                       {hidden > 0 && (
                         <button type="button" tabIndex={-1} data-month-more={hidden} aria-expanded={false}
@@ -328,8 +329,11 @@ export function MonthView({ date }: { date?: string }) {
                 </div>
               )
             })}
+            {lanes > 0 && <MonthWeekBand days={week} spans={spans} today={today} maxLanes={weekOpen ? Infinity : CELL_ROWS} selectedId={selectedId} hueOf={chrome.color.hueOf} projectionHue={projectionHue}
+              onSelect={setSelectedId} onOpen={setPanelTaskId} stored={(id) => rawMap.get(id)} />}
           </div>
-        ))}
+          )
+        })}
       </div>
       {narrow && <MonthDayList focused={focused} empty={focusedTasks.length === 0 && focusedDeadlines.length === 0 && !projected.get(focused)?.length} onAdd={() => chrome.add.add({ date: focused })}>
         {focusedTasks.map((task) => row(task, false))}{focusedDeadlines.map((task) => deadlineRow(task, focused))}{(projected.get(focused) ?? []).map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue(p)} variant="large" />)}

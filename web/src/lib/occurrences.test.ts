@@ -36,6 +36,20 @@ describe('shared occurrence vectors', () => {
   })
 })
 
+describe('projected spans (multi-day-tasks D6)', () => {
+  it('a weekly two-day span projects two-day spans ending on each projected date', () => {
+    const series = task({ id: 's', recurrence: 'every monday', start: '2026-11-08', span: true, due: { date: '2026-11-09' } })
+    const out = occurrencesInRange(series, [series], '2026-11-01', '2026-10-26', '2026-12-06')
+    expect(out.projections.map((p) => [p.spanFirst, p.date])).toEqual([
+      ['2026-11-15', '2026-11-16'], ['2026-11-22', '2026-11-23'], ['2026-11-29', '2026-11-30'], ['2026-12-06', '2026-12-07'],
+    ])
+  })
+  it('a series that is not a span projects no first day', () => {
+    const series = task({ id: 's', recurrence: 'every monday', start: '2026-11-08', due: { date: '2026-11-09' } })
+    expect(occurrencesInRange(series, [series], '2026-11-01', '2026-10-26', '2026-11-22').projections.every((p) => p.spanFirst === undefined)).toBe(true)
+  })
+})
+
 describe('occurrencesInRange', () => {
   it('carries the series time, zone and fields, and counts its completed records', () => {
     const series = task({ id: 's', recurrence: 'every day for 5 times', due: { date: '2026-10-12', time: '18:00' }, estimate_minutes: 60 })

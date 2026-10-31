@@ -30,8 +30,10 @@ export interface PlanDayData {
 }
 
 /** A task in the Plan: the one row in its compact shape (rows-v2 D8), placed on the column's day. */
-export function PlanTaskRow({ task, date, time, today, selected, canEdit, project, hue, large, onPointerDown, onSelect, onOpen }: {
+export function PlanTaskRow({ task, date, time, today, selected, canEdit, project, hue, large, position, onPointerDown, onSelect, onOpen }: {
   task: Task
+  /** The column's place in a span the row belongs to (multi-day-tasks D3). */
+  position?: { n: number; of: number }
   date: string
   time?: string
   today: string
@@ -47,7 +49,7 @@ export function PlanTaskRow({ task, date, time, today, selected, canEdit, projec
   onOpen: () => void
 }) {
   return (
-    <TaskRow shape="compact" task={task} date={date} time={time} today={today} selected={selected} readOnly={!canEdit} project={project} hue={hue} large={large}
+    <TaskRow shape="compact" task={task} date={date} time={time} today={today} selected={selected} readOnly={!canEdit} project={project} hue={hue} large={large} position={position}
       onPointerDown={task.completed_at ? undefined : onPointerDown} onSelect={onSelect} onOpen={onOpen} attrs={{ 'data-plan-task': task.id }} />
   )
 }
@@ -57,7 +59,7 @@ export function PlanTaskRow({ task, date, time, today, selected, canEdit, projec
  * opens the occurrence panel (series-occurrences D6); its menu and a drag to another
  * day act on this occurrence alone (series-exceptions D4).
  */
-export function ProjectedRow({ projection, large }: { projection: Projection; large?: boolean }) {
+export function ProjectedRow({ projection, large, position }: { projection: Projection; large?: boolean; position?: { n: number; of: number } }) {
   const note = cappedNote(projection)
   const { handlers, menu } = useProjectionMenu(projection, dayDrag(projection))
   const row = (
@@ -65,7 +67,8 @@ export function ProjectedRow({ projection, large }: { projection: Projection; la
       className={`flex w-full min-w-0 items-center gap-x-1 rounded-chip border border-dashed border-default px-1 text-left text-faint pointer-fine:hover:bg-hover ${large ? 'min-h-11 py-1 text-body' : 'min-h-6 flex-wrap py-0.5 text-meta'}`}>
       <span className="sr-only">{[projection.title || t('Untitled'), t('projected'), formatDate(projection.date, 'full'), projection.time ? formatTime(projection.time) : '', projection.estimate_minutes ? formatMinutes(projection.estimate_minutes) : ''].filter(Boolean).join(', ')}</span>
       <span aria-hidden className="inline-flex shrink-0"><Icon name="repeat" size="xs" /></span>
-      {projection.time && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(projection.time)}</span>}
+      {projection.time && !position && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(projection.time)}</span>}
+      {position && <span aria-hidden data-span-position className="shrink-0 text-hint tabular-nums">{t('Day {n} of {m}', { n: position.n, m: position.of })}</span>}
       <span aria-hidden className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{projection.title || t('Untitled')}</span>
       {projection.estimate_minutes ? <span aria-hidden className="shrink-0 text-hint tabular-nums">{formatMinutes(projection.estimate_minutes)}</span> : null}
     </button>
@@ -106,7 +109,8 @@ export function PlanDayRows({ day, today, selectedId, large, canEdit, projectMap
   hueOf?: (task: Task) => HueName
   subMap: Map<string, CalendarSubscription>
   zone?: string
-  onPointerDown: (task: Task, e: React.PointerEvent) => void
+  /** A press on a task row; `date` is the column's day (a span moves by the column distance, multi-day-tasks D3). */
+  onPointerDown: (task: Task, e: React.PointerEvent, date: string) => void
   onSelect: (id: string, date: string) => void
   onOpen: (id: string) => void
 }) {
@@ -115,11 +119,11 @@ export function PlanDayRows({ day, today, selectedId, large, canEdit, projectMap
       {day.allDay.map((ev) => <EventChip key={ev.id} ev={ev} sub={subMap.get(ev.subscriptionId)} zone={zone} />)}
       {day.events.map((b) => <EventRow key={b.id} ev={b.event} start={b.start} end={b.end} sub={subMap.get(b.event.subscriptionId)} zone={zone} />)}
       {day.entries.map((entry) => entry.kind === 'projected'
-        ? <ProjectedRow key={entry.projection.id} projection={entry.projection} large={large} />
+        ? <ProjectedRow key={entry.projection.id} projection={entry.projection} large={large} position={entry.spanDay} />
         : (
           <PlanTaskRow key={entry.task.id} task={entry.task} date={day.date} time={entry.time} today={today} large={large}
             selected={selectedId === entry.task.id} canEdit={canEdit(entry.task)} project={entry.task.project_id ? projectMap.get(entry.task.project_id) : undefined} hue={hueOf?.(entry.task)}
-            onPointerDown={(e) => onPointerDown(entry.task, e)} onSelect={() => onSelect(entry.task.id, day.date)} onOpen={() => onOpen(entry.task.id)} />
+            position={entry.spanDay} onPointerDown={(e) => onPointerDown(entry.task, e, day.date)} onSelect={() => onSelect(entry.task.id, day.date)} onOpen={() => onOpen(entry.task.id)} />
         ))}
       {day.deadlines?.map((task) => (
         <div key={`deadline:${task.id}`} className={large ? 'flex min-h-11 items-center' : undefined}>

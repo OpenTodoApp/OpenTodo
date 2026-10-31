@@ -15,6 +15,7 @@ import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcu
 import { estimateFocus } from '../signals'
 import { addTaskToSlot, isSlotKey, moveSlot, resizeSlot, slotAt, type SlotView } from '../../lib/slots'
 import { runSlot } from './slotActions'
+import { extendToSpanPatch, moveSpanPatch, resizeSpanPatch, spanOf } from '../../lib/span'
 import { completeWithUndo } from '../undoable'
 import type { Placement } from './grid'
 
@@ -67,6 +68,22 @@ export interface CalendarKeyContext {
   replan?: { apply: () => void; cancel: () => void } | null
   /** `q`: the add dialog for the focused day (calendar-clarity D2). */
   onQuickAdd?: (date: string) => void
+  /** Whether the user may move a task (multi-day-tasks D4: a viewer's spans do not move). */
+  canEdit?: (task: Task) => boolean
+}
+
+/**
+ * The span keys of a selected task (multi-day-tasks D4), shared by Day, Week and Month:
+ * `move` shifts the whole span, `last` and `first` one end; `last` on a date-only task
+ * that is not a span makes it one, ending a day later. Null when the key does nothing.
+ */
+export function spanKeyPatch(task: Task, key: 'move' | 'first' | 'last', days: number): Partial<Task> | null {
+  const span = spanOf(task)
+  const oneDay = !!task.span && !!task.start && task.start === task.due?.date
+  if (key === 'move') return span ? moveSpanPatch(task, days) : null
+  if (span || oneDay) return resizeSpanPatch(task, key, days)
+  if (key === 'last' && days > 0 && task.due) return extendToSpanPatch(task, addDaysISO(task.due.date, days))
+  return null
 }
 
 /** The focused day of Day and Week (calendar-clarity D2): the selected item's day, else today when shown, else the first day. */
@@ -109,6 +126,13 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     move(task, task.due, e)
   }
   const unlessPlacing = (fn: () => boolean | void) => () => (placing ? false : fn())
+  const editable = (tk: Task) => !tk.completed_at && (c.canEdit?.(tk) ?? true)
+  const spanKey = (e: KeyboardEvent, end: 'first' | 'last'): boolean | void => {
+    if (placing || !task || !editable(task)) return false
+    const days = e.key === 'ArrowLeft' ? -1 : 1
+    if (!spanKeyPatch(task, end, days)) return false
+    edit(task.id, (x) => spanKeyPatch(x, end, days))
+  }
   const replan = c.replan
   useShortcutScope('calendar', replan ? {
     'calendar.escape': (e) => {
@@ -144,6 +168,8 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     'calendar.nudge': (e) => {
       const dir = e.key === 'ArrowUp' ? -1 : 1
       if (placing) { ghost({ ...placing, start: clamp(placing.start + dir * SLOT_MINUTES, 0, LAST_SLOT) }); return }
+      // A span is whole days, never a block (multi-day-tasks D3).
+      if (task && spanOf(task)) return
       return arrows((tk) => {
         edit(tk.id, (x) => x.due ? { due: nudgeDue(x.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(x, x.due.date, today, c.nowMinutes, c.prefs) }) } : null)
       })(e)
@@ -152,10 +178,15 @@ export function useCalendarKeys(c: CalendarKeyContext) {
       const days = e.key === 'ArrowLeft' ? -1 : 1
       if (placing) { ghost({ ...placing, date: addDaysISO(placing.date, days) }); return }
       if (slotKeys(e)) return
+      // A span moves whole: start and due by the same day (multi-day-tasks D4).
+      if (task && spanOf(task)) { if (editable(task)) edit(task.id, (x) => spanKeyPatch(x, 'move', days), (_, patch) => patch.due && c.follow(patch.due.date)); return }
       return arrows((tk) => {
         edit(tk.id, (x) => (x.due ? { due: nudgeDue(x.due, { days }) } : null), (_, patch) => patch.due && c.follow(patch.due.date))
       })(e)
     },
+    // Shift+Left/Right move a span's last day, Alt+Shift+Left/Right its first (multi-day-tasks D4).
+    'calendar.span-end': (e) => spanKey(e, 'last'),
+    'calendar.span-start': (e) => spanKey(e, 'first'),
     // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
     'calendar.estimate': arrows((tk, _due, e) => edit(tk.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
     // Alt+Shift+Up starts earlier, Alt+Shift+Down later: the upper edge follows the arrow, the end stays (GitHub issue 355).
