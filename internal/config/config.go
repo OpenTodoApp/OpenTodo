@@ -87,6 +87,9 @@ type Config struct {
 	// Google is the optional Google OAuth client of calendar sync (OpenSpec
 	// change calendar-two-way, see google.go).
 	Google GoogleConfig
+	// Microsoft is the optional Microsoft app registration of calendar sync
+	// (OpenSpec change outlook-calendar-sync, see microsoft.go).
+	Microsoft MicrosoftConfig
 	// Demo turns the server into a public demo instance (OPENTODO_DEMO=true;
 	// OpenSpec `demo-mode`): a private, short-lived sandbox per visitor
 	// (`demo-sandboxes`), a nightly reset, sign-up and every abusable feature
@@ -202,6 +205,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if err := c.loadGoogle(); err != nil {
+		return c, err
+	}
+	if err := c.loadMicrosoft(); err != nil {
 		return c, err
 	}
 	if raw := strings.TrimSpace(os.Getenv("OPENTODO_TRUSTED_PROXIES")); raw != "" {

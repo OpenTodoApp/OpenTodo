@@ -211,7 +211,8 @@ func relayEncrypt(ctx context.Context, c Caller, name string, cs ChangeSet) erro
 			var plain string
 			switch t := v.(type) {
 			case string:
-				if e2ee.IsEnvelope(t) {
+				if e2ee.IsEnvelope(t) || t == "" {
+					// An empty value carries no content (a timer's empty note).
 					continue
 				}
 				plain = t

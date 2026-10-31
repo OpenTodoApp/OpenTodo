@@ -38,14 +38,20 @@ var contentArgs = map[string]struct {
 	fields []string
 	create bool
 }{
-	"create_tasks":    {list: "items", entity: "task", fields: []string{"title", "description", "location"}, create: true},
-	"update_tasks":    {list: "updates", entity: "task", fields: []string{"title", "description", "location"}},
-	"create_project":  {entity: "project", fields: []string{"name"}, create: true},
-	"update_project":  {entity: "project", fields: []string{"name"}},
-	"create_label":    {entity: "label", fields: []string{"name"}, create: true},
-	"add_comment":     {entity: "comment", fields: []string{"body"}, create: true},
-	"create_sections": {list: "items", entity: "section", fields: []string{"name"}, create: true},
-	"update_sections": {list: "updates", entity: "section", fields: []string{"name"}},
+	"create_tasks":   {list: "items", entity: "task", fields: []string{"title", "description", "location"}, create: true},
+	"update_tasks":   {list: "updates", entity: "task", fields: []string{"title", "description", "location"}},
+	"create_project": {entity: "project", fields: []string{"name"}, create: true},
+	"update_project": {entity: "project", fields: []string{"name", "description"}},
+	// agent-tools-complete: label names and time entry notes; a project note's
+	// append_description becomes a description first (projectAppend).
+	"update_labels":       {list: "updates", entity: "label", fields: []string{"name"}},
+	"start_timer":         {entity: "time_entry", fields: []string{"note"}, create: true},
+	"log_time":            {list: "items", entity: "time_entry", fields: []string{"note"}, create: true},
+	"update_time_entries": {list: "updates", entity: "time_entry", fields: []string{"note"}},
+	"create_label":        {entity: "label", fields: []string{"name"}, create: true},
+	"add_comment":         {entity: "comment", fields: []string{"body"}, create: true},
+	"create_sections":     {list: "items", entity: "section", fields: []string{"name"}, create: true},
+	"update_sections":     {list: "updates", entity: "section", fields: []string{"name"}},
 	// Notes (notes-overview D13); append_to_note is sealed by encryptAppend,
 	// for the field appends.<append_id> of the note or the task.
 	"create_note": {entity: "note", fields: []string{"title", "description"}, create: true},
@@ -87,6 +93,9 @@ func (d *decrypter) before(ctx context.Context, message []byte) ([]byte, string,
 		return message, method, "", false, nil
 	}
 	tool, _ := params["name"].(string)
+	if tool == "update_project" {
+		d.projectAppend(ctx, params)
+	}
 	if err := d.encryptCall(params); err != nil {
 		return nil, "", "", false, err
 	}

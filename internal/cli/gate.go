@@ -56,7 +56,7 @@ func (g *writeGate) checkScope(ctx context.Context, c *client, method, path stri
 	case "agent":
 		if !agentRouteAllowed(method, path, body) {
 			return &exitError{code: ExitNotPermitted, jsonCode: "insufficient_scope",
-				msg: fmt.Sprintf("an agent token cannot %s %s: it may only create and edit tasks, projects, labels and comments; nothing was sent", method, "/api/v1"+path)}
+				msg: fmt.Sprintf("an agent token cannot %s %s: it may only create and edit tasks, projects, sections, labels, comments, reminders and time entries; nothing was sent", method, "/api/v1"+path)}
 		}
 	}
 	return nil
@@ -81,7 +81,18 @@ func validIdempotencyKey(k string) bool {
 // agentTaskFields are the task fields an agent token may PATCH.
 var agentTaskFields = map[string]bool{"title": true, "description": true, "priority": true, "labels": true, "estimate_minutes": true,
 	"recurrence": true, "due": true, "project_id": true, "section_id": true, "completed_at": true, "deleted_at": true, "origin": true,
-	"deadline": true, "start": true, "evening": true, "span": true, "day_part": true, "energy": true, "blocked_by": true, "location": true}
+	"deadline": true, "start": true, "evening": true, "span": true, "day_part": true, "energy": true, "blocked_by": true, "location": true,
+	"fields": true}
+
+// agentPatchFields are the fields an agent token may PATCH on the other
+// collections (OpenSpec change agent-tools-complete, design D7).
+var agentPatchFields = map[string]map[string]bool{
+	"projects":     {"name": true, "color": true, "icon": true, "parent_id": true, "description": true},
+	"sections":     {"name": true, "color": true, "icon": true, "position": true},
+	"labels":       {"name": true, "color": true, "position": true},
+	"reminders":    {"offset_minutes": true, "fire_at": true},
+	"time-entries": {"startedAt": true, "endedAt": true, "note": true},
+}
 
 // agentRouteAllowed mirrors the server's agent content routes.
 func agentRouteAllowed(method, path string, body any) bool {
@@ -89,19 +100,30 @@ func agentRouteAllowed(method, path string, body any) bool {
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 	switch {
 	case method == http.MethodPost && len(parts) == 1:
-		return parts[0] == "tasks" || parts[0] == "projects" || parts[0] == "labels"
+		switch parts[0] {
+		case "tasks", "projects", "labels", "sections", "reminders", "time-entries":
+			return true
+		}
+		return false
+	case method == http.MethodPost && len(parts) == 2:
+		return parts[0] == "time-entries" && parts[1] == "stop"
 	case method == http.MethodPost && len(parts) == 3:
 		return parts[0] == "tasks" && parts[2] == "comments"
 	case method == http.MethodDelete && len(parts) == 2:
-		return parts[0] == "tasks"
+		return parts[0] == "tasks" || parts[0] == "reminders"
 	case method == http.MethodPatch && len(parts) == 2:
 		fields := bodyFields(body)
-		allowed := map[string]bool{"name": true, "color": true}
+		allowed := agentPatchFields[parts[0]]
 		switch parts[0] {
 		case "tasks":
 			allowed = agentTaskFields
 		case "projects":
-		default:
+			// Archiving goes on its own (the server answers 400 otherwise).
+			if _, ok := fields["archived"]; ok {
+				return len(fields) == 1
+			}
+		}
+		if allowed == nil {
 			return false
 		}
 		for f, v := range fields {

@@ -225,7 +225,7 @@ A state-changing request authenticated by a session cookie SHALL be refused when
 - **THEN** it is refused with 403 `bad_origin`
 
 ### Requirement: Agent content routes
-An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels`, `POST /api/v1/tasks/{id}/comments`, `PATCH /api/v1/tasks/{id}` (not `assignee_id`, `parent_id`, `position` or a restore), `PATCH /api/v1/projects/{id}` (`name`, `color`) and `DELETE /api/v1/tasks/{id}` (own creations), while both assistant switches are on, through the agent tool registry with MCP's limits, audit, E2EE refusal and mention suppression. On the task routes the accepted fields SHALL be `title`, `description`, `project_id`, `section_id`, `parent_id` (create only), `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`, `fields`, `origin`, `deadline`, `start`, `evening`, `blocked_by` and `location`, plus `completed_at` and `deleted_at` on PATCH, each validated by the registry exactly as the sync path validates it and answered with the registry's codes (400 `invalid_input` naming the field, 404 `not_found`, 403 `forbidden`, 409 `encryption_enabled`). Other write routes and fields SHALL answer 403 `insufficient_scope`. A task in a project kept away from AI assistants (OpenSpec `agent-project-exclusion`) SHALL be `not_found` on these routes, and a create into such a project SHALL be refused the same way.
+An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels|sections|reminders`, `POST /api/v1/tasks/{id}/comments`, `PATCH /api/v1/tasks/{id}` (not `assignee_id`, `parent_id`, `position` or a restore), `PATCH /api/v1/projects/{id}` (`name`, `color`, `icon`, `parent_id`, `description`, or `archived` alone), `PATCH /api/v1/sections/{id}` (`name`, `color`, `icon`, `position`), `PATCH /api/v1/labels/{id}` (`name`, `color`, `position`), `PATCH /api/v1/reminders/{id}` (`offset_minutes`, `fire_at` of an absolute reminder), `DELETE /api/v1/reminders/{id}`, `POST /api/v1/time-entries`, `POST /api/v1/time-entries/stop`, `PATCH /api/v1/time-entries/{id}` (entries the same token created) and `DELETE /api/v1/tasks/{id}` (own creations), while both assistant switches are on, through the agent tool registry with MCP's limits, audit, E2EE refusal and mention suppression. On the task routes the accepted fields SHALL be `title`, `description`, `project_id`, `section_id`, `parent_id` (create only), `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`, `fields`, `origin`, `deadline`, `start`, `evening`, `blocked_by` and `location`, plus `completed_at` and `deleted_at` on PATCH, each validated by the registry exactly as the sync path validates it and answered with the registry's codes (400 `invalid_input` naming the field, 404 `not_found`, 403 `forbidden`, 409 `encryption_enabled`). A project PATCH carrying `archived` together with another field SHALL be 400 `invalid_input`. `POST /api/v1/time-entries` with `taskId` alone SHALL start a timer and SHALL answer 409 `timer_running` while another entry of the user runs, unless the body carries `stopRunning: true`. Other write routes and fields, including `DELETE` of sections, labels, projects and time entries, SHALL answer 403 `insufficient_scope`. A task in a project kept away from AI assistants (OpenSpec `agent-project-exclusion`) SHALL be `not_found` on these routes, as SHALL its sections, reminders and time entries, and a create into such a project SHALL be refused the same way.
 
 #### Scenario: Agent creates a task through REST
 - **WHEN** both switches are on and an `agent` token POSTs `{"title":"Water plants"}` to `/api/v1/tasks`
@@ -248,7 +248,7 @@ An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels`, `POST
 - **THEN** the response is 403 `writes_disabled_by_user` and nothing is created
 
 #### Scenario: Forbidden field
-- **WHEN** an `agent` token PATCHes a project with `{"archived": true}` or a task with `{"assignee_id": "…"}`
+- **WHEN** an `agent` token PATCHes a project with `{"workspace_id": "…"}` or a task with `{"assignee_id": "…"}`
 - **THEN** the response is 403 `insufficient_scope` and nothing changes
 
 #### Scenario: Limits shared with MCP
@@ -270,6 +270,38 @@ An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels`, `POST
 #### Scenario: Project kept away from assistants
 - **WHEN** an `agent` token PATCHes a task of a project whose owner switched on "Keep away from AI assistants"
 - **THEN** the response is 404 `not_found`, indistinguishable from a deleted task, and nothing changes
+
+#### Scenario: Archive a project through REST
+- **WHEN** both switches are on and an `agent` token of the project's admin PATCHes `/api/v1/projects/{id}` with `{"archived": true}`
+- **THEN** the response is 200, the project and its sub-projects are archived on every device after sync, and one `agent.write` event for `archive_projects` is recorded
+
+#### Scenario: Archive mixed with a rename
+- **WHEN** an `agent` token PATCHes a project with `{"archived": true, "name": "Old"}`
+- **THEN** the response is 400 `invalid_input` saying archiving goes on its own, and nothing changes
+
+#### Scenario: Field values through REST
+- **WHEN** an `agent` token PATCHes a task with `{"fields": {"<cost-id>": 120}}` where the task's project defines Cost as a number
+- **THEN** the response is 200 with `"fields": {"<cost-id>": 120}` and one operation for that field is written with device `agent:<token-id>`
+
+#### Scenario: Section and project note through REST
+- **WHEN** an `agent` token POSTs `{"name":"Doing","project_id":"<p>"}` to `/api/v1/sections` and PATCHes `/api/v1/projects/<p>` with `{"description":"Budget approved."}`
+- **THEN** both answer with the usual shapes (201 and 200), the section and the note reach every device after sync, and two `agent.write` events are recorded
+
+#### Scenario: Reminder through REST
+- **WHEN** an `agent` token POSTs `{"task_id":"<id>","kind":"relative","offset_minutes":0}` to `/api/v1/reminders` for a task due today at 10:00
+- **THEN** the response is 201 with `fire_at` at 10:00 in the user's time zone
+
+#### Scenario: Timer already running through REST
+- **WHEN** the person's entry runs and an `agent` token POSTs `{"taskId":"<id>"}` to `/api/v1/time-entries`
+- **THEN** the response is 409 `timer_running` and the person's entry keeps running; the same body with `"stopRunning": true` answers 201
+
+#### Scenario: Deleting stays refused
+- **WHEN** an `agent` token sends `DELETE /api/v1/time-entries/{id}`, `DELETE /api/v1/labels/{id}` or `DELETE /api/v1/sections/{id}`
+- **THEN** the response is 403 `insufficient_scope` and nothing changes
+
+#### Scenario: Reminder on a project kept away
+- **WHEN** an `agent` token POSTs a reminder for a task of a project kept away from AI assistants
+- **THEN** the response is 404 `not_found` and no reminder is created
 
 ### Requirement: Credential introspection
 `GET /api/v1/me` SHALL include `auth: {method, scope}` where `method` is `session` or `token` and `scope` is `full`, `read` or `agent`, plus `token_id` and `token_name` for tokens and, for `agent` tokens, `writes_allowed` and (when false) `writes_denied` naming the switch that is off. The field is additive and SHALL never include the secret. It is server state and needs a connection.

@@ -37,10 +37,13 @@ func (w *Worker) Cycle(ctx context.Context, c *Connection) (RunCounts, error) {
 	}
 	cctx, cancel := context.WithTimeout(ctx, CycleTimeout)
 	defer cancel()
-	r := &cycle{w: w, c: c, target: dirURL(c.TargetURL)}
+	r := &cycle{w: w, c: c, target: c.TargetURL}
 	err = w.prepare(cctx, r)
 	if err == nil {
 		err = r.run(cctx)
+	}
+	if err == nil {
+		err = r.tr.commit(cctx)
 	}
 	if err != nil {
 		return r.counts, w.fail(ctx, r, err)
@@ -56,11 +59,14 @@ func (w *Worker) prepare(ctx context.Context, r *cycle) error {
 	if w.Tasks == nil {
 		return errors.New("calendar sync: no task source")
 	}
-	dav, err := w.Client(ctx, r.c)
+	tr, err := w.transport(ctx, r.c)
 	if err != nil {
 		return err
 	}
-	r.dav = dav
+	if _, ok := tr.(davTransport); ok {
+		r.target = dirURL(r.c.TargetURL)
+	}
+	r.tr = tr
 	return nil
 }
 
@@ -121,6 +127,17 @@ func (w *Worker) DiscoverGoogle(ctx context.Context, access string) (*Discovery,
 // Rediscover runs discovery again for a stored connection (Sync now, a new
 // password, a Google reconnect) and records what it found.
 func (w *Worker) Rediscover(ctx context.Context, c *Connection) error {
+	if c.Provider == ProviderMicrosoft {
+		g, err := w.graphFor(ctx, c)
+		if err != nil {
+			return err
+		}
+		acct, err := g.Discover(ctx)
+		if err != nil {
+			return err
+		}
+		return w.Store.SaveDiscovery(ctx, c, "", w.GraphBase, acct.Calendars)
+	}
 	dav, err := w.Client(ctx, c)
 	if err != nil {
 		return err

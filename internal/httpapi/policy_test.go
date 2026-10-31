@@ -212,6 +212,11 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"GET /api/v1/calendar-sync/connections":            "auth demo",
 		"POST /api/v1/calendar-sync/connections/{id}/sync": "auth demo",
 		"DELETE /api/v1/calendar-sync/connections/{id}":    "auth demo",
+		// Microsoft (outlook-calendar-sync D11): the same as Google.
+		"GET /api/v1/settings/calendar-sync/microsoft": "auth owner demo",
+		"PUT /api/v1/settings/calendar-sync/microsoft": "auth owner admin-token demo",
+		"POST /api/v1/calendar-sync/microsoft/start":   "auth fresh demo",
+		"GET /api/v1/calendar-sync/microsoft/callback": "auth session-only demo",
 		// Owner data and restore.
 		"GET /api/v1/backups":                                 "auth owner",
 		"POST /api/v1/backups/restore":                        "auth owner session-only fresh demo",

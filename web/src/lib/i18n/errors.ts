@@ -57,6 +57,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   calendar_sync_disabled: msg('Calendar sync is not enabled on this server.'),
   calendar_unreachable: msg('The calendar server could not be used: {detail}'),
   google_not_configured: msg('The server owner has not set up a Google client for calendar sync.'),
+  microsoft_not_configured: msg('The server owner has not set up a Microsoft client for calendar sync.'),
   managed_by_environment: msg('This is set by environment variables on the server.'),
   no_calendars: msg('This account has no calendar that holds events.'),
   unauthorized_remote: msg('The calendar server refused the username or the app password.'),

@@ -323,8 +323,12 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 
 // notInApp are registry write tools the in-app assistant does not offer: the
 // project and section structure tools of OpenSpec change mcp-projects, whose
-// changes (sections, Favourites) the review screen does not describe yet.
-var notInApp = map[string]bool{"update_project": true, "set_favourite": true, "create_sections": true, "update_sections": true, "reorder_sections": true}
+// changes (sections, Favourites) the review screen does not describe yet, and
+// the tools of OpenSpec change agent-tools-complete (archiving, labels,
+// reminders, time entries), which are for external agents (design D9).
+var notInApp = map[string]bool{"update_project": true, "set_favourite": true, "create_sections": true, "update_sections": true, "reorder_sections": true,
+	"archive_projects": true, "update_labels": true, "add_reminders": true, "update_reminders": true, "remove_reminders": true,
+	"start_timer": true, "stop_timer": true, "log_time": true, "update_time_entries": true}
 
 // runTool runs one call: read tools return their result with the untrusted
 // notice; write tools plan into the draft and never apply. Anything else (an
