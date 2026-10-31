@@ -5847,5 +5847,10 @@
   "Skip this occurrence": "Salta questa occorrenza",
   "That date is not a coming occurrence of this repeating task.": "Questa data non è una prossima occorrenza di questa attività ricorrente.",
   "a repeating task": "un’attività ricorrente",
-  "{date} · one occurrence of a repeating task": "{date} · un’occorrenza di un’attività ricorrente"
+  "{date} · one occurrence of a repeating task": "{date} · un’occorrenza di un’attività ricorrente",
+  "Apply to": "Applica a",
+  "Only future ones": "Solo le future",
+  "Also past ones": "Anche le passate",
+  "Past occurrences take the new title, notes, labels, project and priority; their dates and completions stay.": "Le occorrenze passate prendono il nuovo titolo, note, etichette, progetto e priorità; date e completamenti restano.",
+  "Changed past occurrences too": "Modificate anche le occorrenze passate"
 }

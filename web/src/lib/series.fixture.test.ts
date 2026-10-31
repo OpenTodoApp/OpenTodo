@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { occurrenceId, pieceId } from './ids'
 import { occurrencesInRange } from './occurrences'
+import { hasPast, planPast } from './seriesPast'
 import { planActOn, planCarry, planRepair, type OccurrenceAction } from './seriesPlan'
 import { planEndFrom, planSplit } from './seriesSplit'
 import type { Due, SplitFrom, Task } from './types'
@@ -21,6 +22,7 @@ interface FixtureCase {
   act?: { date: string | null; kind: 'complete' | 'skip' | 'move' | 'edit' | 'split' | 'end_from'; due?: Due; patch?: Record<string, unknown> }
   repair?: boolean
   carry?: Record<string, unknown>
+  carry_past?: Record<string, unknown>
   range?: { from: string; to: string }
   expect: {
     ok?: false
@@ -32,6 +34,8 @@ interface FixtureCase {
     piece?: Record<string, unknown>
     carries?: Record<string, Record<string, unknown>>
     occurrences?: Record<string, string[]>
+    past?: Record<string, Record<string, unknown>>
+    has_past?: boolean
   }
 }
 
@@ -87,6 +91,13 @@ describe('shared series fixture', () => {
         const got = occurrencesInRange(rows.find((t) => t.id === id)!, tasks, c.today, c.range.from, c.range.to).projections.map((p) => p.occurrence)
         expect(got, id).toEqual(dates)
       }
+      return
+    }
+    if (c.carry_past) {
+      // Also past ones (series-all-scope D2): by record date, or by piece id.
+      const out = planPast(target, c.carry_past, tasks)
+      expect(Object.fromEntries(out.map((ch) => [tasks.find((t) => t.id === ch.entityId)?.occurrence_date ?? ch.entityId, ch.patch]))).toEqual(c.expect.past)
+      if (c.expect.has_past !== undefined) expect(hasPast(target, tasks)).toBe(c.expect.has_past)
       return
     }
     if (c.carry) {
