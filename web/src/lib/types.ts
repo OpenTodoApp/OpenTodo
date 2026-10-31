@@ -327,7 +327,7 @@ export interface Note extends NoteFields {
 }
 
 /** A task's origin kind; the list is closed (the server refuses any other). */
-export type OriginKind = 'url' | 'email' | 'issue' | 'import'
+export type OriginKind = 'url' | 'email' | 'issue' | 'import' | 'obsidian'
 
 /**
  * A task's origin (task-origin D1): `url` needs `url`, the other kinds need

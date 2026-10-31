@@ -40,7 +40,7 @@ export function fieldSuggestions(query: string, defs: readonly FieldDef[], limit
   return out
 }
 
-const ORIGIN_KINDS = ['url', 'email', 'issue', 'import']
+const ORIGIN_KINDS = ['url', 'email', 'issue', 'import', 'obsidian']
 
 /**
  * Values to offer after `origin:` (OpenSpec task-origin, design D9): the four

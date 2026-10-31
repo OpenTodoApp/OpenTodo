@@ -104,9 +104,9 @@ text     := word | '"' chars '"'
 | `notes` | tasks with a note: anything but blank space in the task's notes |
 | `no notes` | tasks without a note |
 | `notes: text` | tasks whose note contains the text, ignoring case; the title is not searched (use `search:` for both). Quote several words: `notes: "permit office"`. On an [encrypted account](e2ee.md) the note is read on your device, decrypted |
-| `origin` | tasks that know where they came from: a captured page, an email, an issue or an import (see [Where a task came from](capture.md#where-a-task-came-from)) |
+| `origin` | tasks that know where they came from: a captured page, an email, an issue, an import or an Obsidian note (see [Where a task came from](capture.md#where-a-task-came-from)) |
 | `no origin` | tasks without an origin |
-| `origin: value` | tasks whose origin's provider is the value, ignoring case (`origin: github`, `origin: linear`, `origin: todoist`), or, for an origin without a provider, whose kind is (`origin: url` for captured pages, `origin: email` for mail); quotes allowed |
+| `origin: value` | tasks whose origin's provider is the value, ignoring case (`origin: github`, `origin: linear`, `origin: todoist`), or, for an origin without a provider, whose kind is (`origin: url` for captured pages, `origin: email` for mail, `origin: obsidian` for tasks from an Obsidian note); quotes allowed |
 | `energy` | tasks with an [energy](method/set-up.md#energy-levels) set (Deep, Medium or Low) |
 | `no energy` | tasks without one |
 | `energy: value` | tasks whose energy is `deep`, `medium` or `low`, ignoring case; quotes allowed. Any other value is an error. The terms work whether or not **Energy levels** is on |

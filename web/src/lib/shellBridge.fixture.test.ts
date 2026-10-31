@@ -12,6 +12,8 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { forgetShellData, type OpenTodoShell } from './shell'
 import { shellUrlAction } from './shellActions'
 import { shellReminders, shellWidget } from './shellPublish'
+import { openOrigin } from './taskOrigin'
+import vectors from '../../../internal/origin/testdata/origin_vectors.json'
 import type { Reminder, Task } from './types'
 
 // Vitest runs in web/ (happy-dom's URL cannot resolve file: addresses).
@@ -115,6 +117,29 @@ function actions() {
   }
 }
 
+/**
+ * The Obsidian note links of obsidian-origin: the exact string the web app hands
+ * `openExternal` for a note origin, and the shapes of the shared origin vectors
+ * the shells must accept or refuse (internal/origin/testdata/origin_vectors.json).
+ */
+function externalLinks() {
+  const handed: string[] = []
+  window.opentodoShell = {
+    bridge: 1, platform: 'android', app: '0.20.0', capabilities: ['links', 'obsidian-links'],
+    openExternal: (url) => void handed.push(url),
+  }
+  openOrigin({ kind: 'obsidian', id: 'Daily/2026-10-29.md', url: 'obsidian://open?vault=Notes&file=Daily%2F2026-10-29' })
+  delete window.opentodoShell
+  const cases = (vectors as unknown as { obsidian: { origin: { url?: string }; link: boolean | null }[] }).obsidian
+  const urls = (want: boolean) => [...new Set(cases.filter((c) => c.link === want && c.origin.url).map((c) => c.origin.url as string))]
+  return {
+    description: 'Obsidian note links (obsidian-origin): what the web app hands openExternal for a note origin, and the links the shell must hand to the system (accepted) or refuse (refused) when it lists obsidian-links. Other schemes keep the http(s), mailto and tel rule.',
+    handed,
+    accepted: urls(true),
+    refused: [...urls(false), 'javascript:alert(1)', 'file:///etc/passwd', 'obsidian://open?vault=Notes&file=a&vault=Other'],
+  }
+}
+
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
 afterEach(() => {
@@ -123,7 +148,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })

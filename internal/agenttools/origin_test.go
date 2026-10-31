@@ -112,3 +112,34 @@ func TestOriginInToolResults(t *testing.T) {
 		t.Fatalf("encrypted origin write: %v", err)
 	}
 }
+
+// TestObsidianOriginInTools covers obsidian-origin: an agent sets an Obsidian
+// note origin through the one validation, another Obsidian action is refused,
+// and the note's path is returned inside the untrusted marking.
+func TestObsidianOriginInTools(t *testing.T) {
+	f := newFixture(t)
+	f.task("u1", "t1", "Call the plumber", nil)
+	c := agent("u1")
+	note := map[string]any{"kind": "obsidian", "id": "Daily/2026-10-29.md", "url": "obsidian://open?vault=Notes&file=Daily%2F2026-10-29"}
+	f.mustCall(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "t1", "origin": note}}})
+	bad := map[string]any{"kind": "obsidian", "id": "x.md", "url": "obsidian://new?vault=Notes&name=x"}
+	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "t1", "origin": bad}}}); !isArgErr(err) {
+		t.Fatalf("obsidian://new: %v", err)
+	}
+	raw, _ := json.Marshal(f.mustCall(c, "get_task", map[string]any{"id": "t1"}))
+	var shape struct {
+		Task struct {
+			Origin    map[string]any `json:"origin"`
+			Untrusted struct {
+				Origin map[string]any `json:"origin"`
+			} `json:"untrusted_text"`
+		} `json:"task"`
+	}
+	_ = json.Unmarshal(raw, &shape)
+	if shape.Task.Origin["kind"] != "obsidian" || shape.Task.Origin["id"] != nil {
+		t.Fatalf("origin outside the marking = %v (%s)", shape.Task.Origin, raw)
+	}
+	if shape.Task.Untrusted.Origin["note"] != "Daily/2026-10-29.md" || shape.Task.Untrusted.Origin["url"] != note["url"] {
+		t.Fatalf("note not marked: %s", raw)
+	}
+}

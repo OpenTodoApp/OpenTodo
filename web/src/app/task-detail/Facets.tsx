@@ -11,7 +11,8 @@ import { createProject, setRecurrence, unparkTask, updateTask } from '../../lib/
 import { INBOX_KEY, itemKeywords, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
-import { openOrigin, originOf } from '../../lib/taskOrigin'
+import { openOrigin, originLink, originOf } from '../../lib/taskOrigin'
+import { copyText } from '../../lib/clipboard'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { isZoned, zoneCity } from '../../lib/dates'
 import { ComboboxPanel, Icon, type IconName, Menu, MenuGroup, MenuItem, MenuSeparator, Switch } from '../../ui'
@@ -19,7 +20,7 @@ import { AssigneePicker } from '../AssigneePicker'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { EstimateField } from '../EstimateField'
 import { LabelChip, LabelPicker } from '../LabelPicker'
-import { originText } from '../OriginChip'
+import { originText, originTip } from '../OriginChip'
 import { LocationEditor, useShownLocation } from '../locations/LocationEditor'
 import { LocationPreview } from '../locations/LocationPreview'
 import { setTaskLocation, locationLabel } from '../../lib/locations'
@@ -88,7 +89,8 @@ export function useFacetParts(props: PropertiesProps, m: PropertiesModel, reveal
     sectionName: m.shownSection ? m.sectionMap.get(m.shownSection)?.name || t('Untitled section') : null,
     parentTitle: task.parent_id ? (parent?.title ?? '') : null,
     originText: origin ? originText(origin) : null,
-    originTitle: origin?.title ?? null,
+    // An origin the device will not open (a shell without Obsidian links) copies its link instead (obsidian-origin).
+    originTitle: origin ? (originLink(origin) ? originTip(origin) : origin.url ? t('Copy link') : origin.title) ?? null : null,
     originLinked: !!origin?.url,
     locationText: shownLocation ? locationLabel(shownLocation) || t('Location') : null,
     labels: m.labels,
@@ -118,8 +120,13 @@ export function usePartEditor(m: PropertiesModel, task: Task) {
   const setEditing = (id: string, on: boolean) => (OPTIONAL.has(id) ? ed.chipProps(id as Optional) : ed.fixedChip(id)).onEditingChange(on)
   const close = () => { if (ed.editing) setEditing(ed.editing, false) }
   const activate = (id: string) => {
-    // The origin opens its source (task-origin); removing it is in the header menu.
-    if (id === 'origin') { const origin = originOf(task); if (origin?.url) openOrigin(origin); return }
+    // The origin opens its source (task-origin), or copies a link the device will not
+    // open (obsidian-origin); removing it is in the header menu.
+    if (id === 'origin') {
+      const origin = originOf(task)
+      if (origin?.url) { if (originLink(origin)) openOrigin(origin); else act(copyText(origin.url)) }
+      return
+    }
     // A second activation of the open part closes its editor (task-panel-polish "Popover triggers toggle").
     if (ed.editing === id) { close(); return }
     if (ed.editing) setEditing(ed.editing, false)

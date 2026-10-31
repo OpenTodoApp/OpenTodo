@@ -71,6 +71,19 @@ func TestOriginURL(t *testing.T) {
 	}
 }
 
+// The table's origin column reads an Obsidian note by its title, else its name
+// (obsidian-origin D5), through origin.Label.
+func TestObsidianOriginLabel(t *testing.T) {
+	note := `{"kind":"obsidian","id":"Daily/2026-10-29.md","url":"obsidian://open?vault=Notes&file=Daily%2F2026-10-29"}`
+	if got := (task{Origin: json.RawMessage(note)}).originLabel(); got != "2026-10-29" {
+		t.Fatalf("label = %q", got)
+	}
+	titled := `{"kind":"obsidian","id":"Daily/2026-10-29.md","url":"obsidian://open?vault=Notes&file=Daily%2F2026-10-29","title":"Thursday"}`
+	if got := (task{Origin: json.RawMessage(titled)}).originLabel(); got != "Thursday" {
+		t.Fatalf("titled label = %q", got)
+	}
+}
+
 func sameMap(got, want map[string]any) bool {
 	if len(got) != len(want) {
 		return false
