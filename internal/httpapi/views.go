@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/filter"
 	"github.com/OpenTodoApp/opentodo/internal/iconset"
@@ -107,7 +106,7 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 		return invalidView("view.name must not be empty")
 	}
 	if sortBy, ok := str("sort_by"); ok && !slices.Contains(viewSortBy, sortBy) && !validViewSortBy(sortBy) {
-		return invalidView("view.sort_by must be one of %s or field:<name>", strings.Join(viewSortBy, ", "))
+		return invalidView("view.sort_by must be one of %s or field:<id>", strings.Join(viewSortBy, ", "))
 	}
 	for field, allowed := range viewEnumSets {
 		if v, ok := str(field); ok && !slices.Contains(allowed, v) {
@@ -186,15 +185,30 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 	return nil
 }
 
-// validViewSortBy accepts a named custom field after the built-in sort options.
-// Field names follow the custom-field definition rules: non-empty, trimmed and
-// bounded by maxFieldName (fields.go).
+// validViewSortBy accepts a canonical UUID field definition id after the built-in sort options.
 func validViewSortBy(value string) bool {
-	name, ok := strings.CutPrefix(value, "field:")
-	if !ok || name == "" || name != strings.TrimSpace(name) {
+	id, ok := strings.CutPrefix(value, "field:")
+	if !ok || len(id) != 36 {
 		return false
 	}
-	return utf8.RuneCountInString(name) <= maxFieldName
+	for i, ch := range id {
+		if i == 14 && (ch < '1' || ch > '8') {
+			return false
+		}
+		if i == 19 && ch != '8' && ch != '9' && ch != 'a' && ch != 'b' {
+			return false
+		}
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if ch != '-' {
+				return false
+			}
+			continue
+		}
+		if !((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f')) {
+			return false
+		}
+	}
+	return true
 }
 
 // checkOnDrop validates a view's on-drop rule against current state (OpenSpec

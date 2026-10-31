@@ -7,7 +7,7 @@ Issue #404: people can store a precise score such as WSJF, effort or cost in a c
 ## What Changes
 
 - Add **Number** and **Date** custom fields to **Order by** for project lists, label pages, saved views and the New view page. Keep each page's existing built-in options and defaults.
-- Store a selected field sort in the existing `sort_by` string as `field:<name>`. Match field names without regard to case, so a saved view can sort tasks from different projects whose fields share a name.
+- Store a selected field sort in the existing sort_by string as `field:<definition-id>`. The id is non-content metadata; the device resolves the decrypted field name locally and matches same-named applicable definitions across projects.
 - Sort numbers numerically and dates chronologically. Tasks without a matching value come last in either direction. Ties use the existing default order: due date, priority, manual position, then task id.
 - Keep grouping, subtasks, Later and Completed behavior unchanged. Keep manual move behavior: a move in a project list switches back to manual order first.
 
@@ -17,7 +17,7 @@ This advances the Roadmap's section 3 item `custom-views` (saved views and displ
 
 ## Compatibility
 
-Not breaking: the existing `sort_by` values carry the selection; no operation field, migration or new endpoint is needed. The REST API accepts the additive `field:<name>` value for saved views. Older clients treat an unrecognized sort value as their existing default and leave it stored, so a newer client can resume the field sort.
+Not breaking: existing sort values are unchanged, and `field:<definition-id>` is additive. The REST API accepts a canonical UUID without requiring that the definition already exists. Older clients keep the value and show their existing default order.
 
 ## Out of scope
 

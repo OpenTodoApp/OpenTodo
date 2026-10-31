@@ -1,9 +1,9 @@
 ## 1. Sort model and stored options
 
-- [x] 1.1 Add dynamic `field:<name>` options to project, label, saved-view and New view display controls; verify defaults and writes in `listDisplay.test.ts`, `listDisplayPanel.test.tsx` and `views.test.ts`.
+- [x] 1.1 Add dynamic field:<definition-id> options to project, label, saved-view and New view display controls; verify defaults and ID writes in listDisplay.test.ts, listDisplayPanel.test.tsx and views.test.ts.
 - [x] 1.2 Match names case-insensitively against live, applicable definitions, including inherited fields; resolve each task by applicable-field order; verify cross-project and inheritance behavior in `views.test.ts` and `listDisplay.test.ts`.
 - [x] 1.3 Compare Number values numerically, Date values chronologically and Number before Date before Text across matching types; verify ascending, descending, missing-last and tie behavior in `views.test.ts`.
-- [x] 1.4 Accept and preserve valid `field:<name>` values on saved-view create and patch, and reject an empty name; verify with `go test ./internal/httpapi`.
+- [x] 1.4 Accept canonical UUID field sort values on saved-view create and patch, preserve them, and reject field names or malformed IDs; verify with go test ./internal/httpapi.
 
 ## 2. List behavior and regression coverage
 
@@ -14,5 +14,5 @@
 
 ## 3. Documentation and checks
 
-- [x] 3.1 Update the project, label and saved-view guides to explain Number and Date field sorting, cross-project name matching, and missing values.
+- [x] 3.1 Update project, label, saved-view, API, CLI and E2EE documentation for definition IDs, local name matching and encrypted field names; add the custom-fields cross-reference and Unreleased changelog entry.
 - [x] 3.2 Run relevant tests, `make check`, and the required UI checks; record any environment limitations.

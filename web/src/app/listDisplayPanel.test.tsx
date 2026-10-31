@@ -8,6 +8,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { setListDisplay } from '../lib/listDisplay'
+import { fieldSortBy } from '../lib/types'
 import { createField, setFieldValue } from '../lib/fields'
 import { createLabel } from '../lib/labels'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
@@ -61,6 +62,7 @@ describe('Display options on a project page', () => {
   it('orders by a numeric custom field and keeps unset tasks last in both directions', async () => {
     const pid = await createProject({ name: 'Home' })
     const field = await createField(pid, { name: 'Effort', type: 'number' })
+    const sortBy = fieldSortBy(field)
     const low = await createTask({ title: 'Low', project_id: pid })
     const high = await createTask({ title: 'High', project_id: pid })
     await createTask({ title: 'Unset', project_id: pid })
@@ -69,10 +71,11 @@ describe('Display options on a project page', () => {
     const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)
     await waitFor(() => titles().length === 3, 'rows')
     await click(document.querySelector('[data-display-trigger]')!)
-    await waitFor(() => !!document.querySelector('[data-display-panel] option[value="field:Effort"]'), 'field choice')
-    await choose('Order by', 'field:Effort')
+    await waitFor(() => !!document.querySelector('[data-display-panel] option[value="' + sortBy + '"]'), 'field choice')
+    expect(document.querySelector('optgroup[label="Custom fields"] option[value="' + sortBy + '"]')).not.toBeNull()
+    await choose('Order by', sortBy)
     await waitFor(() => titles().join() === 'Low,High,Unset', 'ascending field order')
-    await waitFor(async () => (await db.prefs.get(pid))?.sort_by === 'field:Effort', 'field order persisted')
+    await waitFor(async () => (await db.prefs.get(pid))?.sort_by === sortBy, 'field order persisted')
     await click(document.querySelector('[data-display-more]')!)
     await choose('Sort direction', 'desc')
     await waitFor(() => titles().join() === 'High,Low,Unset', 'descending field order')
@@ -82,11 +85,12 @@ describe('Display options on a project page', () => {
   it('switches from custom field order to manual order when a task is moved', async () => {
     const pid = await createProject({ name: 'Home' })
     const field = await createField(pid, { name: 'Effort', type: 'number' })
+    const sortBy = fieldSortBy(field)
     const b = await createTask({ title: 'B', project_id: pid })
     const a = await createTask({ title: 'A', project_id: pid })
     await setFieldValue(b, field, 2)
     await setFieldValue(a, field, 1)
-    await setListDisplay({ kind: 'project', id: pid }, { sortBy: 'field:Effort' })
+    await setListDisplay({ kind: 'project', id: pid }, { sortBy })
     const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)
     await waitFor(() => titles().join() === 'A,B', 'field order')
     await key(document.body, 'j')
