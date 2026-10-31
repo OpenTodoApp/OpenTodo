@@ -444,7 +444,11 @@ export interface AttachmentFields {
  * author edits, the author, admins and the owner delete, viewers cannot
  * create). ended_at is null while the entry runs; a user has at most one
  * running entry, a rule every device applies (internal/timetrack). note is
- * user-written text, so it is an encrypted content field. See docs/sync.md.
+ * user-written text, so it is an encrypted content field. focus_mode,
+ * focus_session and planned_end_at are what a Focus work session tells
+ * readers outside the device (OpenSpec change focus-session-readable,
+ * design D2): plaintext, the author's alone, and planned_end_at is never
+ * before started_at (refused as invalid). See docs/sync.md.
  * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
  */
 export interface TimeEntryFields {
@@ -456,6 +460,22 @@ export interface TimeEntryFields {
   note?: string
   created_at?: number
   deleted_at?: number | null
+  /**
+   * focus_mode is the Focus mode of the work session that wrote the entry:
+   * "pomodoro", "flowtime" or "countdown", "" for any other entry. A reader
+   * keeps and shows an unknown value as a Focus session of unknown mode.
+   */
+  focus_mode?: string
+  /**
+   * focus_session is the work session's number in the Pomodoro cycle (1 up
+   * to the long-break count), 0 for the other modes and other entries.
+   */
+  focus_session?: number
+  /**
+   * planned_end_at is when the work stretch ends if nothing changes (Unix
+   * ms), null for Flowtime and other entries. Never before started_at.
+   */
+  planned_end_at?: number | null
 }
 
 /**
@@ -913,7 +933,7 @@ export const OP_DEFAULTS = {
     task_id: '', comment_id: null, name: '', mime: 'application/octet-stream', size: 0, sha256: '', url: null, encrypted: false, author_id: '', created_at: 0, uploaded_at: null, deleted_at: null,
   } satisfies Omit<Attachment, 'id' | '_clock'>,
   time_entry: {
-    task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null,
+    task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null, focus_mode: '', focus_session: 0, planned_end_at: null,
   } satisfies Omit<TimeEntry, 'id' | '_clock'>,
   rule: {
     name: '', enabled: false, trigger: null, condition: null, actions: null, position: 0, created_at: 0, deleted_at: null,

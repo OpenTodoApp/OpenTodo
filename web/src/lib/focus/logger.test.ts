@@ -2,11 +2,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../db'
 import { createTask, resetDeviceId } from '../ops'
 import { setCurrentUserId } from '../sharing'
-import { stopTracking } from '../timeEntries'
+import { startTracking, stopTracking } from '../timeEntries'
 import { noopLogger, setFocusLogger, timeTrackingLogger } from './index'
 import { FOCUS_DEFAULTS } from './prefs'
-import { breakSession, finishIfDue, noteEntryStopped, pauseSession, resumeSession, startSession, completeSession } from './session'
-import { readFocus } from './state'
+import { breakSession, extendSession, finishIfDue, noteEntryStopped, pauseSession, resumeSession, startSession, completeSession } from './session'
+import { readFocus, writeFocus } from './state'
+import { idleState } from './timer'
 
 // Sessions as time entries (OpenSpec focus-mode, task 2.4): with time tracking a
 // work stretch is one entry, breaks are never logged; without it nothing is written.
@@ -67,6 +68,58 @@ describe('with time tracking', () => {
     const list = await entries()
     expect(list).toHaveLength(2)
     expect(list[1]).toMatchObject({ started_at: at(7), ended_at: null })
+  })
+})
+
+// Session details on the time entry (OpenSpec focus-session-readable, task 2.1):
+// the mode, the Pomodoro session number and the planned end travel with the entry.
+describe('session details on the entry', () => {
+  const outboxFields = async (entryId: string) =>
+    Object.fromEntries((await db.outbox.toArray()).filter((o) => o.entity === 'time_entry' && o.entityId === entryId).map((o) => [o.field, o.value]))
+
+  it('Third Pomodoro: mode, session 3 and the planned end 25 minutes after the start', async () => {
+    await writeFocus(idleState(task, 'pomodoro', at(0), { cycle: 3, lengthMinutes: 25 }))
+    await startSession(task, FOCUS_DEFAULTS, at(0))
+    const [e] = await entries()
+    expect(e).toMatchObject({ focus_mode: 'pomodoro', focus_session: 3, planned_end_at: at(25), ended_at: null })
+    expect(await outboxFields(e.id)).toMatchObject({ focus_mode: 'pomodoro', focus_session: 3, planned_end_at: at(25) })
+  })
+
+  it('Resume after a pause: the new entry keeps session 3 and ends when the time left runs out', async () => {
+    await writeFocus(idleState(task, 'pomodoro', at(0), { cycle: 3, lengthMinutes: 25 }))
+    await startSession(task, FOCUS_DEFAULTS, at(0))
+    await pauseSession(at(10))
+    await resumeSession(at(20))
+    const list = await entries()
+    expect(list.map((e) => [e.started_at, e.ended_at, e.focus_session, e.planned_end_at])).toEqual([[at(0), at(10), 3, at(25)], [at(20), null, 3, at(35)]])
+  })
+
+  it('Flowtime: mode flowtime, session 0 and no planned end', async () => {
+    await startSession(task, { ...FOCUS_DEFAULTS, mode: 'flowtime' }, at(0))
+    const [e] = await entries()
+    expect(e).toMatchObject({ focus_mode: 'flowtime', focus_session: 0, planned_end_at: null })
+  })
+
+  it('Countdown offline: the entry and its three fields are stored and queued together at once', async () => {
+    await startSession(task, { ...FOCUS_DEFAULTS, mode: 'countdown' }, at(0), 40)
+    const [e] = await entries()
+    expect(e).toMatchObject({ focus_mode: 'countdown', focus_session: 0, planned_end_at: at(40) })
+    expect(await outboxFields(e.id)).toMatchObject({ started_at: at(0), focus_mode: 'countdown', focus_session: 0, planned_end_at: at(40) })
+  })
+
+  it('Extended session: "+5 min" starts an entry that ends five minutes later', async () => {
+    await startSession(task, FOCUS_DEFAULTS, at(0))
+    await finishIfDue(FOCUS_DEFAULTS, at(25))
+    await extendSession(5, at(26))
+    const list = await entries()
+    expect(list[1]).toMatchObject({ started_at: at(26), ended_at: null, focus_mode: 'pomodoro', planned_end_at: at(31) })
+  })
+
+  it('A plain timer keeps the defaults', async () => {
+    const id = await startTracking(task, { now: at(0) })
+    const row = await db.timeEntries.get(id)
+    expect(row?.focus_mode ?? '').toBe('')
+    expect(row?.planned_end_at ?? null).toBeNull()
   })
 })
 

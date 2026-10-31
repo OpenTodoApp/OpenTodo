@@ -78,7 +78,7 @@ Phones, Apple, Obsidian and voice.
 | [`ios-distribution`](openspec/changes/ios-distribution/) | The iPhone app in TestFlight and the App Store | [#105](https://github.com/OpenTodoApp/OpenTodo/issues/105) |
 | [`apple-shortcuts`](openspec/changes/apple-shortcuts/) | Siri, Shortcuts, the Action Button and iOS widgets |  |
 | [`focus-live-activity`](openspec/changes/focus-live-activity/) | Focus as a Live Activity and in the Dynamic Island |  |
-| [`focus-session-readable`](openspec/changes/focus-session-readable/) | The running Focus session readable by the shells and agents |  |
+| [`focus-session-readable`](openspec/changes/archive/2026-10-31-focus-session-readable/) | **Shipped.** The running Focus session readable by the shells and agents | [#604](https://github.com/OpenTodoApp/OpenTodo/issues/604) |
 | [`obsidian-origin`](openspec/changes/obsidian-origin/) | An `obsidian` origin that links a task back to its note |  |
 | [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included |  |
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian |  |

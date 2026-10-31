@@ -35,6 +35,8 @@ type timeEntry struct {
 	TaskTitle   string  `json:"taskTitle"`
 	ProjectName string  `json:"projectName"`
 	ProjectID   *string `json:"projectId"`
+	// Focus is what a Focus work session wrote (focus-session-readable).
+	Focus *timetrack.Focus `json:"focus"`
 }
 
 // durationForms names the accepted durations in usage errors.
@@ -42,7 +44,7 @@ const durationForms = "use a duration such as 45m, 1h30 or 90 (minutes)"
 
 func cmdTime(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if len(args) == 0 {
-		return usageErr("usage: ot time start|stop|log|list|export ...")
+		return usageErr("usage: ot time start|stop|status|log|list|export ...")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -50,6 +52,8 @@ func cmdTime(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		return timeStart(a, ctx, g, rest)
 	case "stop":
 		return timeStop(a, ctx, g, rest)
+	case "status":
+		return timeStatus(a, ctx, g, rest)
 	case "log":
 		return timeLog(a, ctx, g, rest)
 	case "list", "ls":
@@ -57,7 +61,7 @@ func cmdTime(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	case "export":
 		return timeExport(a, ctx, g, rest)
 	}
-	return usageErr("unknown time command %q (expected start, stop, log, list or export)", sub)
+	return usageErr("unknown time command %q (expected start, stop, status, log, list or export)", sub)
 }
 
 // taskOf resolves a task reference through the task list.
@@ -127,6 +131,70 @@ func timeStop(a *App, ctx context.Context, g *globalFlags, args []string) error 
 		return err
 	}
 	return a.printEntry(g, raw, "Stopped")
+}
+
+// focusModes names the Focus modes the app writes; another value comes from a
+// newer client and is shown as written.
+var focusModes = map[string]string{"pomodoro": "Pomodoro", "flowtime": "Flowtime", "countdown": "Countdown"}
+
+// focusLine describes a running entry's Focus details: "Pomodoro, session 3,
+// ends 10:25" (local time), "" for an entry that is no Focus session.
+func focusLine(f *timetrack.Focus, loc *time.Location) string {
+	if f == nil {
+		return ""
+	}
+	mode, ok := focusModes[f.Mode]
+	if !ok {
+		mode = "Focus (" + f.Mode + ")"
+	}
+	parts := []string{mode}
+	if f.Session > 0 {
+		parts = append(parts, fmt.Sprintf("session %d", f.Session))
+	}
+	if f.PlannedEndAt != nil {
+		parts = append(parts, "ends "+time.UnixMilli(*f.PlannedEndAt).In(loc).Format("15:04"))
+	}
+	return strings.Join(parts, ", ")
+}
+
+// timeStatus prints the caller's running entry from GET
+// /time-entries/running (focus-session-readable D3); a read, so any token
+// scope works.
+func timeStatus(a *App, ctx context.Context, g *globalFlags, args []string) error {
+	fs := a.flagSet("time status", g)
+	pos, err := a.parse(g, fs, "time status", args)
+	if err != nil {
+		return a.helpOr("time", err)
+	}
+	if len(pos) != 0 {
+		return usageErr("usage: ot time status")
+	}
+	c, _, err := a.connect(g)
+	if err != nil {
+		return err
+	}
+	raw, _, err := c.do(ctx, http.MethodGet, "/time-entries/running", nil, nil)
+	if err != nil {
+		return err
+	}
+	if g.json {
+		return a.printJSON(json.RawMessage(raw))
+	}
+	var res struct {
+		Entry *timeEntry `json:"entry"`
+	}
+	_ = json.Unmarshal(raw, &res)
+	if res.Entry == nil {
+		fmt.Fprintln(a.Stdout, "Nothing running.")
+		return nil
+	}
+	e, loc := res.Entry, a.Now().Location()
+	fmt.Fprintf(a.Stdout, "Running %s  since %s  %s  %s\n", shortID(e.ID), time.UnixMilli(e.StartedAt).In(loc).Format("15:04"),
+		formatMinutes(e.Minutes), timetrack.Display(e.TaskTitle))
+	if line := focusLine(e.Focus, loc); line != "" {
+		fmt.Fprintln(a.Stdout, line)
+	}
+	return nil
 }
 
 // dayOf reads --on: today, yesterday, a weekday (the latest one, today

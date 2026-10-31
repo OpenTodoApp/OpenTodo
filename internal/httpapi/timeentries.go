@@ -25,6 +25,10 @@ import (
 // nothing stored outside the sandbox's log.
 func (s *Server) registerTimeEntryRoutes(mux *routes) {
 	mux.handle("GET /api/v1/time-entries", signedIn, s.handleListTimeEntries)
+	// The caller's running entry with its Focus details, for a panel that
+	// polls (OpenSpec change focus-session-readable, design D3): a read, so
+	// every token scope and not demo-denied.
+	mux.handle("GET /api/v1/time-entries/running", signedIn, s.handleRunningTimeEntry)
 	mux.handle("GET /api/v1/tasks/{id}/time-entries", signedIn, s.handleTaskTimeEntries)
 	mux.handle("POST /api/v1/time-entries", signedIn, s.handleCreateTimeEntry)
 	mux.handle("POST /api/v1/time-entries/stop", signedIn, s.handleStopTimeEntry)
@@ -51,12 +55,16 @@ type apiTimeEntry struct {
 	TaskTitle   string  `json:"taskTitle"`
 	ProjectID   *string `json:"projectId"`
 	ProjectName string  `json:"projectName,omitempty"`
+	// Focus is what a Focus work session wrote on the entry, null for any
+	// other entry (focus-session-readable D2).
+	Focus *timetrack.Focus `json:"focus"`
 }
 
 // timeData is what the list routes read once per request.
 type timeData struct {
 	entries  []timetrack.Entry
 	devices  map[string]string
+	focus    map[string]*timetrack.Focus
 	tasks    map[string]timetrack.Task
 	projects []timetrack.Project
 	trashed  map[string]bool
@@ -72,7 +80,7 @@ func (d *timeData) liveTask(id string) bool {
 // loadTimeData reads the caller's readable entries, tasks and projects; with
 // csv it also reads labels and custom field definitions.
 func (s *Server) loadTimeData(ctx context.Context, uid string, csv bool) (*timeData, error) {
-	d := &timeData{devices: map[string]string{}, tasks: map[string]timetrack.Task{}, trashed: map[string]bool{}}
+	d := &timeData{devices: map[string]string{}, focus: map[string]*timetrack.Focus{}, tasks: map[string]timetrack.Task{}, trashed: map[string]bool{}}
 	rows, err := s.sync.List(ctx, uid, "time_entry", false)
 	if err != nil {
 		return nil, err
@@ -81,6 +89,7 @@ func (s *Server) loadTimeData(ctx context.Context, uid string, csv bool) (*timeD
 		e := timetrack.FromRow(r)
 		d.entries = append(d.entries, e)
 		d.devices[e.ID] = idOf(r["device_id"])
+		d.focus[e.ID] = timetrack.FocusFromRow(r)
 	}
 	tasks, err := s.sync.List(ctx, uid, "task", true)
 	if err != nil {
@@ -127,7 +136,7 @@ func (s *Server) loadTimeData(ctx context.Context, uid string, csv bool) (*timeD
 func (d *timeData) out(e timetrack.Entry, now int64) apiTimeEntry {
 	t := d.tasks[e.TaskID]
 	a := apiTimeEntry{ID: e.ID, TaskID: e.TaskID, UserID: e.UserID, StartedAt: e.StartedAt, EndedAt: e.EndedAt,
-		Minutes: timetrack.MinutesOf(e, now), Note: e.Note, DeviceID: d.devices[e.ID], TaskTitle: t.Title}
+		Minutes: timetrack.MinutesOf(e, now), Note: e.Note, DeviceID: d.devices[e.ID], TaskTitle: t.Title, Focus: d.focus[e.ID]}
 	if t.ProjectID != "" {
 		pid := t.ProjectID
 		a.ProjectID = &pid
@@ -282,6 +291,34 @@ func (s *Server) listTimeEntries(w http.ResponseWriter, r *http.Request, tq time
 	}
 	resp["entries"] = out
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// handleRunningTimeEntry answers the caller's own running entry, or null,
+// with the server time (focus-session-readable D3). 200 either way, so a
+// poller treats only real failures as errors. Another member's running entry
+// on a shared task is never returned. taskTitle is the stored value: an
+// encrypted account's ciphertext, which the panel decrypts or replaces.
+func (s *Server) handleRunningTimeEntry(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	uid := userFrom(ctx).ID
+	d, err := s.loadTimeData(ctx, uid, false)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	own := make([]timetrack.Entry, 0, len(d.entries))
+	for _, e := range d.entries {
+		if e.UserID == uid && d.liveTask(e.TaskID) {
+			own = append(own, e)
+		}
+	}
+	now := s.now().UnixMilli()
+	var entry *apiTimeEntry
+	if e := timetrack.Running(own, uid); e != nil {
+		out := d.out(*e, now)
+		entry = &out
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"entry": entry, "serverTime": now})
 }
 
 func timeLimit(w http.ResponseWriter, r *http.Request) (int, bool) {
@@ -515,7 +552,8 @@ func (s *Server) writeTimeEntry(w http.ResponseWriter, r *http.Request, id strin
 		s.internal(w, fmt.Errorf("read time entry after write: %v", err))
 		return
 	}
-	d := &timeData{devices: map[string]string{id: idOf(row["device_id"])}, tasks: map[string]timetrack.Task{}}
+	d := &timeData{devices: map[string]string{id: idOf(row["device_id"])}, focus: map[string]*timetrack.Focus{id: timetrack.FocusFromRow(row)},
+		tasks: map[string]timetrack.Task{}}
 	e := timetrack.FromRow(row)
 	if t, err := s.sync.Get(ctx, uid, "task", e.TaskID); err == nil && t != nil {
 		d.tasks[e.TaskID] = timetrack.TaskFromRow(t)

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "time_running",
+  "description": "ot time status --json: GET /api/v1/time-entries/running as the server returns it (OpenSpec focus-session-readable).",
+  "type": "object",
+  "required": ["entry", "serverTime"],
+  "properties": {
+    "entry": {"anyOf": [{"$ref": "#/schemas/time_entry"}, {"type": "null"}], "description": "your own running entry; null when nothing runs, on a Focus break or while a session is paused"},
+    "serverTime": {"type": "integer", "description": "the server's clock, Unix milliseconds"}
+  }
+}

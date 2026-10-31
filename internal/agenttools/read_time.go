@@ -48,6 +48,83 @@ type entryOut struct {
 	StartedAt    *string `json:"started_at"`
 	EndedAt      *string `json:"ended_at"`
 	Minutes      int     `json:"minutes"`
+	// Focus is what a Focus work session wrote on the entry, null for any
+	// other entry (OpenSpec change focus-session-readable, design D4).
+	Focus *focusOut `json:"focus"`
+}
+
+// focusOut is an entry's Focus details: the mode as written (an unknown mode
+// from a newer client is kept), the Pomodoro session number (0 otherwise) and
+// the planned end (null for Flowtime).
+type focusOut struct {
+	Mode         string  `json:"mode"`
+	Session      int     `json:"session"`
+	PlannedEndAt *string `json:"planned_end_at"`
+}
+
+func focusOf(row opsync.Entity) *focusOut {
+	f := timetrack.FocusFromRow(row)
+	if f == nil {
+		return nil
+	}
+	out := &focusOut{Mode: f.Mode, Session: f.Session}
+	if f.PlannedEndAt != nil {
+		out.PlannedEndAt = isoTime(float64(*f.PlannedEndAt))
+	}
+	return out
+}
+
+// entryOf is one entry as the tools show it; tasks holds the visible tasks.
+func entryOf(e timetrack.Entry, row opsync.Entity, tasks map[string]opsync.Entity, userID string, now int64) entryOut {
+	out := entryOut{ID: e.ID, TaskID: e.TaskID, UserID: e.UserID, TrackedByYou: e.UserID == userID,
+		Untrusted: entryText{Note: timetrack.Display(e.Note), Task: str(tasks[e.TaskID], "title")},
+		StartedAt: isoTime(float64(e.StartedAt)), Minutes: timetrack.MinutesOf(e, now), Focus: focusOf(row)}
+	if e.EndedAt != nil {
+		out.EndedAt = isoTime(float64(*e.EndedAt))
+	}
+	return out
+}
+
+// visibleTasks are the tasks an assistant may see (projects kept away from
+// assistants are not in the snapshot), archived ones included.
+func (snap *snapshot) visibleTasks() map[string]opsync.Entity {
+	tasks := map[string]opsync.Entity{}
+	for _, t := range snap.tasks {
+		if snap.visible(t, true) {
+			tasks[str(t, "id")] = t
+		}
+	}
+	return tasks
+}
+
+// RunningTimeEntryResource is opentodo://time-entries/running
+// (focus-session-readable D4): the caller's own running entry with its Focus
+// details, or null. An entry on a task the assistant may not see (a project
+// kept away from assistants) reads as null, like nothing running.
+func (r *Registry) RunningTimeEntryResource(ctx context.Context, userID string) (map[string]any, error) {
+	snap, err := r.load(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	tasks := snap.visibleTasks()
+	rows, err := r.list(ctx, userID, "time_entry", false)
+	if err != nil {
+		return nil, err
+	}
+	own := []timetrack.Entry{}
+	byID := map[string]opsync.Entity{}
+	for _, row := range rows {
+		e := timetrack.FromRow(row)
+		if e.UserID == userID && tasks[e.TaskID] != nil {
+			own = append(own, e)
+			byID[e.ID] = row
+		}
+	}
+	var entry any
+	if e := timetrack.Running(own, userID); e != nil {
+		entry = entryOf(*e, byID[e.ID], tasks, userID, r.now().UnixMilli())
+	}
+	return noticed(map[string]any{"entry": entry, "server_time": r.serverTime()}), nil
 }
 
 func (r *Registry) listTimeEntries(ctx context.Context, userID string, a args) (map[string]any, error) {
@@ -83,12 +160,7 @@ func (r *Registry) listTimeEntries(ctx context.Context, userID string, a args) (
 	if err != nil {
 		return nil, err
 	}
-	tasks := map[string]opsync.Entity{}
-	for _, t := range snap.tasks {
-		if snap.visible(t, true) {
-			tasks[str(t, "id")] = t
-		}
-	}
+	tasks := snap.visibleTasks()
 	if q.Task != "" && tasks[q.Task] == nil {
 		return nil, ErrTaskNotFound
 	}
@@ -100,19 +172,17 @@ func (r *Registry) listTimeEntries(ctx context.Context, userID string, a args) (
 		return nil, err
 	}
 	entries := make([]timetrack.Entry, 0, len(rows))
-	for _, e := range rows {
-		entries = append(entries, timetrack.FromRow(e))
+	byID := make(map[string]opsync.Entity, len(rows))
+	for _, row := range rows {
+		e := timetrack.FromRow(row)
+		entries = append(entries, e)
+		byID[e.ID] = row
 	}
 	now := r.now().UnixMilli()
 	sel := timetrack.Select(entries, q, func(id string) bool { return tasks[id] != nil })
 	items := make([]keyed[entryOut], 0, len(sel))
 	for _, e := range sel {
-		out := entryOut{ID: e.ID, TaskID: e.TaskID, UserID: e.UserID, TrackedByYou: e.UserID == userID,
-			Untrusted: entryText{Note: timetrack.Display(e.Note), Task: str(tasks[e.TaskID], "title")},
-			StartedAt: isoTime(float64(e.StartedAt)), Minutes: timetrack.MinutesOf(e, now)}
-		if e.EndedAt != nil {
-			out.EndedAt = isoTime(float64(*e.EndedAt))
-		}
+		out := entryOf(e, byID[e.ID], tasks, userID, now)
 		// Newest first: the key orders by descending start (page sorts ascending).
 		items = append(items, keyed[entryOut]{key: fmt.Sprintf("%019d", int64(1<<62)-e.StartedAt), id: e.ID, v: out})
 	}

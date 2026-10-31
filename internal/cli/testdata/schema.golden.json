@@ -1911,6 +1911,19 @@
       }
     },
     {
+      "name": "time status",
+      "summary": "show your running time entry and, for a Focus session, its mode, session number and planned end; read-only",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/time_running"
+      }
+    },
+    {
       "name": "time stop",
       "summary": "stop the running time entry",
       "args": [],
@@ -4019,6 +4032,62 @@
         },
         "projectName": {
           "type": "string"
+        },
+        "focus": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "what a Focus work session wrote on the entry, null for any other entry (OpenSpec focus-session-readable)",
+          "required": [
+            "mode",
+            "session",
+            "plannedEndAt"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "description": "pomodoro, flowtime or countdown; a newer client may write another value"
+            },
+            "session": {
+              "type": "integer",
+              "description": "the work session's number in the Pomodoro cycle, 0 for the other modes"
+            },
+            "plannedEndAt": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Unix milliseconds when the stretch ends if nothing changes; null for Flowtime"
+            }
+          }
+        }
+      }
+    },
+    "time_running": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "time_running",
+      "description": "ot time status --json: GET /api/v1/time-entries/running as the server returns it (OpenSpec focus-session-readable).",
+      "type": "object",
+      "required": [
+        "entry",
+        "serverTime"
+      ],
+      "properties": {
+        "entry": {
+          "anyOf": [
+            {
+              "$ref": "#/schemas/time_entry"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "your own running entry; null when nothing runs, on a Focus break or while a session is paused"
+        },
+        "serverTime": {
+          "type": "integer",
+          "description": "the server's clock, Unix milliseconds"
         }
       }
     },
