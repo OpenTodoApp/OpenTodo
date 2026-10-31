@@ -20,8 +20,8 @@ export default meta
 /** No custom colour yet: the preview shows the default accent. */
 export const Empty: StoryObj = { render: () => <Picker /> }
 /** A curated swatch, applied exactly as shown. */
-export const Swatch: StoryObj = { render: () => <Picker value="#3263c3" /> }
+export const Swatch: StoryObj = { render: () => <Picker value="#3263c3" /> } // token-lint-allow: a picked colour is data, not styling
 /** A pale yellow: darker in light mode, lighter in dark, and the picker says so. */
-export const AdjustedForContrast: StoryObj = { render: () => <Picker value="#ffe066" /> }
+export const AdjustedForContrast: StoryObj = { render: () => <Picker value="#ffe066" /> } // token-lint-allow: a picked colour is data, not styling
 /** A red pick is turned away from the colour for errors. */
-export const TurnedFromRed: StoryObj = { render: () => <Picker value="#d93025" /> }
+export const TurnedFromRed: StoryObj = { render: () => <Picker value="#d93025" /> } // token-lint-allow: a picked colour is data, not styling
