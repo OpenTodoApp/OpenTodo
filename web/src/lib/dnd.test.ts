@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 // The long-press next to swipes and selections (OpenSpec change phone-v2, design D3,
 // D8; task-row-context-menu "Touch: hold and release"): a hold without movement arms
-// the drag — a release then opens the row's menu at the finger, a move then lifts the
-// drag (with onHold, the hold selects instead); a move before the hold is a swipe or a
-// scroll, never a drag.
+// the drag — a release then opens the row's menu at the finger on any pointer, a move
+// then lifts the drag (with onHold, the hold selects instead — the row's grip, since
+// the touch rework); a move before the hold is a swipe or a scroll, never a drag —
+// except on the grip, which never scrolls and drags on movement alone.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { beginDrag, TOUCH_HOLD_MS } from './dnd'
 
@@ -76,9 +77,9 @@ describe('touch: hold, swipe and drag', () => {
     expect(click.defaultPrevented).toBe(true)
   })
 
-  it('on a coarse pointer (a phone) a held release never opens the row menu', () => {
-    // task-row-context-menu: the hold menu is for a fine pointer; a phone's long press
-    // keeps bulk-actions' meaning (it ticks the row), so nothing opens on release.
+  it('a held release opens the row menu on any pointer, a coarse (phone) one included', () => {
+    // The grip took selection, so the row body's hold is only ever the menu's — on a
+    // phone as on a desktop (task-row-context-menu, revised by the touch rework).
     const original = window.matchMedia
     window.matchMedia = ((q: string) => ({
       matches: false, media: q, onchange: null,
@@ -89,12 +90,63 @@ describe('touch: hold, swipe and drag', () => {
       beginDrag(press, { label: 'Task', onDrop: vi.fn(), onEnd: vi.fn(), onHoldRelease: release })
       vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
       up(50, 50)
-      expect(release).not.toHaveBeenCalled()
-      // The held press still swallowed its click — consume it so a later test keeps its own.
+      expect(release).toHaveBeenCalledWith(50, 50)
+      // The held press swallowed its click — consume it so a later test keeps its own.
       window.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
     } finally {
       window.matchMedia = original
     }
+  })
+})
+
+describe('the grip (bulk-actions on touch)', () => {
+  it('movement alone drags: a grip never waits for the hold and never scrolls', () => {
+    const s = spies()
+    beginDrag(press, { label: 'Task', grip: true, ...s })
+    move(60) // well before TOUCH_HOLD_MS
+    expect(s.onStart).toHaveBeenCalledTimes(1)
+    expect(s.onHold).not.toHaveBeenCalled()
+    expect(document.querySelector('[data-drag-ghost]')).toBeTruthy()
+    up(60)
+    expect(s.onEnd).toHaveBeenCalledTimes(1)
+  })
+
+  it('a grip hold selects, its release swallows the click and never opens the menu', () => {
+    const s = spies()
+    const release = vi.fn()
+    beginDrag(press, { label: 'Task', grip: true, onHoldRelease: release, ...s })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    expect(s.onHold).toHaveBeenCalledTimes(1)
+    expect(s.onStart).not.toHaveBeenCalled()
+    up(50, 50)
+    expect(release).not.toHaveBeenCalled()
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    window.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(true)
+  })
+
+  it('a plain tap on the grip lifts nothing, so the button\'s own click ticks', () => {
+    const s = spies()
+    const release = vi.fn()
+    beginDrag(press, { label: 'Task', grip: true, onHoldRelease: release, ...s })
+    up(50, 50)
+    expect(s.onStart).not.toHaveBeenCalled()
+    expect(s.onHold).not.toHaveBeenCalled()
+    expect(release).not.toHaveBeenCalled()
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    window.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(false)
+  })
+
+  it('a grip that drags before the hold elapses never selects: the hold dies with the lift', () => {
+    const s = spies()
+    beginDrag(press, { label: 'Task', grip: true, ...s })
+    move(60) // lifts at once, well before TOUCH_HOLD_MS (the Android repro)
+    vi.advanceTimersByTime(TOUCH_HOLD_MS * 2) // a hold timer that survived the lift would fire here
+    expect(s.onHold).not.toHaveBeenCalled()
+    up(60)
+    expect(s.onHold).not.toHaveBeenCalled()
+    expect(s.onStart).toHaveBeenCalledTimes(1)
   })
 })
 

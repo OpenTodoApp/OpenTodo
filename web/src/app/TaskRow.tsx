@@ -51,7 +51,7 @@ import { OriginChip } from './OriginChip'
 import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
-import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
+import { DRAG_THRESHOLD, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
 import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
 
@@ -412,6 +412,10 @@ export interface TaskRowProps {
   onContextMenu?: (e: React.MouseEvent<HTMLLIElement>) => void
   /** A touch hold's release: the same menu at those coordinates — no event, so no cast (task-row-context-menu). */
   onRowMenu?: (x: number, y: number, row: HTMLElement) => void
+  /** Starts a drag from the row's touch grip (right edge): hold selects, hold then move drags. */
+  onGripDown?: (e: React.PointerEvent<HTMLElement>) => void
+  /** A tap on the grip: tick the row and enter Select mode (bulk-actions on touch). */
+  onGripClick?: () => void
   /** Drop target key for lib/dnd (manual-ordering): the row accepts drops before, after or inside it. */
   dropKey?: string
   /** Where the dragged task would land relative to this row (manual-ordering). */
@@ -549,14 +553,14 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
  * Touch hold on a row the drag does not own (task-row-context-menu "Touch: hold and
  * release"): the hold arms with a tint on the row, a release then opens the actions
  * menu at the finger, a move ends it as a scroll — one rule, so a long press means the
- * same thing on every list of a device. Only a fine pointer holds for the menu; a
- * coarse one (a phone) keeps its long press for ticking the row (bulk-actions) and
- * never opens it here. A draggable row gets the same hold inside beginDrag, so
- * exactly one owner per row.
+ * same thing on every list of every device. Selection moved to the row's grip
+ * (bulk-actions), so a phone's long press no longer ticks the row: it is the menu's
+ * gesture on a coarse pointer as on a fine one. A draggable row gets the same hold
+ * inside beginDrag, so exactly one owner per row.
  */
 function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['onPointerDown'], open: TaskRowProps['onRowMenu']): void {
   drag?.(e)
-  if (drag || e.pointerType !== 'touch' || !open || !finePointer()) return
+  if (drag || e.pointerType !== 'touch' || !open) return
   const fire = open
   const li = e.currentTarget
   const x0 = e.clientX
@@ -604,7 +608,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -795,12 +799,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>
-        {onTick && !readOnly && (
-          <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-fine:-inset-0.5 pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
-            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
-          </label>
-        )}
+        {onTick && !readOnly && <RowTick name={name} ticked={ticked} showCheckbox={showCheckbox} onTick={onTick} />}
       </span>
       {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
@@ -841,6 +840,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       )}
       {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} editable={!readOnly}
         details={canExpand ? { expanded: showDetails, controls: detailsId, onToggle: onExpand! } : undefined} />}
+      {onGripDown && onGripClick && onTick && !readOnly && !inline && !departing && <RowGrip name={name} ticked={ticked} onDown={onGripDown} onClick={onGripClick} />}
       {showDetails && (
         // Indented under the title column: past the leading slot, the checkbox and the time column (row-expand D3).
         // The id lives here, so `aria-controls` names an element while the lazy details still load.
@@ -852,6 +852,46 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       )}
       {swipe && swiping.layers}
     </li>
+  )
+}
+
+/**
+ * The row's selection box, drawn by the app rather than the platform (bulk-actions on
+ * touch): it fills the same 20 px slot as the completion circle it stands in for,
+ * identically on every device, instead of taking whatever size and offset the browser
+ * gave the native control.
+ */
+function RowTick({ name, ticked, showCheckbox, onTick }: { name: string; ticked: boolean; showCheckbox?: boolean; onTick: (range: boolean) => void }) {
+  return (
+    <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-fine:-inset-0.5 pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
+      <input type="checkbox" className="row-tick size-5 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
+    </label>
+  )
+}
+
+/**
+ * The touch grip at a row's right edge (task-row-context-menu follow-up, bulk-actions
+ * on touch): a tap ticks the row and enters Select mode, a hold selects it, a hold
+ * then a move drags — so the row body's own press stays tap-to-open, swipe and
+ * hold-for-menu, and never selects words under the finger. A coarse pointer only
+ * (hidden before it renders): a fine pointer drags the row anywhere and ticks through
+ * the same box as before.
+ */
+function RowGrip({ name, ticked, onDown, onClick }: { name: string; ticked: boolean; onDown: (e: React.PointerEvent<HTMLElement>) => void; onClick: () => void }) {
+  return (
+    <span data-row-grip="" className="mt-0.5 hidden h-5 w-5 shrink-0 items-center justify-center self-start pointer-coarse:flex">
+      <button
+        type="button"
+        aria-label={t('Select {title}', { title: name })}
+        aria-pressed={ticked}
+        onPointerDown={(e) => { e.stopPropagation(); onDown(e) }}
+        onClick={onClick}
+        className="touch-target pointer-coarse:-m-3 flex select-none items-center justify-center rounded-chip text-faint touch-action-none hover:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      >
+        <Icon name="grip-vertical" size="sm" />
+      </button>
+    </span>
   )
 }
 

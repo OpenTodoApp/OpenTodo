@@ -14723,13 +14723,13 @@
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Tick me off when you have read this": [
     "web/src/lib/sampleTasks.ts"
   ],
   "Tick the selected task for a bulk action (Space with Vim keybindings on)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Tick the task and show every checkbox (a tap on the grip at the row's edge does the same); Select tasks in the page menu does the same, Done hides them": [
     "web/src/lib/shortcuts.ts"
   ],
   "Tick {title}": [

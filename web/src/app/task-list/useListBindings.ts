@@ -77,7 +77,7 @@ export interface BindingContext {
   setSelectMode: (on: boolean) => void
   toggleComplete: (id: string, completed: boolean) => Promise<void>
   toggleCollapsed: (id: string, force?: boolean) => void
-  startDrag: (e: React.PointerEvent, task: Task) => void
+  startDrag: (e: React.PointerEvent, task: Task, grip?: boolean) => void
   quickAddRef: RefObject<HTMLInputElement | null>
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   insertAfter: RefObject<string | null>
@@ -214,6 +214,14 @@ export function useListBindings(c: BindingContext): RowActions {
       setSelectedId(id)
     },
     drag: (e, task) => live.current.startDrag(e, task),
+    grip: (e, task) => live.current.startDrag(e, task, true),
+    gripTap: (task) => {
+      // A tap on the grip is a plain tick with the long press's feedback (bulk-actions on touch).
+      live.current.selection.toggle(task.id)
+      setSelectedId(task.id)
+      live.current.setSelectMode(true)
+      navigator.vibrate?.(10)
+    },
     // The revealed More action (rows-v2 D7): the row menu for this row, as `.` opens it.
     more: (id, from) => {
       setSelectedId(id)

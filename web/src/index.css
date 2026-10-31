@@ -933,6 +933,27 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    row tints while the hold counts, so holding reads as feedback before the menu opens
    on release. A plain attribute, so it survives the row's re-renders mid-hold. */
 li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--text-color-accent) 8%, transparent); }
+/* The bulk-selection box (bulk-actions): drawn by us, not by the platform, so it fills
+   the same 20 px slot as the completion circle it stands in for on every device — the
+   native control's size and alignment vary per browser and read as off-centre on a phone. */
+.row-tick {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid var(--ot-border-input);
+  border-radius: 4px;
+  background: transparent;
+}
+.row-tick:checked {
+  border-color: var(--ot-accent);
+  background-color: var(--ot-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-position: center;
+  background-size: 75% 75%;
+  background-repeat: no-repeat;
+}
 /* A narrow row's line is one run of muted text (rows-v2 D4): a faint middle dot between
    adjacent items, as generated content so it is never read out. A row's line holds two
    wrappers (the column's cells, then the rest), so its dots also cross from the first
@@ -1184,6 +1205,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 }
 }
 @media (pointer: coarse) {
+  /* A held row is the menu's gesture, never a text selection (task-row-context-menu
+     follow-up): a long press on a phone must not select words under the finger.
+     Editing controls keep text selection — the inline editor still selects its text. */
+  li[data-task-id] { -webkit-user-select: none; user-select: none; }
+  li[data-task-id] :is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
   :where(button, [role="button"], summary, select, a.ui-btn) { min-height: 44px; min-width: 44px; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
   :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }

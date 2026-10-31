@@ -545,6 +545,63 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
   })
 })
 
+// The touch grip and the rules that keep a held row from selecting words
+// (task-row-context-menu follow-up, bulk-actions on touch).
+describe('the touch grip', () => {
+  it('renders for a selectable row only, coarse-hidden, and owns its own press', async () => {
+    const rowDown = vi.fn()
+    const gripDown = vi.fn()
+    const gripClick = vi.fn()
+    const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onTick={() => {}} onPointerDown={rowDown} onGripDown={gripDown} onGripClick={gripClick} /></ul>)
+    const grip = r.container.querySelector<HTMLElement>('[data-row-grip]')!
+    // Hidden until a coarse pointer is the primary one; a fine pointer drags the row anywhere.
+    expect(grip.className).toMatch(/\bhidden\b/)
+    expect(grip.className).toMatch(/pointer-coarse:flex/)
+    const button = grip.querySelector('button')!
+    expect(button.className).toMatch(/touch-action-none/)
+    expect(button.className).toMatch(/select-none/)
+    expect(button.className).toMatch(/touch-target/)
+    expect(button.getAttribute('aria-label')).toBe('Select Task')
+    expect(button.getAttribute('aria-pressed')).toBe('false')
+    // The press stops at the grip: the row's own swipe/drag/hold handler never sees it.
+    await act(async () => { button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'touch', clientX: 5, clientY: 5 })) })
+    expect(gripDown).toHaveBeenCalledTimes(1)
+    expect(rowDown).not.toHaveBeenCalled()
+    // A tap is the button's own click: the row's open handler must not also fire.
+    await act(async () => { button.click() })
+    expect(gripClick).toHaveBeenCalledTimes(1)
+    expect(r.container.querySelector('[data-ticked]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('is absent where there is nothing to select: no onTick, no drag, or read-only', async () => {
+    const down = vi.fn()
+    const bare = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onGripDown={down} onGripClick={() => {}} /></ul>)
+    expect(bare.container.querySelector('[data-row-grip]')).toBeNull()
+    await bare.unmount()
+    const viewer = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onTick={() => {}} readOnly onGripDown={down} onGripClick={() => {}} /></ul>)
+    expect(viewer.container.querySelector('[data-row-grip]')).toBeNull()
+    await viewer.unmount()
+  })
+
+  it('a held row never selects words, and the selection box is ours on every device', async () => {
+    const css = (await import('../index.css?raw')).default
+    // The row body is unselectable on a coarse pointer — the source of the Android
+    // word-selection — with form controls exempt so the inline editor still selects.
+    expect(css).toMatch(/li\[data-task-id\] \{ -webkit-user-select: none; user-select: none; \}/)
+    expect(css).toMatch(/li\[data-task-id\] :is\(input, textarea, \[contenteditable="true"\]\) \{ -webkit-user-select: text; user-select: text; \}/)
+    // The box is drawn by the app, not the platform: no native control's sizing or offset.
+    expect(css).toMatch(/\.row-tick \{\s*appearance: none;/)
+    expect(css).toMatch(/\.row-tick:checked \{[^}]*--ot-accent/)
+    const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onTick={() => {}} showCheckbox /></ul>)
+    const input = r.container.querySelector<HTMLInputElement>('[data-tick]')!
+    expect(input.className).toMatch(/row-tick/)
+    // The same 20 px as the completion circle's mark: one slot, one size, every device.
+    expect(input.className).toMatch(/size-5/)
+    await r.unmount()
+  })
+})
+
 // Task origins (OpenSpec change task-origin, task-list-presentation "Metadata language").
 describe('origin chip', () => {
   const issue = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' }
