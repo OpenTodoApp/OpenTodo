@@ -63,7 +63,7 @@ Because the start moves with the series by the same number of days as the due, a
 
 ### D7. Integrations
 - **REST/export/sync:** `span` is a plain boolean field; the resolver rejects non-booleans.
-- **CLI:** `--span` / `--no-span` on `ot add` and `ot edit`, with `--start` and `--due` (help text says a span needs both); `ot show` prints "3–5 Nov".
+- **CLI:** `--span` / `--no-span` on `ot add` and `ot edit`, with `--start` and `--due` (help text says a span needs both); `ot list` prints "3–5 Nov" in its due column.
 - **MCP / agent tools:** results carry `span: true` when set; create/update accept `span`. Server-side views (inbox, today) do not change, since a span changes no membership on the server.
 - **CalDAV:** `X-OPENTODO-SPAN:TRUE` when set, beside `X-OPENTODO-START`; inbound sets or clears the flag; an invalid value is kept in `ical_extra`. DTSTART and DUE keep the deadline mapping; repurposing DTSTART as the span start would break every existing round trip (a client echoing DTSTART would move the do-on date). Generic clients therefore show a span on its due day, as they show it today; documented as a degradation.
 - **Calendar feed and calendar sync:** a span is written as an all-day event with `DTSTART;VALUE=DATE` = start and `DTEND;VALUE=DATE` = the day after due, regardless of "Include tasks without a time" (a span is calendar-shaped by intent). Calendar sync reads a changed all-day event of a span back: first day → `start`, last day → `due.date` (time and zone kept), as ops through `ApplyStrict` with device `calsync:<connection-id>`. An event changed to a timed event writes the due as today and leaves `start` and `span` alone.

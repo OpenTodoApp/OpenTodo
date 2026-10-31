@@ -29,6 +29,7 @@ func planningProps() map[string]any {
 		"start": map[string]any{"type": []string{"string", "null"},
 			"description": "Do not show before this date (YYYY-MM-DD), or \"someday\" to park the task without a date; null makes it active. Written as sent: parking does not clear the do-on date, send due null too (schedule_tasks) if you mean that."},
 		"evening": map[string]any{"type": "boolean", "description": "true puts the task in This Evening of its day; false takes it out."},
+		"span":    map[string]any{"type": "boolean", "description": "true draws the task across the days from its start date to its do-on date, both included (a trip, a conference); needs a start date before the due date. false draws it on its do-on date only."},
 		"day_part": map[string]any{"type": []string{"string", "null"}, "enum": []any{"morning", "afternoon", "evening", nil},
 			"description": "The part of the day the task belongs to: morning, afternoon or evening (This Evening); null for any time. Sets evening too; wins over evening when both are sent."},
 		"energy": map[string]any{"type": []string{"string", "null"}, "enum": []any{"deep", "medium", "low", nil},
@@ -85,12 +86,15 @@ func (snap *snapshot) planningPatch(p string, it args, c Caller, patch map[strin
 			patch["start"] = raw(d)
 		}
 	}
-	if v, ok := it["evening"]; ok {
-		var b bool
-		if json.Unmarshal(v, &b) != nil {
-			return argErr(p + "evening: must be true or false")
+	// This Evening and the span flag (OpenSpec change multi-day-tasks): booleans.
+	for _, f := range []string{"evening", "span"} {
+		if v, ok := it[f]; ok {
+			var b bool
+			if json.Unmarshal(v, &b) != nil {
+				return argErr(p + f + ": must be true or false")
+			}
+			patch[f] = raw(b)
 		}
-		patch["evening"] = raw(b)
 	}
 	// The part of the day (OpenSpec change day-parts): both fields, paired.
 	if v, ok := it["day_part"]; ok {

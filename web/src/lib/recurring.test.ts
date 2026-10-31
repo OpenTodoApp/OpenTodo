@@ -401,6 +401,13 @@ describe('start and evening follow the series (OpenSpec someday-and-evening 7.1)
     expect((await db.tasks.get(occurrenceId(id, '2026-10-14')))?.evening).toBe(true)
   })
 
+  it('a weekly two-day span keeps its length; the record keeps its span (multi-day-tasks D6)', async () => {
+    const id = await createTask({ title: 'Weekend shift', due: { date: '2026-11-09' }, start: '2026-11-08', span: true, recurrence: 'every monday' })
+    await completeTask(id, { today: '2026-11-09' })
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-11-16' }, start: '2026-11-15', span: true })
+    expect(await db.tasks.get(occurrenceId(id, '2026-11-09'))).toMatchObject({ span: true, start: '2026-11-08', due: { date: '2026-11-09' } })
+  })
+
   it('two devices completing offline converge on the same start', async () => {
     const { a, b, id } = await seriesOnTwoDevices({ title: 'Plan', due: { date: '2026-10-19' }, start: '2026-10-17', recurrence: 'every monday' })
     await use(a)

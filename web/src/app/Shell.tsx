@@ -10,7 +10,6 @@ import { canonicalPath, navigate, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
 import { MonthView } from './MonthView'
-import { PlanView } from './PlanView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { PlacesView } from './locations/PlacesView'
@@ -60,6 +59,8 @@ import { SkipLink, usePageFocus } from './pageFocus'
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
+// Plan, the calendar's least used mode, loads on first use (multi-day-tasks kept the first load in its budget).
+const PlanView = lazy(() => import('./PlanView').then((m) => ({ default: m.PlanView })))
 const TriageView = lazy(() => import('./TriageView').then((m) => ({ default: m.TriageView })))
 // In-app Help (user-documentation): the view, the panel and the guide text are
 // chunks of their own, fetched when Help first opens (and precached for offline).
@@ -305,7 +306,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'month' ? (
             <MonthView date={route.date} />
           ) : route.view === 'plan' ? (
-            <PlanView date={route.date} />
+            <Suspense fallback={null}><PlanView date={route.date} /></Suspense>
           ) : (
             // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
             <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'workspace-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />

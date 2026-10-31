@@ -25,3 +25,4 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 
 - [ ] Clean the windows [someday:: true] [evening:: true] [energy:: low] 🆔 t-home6
 - [ ] Stretch 📅 2026-10-25 [daypart:: morning] 🆔 t-home7
+- [ ] Lisbon trip 📅 2026-11-05 🛫 2026-11-03 [span:: true] 🆔 t-home8

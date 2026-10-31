@@ -54,6 +54,7 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 
 - [ ] Clean the windows [someday:: true] [evening:: true] [energy:: low] 🆔 t-home6
 - [ ] Stretch 📅 2026-10-25 [daypart:: morning] 🆔 t-home7
+- [ ] Lisbon trip 📅 2026-11-05 🛫 2026-11-03 [span:: true] 🆔 t-home8
 ```
 
 | Field | Meaning |
@@ -61,6 +62,7 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 | `📅` `[time:: ]` `[tz:: ]` | do-on date, time, zone |
 | `🛫` `[someday:: true]` `[deadline:: ]` | start, Someday, deadline |
 | `[estimate:: 45m]` `[evening:: true]` | estimate, This Evening |
+| `[span:: true]` | a multi-day task, drawn from its `🛫` date to its `📅` date; written after `[evening:: true]`, read anywhere on the line. `[span:: false]` or removing it clears it. Another value is reported and changes nothing |
 | `[daypart:: morning]` `[daypart:: afternoon]` | the part of the day; never beside `[evening:: true]`, which wins when both are there. Another value is reported and changes nothing |
 | `[energy:: deep]` `[energy:: medium]` `[energy:: low]` | the energy the task asks for, read in any letter case and written in lower case; removing it clears the energy. Another value is reported and changes nothing |
 | `🔺` `⏫` `🔼` | priority 1–3 (`🔽` `⏬` read as 4) |

@@ -10,6 +10,7 @@ import { t } from './i18n'
 import { seriesRule } from './recurring'
 import type { Projection } from './occurrences'
 import type { CalendarEvent, Project, Task } from './types'
+import { spanCovers, spanDay, spanOf } from './span'
 
 // The walk lives in occurrences.ts since series-occurrences (design D2): Plan is one of its consumers.
 export { MAX_PROJECTIONS, projectedOccurrences, type Projection } from './occurrences'
@@ -44,7 +45,10 @@ export function planSeries(tasks: readonly Task[], projects: readonly Pick<Proje
 }
 
 /** One row of a column: a task or a projection, in the column's order. */
-export type PlanEntry = { kind: 'task'; task: Task; time?: string } | { kind: 'projected'; projection: Projection; time?: string }
+export type PlanEntry = { kind: 'task'; task: Task; time?: string; spanDay?: SpanPosition } | { kind: 'projected'; projection: Projection; time?: string; spanDay?: SpanPosition }
+
+/** Where a column's day falls in a span the column lists (multi-day-tasks D3): "Day 2 of 3". */
+export interface SpanPosition { n: number; of: number }
 
 /**
  * A column's rows: the day's tasks (in the viewer's zone) and projections together,
@@ -54,9 +58,16 @@ export function columnEntries(tasks: readonly Task[], projections: readonly Proj
   const out: (PlanEntry & { priority: number; position: number })[] = []
   for (const task of tasks) {
     const due = localDueOf(task.due, zone)
-    if (due?.date === date) out.push({ kind: 'task', task, time: due.time, priority: task.priority, position: task.position })
+    // A span is listed on each day it covers, with its position and without a time (multi-day-tasks D3).
+    const span = spanOf(task)
+    if (span && spanCovers(span, date)) out.push({ kind: 'task', task, spanDay: { n: spanDay(span, date), of: span.length }, priority: task.priority, position: task.position })
+    else if (!span && due?.date === date) out.push({ kind: 'task', task, time: due.time, priority: task.priority, position: task.position })
   }
-  for (const p of projections) if (p.date === date) out.push({ kind: 'projected', projection: p, time: p.time, priority: p.priority, position: p.position })
+  for (const p of projections) {
+    const first = p.spanFirst
+    if (first && first <= date && date <= p.date) out.push({ kind: 'projected', projection: p, spanDay: { n: daysBetweenISO(first, date) + 1, of: daysBetweenISO(first, p.date) + 1 }, priority: p.priority, position: p.position })
+    else if (!first && p.date === date) out.push({ kind: 'projected', projection: p, time: p.time, priority: p.priority, position: p.position })
+  }
   out.sort((a, b) => {
     if (!!a.time !== !!b.time) return a.time ? -1 : 1
     if (a.time && b.time && a.time !== b.time) return a.time < b.time ? -1 : 1

@@ -35,6 +35,7 @@
     "deadline": {"type": ["string", "null"], "description": "YYYY-MM-DD: the day the task must be finished by, separate from due"},
     "start": {"type": ["string", "null"], "description": "\"someday\" (parked) or YYYY-MM-DD (deferred until that day)"},
     "evening": {"type": "boolean", "description": "in This Evening"},
+    "span": {"type": "boolean", "description": "drawn across the days from start to the due date, both included, when start is a date before the due date"},
     "day_part": {"type": ["string", "null"], "enum": ["morning", "afternoon", null], "description": "the part of the day: morning or afternoon; evening is the evening flag"},
     "energy": {"type": ["string", "null"], "enum": ["deep", "medium", "low", null], "description": "the energy the task asks for; null for none"},
     "waiting_for_slot": {"type": "boolean", "description": "ot today with a Today limit only: true when the limit keeps the task waiting for a slot"},

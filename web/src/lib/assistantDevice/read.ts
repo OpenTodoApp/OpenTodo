@@ -56,6 +56,7 @@ function render(snap: Snapshot, t: Row, tz: string, today: string, withDescripti
     blocked_by: list(t, 'blocked_by'), blocked: blockedNow(snap, t),
   }
   if (sid && snap.sections.has(sid)) { out.section_id = sid; text.section = field(snap.sections.get(sid), 'name') }
+  if (t.span === true) out.span = true
   if (field(t, 'parent_id')) out.parent_id = field(t, 'parent_id')
   if (field(t, 'recurrence')) out.recurrence = field(t, 'recurrence')
   if (num(t, 'estimate_minutes') > 0) out.estimate_minutes = num(t, 'estimate_minutes')

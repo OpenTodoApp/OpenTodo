@@ -177,6 +177,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>k</kbd> | Select the previous task |
 | <kbd>↑</kbd> / <kbd>↓</kbd> | Move the selected task 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first task |
 | <kbd>←</kbd> / <kbd>→</kbd> | Move the selected task one day earlier / later |
+| <kbd>Shift+←</kbd> / <kbd>Shift+→</kbd> | Move the last day of the selected span; on a task without a time, Shift+→ makes it a two-day span |
+| <kbd>Alt+Shift+←</kbd> / <kbd>Alt+Shift+→</kbd> | Move the first day of the selected span |
 | <kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd> | Shorten / lengthen the estimate by 15 minutes |
 | <kbd>Alt+Shift+↑</kbd> / <kbd>Alt+Shift+↓</kbd> | Start 15 minutes earlier / later, keeping the end |
 | <kbd>u</kbd> | Unschedule the selected task (keep the date) |
@@ -190,6 +192,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>]</kbd> | Next day or week |
 | <kbd>t</kbd> | Back to today |
 | <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In Month: move the focused day; with a task selected, move it a day or a week (keeps its time) |
+| <kbd>Shift+←</kbd> / <kbd>Shift+→</kbd> | In Month: move the last day of the selected span; on a task without a time, Shift+→ makes it a two-day span |
+| <kbd>Alt+Shift+←</kbd> / <kbd>Alt+Shift+→</kbd> | In Month: move the first day of the selected span |
 | <kbd>j</kbd> | In Month: select the next task of the month |
 | <kbd>k</kbd> | In Month: select the previous task |
 | <kbd>Enter</kbd> | In Month: open the selected task |

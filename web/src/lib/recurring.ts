@@ -206,6 +206,8 @@ export function recordFields(series: Task, date: string, now: number, today: str
     ...(series.section_id ? { section_id: series.section_id } : {}),
     ...(series.start === 'someday' ? { start: series.start } : {}),
     ...(series.evening ? { evening: true } : {}),
+    // A span keeps its flag; its start moved with the due above (multi-day-tasks D6).
+    ...(series.span ? { span: true } : {}),
     // The record keeps the part of the day (day-parts D2); only sent when set.
     ...(series.day_part ? { day_part: series.day_part } : {}),
     // And the energy (task-energy); only sent when set.

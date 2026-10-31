@@ -28,6 +28,7 @@ const OUT = 'docs/images'
 let eisenhowerPath = null
 let completedCalendarFixture = null
 let repeatingCalendarFixture = null
+let spansCalendarFixture = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -480,6 +481,33 @@ const shots = [
     await go(p, plainBase, `/week/${fixture.date}`, () => p.locator(`[data-block="${fixture.study}"]`).waitFor())
     await p.locator('[data-projected]').first().waitFor()
     await p.locator(`[data-block="${fixture.study}"]`).scrollIntoViewIfNeeded()
+    await p.mouse.move(0, 0)
+  } },
+  // Tasks that span days (multi-day-tasks 7.1): a three-day trip and a conference that
+  // runs into the next week as bars in the Week's all-day strip, beside a one-day task.
+  { name: 'spans-calendar', server: P, async run(p, { ctx }) {
+    const api = async (method, path, body) => {
+      const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    if (!spansCalendarFixture) {
+      // Next Monday, so the week is the same in both themes.
+      const d = new Date()
+      d.setUTCDate(d.getUTCDate() + ((8 - d.getUTCDay()) % 7 || 7))
+      const day = (n) => new Date(d.getTime() + n * 86400000).toISOString().slice(0, 10)
+      const travel = await api('POST', '/api/v1/projects', { name: 'Travel', color: '#0ea5e9' })
+      const work = await api('POST', '/api/v1/projects', { name: 'Work', color: '#8b5cf6' })
+      const trip = await api('POST', '/api/v1/tasks', { title: 'Lisbon trip', project_id: travel.id, start: day(1), due: { date: day(3) }, span: true })
+      await api('POST', '/api/v1/tasks', { title: 'Design conference', project_id: work.id, start: day(5), due: { date: day(8) }, span: true, estimate_minutes: 240 })
+      await api('POST', '/api/v1/tasks', { title: 'Pack the bags', project_id: travel.id, due: { date: day(0) }, estimate_minutes: 30 })
+      await api('POST', '/api/v1/tasks', { title: 'Send the slides', project_id: work.id, due: { date: day(4), time: '10:00' }, estimate_minutes: 60 })
+      spansCalendarFixture = { date: day(0), trip: trip.id }
+    }
+    const fixture = spansCalendarFixture
+    await p.setViewportSize({ width: 1280, height: 800 })
+    await p.clock.setFixedTime(new Date(`${fixture.date}T09:00:00`))
+    await go(p, plainBase, `/week/${fixture.date}`, () => p.locator(`[data-span-bar="${fixture.trip}"]`).waitFor())
     await p.mouse.move(0, 0)
   } },
   // Frames (calendar-frames 5.2): "Deep work" on weekday mornings and "Admin" late in the afternoon behind the Week's blocks.

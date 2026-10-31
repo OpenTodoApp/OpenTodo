@@ -33,6 +33,8 @@ export type ProjectionHue = (p: Projection) => HueName | undefined
 
 /** A day's drawn projections, timed and date-only: the capacity counts these (series-occurrences D5). */
 export const dayProjections = (day: DayData): Projection[] => [...[...day.projected.values()].map((x) => x.projection), ...day.laneProjected]
+/** The projections a day's capacity counts: its drawn ones and the span projections due that day (multi-day-tasks D3). */
+export const dayLoadProjections = (day: DayData): Projection[] => [...dayProjections(day), ...day.spans.flatMap((x) => (x.kind === 'projected' && x.projection.date === day.date ? [x.projection] : []))]
 /** Adding with the pointer (calendar-clarity D2): the dialog and the menu of the view. */
 export type AddGestures = Pick<AddHere, 'add' | 'menuAt'>
 
@@ -66,8 +68,18 @@ export function HourGutter() {
   )
 }
 
-export function DayHeader({ day, today, tasks, meetings, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, hueOf, projectionHue, deadlines = NO_TASKS, hidden = 0, gestures }: {
+export function DayHeader({ day, today, tasks, meetings, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, hueOf, projectionHue, deadlines = NO_TASKS, hidden = 0, gestures, part = 'all', spanRows = 0, spanHidden = 0, onExtend }: {
   day: DayData
+  /**
+   * With spans on screen (multi-day-tasks D3) the header is drawn in two parts around
+   * the span band: the name and capacity, then the all-day strip and the lane.
+   */
+  part?: 'all' | 'head' | 'body'
+  /** Span bars the band draws on this day, and spans it leaves out: both count toward the strip's cap. */
+  spanRows?: number
+  spanHidden?: number
+  /** The trailing end of a date-only lane task (multi-day-tasks D2): dragging it makes the task a span. */
+  onExtend?: (e: React.PointerEvent, task: Task) => void
   projectionHue?: ProjectionHue
   today: string
   /** Every task of the shown days, filtered or not: capacity counts the day (calendar-clarity D4). */
@@ -90,11 +102,10 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
   onPointerDown: (e: React.PointerEvent, id: string) => void
   hueOf: HueOf
 }) {
-  const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0, slotCapacity([...day.slots.values()]), dayProjections(day))
+  const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0, slotCapacity([...day.slots.values()]), dayLoadProjections(day))
   const d = Number(day.date.slice(8))
   const weekdayName = formatDateParts(day.date, { weekday: 'short' })
-  return (
-    <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
+  const head = (
       <div className="flex items-baseline justify-between gap-1 px-1">
         {showName ? (
           <TruncatedText className={`text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`} text={`${weekdayName} ${d}`} />
@@ -103,7 +114,9 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
           <CapacityLine load={load} dayLength={prefs.dayLength} unestimated focusable />
         </Tooltip>
       </div>
-      {day.allDay.length + deadlines.length > 0 && <AllDayStrip day={day} deadlines={deadlines} today={today} subMap={subMap} zone={zone} onOpen={onOpen} />}
+  )
+  const body = <>
+      {day.allDay.length + deadlines.length + spanHidden > 0 && <AllDayStrip day={day} deadlines={deadlines} today={today} subMap={subMap} zone={zone} onOpen={onOpen} spanRows={spanRows} spanHidden={spanHidden} />}
       <div
         data-drop-lane={day.date}
         {...addHandlers(gestures, () => ({ date: day.date }))}
@@ -121,17 +134,26 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
             onPointerDown={task.completed_at ? undefined : (e) => onPointerDown(e, task.id)}
             onClick={() => onSelect(task.id)}
             onDoubleClick={() => onOpen(task.id)}
-            className={`ui-block ui-block--row flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-left text-meta ${task.completed_at || day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
+            className={`ui-block ui-block--row relative flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-left text-meta ${task.completed_at || day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
             data-hue={hueOf(task)}
           >
             <span className={`truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
             {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
             {task.deadline === day.date && !task.completed_at && <><DeadlineDiamond past={day.date < today} /><span className="sr-only">, {deadlineMark(task, day.date)}</span></>}
             {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
+            {/* The trailing end: drag it onto a later day to make the task a span (multi-day-tasks D2). */}
+            {onExtend && !task.completed_at && !task.due?.time && <span aria-hidden data-span-handle="extend" onPointerDown={(e) => onExtend(e, task)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />}
           </button>
         ))}
         {day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" onDrag={(e) => onPointerDown(e, p.id)} />)}
       </div>
+  </>
+  if (part === 'head') return <div className="min-w-0 flex-1 border-l border-default px-1 pt-1" data-day-header={day.date}>{head}</div>
+  if (part === 'body') return <div className="min-w-0 flex-1 border-l border-default px-1 pb-1" data-day-strip={day.date}>{body}</div>
+  return (
+    <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
+      {head}
+      {body}
     </div>
   )
 }
@@ -421,13 +443,15 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
  * The all-day strip: deadline markers first (calendar-clarity D1), then all-day events;
  * at most three items together, then "+N" to show the rest on this device (surfaces-v2 D4).
  */
-function AllDayStrip({ day, deadlines, today, subMap, zone, onOpen }: { day: DayData; deadlines: readonly Task[]; today: string; subMap: Map<string, CalendarSubscription>; zone?: string; onOpen: (id: string) => void }) {
+function AllDayStrip({ day, deadlines, today, subMap, zone, onOpen, spanRows = 0, spanHidden = 0 }: { day: DayData; deadlines: readonly Task[]; today: string; subMap: Map<string, CalendarSubscription>; zone?: string; onOpen: (id: string) => void; spanRows?: number; spanHidden?: number }) {
   const expanded = useAllDayExpanded().has(day.date)
   const items: ({ kind: 'deadline'; task: Task } | { kind: 'event'; ev: CalendarEvent })[] = [
     ...deadlines.map((task) => ({ kind: 'deadline' as const, task })), ...day.allDay.map((ev) => ({ kind: 'event' as const, ev })),
   ]
-  const capped = items.length > ALL_DAY_CAP
-  const shown = capped && !expanded ? items.slice(0, ALL_DAY_CAP) : items
+  // Span bars above take rows of the cap; the spans the band leaves out count in "+N" (multi-day-tasks D3).
+  const room = Math.max(0, ALL_DAY_CAP - spanRows)
+  const capped = items.length > room || spanHidden > 0
+  const shown = capped && !expanded ? items.slice(0, room) : items
   return (
     <div className="mt-1" data-all-day={day.date}>
       <ul className="space-y-0.5" aria-label={t('All-day events on {date}', { date: day.date })}>
@@ -438,7 +462,7 @@ function AllDayStrip({ day, deadlines, today, subMap, zone, onOpen }: { day: Day
       {capped && (
         <Button variant="ghost" size="sm" className="mt-0.5 w-full justify-start" aria-expanded={expanded} data-all-day-more={day.date}
           onClick={() => toggleAllDay(day.date)}>
-          {expanded ? t('Show less') : `+${items.length - ALL_DAY_CAP}`}
+          {expanded ? t('Show less') : `+${items.length - shown.length + spanHidden}`}
         </Button>
       )}
     </div>
