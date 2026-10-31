@@ -47,7 +47,7 @@ describe('OwnerAssistantSettings', () => {
     const d = draftFrom(saved)
     expect(inputFrom(d).keys).toEqual({})
     expect(inputFrom({ ...d, keys: { anthropic: '' } }).keys).toEqual({ anthropic: '' })
-    expect(inputFrom(d).providers?.compatible).toEqual({ enabled: false, model: '', base_url: '' })
+    expect(inputFrom(d).providers?.compatible).toEqual({ enabled: false, model: '', base_url: '', images: false })
   })
 })
 
@@ -59,7 +59,10 @@ describe('Test connection uses the values on screen (assistant-test-unsaved-sett
     expect(testDraft(d, 'anthropic')).toEqual({ model: 'claude-opus-5-5', allow_private_endpoint: false })
     expect(testDraft({ ...d, keys: { anthropic: '' } }, 'anthropic').key).toBe('')
     const compat = { ...d, allow_private_endpoint: true, providers: { ...d.providers, compatible: { enabled: false, model: 'llama', base_url: ' http://192.168.1.20:11434/v1 ' } } }
-    expect(testDraft(compat, 'compatible')).toEqual({ model: 'llama', base_url: 'http://192.168.1.20:11434/v1', allow_private_endpoint: true })
+    expect(testDraft(compat, 'compatible')).toEqual({ model: 'llama', base_url: 'http://192.168.1.20:11434/v1', allow_private_endpoint: true, images: false })
+    // "This model reads images" goes with the test (voice-ramble 2.4).
+    const marked = { ...compat, providers: { ...compat.providers, compatible: { ...compat.providers.compatible, images: true } } }
+    expect(testDraft(marked, 'compatible')).toMatchObject({ images: true })
   })
   it('knows when a test covered unsaved values', () => {
     const d = draftFrom(saved)

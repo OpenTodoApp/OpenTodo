@@ -43,6 +43,15 @@ func (p *ChatProvider) Start(req Request) Conversation {
 		if m.Role == "assistant" {
 			role = "assistant"
 		}
+		if role == "user" && len(m.Images) > 0 {
+			// Image parts with data: URLs (voice-ramble D5).
+			parts := []map[string]any{{"type": "text", "text": m.Text}}
+			for _, img := range m.Images {
+				parts = append(parts, map[string]any{"type": "image_url", "image_url": map[string]any{"url": "data:" + img.MediaType + ";base64," + img.Data}})
+			}
+			msgs = append(msgs, map[string]any{"role": role, "content": parts})
+			continue
+		}
 		msgs = append(msgs, map[string]any{"role": role, "content": m.Text})
 	}
 	var tools []map[string]any
@@ -56,7 +65,7 @@ func (p *ChatProvider) Start(req Request) Conversation {
 			"name": t.Name, "description": t.Description, "parameters": schema,
 		}})
 	}
-	return &chatConv{p: p, messages: msgs, tools: tools, maxTokens: req.MaxTokens}
+	return &chatConv{p: p, messages: msgs, tools: tools, maxTokens: req.MaxTokens, images: hasImages(req.Messages)}
 }
 
 type chatConv struct {
@@ -64,6 +73,8 @@ type chatConv struct {
 	messages  []map[string]any
 	tools     []map[string]any
 	maxTokens int64
+	// images marks a turn that carries photos (a 400 about them is images_unsupported).
+	images bool
 }
 
 func (c *chatConv) body() ([]byte, error) {
@@ -286,6 +297,10 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 			return nil, &ProviderError{Code: CodeProviderError, Status: resp.StatusCode, Msg: "the endpoint answered with a redirect, which this server does not follow"}
 		}
 		if !retry || attempt >= c.p.Retries {
+			if c.images && imageRefusal(resp.StatusCode, string(errBody)) {
+				typ, _ := readChatError(errBody)
+				return nil, imagesUnsupported(resp.StatusCode, typ)
+			}
 			return nil, chatError(c.p.Name, resp.StatusCode, errBody)
 		}
 		select {

@@ -17,6 +17,8 @@ Once the [assistant is on](assistant-setup.md), the owner can point it at a mode
 
 Run Ollama or LM Studio on a machine in your network, choose **Compatible endpoint**, enter its base URL (Ollama: `http://<host>:11434/v1`; LM Studio: `http://<host>:1234/v1`) and a model that supports tools, and tick **Allow private endpoints**. Small models answer questions well but struggle with the multi-step [skills](assistant-skills.md#skills): in testing, a 3-billion-parameter model handled **Break this down** but not the others, so choose a model of 7B or more for skills. Without that switch, addresses on private networks are refused, the same rule as for [webhooks](webhooks.md).
 
+**This model reads images** (off by default) lets people add [photos](assistant-capture.md) to a message when the compatible endpoint is in use; tick it only for a vision model (for example `llava` or `qwen2.5vl` in Ollama). **Test connection** then also sends a small built-in image and says so when the endpoint refuses it. Anthropic, OpenAI and Google Gemini always read images. Without the mark nobody sees **Add photo**, and a request with photos is refused before the endpoint is asked. Photos are held in memory only for the turn (at most 16 MB per request).
+
 ## On-device assistant for encrypted accounts
 
 **Let encrypted accounts use the assistant from their own device** (off by default) lets people with end-to-end encryption run the assistant in their browser with their own key; your keys are never used, and the server sees no content. While it is on, pages of the server may connect to the providers you allow. See [Assistant on encrypted accounts](assistant-encrypted.md#for-the-server-owner).

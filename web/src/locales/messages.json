@@ -938,6 +938,9 @@
   "Add passkey": [
     "web/src/app/SecurityPanel.tsx"
   ],
+  "Add photo": [
+    "web/src/app/assistant/ComposerCapture.tsx"
+  ],
   "Add reaction": [
     "web/src/app/task-detail/ReactionBar.tsx"
   ],
@@ -1721,6 +1724,9 @@
   "At least {MIN_PASSPHRASE_LENGTH} characters.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "At most 4 photos go with one message.": [
+    "web/src/lib/assistantImages.ts"
+  ],
   "At most one year before or after.": [
     "web/src/app/DefaultRemindersSettings.tsx"
   ],
@@ -2229,6 +2235,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
@@ -3101,7 +3108,8 @@
     "web/src/app/FirstRun.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/SecurityPanel.tsx",
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/app/TwoFactorPanel.tsx",
+    "web/src/app/assistant/ComposerCapture.tsx"
   ],
   "Continues as {title} from {date}": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -4047,6 +4055,7 @@
     "web/src/app/RemindersField.tsx",
     "web/src/app/Shell.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
+    "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx"
   ],
   "Display mode": [
@@ -7170,6 +7179,9 @@
   "Lets connectors such as Claude.ai read and write your encrypted text through this device.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Lets people add photos to a message. Test connection then also sends a small image.": [
+    "web/src/app/assistant/AssistantSettings.tsx"
+  ],
   "Lets people connect Google Calendar. Register the redirect address in your OAuth client.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -7260,6 +7272,12 @@
   ],
   "Listed on the All projects page, where each can be restored.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Listening": [
+    "web/src/app/assistant/useRamble.ts"
+  ],
+  "Listening {time}": [
+    "web/src/app/assistant/ComposerCapture.tsx"
   ],
   "Lists": [
     "web/src/app/calendar/PlanPanel.tsx"
@@ -9592,6 +9610,9 @@
   "Only people who already have an account on this server can use it. The server owner can let members invite new people in Settings → People.": [
     "web/src/app/InviteLinksSection.tsx"
   ],
+  "Only photos can be added: JPEG, PNG, WebP, GIF or HEIC.": [
+    "web/src/lib/assistantImages.ts"
+  ],
   "Only the addresses you list below.": [
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
@@ -10263,6 +10284,15 @@
     "web/src/app/workspaceNav.ts",
     "web/src/lib/templateLibrary.ts"
   ],
+  "Photo {n}": [
+    "web/src/app/assistant/ComposerCapture.tsx"
+  ],
+  "Photos": [
+    "web/src/app/assistant/ComposerCapture.tsx"
+  ],
+  "Photos you add go to {provider} with this message and are not kept by OpenTodo.": [
+    "web/src/app/assistant/ComposerCapture.tsx"
+  ],
   "Pick a date and time.": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -10919,6 +10949,9 @@
   "Quote\nOrdered\nDone": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Ramble into tasks": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Range": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/MonthView.tsx",
@@ -11197,6 +11230,9 @@
   "Remove pasted text": [
     "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/ui/patterns/AskComposer.tsx"
+  ],
+  "Remove photo {n}": [
+    "web/src/app/assistant/ComposerCapture.tsx"
   ],
   "Remove picture": [
     "web/src/app/profile/PictureDialog.tsx"
@@ -13073,6 +13109,9 @@
   "Speak a task instead of typing it, on this device.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Speak your list": [
+    "web/src/app/assistant/ComposerCapture.tsx"
+  ],
   "Speech is recognised by your browser, not by OpenTodo.": [
     "web/src/app/VoiceSettings.tsx"
   ],
@@ -13253,7 +13292,8 @@
   ],
   "Stop": [
     "web/src/app/TrackingIndicator.tsx",
-    "web/src/app/assistant/AssistantComposer.tsx"
+    "web/src/app/assistant/AssistantComposer.tsx",
+    "web/src/app/assistant/ComposerCapture.tsx"
   ],
   "Stop dictating": [
     "web/src/lib/shortcuts.ts"
@@ -13266,6 +13306,9 @@
   ],
   "Stop grouping by part of the day": [
     "web/src/app/TaskListView.tsx"
+  ],
+  "Stop listening": [
+    "web/src/app/assistant/ComposerCapture.tsx"
   ],
   "Stop placing into the frame": [
     "web/src/app/calendar/PlanPanel.tsx"
@@ -13280,7 +13323,11 @@
   ],
   "Stopped": [
     "web/src/app/CalendarSyncPanel.tsx",
-    "web/src/app/IssuesPanel.tsx"
+    "web/src/app/IssuesPanel.tsx",
+    "web/src/app/assistant/useRamble.ts"
+  ],
+  "Stopped at 5:00, the longest recording. The text so far is in the field.": [
+    "web/src/lib/voice/ramble.ts"
   ],
   "Stopped because this account uses end-to-end encryption.": [
     "web/src/app/IssuesPanel.tsx"
@@ -13883,6 +13930,12 @@
   "The change could not be saved.": [
     "web/src/app/actionError.ts"
   ],
+  "The chosen model does not read photos. Remove them to send the message.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "The chosen model does not read photos. Your message and photos are still in the field: remove the photos to send the text.": [
+    "web/src/lib/assistantImages.ts"
+  ],
   "The code is not valid. Check that your device’s clock is set automatically and try again.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -14051,6 +14104,9 @@
   ],
   "The microphone is used only while you dictate; the browser asks for permission the first time.": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "The model on this device does not read photos. Remove them and send the message without them.": [
+    "web/src/lib/assistantImages.ts"
   ],
   "The model provider changed.": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -14435,6 +14491,9 @@
   "The speech service did not answer. Try again, or type the task.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The speech service’s limit was reached. The text so far is in the field; try again in a minute.": [
+    "web/src/lib/voice/ramble.ts"
+  ],
   "The start must be on or before the due date.": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -14626,6 +14685,9 @@
   ],
   "This browser cannot keep files on the device (private browsing?), so they cannot be attached here.": [
     "web/src/lib/attachments.ts"
+  ],
+  "This browser cannot open this photo. Try a JPEG or PNG.": [
+    "web/src/lib/assistantImages.ts"
   ],
   "This browser cannot receive push notifications (private windows and some browsers cannot). Reminders still appear inside the app.": [
     "web/src/lib/push.ts"
@@ -14898,6 +14960,9 @@
   "This message will not appear again. You can open it from Settings → About.": [
     "web/src/app/WelcomeDialog.tsx"
   ],
+  "This model reads images": [
+    "web/src/app/assistant/AssistantSettings.tsx"
+  ],
   "This month": [
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/stats.ts"
@@ -14962,6 +15027,9 @@
   ],
   "This person is not a member of the workspace. Ask the workspace owner to add them first.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This photo is still larger than 3.75 MB after scaling. Try a smaller one.": [
+    "web/src/lib/assistantImages.ts"
   ],
   "This project": [
     "web/src/app/assistant/AssistantPanel.tsx"
@@ -15660,6 +15728,9 @@
   ],
   "Turn on voice capture?": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Turn this into tasks": [
+    "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "Turned away from the colour for errors": [
     "web/src/ui/AccentPicker.tsx"
@@ -18277,6 +18348,9 @@
   "the model server at {origin}": [
     "web/src/app/assistant/useDeviceAssistant.ts"
   ],
+  "the model server your server owner set up": [
+    "web/src/app/assistant/AssistantPanel.tsx"
+  ],
   "the name": [
     "web/src/lib/activity.ts"
   ],
@@ -19031,6 +19105,9 @@
   ],
   "{n, plural, one {# person} other {# people}}": [
     "web/src/app/ShareDirectory.tsx"
+  ],
+  "{n, plural, one {# photo (not kept)} other {# photos (not kept)}}": [
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "{n, plural, one {# possible duplicate} other {# possible duplicates}}": [
     "web/src/app/ImportScreen.tsx"

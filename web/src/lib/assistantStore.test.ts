@@ -19,6 +19,16 @@ describe('assistant conversations on the device', () => {
     expect((await listThreads())[0].messages).toHaveLength(2)
   })
 
+  // voice-ramble 4.3: a message keeps how many photos went with it, never the photos.
+  it('keep a count of photos, never the images', async () => {
+    const t = newThread('anthropic')
+    t.messages.push({ role: 'user', text: 'turn this into tasks', photos: 2, at: 1 })
+    await saveThread(t)
+    const saved = (await listThreads())[0].messages[0]
+    expect(saved).toEqual({ role: 'user', text: 'turn this into tasks', photos: 2, at: 1 })
+    expect(Object.keys(saved)).not.toContain('images')
+  })
+
   it('are cleared at sign-out', async () => {
     await saveThread(newThread('anthropic'))
     await db.assistantUndo.put({ id: 'u', created_at: 1, count: 1, inverse: [], clocks: [] })

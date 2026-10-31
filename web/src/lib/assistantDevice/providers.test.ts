@@ -206,3 +206,42 @@ describe('model server address', () => {
     expect(calls[0].url).toBe('http://localhost:11434/v1/chat/completions')
   })
 })
+
+// voice-ramble 5.1: photos go from the device to the provider with the same limits.
+describe('photos from the device', () => {
+  const photo = { media_type: 'image/jpeg', data: '/9j/AAAA' }
+  const done = (named: boolean) => named
+    ? sse([{ type: 'message_start', message: { usage: { input_tokens: 5, output_tokens: 1 } } }, { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 3 } }])
+    : sse([{ choices: [{ index: 0, delta: { content: 'ok' }, finish_reason: 'stop' }] }, '[DONE]'], false)
+  const msgs = [{ role: 'user' as const, text: 'earlier' }, { role: 'assistant' as const, text: 'ok' }, { role: 'user' as const, text: 'Turn this into tasks', images: [photo] }]
+
+  it('sends Anthropic image blocks after the text of their message', async () => {
+    const { f, calls } = fakeFetch([done(true)])
+    await anthropicProvider({ provider: 'anthropic', model: 'claude-opus-5-5', key: 'k', savedAt: 1 }, f).start({ system: 'S', messages: msgs, tools: [], maxTokens: 10 }).next(() => {})
+    const body = JSON.parse(String(calls[0].init.body))
+    expect(body.messages[0].content).toEqual([{ type: 'text', text: 'earlier' }])
+    expect(body.messages[2].content).toEqual([{ type: 'text', text: 'Turn this into tasks' }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: '/9j/AAAA' } }])
+  })
+
+  it('sends Chat Completions image parts with a data: URL', async () => {
+    for (const provider of ['openai', 'gemini', 'compatible'] as const) {
+      const { f, calls } = fakeFetch([done(false)])
+      await chatProvider({ provider, model: 'm', key: 'k', savedAt: 1, baseUrl: 'http://localhost:11434/v1' }, f).start({ system: 'S', messages: msgs, tools: [], maxTokens: 10 }).next(() => {})
+      const body = JSON.parse(String(calls[0].init.body))
+      expect(body.messages[1]).toEqual({ role: 'user', content: 'earlier' })
+      expect(body.messages[3].content).toEqual([{ type: 'text', text: 'Turn this into tasks' }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,/9j/AAAA' } }])
+    }
+  })
+
+  it('says the model on this device does not read photos when it refuses them', async () => {
+    const { f } = fakeFetch(['{"error":{"message":"model does not support image input"}}'], 400)
+    const err = await chatProvider({ provider: 'compatible', model: 'm', savedAt: 1, baseUrl: 'http://localhost:11434/v1' }, f).start({ system: 'S', messages: msgs, tools: [], maxTokens: 10 }).next(() => {}).catch((e) => e)
+    expect(err).toBeInstanceOf(ProviderError)
+    expect(err.code).toBe('images_unsupported')
+    expect(deviceCode(err.code)).toBe('device_images_unsupported')
+    // Without photos the same answer is an ordinary refusal.
+    const { f: f2 } = fakeFetch(['{"error":{"message":"model does not support image input"}}'], 400)
+    const plain = await chatProvider({ provider: 'compatible', model: 'm', savedAt: 1, baseUrl: 'http://localhost:11434/v1' }, f2).start({ system: 'S', messages: [msgs[0]], tools: [], maxTokens: 10 }).next(() => {}).catch((e) => e)
+    expect(plain.code).toBe('provider_error')
+  })
+})

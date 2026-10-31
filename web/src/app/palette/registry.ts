@@ -43,6 +43,7 @@ import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotA
 import { requestFrames } from '../calendar/framesRequest'
 import { newSlotNow } from '../calendar/slotActions'
 import { act } from '../actionError'
+import { assistantStatus, openAssistantWith } from '../../lib/assistantStatus'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -352,6 +353,11 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'today:limit', label: t('Limit Today…'), icon: 'list-checks', keywords: 'today limit slots closed list wip cap',
       run: () => navigate({ view: 'settings', section: 'general', page: 'start', anchor: 'today-limit' }) },
   )
+  // Ramble into tasks (voice-ramble D1): the assistant with the capture skill and the microphone; no default key.
+  if (assistantStatus()?.available) {
+    out.push({ id: 'assistant:ramble', label: t('Ramble into tasks'), icon: 'mic', keywords: 'voice speak dictate brain dump photo whiteboard notes capture assistant',
+      run: () => openAssistantWith({ skill: 'capture', listen: true }) })
+  }
   if (ctx.query.trim()) {
     const q = ctx.query.trim()
     out.push({ id: 'app:help-search', label: t('Search Help for “{query}”', { query: q }), icon: 'search', run: () => navigate({ view: 'help', q }) })

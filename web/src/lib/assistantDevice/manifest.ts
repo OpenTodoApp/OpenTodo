@@ -30,9 +30,11 @@ export interface Manifest {
   device_note: string
   notice: string
   untrusted_note: string
+  /** Introduces a message's photos (voice-ramble D8). */
+  images_note: string
   views: Record<string, string>
   messages: { refusal: string; cut_off: string; round_limit: string }
-  limits: { max_rounds: number; max_output_tokens: number; max_entities: number; max_items: number }
+  limits: { max_rounds: number; max_output_tokens: number; max_entities: number; max_items: number; max_images: number; max_image_bytes: number }
   default_anthropic_model: string
   anthropic_models: string[]
   endpoints: Record<'anthropic' | 'openai' | 'gemini', string>
