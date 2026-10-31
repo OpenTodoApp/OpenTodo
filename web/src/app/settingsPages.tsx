@@ -16,6 +16,7 @@ import { AssistantsPanel } from './AssistantsPanel'
 import { AppearanceSection, SidebarSection, TaskDetailsSection } from './AppearanceSection'
 import { BackupsPanel } from './BackupsPanel'
 import { AddPositionSection, QuickAddSettingsSection } from './QuickAddSettings'
+import { DefaultRemindersSection } from './DefaultRemindersSettings'
 import { VoiceSettingsSection } from './VoiceSettings'
 import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
@@ -39,7 +40,8 @@ import { IssuesPanel } from './IssuesPanel'
 import { CalendarSyncPanel } from './CalendarSyncPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
-import { BriefingSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
+import { BriefingSection, DayPartsSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
+import { ClosedListSection } from './ClosedListSettings'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
 import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
@@ -57,6 +59,8 @@ import { demoFeatures, joinList, type SettingsPage, type SettingsSection } from 
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
 const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
+// Settings → Server → Backups → Database storage (op-log-compaction): owner only, loaded with the page.
+const DatabaseStoragePanel = lazy(() => import('./DatabaseStoragePanel').then((m) => ({ default: m.DatabaseStoragePanel })))
 
 interface PageProps { user: User; demo: boolean; hosted: boolean; onLogout: () => void }
 
@@ -79,7 +83,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'account/activity': () => <Anchor id="sessions"><ActivityPanel /></Anchor>,
   'account/invitations': ({ demo }) => <Anchor id="invitations"><DemoDisabled on={demo}><InvitationsPanel /></DemoDisabled></Anchor>,
   'account/encryption': ({ demo }) => <Anchor id="encryption"><DemoDisabled on={demo}><EncryptionPanel /></DemoDisabled></Anchor>,
-  'general/start': () => <><StartViewSection /><BriefingSection /></>,
+  'general/start': () => <><StartViewSection /><BriefingSection /><DayPartsSection /><ClosedListSection /></>,
   'general/keyboard': () => <KeyboardSection />,
   'general/focus': () => <FocusSection />,
   'general/maps': () => <MapsUserSection />,
@@ -89,7 +93,8 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'appearance/theme': () => <AppearanceSection />,
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
-  'notifications/push': ({ demo }) => <DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled>,
+  // Default reminders touch no server feature, so they stay usable on the demo (default-reminders D8).
+  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled></>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,
   'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /></>,
@@ -109,7 +114,8 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'people/users': ({ user, demo }) => <><ConfigWarningsNotice user={user} /><DemoDisabled on={demo}><AdministrationSections user={user} /></DemoDisabled></>,
   'people/access-policies': ({ demo }) => <Anchor id="access-policies"><DemoDisabled on={demo}><MfaPolicyPanel /><ProjectInvitePolicyPanel /></DemoDisabled></Anchor>,
   'people/sso': ({ demo }) => <DemoDisabled on={demo}><SsoPanel /></DemoDisabled>,
-  'server/backups': ({ demo }) => <DemoDisabled on={demo}><BackupsPanel /></DemoDisabled>,
+  // Backups, then the database file and notes compaction (op-log-compaction D7).
+  'server/backups': ({ user, demo }) => <DemoDisabled on={demo}><BackupsPanel /><Suspense fallback={null}><DatabaseStoragePanel isOwner={user.role === 'owner'} /></Suspense></DemoDisabled>,
   'server/download': () => <ServerArchivePanel />,
   'server/attachments': () => <AttachmentSettingsPanel />,
   // Outgoing email (outgoing-email change): the owner's SMTP settings; a demo instance never builds the mailer.

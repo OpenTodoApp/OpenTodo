@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -47,8 +48,17 @@ type Task struct {
 	Deadline    string // "YYYY-MM-DD" or "" (OpenSpec change deadlines)
 	Start       string // "someday", "YYYY-MM-DD" or "" (OpenSpec change someday-and-evening)
 	Evening     bool
-	Categories  []string
-	ParentUID   string
+	// Span draws the task from Start to its due date (OpenSpec change
+	// multi-day-tasks), served as X-OPENTODO-SPAN:TRUE; false serves nothing.
+	Span bool
+	// DayPart is "morning" or "afternoon" (OpenSpec change day-parts), served
+	// as X-OPENTODO-DAY-PART; Evening stays X-OPENTODO-EVENING only.
+	DayPart string
+	// Energy is "deep", "medium" or "low" (OpenSpec change task-energy),
+	// served as X-OPENTODO-ENERGY; empty serves nothing.
+	Energy     string
+	Categories []string
+	ParentUID  string
 	// DependsOn are the UIDs of the task's blockers in the same calendar
 	// (OpenSpec change task-dependencies, design D10).
 	DependsOn   []string
@@ -61,6 +71,14 @@ type Task struct {
 	// Reminders as VALARMs (OpenSpec change caldav-interop).
 	EstimateMinutes int
 	Reminders       []Reminder
+	// Exceptions of a series (OpenSpec change series-exceptions, design D10):
+	// ExDates are its exception dates from the current occurrence on, served
+	// as one EXDATE; Until, when set, replaces a `for N times` COUNT with the
+	// date of the last remaining occurrence. SiblingUID is the series' UID on
+	// an open occurrence record (RELATED-TO;RELTYPE=SIBLING).
+	ExDates    []string
+	Until      string
+	SiblingUID string
 }
 
 // DateShape is the shape of an inbound VTODO's date properties (OpenSpec
@@ -113,8 +131,19 @@ type Inbound struct {
 	// Start and Evening come from X-OPENTODO-START and X-OPENTODO-EVENING
 	// (someday-and-evening D7); nil means the client did not send the property,
 	// which leaves the field alone.
-	Start       *string
-	Evening     *bool
+	Start   *string
+	Evening *bool
+	// Span comes from X-OPENTODO-SPAN (multi-day-tasks D7): TRUE or FALSE;
+	// nil when the client did not send a known value.
+	Span *bool
+	// DayPart comes from X-OPENTODO-DAY-PART (day-parts): "morning" or
+	// "afternoon"; nil when the client did not send a known value.
+	DayPart *string
+	// Energy comes from X-OPENTODO-ENERGY (task-energy): a known level, else
+	// nil. EnergySent is true when the property was there at all, so a VTODO
+	// without it can clear a served energy while an unknown value leaves it.
+	Energy      *string
+	EnergySent  bool
 	Completed   bool
 	CompletedAt *int64 // the COMPLETED time when the client sent one
 	Categories  []string
@@ -128,11 +157,25 @@ type Inbound struct {
 	RRULE string
 	Rule  string
 	Extra string
-	// CompletedOccurrences are the RECURRENCE-ID dates of the overrides the
-	// client sent completed (Thunderbird completes one occurrence of a
-	// repeating task that way); the caller completes the current occurrence
-	// when its due date is among them. Other overrides are not modelled.
-	CompletedOccurrences []string
+	// Overrides are the RECURRENCE-ID overrides the client sent beside the
+	// series (Thunderbird completes one occurrence of a repeating task that
+	// way); ExDates are the dates of its EXDATE lines and HasExDate reports
+	// that it sent one at all (OpenSpec change series-exceptions, design D10).
+	// The caller turns them into occurrence records; neither is stored.
+	Overrides []Override
+	ExDates   []string
+	HasExDate bool
+}
+
+// CompletedOccurrences are the dates of the overrides the client sent completed.
+func (in *Inbound) CompletedOccurrences() []string {
+	var out []string
+	for _, o := range in.Overrides {
+		if o.Completed {
+			out = append(out, o.Date)
+		}
+	}
+	return out
 }
 
 // AppToICalPriority is the outbound priority table (design D3): 1→1, 2→5, 3→9,
@@ -234,8 +277,14 @@ func Encode(t Task) []byte {
 	}
 	if t.Recurrence != "" {
 		if r, err := recurrence.Parse(t.Recurrence); err == nil {
-			add("RRULE", r.RRULE())
+			add("RRULE", r.RRULEUntil(t.Until))
 		}
+		// The series' exceptions are the server's (series-exceptions D10); an
+		// EXDATE stays client data only beside a rule the server does not map.
+		extra = dropTopLevel(extra, "EXDATE")
+	}
+	if len(t.ExDates) > 0 && t.Due != nil {
+		todo.Props = append(todo.Props, exdateProp(t.Due, t.ExDates))
 	}
 	if t.EstimateMinutes > 0 {
 		add("ESTIMATED-DURATION", DurationText(t.EstimateMinutes))
@@ -254,8 +303,16 @@ func Encode(t Task) []byte {
 	case t.Start != "":
 		add("X-OPENTODO-START", dateValue(t.Start))
 	}
+	if t.Span {
+		add("X-OPENTODO-SPAN", "TRUE")
+	}
 	if t.Evening {
 		add("X-OPENTODO-EVENING", "TRUE")
+	} else if t.DayPart == "morning" || t.DayPart == "afternoon" {
+		add("X-OPENTODO-DAY-PART", strings.ToUpper(t.DayPart))
+	}
+	if t.Energy == "deep" || t.Energy == "medium" || t.Energy == "low" {
+		add("X-OPENTODO-ENERGY", strings.ToUpper(t.Energy))
 	}
 	if p := AppToICalPriority(t.Priority); p != 0 {
 		add("PRIORITY", strconv.Itoa(p))
@@ -278,6 +335,13 @@ func Encode(t Task) []byte {
 	}
 	if t.ParentUID != "" {
 		add("RELATED-TO", EscapeText(t.ParentUID))
+	}
+	if t.SiblingUID != "" {
+		// The series of an occurrence record (series-exceptions D10); the copy
+		// a client echoed into the remainder is this one, not client data.
+		sibling := Prop{Name: "RELATED-TO", Params: []Param{{Name: "RELTYPE", Values: []string{"SIBLING"}}}, Value: EscapeText(t.SiblingUID)}
+		extra = slices.DeleteFunc(extra, func(l string) bool { return l == sibling.Line() })
+		todo.Props = append(todo.Props, sibling)
 	}
 	for _, uid := range t.DependsOn {
 		todo.Props = append(todo.Props, Prop{Name: "RELATED-TO", Params: []Param{{Name: "RELTYPE", Values: []string{"DEPENDS-ON"}}}, Value: EscapeText(uid)})

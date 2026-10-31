@@ -475,3 +475,138 @@ The phone's quick-add sheet SHALL show, under the line, a row of neutral chips f
 #### Scenario: Send offline
 - **WHEN** the device is offline and the user taps send with `Water the plants`
 - **THEN** the task appears at once in the current view with its defaults and syncs when the connection returns
+
+### Requirement: Pasting several lines into quick add
+When text with at least two non-empty lines is pasted into an empty quick add (or one whose whole text is selected), in any of its presentations (a list's or a section's quick add, the command bar, the phone's add sheet, the share capture screen, a calendar day's add dialog), the paste SHALL NOT be inserted; instead an offer anchored to the field SHALL show the number of tasks, the first five lines as they will be titled and how many more follow, with "Add N tasks" (the default, Enter) and "Paste as one line" (inserts the lines joined by spaces); Escape SHALL close the offer and paste nothing. A paste into a field that already holds unselected text, or of a single line, SHALL behave as before.
+
+Before counting, each line SHALL be trimmed, blank lines SHALL be skipped, one leading list marker (`-`, `*`, `+`, `•`, `‣`, `◦`, a number or letter followed by `.` or `)`, `[ ]`, `[x]`, `- [ ]`, `- [x]`, `☐`, `☑`) SHALL be removed, and runs of whitespace SHALL become one space; a line holding only a marker SHALL be skipped. A checked box SHALL NOT complete the task.
+
+Confirming SHALL create one task per line, in the pasted order. With parsing on, each line SHALL be parsed on its own with the same options as a typed line, and the view's defaults SHALL fill what the line does not set, exactly as if each line had been typed and added; a line whose parse leaves an empty title SHALL keep its cleaned text as the title. All tasks of one paste, with the reminders their lines ask for, SHALL be written as one batch of operations, applied locally first, so the paste works offline, is uploaded together and converges like tasks created one by one; one Undo SHALL remove them all. A paste of more than 100 lines SHALL NOT be split: the offer SHALL say so and offer Import and "Paste as one line". If any line cannot be written (for example, too long to encrypt), no task of the paste SHALL be created and the field SHALL show why.
+
+#### Scenario: Paste a shopping list into the Inbox
+- **WHEN** the user pastes "- Milk\n- Eggs\n\n- Bread" into the empty Inbox quick add and presses Enter on the offer
+- **THEN** the Inbox gains the tasks "Milk", "Eggs" and "Bread" in that order, and a toast says "3 tasks added" with Undo
+
+#### Scenario: Each line is parsed with the view's defaults
+- **WHEN** parsing is on and the user pastes "Call Anna tomorrow 10am\nSend invoice #Work p1" into Today's quick add and confirms
+- **THEN** "Call Anna" is due tomorrow at 10:00, and "Send invoice" is due today in project Work with priority 1
+
+#### Scenario: Paste as one line
+- **WHEN** the user pastes two lines and chooses "Paste as one line"
+- **THEN** the field holds both lines joined by a space and nothing is created until the user adds it
+
+#### Scenario: Escape pastes nothing
+- **WHEN** the offer is open and the user presses Escape
+- **THEN** the offer closes, the field is still empty and nothing is created
+
+#### Scenario: Field already has text
+- **WHEN** the field holds "Buy " with the caret at its end and the user pastes two lines
+- **THEN** no offer appears and the paste is inserted into the field as the browser does
+
+#### Scenario: Offline paste
+- **WHEN** the device is offline and the user pastes and confirms five lines
+- **THEN** the five tasks appear at once, survive a reload, and are uploaded together on the next successful sync
+
+#### Scenario: One Undo
+- **WHEN** the user pastes and confirms five lines and then chooses Undo in the toast
+- **THEN** all five tasks are removed in one step and none of them reaches other devices as an open task
+
+#### Scenario: Too many lines
+- **WHEN** the user pastes 150 lines
+- **THEN** the offer says that more than 100 lines cannot be added at once, offers Import and "Paste as one line", and creates nothing
+
+#### Scenario: Encrypted account with a line too long
+- **WHEN** an encrypted account pastes three lines and one is longer than an encrypted title can hold
+- **THEN** no task is created and the field says that the title is too long to encrypt
+
+### Requirement: Part of the day phrases
+While the user's Day parts preference (OpenSpec `day-parts`) is on, the parser SHALL recognise `this morning` and `this afternoon`, which make the task due today with that part, and a part word (`morning`, `afternoon`, `evening`) directly after a date phrase, which sets that date with that part (Evening as the evening flag), each with its bundled equivalents in every active language (en, de, fr, it, es, pt). A part word anywhere else SHALL stay in the title. While the preference is off these phrases SHALL not be parsed; `tonight` and `this evening` SHALL keep their meaning in every mode. A time still sets the due time. Each SHALL show a dismissable chip. The TypeScript parser and the Go port SHALL agree on shared vectors, and `POST /api/v1/quick-add/parse` SHALL accept an optional `day_parts` boolean that turns the phrases on or off; when the request leaves it out, the route SHALL use the signed-in account's Day parts preference (`user_prefs.day_parts`), and an explicit `day_parts` SHALL win over the preference in both directions.
+
+#### Scenario: Tomorrow morning
+- **WHEN** day parts are on and the user enters `Stretch tomorrow morning` on 2026-10-14
+- **THEN** the task is titled `Stretch`, due 2026-10-15 with the part Morning, and a Morning chip is shown
+
+#### Scenario: Title word stays literal
+- **WHEN** day parts are on and the user enters `Morning run tomorrow`
+- **THEN** the task is titled `Morning run`, due tomorrow, with no part
+
+#### Scenario: German afternoon
+- **WHEN** German is active, day parts are on and the user enters `Einkaufen heute Nachmittag`
+- **THEN** the task is due today with the part Afternoon and titled `Einkaufen`
+
+#### Scenario: Preference off
+- **WHEN** day parts are off and the user enters `Call Ana this morning`
+- **THEN** the task is titled `Call Ana this morning` with no date and no part
+
+#### Scenario: Parse route follows the preference
+- **WHEN** an account with day parts on calls `POST /api/v1/quick-add/parse` with `Stretch tomorrow morning` and no `day_parts`
+- **THEN** the response is titled `Stretch` with the part Morning
+
+#### Scenario: Explicit day_parts wins
+- **WHEN** an account with day parts on sends `day_parts: false`, or an account with day parts off sends `day_parts: true`
+- **THEN** the phrases are respectively not read and read, whatever the preference
+
+### Requirement: Energy tokens
+While the Energy levels switch (OpenSpec `task-energy`) is on, the quick-add line SHALL recognise `~deep`, `~medium` and `~low`, and the prefixes `~d`, `~m` and `~l`, ignoring case, in every interface language, as the task's energy. A recognised token SHALL be removed from the title and shown as a dismissable chip; the last energy token on the line SHALL win. `~` followed by anything else SHALL stay in the title. Typing `~` SHALL suggest the three values. While the switch is off the token SHALL not be parsed or suggested. Parsing SHALL be deterministic and offline, and the web and server parsers SHALL agree through the shared vectors.
+
+#### Scenario: Token in a full line
+- **WHEN** the switch is on and the user enters `Draft the strategy #Work ~deep +2h`
+- **THEN** the task is titled `Draft the strategy`, in "Work", with a 120-minute estimate and energy Deep, and the preview shows a "Deep energy" chip
+
+#### Scenario: Prefix and language
+- **WHEN** German is active, the switch is on and the user enters `Rechnungen ablegen ~L`
+- **THEN** the task is titled `Rechnungen ablegen` with energy Low
+
+#### Scenario: Not a token
+- **WHEN** the switch is on and the user enters `Dinner for ~6 people`
+- **THEN** the title is `Dinner for ~6 people` and no energy is set
+
+#### Scenario: Switch off
+- **WHEN** the switch is off and the user enters `Call ~low`
+- **THEN** the title is `Call ~low` and no chip is shown
+
+#### Scenario: Same in the CLI
+- **WHEN** the line `Sort receipts ~low` is parsed by the CLI's quick add
+- **THEN** the result equals the web parser's, as pinned by the shared vectors
+
+### Requirement: Bare month names
+A month name alone (without a day) SHALL be a date only while the line has no complete date phrase after it: a later relative day word, weekday, relative period, month and day, numeric date or `tonight`/`this morning` phrase SHALL replace it, and the month word SHALL then stay in the title. A second month name alone SHALL not replace the first. A month name alone directly after `from`, `since`, `of`, `for` or a bundled equivalent (`seit`, `von`, `vom`, `ab`, `für`; `depuis`, `de`, `du`, `des`; `da`, `dal`, `di`, `del`; `desde`, `de`, `del`; `desde`, `de`, `do`) SHALL stay text and set no date. The TypeScript parser and the Go port SHALL agree on shared vectors.
+
+#### Scenario: Month in passing, date at the end
+- **WHEN** today is Wednesday 2026-10-28 and the user enters `Collect the invoices from September and send them to the accountant next monday at 10am`
+- **THEN** the task is due `{date: "2026-11-02", time: "10:00"}` and its title is `Collect the invoices from September and send them to the accountant`
+
+#### Scenario: Month in passing in each language
+- **WHEN** today is 2026-10-28 and the user enters, with that language active, `Rechnungen von September an den Steuerberater schicken nächsten Montag um 10 Uhr`, `Rassembler les factures de septembre pour le comptable lundi prochain à 10h`, `Raccogliere le fatture di settembre per il commercialista lunedì prossimo alle 10`, `Reunir las facturas de septiembre para el contador el próximo lunes a las 10` or `Juntar as faturas de setembro para o contador na próxima segunda às 10`
+- **THEN** the task is due 2026-11-02 at 10:00 and the month word stays in the title
+
+#### Scenario: A later date replaces a bare month
+- **WHEN** today is 2026-10-28 and the user enters `September report tomorrow`
+- **THEN** the task is due 2026-10-29 and its title is `September report`
+
+#### Scenario: The only date phrase
+- **WHEN** today is 2026-10-28 and the user enters `Pay rent in September`, `Miete zahlen im September`, `Payer le loyer en septembre`, `Pagare l'affitto a settembre`, `Pagar el alquiler en septiembre` or `Pagar o aluguel em setembro`, with that language active
+- **THEN** the task is due 2027-09-01
+
+#### Scenario: Month after "from" is text
+- **WHEN** the user enters `File the invoices from September` or, with German active, `Rechnungen seit März ablegen`
+- **THEN** no due date is set and the title is the line as typed
+
+### Requirement: Every other phrases
+The parser SHALL read "every other" before a unit or a weekday as a repeat every 2 of that unit: `every other day`, `week`, `month` and `year` SHALL set `every 2 days`, `every 2 weeks`, `every 2 months` and `every 2 years`, and `every other <weekday>` SHALL set `every 2 weeks` with the task due on the first such weekday on or after today unless the line has its own date phrase. The bundled equivalents SHALL be `jeden zweiten`, `jede zweite`, `jedes zweite`, `alle zwei`; `un … sur deux`, `une … sur deux`, `tous les deux`, `toutes les deux`; `ogni due`, `a giorni alterni`, `a settimane alterne`, `a mesi alterni`, `ad anni alterni`; `cada dos`; `a cada dois`, `a cada duas`, `cada dois`, `cada duas`. The phrase SHALL be removed from the title. A German ordinal weekday followed by "of the month" (`jeden zweiten Montag im Monat`) SHALL keep its monthly reading. The TypeScript parser and the Go port SHALL agree on shared vectors.
+
+#### Scenario: Every other weekday
+- **WHEN** today is Wednesday 2026-10-28 and the user enters `Send timesheet every other friday`
+- **THEN** the title is `Send timesheet`, the rule is `every 2 weeks` and the task is due 2026-10-30
+
+#### Scenario: Every other unit
+- **WHEN** today is 2026-10-28 and the user enters `Review budget every other week`, `Pay invoice every other month`, `Water ferns every other day` or `Renew passport every other year`
+- **THEN** the rule is `every 2 weeks`, `every 2 months`, `every 2 days` or `every 2 years`, the task is due 2026-10-28 and the phrase leaves the title
+
+#### Scenario: Every other weekday in each language
+- **WHEN** today is 2026-10-28 and the user enters, with that language active, `Stundenzettel senden jeden zweiten Freitag`, `Envoyer la feuille de temps un vendredi sur deux`, `Inviare il foglio ore ogni due venerdì`, `Enviar la hoja de horas cada dos viernes` or `Enviar a folha de horas a cada duas sextas`
+- **THEN** the rule is `every 2 weeks`, the task is due 2026-10-30 and only the words before the phrase remain in the title
+
+#### Scenario: Every other unit in each language
+- **WHEN** the user enters, with that language active, `jede zweite Woche`, `une semaine sur deux`, `ogni due settimane`, `a settimane alterne`, `cada dos semanas` or `a cada duas semanas` after a title
+- **THEN** the rule is `every 2 weeks`

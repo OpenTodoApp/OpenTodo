@@ -2,15 +2,15 @@
 // only on the line, the reference date and time, the languages, the project list and
 // the dismissed spans. No network, no clock reads, no randomness.
 import type { Due, Priority } from '../types'
-import { matchDuration, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
+import { matchDuration, matchEnergy, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
 import { firstOccurrence } from '../recurrence'
-import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, partWordAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
 import { matchReminderAt, type ReminderMatch, type ReminderPhrase } from './reminders'
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
 import { vocabulariesFor, type DayMonthOrder } from './vocab'
 
-export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder'
+export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'daypart' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder' | 'energy'
 
 /** One recognised attribute; drives a preview chip. `spans` are removed from the title. */
 export interface Chip {
@@ -18,7 +18,7 @@ export interface Chip {
   /** Stable within one parse: kind plus the first span start. */
   key: string
   spans: Span[]
-  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, true (evening), the canonical rule or a reminder. */
+  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, true (evening), the part (daypart), the canonical rule, a reminder or the energy. */
   value: Due | string | number | boolean | ReminderPhrase
 }
 
@@ -36,6 +36,10 @@ export interface ParseContext {
   dayMonthOrder?: DayMonthOrder
   /** First day of the week, 0 = Sunday … 6 = Saturday (date-time-preferences D5); Monday when absent. */
   weekStart?: number
+  /** The account uses day parts (day-parts D5): the part phrases are read. */
+  dayParts?: boolean
+  /** The account offers energy (task-energy D3): the `~deep` tokens are read. */
+  energy?: boolean
 }
 
 export interface ParseResult {
@@ -45,11 +49,15 @@ export interface ParseResult {
   deadline: string | null
   /** "someday" from a someday phrase on a line without a date (someday-and-evening), or null. */
   start: 'someday' | null
-  /** Set by "tonight" / "this evening" (the task is also due today). */
+  /** Set by "tonight" / "this evening" (the task is also due today), or by "evening" after a date with day parts on. */
   evening: boolean
+  /** Morning or Afternoon from a part phrase (day-parts D5), only with `dayParts`; null otherwise. */
+  dayPart: 'morning' | 'afternoon' | null
   projectId: string | null
   labels: string[]
   priority: Priority | null
+  /** Deep, Medium or Low from a `~` token (task-energy D4), only with `energy`; the last one wins. */
+  energy: 'deep' | 'medium' | 'low' | null
   estimateMinutes: number | null
   /** Minutes already spent from a `30m/2h` token (time-tracking D10): one closed time entry ending at creation. */
   spentMinutes: number | null
@@ -94,7 +102,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   const dismissed = liveDismissals(line, ctx.dismissed)
   const { tokens, quoteSpans } = tokenize(line)
 
-  let date: { value: string; span: Span } | null = null
+  // A bare month ("September") is replaced by a later complete date phrase (quick-add-month-and-every-other D1).
+  let date: { value: string; span: Span; bare?: true } | null = null
   let time: { value: string; date?: string; span: Span } | null = null
   let project: { id: string; span: Span } | null = null
   let priority: { value: Priority; span: Span } | null = null
@@ -102,10 +111,25 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   let spent: number | null = null
   let deadline: { value: string; span: Span } | null = null
   let evening: Span | null = null
+  let dayPart: { value: 'morning' | 'afternoon'; span: Span } | null = null
+  // A part phrase sets one part: the evening flag or a day part, never both.
+  const partFree = () => !evening && !dayPart
+  /** A part word directly after a date phrase ending at token `to` (day-parts D5); returns where reading goes on. */
+  const partAfter = (to: number): number => {
+    if (!ctx.dayParts || !partFree()) return to
+    const pw = partWordAt(tokens, to, dctx)
+    const span = pw ? spanOf(line, tokens, to, to + pw.n) : null
+    if (!pw || !span || overlaps(span, dismissed)) return to
+    if (pw.part === 'evening') evening = span
+    else dayPart = { value: pw.part, span }
+    return to + pw.n
+  }
   let someday: Span | null = null
-  let recurrence: { value: string; span: Span } | null = null
+  let recurrence: { value: string; span: Span; start?: string } | null = null
   const reminders: { value: ReminderPhrase; span: Span }[] = []
   const labels: { value: string; span: Span }[] = []
+  // Every energy token leaves the title; the last one is the value (task-energy D4).
+  const energies: { value: 'deep' | 'medium' | 'low'; span: Span }[] = []
   const unmatched: Unmatched[] = []
 
   let i = 0
@@ -134,6 +158,12 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       const label = matchLabel(tok.text)
       if (label !== null) {
         labels.push({ value: label, span: one })
+        i++
+        continue
+      }
+      const energy = ctx.energy ? matchEnergy(tok.text) : null
+      if (energy) {
+        energies.push({ value: energy, span: one })
         i++
         continue
       }
@@ -181,16 +211,35 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       const span = n ? spanOf(line, tokens, i, i + n) : null
       if (span && !overlaps(span, dismissed)) {
         evening = span
-        if (!date) date = { value: ctx.today, span }
+        if (!date || date.bare) date = { value: ctx.today, span }
         i += n
         continue
       }
     }
 
+    // "this morning" / "this afternoon" (day-parts D5): like "tonight", only with day parts on.
+    if (ctx.dayParts && partFree()) {
+      let matched = false
+      for (const [field, part] of [['morningWords', 'morning'], ['afternoonWords', 'afternoon']] as const) {
+        const n = wordsAt(tokens, i, dctx, field)
+        const span = n ? spanOf(line, tokens, i, i + n) : null
+        if (span && !overlaps(span, dismissed)) {
+          dayPart = { value: part, span }
+          if (!date || date.bare) date = { value: ctx.today, span }
+          i += n
+          matched = true
+          break
+        }
+      }
+      if (matched) continue
+    }
+
     // Date, time, recurrence and reminder phrases: the longest wins, a date on a
     // tie. The first date, time and rule win; reminders accumulate. A match whose
     // range overlaps a live dismissal is ignored.
-    let dm: DateMatch | null = date ? null : matchDateAt(tokens, i, dctx)
+    let dm: DateMatch | null = date && !date.bare ? null : matchDateAt(tokens, i, dctx)
+    // After a bare month only a complete date phrase counts; another bare month stays text.
+    if (date && dm?.bare) dm = null
     let tm: TimeMatch | null = time ? null : matchTimeAt(tokens, i, dctx)
     let rm: RecurrenceMatch | null = matchRecurrenceAt(tokens, i, dctx)
     // After the first rule only a literal match still counts (it keeps "cada 2 lunes" whole).
@@ -212,15 +261,15 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     if (phraseEnd > Math.max(dm?.to ?? 0, tm?.to ?? 0)) {
       if (rm && rSpan && rm.to === phraseEnd) {
         // A literal match (quick-add-nth-weekday D3) is skipped as a unit and stays in the title.
-        if (!rm.literal) recurrence = { value: rm.rule, span: rSpan }
+        if (!rm.literal) recurrence = { value: rm.rule, span: rSpan, start: rm.start }
         i = rm.to
       } else if (mm && mSpan) {
         reminders.push({ value: mm.reminder, span: mSpan })
         i = mm.to
       }
     } else if (dm && dSpan && (!tm || dm.to >= tm.to)) {
-      date = { value: dm.date, span: dSpan }
-      i = dm.to
+      date = { value: dm.date, span: dSpan, bare: dm.bare }
+      i = partAfter(dm.to)
     } else if (tm && tSpan) {
       time = { value: tm.time, date: tm.date, span: tSpan }
       i = tm.to
@@ -238,10 +287,11 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   }
   const parked = !!someday && !date && !time && !deadline && !recurrence
 
-  // A rule without a date phrase starts on its first occurrence on or after today.
+  // A rule without a date phrase starts on its first occurrence on or after today,
+  // or on the weekday it was typed with ("every other friday", D3).
   let due: Due | null = null
   if (date || time || recurrence) {
-    due = { date: date?.value ?? (recurrence ? firstOccurrence(recurrence.value, ctx.today) : time?.date ?? ctx.today) }
+    due = { date: date?.value ?? (recurrence ? recurrence.start ?? firstOccurrence(recurrence.value, ctx.today) : time?.date ?? ctx.today) }
     if (time) due.time = time.value
   }
 
@@ -253,11 +303,13 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   if (recurrence) chip('recurrence', [recurrence.span], recurrence.value)
   for (const r of reminders) chip('reminder', [r.span], r.value)
   if (evening) chip('evening', [evening], true)
+  if (dayPart) chip('daypart', [dayPart.span], dayPart.value)
   if (parked && someday) chip('someday', [someday], 'someday')
   if (deadline) chip('deadline', [deadline.span], deadline.value)
   if (project) chip('project', [project.span], project.id)
   for (const l of labels) chip('label', [l.span], l.value)
   if (priority) chip('priority', [priority.span], priority.value)
+  if (energies.length) chip('energy', energies.map((e) => e.span), energies[energies.length - 1].value)
   if (estimate) chip('estimate', [estimate.span], estimate.value)
   // The spent chip shares the token's span: dismissing either keeps the whole token as text.
   if (estimate && spent !== null) chip('spent', [estimate.span], spent)
@@ -269,9 +321,11 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     deadline: deadline?.value ?? null,
     start: parked ? 'someday' : null,
     evening: !!evening,
+    dayPart: dayPart?.value ?? null,
     projectId: project?.id ?? null,
     labels: labels.map((l) => l.value),
     priority: priority?.value ?? null,
+    energy: energies.length ? energies[energies.length - 1].value : null,
     estimateMinutes: estimate?.value ?? null,
     spentMinutes: spent,
     recurrence: recurrence?.value ?? null,

@@ -70,6 +70,13 @@ export const SETTINGS_COPY = {
     },
     rows: {
       guide: { label: msg('Start guide'), description: msg('Add a first task, choose how you work, install the app.') },
+      // Today's focus style and Bento order (bento-daily-check D4): synced user_prefs, as in the Daily check's menu.
+      focus: { label: msg('Daily focus'), description: msg('Three tasks of any size, or a Bento: one Large, one Medium and one Small.') },
+      order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
+      // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
+      energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
+      // Formatting button (notes-toolbar-desktop D4): synced user_prefs.formatting_toggle, on by default.
+      formatting: { label: msg('Formatting button'), description: msg('A button beside notes and comments on a computer that shows bold, lists and links.') },
     },
   },
   // Settings → Account → Invitations (member-add-consent).
@@ -191,6 +198,10 @@ export const SETTINGS_COPY = {
       arranged: msg('The full Open Loops method arranges the sidebar; these choices apply in the other modes.'),
     },
     learnMore: 'settings/appearance',
+    rows: {
+      counts: { label: msg('Sidebar counts'), description: msg('Every list adds open-task numbers to each project, label and view.') },
+      destinations: { label: msg('Sidebar destinations'), description: msg("Drag or use a row's menu to reorder. Switched-on ones sit next to Inbox and Today.") },
+    },
   },
   // How a task opens from a list (task-side-panel D1): the synced user_prefs.task_open.
   'task-details': {
@@ -227,6 +238,25 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/briefing',
     rows: { show: { label: msg('Show the briefing') } },
   },
+  // Today by part of the day (day-parts D4): the synced user_prefs.day_parts, as in Today's menu.
+  'day-parts': {
+    title: msg('Today'),
+    icon: 'sun',
+    description: msg('How Today lists the day, on all your devices.'),
+    learnMore: 'settings/day-parts',
+    rows: { group: { label: msg('Group by day part'), description: msg('Morning, Afternoon and This Evening; a task with a time goes to its part.') } },
+  },
+  // Today's closed list (today-closed-list D5): the synced user_prefs.today_limit and today_done, as in Today's menu.
+  'today-limit': {
+    title: msg('Today limit'),
+    icon: 'list-checks',
+    description: msg('How many tasks Today holds, and what you got done. On all your devices.'),
+    learnMore: 'settings/today-limit',
+    rows: {
+      limit: { label: msg('Today holds'), description: msg('The rest wait for a slot and come in, first come, first served, when you finish one.') },
+      done: { label: msg('Show done today'), description: msg('A folded list of what you completed today, at the end of Today.') },
+    },
+  },
   'date-time': {
     title: msg('Date and time'),
     icon: 'calendar-clock',
@@ -249,6 +279,7 @@ export const SETTINGS_COPY = {
       gridStart: { label: msg('Grid starts') },
       gridEnd: { label: msg('Grid ends') },
       dayLength: { label: msg('Day length'), description: msg('Your daily capacity; the Day view warns when planned work goes over it.') },
+      countEvents: { label: msg('Count meetings in capacity'), description: msg('Busy calendar events add to each day in Day, Week and Month.') },
     },
   },
   keyboard: {
@@ -278,6 +309,9 @@ export const SETTINGS_COPY = {
       reminder: { label: msg('Break reminder'), description: msg('A notice on any screen after a long stretch of work without a break.') },
       remindAfter: { label: msg('Remind me after') },
       sound: { label: msg('Sound'), description: msg('A short tone when a session or a break ends, while the app is shown.') },
+      presets: { label: msg('Countdown presets'), description: msg('Up to four lengths in minutes, offered when a countdown starts.') },
+      noise: { label: msg('Background noise'), description: msg('Generated on this device; plays only while you work.') },
+      volume: { label: msg('Noise volume'), description: msg('This device only.') },
     },
   },
 
@@ -344,6 +378,17 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/quick-add',
     rows: {
       parse: { label: msg('Parse natural language'), description: msg('Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; "quotes" keep text as is.') },
+    },
+  },
+  // Default reminders (default-reminders D8): the synced user_prefs.reminder_default_*.
+  'default-reminders': {
+    title: msg('Default reminders'),
+    icon: 'bell',
+    description: msg('Added when a task gets a date. You can remove it from any task.'),
+    learnMore: 'settings/default-reminders',
+    rows: {
+      timed: { label: msg('Tasks with a time'), description: msg('Counted from the due time.') },
+      dated: { label: msg('Tasks with no time'), description: msg('Counted from 09:00 on the due date.') },
     },
   },
   // Where new tasks are added (add-position D1): the synced user_prefs.add_position.
@@ -415,6 +460,7 @@ export const SETTINGS_COPY = {
       website: { label: msg('Website'), description: msg('News, guides, comparisons and what is new in each release.') },
       feedback: { label: msg('Feedback and problems'), description: msg('Open an issue on GitHub. Every report is read.') },
       community: { label: msg('Community'), description: msg('Questions, ideas and other people who use OpenTodo, on Discord.') },
+      news: { label: msg('News and updates'), description: msg('Releases and what is being built, on X.') },
       source: { label: msg('Source code'), description: msg('A star on GitHub helps other people find it.') },
       welcome: { label: msg('Welcome note'), description: msg('The thank-you shown the first time you opened this server.') },
     },
@@ -720,6 +766,22 @@ export const SETTINGS_COPY = {
       encryption: { label: msg('Encryption') },
     },
     notices: { offline: msg('Offline: backups run on the server; the status below is the last one fetched.') },
+  },
+  // Database storage (op-log-compaction D7): the database file and the notes compaction job.
+  'database-storage': {
+    title: msg('Database storage'),
+    icon: 'layers',
+    description: msg('Old note versions go after 30 days, and the space they took returns to the disk.'),
+    learnMore: 'settings/backups',
+    rows: {
+      size: { label: msg('Database') },
+      compaction: { label: msg('Last compacted') },
+    },
+    notices: {
+      offline: msg('Database storage needs a connection to the server.'),
+      noSpace: msg('Shrinking the file once needs {bytes} of free disk space; old versions still go.'),
+      waiting: msg('The file is shrunk once, at a quiet moment; old versions already go.'),
+    },
   },
   'attachments-settings': {
     title: msg('Attachments'),

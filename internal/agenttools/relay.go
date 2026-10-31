@@ -31,7 +31,7 @@ type Relay interface {
 
 // unmarkable content fields: not shown as text by any tool (documents, the
 // iCalendar extras, structured values), so they keep the placeholder.
-var unmarkable = map[string]bool{"task.notes_doc": true, "project.notes_doc": true, "task.ical_extra": true, "task.origin": true, "field.options": true}
+var unmarkable = map[string]bool{"task.notes_doc": true, "project.notes_doc": true, "note.notes_doc": true, "task.ical_extra": true, "task.origin": true, "field.options": true}
 
 // marker collects the ciphertext values one read call loaded.
 type marker struct {

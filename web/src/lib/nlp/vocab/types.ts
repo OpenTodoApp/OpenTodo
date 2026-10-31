@@ -34,6 +34,15 @@ export interface Vocabulary {
   somedayWords: string[]
   /** Words that make a task due today and for This Evening ("tonight"). */
   eveningWords: string[]
+  /**
+   * Day parts (OpenSpec change day-parts, D5), only while the account uses them:
+   * "this morning" and "this afternoon" make a task due today with that part, and a
+   * part word directly after a date phrase ("tomorrow morning") gives that date the
+   * part. A part word anywhere else stays in the title ("Morning run").
+   */
+  morningWords: string[]
+  afternoonWords: string[]
+  partWords: { morning: string[]; afternoon: string[]; evening: string[] }
   /** "next" placed before the noun ("next Wed", "nächsten Mittwoch"). */
   nextBefore: string[]
   /** "next" placed after the noun ("mardi prochain", "martes que viene"). */
@@ -83,6 +92,17 @@ export interface Vocabulary {
   untilWords: string[]
   /** "for N times": words before and after the count. */
   timesWords: { before: string[]; after: string[] }
+  /**
+   * "every other" before a unit or a weekday ("every other week", "jeden zweiten
+   * Freitag", "ogni due venerdì"): a repeat every 2 of that unit, every 2 weeks from
+   * the weekday for a weekday (OpenSpec change quick-add-month-and-every-other, D3).
+   */
+  everyOther: string[]
+  /** "every other" around the unit or weekday: French "un vendredi sur deux". */
+  everyOtherAround: { before: string[]; after: string[] }
+  // ---- bare months (quick-add-month-and-every-other, D2) ----
+  /** Single words after which a month name alone stays text ("from September", "seit März"). */
+  monthTextBefore: string[]
   // ---- reminder phrases (quick-add-recurrence, design D3) ----
   /** "remind me", "erinnere mich", "rappelle-moi". */
   remindWords: string[]

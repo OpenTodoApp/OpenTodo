@@ -18,6 +18,9 @@ import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { labelKey } from './labels'
+import { dayPartFields, dayPartName, dayPartOf, type DayPart } from './dayParts'
+import { energyName, type Energy } from './energy'
+import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
 export interface UndoableResult {
@@ -103,7 +106,49 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
     const label = await db.labels.get(target.slice('label:'.length))
     return label && !label.deleted_at ? addLabelUndoable(ids, label.id, label.name) : null
   }
+  // Today's part headings (day-parts D4).
+  if (target.startsWith('part:')) {
+    const part = target.slice('part:'.length)
+    if (part === 'none') return dayPartUndoable(ids, null)
+    return part === 'morning' || part === 'afternoon' || part === 'evening' ? dayPartUndoable(ids, part) : null
+  }
   return null
+}
+
+/** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */
+export async function flowUndoable(entity: 'project' | 'section', id: string, flow: string, label: string): Promise<UndoableResult> {
+  await getDeviceId()
+  const entry = await applyBatch([{ entity, entityId: id, patch: { flow_mode: flow }, base: { flow_mode: '' } }], { source: 'action', label })
+  return { entry, label }
+}
+
+/** Set this user's review interval for a project (project-review-cadence): one personal op, with Undo. */
+export async function reviewEveryUndoable(projectId: string, every: string, label: string): Promise<UndoableResult> {
+  await getDeviceId()
+  const entry = await applyBatch([{ entity: 'project_prefs', entityId: projectId, patch: { review_every: every }, base: { review_every: '' } }], { source: 'action', label })
+  return { entry, label }
+}
+
+/** Put a project in maintenance or end it (project-review-cadence): one shared op, with Undo. */
+export async function projectStatusUndoable(projectId: string, status: 'active' | 'maintenance', label: string): Promise<UndoableResult> {
+  await getDeviceId()
+  const entry = await applyBatch([{ entity: 'project', entityId: projectId, patch: { status }, base: { status: '' } }], { source: 'action', label })
+  return { entry, label }
+}
+
+/**
+ * Apply a re-plan (replan-the-day D4): every move, and with "Move to tomorrow" every
+ * unfit task, as one batch of `due` edits with one Undo. Each task is checked again
+ * right before writing; those that changed meanwhile are skipped and the label says how many.
+ */
+export async function replanUndoable(proposal: ReplanProposal, opts: { today: string; choice: UnfitChoice; stored: ReadonlyMap<string, Task['due']>; zone?: string }): Promise<UndoableResult> {
+  const ids = [...proposal.moves, ...(opts.choice === 'tomorrow' ? proposal.unfit : [])].map((m) => m.id)
+  const { tasks } = await readTicked(ids)
+  const { changes, skipped } = replanChanges(proposal, { ...opts, live: new Map(tasks.map((tk) => [tk.id, tk])), memberships: await membershipMap() })
+  const label = skipped > 0
+    ? t('{moved} moved · {skipped} changed meanwhile', { moved: changes.length, skipped })
+    : t('{n, plural, one {# task moved} other {# tasks moved}}', { n: changes.length })
+  return changes.length ? apply(changes, label) : { entry: null, label }
 }
 
 /** Set or clear the due of one task (the value is already in the task's own zone). */
@@ -116,6 +161,11 @@ export async function rescheduleUndoable(id: string, due: NonNullable<Task['due'
   return apply([{ entity: 'task', entityId: id, patch: { due, estimate_minutes: estimate } }], t('Rescheduled'))
 }
 
+/** A span moved or resized, or a task made a span (multi-day-tasks D4): start, due and the flag in one change. */
+export async function spanUndoable(id: string, patch: Pick<Partial<Task>, 'start' | 'due' | 'span'>): Promise<UndoableResult> {
+  return apply([{ entity: 'task', entityId: id, patch }], t('Rescheduled'))
+}
+
 /** Park one task in Someday: no date, not an evening task. */
 export async function parkUndoable(id: string): Promise<UndoableResult> {
   const { tasks } = await readTicked([id])
@@ -125,6 +175,30 @@ export async function parkUndoable(id: string): Promise<UndoableResult> {
   if (task.due) patch.due = null
   if (task.evening) patch.evening = false
   return apply([{ entity: 'task', entityId: id, patch }], t('Moved to Someday'))
+}
+
+/**
+ * Set the part of the day of tasks (day-parts D2): both fields in one batch per
+ * task, with Undo; a task already in that part writes nothing.
+ */
+export async function dayPartUndoable(ids: readonly string[], part: DayPart | null): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const fields = dayPartFields(part)
+  const changes: Change[] = tasks
+    .filter((task) => dayPartOf(task) !== part || (task.day_part ?? null) !== fields.day_part)
+    .map((task) => ({ entity: 'task', entityId: task.id, patch: { ...fields } }))
+  if (!changes.length) return { entry: null, label: '' }
+  return apply(changes, part ? t('Moved to {part}', { part: dayPartName(part) }) : t('Moved to Any time'))
+}
+
+/** Set (or with null clear) the energy of the ticked tasks (task-energy D6): one batch, with Undo. */
+export async function energyUndoable(ids: readonly string[], energy: Energy | null): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const changes: Change[] = tasks
+    .filter((task) => (task.energy ?? '') !== (energy ?? ''))
+    .map((task) => ({ entity: 'task', entityId: task.id, patch: { energy: energy ?? '' } }))
+  if (!changes.length) return { entry: null, label: '' }
+  return apply(changes, energy ? t('Energy set to {level}', { level: energyName(energy) }) : t('Energy cleared'))
 }
 
 export interface DropResult extends UndoableResult {

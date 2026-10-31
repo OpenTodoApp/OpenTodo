@@ -14,12 +14,13 @@
 //   statistics, which must name or exclude what is in the Trash.
 // Snapshots are shared and read-only: sort a copy, never the array itself.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
+import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { db, getMeta, setMeta, type AttachmentBlob } from './db'
 import { rememberFieldNames } from './fieldNames'
 import { applicableFieldsLookup } from './fieldTree'
 import { t } from './i18n'
 import { activeLabels } from './labels'
+import { lineageRows } from './lineageRows'
 import { derived, liveSnapshot } from './liveSnapshot'
 import { compareByPosition } from './ordering'
 import { REVIEW_ID } from './review'
@@ -76,6 +77,8 @@ const activeOf = derived((all: Label[]) => activeLabels(all))
 const memberMapOf = derived((all: Membership[]) => new Map(all.map((m) => [m.projectId, m])))
 const reviewedAtOf = derived((all: ProjectPrefs[]) => new Map(all.filter((p) => p.reviewed_at > 0).map((p) => [p.id, p.reviewed_at])))
 const NO_STAMPS = new Map<string, number>()
+const reviewEveryOf = derived((all: ProjectPrefs[]) => new Map(all.filter((p) => !!p.review_every).map((p) => [p.id, p.review_every!])))
+const NO_INTERVALS = new Map<string, string>()
 
 const NO_WORKSPACES: WorkspaceState = { current: '', defaultId: '', list: [] }
 
@@ -176,6 +179,17 @@ export function useReviewedAt(): ReadonlyMap<string, number> {
   return rows ? reviewedAtOf(rows) : NO_STAMPS
 }
 
+/** Whether the personal project preferences have been read once (the walk's queue waits for them). */
+export function useProjectPrefsLoaded(): boolean {
+  return projectPrefRows.use() !== undefined
+}
+
+/** This user's stored review interval per project (project_prefs.review_every, project-review-cadence); empty while loading. */
+export function useReviewEvery(): ReadonlyMap<string, string> {
+  const rows = projectPrefRows.use()
+  return rows ? reviewEveryOf(rows) : NO_INTERVALS
+}
+
 /** The weekly review row: undefined while loading, null when there is none yet. */
 export function useReviewRow(): Review | null | undefined {
   return reviewRow.use()
@@ -263,9 +277,9 @@ export function useTasksByIdRead(ids: readonly string[]): { tasks: Task[]; read:
   return { tasks: res?.rows ?? NO_TASK_ROWS, read: res?.of === ids }
 }
 
-/** The occurrence records of a recurring task (series-id equals the task's id). */
+/** The occurrence records of a recurring task and the other pieces of its lineage with theirs (series-split). */
 export function useSeriesRecords(seriesId: string): Task[] {
-  return useLiveQuery(() => db.tasks.filter((tk) => tk.series_id === seriesId).toArray(), [seriesId], NO_TASK_ROWS)
+  return useLiveQuery(() => lineageRows(seriesId), [seriesId], NO_TASK_ROWS)
 }
 
 /** Deleted tasks (the Trash). */
@@ -479,6 +493,10 @@ export function useReferenceNames(parents: readonly string[]): Map<string, strin
 const NO_NAMES = new Map<string, string>()
 
 // ---- device-local settings (the meta table, never synced) ----
+
+export function setCalendarShowCompleted(show: boolean): Promise<void> {
+  return setMeta(CALENDAR_COMPLETED_META_KEY, show)
+}
 
 /** Saves the Day and Week view preferences of this device (time-blocking D7). */
 export function saveGridPrefs(prefs: GridPrefs): Promise<void> {

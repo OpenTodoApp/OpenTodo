@@ -377,3 +377,139 @@ A query SHALL be at most 4,096 characters, counted as Unicode code points, and S
 #### Scenario: Unauthenticated
 - **WHEN** a client without a session or token posts a view to `/api/v1/views`
 - **THEN** the server answers 401 and does not parse the query
+
+### Requirement: New view keeps its draft
+The New view page SHALL keep its draft on the device, per workspace: the query and the display options (grouping, sort, layout, completed matches, hidden properties, row layout). The draft SHALL be restored when the page is opened again, after navigating elsewhere and after a reload.
+
+The draft SHALL be stored only in the device's local data, like the query history:
+- never synced, sent to the server or exported;
+- cleared on sign-out.
+
+Rules for the draft:
+- Saving it as a view SHALL clear it.
+- A `?q=` query in the address SHALL replace the draft's query, and the replaced query goes into the history.
+- A "Clear" action in the filter panel's header SHALL empty the query, reset the display options to the defaults and clear the draft, with Undo while its toast is shown.
+- An empty query with default options stores nothing.
+
+#### Scenario: Check something and come back
+- **WHEN** the user builds `@work & due <= tomorrow`, switches the layout to board, opens Today, then presses `g f`
+- **THEN** the New view page shows the same query, the board layout and the same results
+
+#### Scenario: Survives a reload
+- **WHEN** the user reloads the app on the same device with a draft on the New view page
+- **THEN** the draft is restored, and another device's New view page is empty
+
+#### Scenario: Saving clears it
+- **WHEN** the user saves the draft as "Work tomorrow" and opens New view again
+- **THEN** the page is empty with the usage hint, and Up in the query input recalls the saved query from the history
+
+#### Scenario: Clear and undo
+- **WHEN** the user chooses "Clear" in the filter panel's header
+- **THEN** the query is empty, the options are the defaults, a toast offers Undo, and Undo brings the draft back
+
+#### Scenario: Per workspace
+- **WHEN** the user has a draft in "Work" and switches to "Personal" and opens New view
+- **THEN** Personal's New view page has its own draft or none, and switching back to Work restores Work's draft
+
+#### Scenario: Address wins
+- **WHEN** a draft exists and the user opens a link to `/views/new?q=p1`
+- **THEN** the page shows `p1`, and Up in the input recalls the previous draft's query
+
+#### Scenario: Not in the export
+- **WHEN** the user exports their data while a draft exists
+- **THEN** the export holds no trace of the draft
+
+### Requirement: Availability term
+`available` SHALL match tasks that are available (project-flow "Available tasks"): open, not blocked by an open task, not waiting in sequence, and neither in Someday nor deferred to a later start; `!available` SHALL therefore match the other open tasks. It SHALL be a keyword of the published grammar, accepted by the server's query validation for saved views, evaluated on the device from local data with the same open-only default as every other term, and SHALL follow completions synced from other devices without a reload. `blocked` and `unblocked` SHALL keep matching explicit dependencies only.
+
+#### Scenario: What can be done now
+- **WHEN** the user enters `available & @phone`
+- **THEN** only open tasks with the label "@phone" that are available are listed, and the later steps of sequential projects are not
+
+#### Scenario: Waiting step is not blocked
+- **WHEN** a task waits in sequence and has no `blocked_by`
+- **THEN** it matches `!available` and `unblocked`, and does not match `blocked`
+
+#### Scenario: Offline saved view
+- **WHEN** a saved view `available & today` is opened offline and the user completes the current step of a sequential project whose next step is due today
+- **THEN** the next step appears in the view at once
+
+### Requirement: Part of the day terms
+`morning` SHALL match tasks whose stored part is Morning and `afternoon` tasks whose stored part is Afternoon (OpenSpec `day-parts`), whatever their date; a part placed only by the due time in Today SHALL not match. `evening` SHALL keep matching the evening flag. The Go filter parser SHALL accept both keywords when it validates a saved view.
+
+#### Scenario: Morning tasks at home
+- **WHEN** the user enters `#Home & morning`
+- **THEN** open tasks of "Home" set to Morning are listed, and a Home task due at 09:00 without a part is not
+
+#### Scenario: Saved through the API
+- **WHEN** a client saves a view with the query `today & afternoon`
+- **THEN** the server accepts it as valid
+
+### Requirement: Energy terms
+`energy` SHALL match tasks that have an energy (OpenSpec `task-energy`), `no energy` tasks that have none, and `energy: value` (quotes allowed, case ignored) tasks whose energy equals `deep`, `medium` or `low`. Any other value SHALL be an error naming the three valid values. All three SHALL be keywords in the published grammar, accepted by the server's validation of saved views, and evaluated on the device from local data with the same open-only default as every other term, offline included; `energy` SHALL be a reserved word. A value a client does not know SHALL match `no energy`.
+
+#### Scenario: End of the day list
+- **WHEN** the user enters `energy: low & unblocked & today`
+- **THEN** today's open, unblocked tasks with Low energy are listed
+
+#### Scenario: Unknown value
+- **WHEN** the user enters `energy: high`
+- **THEN** the query is not run and the error says the energy is deep, medium or low
+
+#### Scenario: Saved and offline
+- **WHEN** the user saves `energy: deep & #Work` as a view and later opens it on an offline device
+- **THEN** the server accepts the view, and the device lists the open Deep tasks of "Work" from local data
+
+#### Scenario: Reserved word
+- **WHEN** a project defines a custom field named "Energy" and the user enters `energy`
+- **THEN** the term is the energy keyword, and the field is reachable only through its quoted name
+
+#### Scenario: Works with the switch off
+- **WHEN** the Energy levels switch is off and the user enters `no energy`
+- **THEN** open tasks without an energy are listed
+
+### Requirement: Query filter on the calendar and Upcoming
+The Calendar (Day, Week, Month and Plan together) and Upcoming SHALL each offer a filter by query in the published grammar, with label checkboxes that add and remove `@label` terms in the query, from Filter… in the Calendar's overflow menu and from Upcoming's Filter action. An active filter SHALL be one chip with its words and a clear control in the header's lead line, adding no row of chrome. The filter SHALL narrow the tasks drawn and listed and the deadline markers shown, SHALL leave calendar events, frames and the planning list unaffected, and SHALL leave the day's capacity counting every task, its tooltip saying how many are hidden by the filter. An invalid query SHALL keep the last valid filter active and show the parser's error. Each filter SHALL be remembered per device across reloads, never synced, and evaluated on the device from local data, offline and on unlocked encrypted accounts.
+
+#### Scenario: Only work in the week
+- **WHEN** the user opens Filter… in the Week and enters `##Work`
+- **THEN** only tasks of "Work" and its sub-projects are drawn, a chip reading "Project is Work or a sub-project" (the condition words of saved views' toolbar) shows in the header, and meetings are still drawn
+
+#### Scenario: Label checkboxes
+- **WHEN** the user ticks the labels "errand" and "call" in Upcoming's filter
+- **THEN** the query reads `@errand | @call` and Upcoming lists only tasks carrying either label
+
+#### Scenario: Capacity unchanged
+- **WHEN** a filter hides two tasks estimated at 1 hour each on Tuesday
+- **THEN** Tuesday's capacity still counts them and its tooltip says "2 tasks hidden by the filter"
+
+#### Scenario: Invalid query
+- **WHEN** the user changes an active filter to `p1 &`
+- **THEN** the error is shown in the popover and the previous filter stays active
+
+#### Scenario: Remembered offline
+- **WHEN** the device is offline, the Calendar's filter is active and the page is reloaded
+- **THEN** the same filter is active in Day, Week, Month and Plan, and other devices are unaffected
+
+### Requirement: Notes terms
+`notes` SHALL match tasks whose note is not empty, `no notes` tasks whose note is empty, and `notes: text` (quotes allowed, case ignored) tasks whose note contains the text. `notes:` without text SHALL be an error. All three SHALL be keywords in the published grammar, accepted by the server's validation of saved views, and evaluated on the device from local data, over the decrypted note on an encrypted account, with the same open-only default as every other term, offline included; `notes` SHALL be a reserved word. The terms SHALL match tasks only, never standalone notes. The TypeScript and Go parsers SHALL share their test queries.
+
+#### Scenario: Tasks with notes in a project
+- **WHEN** the user enters `notes & #Renovation`
+- **THEN** the open tasks of "Renovation" that have a note are listed
+
+#### Scenario: Text in the note
+- **WHEN** the user enters `notes: "permit office"`
+- **THEN** open tasks whose note contains "permit office" in any letter case are listed, and a task with those words only in its title is not
+
+#### Scenario: Missing text
+- **WHEN** the user enters `notes:`
+- **THEN** the query is not run and the error asks for text after `notes:`
+
+#### Scenario: Saved and offline
+- **WHEN** the user saves `no notes & p1` as a view and opens it later on an offline device
+- **THEN** the server accepts the view, and the device lists the open priority-1 tasks without a note from local data
+
+#### Scenario: Reserved word
+- **WHEN** a project defines a custom field named "Notes" and the user enters `notes`
+- **THEN** the term is the notes keyword, and the field is reachable only through its quoted name

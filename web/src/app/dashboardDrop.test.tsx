@@ -158,3 +158,25 @@ describe('keyboard moves', () => {
     expect(card(id, panel('Middle'))).toBeNull()
   })
 })
+
+describe('folded panels (board-polish)', () => {
+  it('a panel folds to its header line, which unfolds it, and a folded panel with a rule still takes drops', async () => {
+    const { dash } = await board([{ name: 'Backlog', query: 'p3' }, URGENT])
+    const id = await createTask({ title: 'Report', priority: 3 })
+    await render(<Board id={dash} />)
+    await waitFor(() => !!card(id, panel('Backlog')))
+    const before = await db.outbox.count()
+    await act(async () => { panel('Urgent and important').querySelector<HTMLButtonElement>('[data-panel-fold]')!.click() })
+    await waitFor(() => !!panel('Urgent and important').querySelector('[data-panel-strip]'), 'the folded panel')
+    const strip = panel('Urgent and important').querySelector('[data-panel-strip]')!
+    expect(strip.getAttribute('aria-expanded')).toBe('false')
+    expect(strip.getAttribute('aria-label')).toBe('Urgent and important, 0 open tasks, folded')
+    expect(await db.outbox.count()).toBe(before)
+    expect(panel('Urgent and important').getAttribute('data-drop-target')).toMatch(/^panel:/)
+    await drag(card(id)!, panel('Urgent and important'))
+    await waitFor(async () => (await db.tasks.get(id))!.priority === 1, 'the rule applied on the folded panel')
+    await waitFor(() => panel('Urgent and important').querySelector('[data-panel-strip]')?.getAttribute('aria-label') === 'Urgent and important, 1 open task, folded', 'the count')
+    await act(async () => { (panel('Urgent and important').querySelector('[data-panel-strip]') as HTMLButtonElement).click() })
+    await waitFor(() => !!card(id, panel('Urgent and important')), 'unfolded')
+  })
+})

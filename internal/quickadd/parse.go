@@ -14,6 +14,12 @@ type Context struct {
 	Projects      []Project `json:"projects"`
 	DayMonthOrder string    `json:"dayMonthOrder,omitempty"` // DM | MD; the first language's when empty
 	WeekStart     *int      `json:"weekStart,omitempty"`     // 0 = Sunday; Monday when nil
+	// DayParts reads the part phrases (OpenSpec change day-parts, D5): the
+	// account's Day parts preference.
+	DayParts bool `json:"dayParts,omitempty"`
+	// Energy reads the `~deep` tokens (OpenSpec change task-energy, D4): the
+	// account's Energy levels preference.
+	Energy bool `json:"energy,omitempty"`
 }
 
 // Due is a floating due date with an optional time.
@@ -24,15 +30,20 @@ type Due struct {
 
 // Result is what a line sets (ParseResult in parse.ts, without the chips).
 type Result struct {
-	Title           string   `json:"title"`
-	Due             *Due     `json:"due"`
-	Deadline        string   `json:"deadline,omitempty"`
-	Someday         bool     `json:"someday,omitempty"`
-	Evening         bool     `json:"evening,omitempty"`
-	ProjectID       string   `json:"projectId,omitempty"`
-	Labels          []string `json:"labels"`
-	Priority        int      `json:"priority,omitempty"`
-	EstimateMinutes int      `json:"estimateMinutes,omitempty"`
+	Title    string `json:"title"`
+	Due      *Due   `json:"due"`
+	Deadline string `json:"deadline,omitempty"`
+	Someday  bool   `json:"someday,omitempty"`
+	Evening  bool   `json:"evening,omitempty"`
+	// DayPart is "morning" or "afternoon" from a part phrase (day-parts D5).
+	DayPart   string   `json:"dayPart,omitempty"`
+	ProjectID string   `json:"projectId,omitempty"`
+	Labels    []string `json:"labels"`
+	Priority  int      `json:"priority,omitempty"`
+	// Energy is "deep", "medium" or "low" from a `~` token, the last one on
+	// the line (task-energy D4).
+	Energy          string `json:"energy,omitempty"`
+	EstimateMinutes int    `json:"estimateMinutes,omitempty"`
 	// SpentMinutes is time already spent from a `30m/2h` token (time-tracking
 	// D10): one closed time entry ending at creation.
 	SpentMinutes int        `json:"spentMinutes,omitempty"`
@@ -66,8 +77,8 @@ func Parse(line string, ctx Context) Result {
 
 // Mark is one recognised attribute and the span of the line it came from, in
 // line order: the chips a client previews (OpenSpec change extension-v2, D1).
-// Kind is date, time, deadline, evening, someday, project, label, priority,
-// estimate, recurrence or reminder.
+// Kind is date, time, deadline, evening, daypart, someday, project, label,
+// priority, energy, estimate, recurrence or reminder.
 type Mark struct {
 	Kind string
 	Span Span
@@ -97,12 +108,13 @@ func (p *parser) marks(r Result) []Mark {
 			out = append(out, Mark{kind, s})
 		}
 	}
-	add("date", p.date.span, p.date.set && (p.evening == nil || p.date.span != *p.evening))
+	add("date", p.date.span, p.date.set && (p.evening == nil || p.date.span != *p.evening) && (!p.dayPart.set || p.date.span != p.dayPart.span))
 	add("time", p.timeV.span, p.timeV.set)
 	add("deadline", p.deadline.span, p.deadline.set)
 	if p.evening != nil {
 		add("evening", *p.evening, true)
 	}
+	add("daypart", p.dayPart.span, p.dayPart.set)
 	if p.someday != nil {
 		add("someday", *p.someday, r.Someday)
 	}
@@ -111,6 +123,9 @@ func (p *parser) marks(r Result) []Mark {
 		add("label", l.span, true)
 	}
 	add("priority", p.priority.span, p.priority.value > 0)
+	for _, e := range p.energies {
+		add("energy", e.span, true)
+	}
 	add("estimate", p.estimate.span, p.estimate.value > 0)
 	add("recurrence", p.rec.span, p.rec.set)
 	for _, m := range p.reminders {
@@ -136,7 +151,14 @@ type parser struct {
 	tokens         []token
 
 	date, deadline, project, rec found
-	timeV                        struct {
+	// dateBare marks a date from a month name alone, which a later complete
+	// date phrase replaces; recStart is the first date of an "every other
+	// friday" rule (quick-add-month-and-every-other D1, D3).
+	dateBare bool
+	recStart string
+	// dayPart is Morning or Afternoon (day-parts D5); Evening is evening.
+	dayPart found
+	timeV   struct {
 		value, date string
 		span        Span
 		set         bool
@@ -148,7 +170,10 @@ type parser struct {
 	spent            int
 	evening, someday *Span
 	labels           []found
-	reminders        []struct {
+	// energies are the `~` tokens; every one leaves the title and the last
+	// one is the value (task-energy D4).
+	energies  []found
+	reminders []struct {
 		value Reminder
 		span  Span
 	}
@@ -183,6 +208,12 @@ func (p *parser) attribute(i int) (int, bool) {
 		p.labels = append(p.labels, found{l, one, true})
 		return i + 1, true
 	}
+	if p.ctx.Energy {
+		if e := matchEnergy(t.text); e != "" {
+			p.energies = append(p.energies, found{e, one, true})
+			return i + 1, true
+		}
+	}
 	if p.priority.value == 0 {
 		if pr := matchPriority(t.text); pr > 0 {
 			p.priority.value, p.priority.span = pr, one
@@ -209,17 +240,74 @@ func (p *parser) attribute(i int) (int, bool) {
 			return next, true
 		}
 	}
+	if next, ok := p.thisPart(i); ok {
+		return next, true
+	}
 	if p.evening == nil {
 		if n := wordsAt(tokens, i, dctx, func(v *Vocab) []string { return v.EveningWords }); n > 0 {
 			s := p.span(i, i+n)
 			p.evening = &s
-			if !p.date.set {
-				p.date = found{p.ctx.Today, s, true}
+			if !p.date.set || p.dateBare {
+				p.date, p.dateBare = found{p.ctx.Today, s, true}, false
 			}
 			return i + n, true
 		}
 	}
 	return 0, false
+}
+
+// partFree reports whether no part was set yet: a line sets one part, the
+// evening flag or a day part, never both (day-parts D5).
+func (p *parser) partFree() bool { return p.evening == nil && !p.dayPart.set }
+
+// thisPart matches "this morning" / "this afternoon" at token i: due today
+// (unless a date came first) with that part, only with Context.DayParts.
+func (p *parser) thisPart(i int) (int, bool) {
+	if !p.ctx.DayParts || !p.partFree() {
+		return 0, false
+	}
+	for _, c := range []struct {
+		part string
+		pick func(*Vocab) []string
+	}{{"morning", func(v *Vocab) []string { return v.MorningWords }}, {"afternoon", func(v *Vocab) []string { return v.AfternoonWords }}} {
+		if n := wordsAt(p.tokens, i, p.dctx, c.pick); n > 0 {
+			s := p.span(i, i+n)
+			p.dayPart = found{c.part, s, true}
+			if !p.date.set || p.dateBare {
+				p.date, p.dateBare = found{p.ctx.Today, s, true}, false
+			}
+			return i + n, true
+		}
+	}
+	return 0, false
+}
+
+// partAfter reads a part word directly after a date phrase ending at token to
+// ("tomorrow morning"), only with Context.DayParts, and returns where reading
+// goes on. Evening sets the evening flag.
+func (p *parser) partAfter(to int) int {
+	if !p.ctx.DayParts || !p.partFree() || to >= len(p.tokens) || p.tokens[to].quoted {
+		return to
+	}
+	best, part := 0, ""
+	for _, c := range []struct {
+		part string
+		pick func(*Vocab) []string
+	}{{"morning", func(v *Vocab) []string { return v.PartWords.Morning }}, {"afternoon", func(v *Vocab) []string { return v.PartWords.Afternoon }}, {"evening", func(v *Vocab) []string { return v.PartWords.Evening }}} {
+		if n := wordsAt(p.tokens, to, p.dctx, c.pick); n > best {
+			best, part = n, c.part
+		}
+	}
+	if best == 0 {
+		return to
+	}
+	s := p.span(to, to+best)
+	if part == "evening" {
+		p.evening = &s
+	} else {
+		p.dayPart = found{part, s, true}
+	}
+	return to + best
 }
 
 // phrase matches the longest of a date, a time, a recurrence or a reminder at
@@ -229,8 +317,12 @@ func (p *parser) phrase(i int) int {
 	var dm *dateMatch
 	var tm *timeMatch
 	var rm *recMatch
-	if !p.date.set {
+	if !p.date.set || p.dateBare {
 		dm = matchDateAt(tokens, i, dctx)
+		// After a bare month only a complete date phrase counts.
+		if p.date.set && dm != nil && dm.bare {
+			dm = nil
+		}
 	}
 	if !p.timeV.set {
 		tm = matchTimeAt(tokens, i, dctx)
@@ -242,7 +334,7 @@ func (p *parser) phrase(i int) int {
 	}
 	if rm == nil {
 		if n := ordinalOutOfRangeAt(tokens, i, dctx); n > 0 {
-			rm = &recMatch{"", i, i + n, true}
+			rm = &recMatch{from: i, to: i + n, literal: true}
 		}
 	}
 	mm := matchReminderAt(tokens, i, dctx)
@@ -258,6 +350,7 @@ func (p *parser) phrase(i int) int {
 		if rm != nil && rm.to == phraseEnd {
 			if !rm.literal {
 				p.rec = found{rm.rule, p.span(rm.from, rm.to), true}
+				p.recStart = rm.start
 			}
 			return rm.to
 		} else if mm != nil {
@@ -269,8 +362,8 @@ func (p *parser) phrase(i int) int {
 		}
 		return i
 	case dm != nil && (tm == nil || dm.to >= tm.to):
-		p.date = found{dm.date, p.span(dm.from, dm.to), true}
-		return dm.to
+		p.date, p.dateBare = found{dm.date, p.span(dm.from, dm.to), true}, dm.bare
+		return p.partAfter(dm.to)
 	case tm != nil:
 		p.timeV.value, p.timeV.date, p.timeV.span, p.timeV.set = tm.time, tm.date, p.span(tm.from, tm.to), true
 		return tm.to
@@ -296,6 +389,8 @@ func (p *parser) due() *Due {
 	d := p.date.value
 	if !p.date.set {
 		switch {
+		case p.rec.set && p.recStart != "":
+			d = p.recStart
 		case p.rec.set:
 			r, _ := recurrence.Parse(p.rec.value)
 			d, _ = r.First(p.ctx.Today)
@@ -327,6 +422,7 @@ func (p *parser) result(quotes []Span) Result {
 	if p.evening != nil {
 		remove = append(remove, *p.evening)
 	}
+	add(p.dayPart.span, p.dayPart.set)
 	if parked {
 		remove = append(remove, *p.someday)
 	}
@@ -335,8 +431,12 @@ func (p *parser) result(quotes []Span) Result {
 	add(p.rec.span, p.rec.set)
 	add(p.priority.span, p.priority.value > 0)
 	add(p.estimate.span, p.estimate.value > 0)
-	out := Result{Due: p.due(), Deadline: p.deadline.value, Someday: parked, Evening: p.evening != nil, ProjectID: p.project.value,
+	out := Result{Due: p.due(), Deadline: p.deadline.value, Someday: parked, Evening: p.evening != nil, DayPart: p.dayPart.value, ProjectID: p.project.value,
 		Priority: p.priority.value, EstimateMinutes: p.estimate.value, SpentMinutes: p.spent, Recurrence: p.rec.value, Labels: []string{}, Reminders: []Reminder{}}
+	for _, e := range p.energies {
+		remove = append(remove, e.span)
+		out.Energy = e.value
+	}
 	for _, l := range p.labels {
 		remove = append(remove, l.span)
 		out.Labels = append(out.Labels, l.value)

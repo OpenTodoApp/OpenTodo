@@ -32,6 +32,10 @@ import type { Optional } from './usePropertyEditing'
 import { WhenControl, WhenSegmentPicker } from './WhenControl'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
+import { dayPartFields } from '../../lib/dayParts'
+import { energyLevelsOn, energyOf, setTaskEnergy } from '../../lib/energy'
+import { useUserPrefsRow } from '../../lib/localData'
+import { EnergyChoice } from './EnergyChoice'
 
 export const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   // Priority colours come from the p1–p4 tokens (borders, 3:1); the labels use the
@@ -62,7 +66,7 @@ const itemPath = (i: PickerItem) => i.path
 const itemMeta = (i: PickerItem) => i.meta
 
 /** The parts that are optional (revealed by Add, removed when left empty); the rest are fixed. */
-export const OPTIONAL = new Set<string>(['deadline', 'when', 'evening', 'reminders', 'estimate', 'repeat', 'labels', 'assignee', 'blocked-by', 'parent', 'section', 'location'])
+export const OPTIONAL = new Set<string>(['deadline', 'when', 'evening', 'reminders', 'estimate', 'repeat', 'labels', 'assignee', 'blocked-by', 'parent', 'section', 'location', 'energy'])
 /** The When segment a part opens on. */
 const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', reminders: 'reminders' }
 
@@ -229,6 +233,8 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
       ))
     case 'estimate':
       return frame('clock', t('Estimate'), <EstimateField task={task} />, task.estimate_minutes !== null ? () => act(updateTask(task.id, { estimate_minutes: null })) : undefined)
+    case 'energy':
+      return frame('zap', t('Energy'), <EnergyChoice task={task} onChosen={onClose} />, energyOf(task) ? () => act(setTaskEnergy(task.id, null)) : undefined)
     case 'labels':
       return frame('tag', t('Labels'), (
         <div className="space-y-2">
@@ -268,6 +274,8 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
 /** The Add menu (task-panel-facets D5): what is not set, grouped by facet, then Attach. */
 function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: PropertiesModel }) {
   const { solo, offerSection, editing: ed } = m
+  // Energy is offered only while the account has Energy levels on (task-energy D3).
+  const energyOn = energyLevelsOn(useUserPrefsRow())
   type Offer = { id: Optional; label: string; icon: IconName; shortcut?: string; when?: boolean; run?: () => void }
   const groups: { title: string; offers: Offer[] }[] = [
     { title: t('Where'), offers: [
@@ -278,12 +286,13 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
     { title: t('When'), offers: [
       { id: 'deadline', label: t('Deadline'), icon: 'hourglass', shortcut: keysOf('list.deadline') },
       { id: 'when', label: t('Start'), icon: 'calendar-range', shortcut: keysOf('list.defer') },
-      { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(updateTask(task.id, { evening: true })) },
+      { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(updateTask(task.id, dayPartFields('evening'))) },
       { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock' },
       { id: 'repeat', label: t('Repeat'), icon: 'repeat' },
     ] },
     { title: t('How'), offers: [
       { id: 'estimate', label: t('Estimate'), icon: 'clock', shortcut: keysOf('list.estimate') },
+      { id: 'energy', label: t('Energy'), icon: 'zap', when: energyOn },
       { id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels') },
     ] },
     { title: t('Who'), offers: [

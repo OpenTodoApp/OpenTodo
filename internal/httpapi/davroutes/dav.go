@@ -16,6 +16,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -220,6 +221,12 @@ type davView struct {
 	remTask   map[string]string
 	// ws places calendars in workspaces (caldav_workspaces.go).
 	ws *davWorkspaces
+	// today is the server's calendar date; bySeries groups the tasks pointing
+	// at each series (occurrences.go, series-exceptions).
+	today    string
+	bySeries map[string][]opsync.Entity
+	// hasSplit is set with bySeries when a task continues a split series.
+	hasSplit bool
 }
 
 func (d *davRequest) load() (*davView, error) {
@@ -228,7 +235,8 @@ func (d *davRequest) load() (*davView, error) {
 	}
 	ctx, uid := d.ctx(), d.user.ID
 	v := &davView{uid: uid, projects: map[string]opsync.Entity{}, roles: map[string]string{}, byID: map[string]opsync.Entity{},
-		labels: map[string]string{}, byName: map[string]string{}, names: map[string]string{}, uids: map[string]string{}}
+		labels: map[string]string{}, byName: map[string]string{}, names: map[string]string{}, uids: map[string]string{},
+		today: localToday(d.s.now())}
 	var err error
 	// The cursor is read first: anything written while the view loads moves the
 	// next token past it, so a client never misses a change.
@@ -429,7 +437,9 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 	}
 	ct.Deadline = idOf(t["deadline"])
 	ct.Start = idOf(t["start"])
-	ct.Evening = string(t["evening"]) == "true"
+	ct.Evening, ct.Span = string(t["evening"]) == "true", string(t["span"]) == "true"
+	ct.DayPart = daypart.OfRow(t)
+	ct.Energy = idOf(t["energy"])
 	if !isNullish(t["completed_at"]) {
 		c := int64(numberOf(t["completed_at"]))
 		ct.CompletedAt = &c
@@ -454,6 +464,7 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 			ct.DependsOn = append(ct.DependsOn, v.uidOf(b))
 		}
 	}
+	v.seriesParts(t, &ct)
 	body := caldav.Encode(ct)
 	sum := sha256.Sum256(body)
 	return body, `"` + hex.EncodeToString(sum[:16]) + `"`

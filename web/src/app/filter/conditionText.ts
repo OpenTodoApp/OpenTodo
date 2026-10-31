@@ -4,6 +4,7 @@ import { fieldValueText, type DateExpr, type FieldValueExpr } from '../../lib/fi
 import { formatMinutes, type Leaf } from '../../lib/filter/builder'
 import type { Cmp, Keyword } from '../../lib/filter/parse'
 import { msg, t, translatedMap } from '../../lib/i18n'
+import { energyName } from '../../lib/energy'
 
 export const DATE_FIELD_NAME = translatedMap({
   due: msg('Due'), deadline: msg('Deadline'), start: msg('Start'), created: msg('Created'), completed: msg('Completed'),
@@ -24,15 +25,22 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   someday: msg('Someday'),
   deferred: msg('Starts later'),
   evening: msg('This evening'),
+  morning: msg('In the morning'),
+  afternoon: msg('In the afternoon'),
   open: msg('Open'),
   completed: msg('Completed'),
   subtask: msg('Is a subtask'),
   blocked: msg('Waiting on another task'),
   unblocked: msg('Not waiting on another task'),
+  available: msg('Available now'),
   habit: msg('Habit'),
   origin: msg('Has an origin'),
   'no origin': msg('No origin'),
   tracked: msg('Has tracked time'),
+  energy: msg('Has an energy'),
+  'no energy': msg('No energy'),
+  notes: msg('Has a note'),
+  'no notes': msg('No note'),
 })
 
 const WEEKDAY = [msg('Sunday'), msg('Monday'), msg('Tuesday'), msg('Wednesday'), msg('Thursday'), msg('Friday'), msg('Saturday')]
@@ -99,7 +107,9 @@ export function conditionText(leaf: Leaf): string {
     case 'date': return dateText(DATE_FIELD_NAME[leaf.field], leaf.op, leaf.date)
     case 'keyword': return KEYWORD_NAME[leaf.keyword]
     case 'search': return t('Title or notes contain {text}', { text: leaf.text })
+    case 'notes': return t('Note contains {text}', { text: leaf.text })
     case 'origin': return t('Origin is {value}', { value: leaf.value })
+    case 'energy': return t('Energy is {level}', { level: energyName(leaf.value) })
     case 'workspace': return t('Workspace is {name}', { name: leaf.name })
     case 'tracked': return compareText(t('Tracked time'), leaf.op, formatMinutes(leaf.minutes))
     case 'field': return compareText(leaf.name, leaf.op, fieldValueWords(leaf.value))

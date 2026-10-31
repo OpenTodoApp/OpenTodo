@@ -47,7 +47,7 @@ The endpoint SHALL implement streamable HTTP JSON-RPC 2.0 in stateless mode: `in
 - **THEN** the response is a JSON-RPC error with code `-32601` and nothing changes
 
 ### Requirement: Read-only tools
-`tools/list` SHALL always advertise `list_projects`, `list_tasks`, `get_task`, `search_tasks`, `today_summary`, `list_time_entries` and `list_icons` with argument schemas and a read-only annotation, and SHALL add write tools only as the write permission gate allows. Read tools SHALL filter as before, return structured JSON, exclude deleted entities, cover only the token's user, write nothing, and reflect only data devices have synced. Task results SHALL carry `tracked_minutes` (every member's live entries, a running one to the server time). `list_time_entries` SHALL take `task_id`, `from`, `to`, `running` and `limit`, return the entries the user can read with `task_id`, `user_id`, `started_at`, `ended_at`, `minutes` and `note` (the note marked as untrusted text, "[encrypted]" when it is ciphertext), and offer a cursor for more. No tool SHALL start, stop or edit an entry. The `inbox` view of `list_tasks` and the Inbox count of `today_summary` SHALL use the Inbox rule of OpenSpec `project-organization` (no project and not scheduled), and the tool descriptions SHALL say so.
+`tools/list` SHALL always advertise every read tool of the registry with its argument schema and a read-only annotation (at the time of writing `list_projects`, `list_tasks`, `get_task`, `search_tasks`, `today_summary`, `list_time_entries`, `list_icons`, `list_workspaces`, `list_frames`, `list_notes`, `search_notes` and `get_note`; a change that adds a read tool adds it to this list), and SHALL add write tools only as the write permission gate allows. Read tools SHALL filter as before, return structured JSON, exclude deleted entities, cover only the token's user, write nothing, and reflect only data devices have synced. Task results SHALL carry `tracked_minutes` (every member's live entries, a running one to the server time). `list_time_entries` SHALL take `task_id`, `from`, `to`, `running` and `limit`, return the entries the user can read with `task_id`, `user_id`, `started_at`, `ended_at`, `minutes` and `note` (the note marked as untrusted text, "[encrypted]" when it is ciphertext), and offer a cursor for more. No tool SHALL start, stop or edit an entry. The `inbox` view of `list_tasks` and the Inbox count of `today_summary` SHALL use the Inbox rule of OpenSpec `project-organization` (no project and not scheduled), and the tool descriptions SHALL say so.
 
 #### Scenario: Today's tasks
 - **WHEN** an assistant calls `list_tasks` with `view: "today"` and a `timezone`
@@ -67,7 +67,7 @@ The endpoint SHALL implement streamable HTTP JSON-RPC 2.0 in stateless mode: `in
 
 #### Scenario: Read token sees only read tools
 - **WHEN** a client with a `read` token calls `tools/list` while the owner and the user have allowed assistant writes
-- **THEN** exactly the seven read tools are listed: `list_projects`, `list_tasks`, `get_task`, `search_tasks`, `today_summary`, `list_time_entries` and `list_icons`
+- **THEN** exactly the read tools are listed, each with a read-only annotation, and no write tool
 
 #### Scenario: Entries of a week
 - **WHEN** an assistant calls `list_time_entries` with `from: "2026-10-12"`, `to: "2026-10-18"` and a `timezone`
@@ -138,7 +138,7 @@ A write tool SHALL run only when MCP is enabled, the owner allowed assistant wri
 
 #### Scenario: All conditions met
 - **WHEN** the owner and the user allowed writes and a client with an `agent` token calls `tools/list`
-- **THEN** the five read tools and every write tool are listed, write tools with `readOnlyHint: false`
+- **THEN** every read tool and every write tool are listed, write tools with `readOnlyHint: false`
 
 #### Scenario: Full token stays read-only on MCP
 - **WHEN** both switches are on and a client with a `full` token calls `complete_tasks`
@@ -743,3 +743,25 @@ For an end-to-end encrypted account the `location` argument of `create_tasks` an
 #### Scenario: Read token
 - **WHEN** a `read` token calls `tools/list`
 - **THEN** `list_workspaces` is listed with the other read tools and no write tool is
+
+### Requirement: Part of the day in agent tools
+`create_tasks` items and `update_tasks` updates SHALL accept `day_part` (`morning`, `afternoon`, `evening` or null), written through the server's strict apply path as OpenSpec `day-parts` pairs it with the evening flag; another value SHALL be a tool error that writes nothing. Task results and `opentodo://` task resources SHALL carry `day_part` (`morning`, `afternoon` or null) beside `evening`.
+
+#### Scenario: Plan a morning habit
+- **WHEN** an assistant with write access calls `update_tasks` with `day_part: "morning"` on an evening habit
+- **THEN** the habit's part is Morning, its evening flag is false, and `get_task` returns `day_part: "morning"`, `evening: false`
+
+#### Scenario: Unknown part
+- **WHEN** an assistant passes `day_part: "night"`
+- **THEN** the tool returns an error and nothing is written
+
+### Requirement: Today summary reports the Today limit
+`today_summary` SHALL return `today_limit` (`null` when off, else the number of slots) and SHALL mark each listed task due today or overdue with `waiting_for_slot` (true when the user's Today limit keeps it waiting, false otherwise), computed with the same fill rule as the web app (OpenSpec `today-closed-list`) from the rows devices have synced. It SHALL write nothing. `list_tasks` with `view: "today"` SHALL be unchanged and list every task.
+
+#### Scenario: Limit on
+- **WHEN** the user's limit is 3, Today has five available tasks and an assistant calls `today_summary`
+- **THEN** the result carries `today_limit: 3`, three tasks with `waiting_for_slot: false` and two with `waiting_for_slot: true`
+
+#### Scenario: Limit off
+- **WHEN** the user has no limit
+- **THEN** the result carries `today_limit: null` and every task has `waiting_for_slot: false`

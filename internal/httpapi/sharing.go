@@ -281,6 +281,10 @@ func (s *Server) handleTransferProject(w http.ResponseWriter, r *http.Request) {
 // is also where a task's custom field values are folded into its `fields`
 // object (custom-fields D3).
 func (s *Server) annotateProjects(ctx context.Context, entity string, list ...opsync.Entity) error {
+	// Body version and pending appends (notes-overview D13), in every representation.
+	if err := s.annotateBody(ctx, entity, list...); err != nil {
+		return err
+	}
 	if entity == "task" {
 		for _, e := range list {
 			foldFieldsInPlace(e)
@@ -289,6 +293,8 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 			if _, has := e["origin"]; e != nil && !has {
 				e["origin"] = json.RawMessage("null")
 			}
+			// And energy, null when none (task-energy D7).
+			presentEnergy(e)
 		}
 		return nil
 	}
@@ -301,21 +307,28 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 					e[f] = json.RawMessage("null")
 				}
 			}
+			defaultFlowMode(e)
 		}
 		return nil
 	}
 	if entity == "view" {
-		// Every view representation carries on_drop, null when unset
-		// (OpenSpec change rule-boards, "Views API and export").
+		// Every view representation carries on_drop and icon, null when unset
+		// (OpenSpec changes rule-boards, "Views API and export", and sidebar-polish).
 		for _, e := range list {
-			if _, has := e["on_drop"]; e != nil && !has {
-				e["on_drop"] = json.RawMessage("null")
+			for _, f := range []string{"on_drop", "icon"} {
+				if _, has := e[f]; e != nil && !has {
+					e[f] = json.RawMessage("null")
+				}
 			}
 		}
 		return nil
 	}
 	if entity != "project" || len(list) == 0 {
 		return nil
+	}
+	for _, e := range list {
+		defaultFlowMode(e)
+		defaultProjectStatus(e)
 	}
 	shared, err := s.sync.SharedProjects(ctx, userFrom(ctx).ID)
 	if err != nil || len(shared) == 0 {
@@ -339,6 +352,10 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 // stripAnnotations removes the read-only sharing annotations from a project
 // write body, so a client can PATCH back what it read.
 func stripAnnotations(entity string, body map[string]json.RawMessage) {
+	delete(body, "body_version")
+	if entity == "task" || entity == "note" {
+		delete(body, "appends")
+	}
 	if entity == "project" {
 		delete(body, "role")
 		delete(body, "owner_id")

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "frame",
+  "description": "A calendar frame exactly as the REST API returns it (OpenSpec calendar-frames). The title is ciphertext for an encrypted account (encrypted: true).",
+  "type": "object",
+  "required": ["id", "title", "weekdays", "start", "end"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "weekdays": {"type": "string", "description": "ISO weekdays, a sorted comma list such as \"1,2,3,4,5\""},
+    "start": {"type": "string", "description": "HH:MM"},
+    "end": {"type": "string", "description": "HH:MM"},
+    "color": {"type": "string"},
+    "source": {"type": "string", "description": "\"\", project:<id>, label:<id> or view:<id>"},
+    "from_date": {"type": ["string", "null"]},
+    "until_date": {"type": ["string", "null"]},
+    "position": {"type": "number"},
+    "created_at": {"type": "number"},
+    "encrypted": {"type": "boolean"}
+  }
+}

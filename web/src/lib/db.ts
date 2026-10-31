@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
 import { forgetShellData } from './shell'
-import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Section, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
+import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type Frame, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Note, type Section, type Slot, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
 import { createStore } from './store'
 
 export interface OutboxOp extends Op {
@@ -49,7 +49,7 @@ export interface AssistantUndo {
   /** How many changes were applied, for the summary. */
   count: number
   /** Field values to restore, per entity. */
-  inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean }[]
+  inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; /** A default reminder the batch added (default-reminders): undone with it, not counted. */ followUp?: boolean }[]
   /** The clock each applied field got, to skip fields changed again since. */
   clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
   undone_at?: number
@@ -132,6 +132,12 @@ class OpenTodoDB extends Dexie {
   places!: Table<Place, string>
   /** Automation rules (OpenSpec automation-rules): a synced entity, ordered by position. */
   rules!: Table<Rule, string>
+  /** Calendar frames (OpenSpec calendar-frames): a synced entity, ordered by position. */
+  frames!: Table<Frame, string>
+  /** Calendar slots (OpenSpec calendar-slots): a synced entity, by date. */
+  slots!: Table<Slot, string>
+  /** Standalone notes (OpenSpec notes-overview): a synced entity, by project. */
+  notes!: Table<Note, string>
   /** The focus timer's state (focus-mode D2): one row "current" on this device, never synced, cleared at sign-out. */
   focus!: Table<FocusState, string>
   /** The account's workspaces, their members and groups (workspaces D8): replaced from every sync response, never ops. */
@@ -421,12 +427,13 @@ class OpenTodoDB extends Dexie {
     this.version(20).stores({ timeEntries: 'id, task_id, user_id, started_at' })
     // v21 (focus-mode D2): the focus timer's one device-local row; never an op, never exported.
     this.version(21).stores({ focus: 'id' })
-    // v22 (task-locations): the synced `place` entity.
-    this.version(22).stores({ places: 'id, position' })
-    // v23 (automation-rules): the synced `rule` entity.
-    this.version(23).stores({ rules: 'id, position' })
+    this.version(22).stores({ places: 'id, position' }) // v22 (task-locations): the synced `place` entity.
+    this.version(23).stores({ rules: 'id, position' }) // v23 (automation-rules): the synced `rule` entity.
     // v24 (workspaces D8): the cached directory, and a workspace_id index on the four entities that carry the field.
     this.version(24).stores({ projects: 'id, position, workspace_id', tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id, workspace_id', labels: 'id, position, workspace_id', views: 'id, position, workspace_id', workspaces: 'id', workspaceMembers: 'id, workspaceId', groups: 'id, workspaceId' })
+    this.version(25).stores({ frames: 'id, position' }) // v25 (calendar-frames): the synced `frame` entity.
+    this.version(26).stores({ slots: 'id, date' }) // v26 (calendar-slots): the synced `slot` entity.
+    this.version(27).stores({ notes: 'id, project_id' }) // v27 (notes-overview): the synced `note` entity.
   }
 }
 
@@ -505,7 +512,7 @@ function tableMap(d: OpenTodoDB) {
   return {
     project: d.projects, task: d.tasks, label: d.labels, view: d.views, reminder: d.reminders, section: d.sections,
     field: d.fields, comment: d.comments, project_prefs: d.prefs, user_prefs: d.userPrefs, attachment: d.attachments, review: d.review,
-    time_entry: d.timeEntries, place: d.places, rule: d.rules,
+    time_entry: d.timeEntries, place: d.places, rule: d.rules, frame: d.frames, slot: d.slots, note: d.notes,
   } satisfies Record<Entity, Table<unknown, string>>
 }
 

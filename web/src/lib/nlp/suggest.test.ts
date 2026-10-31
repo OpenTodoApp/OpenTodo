@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { matchProject } from './attributes'
 import { findLabel } from './quickadd'
-import { hasExact, insertToken, labelSuggestions, projectSuggestions, tokenAtCaret } from './suggest'
+import { energySuggestions, hasExact, insertToken, labelSuggestions, projectSuggestions, tokenAtCaret } from './suggest'
 
 const projects = [
   { id: 'p-home', name: 'Home' }, { id: 'p-homework', name: 'Homework' }, { id: 'p-reno', name: 'Home renovation' },
@@ -22,6 +22,19 @@ describe('tokenAtCaret', () => {
     expect(tokenAtCaret('Call the bank', 9)).toBeNull()
     expect(tokenAtCaret('a#b', 3)).toBeNull()
     expect(tokenAtCaret('Read "#notes', 12)).toBeNull()
+  })
+})
+
+describe('energy suggestions (task-energy D4)', () => {
+  it('a ~ token counts only while energy is on', () => {
+    expect(tokenAtCaret('Call ~', 6)).toBeNull()
+    expect(tokenAtCaret('Call ~', 6, { energy: true })).toEqual({ kind: 'energy', start: 5, end: 6, query: '' })
+    expect(tokenAtCaret('Call ~Me', 8, { energy: true })).toEqual({ kind: 'energy', start: 5, end: 8, query: 'Me' })
+  })
+  it('typing ~ suggests the three levels, a prefix narrows them, anything else none', () => {
+    expect(energySuggestions('').map((s) => s.token)).toEqual(['~deep', '~medium', '~low'])
+    expect(energySuggestions('L').map((s) => s.level)).toEqual(['low'])
+    expect(energySuggestions('6')).toEqual([])
   })
 })
 

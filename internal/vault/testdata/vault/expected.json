@@ -2,8 +2,8 @@
   "project": {
     "p-home": {"name": "Home", "color": "#22c55e", "icon": "house", "position": 1000, "archived": false, "parent_id": null, "deleted_at": null},
     "p-work": {"name": "Work", "color": "#3b82f6", "icon": null, "position": 2000, "archived": false, "parent_id": null, "deleted_at": null},
-    "p-launch": {"name": "Launch", "color": "#8b5cf6", "icon": null, "position": 1000, "archived": false, "parent_id": "p-work", "deleted_at": null},
-    "p-hiring": {"name": "Hiring", "color": "#ec4899", "icon": null, "position": 2000, "archived": false, "parent_id": "p-work", "deleted_at": null}
+    "p-launch": {"name": "Launch", "color": "#8b5cf6", "icon": null, "flow_mode": "sequential", "position": 1000, "archived": false, "parent_id": "p-work", "deleted_at": null},
+    "p-hiring": {"name": "Hiring", "color": "#ec4899", "icon": null, "status": "maintenance", "position": 2000, "archived": false, "parent_id": "p-work", "deleted_at": null}
   },
   "section": {
     "s-weekend": {"name": "Weekend", "project_id": "p-home", "position": 1000, "deleted_at": null},
@@ -29,7 +29,9 @@
     "t-home3": {"title": "Order the part", "project_id": "p-home", "parent_id": "t-home2", "priority": 4, "start": "2026-10-22", "position": 1000},
     "t-home4": {"title": "Pay rent", "project_id": "p-home", "priority": 4, "due": {"date": "2026-11-01"}, "recurrence": "every month", "labels": ["l-bills"], "position": 3000},
     "t-home5": {"title": "Return the drill", "project_id": "p-home", "priority": 4, "completed_at": 1792411200000, "position": 4000},
-    "t-home6": {"title": "Clean the windows", "project_id": "p-home", "section_id": "s-weekend", "priority": 4, "start": "someday", "evening": true, "position": 1000},
+    "t-home6": {"title": "Clean the windows", "project_id": "p-home", "section_id": "s-weekend", "priority": 4, "start": "someday", "evening": true, "energy": "low", "position": 1000},
+    "t-home7": {"title": "Stretch", "project_id": "p-home", "section_id": "s-weekend", "priority": 4, "due": {"date": "2026-10-25"}, "day_part": "morning", "position": 2000},
+    "t-home8": {"title": "Lisbon trip", "project_id": "p-home", "section_id": "s-weekend", "priority": 4, "due": {"date": "2026-11-05"}, "start": "2026-11-03", "span": true, "position": 3000},
     "t-work1": {"title": "Weekly report", "project_id": "p-work", "priority": 4, "due": {"date": "2026-10-23"}, "recurrence": "every week after completion", "labels": ["l-deep"], "position": 1000},
     "t-launch1": {"title": "Ship the beta", "project_id": "p-launch", "section_id": "s-next", "priority": 4, "due": {"date": "2026-10-28", "time": "14:00", "tz": "Europe/Rome"}, "fields.f-stage": "beta", "position": 1000},
     "t-hire1": {"title": "Interview Ada", "project_id": "p-hiring", "priority": 4, "position": 1000}

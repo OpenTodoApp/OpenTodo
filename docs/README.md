@@ -38,6 +38,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Statistics and the weekly digest](statistics.md) | What you completed, created and let slip computed on your device, and an optional weekly digest by email. |
 | &nbsp;&nbsp;↳ [Process the Inbox](process-the-inbox.md) | Walk the Inbox one task at a time and decide each with a single key: today, schedule, move, delegate, label, Someday, complete or trash, with Undo. |
 | &nbsp;&nbsp;↳ [Focus](focus.md) | One task and a timer: Pomodoro, Flowtime or Countdown, breaks and a break reminder, and the time worked logged on the task. |
+| &nbsp;&nbsp;↳ [Focus breaks, presets and noise](focus-options.md) | The break reminder, the tone, Countdown presets, +5 or +15 minutes when a session ends, and background noise while you work. |
 | &nbsp;&nbsp;↳ [Today and Upcoming](today-and-upcoming.md) | How Today orders overdue, started, evening and blocked tasks, how deadlines and start dates bring tasks in, and how Upcoming lays out the days ahead. |
 | &nbsp;&nbsp;↳ [Calendar events in Today](calendar-events-in-today.md) | Show the day's appointments from your subscribed calendars above Today's tasks: turning it on, what the agenda shows, and how it works offline. |
 | &nbsp;&nbsp;↳ [Saved views](saved-views.md) | Turn a filter query into a view pinned to the sidebar, group and sort it, manage it from its menu, and put up to six views on one dashboard. |
@@ -51,9 +52,16 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Recurring tasks and reminders](recurring-and-reminders.md) | Make a task repeat every week, month or weekday, skip an occurrence, and get reminded at the right moment. |
 | &nbsp;&nbsp;↳ [Repeat rules](repeat-rules.md) | Every rule you can type into Repeat, the after-completion and end options, and what completing, skipping or splitting off one occurrence does. |
 | &nbsp;&nbsp;↳ [Task reminders](task-reminders.md) | Every kind of reminder you can add to a task, how reminders follow the due date, the deadline and a repeat rule, and what happens when one goes off. |
+| &nbsp;&nbsp;↳ [Default reminders](default-reminders.md) | A reminder added to every task that gets a date or a time, set once for all your devices, and when it is or isn't added. |
 | [Time blocking](time-blocking.md) | Estimate how long tasks take, then place them on the Day or Week calendar to see whether your plan fits the day. |
 | &nbsp;&nbsp;↳ [Day, Week and Month](calendar-views.md) | Open the calendar, read the Day and Week grids, and use the Month overview to see six weeks at once and move tasks between days. |
+| &nbsp;&nbsp;↳ [Several months and the year](months-and-year.md) | Stack two, three or six months in the Month, and see the twelve months of a year with a mark for how busy each day is. |
+| &nbsp;&nbsp;↳ [Completed tasks on the calendar](completed-on-the-calendar.md) | Show finished tasks with struck-through titles in Day, Week, Month and Plan, with a choice remembered on each device. |
+| &nbsp;&nbsp;↳ [Frames](frames.md) | Shade the hours you keep for one kind of work, such as deep work every weekday morning, behind Day and Week, and plan tasks into them. |
+| &nbsp;&nbsp;↳ [Slots](slots.md) | Put several small tasks into one block of Day and Week, such as Admin from 16:00 to 16:45, and tick them off from a checklist inside it. |
 | &nbsp;&nbsp;↳ [Place tasks on the calendar](place-tasks-on-the-calendar.md) | Drag tasks onto time slots or move them with the keyboard, change how long a block lasts, and read each day's planned hours against its capacity. |
+| &nbsp;&nbsp;↳ [Add and colour on the calendar](calendar-add-and-colour.md) | Add a task by double-clicking a time or a day, and colour the calendar and boards by project, label or priority. |
+| &nbsp;&nbsp;↳ [Filter the calendar](calendar-filter.md) | Show only the tasks a query matches in the calendar and in Upcoming, and show one project as a calendar. |
 | [Calendar feeds](calendar-feeds.md) | Show your other calendars next to your tasks in Day and Week, and subscribe to your tasks from Google Calendar, Outlook or Apple Calendar. |
 | &nbsp;&nbsp;↳ [Other calendars in Day and Week](other-calendars.md) | Subscribe to a Google, Outlook, Apple, Fastmail or Nextcloud calendar so its events appear next to your tasks: the steps per app, refreshing, what you see, and the limits. |
 | [Sharing and comments](sharing.md) | Share a project with people on your server, choose what they can do, assign tasks, and talk it through in comments with @mentions. |

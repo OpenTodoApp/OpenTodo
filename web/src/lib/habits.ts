@@ -6,8 +6,9 @@
 // Dates are floating YYYY-MM-DD strings and all arithmetic runs on day numbers
 // (Date.UTC), never on local `Date` values, so time zones and daylight saving
 // changes cannot shift a day.
-import { occurrenceId } from './ids'
 import { parseRule, type Rule } from './recurrence'
+import { lineageOf, pieceEnd } from './lineage'
+import { isRecordOf, recordDate } from './recurring'
 import type { Task } from './types'
 import { t } from './i18n'
 
@@ -114,15 +115,59 @@ export function scheduled(rule: Rule, dueDate: string | null, date: string): boo
   }
 }
 
-/** The occurrence records of a series by date: done or skipped. Detached copies and reopened records are not records. */
-export function recordsByDate(seriesId: string, tasks: Iterable<Task>): Map<string, 'done' | 'skipped'> {
-  const out = new Map<string, 'done' | 'skipped'>()
+/**
+ * The occurrence records of a series by the date they stand for: done, skipped or
+ * open (moved or edited, still to do). A record's date is its occurrence date,
+ * even when it was moved to another day (series-exceptions); detached copies made
+ * before records carried one are not records.
+ */
+export function recordsByDate(seriesId: string, tasks: Iterable<Task>): Map<string, RecordMark> {
+  const out = new Map<string, RecordMark>()
   for (const task of tasks) {
-    if (task.series_id !== seriesId || !task.completed_at || task.deleted_at || !task.due) continue
-    if (task.id !== occurrenceId(seriesId, task.due.date)) continue
-    out.set(task.due.date, task.skipped ? 'skipped' : 'done')
+    if (task.deleted_at || !isRecordOf(seriesId, task)) continue
+    out.set(recordDate(task) as string, task.completed_at ? (task.skipped ? 'skipped' : 'done') : 'open')
   }
   return out
+}
+
+export type RecordMark = 'done' | 'skipped' | 'open'
+
+/** Done and skipped records; an open one is not (yet) a record of its day. */
+const marks = (r: RecordMark | undefined): r is 'done' | 'skipped' => r === 'done' || r === 'skipped'
+
+/** Whether the habit's schedule (one series, or the pieces of a split lineage) has a date. */
+type Schedule = (date: string) => boolean
+
+/**
+ * What a habit is measured against (series-split D5): its schedule and its records
+ * by date. For a split lineage each piece's rule schedules the dates of its own
+ * range, the records of every piece count, and an earlier piece that reached its
+ * end counts its last occurrence as done (completing it wrote no record). Null when
+ * the series has no calendar rule.
+ */
+function measureOf(series: Task, tasks: Iterable<Task>): { sched: Schedule; records: Map<string, RecordMark> } | null {
+  const rule = habitRule(series)
+  if (!rule) return null
+  const list = [...tasks]
+  const pieces = lineageOf(series, list)
+  if (pieces.length === 1) {
+    const dueDate = series.due?.date ?? null
+    return { sched: (d) => scheduled(rule, dueDate, d), records: recordsByDate(series.id, list) }
+  }
+  const records = new Map<string, RecordMark>()
+  const parts = pieces.map((p, i) => {
+    const end = pieceEnd(pieces, i)
+    const last = p.task.due?.date
+    for (const [d, m] of recordsByDate(p.task.id, list)) records.set(d, m)
+    if (p.task.id !== series.id && p.task.completed_at && last && (!end || last <= end) && !records.has(last)) records.set(last, 'done')
+    return { rule: habitRule(p.task), due: last ?? null, start: p.start, end }
+  })
+  const sched: Schedule = (d) => {
+    let part = parts[0]
+    for (const p of parts) if (!p.start || p.start <= d) part = p
+    return !!part.rule && (!part.end || d <= part.end) && scheduled(part.rule, part.due, d)
+  }
+  return { sched, records }
 }
 
 /** The first day of the habit's history: its earliest record, or the current occurrence. */
@@ -133,8 +178,8 @@ function firstDay(dueDate: string, records: Map<string, unknown>): string {
 }
 
 /** A record proves its day was scheduled, even when the rule changed since. */
-function isScheduled(rule: Rule, dueDate: string, records: Map<string, unknown>, date: string): boolean {
-  return records.has(date) || scheduled(rule, dueDate, date)
+function isScheduled(sched: Schedule, records: Map<string, unknown>, date: string): boolean {
+  return records.has(date) || sched(date)
 }
 
 /**
@@ -142,21 +187,25 @@ function isScheduled(rule: Rule, dueDate: string, records: Map<string, unknown>,
  * history (from its first record) has none.
  */
 export function previousScheduled(rule: Rule, dueDate: string, before: string, records: Map<string, unknown>): string | null {
+  return previousIn((d) => scheduled(rule, dueDate, d), dueDate, before, records)
+}
+
+function previousIn(sched: Schedule, dueDate: string, before: string, records: Map<string, unknown>): string | null {
   const first = dayOf(firstDay(dueDate, records))
   for (let z = dayOf(before) - 1; z >= first; z--) {
     const date = isoOf(z)
-    if (isScheduled(rule, dueDate, records, date)) return date
+    if (isScheduled(sched, records, date)) return date
   }
   return null
 }
 
 /** Scheduled dates from the first record up to, not including, the current occurrence, oldest first. */
-function pastSchedule(rule: Rule, dueDate: string, records: Map<string, unknown>): string[] {
+function pastSchedule(sched: Schedule, dueDate: string, records: Map<string, unknown>): string[] {
   const out: string[] = []
   const end = dayOf(dueDate)
   for (let z = dayOf(firstDay(dueDate, records)); z < end; z++) {
     const date = isoOf(z)
-    if (isScheduled(rule, dueDate, records, date)) out.push(date)
+    if (isScheduled(sched, records, date)) out.push(date)
   }
   return out
 }
@@ -165,44 +214,48 @@ function pastSchedule(rule: Rule, dueDate: string, records: Map<string, unknown>
  * Streak of a habit. Null when the task cannot be measured: no calendar rule or
  * no current occurrence. A skipped record keeps the chain without extending it;
  * a scheduled day before the current occurrence without a record ends it; the
- * current occurrence is pending and never breaks it.
+ * current occurrence is pending and never breaks it. A split series is measured
+ * over its lineage as one series (series-split D5).
  */
 export function habitStats(series: Task, tasks: Iterable<Task>, today: string): HabitStats | null {
-  const rule = habitRule(series)
+  const m = measureOf(series, tasks)
   const dueDate = series.due?.date
-  if (!rule || !dueDate) return null
-  const records = recordsByDate(series.id, tasks)
-  const past = pastSchedule(rule, dueDate, records)
+  if (!m || !dueDate) return null
+  const { records } = m
+  const past = pastSchedule(m.sched, dueDate, records)
   // Best: every maximal run of records, skipped days neither breaking nor counting.
   let best = 0
   let run = 0
   for (const date of past) {
     const r = records.get(date)
-    if (!r) run = 0
+    if (!marks(r)) run = 0
     else if (r === 'done') best = Math.max(best, ++run)
   }
   // Current: the run that reaches the day before the current occurrence.
   let current = 0
   for (let i = past.length - 1; i >= 0; i--) {
     const r = records.get(past[i])
-    if (!r) break
+    if (!marks(r)) break
     if (r === 'done') current++
   }
   // A concurrent completion on another device can leave a record on the current day.
   const own = records.get(dueDate)
   if (own === 'done') current++
   best = Math.max(best, current)
-  return { current, best, pending: !own, atRisk: !own && dueDate < today }
+  return { current, best, pending: !marks(own), atRisk: !marks(own) && dueDate < today }
 }
 
 /**
  * Stats of every open, live habit in `tasks`, keyed by series id, computed once per
  * list from the rows it already holds (design D5): records are grouped by series
- * in one pass, so a list does not scan every task per row.
+ * in one pass, so a list does not scan every task per row. A habit of a split
+ * lineage reads the whole list (series-split D5).
  */
 export function habitStatsMap(tasks: readonly Task[], today: string): Map<string, HabitStats> {
   const bySeries = new Map<string, Task[]>()
+  const split = new Set<string>()
   for (const task of tasks) {
+    if (task.split_from && !task.deleted_at) split.add(task.id).add(task.split_from.series)
     if (!task.series_id) continue
     const list = bySeries.get(task.series_id)
     if (list) list.push(task)
@@ -211,7 +264,7 @@ export function habitStatsMap(tasks: readonly Task[], today: string): Map<string
   const out = new Map<string, HabitStats>()
   for (const tk of tasks) {
     if (!tk.habit || tk.completed_at || tk.deleted_at) continue
-    const stats = habitStats(tk, bySeries.get(tk.id) ?? [], today)
+    const stats = habitStats(tk, split.has(tk.id) ? tasks : bySeries.get(tk.id) ?? [], today)
     if (stats) out.set(tk.id, stats)
   }
   return out
@@ -226,27 +279,29 @@ export function streakLabel(stats: HabitStats): string {
  * The days of one month (`month` 1–12) with their state. Records decide done and
  * skipped; the current occurrence is pending; a scheduled day before it with no
  * record is missed, a later one upcoming; anything else, and every day before the
- * habit's first record, is blank.
+ * habit's first record, is blank. A split series shows its lineage.
  */
 export function monthGrid(series: Task, tasks: Iterable<Task>, year: number, month: number, today: string): DayCell[] {
-  const rule = habitRule(series)
+  const m = measureOf(series, tasks)
   const dueDate = series.due?.date ?? null
-  const records = recordsByDate(series.id, tasks)
+  const records = m?.records ?? recordsByDate(series.id, tasks)
   const first = dueDate ? firstDay(dueDate, records) : null
   const out: DayCell[] = []
   const prefix = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-`
   for (let d = 1; d <= monthLen(year, month); d++) {
     const date = prefix + String(d).padStart(2, '0')
-    out.push({ date, state: dayState(rule, dueDate, first, records, date), today: date === today })
+    out.push({ date, state: dayState(m?.sched ?? null, dueDate, first, records, date), today: date === today })
   }
   return out
 }
 
-function dayState(rule: Rule | null, dueDate: string | null, first: string | null, records: Map<string, 'done' | 'skipped'>, date: string): DayState {
+function dayState(sched: Schedule | null, dueDate: string | null, first: string | null, records: Map<string, RecordMark>, date: string): DayState {
   const r = records.get(date)
+  // An open record is pending until it is done or skipped, missed once the series is past it.
+  if (r === 'open') return dueDate && date < dueDate ? 'missed' : 'pending'
   if (r) return r
-  if (!rule || !dueDate || !first) return 'blank'
+  if (!sched || !dueDate || !first) return 'blank'
   if (date === dueDate) return 'pending'
-  if (date < first || !scheduled(rule, dueDate, date)) return 'blank'
+  if (date < first || !sched(date)) return 'blank'
   return date < dueDate ? 'missed' : 'upcoming'
 }

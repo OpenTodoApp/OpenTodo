@@ -3,7 +3,7 @@
 // in a scope and an ancestor scope, without an explicit override; every row the
 // sheet and the guide show comes from the registry; the resolved bindings hold.
 import { describe, expect, it } from 'vitest'
-import { chordKey, chordsOf, chordText, keysOf, labelMessage, listedShortcuts, matchesChord, parseChord, parseKeys, SCOPE_ANCESTORS, sequencesClash, type Shortcut, SHORTCUT_SECTIONS, SHORTCUTS, spotlightGroup, VIEW_SCOPES } from './shortcuts'
+import { chordKey, chordsOf, chordText, keysOf, labelMessage, listedShortcuts, matchesChord, parseChord, parseKeys, SCOPE_ANCESTORS, sequencesClash, shortcut, type Shortcut, SHORTCUT_SECTIONS, SHORTCUTS, spotlightGroup, VIEW_SCOPES } from './shortcuts'
 
 /** Whether entries `a` and `b` can be active at the same time, given their scopes and views. */
 function canMeet(a: Shortcut, b: Shortcut): boolean {
@@ -89,7 +89,8 @@ describe('conflicts fail the build', () => {
     const trash: Shortcut = { id: 'trash.c', keys: ['c'], description: 'x', section: 'trash', scope: 'view', views: ['trash'] }
     expect(conflicts([...SHORTCUTS, trash])).toEqual([])
     const project: Shortcut = { id: 'project.c', keys: ['c'], description: 'x', section: 'tasks', scope: 'view', views: ['project'] }
-    expect(conflicts([...SHORTCUTS, project])).toEqual([expect.stringContaining('"list.complete"')])
+    // A project hosts a list and, in its Calendar layout (calendar-clarity D5), the calendar's keys.
+    expect(conflicts([...SHORTCUTS, project])).toEqual([expect.stringContaining('"list.complete"'), expect.stringContaining('"calendar.complete"')])
   })
 })
 
@@ -158,6 +159,18 @@ describe('Focus (focus-mode D7)', () => {
     // No task list, board or calendar on the Focus screen: Space, Enter, b and n never meet a list key.
     expect(VIEW_SCOPES.focus).toEqual([])
     expect(conflicts().filter((c) => c.includes('focus.'))).toEqual([])
+  })
+})
+
+describe('Notes (notes-overview D7)', () => {
+  it('g e goes to Notes; q and / are the page\'s own, overriding the quick add without a conflict', () => {
+    expect(keysOf('go.notes')).toBe('g e')
+    expect(listedShortcuts().find((s) => s.id === 'go.notes')?.section).toBe('go')
+    expect(['notes.new', 'notes.search'].map(keysOf)).toEqual(['q', '/'])
+    expect(shortcut('notes.new').overrides).toEqual(['list.quick-add'])
+    expect(SHORTCUT_SECTIONS.find((s) => s.id === 'notes')?.title).toBe('Notes')
+    expect(VIEW_SCOPES.notes).toEqual([])
+    expect(conflicts().filter((c) => c.includes('notes.'))).toEqual([])
   })
 })
 

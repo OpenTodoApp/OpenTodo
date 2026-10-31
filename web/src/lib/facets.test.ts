@@ -27,6 +27,15 @@ describe('facetsOf', () => {
     expect(f.who).toEqual([])
   })
 
+  it('a span reads its range on the When line, not its start again (multi-day-tasks D2)', () => {
+    const span = { ...base, start: '2026-11-03', due: { date: '2026-11-05' }, span: true } as Task
+    const f = facetsOf(span, ctx({ local: { date: '2026-11-05' } }))
+    expect(texts(f.when)[0]).toMatch(/3\s?–\s?5/)
+    expect(f.when.some((p) => p.id === 'when')).toBe(false)
+    const plain = facetsOf({ ...span, span: false }, ctx({ local: { date: '2026-11-05' } }))
+    expect(plain.when.some((p) => p.id === 'when')).toBe(true)
+  })
+
   it('the full task reads as four lines', () => {
     const task = { ...base, priority: 2, due: { date: '2026-10-15', time: '09:00' }, recurrence: 'every 3 months', deadline: '2026-10-23', start: '2026-10-12', estimate_minutes: 120, assignee_id: 'me', blocked_by: ['b'] } as Task
     const f = facetsOf(task, ctx({

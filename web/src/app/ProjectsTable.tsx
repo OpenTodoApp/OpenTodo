@@ -38,6 +38,8 @@ const HEALTH: Record<HealthWord, { label: () => string; icon: IconName; tone: To
   slipping: { label: () => t('Overdue'), icon: 'activity', tone: 'warning' },
   quiet: { label: () => t('Quiet'), icon: 'clock', tone: 'muted' },
   'on-track': { label: () => t('On track'), icon: 'trending-up', tone: 'success' },
+  // project-review-cadence: deliberately on low burn; Late still wins.
+  maintenance: { label: () => t('Maintenance'), icon: 'wrench', tone: 'muted' },
 }
 
 /** The detail after the health word: the late count, the task past its deadline, or the quiet days. */
@@ -213,6 +215,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
                   {s?.progress != null && <span className="inline-flex items-center gap-1.5 text-body tabular-nums text-default">
                     <ProgressRing value={s.progress} /><ReadAs label={t('{n}% done', { n: Math.round(s.progress * 100) })}>{`${Math.round(s.progress * 100)}%`}</ReadAs>
                   </span>}
+                  {s?.area && <span className="text-body text-muted" data-area="">{t('Area')}</span>}
                 </td>
                 <td className={`${cellOf('open')} px-2 text-body tabular-nums text-default`}>
                   <ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: s?.open ?? 0 })}>{s?.open ? String(s.open) : ''}</ReadAs>

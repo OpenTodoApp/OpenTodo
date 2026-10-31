@@ -3,14 +3,18 @@
 // lib/sections, so all of it works offline and converges like any other edit.
 import { CatalogueIcon, HUES, hueFor, Icon, IconButton, IconPicker, isCatalogueIcon, ListGroupHeader } from '../ui'
 import { hueName } from '../lib/colourNames'
-import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
+import { sectionFlowItem } from './menus/flowMenu'
+import { useMethodMode } from '../lib/method/mode'
+import { useProjects } from '../lib/localData'
 import { colourPickerSpec, iconPickerSpec } from './menus/stylePickers'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
 import { createTask } from '../lib/ops'
 import { preferredPlacement } from '../lib/userPrefs'
 import { selectTask } from './signals'
-import { announceIfOutOfSight } from './task-list/announceAdded'
+import { addTasksUndoable } from '../lib/pasteTasks'
+import { showBulkToast } from './bulk/toastStore'
 import { createSection, deleteSection, renameSection, reorderSection, setSectionStyle } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
@@ -19,7 +23,7 @@ import { act } from './actionError'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
-  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown; section?: Section }): ActionGroup[] {
+  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown; section?: Section; flow?: ActionItem | null }): ActionGroup[] {
   const board = o.layout === 'board'
   const section = a.section
   // Colour and icon (icons-and-section-style): steps inside the same overlay.
@@ -40,7 +44,7 @@ export function sectionMenuGroups(title: string, o: { first: boolean; last: bool
     } },
   ] : []
   return [
-    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename }, ...style] },
+    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename }, ...style, ...(a.flow ? [a.flow] : [])] },
     { items: [
       { kind: 'action', id: 'before', label: board ? t('Move left') : t('Move up'), icon: 'arrow-up', disabled: o.first, reason: t('Already first'), onSelect: () => a.move(-1) },
       { kind: 'action', id: 'after', label: board ? t('Move right') : t('Move down'), icon: 'arrow-down', disabled: o.last, reason: t('Already last'), onSelect: () => a.move(1) },
@@ -93,7 +97,7 @@ export function SectionMark({ section }: { section: Pick<Section, 'color' | 'ico
   return dot
 }
 
-export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd, completed = 0, revealed = false, onReveal }: {
+export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd, completed = 0, revealed = false, onReveal, onFold }: {
   /** null: the "No section" heading. */
   section: Section | null
   count: number
@@ -109,6 +113,8 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   completed?: number
   revealed?: boolean
   onReveal?: () => void
+  /** On a board: "Fold column" in the column menu, for every role and "No section" too (board-polish D2). */
+  onFold?: () => void
 }) {
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section?.name ?? '')
@@ -121,12 +127,17 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   }
   const [menuOpen, setMenuOpen] = useState(false)
   const startRename = () => { if (section) { setName(section.name); setRenaming(true) } }
-  const groups = section ? sectionMenuGroups(title, { first, last, layout, count }, {
+  // "Flow…" (project-flow-modes D7): for whoever may rename the section.
+  const mode = useMethodMode()
+  const project = useProjects().find((p) => p.id === section?.project_id)
+  const fold: ActionGroup[] = onFold ? [{ items: [{ kind: 'action', id: 'fold', label: t('Fold column'), icon: 'panel-left-close', shortcut: 'z', onSelect: onFold }] }] : []
+  const groups = [...fold, ...(section && editable ? sectionMenuGroups(title, { first, last, layout, count }, {
     section,
+    flow: sectionFlowItem(section, project, { mode, canEdit: editable }),
     rename: startRename,
     move: (d) => reorderSection(section.id, d),
     remove: () => deleteSection(section.id),
-  }) : []
+  }) : [])]
   const onRowKey = useRowMenuShortcut({
     openMenu: () => setMenuOpen(true),
     rename: startRename,
@@ -158,12 +169,12 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
             </button>
           </span>
         ) : undefined}
-        actions={(editable && (onAdd || section)) ? (
+        actions={((editable && (onAdd || section)) || groups.length > 0) ? (
           <>
             {editable && onAdd && (
               <IconButton icon="plus" size="sm" label={t('Add a task to {title}', { title })} onClick={onAdd} />
             )}
-            {editable && section && (
+            {groups.length > 0 && (
               <ActionMenu label={t('Section menu for {title}', { title })} title={title} groups={groups} width="sm:w-60" open={menuOpen} onOpenChange={setMenuOpen}
                 triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-0.5 text-meta" />
             )}
@@ -190,16 +201,29 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
     const id = await createTask({ ...rest, placement, project_id: target, section_id: target === project.id ? sectionId : null })
     // Out of sight in a long section or column: say where it went (add-position D5).
     const list = root.current?.closest<HTMLElement>('[data-list-page]')
-    if (target === project.id && list) void announceIfOutOfSight(id, { list: sectionName, placement, root: list, select: (x) => selectTask.request(x) })
+    // Loaded with the first add: not needed on first load (web/bundle-budget.json).
+    if (target === project.id && list) void import('./task-list/announceAdded').then((m) => m.announceIfOutOfSight(id, { list: sectionName, placement, root: list, select: (x) => selectTask.request(x) }))
+  }
+  // A pasted list (paste-to-tasks D3): every line in this section unless it names a #project; one batch, one Undo.
+  const onAddMany = async (inputs: QuickAddInput[]) => {
+    const placement = await preferredPlacement()
+    const added = await addTasksUndoable(inputs.map(({ project_id, ...rest }) => {
+      const target = project_id ?? project.id
+      return { ...rest, project_id: target, section_id: target === project.id ? sectionId : null }
+    }), { placement })
+    showBulkToast(added.label, added.undoId)
   }
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }
   return (
     <div ref={root} className="px-1 py-1" onKeyDown={onKeyDown} onBlur={(e) => {
-      if (!e.currentTarget.contains(e.relatedTarget as Node | null) && !(e.target as HTMLInputElement).value) onClose()
+      // Focus moving into the paste offer (an overlay) is not leaving the add row.
+      const to = e.relatedTarget as Element | null
+      if (to?.closest?.('[data-overlay-root]')) return
+      if (!e.currentTarget.contains(to) && !(e.target as HTMLInputElement).value) onClose()
     }}>
-      <QuickAdd onAdd={onAdd} projects={projects} labels={labels} hideHint autoFocus placeholder={t('Add a task to {sectionName}…', { sectionName })} label={t('Add a task to {sectionName}', { sectionName })} />
+      <QuickAdd onAdd={onAdd} onAddMany={onAddMany} projects={projects} labels={labels} hideHint autoFocus placeholder={t('Add a task to {sectionName}…', { sectionName })} label={t('Add a task to {sectionName}', { sectionName })} />
     </div>
   )
 }

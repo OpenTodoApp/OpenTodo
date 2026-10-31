@@ -7,8 +7,9 @@ import { isFirstRow, revealRow } from './task-list/revealRow'
 import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
+import { useFlowView } from '../lib/useFlow'
 import { useAllLabels, useProjects } from '../lib/localData'
-import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, mentionsState, namesWorkspace, originSuggestions, parse, withCompletedTasks, type Node } from '../lib/filter'
+import { addFilterHistory, clearFilterDraft, compile, getFilterDraft, saveFilterDraft, type FilterDraft, fieldSuggestions, getFilterHistory, mentionsState, namesWorkspace, originSuggestions, parse, withCompletedTasks, type Node } from '../lib/filter'
 import { useWorkspaceFilter } from './useWorkspaceFilter'
 import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
@@ -36,16 +37,52 @@ import { FilterBuilder } from './filter/FilterBuilder'
 import { useBuilderOpen } from './filter/builderToggle'
 import { ViewsCrumb } from './views/ViewsCrumb'
 import { FilterPanel, ViewToolbar } from './views/ViewToolbar'
-import { ViewResults } from './views/ViewResults'
+import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import { SaveViewCard } from './views/SaveViewCard'
 import type { ViewDisplay } from './views/DisplayPanel'
 import type { Task } from '../lib/types'
-import { useAccountRowLayout } from '../lib/rowLayout'
+import { ROW_LAYOUTS, useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
+import { useWorkspaceState } from '../lib/localData'
+import { currentWorkspaceId } from '../lib/workspaces'
+import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
+import { GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_LAYOUTS, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout } from '../lib/types'
 
 const DEBOUNCE_MS = 150
 
 /** A new view's display options: the saved view defaults (custom-views "Grouping and sort options"). */
-export const NEW_VIEW_DISPLAY: ViewDisplay = { layout: 'list', groupBy: 'project', sortBy: 'due', sortDir: 'asc', showCompleted: false, hidden: [] }
+export const NEW_VIEW_DISPLAY: ViewDisplay = { layout: 'list', groupBy: 'project', sortBy: 'due', sortDir: 'asc', showCompleted: false, hidden: [], cardNotes: false }
+
+/**
+ * Order by on the New view page: no Manual order, which only a saved view can keep
+ * (view-manual-order D7); a draft that held it reads as the default.
+ */
+export const NEW_VIEW_SORT_OPTIONS: readonly SortBy[] = SORT_BY_OPTIONS.filter((s) => s !== 'position')
+
+/** How long the draft waits after the last change before it is stored (sidebar-polish D5). */
+const DRAFT_DEBOUNCE_MS = 300
+
+/** The page's state as a stored draft. */
+export function toDraft(query: string, d: ViewDisplay): FilterDraft {
+  return {
+    query, group_by: d.groupBy, sort_by: d.sortBy, sort_dir: d.sortDir, layout: d.layout, show_completed: d.showCompleted,
+    hidden_props: [...d.hidden], ...(d.rowLayout ? { row_layout: d.rowLayout } : {}), ...(d.cardNotes ? { card_notes: true } : {}),
+  }
+}
+
+/** A stored draft's display options; a value this build does not know reads as the default. */
+export function displayOfDraft(d: FilterDraft): ViewDisplay {
+  const pick = <T extends string>(v: string, all: readonly T[], fallback: T): T => ((all as readonly string[]).includes(v) ? v as T : fallback)
+  return {
+    layout: pick<ViewLayout>(d.layout, VIEW_LAYOUTS, NEW_VIEW_DISPLAY.layout),
+    groupBy: pick<GroupBy>(d.group_by, GROUP_BY_OPTIONS, NEW_VIEW_DISPLAY.groupBy),
+    sortBy: pick<SortBy>(d.sort_by, NEW_VIEW_SORT_OPTIONS, NEW_VIEW_DISPLAY.sortBy),
+    sortDir: pick<SortDir>(d.sort_dir, SORT_DIR_OPTIONS, NEW_VIEW_DISPLAY.sortDir),
+    showCompleted: d.show_completed === true,
+    cardNotes: d.card_notes === true,
+    hidden: d.hidden_props.filter((p): p is RowProperty => (ROW_PROPERTIES as readonly string[]).includes(p)),
+    ...(d.row_layout && (ROW_LAYOUTS as readonly string[]).includes(d.row_layout) ? { rowLayout: d.row_layout as RowLayout } : {}),
+  }
+}
 
 type Parsed = { ok: true; ast: Node | null } | { ok: false; error: string }
 
@@ -72,6 +109,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   }, [query])
   const [display, setDisplay] = useState<ViewDisplay>(NEW_VIEW_DISPLAY)
   const account = useAccountRowLayout()
+  const draftWs = useFilterDraft(initialQuery, query, display, (q, d) => { setQuery(q); setDebounced(q); setDisplay(d) })
 
   const hereProjects = useProjects()
   const hereLabels = useAllLabels()
@@ -94,13 +132,14 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const taskMap = useMemo(() => new Map(allTasks.map((tk) => [tk.id, tk])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
+  const flow = useFlowView(allTasks, today)
   const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
   const fieldDefs = useFieldDefs(), tracked = useTrackedTotals()
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
-    [today, labels, projects, allTasks, weekStart, fieldDefs, tracked, ws])
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
+    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, ws])
   const compiled = useMemo(() => {
     if (!good.ast) return null
     // "Completed tasks: Show" (views-and-display D4) reads the query as `(query) & (open | completed)`.
@@ -118,14 +157,14 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     // Like the other cross-project views, tasks of archived projects stay out.
     const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
     const tasks = allTasks.filter((item) => !(item.project_id && archived.has(item.project_id)) && compiled.test(item))
-    return { tasks: tasks.sort(compareTasks(display.sortBy, display.sortDir, ctx)), warnings: compiled.warnings }
-  }, [compiled, allTasks, projects, display.sortBy, display.sortDir, ctx])
+    return { tasks: tasks.sort(compareTasks(display.sortBy, display.sortDir)), warnings: compiled.warnings }
+  }, [compiled, allTasks, projects, display.sortBy, display.sortDir])
   // After `origin:` the kinds and providers are offered (task-origin), else field names.
   const origins = useMemo(() => originSuggestions(query, allTasks), [query, allTasks])
   const suggestions = useMemo(() => (origins.length ? origins : fieldSuggestions(query, fieldDefs)), [origins, query, fieldDefs])
 
-  const groups = useMemo(() => (result ? groupTasks(result.tasks, display.groupBy, ctx) : []), [result, display.groupBy, ctx])
-  const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((task) => ({ key: `${g.key}:${task.id}`, task }))), [groups])
+  const { groups, shown } = useFoldedGroups('filter', useMemo(() => (result ? groupTasks(result.tasks, display.groupBy, ctx) : []), [result, display.groupBy, ctx]))
+  const rows = useMemo(() => shown.flatMap((g) => g.tasks.map((task) => ({ key: `${g.key}:${task.id}`, task }))), [shown])
   // The time column (rows-v2 D2): one fact of the whole result.
   const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
 
@@ -227,9 +266,10 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   async function save(name: string) {
     const id = await createView({
       name, query, group_by: display.groupBy, sort_by: display.sortBy, sort_dir: display.sortDir,
-      layout: display.layout, show_completed: display.showCompleted, hidden_props: [...display.hidden], row_layout: display.rowLayout,
+      layout: display.layout, show_completed: display.showCompleted, hidden_props: [...display.hidden], row_layout: display.rowLayout, card_notes: display.cardNotes,
     })
     remember(query)
+    await draftWs.saved()
     setSaving(false)
     navigate({ view: 'view', id })
   }
@@ -240,11 +280,11 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         <PageHeader title={<ViewsCrumb name={t('New view')} />} meta={count ?? undefined} help="filter"
           actions={<Button variant="secondary" size="sm" disabled={!canSave} onClick={() => setSaving(true)}>{t('Save as view')}</Button>} />
       )}
-      <ViewToolbar sortFields={fieldDefs} query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }}
+      <ViewToolbar query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }} sortOptions={NEW_VIEW_SORT_OPTIONS}
         onDisplay={(patch) => setDisplay((d) => ({ ...d, ...patch }))}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (
-        <FilterPanel count={count} onClose={() => setFilterOpen(false)} inputRef={inputRef}
+        <FilterPanel count={count} onClose={() => setFilterOpen(false)} inputRef={inputRef} onClear={() => { setHistIdx(-1); draftWs.clear(); focusQuery() }}
           builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} workspaces={ws.workspaces} />}
           formula={(
             <input
@@ -280,7 +320,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
       {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
       <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('Filter results')}>
-        <ViewResults groups={groups} layout={display.layout} renderTask={(tk, key, shape) => (
+        <ViewResults groups={groups} layout={display.layout} foldScope="filter" selectedGroup={selected ? selected.slice(0, selected.lastIndexOf(':')) : null} renderTask={(tk, key, shape) => (
           <TaskRow
             key={key}
             shape={shape}
@@ -289,11 +329,12 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             labels={resolveLabels(tk.labels, labelMap)}
             showProject={display.groupBy !== 'project'} timeColumn={timeColumn}
             hidden={display.hidden}
-            layout={display.rowLayout}
+            layout={display.rowLayout} notes={shape === 'card' && !!display.cardNotes}
             onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
             selected={key === selected}
             progress={progress.get(tk.id)}
             blockedBy={blocked.get(tk.id)}
+            waitsFor={flow.waitsFor(tk.id)}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
             onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
@@ -312,6 +353,75 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
       )}
     </PageBody>
   )
+}
+
+/**
+ * The draft of the New view page (sidebar-polish D5): restored when the page opens (a
+ * `?q=` query replaces its query, and the replaced one goes into the history), stored
+ * 300 ms after each change and when the page closes, per workspace. Nothing is
+ * stored until the draft was read, so opening the page never overwrites it.
+ */
+function useFilterDraft(initialQuery: string, query: string, display: ViewDisplay, apply: (query: string, display: ViewDisplay) => void) {
+  const current = useWorkspaceState().current
+  const [ws, setWs] = useState<string | null>(null)
+  const wsRef = useRef<string | null>(null)
+  const applyRef = useRef(apply)
+  applyRef.current = apply
+  const latest = useRef({ query, display })
+  latest.current = { query, display }
+  // Saved as a view: the stored draft is gone and the page writes nothing more before it closes.
+  const quiet = useRef(false)
+  useEffect(() => {
+    let live = true
+    void currentWorkspaceId().then(async (id) => {
+      // Another workspace: the one being left keeps the page as it was.
+      const prev = wsRef.current
+      if (prev !== null && prev !== id && !quiet.current) await saveFilterDraft(prev, toDraft(latest.current.query, latest.current.display))
+      const d = await getFilterDraft(id)
+      if (!live) return
+      if (d) {
+        const fromAddress = initialQuery.trim() !== ''
+        if (fromAddress && d.query.trim() && d.query.trim() !== initialQuery.trim()) await addFilterHistory(d.query)
+        if (!live) return
+        applyRef.current(fromAddress ? initialQuery : d.query, displayOfDraft(d))
+      } else if (prev !== null) applyRef.current(initialQuery, NEW_VIEW_DISPLAY)
+      quiet.current = false
+      wsRef.current = id
+      setWs(id)
+    })
+    return () => { live = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once per workspace; the address query is fixed for the page's lifetime (Shell keys it)
+  }, [current])
+  useEffect(() => {
+    if (ws === null || quiet.current) return
+    const id = setTimeout(() => { void saveFilterDraft(ws, toDraft(query, display)) }, DRAFT_DEBOUNCE_MS)
+    return () => clearTimeout(id)
+  }, [ws, query, display])
+  // Leaving the page stores the latest state at once.
+  useEffect(() => () => {
+    const id = wsRef.current
+    if (id !== null && !quiet.current) void saveFilterDraft(id, toDraft(latest.current.query, latest.current.display))
+  }, [])
+  return {
+    /**
+     * "Clear" (filter-queries "New view keeps its draft"): empties the page and the stored
+     * draft (an empty one is never kept), with Undo while the toast is shown.
+     */
+    clear: () => {
+      const before = latest.current
+      applyRef.current('', NEW_VIEW_DISPLAY)
+      if (ws !== null) act(clearFilterDraft(ws))
+      showBulkToast(t('New view cleared'), null, { ttl: ACTION_TOAST_MS, action: { label: t('Undo'), run: () => {
+        if (ws !== null) act(saveFilterDraft(ws, toDraft(before.query, before.display)))
+        applyRef.current(before.query, before.display)
+      } } })
+    },
+    /** Saved as a view: as Clear, and the page keeps it that way until it closes. */
+    saved: async () => {
+      quiet.current = true
+      if (ws !== null) await clearFilterDraft(ws)
+    },
+  }
 }
 
 /** The error or warning line under the query, then field or origin completions. */

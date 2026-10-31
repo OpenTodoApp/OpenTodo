@@ -5,7 +5,8 @@
 // is a drop target: dragging a card onto it, or Shift+← / Shift+→, applies the rule.
 import { blockedMap } from '../lib/dependencies'
 import { beginDrag } from '../lib/dnd'
-import { Badge, Button, EmptyState, Icon, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
+import { Badge, Button, EmptyState, Icon, IconButton, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
+import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGroups'
 import { useId, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
@@ -19,7 +20,7 @@ import { useBoardDrop } from './useBoardDrop'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { navigate } from './router'
-import { ViewMenu } from './ViewsView'
+import { ViewMark, ViewMenu } from './ViewsView'
 import type { ViewData } from './useViews'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
@@ -58,6 +59,11 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   const openId = usePanelTaskId()
   const setOpenId = setPanelTaskId
   const gridRef = useRef<HTMLDivElement>(null)
+  // Folded panels (board-polish D1): per device, keyed by the dashboard; a folded panel keeps only its header and still takes drops.
+  const collapsed = useCollapsedGroups()
+  const foldScope = `dashboard:${dashboard.id}`
+  const isFolded = (p: PanelState) => collapsed.has(groupKey(foldScope, p.id))
+  const fold = (p: PanelState, on: boolean) => setGroupCollapsed(foldScope, p.id, on)
 
   const run = (fn: () => Promise<void>) => void attempt(fn)
   const focusPanel = (i: number) => gridRef.current?.querySelector<HTMLElement>(`[data-panel-index="${i}"]`)?.focus()
@@ -71,7 +77,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   const focused = () => {
     if (openId || focusIdx === null || !grid().inGrid) return null
     const panel = panels[focusIdx]
-    const tasks = lists[focusIdx] ?? []
+    const tasks = panel && isFolded(panel) ? [] : lists[focusIdx] ?? []
     return { panel, tasks, cur: selected?.panel === focusIdx ? tasks.findIndex((tk) => tk.id === selected.id) : -1, at: focusIdx }
   }
   // Drop a task on panel `to` (rule-boards D5); the card stays selected there.
@@ -117,10 +123,20 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
       setSelected(null)
     },
   }, { view: 'dashboard' })
+  // `z` folds or unfolds the focused panel (board-polish D5).
+  useShortcutScope('board', {
+    'board.fold': () => {
+      const p = focusIdx === null || openId || !grid().inGrid ? undefined : panels[focusIdx]
+      if (!p) return false
+      setSelected(null)
+      fold(p, !isFolded(p))
+    },
+  })
 
   return (
     <PageBody width="full">
-        <PageHeader title={dashboard.name} icon="kanban" meta={`${panels.length}/${MAX_PANELS}`} help="dashboard"
+        <PageHeader title={dashboard.name} icon={dashboard.icon ? undefined : 'kanban'}
+          leading={dashboard.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={dashboard} /></span> : undefined} meta={`${panels.length}/${MAX_PANELS}`} help="dashboard"
           actions={<>
             <select className="ui-input w-auto py-1 text-meta" aria-label={t('Add panel')} value="" disabled={panels.length >= MAX_PANELS || candidates.length === 0}
               onChange={(e) => { const id = e.target.value; if (id) run(() => addPanel(dashboard.id, id)) }}>
@@ -154,7 +170,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
         ) : (
           <div ref={gridRef} className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {panels.map((p, i) => (
-              <Panel key={p.id} index={i} panel={p} blocked={blocked} selectedId={selected?.panel === i ? selected.id : null}
+              <Panel key={p.id} index={i} panel={p} blocked={blocked} folded={isFolded(p)} onFold={(on) => fold(p, on)} selectedId={selected?.panel === i ? selected.id : null}
                 tasks={lists[i]} held={held.get(p.id) ?? null} names={names} projectMap={projectMap} labelMap={labelMap}
                 onDragTask={(task, e) => beginDrag(e, {
                   label: task.title,
@@ -186,8 +202,11 @@ function ArrangeRule({ view, names, onEdit }: { view: View | undefined; names: R
   )
 }
 
-function Panel({ index, panel, selectedId, tasks, held, names, projectMap, labelMap, blocked, onFocus, onBlur, onOpenTask, onRemove, onDragTask }: {
+function Panel({ index, panel, selectedId, tasks, held, names, projectMap, labelMap, blocked, onFocus, onBlur, onOpenTask, onRemove, onDragTask, folded = false, onFold }: {
   blocked: Map<string, number>
+  /** Folded on this device (board-polish): only the header shows, and it unfolds the panel. */
+  folded?: boolean
+  onFold?: (on: boolean) => void
   index: number
   panel: PanelState
   selectedId: string | null
@@ -219,6 +238,26 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
   const ruled = !!rule
   // The time column (rows-v2 D2): one fact of the panel's list.
   const timeColumn = hasTimeColumn(tasks)
+  if (folded) {
+    // A folded panel (board-polish D2, adapted to the dashboard's grid): one line that unfolds it; still a drop target.
+    const count = summary.ok ? summary.count : 0
+    return (
+      <section data-panel-index={index} tabIndex={-1} onFocus={onFocus} onBlur={onBlur} aria-label={view.name} aria-describedby={ruled ? ruleId : undefined}
+        data-drop-target={ruled ? `panel:${view.id}` : undefined} data-has-rule={ruled ? '' : undefined} data-folded=""
+        className={`${ring} p-0 data-drop-active:ring-2 data-drop-active:ring-accent data-drop-active:border-dashed`}>
+        <button type="button" aria-expanded={false} onClick={() => onFold?.(false)} data-panel-strip
+          aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}, folded', { name: view.name, n: count })}
+          className="flex w-full items-center gap-2 rounded-card p-3 text-left outline-none hover:shadow-2 focus-visible:ring-2 focus-visible:ring-focus">
+          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
+          <span className="truncate text-body font-semibold">{view.name}</span>{' '}
+          <span className="text-body tabular-nums text-faint">{count}</span>
+          <span className="flex-1" />
+          <Icon name="chevron-down" className="text-faint" />
+        </button>
+        {rule && <span id={ruleId} className="sr-only">{t('On drop: {rule}', { rule })}</span>}
+      </section>
+    )
+  }
   return (
     <section data-panel-index={index} tabIndex={0} onFocus={onFocus} onBlur={onBlur} aria-label={view.name} aria-describedby={ruled ? ruleId : undefined}
       data-drop-target={ruled ? `panel:${view.id}` : undefined} data-has-rule={ruled ? '' : undefined}
@@ -235,6 +274,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
         {rule && <span id={ruleId} className="sr-only">{t('On drop: {rule}', { rule })}</span>}
         <span className="flex-1" />
         <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" tabIndex={-1} onClick={() => navigate({ view: 'view', id: view.id })}>{t('Open view')}</button>
+        {onFold && <IconButton icon="chevrons-down-up" size="sm" tabIndex={-1} label={t('Fold panel')} aria-expanded onClick={() => onFold(true)} data-panel-fold />}
       </div>
       {!summary.ok ? (
         <p role="alert" className="text-meta text-danger">{summary.error}</p>

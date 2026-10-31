@@ -14,9 +14,13 @@ export function hasColumnValue(task: ColumnFields): boolean {
   return !task.completed_at && !!task.deadline
 }
 
-/** Whether a list shows the column: at least one of its visible rows has a value for it. */
-export function hasTimeColumn(tasks: Iterable<ColumnFields>): boolean {
-  for (const task of tasks) if (hasColumnValue(task)) return true
+/**
+ * Whether a list shows the column: at least one of its visible rows has a value for
+ * it. `slotted` adds the tasks a calendar slot holds, which show the slot's start
+ * (calendar-slots D8).
+ */
+export function hasTimeColumn<T extends ColumnFields>(tasks: Iterable<T>, slotted?: (task: T) => boolean): boolean {
+  for (const task of tasks) if (hasColumnValue(task) || (slotted && !task.completed_at && slotted(task))) return true
   return false
 }
 

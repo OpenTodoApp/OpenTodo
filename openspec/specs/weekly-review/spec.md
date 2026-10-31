@@ -14,7 +14,7 @@ The weekly review SHALL offer seven steps in order, grouped into three phases. E
 - **Get current**
   - Look back: this week's completions and the overdue tasks. Done when nothing is overdue.
   - Waiting: the Waiting view's tasks. Always done.
-  - Projects: the project walk. Done when every project in it was reviewed by the user in the last seven days and none is without a next action.
+  - Projects: the project walk. Done when no project in the walk is due for review ("Review interval per project") and none is without a next action.
   - Look ahead: the next seven days. Always done.
 - **Get creative**
   - Someday: always done.
@@ -36,6 +36,10 @@ Steps SHALL be computed from local rows and work offline. A task captured during
 #### Scenario: Waiting step
 - **WHEN** two tasks are assigned to Ana and one is blocked
 - **THEN** Waiting lists the three tasks grouped as the Waiting view groups them, and opening one shows its comments so the user can follow up
+
+#### Scenario: Projects step with a monthly project
+- **WHEN** every project was reviewed this week except "Car", which is reviewed every month and was last reviewed 12 days ago
+- **THEN** the Projects step reads as done
 
 ### Requirement: Finishing a review
 "Finish review" SHALL write `completed_at` on the user's `review` entity (id `me`, personal scope) through the operation log. The Daily check SHALL write `daily_at`, `focus_date` and `focus` on the same entity, the Monthly look SHALL write `monthly_at`, and Close the day SHALL write `closed_at` and `tomorrow_note`. The entity SHALL sync to every device of the user, SHALL be written offline through the outbox, and SHALL converge per field by last-writer-wins, so the latest finish of each rhythm wins. Its times and focus are not user-written content and are never encrypted; `tomorrow_note` is content and follows the end-to-end encryption rules. The entity SHALL be included in the JSON export and SHALL derive no activity event.
@@ -91,7 +95,7 @@ The Mind sweep step SHALL show a short list of trigger prompts in the interface 
 - **THEN** the three tasks are in the Inbox in that order and focus stays in the quick add
 
 ### Requirement: Project walk
-The Projects step SHALL walk projects one at a time. The walk includes every live, unarchived project in which the user may edit tasks, ordered by the user's last review of it (never reviewed first, then oldest), then by the project's position.
+The Projects step SHALL walk projects one at a time. The walk includes every live, unarchived project in which the user may edit tasks and that is due for review for the user ("Review interval per project"), ordered by the user's last review of it (never reviewed first, then oldest), then by the project's position.
 
 The card SHALL show:
 - the project's name
@@ -101,6 +105,8 @@ The card SHALL show:
 - a stalled marker when stalled
 - a "without a next action" marker
 - when the user last reviewed it
+- its review interval ("Every week", "Every 2 weeks", "Every month", "Every quarter")
+- "In maintenance" when the project is in maintenance
 
 The keys SHALL be:
 
@@ -110,10 +116,16 @@ The keys SHALL be:
 | `q` | open quick add scoped to the project, the same key as quick add everywhere; the new task becomes the next action when it qualifies | no |
 | Enter | open the project | no |
 | `a` | archive the project, only where the user may archive it, through the ordinary op, undoable | yes |
+| `e` | choose the review interval: every week, 2 weeks, month, quarter, or paused | no |
+| `m` | put the project in maintenance or end it, only where the user may change the project's fields, undoable | no |
 | `j` or Space | skip without marking | yes |
 | `k` | go back | — |
 
-The walk SHALL show "n of N", and after the last card a summary of what is still without a next action. Every action SHALL be a visible button with its key, usable by touch at 360 px. A polite live region SHALL announce each card and each outcome.
+The walk SHALL show "n of N". After the last card it SHALL show:
+- a summary of what is still without a next action
+- how many projects are not due yet and how many are paused, with "Review them too", which adds them to the end of this walk only
+
+Every action SHALL be a visible button with its key, usable by touch at 360 px. A polite live region SHALL announce each card and each outcome.
 
 #### Scenario: Add a next action, then mark reviewed
 - **WHEN** the card for Garage shows "No next action", the user presses `q`, types "Buy shelf brackets", then presses `r`
@@ -130,6 +142,14 @@ The walk SHALL show "n of N", and after the last card a summary of what is still
 #### Scenario: Archive offline
 - **WHEN** the user archives a project from the walk while offline
 - **THEN** the project is archived locally at once, the walk advances, and the op is sent when the connection returns
+
+#### Scenario: Only due projects
+- **WHEN** the user has twelve projects, "Car" is reviewed every quarter and was reviewed a month ago, "Old ideas" is paused, and the other ten were last reviewed eight days ago
+- **THEN** the walk shows "1 of 10", and after the last card reads "2 not due yet, 1 of them paused" with "Review them too"
+
+#### Scenario: Change the interval from the card
+- **WHEN** on the card for "Car" the user presses `e` and chooses "Every quarter", then presses `r`
+- **THEN** the card shows "Every quarter", Car is stamped as reviewed, and it is not in the walk again until its quarter has passed
 
 ### Requirement: Personal review stamp per project
 Marking a project reviewed SHALL write the time on the user's personal preferences for that project. These sync to the user's own devices and never to other members of a shared project, converge by last-writer-wins, and can be written offline. The stamp is not user-written content and is never encrypted. It SHALL be included in the JSON export and SHALL derive no activity event. A server that does not know the field SHALL reject the op as unknown, and the device SHALL keep its local value.
@@ -193,7 +213,7 @@ The app SHALL offer a Daily check at `/review/daily`, reachable from the Review 
 
 ### Requirement: Monthly look
 The app SHALL offer a Monthly look at `/review/monthly`, reachable from the Review screen's menu, the Loop home and the command palette, with three steps:
-- **Areas:** each live top-level project that has child projects, with its number of child projects and how many of them are without a next action or stalled.
+- **Areas:** each live top-level project that has child projects or whose flow is Area (project-flow "Areas"), with its number of child projects and how many of them are without a next action or stalled; an area without child projects reads "Area" instead of the count.
 - **Old someday:** Someday tasks created more than 90 days ago, with the Someday step's keys.
 - **Trend:** the last four weeks' completed, created and slipped counts, with the definitions of Statistics.
 
@@ -202,6 +222,10 @@ The app SHALL offer a Monthly look at `/review/monthly`, reachable from the Revi
 #### Scenario: Areas with stalled children
 - **WHEN** the top-level project Home has four child projects, one stalled and one without a next action
 - **THEN** Areas lists Home with "4 projects, 2 need attention", and opening it lists the two
+
+#### Scenario: An area without sub-projects
+- **WHEN** the top-level project Finances has the Area flow and no child projects
+- **THEN** Areas lists Finances, reading "Area"
 
 ### Requirement: Rhythm markers
 A rhythm SHALL be due as follows:
@@ -407,3 +431,127 @@ After "Close the day" has written the close, the Close the day screen SHALL show
 #### Scenario: Reload
 - **WHEN** the user reloads the page while the final state is shown
 - **THEN** the Close the day screen shows its first step with "Day closed, 18:42" in its header, as for any closed day
+
+### Requirement: Review interval per project
+Each user SHALL be able to give each project a review interval: every week, every 2 weeks, every month, every quarter, or paused. It SHALL be stored as the additive field `review_every` on the user's personal preferences for that project, with the values `week`, `2weeks`, `month`, `quarter` and `paused`.
+
+Reading rules:
+- An empty, missing or unknown value SHALL read as `week`, and the client SHALL keep the stored value unchanged.
+
+Sync and storage:
+- The field SHALL sync to the user's own devices and never to other members of a shared project.
+- It SHALL be written offline and converge by last-writer-wins.
+- It is not user-written content and is never encrypted.
+- It SHALL be included in the JSON export and SHALL derive no activity event.
+
+A project SHALL be due for review for the user when:
+- it was never reviewed by the user, or
+- the user's logical today is on or after the review date: the logical day of the user's last review stamp, plus 7 days (week), 14 days (2 weeks), one calendar month (month) or three calendar months (quarter). A month added to a day that the target month lacks SHALL land on that month's last day.
+
+A paused project SHALL never be due.
+
+Due-ness SHALL be computed on the device from the synced stamp and interval, with no write. The interval SHALL be changeable from the walk card and from a "Review every…" submenu in the project menu. In `lists` mode the menu item SHALL be shown only when a value other than the default is stored. Changing it SHALL write one operation and offer Undo.
+
+#### Scenario: Monthly review date
+- **WHEN** "Car" is reviewed every month and the user last reviewed it on 31 January
+- **THEN** it is due from the last day of February in the user's logical days, offline too
+
+#### Scenario: Shared project, personal rhythm
+- **WHEN** the user sets the shared project "Household" to every month and Ana keeps it weekly
+- **THEN** Household is due for Ana every week and for the user every month, and neither choice reaches the other's devices
+
+#### Scenario: Two devices offline
+- **WHEN** the phone sets "Car" to every quarter and the laptop sets it to paused, both offline, and both sync
+- **THEN** every device of the user shows the value written with the greater timestamp
+
+#### Scenario: Older server
+- **WHEN** the device syncs with a server that does not know `review_every`
+- **THEN** the op is rejected as unknown, the device keeps its local value, and the walk on this device uses it
+
+### Requirement: Focus style
+The user SHALL choose today's focus style, **Three tasks** (default) or **Bento**, stored as the synced additive preference `user_prefs.focus_style` (`bento`; empty or unknown reads as Three tasks and is not rewritten), from Settings › Account › How you work ("Daily focus") and from the Daily check's header menu. Three tasks SHALL behave exactly as the Daily check does without this change. The preference SHALL be written offline, converge by last-writer-wins and sync to the user's own devices only. Switching style SHALL write nothing to the focus.
+
+#### Scenario: Default unchanged
+- **WHEN** a user who never chose a style opens the Daily check
+- **THEN** today's tasks are listed and `f` toggles up to three of them into the focus, as before
+
+#### Scenario: Chosen on one device
+- **WHEN** the user chooses Bento in How you work on the laptop, offline, and later syncs
+- **THEN** the phone's Daily check shows the three slots after its next sync
+
+#### Scenario: Switching keeps the focus
+- **WHEN** three tasks are in today's focus in Three tasks style and the user switches to Bento
+- **THEN** the same three tasks are shown in slots by their estimates, and no operation is written
+
+### Requirement: Bento slots
+In Bento style today's focus SHALL be three slots, Large, Medium and Small, each holding at most one task. A task's suggested slot SHALL follow its estimate: Small up to 30 minutes, Medium 31 to 89, Large 90 or more. `f` on a focused task SHALL remove it; on an estimated task it SHALL put the task in its suggested slot when free, and otherwise refuse with a message naming the slot's task and offering Choose a slot; on an unestimated task it SHALL open a menu of the free slots and Set estimate…, offered only when the user may edit the task. Choosing a slot SHALL write only the user's `review` row: the plain id list `focus` in display order, the additive field `focus_slots` (`L:<id>,M:<id>,S:<id>`) and `focus_date`, as one batch with Undo. Reading SHALL write nothing: a `focus_slots` entry counts only for an id in `focus`, and an id in `focus` without one takes its suggested slot when free, else the first free slot, else is listed after the slots as Not sized. The fields are not content, are written offline, converge per field by last-writer-wins and sync to the user's own devices only; completed or deleted tasks drop out as in the Daily check.
+
+#### Scenario: Placed by estimate
+- **WHEN** Bento is on and the user presses `f` on a 2-hour task, a 45-minute task and a 20-minute task
+- **THEN** they fill Large, Medium and Small in that order, and the Loop home on every device lists them after sync
+
+#### Scenario: Slot taken
+- **WHEN** Large holds "Write the report" and the user presses `f` on another 3-hour task
+- **THEN** nothing is written, the message reads that Large holds "Write the report", and Choose a slot lists Medium and Small if free
+
+#### Scenario: Unestimated task
+- **WHEN** the user presses `f` on a task without an estimate and Medium is free
+- **THEN** a menu offers Medium, any other free slot and Set estimate…, and choosing Medium puts the task there without changing its estimate
+
+#### Scenario: Viewer of a shared project
+- **WHEN** the user presses `f` on an unestimated task of a shared project they only view
+- **THEN** the menu lists the free slots without Set estimate…, and the task can be put in a slot
+
+#### Scenario: Older device writes the focus
+- **WHEN** a device without Bento replaces today's focus with three other tasks while `focus_slots` still names the old ones
+- **THEN** the Bento device shows the three new tasks in slots by their estimates, with no write until the user changes a slot
+
+#### Scenario: Older device reads the focus
+- **WHEN** the user picks a Bento on the phone and opens the Loop home on a device that predates this change
+- **THEN** the older device lists the same three tasks
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user fills the three slots
+- **THEN** the slots show at once and the review row is uploaded on the next successful sync
+
+### Requirement: Bento order
+In Bento style the user SHALL choose an order, Frog (Large, Medium, Small; default) or Summit (Medium, Large, Small), stored as the synced additive preference `user_prefs.bento_order` (`summit`; empty or unknown reads as Frog and is not rewritten), from How you work, where it is shown only while Bento is chosen, and from the Daily check's header menu. The Daily check's slots, the Loop home's Today's focus and the Focus screen's first task SHALL follow the order, with Not sized tasks after the slots. Changing the order SHALL write only the preference, offline included, converging by last-writer-wins.
+
+#### Scenario: Summit
+- **WHEN** Bento holds a Large, a Medium and a Small task and the user chooses Summit
+- **THEN** the Loop home lists Medium, Large, Small, and the Focus screen opens on the Medium task
+
+#### Scenario: Frog by default
+- **WHEN** a user turns Bento on and never chooses an order
+- **THEN** the focus is listed Large, Medium, Small
+
+#### Scenario: Not shown without Bento
+- **WHEN** the style is Three tasks
+- **THEN** How you work shows no Order row and the focus keeps the order it was picked in
+
+### Requirement: Filling the focus by touch
+Today's focus SHALL be fillable and emptiable without a keyboard. In Bento style an empty slot in the Daily check SHALL be a target of at least 44 × 44 px on a coarse pointer that opens a task picker for that slot, listing open tasks not already in the focus: today's and overdue tasks first, and within each group the tasks whose estimate suggests that slot first, then tasks without an estimate, then the rest; choosing one SHALL put it in that slot. In Three tasks style the Daily check SHALL show Today's focus with an Add to focus row while it holds fewer than three tasks, and the Loop home SHALL offer Add to focus while there is room; both open the picker. One task's Actions menu, the task panel's and task page's menu and the Focus screen's menu SHALL offer Add to focus (Three tasks) or Put in a slot (Bento) for an open task not in today's focus, and Remove from focus for a task in it, also for a task of a shared project the user only views. These paths SHALL follow the same rules as `f`, and every change SHALL be one batch on the user's `review` row with Undo, written offline and converging like the focus written with `f`.
+
+#### Scenario: Empty slot by touch
+- **WHEN** Bento is on, Large is empty and the user taps the empty Large row at 390 px
+- **THEN** a picker lists today's tasks with a 90-minute or longer estimate first, and choosing "Write the report" puts it in Large with Undo
+
+#### Scenario: Three tasks by touch
+- **WHEN** Three tasks is on and today's focus holds one task
+- **THEN** the Daily check shows Add to focus, and choosing a task in its picker adds it as the second focus task
+
+#### Scenario: Menu adds and removes
+- **WHEN** the user opens a task's Actions menu and chooses Add to focus, then opens it again
+- **THEN** the task is in today's focus, the toast offers Undo, and the menu now offers Remove from focus
+
+#### Scenario: Menu in Bento without an estimate
+- **WHEN** Bento is on and the user chooses Put in a slot for a task without an estimate
+- **THEN** the slot menu opens with the free slots, as for `f`
+
+#### Scenario: Full
+- **WHEN** the focus already holds three tasks and the user chooses Add to focus on a fourth
+- **THEN** nothing is written and a message says to take one out first
+
+#### Scenario: Viewer
+- **WHEN** the task belongs to a shared project the user only views
+- **THEN** the menu still offers Add to focus or Put in a slot, and the task joins the user's own focus

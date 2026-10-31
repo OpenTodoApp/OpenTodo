@@ -81,7 +81,7 @@ func (r *cycle) loadLinks(ctx context.Context) error {
 }
 
 // loadTasks reads the push set: the task feed's selection within the window,
-// date-only tasks only with the option on (design D5).
+// date-only tasks only with the option on (design D5), spans always.
 func (r *cycle) loadTasks(ctx context.Context) error {
 	list, err := r.w.Tasks(ctx, r.c.UserID)
 	if err != nil {
@@ -92,7 +92,8 @@ func (r *cycle) loadTasks(ctx context.Context) error {
 	to := now.AddDate(0, 0, calfeed.FeedFutureDays).Format("2006-01-02")
 	r.tasks = map[string]calfeed.FeedTask{}
 	for _, t := range list {
-		if t.Date == "" || t.Date < from || t.Date > to || (t.Time == nil && !r.c.IncludeDateOnly) {
+		// A span is written whatever the option says (multi-day-tasks D7).
+		if t.Date == "" || t.Date < from || t.Date > to || (t.Time == nil && t.Start == "" && !r.c.IncludeDateOnly) {
 			continue
 		}
 		r.tasks[t.ID] = t

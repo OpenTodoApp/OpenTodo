@@ -26,6 +26,8 @@ Big tasks are easier as a few small steps. To add one:
 
 Subtasks appear indented under their parent, and the parent shows your progress, like **1/3**. You can nest subtasks inside subtasks.
 
+To add several at once, paste a list (up to 100 lines) into the empty **Add subtask** line and confirm **Add 3 subtasks**. Markers such as `-` and `1.` are removed as in [quick add](quick-add.md#paste-a-list), but dates and projects are not read. One **Undo** removes them all.
+
 To turn an existing task into a subtask, select it and press <kbd>Tab</kbd>: it moves under the task above it. <kbd>Shift</kbd>+<kbd>Tab</kbd> moves it back out. You can also pick a **Parent task** in the panel. Use <kbd>←</kbd> and <kbd>→</kbd> to fold and unfold a parent's subtasks.
 
 Completing a parent completes all its open subtasks too. When you tick off the last open subtask, OpenTodo asks whether to complete the parent as well; press <kbd>Enter</kbd> for yes.

@@ -39,15 +39,19 @@ The client SHALL provide Day and Week views as one Calendar destination, reachab
 - **THEN** the current week renders with every timed task as a block and date-only tasks in each day's lane
 
 ### Requirement: Tasks as calendar blocks
-An open task with a due date and time SHALL appear as a block at that time, sized by its estimate, or by a 30-minute default rendered distinctly when unestimated. Tasks due that day without a time SHALL appear in an "unscheduled" lane above the grid. A task block SHALL be drawn as a soft fill of its project's palette hue (the Inbox hue for a task without a project) with a 3 px edge of the solid hue on its leading side and the strong text tone for its title, never as a white box with a coloured border; its edge SHALL meet 3:1 against the grid. A block on a day before today, and a block whose task is a completed occurrence shown by a view, SHALL be dimmed to the faint tone with its fill lightened, so the past reads as past at a glance. Today's grid SHALL carry one now line across its column at the current time, updated while the view is open, and no other day SHALL carry one. The selected block SHALL keep the accent ring as the one selection style.
+A visible task (open by default, also completed when Show completed tasks is on) with a due date and time SHALL appear as a block at that time, sized by its estimate, or by a 30-minute default rendered distinctly when unestimated. Tasks due that day without a time SHALL appear in an "unscheduled" lane above the grid. A task block SHALL be drawn as a soft fill of its project's palette hue (the Inbox hue for a task without a project) with a 3 px edge of the solid hue on its leading side and the strong text tone for its title, never as a white box with a coloured border; its edge SHALL meet 3:1 against the grid. A block on a day before today, and a block whose task is a completed occurrence shown by a view, SHALL be dimmed to the faint tone with its fill lightened, so the past reads as past at a glance. Today's grid SHALL carry one now line across its column at the current time, updated while the view is open, and no other day SHALL carry one. The selected block SHALL keep the accent ring as the one selection style. Blocks and lanes SHALL render from local data while offline and SHALL reflect converged task rows after sync.
 
 #### Scenario: Unestimated block
 - **WHEN** a task due today at 10:00 has no estimate
 - **THEN** it appears as a 30-minute block with a dashed edge and no duration label, and its tooltip explains the dashed edge and offers Set estimate
 
 #### Scenario: Completed tasks
-- **WHEN** a task shown as a block is completed
+- **WHEN** a task shown as a block is completed while Show completed tasks is off
 - **THEN** it leaves the grid and the day's planned total decreases accordingly
+
+#### Scenario: Completed task stays visible when opted in
+- **WHEN** a task shown as a block is completed while Show completed tasks is on
+- **THEN** it stays at the same due date and time with a struck-through title and an accessible completed status, and the day's planned total decreases accordingly
 
 #### Scenario: Capacity as a bar
 - **WHEN** a day has 2 h 50 planned of 8 h with five unestimated tasks
@@ -166,7 +170,7 @@ With a block or lane task selected, arrow keys SHALL move it by 15 minutes or on
 - **THEN** the task is due at 09:45 with a 75-minute estimate
 
 ### Requirement: Overlap and capacity
-Blocks that overlap in time SHALL be laid out side by side without hiding each other and SHALL carry an overlap marker. Each day column SHALL show the sum of estimates of its open timed and untimed tasks against a configurable day length (default 8 hours) and SHALL mark the day when the sum exceeds it. The capacity line SHALL be set in the muted text tone with tabular figures of the interface typeface, and SHALL turn to the danger tone with the over-capacity text when the day is over capacity; it SHALL never use a monospace face. Blocks of subscribed calendar events (OpenSpec `calendar-feeds`) SHALL take part in the side-by-side layout and the marker, and SHALL NOT count toward the sum.
+Blocks that overlap in time SHALL be laid out side by side without hiding each other and SHALL carry an overlap marker. Each day column SHALL show the sum of estimates of its open timed and untimed tasks against a configurable day length (default 8 hours) and SHALL mark the day when the sum exceeds it. The capacity line SHALL be set in the muted text tone with tabular figures of the interface typeface, and SHALL turn to the danger tone with the over-capacity text when the day is over capacity; it SHALL never use a monospace face. Blocks of subscribed calendar events (OpenSpec `calendar-feeds`) SHALL take part in the side-by-side layout and the marker, and SHALL NOT count toward the sum unless the device's "Count meetings in capacity" option (see "Grid preferences") is on. With the option on, the sum SHALL add the day's event minutes as defined by OpenSpec `planner-view` "Event minutes in the capacity" (busy timed occurrences of enabled calendars shown on this device, overlaps counted once, all-day and free events left out), the tooltip SHALL name both parts ("4h 15m of tasks, 2h 30m in meetings"), and a day whose tasks alone fit but whose tasks plus event minutes exceed the day length SHALL be marked in the warning tone with the text "Over with meetings", while a day whose tasks alone exceed it keeps the danger tone. Both marks SHALL be in the line's accessible name, never shown by colour alone. Events hidden on the device are neither drawn nor counted. Nothing is written by the option or the sum; it is computed on the device from local data and works offline.
 
 #### Scenario: Two tasks at the same time
 - **WHEN** two tasks are due today at 10:00
@@ -188,6 +192,30 @@ Blocks that overlap in time SHALL be laid out side by side without hiding each o
 - **WHEN** the user hides calendars on this device
 - **THEN** task blocks are laid out as if no events existed and the header is unchanged
 
+#### Scenario: Meetings counted
+- **WHEN** "Count meetings in capacity" is on, today's open tasks total 4h 15m, busy meetings run 09:00 to 10:30 and 14:00 to 15:00, and the day length is 8 hours
+- **THEN** the day header reads `6h 45m / 8h` in the muted tone and its tooltip reads "4h 15m of tasks, 2h 30m in meetings"
+
+#### Scenario: Over only with meetings
+- **WHEN** the option is on, today's tasks total 6 hours and busy meetings total 3 hours with an 8-hour day length
+- **THEN** the header shows `9h / 8h` in the warning tone with "Over with meetings", and a screen reader announces "over with meetings"
+
+#### Scenario: Over with tasks alone
+- **WHEN** the option is on, today's tasks total 9 hours and meetings 1 hour with an 8-hour day length
+- **THEN** the header shows `10h / 8h` in the danger tone marked as over capacity
+
+#### Scenario: Free and all-day events do not count
+- **WHEN** the option is on and today holds a free (transparent) 10:00 to 12:00 event and an all-day "Offsite" event
+- **THEN** neither adds to the sum, and the header equals the tasks' estimates
+
+#### Scenario: Option on, calendars hidden
+- **WHEN** the option is on and the user turns the toolbar's "Calendars" toggle off
+- **THEN** no event is drawn or counted and the header shows the tasks' sum only
+
+#### Scenario: Offline outside the cache
+- **WHEN** the option is on, the device is offline and the Week shows a day outside the device's event cache
+- **THEN** that day counts no event minutes and its tooltip says calendars are unavailable offline for that day
+
 ### Requirement: Duration filter
 Inbox, Today, Upcoming and project views SHALL offer a duration filter with "Quick wins" (15 minutes or less), "Under 30 min", "Over 1 h" and "Unestimated" from the Filter action in the page header. The options SHALL not be shown while no filter is active; an active filter SHALL be one chip in the header with a clear control. The filter SHALL apply to the local data, persist per device across reloads, and use one duration predicate that later filter features can reuse.
 
@@ -204,11 +232,19 @@ Inbox, Today, Upcoming and project views SHALL offer a duration filter with "Qui
 - **THEN** the same filter is still active
 
 ### Requirement: Grid preferences
-Start hour, end hour and day length SHALL be per-device preferences editable in Settings, with defaults that need no setup, and SHALL not be synced.
+Start hour, end hour, day length and "Count meetings in capacity" SHALL be per-device preferences editable in Settings › Calendar, with defaults that need no setup (the option off), and SHALL not be synced. The option SHALL be shown only while the device knows at least one subscribed or connected calendar; a stored value SHALL be kept while it is hidden. A missing or invalid stored value SHALL read as its default.
 
 #### Scenario: Change day length
 - **WHEN** the user sets the day length to 6 hours in Settings
 - **THEN** capacity markers on this device use 6 hours and other devices are unaffected
+
+#### Scenario: Turn meetings on for this device
+- **WHEN** the user turns on "Count meetings in capacity" on the laptop
+- **THEN** the laptop's Day, Week and Month count busy event minutes and the phone's do not
+
+#### Scenario: No calendar, no option
+- **WHEN** the device knows no subscribed or connected calendar
+- **THEN** Settings › Calendar shows no "Count meetings in capacity" row and capacity counts tasks only
 
 ### Requirement: Short blocks never cover each other
 Every block on the Day and Week grids, task or event, SHALL be drawn at least tall enough for one line of its title, and blocks whose drawn boxes would overlap SHALL be laid out side by side like blocks that overlap in time, so no block hides another. The overlap marker SHALL appear only on blocks whose times overlap.
@@ -220,3 +256,199 @@ Every block on the Day and Week grids, task or event, SHALL be drawn at least ta
 #### Scenario: Long blocks keep the full width
 - **WHEN** a day has a one-hour task at 10:00 and a 90-minute task at 11:00
 - **THEN** both are drawn across the full column width, one under the other
+
+### Requirement: Missed blocks and where to re-plan
+A missed block SHALL be an open, not deleted task due on the logical today with a time, whose block end (its due time plus its estimate, or plus the 30-minute default) is at or before now. Tasks the user may not edit, tasks of a shared project assigned to another member, the task with the user's running time entry and tasks of archived projects SHALL never count as missed. While today is shown in Day or Week and at least one missed block exists, the header's lead line SHALL read "<n> blocks behind · Re-plan", and the calendar's overflow menu, Today's overflow menu and the command palette SHALL offer "Re-plan the rest of the day"; from Today it SHALL open the Day view of today with the preview open. Without a missed block none of these SHALL be shown or enabled. No shortcut SHALL be added.
+
+#### Scenario: Behind at half past one
+- **WHEN** it is 13:30 and today has open tasks at 09:00 (60 min), 10:30 (30 min) and 11:00 (unestimated), and one at 13:00 (60 min)
+- **THEN** the Day header reads "3 blocks behind · Re-plan", and the 13:00 task is not counted because it is in progress
+
+#### Scenario: Nothing behind
+- **WHEN** every timed task of today ends after now or is completed
+- **THEN** no Re-plan entry is shown in the header, the menus or the palette
+
+#### Scenario: Viewer of a shared project
+- **WHEN** a missed 09:00 task belongs to a shared project where the user is a viewer
+- **THEN** it is not counted and never moved
+
+#### Scenario: From Today
+- **WHEN** the user opens Today's overflow menu at 14:00 with two missed blocks and chooses "Re-plan the rest of the day"
+- **THEN** the Day view of today opens with the preview showing both moves
+
+### Requirement: Re-plan packs missed blocks deterministically
+Re-plan SHALL compute a proposal on the device: starting at now rounded up to the next 15 minutes and ending at the device's grid end hour on the logical today, it SHALL place the missed blocks, sorted by original due time, then priority, then task id, each into the first free interval on a 15-minute mark that holds its whole length (its estimate, or 30 minutes). Other open timed task blocks of today and busy timed events of enabled subscriptions shown on this device SHALL be busy; free events, all-day events and calendar frames SHALL NOT be. A block that finds no interval SHALL be listed as not fitting. The same tasks, events, preferences and clock SHALL give the same proposal on every device. Offline, the proposal SHALL use local tasks and the device's cached events, and for a day outside the cache SHALL pack around tasks only and say that calendars are unavailable offline.
+
+#### Scenario: Around a meeting
+- **WHEN** it is 13:20, missed blocks are A at 09:00 (60 min) and B at 10:00 (30 min), a busy event runs 13:30 to 14:30, and the grid ends at 22:00
+- **THEN** A is proposed at 14:30 and B at 15:30, because 13:30 is the next mark and the meeting fills 13:30 to 14:30
+
+#### Scenario: Order kept, small tasks not jumped ahead
+- **WHEN** missed blocks are A at 09:00 (90 min, priority 4) and B at 10:00 (15 min, priority 1), and the free time is 15:00 to 15:30 and 16:00 to 22:00
+- **THEN** A is proposed at 16:00 and B at 15:00, because A goes first and takes the first interval that holds it, and B then takes the earlier hole
+
+#### Scenario: Does not fit
+- **WHEN** it is 21:10, the grid ends at 22:00 and three 30-minute blocks are missed
+- **THEN** the first is proposed at 21:15, and the other two are listed as not fitting
+
+#### Scenario: After the grid end
+- **WHEN** it is 23:00 and the grid ends at 22:00
+- **THEN** every missed block is listed as not fitting and nothing is proposed to move today
+
+#### Scenario: Calendars hidden
+- **WHEN** the device's Calendars toggle is off and a busy event runs 15:00 to 16:00
+- **THEN** the packer treats 15:00 to 16:00 as free, as the grid shows it
+
+#### Scenario: Offline beyond the cache
+- **WHEN** the device is offline and today lies outside its cached event window
+- **THEN** the proposal packs around tasks only and the preview says calendars are unavailable offline
+
+### Requirement: Re-plan is a preview first
+The proposal SHALL be shown before anything is written. Where the page header has its own row (from 768 px), Day and Week SHALL draw each move as a ghost block at its new place and the original block in the faint tone, and the header's lead line SHALL become a bar with the count ("4 tasks move · 1 doesn't fit"), the choice for the tasks that do not fit (Leave them, the default, or Move to tomorrow), Apply and Cancel. Below 768 px, where the lead line moves into the shell's bar, the same SHALL be a bottom sheet listing each move as "<old time> → <new time> <title>". Enter in the bar SHALL apply and Escape SHALL cancel; dragging and placement keys SHALL be paused on the grid while the preview is open. When local data that feeds the proposal changes, or the next 15-minute mark passes, the proposal SHALL be recomputed; when nothing is missed any more the preview SHALL close with "Nothing to re-plan". A move to tomorrow that falls after the task's deadline SHALL carry the warning "After its deadline". Cancel SHALL write nothing.
+
+#### Scenario: Cancel writes nothing
+- **WHEN** the user opens the preview and presses Escape
+- **THEN** no operation is written, the ghosts disappear and the blocks are where they were
+
+#### Scenario: Another device completes a task meanwhile
+- **WHEN** the preview shows three moves and another device's completion of one of them arrives by sync
+- **THEN** the preview shows two moves without being reopened
+
+#### Scenario: Phone
+- **WHEN** the user taps Re-plan on a 390 px screen
+- **THEN** a bottom sheet lists "09:00 → 14:30 Write report" style rows, the unfit choice, Apply and Cancel, each target at least 48 px, and the grid shows no ghosts
+
+#### Scenario: Deadline warning
+- **WHEN** a task that does not fit has its deadline today and the user chooses Move to tomorrow
+- **THEN** its row shows "After its deadline" before Apply
+
+### Requirement: Applying a re-plan is one batch with one Undo
+Apply SHALL write every move, and with Move to tomorrow every unfit task's due date set to the next logical day with the same time, as one batch of ordinary `due` edits through the operation log: applied locally first, queued offline, converging per field by last-writer-wins, with no other field written. A time fixed to a zone SHALL stay fixed to that zone, the new wall time converted as a drag converts it. Right before writing, a task that is no longer open, no longer editable or whose due changed since the preview SHALL be skipped, and the confirmation SHALL say how many were skipped. The confirmation SHALL offer one Undo that restores every due value the batch changed. Nothing SHALL be moved without Apply.
+
+#### Scenario: Apply and undo
+- **WHEN** the user applies a preview of four moves and then presses Undo in the toast
+- **THEN** all four tasks are back at their morning times as one step, on this device at once and on other devices after sync
+
+#### Scenario: Offline apply
+- **WHEN** the device is offline and the user applies three moves
+- **THEN** the grid shows the new times at once, and the edits are uploaded on the next successful sync
+
+#### Scenario: Concurrent move on another device
+- **WHEN** after this device applies the re-plan, another device that was offline had moved one of the same tasks to 18:00 at a later time, and both sync
+- **THEN** every device shows that task at 18:00 and the others at their re-planned times
+
+#### Scenario: Changed meanwhile
+- **WHEN** a task's due changed on another device between the preview and Apply
+- **THEN** that task is skipped and the toast reads "3 moved · 1 changed meanwhile"
+
+#### Scenario: Zone kept
+- **WHEN** a missed task is due 09:00 fixed to `America/New_York`, viewed from Berlin, and is proposed at 16:00 Berlin time
+- **THEN** after Apply it is due 10:00 `America/New_York` and still fixed to that zone
+
+#### Scenario: Encrypted account
+- **WHEN** the account is end-to-end encrypted and the user applies a re-plan
+- **THEN** the same due operations are written as on any account, and no content is read or changed
+
+### Requirement: Add with the pointer in Day and Week
+A double-click on an empty part of the Day or Week grid (no block, event, deadline chip or frame title under the pointer) SHALL open the add dialog with that date and the slot's 15-minute start, and a double-click in a day's unscheduled lane SHALL open it with the date only. A right-click on the same places, or a long press of 500 ms on touch, SHALL open a menu at that place with Add task here… and the entries other calendar features add there. A fine pointer SHALL see a faint highlight of the 15-minute slot under it. `q` in Day and Week SHALL open the same dialog for the focused day without a time, so no addition needs a pointer. The task SHALL be created locally with no network round trip and synced like any new task.
+
+#### Scenario: Double-click a slot
+- **WHEN** the user double-clicks Tuesday 14:30 in the Week, types "Call the bank" and presses Enter
+- **THEN** a task "Call the bank" due Tuesday at 14:30 appears as a block there at once
+
+#### Scenario: Context menu
+- **WHEN** the user right-clicks Wednesday 09:00
+- **THEN** a menu opens at the pointer with Add task here…, and choosing it opens the dialog with Wednesday 09:00
+
+#### Scenario: Long press on a phone
+- **WHEN** on a touch screen the user long-presses an empty slot of the Day view
+- **THEN** the same menu opens as a bottom sheet, while a long press on a task block keeps its existing behaviour
+
+#### Scenario: Keyboard
+- **WHEN** a Week is shown with a block on Thursday selected and the user presses `q`
+- **THEN** the add dialog opens for Thursday without a time, and a typed "at 4pm" sets 16:00
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user double-clicks a slot and adds a task
+- **THEN** the block appears at once and the task is uploaded on the next sync
+
+### Requirement: Colour by
+The Calendar's overflow menu SHALL offer Colour by with Project (default), Label and Priority, applying to Day, Week, Month and Plan, stored per device and never synced. With Label, a task SHALL take the hue of the first of its labels, in the user's label order, whose colour is not the default grey, else the neutral hue; with Priority, priorities 1 to 3 SHALL take the priority hues and priority 4 the neutral hue. The fill, edge, contrast, dimming and selection rules of task blocks SHALL apply unchanged to the chosen hue. Event blocks and frame bands SHALL keep their own look. A missing or unknown stored value SHALL read as Project.
+
+#### Scenario: Colour by label
+- **WHEN** the user chooses Colour by Label and a task carries "errand" (orange) and "call" (blue), with "call" first in the label order
+- **THEN** its block is drawn in the blue hue, and a task without labels in the neutral hue
+
+#### Scenario: Colour by priority
+- **WHEN** the user chooses Colour by Priority
+- **THEN** priority 1 blocks take the priority-1 hue and priority 4 blocks the neutral hue, each with a 3:1 edge against the grid in light and dark
+
+#### Scenario: Per device
+- **WHEN** the laptop colours by label
+- **THEN** the phone's calendar still colours by project
+
+### Requirement: Calendar layout of a project
+A project's layout switch SHALL offer Calendar after Timeline, showing the Calendar in its last used mode (Day, Week, Month or Plan) narrowed to the project's open tasks and those of its sub-projects, inside the project page, with the planning list opening on the project as its source. The narrowing SHALL combine with an active calendar filter and SHALL not be shown as a chip. `v` SHALL cycle List, Board, Timeline and Calendar. The layout choice SHALL be stored per device like the other layouts, an older device reading it as List. The view SHALL render from local data and work offline.
+
+#### Scenario: A project's week
+- **WHEN** the user switches the project "Home" to Calendar while the last Calendar mode was Week
+- **THEN** the project page shows this week with only the tasks of "Home" and its sub-projects as blocks, and events of subscribed calendars as usual
+
+#### Scenario: Cycle with v
+- **WHEN** a project shows its Timeline and the user presses `v`
+- **THEN** the project shows its Calendar, and pressing `v` again shows its List
+
+#### Scenario: Older device
+- **WHEN** a device without this change opens a project stored with the Calendar layout
+- **THEN** it shows the project's List
+
+### Requirement: Optional completed tasks in the Calendar
+The Calendar SHALL have a keyboard-accessible Show completed tasks toggle control in its existing header actions (a button on wide screens, a checked item in More actions on smaller screens), off by default, shared by Day, Week, Month and Plan. Its label SHALL remain Show completed tasks in both states; the pressed or checked state SHALL communicate whether completed tasks are shown. The choice SHALL be remembered only on this device across navigation and reloads and SHALL work offline. Enabling it SHALL include live completed tasks on their due date and time in the viewer's zone, with a struck-through title and an accessible completed status in blocks, lanes, overflow lists and phone agendas. Deleted tasks, undated tasks and tasks in archived projects SHALL stay excluded. Completed tasks SHALL NOT count towards remaining planned capacity, unestimated work or recurring projection sources. Completed tasks in standalone rows and blocks SHALL remain selectable and openable, but calendar drag, resize, placement and completion shortcuts SHALL NOT change them. The control SHALL apply to standalone calendar task rows and blocks; a slot SHALL retain its own checklist, checked rows, counts and container actions as specified by calendar-slots. Completion SHALL NOT change edit permissions or cause a task to be announced as read-only; that wording SHALL reflect project permissions. Changing visibility SHALL NOT create task operations; task completion and reopening SHALL continue through the ordinary op log, and devices with identical task rows and the same visibility choice SHALL show the same tasks after sync.
+
+#### Scenario: Default calendar
+- **WHEN** the user opens a calendar mode without a saved visibility choice
+- **THEN** the Show completed tasks button is not pressed and only open dated tasks appear as standalone rows or blocks
+
+#### Scenario: Toggle once for all modes, offline
+- **WHEN** the user enables Show completed tasks offline, switches through Day, Week, Month and Plan, and reloads
+- **THEN** the button stays pressed and each mode includes completed dated tasks without a network request or task operation
+
+#### Scenario: Scheduled date rather than completion date
+- **WHEN** a task due yesterday at 09:00 was completed today and Show completed tasks is on
+- **THEN** it appears yesterday at 09:00 with a struck-through title and a completed status
+
+#### Scenario: Inspect completed work without rescheduling it
+- **WHEN** the user selects a completed task with Show completed tasks on and tries calendar arrows, resize, placement or the completion shortcut
+- **THEN** its due date, estimate and completion stay unchanged and no task operation is queued, while Enter still opens its details
+
+#### Scenario: Hide completed work again
+- **WHEN** the user turns Show completed tasks off
+- **THEN** standalone completed task rows disappear immediately from all calendar modes and their overflow counts without changing the task data or the remaining planned capacity
+
+#### Scenario: Completion received from another device
+- **WHEN** a completion or reopening operation arrives from another device
+- **THEN** the task's visibility and title update from the converged local row according to this device's visibility choice
+
+#### Scenario: Completed work with counted meetings
+- **WHEN** Count meetings in capacity is on, a day has 1 hour of open task estimates, 3 hours of completed task estimates and 2 hours of busy meetings, and the user toggles Show completed tasks
+- **THEN** Day, Week and Month keep the total at `3h / 8h`, with the completed tasks visible only when Show completed tasks is on
+
+#### Scenario: Stable visibility label
+- **WHEN** the user enables or disables completed tasks with the button or checked menu item
+- **THEN** the label stays Show completed tasks, and the pressed or checked state is true only while completed tasks are shown
+
+#### Scenario: Completion does not remove edit permissions
+- **WHEN** a user who may edit a task shows its completed row in Month or Plan
+- **THEN** its completed status is announced without read-only wording, calendar scheduling stays disabled, and opening details retains the ability to edit or reopen it
+
+#### Scenario: A shared-project viewer stays read-only
+- **WHEN** a viewer of a shared project shows a completed task in Month or Plan
+- **THEN** the row announces both its completed status and its actual read-only permissions
+
+#### Scenario: Re-plan ignores visible completed work
+- **WHEN** Show completed tasks is on and a day has one missed open block and one completed block
+- **THEN** Re-plan counts and moves only the open task, while the completed task stays unchanged
+
+#### Scenario: Slot checklist stays independent
+- **WHEN** the user toggles Show completed tasks with one open and one completed task held in a slot and another completed task outside it
+- **THEN** the slot keeps its checklist, checked status and capacity in both states, only the standalone completed task appears or disappears, and slot movement and resizing remain available

@@ -14,6 +14,7 @@ import { toggleTracking } from '../lib/timeEntries'
 import { panelTaskId, sidePanelDocks } from './panel'
 import { closeSidePanelFrom, useSidePanel } from './sidePanel'
 import { openTaskPage } from './taskTrail'
+import { dayPartFields } from '../lib/dayParts'
 
 export interface KeyRow {
   key: string
@@ -41,6 +42,8 @@ export interface ListKeys {
   setExpanded?: (key: string | null) => void
   /** The list keeps the side panel with the preference (task-side-panel): the Filter view, saved views, Next and Waiting. */
   sidePanel?: boolean
+  /** A saved view's own order (view-manual-order D4): one step of the row's task within its group; false at the edge. */
+  moveBy?: (row: KeyRow, step: -1 | 1 | 'top' | 'bottom') => Promise<boolean>
 }
 
 export function useListKeys(opts: ListKeys): void {
@@ -59,7 +62,13 @@ export function useListKeys(opts: ListKeys): void {
     ticked: () => ref.current.bulk?.ticked ?? [],
     tick: (ids) => ref.current.bulk?.selection.set(ids),
     openActions: (picker) => ref.current.bulk?.openActions(picker ?? null),
-    manual: () => false,
+    manual: () => !!ref.current.moveBy,
+    ownOrder: () => !!ref.current.moveBy,
+    moveBy: (id, step) => {
+      const { rows, selected, moveBy } = ref.current
+      const r = rows.find((x) => x.key === selected && x.task.id === id) ?? rows.find((x) => x.task.id === id)
+      return r && moveBy ? moveBy(r, step) : Promise.resolve(false)
+    },
     focusQuickAdd: () => false,
     toggleComplete: (id, completed) => setTaskCompleted(id, completed),
     openLabels: (id) => ref.current.setPickerFor(id),
@@ -77,6 +86,11 @@ export function useListKeys(opts: ListKeys): void {
     if (!row) return false
     focus.request(row.id)
     o.setOpenId(row.id)
+  }
+  // Keyboard moves in a saved view's own order (view-manual-order); the selection stays on the row.
+  const move = (step: -1 | 1 | 'top' | 'bottom') => () => {
+    if (!o.moveBy || idx < 0) return false
+    act(o.moveBy(o.rows[idx], step))
   }
   const extend = (dir: 1 | -1) => () => {
     if (!b) return false
@@ -102,6 +116,7 @@ export function useListKeys(opts: ListKeys): void {
     },
     'list.tick': () => { if (!b || !row) return false; b.selection.toggle(row.id) },
     'list.extend-down': extend(1), 'list.extend-up': extend(-1),
+    'list.move-up': move(-1), 'list.move-down': move(1), 'list.move-top': move('top'), 'list.move-bottom': move('bottom'),
     'list.actions': () => { if (!b || !(b.ticked.length || row)) return false; b.openActions() },
     'list.down': () => o.setSelected(o.rows[Math.min(o.rows.length - 1, idx + 1)]?.key ?? null),
     'list.up': () => o.setSelected(o.rows[Math.max(0, idx - 1)]?.key ?? null),
@@ -144,7 +159,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.blocked-by': openWith(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
     'list.park': () => { if (!row) return false; void (row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
-    'list.evening': () => { if (!row) return false; act(updateTask(row.id, { evening: !row.evening })) },
+    'list.evening': () => { if (!row) return false; act(updateTask(row.id, dayPartFields(row.evening ? null : 'evening'))) },
     ...o.extra,
   }, { paused: o.paused })
 }

@@ -18,7 +18,7 @@ order: 17
 The active projects form a table, with sub-projects indented under their parent. For each project you see:
 
 - its **Health** (see below);
-- its **Progress**: completed tasks out of all its tasks, where a repeating task counts once;
+- its **Progress**: completed tasks out of all its tasks, where a repeating task counts once. An [area](project-flows.md) never finishes, so it reads **Area** instead, and sorting by progress puts areas after the projects that have one;
 - how many tasks are **Open**;
 - the **Next due** date, in red when it has passed;
 - the **People** a shared project is shared with;
@@ -34,8 +34,9 @@ Health is one word, worked out on your device from rules you can check, the firs
 |---|---|
 | **Late** | An open task's deadline has passed. The task is named, or the number of tasks past their deadline is given. |
 | **Overdue** | An open task is due before today. The number of late tasks is given. |
-| **Quiet** | Nothing in the project changed for a week. The number of days is given. |
+| **Quiet** | Nothing in the project changed for a week. The number of days is given. An area is never quiet. |
 | **On track** | Anything else, while something is open. |
+| **Maintenance** | The project is [in maintenance](review-intervals.md#maintenance) and no deadline has passed. It takes the place of Overdue, Quiet and On track. |
 
 A project with nothing open says **Nothing open**. Completing a task counts as a change, so it wakes a quiet project.
 
@@ -46,7 +47,7 @@ Health uses no server, no AI and nothing outside your own tasks. It works offlin
 ## Sort and move around
 
 Select a column's header to sort by it:
-- Health starts with what needs you, and Updated starts with the newest change.
+- Health starts with what needs you, Maintenance comes after On track, and Updated starts with the newest change.
 - Select the header again to reverse the order, and a third time to return to your own order.
 - Projects are sorted among their siblings, so sub-projects stay under their parent.
 

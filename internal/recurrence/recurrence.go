@@ -650,6 +650,33 @@ func (r Rule) Preview(due, today string, done, n int) ([]string, error) {
 	return out, nil
 }
 
+// Bounded is r with its until no later than end (YYYY-MM-DD; "" leaves r): a
+// piece of a split lineage produces no occurrence after the day before the next
+// piece starts (OpenSpec change series-split, design D3; web lineage.ts bounded).
+func (r Rule) Bounded(end string) Rule {
+	if end != "" && (r.until == "" || r.until > end) {
+		r.until = end
+	}
+	return r
+}
+
+// WithUntil is r with its end condition replaced by until: the pattern
+// unchanged, no count (series-split D1: the series ends the day before a split).
+func (r Rule) WithUntil(until string) Rule {
+	r.until, r.count = until, 0
+	return r
+}
+
+// AddDays is the date n calendar days after date (YYYY-MM-DD; before for a
+// negative n); an invalid date is returned unchanged.
+func AddDays(date string, n int) string {
+	z, ok := parseDate(date)
+	if !ok {
+		return date
+	}
+	return formatDate(z + n)
+}
+
 // ShiftDate moves date by as many calendar days as the series moved from `from`
 // to `to` (OpenSpec change deadlines, design D8: a deadline follows its series).
 // All three are YYYY-MM-DD; an invalid input returns date unchanged.

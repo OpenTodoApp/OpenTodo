@@ -11,6 +11,25 @@ The repository SHALL provide a command, never linked into the server, that build
 - **WHEN** a device signs in to the fixture account
 - **THEN** it receives all 10,000 tasks by ordinary sync pulls, because every row has its ops in the log
 
+### Requirement: Notes fixture and storage budgets
+The repository SHALL provide, through the same fixture command, a nightly-only notes fixture on top of the 10,000-task account: 500 notes growing to about 10 KB of text each, half standalone notes (task notes until standalone notes exist) and half task notes, each saved about 300 times over twelve months, with 50 of them edited within the last 30 days, written through the operation log with real mergeable documents and receipt times spread over the year. After the server's compaction has run to completion, the nightly benchmark SHALL measure and gate: the database file at most 250 MB, of which the notes' share at most 100 MB; a full compaction of the fixture within 120 s with no write waiting more than 100 ms behind it; the first sync of a new device within 45 s on desktop, 110 s in the phone profile and 120 s on the reference phones; IndexedDB usage after that sync at most 120 MB on desktop; opening the Notes page within 400 ms and 1,200 ms and a note search keystroke at the 95th percentile within 50 ms and 150 ms once the Notes page exists; and the JavaScript heap after the notes session at most 170 MB. It SHALL also report, ungated, the database size before compaction, the operations and bytes compaction removed and the bytes the first sync pulled. Every device of the benchmark SHALL end with identical notes, so compaction is shown not to break convergence. A failing phone first-sync or IndexedDB budget SHALL lead to a separate change for loading note bodies on demand rather than to a raised budget.
+
+#### Scenario: Compaction shrinks the notes fixture
+- **WHEN** the nightly run generates the notes fixture (about 2 GB of log) and the compaction job completes
+- **THEN** the database file is at most 250 MB, and the report shows the size before and the operations and bytes removed
+
+#### Scenario: Phone first sync with notes
+- **WHEN** a new device in the phone profile signs in to the compacted notes account
+- **THEN** all tasks and notes are local within 110 s, and the device shows the same notes as the desktop device
+
+#### Scenario: Compaction regresses
+- **WHEN** a change makes compaction keep every superseded note version
+- **THEN** the nightly benchmark fails naming "database file after compaction" with its size and the 250 MB budget
+
+#### Scenario: Phone budget missed
+- **WHEN** the reference phone's first sync of the notes account takes 160 s
+- **THEN** the record links an issue proposing note bodies on demand, and the budget is not raised
+
 ### Requirement: Published performance budgets
 The repository SHALL publish `docs/performance.md` with the budgets kept as data in `scripts/perf/budgets.json`, and the repository checks SHALL fail when the two differ. With the 10,000-task fixture, the budgets SHALL be at most: cold start with local data to the Today list ready 1,200 ms on desktop and 3,000 ms in the phone profile (4× CPU throttling, 412×915 viewport); opening the 2,000-task project 400 ms and 1,200 ms; search keystroke to updated results at the 95th percentile 50 ms and 150 ms; evaluating an 8-clause saved view 100 ms and 300 ms; completing a task in the 2,000-row list to the next paint at the 95th percentile 50 ms and 150 ms; a cursor move to the next paint at the 95th percentile 16 ms and 50 ms; first sync of a new device 30 s and 75 s, with no main-thread task longer than 200 ms on desktop; a remote edit painted on another device within 1,000 ms over the live channel; JavaScript heap after the scripted session 150 MB; IndexedDB usage 80 MB. Server budgets SHALL be at most: start to healthy 2 s; idle resident memory 60 MB; peak resident memory 150 MB during one device's full first pull and 200 MB during the JSON export; a 1,000-operation pull page 80 ms and a 100-operation push 100 ms at the 95th percentile; listing the 2,000-task project over REST 150 ms and reading one task 10 ms at the 95th percentile; the full JSON export 3 s; the MCP `search_tasks` tool 200 ms at the 95th percentile; database file 150 MB. A budget SHALL only be raised in a change that states the reason.
 

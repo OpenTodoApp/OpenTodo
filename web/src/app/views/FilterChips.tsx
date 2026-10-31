@@ -10,8 +10,8 @@ import { t } from '../../lib/i18n'
 import { conditionText } from '../filter/conditionText'
 
 const LEAF_ICON: Record<Leaf['kind'], IconName> = {
-  label: 'tag', project: 'folder', priority: 'flag', date: 'calendar-days', keyword: 'circle-check-big', search: 'search',
-  origin: 'link', workspace: 'briefcase', tracked: 'timer', field: 'list', nofield: 'list',
+  label: 'tag', project: 'folder', priority: 'flag', date: 'calendar-days', keyword: 'circle-check-big', search: 'search', notes: 'scroll-text',
+  origin: 'link', energy: 'zap', workspace: 'briefcase', tracked: 'timer', field: 'list', nofield: 'list',
 }
 
 export interface Chip { id: string; text: string; icon: IconName; not: boolean }

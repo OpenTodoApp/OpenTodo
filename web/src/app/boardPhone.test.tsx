@@ -71,6 +71,38 @@ describe('below 640 px', () => {
   })
 })
 
+describe('a folded column on a phone (board-polish D9)', () => {
+  const withFolded: BoardColumn[] = [
+    { key: 's1', section: section('s1', 'Backlog', 0), cards: [task('a', 's1')] },
+    { key: 's2', section: section('s2', 'Later', 1), cards: [task('b', 's2')], folded: true },
+    { key: 's3', section: section('s3', 'Doing', 2), cards: [task('c', 's3')] },
+  ]
+  it('is a 48 px strip with its own snap point; the pager has one dot per unfolded column and the bar skips the strip', async () => {
+    const names: (string | null)[] = []
+    const folds: [string, boolean][] = []
+    const r = await render(<BoardView project={project} columns={withFolded} editable addingTo={null} setAddingTo={() => {}} projects={[project]} labels={[]}
+      renderCard={(t) => <li key={t.id} data-task-id={t.id}>{t.title}</li>} onCurrentColumn={(n) => names.push(n)} onFold={(k, f) => folds.push([k, f])} />)
+    await flush()
+    const strip = document.querySelector<HTMLElement>('[data-column="s2"]')!
+    expect(strip.hasAttribute('data-folded')).toBe(true)
+    expect(strip.className).toContain('ui-column-strip')
+    expect(document.querySelectorAll('[data-board-dot]')).toHaveLength(2)
+    expect(document.querySelectorAll('[data-board-dot]')[1].getAttribute('aria-label')).toBe('Doing, column 2 of 2')
+    // Swiped so the strip starts the row: Backlog (343 + 12) is past, the page bar reads Doing.
+    const scroller = document.querySelector<HTMLElement>('[data-board]')!
+    Object.defineProperty(document.querySelector('[data-column="s1"]') as HTMLElement, 'offsetWidth', { value: 343, configurable: true })
+    Object.defineProperty(scroller, 'scrollLeft', { value: 355, configurable: true })
+    scroller.dispatchEvent(new Event('scroll'))
+    await flush()
+    expect(document.querySelector('[data-board-dot="current"]')!.getAttribute('aria-label')).toBe('Doing, column 2 of 2')
+    expect(names[names.length - 1]).toBe('Doing')
+    // A tap unfolds it.
+    await click(document.querySelector<HTMLButtonElement>('[data-column-strip="s2"]')!)
+    expect(folds).toEqual([['s2', false]])
+    await r.unmount()
+  })
+})
+
 describe('from 640 px', () => {
   it('has no pager and 18 rem columns', async () => {
     width = 1024

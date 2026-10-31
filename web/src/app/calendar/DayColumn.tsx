@@ -1,21 +1,60 @@
 // The Day and Week grid columns (OpenSpec `time-blocking`): the hour gutter, each
 // day's header with capacity and unscheduled lane, and the day column with its
 // task blocks, calendar events, "+N" overflow lists, ghosts and the now line.
-import { DAY_MINUTES, dayLoad, DEFAULT_BLOCK_MINUTES, MIN_BLOCK_MINUTES, SLOT_MINUTES, type GridPrefs } from '../../lib/calendar'
+import { useRef } from 'react'
+import { DAY_MINUTES, dayLoad, DEFAULT_BLOCK_MINUTES, MIN_BLOCK_MINUTES, SLOT_MINUTES, slotFromOffset, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { formatHour, formatDateParts } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
+import type { PlacedFrame } from '../../lib/frames'
+import { slotCapacity, slotCount, slotName } from '../../lib/slots'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
-import type { CalendarSubscription, Project, Task } from '../../lib/types'
-import { Button, hueFor, Tooltip, TruncatedText } from '../../ui'
+import type { CalendarEvent, CalendarSubscription, Task } from '../../lib/types'
+import { Button, Tooltip, TruncatedText, type HueName } from '../../ui'
 import { EventBlockView, EventChip } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
 import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
-import { CapacityLine } from './CapacityLine'
+import { CapacityLine, capacityTooltip, hiddenByFilter } from './CapacityLine'
+import { isEmptyPlace, startAddHold, type AddHere } from './addHere'
+import { DeadlineDiamond, deadlineMark, DeadlineMarker } from './DeadlineMarker'
+import { FrameBands } from './FrameBand'
+import { SlotBlock } from './SlotBlock'
+import { ProjectedItem } from './projections'
+import type { Projection } from '../../lib/occurrences'
+import type { DayMeetings } from './meetingCapacity'
 import { formatTime, GRID_HEIGHT, PX_PER_MIN, RESIZE_ZONE_PX, type Preview } from './grid'
 
 type DragStart = ReturnType<typeof useCalendarDrag>['start']
+/** The hue of a task under the device's Colour by (calendar-clarity D3). */
+export type HueOf = (task: Task) => HueName
+/** The hue of a projection: its series' under Colour by (series-occurrences D3). */
+export type ProjectionHue = (p: Projection) => HueName | undefined
+
+/** A day's drawn projections, timed and date-only: the capacity counts these (series-occurrences D5). */
+export const dayProjections = (day: DayData): Projection[] => [...[...day.projected.values()].map((x) => x.projection), ...day.laneProjected]
+/** The projections a day's capacity counts: its drawn ones and the span projections due that day (multi-day-tasks D3). */
+export const dayLoadProjections = (day: DayData): Projection[] => [...dayProjections(day), ...day.spans.flatMap((x) => (x.kind === 'projected' && x.projection.date === day.date ? [x.projection] : []))]
+/** Adding with the pointer (calendar-clarity D2): the dialog and the menu of the view. */
+export type AddGestures = Pick<AddHere, 'add' | 'menuAt'>
+
+/** Double-click, right-click and long press on an empty part of an element add at the place `at` reads from the pointer. */
+export function addHandlers(gestures: AddGestures | undefined, at: (e: React.MouseEvent | React.PointerEvent, el: HTMLElement) => { date: string; start?: number }) {
+  if (!gestures) return {}
+  return {
+    onDoubleClick: (e: React.MouseEvent<HTMLElement>) => { if (isEmptyPlace(e.target, e.currentTarget)) gestures.add(at(e, e.currentTarget)) },
+    onContextMenu: (e: React.MouseEvent<HTMLElement>) => {
+      if (!isEmptyPlace(e.target, e.currentTarget)) return
+      e.preventDefault()
+      gestures.menuAt(at(e, e.currentTarget), e.clientX, e.clientY)
+    },
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      if (!isEmptyPlace(e.target, e.currentTarget)) return
+      const place = at(e, e.currentTarget)
+      startAddHold(e, (x, y) => gestures.menuAt(place, x, y))
+    },
+  }
+}
 
 export function HourGutter() {
   return (
@@ -29,10 +68,29 @@ export function HourGutter() {
   )
 }
 
-export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, projectMap }: {
+export function DayHeader({ day, today, tasks, meetings, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, hueOf, projectionHue, deadlines = NO_TASKS, hidden = 0, gestures, part = 'all', spanRows = 0, spanHidden = 0, onExtend }: {
   day: DayData
+  /**
+   * With spans on screen (multi-day-tasks D3) the header is drawn in two parts around
+   * the span band: the name and capacity, then the all-day strip and the lane.
+   */
+  part?: 'all' | 'head' | 'body'
+  /** Span bars the band draws on this day, and spans it leaves out: both count toward the strip's cap. */
+  spanRows?: number
+  spanHidden?: number
+  /** The trailing end of a date-only lane task (multi-day-tasks D2): dragging it makes the task a span. */
+  onExtend?: (e: React.PointerEvent, task: Task) => void
+  projectionHue?: ProjectionHue
   today: string
+  /** Every task of the shown days, filtered or not: capacity counts the day (calendar-clarity D4). */
   tasks: Task[]
+  /** Deadline markers of the day (calendar-clarity D1). */
+  deadlines?: readonly Task[]
+  /** Tasks of the day the calendar's filter hides. */
+  hidden?: number
+  gestures?: AddGestures
+  /** Counted meetings of the day, or null when this device does not count them. */
+  meetings: DayMeetings | null
   prefs: GridPrefs
   showName: boolean
   selectedId: string | null
@@ -42,75 +100,118 @@ export function DayHeader({ day, today, tasks, prefs, showName, selectedId, subM
   onSelect: (id: string) => void
   onOpen: (id: string) => void
   onPointerDown: (e: React.PointerEvent, id: string) => void
-  projectMap: Map<string, Project>
+  hueOf: HueOf
 }) {
-  const load = dayLoad(tasks, day.date, prefs.dayLength)
+  const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0, slotCapacity([...day.slots.values()]), dayLoadProjections(day))
   const d = Number(day.date.slice(8))
   const weekdayName = formatDateParts(day.date, { weekday: 'short' })
-  return (
-    <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
+  const head = (
       <div className="flex items-baseline justify-between gap-1 px-1">
         {showName ? (
           <TruncatedText className={`text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`} text={`${weekdayName} ${d}`} />
         ) : <span />}
-        <Tooltip label={[load.over ? t('Over capacity.') : '', t('Planned estimates against a {minutes} day', { minutes: formatMinutes(prefs.dayLength) }) + (load.unestimated ? t('; {n} unestimated (counted as 0)', { n: load.unestimated }) : '')].filter(Boolean).join(' ')}>
+        <Tooltip label={[capacityTooltip(load, prefs.dayLength, meetings), hiddenByFilter(hidden)].filter(Boolean).join(' ')}>
           <CapacityLine load={load} dayLength={prefs.dayLength} unestimated focusable />
         </Tooltip>
       </div>
-      {day.allDay.length > 0 && <AllDayStrip day={day} subMap={subMap} zone={zone} />}
+  )
+  const body = <>
+      {day.allDay.length + deadlines.length + spanHidden > 0 && <AllDayStrip day={day} deadlines={deadlines} today={today} subMap={subMap} zone={zone} onOpen={onOpen} spanRows={spanRows} spanHidden={spanHidden} />}
       <div
         data-drop-lane={day.date}
+        {...addHandlers(gestures, () => ({ date: day.date }))}
         role="group"
         aria-label={t('Unscheduled on {date}', { date: day.date })}
         className={`mt-1 min-h-8 space-y-0.5 rounded-control border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
       >
-        {day.lane.length === 0 && <span className="block px-1 py-1 text-hint text-faint">{t('Unscheduled')}</span>}
+        {day.lane.length === 0 && day.laneProjected.length === 0 && <span className="block px-1 py-1 text-hint text-faint">{t('Unscheduled')}</span>}
         {day.lane.map((task) => (
           <button
             key={task.id}
             type="button"
             data-cal-id={task.id}
             data-lane-task={task.id}
-            onPointerDown={(e) => onPointerDown(e, task.id)}
+            onPointerDown={task.completed_at ? undefined : (e) => onPointerDown(e, task.id)}
             onClick={() => onSelect(task.id)}
             onDoubleClick={() => onOpen(task.id)}
-            className={`ui-block ui-block--row flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-left text-meta ${day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
-            data-hue={hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)}
+            className={`ui-block ui-block--row relative flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-left text-meta ${task.completed_at || day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
+            data-hue={hueOf(task)}
           >
-            <span className="truncate">{task.title || t('Untitled')}</span>
+            <span className={`truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+            {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
+            {task.deadline === day.date && !task.completed_at && <><DeadlineDiamond past={day.date < today} /><span className="sr-only">, {deadlineMark(task, day.date)}</span></>}
             {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
+            {/* The trailing end: drag it onto a later day to make the task a span (multi-day-tasks D2). */}
+            {onExtend && !task.completed_at && !task.due?.time && <span aria-hidden data-span-handle="extend" onPointerDown={(e) => onExtend(e, task)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />}
           </button>
         ))}
+        {day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" onDrag={(e) => onPointerDown(e, p.id)} />)}
       </div>
+  </>
+  if (part === 'head') return <div className="min-w-0 flex-1 border-l border-default px-1 pt-1" data-day-header={day.date}>{head}</div>
+  if (part === 'body') return <div className="min-w-0 flex-1 border-l border-default px-1 pb-1" data-day-strip={day.date}>{body}</div>
+  return (
+    <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
+      {head}
+      {body}
     </div>
   )
 }
 
-export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, onSelect, onOpen, onDragStart }: {
+/** The re-plan preview on a day (replan-the-day D4): ghosts at the new places, the originals faint. */
+export interface ReplanGhosts {
+  ghosts: (Preview & { hue?: string })[]
+  /** Task id → its proposed start. */
+  movesTo: Map<string, number>
+}
+
+export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, hueOf, projectionHue, subMap, zone, selectedId, draggingId, slotDrop = null, expanded, setExpanded, preview, replan, frames, gestures, onSelect, onOpen, onDragStart }: {
   day: DayData
+  /** The day's frame occurrences (calendar-frames D3): background bands below every block. */
+  frames?: readonly PlacedFrame[]
   prefs: GridPrefs
   isToday: boolean
   /** The day is before the logical today: its blocks are dimmed (surfaces-v2 D3). */
   isPast?: boolean
   nowMinutes: number
   taskMap: Map<string, Task>
-  projectMap: Map<string, Project>
+  hueOf: HueOf
+  projectionHue?: ProjectionHue
   subMap: Map<string, CalendarSubscription>
   zone?: string
   selectedId: string | null
   draggingId: string | null
+  /** Adding with the pointer (calendar-clarity D2). */
+  gestures?: AddGestures
+  /** The slot a dragged task would be added to (calendar-slots D3). */
+  slotDrop?: string | null
   expanded: string | null
   setExpanded: (key: string | null) => void
   preview: Preview | null
+  replan?: ReplanGhosts | null
   onSelect: (id: string) => void
   onOpen: (id: string) => void
   onDragStart: DragStart
 }) {
   const startPx = prefs.startHour * 60 * PX_PER_MIN
   const endPx = prefs.endHour * 60 * PX_PER_MIN
+  const hover = useRef<HTMLDivElement>(null)
+  /** The quarter hour under the pointer. */
+  const slotOf = (e: React.MouseEvent | React.PointerEvent, el: HTMLElement) => slotFromOffset(e.clientY - el.getBoundingClientRect().top, PX_PER_MIN)
+  // A faint highlight of the quarter hour under a fine pointer (calendar-clarity D2), moved without a re-render.
+  const track = (e: React.PointerEvent<HTMLDivElement>) => {
+    const h = hover.current
+    if (!h) return
+    const show = e.pointerType === 'mouse' && isEmptyPlace(e.target, e.currentTarget)
+    h.hidden = !show
+    if (show) h.style.top = `${slotOf(e, e.currentTarget) * PX_PER_MIN}px`
+  }
   return (
     <div
       data-drop-day={day.date}
+      {...addHandlers(gestures, (e, el) => ({ date: day.date, start: slotOf(e, el) }))}
+      onPointerMove={gestures ? track : undefined}
+      onPointerLeave={() => { if (hover.current) hover.current.hidden = true }}
       className="relative min-w-0 flex-1 border-l border-default"
       style={{
         height: GRID_HEIGHT,
@@ -122,6 +223,8 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
       {/* Outside the configured hours: shaded but still usable. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 bg-sunken" style={{ height: startPx }} />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-sunken" style={{ top: endPx }} />
+      {frames && frames.length > 0 && <FrameBands frames={frames} past={isPast} />}
+      {gestures && <div ref={hover} hidden aria-hidden data-slot-hover className="pointer-events-none absolute inset-x-0 bg-hover" style={{ height: SLOT_MINUTES * PX_PER_MIN }} />}
 
       {day.layout.blocks.filter((b) => !b.hidden).map((b) => {
         const ev = day.events.get(b.id)
@@ -129,12 +232,35 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
           return <EventBlockView key={b.id} block={ev} lane={b.lane} lanes={b.lanes} overlap={b.overlap} pxPerMinute={PX_PER_MIN}
             minHeight={MIN_BLOCK_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} />
         }
+        const pj = day.projected.get(b.id)
+        if (pj) {
+          // A projected occurrence (series-occurrences D3): read-only, in the overlap layout like an event.
+          // Dragged by an editor, it moves this occurrence alone (series-exceptions D4).
+          return <ProjectedItem key={b.id} p={pj.projection} hue={projectionHue?.(pj.projection)} variant="block"
+            onDrag={(e) => onDragStart(e, { taskId: pj.projection.id, kind: 'move', grabOffset: e.clientY - e.currentTarget.getBoundingClientRect().top })} style={{
+            top: b.start * PX_PER_MIN, height: Math.max(MIN_BLOCK_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN),
+            left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`, width: `calc(${100 / b.lanes}% - 4px)`,
+          }} />
+        }
+        const sv = day.slots.get(b.id)
+        if (sv) {
+          return <SlotBlock key={b.id} view={sv} b={b} past={isPast} selected={selectedId === b.id} dragging={draggingId === b.id}
+            dropTarget={slotDrop === sv.slot.id} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
+        }
         const task = taskMap.get(b.id)
         const block = day.blocks.get(b.id)
         if (!task || !block) return null
-        return <TaskBlock key={b.id} b={b} block={block} task={task} date={day.date} past={isPast} projectMap={projectMap} selected={selectedId === b.id}
-          dragging={draggingId === b.id} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
+        return <TaskBlock key={b.id} b={b} block={block} task={task} date={day.date} past={isPast} hue={hueOf(task)} selected={selectedId === b.id}
+          dragging={draggingId === b.id} movesTo={replan?.movesTo.get(b.id)} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
       })}
+
+      {replan?.ghosts.map((g) => (
+        <div key={g.id} data-replan-ghost={g.id} data-hue={g.hue} aria-hidden
+          className="ui-block ui-block--ghost pointer-events-none absolute inset-x-0.5 z-30 overflow-hidden px-1.5 py-0.5 text-meta"
+          style={{ top: g.start * PX_PER_MIN, height: Math.max(MIN_BLOCK_MINUTES, Math.min(g.length, DAY_MINUTES - g.start)) * PX_PER_MIN }}>
+          <span className="text-hint tabular-nums">{formatTime(g.start)}</span> <span className="truncate font-medium">{g.title || t('Untitled')}</span>
+        </div>
+      ))}
 
       {day.layout.overflow.map((o) => (
         <OverflowStack key={`${day.date}:${o.start}`} o={o} day={day} taskMap={taskMap} selectedId={selectedId} expanded={expanded} setExpanded={setExpanded}
@@ -162,15 +288,18 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
 }
 
 /** One task block: drag to move, drag its upper edge to change the start or its lower edge the end, double-click to open. */
-function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging, onSelect, onOpen, onDragStart }: {
+function TaskBlock({ b, block, task, date, past, hue, selected, dragging, movesTo, onSelect, onOpen, onDragStart }: {
   b: PlacedBlock
   block: NonNullable<ReturnType<DayData['blocks']['get']>>
   task: Task
   date: string
   past: boolean
-  projectMap: Map<string, Project>
+  /** The block's hue under Colour by (calendar-clarity D3): the fill and edge rules apply to any palette hue. */
+  hue: HueName
   selected: boolean
   dragging: boolean
+  /** The start a re-plan preview proposes: the block is drawn in the faint past tone. */
+  movesTo?: number
   onSelect: (id: string) => void
   onOpen: (id: string) => void
   onDragStart: DragStart
@@ -178,8 +307,6 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
   const top = b.start * PX_PER_MIN
   // At least one title line tall; the layout gives such blocks their own lane (issue 526).
   const height = Math.max(MIN_BLOCK_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN)
-  // Project colours render through the palette hue (design-system "Stored colours render through the palette").
-  const hue = hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)
   const ghost = dragging ? 'opacity-40' : '' // tone-lint-allow: the dragged block's ghost
   return (
     <div
@@ -188,9 +315,11 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       data-overlap={b.overlap || undefined}
       data-estimated={block.estimated || undefined}
       data-hue={hue}
+      data-replan-from={movesTo === undefined ? undefined : formatTime(movesTo)}
       role="button"
       tabIndex={-1}
       onPointerDown={(e) => {
+        if (task.completed_at) return
         // The lowest few pixels resize the end, the highest few the start (GitHub issue 355); the rest moves the block.
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
         const zone = Math.min(RESIZE_ZONE_PX, rect.height / 3)
@@ -201,7 +330,7 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       onClick={() => onSelect(b.id)}
       onDoubleClick={() => onOpen(b.id)}
       // Filled, not outlined (surfaces-v2 D1): the project's soft fill, a hue edge, strong text; dashed edge without an estimate.
-      className={`ui-block absolute z-10 cursor-grab touch-manipulation overflow-hidden px-1.5 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? '' : 'ui-block--dashed'} ${past ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${ghost}`}
+      className={`ui-block absolute z-10 ${task.completed_at ? '' : 'cursor-grab'} touch-manipulation overflow-hidden px-1.5 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? '' : 'ui-block--dashed'} ${past || task.completed_at || movesTo !== undefined ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${ghost}`}
       style={{
         top, height,
         left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
@@ -209,9 +338,10 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
       }}
     >
       {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
-      <span className="sr-only">{[task.title || t('Untitled'), block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : ''].filter(Boolean).join(', ')}</span>
+      <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : '', movesTo !== undefined ? t('moves to {time}', { time: formatTime(movesTo) }) : '', task.completed_at ? '' : deadlineMark(task, date)].filter(Boolean).join(', ')}</span>
       <div aria-hidden className="flex items-start gap-1">
-        <span className="min-w-0 flex-1 truncate font-medium">{task.title || t('Untitled')}</span>
+        <span className={`min-w-0 flex-1 truncate font-medium ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+        {task.deadline === date && !task.completed_at && <DeadlineDiamond past={past} className="mt-1" />}
         {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
       </div>
       {height >= 30 && (
@@ -220,16 +350,16 @@ function TaskBlock({ b, block, task, date, past, projectMap, selected, dragging,
           {block.estimated && <span className="ml-1">{formatMinutes(task.estimate_minutes!)}</span>}
         </div>
       )}
-      <div
+      {!task.completed_at && <div
         data-resize-start-handle
         aria-hidden
         className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize touch-none hover:bg-accent/30"
-      />
-      <div
+      />}
+      {!task.completed_at && <div
         data-resize-handle
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize touch-none hover:bg-accent/30"
-      />
+      />}
     </div>
   )
 }
@@ -273,6 +403,17 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                 </li>
               )
             }
+            const pj = day.projected.get(id)
+            if (pj) return <li key={id}><ProjectedItem p={pj.projection} variant="row" /></li>
+            const sv = day.slots.get(id)
+            if (sv) {
+              return (
+                <li key={id} data-overflow-slot={sv.slot.id} className="flex gap-1 truncate px-1 py-0.5 text-meta">
+                  <span className="text-hint tabular-nums text-muted">{formatTime(sv.start)}</span>
+                  <span className="truncate">{slotName(sv.slot)} · {slotCount(sv)}</span>
+                </li>
+              )
+            }
             const tk = taskMap.get(id)
             const blk = day.blocks.get(id)
             return (
@@ -280,13 +421,14 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                 <button
                   type="button"
                   data-cal-id={id}
-                  onPointerDown={(e) => onDragStart(e, { taskId: id, kind: 'move' })}
+                  onPointerDown={tk?.completed_at ? undefined : (e) => onDragStart(e, { taskId: id, kind: 'move' })}
                   onClick={() => onSelect(id)}
                   onDoubleClick={() => onOpen(id)}
                   className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-selected-row' : 'hover:bg-hover'}`}
                 >
                   <span className="text-hint tabular-nums text-muted">{blk ? formatTime(blk.start) : ''}</span>
-                  <span className="truncate">{tk?.title || t('Untitled')}</span>
+                  <span className={`truncate ${tk?.completed_at ? 'line-through' : ''}`}>{tk?.title || t('Untitled')}</span>
+                  {tk?.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
                 </button>
               </li>
             )
@@ -297,22 +439,34 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
   )
 }
 
-/** The all-day strip: at most three items, then "+N" to show the rest on this device (surfaces-v2 D4). */
-function AllDayStrip({ day, subMap, zone }: { day: DayData; subMap: Map<string, CalendarSubscription>; zone?: string }) {
+/**
+ * The all-day strip: deadline markers first (calendar-clarity D1), then all-day events;
+ * at most three items together, then "+N" to show the rest on this device (surfaces-v2 D4).
+ */
+function AllDayStrip({ day, deadlines, today, subMap, zone, onOpen, spanRows = 0, spanHidden = 0 }: { day: DayData; deadlines: readonly Task[]; today: string; subMap: Map<string, CalendarSubscription>; zone?: string; onOpen: (id: string) => void; spanRows?: number; spanHidden?: number }) {
   const expanded = useAllDayExpanded().has(day.date)
-  const capped = day.allDay.length > ALL_DAY_CAP
-  const shown = capped && !expanded ? day.allDay.slice(0, ALL_DAY_CAP) : day.allDay
+  const items: ({ kind: 'deadline'; task: Task } | { kind: 'event'; ev: CalendarEvent })[] = [
+    ...deadlines.map((task) => ({ kind: 'deadline' as const, task })), ...day.allDay.map((ev) => ({ kind: 'event' as const, ev })),
+  ]
+  // Span bars above take rows of the cap; the spans the band leaves out count in "+N" (multi-day-tasks D3).
+  const room = Math.max(0, ALL_DAY_CAP - spanRows)
+  const capped = items.length > room || spanHidden > 0
+  const shown = capped && !expanded ? items.slice(0, room) : items
   return (
     <div className="mt-1" data-all-day={day.date}>
       <ul className="space-y-0.5" aria-label={t('All-day events on {date}', { date: day.date })}>
-        {shown.map((ev) => <li key={ev.id}><EventChip ev={ev} sub={subMap.get(ev.subscriptionId)} zone={zone} /></li>)}
+        {shown.map((it) => it.kind === 'deadline'
+          ? <li key={`deadline:${it.task.id}`}><DeadlineMarker task={it.task} date={day.date} today={today} variant="chip" onOpen={onOpen} /></li>
+          : <li key={it.ev.id}><EventChip ev={it.ev} sub={subMap.get(it.ev.subscriptionId)} zone={zone} /></li>)}
       </ul>
       {capped && (
         <Button variant="ghost" size="sm" className="mt-0.5 w-full justify-start" aria-expanded={expanded} data-all-day-more={day.date}
           onClick={() => toggleAllDay(day.date)}>
-          {expanded ? t('Show less') : `+${day.allDay.length - ALL_DAY_CAP}`}
+          {expanded ? t('Show less') : `+${items.length - shown.length + spanHidden}`}
         </Button>
       )}
     </div>
   )
 }
+
+const NO_TASKS: readonly Task[] = []

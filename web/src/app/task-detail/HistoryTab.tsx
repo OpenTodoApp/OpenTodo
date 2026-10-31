@@ -9,7 +9,7 @@ import { isNetworkError } from '../../lib/api'
 import { zoneCity } from '../../lib/dates'
 import { useAllLabels, useMemberships, useReferenceNames } from '../../lib/localData'
 import { canRestoreField, deviceLabel, fetchHistory, fieldLabel, formatValue, parentRefs, restoreValue } from '../../lib/history'
-import { summarizeVersion, toVersions, type Version, type VersionChange } from '../../lib/historyVersions'
+import { firstDailyNoteVersion, summarizeVersion, toVersions, type Version, type VersionChange } from '../../lib/historyVersions'
 import { useOnline } from '../../lib/online'
 import { getDeviceId } from '../../lib/ops'
 import { memberName, useMe } from '../../lib/sharing'
@@ -167,6 +167,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
 
 export function HistoryView(props: HistoryViewProps) {
   const { state, versions, canLoadOlder, onLoadOlder, message } = props
+  const daily = firstDailyNoteVersion(versions, props.now ?? Date.now())
   if (state === 'offline') return <EmptyState icon="history" title={t('History needs a connection to the server')} body={t('The history is read from the server; reconnect to see it.')} />
   if (state === 'empty') return <EmptyState icon="history" title={t('No history on the server yet')} body={t('Changes appear here once this task has synced.')} />
   return (
@@ -176,7 +177,12 @@ export function HistoryView(props: HistoryViewProps) {
       {message && <p role="status" className="text-meta text-success">{message}</p>}
       {versions.length > 0 && (
         <ol className="space-y-4" aria-label={t('Versions')}>
-          {versions.map((v) => <li key={v.id}><VersionItem v={v} props={props} /></li>)}
+          {versions.map((v) => (
+            <li key={v.id}>
+              {v === daily && <p className="mb-3 text-meta text-faint" data-testid="history-notes-daily">{t('Older note versions are kept one per day (UTC).')}</p>}
+              <VersionItem v={v} props={props} />
+            </li>
+          ))}
         </ol>
       )}
       {canLoadOlder && <Button variant="ghost" size="sm" onClick={onLoadOlder}>{t('Older changes')}</Button>}

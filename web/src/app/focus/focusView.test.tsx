@@ -70,7 +70,7 @@ describe('the route', () => {
 })
 
 describe('task selection', () => {
-  it('Open from a task: the panel menu opens /focus/<id> with the notes and subtasks, the timer ready', async () => {
+  it('Open from a task: "Focus on this task" opens /focus/<id> with the notes and subtasks and a session running (focus-everywhere D2)', async () => {
     const id = await createTask({ title: 'Write the report', description: 'Outline first' })
     await createTask({ title: 'Collect the numbers', parent_id: id })
     const r = await shell({ view: 'task', id })
@@ -82,8 +82,9 @@ describe('task selection', () => {
     expect(location.pathname).toBe(`/focus/${id}`)
     expect(q('[data-focus-notes]')?.textContent).toContain('Outline first')
     await waitFor(() => !!q('[data-focus-subtasks]')?.textContent?.includes('Collect the numbers'), 'subtasks')
-    expect(q('[data-focus-timer]')?.dataset.focusTimer).toBe('idle')
+    await waitFor(() => q('[data-focus-timer]')?.dataset.focusTimer === 'work', 'session running')
     expect(clock()).toBe('25:00')
+    expect((await readFocus())?.taskId).toBe(id)
     await r.unmount()
   })
 
@@ -235,14 +236,14 @@ describe('a running session', () => {
     await r.unmount()
   })
 
-  it('Menu: the three modes with the current one checked, Change task, Settings and Help; modes disabled while running', async () => {
+  it('Menu: the three modes with the current one checked, Change task, Remove from focus (phone-touch-focus), the noise toggle, Settings and Help; modes disabled while running', async () => {
     await focusList('A')
     const r = await shell()
     await waitFor(() => shownTask() === 'A')
     await click(q('button[aria-label="More actions"]')!)
     await waitFor(() => !!q('[data-menu-label="Pomodoro"]'))
     const labels = [...document.querySelectorAll('[role="menu"] [data-menu-label]')].map((x) => x.getAttribute('data-menu-label'))
-    expect(labels).toEqual(['Pomodoro', 'Flowtime', 'Countdown', 'Change task', 'Settings', 'Help'])
+    expect(labels).toEqual(['Pomodoro', 'Flowtime', 'Countdown', 'Change task', 'Remove from focus', 'Noise on', 'Settings', 'Help'])
     expect(q('[data-menu-label="Pomodoro"]')?.getAttribute('aria-checked')).toBe('true')
     await key(document.body, 'Escape')
     await click(q('[data-focus-toggle]')!)
@@ -302,3 +303,131 @@ describe('the task\'s due (ux-feedback-2)', () => {
     await r.unmount()
   })
 })
+
+// Ways in and timer comforts (OpenSpec change focus-everywhere, tasks 2.3, 3.1,
+// 3.2 and 3.4).
+describe('focus everywhere', () => {
+  async function panel(id: string, readOnly = false) {
+    const { TaskDetail } = await import('../task-detail/TaskDetail')
+    return render(<TaskDetail taskId={id} userId="u1" projects={[]} labelMap={new Map()} onClose={() => {}} readOnly={readOnly} />)
+  }
+
+  it('Start from the panel header: Pomodoro, nothing running, the Focus button opens /focus/<id> with a 25 minute session running', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    const r = await panel(id)
+    await waitFor(() => !!q('[data-panel-focus]'), 'the Focus button')
+    expect(q('[data-panel-focus]')?.getAttribute('aria-label')).toBe('Start focus')
+    await click(q('[data-panel-focus]')!)
+    await waitFor(() => location.pathname === `/focus/${id}`, 'navigated')
+    await waitFor(async () => (await readFocus())?.phase === 'work', 'running')
+    expect((await readFocus())).toMatchObject({ taskId: id, plannedMs: 25 * MIN })
+    await r.unmount()
+  })
+
+  it('Already running here: the button opens the same session, the timer unchanged', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    const r = await panel(id)
+    await waitFor(() => !!q('[data-panel-focus]'))
+    await click(q('[data-panel-focus]')!)
+    await waitFor(async () => {
+      const session = await readFocus()
+      return session?.phase === 'work' && !!session.entryId
+    }, 'initial focus entry created')
+    const before = await readFocus()
+    vi.setSystemTime(T0 + 3 * MIN)
+    await click(q('[data-panel-focus]')!)
+    await flush()
+    expect(await readFocus()).toEqual(before)
+    await r.unmount()
+  })
+
+  it('Viewer and completed tasks: no Focus button and no "Focus on this task"', async () => {
+    const done = await createTask({ title: 'Done already' })
+    await mutate('task', done, { completed_at: T0 })
+    const r = await panel(done)
+    await waitFor(() => !!q('button[aria-label="Task actions"]'), 'header')
+    expect(q('[data-panel-focus]')).toBeNull()
+    await click(q('button[aria-label="Task actions"]')!)
+    await waitFor(() => !!q('[role="menu"]'))
+    expect(q('[data-menu-label="Focus on this task"]')).toBeNull()
+    await r.unmount()
+    const other = await createTask({ title: 'Theirs' })
+    const r2 = await panel(other, true)
+    await waitFor(() => !!q('button[aria-label="Task actions"]'), 'header')
+    expect(q('[data-panel-focus]')).toBeNull()
+    await r2.unmount()
+  })
+
+  it('Countdown asks first: Start focus opens the screen with the length dialog and its preset chips; the "40" chip starts at once', async () => {
+    await mutate('user_prefs', 'me', { focus_mode: 'countdown' })
+    const id = await createTask({ title: 'Write the report' })
+    const r = await shell({ view: 'inbox' })
+    const { startFocusOn } = await import('./startFocus')
+    await startFocusOn(id)
+    await waitFor(() => !!q('[data-focus-length]'), 'length dialog')
+    expect(await readFocus()).toBeNull()
+    expect([...document.querySelectorAll('[data-focus-preset]')].map((b) => b.textContent)).toEqual(['10 min', '20 min', '40 min'])
+    await click(q('[data-focus-preset="40"]')!)
+    await waitFor(() => !q('[data-focus-length]'), 'dialog closed')
+    await waitFor(async () => (await readFocus())?.phase === 'work', 'running')
+    expect(await readFocus()).toMatchObject({ taskId: id, plannedMs: 40 * MIN })
+    await r.unmount()
+  })
+
+  it('One-tap preset: in Countdown, Space on the Focus screen then a chip of the synced presets starts that length', async () => {
+    await mutate('user_prefs', 'me', { focus_mode: 'countdown', focus_presets: '15,45,90' })
+    await focusList('A')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    await key(document.body, ' ')
+    await waitFor(() => !!q('[data-focus-length]'), 'length dialog')
+    expect([...document.querySelectorAll('[data-focus-preset]')].map((b) => b.textContent)).toEqual(['15 min', '45 min', '90 min'])
+    await click(q('[data-focus-preset="45"]')!)
+    await waitFor(() => clock() === '45:00', 'running 45')
+    await r.unmount()
+  })
+
+  it('Five more minutes: the done state offers +5 and +15 min; +5 runs 5:00 on the same task', async () => {
+    await focusList('A')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    await key(document.body, ' ')
+    await waitFor(() => !!q('[data-running]'))
+    await advance(25 * MIN)
+    await waitFor(() => !!q('[data-focus-done="work"]'), 'done')
+    expect([...document.querySelectorAll('[data-focus-extend]')].map((b) => b.textContent)).toEqual(['+5 min', '+15 min'])
+    await advance(MIN)
+    await click(q('[data-focus-extend="5"]')!)
+    await waitFor(() => clock() === '5:00' && !!q('[data-running]'), 'five more minutes')
+    expect(shownTask()).toBe('A')
+    await r.unmount()
+  })
+
+  it('Gone after ten minutes: the done state keeps its usual actions only', async () => {
+    await focusList('A')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    await key(document.body, ' ')
+    await waitFor(() => !!q('[data-running]'))
+    await advance(25 * MIN)
+    await waitFor(() => !!q('[data-focus-extend]'), 'offered')
+    await advance(11 * MIN)
+    await waitFor(() => !q('[data-focus-extend]'), 'gone')
+    expect(q('[data-focus-done="work"]')).toBeTruthy()
+    await r.unmount()
+  })
+
+  it('Noise toggle: "Noise on" chooses Brown, then the menu offers "Noise off"', async () => {
+    await focusList('A')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    await click(q('button[aria-label="More actions"]')!)
+    await waitFor(() => !!q('[data-menu-label="Noise on"]'))
+    await click(q('[data-menu-label="Noise on"]')!)
+    await waitFor(async () => (await db.userPrefs.get('me'))?.focus_noise === 'brown', 'stored')
+    await click(q('button[aria-label="More actions"]')!)
+    await waitFor(() => !!q('[data-menu-label="Noise off"]'), 'Noise off offered')
+    await r.unmount()
+  })
+})
+

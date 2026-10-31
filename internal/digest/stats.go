@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/flow"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -48,6 +49,11 @@ type Project struct {
 	Archived bool
 	Deleted  bool
 	Position float64
+	// FlowMode is the stored project flow (OpenSpec change project-flow-modes).
+	FlowMode string
+	// Status is the stored project status (OpenSpec change
+	// project-review-cadence): "maintenance" mutes "without a next action".
+	Status string
 }
 
 // Period is an inclusive range of local days.
@@ -311,7 +317,12 @@ func (in Input) WithoutNextAction() []Project {
 	}
 	var out []Project
 	for _, p := range in.Projects {
-		if p.Deleted || p.Archived || planned[p.ID] || in.Shared[p.ID] == "viewer" {
+		// An area is never without a next action (project-flow "Areas"), nor
+		// is a project in maintenance (method-views "Maintenance projects are
+		// not flagged"). A
+		// sequence cannot change the answer: its current step is an open task
+		// that is not Someday, so it is actionable, waiting or deferred.
+		if p.Deleted || p.Archived || planned[p.ID] || in.Shared[p.ID] == "viewer" || flow.ProjectFlow(p.FlowMode) == flow.Area || p.InMaintenance() {
 			continue
 		}
 		out = append(out, p)
@@ -366,9 +377,13 @@ func TaskOf(e opsync.Entity) Task {
 	return t
 }
 
+// InMaintenance reports whether the project is in maintenance; an empty or
+// unknown status reads as active (project-organization "Maintenance status").
+func (p Project) InMaintenance() bool { return p.Status == "maintenance" }
+
 // ProjectOf reads a materialized project row.
 func ProjectOf(e opsync.Entity) Project {
-	p := Project{ID: str(e, "id"), Name: str(e, "name"), Deleted: e.Deleted(), Position: num(e, "position")}
+	p := Project{ID: str(e, "id"), Name: str(e, "name"), Deleted: e.Deleted(), Position: num(e, "position"), FlowMode: str(e, "flow_mode"), Status: str(e, "status")}
 	if v, ok := e["archived"]; ok {
 		_ = json.Unmarshal(v, &p.Archived)
 	}

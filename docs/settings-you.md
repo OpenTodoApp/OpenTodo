@@ -29,7 +29,8 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 
 ## How you work
 
-**How you work** chooses how much the app shows [Open Loops](method/overview.md), its method for everything on your mind: **Simple lists**, **Lists with method hints** or **Full Open Loops method** (the Loop home first). It syncs to your devices and never changes a task; see [Set up in ten minutes](method/set-up.md).
+**How you work** chooses how much the app shows [Open Loops](method/overview.md), its method for everything on your mind: **Simple lists**, **Lists with method hints** or **Full Open Loops method** (the Loop home first). It syncs and never changes a task; see [Set up in ten minutes](method/set-up.md). **Daily focus** is **Three tasks** or a [Bento](method/rhythms.md#bento), with its **Order** while Bento is on. **Energy levels** adds [task energy](method/set-up.md#energy-levels), **Formatting button** [the formatting row](formatting-row.md).
+
 ## Appearance
 
 Three pages, **Theme and density**, **Sidebar** and **Task details**. These choices follow your account to every device, also offline:
@@ -40,6 +41,6 @@ Three pages, **Theme and density**, **Sidebar** and **Task details**. These choi
 - **Task rows**: [one line or detailed](row-layouts.md).
 - **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with a long press. On by default; turning it off on one device turns it off on all of them. Computers without vibration do not show the switch.
 - **Open tasks** (Task details): **As a page** (the default) or **In a side panel** beside every list, from 1024 px wide. See [The task page](task-panel.md#open-tasks-beside-the-list).
-- **Sidebar**: one switch per destination of the sidebar's **More** group (Anytime, Someday, Assigned to me, Completed, Updates, Trash, Filter). A destination you switch on moves up next to Inbox, Today, Upcoming and Calendar. Under the full method the sidebar follows the method, so these switches wait, kept, until you choose another mode.
+- **Sidebar**: numbers on every list or only on Inbox and Today, the order of the main destinations, and which **More** destinations sit next to them. See [Sidebar counts and order](sidebar-counts-and-order.md).
 
 Mode and theme apply at once, without a reload. They never change other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme too; its splash screen stays neutral. Every theme meets the same contrast rules in light and dark.

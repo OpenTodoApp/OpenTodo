@@ -40,7 +40,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
 		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin", "id",
-			"deadline", "start", "evening", "blocked_by", "location", "workspace_id"); err != nil {
+			"deadline", "start", "evening", "span", "day_part", "energy", "blocked_by", "location", "workspace_id"); err != nil {
 			return Plan{}, err
 		}
 		title, _, err := it.contentText(c, "title", true, 500)
@@ -185,7 +185,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
 		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin",
-			"deadline", "start", "evening", "blocked_by", "location"); err != nil {
+			"deadline", "start", "evening", "span", "day_part", "energy", "blocked_by", "location"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")

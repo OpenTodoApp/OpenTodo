@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -243,6 +244,27 @@ func dueEchoed(sent *caldav.Due, current opsync.Entity) bool {
 	return eq(cur.Time, sent.Time) && eq(cur.TZ, sent.TZ)
 }
 
+// energyWrite maps X-OPENTODO-ENERGY (task-energy D7): a level sets it; a
+// VTODO without the property clears an energy the task was served with; an
+// unknown value (kept in ical_extra) leaves it alone.
+func energyWrite(f map[string]json.RawMessage, in *caldav.Inbound, current opsync.Entity) {
+	if in.Energy != nil {
+		if idOf(current["energy"]) != *in.Energy {
+			f["energy"] = mustJSON(*in.Energy)
+		}
+	} else if !in.EnergySent && idOf(current["energy"]) != "" {
+		f["energy"] = mustJSON("")
+	}
+}
+
+// flagWrite writes a boolean the client sent (nil: not sent), skipping a false
+// on a task that never had the flag so a plain PUT writes no op for it.
+func flagWrite(f map[string]json.RawMessage, field string, sent *bool, current opsync.Entity) {
+	if sent != nil && (*sent || string(current[field]) == "true") {
+		f[field] = mustJSON(*sent)
+	}
+}
+
 // fields maps an inbound VTODO onto task field values and the reminder ops of
 // its alarms. id is the task the reminders belong to; current is nil on create.
 func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entity, id string, ts int64) (davFields, error) {
@@ -266,14 +288,23 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	if in.EstimateMinutes != nil {
 		f["estimate_minutes"] = mustJSON(*in.EstimateMinutes)
 	}
-	// X-OPENTODO-START / -EVENING (someday-and-evening D7): only a property the
-	// client sent changes the field; absence leaves it alone.
+	// X-OPENTODO-START / -EVENING / -SPAN (someday-and-evening D7,
+	// multi-day-tasks D7): only a property the client sent changes the field;
+	// absence leaves it alone.
 	if in.Start != nil {
 		f["start"] = mustJSON(*in.Start)
 	}
-	if in.Evening != nil && (*in.Evening || string(current["evening"]) == "true") {
-		f["evening"] = mustJSON(*in.Evening)
+	flagWrite(f, "evening", in.Evening, current)
+	flagWrite(f, "span", in.Span, current)
+	// X-OPENTODO-DAY-PART (day-parts D6): Morning or Afternoon with the evening
+	// flag cleared, written only when it changes the task's part; Evening sent
+	// beside it wins, as the served form never carries both.
+	if in.DayPart != nil && (in.Evening == nil || !*in.Evening) && daypart.OfRow(current) != *in.DayPart {
+		for k, v := range daypart.Fields(*in.DayPart) {
+			f[k] = v
+		}
 	}
+	energyWrite(f, in, current)
 	extra := in.Extra
 	alarms, err := d.alarmWrites(v, in, current, id, f, ts)
 	if err != nil {
@@ -503,7 +534,7 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	curRule := idOf(cur["recurrence"])
 	keep := false
 	if curRule != "" && in.RRULE != "" {
-		if r, err := recurrence.Parse(curRule); err == nil && recurrence.SameRRULE(r.RRULE(), in.RRULE) {
+		if r, err := recurrence.Parse(curRule); err == nil && (recurrence.SameRRULE(r.RRULE(), in.RRULE) || recurrence.SameRRULE(v.servedRRULE(cur), in.RRULE)) {
 			keep = true
 		}
 	}
@@ -544,6 +575,10 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	}
 	var extra []opsync.Op
 	extra = append(extra, extraOps...)
+	// Overrides and EXDATE changes become occurrence records (series-exceptions D10).
+	if keep || in.Rule == curRule {
+		extra = append(extra, d.occurrenceOps(v, cur, in, body, ts)...)
+	}
 	// Completing a recurring task records the occurrence and moves the series,
 	// exactly like a REST completion.
 	recordID, record, ok, err := d.s.recurringCompletion(d.ctx(), d.user.ID, id, body, cur, localToday(d.s.now()))
@@ -988,7 +1023,7 @@ func (d *davRequest) proppatchRefuse(body *caldav.Node, href string) {
 // completesCurrentOccurrence reports whether the client sent the recurring
 // task's current occurrence (its due date) as a completed override.
 func completesCurrentOccurrence(in *caldav.Inbound, cur map[string]json.RawMessage) bool {
-	if len(in.CompletedOccurrences) == 0 || idOf(cur["recurrence"]) == "" {
+	if len(in.CompletedOccurrences()) == 0 || idOf(cur["recurrence"]) == "" {
 		return false
 	}
 	var due struct {
@@ -997,7 +1032,7 @@ func completesCurrentOccurrence(in *caldav.Inbound, cur map[string]json.RawMessa
 	if json.Unmarshal(cur["due"], &due) != nil || due.Date == "" {
 		return false
 	}
-	for _, d := range in.CompletedOccurrences {
+	for _, d := range in.CompletedOccurrences() {
 		if strings.ReplaceAll(due.Date, "-", "") == strings.ReplaceAll(d, "-", "") {
 			return true
 		}

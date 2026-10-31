@@ -3,6 +3,7 @@ package agenttools
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -22,6 +23,11 @@ func (r *Registry) Apply(ctx context.Context, c Caller, cs ChangeSet) (opsync.Ap
 	}
 	device := c.Device()
 	ts := r.opTS()
+	for _, ch := range cs {
+		if ch.bodyVersion != "" {
+			ctx = opsync.WithBodyVersion(ctx, ch.Entity, ch.EntityID, ch.bodyVersion)
+		}
+	}
 	var ops []opsync.Op
 	for _, ch := range cs {
 		fields := make([]string, 0, len(ch.Patch))
@@ -57,7 +63,10 @@ func (r *Registry) Apply(ctx context.Context, c Caller, cs ChangeSet) (opsync.Ap
 // applyError maps a refused batch onto a tool error the assistant can explain.
 func applyError(err error) error {
 	var rej *opsync.RejectedError
+	var changed *opsync.BodyChangedError
 	switch {
+	case errors.As(err, &changed):
+		return bodyChanged(changed.Current)
 	case errors.As(err, &rej):
 		item := map[string]any{"entity": rej.Op.Entity, "id": rej.Op.EntityID, "reason": rej.Reason}
 		msg := "the change was refused and nothing was applied"
@@ -66,6 +75,12 @@ func applyError(err error) error {
 			msg = "your role does not allow this change; nothing was applied"
 		case opsync.ReasonScopeChange:
 			msg = "a task cannot move between projects that are shared differently; nothing was applied"
+		case opsync.ReasonTooManyAppends:
+			msg = fmt.Sprintf("this note already holds %d appended texts that no device has merged yet; open it on a device first; nothing was applied", opsync.MaxPendingAppends)
+		case opsync.ReasonAppendTaken:
+			msg = "an append with this append_id exists already; choose another id; nothing was applied"
+		case opsync.ReasonTooLarge:
+			msg = "the note would become too long; nothing was applied"
 		case opsync.ReasonRateLimited:
 			msg = "too many comments in a short time; nothing was applied"
 			return &ToolError{Code: "rate_limited", Message: msg, Data: map[string]any{"retry_after_seconds": 60, "items": []any{item}}}

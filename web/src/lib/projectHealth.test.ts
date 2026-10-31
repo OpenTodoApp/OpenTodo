@@ -57,6 +57,29 @@ describe('project health rules', () => {
   })
 })
 
+describe('areas (project-flow-modes, statistics "Areas in project health")', () => {
+  it('A quiet area is fine: On track, no progress', () => {
+    const s = summary([project('home', { flow_mode: 'area' })], [task('a', 'home', { _clock: clock(NOW - 30 * DAY) }), done('b', 'home', { _clock: clock(NOW - 30 * DAY) })]).get('home')!
+    expect(s.health.word).toBe('on-track')
+    expect(s.health.quietDays).toBeNull()
+    expect(s.progress).toBeNull()
+    expect(s.area).toBe(true)
+  })
+
+  it('Overdue in an area', () => {
+    const s = summary([project('home', { flow_mode: 'area' })], [task('a', 'home', { due: { date: '2026-10-13' } })]).get('home')!
+    expect(s.health).toMatchObject({ word: 'slipping', late: 1 })
+  })
+
+  it('a sub-project of an area keeps its progress, and areas sort after projects with one', () => {
+    const map = summary([project('home', { flow_mode: 'area' }), project('kitchen', { parent_id: 'home', flow_mode: 'sequential' })], [task('a', 'kitchen'), done('b', 'kitchen')])
+    expect(map.get('kitchen')!.progress).toBe(0.5)
+    expect(map.get('home')!.progress).toBeNull()
+    const rows = [{ name: 'Home', summary: map.get('home') }, { name: 'Kitchen', summary: map.get('kitchen') }]
+    for (const dir of [1, -1] as const) expect(rows.slice().sort((a, b) => compareProjects('progress', dir, a, b)).map((r) => r.name)).toEqual(['Kitchen', 'Home'])
+  })
+})
+
 describe('project summary', () => {
   it('progress, open, next due and updated', () => {
     const s = summary([project('p')], [
@@ -151,5 +174,32 @@ describe('sorting', () => {
     expect(order('name')).toEqual(['a', 'b', 'c', 'd'])
     expect(order('open', -1)).toEqual(['a', 'b', 'c', 'd'])
     expect(order('progress', -1)).toEqual(['c', 'a', 'b', 'd'])
+  })
+})
+
+describe('maintenance (project-review-cadence, statistics "Maintenance in project health")', () => {
+  const garden = (extra: Partial<Project> = {}) => project('garden', { status: 'maintenance', ...extra })
+  it('reads Maintenance in place of Overdue and Quiet', () => {
+    const tasks = [task('a', 'garden', { due: { date: '2026-10-07' }, _clock: clock(NOW - 20 * DAY) }), task('b', 'garden', { due: { date: '2026-10-08' }, _clock: clock(NOW - 20 * DAY) })]
+    const s = summary([garden()], tasks).get('garden')!
+    expect(s.health).toMatchObject({ word: 'maintenance', quietDays: null })
+    expect(s.progress).toBe(0)
+  })
+  it('keeps Late for a passed deadline', () => {
+    const s = summary([garden()], [task('roses', 'garden', { deadline: '2026-10-13' })]).get('garden')!
+    expect(s.health).toMatchObject({ word: 'late', firstPastDeadline: { id: 'roses', title: 'roses' } })
+  })
+  it('has no word with nothing open, and an unknown status reads as active', () => {
+    expect(summary([garden()], [done('a', 'garden')]).get('garden')!.health.word).toBeNull()
+    expect(summary([garden({ status: 'on-hold' })], [task('a', 'garden', { due: { date: '2026-10-07' } })]).get('garden')!.health.word).toBe('slipping')
+  })
+  it('sorts after On track and before nothing open', () => {
+    const rows = [
+      { name: 'Quiet', summary: summary([project('q')], [task('a', 'q', { _clock: clock(NOW - 9 * DAY) })]).get('q') },
+      { name: 'Nothing', summary: summary([project('n')], []).get('n') },
+      { name: 'Garden', summary: summary([garden()], [task('a', 'garden')]).get('garden') },
+      { name: 'Track', summary: summary([project('t')], [task('a', 't')]).get('t') },
+    ]
+    expect([...rows].sort((a, b) => compareProjects('health', 1, a, b)).map((r) => r.name)).toEqual(['Quiet', 'Track', 'Garden', 'Nothing'])
   })
 })

@@ -194,7 +194,7 @@ describe('parse: errors', () => {
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
     expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1')
-    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', 'field name'])
+    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', '"energy"', '"notes"', 'field name'])
   })
 
   it('reports incomplete date terms', () => {
@@ -519,6 +519,17 @@ describe('evaluate: start, Someday and evening (OpenSpec someday-and-evening 4.1
   it('#Home & evening, whatever the date', () => {
     expect(ids('#Home & evening', L, ctx)).toEqual(['home-evening'])
   })
+  it('#Home & morning matches the stored part, not a morning due time (day-parts)', () => {
+    const M: Task[] = [
+      task('home-morning', { project_id: 'p-home', day_part: 'morning' }),
+      task('home-nine', { project_id: 'p-home', due: { date: '2026-10-14', time: '09:00' } }),
+      task('home-old-evening', { project_id: 'p-home', day_part: 'morning', evening: true }),
+      task('home-afternoon', { project_id: 'p-home', day_part: 'afternoon' }),
+    ]
+    expect(ids('#Home & morning', M, ctx)).toEqual(['home-morning'])
+    expect(ids('afternoon', M, ctx)).toEqual(['home-afternoon'])
+    expect(ids('evening', M, ctx)).toEqual(['home-old-evening'])
+  })
   it('someday, no start, and start never matching parked or empty starts', () => {
     expect(ids('someday', L, ctx)).toEqual(['wait-parked'])
     expect(ids('no start & @call', L, ctx)).toEqual(['wait-plain'])
@@ -553,6 +564,87 @@ describe('evaluate: habits (OpenSpec habits 4.3)', () => {
     expect(show('habit&!overdue')).toBe('(habit & !overdue)')
     const ast = parse('habit | @call')!
     expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
+  })
+})
+
+describe('evaluate: energy terms (OpenSpec task-energy 2.3)', () => {
+  const L: Task[] = [
+    task('deep-work', { project_id: 'p-work', energy: 'deep' }),
+    task('deep-done', { energy: 'deep', completed_at: at('2026-10-09') }),
+    task('low-today', { energy: 'low', due: { date: '2026-10-10' } }),
+    task('low-later', { energy: 'low', due: { date: '2026-10-20' } }),
+    task('medium', { energy: 'medium' }),
+    task('none', { energy: '' }),
+    task('future', { energy: 'high' }),
+    task('legacy'),
+  ]
+  it('energy: value matches the open tasks with that energy, case ignored', () => {
+    expect(ids('energy: deep', L)).toEqual(['deep-work'])
+    expect(ids('energy:DEEP & #Work', L)).toEqual(['deep-work'])
+    expect(ids('energy: "low" & today', L)).toEqual(['low-today'])
+  })
+  it('energy and no energy; an unknown value reads as none', () => {
+    expect(ids('energy', L)).toEqual(sorted('deep-work', 'low-today', 'low-later', 'medium'))
+    expect(ids('no energy', L)).toEqual(sorted('none', 'future', 'legacy'))
+  })
+  it('an unknown value is an error naming the three', () => {
+    expect(() => parse('energy: high')).toThrow('Energy must be deep, medium or low at position 1')
+  })
+  it('energy is a reserved word: a field named energy needs its quoted name', () => {
+    expect(parse('energy')).toEqual({ kind: 'keyword', keyword: 'energy' })
+    expect(() => parse('energy = x')).toThrow(FilterSyntaxError)
+    expect(parse('"energy" = x')).toMatchObject({ kind: 'field', name: 'energy' })
+  })
+  it('round-trips through printing', () => {
+    expect(printQuery(parse('energy:Low & no energy')!)).toBe('(energy: low & no energy)')
+  })
+})
+
+describe('evaluate: notes terms (OpenSpec notes-overview 3.1)', () => {
+  const RENO: Project[] = [...PROJECTS, project('p-reno', 'Renovation')]
+  const ctx: FilterContext = { ...CTX, projects: RENO }
+  const L: Task[] = [
+    task('permit', { project_id: 'p-reno', description: 'Call the **Permit Office** on Monday' }),
+    task('title-only', { title: 'Permit office visit', project_id: 'p-reno' }),
+    task('blank', { project_id: 'p-reno', description: '  \n\t ' }),
+    task('urgent-bare', { priority: 1 }),
+    task('urgent-noted', { priority: 1, description: 'see the quote' }),
+    task('done-noted', { description: 'permit office closed', completed_at: at('2026-10-09') }),
+    task('deleted-noted', { description: 'permit office', deleted_at: at('2026-10-09') }),
+  ]
+  it('notes matches open tasks with a non-blank note; no notes the rest', () => {
+    expect(ids('notes', L, ctx)).toEqual(sorted('permit', 'urgent-noted'))
+    expect(ids('no notes', L, ctx)).toEqual(sorted('title-only', 'blank', 'urgent-bare'))
+    expect(ids('notes & #Renovation', L, ctx)).toEqual(['permit'])
+    expect(ids('no notes & p1', L, ctx)).toEqual(['urgent-bare'])
+  })
+  it('notes: text searches the note only, ignoring case, never the title', () => {
+    expect(ids('notes: "permit office"', L, ctx)).toEqual(['permit'])
+    expect(ids('NOTES: PERMIT', L, ctx)).toEqual(['permit'])
+    expect(ids('search: "permit office"', L, ctx)).toEqual(sorted('permit', 'title-only'))
+    expect(ids('notes: "permit office" & completed', L, ctx)).toEqual(['done-noted'])
+  })
+  it('notes: with no text is an error asking for text', () => {
+    expect(errorOf('notes:')).toMatchObject({ message: 'Expected text after "notes:" at position 1', position: 1, expected: ['text'] })
+    expect(errorOf('p1 & notes: ')).toMatchObject({ message: 'Expected text after "notes:" at position 6' })
+  })
+  it('notes is a reserved word: a field named Notes needs its quoted name', () => {
+    const fields = [{ id: 'f-notes', name: 'Notes', type: 'text', project_id: 'p-reno', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} }] as FilterContext['fields']
+    const withField: FilterContext = { ...ctx, fields }
+    const F: Task[] = [
+      task('field-only', { project_id: 'p-reno', fields: { 'f-notes': 'yes' } }),
+      task('note-only', { project_id: 'p-reno', description: 'yes' }),
+    ]
+    expect(parse('notes')).toEqual({ kind: 'keyword', keyword: 'notes' })
+    expect(parse('no notes')).toEqual({ kind: 'keyword', keyword: 'no notes' })
+    expect(ids('notes', F, withField)).toEqual(['note-only'])
+    expect(() => parse('notes = yes')).toThrow(FilterSyntaxError)
+    expect(ids('"Notes" = yes', F, withField)).toEqual(['field-only'])
+    expect(ids('no "Notes"', F, withField)).toEqual(['note-only'])
+  })
+  it('round-trips through printing', () => {
+    expect(printQuery(parse('notes:Permit & no notes | notes')!)).toBe('((notes: Permit & no notes) | notes)')
+    expect(printQuery(parse('notes: "permit office"')!)).toBe('notes: "permit office"')
   })
 })
 
@@ -780,5 +872,32 @@ describe('blocked and unblocked (task-dependencies)', () => {
       expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
     }
     expect(compile(parse('blocked')!, CTX).warnings).toEqual(['Blocked tasks cannot be told apart here'])
+  })
+})
+
+describe('available (project-flow-modes)', () => {
+  const projects = [...PROJECTS, project('p-move', 'Move house', null, { flow_mode: 'sequential' })]
+  const tasks: Task[] = [
+    task('van', { title: 'Book van', project_id: 'p-move', position: 1, labels: ['l-call'] }),
+    task('pack', { title: 'Pack kitchen', project_id: 'p-move', position: 2, labels: ['l-call'], due: { date: TODAY } }),
+    task('keys', { title: 'Hand over keys', project_id: 'p-move', position: 3 }),
+    task('phone', { title: 'Phone bank', labels: ['l-call'] }),
+    task('parked', { title: 'Parked', start: 'someday', labels: ['l-call'] }),
+  ]
+  const ctx: FilterContext = { ...CTX, projects, tasks }
+  it('What can be done now: only the current step of a sequential project', () => {
+    expect(ids('available & @Call', tasks, ctx)).toEqual(['phone', 'van'])
+  })
+  it('Waiting step is not blocked', () => {
+    expect(ids('!available & unblocked & !someday', tasks, ctx)).toEqual(['keys', 'pack'])
+    expect(ids('blocked', tasks, ctx)).toEqual([])
+  })
+  it('completing the current step makes the next one available at the next evaluation', () => {
+    const after = tasks.map((t) => (t.id === 'van' ? { ...t, completed_at: at('2026-10-10') } : t))
+    expect(ids('available & today', after, { ...ctx, tasks: after })).toEqual(['pack'])
+  })
+  it('round-trips through printQuery', () => {
+    const ast = parse('available & !available')!
+    expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
   })
 })

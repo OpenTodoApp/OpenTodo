@@ -815,6 +815,14 @@ select.ui-input:not([multiple]) {
 .slash-menu { @apply z-50 w-64 max-w-[calc(100vw-2rem)] rounded-control border border-default bg-surface p-1 shadow-3 dark:bg-raised; }
 .slash-menu [aria-selected="true"] { @apply bg-accent-soft text-strong; }
 .editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
+/* The Formatting toggle on a computer (notes-toolbar-desktop D2): at the note's top
+   end corner, over end padding of the first block (and of the row), so text never
+   runs under it. */
+.notes-frame { @apply relative; }
+.notes-frame > .formatting-toggle { @apply absolute end-0 top-0 z-10; }
+.formatting-toggle[aria-pressed="true"] { @apply bg-selected text-strong; }
+.notes-frame[data-formatting] .notes-editor > :first-child,
+.notes-frame[data-formatting] .editor-toolbar { padding-inline-end: 2.25rem; }
 }
 
 /* Surfaces (OpenSpec change surfaces-v2): structure felt through soft fills and
@@ -837,6 +845,33 @@ select.ui-input:not([multiple]) {
   border-inline-start-color: color-mix(in oklab, var(--hue-solid) 60%, var(--ot-surface));
   color: var(--ot-faint);
 }
+/* A re-plan preview's proposed place (replan-the-day D4): the block recipe with a dashed accent outline. */
+.ui-block--ghost {
+  background: color-mix(in oklab, var(--hue-soft) 70%, var(--ot-surface));
+  border: 1.5px dashed var(--ot-accent);
+  border-inline-start: 3px dashed var(--ot-accent);
+  color: var(--ot-text-strong);
+}
+/* A task drawn across days (multi-day-tasks D3): the block recipe; where it continues
+   past the shown days its end is squared off and the leading edge is left off. */
+.ui-span--before { border-start-start-radius: 0; border-end-start-radius: 0; border-inline-start-width: 0; }
+.ui-span--after { border-start-end-radius: 0; border-end-end-radius: 0; }
+/* The part of a bar over days before today, dimmed like past blocks. */
+.ui-span-past { background: color-mix(in oklab, var(--ot-surface) 45%, transparent); }
+/* Month's bars lie over the cells: only the bars take the pointer. */
+.ui-span-overlay [data-span-piece] { pointer-events: auto; }
+/* While a bar is dragged the pointer reaches the days under every bar. */
+body[data-span-dragging] [data-span-piece] { pointer-events: none; }
+/* A projected occurrence of a repeating task (series-occurrences D3): a fainter fill than
+   the past, a dashed leading edge in the hue (told from a past block without colour) and
+   muted text. In high contrast the dashed edge is the marker. */
+.ui-block--projected {
+  background: color-mix(in oklab, var(--hue-soft) 40%, var(--ot-surface));
+  border-inline-start: 3px dashed var(--hue-solid);
+  color: var(--ot-muted);
+}
+.ui-block--projected:hover { background: color-mix(in oklab, var(--hue-soft) 70%, var(--ot-surface)); }
+html:root[data-contrast="high"] .ui-block--projected:not(:focus-visible) { background: var(--ot-surface); outline: 1px dashed var(--hue-solid); outline-offset: -1px; }
 .ui-block--late {
   background: var(--ot-danger-soft);
   border-inline-start-color: var(--ot-danger);
@@ -851,6 +886,16 @@ select.ui-input:not([multiple]) {
   color: var(--ot-muted);
 }
 .ui-block-dot { @apply inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-hue-solid; }
+/* A frame's band behind the Day and Week blocks (calendar-frames D3): a tint lighter
+   than a block's fill, a hairline top in the hue, no other edge; dimmed on past days. */
+.ui-frame-band {
+  background: color-mix(in oklab, var(--hue-soft) 70%, transparent);
+  border-top: 1px solid color-mix(in oklab, var(--hue-solid) 70%, transparent);
+}
+.ui-frame-band--past {
+  background: color-mix(in oklab, var(--hue-soft) 40%, transparent);
+  border-top-color: color-mix(in oklab, var(--hue-solid) 35%, transparent);
+}
 /* An event of Today's agenda that already ended (OpenSpec change today-agenda, D6): dimmed by mixing, never by opacity. */
 .ui-event-past {
   color: var(--ot-faint);
@@ -866,6 +911,11 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
   border-radius: var(--radius-control);
   background: var(--ot-accent-soft);
 }
+/* A folded board column (board-polish D2): a strip of the column surface the board's height,
+   48 px on a phone and 40 px from 640 px; it lifts like a card, and a card dragged over it
+   gives it the placeholder's dashed edge along its whole length (D3). */
+.ui-column-strip { @apply flex h-[calc(100dvh-14rem)] w-12 shrink-0 snap-start flex-col rounded-card bg-sunken p-0 transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2 sm:w-10 dark:border dark:border-default; }
+.ui-column-strip[data-drop-over] { border: 2px dashed var(--ot-border-input); background: var(--ot-accent-soft); }
 .ui-section-flat { @apply px-4 py-5 sm:px-6; }
 /* A settings section (precision-settings D3): flat on the page, its rows between hairlines; the page spaces them. */
 .ui-settings-section { @apply min-w-0; }
@@ -1020,7 +1070,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-props] :is([data-date], [data-estimate], [data-progress]) > svg { display: none; }
 }
 @container row (width >= 40rem) {
-  [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 0.75rem; row-gap: 0.125rem; }
+  /* align-content: on touch the open control is at least 44 px tall (the coarse-pointer
+     button rule); the lines stay at its top, on the circle's line, not in its middle. */
+  [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: start; column-gap: 0.75rem; row-gap: 0.125rem; }
   [data-row-head] { grid-area: 1 / 1; }
   [data-row-meta="row"] { display: contents; }
   [data-row-props] {
@@ -1129,6 +1181,18 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @media (hover: hover) {
   .ui-reveal { opacity: 0; transition: opacity var(--duration-ui); }
   :is(.group, [data-sidebar-item], [data-sidebar-group-header]):is(:hover, :focus-within) .ui-reveal, .ui-reveal:focus-within { opacity: 1; }
+  /* A note's Formatting toggle (notes-toolbar-desktop D2): with the note, and always while pressed. */
+  .notes-frame:is(:hover, :focus-within) > .ui-reveal, .ui-reveal[aria-pressed="true"] { opacity: 1; }
+}
+/* Every count on (sidebar-polish D2): the count sits in a slot as wide as the row's
+   menu button; with a fine pointer the button takes the slot while the row is hovered
+   or focused, so the row never grows. Touch keeps the count and the button side by side. */
+@media (hover: hover) and (pointer: fine) {
+  .ui-swap-row { position: relative; }
+  .ui-swap-count { min-width: 1.75rem; text-align: center; }
+  .ui-swap-menu { position: absolute; right: 0.25rem; top: 50%; translate: 0 -50%; opacity: 0; }
+  .ui-swap-row:is(:hover, :focus-within) .ui-swap-menu, .ui-swap-menu[aria-expanded="true"] { opacity: 1; }
+  .ui-swap-row:is(:hover, :focus-within) .ui-swap-count, .ui-swap-row:has(.ui-swap-menu[aria-expanded="true"]) .ui-swap-count { visibility: hidden; }
 }
 .ui-scroller:is([data-fade-top], [data-fade-bottom]) {
   mask-image: var(--fade), linear-gradient(black, black);

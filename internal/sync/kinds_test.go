@@ -2,13 +2,14 @@ package sync
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 )
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kGeo; k++ {
+	for k := kString; k <= kOrderList; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
@@ -43,6 +44,42 @@ func TestCheckKindTable(t *testing.T) {
 		{"start null", kStart, `null`, ""},
 		{"start missing date", kStart, `"2026-02-30"`, "that exists"},
 		{"start word", kStart, `"later"`, `must be null, "someday" or a date`},
+		{"energy none", kEnergy, `""`, ""},
+		{"energy deep", kEnergy, `"deep"`, ""},
+		{"energy medium", kEnergy, `"medium"`, ""},
+		{"energy low", kEnergy, `"low"`, ""},
+		{"energy high", kEnergy, `"high"`, `must be "", "deep", "medium" or "low"`},
+		{"energy capitalised", kEnergy, `"Deep"`, `must be "", "deep", "medium" or "low"`},
+		{"energy number", kEnergy, `2`, `must be "", "deep", "medium" or "low"`},
+		{"energy null", kEnergy, `null`, `must be "", "deep", "medium" or "low"`},
+		{"order list", kOrderList, `["t1","t2"]`, ""},
+		{"order list empty", kOrderList, `[]`, ""},
+		{"order list full", kOrderList, orderListOf(MaxManualOrder), ""},
+		{"order list too long", kOrderList, orderListOf(MaxManualOrder + 1), "at most 500 ids"},
+		{"order list twice", kOrderList, `["t1","t1"]`, `lists "t1" twice`},
+		{"order list empty id", kOrderList, `[""]`, "ids must be 1 to 64 characters"},
+		{"order list long id", kOrderList, `["` + strings.Repeat("a", MaxIDLen+1) + `"]`, "ids must be 1 to 64 characters"},
+		{"order list null", kOrderList, `null`, "must be an array of task ids"},
+		{"order list string", kOrderList, `"t1"`, "must be an array of task ids"},
+		{"day part morning", kDayPart, `"morning"`, ""},
+		{"day part afternoon", kDayPart, `"afternoon"`, ""},
+		{"day part null", kDayPart, `null`, ""},
+		{"day part night", kDayPart, `"night"`, `must be null, "morning" or "afternoon"`},
+		{"day part evening", kDayPart, `"evening"`, `must be null, "morning" or "afternoon"`},
+		{"clock", kClock, `"09:00"`, ""},
+		{"clock last minute", kClock, `"23:59"`, ""},
+		{"clock short", kClock, `"9:5"`, "between 00:00 and 23:59"},
+		{"clock hour 24", kClock, `"24:00"`, "between 00:00 and 23:59"},
+		{"clock minute 60", kClock, `"10:60"`, "between 00:00 and 23:59"},
+		{"clock null", kClock, `null`, "between 00:00 and 23:59"},
+		{"weekdays", kWeekdays, `"1,2,3,4,5"`, ""},
+		{"weekdays empty", kWeekdays, `""`, ""},
+		{"weekdays sunday", kWeekdays, `"7"`, ""},
+		{"weekdays eight", kWeekdays, `"1,8"`, "distinct weekdays 1 to 7"},
+		{"weekdays zero", kWeekdays, `"0,1"`, "distinct weekdays 1 to 7"},
+		{"weekdays twice", kWeekdays, `"1,1"`, "distinct weekdays 1 to 7"},
+		{"weekdays spaces", kWeekdays, `"1, 2"`, "distinct weekdays 1 to 7"},
+		{"weekdays number", kWeekdays, `12`, "distinct weekdays 1 to 7"},
 		{"date", kDate, `"2026-01-01"`, ""},
 		{"date null", kDate, `null`, ""},
 		{"date missing", kDate, `"2026-13-01"`, "that exists"},
@@ -145,4 +182,14 @@ func TestCheckKindTable(t *testing.T) {
 			}
 		})
 	}
+}
+
+// orderListOf is a JSON array of n distinct ids (view-manual-order).
+func orderListOf(n int) string {
+	ids := make([]string, n)
+	for i := range ids {
+		ids[i] = fmt.Sprintf("%036d", i)
+	}
+	b, _ := json.Marshal(ids)
+	return string(b)
 }

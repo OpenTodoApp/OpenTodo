@@ -37,7 +37,9 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = OP_CON
  * internal/e2ee ContentPrefixes.
  */
 export const CONTENT_PREFIXES: Partial<Record<Entity, readonly string[]>> = {
-  task: ['fields.'],
+  // Pending appends `appends.<id>` (notes-overview D13) are note text.
+  task: ['fields.', 'appends.'],
+  note: ['appends.'],
 }
 
 export function isContentField(entity: Entity, field: string): boolean {

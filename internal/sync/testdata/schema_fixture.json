@@ -36,16 +36,41 @@
       "project_id",
       "type"
     ],
+    "frame": [
+      "color",
+      "created_at",
+      "deleted_at",
+      "end",
+      "from_date",
+      "position",
+      "source",
+      "start",
+      "title",
+      "until_date",
+      "weekdays"
+    ],
     "label": [
       "color",
       "created_at",
       "deleted_at",
       "group_by",
+      "manual_order",
       "name",
       "position",
       "row_layout",
       "sort_by",
       "sort_dir",
+      "workspace_id"
+    ],
+    "note": [
+      "created_at",
+      "deleted_at",
+      "description",
+      "labels",
+      "notes_doc",
+      "position",
+      "project_id",
+      "title",
       "workspace_id"
     ],
     "place": [
@@ -62,16 +87,20 @@
       "created_at",
       "deleted_at",
       "description",
+      "flow_mode",
       "icon",
       "name",
       "notes_doc",
       "parent_id",
       "position",
+      "status",
       "workspace_id"
     ],
     "project_prefs": [
+      "card_notes",
       "feed_seen_at",
       "group_by",
+      "review_every",
       "reviewed_at",
       "row_layout",
       "sort_by",
@@ -95,7 +124,10 @@
       "daily_at",
       "focus",
       "focus_date",
+      "focus_slots",
       "monthly_at",
+      "slots",
+      "slots_date",
       "tomorrow_note"
     ],
     "rule": [
@@ -112,10 +144,21 @@
       "color",
       "created_at",
       "deleted_at",
+      "flow_mode",
       "icon",
       "name",
       "position",
       "project_id"
+    ],
+    "slot": [
+      "color",
+      "created_at",
+      "date",
+      "deleted_at",
+      "minutes",
+      "start",
+      "task_ids",
+      "title"
     ],
     "task": [
       "assignee_id",
@@ -123,10 +166,12 @@
       "completed_at",
       "completed_by",
       "created_at",
+      "day_part",
       "deadline",
       "deleted_at",
       "description",
       "due",
+      "energy",
       "estimate_minutes",
       "evening",
       "habit",
@@ -135,6 +180,7 @@
       "location",
       "note_mentions",
       "notes_doc",
+      "occurrence_date",
       "origin",
       "parent_id",
       "position",
@@ -145,6 +191,8 @@
       "section_id",
       "series_id",
       "skipped",
+      "span",
+      "split_from",
       "start",
       "title",
       "workspace_id"
@@ -161,10 +209,13 @@
     ],
     "user_prefs": [
       "add_position",
+      "bento_order",
       "briefing",
       "date_format",
+      "day_parts",
       "day_start",
       "density",
+      "energy",
       "favourites",
       "first_run",
       "focus_auto_start",
@@ -172,33 +223,46 @@
       "focus_long_break_every",
       "focus_long_break_minutes",
       "focus_mode",
+      "focus_noise",
+      "focus_presets",
       "focus_short_break_minutes",
       "focus_sound",
+      "focus_style",
       "focus_work_minutes",
+      "formatting_toggle",
       "haptics",
       "language",
       "maps",
       "method_mode",
+      "reminder_default_dated",
+      "reminder_default_timed",
       "row_detail",
       "row_layout",
+      "sidebar_counts",
       "sidebar_destinations",
+      "sidebar_order",
       "start_checklist",
       "task_open",
       "theme_accent",
       "theme_mode",
       "time_format",
+      "today_done",
       "today_events",
+      "today_limit",
       "week_start",
       "welcome"
     ],
     "view": [
+      "card_notes",
       "color",
       "created_at",
       "deleted_at",
       "group_by",
       "hidden_props",
+      "icon",
       "kind",
       "layout",
+      "manual_order",
       "name",
       "on_drop",
       "panels",
@@ -216,8 +280,12 @@
     "comment": [
       "reactions."
     ],
+    "note": [
+      "appends."
+    ],
     "task": [
-      "fields."
+      "fields.",
+      "appends."
     ]
   },
   "content_fields": {
@@ -234,8 +302,16 @@
       "name",
       "options"
     ],
+    "frame": [
+      "title"
+    ],
     "label": [
       "name"
+    ],
+    "note": [
+      "description",
+      "notes_doc",
+      "title"
     ],
     "place": [
       "address",
@@ -256,6 +332,9 @@
     "section": [
       "name"
     ],
+    "slot": [
+      "title"
+    ],
     "task": [
       "description",
       "ical_extra",
@@ -273,8 +352,12 @@
     ]
   },
   "content_prefixes": {
+    "note": [
+      "appends."
+    ],
     "task": [
-      "fields."
+      "fields.",
+      "appends."
     ]
   }
 }

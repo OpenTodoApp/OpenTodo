@@ -6,6 +6,7 @@ import { writeFocus } from '../../lib/focus/state'
 import { finish, idleState, start } from '../../lib/focus/timer'
 import { HEX, seeded, storyUser, TODAY, withSeed } from '../stories/fixtures'
 import { FocusView } from './FocusView'
+import { LengthDialog } from './FocusParts'
 
 // Core screen: Focus (OpenSpec change focus-mode, design D14): one task with its
 // notes and subtasks and a large timer; light and dark at 375 px and 1280 px,
@@ -39,7 +40,7 @@ export const Running: StoryObj = {
   render: () => <FocusView />,
 }
 
-/** The session ended: 25:00 worked, the break, completing the task or the next task offered. */
+/** The session ended a minute ago: 25:00 worked, the break, completing the task, the next task, and +5 or +15 min (focus-everywhere D4). */
 export const Done: StoryObj = {
   ...withSeed(async () => {
     const id = await seedTask()
@@ -55,4 +56,9 @@ export const ChooseATask: StoryObj = {
     await createTask({ title: 'Plan the week' })
   }),
   render: () => <FocusView />,
+}
+
+/** Countdown asks for its length: the presets as chips above the field (focus-everywhere D5). */
+export const CountdownPresets: StoryObj = {
+  render: () => <LengthDialog initial={25} presets={[10, 20, 40]} onStart={() => {}} onClose={() => {}} />,
 }

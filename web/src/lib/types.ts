@@ -2,10 +2,10 @@ import { nameKey } from './fieldNames'
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, LabelFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note']
 
 export interface Op {
   id: string
@@ -56,6 +56,10 @@ export interface Project extends ProjectFields {
   notes_doc?: string
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
   workspace_id?: string | null
+  /** The stored flow (project-flow-modes), kept as received; read it with `projectFlowOf` from lib/flow.ts. */
+  flow_mode?: string
+  /** The stored status (project-review-cadence), kept as received; read it with `projectStatusOf` from lib/reviewCadence.ts. */
+  status?: string
   _clock: Clock
 }
 
@@ -92,6 +96,12 @@ export interface Task extends TaskFields {
   /** This Evening: grouped below the day's tasks in Today. Read with `?? false`. */
   evening?: boolean
   /**
+   * Draw the task as a span from `start` to `due.date` (OpenSpec change
+   * `multi-day-tasks`). Only drawing changes; read with `spanOf` in `lib/span.ts`,
+   * which ignores the flag without a valid range. Read with `?? false`.
+   */
+  span?: boolean
+  /**
    * The tasks this one waits for, in its own sharing scope (OpenSpec change
    * `task-dependencies`). Blocked while any of them is live and open. Optional on
    * rows stored before the field; read with `?? []`.
@@ -110,6 +120,12 @@ export interface Task extends TaskFields {
   recurrence: string | null
   /** On a completed occurrence record or a detached copy: the id of its series; otherwise null. */
   series_id: string | null
+  /**
+   * On a piece of a split series (OpenSpec change `series-split`): the series it
+   * continues and the date it starts, set once at creation. Read the lineage with
+   * `lineageOf` from `lib/lineage.ts`; rows stored before the field read as undefined.
+   */
+  split_from?: SplitFrom | null
   /**
    * Account id of the assignee or null (OpenSpec `task-assignment`). The server
    * accepts only a current member of the task's shared project, or the author for
@@ -166,6 +182,12 @@ export interface Task extends TaskFields {
    */
   fields?: Record<string, FieldValue>
   /**
+   * Pending appends keyed by append id (notes-overview D13): each entry is its own
+   * op `appends.<id>`; a non-empty value is Markdown a plain-text writer added, waiting
+   * to be inserted at the end of the note (docs/sync.md "Mergeable documents" rule 5).
+   */
+  appends?: Record<string, string>
+  /**
    * Where the task came from (OpenSpec change `task-origin`): a page, a mail, an
    * issue or an import, or null. One last-writer-wins value like `due`. Rows
    * stored before the field read as undefined, and a value this device could not
@@ -199,6 +221,13 @@ export interface Task extends TaskFields {
  * A task's location (task-locations D1): at least a name, an address or a
  * coordinate pair; `lat` and `lon` both present or both absent.
  */
+/** A piece's link to the series it continues (task.split_from, series-split D2). */
+export interface SplitFrom {
+  series: string
+  /** YYYY-MM-DD: the first date the piece produces occurrences on. */
+  date: string
+}
+
 export interface TaskLocation {
   name?: string
   address?: string
@@ -226,6 +255,74 @@ export interface Place extends PlaceFields {
   position: number
   created_at: number
   deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A frame (OpenSpec change `calendar-frames`, design D1): a recurring
+ * background window on the Day and Week grid. Personal; `weekdays` is a comma
+ * list of ISO weekdays ("1,2,3,4,5"), `start` and `end` floating wall times
+ * "HH:MM", `source` a planning source key (`project:<id>`, `label:<id>`,
+ * `view:<id>` or ""). Occurrences are derived in `lib/frames.ts`.
+ */
+export interface Frame extends FrameFields {
+  id: string
+  title: string
+  weekdays: string
+  start: string
+  end: string
+  color: string
+  source: string
+  from_date: string | null
+  until_date: string | null
+  position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A slot (OpenSpec change `calendar-slots`, design D1): one block on the Day
+ * and Week grid that holds a checklist of small tasks. Personal; `date` is the
+ * floating day, `start` a wall time "HH:MM", `minutes` the length, `task_ids`
+ * the ordered list (one whole value, at most 20). Which tasks it shows is
+ * derived in `lib/slots.ts`; no field is added to tasks.
+ */
+export interface Slot extends SlotFields {
+  id: string
+  title: string
+  date: string | null
+  start: string
+  minutes: number
+  task_ids: string[]
+  color: string
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A standalone note (OpenSpec change `notes-overview`, design D1): a title, a
+ * mergeable note document with its Markdown projection, an optional project
+ * (which decides its sharing scope, like a task) and labels. Never a task: it
+ * shows only on the Notes page, the palette and the Trash.
+ */
+export interface Note extends NoteFields {
+  id: string
+  title: string
+  description: string
+  notes_doc?: string
+  project_id: string | null
+  labels: string[]
+  position: number
+  created_at: number
+  deleted_at: number | null
+  workspace_id?: string | null
+  /** Pending appends (rule 5), as on tasks. */
+  appends?: Record<string, string>
   _clock: Clock
   _e2ee?: RowEncryption
 }
@@ -285,6 +382,8 @@ export interface Section extends SectionFields {
   color?: string | null
   /** A name from the icon catalogue, or null (icons-and-section-style). */
   icon?: string | null
+  /** The stored flow (project-flow-modes), kept as received; read it with `sectionFlowOf` from lib/flow.ts. */
+  flow_mode?: string
   _clock: Clock
 }
 
@@ -336,8 +435,8 @@ export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
 export type ViewLayout = 'list' | 'board'
 export const VIEW_LAYOUTS: readonly ViewLayout[] = ['list', 'board']
 /** What a row can show beside its title (views-and-display D3), in the display panel's order. */
-export type RowProperty = 'date' | 'project' | 'labels' | 'estimate' | 'assignee' | 'deadline' | 'start' | 'origin'
-export const ROW_PROPERTIES: readonly RowProperty[] = ['date', 'project', 'labels', 'estimate', 'assignee', 'deadline', 'start', 'origin']
+export type RowProperty = 'date' | 'project' | 'labels' | 'estimate' | 'assignee' | 'deadline' | 'start' | 'origin' | 'energy'
+export const ROW_PROPERTIES: readonly RowProperty[] = ['date', 'project', 'labels', 'estimate', 'assignee', 'deadline', 'start', 'origin', 'energy']
 
 /**
  * A saved view (OpenSpec `custom-views`): a filter query plus presentation options.
@@ -371,6 +470,8 @@ export interface View extends ViewFields {
   deleted_at: number | null
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
   workspace_id?: string | null
+  /** A catalogue icon name (sidebar-polish D4); null, absent or unknown shows the default icon of the view's kind. */
+  icon?: string | null
   _clock: Clock
 }
 
@@ -610,6 +711,8 @@ export interface ProjectPrefs extends ProjectPrefsFields {
   sort_dir?: string
   /** The project list's row layout (row-layouts D1); '' or absent follows the account's. */
   row_layout?: string
+  /** The review interval (project-review-cadence D2), kept as received; read it with `reviewEveryOf` from lib/reviewCadence.ts. */
+  review_every?: string
   _clock: Clock
 }
 
@@ -677,6 +780,18 @@ export interface UserPrefs extends UserPrefsFields {
   today_events?: string
   /** Where new tasks are added from a list's quick add (add-position D1): 'top' or 'bottom'; '' and anything else read as 'bottom'. */
   add_position?: string
+  /** Default reminder for tasks with a time (default-reminders D1): minutes from the due time as a decimal string; '' or anything malformed reads as none. */
+  reminder_default_timed?: string
+  /** Default reminder for tasks with a date only (default-reminders D1): minutes from 09:00 on the due date; '' or anything malformed reads as none. */
+  reminder_default_dated?: string
+  /** Sidebar counts (sidebar-polish D1): 'all' shows every list's count at rest; '' and anything else read as Inbox and Today only. */
+  sidebar_counts?: string
+  /** Primary destination order (sidebar-polish D3): comma-separated destination ids; unknown ids are ignored and kept. */
+  sidebar_order?: string
+  /** Countdown presets (focus-everywhere D5): comma-separated minutes (5-180, at most four); '' or unreadable reads as 10,20,40. */
+  focus_presets?: string
+  /** Background noise (focus-everywhere D6): off | white | pink | brown; '' and anything else read as off. */
+  focus_noise?: string
   _clock: Clock
 }
 
@@ -1115,6 +1230,28 @@ export interface CalendarFeed {
 }
 
 /** The owner's attachment settings (Settings → People → Attachments). */
+/** One notes compaction run, or a complete pass (GET /api/v1/settings/storage, op-log-compaction). */
+export interface CompactionReport {
+  at: number
+  ops_removed: number
+  value_bytes_removed: number
+  file_bytes_reclaimed: number
+  more: boolean
+  converted: boolean
+}
+
+/** The owner's view of the database file (op-log-compaction D7). */
+export interface StorageStatus {
+  database_bytes: number
+  /** Free pages inside the file. */
+  free_bytes: number
+  wal_bytes: number
+  last_compaction: CompactionReport | null
+  conversion: 'pending' | 'waiting_for_quiet' | 'no_space' | 'done'
+  /** The free disk space the one-time conversion needs (no_space). */
+  conversion_needed_bytes?: number
+}
+
 export interface AttachmentSettings {
   enabled: boolean
   max_file_mb: number
@@ -1399,7 +1536,7 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'blocked_by', 'completed_by', 'note_mentions',
+  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'span', 'blocked_by', 'completed_by', 'note_mentions',
 ] as const
 export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const

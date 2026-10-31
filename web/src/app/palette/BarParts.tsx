@@ -3,10 +3,11 @@
 // footer that names the keys and the prefixes (a fine pointer), Add mode (the quick-add
 // palette with the opening screen's defaults) and Ask mode (one line handed to the
 // assistant panel on Enter; nothing is sent before).
-import { useRef, useState, type FormEvent } from 'react'
-import { useLabels, useProjects } from '../../lib/localData'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useLabels, useMemberships, useProjects } from '../../lib/localData'
+import { canEditTasks, roleOf } from '../../lib/sharing'
 import { t } from '../../lib/i18n'
-import { Icon, KeySequence } from '../../ui'
+import { Icon, KeySequence, Switch } from '../../ui'
 import { HelpLink } from '../help/HelpLink'
 import { QuickAdd, type QuickAddInput } from '../QuickAdd'
 import { ask } from '../assistant/AskEntry'
@@ -77,18 +78,39 @@ export function BarFooter({ ask: withAsk }: { ask: boolean }) {
  * Add mode: the quick-add palette (field rows, the title and the keys). Enter adds and
  * keeps the field, empty and focused; Shift+Enter adds and opens the task.
  */
-export function AddPanel({ onAdd, onAddAndOpen, initial, escape }: {
+export function AddPanel({ onAdd, onAddMany, onAddAndOpen, initial, escape, win }: {
   onAdd: (input: QuickAddInput) => Promise<unknown>
+  /** A pasted list confirmed as one task per line (paste-to-tasks). */
+  onAddMany?: (inputs: QuickAddInput[]) => Promise<unknown>
   onAddAndOpen: (input: QuickAddInput) => Promise<unknown>
   initial?: string
   escape: { label: string; run: () => void }
+  /** Opened by "Log a win" (today-closed-list D6): the "Log as done" switch, on, and what it does. */
+  win?: { onLog: (input: QuickAddInput, open: boolean) => Promise<unknown> }
 }) {
   const projects = useProjects()
   const labels = useLabels()
+  const [logDone, setLogDone] = useState(!!win)
+  // A win goes to a project the user can add to: projects they only view are not offered (D6).
+  const memberships = useMemberships()
+  const writable = useMemo(() => {
+    if (!logDone) return projects
+    const map = new Map(memberships.map((m) => [m.projectId, m]))
+    return projects.filter((p) => canEditTasks(roleOf(p.id, map)))
+  }, [logDone, projects, memberships])
+  const logging = logDone && win
   return (
-    <div data-bar-add>
-      <QuickAdd layout="palette" autoFocus hideHint initialValue={initial} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels}
-        onAdd={async (input) => { await onAdd(input) }} onAddAndOpen={async (input) => { await onAddAndOpen(input) }} escape={escape} />
+    <div data-bar-add data-log-done={logging ? '' : undefined}>
+      <QuickAdd layout="palette" autoFocus hideHint initialValue={initial} placeholder={logging ? t('What did you get done?') : t('Add a task…')} label={logging ? t('Log a win') : t('Add a task')}
+        projects={writable} labels={labels} logDone={!!logging}
+        onAdd={async (input) => { await (logging ? logging.onLog(input, false) : onAdd(input)) }}
+        onAddMany={!logging && onAddMany ? (async (inputs) => { await onAddMany(inputs) }) : undefined}
+        onAddAndOpen={async (input) => { await (logging ? logging.onLog(input, true) : onAddAndOpen(input)) }} escape={escape} />
+      {win && (
+        <div className="border-b border-default px-4 py-2 text-meta" data-log-done-row>
+          <Switch id="log-done-switch" checked={logDone} onChange={setLogDone} label={t('Log as done')} />
+        </div>
+      )}
     </div>
   )
 }

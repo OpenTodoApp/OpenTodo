@@ -19,6 +19,8 @@ A **deadline** is the day a task must be finished by, and the two are separate: 
 
 A task with a deadline shows a countdown on its row, next to an hourglass: `3d` for three days to go, `Today` on the day, and `2d over` once it has passed. It turns amber in the last week and red on the day and after. Hover it to see the full date. The countdown follows the calendar on your device, so it moves on at midnight even offline.
 
+On the [calendar](calendar-views.md#open-the-calendar), a deadline shows on its day with an amber diamond: a chip in the Day and Week strip under the day's name, a row at the end of a Month day, and a row at the end of a Plan column. When the task is planned on its deadline day, the diamond sits on the task instead. Click one to open the task. They never count toward the day's capacity.
+
 Deadlines also bring tasks into [Today and Upcoming](views.md#plan-your-day-with-today), and you can add a reminder before the deadline (see [Reminders](reminders.md)). In the panel, **Deadline** in the **When** editor offers **End of week**, **End of month** and **In 2 weeks**, a field and a calendar. From the list, <kbd>d</kbd> sets the deadline (`fri`, `2026-11-06`).
 
 ## When a task starts
@@ -31,6 +33,8 @@ Not every task is for now. **Start**, in the panel's **When** editor, says when 
 
 A due date or a deadline that has come always shows the task in Today, even if it is deferred or parked.
 
-**This Evening** (the **Evening** switch in the same editor, or **Add › This Evening**) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. It says nothing about the time of day.
+With **Multi-day** on, a task is drawn across the days from its start date to its due date: see [Tasks that span days](tasks-that-span-days.md).
+
+**This Evening** (the **Evening** switch in the same editor, or **Add › This Evening**) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. It says nothing about the time of day. With [day parts](day-parts.md) on, the switch becomes **Any time**, **Morning**, **Afternoon** and **Evening**, and Today groups the day by them.
 
 From the list: <kbd>n</kbd> parks a task or brings it back, <kbd>Shift</kbd>+<kbd>N</kbd> asks for its start date, and <kbd>Shift</kbd>+<kbd>E</kbd> toggles This Evening.

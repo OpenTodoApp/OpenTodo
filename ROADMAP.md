@@ -22,15 +22,15 @@ Method primitives and the community's quick wins.
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`project-flow-modes`](openspec/changes/project-flow-modes/) | Projects and sections that are Parallel, Sequential (only the next task is available) or an Area |  |
-| [`project-review-cadence`](openspec/changes/project-review-cadence/) | A review interval per project, so the weekly review shows only the projects that are due |  |
-| [`today-closed-list`](openspec/changes/today-closed-list/) | An optional Today limit with a "Waiting for a slot" drawer, a Done today list and Log a win |  |
-| [`day-parts`](openspec/changes/day-parts/) | Morning, Afternoon and Evening groups in Today |  |
-| [`paste-to-tasks`](openspec/changes/paste-to-tasks/) | Paste several lines, get one task per line |  |
+| [`project-flow-modes`](openspec/changes/archive/2026-10-30-project-flow-modes/) | **Shipped.** Projects and sections that are Parallel, Sequential (only the next task is available) or an Area | [#574](https://github.com/OpenTodoApp/OpenTodo/issues/574) |
+| [`project-review-cadence`](openspec/changes/archive/2026-10-30-project-review-cadence/) | **Shipped.** A review interval per project, so the weekly review shows only the projects that are due | [#575](https://github.com/OpenTodoApp/OpenTodo/issues/575) |
+| [`today-closed-list`](openspec/changes/archive/2026-10-30-today-closed-list/) | **Shipped.** An optional Today limit with a "Waiting for a slot" drawer, a Done today list and Log a win |  |
+| [`day-parts`](openspec/changes/archive/2026-10-30-day-parts/) | **Shipped.** Morning, Afternoon and Evening groups in Today |  |
+| [`paste-to-tasks`](openspec/changes/archive/2026-10-30-paste-to-tasks/) | **Shipped.** Paste several lines, get one task per line | [#578](https://github.com/OpenTodoApp/OpenTodo/issues/578) |
 | [`add-position`](openspec/changes/archive/2026-10-30-add-position/) | **Shipped.** Add new tasks at the top or the bottom; the Add row stays reachable | [#540](https://github.com/OpenTodoApp/OpenTodo/issues/540), [#541](https://github.com/OpenTodoApp/OpenTodo/issues/541) |
-| [`focus-everywhere`](openspec/changes/focus-everywhere/) | Focus in the sidebar, on tasks and in the task menu, with presets, +5/+15 min and optional noise | [#543](https://github.com/OpenTodoApp/OpenTodo/issues/543), [#553](https://github.com/OpenTodoApp/OpenTodo/issues/553), [#535](https://github.com/OpenTodoApp/OpenTodo/issues/535) |
-| [`sidebar-polish`](openspec/changes/sidebar-polish/) | Counts, reorderable destinations, icons for saved views, a kept draft | [#545](https://github.com/OpenTodoApp/OpenTodo/issues/545), [#562](https://github.com/OpenTodoApp/OpenTodo/issues/562), [#560](https://github.com/OpenTodoApp/OpenTodo/issues/560), [#559](https://github.com/OpenTodoApp/OpenTodo/issues/559) |
-| [`default-reminders`](openspec/changes/default-reminders/) | A default reminder for dated or timed tasks | [#546](https://github.com/OpenTodoApp/OpenTodo/issues/546) |
+| [`focus-everywhere`](openspec/changes/archive/2026-10-30-focus-everywhere/) | **Shipped.** Focus in the sidebar, on tasks and in the task menu, with presets, +5/+15 min and optional noise | [#543](https://github.com/OpenTodoApp/OpenTodo/issues/543), [#553](https://github.com/OpenTodoApp/OpenTodo/issues/553), [#535](https://github.com/OpenTodoApp/OpenTodo/issues/535) |
+| [`sidebar-polish`](openspec/changes/archive/2026-10-30-sidebar-polish/) | **Shipped.** Counts, reorderable destinations, icons for saved views, a kept draft | [#545](https://github.com/OpenTodoApp/OpenTodo/issues/545), [#562](https://github.com/OpenTodoApp/OpenTodo/issues/562), [#560](https://github.com/OpenTodoApp/OpenTodo/issues/560), [#559](https://github.com/OpenTodoApp/OpenTodo/issues/559) |
+| [`default-reminders`](openspec/changes/archive/2026-10-30-default-reminders/) | **Shipped.** A default reminder for dated or timed tasks | [#546](https://github.com/OpenTodoApp/OpenTodo/issues/546) |
 | [`assistant-providers-fix`](openspec/changes/archive/2026-10-30-assistant-providers-fix/) | **Shipped.** Gemini and other OpenAI-compatible providers | [#501](https://github.com/OpenTodoApp/OpenTodo/issues/501) |
 
 ### [0.18 "The mindful daily planner"](https://github.com/OpenTodoApp/OpenTodo/milestone/2)
@@ -39,28 +39,35 @@ What paid planners charge for, free.
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`meeting-aware-capacity`](openspec/changes/meeting-aware-capacity/) | Busy calendar events count toward the day's capacity |  |
-| [`replan-the-day`](openspec/changes/replan-the-day/) | Re-plan the rest of the day: a preview, one confirm, one Undo |  |
-| [`calendar-frames`](openspec/changes/calendar-frames/) | Recurring background frames on the calendar (Deep work 9–11) | [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555) |
-| [`calendar-slots`](openspec/changes/calendar-slots/) | Several small tasks in one calendar block |  |
-| [`bento-daily-check`](openspec/changes/bento-daily-check/) | A Large, a Medium and a Small task in the Daily check |  |
-| [`task-energy`](openspec/changes/task-energy/) | An energy property (deep, medium, low) with a filter and quick-add token |  |
+| [`meeting-aware-capacity`](openspec/changes/archive/2026-10-30-meeting-aware-capacity/) | **Shipped.** Busy calendar events count toward the day's capacity |  |
+| [`replan-the-day`](openspec/changes/archive/2026-10-30-replan-the-day/) | **Shipped.** Re-plan the rest of the day: a preview, one confirm, one Undo |  |
+| [`calendar-frames`](openspec/changes/archive/2026-10-30-calendar-frames/) | **Shipped.** Recurring background frames on the calendar (Deep work 9–11) | [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555) |
+| [`calendar-slots`](openspec/changes/archive/2026-10-30-calendar-slots/) | **Shipped.** Several small tasks in one calendar block |  |
+| [`bento-daily-check`](openspec/changes/archive/2026-10-30-bento-daily-check/) | **Shipped.** A Large, a Medium and a Small task in the Daily check | [#597](https://github.com/OpenTodoApp/OpenTodo/issues/597) |
+| [`task-energy`](openspec/changes/archive/2026-10-30-task-energy/) | **Shipped.** An energy property (deep, medium, low) with a filter and quick-add token |  |
 | [`urgency-sort`](openspec/changes/urgency-sort/) | A deterministic urgency score sort, and sort by a custom field | [#404](https://github.com/OpenTodoApp/OpenTodo/issues/404) |
-| [`calendar-clarity`](openspec/changes/calendar-clarity/) | Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | [#554](https://github.com/OpenTodoApp/OpenTodo/issues/554), [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555), [#556](https://github.com/OpenTodoApp/OpenTodo/issues/556) |
+| [`calendar-clarity`](openspec/changes/archive/2026-10-30-calendar-clarity/) | **Shipped.** Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | [#554](https://github.com/OpenTodoApp/OpenTodo/issues/554), [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555), [#556](https://github.com/OpenTodoApp/OpenTodo/issues/556) |
 
 ### [0.19 "Series and time"](https://github.com/OpenTodoApp/OpenTodo/milestone/3)
 
-Recurring depth and calendar range.
+Recurring depth, calendar range, and notes that stay cheap to store and easy to find.
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`series-occurrences`](openspec/changes/series-occurrences/) | Future occurrences of repeating tasks and habits in Day, Week and Month | [#550](https://github.com/OpenTodoApp/OpenTodo/issues/550), [#537](https://github.com/OpenTodoApp/OpenTodo/issues/537) |
-| [`series-exceptions`](openspec/changes/series-exceptions/) | Move, skip or edit one occurrence alone | [#551](https://github.com/OpenTodoApp/OpenTodo/issues/551) |
-| [`series-split`](openspec/changes/series-split/) | "This and following": edit from one occurrence onward | [#552](https://github.com/OpenTodoApp/OpenTodo/issues/552) |
-| [`multi-day-tasks`](openspec/changes/multi-day-tasks/) | Tasks that span days on the calendar | [#558](https://github.com/OpenTodoApp/OpenTodo/issues/558) |
-| [`year-view`](openspec/changes/year-view/) | Several months and a Year view | [#557](https://github.com/OpenTodoApp/OpenTodo/issues/557) |
-| [`board-polish`](openspec/changes/board-polish/) | Fold a board column, preview notes on cards | [#561](https://github.com/OpenTodoApp/OpenTodo/issues/561) |
+| [`series-occurrences`](openspec/changes/archive/2026-10-31-series-occurrences/) | **Shipped.** Future occurrences of repeating tasks and habits in Day, Week and Month | [#550](https://github.com/OpenTodoApp/OpenTodo/issues/550), [#537](https://github.com/OpenTodoApp/OpenTodo/issues/537) |
+| [`series-exceptions`](openspec/changes/archive/2026-10-31-series-exceptions/) | **Shipped.** Move, skip or edit one occurrence alone | [#551](https://github.com/OpenTodoApp/OpenTodo/issues/551) |
+| [`series-split`](openspec/changes/archive/2026-10-31-series-split/) | **Shipped.** "This and following": edit from one occurrence onward | [#552](https://github.com/OpenTodoApp/OpenTodo/issues/552) |
+| [`series-all-scope`](openspec/changes/archive/2026-10-31-series-all-scope/) | **Shipped.** "All occurrences": only future ones or also past ones | — |
+| [`multi-day-tasks`](openspec/changes/archive/2026-10-31-multi-day-tasks/) | **Shipped.** Tasks that span days on the calendar | [#558](https://github.com/OpenTodoApp/OpenTodo/issues/558) |
+| [`year-view`](openspec/changes/archive/2026-10-31-year-view/) | **Shipped.** Several months and a Year view | [#557](https://github.com/OpenTodoApp/OpenTodo/issues/557) |
+| [`board-polish`](openspec/changes/archive/2026-10-31-board-polish/) | **Shipped.** Fold a board column, preview notes on cards | [#561](https://github.com/OpenTodoApp/OpenTodo/issues/561) |
 | [`accent-colour`](openspec/changes/accent-colour/) | Your own accent colour, with contrast guaranteed | [#563](https://github.com/OpenTodoApp/OpenTodo/issues/563) |
+| [`notes-compaction`](openspec/changes/archive/2026-10-31-notes-compaction/) | **Shipped.** The server drops superseded note versions after 30 days and reclaims the space | [#652](https://github.com/OpenTodoApp/OpenTodo/issues/652) |
+| [`notes-save-cadence`](openspec/changes/archive/2026-10-31-notes-save-cadence/) | **Shipped.** Notes save on the device at every pause and sync after 3 s quiet | [#653](https://github.com/OpenTodoApp/OpenTodo/issues/653) |
+| [`notes-toolbar-desktop`](openspec/changes/archive/2026-10-31-notes-toolbar-desktop/) | **Shipped.** A Formatting toggle beside notes on a computer | [#654](https://github.com/OpenTodoApp/OpenTodo/issues/654) |
+| [`notes-overview`](openspec/changes/archive/2026-10-31-notes-overview/) | **Shipped.** A Notes page with standalone notes and search on the device | [#655](https://github.com/OpenTodoApp/OpenTodo/issues/655) |
+
+The notes overview depends on `notes-compaction` and `notes-save-cadence`, which keep many long, often-edited notes cheap to store and sync; its budgets are part of `performance-10k`.
 
 ### [0.20 "Everywhere"](https://github.com/OpenTodoApp/OpenTodo/milestone/4)
 
@@ -110,6 +117,20 @@ The release that makes OpenTodo the default choice.
 | [`docs-1-0`](openspec/changes/docs-1-0/) | Complete user, self-host and API docs and a contributor guide |  |
 
 Order inside the plan: `project-flow-modes` before `today-closed-list` and `time-sectors`; `calendar-frames` before `calendar-slots`; the three series changes in order, then `multi-day-tasks`; `ios-shell` before `ios-distribution` and `apple-shortcuts`. Each milestone ends with a release.
+
+### [1.1 "Routines"](https://github.com/OpenTodoApp/OpenTodo/milestone/7)
+
+Multi-step routines with AI steps, built on Automations: every existing rule becomes a one-card routine, nothing to migrate.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`routines-engine`](openspec/changes/routines-engine/) | Rules grow into routines: typed steps, manual runs, Test, step-by-step run log, Undo a run, full CLI and MCP | [#658](https://github.com/OpenTodoApp/OpenTodo/issues/658) |
+| [`routines-editor`](openspec/changes/routines-editor/) | Sentence-card editor with live previews, run history, and "Routines since your last visit" in the Inbox | [#659](https://github.com/OpenTodoApp/OpenTodo/issues/659) |
+| [`routines-starters`](openspec/changes/routines-starters/) | Starter routines in the template library, and "Describe it" to draft one with AI | [#660](https://github.com/OpenTodoApp/OpenTodo/issues/660) |
+| [`routines-ai-step`](openspec/changes/routines-ai-step/) | Ask AI and Summarise steps, proposals by default, a bounded "apply without asking", device runs for encrypted accounts | [#661](https://github.com/OpenTodoApp/OpenTodo/issues/661) |
+| [`routines-shared`](openspec/changes/routines-shared/) | Routines that belong to a shared project and run as whoever turned them on | [#662](https://github.com/OpenTodoApp/OpenTodo/issues/662) |
+
+The five changes land in this order. Routines never fetch URLs or feeds: outbound requests stay with configured webhooks, delivery channels and the owner's SMTP server.
 
 ## Shipped
 

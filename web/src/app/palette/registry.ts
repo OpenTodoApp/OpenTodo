@@ -17,12 +17,16 @@ import type { IconName } from '../../ui'
 import { labelMenuGroups } from '../LabelsView'
 import type { ListState } from '../listActions'
 import { flatItems, type ActionGroup } from '../menus/ActionMenu'
+import { startFocusOn } from '../focus/startFocus'
 import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
 import { sectionMenuGroups } from '../Sections'
+import { projectFlowPicker } from '../menus/flowMenu'
+import { reviewEveryPicker, setMaintenance } from '../menus/reviewMenu'
+import { inMaintenance } from '../../lib/reviewCadence'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, placeInDay, sidebarFind } from '../signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
 import { switchWorkspace, workspaceLabel } from '../workspaceNav'
@@ -33,6 +37,12 @@ import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
+import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayParts'
+import { dayPartUndoable } from '../../lib/undoActions'
+import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
+import { requestFrames } from '../calendar/framesRequest'
+import { newSlotNow } from '../calendar/slotActions'
+import { act } from '../actionError'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -44,7 +54,7 @@ export interface PaletteContext {
   /** The selected (or open) task, when the list has one. */
   task?: Task
   /** The project, saved view or label of the current route, and the selected task's section. */
-  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; keptAway?: boolean }
+  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; keptAway?: boolean; reviewEvery?: string }
   view?: { row: View; peers: View[]; isStart: boolean }
   label?: { row: Label; labels: Label[]; pinned?: boolean }
   section?: { row: Section; first: boolean; last: boolean; layout: 'list' | 'board'; count: number }
@@ -60,6 +70,12 @@ export interface PaletteContext {
   focusQuickAdd: () => boolean
   /** The tasks of Today's Earlier group (page-rhythm D6); its two commands are offered while it is not empty. */
   earlier?: readonly string[]
+  /** The account groups Today by part of the day (day-parts D4): the part commands are offered. */
+  dayParts?: boolean
+  /** The selected task's slot command on Today with a limit (today-closed-list D3). */
+  slot?: SlotState
+  /** Today's missed blocks (replan-the-day D4): "Re-plan the rest of the day" is offered while there are any. */
+  missedBlocks?: number
 }
 
 interface Command {
@@ -86,6 +102,7 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Go to Calendar (Day)'), route: { view: 'day' }, icon: 'clock', shortcut: keysOf('go.day'), keywords: 'day calendar' },
   { label: msg('Go to Calendar (Week)'), route: { view: 'week' }, icon: 'calendar-range', shortcut: keysOf('go.week'), keywords: 'week calendar' },
   { label: msg('Go to Calendar (Plan)'), route: { view: 'plan' }, icon: 'calendar-range', shortcut: keysOf('go.plan'), keywords: 'plan next two weeks capacity calendar' },
+  { label: msg('Go to Calendar (Year)'), route: { view: 'year' }, icon: 'calendar-days', shortcut: keysOf('go.year'), keywords: 'year twelve months overview calendar' },
   { label: msg('Go to Completed'), route: { view: 'completed' }, icon: 'circle-check-big', shortcut: keysOf('go.completed') },
   { label: msg('Go to Projects'), route: { view: 'projects' }, icon: 'folder', shortcut: keysOf('go.projects'), keywords: 'all projects archived tree' },
   { label: msg('Go to Labels'), route: { view: 'labels' }, icon: 'tag', shortcut: keysOf('go.labels') },
@@ -105,6 +122,9 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Go to Next'), route: { view: 'next' }, icon: 'arrow-right', shortcut: keysOf('go.next'), keywords: 'next actions contexts open loops' },
   { label: msg('Go to Waiting'), route: { view: 'waiting' }, icon: 'hourglass', shortcut: keysOf('go.waiting'), keywords: 'waiting for delegated blocked open loops' },
   { label: msg('Go to Focus'), route: { view: 'focus' }, icon: 'clock', shortcut: keysOf('go.focus'), keywords: 'focus timer pomodoro flowtime countdown session' },
+  // Notes (notes-overview D5): the page, and a new note started there (/notes?new=1).
+  { label: msg('Go to Notes'), route: { view: 'notes' }, icon: 'notebook-pen', shortcut: keysOf('go.notes'), keywords: 'notes notebook memo standalone' },
+  { label: msg('New note'), route: { view: 'notes', create: true }, icon: 'notebook-pen', keywords: 'note create add write memo' },
   { label: msg('Go to Statistics'), route: { view: 'stats' }, icon: 'chart-column', shortcut: keysOf('go.stats'), keywords: 'stats productivity completed' },
   { label: msg('Import data'), route: { view: 'import' }, icon: 'upload', shortcut: keysOf('go.import') },
   { label: msg('Go to Settings'), route: { view: 'settings' }, icon: 'settings', shortcut: keysOf('go.settings') },
@@ -164,6 +184,9 @@ export function commands(ctx: PaletteContext): Command[] {
     const title = `“${tk.title || t('Untitled')}”`
     const list = ctx.list
     out.push({ id: 'task:open', label: t('Open {title}', { title }), icon: 'chevron-right', shortcut: keysOf('list.open'), run: () => list.open(tk.id) })
+    // Take a slot / Give back the slot (today-closed-list D3): personal, so also for a viewer's task.
+    if (ctx.slot === 'waiting') out.push({ id: 'task:take-slot', label: t('Take a slot for {title}', { title }), icon: 'arrow-up', keywords: 'today limit slot waiting', run: () => runTakeSlot(tk.id) })
+    if (ctx.slot === 'taken') out.push({ id: 'task:give-back-slot', label: t('Give back the slot of {title}', { title }), icon: 'undo-2', keywords: 'today limit slot', run: () => runGiveBackSlot(tk.id) })
     if (writable) {
       out.push(
         { id: 'task:complete', label: tk.completed_at ? t('Reopen {title}', { title }) : t('Complete {title}', { title }), icon: 'check', shortcut: keysOf('list.complete'), keywords: 'done finish', run: () => list.toggleComplete(tk.id, !tk.completed_at) },
@@ -176,7 +199,12 @@ export function commands(ctx: PaletteContext): Command[] {
         tk.start === 'someday'
           ? { id: 'task:unpark', label: t('Bring back {title} from Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => unparkTask(tk.id) }
           : { id: 'task:park', label: t('Park {title} in Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => parkTask(tk.id) },
-        { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(tk.id, { evening: !tk.evening }) },
+        { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(tk.id, dayPartFields(tk.evening ? null : 'evening')) },
+        // Day parts (day-parts D4): the parts the task is not in, while the account uses them.
+        ...(ctx.dayParts ? ([...DAY_PARTS, null] as const).filter((part) => dayPartOf(tk) !== part).map((part): Command => ({
+          id: `task:part:${part ?? 'none'}`, label: part ? t('Move {title} to {part}', { title, part: dayPartName(part) }) : t('Move {title} to Any time', { title }),
+          icon: part === 'evening' ? 'moon' : 'sun', keywords: 'day part morning afternoon evening', run: () => dayPartUndoable([tk.id], part).then(() => {}),
+        })) : []),
         { id: 'task:schedule', label: t('Schedule {title} in the Day view', { title }), icon: 'clock', shortcut: keysOf('list.schedule'), run: () => placeInDay(tk, ctx.today) },
       )
       // A task without a project moves to another workspace's Inbox (workspaces "Move an Inbox task").
@@ -194,7 +222,8 @@ export function commands(ctx: PaletteContext): Command[] {
           { id: 'task:detach', label: t('This occurrence only: {title}', { title }), icon: 'repeat', shortcut: keysOf('list.detach'), run: () => detachOccurrence(tk.id) },
         )
       }
-      if (!tk.completed_at) out.push({ id: 'task:focus', label: t('Focus on {title}', { title }), icon: 'clock', keywords: 'focus timer pomodoro session', run: () => navigate({ view: 'focus', id: tk.id }) })
+      // Start focus (focus-everywhere D2): the same as the Actions menu's item.
+      if (!tk.completed_at && !tk.deleted_at) out.push({ id: 'task:focus', label: t('Start focus on {title}', { title }), icon: 'clock', keywords: 'focus timer pomodoro session start', run: () => startFocusOn(tk.id) })
       out.push({ id: 'task:trash', label: t('Move {title} to the Trash', { title }), icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteTask(tk.id) })
     }
   }
@@ -208,6 +237,22 @@ export function commands(ctx: PaletteContext): Command[] {
     }), 'project'))
     if (p.role !== 'viewer') {
       out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => updateProject(p.row.id, { color: h.hex }) })))
+    }
+    // Set project flow (project-flow-modes D7): in every mode, for the owner and admins.
+    if (p.role === 'owner' || p.role === 'admin') {
+      out.push({ id: 'project:flow', icon: 'list-ordered', label: t('Project “{name}”: Set project flow…', { name }), menuLabel: t('Flow'),
+        keywords: 'flow sequential parallel area steps', run: () => ({ kind: 'picker', picker: projectFlowPicker(p.row) }) as Step })
+    }
+    // Review every… (personal) and maintenance (owner and admins), project-review-cadence D6: in every mode.
+    if (p.role !== 'viewer') {
+      out.push({ id: 'project:review-every', icon: 'calendar-sync', label: t('Project “{name}”: Review every…', { name }), menuLabel: t('Review every'),
+        keywords: 'review interval weekly monthly quarterly paused cadence', run: () => ({ kind: 'picker', picker: reviewEveryPicker(p.row.id, p.reviewEvery) }) as Step })
+    }
+    if (p.role === 'owner' || p.role === 'admin') {
+      const on = inMaintenance(p.row)
+      out.push({ id: on ? 'project:maintenance-end' : 'project:maintenance-start', icon: 'wrench',
+        label: on ? t('Project “{name}”: End maintenance', { name }) : t('Project “{name}”: Put in maintenance', { name }),
+        menuLabel: on ? t('End maintenance') : t('Put in maintenance'), keywords: 'maintenance low burn status health mute', run: () => setMaintenance(p.row, !on) })
     }
     // Keep away from AI assistants (agent-planning-fields D9): owner and admins.
     if (p.role === 'owner' || p.role === 'admin') {
@@ -264,6 +309,12 @@ export function commands(ctx: PaletteContext): Command[] {
     )
   }
 
+  // Re-plan the rest of the day (replan-the-day D4): no key; in place on Day and Week, else on the Day view.
+  if (ctx.missedBlocks && ctx.missedBlocks > 0) {
+    out.push({ id: 'replan:day', label: t('Re-plan the rest of the day'), icon: 'calendar-clock', keywords: 'replan reschedule behind missed blocks time blocking afternoon',
+      run: () => openReplan(ctx.route.view === 'day' || ctx.route.view === 'week') })
+  }
+
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
     const q = ctx.filterQuery
     out.push({ id: 'filter:save', label: t('Save as view'), icon: 'filter', shortcut: keysOf('filter.save'), run: () => prompt(t('Save view'), t('View name'), '', async (name) => {
@@ -278,6 +329,10 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'new:from-template', label: t('New project from a template'), icon: 'copy', keywords: t('template library add create'), run: () => requestTemplateDialog() },
     { id: 'new:label', label: t('New label'), icon: 'tag', keywords: 'add create', run: () => prompt(t('New label'), t('Label name'), '', async (name) => navigate({ view: 'label', id: await createLabel({ name }) })) },
     { id: 'new:dashboard', label: t('New dashboard'), icon: 'list', keywords: 'add create', run: () => prompt(t('New dashboard'), t('Dashboard name'), '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
+    // Frames (calendar-frames D5): the form of the Frames dialog; no default key.
+    { id: 'new:frame', label: t('New frame'), icon: 'rows-2', keywords: 'frame calendar time block window deep work focus add create', run: () => requestFrames({ mode: 'new' }) },
+    // Slots (calendar-slots "Create slots"): today at the next free quarter hour; no default key.
+    { id: 'new:slot', label: t('New slot'), icon: 'layers', keywords: 'slot calendar batch small tasks admin errands checklist add create', run: () => act(newSlotNow()) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: t('Open Settings: {section}', { section: s.label }), icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
     // Workspaces (workspaces D6): one switch command per other workspace and New workspace; no keys.
@@ -290,6 +345,12 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
     { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
+    // Today's closed list (today-closed-list D5, D6): no default keys.
+    { id: 'today:log-win', label: t('Log a win'), icon: 'party-popper', keywords: 'done today completed logged win record unplanned',
+      // After the box has closed, so the bar opens again in Add with "Log as done" on.
+      run: () => { setTimeout(() => logWinRequest.request('palette'), 0) } },
+    { id: 'today:limit', label: t('Limit Today…'), icon: 'list-checks', keywords: 'today limit slots closed list wip cap',
+      run: () => navigate({ view: 'settings', section: 'general', page: 'start', anchor: 'today-limit' }) },
   )
   if (ctx.query.trim()) {
     const q = ctx.query.trim()

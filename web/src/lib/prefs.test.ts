@@ -3,7 +3,7 @@ import { db, useDatabase } from './db'
 import { flushSeen, markSeen } from './feed'
 import { applyOps, resetDeviceId } from './ops'
 import { removeLocally } from './trash'
-import { readAddPosition, setAddPosition, USER_PREFS_ID } from './userPrefs'
+import { readAddPosition, readDefaultReminders, setAddPosition, setDefaultReminder, USER_PREFS_ID } from './userPrefs'
 
 let n = 0
 beforeEach(() => {
@@ -87,5 +87,29 @@ describe('add position preference (add-position 1.2)', () => {
     expect(readAddPosition(await db.userPrefs.get(USER_PREFS_ID))).toBe('top')
     const queued = (await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs' && o.field === 'add_position')
     expect(queued.map((o) => o.value)).toEqual(['top'])
+  })
+})
+
+describe('default reminder preferences (default-reminders 1.2)', () => {
+  it('reads empty, malformed or out of range as none and keeps the stored value', async () => {
+    expect(readDefaultReminders(null)).toEqual({ timed: null, dated: null })
+    expect(readDefaultReminders({ reminder_default_timed: '', reminder_default_dated: 'soon' })).toEqual({ timed: null, dated: null })
+    expect(readDefaultReminders({ reminder_default_timed: '-600000', reminder_default_dated: '1.5' })).toEqual({ timed: null, dated: null })
+    expect(readDefaultReminders({ reminder_default_timed: '0', reminder_default_dated: '-1440' })).toEqual({ timed: 0, dated: -1440 })
+    await applyOps([{ id: 'x', entity: 'user_prefs', entityId: USER_PREFS_ID, field: 'reminder_default_timed', value: 'later', ts: 1, device: 'newer-client' }])
+    const row = await db.userPrefs.get(USER_PREFS_ID)
+    expect(readDefaultReminders(row).timed).toBeNull()
+    expect(row?.reminder_default_timed).toBe('later')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('writes one op per choice on the synced row, empty for none', async () => {
+    await setDefaultReminder('timed', -30)
+    await setDefaultReminder('dated', 0)
+    await setDefaultReminder('dated', null)
+    expect(readDefaultReminders(await db.userPrefs.get(USER_PREFS_ID))).toEqual({ timed: -30, dated: null })
+    const queued = (await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs').map((o) => [o.field, o.value])
+    expect(queued).toEqual([['reminder_default_timed', '-30'], ['reminder_default_dated', '0'], ['reminder_default_dated', '']])
+    await expect(setDefaultReminder('timed', 600000)).rejects.toThrow()
   })
 })

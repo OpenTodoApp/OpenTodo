@@ -7,11 +7,11 @@
 // notification (hidden tab, permission granted, tagged per run so two tabs show
 // one), and the end of the session when its task is completed or trashed elsewhere.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getTask, useReviewRow } from '../../lib/localData'
+import { getTask, useReviewRow, useUserPrefsRow } from '../../lib/localData'
+import { orderedFocusIds } from '../../lib/bento'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { swRegistration } from '../../lib/push'
-import { storedFocus } from '../../lib/review'
-import { useFocusPrefs, type FocusPrefs } from '../../lib/focus/prefs'
+import { useFocusPrefs, useNoiseVolume, type FocusPrefs } from '../../lib/focus/prefs'
 import { nextFocusTask } from '../../lib/focus/select'
 import { completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
 import { useEntryRunning } from '../../lib/focus/live'
@@ -107,7 +107,8 @@ function useTaskGone(state: FocusState | null | undefined, prefs: FocusPrefs, no
   const tasks = useLiveTasks()
   const review = useReviewRow()
   const today = useToday()
-  const focusIds = useMemo(() => storedFocus(review, today), [review, today])
+  const userPrefs = useUserPrefsRow()
+  const focusIds = useMemo(() => orderedFocusIds(review, userPrefs, today, tasks ?? []), [review, userPrefs, today, tasks])
   const watching = state && inRun(state) ? state.taskId : null
   const task = watching && tasks ? tasks.find((x) => x.id === watching) : undefined
   const gone = !!watching && !!tasks && (!task || !!task.completed_at)
@@ -115,6 +116,25 @@ function useTaskGone(state: FocusState | null | undefined, prefs: FocusPrefs, no
     if (!gone || !watching || !tasks) return
     void completeSession(watching, nextFocusTask(focusIds, tasks, watching), prefs, now, true)
   }, [gone]) // eslint-disable-line react-hooks/exhaustive-deps -- once when the task goes, with the values of that moment
+}
+
+/**
+ * Background noise (focus-everywhere D6): while a noise is chosen it plays only
+ * while a work phase runs, on any screen; every other state fades it out, and so
+ * does unmounting the shell (sign-out). The generator is loaded on first use.
+ */
+function useNoise(state: FocusState | null | undefined, prefs: FocusPrefs): void {
+  const volume = useNoiseVolume()
+  const kind = prefs.noise !== 'off' && state?.phase === 'work' && isRunning(state) ? prefs.noise : null
+  const loaded = useRef(false)
+  useEffect(() => {
+    if (!kind && !loaded.current) return
+    loaded.current = true
+    void import('../../lib/focus/noise').then((m) => m.setSessionNoise(kind, volume)).catch(() => undefined)
+  }, [kind, volume])
+  useEffect(() => () => {
+    if (loaded.current) void import('../../lib/focus/noise').then((m) => m.setSessionNoise(null, 0)).catch(() => undefined)
+  }, [])
 }
 
 /**
@@ -137,5 +157,6 @@ export function useFocusTimer(): { state: FocusState | null | undefined; prefs: 
   }, [entryId, entryRuns])
   useEndEffects(state, prefs)
   useTaskGone(state, prefs, now)
+  useNoise(state, prefs)
   return { state, prefs, now }
 }

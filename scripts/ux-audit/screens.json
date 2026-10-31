@@ -309,6 +309,16 @@
   "story": "Screens/Month"
  },
  {
+  "id": "year",
+  "route": "year",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "year",
+  "story": "Screens/Year"
+ },
+ {
   "id": "plan",
   "route": "plan",
   "kind": "screen",
@@ -458,6 +468,16 @@
   "core": true,
   "layoutCheck": "completed",
   "story": "Screens/Completed"
+ },
+ {
+  "id": "notes",
+  "route": "notes",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "notes",
+  "story": "Screens/Notes"
  },
  {
   "id": "trash",

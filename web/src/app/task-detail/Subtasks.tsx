@@ -6,6 +6,9 @@ import { createSubtask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon } from '../../ui'
+import { addTasksUndoable, subtaskInputs } from '../../lib/pasteTasks'
+import { showBulkToast } from '../bulk/toastStore'
+import { usePasteOffer } from '../quickadd/PasteOffer'
 
 export interface SubtasksProps {
   task: Task
@@ -75,6 +78,17 @@ export function AddSubtask({ parent }: { parent: Task }) {
     await createSubtask(parent.id, title)
     ref.current?.focus()
   }
+  // A pasted list (paste-to-tasks D7): one subtask per line, unparsed, in one batch with one Undo.
+  const paste = usePasteOffer({
+    field: ref,
+    kind: 'subtasks',
+    onConfirm: async (lines) => {
+      const added = await addTasksUndoable(subtaskInputs(parent, lines), { subtasks: true })
+      showBulkToast(added.label, added.undoId)
+      ref.current?.focus()
+    },
+    onPasteAsLine: (text) => { setValue(text); ref.current?.focus() },
+  })
   return (
     <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2 px-1" data-add-subtask>
       <span className="text-faint"><Icon name="plus" size="xs" /></span>
@@ -85,8 +99,10 @@ export function AddSubtask({ parent }: { parent: Task }) {
         aria-label={t('Add subtask')}
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onPaste={paste.onPaste}
         onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
       />
+      {paste.offer}
     </form>
   )
 }

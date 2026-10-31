@@ -47,3 +47,13 @@ test('every key the manifest, pages and scripts use exists', () => {
 test('French names the context-menu entry in French', () => {
   assert.equal(read('fr').actionTitle.message, 'Ajouter à OpenTodo')
 })
+
+// The Chrome Web Store refuses a package whose manifest name is over 75
+// characters or whose description is over 132, in any locale.
+for (const lang of langs) {
+  test(`${lang} name and description fit the store limits`, () => {
+    const msgs = read(lang)
+    assert.ok([...msgs.extName.message].length <= 75, `${lang}.extName is ${[...msgs.extName.message].length} characters, over 75`)
+    assert.ok([...msgs.extDescription.message].length <= 132, `${lang}.extDescription is ${[...msgs.extDescription.message].length} characters, over 132`)
+  })
+}

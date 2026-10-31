@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/filter"
+	"github.com/OpenTodoApp/opentodo/internal/iconset"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -32,7 +33,7 @@ var (
 	viewRowLayouts = []string{"", "line", "detailed"}
 	viewEnumSets   = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts}
 	// viewRowProps are the row properties a view can hide (views-and-display D3).
-	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin"}
+	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin", "energy"}
 	// viewDefaults are written on create for every field the caller leaves out.
 	viewDefaults = map[string]json.RawMessage{
 		"kind":     json.RawMessage(`"list"`),
@@ -125,6 +126,14 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 		}
 		if err := filter.Parse(q); err != nil {
 			return invalidView("view.query: %s", err.Error())
+		}
+	}
+	// The view's icon (sidebar-polish D4): null or a name from the icon catalogue. Sync
+	// accepts any string so a newer catalogue stays additive; REST checks the name.
+	if raw, has := body["icon"]; has && string(raw) != "null" {
+		var name string
+		if json.Unmarshal(raw, &name) != nil || !iconset.Valid(name) {
+			return invalidView("view.icon must be a name from the icon catalogue or null, got %s", raw)
 		}
 	}
 	if raw, has := body["on_drop"]; has {

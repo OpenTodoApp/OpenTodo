@@ -6,16 +6,15 @@
 // the shell (BreakReminder), so leaving this screen keeps it running.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, EmptyState, MenuItem, MenuSeparator, Notice, PageBody, PageHeader } from '../../ui'
-import { useReviewRow } from '../../lib/localData'
+import { useReviewRow, useUserPrefsRow } from '../../lib/localData'
+import { orderedFocusIds } from '../../lib/bento'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { methodShown, useMethodMode } from '../../lib/method/mode'
-import { storedFocus } from '../../lib/review'
 import { FOCUS_MODES, setFocusPref, useFocusPrefs } from '../../lib/focus/prefs'
 import { focusTarget, nextFocusTask } from '../../lib/focus/select'
-import { breakSession, completeSession, leaveSession, pauseSession, resumeSession, startSession, stopSession } from '../../lib/focus/session'
+import { breakSession, canExtend, completeSession, extendSession, leaveSession, pauseSession, resumeSession, stopSession } from '../../lib/focus/session'
 import { useFocusState } from '../../lib/focus/state'
 import { announcementAt, inRun, isRunning, type FocusState } from '../../lib/focus/timer'
-import { primeTone } from '../../lib/focus/tone'
 import { openHelp } from '../../lib/helpRequest'
 import { keysOf } from '../../lib/shortcuts'
 import type { Task } from '../../lib/types'
@@ -29,6 +28,8 @@ import { completeWithUndo } from '../undoable'
 import { useToday } from '../useViews'
 import { DoneState, FocusTask, LengthDialog, modeName, TaskPickerDialog, TimerCard, type DoneAction } from './FocusParts'
 import { useFocusClock } from './useFocusTimer'
+import { clearAskLength, startFocusOn, useAskLength } from './startFocus'
+import { FocusMenuItem } from './focusRequest'
 
 /** The done state's heading and next steps for the session that ended. */
 function doneContent(s: FocusState, nextOpen: boolean, run: { start: () => void; startBreak: () => void; complete: () => void; next: () => void; choose: () => void }): { heading: string; actions: DoneAction[] } {
@@ -67,12 +68,18 @@ export function FocusView({ id }: { id?: string }) {
   const today = useToday()
   const method = useMethodMode()
   const openId = usePanelTaskId()
-  const focusIds = useMemo(() => storedFocus(review, today), [review, today])
+  const userPrefs = useUserPrefsRow()
+  // Opens on the first task of today's focus in the Bento order (bento-daily-check D6).
+  const focusIds = useMemo(() => orderedFocusIds(review, userPrefs, today, tasks ?? []), [review, userPrefs, today, tasks])
   const list = tasks ?? []
   const target = useMemo(() => focusTarget({ routeId: id, state, focusIds, tasks: tasks ?? [] }), [id, state, focusIds, tasks])
   const task = target.taskId ? list.find((x) => x.id === target.taskId) : undefined
   const session = state && task && state.taskId === task.id ? state : null
-  const now = useFocusClock(isRunning(session))
+  // The clock also ticks while "+5 min" is offered, so the offer goes after its 10 minutes.
+  const [extendable, setExtendable] = useState(false)
+  const now = useFocusClock(isRunning(session) || extendable)
+  const extend = canExtend(session, now)
+  useEffect(() => setExtendable(extend), [extend])
   const running = inRun(session)
   const mode = running ? session!.mode : prefs.mode
   const [picker, setPicker] = useState(false)
@@ -83,11 +90,18 @@ export function FocusView({ id }: { id?: string }) {
 
   const begin = (minutes?: number) => {
     if (!task) return
-    primeTone()
     if (prefs.mode === 'countdown' && minutes === undefined) { setAskLength(true); return }
     setAskLength(false)
-    act(startSession(task.id, prefs, Date.now(), minutes))
+    act(startFocusOn(task.id, { lengthMinutes: minutes, navigate: false, force: true }))
   }
+  // "Start focus" in Countdown opens this screen with the length dialog (focus-everywhere D2).
+  const askFor = useAskLength()
+  useEffect(() => {
+    if (!task || askFor !== task.id) return
+    clearAskLength()
+    setAskLength(true)
+  }, [askFor, task?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- the task's id decides
+  const onExtend = (minutes: number) => act(extendSession(minutes))
   const toggle = () => {
     if (!task) return
     if (isRunning(session)) act(pauseSession())
@@ -145,6 +159,11 @@ export function FocusView({ id }: { id?: string }) {
       ))}
       <MenuSeparator />
       <MenuItem label={t('Change task')} icon="search" onSelect={choose} />
+      {/* In or out of today's focus by touch (phone-touch-focus). */}
+      {task && <FocusMenuItem task={task} />}
+      {/* The noise toggle (focus-everywhere D6): Noise on chooses Brown; Settings offers the other kinds. */}
+      <MenuItem label={prefs.noise === 'off' ? t('Noise on') : t('Noise off')} icon="audio-lines" data-focus-noise-toggle
+        onSelect={() => act(setFocusPref({ field: 'focus_noise', value: prefs.noise === 'off' ? 'brown' : 'off' }))} />
       <MenuItem label={t('Settings')} icon="settings" onSelect={() => navigate({ view: 'settings', section: 'general' })} />
       <MenuItem label={t('Help')} icon="circle-help" description={t('The guide to Focus')} onSelect={() => openHelp('focus')} />
     </>
@@ -169,16 +188,16 @@ export function FocusView({ id }: { id?: string }) {
       ) : (
         <>
           {session?.phase === 'done' && session.ended && (
-            <DoneState session={session} first={firstDone} heading={done.heading} actions={done.actions}
+            <DoneState session={session} first={firstDone} heading={done.heading} actions={done.actions} onExtend={extend ? onExtend : undefined}
               title={session.ended.kind === 'complete' ? (tasks.find((x) => x.id === session.ended?.taskId)?.title ?? '') : task.title} />
           )}
-          <TimerCard session={session} mode={mode} prefs={prefs} now={now} actions={{ onBreak: breakToggle, onStop: () => act(stopSession()), onNext: () => act(moveOn()) }} />
+          <TimerCard session={session} mode={mode} prefs={prefs} now={now} actions={{ onBreak: breakToggle, onStop: () => act(stopSession()), onNext: () => act(moveOn()), onExtend: extend && session?.phase === 'break' ? onExtend : undefined }} />
           {!task.completed_at && <FocusTask task={task} />}
           <p className="mt-4 text-hint text-faint">{t('Space starts and pauses, Enter completes, {b} takes a break, {n} is the next task, Esc goes back.', { b: keysOf('focus.break'), n: keysOf('focus.next') })}</p>
         </>
       )}
       {picker && <TaskPickerDialog tasks={list} onPick={(x) => act(pick(x))} onClose={() => setPicker(false)} />}
-      {askLength && task && <LengthDialog initial={state?.lengthMinutes ?? 25} onStart={(m) => begin(m)} onClose={() => setAskLength(false)} />}
+      {askLength && task && <LengthDialog initial={state?.lengthMinutes ?? 25} presets={prefs.presets} onStart={(m) => begin(m)} onClose={() => setAskLength(false)} />}
     </PageBody>
   )
 }

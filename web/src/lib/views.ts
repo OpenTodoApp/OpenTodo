@@ -15,19 +15,18 @@ import { buildProjectTree } from './projects'
 import { ancestors, flattenTree } from './tree'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS, VIEW_LAYOUTS,
-  fieldSortName, isFieldSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
+  type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
 } from './types'
 import { t, msg } from './i18n'
 import { uuid } from './ids'
 import { workspaceFields } from './workspaces'
-import { applicableFieldsLookup } from './fieldTree'
-import { nameKey } from './fieldNames'
-import { matchesType } from './fields'
+import { compareManual, orderRank } from './viewOrder'
+import { spanOf } from './span'
 
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
 
-type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'> & { project_id?: string | null }
+type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'> & { project_id?: string | null; span?: boolean }
 
 // ---- start dates, Someday and This Evening (OpenSpec change `someday-and-evening`, D2) ----
 
@@ -80,6 +79,8 @@ export function overdueInToday(item: DatedTask, today: string): boolean {
 /** Upcoming lists open tasks due after today, and undated ones whose deadline is ahead. */
 export function inUpcoming(item: DatedTask, today: string): boolean {
   if (deferredUnplaced(item, today)) return true
+  // A span is listed once, under its first day, and only before it (multi-day-tasks D5).
+  if (spanOf(item)) return !item.completed_at && isDeferred(item, today)
   if (item.completed_at || !isActive(item, today)) return false
   if (item.due) return localDueOf(item.due).date > today
   const deadline = item.deadline ?? null
@@ -95,7 +96,9 @@ export function deferredUnplaced(item: DatedTask, today: string): boolean {
 }
 
 /** The Upcoming day a task is listed under: its due date, else its start date when deferredUnplaced, else its deadline. */
-export function upcomingDate(task: Pick<Task, 'due' | 'deadline' | 'completed_at' | 'start'> & { project_id?: string | null }, today?: string): string | null {
+export function upcomingDate(task: Pick<Task, 'due' | 'deadline' | 'completed_at' | 'start'> & { project_id?: string | null; span?: boolean }, today?: string): string | null {
+  const span = spanOf(task)
+  if (span) return span.first
   if (task.due) return localDueOf(task.due).date
   if (today !== undefined && deferredUnplaced(task, today)) return task.start ?? null
   return task.deadline ?? null
@@ -119,6 +122,8 @@ export interface DisplayOptions {
   showCompleted: boolean
   /** Row properties the view hides; names this build does not know are left out. */
   hidden: RowProperty[]
+  /** Cards show two lines of their notes (board-polish D4). */
+  cardNotes: boolean
 }
 
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -134,17 +139,19 @@ export function viewOptions(v: Pick<View, 'kind' | 'group_by' | 'sort_by' | 'sor
   return {
     kind: pick(v.kind, VIEW_KINDS, VIEW_DEFAULTS.kind as ViewKind),
     groupBy: pick(v.group_by, GROUP_BY_OPTIONS, VIEW_DEFAULTS.group_by as GroupBy),
-    sortBy: isFieldSortBy(v.sort_by) ? v.sort_by : pick(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
+    sortBy: pick(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
     sortDir: pick(v.sort_dir, SORT_DIR_OPTIONS, VIEW_DEFAULTS.sort_dir as SortDir),
   }
 }
 
 /** The display options of a view; a row written before views-and-display (no fields) shows everything as before. */
-export function displayOptions(v: Partial<Pick<View, 'layout' | 'show_completed' | 'hidden_props'>>): DisplayOptions {
+export function displayOptions(v: Partial<Pick<View, 'layout' | 'show_completed' | 'hidden_props' | 'card_notes'>>): DisplayOptions {
   const hidden = Array.isArray(v.hidden_props) ? v.hidden_props : []
   return {
     layout: pick(v.layout, VIEW_LAYOUTS, 'list'),
     showCompleted: v.show_completed === true,
+    // The Board layout's notes preview (board-polish D4): only an exact true turns it on.
+    cardNotes: v.card_notes === true,
     hidden: ROW_PROPERTIES.filter((p) => hidden.includes(p)),
   }
 }
@@ -184,6 +191,8 @@ export interface NewView {
   hidden_props?: RowProperty[]
   /** One line or detailed rows (row-layouts); absent follows the account's choice. */
   row_layout?: RowLayout
+  /** The Board layout's notes preview (board-polish D4). */
+  card_notes?: boolean
 }
 
 /** Create a view, last in sidebar order. Pinned unless told otherwise (the Filter view's "Save view"). */
@@ -211,6 +220,7 @@ export async function createView(input: NewView): Promise<string> {
     ...(input.show_completed ? { show_completed: true } : {}),
     ...(input.hidden_props?.length ? { hidden_props: input.hidden_props } : {}),
     ...(input.row_layout ? { row_layout: input.row_layout } : {}),
+    ...(input.card_notes ? { card_notes: true } : {}),
     ...(await workspaceFields()),
     created_at: now,
     deleted_at: null,
@@ -218,7 +228,7 @@ export async function createView(input: NewView): Promise<string> {
   return id
 }
 
-export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props' | 'row_layout'>>
+export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props' | 'row_layout' | 'icon' | 'card_notes'>>
 
 /** Edit a view: one op per changed field. The kind is fixed at creation; panels go through setPanels. */
 export async function updateView(id: string, patch: ViewPatch): Promise<void> {
@@ -430,12 +440,8 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
   return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
 }
 
-function compareText(a: string, b: string): number {
-  return a.localeCompare(b, undefined, { sensitivity: 'base' })
-}
-
 function byTitle(a: Task, b: Task): number {
-  return compareText(a.title, b.title)
+  return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
 }
 
 /**
@@ -443,61 +449,10 @@ function byTitle(a: Task, b: Task): number {
  * tasks always come last under a due-date sort. For priority, "descending" means the
  * most important first (p1 before p4). Ties fall back to due, priority, position, id.
  */
-export interface FieldSortContext {
-  projects: readonly Project[]
-  fields?: readonly FieldDef[]
-}
-
-type FieldSortValue = { type: 'date'; value: string } | { type: 'number'; value: number } | { type: 'text'; value: string }
-
-function fieldSortValue(task: Task, fieldName: string, fieldsOf: (projectId: string | null | undefined) => FieldDef[]): FieldSortValue | null {
-  const definition = fieldsOf(task.project_id).find((field) => nameKey(field.name) === fieldName)
-  if (!definition || (definition.type !== 'number' && definition.type !== 'date' && definition.type !== 'text')) return null
-  const value = task.fields?.[definition.id]
-  if (value === null || value === undefined || value === '' || !matchesType(definition, value)) return null
-  if (definition.type === 'number' && typeof value === 'number') return { type: 'number', value }
-  if (definition.type === 'date' && typeof value === 'string') return { type: 'date', value }
-  if (definition.type === 'text' && typeof value === 'string') return { type: 'text', value }
-  return null
-}
-
-function compareFieldValues(av: FieldSortValue, bv: FieldSortValue): number {
-  if (av.type === 'number' && bv.type === 'number') return av.value - bv.value
-  if (av.type === 'date' && bv.type === 'date') return av.value < bv.value ? -1 : av.value > bv.value ? 1 : 0
-  if (av.type === 'text' && bv.type === 'text') return compareText(av.value, bv.value)
-  return 0
-}
-
-function fieldSortTypeRank(value: FieldSortValue): number {
-  switch (value.type) {
-    case 'number': return 0
-    case 'date': return 1
-    case 'text': return 2
-  }
-}
-
-export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortContext): (a: Task, b: Task) => number {
+export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) => number {
   const sign = dir === 'desc' ? -1 : 1
   const fallback = (a: Task, b: Task) =>
     compareDue(a.due, b.due) || a.priority - b.priority || a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
-  if (isFieldSortBy(sortBy)) {
-    const fieldName = fieldSortName(sortBy)
-    if (fieldName === null) return fallback
-    const fieldsOf = context ? applicableFieldsLookup(context.projects, context.fields ?? []) : () => []
-    const values = new Map<string, FieldSortValue | null>()
-    const valueOf = (task: Task): FieldSortValue | null => {
-      if (values.has(task.id)) return values.get(task.id) ?? null
-      const value = fieldSortValue(task, fieldName, fieldsOf)
-      values.set(task.id, value)
-      return value
-    }
-    return (a, b) => {
-      const av = valueOf(a)
-      const bv = valueOf(b)
-      if (!av || !bv) return !av && !bv ? fallback(a, b) : av ? -1 : 1
-      return fieldSortTypeRank(av) - fieldSortTypeRank(bv) || sign * compareFieldValues(av, bv) || fallback(a, b)
-    }
-  }
   switch (sortBy) {
     case 'due':
       return (a, b) => {
@@ -519,12 +474,18 @@ export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortCo
         if (!a.deadline || !b.deadline) return (a.deadline ? -1 : b.deadline ? 1 : 0) || fallback(a, b)
         return sign * (a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0) || fallback(a, b)
       }
-    default: {
-      const _exhaustive: never = sortBy
-      void _exhaustive
-      return fallback
-    }
   }
+}
+
+/**
+ * A saved view's comparator (OpenSpec change view-manual-order): its sort, where
+ * Manual order is the view's own stored order, then the other tasks by position;
+ * descending reverses it.
+ */
+export function viewComparator(view: Pick<View, 'manual_order'>, sortBy: SortBy, dir: SortDir): (a: Task, b: Task) => number {
+  if (sortBy !== 'position') return compareTasks(sortBy, dir)
+  const asc = compareManual(orderRank(view.manual_order))
+  return dir === 'desc' ? (a, b) => asc(b, a) : asc
 }
 
 /**
@@ -603,7 +564,7 @@ export function runView(view: View, ctx: ViewContext): ViewResult {
   if (!c.ok) return c
   const { groupBy, sortBy, sortDir } = viewOptions(view)
   const scoped = viewScope(c, ctx)
-  const tasks = scoped.tasks.filter(c.test).sort(compareTasks(sortBy, sortDir, scoped))
+  const tasks = scoped.tasks.filter(c.test).sort(viewComparator(view, sortBy, sortDir))
   return { ok: true, tasks, groups: groupTasks(tasks, groupBy, scoped), warnings: c.warnings }
 }
 
@@ -633,13 +594,12 @@ export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TAS
   for (const tk of every.length ? ctx.everyWorkspace!.tasks : []) for (const l of every) if (l.test(tk)) l.matches.push(tk)
   for (const l of live) {
     const { groupBy, sortBy, sortDir } = viewOptions(l.view)
-    const scoped = l.every ? viewScope(l, ctx) : ctx
-    const sorted = l.matches.sort(compareTasks(sortBy, sortDir, scoped))
+    const sorted = l.matches.sort(viewComparator(l.view, sortBy, sortDir))
     const firstN: Task[] = []
     if (limit > 0) {
       // Grouping by label can list a task twice; a panel shows each task once.
       const seen = new Set<string>()
-      for (const g of groupTasks(sorted, groupBy, scoped)) {
+      for (const g of groupTasks(sorted, groupBy, l.every ? viewScope(l, ctx) : ctx)) {
         for (const item of g.tasks) {
           if (firstN.length >= limit) break
           if (!seen.has(item.id)) {

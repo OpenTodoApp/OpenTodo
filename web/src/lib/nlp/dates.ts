@@ -20,6 +20,8 @@ export interface DateMatch {
   date: string
   from: number
   to: number
+  /** A month name alone ("September"): a later complete date phrase replaces it (quick-add-month-and-every-other D1). */
+  bare?: true
 }
 
 export interface TimeMatch {
@@ -235,10 +237,23 @@ function unitAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number
  * Ties go to the earlier vocabulary (the user's preferred language).
  */
 /** Tokens at `i` consumed by the longest phrase of a vocabulary word list in any active language, or 0. */
-export function wordsAt(tokens: readonly Token[], i: number, ctx: DateContext, field: 'somedayWords' | 'eveningWords'): number {
+export function wordsAt(tokens: readonly Token[], i: number, ctx: DateContext, field: 'somedayWords' | 'eveningWords' | 'morningWords' | 'afternoonWords'): number {
   if (!tokens[i] || tokens[i].quoted) return 0
   let best = 0
   for (const v of ctx.vocabs) best = Math.max(best, phraseAt(tokens, i, v[field], `${v.code}:${field}`))
+  return best
+}
+
+/** A part word at `i` ("morning" after "tomorrow", day-parts D5): the longest in any active language, or null. */
+export function partWordAt(tokens: readonly Token[], i: number, ctx: DateContext): { n: number; part: 'morning' | 'afternoon' | 'evening' } | null {
+  if (!tokens[i] || tokens[i].quoted) return null
+  let best: { n: number; part: 'morning' | 'afternoon' | 'evening' } | null = null
+  for (const v of ctx.vocabs) {
+    for (const part of ['morning', 'afternoon', 'evening'] as const) {
+      const n = phraseAt(tokens, i, v.partWords[part], `${v.code}:part:${part}`)
+      if (n > (best?.n ?? 0)) best = { n, part }
+    }
+  }
   return best
 }
 
@@ -274,11 +289,21 @@ export function matchDateAt(tokens: readonly Token[], i: number, ctx: DateContex
       consider(wrap(ordinalWeekdayAt(tokens, j, v, ctx)))
       consider(wrap(nextPeriodAt(tokens, j, v, ctx)))
       consider(wrap(inPeriodAt(tokens, j, v, ctx)))
-      consider(wrap(monthDayAt(tokens, j, v, ctx)))
+      const md = monthDayAt(tokens, j, v, ctx)
+      // A month name alone is a weak date, and none at all right after "from",
+      // "since", "of", "for" ("invoices from September", D2).
+      if (md && md.n === 1 && !(j === i && monthTextBefore(tokens, i, ctx))) consider({ ...wrap(md)!, bare: true })
+      else if (md && md.n > 1) consider(wrap(md))
       consider(wrap(numericDateAt(tokens, j, ctx)))
     }
   }
   return best
+}
+
+/** The token before `i` is a word after which a month name alone stays text, in any active language. */
+function monthTextBefore(tokens: readonly Token[], i: number, ctx: DateContext): boolean {
+  const prev = tokens[i - 1]
+  return !!prev && !prev.quoted && ctx.vocabs.some((v) => phraseAt(tokens, i - 1, v.monthTextBefore, `${v.code}:mtb`) === 1)
 }
 
 function dayWordAt(tokens: readonly Token[], i: number, v: Vocabulary, ctx: DateContext): DateMatch | null {

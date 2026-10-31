@@ -290,7 +290,8 @@ While a list, the panel or a settings page waits for local data, it SHALL show s
 
 #### Scenario: Subtitle arrives on a phone
 - **WHEN** the Inbox opens at 360 px with planned tasks without a project
-- **THEN** their folded group appears at the end of the list in the same step as the Inbox's tasks, and nothing appears under the title later
+- **THEN** the Inbox's own tasks appear in one step, and nothing appears under the title or after the list later
+
 #### Scenario: Settings cards answer at different times
 - **WHEN** Settings → Integrations opens and the app passwords answer 200 ms after the calendar feeds
 - **THEN** the section's cards appear together when the last first answer arrives, and after 600 ms they appear in any case
@@ -577,7 +578,7 @@ Every task list SHALL reserve, between the checkbox and the title, a column for 
 - **THEN** "09:30" stands before "Standup", and "Water the plants" starts right after its checkbox with no empty column before it
 
 ### Requirement: Revealed row actions
-On a fine pointer from 768 px wide, a row SHALL hold four actions at its right edge, shown while the pointer is over the row or focus is inside it as one small floating cluster on the popover surface: over the end of the property column of a one-line row, and in the place of the trailing group of a narrower row, which keeps room for them: Show details, which shows the task's details under the row as → does (Hide details while they are shown, see "Expanded rows"); Schedule, which opens the same Do on popover as `s` anchored to the row; Priority, which opens the same priority choice as `1` to `4`; and More, which opens the row menu as `.` does. The actions SHALL be real buttons at all times, reachable by Tab from the row's open control and back with Shift+Tab, named with their key in their tooltips, with targets of at least 24 by 24 CSS pixels and 8 px apart (WCAG 2.2 2.5.8), and SHALL never be obscured by the sticky page header, the selection bar or a toast when focused (WCAG 2.2 2.4.11). `j` and `k` SHALL keep moving focus from open control to open control, skipping the actions. Revealing the actions SHALL NOT change the row's height, move the title or the properties, or hide the counts or the properties from assistive technology. On coarse pointers and below 768 px the actions SHALL NOT be rendered; the row menu stays reachable by `.`, the Menu key and long press, and the row's disclosure button shows the details. Every action writes through the same path as its keyboard equivalent, so it works offline and converges per field. A viewer's row SHALL offer Show details only.
+On a fine pointer from 768 px wide, a row SHALL hold four actions at its right edge, shown while the pointer is over the row or focus is inside it as one small floating cluster on the popover surface: over the end of the property column of a one-line row, and in the place of the trailing group of a narrower row, which keeps room for them: Show details, which shows the task's details under the row as → does (Hide details while they are shown, see "Expanded rows"); Schedule, which opens the same Do on popover as `s` anchored to the row; Priority, which opens the same priority choice as `1` to `4`; and More, which opens the row menu as `.` does. The actions SHALL be real buttons at all times, reachable by Tab from the row's open control and back with Shift+Tab, named with their key in their tooltips, with targets of at least 24 by 24 CSS pixels and 8 px apart (WCAG 2.2 2.5.8), and SHALL never be obscured by the sticky page header, the selection bar or a toast when focused (WCAG 2.2 2.4.11). `j` and `k` SHALL keep moving focus from open control to open control, skipping the actions. Revealing the actions SHALL NOT change the row's height, move the title or the properties, or hide the counts or the properties from assistive technology. On coarse pointers and below 768 px the actions SHALL NOT be rendered; the row menu stays reachable by `.`, the Menu key, and the selection bar's Actions after a long press ticks the row (`bulk-actions` "One ticked task on touch"), and the row's disclosure button shows the details. Every action writes through the same path as its keyboard equivalent, so it works offline and converges per field. A viewer's row SHALL offer Show details only.
 
 #### Scenario: Reveal on hover
 - **WHEN** the pointer enters a row with two comments on a 1280 px screen
@@ -826,3 +827,14 @@ When a task added from a list page's quick add or a section's add row lands outs
 #### Scenario: Visible task
 - **WHEN** the user adds a task to a project of five tasks that all fit on the screen
 - **THEN** the new task appears and no toast is shown
+
+### Requirement: Checkbox touch target
+On a coarse pointer a task row's checkbox SHALL take taps within a square of at least 44 × 44 px around its circle, above the row's other parts, without changing the circle's visible size or the row's height, on every row that shows a checkbox (lists, Today, board cards, the Daily check and the Loop home).
+
+#### Scenario: Slightly off tap
+- **WHEN** at 390 px on a touch screen the user taps 8 px to the right of a task's circle on Today
+- **THEN** the task is completed and the task does not open
+
+#### Scenario: Row while animated
+- **WHEN** the row's title is moving (the first-visit swipe hint) and the user taps 8 px outside the circle
+- **THEN** the tap still completes the task

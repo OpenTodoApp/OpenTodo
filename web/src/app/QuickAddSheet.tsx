@@ -10,6 +10,8 @@ import { logicalToday } from '../lib/dates'
 import { createTask } from '../lib/ops'
 import { preferredPlacement } from '../lib/userPrefs'
 import { taskDefaults } from './listActions'
+import { addTasksUndoable } from '../lib/pasteTasks'
+import { showBulkToast } from './bulk/toastStore'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
 import { t } from '../lib/i18n'
@@ -48,17 +50,26 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   const projects = useProjects()
   const labels = useLabels()
   // The same defaults as the view's own quick add line; attributes typed in the line override them.
-  const onAdd = async ({ labels: typed, ...rest }: QuickAddInput) => {
+  const withDefaults = ({ labels: typed, ...rest }: QuickAddInput) => {
     const { labels: viewLabels, ...defaults } = taskDefaults(route, logicalToday(), userId)
     if (rest.due || rest.deadline) delete defaults.start
+    return { ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] }
+  }
+  const onAdd = async (input: QuickAddInput) => {
     // Top or bottom of the list it lands in (add-position D3).
-    await createTask({ ...defaults, ...rest, placement: await preferredPlacement(), labels: [...new Set([...viewLabels, ...(typed ?? [])])] })
+    await createTask({ ...withDefaults(input), placement: await preferredPlacement() })
+    onClose()
+  }
+  // A pasted list (paste-to-tasks D3): one batch with the view's defaults per line, one Undo.
+  const onAddMany = async (inputs: QuickAddInput[]) => {
+    const added = await addTasksUndoable(inputs.map(withDefaults), { placement: await preferredPlacement() })
+    showBulkToast(added.label, added.undoId)
     onClose()
   }
   return (
     <Popover open={open} onClose={onClose} anchor={anchor} label={t('Add a task')} side="top" align="end" width="sm:w-96" className="pt-3 pb-0">
       <div data-quick-add-sheet>
-        <QuickAdd layout="sheet" autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} />
+        <QuickAdd layout="sheet" autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} onAddMany={onAddMany} />
       </div>
     </Popover>
   )

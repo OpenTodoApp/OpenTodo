@@ -13,6 +13,9 @@ import { LocationPreview } from '../locations/LocationPreview'
 import { ProjectMark } from '../Sidebar'
 import { OPTIONAL, PartEditor, type PropertiesProps, useFacetParts, usePartEditor } from './Facets'
 import { usePropertiesModel } from './usePropertiesModel'
+import { dayPartOf, dayPartWord } from '../../lib/dayParts'
+import { energyLevelsOn } from '../../lib/energy'
+import { useUserPrefsRow } from '../../lib/localData'
 
 const TONE: Record<string, string> = {
   overdue: 'text-danger',
@@ -58,9 +61,12 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
   const text = (id: string) => parts.get(id)?.text ?? null
   const tone = (id: string) => TONE[parts.get(id)?.tone ?? ''] ?? undefined
 
+  // Energy is offered while unset only with Energy levels on; a value is always shown (task-energy D3).
+  const energyOn = energyLevelsOn(useUserPrefsRow())
   const due = text('due')
+  const partWord = dayPartWord(dayPartOf(task))
   const schedule: Fact[] = [
-    { id: 'due', label: t('Do'), icon: 'sun', value: due && task.evening ? `${due} · ${t('evening')}` : due ?? (task.evening ? t('evening') : null), empty: t('Set a date'), tone: tone('due') },
+    { id: 'due', label: t('Do'), icon: 'sun', value: due && partWord ? `${due} · ${partWord}` : due ?? partWord, empty: t('Set a date'), tone: tone('due') },
     { id: 'when', label: t('Start'), icon: 'calendar-range', value: text('when'), empty: t('Set a start') },
     { id: 'deadline', label: t('Deadline'), icon: 'hourglass', value: text('deadline'), empty: t('Set a deadline'), tone: tone('deadline') },
     { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock', value: text('reminders'), empty: t('Add a reminder') },
@@ -70,6 +76,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
     { id: 'priority', label: t('Priority'), icon: 'flag', empty: '',
       value: <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className={`h-3 w-3 rounded-full border-2 ${RING[task.priority] ?? 'border-p4'}`} />{t('Priority {n}', { n: task.priority })}</span> },
     { id: 'estimate', label: t('Estimate'), icon: 'clock', value: text('estimate'), empty: t('Add an estimate') },
+    { id: 'energy', label: t('Energy'), icon: 'zap', value: text('energy'), empty: t('Set energy'), onlySet: !energyOn },
     ...(userId ? [{ id: 'assignee', label: t('Assignee'), icon: 'user-check' as const, value: text('assignee'), empty: m.solo ? t('Assign to me') : t('Assign') }] : []),
     { id: 'blocked-by', label: t('Blocked by'), icon: 'lock', value: text('blocked-by'), empty: t('Add a blocker') },
     { id: 'blocks', label: t('Blocks'), icon: 'arrow-right', value: text('blocks'), empty: '', onlySet: true },

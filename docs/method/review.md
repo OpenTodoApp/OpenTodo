@@ -25,7 +25,7 @@ Details are in [Rhythms](rhythms.md) and in [Weekly review](../review-and-statis
 2. **Get current**: what you completed and what is still open from earlier, what is **Waiting**, every project one at a time, and the week ahead.
 3. **Get creative**: skim **Someday** and promote what you now want to do.
 
-The project walk is the heart of it: one card per project, with its outcome, its next action and whether it has stalled. Press <kbd>r</kbd> when it looks right, <kbd>q</kbd> to add a next step.
+The project walk is the heart of it: one card per project that is due, with its outcome, its next action and whether it has stalled. Press <kbd>r</kbd> when it looks right, <kbd>q</kbd> to add a next step. A project you only need to see once a month or a season gets its own [interval](../review-intervals.md) with <kbd>e</kbd>.
 
 ## Keep the rhythm
 

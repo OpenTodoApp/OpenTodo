@@ -64,6 +64,8 @@ export interface BindingContext {
   columns: ListColumn[]
   board: boolean
   manual: boolean
+  /** A list with its own order (a label page, view-manual-order): Vim's moves step within the task's group. */
+  moveInView?: (id: string, step: -1 | 1) => Promise<boolean>
   selectedId: string | null
   setSelectedId: (id: string | null) => void
   openId: string | null
@@ -149,6 +151,8 @@ export function useListBindings(c: BindingContext): RowActions {
     open: setOpenId,
     readOnly: (task) => live.current.isReadOnly(task),
     manual: () => live.current.manual,
+    ownOrder: () => !!live.current.moveInView,
+    moveBy: (id, step) => live.current.moveInView?.(id, step) ?? Promise.resolve(false),
     focusQuickAdd: (after) => {
       const input = quickAddRef.current
       if (!input) return false

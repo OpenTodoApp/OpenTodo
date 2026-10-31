@@ -108,6 +108,49 @@ describe('a saved view', () => {
   })
 })
 
+describe('board polish on a saved view (board-polish)', () => {
+  it('Notes on cards is offered only in the Board layout, writes card_notes and shows the preview on cards', async () => {
+    await createTask({ title: 'Send invoice', priority: 1, description: 'Waiting on the quote from **Marco**' })
+    const id = await createView({ name: 'Client work', query: 'p1' })
+    const r = await render(<SavedViewRoute id={id} />)
+    await waitFor(() => titles(r.container).length === 1, 'the match')
+    await click(r.container.querySelector('[data-display-trigger]') as HTMLButtonElement)
+    await waitFor(() => !!panel(), 'the display panel')
+    expect(panel()!.querySelector('[data-display-card-notes]')).toBeNull()
+    await click(panel()!.querySelector('[data-layout="board"]') as HTMLButtonElement)
+    await waitFor(() => !!panel()!.querySelector('[data-display-card-notes]'), 'the switch in the Board layout')
+    expect(r.container.querySelector('[data-card-notes]')).toBeNull()
+    await click(panel()!.querySelector('[data-display-card-notes] [role="switch"]') as HTMLButtonElement)
+    await waitFor(async () => (await db.views.get(id))?.card_notes === true, 'card_notes on the view')
+    await waitFor(() => !!r.container.querySelector('[data-view-board] [data-card-notes]'), 'the preview')
+    expect(r.container.querySelector('[data-card-notes]')!.textContent).toBe('Notes: Waiting on the quote from Marco')
+    await r.unmount()
+  })
+
+  it('a column folds from its menu into a strip, and the group is collapsed in the list layout on this device', async () => {
+    await createTask({ title: 'Call the bank', priority: 1 })
+    await createTask({ title: 'Tidy desk', priority: 1 })
+    const id = await createView({ name: 'Calls', query: 'p1', layout: 'board', group_by: 'priority' })
+    const r = await render(<SavedViewRoute id={id} />)
+    await waitFor(() => !!r.container.querySelector('[data-view-board] [data-column] [data-task-id]'), 'the board')
+    await click(r.container.querySelector('button[aria-label="Column menu for Priority 1"]') as HTMLButtonElement)
+    await waitFor(() => !!document.querySelector('[data-menu-label="Fold column"]'), 'Fold column')
+    await click(document.querySelector('[data-menu-label="Fold column"]') as HTMLElement)
+    await waitFor(() => !!r.container.querySelector('[data-column-strip]'), 'the strip')
+    const strip = r.container.querySelector('[data-column-strip]')!
+    expect(strip.getAttribute('aria-expanded')).toBe('false')
+    expect(strip.getAttribute('aria-label')).toBe('Priority 1, 2 tasks, folded')
+    expect(r.container.querySelector('[data-view-board] [data-task-id]')).toBeNull()
+    // The list layout shows the group collapsed.
+    const { updateView } = await import('../../lib/views')
+    await updateView(id, { layout: 'list' })
+    await waitFor(() => !r.container.querySelector('[data-view-board]'), 'the list')
+    expect(r.container.querySelector('[data-task-id]')).toBeNull()
+    expect(r.container.querySelector('[data-group] [aria-expanded="false"]')).not.toBeNull()
+    await r.unmount()
+  })
+})
+
 describe('the New view page', () => {
   it('orders by a custom field and carries that choice into the saved view', async () => {
     const project = await createProject({ name: 'Scoring' })

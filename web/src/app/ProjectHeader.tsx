@@ -34,8 +34,12 @@ import { act } from './actionError'
 import { setFavourite } from '../lib/favourites'
 import { useIsFavourite } from './useFavourites'
 import { pinItem } from './menus/pinItem'
+import { projectFlowItem } from './menus/flowMenu'
+import { maintenanceItem, reviewEveryItem } from './menus/reviewMenu'
+import { inMaintenance } from '../lib/reviewCadence'
+import { useMethodMode, type MethodMode } from '../lib/method/mode'
 import { openTaskCount, useOpenTaskCount } from '../lib/liveTasks'
-import { useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
+import { useProjectPrefsRow, useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
 
 /** A "Move to" target: a project, or the top level (id ''). */
@@ -88,7 +92,7 @@ function ColourSwatches({ project }: { project: Project }) {
  * "Pin to sidebar" (sidebar-favourites) is offered to every role: it changes the
  * user's own preferences, never the project.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[] }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[]; mode?: MethodMode; reviewEvery?: string }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
   // A consequence naming the open tasks: from the count the caller holds, or, while
   // that has not loaded yet, read when the confirmation opens (never "0 open tasks").
@@ -105,11 +109,19 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
   const fields: ActionGroup[] = a.fields && canEditTasks(role) ? [{ items: [
     { kind: 'action', id: 'fields', label: t('Fields…'), icon: 'list', shortcut: keysOf('project.fields'), onSelect: a.fields },
   ] }] : []
-  if (!canEditProject(role)) return [...pin, ...copies, ...fields]
+  // "Review every…" (project-review-cadence D6): personal, for whoever is in the walk (editors and up).
+  const every = o.mode && canEditTasks(role) ? reviewEveryItem(project.id, o.reviewEvery, { mode: o.mode }) : null
+  const review: ActionGroup[] = every ? [{ items: [every] }] : []
+  if (!canEditProject(role)) return [...pin, ...copies, ...fields, ...review]
+  // "Flow…" (project-flow-modes D7): the menus pass the mode; the palette offers its own "Set project flow…".
+  const flow = o.mode ? projectFlowItem(project, { mode: o.mode, canEdit: true }) : null
+  // "Put in maintenance" / "End maintenance" (project-review-cadence D6): owner and admins, like the flow.
+  const maintenance = o.mode ? maintenanceItem(project, { mode: o.mode, canEdit: true }) : null
   return [
     ...pin,
     ...copies,
     ...fields,
+    ...review,
     { items: [
       { kind: 'picker', id: 'move', label: t('Move to'), icon: 'folder-input', shortcut: keysOf('project.move'), picker: {
         title: t('Move to'), placeholder: t('Find a project…'), emptyText: t('No other project can hold this one'),
@@ -134,6 +146,8 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         ),
         palette: iconPickerSpec(project.icon, (icon) => act(updateProject(project.id, { icon }))),
       } },
+      ...(flow ? [flow] : []),
+      ...(maintenance ? [maintenance] : []),
       { kind: 'confirm', id: 'archive', label: subCount ? t('Archive with sub-projects') : t('Archive'), icon: 'archive', confirm: {
         title: t('Archive “{name}”?', { name: project.name }), tone: 'default', confirmLabel: t('Archive'),
         body: withCount((tasks) => subCount
@@ -156,9 +170,15 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
 const ACTIVITY_PANEL = 'project-activity'
 const HISTORY_PANEL = 'project-history'
 
-export function ProjectHeader({ project, userId, actions, layout, subtitle, phone }: {
+export function ProjectHeader({ project, userId, actions, layout, subtitle, phone, extraGroups, lead, secondary }: {
   project: Project
   userId?: string
+  /** Items the layout adds to the project menu (a board's Colour by, calendar-clarity D3). */
+  extraGroups?: ActionGroup[]
+  /** The layout's part of the lead line (the Calendar layout's filter chip, calendar-clarity D5). */
+  lead?: ReactNode
+  /** A second row under the title (the Calendar layout's range controls, calendar-clarity D5). */
+  secondary?: ReactNode
   /** Below 768 px, a line under the title in the shell's bar (the board's current column). */
   subtitle?: ReactNode
   /** Page actions rendered after Share (the duration filter, touch Select). */
@@ -227,6 +247,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
 
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const otherWorkspaces = useOtherWorkspaces()
+  const mode = useMethodMode()
+  const reviewEvery = useProjectPrefsRow(project.id)?.review_every
   const panels: ActionGroup = { items: [
     ...(listLayout ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
@@ -236,8 +258,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
-    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces },
+    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
       { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
+    ...(extraGroups ?? []),
     panels,
   ]
 
@@ -269,6 +292,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
         </button>
       )}
       {role === 'viewer' && <span role="note" className="rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted">{t('Read-only')}</span>}
+      {/* project-review-cadence: the shared status, inside the existing lead line. */}
+      {inMaintenance(project) && <span role="note" data-project-maintenance className="inline-flex items-center gap-1 rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted"><Icon name="wrench" size="xs" />{t('In maintenance')}</span>}
+      {lead}
       {online && managesLinks && publicLinks > 0 && (
         <button type="button" data-public-badge onClick={() => setSharing('public')}
           aria-label={t('{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}', { n: publicLinks })}
@@ -285,6 +311,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const phoneMeta = [
     membership ? `${membership.members.length} · ${roleName(role)}` : '',
     role === 'viewer' ? t('Read-only') : '',
+    inMaintenance(project) ? t('In maintenance') : '',
     online && managesLinks && publicLinks > 0 ? t('Public') : '',
   ].filter(Boolean).join(' · ')
 
@@ -304,7 +331,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
         </>}
         menu={<ActionMenu label={t('Project menu')} title={project.name} groups={phone ? [...phone.groups, { items: [shareItem] }, ...groups] : groups} header={editable ? <ColourSwatches project={project} /> : undefined}
           trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
-          open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
+          open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />}>
+        {secondary}
+      </PageHeader>
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership ?? undefined} section={sharing === 'public' ? 'public' : undefined}
         onPublicLinks={setPublicLinks} onClose={() => setSharing(false)} />}
       {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}

@@ -71,4 +71,13 @@ describe('project header', () => {
     expect(document.querySelector('[data-panel-frame]')).toBeNull()
     await r.unmount()
   })
+
+  it('reads "In maintenance" in the lead line while the project is in maintenance (project-review-cadence)', async () => {
+    const r = await render(<ProjectHeader project={{ ...p('home', 'Home'), status: 'maintenance' }} />)
+    await waitFor(() => !!r.container.querySelector('[data-project-maintenance]'), 'the maintenance note')
+    expect(r.container.querySelector('[data-project-maintenance]')!.textContent).toBe('In maintenance')
+    await r.rerender(<ProjectHeader project={{ ...p('home', 'Home'), status: 'active' }} />)
+    await waitFor(() => !r.container.querySelector('[data-project-maintenance]'), 'no maintenance note')
+    await r.unmount()
+  })
 })

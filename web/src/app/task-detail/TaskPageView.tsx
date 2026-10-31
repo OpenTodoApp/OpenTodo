@@ -24,6 +24,7 @@ import { Subtasks } from './Subtasks'
 import { TaskActionsMenu } from './TaskActionsMenu'
 import { TaskFacts } from './TaskFacts'
 import { ReadOnlyNote, TaskHead, TaskRelations } from './TaskHead'
+import { useFollowing, useOccurrenceView } from './occurrenceView'
 import { TaskNotes } from './TaskNotes'
 import { TaskPageDialog } from './TaskPageDialog'
 import { useTaskDetail } from './useTaskDetail'
@@ -51,9 +52,15 @@ export interface TaskPageViewProps {
   onOpen: (id: string) => void
 }
 
-export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav, onOpen }: TaskPageViewProps) {
+export function TaskPageView({ taskId, userId, readOnly: viewer, projects, labelMap, nav, onOpen }: TaskPageViewProps) {
   const root = useRef<HTMLDivElement>(null)
-  const m = useTaskDetail({ taskId, readOnly, projects, labelMap, onClose: nav.onBack, onOpen, scope: root })
+  const m = useTaskDetail({ taskId, readOnly: viewer, projects, labelMap, onClose: nav.onBack, onOpen, scope: root })
+  // On This occurrence a series' values show without editing them (series-exceptions D5).
+  const occurrence = useOccurrenceView(m.task)
+  const readOnly = viewer || !!occurrence
+  // Under This and following only the series' own fields are edited: the first edit splits it (series-split D6).
+  const following = useFollowing(m.task)
+  const locked = readOnly || !!following
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   // The pinned bottom of the content column: the comment composer renders here while Comments is shown.
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
@@ -118,9 +125,9 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
     <div ref={root} className={`${PAGE_FRAME} px-4 md:px-8`} data-task-page={task.id} data-detail-for={task.id} data-detail-variant="page">
       <PageHeader title={desktop ? crumbs : nav.backLabel || project?.name || t('Inbox')} help="task-panel" barActions
         back={desktop ? undefined : { label: t('Back to the list'), onClick: nav.onBack }}
-        menu={<TaskActionsMenu m={m} page readOnly={readOnly} onOpen={onOpen} />}
+        menu={<TaskActionsMenu m={m} page readOnly={locked} onOpen={onOpen} />}
         actions={<>{stepper}{desktop && <IconButton icon="x" size="sm" label={t('Close')} shortcut="Esc" onClick={nav.onBack} data-task-close />}</>} />
-      {readOnly && <ReadOnlyNote />}
+      {viewer && <ReadOnlyNote />}
       {isSample(task) && !readOnly && <SampleNotice />}
       {/* From 1024 px the facts column spans the three blocks; the last row takes the height the
           facts need beyond the content, so no gap opens between the title and the notes. */}
@@ -130,9 +137,9 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
             three blocks (task-panel-notes-below D3, GitHub issue 444). */}
         <div className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-1 lg:pt-4" data-task-content>
           <div className="flex min-w-0 items-start gap-2">
-            <TaskHead m={m} readOnly={readOnly} projects={projects} size="page" />
+            <TaskHead m={m} readOnly={readOnly} completeLocked={locked} projects={projects} size="page" />
           </div>
-          <TaskRelations m={m} onOpen={onOpen} />
+          <TaskRelations m={m} onOpen={onOpen} readOnly={viewer} />
         </div>
         <aside aria-label={t('Facts')} className="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:sticky lg:top-(--panel-header-h) lg:self-start lg:border-l lg:border-soft lg:pl-8 lg:pt-4 max-lg:rounded-card max-lg:border max-lg:border-default md:max-lg:p-3 max-md:overflow-hidden" data-task-facts>
           {/* Below 768 px the facts are one stacked card of 44 px rows (precision-phone D4). */}
@@ -141,8 +148,8 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
         </aside>
         {/* From 1024 px the notes follow the title as one block, as before: the grid's row gap is taken back. */}
         <div className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-2 lg:-mt-3" data-task-notes-block>
-          <TaskNotes task={task} readOnly={readOnly} />
-          {!readOnly && (
+          <TaskNotes task={task} readOnly={locked} />
+          {!locked && (
             <div className="flex items-center gap-1" data-content-tools>
               <AttachMenu taskId={task.id} />
             </div>
@@ -150,8 +157,8 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
         </div>
         <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-3" data-task-rest>
           {/* Custom field values of the task's project (custom-fields). */}
-          <FieldsGroup task={task} readOnly={readOnly} />
-          <Subtasks task={task} items={m.children} progress={m.progress} readOnly={readOnly} boxed onToggle={m.toggle} onOpen={onOpen} />
+          <FieldsGroup task={task} readOnly={locked} />
+          <Subtasks task={task} items={m.children} progress={m.progress} readOnly={locked} boxed onToggle={m.toggle} onOpen={onOpen} />
           <AttachmentsRow taskId={task.id} userId={userId} role={roleOf(task.project_id, m.memberships ?? new Map())} dropTarget={root} />
           <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} composerHost={footer} page />
           <div ref={setFooter} data-panel-footer className="sticky bottom-0 bg-surface pb-3 pt-2 empty:hidden" />

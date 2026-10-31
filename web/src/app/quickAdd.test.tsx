@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { flush, render, type, waitFor } from '../ui/test-utils'
-import { QuickAdd } from './QuickAdd'
+import { pastedInputs, QuickAdd } from './QuickAdd'
 
 beforeEach(() => localStorage.clear())
 
@@ -185,5 +185,143 @@ describe('inline tints (moments-and-onboarding 6.1)', () => {
     await waitFor(() => !!r.container.querySelector('[data-tint="priority"]'), 'the priority tint')
     expect(r.container.querySelector('[data-tint="priority"]')!.className).toBe('quick-add-tint')
     await r.unmount()
+  })
+})
+
+// OpenSpec change paste-to-tasks, tasks 3.1 and 3.2: a pasted list offers one task per line.
+describe('pasting several lines', () => {
+  /** Pastes `text` into the field; returns whether the paste was held back. */
+  async function paste(input: HTMLInputElement, text: string): Promise<boolean> {
+    const e = new Event('paste', { bubbles: true, cancelable: true })
+    Object.defineProperty(e, 'clipboardData', { value: { files: [], getData: (kind: string) => (kind === 'text/plain' ? text : '') } })
+    await act(async () => { input.dispatchEvent(e) })
+    await flush()
+    return e.defaultPrevented
+  }
+  const offer = () => document.querySelector<HTMLElement>('[data-paste-offer]')
+  const press = (sel: string) => act(async () => { document.querySelector<HTMLButtonElement>(sel)!.click() })
+
+  async function setup(extra: { onAddMany?: boolean } = {}) {
+    const added: Record<string, unknown>[] = []
+    const many: Record<string, unknown>[][] = []
+    const r = await render(<QuickAdd placeholder="Add a task" projects={[{ id: 'p-work', name: 'Work' }]}
+      onAdd={async (i) => { added.push(i as never) }}
+      onAddMany={extra.onAddMany === false ? undefined : async (inputs) => { many.push(inputs as never) }} />)
+    return { r, added, many, input: r.container.querySelector('input')! }
+  }
+
+  it('an empty field: the offer shows the count, five previews and "and N more"; Add hands every line at once', async () => {
+    const { r, many, added, input } = await setup()
+    expect(await paste(input, '- Milk\n- Eggs\n\n- Bread\n* Butter\n1. Jam\n2) Tea\n[ ] Rice')).toBe(true)
+    await waitFor(() => !!offer(), 'the offer')
+    expect(offer()!.dataset.pasteOffer).toBe('add')
+    expect(offer()!.textContent).toContain('Add 7 tasks, one per line?')
+    expect([...document.querySelectorAll('[data-paste-preview] li:not([data-paste-more])')].map((li) => li.textContent)).toEqual(['Milk', 'Eggs', 'Bread', 'Butter', 'Jam'])
+    expect(document.querySelector('[data-paste-more]')!.textContent).toBe('and 2 more')
+    expect(document.querySelector('[data-paste-add]')!.textContent).toContain('Add 7 tasks')
+    await press('[data-paste-add]')
+    await waitFor(() => many.length === 1 && !offer(), 'the batch')
+    expect(many[0].map((i) => i.title)).toEqual(['Milk', 'Eggs', 'Bread', 'Butter', 'Jam', 'Tea', 'Rice'])
+    expect(added).toEqual([])
+    expect(input.value).toBe('')
+    await r.unmount()
+  })
+
+  it('a field that already holds text is not intercepted', async () => {
+    const { r, input } = await setup()
+    await type(input, 'Buy ')
+    await act(async () => { input.setSelectionRange(4, 4) })
+    expect(await paste(input, 'Milk\nEggs')).toBe(false)
+    expect(offer()).toBeNull()
+    await r.unmount()
+  })
+
+  it('a wholly selected field is intercepted', async () => {
+    const { r, input } = await setup()
+    await type(input, 'old text')
+    await act(async () => { input.setSelectionRange(0, input.value.length) })
+    expect(await paste(input, 'Milk\nEggs')).toBe(true)
+    await waitFor(() => !!offer(), 'the offer')
+    await r.unmount()
+  })
+
+  it('a single line (after cleanup) pastes as before', async () => {
+    const { r, input } = await setup()
+    expect(await paste(input, '- Milk\n\n   \n-')).toBe(false)
+    expect(offer()).toBeNull()
+    await r.unmount()
+  })
+
+  it('Paste as one line fills the field with the lines joined by spaces and creates nothing', async () => {
+    const { r, input, many, added } = await setup()
+    await paste(input, 'Milk\nEggs')
+    await waitFor(() => !!offer(), 'the offer')
+    await press('[data-paste-one-line]')
+    await waitFor(() => !offer() && input.value === 'Milk Eggs', 'the joined line')
+    expect(many).toEqual([])
+    expect(added).toEqual([])
+    await r.unmount()
+  })
+
+  it('Escape closes the offer and pastes nothing', async () => {
+    const { r, input, many } = await setup()
+    await paste(input, 'Milk\nEggs')
+    await waitFor(() => !!offer(), 'the offer')
+    await act(async () => { document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })) })
+    await waitFor(() => !offer(), 'the offer closed')
+    expect(input.value).toBe('')
+    expect(many).toEqual([])
+    await r.unmount()
+  })
+
+  it('more than 100 lines: the offer says so, offers Import and one line, and adds nothing', async () => {
+    const { r, input, many } = await setup()
+    await paste(input, Array.from({ length: 150 }, (_, i) => `Item ${i + 1}`).join('\n'))
+    await waitFor(() => !!offer(), 'the offer')
+    expect(offer()!.dataset.pasteOffer).toBe('too-many')
+    expect(offer()!.textContent).toContain('That is more than 100 lines. Use Import for long lists.')
+    expect(document.querySelector('[data-paste-import]')).not.toBeNull()
+    expect(document.querySelector('[data-paste-one-line]')).not.toBeNull()
+    expect(document.querySelector('[data-paste-add]')).toBeNull()
+    expect(many).toEqual([])
+    await r.unmount()
+  })
+
+  it('a refused batch keeps the offer open with the reason', async () => {
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={() => {}} onAddMany={async () => { throw new Error('This title is too long to encrypt.') }} />)
+    const input = r.container.querySelector('input')!
+    await paste(input, 'Milk\nEggs')
+    await waitFor(() => !!offer(), 'the offer')
+    await press('[data-paste-add]')
+    await waitFor(() => !!document.querySelector('[data-paste-error]'), 'the reason')
+    expect(document.querySelector('[data-paste-error]')!.textContent).toBe('This title is too long to encrypt.')
+    expect(offer()).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('without onAddMany each line goes through onAdd in order', async () => {
+    const { r, input, added } = await setup({ onAddMany: false })
+    await paste(input, 'One\nTwo\nThree')
+    await waitFor(() => !!offer(), 'the offer')
+    await press('[data-paste-add]')
+    await waitFor(() => added.length === 3, 'three adds')
+    expect(added.map((i) => i.title)).toEqual(['One', 'Two', 'Three'])
+    await r.unmount()
+  })
+})
+
+describe('pastedInputs (paste-to-tasks 3.2)', () => {
+  const context = { today: '2026-10-30', now: '09:00', languages: ['en'], weekStart: 1, projects: [{ id: 'p-work', name: 'Work' }] }
+
+  it('each line is parsed on its own: dates, #project and p1', async () => {
+    const inputs = await pastedInputs(['Call Anna tomorrow 10am', 'Send invoice #Work p1'], context)
+    expect(inputs[0]).toMatchObject({ title: 'Call Anna', due: { date: '2026-10-31', time: '10:00' } })
+    expect(inputs[1]).toMatchObject({ title: 'Send invoice', project_id: 'p-work', priority: 1 })
+    expect(inputs[1].due).toBeUndefined()
+  })
+
+  it('a line that parses to no title keeps its text; with parsing off lines are titles as they are', async () => {
+    expect(await pastedInputs(['tomorrow'], context)).toEqual([{ title: 'tomorrow' }])
+    expect(await pastedInputs(['Call Anna tomorrow', 'p1'], null)).toEqual([{ title: 'Call Anna tomorrow' }, { title: 'p1' }])
   })
 })

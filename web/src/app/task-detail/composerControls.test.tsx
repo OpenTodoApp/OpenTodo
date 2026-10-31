@@ -6,6 +6,8 @@ import { TextSelection } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MentionTarget } from '../../lib/comments'
+import { setFormattingButton } from '../../lib/userPrefs'
+import { formattingRowKey } from '../../lib/formattingRow'
 import type { Comment } from '../../lib/types'
 import { click, flush, key, render as mount, waitFor } from '../../ui/test-utils'
 import { setRichComposer, writeDraft } from './Composer'
@@ -137,6 +139,37 @@ describe('Formatting control', () => {
     expect(posted(p)[0][0]).toBe('**done**')
     await click(toggle)
     await waitFor(() => !r.container.querySelector('[data-editor-toolbar]'), 'the row to hide')
+  })
+
+  it('Formatting row remembered: another composer opens with the row, notes are unaffected (notes-toolbar-desktop D6)', async () => {
+    const first = await render(<CommentsView {...props()} />)
+    await waitFor(() => !!first.container.querySelector('[data-rich-composer] #comment-composer'), 'the rich composer')
+    await click(first.container.querySelector<HTMLButtonElement>('[data-composer-formatting]')!)
+    await waitFor(() => !!first.container.querySelector('[data-editor-toolbar]'), 'the formatting row')
+    expect(localStorage.getItem(formattingRowKey('comments'))).toBe('on')
+    expect(localStorage.getItem(formattingRowKey('notes'))).toBeNull()
+    await first.unmount()
+    const second = await render(<CommentsView {...props({ taskId: 't2' })} />)
+    await waitFor(() => !!second.container.querySelector('[data-editor-toolbar]'), 'the remembered row')
+    expect(second.container.querySelector('[data-composer-formatting]')!.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('Formatting button turned off: no toggle and no row; the bold shortcut still works', async () => {
+    localStorage.setItem(formattingRowKey('comments'), 'on')
+    await setFormattingButton(false)
+    const p = props()
+    const r = await render(<CommentsView {...p} />)
+    await waitFor(() => !!r.container.querySelector('[data-rich-composer] #comment-composer'), 'the rich composer')
+    await waitFor(() => !r.container.querySelector('[data-composer-formatting]'), 'the toggle hidden')
+    expect(r.container.querySelector('[data-editor-toolbar]')).toBeNull()
+    const v = composerViewOf(r.container.querySelector('#comment-composer')!)!
+    v.focus()
+    await typeText(v, 'done')
+    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 1, 5)))
+    await press(v, 'b', { ctrlKey: true })
+    await press(v, 'Enter', { ctrlKey: true })
+    await waitFor(() => posted(p).length > 0, 'the comment to post')
+    expect(posted(p)[0][0]).toBe('**done**')
   })
 })
 

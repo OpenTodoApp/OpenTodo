@@ -20,12 +20,12 @@ export function PlanAgenda({ days, today, dayLength, eventHue, onAdd, rowProps }
     <div className="space-y-3 py-2" data-plan-agenda>
       {days.map((day) => {
         const name = formatDateParts(day.date, { weekday: 'long', day: 'numeric', month: 'short' })
-        const empty = day.entries.length === 0 && day.events.length === 0 && day.allDay.length === 0
+        const empty = day.entries.length === 0 && day.events.length === 0 && day.allDay.length === 0 && !day.deadlines?.length
         return (
           <section key={day.date} data-agenda-day={day.date} aria-labelledby={`plan-${day.date}`}>
             <div className="border-b border-default px-1 pb-1">
               <h2 id={`plan-${day.date}`} className={`text-body font-semibold ${day.date === today ? 'text-accent' : 'text-strong'}`}>{name}</h2>
-              <CapacityBar load={day.load} dayLength={dayLength} eventHue={eventHue} />
+              <CapacityBar load={day.load} dayLength={dayLength} eventHue={eventHue} hidden={day.hidden} />
             </div>
             {empty
               // One quiet line per empty day (not an empty-view landmark: fourteen of them would repeat one name).

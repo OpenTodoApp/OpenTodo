@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	"github.com/OpenTodoApp/opentodo/internal/timetrack"
@@ -238,6 +239,15 @@ func (v *view) line(id string, labels map[string]string, extra string) Line {
 		l.Estimate = formatMinutes(m)
 	}
 	l.Evening = r.Bool("evening")
+	if part := r.Str("day_part"); !l.Evening && daypart.Stored(part) {
+		l.DayPart = part
+	}
+	if e := r.Str("energy"); validEnergy(e) {
+		l.Energy = e
+	}
+	if r.Bool("span") {
+		l.Span = "true"
+	}
 	if p := int(r.Num("priority")); p >= 1 && p <= 3 {
 		l.Priority = p
 	}

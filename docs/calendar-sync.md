@@ -22,6 +22,7 @@ The server owner turns calendar sync on under **Settings → Integrations → Ca
 | An open task due at 09:00 with an estimate of 45 minutes | An event from 09:00 to 09:45, titled like the task, with the notes as its description |
 | A task due at a time without an estimate | A 30-minute event |
 | A task due on a day without a time | An all-day event, only with **Include tasks without a time** on |
+| A multi-day task, from its start date to its due date | One all-day event over those days, whatever **Include tasks without a time** says; a due time is not shown |
 | A repeating task | One event for its next occurrence |
 | A completed, deleted or undated task | Its event is removed |
 
@@ -32,6 +33,8 @@ And back:
 | Drag the event to another time or day | The task's due date and time change |
 | Make the event longer or shorter | The task's estimate changes |
 | Make it an all-day event | The task keeps the date and loses the time |
+| Move, lengthen or shorten a multi-day task's all-day event | Its first day becomes the task's start date and its last day the due date; a due time stays |
+| Make a multi-day task's event a timed event | The due date and time change as for any task; the start date and the multi-day setting stay, so the next check writes the all-day event again while the start is before the due date |
 | Rename the event | The task is renamed |
 | Delete the event | The task stays open without a date |
 
@@ -95,7 +98,7 @@ The server cannot read an encrypted account's titles and notes. With encryption 
 - Up to 3 calendar accounts per person; one calendar to write into and up to 10 shown per account.
 - Up to 200 events written or removed per check; the rest follows about 20 seconds later.
 - Repeating tasks are written as their next occurrence, not as a series. Alarms, attendees and invitations are not written.
-- Moving an event of a task you may only view in a shared project is undone: the next check writes the task's time back.
+- Moving an event of a task you may only view in a shared project is undone: the next check writes the task's time back (for a multi-day task, its start and due dates).
 - Calendar sync is refused on a public demo instance.
 
 ## Outlook

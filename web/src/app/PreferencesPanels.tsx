@@ -1,5 +1,6 @@
 // Settings → General panels (OpenSpec settings-navigation, settings-redesign D3).
 import { useUserPrefsRow } from '../lib/localData'
+import { dayPartsOn, setDayParts } from '../lib/dayParts'
 import { briefingHidden, readLanguage, setBriefingShown, setUserPref } from '../lib/userPrefs'
 import type { LanguagePref } from '../lib/types'
 import { SHIPPED, nativeName } from '../locales'
@@ -109,6 +110,21 @@ export function BriefingView({ shown, onChange }: { shown: boolean; onChange: (o
     <SettingsSection {...cardCopy('briefing')}>
       <SettingRow {...rowCopy('briefing', 'show')} id="briefing-show" htmlFor="briefing-show-switch"
         control={<span data-briefing-switch><Switch id="briefing-show-switch" checked={shown} onChange={onChange} label={t('Show the briefing')} hideLabel /></span>} />
+    </SettingsSection>
+  )
+}
+
+/** Settings → General → Today (day-parts D4): the synced user_prefs.day_parts, as in Today's menu. */
+export function DayPartsSection() {
+  const row = useUserPrefsRow()
+  return <DayPartsView on={dayPartsOn(row)} onChange={(on) => act(setDayParts(on))} />
+}
+
+export function DayPartsView({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <SettingsSection {...cardCopy('day-parts')}>
+      <SettingRow {...rowCopy('day-parts', 'group')} id="day-parts" htmlFor="day-parts-switch"
+        control={<span data-day-parts-switch><Switch id="day-parts-switch" checked={on} onChange={onChange} label={t('Group Today by part of the day')} hideLabel /></span>} />
     </SettingsSection>
   )
 }

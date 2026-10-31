@@ -10,6 +10,11 @@ import { t } from '../lib/i18n'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 import { pinItem } from './menus/pinItem'
 import { useFavourites, useIsFavourite } from './useFavourites'
+import { projectFlowItem } from './menus/flowMenu'
+import { maintenanceItem } from './menus/reviewMenu'
+import { useMethodMode } from '../lib/method/mode'
+import { useMembership } from '../lib/localData'
+import { canEditProject } from '../lib/sharing'
 
 export function projectRowMenuGroups(a: { pinned: boolean; pin: () => unknown; move?: (d: -1 | 1) => unknown; first: boolean; last: boolean }): ActionGroup[] {
   return [
@@ -35,7 +40,15 @@ export function ProjectRowMenu({ project, within, edges, movable = false, classN
   const inFavourites = within === 'favourites'
   const place = inFavourites ? favouriteEdges(favourites, 'project', project.id) : edges ?? { first: true, last: true }
   const move = inFavourites ? (d: -1 | 1) => moveFavourite('project', project.id, d) : movable ? (d: -1 | 1) => moveProjectBy(project.id, d) : undefined
-  const groups = projectRowMenuGroups({ pinned, pin: () => setFavourite('project', project.id, !pinned), move, ...place })
+  // "Flow…" (project-flow-modes D7) for the owner and admins; under Simple lists only once a flow is set.
+  const membership = useMembership(project.id)
+  const mode = useMethodMode()
+  const canEdit = membership !== undefined && canEditProject(membership?.role ?? 'owner')
+  const flow = projectFlowItem(project, { mode, canEdit })
+  // "Put in maintenance" / "End maintenance" (project-review-cadence D6), under the same rule.
+  const maintenance = maintenanceItem(project, { mode, canEdit })
+  const extra = [flow, maintenance].filter((i) => i !== null)
+  const groups = [...projectRowMenuGroups({ pinned, pin: () => setFavourite('project', project.id, !pinned), move, ...place }), ...(extra.length ? [{ items: extra }] : [])]
   return (
     <ActionMenu label={t('Menu for project {name}', { name: project.name })} title={project.name} groups={groups}
       triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
