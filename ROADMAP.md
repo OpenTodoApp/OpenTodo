@@ -84,7 +84,7 @@ Phones, Apple, Obsidian and voice.
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian |  |
 | [`voice-ramble`](openspec/changes/archive/2026-10-31-voice-ramble/) | **Shipped.** Speak a brain dump or drop a photo of notes; review the proposed tasks | [#608](https://github.com/OpenTodoApp/OpenTodo/issues/608) |
 | [`outlook-calendar-sync`](openspec/changes/archive/2026-10-31-outlook-calendar-sync/) | **Shipped.** Microsoft 365 and Outlook in calendar sync | [#609](https://github.com/OpenTodoApp/OpenTodo/issues/609) |
-| [`play-production`](openspec/changes/play-production/) | Google Play production, F-Droid and reproducible builds |  |
+| [`play-production`](openspec/changes/play-production/) | **In progress.** Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | [#603](https://github.com/OpenTodoApp/OpenTodo/issues/603) |
 | [`agent-tools-complete`](openspec/changes/archive/2026-10-31-agent-tools-complete/) | **Shipped.** Agent and MCP tools for reminders, project notes, sections, fields, time and Focus | [#565](https://github.com/OpenTodoApp/OpenTodo/issues/565) |
 
 ### [0.21 "Horizons and home"](https://github.com/OpenTodoApp/OpenTodo/milestone/5)
@@ -317,7 +317,7 @@ Phone and desktop apps as thin shells around the same web app, loaded from your 
 
 | # | Shell | Change | Notes |
 | --- | --- | --- | --- |
-| 1 | **In closed testing on Google Play.** Android app: first-run server screen, reminders scheduled on the phone without a push service, the share menu, Today and quick-add widgets, fingerprint unlock of an encrypted account | `native-shells` | Hand-written Kotlin around a `WebView`, AndroidX only (APK about 1 MB), in `mobile/android` since 0.10. Production, F-Droid and reproducible builds: `play-production` in 0.20 |
+| 1 | **In closed testing on Google Play.** Android app: first-run server screen, reminders scheduled on the phone without a push service, the share menu, Today and quick-add widgets, fingerprint unlock of an encrypted account | `native-shells` | Hand-written Kotlin around a `WebView`, AndroidX only (APK about 1 MB), in `mobile/android` since 0.10. Reproducible builds, one certificate for Google Play, F-Droid and GitHub, and the upload to Play's internal track are in (`play-production`); production on Play and the F-Droid listing are in progress in 0.20 |
 | 2 | **Built; waiting for the owner.** iOS app with the same bridge: first-run server screen, reminders scheduled on the phone without a push service, the share sheet, a Today widget, Face ID unlock, and an opt-in build setting that adds the installed web app's offline start | `ios-shell` | Hand-written Swift around a `WKWebView`, no third-party code, in `mobile/ios`. Store distribution is `ios-distribution` in 0.20 |
 | 3 | Desktop app for macOS and Windows: the embedded server plus a window, a tray icon and native notifications | `desktop-shell` | Open: Wails v3 or the `webview/webview` binding (D2), code signing and notarisation, where the data directory lives |
 
