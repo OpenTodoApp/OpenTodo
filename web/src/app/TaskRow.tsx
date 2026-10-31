@@ -799,14 +799,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>
-        {onTick && !readOnly && (
-          <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-fine:-inset-0.5 pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
-            {/* A styled box, not the platform's: it fills the same 20 px slot as the
-                completion circle it stands in for, identically on every device. */}
-            <input type="checkbox" className="row-tick size-5 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
-          </label>
-        )}
+        {onTick && !readOnly && <RowTick name={name} ticked={ticked} showCheckbox={showCheckbox} onTick={onTick} />}
       </span>
       {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
@@ -859,6 +852,21 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       )}
       {swipe && swiping.layers}
     </li>
+  )
+}
+
+/**
+ * The row's selection box, drawn by the app rather than the platform (bulk-actions on
+ * touch): it fills the same 20 px slot as the completion circle it stands in for,
+ * identically on every device, instead of taking whatever size and offset the browser
+ * gave the native control.
+ */
+function RowTick({ name, ticked, showCheckbox, onTick }: { name: string; ticked: boolean; showCheckbox?: boolean; onTick: (range: boolean) => void }) {
+  return (
+    <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-fine:-inset-0.5 pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
+      <input type="checkbox" className="row-tick size-5 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
+    </label>
   )
 }
 
