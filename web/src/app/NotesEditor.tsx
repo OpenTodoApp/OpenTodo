@@ -12,9 +12,10 @@ import { byteLength, MAX_PLAINTEXT_BYTES } from '../lib/crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE } from '../lib/docfields'
 import { encryptionSnapshot } from '../lib/e2ee'
 import { checkLineAt, mentionIds, sameIds, subtaskLine } from '../lib/editorNotes'
-import { foldNote, mutate, mutateMany, planTask, type Change } from '../lib/ops'
+import { foldNote, mutate, mutateMany, planTask, type Change, type PushTiming } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
 import { applyBody, createState, insertBlocks, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
+import { pushPendingNotes } from '../lib/sync'
 import { useMe } from '../lib/timeEntries'
 import type { Clock } from '../lib/types'
 import { EditorToolbar, openCellMenu, useEditorChrome } from './EditorChrome'
@@ -27,7 +28,11 @@ import { filesFrom } from './task-detail/AttachmentsRow'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
 
-/** Debounce between the last keystroke and saving the note (design D3). */
+/**
+ * Debounce between the last keystroke and saving the note on the device (design D3).
+ * The timed save is pushed after the note's pause (notes-save-cadence D2); leaving
+ * the editor pushes at once.
+ */
 const SAVE_MS = 400
 const LOCAL = 'local'
 const REMOTE = 'remote'
@@ -201,13 +206,14 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     }
     return patch
   }
-  const flush = useRef<() => void>(() => {})
-  flush.current = () => {
+  // 'now' when the editor is left (blur, hide, unload, unmount): also pushes an earlier timed save.
+  const flush = useRef<(push: PushTiming) => void>(() => {})
+  flush.current = (push) => {
     if (timer.current) clearTimeout(timer.current)
     timer.current = null
-    if (!dirty.current || !ydoc.current) return
+    if (!dirty.current || !ydoc.current) return void (push === 'now' && pushPendingNotes())
     dirty.current = false
-    mutate(entity, taskId, notePatch()).then(
+    mutate(entity, taskId, notePatch(), { push }).then(
       () => setError(null),
       (err) => setError(err instanceof DocTooLargeError ? err.message : t('Could not save the note: {reason}', { reason: messageOf(err) })),
     )
@@ -270,7 +276,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
           return false
         },
         blur: () => {
-          flush.current()
+          flush.current('now')
           setEditing(false)
           return false
         },
@@ -285,7 +291,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         setSizeNote(size.current >= WARN_DOC_CHARS ? t('This note is {percent}% of the size limit.', { percent: Math.round((size.current / MAX_DOC_CHARS) * 100) }) : null)
         dirty.current = true
         if (timer.current) clearTimeout(timer.current)
-        timer.current = setTimeout(() => flush.current(), SAVE_MS)
+        timer.current = setTimeout(() => flush.current('deferred'), SAVE_MS)
       },
     })
     view.current = v
@@ -293,14 +299,14 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     size.current = usage(doc, v.state.doc)
     if (autoFocus && !readOnly) v.focus()
     const onHide = () => {
-      if (document.visibilityState === 'hidden') flush.current()
+      if (document.visibilityState === 'hidden') flush.current('now')
     }
-    const onUnload = () => flush.current()
+    const onUnload = () => flush.current('now')
     document.addEventListener('visibilitychange', onHide)
     window.addEventListener('pagehide', onUnload)
     window.addEventListener('beforeunload', onUnload)
     return () => {
-      flush.current()
+      flush.current('now')
       document.removeEventListener('visibilitychange', onHide)
       window.removeEventListener('pagehide', onUnload)
       window.removeEventListener('beforeunload', onUnload)
