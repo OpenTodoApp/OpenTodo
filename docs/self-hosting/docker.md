@@ -232,6 +232,8 @@ The command needs only the data volume: shell access to the host is the proof of
 
 **Upgrading from 0.1.0 to 0.2.0:** 0.1.0 locked the data directory exclusively, so a 0.2.0 container cannot start beside it. Plain `docker compose up -d` already stops the old container first and needs nothing special. With an orchestrator that starts the new container first, stop the old one for this one upgrade (`docker compose down && docker compose up -d`, or **Stop** then **Deploy** in Coolify); from 0.2.0 on, updates roll without stopping. If you pinned a tag such as `ghcr.io/pixari/opentodo:0.1`, change it to `0.2` (or `0.2.0`).
 
+**Upgrading to 0.19:** a database created by an earlier version is rewritten once, at a quiet moment, so the file can shrink after old note versions are removed. It needs free disk space of the database's size plus 10 % and takes about as long as a backup; writes wait meanwhile. See [Database size and compaction](../backups.md#database-size-and-compaction).
+
 ### The move to OpenTodoApp
 
 The project moved from the GitHub account `pixari` to the organization [OpenTodoApp](https://github.com/OpenTodoApp) after 0.14.2. The image is now **`ghcr.io/opentodoapp/opentodo`** (the Helm chart `oci://ghcr.io/opentodoapp/charts/opentodo`), with the same tags: `stable`, `<major>.<minor>`, `<version>` and `latest`. GitHub redirects the old repository addresses; the container registry does not.
