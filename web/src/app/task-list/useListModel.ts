@@ -172,7 +172,7 @@ export function useListModel(route: ListRoute, userId?: string) {
   const treeTasks = useMemo(() => (laterTasks.length ? tasks.filter((task) => !inLater(task, today)) : tasks), [laterTasks, tasks, today])
   const tree = useMemo(() => (treeView ? buildTaskTree(treeTasks) : null), [treeView, treeTasks])
   const buckets = useMemo(() => sectionBuckets(projectId, tree, sections), [projectId, tree, sections])
-  const columns = useMemo(() => boardColumns(buckets), [buckets])
+  const columns = useMemo(() => boardColumns(buckets, collapsedSections), [buckets, collapsedSections])
 
   // A project's or label's display options (list-display-options): personal and synced.
   const prefsRow = useProjectPrefsRow(projectId)

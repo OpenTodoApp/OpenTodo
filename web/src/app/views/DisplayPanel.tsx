@@ -5,7 +5,7 @@
 // label pages show the same panel with the parts they have (list-display-options D2):
 // a part whose value is absent is left out.
 import { useRef, useState, type ReactNode } from 'react'
-import { Icon, IconButton, Popover, type IconName } from '../../ui'
+import { Icon, IconButton, Popover, Switch, type IconName } from '../../ui'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, VIEW_LAYOUTS,
   type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout,
@@ -25,6 +25,8 @@ export interface ViewDisplay {
   hidden: readonly RowProperty[]
   /** The view's own row layout (row-layouts); absent follows the account's. */
   rowLayout?: RowLayout
+  /** The Board layout's notes preview (board-polish D4); off by default. */
+  cardNotes?: boolean
 }
 
 /** What the panel shows: a part without a value (layout, completed tasks, row properties) is left out. */
@@ -37,6 +39,8 @@ export interface PanelValue {
   hidden?: readonly RowProperty[]
   /** One line or detailed rows (row-layouts). */
   rowLayout?: RowLayout
+  /** Notes on cards, offered only while the layout is Board (board-polish D4). */
+  cardNotes?: boolean
 }
 
 export const GROUP_LABEL = translatedMap<ListGroupBy>({ project: msg('Project'), due: msg('Due date'), priority: msg('Priority'), label: msg('Label'), none: msg('None'), section: msg('Section') })
@@ -137,6 +141,11 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
             )
           })}
         </div>
+        {layout === 'board' && value.cardNotes !== undefined && (
+          <div className="mt-3" data-display-card-notes>
+            <Switch checked={value.cardNotes} onChange={(on) => onChange({ cardNotes: on })} label={t('Notes on cards')} />
+          </div>
+        )}
       </div>}
       <div className="border-t border-soft">
         <button type="button" aria-expanded={more} onClick={() => setMore(!more)} data-display-more

@@ -327,6 +327,7 @@ A list view and the New view page SHALL offer a display panel, opened from the t
 - **Group by** and **Order by:** the options of "Grouping and sort options".
 - **Completed tasks:** Hide (default) or Show. Show lists completed matches too, as if the query were `(query) & (open | completed)`; a query that names a state itself (`completed`, `open` or a completion date) is unchanged. Sidebar and overview counts stay counts of open matches.
 - **Show on rows:** one toggle per row property (date, project, labels, estimate, assignee, deadline, start, origin), all shown by default. A hidden property is left out of every row and card of the view, and the property column keeps no room for it; the task itself still shows every property.
+- **Notes on cards:** shown only when Layout is Board, under "Show on rows": a switch, off by default, that shows the first two lines of each card's notes as plain text (OpenSpec `sections-and-boards` "Notes preview on cards"), stored on the view.
 - **More options:** folded by default, holding the sort direction.
 
 On a saved view every change SHALL be written to the view at once, as operations that work offline and converge per field; on the New view page the choices are kept with the page and saved with the view. The panel SHALL be a popover from 640 px and a bottom sheet below it, reachable and operable by keyboard, with every target at least 44 by 44 px on a coarse pointer.
@@ -350,6 +351,10 @@ On a saved view every change SHALL be written to the view at once, as operations
 #### Scenario: Detailed rows for one view
 - **WHEN** the account uses one-line rows and the user chooses Detailed in the display panel of "Urgent"
 - **THEN** "Urgent" shows detailed rows, the choice is stored on the view, and the other lists keep one-line rows
+
+#### Scenario: Notes on the cards of a view board
+- **WHEN** the user opens the display panel of the board view "Client work" and turns on Notes on cards
+- **THEN** every card of "Client work" with notes shows two lines of them, the choice is stored on the view, and the switch is not offered while the view's Layout is List
 
 ### Requirement: Toolbar filter chips
 Under the header of a list view and of the New view page, a toolbar SHALL show the query's conditions as chips on the left, followed by "Filter", and the filter and display buttons on the right. A query whose top level is "All of these" SHALL show one chip per condition or group, in words ("Label is waiting", "Due on or before tomorrow", "Any of 2 conditions"), each with its property's icon and "Not" when negated; any other query SHALL show one chip for the whole query. A chip SHALL open the filter panel; "Filter" SHALL open it and start adding a condition. The chips only read the query and SHALL follow every change of it, including changes from other devices after sync. The toolbar SHALL be one row of chrome, wrapping its chips on a narrow screen.

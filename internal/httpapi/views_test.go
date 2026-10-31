@@ -222,6 +222,25 @@ func TestViewDisplayOptions(t *testing.T) {
 	if out["layout"] != "board" || out["show_completed"] != true || fmt.Sprint(out["hidden_props"]) != "[estimate project]" {
 		t.Fatalf("patched view = %v", out)
 	}
+	// The Board layout's notes preview (board-polish D4): a boolean, absent until set.
+	if _, has := out["card_notes"]; has {
+		t.Errorf("card_notes present before it was set: %v", out)
+	}
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"card_notes": true})
+	e.mustStatus(resp, 200, out)
+	if out["card_notes"] != true {
+		t.Fatalf("card_notes after patch = %v", out)
+	}
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"card_notes": "yes"})
+	e.mustStatus(resp, 400, out)
+	if code := out["error"].(map[string]any)["code"]; code != "invalid_input" {
+		t.Fatalf("non-boolean card_notes: code %v", code)
+	}
+	resp, out = e.do("POST", "/api/v1/views", map[string]any{"name": "Client work", "query": "#client", "layout": "board", "card_notes": true})
+	e.mustStatus(resp, 201, out)
+	if out["card_notes"] != true {
+		t.Fatalf("created view = %v", out)
+	}
 }
 
 func TestViewAndLabelManualOrder(t *testing.T) {

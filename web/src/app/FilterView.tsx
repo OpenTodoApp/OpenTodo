@@ -37,7 +37,7 @@ import { FilterBuilder } from './filter/FilterBuilder'
 import { useBuilderOpen } from './filter/builderToggle'
 import { ViewsCrumb } from './views/ViewsCrumb'
 import { FilterPanel, ViewToolbar } from './views/ViewToolbar'
-import { ViewResults } from './views/ViewResults'
+import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import { SaveViewCard } from './views/SaveViewCard'
 import type { ViewDisplay } from './views/DisplayPanel'
 import type { Task } from '../lib/types'
@@ -50,7 +50,7 @@ import { GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VI
 const DEBOUNCE_MS = 150
 
 /** A new view's display options: the saved view defaults (custom-views "Grouping and sort options"). */
-export const NEW_VIEW_DISPLAY: ViewDisplay = { layout: 'list', groupBy: 'project', sortBy: 'due', sortDir: 'asc', showCompleted: false, hidden: [] }
+export const NEW_VIEW_DISPLAY: ViewDisplay = { layout: 'list', groupBy: 'project', sortBy: 'due', sortDir: 'asc', showCompleted: false, hidden: [], cardNotes: false }
 
 /**
  * Order by on the New view page: no Manual order, which only a saved view can keep
@@ -65,7 +65,7 @@ const DRAFT_DEBOUNCE_MS = 300
 export function toDraft(query: string, d: ViewDisplay): FilterDraft {
   return {
     query, group_by: d.groupBy, sort_by: d.sortBy, sort_dir: d.sortDir, layout: d.layout, show_completed: d.showCompleted,
-    hidden_props: [...d.hidden], ...(d.rowLayout ? { row_layout: d.rowLayout } : {}),
+    hidden_props: [...d.hidden], ...(d.rowLayout ? { row_layout: d.rowLayout } : {}), ...(d.cardNotes ? { card_notes: true } : {}),
   }
 }
 
@@ -78,6 +78,7 @@ export function displayOfDraft(d: FilterDraft): ViewDisplay {
     sortBy: pick<SortBy>(d.sort_by, NEW_VIEW_SORT_OPTIONS, NEW_VIEW_DISPLAY.sortBy),
     sortDir: pick<SortDir>(d.sort_dir, SORT_DIR_OPTIONS, NEW_VIEW_DISPLAY.sortDir),
     showCompleted: d.show_completed === true,
+    cardNotes: d.card_notes === true,
     hidden: d.hidden_props.filter((p): p is RowProperty => (ROW_PROPERTIES as readonly string[]).includes(p)),
     ...(d.row_layout && (ROW_LAYOUTS as readonly string[]).includes(d.row_layout) ? { rowLayout: d.row_layout as RowLayout } : {}),
   }
@@ -162,8 +163,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const origins = useMemo(() => originSuggestions(query, allTasks), [query, allTasks])
   const suggestions = useMemo(() => (origins.length ? origins : fieldSuggestions(query, fieldDefs)), [origins, query, fieldDefs])
 
-  const groups = useMemo(() => (result ? groupTasks(result.tasks, display.groupBy, ctx) : []), [result, display.groupBy, ctx])
-  const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((task) => ({ key: `${g.key}:${task.id}`, task }))), [groups])
+  const { groups, shown } = useFoldedGroups('filter', useMemo(() => (result ? groupTasks(result.tasks, display.groupBy, ctx) : []), [result, display.groupBy, ctx]))
+  const rows = useMemo(() => shown.flatMap((g) => g.tasks.map((task) => ({ key: `${g.key}:${task.id}`, task }))), [shown])
   // The time column (rows-v2 D2): one fact of the whole result.
   const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
 
@@ -265,7 +266,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   async function save(name: string) {
     const id = await createView({
       name, query, group_by: display.groupBy, sort_by: display.sortBy, sort_dir: display.sortDir,
-      layout: display.layout, show_completed: display.showCompleted, hidden_props: [...display.hidden], row_layout: display.rowLayout,
+      layout: display.layout, show_completed: display.showCompleted, hidden_props: [...display.hidden], row_layout: display.rowLayout, card_notes: display.cardNotes,
     })
     remember(query)
     await draftWs.saved()
@@ -319,7 +320,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
       {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
       <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('Filter results')}>
-        <ViewResults groups={groups} layout={display.layout} renderTask={(tk, key, shape) => (
+        <ViewResults groups={groups} layout={display.layout} foldScope="filter" selectedGroup={selected ? selected.slice(0, selected.lastIndexOf(':')) : null} renderTask={(tk, key, shape) => (
           <TaskRow
             key={key}
             shape={shape}
@@ -328,7 +329,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             labels={resolveLabels(tk.labels, labelMap)}
             showProject={display.groupBy !== 'project'} timeColumn={timeColumn}
             hidden={display.hidden}
-            layout={display.rowLayout}
+            layout={display.rowLayout} notes={shape === 'card' && !!display.cardNotes}
             onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
             selected={key === selected}
             progress={progress.get(tk.id)}

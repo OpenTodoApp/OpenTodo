@@ -5867,5 +5867,15 @@
   "Only future ones": "Solo le future",
   "Also past ones": "Anche le passate",
   "Past occurrences take the new title, notes, labels, project and priority; their dates and completions stay.": "Le occorrenze passate prendono il nuovo titolo, note, etichette, progetto e priorità; date e completamenti restano.",
-  "Changed past occurrences too": "Modificate anche le occorrenze passate"
+  "Changed past occurrences too": "Modificate anche le occorrenze passate",
+  "Column menu for {title}": "Menu della colonna {title}",
+  "Fold column": "Comprimi colonna",
+  "Fold or unfold the selected card’s column; on a folded column, unfold it": "Comprimi o espandi la colonna della scheda selezionata; su una colonna compressa, espandila",
+  "Fold panel": "Comprimi pannello",
+  "Moved to {name}": "Spostata in {name}",
+  "Notes on cards": "Note sulle schede",
+  "Notes:": "Note:",
+  "Show notes on cards": "Mostra le note sulle schede",
+  "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": "{name}, {n, plural, one {# attività aperta} other {# attività aperte}}, compressa",
+  "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}, {n, plural, one {# attività} other {# attività}}, compressa"
 }

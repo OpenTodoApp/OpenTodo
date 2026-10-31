@@ -58,6 +58,8 @@ import { formatSpan, spanOf, type Span } from '../lib/span'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
+// A board card's notes preview (board-polish D6): loaded with the first board that shows it.
+const CardNotes = lazy(() => import('./CardNotes'))
 
 /** Field values shown on a row before the rest collapse into "+n" (custom-fields). */
 export const MAX_FIELD_BADGES = 3
@@ -462,6 +464,8 @@ export interface TaskRowProps {
   layout?: RowLayout
   /** A board card's 3 px leading edge in this hue (calendar-clarity "Colour by on boards"); none when absent. */
   edge?: HueName
+  /** A board card shows two lines of its notes as plain text (board-polish "Notes preview on cards"). */
+  notes?: boolean
 }
 
 const NO_HIDDEN: readonly RowProperty[] = []
@@ -628,7 +632,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -847,6 +851,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         {!card && m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeatLabel ?? m.repeat} className="shrink-0">{null}</ToneText>}
         {!card && headCounts.length > 0 && <RowCounts counts={headCounts} />}
         </div>
+        {card && notes && task.description && <Suspense fallback={null}><CardNotes task={task} /></Suspense>}
         {meta}
         {source && !card && <SourceLine task={task} />}
       </button>}

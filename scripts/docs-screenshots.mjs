@@ -334,6 +334,19 @@ const shots = [
     await go(p, demoBase, '/inbox'); await openProject(p, 'Q4 launch')
     await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'Board' }).click(); await settle(p, 800)
   }, async after(p) { await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {}) } },
+  // Board polish (board-polish): the Q4 launch board with Review folded and the notes preview on; both are put back.
+  { name: 'board-fold-notes', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Q4 launch')
+    await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'Board' }).click(); await p.locator('[data-board]').waitFor()
+    await p.getByRole('button', { name: 'Project menu' }).click(); await p.locator('[data-menu-label="Show notes on cards"]').click()
+    await p.getByRole('button', { name: 'Section menu for Review' }).click(); await p.locator('[data-menu-label="Fold column"]').click()
+    await p.locator('[data-column-strip]').first().waitFor(); await p.mouse.move(700, 40)
+    await p.locator('body').evaluate(() => (document.activeElement)?.blur()); await settle(p, 800)
+  }, async after(p) {
+    await p.locator('[data-column-strip]').first().click().catch(() => {})
+    await p.getByRole('button', { name: 'Project menu' }).click().catch(() => {}); await p.locator('[data-menu-label="Show notes on cards"]').click().catch(() => {})
+    await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {})
+  } },
   // Custom fields (custom-fields): the Side project's list in the columns layout.
   { name: 'custom-fields', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Side project')

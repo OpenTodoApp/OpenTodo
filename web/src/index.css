@@ -911,6 +911,11 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
   border-radius: var(--radius-control);
   background: var(--ot-accent-soft);
 }
+/* A folded board column (board-polish D2): a strip of the column surface the board's height,
+   48 px on a phone and 40 px from 640 px; it lifts like a card, and a card dragged over it
+   gives it the placeholder's dashed edge along its whole length (D3). */
+.ui-column-strip { @apply flex h-[calc(100dvh-14rem)] w-12 shrink-0 snap-start flex-col rounded-card bg-sunken p-0 transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2 sm:w-10 dark:border dark:border-default; }
+.ui-column-strip[data-drop-over] { border: 2px dashed var(--ot-border-input); background: var(--ot-accent-soft); }
 .ui-section-flat { @apply px-4 py-5 sm:px-6; }
 /* A settings section (precision-settings D3): flat on the page, its rows between hairlines; the page spaces them. */
 .ui-settings-section { @apply min-w-0; }

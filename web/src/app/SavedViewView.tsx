@@ -41,7 +41,7 @@ import { ViewsCrumb } from './views/ViewsCrumb'
 import { FilterPanel, ViewToolbar } from './views/ViewToolbar'
 import { BOARD_COLOR_BY_KEY } from '../lib/colorBy'
 import { useColorBy } from './calendar/colorByControls'
-import { ViewResults } from './views/ViewResults'
+import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
 
@@ -65,6 +65,7 @@ export function displayPatch(patch: Partial<ViewDisplay>): ViewPatch {
   if (patch.showCompleted !== undefined) out.show_completed = patch.showCompleted
   if (patch.hidden !== undefined) out.hidden_props = [...patch.hidden]
   if (patch.rowLayout !== undefined) out.row_layout = patch.rowLayout
+  if (patch.cardNotes !== undefined) out.card_notes = patch.cardNotes
   return out
 }
 
@@ -84,7 +85,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const account = useAccountRowLayout()
   // Colour by on boards (calendar-clarity): the device's one choice for every board.
   const boardColor = useColorBy(BOARD_COLOR_BY_KEY)
-  const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account) }
+  const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account), cardNotes: shown.cardNotes }
   const result = useMemo(() => runView(view, ctx), [view, ctx])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
@@ -141,8 +142,10 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   }
 
   // ---- results and keyboard navigation (a task can appear under several labels) ----
-  const groups = useMemo(() => (result.ok ? result.groups : []), [result])
-  const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [groups])
+  const resultGroups = useMemo(() => (result.ok ? result.groups : []), [result])
+  // Groups collapsed or folded on this device (board-polish D1) keep their tasks off screen and out of the keyboard's rows.
+  const { groups, shown: shownGroups } = useFoldedGroups(`view:${view.id}`, resultGroups)
+  const rows = useMemo(() => shownGroups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [shownGroups])
   // The time column (rows-v2 D2): one fact of the whole view.
   const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
   const [selected, setSelected] = useState<string | null>(null)
@@ -230,7 +233,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
           {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('View results')}>
-            <ViewResults groups={groups} layout={display.layout} renderTask={(tk, key, shape) => (
+            <ViewResults groups={groups} layout={display.layout} foldScope={`view:${view.id}`} selectedGroup={selected ? groupOfKey(selected) : null} renderTask={(tk, key, shape) => (
               <TaskRow
                 key={key}
                 shape={shape}
@@ -242,6 +245,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 hidden={display.hidden}
                 layout={display.rowLayout}
                 edge={shape === 'card' && boardColor.mode !== 'project' ? boardColor.hueOf(tk) : undefined}
+                notes={shape === 'card' && display.cardNotes}
                 onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                 selected={key === selected}
                 progress={progress.get(tk.id)}
