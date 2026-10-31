@@ -45,7 +45,7 @@ import { ROW_LAYOUTS, useAccountRowLayout, type RowLayout } from '../lib/rowLayo
 import { useWorkspaceState } from '../lib/localData'
 import { currentWorkspaceId } from '../lib/workspaces'
 import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
-import { GROUP_BY_OPTIONS, isFieldSortBy, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_LAYOUTS, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout } from '../lib/types'
+import { GROUP_BY_OPTIONS, readSortBy, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_LAYOUTS, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout } from '../lib/types'
 
 const DEBOUNCE_MS = 150
 
@@ -75,7 +75,7 @@ export function displayOfDraft(d: FilterDraft): ViewDisplay {
   return {
     layout: pick<ViewLayout>(d.layout, VIEW_LAYOUTS, NEW_VIEW_DISPLAY.layout),
     groupBy: pick<GroupBy>(d.group_by, GROUP_BY_OPTIONS, NEW_VIEW_DISPLAY.groupBy),
-    sortBy: isFieldSortBy(d.sort_by) ? d.sort_by : pick<SortBy>(d.sort_by, NEW_VIEW_SORT_OPTIONS, NEW_VIEW_DISPLAY.sortBy),
+    sortBy: readSortBy(d.sort_by, NEW_VIEW_SORT_OPTIONS, NEW_VIEW_DISPLAY.sortBy),
     sortDir: pick<SortDir>(d.sort_dir, SORT_DIR_OPTIONS, NEW_VIEW_DISPLAY.sortDir),
     showCompleted: d.show_completed === true,
     cardNotes: d.card_notes === true,
