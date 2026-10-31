@@ -15,7 +15,6 @@ import { ACTION_TOAST_MS, showBulkToast } from '../bulk/toastStore'
 import { navigate, type Route } from '../router'
 import { selectTask } from '../signals'
 import { offerMoveToWorkspace } from '../workspaceNav'
-import { announceIfOutOfSight } from './announceAdded'
 
 export async function afterListAdd(id: string, c: {
   route: Route
@@ -53,7 +52,8 @@ export async function afterListAdd(id: string, c: {
     }
   }
   // Not awaited, so the quick add is free for the next line at once.
-  void announceIfOutOfSight(id, { list: c.list, placement: c.placement, root: c.root, select: c.select })
+  // Loaded with the first add: not needed on first load (web/bundle-budget.json).
+  void import('./announceAdded').then((m) => m.announceIfOutOfSight(id, { list: c.list, placement: c.placement, root: c.root, select: c.select }))
     .then((announced) => { if (!announced && inbox) void offerMoveToWorkspace(id) })
 }
 
