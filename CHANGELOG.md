@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **A device whose clock ran fast no longer loses its later edit when it has many changes to upload.** When the server refused a fast clock's changes in more than one batch of an exchange, the device set its clock back to the server's time for each batch, so a change in a later batch could be stamped before an earlier change of the same field: the server kept the earlier value while the device showed the later one. The clock now restarts only when it is more than 2.5 minutes ahead of the server, so the changes keep their order. ([Sync](docs/sync.md#clocks), closes #651)
+
 ## [0.18.0] - 2026-10-30
 
 OpenTodo 0.18.0 is about planning the day on the calendar. Meetings from your subscribed and connected calendars can **count toward the day's capacity**, **Re-plan** moves the blocks a slipped morning missed into the free time left, **frames** mark the hours you keep for one kind of work and **slots** gather several small tasks in one block. The calendar shows **deadlines** on their day, adds a task with a double-click, colours blocks by project, label or priority, takes a **filter** and can show **completed tasks**; a project gains a **Calendar** layout. Tasks can carry an **energy** (Deep, Medium, Low) to filter by, and the Daily check offers **Bento**: one Large, one Medium and one Small task. Label pages and saved views keep their own **manual order**, quick add reads `every other friday` and stops taking a month named in passing as the date, today's focus and the Bento slots can be filled by touch, a tap beside a task's circle completes it on a phone, and calendars published from Exchange on-premises load. Every new setting is off by default.
