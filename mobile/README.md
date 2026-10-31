@@ -119,14 +119,14 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 | `bridge` | | `1` | changes only when a method's shape changes |
 | `platform` | | `"android"` | |
 | `app` | | `"0.10.0"` | the shell's version; Settings → About warns below the web app's `MIN_SHELL_APP` |
-| `capabilities` | | `string[]` | `reminders`, `widgets`, and in the visible app `share`, `links`, `biometric` (when a strong biometric is enrolled) |
+| `capabilities` | | `string[]` | `reminders`, `widgets`, and in the visible app `share`, `links`, `obsidian-links`, `biometric` (when a strong biometric is enrolled) |
 | `scheduleReminders(json)` | `reminders` | `→ Promise<"granted" \| "denied" \| "exact-denied">` | `[{id, taskId, fireAt, title?}]`, the next 7 days; replaces the stored schedule; asks for the notification permission once, opens the exact-alarm setting once |
 | `testNotification()` | `reminders` | `→ Promise<boolean>` | shows a notification now |
 | `publishWidget(json)` | `widgets` | `void` | `{updatedAt, locked, count, overdue, tasks: [{id, title?, time?, priority, overdue}]}`, at most 50 tasks; `locked` means counts only |
 | `biometricStore(keyB64)` | `biometric` | `→ Promise<boolean>` | 32-byte raw account key; shows the biometric prompt |
 | `biometricRead()` | `biometric` | `→ Promise<string \| null>` | the key after the prompt; `null` when cancelled, never stored or invalidated |
 | `biometricForget()` | `biometric` | `void` | deletes the stored key |
-| `openExternal(url)` | `links` | `void` | http(s), `mailto:` and `tel:` in the system browser or app |
+| `openExternal(url)` | `links` | `void` | http(s), `mailto:` and `tel:` in the system browser or app; with `obsidian-links` also an Obsidian note link of exactly the form `obsidian://open?vault=…&file=…` (no other Obsidian action, no other custom scheme) |
 
 The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders` answers `"granted"` or `"denied"` (iOS has no exact-alarm permission, so never `"exact-denied"`), `widgets`, `share`, `links` and — with Face ID or Touch ID enrolled — `biometric`.
 

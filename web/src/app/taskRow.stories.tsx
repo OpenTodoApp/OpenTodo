@@ -333,6 +333,20 @@ export const WithOrigins: StoryObj = {
   },
 }
 
+/** A task from an Obsidian note (obsidian-origin): the note's name with a note icon; one titled, one read from its path. */
+export const WithObsidianOrigin: StoryObj = {
+  render: () => {
+    const daily = { kind: 'obsidian' as const, id: 'Daily/2026-10-29.md', url: 'obsidian://open?vault=Notes&file=Daily%2F2026-10-29', title: 'Thursday standup' }
+    const meeting = { kind: 'obsidian' as const, id: 'Meetings/Kick-off.md', url: 'obsidian://open?vault=Work%20notes&file=Meetings%2FKick-off' }
+    return (
+      <List>
+        <TaskRow {...base} task={task({ id: 'ob-d', title: 'Send the standup notes to Jo', due: { date: TODAY }, origin: daily })} />
+        <TaskRow {...base} task={task({ id: 'ob-m', title: 'Book the kick-off room', priority: 2, origin: meeting })} />
+      </List>
+    )
+  },
+}
+
 /** A row edited in place (inline-task-editing): the title field and, under it, Date, Priority, Labels, Project and Open details. */
 export const EditingInline: StoryObj = {
   render: () => {

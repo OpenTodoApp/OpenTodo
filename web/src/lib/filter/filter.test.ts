@@ -687,7 +687,7 @@ describe('evaluate: origin terms (OpenSpec task-origin 3.3)', () => {
     expect(() => parse('origin:')).toThrow('Expected a provider or kind after "origin:" at position 1')
   })
   it('suggests the kinds and the local providers after origin:', () => {
-    expect(originSuggestions('origin: ', L).map((x) => x.name)).toEqual(['url', 'email', 'issue', 'import', 'github', 'ticktick'])
+    expect(originSuggestions('origin: ', L).map((x) => x.name)).toEqual(['url', 'email', 'issue', 'import', 'obsidian', 'github', 'ticktick'])
     expect(originSuggestions('#Work & origin: gi', L)).toEqual([{ name: 'github', query: '#Work & origin: github ' }])
     expect(originSuggestions('origin: github', L)).toEqual([])
     expect(originSuggestions('search: origin', L)).toEqual([])

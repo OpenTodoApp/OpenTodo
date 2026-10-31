@@ -33,6 +33,7 @@ export function taskSource(task: Pick<Task, 'origin' | '_clock'>): TaskSource {
   if (origin?.kind === 'import') {
     return { kind: 'import', text: origin.provider ? t('Imported from {app}', { app: origin.provider }) : t('Imported') }
   }
+  if (origin?.kind === 'obsidian') return { kind: 'vault', text: t('From Obsidian') }
   if (origin?.kind === 'url') {
     const host = originHost(origin)
     return { kind: 'web', text: host ? t('From {site}', { site: host }) : t('From a web page') }

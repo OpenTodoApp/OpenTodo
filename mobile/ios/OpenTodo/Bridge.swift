@@ -35,7 +35,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// The capabilities this shell offers, in the contract's names.
     static func capabilities(biometric: Bool, share: Bool) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links"] }
+        if share { caps += ["share", "links", "obsidian-links"] }
         if biometric { caps.append("biometric") }
         return caps
     }
@@ -88,7 +88,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             reply(nil, nil)
         case "openExternal":
             let url = string(0)
-            if Self.safeExternal(url) { actions.bridgedOpenExternal(url) }
+            if Self.externalLink(url) { actions.bridgedOpenExternal(url) }
             reply(nil, nil)
         default:
             reply(nil, "unknown_method")
@@ -98,6 +98,70 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     static func safeExternal(_ url: String) -> Bool {
         guard let scheme = URLComponents(string: url)?.scheme?.lowercased() else { return false }
         return ["https", "http", "mailto", "tel"].contains(scheme)
+    }
+
+    /// What the bridge's openExternal hands to the system: `safeExternal`, or an Obsidian
+    /// note link of the one accepted shape (obsidian-origin, capability `obsidian-links`).
+    /// Navigation of the web view never opens an Obsidian link: only this method does.
+    static func externalLink(_ url: String) -> Bool {
+        safeExternal(url) || obsidianNote(url)
+    }
+
+    /// An Obsidian note link (obsidian-origin D2): `obsidian://open?` then exactly `vault`
+    /// (1–255 characters) and `file` (1–1024, not starting with "/") once each, at most
+    /// 2048 bytes. Every other Obsidian action can write or run something, and `path=`
+    /// opens any file. The rule of internal/origin/obsidian.go and web/src/lib/taskOrigin.ts,
+    /// pinned by the bridge fixture external-links.json.
+    static func obsidianNote(_ url: String) -> Bool {
+        let prefix = "obsidian://open?"
+        guard url.hasPrefix(prefix), url.utf8.count <= 2048 else { return false }
+        let parts = url.utf8.dropFirst(prefix.utf8.count).split(separator: UInt8(ascii: "&"), omittingEmptySubsequences: false)
+        guard parts.count == 2 else { return false }
+        var seen = Set<[UInt8]>()
+        for part in parts {
+            guard let eq = part.firstIndex(of: UInt8(ascii: "=")) else { return false }
+            let name = Array(part[part.startIndex..<eq])
+            guard seen.insert(name).inserted, let value = obsidianValue(Array(part[part.index(after: eq)...])) else { return false }
+            let n = value.unicodeScalars.count
+            switch String(decoding: name, as: UTF8.self) {
+            case "vault": if n < 1 || n > 255 { return false }
+            case "file": if n < 1 || n > 1024 || value.hasPrefix("/") { return false }
+            default: return false
+            }
+        }
+        return true
+    }
+
+    private static let obsidianValueBytes = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$'()*,;:@/%".utf8)
+
+    /// Percent-decodes one value: only the allowed characters, well-formed escapes, valid UTF-8, no control characters.
+    private static func obsidianValue(_ raw: [UInt8]) -> String? {
+        var bytes: [UInt8] = []
+        var i = 0
+        while i < raw.count {
+            let c = raw[i]
+            guard obsidianValueBytes.contains(c) else { return nil }
+            if c == UInt8(ascii: "%") {
+                guard i + 2 < raw.count, let hi = hexDigit(raw[i + 1]), let lo = hexDigit(raw[i + 2]) else { return nil }
+                bytes.append(hi << 4 | lo)
+                i += 3
+            } else {
+                bytes.append(c)
+                i += 1
+            }
+        }
+        guard let text = String(bytes: bytes, encoding: .utf8) else { return nil }
+        for s in text.unicodeScalars where s.value < 0x20 || (0x7f...0x9f).contains(s.value) { return nil }
+        return text
+    }
+
+    private static func hexDigit(_ c: UInt8) -> UInt8? {
+        switch c {
+        case 48...57: return c - 48
+        case 65...70: return c - 55
+        case 97...102: return c - 87
+        default: return nil
+        }
     }
 
     /// The page side. The origin guard is repeated here because user scripts reach every

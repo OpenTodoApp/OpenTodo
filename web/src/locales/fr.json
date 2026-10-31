@@ -5934,5 +5934,7 @@
   "Picked {picked}, shown as {used}": "Choisie : {picked}, affichée : {used}",
   "Selected": "Sélectionné",
   "Turned away from the colour for errors": "Éloignée de la couleur des erreurs",
-  "deep {colour}": "{colour} foncé"
+  "deep {colour}": "{colour} foncé",
+  "From Obsidian": "Depuis Obsidian",
+  "Open in Obsidian: {vault} › {path}": "Ouvrir dans Obsidian : {vault} › {path}"
 }

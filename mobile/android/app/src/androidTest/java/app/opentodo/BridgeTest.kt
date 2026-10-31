@@ -63,7 +63,7 @@ class BridgeTest {
         assertEquals("1", web.js("window.opentodoShell.bridge"))
         assertEquals("\"android\"", web.js("window.opentodoShell.platform"))
         val caps = web.js("window.opentodoShell.capabilities.join(',')")
-        for (c in listOf("reminders", "widgets", "share", "links")) assertTrue("capability $c in $caps", caps.contains(c))
+        for (c in listOf("reminders", "widgets", "share", "links", "obsidian-links")) assertTrue("capability $c in $caps", caps.contains(c))
     }
 
     @Test fun aCallAnswersThroughTheMessageChannel() {
