@@ -117,6 +117,20 @@ The release that makes OpenTodo the default choice.
 
 Order inside the plan: `project-flow-modes` before `today-closed-list` and `time-sectors`; `calendar-frames` before `calendar-slots`; the three series changes in order, then `multi-day-tasks`; `ios-shell` before `ios-distribution` and `apple-shortcuts`. Each milestone ends with a release.
 
+### [1.1 "Routines"](https://github.com/OpenTodoApp/OpenTodo/milestone/7)
+
+Multi-step routines with AI steps, built on Automations: every existing rule becomes a one-card routine, nothing to migrate.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`routines-engine`](openspec/changes/routines-engine/) | Rules grow into routines: typed steps, manual runs, Test, step-by-step run log, Undo a run, full CLI and MCP | [#658](https://github.com/OpenTodoApp/OpenTodo/issues/658) |
+| [`routines-editor`](openspec/changes/routines-editor/) | Sentence-card editor with live previews, run history, and "Routines since your last visit" in the Inbox | [#659](https://github.com/OpenTodoApp/OpenTodo/issues/659) |
+| [`routines-starters`](openspec/changes/routines-starters/) | Starter routines in the template library, and "Describe it" to draft one with AI | [#660](https://github.com/OpenTodoApp/OpenTodo/issues/660) |
+| [`routines-ai-step`](openspec/changes/routines-ai-step/) | Ask AI and Summarise steps, proposals by default, a bounded "apply without asking", device runs for encrypted accounts | [#661](https://github.com/OpenTodoApp/OpenTodo/issues/661) |
+| [`routines-shared`](openspec/changes/routines-shared/) | Routines that belong to a shared project and run as whoever turned them on | [#662](https://github.com/OpenTodoApp/OpenTodo/issues/662) |
+
+The five changes land in this order. Routines never fetch URLs or feeds: outbound requests stay with configured webhooks, delivery channels and the owner's SMTP server.
+
 ## Shipped
 
 ### 1. Core engine and architecture
