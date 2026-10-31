@@ -11,11 +11,12 @@ import { planFiles, type PlannedFile } from '../../lib/attachments'
 import { mentionAt, mentionCandidates, mentionsInBody, mentionToken, type MentionTarget } from '../../lib/comments'
 import { MentionOption } from './MentionOption'
 import { uuid } from '../../lib/ids'
-import { Button, ComposerFrame, IconButton, Popover, useMediaQuery } from '../../ui'
+import { Button, ComposerFrame, IconButton, Popover } from '../../ui'
 import { Icon } from '../../ui'
 import { filesFrom } from './AttachmentsRow'
 import { t } from '../../lib/i18n'
 import { readString, writeString } from '../../lib/deviceStorage'
+import { FormattingToggle, useFormattingToggle } from '../FormattingToggle'
 
 const MAX_LINES = 10
 const LINE_PX = 20
@@ -84,9 +85,10 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
 ) {
   const [rich] = useState(() => richProp ?? richComposer)
   const richField = useRef<RichFieldHandle | null>(null)
-  // The formatting row on a computer (rich-comments D3); touch screens show it while the editor has focus.
-  const [formatting, setFormatting] = useState(false)
-  const coarse = useMediaQuery('(pointer: coarse)')
+  // The formatting row on a computer (rich-comments D3), remembered on the device for comments
+  // and hidden with the Formatting button setting (notes-toolbar-desktop D6); touch screens show
+  // it while the editor has focus.
+  const formatting = useFormattingToggle('comments', rich)
   const richMentions = useRef<string[] | null>(null)
   const commentId = useRef(uuid())
   const embeds = useRef<PlannedFile[]>([])
@@ -269,9 +271,8 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
       {members.length > 0 && (
         <IconButton icon="at-sign" size="sm" label={t('Mention someone')} onClick={startMention} data-keep-focus="" data-composer-mention="" />
       )}
-      {rich && !coarse && (
-        <IconButton icon="bold" size="sm" label={t('Formatting')} aria-pressed={formatting} onClick={() => setFormatting((f) => !f)}
-          data-keep-focus="" data-composer-formatting="" />
+      {formatting.offered && (
+        <FormattingToggle pressed={formatting.pressed} onToggle={formatting.set} controls={`${id}-formatting`} data-keep-focus="" data-composer-formatting="" />
       )}
       {attach && (
         <>
@@ -295,7 +296,7 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
         {rich ? (
           <Suspense fallback={plain}>
             <RichComposerField id={id} value={body} members={members} me={me} label={label} placeholder={placeholder} describedBy={`${id}-hint`}
-              autoFocus={autoFocus || (!!area.current && document.activeElement === area.current)} taskId={taskId ?? null} fieldRef={richField} toolbar={formatting}
+              autoFocus={autoFocus || (!!area.current && document.activeElement === area.current)} taskId={taskId ?? null} fieldRef={richField} toolbar={formatting.open}
               onChange={(next, ids) => { richMentions.current = ids; setBody(next) }}
               onSubmit={() => void submit()}
               onEscape={() => { if (onCancel) onCancel(); else (document.activeElement as HTMLElement | null)?.blur() }}

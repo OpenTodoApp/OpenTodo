@@ -5762,5 +5762,7 @@
   "Shrinking the file once needs {bytes} of free disk space; old versions still go.": "Reducir el archivo una vez necesita {bytes} libres en disco; las versiones antiguas se eliminan igual.",
   "The file is shrunk once, at a quiet moment; old versions already go.": "El archivo se reduce una vez, en un momento tranquilo; las versiones antiguas ya se eliminan.",
   "{date}, {n, plural, one {# old note version} other {# old note versions}} removed, {bytes} reclaimed": "{date}, {n, plural, one {# versión antigua de nota eliminada} other {# versiones antiguas de notas eliminadas}}, {bytes} recuperados",
-  "{size}, {free} free inside the file": "{size}, {free} libres dentro del archivo"
+  "{size}, {free} free inside the file": "{size}, {free} libres dentro del archivo",
+  "Formatting button": "Botón de formato",
+  "A button beside notes and comments on a computer that shows bold, lists and links.": "Un botón junto a las notas y los comentarios en el ordenador que muestra negrita, listas y enlaces."
 }

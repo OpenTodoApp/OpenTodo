@@ -815,6 +815,14 @@ select.ui-input:not([multiple]) {
 .slash-menu { @apply z-50 w-64 max-w-[calc(100vw-2rem)] rounded-control border border-default bg-surface p-1 shadow-3 dark:bg-raised; }
 .slash-menu [aria-selected="true"] { @apply bg-accent-soft text-strong; }
 .editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
+/* The Formatting toggle on a computer (notes-toolbar-desktop D2): at the note's top
+   end corner, over end padding of the first block (and of the row), so text never
+   runs under it. */
+.notes-frame { @apply relative; }
+.notes-frame > .formatting-toggle { @apply absolute end-0 top-0 z-10; }
+.formatting-toggle[aria-pressed="true"] { @apply bg-selected text-strong; }
+.notes-frame[data-formatting] .notes-editor > :first-child,
+.notes-frame[data-formatting] .editor-toolbar { padding-inline-end: 2.25rem; }
 }
 
 /* Surfaces (OpenSpec change surfaces-v2): structure felt through soft fills and
@@ -1148,6 +1156,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @media (hover: hover) {
   .ui-reveal { opacity: 0; transition: opacity var(--duration-ui); }
   :is(.group, [data-sidebar-item], [data-sidebar-group-header]):is(:hover, :focus-within) .ui-reveal, .ui-reveal:focus-within { opacity: 1; }
+  /* A note's Formatting toggle (notes-toolbar-desktop D2): with the note, and always while pressed. */
+  .notes-frame:is(:hover, :focus-within) > .ui-reveal, .ui-reveal[aria-pressed="true"] { opacity: 1; }
 }
 /* Every count on (sidebar-polish D2): the count sits in a slot as wide as the row's
    menu button; with a fine pointer the button takes the slot while the row is hovered
