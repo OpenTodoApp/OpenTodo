@@ -10,3 +10,8 @@
 ## 3. Docs
 
 - [x] 3.1 Assistant settings guide and CHANGELOG `### Added`
+
+## 4. Step budget
+
+- [x] 4.1 Raise the loop's step budget from 8 to 12 model calls (`MaxRounds`), keeping the change set only on `end_turn`; `TestLoopRoundLimit` and `TestLoopStopsAtRoundLimitOnLastRound`
+- [x] 4.2 Spec delta: MODIFIED "The agent loop and its step budget" (reaches 12 model calls, inclusive limit), design D5, docs' `round_limit` line; `make openspec-validate`

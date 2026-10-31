@@ -22,6 +22,10 @@ It is an instruction to the model, not text a person reads, and the model is tol
 
 Each add that asks costs one assistant turn and opens the panel. The switch is per device so a phone can stay quiet while a desktop asks.
 
+### D5. The turn's step budget is 12 model calls
+
+A turn that keeps planning ("then break each of these down") needs more rounds than the live spec's 8. The loop is bounded by model calls, not tool-use rounds: every call to the provider counts, including the one that answers `end_turn`. The 12th call may still end the turn with a change set; only a tool-use answer on the 12th call is refused the next round and stops the turn with `round_limit`. The change's spec delta carries the MODIFIED requirement and the docs' `round_limit` line names the same number.
+
 ## Risks
 
 - A fast series of adds sends one turn each; the server already allows one answer at a time per person, so the later ones are refused with the usual "busy" notice and the person can ask again from the panel.
