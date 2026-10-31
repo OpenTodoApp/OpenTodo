@@ -15,7 +15,7 @@ vi.mock('./api', () => {
 })
 
 import { db, useDatabase } from './db'
-import { applyOps, createProject, createSubtask, createTask, deleteProject, deleteTask, resetDeviceId, restoreProject, restoreTask, setTaskCompleted } from './ops'
+import { applyOps, createProject, createSubtask, createTask, deleteProject, deleteTask, mutate, resetDeviceId, restoreProject, restoreTask, setTaskCompleted } from './ops'
 import { flushPendingPurges, pendingPurges, purgeItems, remainingDays, removeLocally, trashItems, visibleTasks } from './trash'
 import type { Op } from './types'
 import { nextMillisecond } from '../test/clock'
@@ -114,6 +114,17 @@ describe('restore', () => {
 })
 
 describe('purge', () => {
+  it('a purged project takes its notes along locally; a note purge drops the note (notes-overview D10)', async () => {
+    const p = await createProject({ name: 'Renovation' })
+    await mutate('note', 'n1', { title: 'Permit', description: 'ask', project_id: p })
+    await mutate('note', 'n2', { title: 'Loose', description: 'x', deleted_at: Date.now() })
+    await removeLocally([{ entity: 'project', entityId: p }], true)
+    expect(await db.notes.get('n1')).toBeUndefined()
+    expect(await purgeItems([{ entity: 'note', id: 'n2' }])).toBe('done')
+    expect(purgeCalls).toHaveBeenCalledWith('note', 'n2')
+    expect(await db.notes.get('n2')).toBeUndefined()
+  })
+
   it('queues purges while offline and sends them once online', async () => {
     const t = await createTask({ title: 'Gone' })
     await deleteTask(t)

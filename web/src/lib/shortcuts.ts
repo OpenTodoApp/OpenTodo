@@ -8,7 +8,7 @@
 // the same keys in one scope, or in a scope and an ancestor scope, without an
 // explicit `overrides`.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'focus' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'focus' | 'notes' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
 
 /**
  * Where a shortcut applies. The dispatcher runs the innermost active scope first:
@@ -68,6 +68,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'trash', title: 'Trash and projects' },
   { id: 'triage', title: 'Process the Inbox' },
   { id: 'focus', title: 'Focus' },
+  { id: 'notes', title: 'Notes' },
   { id: 'review', title: 'Reviews' },
   { id: 'display', title: 'Display mode' },
   { id: 'comments', title: 'Comments and notes' },
@@ -96,6 +97,8 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   next: ['list'], waiting: ['list'], loop: [],
   // Focus (focus-mode D7): one task and a timer, no list; Space, Enter, b, n and Esc are its `view` entries.
   focus: [],
+  // Notes (notes-overview D7): the page's own list of notes, not a task list; `q` and `/` are its `view` entries.
+  notes: [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -167,6 +170,8 @@ export const SHORTCUTS: Shortcut[] = [
   // Close the day (close-the-day D6): `g d` is the Day calendar and `Shift+D` alone duplicates in a list; a `g` sequence meets neither.
   { id: 'go.close', keys: ['g Shift+D'], label: 'Close the day', description: 'Close the day: how it went, carry over what is left, a line for tomorrow', section: 'go', scope: 'global' },
   { id: 'go.focus', keys: ['g Shift+F'], label: 'Focus', description: 'Go to Focus: one task, a timer, a break when you need one', section: 'go', scope: 'global' },
+  // Notes (notes-overview D7): `g n` is Anytime, so the page takes `g e`.
+  { id: 'go.notes', keys: ['g e'], label: 'Notes', description: 'Go to Notes: every note, standalone and on tasks and projects, with search', section: 'go', scope: 'global' },
   { id: 'go.find', keys: ['g /'], label: 'Find in sidebar', description: 'Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)', section: 'go', scope: 'global' },
 
   // ---- tasks in a list
@@ -325,6 +330,10 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'focus.next', keys: ['n'], description: "Next task of today's focus", section: 'focus', scope: 'view', views: ['focus'] },
   { id: 'focus.escape', keys: ['Esc'], description: 'Back to the previous view (the session keeps running)', section: 'focus', scope: 'view', views: ['focus'], hidden: true },
 
+  // ---- Notes (notes-overview D7): `q` overrides the global quick add as the calendar's does; `/` focuses the search as in Settings.
+  { id: 'notes.new', keys: ['q'], description: 'On the Notes page: start a new note', section: 'notes', scope: 'view', views: ['notes'], overrides: ['list.quick-add'] },
+  { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
+
   // ---- Process the Inbox (inbox-triage): one Inbox task at a time, a key per decision; every decision but Labels moves on to the next task.
   { id: 'triage.today', keys: ['t'], description: 'Due today, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
   { id: 'triage.schedule', keys: ['s'], description: 'Schedule: pick a choice or a day, or type a date (fri, 3/11) and press Enter, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
@@ -439,7 +448,7 @@ const SPOTLIGHT_GROUPS: Record<string, SpotlightGroup> = {
   'go.completed': 'views', 'go.labels': 'views', 'go.projects': 'views', 'go.filter': 'views', 'go.views': 'views', 'go.trash': 'views', 'go.feed': 'views',
   'go.day': 'calendar', 'go.week': 'calendar', 'go.month': 'calendar', 'go.plan': 'calendar',
   'go.triage': 'method', 'go.review': 'method', 'go.loop': 'method', 'go.next': 'method', 'go.waiting': 'method', 'go.daily': 'method',
-  'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method',
+  'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method', 'go.notes': 'views',
 }
 export function spotlightGroup(id: string): SpotlightGroup {
   return SPOTLIGHT_GROUPS[id] ?? 'tools'

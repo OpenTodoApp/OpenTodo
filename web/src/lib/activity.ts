@@ -70,14 +70,14 @@ const COUNTED = new Set(['task', 'project', 'comment'])
  * readable projection (`description`) is written in the same batch and counts.
  * Same list as `Opaque` in internal/activity.
  */
-export const OPAQUE = new Set(['task.notes_doc', 'project.notes_doc'])
+export const OPAQUE = new Set(['task.notes_doc', 'project.notes_doc', 'note.notes_doc'])
 /**
  * Ops that never form or join an event (editor-everywhere): a comment's reactions,
  * and a task's note_mentions, which travel with the note edit. Same as `quiet` in
  * internal/activity.
  */
 const quiet = (op: { entity: string; field: string }) =>
-  OPAQUE.has(`${op.entity}.${op.field}`) || (op.entity === 'task' && op.field === 'note_mentions') || (op.entity === 'comment' && op.field.startsWith('reactions.'))
+  OPAQUE.has(`${op.entity}.${op.field}`) || (op.entity === 'task' && op.field === 'note_mentions') || (op.entity === 'comment' && op.field.startsWith('reactions.')) || op.field.startsWith('appends.')
 const counts = (op: { entity: string; field: string }) => COUNTED.has(op.entity) && !quiet(op)
 
 /** An op as the rule needs it; `from` is an optional known old value (local rows). */

@@ -61,6 +61,8 @@ export type Route =
   | { view: 'loop' }
   // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
   | { view: 'focus'; id?: string }
+  // Notes (notes-overview D7): every note, /notes/<id> one standalone note; `create` (/notes?new=1) starts a new note.
+  | { view: 'notes'; id?: string; create?: boolean }
 
 /** Settings sections, each at /settings/<id> (settings-navigation), in list order (workspaces added Workspaces, settings-subpages Language and region). */
 export const SETTINGS_SECTION_IDS = [
@@ -217,6 +219,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'stats' }
     case 'focus':
       return parts[1] ? { view: 'focus', id: safeDecode(parts[1]) } : { view: 'focus' }
+    case 'notes':
+      return parts[1] ? { view: 'notes', id: safeDecode(parts[1]) } : { view: 'notes' }
     default:
       return { view: 'inbox' }
   }
@@ -300,6 +304,8 @@ export function routePath(r: Route): string {
       return r.step ? `/review/${r.step}` : '/review'
     case 'focus':
       return r.id ? `/focus/${encodeURIComponent(r.id)}` : '/focus'
+    case 'notes':
+      return r.id ? `/notes/${encodeURIComponent(r.id)}` : r.create ? '/notes?new=1' : '/notes'
     case 'help':
       return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:

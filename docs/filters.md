@@ -30,6 +30,7 @@ term     := "@" name                       label
           | ("due" | "created" | "deadline" | "start" | "completed") cmp date
           | keyword
           | "search:" text
+          | "notes:" text                               text in the task's note
           | "origin:" text                              where the task came from
           | "energy:" ("deep" | "medium" | "low")        the energy a task asks for
           | "workspace:" name                           the task's workspace
@@ -47,7 +48,7 @@ weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturd
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
           | "someday" | "deferred" | "evening" | "morning" | "afternoon" | "blocked" | "unblocked" | "available" | "habit"
-          | "origin" | "no origin" | "tracked" | "energy" | "no energy"
+          | "origin" | "no origin" | "tracked" | "energy" | "no energy" | "notes" | "no notes"
 duration := INT ("m" | "min" | "mins" | "minutes")? | NUM "h" (INT ("m" | "min")?)?
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
@@ -100,6 +101,9 @@ text     := word | '"' chars '"'
 | `completed` | completed tasks; the record a skipped habit day leaves is not one |
 | `open` | open (not completed) tasks |
 | `search: text` | title or notes contain the text, ignoring case; quote several words: `search: "oat milk"` |
+| `notes` | tasks with a note: anything but blank space in the task's notes |
+| `no notes` | tasks without a note |
+| `notes: text` | tasks whose note contains the text, ignoring case; the title is not searched (use `search:` for both). Quote several words: `notes: "permit office"`. On an [encrypted account](e2ee.md) the note is read on your device, decrypted |
 | `origin` | tasks that know where they came from: a captured page, an email, an issue or an import (see [Where a task came from](capture.md#where-a-task-came-from)) |
 | `no origin` | tasks without an origin |
 | `origin: value` | tasks whose origin's provider is the value, ignoring case (`origin: github`, `origin: linear`, `origin: todoist`), or, for an origin without a provider, whose kind is (`origin: url` for captured pages, `origin: email` for mail); quotes allowed |
@@ -114,7 +118,7 @@ text     := word | '"' chars '"'
 
 ### Custom fields
 
-A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, `tracked`, `energy`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
+A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, `tracked`, `energy`, `notes`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
 
 | Type | Terms |
 | --- | --- |
@@ -184,6 +188,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `tracked > soon` | `Expected a duration such as 30m or 1h30 after ">" at position 11` |
 | `workspace: & p1` | `Expected a workspace name after "workspace:" at position 1` |
 | `energy: high` | `Energy must be deep, medium or low at position 1` |
+| `notes: & p1` | `Expected text after "notes:" at position 1` |
 
 An empty query shows a short usage hint and no results.
 
@@ -394,4 +399,16 @@ available & @phone
 
 ```filter
 energy: low & unblocked & today
+```
+
+### 29. Renovation tasks with notes
+
+```filter
+notes & #Renovation
+```
+
+### 30. Urgent tasks nobody wrote anything down for
+
+```filter
+no notes & p1
 ```

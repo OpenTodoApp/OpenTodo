@@ -172,6 +172,8 @@ func init() {
 		{"done", "complete one or more tasks", "ot done <ref>...", cmdDone},
 		{"reopen", "reopen one or more completed tasks", "ot reopen <ref>...", cmdReopen},
 		{"rm", "delete one or more tasks (soft delete)", "ot rm <ref>... [--yes]", cmdRm},
+		{"notes", "notes: list, search, show, add, edit, append, rm, to-task", "ot notes [list] [--source note|task|project|all] [--standalone] [--project <ref>] [--label <ref>] [--search <text>] [--limit <n>]\not notes search <text>\not notes show <ref>\not notes add <title> [--project <ref>] [--label <l>]... [--body <text> | --body-file <path|->] [--idempotency-key <key>]\not notes edit <ref> [--title <t>] [--project <ref|none>] [--label <l>]... [--body <text> | --body-file <path|->]\not notes append <ref> <text> | --body-file <path|->\not notes rm <ref>... [--yes]\not notes to-task <ref>", cmdNotes},
+		{"task", "a task's note: task note", "ot task note <ref> [--set <text> | --file <path|-> | --append <text> | --clear]", cmdTask},
 		{"project", "manage projects: list, add, rename, move, archive, rm", "ot project list [--all]\not project add <name> [--color <#rrggbb>] [--idempotency-key <key>]\not project rename <ref> <new-name>\not project move <ref> --workspace <name>\not project archive <ref> [--undo]\not project rm <ref> [--yes]", cmdProject},
 		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name> [--scope full|read|agent]\not token revoke <id-or-name> [--yes]", cmdToken},
 		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token] [--decrypt]", cmdMCP},
@@ -418,6 +420,8 @@ var commandHelp = map[string]string{
 	"rm":         "Soft-deletes (tombstone). Asks for confirmation on a terminal unless --yes is given;\noff a terminal or with --json it refuses without --yes (exit 2).",
 	"done":       "A task that is already completed is reported as unchanged and nothing is sent.",
 	"completion": "Load it in your shell's startup file or completion directory, for example:\n  bash: ot completion bash > ~/.local/share/bash-completion/completions/ot\n  zsh:  ot completion zsh > ~/.zfunc/_ot   (with fpath=(~/.zfunc $fpath) before compinit)\n  fish: ot completion fish > ~/.config/fish/completions/ot.fish\nProject, label, workspace and task values are read from the profile's server (2 seconds at most).",
+	"notes":      "A <ref> is a note id, a unique id prefix, a title or a unique title prefix. Text is Markdown: show prints the text, then text\nappended that no device has merged yet. edit --body replaces the text only when nobody changed it since it was read\n(else body_changed, exit 1); append never replaces anything. rm moves notes to the Trash and needs --yes off a terminal.",
+	"task":       "Prints the task's note as Markdown. --set, --file and --clear replace it (only when nobody changed it since it was read,\nelse body_changed, exit 1); --append adds text at the end. Give at most one of them (exit 2 otherwise).",
 	"mcp":        "Reads newline-delimited JSON-RPC messages from stdin and writes responses to stdout.\nA read-only token is required unless --allow-full-token is given.",
 }
 

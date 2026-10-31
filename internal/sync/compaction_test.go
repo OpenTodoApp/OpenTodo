@@ -589,3 +589,30 @@ func TestCompactionKeepsUnpulledInsideWindow(t *testing.T) {
 		t.Fatalf("union not published: %v", got)
 	}
 }
+
+// TestCompactionStandaloneNotesAndAppends: a standalone note's superseded
+// documents go like a task's, its winner and a folded append's "" stay, and
+// the superseded append text goes (notes-overview D10, D13).
+func TestCompactionStandaloneNotesAndAppends(t *testing.T) {
+	e := newCompactEnv(t)
+	for i := 0; i < 200; i++ {
+		e.apply("u1", e.op("note", "n1", "notes_doc", doc(fmt.Sprint(i)), "A", 0))
+	}
+	e.apply("u1", e.op("note", "n1", "appends.a1", `"later"`, "server", 0), e.op("task", "t1", "appends.a1", `"pending"`, "server", 0))
+	e.apply("u1", e.op("note", "n1", "appends.a1", `""`, "A", 0))
+	e.advance(31 * day)
+	e.compact()
+	if n := e.count(`entity = 'note' AND field = 'notes_doc'`); n != 1 {
+		t.Fatalf("note documents left = %d, want the winner", n)
+	}
+	if n := e.count(`entity = 'note' AND field = 'appends.a1'`); n != 1 {
+		t.Fatalf("note appends left = %d, want the folded \"\"", n)
+	}
+	if n := e.count(`entity = 'task' AND field = 'appends.a1'`); n != 1 {
+		t.Fatalf("pending task append removed: %d left", n)
+	}
+	got, _ := e.s.Get(e.ctx, "u1", "note", "n1")
+	if string(got["notes_doc"]) != doc("199") || string(got["appends.a1"]) != `""` {
+		t.Fatalf("note after compaction: %v", got)
+	}
+}

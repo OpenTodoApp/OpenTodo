@@ -36,6 +36,11 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		return ApplyResult{}, err
 	}
 	b.rs.attachmentQuota = attachmentQuota
+	// A plain-text replacement's version check (notes-overview D13), in the
+	// same transaction as the write.
+	if err := checkBodyVersion(ctx, tx, b.acc); err != nil {
+		return ApplyResult{}, err
+	}
 	for _, op := range ops {
 		if err := b.applyOne(op); err != nil {
 			return b.res, err

@@ -603,6 +603,8 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
     // Focus (focus-everywhere D1): after Statistics in every mode, promotable, no count.
     { id: 'focus', route: { view: 'focus' }, label: t('Focus'), icon: 'clock' },
+    // Notes (notes-overview, app-shell "Notes in the More group"): after Focus in every mode, promotable, no count, no marker.
+    { id: 'notes', route: { view: 'notes' }, label: t('Notes'), icon: 'notebook-pen' },
     ...(o.shared ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: o.unreadBadge, note: o.unreadTotal > 0 ? `${formatUnread(o.unreadTotal)} ${t('unread updates')}` : undefined }] : []),
     // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
     { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },

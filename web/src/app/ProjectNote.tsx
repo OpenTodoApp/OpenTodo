@@ -5,6 +5,7 @@
 // Long notes fold after about eight lines; the fold is a per-device preference
 // in Dexie meta, never synced. It sits above the sections, the board and the
 // timeline, below the quick add, so chrome stays together above content.
+import { resettable } from '../lib/moduleState'
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button, Icon } from '../ui'
 import { setProjectNoteFolded, useMembership, useProjectNoteFolded } from '../lib/localData'
@@ -20,7 +21,11 @@ const NotesEditor = lazy(() => import('./NotesEditor'))
 
 /** "Add a note" from the project menu on a phone, where the empty note's line is not shown (phone-v2 D1). */
 const noteRequests = new Set<(id: string) => void>()
+/** A request made before the project's page is on screen (the Notes page opens a project note): taken by its note when it mounts. */
+let pendingNote: string | null = null
+resettable('projectNote.pending', () => (pendingNote = null))
 export function requestProjectNote(projectId: string): void {
+  pendingNote = projectId
   noteRequests.forEach((fn) => fn(projectId))
 }
 
@@ -43,7 +48,8 @@ export function ProjectNote({ project, phone = false }: { project: Project; phon
   }, { view: 'project' })
 
   useEffect(() => {
-    const on = (id: string) => { if (id === project.id) setEditing(true) }
+    const on = (id: string) => { if (id === project.id) { pendingNote = null; setEditing(true) } }
+    if (pendingNote === project.id) on(project.id)
     noteRequests.add(on)
     return () => { noteRequests.delete(on) }
   }, [project.id])

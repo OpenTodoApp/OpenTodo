@@ -95,6 +95,13 @@ func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 				}
 				continue
 			}
+			// search_notes and note_to_task are answered on this machine.
+			if local, ok := dec.answerLocally(ctx, message, tool); ok && method == "tools/call" {
+				if _, err := fmt.Fprintln(a.Stdout, string(local)); err != nil {
+					return serverErr("write MCP response: %v", err)
+				}
+				continue
+			}
 		}
 		response, status, err := c.mcp(ctx, message)
 		if err == nil && dec != nil && status != http.StatusAccepted && len(bytes.TrimSpace(response)) > 0 {

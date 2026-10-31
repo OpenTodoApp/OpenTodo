@@ -201,6 +201,35 @@ ot project rm Garden [--yes]
 
 Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column and each project's FLOW (`parallel`, `sequential` or `area`, see [Sequential projects and areas](project-flows.md)), and STATUS `archived` or `maintenance` ([Review intervals and maintenance](review-intervals.md)); `--workspace` narrows it to one.
 
+## Notes
+
+[Notes](notes.md) from the shell: standalone notes, the notes of tasks and the notes of projects, read and written as Markdown.
+
+```bash
+ot notes                                   # every note, newest change first (same as ot notes list)
+ot notes list --source task --project Home # note, task, project or all; --standalone is --source note
+ot notes list --label work --limit 20
+ot notes search plumber                    # every word in the title or text, title matches first
+ot notes show 3fa1                         # the text, then text appended that no device merged yet
+ot notes add "Wi-Fi" --project Home --label home --body "- network: home" [--idempotency-key wifi-1]
+ot notes add "Meeting" --body-file agenda.md       # or --body-file - for standard input
+ot notes edit 3fa1 --title "Wi-Fi at home" --project none --label none
+ot notes edit 3fa1 --body-file notes.md            # replaces the text, see below
+ot notes append Meeting "- decided: ship Friday"   # adds at the end, replaces nothing
+ot notes rm 3fa1 [--yes]                   # to the Trash
+ot notes to-task "Call the plumber"        # a task with the note's title, text, project and labels; prints its id
+ot task note 8c2a                          # a task's note as Markdown
+ot task note 8c2a --set "New plan" | --file plan.md | --file - | --append "- called, no answer" | --clear
+```
+
+A note `<ref>` is a full id, a unique id prefix, a title (ignoring case) or a unique title prefix; an ambiguous one changes nothing and exits 2 with the candidates. `ot notes show` accepts the id of a task or project note from the list too; `edit`, `append`, `rm` and `to-task` act on standalone notes, and `ot task note` on a task's note (a task id, unique id prefix or title). The list prints KIND (`note`, `task`, `project`; `task (done)` and `project (archived)` are marked), id prefix, title (`Untitled note` when a note has none), project and when its text last changed; `ot notes search` adds a MATCH column with the text around the first match. Search runs on your machine over the notes the server returned, with the matching of the app: every word must occur in the title or the text, case and accents ignored, a quoted phrase as one; title matches first.
+
+Text is Markdown. What a note shows is its text followed by anything appended that no device has merged into it yet; the next device that opens the note turns the Markdown into formatted content. **A replacement** (`edit --body`, `edit --body-file`, `task note --set`, `--file` and `--clear`) carries the version `ot` read: when someone changed the note in the app after that (or another write came first), the server refuses it with `body_changed`, exit 1, and nothing changes. Read it again and retry. **An append** (`ot notes append`, `ot task note --append`) never replaces anything, so it is safe while someone edits the same note on a phone: every device adds the text at the end once. A note holds at most 100 appends no device has merged yet (`too_many_appends`). `ot task note` takes one of `--set`, `--file`, `--append` and `--clear` per call; two exit 2 before anything is sent.
+
+Every write supports `--dry-run` and is refused by `--read-only`; `rm` needs `--yes` off a terminal and with `--json`, like `ot rm`. Note writes go through the REST routes and need a `full` token: a `read` token reads only, and an `agent` token writes notes through [MCP](mcp.md) instead (`ot task note --set` on a task it may edit is allowed). The CLI is online: a write reaches the server, then every device on its next sync.
+
+On an [end-to-end encrypted](e2ee.md) account `ot notes` and `ot task note` decrypt on your machine after `ot encryption unlock`, and seal every title, text and append for its note or task before sending, as `ot vault` does (a new note is created first and its sealed title and text written right after, since a sealed value names its note's id; `to-task` seals the title, text and document for the task id it chose). Without the key the list shows `(encrypted)`, `show` says the note is encrypted, and text writes stop with `encryption_enabled`, exit 5, before anything is sent; `rm` and project or label changes still work. Labels named with `--label` must exist on an encrypted account (`ot` would otherwise send the new name readable). `to-task` refuses a note with appends no device has merged yet: open it in the app once, then run it again.
+
 ## Time
 
 [Time tracking](time-tracking.md) from the shell: start and stop a running entry, log past work, list and export entries.
@@ -305,6 +334,8 @@ ot mcp --decrypt                           # the bridge, decrypting on this mach
 
 `ot encryption unlock` fetches the wrapped key record with the profile's token, checks its key-derivation settings as devices do, unwraps the key locally and stores it with its key version in an owner-only file (`keys/<profile>.json` next to the configuration file, the same protection as the token). The passphrase, the recovery key and the key itself are never sent or printed. After 5 failed attempts within a minute it waits before trying again. A passphrase with accented or other non-ASCII characters may need `--recovery`, since `ot` does not normalise Unicode the way the browser does. Lock the key on a shared machine.
 
+The note tools work through the bridge too: `create_note`, `update_note` and `append_to_note` have their text sealed here (an append for the field of the append id the bridge chooses), `list_notes`, `get_note` and the `opentodo://notes` resources come back decrypted, and the bridge answers `search_notes` itself: it reads the notes with `list_notes`, decrypts them and matches the query on your machine, so the server never receives it. `note_to_task` is refused with a pointer to `ot notes to-task`, which seals the note again for the new task.
+
 `ot mcp --decrypt` refuses to start, without prompting, when no key is stored or the stored one is out of date (`stale`: the passphrase or key changed on another device); run `ot encryption unlock` again. Custom field text and task origins are not encrypted by the bridge: the server refuses them for an encrypted account.
 
 ## Markdown vault
@@ -329,6 +360,10 @@ Every command accepts `--json`. Stdout then holds only JSON, with the same field
 | `done`, `reopen`, `rm` | `task_result` (one reference) or an array of them: the task plus `ref` (what you typed) and `status` (`completed`, `reopened`, `deleted` or `unchanged`) |
 | `project list` / `add`, `rename`, `archive`, `rm` | array of `project` / `project` |
 | `token list` / `create` / `revoke` | array of `token` / `token_created` (`{token, secret}`) / `token` |
+| `notes list`, `notes search` | array of `note`: `{kind, id, title, project_id, project, label_ids, updated_at, body_version, encrypted}`, `search` adds `snippet` (`[{text, mark}]`) |
+| `notes show`, `add`, `edit`, `task note` | `note_text`: `{kind, id, title, text, appends, body_version, project_id, label_ids, encrypted}` |
+| `notes append`, `task note --append` | `note_append`: `{entity, entity_id, append_id, body_version}` |
+| `notes rm` / `notes to-task` | `note_result` (the `note` plus `ref` and `status`) or an array of them / `task` |
 | any write command with `--dry-run` | `dry_run` |
 | any failure | `error`: `{"error":{"code":"…","message":"…","exit":N}}` |
 

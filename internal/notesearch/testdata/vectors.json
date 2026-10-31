@@ -1,0 +1,129 @@
+{
+  "comment": "Note search (OpenSpec notes-overview D4). Read by internal/notesearch/notesearch_test.go and web/src/lib/noteSearch.test.ts. Written by hand: add the case you fix first.",
+  "normalize": [
+    { "name": "accents and case", "in": "Café Müller", "out": "cafe muller" },
+    { "name": "capital accents", "in": "ÀÉÎÕÜ", "out": "aeiou" },
+    { "name": "decomposed accent", "in": "été", "out": "ete" },
+    { "name": "ligature", "in": "ﬁnance", "out": "finance" },
+    { "name": "fullwidth", "in": "ＡＢＣ１２３", "out": "abc123" },
+    { "name": "superscript", "in": "x²", "out": "x2" },
+    { "name": "sharp s stays", "in": "Straße", "out": "straße" },
+    { "name": "dotted capital I", "in": "İstanbul", "out": "istanbul" },
+    { "name": "ij ligature", "in": "Ĳssel", "out": "ijssel" },
+    { "name": "greek final sigma and tonos", "in": "ΟΔΟΣ οδός", "out": "οδοσ οδοσ" },
+    { "name": "cyrillic yo", "in": "Ёлка", "out": "елка" },
+    { "name": "vietnamese", "in": "Nguyễn", "out": "nguyen" }
+  ],
+  "strip": [
+    { "name": "bold", "in": "**oat** milk", "out": "oat milk" },
+    { "name": "italics", "in": "_one_ and *two*", "out": "one and two" },
+    { "name": "underscores inside a word stay", "in": "call snake_case_name now", "out": "call snake_case_name now" },
+    { "name": "star between digits stays", "in": "2*3=6", "out": "2*3=6" },
+    { "name": "headings", "in": "# Title\n\n## Sub", "out": "Title Sub" },
+    { "name": "hash without a space stays", "in": "#tag", "out": "#tag" },
+    { "name": "lists", "in": "- one\n* two\n+ three\n1. four\n2) five\n-5 degrees", "out": "one two three four five -5 degrees" },
+    { "name": "task boxes", "in": "- [ ] buy milk\n- [x] call Anna\n[X] done", "out": "buy milk call Anna done" },
+    { "name": "link", "in": "see [the docs](https://x.y/z) now", "out": "see the docs now" },
+    { "name": "image", "in": "![a cat](cat.png) here", "out": "a cat here" },
+    { "name": "brackets that are not links", "in": "array[0] and [note]", "out": "array[0] and [note]" },
+    { "name": "inline code is literal", "in": "run `a**b*` please", "out": "run a**b* please" },
+    { "name": "code fence", "in": "```js\nconst x = 1\n```", "out": "const x = 1" },
+    { "name": "quotes", "in": "> quoted\n> > nested", "out": "quoted nested" },
+    { "name": "table", "in": "| a | b |\n| --- | :-: |\n| 1 | 2 |", "out": "a b 1 2" },
+    { "name": "strikethrough, escapes and a tilde", "in": "~~gone~~ \\*literal\\* ~5", "out": "gone *literal* ~5" },
+    { "name": "rule and blank lines", "in": "above\n\n---\n\nbelow", "out": "above below" },
+    { "name": "line endings and tabs", "in": "a\r\nb\rc\t\td", "out": "a b c d" },
+    { "name": "empty", "in": "", "out": "" }
+  ],
+  "query": [
+    { "name": "words and extra spaces", "in": "  ferry   leaves ", "out": ["ferry", "leaves"] },
+    { "name": "phrase", "in": "\"oat milk\" fresh", "out": ["oat milk", "fresh"] },
+    { "name": "curly quotes and inner spaces", "in": "“Oat  Milk”", "out": ["oat milk"] },
+    { "name": "unclosed quote runs to the end", "in": "milk \"oat drink", "out": ["milk", "oat drink"] },
+    { "name": "normalised", "in": "Café MÜLLER", "out": ["cafe", "muller"] },
+    { "name": "repeats dropped", "in": "ferry FERRY", "out": ["ferry"] },
+    { "name": "empty quotes", "in": "\"\" x", "out": ["x"] },
+    { "name": "empty", "in": "", "out": [] },
+    { "name": "spaces only", "in": "   ", "out": [] }
+  ],
+  "match": [
+    { "name": "every word", "title": "Trip", "text": "the ferry leaves at 7", "query": "ferry 7", "matched": true, "title_match": false, "body_words": 2 },
+    { "name": "one word missing", "title": "Trip", "text": "the ferry leaves at 7", "query": "ferry bus", "matched": false, "title_match": false, "body_words": 1 },
+    { "name": "phrase across bold markers", "title": "Shopping", "text": "**oat** milk", "query": "\"oat milk\"", "matched": true, "title_match": false, "body_words": 1 },
+    { "name": "phrase in another order", "title": "Shopping", "text": "milk oat", "query": "\"oat milk\"", "matched": false, "title_match": false, "body_words": 0 },
+    { "name": "accents in the text", "title": "Lunch", "text": "Café Müller", "query": "cafe muller", "matched": true, "title_match": false, "body_words": 2 },
+    { "name": "accents in the query", "title": "Lunch", "text": "cafe muller", "query": "Café Müller", "matched": true, "title_match": false, "body_words": 2 },
+    { "name": "title only", "title": "Groceries", "text": "eggs", "query": "groceries", "matched": true, "title_match": true, "body_words": 0 },
+    { "name": "words in title and text", "title": "Oat", "text": "milk", "query": "oat milk", "matched": true, "title_match": true, "body_words": 1 },
+    { "name": "link targets are not searched", "title": "Docs", "text": "[docs](https://example.com)", "query": "example", "matched": false, "title_match": false, "body_words": 0 },
+    { "name": "substring of a word", "title": "Trip", "text": "ferryboat", "query": "boat", "matched": true, "title_match": false, "body_words": 1 },
+    { "name": "empty query matches nothing", "title": "Trip", "text": "ferry", "query": "", "matched": false, "title_match": false, "body_words": 0 }
+  ],
+  "rank": [
+    {
+      "name": "title matches, then body words, then newest, then key",
+      "query": "ferry 7",
+      "notes": [
+        { "key": "c", "title": "Plans", "text": "ferry and 7 am", "updated": 2 },
+        { "key": "e", "title": "Ferry", "text": "7", "updated": 1 },
+        { "key": "d", "title": "Other", "text": "nothing", "updated": 9 },
+        { "key": "b", "title": "Trip", "text": "ferry ferry at 7", "updated": 5 },
+        { "key": "a", "title": "Ferry times", "text": "at 7", "updated": 1 }
+      ],
+      "keys": ["a", "e", "b", "c"]
+    },
+    {
+      "name": "ties by key",
+      "query": "milk",
+      "notes": [
+        { "key": "k2", "title": "A", "text": "milk", "updated": 3 },
+        { "key": "k1", "title": "B", "text": "milk", "updated": 3 }
+      ],
+      "keys": ["k1", "k2"]
+    },
+    {
+      "name": "empty query",
+      "query": "  ",
+      "notes": [{ "key": "k1", "title": "A", "text": "milk", "updated": 3 }],
+      "keys": []
+    }
+  ],
+  "snippet": [
+    { "name": "short text fits", "text": "the ferry leaves at 7", "query": "ferry", "segments": [{ "text": "the ", "mark": false }, { "text": "ferry", "mark": true }, { "text": " leaves at 7", "mark": false }] },
+    { "name": "formatting removed", "text": "**oat** milk", "query": "\"oat milk\"", "segments": [{ "text": "oat milk", "mark": true }] },
+    { "name": "Markdown blocks removed", "text": "## Plan\n- [ ] book the **ferry**", "query": "ferry", "segments": [{ "text": "Plan book the ", "mark": false }, { "text": "ferry", "mark": true }] },
+    { "name": "accented original shown", "text": "Lunch at Café Müller", "query": "cafe", "segments": [{ "text": "Lunch at ", "mark": false }, { "text": "Café", "mark": true }, { "text": " Müller", "mark": false }] },
+    { "name": "ligature original shown", "text": "the ﬁnal note", "query": "final", "segments": [{ "text": "the ", "mark": false }, { "text": "ﬁnal", "mark": true }, { "text": " note", "mark": false }] },
+    {
+      "name": "every occurrence of every term",
+      "text": "milk, oat milk and more milk",
+      "query": "milk oat",
+      "segments": [
+        { "text": "milk", "mark": true },
+        { "text": ", ", "mark": false },
+        { "text": "oat", "mark": true },
+        { "text": " ", "mark": false },
+        { "text": "milk", "mark": true },
+        { "text": " and more ", "mark": false },
+        { "text": "milk", "mark": true }
+      ]
+    },
+    {
+      "name": "long text cut at both ends on spaces",
+      "text": "alpha beta gamma delta epsilon zeta eta theta iota kappa",
+      "query": "epsilon",
+      "max": 20,
+      "segments": [{ "text": "…delta ", "mark": false }, { "text": "epsilon", "mark": true }, { "text": " zeta…", "mark": false }]
+    },
+    {
+      "name": "cut inside a word when there is no space before the match",
+      "text": "xxxxxxxxxxxxxxxxxxxxferry",
+      "query": "ferry",
+      "max": 10,
+      "segments": [{ "text": "…xxxxx", "mark": false }, { "text": "ferry", "mark": true }]
+    },
+    { "name": "title-only match shows the start", "text": "eggs and bread", "query": "groceries", "segments": [{ "text": "eggs and bread", "mark": false }] },
+    { "name": "title-only match on a long text", "text": "one two three four five six", "query": "groceries", "max": 10, "segments": [{ "text": "one two…", "mark": false }] },
+    { "name": "empty text", "text": "", "query": "ferry", "segments": [] }
+  ]
+}
