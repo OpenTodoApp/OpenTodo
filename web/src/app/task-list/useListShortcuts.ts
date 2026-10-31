@@ -24,6 +24,7 @@ import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcu
 import { deleteWithUndo, parkWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
 import { dayPartFields } from '../../lib/dayParts'
+import { t } from '../../lib/i18n'
 
 /** The list's transient UI state the keys open and close. */
 export interface ListUi {
@@ -73,6 +74,10 @@ export interface ShortcutContext {
   acceptPrompt: () => void
   moveToSection: (task: Task, key: string) => void
   toggleViewMode: () => void
+  /** Fold (true) or unfold a board column on this device (board-polish D1). */
+  foldColumn?: (key: string, folded: boolean) => void
+  /** A polite announcement on the board, such as "Moved to Done" (board-polish D3). */
+  announce?: (text: string) => void
   /** F2: edit the selected task's title in place (inline-task-editing). */
   editInline?: (id: string) => void
   /** The row whose details are shown under it, and its setter (row-expand D1, D4). */
@@ -271,13 +276,24 @@ export function useListShortcuts(c: ShortcutContext) {
   useBoardShortcuts(c, row)
 }
 
-/** The `board` scope: columns and cards; cards are not nested. */
+/** The column whose header or folded strip has focus, when no card is selected (board-polish D5). */
+function focusedColumn(columns: ListColumn[]): ListColumn | undefined {
+  const el = (document.activeElement as HTMLElement | null)?.closest?.('[data-column]')
+  if (!el || el.querySelector('[data-task-id]:focus-within')) return undefined
+  return columns.find((x) => x.key === el.getAttribute('data-column'))
+}
+
+/** A column's name as the board shows it. */
+const columnName = (col: ListColumn) => (col.section ? col.section.name || t('Untitled section') : t('No section'))
+
+/** The `board` scope: columns and cards; cards are not nested. A folded column shows no cards (board-polish). */
 function useBoardShortcuts(c: ShortcutContext, row: ListRow | undefined) {
   const { columns, selectedId, setSelectedId } = c
-  const col = c.board ? columns.findIndex((x) => x.cards.some((task) => task.id === selectedId)) : -1
+  const col = c.board ? columns.findIndex((x) => !x.folded && x.cards.some((task) => task.id === selectedId)) : -1
   const pos = col >= 0 ? columns[col].cards.findIndex((task) => task.id === selectedId) : -1
+  // `h` / `l` and `z` skip folded columns (board-polish D3).
   const firstCard = (from: number, dir: 1 | -1) => {
-    for (let i = from; i >= 0 && i < columns.length; i += dir) if (columns[i].cards.length) return columns[i].cards[0].id
+    for (let i = from; i >= 0 && i < columns.length; i += dir) if (!columns[i].folded && columns[i].cards.length) return columns[i].cards[0].id
     return null
   }
   const boardStep = (dir: 1 | -1) => () => {
@@ -289,14 +305,33 @@ function useBoardShortcuts(c: ShortcutContext, row: ListRow | undefined) {
     else setSelectedId(firstCard(col + dir, dir) ?? selectedId)
   }
   const boardMove = (dir: 1 | -1) => () => {
-    // Shift+←/→ moves the selected card to the adjacent column; it stays selected.
+    // Shift+←/→ moves the selected card to the adjacent column; it stays selected,
+    // unless that column is folded: then a neighbour in the origin column is (D3).
     const target = columns[col + dir]
-    if (row && col >= 0 && target && c.projectEditable) c.moveToSection(row.task, target.key)
+    if (!row || col < 0 || !target || !c.projectEditable) return
+    c.moveToSection(row.task, target.key)
+    if (!target.folded) return
+    const cards = columns[col].cards
+    setSelectedId(cards[pos + 1]?.id ?? cards[pos - 1]?.id ?? null)
+    c.announce?.(t('Moved to {name}', { name: columnName(target) }))
+  }
+  // `z` folds the selected card's column (the selection moves on) or toggles the focused column.
+  const boardFold = () => {
+    if (!c.foldColumn) return false
+    if (col >= 0) {
+      c.foldColumn(columns[col].key, true)
+      setSelectedId(firstCard(col + 1, 1) ?? firstCard(col - 1, -1))
+      return
+    }
+    const focused = focusedColumn(columns)
+    if (!focused) return false
+    c.foldColumn(focused.key, !focused.folded)
   }
   useShortcutScope('board', {
     'board.down': boardStep(1), 'board.up': boardStep(-1),
     'board.column-prev': boardColumn(-1), 'board.column-next': boardColumn(1),
     'board.move-prev': boardMove(-1), 'board.move-next': boardMove(1),
+    'board.fold': boardFold,
     // On the board, `a` opens the quick add of the selected card's column.
     'board.add': () => { if (!c.projectEditable) return false; c.ui.setAddingTo(col >= 0 ? columns[col].key : columns[0]?.key ?? '') },
     // Cards are not nested: Tab keeps moving focus and never reaches the list's indent.

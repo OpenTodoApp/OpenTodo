@@ -70,6 +70,8 @@ export interface RowContext {
   expandedId?: string | null
   /** A board card's leading edge under Colour by (calendar-clarity); absent with Colour by Project. */
   edgeOf?: (task: Task) => HueName
+  /** A project board's notes preview is on (board-polish): cards show two lines of their notes. */
+  cardNotes?: boolean
 }
 
 /** The sequence a row plays: a ghost departs, a completed row that stayed rolled forward, Undo restores. */
@@ -171,6 +173,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
           edge={c.board ? c.edgeOf?.(r.task) : undefined}
+          notes={c.board && !!c.cardNotes}
         />
         {c.addingUnder === r.task.id && !c.board && (
           <li>
