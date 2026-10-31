@@ -202,7 +202,10 @@
       "deleted_at",
       "device_id",
       "ended_at",
+      "focus_mode",
+      "focus_session",
       "note",
+      "planned_end_at",
       "started_at",
       "task_id",
       "user_id"

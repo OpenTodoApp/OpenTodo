@@ -193,7 +193,15 @@ const (
 	// (task.split_from, OpenSpec change series-split, design D2): one whole value
 	// {series: id, date: "YYYY-MM-DD"} with no other members.
 	kSplit
+	// kFocusSession is an integer from 0 to MaxFocusSession: a Focus work
+	// session's number in its Pomodoro cycle, 0 for the other modes and for
+	// entries that are no Focus session (time_entry.focus_session, OpenSpec
+	// change focus-session-readable, design D2).
+	kFocusSession
 )
+
+// MaxFocusSession is the largest time_entry.focus_session (focus-session-readable D2).
+const MaxFocusSession = 99
 
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
 // version, e.g. "ydoc:v1:" (a Yjs update) or "enc:v1:" (e2ee ciphertext).
@@ -582,7 +590,11 @@ var Schema = map[string]map[string]Field{
 	// author edits, the author, admins and the owner delete, viewers cannot
 	// create). ended_at is null while the entry runs; a user has at most one
 	// running entry, a rule every device applies (internal/timetrack). note is
-	// user-written text, so it is an encrypted content field. See docs/sync.md.
+	// user-written text, so it is an encrypted content field. focus_mode,
+	// focus_session and planned_end_at are what a Focus work session tells
+	// readers outside the device (OpenSpec change focus-session-readable,
+	// design D2): plaintext, the author's alone, and planned_end_at is never
+	// before started_at (refused as invalid). See docs/sync.md.
 	"time_entry": {
 		"task_id":    {Kind: kID, Default: `""`},
 		"user_id":    {Kind: kID, Default: `""`},
@@ -592,6 +604,16 @@ var Schema = map[string]map[string]Field{
 		"note":       {Kind: kString, Default: `""`, Content: true},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+		// focus_mode is the Focus mode of the work session that wrote the entry:
+		// "pomodoro", "flowtime" or "countdown", "" for any other entry. A reader
+		// keeps and shows an unknown value as a Focus session of unknown mode.
+		"focus_mode": {Kind: kString, Default: `""`},
+		// focus_session is the work session's number in the Pomodoro cycle (1 up
+		// to the long-break count), 0 for the other modes and other entries.
+		"focus_session": {Kind: kFocusSession, Default: `0`},
+		// planned_end_at is when the work stretch ends if nothing changes (Unix
+		// ms), null for Flowtime and other entries. Never before started_at.
+		"planned_end_at": {Kind: kInstant, Default: `null`},
 	},
 	// place: a location the user keeps for reuse (OpenSpec change task-locations,
 	// design D1). Like a label it is personal: it resolves to the author's

@@ -28,6 +28,10 @@ func TestTimeEntriesReadTool(t *testing.T) {
 	if ut(list[1].(map[string]any))["note"] != "draft" || list[1].(map[string]any)["minutes"] != float64(40) {
 		t.Fatalf("older = %v", list[1])
 	}
+	// "Older entry" (focus-session-readable): focus is null.
+	if v, ok := newest["focus"]; !ok || v != nil {
+		t.Fatalf("focus of an entry without Focus details = %v", newest)
+	}
 	if res := f.tool("u1", "list_time_entries", map[string]any{"running": true}); len(res["time_entries"].([]any)) != 1 {
 		t.Fatalf("running = %v", res)
 	}

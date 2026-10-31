@@ -179,3 +179,64 @@ func TestTimeEntriesGoWithTheTask(t *testing.T) {
 		t.Fatalf("late entry = %+v", res)
 	}
 }
+
+// Focus details on a time entry (OpenSpec change focus-session-readable).
+func TestTimeEntryFocusDetails(t *testing.T) {
+	t.Parallel()
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	start := int64(1_760_950_800_000)
+	// "Third Pomodoro": the details travel with the entry, in one batch.
+	ops := append(f.entryOps("e1", "t1", "bob", start, 0),
+		f.op("time_entry", "e1", "focus_mode", `"pomodoro"`),
+		f.op("time_entry", "e1", "focus_session", `3`),
+		f.op("time_entry", "e1", "planned_end_at", mustJSON(start+25*60000)))
+	if res := f.apply("bob", "B", ops...); len(res.Rejected) != 0 {
+		t.Fatalf("focus entry rejected: %v", res.Rejected)
+	}
+	if got := f.field("alice", "time_entry", "e1", "planned_end_at"); got != mustJSON(start+25*60000) {
+		t.Fatalf("alice sees planned_end_at %s", got)
+	}
+	// "Older entry": an entry without the fields stores none of them; readers
+	// take the defaults ("", 0, null).
+	f.apply("bob", "B", f.entryOps("e0", "t1", "bob", start-9_000_000, start-8_000_000)...)
+	row, err := f.s.Get(f.ctx, "bob", "time_entry", "e0")
+	if err != nil || row["focus_mode"] != nil || row["focus_session"] != nil || row["planned_end_at"] != nil {
+		t.Fatalf("older entry = %v, %v", row, err)
+	}
+	// "Invalid planned end": before the stored start, and before the batch's start.
+	res := f.apply("bob", "B", f.op("time_entry", "e1", "planned_end_at", mustJSON(start-1)))
+	if len(res.Rejected) != 1 || res.Rejected[0].Reason != ReasonInvalidPlannedEnd {
+		t.Fatalf("early end = %+v", res)
+	}
+	if len(res.Restore) != 1 || string(res.Restore[0].Value) != mustJSON(start+25*60000) {
+		t.Fatalf("restore = %+v", res.Restore)
+	}
+	res = f.apply("bob", "B", append(f.entryOps("e2", "t1", "bob", start, 0), f.op("time_entry", "e2", "planned_end_at", mustJSON(start-60000)))...)
+	if len(res.Rejected) != 1 || res.Rejected[0].Reason != ReasonInvalidPlannedEnd {
+		t.Fatalf("early end in the creating batch = %+v", res)
+	}
+	// Equal to the start is fine.
+	if res := f.apply("bob", "B", f.op("time_entry", "e1", "planned_end_at", mustJSON(start))); len(res.Rejected) != 0 {
+		t.Fatalf("end at start = %+v", res)
+	}
+	// Session 120 is invalid before anything is read.
+	bad := f.op("time_entry", "e1", "focus_session", `120`)
+	bad.Device = "B"
+	if err := Validate(bad); !errors.Is(err, ErrInvalidOp) {
+		t.Fatalf("session 120: %v", err)
+	}
+	// "Another member edits the details": forbidden, the stored value travels back.
+	res = f.apply("alice", "A", f.op("time_entry", "e1", "planned_end_at", mustJSON(start+30*60000)))
+	if len(res.Rejected) != 1 || res.Rejected[0].Reason != ReasonForbidden || len(res.Restore) != 1 || string(res.Restore[0].Value) != mustJSON(start) {
+		t.Fatalf("other member = %+v", res)
+	}
+	// "Concurrent extend and stop": both fields win on their own.
+	extend := f.op("time_entry", "e1", "planned_end_at", mustJSON(start+30*60000))
+	stop := f.op("time_entry", "e1", "ended_at", mustJSON(start+10*60000))
+	f.apply("bob", "phone", stop)
+	f.apply("bob", "laptop", extend)
+	if f.field("alice", "time_entry", "e1", "ended_at") != mustJSON(start+10*60000) || f.field("alice", "time_entry", "e1", "planned_end_at") != mustJSON(start+30*60000) {
+		t.Fatal("extend and stop did not both survive")
+	}
+}

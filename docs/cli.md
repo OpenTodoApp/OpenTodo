@@ -256,13 +256,14 @@ On an [end-to-end encrypted](e2ee.md) account `ot notes` and `ot task note` decr
 ```bash
 ot time start 8c2a [--note "review"]     # stops the running entry first
 ot time stop                             # exit 1 when nothing runs
+ot time status                           # your running entry; a Focus session adds its timer, session and planned end
 ot time log 8c2a 1h30 --on yesterday --note "review"
 ot time log 8c2a --from 09:00 --to 09:25 [--on 2026-10-12]
 ot time list --from 2026-10-12 --to 2026-10-18 [--task 8c2a] [--running] [--limit 50]
 ot time export --from 2026-10-12 --to 2026-10-18 -o week.csv
 ```
 
-A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 before a request. Without `--on` a duration ends now; on another day (`--on yesterday`, a weekday meaning the last one, or `YYYY-MM-DD`) it ends at 17:00 local time. `--from` and `--to` are times on that day. `start`, `stop` and `log` write, so `--dry-run`, `--read-only` and token scope apply: a `read` token exits 5 (`insufficient_scope`) before anything is sent, while `list` and `export` work with it. `ot time list` prints the id prefix, day, `09:00–09:25`, duration, task and project, newest first; `--json` prints the [`time_entry`](#machine-readable-help-ot-schema) objects (`endedAt: null` while running). `ot time export` downloads the server's CSV for those local days in your time zone; with `-o` and `--json` it reports the file and the row count. A weekly export for cron:
+A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 before a request. Without `--on` a duration ends now; on another day (`--on yesterday`, a weekday meaning the last one, or `YYYY-MM-DD`) it ends at 17:00 local time. `--from` and `--to` are times on that day. `start`, `stop` and `log` write, so `--dry-run`, `--read-only` and token scope apply: a `read` token exits 5 (`insufficient_scope`) before anything is sent, while `list` and `export` work with it. `ot time list` prints the id prefix, day, `09:00–09:25`, duration, task and project, newest first; `--json` prints the [`time_entry`](#machine-readable-help-ot-schema) objects (`endedAt: null` while running). `ot time status` prints your own running entry, or "Nothing running." (on a [Focus](focus.md) break or pause too), and for a Focus work session a line such as `Pomodoro, session 3, ends 10:25`; it reads, so a `read` token works, and `--json` prints [`time_running`](#machine-readable-help-ot-schema), the answer of [`GET /api/v1/time-entries/running`](api.md#the-running-entry). `ot time export` downloads the server's CSV for those local days in your time zone; with `-o` and `--json` it reports the file and the row count. A weekly export for cron:
 
 ```bash
 0 18 * * 5  ot time export --from monday --to today -o "$HOME/time/week-$(date +\%F).csv"

@@ -53,6 +53,7 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kEnergy:         checkEnergy,
 	kOrderList:      checkOrderList,
 	kSplit:          orNull(checkSplit),
+	kFocusSession:   checkFocusSession,
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -158,6 +159,16 @@ func checkClock(raw json.RawMessage) error {
 	var c string
 	if err := json.Unmarshal(raw, &c); err != nil || !isClock(c) || c[:2] > "23" || c[3:] > "59" {
 		return errors.New(`must be a time "HH:MM" between 00:00 and 23:59`)
+	}
+	return nil
+}
+
+// checkFocusSession accepts an integer from 0 to MaxFocusSession
+// (focus-session-readable D2).
+func checkFocusSession(raw json.RawMessage) error {
+	var n int64
+	if err := json.Unmarshal(raw, &n); err != nil || isNullValue(raw) || n < 0 || n > MaxFocusSession {
+		return fmt.Errorf("must be an integer from 0 to %d", MaxFocusSession)
 	}
 	return nil
 }

@@ -237,6 +237,7 @@ var cmdSpecs = []cmdSpec{
 	{Name: "time start", Summary: "start tracking time on a task (stops the running entry)", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: []flagSpec{{Name: "note", Type: "string", Description: "note on the entry"}}, Writes: true, DryRun: true, Output: ref("time_entry")},
 	{Name: "time stop", Summary: "stop the running time entry", Writes: true, DryRun: true, Output: ref("time_entry")},
+	{Name: "time status", Summary: "show your running time entry and, for a Focus session, its mode, session number and planned end; read-only", Output: ref("time_running")},
 	{Name: "time log", Summary: "add a closed time entry: a duration (45m, 1h30, 90) or --from and --to", Args: []argSpec{{Name: "ref", Required: true}, {Name: "duration"}},
 		Flags: []flagSpec{
 			{Name: "on", Type: "string", Description: "the day: YYYY-MM-DD, today, yesterday or a weekday; a duration on another day than today ends at 17:00"},
