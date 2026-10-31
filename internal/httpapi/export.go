@@ -30,6 +30,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 			s.internal(w, err)
 			return
 		}
+		// The body version is a read's precondition, not data: an export
+		// keeps the pending appends and leaves it out (notes-overview D13).
+		for _, e := range list {
+			delete(e, "body_version")
+		}
 		out[plural] = list
 	}
 	// Comments are exported too (comments-and-activity), deleted ones included like

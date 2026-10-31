@@ -579,6 +579,8 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 	issueConn := h.seedIssueConnection()
 	h.seedRule()
 	h.seedFrame()
+	h.seedSlot()
+	h.put("note", "meet0001", map[string]any{"title": "Meeting", "description": "- agenda", "labels": []string{}, "project_id": nil, "deleted_at": nil})
 	cfgBefore, _ := os.ReadFile(h.configPath)
 	schemas := loadSchemas(t)
 	cases := [][]string{
@@ -605,7 +607,16 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"rules", "disable", "Sweep"},
 		{"frames", "add", "Dry frame", "--days", "mon-fri"},
 		{"frames", "rm", "Admin"},
+		{"slots", "add", "Dry slot", "--date", "2026-11-05"},
+		{"slots", "put", "Errands", "plum"},
+		{"slots", "rm", "Errands"},
 		{"import", writeTemp(t, "dry.csv", "title\nDry import\n")},
+		{"notes", "add", "Dry note", "--body", "- item"},
+		{"notes", "edit", "Meeting", "--body", "replaced"},
+		{"notes", "append", "Meeting", "- decided"},
+		{"notes", "rm", "Meeting"},
+		{"notes", "to-task", "Meeting"},
+		{"task", "note", "plum", "--set", "x"},
 	}
 	covered := map[string]bool{}
 	for _, c := range cases {

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "slot",
+  "description": "A calendar slot exactly as the REST API returns it (OpenSpec calendar-slots). The title is ciphertext for an encrypted account (encrypted: true); an empty title reads as \"Slot\".",
+  "type": "object",
+  "required": ["id", "title", "date", "start", "minutes", "task_ids"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "date": {"type": ["string", "null"], "description": "YYYY-MM-DD"},
+    "start": {"type": "string", "description": "HH:MM"},
+    "minutes": {"type": "integer"},
+    "task_ids": {"type": "array", "items": {"type": "string"}, "description": "ordered task ids, at most 20"},
+    "color": {"type": "string"},
+    "created_at": {"type": "number"},
+    "encrypted": {"type": "boolean"}
+  }
+}

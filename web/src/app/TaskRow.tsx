@@ -23,7 +23,8 @@
 // The row is its own size container (`@container/row`), so every host gets the layout
 // its width allows; the rules are in index.css, "The property column".
 import { isSample } from '../lib/sampleTasks'
-import { hueFor, Icon, LabelChips, ReadAs, ToneText, TruncatedText, type IconName, type Tone } from '../ui'
+import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, type HueName, type IconName, type Tone } from '../ui'
+import { slotName, useSlotOf } from '../lib/slots'
 import { lazy, memo, type ReactNode, Suspense, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
 import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logicalToday, zoneHint } from '../lib/dates'
@@ -52,6 +53,7 @@ import { RowActionCluster } from './task-list/RowActionCluster'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
+import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -115,11 +117,20 @@ export function RowCounts({ counts }: { counts: RowCount[] }) {
   )
 }
 
-/** The time column's value (rows-v2 D3): the due time in the date tone, else the deadline countdown in its tone. */
-function TimeCell({ time, timeTone, deadline, deadlineLabel }: { time: string | null; timeTone: Tone; deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string }) {
+/**
+ * The time column's value (rows-v2 D3): the due time in the date tone, else the start
+ * of the calendar slot that holds the task with the stack icon (calendar-slots D8),
+ * else the deadline countdown in its tone.
+ */
+function TimeCell({ time, timeTone, slot, deadline, deadlineLabel }: { time: string | null; timeTone: Tone; slot: { start: string; name: string } | null; deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string }) {
   return (
     <span data-row-time="" className="mt-0.5 flex h-5 w-(--row-time-w) shrink-0 items-center">
       {time ? <ToneText tone={timeTone} data-time="">{time}</ToneText>
+        : slot ? (
+          <Tooltip label={t('In the slot {slot}', { slot: slot.name })}>
+            <span data-row-slot="" className="inline-flex min-w-0"><ToneText tone={timeTone} icon="layers" data-time="" label={t('{time}, in the slot {slot}', { time: slot.start, slot: slot.name })}>{slot.start}</ToneText></span>
+          </Tooltip>
+        )
         : deadline ? <ToneText tone={DEADLINE_TONE[deadline.tone]} data-deadline="" label={deadlineLabel}>{deadline.label}</ToneText>
         : null}
     </span>
@@ -145,6 +156,8 @@ interface MetaValues {
   startText: string | null
   someday: boolean
   estimate: { text: string; label: string; tracked: boolean } | null
+  /** The task's energy as one muted word (task-energy D6), only when set. */
+  energy: Energy | null
   blockedBy: number
   /** The holding step's title while the task waits in sequence (project-flow-modes); the blocked marker wins. */
   waitsFor: string | null
@@ -161,7 +174,7 @@ interface MetaValues {
 
 /** How many items the line has to show (the project and the repeat mark are placed apart). */
 function metaItems(m: MetaValues): number {
-  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.blockedBy > 0 || !!m.waitsFor, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts, m.progress].filter(Boolean).length
+  return [m.sample, m.breadcrumb, m.date, m.hint, m.repeat, m.deadline, m.startText, m.estimate, m.energy, m.blockedBy > 0 || !!m.waitsFor, m.streak, m.badges.length > 0, m.assignee, m.origin, m.labels, m.counts, m.progress].filter(Boolean).length
 }
 
 /**
@@ -180,6 +193,11 @@ function BlockMark({ m, rowItem = false }: { m: MetaValues; rowItem?: boolean })
   )
 }
 
+/** The energy as one muted word, read as "Deep energy" (task-energy D6). */
+function EnergyWord({ energy, rowItem = false }: { energy: Energy; rowItem?: boolean }) {
+  return <ToneText data-energy={energy} data-row-item={rowItem ? '' : undefined} label={energyChipLabel(energy)}>{energyName(energy)}</ToneText>
+}
+
 /**
  * A card's property row (precision-boards-timeline D3): the date, the estimate and the
  * subtask progress lead with their icons, the other facts and the label chips follow,
@@ -192,6 +210,7 @@ function CardMeta({ m }: { m: MetaValues }) {
       {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
       {m.estimate && <ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
       {m.progress && <ToneText icon="circle-check-big" data-progress="" label={m.progress.label}>{m.progress.text}</ToneText>}
+      {m.energy && <EnergyWord energy={m.energy} />}
       {m.sample && <ToneText data-sample="">{t('Sample')}</ToneText>}
       {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="">{m.breadcrumb}</ToneText>}
       {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
@@ -259,6 +278,7 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
       </span>
     ),
     m.estimate && <ToneText key="estimate" icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>,
+    m.energy && <EnergyWord key="energy" energy={m.energy} />,
     m.assignee && <span key="assignee" data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>,
     m.sample && <ToneText key="sample" data-sample="">{t('Sample')}</ToneText>,
     (m.blockedBy > 0 || m.waitsFor) && <BlockMark key="blocked" m={m} />,
@@ -305,6 +325,8 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
   const keep = (cell: Exclude<PhoneCell, null>) => (phone === cell ? { 'data-row-phone': '' } : {})
   const deadline = m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" data-row-item="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>
   const rest = [
+    // After the column, so it reads right after the estimate; a phone row hides the rest (precision-phone D2).
+    m.energy && <EnergyWord key="energy" energy={m.energy} rowItem />,
     m.sample && <ToneText key="sample" data-sample="" data-row-item="">{t('Sample')}</ToneText>,
     m.breadcrumb && <ToneText key="crumb" icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="" data-row-item="">{m.breadcrumb}</ToneText>,
     extra !== 'deadline' && deadline && <span key="deadline" className="contents">{deadline}</span>,
@@ -429,6 +451,8 @@ export interface TaskRowProps {
   onExpand?: () => void
   /** One line or detailed (row-layouts); absent follows the account's choice. A card has its own shape. */
   layout?: RowLayout
+  /** A board card's 3 px leading edge in this hue (calendar-clarity "Colour by on boards"); none when absent. */
+  edge?: HueName
 }
 
 const NO_HIDDEN: readonly RowProperty[] = []
@@ -483,6 +507,8 @@ export interface CompactRowProps {
   onOpen: () => void
   /** Hooks of the screen that hosts the row (`data-plan-task`). */
   attrs?: Record<`data-${string}`, string>
+  /** The row's hue under the calendar's Colour by (calendar-clarity D3); the project's when absent. */
+  hue?: HueName
 }
 
 /** The row's own controls: a click on one of them is theirs, not the row's (row-and-cursor D1). */
@@ -490,19 +516,20 @@ const ROW_CONTROL = 'button, a, input, label, select, textarea, [role="button"],
 
 const TONE_TEXT: Partial<Record<Tone, string>> ={ danger: 'text-danger', accent: 'text-accent', default: 'text-default' }
 
-function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs }: CompactRowProps) {
+function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs, hue }: CompactRowProps) {
   const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
+  const canDrag = !readOnly && onPointerDown !== undefined
   return (
-    <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hueFor(project?.color ?? null)} aria-pressed={selected}
-      onPointerDown={readOnly ? undefined : onPointerDown}
+    <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hue ?? hueFor(project?.color ?? null)} aria-pressed={selected}
+      onPointerDown={canDrag ? onPointerDown : undefined}
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
       onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
-      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${readOnly ? '' : 'cursor-grab'}`}>
+      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${task.completed_at || date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canDrag ? 'cursor-grab' : ''}`}>
       {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
       {time && <span data-plan-time className={`shrink-0 tabular-nums ${TONE_TEXT[ladderTone(date, today)] ?? 'text-muted'}`}>{formatTime(time)}</span>}
       {/* In a narrow column the title takes the first line and the time, estimate and priority the second. */}
-      <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{task.title || t('Untitled')}</span>
+      <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'} ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
       {task.estimate_minutes ? <span data-estimate className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
       {/* The row's priority ring: coloured for P1 and P2, neutral for P3; read as "P1". */}
       {priority && (
@@ -510,6 +537,9 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
           <span aria-hidden data-priority-dot className={`h-2.5 w-2.5 rounded-full border-2 ${priority}`} /><span className="sr-only">P{task.priority}</span>
         </span>
       )}
+      {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
+      {/* The deadline diamond when the row is on its deadline day (calendar-clarity D1). */}
+      {task.deadline === date && !task.completed_at && <span className="inline-flex shrink-0 items-center"><span aria-hidden data-deadline-diamond className={`inline-block size-2 rotate-45 rounded-[1px] ${date < today ? 'bg-faint' : 'bg-warning'}`} /><span className="sr-only">{`, ${t('deadline today')}`}</span></span>}
       {readOnly && <span className="sr-only">{`, ${t('read-only')}`}</span>}
     </button>
   )
@@ -574,7 +604,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -599,7 +629,10 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The column (rows-v2 D2, D3): the due time, else the deadline countdown; the line never repeats it.
   const column = timeColumn && !card && !hides('date') && !detailed
   const timeInColumn = column && !!due?.time
-  const deadlineInColumn = column && !due?.time && !!deadline
+  // A task a calendar slot holds shows the slot's start (calendar-slots D8).
+  const slotted = useSlotOf(task)
+  const slotInColumn = column && !due?.time && slotted ? { start: formatTime(slotted.start), name: slotName(slotted) } : null
+  const deadlineInColumn = column && !due?.time && !slotInColumn && !!deadline
   const comments = useCommentCount(task.id)
   const attachments = useAttachmentCount(task.id)
   // End-to-end encryption (OpenSpec e2ee): content the server still holds in
@@ -634,7 +667,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,
     startText, someday: start === 'someday',
-    estimate, blockedBy: done ? 0 : blockedBy, waitsFor: done ? null : waitsFor, streak: habit && !done ? habit : null,
+    estimate, energy: hides('energy') ? null : energyOf(task), blockedBy: done ? 0 : blockedBy, waitsFor: done ? null : waitsFor, streak: habit && !done ? habit : null,
     badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved, fieldsOf),
     assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
     origin: null,
@@ -720,8 +753,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       onContextMenu={onContextMenu}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
-      data-row-layout={detailed ? 'detailed' : undefined}
-      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
+      data-row-layout={detailed ? 'detailed' : undefined} {...(card && edge ? { 'data-hue': edge, 'data-card-edge': '' } : {})}
+      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
@@ -749,8 +782,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           checkbox, replaced by the selection box only while a selection is in progress
           (a row is ticked, or touch Select mode), in the same 20 px square, so the title
           never moves. Hover and focus never swap them: a click on the circle always
-          completes (row-checkbox-completes). */}
-      <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
+          completes (row-checkbox-completes); on touch its 44 px button is stacked above the row (phone-touch-focus D1). */}
+      <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start pointer-coarse:z-1" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
         <button
           type="button"
           aria-label={done ? t('Reopen {title}', { title: name }) : t('Complete {title}', { title: name })}
@@ -769,7 +802,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           </label>
         )}
       </span>
-      {column && <TimeCell time={due?.time ?? null} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
+      {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
         aria-expanded={canExpand ? showDetails : undefined} aria-controls={showDetails ? detailsId : undefined}
         onClick={(e) => {

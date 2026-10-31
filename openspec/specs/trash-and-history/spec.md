@@ -58,7 +58,7 @@ When the last open task of a project with at least one task is completed, the cl
 - **THEN** no project is archived automatically from this device while other devices keep their own setting
 
 ### Requirement: Revision history
-The API SHALL expose `GET /api/v1/tasks/{id}/history` and `GET /api/v1/projects/{id}/history`, requiring authentication, returning the entity's operations ordered by timestamp with field, value, timestamp and device, including operations that lost under last-writer-wins. The client SHALL show this as a list of versions in the History tab of the detail panel, newest first; when offline it SHALL state that history needs a connection and show nothing stale.
+The API SHALL expose `GET /api/v1/tasks/{id}/history` and `GET /api/v1/projects/{id}/history`, requiring authentication, returning the entity's operations ordered by timestamp with field, value, timestamp and device, including operations that lost under last-writer-wins, except the superseded note versions that compaction removed (OpenSpec `op-log-compaction`): for edits received more than 30 days ago the note keeps one revision per calendar day in UTC. The client SHALL show this as a list of versions in the History tab of the detail panel, newest first, and above the first note revision older than 30 days it SHALL say in one muted line that older note versions are kept one per day (UTC); when offline it SHALL state that history needs a connection and show nothing stale.
 
 #### Scenario: Timeline of changes
 - **WHEN** a task was created on a laptop, retitled on a phone and rescheduled through the API, and the user opens its history online
@@ -75,6 +75,10 @@ The API SHALL expose `GET /api/v1/tasks/{id}/history` and `GET /api/v1/projects/
 #### Scenario: Offline history tab
 - **WHEN** the user opens the History tab without a network
 - **THEN** the tab states that history needs a connection to the server and lists no versions
+
+#### Scenario: Thinned note history
+- **WHEN** a task's note was edited 40 times on 2 September and 5 times yesterday, compaction ran, and the user opens the task's history
+- **THEN** 2 September shows one note revision, the line saying older note versions are kept one per day (UTC) is shown once above the older revisions, and yesterday shows all 5
 
 ### Requirement: Restore a previous value
 From the history timeline the user SHALL be able to restore an earlier value of a field, written as a new operation with the current time, so it applies locally at once, is recorded in the history and converges like any other edit. Restoring SHALL never remove operations from the log. The user SHALL also be able to restore a whole version: one such operation for each restorable field the version changed, after one confirmation listing those fields.
@@ -237,3 +241,30 @@ History entries whose device starts with `rule:` SHALL carry a `device_label`: "
 #### Scenario: Unauthenticated history request
 - **WHEN** a request without credentials asks for the history of a task changed by a rule
 - **THEN** the response is 401 `unauthorized`
+
+### Requirement: Standalone notes in the Trash and history
+A deleted standalone note SHALL be listed in the Trash with tasks and projects, restorable, and purged permanently by the user, by Empty Trash and by the retention job like a task, and purged with its project. The API SHALL expose `GET /api/v1/notes/{id}/history` and `DELETE /api/v1/notes/{id}/purge`, requiring authentication, with the rules of task history and purge: history lists the note's operations except its document, showing the projection's revisions; purge accepts only a deleted note and leaves a purge marker so devices drop it and late operations are discarded. Deleting and restoring SHALL work offline as operations and converge by last-writer-wins; purging SHALL need a connection.
+
+#### Scenario: Delete and restore
+- **WHEN** the user deletes the note "Trip" and later restores it from the Trash
+- **THEN** the note is back on the Notes page with its text, on every device after sync
+
+#### Scenario: Retention
+- **WHEN** a note has been in the Trash for 31 days with the default retention
+- **THEN** it is purged and devices drop it on their next sync
+
+#### Scenario: Purge a project with notes
+- **WHEN** a trashed project with two notes is purged
+- **THEN** the two notes are purged with it
+
+#### Scenario: Unauthenticated request
+- **WHEN** a request without credentials asks for `GET /api/v1/notes/{id}/history` or `DELETE /api/v1/notes/{id}/purge`
+- **THEN** the response is 401 `unauthorized`
+
+#### Scenario: Purge a note that is not deleted
+- **WHEN** an authenticated client asks to purge a note that is not in the Trash
+- **THEN** the response is 409 `not_deleted` and nothing is removed
+
+#### Scenario: Unknown note history
+- **WHEN** an authenticated user asks for the history of a note id that does not exist for their account
+- **THEN** the response is 404 `not_found`

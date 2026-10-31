@@ -27,6 +27,8 @@ export interface ReplanTasksInput {
 export interface ReplanInput extends ReplanTasksInput {
   /** The device's grid end hour (time-blocking "Grid preferences"). */
   endHour: number
+  /** Fixed obstacles of today that are never moved: the calendar slots' intervals (calendar-slots D8). */
+  obstacles?: readonly { start: number; end: number }[]
   /** Events drawn on this device (enabled subscriptions, Calendars toggle on); empty when hidden or unknown. */
   events: readonly CalendarEvent[]
   zone?: string
@@ -111,6 +113,7 @@ export function replan(input: ReplanInput): ReplanProposal {
   // Free and all-day events are not obstacles; zero-length events take no time.
   const timed = input.events.filter((ev) => !ev.free && !ev.allDay && !(ev.start.date === ev.end.date && ev.start.time === ev.end.time && ev.start.tz === ev.end.tz))
   for (const ev of eventBlocks(timed, input.today, input.zone)) busy.push({ start: ev.start, end: ev.end })
+  for (const o of input.obstacles ?? []) busy.push({ start: o.start, end: o.end })
 
   const moves: ReplanMove[] = []
   const unfit: MissedBlock[] = []

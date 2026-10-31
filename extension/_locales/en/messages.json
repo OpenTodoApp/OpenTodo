@@ -4,7 +4,7 @@
     "description": "The extension name in the browser’s extension list."
   },
   "extDescription": {
-    "message": "Add the current page, a link, an image, a mail or the selected text to your own OpenTodo server, from a small popup. It talks only to the server address you enter.",
+    "message": "Add the page, a link, an image, a mail or selected text to your own OpenTodo server. It talks only to the server you enter.",
     "description": "The description in the browser’s extension list."
   },
   "actionTitle": {

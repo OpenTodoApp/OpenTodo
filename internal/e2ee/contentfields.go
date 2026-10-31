@@ -12,6 +12,7 @@ var ContentFields = map[string][]string{
 	"task":       {"title", "description", "ical_extra", "notes_doc", "origin", "location"},
 	"section":    {"name"},
 	"field":      {"name", "options"},
+	"note":       {"title", "notes_doc", "description"},
 	"label":      {"name"},
 	"view":       {"name", "query"},
 	"comment":    {"body", "guest_name"},
@@ -19,6 +20,7 @@ var ContentFields = map[string][]string{
 	"time_entry": {"note"},
 	"rule":       {"name"},
 	"frame":      {"title"},
+	"slot":       {"title"},
 	"place":      {"name", "address", "geo"},
 	"review":     {"tomorrow_note"},
 }

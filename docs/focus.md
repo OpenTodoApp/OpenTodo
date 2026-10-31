@@ -24,7 +24,7 @@ From a task, Focus starts a session at once (Countdown asks for the length first
 
 ## Which task
 
-Without a task of your own choosing, Focus takes the first open task of **today's focus**, picked in the [Daily check](method/rhythms.md#daily-check). Completing it, or <kbd>n</kbd>, moves on to the next one. When none is left, **Choose a task** finds any open task by name, as **Change task** in the screen's menu does at any time.
+Without a task of your own choosing, Focus takes the first open task of **today's focus**, picked in the [Daily check](method/rhythms.md#daily-check) (with [Bento](method/rhythms.md#bento), in its Frog or Summit order). Its **⋯** menu has [**Add to focus**](method/rhythms.md#pick-the-focus-by-touch) and **Remove from focus**. Completing it, or <kbd>n</kbd>, moves on to the next one. When none is left, **Choose a task** finds any open task by name, as **Change task** in the screen's menu does at any time.
 
 The task's notes and subtasks are shown below the timer. Tick subtasks there; **Edit the notes** opens the task panel.
 

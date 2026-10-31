@@ -108,3 +108,18 @@ describe('The mode is presentation only (open-loops "How you work preference")',
     await r.unmount()
   })
 })
+
+describe('Formatting button (notes-toolbar-desktop D4)', () => {
+  it('is on by default and writes user_prefs.formatting_toggle when turned off and on', async () => {
+    const r = await render(<HowYouWorkSection />)
+    const sw = () => document.querySelector<HTMLButtonElement>('#formatting-button-switch')!
+    await waitFor(() => !!sw())
+    expect(sw().getAttribute('aria-checked')).toBe('true')
+    await click(sw())
+    await waitFor(async () => (await db.userPrefs.get('me'))?.formatting_toggle === 'off')
+    await waitFor(() => sw().getAttribute('aria-checked') === 'false')
+    await click(sw())
+    await waitFor(async () => (await db.userPrefs.get('me'))?.formatting_toggle === 'on')
+    await r.unmount()
+  })
+})

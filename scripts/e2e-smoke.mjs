@@ -181,6 +181,21 @@ await page.locator('aside').getByRole('button', { name: /^Home renovation/ }).cl
 await row(page, 'Added while offline').waitFor({ timeout: 40000 })
 await snap(page, 'project')
 
+step('co-editing a note: device 1 shows device 2\'s paragraph after its pause (notes-save-cadence)')
+// Device 2 types and stops with the editor still focused: the note is pushed 3 s after
+// its last save, and device 1 (live channel connected) merges it into its open editor.
+await row(page, 'Pick paint colours').click()
+await detail(page).getByRole('textbox', { name: 'Notes' }).waitFor()
+await row(p2, 'Pick paint colours').click()
+const notes2 = detail(p2).getByRole('textbox', { name: 'Notes' })
+await notes2.click()
+await p2.keyboard.type('Sample the greens in daylight.', { delay: 15 })
+const stopped = Date.now()
+await detail(page).getByRole('textbox', { name: 'Notes' }).getByText('Sample the greens in daylight.').waitFor({ timeout: 5000 })
+console.log('  shown on device 1', Date.now() - stopped, 'ms after the last keystroke')
+await page.keyboard.press('Escape')
+await p2.keyboard.press('Escape')
+
 step('close the day on device 1, reopen it offline on device 2 (ux-feedback-2)')
 const serverDue = async (p, title) => p.evaluate(async (t) => ((await (await fetch('/api/v1/tasks')).json()).tasks ?? []).find((x) => x.title === t)?.due?.date ?? null, title)
 await page.goto(`${base}/review/close`)

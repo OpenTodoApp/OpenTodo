@@ -16,7 +16,7 @@ func (s *Service) NextRetention(ctx context.Context, days int) (time.Time, bool,
 	}
 	var at sql.NullFloat64
 	err := s.db.QueryRowContext(ctx, `SELECT MIN(CAST(value AS REAL)) FROM scope_fields
-		WHERE field = 'deleted_at' AND entity IN ('project','task','attachment') AND value != 'null'`).Scan(&at)
+		WHERE field = 'deleted_at' AND entity IN ('project','task','note','attachment') AND value != 'null'`).Scan(&at)
 	if err != nil || !at.Valid {
 		return time.Time{}, false, err
 	}

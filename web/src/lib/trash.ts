@@ -10,7 +10,7 @@
 import { forgetEntities } from './activity'
 import { api, ApiError, isNetworkError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
-import type { Entity, Project, Task } from './types'
+import type { Entity, Note, Project, Task } from './types'
 import { t } from './i18n'
 import { readWorkspaceState, tasksIn } from './workspaces'
 
@@ -41,17 +41,17 @@ export async function visibleTaskSets(): Promise<{ every: Task[]; here: Task[] }
 }
 
 export interface TrashItem {
-  entity: 'task' | 'project'
+  entity: 'task' | 'project' | 'note'
   id: string
   title: string
   deletedAt: number
-  /** For tasks: the name of their project ("Inbox" when none). */
+  /** For tasks: the name of their project ("Inbox" when none); for notes: their project's, if any. */
   projectName?: string
   color?: string
 }
 
-/** Deleted tasks and projects, newest deletion first. */
-export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>): TrashItem[] {
+/** Deleted tasks, projects and standalone notes (notes-overview D10), newest deletion first. */
+export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>, notes: Iterable<Note> = []): TrashItem[] {
   const byId = new Map<string, Project>()
   const out: TrashItem[] = []
   for (const p of projects) {
@@ -62,6 +62,11 @@ export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>): 
     if (!task.deleted_at) continue
     const project = task.project_id ? byId.get(task.project_id) : undefined
     out.push({ entity: 'task', id: task.id, title: task.title || t('Untitled'), deletedAt: task.deleted_at, projectName: project ? project.name : t('Inbox') })
+  }
+  for (const n of notes) {
+    if (!n.deleted_at) continue
+    const project = n.project_id ? byId.get(n.project_id) : undefined
+    out.push({ entity: 'note', id: n.id, title: n.title || t('Untitled note'), deletedAt: n.deleted_at, ...(project ? { projectName: project.name } : {}) })
   }
   return out.sort((a, b) => b.deletedAt - a.deletedAt || (a.id < b.id ? -1 : 1))
 }
@@ -84,7 +89,7 @@ export function trashRetentionDays(): Promise<number> {
 // ---- purge ----
 
 export interface PurgeRequest {
-  entity: 'task' | 'project'
+  entity: 'task' | 'project' | 'note'
   id: string
 }
 
@@ -129,9 +134,11 @@ export async function purgeItems(items: PurgeRequest[]): Promise<'done' | 'pendi
 export async function emptyTrash(): Promise<'done' | 'pending'> {
   const tasks = await db.tasks.filter((task) => !!task.deleted_at).toArray()
   const projects = await db.projects.filter((p) => !!p.deleted_at).toArray()
+  const notes = await db.notes.filter((n) => !!n.deleted_at).primaryKeys()
   const items: PurgeRequest[] = [
     ...projects.map((p) => ({ entity: 'project' as const, id: p.id })),
     ...tasks.map((tk) => ({ entity: 'task' as const, id: tk.id })),
+    ...notes.map((id) => ({ entity: 'note' as const, id: id as string })),
   ]
   if (isOffline()) {
     await queue(items)
@@ -177,7 +184,7 @@ export async function flushPendingPurges(): Promise<void> {
   for (const it of list) {
     try {
       // Restored while queued: the user changed their mind, drop the request.
-      const row = it.entity === 'task' ? await db.tasks.get(it.id) : await db.projects.get(it.id)
+      const row = it.entity === 'task' ? await db.tasks.get(it.id) : it.entity === 'note' ? await db.notes.get(it.id) : await db.projects.get(it.id)
       if (row && !row.deleted_at) continue
       await purgeOne(it)
     } catch (err) {
@@ -230,10 +237,11 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
       }
       for (const id of taskIds) gone.set(id, 'task')
       for (const r of await db.reminders.toArray()) if (taskIds.has(r.task_id)) gone.set(r.id, 'reminder')
-      // Sections of purged projects (board-view).
+      // Sections of purged projects (board-view), and their notes (notes-overview D10).
       for (const p of list) {
         if (p.entity !== 'project') continue
         for (const s of await db.sections.where('project_id').equals(p.entityId).primaryKeys()) gone.set(s as string, 'section')
+        for (const n of await db.notes.where('project_id').equals(p.entityId).primaryKeys()) gone.set(n as string, 'note')
       }
       // Comments go with their task (comments-and-activity).
       for (const id of await db.comments.where('task_id').anyOf([...taskIds]).primaryKeys()) gone.set(id as string, 'comment')
@@ -248,6 +256,7 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
     if (byEntity.label) await db.labels.bulkDelete(byEntity.label)
     if (byEntity.view) await db.views.bulkDelete(byEntity.view)
     if (byEntity.section) await db.sections.bulkDelete(byEntity.section)
+    if (byEntity.note) await db.notes.bulkDelete(byEntity.note)
     if (byEntity.comment) await db.comments.bulkDelete(byEntity.comment)
     if (byEntity.attachment) {
       await db.attachments.bulkDelete(byEntity.attachment)

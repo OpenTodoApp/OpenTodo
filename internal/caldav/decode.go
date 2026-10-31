@@ -193,7 +193,7 @@ func (d *decoder) prop(master *Component, i int) {
 		if ms, err := instantOf(p); err == nil {
 			in.CreatedAt = &ms
 		}
-	case "X-OPENTODO-START", "X-OPENTODO-EVENING", "X-OPENTODO-DAY-PART":
+	case "X-OPENTODO-START", "X-OPENTODO-EVENING", "X-OPENTODO-DAY-PART", "X-OPENTODO-ENERGY":
 		d.opentodoProp(p)
 	case "ESTIMATED-DURATION":
 		d.estimate(p)
@@ -289,11 +289,22 @@ func (d *decoder) estimate(p Prop) {
 	d.in.HasDuration = true
 }
 
-// opentodoProp reads this server's own X-OPENTODO-START, X-OPENTODO-EVENING
-// and X-OPENTODO-DAY-PART; a value it does not know is kept in ical_extra.
+// opentodoProp reads this server's own X-OPENTODO-START, X-OPENTODO-EVENING,
+// X-OPENTODO-DAY-PART and X-OPENTODO-ENERGY; a value it does not know is kept in ical_extra.
 func (d *decoder) opentodoProp(p Prop) {
 	in := d.in
 	v := strings.ToUpper(strings.TrimSpace(p.Value))
+	// X-OPENTODO-ENERGY (task-energy D7): a level, case ignored; any other value
+	// is kept in ical_extra and leaves the energy alone.
+	if p.Name == "X-OPENTODO-ENERGY" {
+		in.EnergySent = true
+		if e := strings.ToLower(v); e == "deep" || e == "medium" || e == "low" {
+			in.Energy = &e
+		} else {
+			d.keep(p)
+		}
+		return
+	}
 	if p.Name == "X-OPENTODO-DAY-PART" {
 		if part := strings.ToLower(v); part == "morning" || part == "afternoon" {
 			in.DayPart = &part

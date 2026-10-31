@@ -186,18 +186,19 @@ func isTrue(v json.RawMessage) bool {
 	return json.Unmarshal(v, &b) == nil && b
 }
 
-// withoutDocFields returns c without opaque document fields (opsync.DocFields).
+// withoutDocFields returns c without opaque document fields (opsync.DocFields)
+// and pending appends (notes-overview D13: the folded description is the change).
 func withoutDocFields(c opsync.Change) opsync.Change {
 	has := false
 	for f := range c.Fields {
-		has = has || opsync.IsDocField(c.Entity, f)
+		has = has || opsync.IsDocField(c.Entity, f) || strings.HasPrefix(f, opsync.AppendPrefix)
 	}
 	if !has {
 		return c
 	}
 	out := make(map[string]opsync.FieldChange, len(c.Fields))
 	for f, fc := range c.Fields {
-		if !opsync.IsDocField(c.Entity, f) {
+		if !opsync.IsDocField(c.Entity, f) && !strings.HasPrefix(f, opsync.AppendPrefix) {
 			out[f] = fc
 		}
 	}

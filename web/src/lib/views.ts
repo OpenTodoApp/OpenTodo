@@ -20,6 +20,7 @@ import {
 import { t, msg } from './i18n'
 import { uuid } from './ids'
 import { workspaceFields } from './workspaces'
+import { compareManual, orderRank } from './viewOrder'
 
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
@@ -465,6 +466,17 @@ export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) =
 }
 
 /**
+ * A saved view's comparator (OpenSpec change view-manual-order): its sort, where
+ * Manual order is the view's own stored order, then the other tasks by position;
+ * descending reverses it.
+ */
+export function viewComparator(view: Pick<View, 'manual_order'>, sortBy: SortBy, dir: SortDir): (a: Task, b: Task) => number {
+  if (sortBy !== 'position') return compareTasks(sortBy, dir)
+  const asc = compareManual(orderRank(view.manual_order))
+  return dir === 'desc' ? (a, b) => asc(b, a) : asc
+}
+
+/**
  * Split sorted tasks into headed groups; headings come in a fixed, meaningful order.
  * `once` (a project or label page, list-display-options D3): a task with several
  * labels is listed once, under the first of them in label order, since a list page
@@ -540,7 +552,7 @@ export function runView(view: View, ctx: ViewContext): ViewResult {
   if (!c.ok) return c
   const { groupBy, sortBy, sortDir } = viewOptions(view)
   const scoped = viewScope(c, ctx)
-  const tasks = scoped.tasks.filter(c.test).sort(compareTasks(sortBy, sortDir))
+  const tasks = scoped.tasks.filter(c.test).sort(viewComparator(view, sortBy, sortDir))
   return { ok: true, tasks, groups: groupTasks(tasks, groupBy, scoped), warnings: c.warnings }
 }
 
@@ -570,7 +582,7 @@ export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TAS
   for (const tk of every.length ? ctx.everyWorkspace!.tasks : []) for (const l of every) if (l.test(tk)) l.matches.push(tk)
   for (const l of live) {
     const { groupBy, sortBy, sortDir } = viewOptions(l.view)
-    const sorted = l.matches.sort(compareTasks(sortBy, sortDir))
+    const sorted = l.matches.sort(viewComparator(l.view, sortBy, sortDir))
     const firstN: Task[] = []
     if (limit > 0) {
       // Grouping by label can list a task twice; a panel shows each task once.

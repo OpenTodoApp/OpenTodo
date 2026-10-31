@@ -3,7 +3,7 @@
     "message": "OpenTodo Capture"
   },
   "extDescription": {
-    "message": "Añade la página, un enlace, una imagen, un correo o el texto seleccionado a tu propio servidor OpenTodo desde una pequeña ventana. Solo se comunica con la dirección del servidor que indiques.",
+    "message": "Añade la página, un enlace, una imagen, un correo o texto seleccionado a tu servidor OpenTodo. Solo habla con tu servidor.",
     "description": "The description in the browser’s extension list."
   },
   "actionTitle": {

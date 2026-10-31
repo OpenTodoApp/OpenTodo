@@ -1,10 +1,10 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note']
 
 export interface Op {
   id: string
@@ -169,6 +169,12 @@ export interface Task extends TaskFields {
    */
   fields?: Record<string, FieldValue>
   /**
+   * Pending appends keyed by append id (notes-overview D13): each entry is its own
+   * op `appends.<id>`; a non-empty value is Markdown a plain-text writer added, waiting
+   * to be inserted at the end of the note (docs/sync.md "Mergeable documents" rule 5).
+   */
+  appends?: Record<string, string>
+  /**
    * Where the task came from (OpenSpec change `task-origin`): a page, a mail, an
    * issue or an import, or null. One last-writer-wins value like `due`. Rows
    * stored before the field read as undefined, and a value this device could not
@@ -253,6 +259,50 @@ export interface Frame extends FrameFields {
   position: number
   created_at: number
   deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A slot (OpenSpec change `calendar-slots`, design D1): one block on the Day
+ * and Week grid that holds a checklist of small tasks. Personal; `date` is the
+ * floating day, `start` a wall time "HH:MM", `minutes` the length, `task_ids`
+ * the ordered list (one whole value, at most 20). Which tasks it shows is
+ * derived in `lib/slots.ts`; no field is added to tasks.
+ */
+export interface Slot extends SlotFields {
+  id: string
+  title: string
+  date: string | null
+  start: string
+  minutes: number
+  task_ids: string[]
+  color: string
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A standalone note (OpenSpec change `notes-overview`, design D1): a title, a
+ * mergeable note document with its Markdown projection, an optional project
+ * (which decides its sharing scope, like a task) and labels. Never a task: it
+ * shows only on the Notes page, the palette and the Trash.
+ */
+export interface Note extends NoteFields {
+  id: string
+  title: string
+  description: string
+  notes_doc?: string
+  project_id: string | null
+  labels: string[]
+  position: number
+  created_at: number
+  deleted_at: number | null
+  workspace_id?: string | null
+  /** Pending appends (rule 5), as on tasks. */
+  appends?: Record<string, string>
   _clock: Clock
   _e2ee?: RowEncryption
 }
@@ -347,8 +397,8 @@ export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
 export type ViewLayout = 'list' | 'board'
 export const VIEW_LAYOUTS: readonly ViewLayout[] = ['list', 'board']
 /** What a row can show beside its title (views-and-display D3), in the display panel's order. */
-export type RowProperty = 'date' | 'project' | 'labels' | 'estimate' | 'assignee' | 'deadline' | 'start' | 'origin'
-export const ROW_PROPERTIES: readonly RowProperty[] = ['date', 'project', 'labels', 'estimate', 'assignee', 'deadline', 'start', 'origin']
+export type RowProperty = 'date' | 'project' | 'labels' | 'estimate' | 'assignee' | 'deadline' | 'start' | 'origin' | 'energy'
+export const ROW_PROPERTIES: readonly RowProperty[] = ['date', 'project', 'labels', 'estimate', 'assignee', 'deadline', 'start', 'origin', 'energy']
 
 /**
  * A saved view (OpenSpec `custom-views`): a filter query plus presentation options.
@@ -1142,6 +1192,28 @@ export interface CalendarFeed {
 }
 
 /** The owner's attachment settings (Settings → People → Attachments). */
+/** One notes compaction run, or a complete pass (GET /api/v1/settings/storage, op-log-compaction). */
+export interface CompactionReport {
+  at: number
+  ops_removed: number
+  value_bytes_removed: number
+  file_bytes_reclaimed: number
+  more: boolean
+  converted: boolean
+}
+
+/** The owner's view of the database file (op-log-compaction D7). */
+export interface StorageStatus {
+  database_bytes: number
+  /** Free pages inside the file. */
+  free_bytes: number
+  wal_bytes: number
+  last_compaction: CompactionReport | null
+  conversion: 'pending' | 'waiting_for_quiet' | 'no_space' | 'done'
+  /** The free disk space the one-time conversion needs (no_space). */
+  conversion_needed_bytes?: number
+}
+
 export interface AttachmentSettings {
   enabled: boolean
   max_file_mb: number

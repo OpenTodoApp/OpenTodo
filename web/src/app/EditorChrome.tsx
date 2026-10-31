@@ -3,13 +3,13 @@
 // list (a listbox at the caret driven by the editor's suggest plugin), the
 // table's context menu, limit notices, and on touch screens a row of
 // formatting controls. Shared by the notes and the comment composer; lazy chunk.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import type { EditorView } from 'prosemirror-view'
 import { mentionCandidates, mentionToken, type MentionTarget } from '../lib/comments'
 import { insertMention } from '../lib/editorNotes'
 import { dismissSuggest, type Suggest, type SuggestBridge } from '../lib/editorSuggest'
 import { t } from '../lib/i18n'
-import { Icon, IconButton, Menu, MenuItem, Popover, useMediaQuery } from '../ui'
+import { Icon, IconButton, type IconName, Menu, MenuItem, Popover, useMediaQuery } from '../ui'
 import { editorCommands, filterCommands, tableCommands, type CommandEnv, type EditorCommand } from './editorCommands'
 import { MentionOption } from './task-detail/MentionOption'
 
@@ -164,33 +164,90 @@ function SuggestList({ id, open, items, active, onPick }: { id: string; open: { 
   )
 }
 
+const ROW_COMMANDS: readonly { id: string; icon: IconName; label: () => string }[] = [
+  { id: 'bold', icon: 'bold', label: () => t('Bold') },
+  { id: 'italic', icon: 'italic', label: () => t('Italic') },
+  { id: 'link', icon: 'link', label: () => t('Link') },
+  { id: 'bullet', icon: 'list', label: () => t('Bullet list') },
+  { id: 'checklist', icon: 'list-checks', label: () => t('Checklist') },
+]
+
 /**
- * The formatting row on touch screens (rich-text-editing "Editing toolbar on
- * touch screens"): shown only on a coarse pointer while the editor has focus.
+ * The formatting row (rich-text-editing "Editing toolbar on touch screens"): on a
+ * coarse pointer while the editor has focus, and on request whatever the pointer
+ * (`always`: the Formatting toggle of notes and of the comment composer,
+ * notes-toolbar-desktop D3). A toolbar with one Tab stop (D5): Left and Right move
+ * between its controls, Home and End go to the first and last, Down opens More,
+ * Escape returns to the editor with its selection; a command run from the row
+ * puts focus back in the editor.
  */
-export function EditorToolbar({ view, env, visible, onMenu, coarse: forced, always = false }: {
+export function EditorToolbar({ id, view, env, visible, onMenu, coarse: forced, always = false }: {
+  /** The row's id, named by the Formatting toggle's aria-controls. */
+  id?: string
   view: EditorView | null; env: CommandEnv; visible: boolean; onMenu: (open: boolean) => void
   /** Stories: show the touch row whatever the pointer. */
   coarse?: boolean
-  /** Shown on request whatever the pointer and focus (the comment composer's Formatting toggle, rich-comments D3). */
+  /** Shown on request whatever the pointer and focus (the Formatting toggle, rich-comments D3, notes-toolbar-desktop D3). */
   always?: boolean
 }) {
   const coarse = useMediaQuery('(pointer: coarse)') || !!forced
   const commands = useMemo(() => editorCommands(), [])
+  // The control holding the row's one Tab stop: the last one focused.
+  const [current, setCurrent] = useState(0)
+  const row = useRef<HTMLDivElement>(null)
   if (!view || !(always || (coarse && visible))) return null
-  const byId = (id: string) => commands.find((c) => c.id === id) as EditorCommand
-  const run = (id: string) => byId(id).run(view, env)
-  const more = commands.filter((c) => !['bold', 'italic', 'link', 'bullet', 'checklist'].includes(c.id) && (c.available ? c.available(view, env) : true))
+  const byId = (cmdId: string) => commands.find((c) => c.id === cmdId) as EditorCommand
+  // Focus goes back to the editor first, so the command sees its selection and typing continues.
+  const run = (cmdId: string) => {
+    if (!view.hasFocus()) view.focus()
+    byId(cmdId).run(view, env)
+  }
+  const more = commands.filter((c) => !ROW_COMMANDS.some((r) => r.id === c.id) && (c.available ? c.available(view, env) : true))
+  const items = () => Array.from(row.current?.querySelectorAll<HTMLElement>('[data-toolbar-item]') ?? [])
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    // Keys from the More menu's panel (a portal) bubble here through React: they are not the row's.
+    const list = items()
+    const target = e.target as HTMLElement
+    const at = list.indexOf(target)
+    if (at < 0) return
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      view.focus()
+      return
+    }
+    if (e.key === 'ArrowDown' && target.hasAttribute('data-toolbar-more')) {
+      e.preventDefault()
+      target.click()
+      return
+    }
+    const next = e.key === 'ArrowRight' ? (at + 1) % list.length
+      : e.key === 'ArrowLeft' ? (at + list.length - 1) % list.length
+        : e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : null
+    if (next === null) return
+    e.preventDefault()
+    setCurrent(next)
+    list[next].focus()
+  }
+  const tab = (i: number) => (i === Math.min(current, ROW_COMMANDS.length) ? 0 : -1)
   return (
-    // Buttons keep the editor's focus and selection: the press never moves focus.
-    <div role="toolbar" aria-label={t('Formatting')} className="editor-toolbar" data-editor-toolbar onMouseDown={(e) => e.preventDefault()}>
-      <IconButton icon="bold" size="sm" label={t('Bold')} onClick={() => run('bold')} />
-      <IconButton icon="italic" size="sm" label={t('Italic')} onClick={() => run('italic')} />
-      <IconButton icon="link" size="sm" label={t('Link')} onClick={() => run('link')} />
-      <IconButton icon="list" size="sm" label={t('Bullet list')} onClick={() => run('bullet')} />
-      <IconButton icon="list-checks" size="sm" label={t('Checklist')} onClick={() => run('checklist')} />
-      <Menu label={t('More formatting')} kind="menu" align="end" onOpenChange={onMenu} trigger={<Icon name="ellipsis" size="sm" />} triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm">
-        {more.map((c) => <MenuItem key={c.id} label={c.label} icon={c.icon} onSelect={() => c.run(view, env)} />)}
+    // Buttons keep the editor's focus and selection: a press never moves focus.
+    <div ref={row} id={id} role="toolbar" aria-label={t('Formatting')} className="editor-toolbar" data-editor-toolbar
+      onMouseDown={(e) => e.preventDefault()} onKeyDown={onKeyDown}
+      onFocus={(e) => { const i = items().indexOf(e.target as HTMLElement); if (i >= 0) setCurrent(i) }}>
+      {ROW_COMMANDS.map((c, i) => (
+        <IconButton key={c.id} icon={c.icon} size="sm" label={c.label()} tabIndex={tab(i)} data-toolbar-item="" onClick={() => run(c.id)} />
+      ))}
+      <Menu label={t('More formatting')} kind="menu" align="end" onOpenChange={onMenu} trigger={<Icon name="ellipsis" size="sm" />} triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm"
+        triggerProps={{ tabIndex: tab(ROW_COMMANDS.length), 'data-toolbar-item': '', 'data-toolbar-more': '' }}>
+        {more.map((c) => <MenuItem key={c.id} label={c.label} icon={c.icon} onSelect={() => {
+          c.run(view, env)
+          // The menu gives focus back to its button as it closes; the editor takes it after that.
+          setTimeout(() => {
+            const active = document.activeElement
+            if (!view.isDestroyed && (!active || active === document.body || row.current?.contains(active))) view.focus()
+          }, 0)
+        }} />)}
       </Menu>
     </div>
   )

@@ -24,6 +24,10 @@ Calendar feeds are off until the server owner turns them on under **Settings →
 
 Copy the calendar's iCal or `webcal://` address from its app, then open **Settings → Integrations → Calendar feeds**, choose **Add calendar** and paste it, with a name and a colour if you like. The server fetches the calendar straight away and then on its own schedule, and its events appear in Day and Week beside your tasks. [Other calendars in Day and Week](other-calendars.md) has the steps for each calendar app, what the events look like, how refreshing works, and the limits.
 
+### Exchange on-premises
+
+Outlook on the web on your organisation's own Exchange server refuses non-browser requests with error 400. When a calendar answers 400, 403 or 406, OpenTodo retries once as a desktop browser and keeps doing so for that calendar. If **http_400** stays, check the calendar is still published.
+
 ## Your tasks as a calendar
 
 In **Settings → Integrations → Calendar feeds**, under **Your tasks as a calendar**, choose **Create feed URL**. The address is shown **only once**, so copy it right away. Then subscribe to it:

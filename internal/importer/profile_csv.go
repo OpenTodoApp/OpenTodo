@@ -21,7 +21,7 @@ type csvProfile struct{}
 
 func (csvProfile) Name() string { return "csv" }
 func (csvProfile) Description() string {
-	return "CSV with a header row (title, project, section, parent, priority, due_date, due_time, labels, recurrence, reminder, …)"
+	return "CSV with a header row (title, project, section, parent, priority, due_date, due_time, labels, recurrence, reminder, energy, …)"
 }
 
 // csvColumns maps accepted header names (lower case, spaces as underscores) to the
@@ -45,6 +45,7 @@ var csvColumns = map[string]string{
 	"deadline": "deadline",
 	"start":    "start", "start_date": "start",
 	"evening":    "evening",
+	"energy":     "energy",
 	"attachment": "attachment", "attachments": "attachment", "files": "attachment", "links": "attachment",
 	"blocked_by": "blocked_by", "depends_on": "blocked_by", "waits_for": "blocked_by",
 }
@@ -236,6 +237,15 @@ func csvRow(line int, rec []string, get func(string) string, unsupported map[int
 	}
 	if v := get("evening"); v != "" {
 		row.Evening = truthy(v)
+	}
+	// The energy (task-energy D7): a level, case ignored; anything else is
+	// reported and left out.
+	if v := get("energy"); v != "" {
+		if e := strings.ToLower(v); e == "deep" || e == "medium" || e == "low" {
+			row.Energy = e
+		} else {
+			row.warn("energy %q dropped (expected deep, medium or low)", v)
+		}
 	}
 	if v := get("reminder"); v != "" {
 		var list []any

@@ -7,7 +7,7 @@ import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus
 import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /** The properties the Add menu can offer, in its order. */
-export type Optional = 'deadline' | 'when' | 'evening' | 'reminders' | 'estimate' | 'repeat' | 'labels' | 'assignee' | 'blocked-by' | 'parent' | 'section' | 'location'
+export type Optional = 'deadline' | 'when' | 'evening' | 'reminders' | 'estimate' | 'repeat' | 'labels' | 'assignee' | 'blocked-by' | 'parent' | 'section' | 'location' | 'energy'
 
 export interface ChipEditing {
   editing: boolean

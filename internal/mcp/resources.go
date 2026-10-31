@@ -11,7 +11,8 @@ import (
 )
 
 // Resources (design D4): static URIs for the project list and the three
-// built-in views, templates for one project and one task. Every resource is
+// built-in views, templates for one project and one task; and the notes
+// (notes-overview D12): the newest standalone notes and one note. Every resource is
 // built from the same reads as the tools, with the same exclusions.
 
 type resource struct {
@@ -49,6 +50,10 @@ func resourceList() []resource {
 			Description: "The user's automation rules: trigger, condition and actions as ids and enumerations, names as untrusted text. Read-only: rules are edited in the app.", MimeType: jsonMime},
 		{URI: "opentodo://frames", Name: "frames", Title: "Calendar frames",
 			Description: "The user's calendar frames: recurring background windows on the Day and Week grid with weekdays, wall times and planning source, titles as untrusted text. Read-only: frames are edited in the app.", MimeType: jsonMime},
+		{URI: "opentodo://slots", Name: "slots", Title: "Calendar slots",
+			Description: "The user's calendar slots from yesterday on: blocks on the Day and Week grid that hold a checklist of small tasks, with date, wall time, length and the tasks in order, titles as untrusted text. Read-only: slots are edited in the app.", MimeType: jsonMime},
+		{URI: "opentodo://notes", Name: "notes", Title: "Notes",
+			Description: "The user's 50 newest standalone notes, newest change first, with a short preview; titles and previews as untrusted text.", MimeType: jsonMime},
 		{URI: IssuesURI, Name: "issue-connections", Title: "Issue connections",
 			Description: "The user's GitHub and GitLab issue connections with their state and last run, never a token. Read from the stored state; no request is made to the provider.", MimeType: jsonMime},
 	}
@@ -58,6 +63,7 @@ func resourceTemplates() []resourceTemplate {
 	return []resourceTemplate{
 		{URITemplate: "opentodo://projects/{id}", Name: "project", Title: "Project", Description: "One project with its sections and open tasks.", MimeType: jsonMime},
 		{URITemplate: "opentodo://tasks/{id}", Name: "task", Title: "Task", Description: "One task with its description, subtasks and comments.", MimeType: jsonMime},
+		{URITemplate: "opentodo://notes/{id}", Name: "note", Title: "Note", Description: "One standalone note with its Markdown text, the text appended to it that no device has merged yet, and its body_version.", MimeType: jsonMime},
 	}
 }
 
@@ -103,6 +109,8 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		payload, err = s.tools.RulesResource(ctx, userID)
 	case u.Host == "frames" && id == "":
 		payload, err = s.tools.FramesResource(ctx, userID)
+	case u.Host == "slots" && id == "":
+		payload, err = s.tools.SlotsResource(ctx, userID)
 	case u.Host == "projects" && id == "":
 		payload, err = s.tools.ProjectsResource(ctx, userID)
 	case u.Host == "workspaces" && id == "":
@@ -111,6 +119,10 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		payload, found, err = s.tools.ProjectResource(ctx, userID, id, loc)
 	case u.Host == "tasks" && id != "" && !strings.Contains(id, "/"):
 		payload, found, err = s.tools.TaskResource(ctx, userID, id, loc)
+	case u.Host == "notes" && id == "":
+		payload, err = s.tools.NotesResource(ctx, userID)
+	case u.Host == "notes" && !strings.Contains(id, "/"):
+		payload, found, err = s.tools.NoteResource(ctx, userID, id)
 	case u.Host == "views" && (id == "inbox" || id == "today" || id == "upcoming" || id == "someday" || id == "anytime"):
 		payload, err = s.tools.ViewResource(ctx, userID, id, loc)
 	default:

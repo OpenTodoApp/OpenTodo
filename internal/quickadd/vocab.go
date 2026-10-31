@@ -70,9 +70,19 @@ type Vocab struct {
 		Before []string `json:"before"`
 		After  []string `json:"after"`
 	} `json:"timesWords"`
-	RemindWords []string `json:"remindWords"`
-	BeforeWords []string `json:"beforeWords"`
-	AfterWords  []string `json:"afterWords"`
+	// EveryOther and EveryOtherAround read "every other" before a unit or a
+	// weekday, or around it (French "un vendredi sur deux"), and MonthTextBefore
+	// keeps a month name alone as text after "from", "since", "of", "for"
+	// (quick-add-month-and-every-other D2, D3).
+	EveryOther       []string `json:"everyOther"`
+	EveryOtherAround struct {
+		Before []string `json:"before"`
+		After  []string `json:"after"`
+	} `json:"everyOtherAround"`
+	MonthTextBefore []string `json:"monthTextBefore"`
+	RemindWords     []string `json:"remindWords"`
+	BeforeWords     []string `json:"beforeWords"`
+	AfterWords      []string `json:"afterWords"`
 }
 
 // MonthVocab holds a month's full names and abbreviations.

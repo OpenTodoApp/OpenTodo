@@ -302,6 +302,7 @@ const (
 	kindLabels    valueKind = "labels"
 	kindTasks     valueKind = "tasks"
 	kindDoneTasks valueKind = "completed-tasks"
+	kindNotes     valueKind = "notes"
 	kindCommands  valueKind = "commands"
 	kindShells    valueKind = "shells"
 	kindTitle     valueKind = "title"
@@ -322,7 +323,7 @@ func flagKind(f flagSpec) valueKind {
 		return kindLabels
 	case "task", "blocked-by":
 		return kindTasks
-	case "out", "passphrase-file":
+	case "out", "passphrase-file", "body-file", "file":
 		return kindFile
 	}
 	return kindNone
@@ -348,6 +349,8 @@ func argKind(sp *cmdSpec, i int) valueKind {
 			return kindAllProj
 		case strings.HasPrefix(sp.Name, "project "):
 			return kindProjects
+		case strings.HasPrefix(sp.Name, "notes "):
+			return kindNotes
 		}
 		return kindTasks
 	case "dir":

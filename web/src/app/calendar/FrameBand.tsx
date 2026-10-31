@@ -16,6 +16,9 @@ import { useViews } from '../useViews'
 import { requestFrames } from './framesRequest'
 import { PX_PER_MIN } from './grid'
 import { openPlanPanel } from './PlanPanel'
+import { newSlot } from './slotActions'
+import { act } from '../actionError'
+import { clampSlotMinutes } from '../../lib/slots'
 
 /** The bands of one day column, below every block layer. */
 export function FrameBands({ frames, past }: { frames: readonly PlacedFrame[]; past: boolean }) {
@@ -63,6 +66,11 @@ export function FrameDetails({ occ, onDone }: { occ: FrameOccurrence; onDone: ()
       </div>
       <div className="flex flex-col gap-1">
         <Button variant="secondary" icon="list" data-frame-plan onClick={() => { planFromFrame(occ); onDone() }}>{t('Plan from this frame')}</Button>
+        {/* Make a slot here (calendar-slots "Create slots"): a slot over this occurrence with the frame's title and colour. */}
+        <Button variant="ghost" icon="layers" data-frame-make-slot onClick={() => {
+          onDone()
+          act(newSlot({ date: occ.date, start: occ.frame.start, minutes: clampSlotMinutes(occ.end - occ.start), title: f.title, color: f.color }))
+        }}>{t('Make a slot here')}</Button>
         <div className="flex gap-1">
           <Button variant="ghost" icon="pencil" className="flex-1" data-frame-edit-action onClick={() => { onDone(); requestFrames({ mode: 'edit', id: f.id }) }}>{t('Edit')}</Button>
           <Button variant="ghost" icon="trash-2" className="flex-1" data-frame-delete onClick={() => { onDone(); void deleteFrame(f.id) }}>{t('Delete')}</Button>

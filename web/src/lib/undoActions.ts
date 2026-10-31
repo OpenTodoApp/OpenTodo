@@ -19,6 +19,7 @@ import { t } from './i18n'
 import { uuid } from './ids'
 import { labelKey } from './labels'
 import { dayPartFields, dayPartName, dayPartOf, type DayPart } from './dayParts'
+import { energyName, type Energy } from './energy'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
@@ -183,6 +184,16 @@ export async function dayPartUndoable(ids: readonly string[], part: DayPart | nu
     .map((task) => ({ entity: 'task', entityId: task.id, patch: { ...fields } }))
   if (!changes.length) return { entry: null, label: '' }
   return apply(changes, part ? t('Moved to {part}', { part: dayPartName(part) }) : t('Moved to Any time'))
+}
+
+/** Set (or with null clear) the energy of the ticked tasks (task-energy D6): one batch, with Undo. */
+export async function energyUndoable(ids: readonly string[], energy: Energy | null): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const changes: Change[] = tasks
+    .filter((task) => (task.energy ?? '') !== (energy ?? ''))
+    .map((task) => ({ entity: 'task', entityId: task.id, patch: { energy: energy ?? '' } }))
+  if (!changes.length) return { entry: null, label: '' }
+  return apply(changes, energy ? t('Energy set to {level}', { level: energyName(energy) }) : t('Energy cleared'))
 }
 
 export interface DropResult extends UndoableResult {

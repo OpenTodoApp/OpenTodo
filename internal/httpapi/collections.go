@@ -154,6 +154,9 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if entity == "task" {
+		if !energyOK(w, body) {
+			return
+		}
 		canonicalizeRecurrence(body)
 		pairDayPart(body)
 		// Custom field values become fields.<id> keys before an idempotent
@@ -242,6 +245,9 @@ var labelPalette = []string{"#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6
 // It returns a user-facing message when the body is rejected. Type errors are left
 // to the schema validation in Apply so the two never disagree.
 func (s *Server) checkReferences(ctx context.Context, uid, entity string, body map[string]json.RawMessage) (string, error) {
+	if entity == "note" {
+		return s.checkNoteBody(ctx, uid, body)
+	}
 	if entity == "label" {
 		if raw, has := body["name"]; has {
 			var name string
@@ -423,6 +429,9 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 		return
 	}
+	if entity == "task" && !energyOK(w, body) {
+		return
+	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
 		s.internal(w, err)
 		return
@@ -514,7 +523,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		}
 		extra = append(extra, rops...)
 	}
-	s.writeFieldsAt(w, r, entity, r.PathValue("id"), body, http.StatusOK, extra, ts)
+	s.writeFieldsAt(w, withIfMatch(r, entity, body), entity, r.PathValue("id"), body, http.StatusOK, extra, ts)
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {

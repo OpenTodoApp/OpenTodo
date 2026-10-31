@@ -41,7 +41,10 @@ const (
 	MaxValueBytes    = 64 * 1024
 	MaxIDLen         = 64
 	// MaxBlockedBy caps a task's blockers (OpenSpec change task-dependencies).
-	MaxBlockedBy    = 50
+	MaxBlockedBy = 50
+	// MaxManualOrder caps the task ids of a label's or view's own manual order
+	// (OpenSpec change view-manual-order, design D2): about 19 KB of UUIDs.
+	MaxManualOrder  = 500
 	MaxFutureSkewMs = 5 * 60 * 1000
 	// MaxDocBytes caps a kDoc value (OpenSpec change collaborative-rich-text): the
 	// length of the envelope string, i.e. 256 KB of base64 text. Every other kind
@@ -177,87 +180,16 @@ const (
 	// kWeekdays is "" or a comma list of distinct ISO weekdays "1" (Monday) to
 	// "7" (Sunday), e.g. "1,2,3,4,5" (frame.weekdays, calendar-frames D1).
 	kWeekdays
+	// kEnergy is "" (none), "deep", "medium" or "low" (task.energy, OpenSpec
+	// change task-energy, design D1). A later value is a spec change; older
+	// clients read it as none and keep it.
+	kEnergy
+	// kOrderList is an array of at most MaxManualOrder distinct, non-empty ids of
+	// at most MaxIDLen characters (label.manual_order and view.manual_order,
+	// OpenSpec change view-manual-order, design D2). Unknown ids are accepted:
+	// the order is a personal preference and a task may arrive later.
+	kOrderList
 )
-
-// FieldValuePrefix starts the name of a task's custom field value op
-// (`fields.<definition id>`, OpenSpec change custom-fields, design D2). It is the
-// only family of op field names not listed in Schema one by one.
-const FieldValuePrefix = "fields."
-
-// MaxFieldIDLen bounds the definition id inside a `fields.<id>` name.
-const MaxFieldIDLen = 64
-
-// MaxFieldsPerProject is the number of live field definitions a project may
-// have; the dialog, REST and the assistant tools enforce it (Validate sees one
-// op and no other entity).
-const MaxFieldsPerProject = 30
-
-// ReactionPrefix starts the name of a comment's per-account reactions field
-// (`reactions.<account id>`, OpenSpec change editor-everywhere, design D8): one
-// field per reacting account, so concurrent reactions never overwrite each other.
-const ReactionPrefix = "reactions."
-
-// ReactionNames is the closed set of reaction names a comment accepts.
-var ReactionNames = []string{"thumbs_up", "heart", "check", "eyes", "party", "question"}
-
-// ReactionAccount returns the account id of a comment op field named
-// `reactions.<account id>`, where the id is 1–64 characters of [A-Za-z0-9_-].
-func ReactionAccount(field string) (string, bool) {
-	return familyID(field, ReactionPrefix)
-}
-
-// FieldValueID returns the definition id of a task op field named
-// `fields.<id>`, where id is 1–64 characters of [A-Za-z0-9_-].
-func FieldValueID(field string) (string, bool) {
-	return familyID(field, FieldValuePrefix)
-}
-
-// familyID returns the id after prefix in a field family name, when it is 1–64
-// characters of [A-Za-z0-9_-].
-func familyID(field, prefix string) (string, bool) {
-	id, ok := strings.CutPrefix(field, prefix)
-	if !ok || id == "" || len(id) > MaxFieldIDLen {
-		return "", false
-	}
-	for _, c := range id {
-		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
-			return "", false
-		}
-	}
-	return id, true
-}
-
-// fieldKind resolves an op field name: exact Schema entries first, then the
-// task's `fields.<id>` family.
-func fieldKind(entity, field string) (kind, bool) {
-	fields, ok := Schema[entity]
-	if !ok {
-		return 0, false
-	}
-	if f, ok := fields[field]; ok {
-		return f.Kind, true
-	}
-	if entity == "task" {
-		if _, ok := FieldValueID(field); ok {
-			return kFieldValue, true
-		}
-	}
-	if entity == "comment" {
-		if _, ok := ReactionAccount(field); ok {
-			return kReactions, true
-		}
-	}
-	return 0, false
-}
-
-// KnownField reports whether entity.field may be written: a Schema entry or a
-// task's custom field value (`fields.<id>`) or a comment's reactions
-// (`reactions.<account id>`). Readers that ask "is this a field
-// of the schema" use it instead of indexing Schema.
-func KnownField(entity, field string) bool {
-	_, ok := fieldKind(entity, field)
-	return ok
-}
 
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
 // version, e.g. "ydoc:v1:" (a Yjs update) or "enc:v1:" (e2ee ciphertext).
@@ -271,6 +203,8 @@ var DocFields = map[string]bool{
 	"task.notes_doc": true,
 	// A project's note (OpenSpec change project-notes): project.description is its projection.
 	"project.notes_doc": true,
+	// A standalone note (notes-overview): note.description is its projection.
+	"note.notes_doc": true,
 }
 
 // IsDocField reports whether entity.field holds an opaque document.
@@ -385,6 +319,10 @@ var Schema = map[string]map[string]Field{
 		// flag; clients write both fields in one batch (D2), and a task with the
 		// flag set reads as Evening whatever this holds. Not content; additive.
 		"day_part": {Kind: kDayPart, Default: `null`},
+		// The energy the task asks for (OpenSpec change task-energy, design
+		// D1): "" (none), "deep", "medium" or "low". Chosen from a menu, never
+		// written text, so not content (D2); additive.
+		"energy": {Kind: kEnergy, Default: `""`},
 		// The tasks this one waits for, in its own sharing scope (OpenSpec change
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
@@ -471,6 +409,31 @@ var Schema = map[string]map[string]Field{
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
+	// note: a standalone note (OpenSpec change notes-overview, design D1), not a
+	// task: it never shows in task lists, counts, calendars, filters or
+	// reminders. It lives in its project's sharing scope like a task, in the
+	// author's personal scope without a project (design D2). Its pending
+	// appends are the `appends.<id>` family.
+	"note": {
+		// The note's title; an empty one reads "Untitled note".
+		"title": {Kind: kString, Default: `""`, Content: true},
+		// The note itself: Markdown in description, the mergeable document in
+		// notes_doc, written as a pair, as on tasks and projects.
+		"notes_doc":   {Kind: kDoc, Default: `""`, Content: true},
+		"description": {Kind: kString, Default: `""`, Content: true},
+		// The note's project, or null for a personal note; decides its scope.
+		"project_id": {Kind: kNullableString, Default: `null`},
+		// Label ids, one whole-list register like task.labels.
+		"labels": {Kind: kStringList, Default: `[]`},
+		// Written at creation (the creation time) and kept for a later manual
+		// order; the Notes page sorts by when the note last changed.
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+		// The workspace of a note without a project, or null for the default;
+		// a note with a project follows its project, as task.workspace_id.
+		"workspace_id": {Kind: kNullableString, Default: `null`},
+	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
 		"name":       {Kind: kString, Default: `""`, Content: true},
@@ -489,6 +452,11 @@ var Schema = map[string]map[string]Field{
 		"sort_dir": {Kind: kString, Default: `""`},
 		// The label page's row layout (row-layouts D1); "" follows the account's.
 		"row_layout": {Kind: kString, Default: `""`},
+		// The label page's own manual order (OpenSpec change view-manual-order,
+		// design D1, D2): the ids of the tasks placed by hand, in order; tasks
+		// not listed follow by position. One whole-list register like
+		// view.panels, never a task's position. Not content.
+		"manual_order": {Kind: kOrderList, Default: `[]`},
 	},
 	// view: a saved filter query with presentation options (OpenSpec `custom-views`).
 	// kind, group_by, sort_by and sort_dir are enumerations carried as plain strings so
@@ -525,6 +493,10 @@ var Schema = map[string]map[string]Field{
 		// additive; REST checks it with iconset.Valid and clients render an
 		// unknown name as the default icon.
 		"icon": {Kind: kNullableString, Default: `null`},
+		// A list view's own manual order (OpenSpec change view-manual-order,
+		// design D1, D2): the ids of the tasks placed by hand, in order; tasks
+		// not listed follow by position. One whole-list register. Not content.
+		"manual_order": {Kind: kOrderList, Default: `[]`},
 	},
 	// reminder: fires relative to its task's due time or at an absolute instant
 	// (OpenSpec change reminders, docs/sync.md). fire_at is always the resolved
@@ -633,6 +605,25 @@ var Schema = map[string]map[string]Field{
 		"from_date":  {Kind: kDate, Default: `null`},
 		"until_date": {Kind: kDate, Default: `null`},
 		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+	},
+	// slot: several small tasks in one calendar block (OpenSpec change
+	// calendar-slots, design D1), such as "Admin" on Wednesday from 16:00 for 45
+	// minutes. Personal like a frame, with ids unique on the server; membership
+	// lives here, never on the task, so shared tasks are unchanged for other
+	// members. title is a content field.
+	"slot": {
+		"title": {Kind: kString, Default: `""`, Content: true},
+		// The day it is on (floating); a slot without a date is never drawn.
+		"date": {Kind: kDate, Default: `null`},
+		// Floating wall time "HH:MM".
+		"start": {Kind: kClock, Default: `"09:00"`},
+		// Length in minutes, never null and at most MaxSlotMinutes (clients offer 15 to 480 in 15-minute steps).
+		"minutes": {Kind: kPositiveInt, Default: `30`},
+		// Ordered task ids, at most MaxSlotTasks, one whole-list value like task.blocked_by; ids of tasks not shown are kept.
+		"task_ids":   {Kind: kIDList, Default: `[]`},
+		"color":      {Kind: kString, Default: `"#64748b"`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
@@ -815,6 +806,24 @@ var Schema = map[string]map[string]Field{
 		// "hidden"; empty or unknown reads as shown in the method modes
 		// companion and first and as hidden in lists.
 		"today_done": {Kind: kString, Default: `""`},
+		// Today's focus style (OpenSpec change bento-daily-check, design D4):
+		// "bento" makes the focus a Large, a Medium and a Small slot; empty or
+		// unknown reads as Three tasks and is kept.
+		"focus_style": {Kind: kString, Default: `""`},
+		// Energy levels (OpenSpec change task-energy, design D3): "on" offers
+		// a task's energy in the task page, the row menu and quick add; clients
+		// read an empty or unknown value as off and keep the stored value.
+		"energy": {Kind: kString, Default: `""`},
+		// The Bento order (bento-daily-check D4, D6): "summit" lists Medium,
+		// Large, Small; empty or unknown reads as Frog (Large, Medium, Small)
+		// and is kept.
+		"bento_order": {Kind: kString, Default: `""`},
+		// The Formatting button (OpenSpec change notes-toolbar-desktop, design
+		// D4): "off" hides the Formatting toggle beside notes and in the
+		// comment composer on a fine pointer; empty, "on" or any other value
+		// shows it, and clients keep the stored value. Whether the row is open
+		// is device storage and never synced. Settings, never content.
+		"formatting_toggle": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
@@ -851,11 +860,16 @@ var Schema = map[string]map[string]Field{
 		// A list of another day reads as empty. Task ids only, never content.
 		"slots_date": {Kind: kString, Default: `""`},
 		"slots":      {Kind: kString, Default: `""`},
+		// The Bento slots of today's focus (OpenSpec change bento-daily-check,
+		// design D3): "L:<id>,M:<id>,S:<id>", any subset, written in the same
+		// batch as focus and focus_date; an entry counts only for an id in
+		// focus. Task ids and fixed letters only, never content.
+		"focus_slots": {Kind: kString, Default: `""`},
 	},
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot", "notes": "note"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
@@ -901,6 +915,35 @@ func Validate(op Op) error {
 	if op.Entity == "attachment" {
 		if err := checkAttachment(op.Field, op.Value); err != nil {
 			return fmt.Errorf("%w: attachment.%s %v", ErrInvalidOp, op.Field, err)
+		}
+	}
+	if op.Entity == "slot" {
+		if err := checkSlot(op.Field, op.Value); err != nil {
+			return fmt.Errorf("%w: slot.%s %v", ErrInvalidOp, op.Field, err)
+		}
+	}
+	return nil
+}
+
+// MaxSlotTasks caps the tasks one slot lists (calendar-slots D1).
+const MaxSlotTasks = 20
+
+// MaxSlotMinutes is the longest slot the server accepts (calendar-slots D1:
+// clients offer 15 to 480 minutes; the server checks the kind and one day).
+const MaxSlotMinutes = 1440
+
+// checkSlot adds the slot rules to the kinds: at most MaxSlotTasks task ids
+// and a length that is set and at most one day.
+func checkSlot(field string, raw json.RawMessage) error {
+	switch field {
+	case "task_ids":
+		if len(idList(raw)) > MaxSlotTasks {
+			return fmt.Errorf("may hold at most %d tasks", MaxSlotTasks)
+		}
+	case "minutes":
+		var n int64
+		if json.Unmarshal(raw, &n) != nil || n < 1 || n > MaxSlotMinutes {
+			return fmt.Errorf("must be an integer from 1 to %d", MaxSlotMinutes)
 		}
 	}
 	return nil

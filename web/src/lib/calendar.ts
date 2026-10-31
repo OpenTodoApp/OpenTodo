@@ -172,11 +172,38 @@ export function allDayEvents(events: readonly CalendarEvent[], date: string): Ca
     .sort((a, b) => (a.start.date < b.start.date ? -1 : a.start.date > b.start.date ? 1 : a.summary.localeCompare(b.summary)))
 }
 
-/** Open, live tasks due in [from, to] (inclusive ISO dates), leaving out archived projects. */
-export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string): Task[] {
+/** Live tasks due in [from, to], optionally including completed work; archived projects stay excluded. */
+export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string, showCompleted = false): Task[] {
   const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-  return tasks.filter((t) => !t.deleted_at && !t.completed_at && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
+  return tasks.filter((t) => !t.deleted_at && (showCompleted || !t.completed_at) && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
 }
+
+/**
+ * Deadlines on the calendar (OpenSpec change calendar-clarity, design D1): per date in
+ * [from, to], the open, live tasks of non-archived projects whose `deadline` falls on it
+ * (a floating date, no zone conversion). A task whose (viewed) due is on its deadline
+ * day is drawn there already and carries the diamond instead, so it is left out. Never
+ * part of capacity: markers are not tasks of the day.
+ */
+export function deadlineMarkers(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string): Map<string, Task[]> {
+  const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
+  const out = new Map<string, Task[]>()
+  for (const t of tasks) {
+    const d = t.deadline
+    if (!d || t.deleted_at || t.completed_at || d < from || d > to || (t.project_id && archived.has(t.project_id))) continue
+    if (t.due?.date === d) continue
+    const list = out.get(d)
+    if (list) list.push(t)
+    else out.set(d, [t])
+  }
+  for (const list of out.values()) list.sort((a, b) => a.priority - b.priority || a.title.localeCompare(b.title))
+  return out
+}
+
+/** Calendar visibility is a device-local display choice, independent of grid settings. */
+export const CALENDAR_COMPLETED_META_KEY = 'calendar.showCompleted'
+
+const NO_SLOT_LOAD = { extra: 0, covered: 0 }
 
 export interface DayLoad {
   /** What the line shows: the task estimates plus the counted event minutes. */
@@ -198,16 +225,19 @@ export interface DayLoad {
 /**
  * The load of `date` against the day length (OpenSpec `time-blocking` "Overlap and
  * capacity"): the open tasks' estimates, plus `eventMinutes` when the device counts
- * meetings (meeting-aware-capacity D3).
+ * meetings (meeting-aware-capacity D3). `slots` is what the day's calendar slots
+ * change (calendar-slots D6, lib/slots `slotCapacity`): each slot counts once with
+ * the greater of its length and its tasks' estimates.
  */
-export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number, eventMinutes = 0): DayLoad {
-  let taskMinutes = 0
-  let unestimated = 0
+export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number, eventMinutes = 0, slots: { extra: number; covered: number } = NO_SLOT_LOAD): DayLoad {
+  let taskMinutes = slots.extra
+  let unestimated = -slots.covered
   for (const t of tasks) {
     if (t.completed_at || t.deleted_at || t.due?.date !== date) continue
     if (t.estimate_minutes) taskMinutes += t.estimate_minutes
     else unestimated++
   }
+  unestimated = Math.max(0, unestimated)
   const events = Math.max(0, eventMinutes)
   const planned = taskMinutes + events
   const overTasks = taskMinutes > dayLength

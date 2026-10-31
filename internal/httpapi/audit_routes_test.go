@@ -345,6 +345,10 @@ func TestUserExportExcludesAudit(t *testing.T) {
 			"rules",
 			// calendar frames (calendar-frames).
 			"frames",
+			// standalone notes (notes-overview).
+			"notes",
+			// calendar slots (calendar-slots).
+			"slots",
 			// the caller's workspaces (workspaces).
 			"workspaces":
 		default:

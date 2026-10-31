@@ -220,8 +220,9 @@ describe('Ask mode (5.4)', () => {
 })
 
 describe('`q` where there is no quick add (5.5)', () => {
-  it('Settings and Week open the bar in Add mode; Today focuses the list line', async () => {
-    for (const view of ['settings', 'week'] as const) {
+  // Day and Week have their own add dialog for q since calendar-clarity D2 (calendarAdd.test.tsx).
+  it('Settings opens the bar in Add mode; Today focuses the list line', async () => {
+    for (const view of ['settings'] as const) {
       navigate({ view })
       const r = await render(<Shell user={user} onLogout={() => {}} />)
       await waitFor(() => !!document.querySelector('main h1'), 'the page')

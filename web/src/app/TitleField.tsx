@@ -11,6 +11,7 @@ import { editPlan, parseEdit, type EditPlan } from '../lib/nlp/edit'
 import { preferredLanguages } from '../lib/i18n'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { dayPartsOn } from '../lib/dayParts'
+import { energyLevelsOn } from '../lib/energy'
 import { useUserPrefsRow } from '../lib/localData'
 import { ParseChips } from './ParseChips'
 import { useTokenSuggest } from './TokenSuggest'
@@ -58,23 +59,26 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
   useEffect(() => onQuickAddSettingsChange(() => setSettings(loadQuickAddSettings())), [])
   const { prefs: dtPrefs, resolved } = useDateTimeFormat()
   const parsing = settings.enabled && !readOnly
-  const dayParts = dayPartsOn(useUserPrefsRow())
+  const prefs = useUserPrefsRow()
+  const dayParts = dayPartsOn(prefs)
+  // The `~deep` tokens only while the account offers energy (task-energy D3).
+  const energy = energyLevelsOn(prefs)
 
   const parsed = useMemo(() => {
     if (!parsing || !focused || value === base.current) return null
     const langs = preferredLanguages()
     return parseEdit(base.current, value, {
       today: logicalToday(), now: nowHHMM(), languages: resolveLanguages(settings, langs),
-      dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs), weekStart: resolved.weekStart, projects, dismissed, dayParts,
+      dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs), weekStart: resolved.weekStart, projects, dismissed, dayParts, energy,
     })
-  }, [parsing, focused, value, settings, dtPrefs, resolved, projects, dismissed, dayParts])
+  }, [parsing, focused, value, settings, dtPrefs, resolved, projects, dismissed, dayParts, energy])
 
   const change = (next: string) => {
     const clean = multiline ? next.replace(/\n/g, ' ') : next
     setDismissed((d) => rebaseDismissed(value, clean, d))
     onChange(clean)
   }
-  const suggest = useTokenSuggest({ input, value, setValue: change, projects, labels, enabled: parsing && focused })
+  const suggest = useTokenSuggest({ input, value, setValue: change, projects, labels, enabled: parsing && focused, energy })
 
   const commit = () => {
     const text = value.trim()

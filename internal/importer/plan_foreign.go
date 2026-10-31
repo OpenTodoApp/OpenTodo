@@ -415,6 +415,9 @@ func (fp *foreignPlan) taskFields(row Row, projectID, parentID string, due *Due)
 	if row.Evening {
 		fields = append(fields, field{"evening", raw(true)})
 	}
+	if row.Energy != "" {
+		fields = append(fields, field{"energy", raw(row.Energy)})
+	}
 	if row.Origin != nil {
 		fields = append(fields, field{"origin", raw(row.Origin)})
 	}

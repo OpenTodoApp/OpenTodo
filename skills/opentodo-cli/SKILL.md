@@ -76,6 +76,19 @@ ot time list --from 2026-10-12 --to 2026-10-18 --json
 ot time export --from 2026-10-12 --to 2026-10-18 -o week.csv --json
 ```
 
+Notes (standalone notes, and the notes of tasks and projects) are Markdown:
+
+```bash
+ot notes list --json
+ot notes search "plumber" --json
+ot notes show 3fa1c2d0 --json
+ot task note 8c2a41f0 --json
+ot notes append 3fa1c2d0 "- decided: ship Friday" --json
+ot task note 8c2a41f0 --append "- called, no answer" --json
+```
+
+Prefer appending to replacing: an append adds text at the end and never overwrites what the user typed on another device. A replacement (`ot notes edit --body`, `ot task note --set`) fails with `body_changed` (exit 1) when the note changed since you read it; read it again before retrying, never retry blindly. Writing notes through `ot` needs a full token; with an agent token use the MCP note tools instead.
+
 `ot time start` stops the running entry first (one runs at a time); `ot time stop` exits 1 when nothing runs. A duration logged on another day than today ends at 17:00 local time.
 
 `ot done` and `ot reopen` report each task with `status`; a task already in that state is `unchanged` and nothing is sent. `ot edit` with values equal to the current ones sends nothing.

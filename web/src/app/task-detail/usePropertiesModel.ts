@@ -20,6 +20,7 @@ import type { PropertiesProps } from './Facets'
 import { type Optional, usePropertyEditing } from './usePropertyEditing'
 import { messageOf } from '../../lib/errorText'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { energyOf } from '../../lib/energy'
 
 /** An error message from a failed write, shown beside its chip. */
 
@@ -96,6 +97,8 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
     parent: !!task.parent_id,
     section: !!shownSection,
     location: task.location != null,
+    // Shown whenever set, whatever the switch (task-energy D3).
+    energy: energyOf(task) !== null,
   }
   const editing = usePropertyEditing(task.id, has, section)
 
