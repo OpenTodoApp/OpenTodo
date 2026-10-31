@@ -144,9 +144,14 @@ func (e *engine) generation(rep Reply) bool {
 	e.st.Generation = rep.Generation
 	e.st.Cursor = 0
 	e.st.BackfillAck = 0
-	for entity, byID := range e.base {
-		for id, row := range byID {
-			for field, f := range row {
+	// In sorted order, so a retried run sends the same batches (and the
+	// plugin's engine sends what this one does).
+	for _, entity := range sortedKeys(e.base) {
+		byID := e.base[entity]
+		for _, id := range sortedKeys(byID) {
+			row := byID[id]
+			for _, field := range sortedKeys(row) {
+				f := row[field]
 				e.reseed = append(e.reseed, Op{ID: opID(e.st.Device, entity, id, field, "reseed:"+rep.Generation, f.V), Entity: entity, EntityID: id, Field: field, Value: f.V, TS: f.TS, Device: f.D})
 			}
 		}

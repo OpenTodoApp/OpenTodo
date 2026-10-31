@@ -50,6 +50,14 @@ export class FakeServer {
     return any ? out : null
   }
 
+  /** Seeds an entity as another device wrote it. */
+  put(entity: string, id: string, fields: Record<string, unknown>, ts = Date.now()): void {
+    for (const [field, value] of Object.entries(fields)) {
+      const opId = `seed-${entity}-${id}-${field}-${ts}`
+      this.ops.set(opId, { entity, entityId: id, field, value, ts, device: 'web:seed', id: opId } as never)
+    }
+  }
+
   tasks(): Record<string, unknown>[] {
     const ids = new Set([...this.ops.values()].filter((o) => o.entity === 'task').map((o) => o.entityId))
     return [...ids].map((id) => ({ id, ...this.row('task', id) }))
@@ -75,8 +83,10 @@ export class FakeServer {
     }
     if (route === 'POST /api/v1/sync') {
       if (this.scope === 'read') return json(403, { error: { code: 'insufficient_scope', message: 'read token' } })
-      const body = JSON.parse(String(req.body)) as { device: string; features: string[]; ops: { id: string; entity: string; entityId: string; field: string; value: unknown; ts: number; device: string }[] }
+      const body = JSON.parse(String(req.body)) as { device: string; cursor: number; features: string[]; ops: { id: string; entity: string; entityId: string; field: string; value: unknown; ts: number; device: string }[] }
       this.pushes.push({ device: body.device, features: body.features, ops: body.ops.length })
+      // A full exchange (the vault sync) gets the log from its cursor; a push-only one nothing.
+      const pulled = body.features.includes('push_only') ? [] : [...this.ops.values()].slice(body.cursor)
       let applied = 0
       let duplicates = 0
       const rejected: { id: string; reason: string }[] = []
@@ -96,7 +106,7 @@ export class FakeServer {
         this.dropNextAnswer = false
         throw new Error('net::ERR_CONNECTION_RESET')
       }
-      return json(200, { applied, duplicates, rejected, ops: [], cursor: this.ops.size, hasMore: false, serverTime: Date.now() })
+      return json(200, { applied, duplicates, rejected, ops: pulled, cursor: this.ops.size, hasMore: false, serverTime: Date.now(), generation: 'g1', memberships: [] })
     }
     return json(404, { error: { code: 'not_found', message: route } })
   }

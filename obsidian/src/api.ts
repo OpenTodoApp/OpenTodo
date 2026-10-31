@@ -4,6 +4,7 @@
 import type { RequestUrlParam, RequestUrlResponse } from 'obsidian'
 import type { KeyRecord } from '../../web/src/lib/crypto'
 import type { Op } from './ops'
+import type { Reply as VaultReply, Request as VaultRequest } from './vault/types'
 
 export type Request = (req: RequestUrlParam) => Promise<RequestUrlResponse>
 
@@ -109,6 +110,11 @@ export class Client {
 
   async keyRecord(): Promise<KeyRecord> {
     return (await this.call<{ keys: KeyRecord }>('GET', '/api/v1/encryption/keys')).keys
+  }
+
+  /** One full exchange of the vault sync (obsidian-vault-sync task 3.3): ops out, the log from the cursor back. */
+  exchange(req: VaultRequest): Promise<VaultReply> {
+    return this.call('POST', '/api/v1/sync', req)
   }
 
   /** A push-only exchange (D4): the server applies the ops and pulls nothing. */

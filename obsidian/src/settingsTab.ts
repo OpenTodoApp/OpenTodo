@@ -6,6 +6,7 @@ import type OpenTodoPlugin from './main'
 import { ConnectError, serverAddress } from './connect'
 import { sheetProjects } from './send'
 import { tr } from './strings'
+import { VaultSection } from './vaultTab'
 
 export class OpenTodoSettingTab extends PluginSettingTab {
   private address = ''
@@ -16,6 +17,7 @@ export class OpenTodoSettingTab extends PluginSettingTab {
   private httpConfirmed = ''
   private busy = false
   private off: (() => void) | null = null
+  private vault: VaultSection | null = null
 
   constructor(app: App, private plugin: OpenTodoPlugin) {
     super(app, plugin)
@@ -32,6 +34,10 @@ export class OpenTodoSettingTab extends PluginSettingTab {
     if (account && server) this.connected(el, account, server)
     else this.connectForm(el)
     this.preferences(el)
+    if (account && server) {
+      this.vault ??= new VaultSection(this.app, this.plugin, () => this.display())
+      this.vault.display(el)
+    }
   }
 
   hide(): void {

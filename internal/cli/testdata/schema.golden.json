@@ -2122,7 +2122,13 @@
           "repeatable": false
         }
       ],
-      "flags": [],
+      "flags": [
+        {
+          "name": "take-over",
+          "type": "bool",
+          "description": "sync a folder another device owns from this machine: a new vault device, and a first sync that keeps the server's values and lists differing lines in conflict files"
+        }
+      ],
       "writes": true,
       "destructive": false,
       "dry_run": true,
@@ -2177,7 +2183,13 @@
           "repeatable": false
         }
       ],
-      "flags": [],
+      "flags": [
+        {
+          "name": "take-over",
+          "type": "bool",
+          "description": "sync a folder another device owns from this machine: a new vault device, and a first sync that keeps the server's values and lists differing lines in conflict files"
+        }
+      ],
       "writes": true,
       "destructive": false,
       "dry_run": false,
@@ -2284,6 +2296,11 @@
       "code": "encryption_enabled",
       "exit": 5,
       "meaning": "the account is end-to-end encrypted; readable text cannot be written"
+    },
+    {
+      "code": "vault_owned",
+      "exit": 2,
+      "meaning": "another device syncs this vault folder; nothing was sent: --take-over syncs it here instead"
     },
     {
       "code": "issues_disabled",
