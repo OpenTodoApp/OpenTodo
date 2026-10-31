@@ -36,8 +36,10 @@ function Marked({ text, ranges }: { text: string; ranges: Range[] }) {
   return <>{highlight(text, ranges).map((p, i) => (p.hit ? <mark key={i} className="rounded-[2px] bg-accent-soft text-on-accent-soft">{p.text}</mark> : <span key={i}>{p.text}</span>))}</>
 }
 
-export function ComboboxList<T>({ state, renderLeading, renderTrailing, emptyText, label, look = 'default' }: {
+export function ComboboxList<T>({ state, renderLeading, renderTrailing, renderSecondary, emptyText, label, look = 'default' }: {
   state: ComboboxState<T>; renderLeading?: (item: T) => ReactNode; emptyText?: string; label: string
+  /** The second line drawn instead of the secondary text when it returns something (the palette's note snippets). */
+  renderSecondary?: (item: T) => ReactNode
   /** Trailing visual of an option (a shortcut's keycaps), at the row's end. */
   renderTrailing?: (item: T) => ReactNode
   look?: ComboboxLook
@@ -89,7 +91,7 @@ export function ComboboxList<T>({ state, renderLeading, renderTrailing, emptyTex
         : <li key={`g:${o.group}`} role="presentation" className="px-3 pb-1 pt-2 text-hint font-semibold uppercase tracking-wide text-faint">{o.group}</li>)
     }
     if (o.kind === 'item') lastGroup = o.group
-    rows.push(<OptionRow key={o.key} state={state} o={o} i={i} renderLeading={renderLeading} renderTrailing={renderTrailing} windowed={windowed} rh={rh} palette={palette} />)
+    rows.push(<OptionRow key={o.key} state={state} o={o} i={i} renderLeading={renderLeading} renderTrailing={renderTrailing} renderSecondary={renderSecondary} windowed={windowed} rh={rh} palette={palette} />)
   }
   return (
     <ul
@@ -109,11 +111,12 @@ export function ComboboxList<T>({ state, renderLeading, renderTrailing, emptyTex
   )
 }
 
-function OptionRow<T>({ state, o, i, renderLeading, renderTrailing, windowed, rh, palette }: {
-  state: ComboboxState<T>; o: ComboOption<T>; i: number; renderLeading?: (item: T) => ReactNode; renderTrailing?: (item: T) => ReactNode; windowed: boolean; rh: number; palette: boolean
+function OptionRow<T>({ state, o, i, renderLeading, renderTrailing, renderSecondary, windowed, rh, palette }: {
+  state: ComboboxState<T>; o: ComboOption<T>; i: number; renderLeading?: (item: T) => ReactNode; renderTrailing?: (item: T) => ReactNode; renderSecondary?: (item: T) => ReactNode; windowed: boolean; rh: number; palette: boolean
 }) {
   const active = i === state.activeIndex
   const selected = state.isSelected(o)
+  const custom = o.kind === 'item' ? renderSecondary?.(o.item) : null
   return (
     <li
       id={state.optionId(i)}
@@ -137,9 +140,9 @@ function OptionRow<T>({ state, o, i, renderLeading, renderTrailing, windowed, rh
           {renderLeading && <span className="flex shrink-0 items-center">{renderLeading(o.item)}</span>}
           <span className="min-w-0 flex-1">
             <span className="block truncate"><Marked text={o.label} ranges={o.m.label} /></span>
-            {(o.secondary || (o.path.length > 0 && o.depth === 0)) && (
+            {(custom || o.secondary || (o.path.length > 0 && o.depth === 0)) && (
               <span className="block truncate text-meta text-muted">
-                {o.path.length > 0 && o.depth === 0 ? o.path.join(' › ') : <Marked text={o.secondary ?? ''} ranges={o.m.secondary} />}
+                {custom || (o.path.length > 0 && o.depth === 0 ? o.path.join(' › ') : <Marked text={o.secondary ?? ''} ranges={o.m.secondary} />)}
               </span>
             )}
           </span>

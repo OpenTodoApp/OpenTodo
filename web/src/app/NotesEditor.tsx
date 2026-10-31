@@ -35,6 +35,7 @@ import { messageOf } from '../lib/errorText'
  * the editor pushes at once.
  */
 const SAVE_MS = 400
+const NO_TARGETS: ReturnType<typeof useMentionTargets> = []
 const LOCAL = 'local'
 const REMOTE = 'remote'
 
@@ -52,9 +53,12 @@ function usage(doc: Y.Doc, pm: import('prosemirror-model').Node): number {
   return Math.ceil(Math.max(encodeDoc(doc).length / docCap, text / textCap) * MAX_DOC_CHARS)
 }
 
-/** Whose note the editor edits: a task's or a project's (OpenSpec change project-notes, D3). */
+/**
+ * Whose note the editor edits: a task's, a project's (OpenSpec change project-notes,
+ * D3) or a standalone note's (notes-overview D7: no mentions, images or Make subtask).
+ */
 export interface NoteTarget {
-  entity: 'task' | 'project'
+  entity: 'task' | 'project' | 'note'
   id: string
   notes_doc?: string
   description?: string
@@ -170,8 +174,9 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   const [linkAsk, setLinkAsk] = useState<{ current: string; answer: (href: string | null) => void } | null>(null)
   const askLink = (current: string) => new Promise<string | null>((answer) => setLinkAsk({ current, answer }))
   const isTask = entity === 'task'
-  // People, then the workspace's groups (group-mentions D4).
-  const members = useMentionTargets(isTask ? note.project_id : null)
+  // People, then the workspace's groups (group-mentions D4); a standalone note has nobody to notify.
+  const targets = useMentionTargets(isTask ? note.project_id : null)
+  const members = entity === 'note' ? NO_TARGETS : targets
   const me = useMe()
   const picker = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)

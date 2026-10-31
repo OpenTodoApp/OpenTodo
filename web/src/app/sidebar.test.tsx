@@ -22,6 +22,7 @@ import { navigate } from './router'
 import { sidebarFind } from './signals'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
+import budget from './budget.json'
 import { resetSidebarLayout, setSidebarWidth, sidebarLayout, toggleSidebarCollapsed } from './sidebarLayout'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -108,12 +109,12 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     expect(moreToggle(r.container).getAttribute('aria-expanded')).toBe('false')
     expect(moreItems(r.container)).toEqual([])
     await click(moreToggle(r.container))
-    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'completed', 'review', 'stats', 'focus', 'places', 'rules', 'trash', 'filter'])
+    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'completed', 'review', 'stats', 'focus', 'notes', 'places', 'rules', 'trash', 'filter'])
     expect(localStorage.getItem('ot.sidebar.more')).toBe('1')
     // A shared project brings Assigned to me and Updates.
     await db.memberships.put({ projectId: 'p1', role: 'editor', ownerId: 'alice', members: [] } as Membership)
     await waitFor(() => moreItems(r.container).includes('assigned'))
-    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'review', 'stats', 'focus', 'feed', 'places', 'rules', 'trash', 'filter'])
+    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'review', 'stats', 'focus', 'notes', 'feed', 'places', 'rules', 'trash', 'filter'])
     expect(primaryOf(r.container)).toHaveLength(4)
     await r.unmount()
   })
@@ -158,6 +159,28 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     await applyOps([{ id: 'm2', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'companion', ts: Date.now() + 2000, device: 'laptop' } as Op])
     await waitFor(() => primaryOf(r.container).includes('someday'))
     expect(primaryOf(r.container)).toEqual(['inbox', 'today', 'upcoming', 'day', 'someday'])
+    await r.unmount()
+  })
+
+  it('Notes (notes-overview): in More after Focus, promotable in Companion, back in More in Open Loops first with the six destinations unchanged', async () => {
+    await applyOps([{ id: 'n0', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'companion', ts: Date.now() + 500, device: 'laptop' } as Op])
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => !!r.container.querySelector('[data-testid="sidebar-more"] button[aria-expanded]'), 'the More group')
+    await click(moreToggle(r.container))
+    const items = moreItems(r.container)
+    expect(items[items.indexOf('focus') + 1]).toBe('notes')
+    // No count and no marker on the entry.
+    expect(r.container.querySelector('[data-destination="notes"]')!.textContent).toBe('Notes')
+    await setPromoted(await db.userPrefs.get('me'), 'notes', true)
+    await waitFor(() => primaryOf(r.container).includes('notes'))
+    expect(primaryOf(r.container)).toEqual(['inbox', 'today', 'upcoming', 'day', 'notes'])
+    expect(moreItems(r.container)).not.toContain('notes')
+    await applyOps([{ id: 'n1', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'first', ts: Date.now() + 1000, device: 'laptop' } as Op])
+    await waitFor(() => primaryOf(r.container)[0] === 'loop')
+    expect(primaryOf(r.container)).toEqual(['loop', 'inbox', 'today', 'next', 'waiting', 'review'])
+    expect(primaryOf(r.container).length).toBeLessThanOrEqual(budget.MAX_PRIMARY_DESTINATIONS)
+    expect(moreItems(r.container)).toContain('notes')
+    expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('notes')
     await r.unmount()
   })
 
@@ -218,7 +241,7 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     await click(trigger)
     // The review state arrives on its own: wait for its marker on the Review entry.
     await waitFor(() => menuItems().length > 0 && !!document.querySelector('[data-menu-label="Review"]')?.textContent?.includes('Review due'), 'the More menu with Review due')
-    expect(menuItems()).toEqual(['Loop home', 'Next', 'Waiting', 'Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Focus', 'Locations', 'Rules', 'Trash', 'New view'])
+    expect(menuItems()).toEqual(['Loop home', 'Next', 'Waiting', 'Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Focus', 'Notes', 'Locations', 'Rules', 'Trash', 'New view'])
     // Never reviewed: the dot and the words are on the Review entry.
     const reviewItem = document.querySelector('[data-menu-label="Review"]')!
     expect(reviewItem.textContent).toContain('Review due')

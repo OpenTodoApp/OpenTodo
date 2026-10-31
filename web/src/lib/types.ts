@@ -1,10 +1,10 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note']
 
 export interface Op {
   id: string
@@ -169,6 +169,12 @@ export interface Task extends TaskFields {
    */
   fields?: Record<string, FieldValue>
   /**
+   * Pending appends keyed by append id (notes-overview D13): each entry is its own
+   * op `appends.<id>`; a non-empty value is Markdown a plain-text writer added, waiting
+   * to be inserted at the end of the note (docs/sync.md "Mergeable documents" rule 5).
+   */
+  appends?: Record<string, string>
+  /**
    * Where the task came from (OpenSpec change `task-origin`): a page, a mail, an
    * issue or an import, or null. One last-writer-wins value like `due`. Rows
    * stored before the field read as undefined, and a value this device could not
@@ -274,6 +280,29 @@ export interface Slot extends SlotFields {
   color: string
   created_at: number
   deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A standalone note (OpenSpec change `notes-overview`, design D1): a title, a
+ * mergeable note document with its Markdown projection, an optional project
+ * (which decides its sharing scope, like a task) and labels. Never a task: it
+ * shows only on the Notes page, the palette and the Trash.
+ */
+export interface Note extends NoteFields {
+  id: string
+  title: string
+  description: string
+  notes_doc?: string
+  project_id: string | null
+  labels: string[]
+  position: number
+  created_at: number
+  deleted_at: number | null
+  workspace_id?: string | null
+  /** Pending appends (rule 5), as on tasks. */
+  appends?: Record<string, string>
   _clock: Clock
   _e2ee?: RowEncryption
 }

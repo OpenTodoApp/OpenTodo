@@ -44,6 +44,8 @@ export function screens(ids, base) {
     { name: 'completed', path: '/completed', ready: row('Submit expense report') },
     { name: 'filter', path: '/views/new', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'ask', path: '/ask', ready: heading('Assistant') },
+    // Notes (notes-overview 4.8): the search field and the filters row, behind one Filters button on a phone.
+    { name: 'notes', path: '/notes', ready: heading('Notes') },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'updates', path: '/updates', ready: heading('Updates') },
     // The old address still opens Updates (ux-overhaul vocabulary).

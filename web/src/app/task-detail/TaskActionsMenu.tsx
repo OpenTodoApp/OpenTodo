@@ -40,6 +40,9 @@ export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailMo
       {/* The origin's Remove lives here; its row opens the source (task-panel-facets). */}
       {!readOnly && task.origin && <MenuItem label={t('Remove origin')} icon="x" onSelect={() => act(updateTask(task.id, { origin: null }))} />}
       {!readOnly && m.assistantAvailable && <MenuItem label={t('Break this down')} icon="list" onSelect={m.breakDown} />}
+      {/* The task's note as a standalone note (notes-overview D6); its batch and Undo load on first use. */}
+      {!readOnly && !task.deleted_at && !!task.description?.trim() && <MenuItem label={t('Move note to a new note')} icon="notebook-pen"
+        description={t('The note leaves the task; Undo puts it back')} onSelect={() => void import('../notes/noteActions').then((a) => a.moveNoteOut(task.id))} data-move-note-out />}
       {!readOnly && <MenuSeparator />}
       {!readOnly && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={m.remove} />}
     </Menu>

@@ -19,6 +19,8 @@ type CompactField struct {
 	// (a note's readable revision in History); otherwise every superseded value
 	// past the grace window goes.
 	Daily bool
+	// Family makes Field a prefix: every field of the family (`appends.<id>`).
+	Family bool
 }
 
 // CompactFields is the table of fields compaction touches: each mergeable
@@ -30,6 +32,12 @@ var CompactFields = []CompactField{
 	{Entity: "task", Field: "description", Daily: true},
 	{Entity: "project", Field: "notes_doc"},
 	{Entity: "project", Field: "description", Daily: true},
+	{Entity: "note", Field: "notes_doc"},
+	{Entity: "note", Field: "description", Daily: true},
+	// A pending append (notes-overview D13) is superseded by the "" a device
+	// writes once the text is in the document, which carries it from then on.
+	{Entity: "task", Field: AppendPrefix, Family: true},
+	{Entity: "note", Field: AppendPrefix, Family: true},
 }
 
 // CompactGrace is how long after the server received it a superseded value
@@ -78,6 +86,11 @@ func compactSQL(cutoff int64) (string, []any) {
 	var all, daily []string
 	var args, dailyArgs []any
 	for _, f := range CompactFields {
+		if f.Family {
+			all = append(all, "(o.entity = ? AND o.field LIKE ?)")
+			args = append(args, f.Entity, f.Field+"%")
+			continue
+		}
 		all = append(all, "(o.entity = ? AND o.field = ?)")
 		args = append(args, f.Entity, f.Field)
 		if f.Daily {

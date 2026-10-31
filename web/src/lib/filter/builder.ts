@@ -18,7 +18,7 @@ function quoteName(name: string): string {
   return BREAK.test(name) || name === '' || name.startsWith('#') ? quoteAlways(name) : name
 }
 
-/** `search:`, `origin:` and `workspace:` text: bare when it reads back as one word. */
+/** `search:`, `notes:`, `origin:` and `workspace:` text: bare when it reads back as one word. */
 function quoteText(text: string): string {
   return BREAK.test(text) || text === '' || text.startsWith('"') ? quoteAlways(text) : text
 }
@@ -64,6 +64,7 @@ export function formatLeaf(n: Node): string {
     case 'date': return `${n.field} ${n.op} ${formatDate(n.date)}`
     case 'keyword': return n.keyword
     case 'search': return `search: ${quoteText(n.text)}`
+    case 'notes': return `notes: ${quoteText(n.text)}`
     case 'origin': return `origin: ${quoteText(n.value)}`
     case 'energy': return `energy: ${n.value}`
     case 'workspace': return `workspace: ${quoteText(n.name)}`

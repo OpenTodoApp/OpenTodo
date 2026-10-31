@@ -909,7 +909,8 @@
     "web/src/app/palette/registry.ts"
   ],
   "Add label…": [
-    "web/src/app/LabelPicker.tsx"
+    "web/src/app/LabelPicker.tsx",
+    "web/src/app/notes/NoteEditor.tsx"
   ],
   "Add location": [
     "web/src/app/locations/PlacesView.tsx"
@@ -923,6 +924,7 @@
   ],
   "Add notes…": [
     "web/src/app/NotesEditor.tsx",
+    "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskNotes.tsx"
   ],
   "Add or fold projects": [
@@ -1135,10 +1137,14 @@
   ],
   "All labels": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "All locations": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "All notes": [
+    "web/src/app/notes/NoteFilters.tsx"
   ],
   "All of these": [
     "web/src/app/filter/FilterBuilder.tsx"
@@ -1146,6 +1152,7 @@
   "All projects": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/notes/NoteFilters.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "All shared projects": [
@@ -1483,7 +1490,8 @@
     "web/src/app/ProjectHeader.tsx"
   ],
   "Archived": [
-    "web/src/app/ProjectsView.tsx"
+    "web/src/app/ProjectsView.tsx",
+    "web/src/app/notes/NoteRow.tsx"
   ],
   "Archived projects": [
     "web/src/app/ArchivedProjects.tsx",
@@ -2576,6 +2584,9 @@
     "web/src/app/calendar/queryFilter.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Clear filters": [
+    "web/src/app/notes/NoteFilters.tsx"
+  ],
   "Clear the dashboard selection": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -2884,6 +2895,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -3643,6 +3655,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/calendar/FrameBand.tsx",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
@@ -4912,6 +4925,9 @@
   "Expected a workspace name after \"workspace:\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
+  "Expected text after \"notes:\" at position {pos}": [
+    "web/src/lib/filter/parse.ts"
+  ],
   "Expected text after \"search:\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
@@ -5089,7 +5105,11 @@
     "web/src/app/calendar/queryFilter.tsx"
   ],
   "Filters": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/notes/NoteFilters.tsx"
+  ],
+  "Filters ({n})": [
+    "web/src/app/notes/NoteFilters.tsx"
   ],
   "Filter…": [
     "web/src/app/calendar/useCalendarChrome.tsx",
@@ -5106,7 +5126,8 @@
   ],
   "Find a label…": [
     "web/src/app/LabelsView.tsx",
-    "web/src/app/RuleEditor.tsx"
+    "web/src/app/RuleEditor.tsx",
+    "web/src/app/notes/NoteFilters.tsx"
   ],
   "Find a member…": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -5129,7 +5150,8 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/ProjectsView.tsx",
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/notes/NoteFilters.tsx"
   ],
   "Find a saved location or type coordinates": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -5544,6 +5566,12 @@
   "Go to Next: the next action of every project, by context": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Go to Notes": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Go to Notes: every note, standalone and on tasks and projects, with search": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Go to Projects": [
     "web/src/app/palette/registry.ts"
   ],
@@ -5777,6 +5805,9 @@
   ],
   "Has a day: Today and Upcoming.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Has a note": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Has an energy": [
     "web/src/app/filter/conditionText.ts"
@@ -6716,6 +6747,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/views/DisplayPanel.tsx"
@@ -6752,6 +6784,7 @@
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/method/MethodListView.tsx",
+    "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/MonthlyLook.tsx",
@@ -7638,6 +7671,9 @@
   "Move left": [
     "web/src/app/Sections.tsx"
   ],
+  "Move note to a new note": [
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
   "Move or delete the workspace’s projects and remove its other members first.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -7777,6 +7813,9 @@
   "Moved from {from} to {to}": [
     "web/src/lib/assistant.ts"
   ],
+  "Moved the note to a new note": [
+    "web/src/lib/noteOps.ts"
+  ],
   "Moved to Any time": [
     "web/src/lib/undoActions.ts"
   ],
@@ -7784,6 +7823,7 @@
     "web/src/lib/undoActions.ts"
   ],
   "Moved to Trash": [
+    "web/src/lib/noteOps.ts",
     "web/src/lib/undoActions.ts"
   ],
   "Moved to the Trash": [
@@ -7961,6 +8001,10 @@
   ],
   "New name for {name}": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "New note": [
+    "web/src/app/notes/NotesPage.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "New owner": [
     "web/src/app/WorkspaceGeneral.tsx"
@@ -8285,6 +8329,9 @@
   "No label": [
     "web/src/lib/views.ts"
   ],
+  "No label matches.": [
+    "web/src/app/notes/NoteFilters.tsx"
+  ],
   "No label named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
   ],
@@ -8300,7 +8347,8 @@
     "web/src/app/RuleEditor.tsx"
   ],
   "No labels yet. Type a name and press Enter.": [
-    "web/src/app/LabelPicker.tsx"
+    "web/src/app/LabelPicker.tsx",
+    "web/src/app/notes/NoteEditor.tsx"
   ],
   "No longer a subtask": [
     "web/src/lib/assistant.ts"
@@ -8337,6 +8385,15 @@
   "No next action": [
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "No note": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "No note matches these filters.": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
+  "No note matches your search.": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "No notes": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -8401,6 +8458,7 @@
   ],
   "No project": [
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/lib/pickerSources.ts"
   ],
@@ -8408,7 +8466,8 @@
     "web/src/app/WorkspaceGroups.tsx"
   ],
   "No project matches.": [
-    "web/src/app/ProjectPickerField.tsx"
+    "web/src/app/ProjectPickerField.tsx",
+    "web/src/app/notes/NoteFilters.tsx"
   ],
   "No project named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
@@ -8738,17 +8797,37 @@
   ],
   "Note": [
     "web/src/app/RelayConfirm.tsx",
+    "web/src/app/TrashView.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/notes/NoteEditor.tsx",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Note (optional)": [
     "web/src/app/review/CloseDay.tsx"
   ],
+  "Note actions": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
+  "Note contains {text}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Notes": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/NotesEditor.tsx",
-    "web/src/app/task-detail/TaskNotes.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/notes/NoteEditor.tsx",
+    "web/src/app/notes/NotesPage.tsx",
+    "web/src/app/palette/entries.ts",
+    "web/src/app/palette/notesSection.tsx",
+    "web/src/app/task-detail/TaskNotes.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Notes edited": [
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Notes you write, and the notes of your tasks and projects, are listed here.": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Nothing changes until you apply": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -9165,6 +9244,12 @@
   ],
   "On macOS, check System Settings → Notifications → your browser (allow notifications, banners or alerts), and Focus.": [
     "web/src/lib/push.ts"
+  ],
+  "On the Notes page: focus the search field, which finds notes by every word": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "On the Notes page: start a new note": [
+    "web/src/lib/shortcuts.ts"
   ],
   "On the day at 09:00": [
     "web/src/app/DefaultRemindersSettings.tsx"
@@ -10261,7 +10346,10 @@
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/notes/NoteEditor.tsx",
+    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/palette/index.ts",
+    "web/src/app/palette/notesSection.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -10316,7 +10404,11 @@
     "web/src/app/palette/registry.ts"
   ],
   "Project note": [
-    "web/src/app/ProjectNote.tsx"
+    "web/src/app/ProjectNote.tsx",
+    "web/src/app/notes/NoteRow.tsx"
+  ],
+  "Project notes": [
+    "web/src/app/notes/NoteFilters.tsx"
   ],
   "Project shared with a group": [
     "web/src/app/auditFormat.ts"
@@ -11684,6 +11776,9 @@
   "Search labels": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
+  "Search notes": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "Search or type a command…": [
     "web/src/app/palette/CommandPalette.tsx"
   ],
@@ -12200,6 +12295,7 @@
   ],
   "Show more": [
     "web/src/app/ProjectNote.tsx",
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "Show more {older}": [
@@ -12672,6 +12768,9 @@
   "Sound at the end of a session": [
     "web/src/app/focus/FocusSettings.tsx"
   ],
+  "Source": [
+    "web/src/app/notes/NoteFilters.tsx"
+  ],
   "Source code": [
     "web/src/app/SettingsView.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -12696,6 +12795,9 @@
   "Stalled": [
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Standalone only": [
+    "web/src/app/notes/NoteFilters.tsx"
   ],
   "Star OpenTodo on GitHub": [
     "web/src/app/WelcomeDialog.tsx"
@@ -13121,6 +13223,12 @@
   "Task name": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
+  "Task note": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
+  "Task notes": [
+    "web/src/app/notes/NoteFilters.tsx"
+  ],
   "Task page": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
@@ -13278,6 +13386,9 @@
   "Text": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts"
+  ],
+  "Text in the note": [
+    "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Text in the title or notes": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -13661,6 +13772,12 @@
   ],
   "The next action of every project, by context.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "The note goes to the Trash; Undo brings it back": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
+  "The note leaves the task; Undo puts it back": [
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
   "The offline service worker is not active yet. Reload the page; on iPhone and iPad, install the app to the Home Screen first.": [
     "web/src/lib/push.ts"
@@ -14475,11 +14592,21 @@
   "This needs a signed-in browser session, not an API token.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This note changed since it was read. Read it again and retry.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This note has too many additions waiting. Open it in the app, then try again.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This note is too large to save ({size} KB of {limit} KB). Remove some text.": [
     "web/src/lib/docfields.ts"
   ],
   "This note is {percent}% of the size limit.": [
     "web/src/app/NotesEditor.tsx"
+  ],
+  "This note no longer exists.": [
+    "web/src/app/notes/NoteEditor.tsx",
+    "web/src/lib/noteOps.ts"
   ],
   "This note's formatting could not be read on this device; its text is shown instead.": [
     "web/src/app/NotesEditor.tsx"
@@ -14666,7 +14793,8 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "This task no longer exists.": [
-    "web/src/app/TaskPage.tsx"
+    "web/src/app/TaskPage.tsx",
+    "web/src/lib/noteOps.ts"
   ],
   "This task was moved elsewhere.": [
     "web/src/lib/triage.ts"
@@ -14834,6 +14962,7 @@
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
+    "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/views/DisplayPanel.tsx"
@@ -15156,6 +15285,9 @@
   "Turn into labels": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Turn into task": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
   "Turn off": [
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -15204,6 +15336,9 @@
   ],
   "Turn on voice capture?": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Turned into a task": [
+    "web/src/lib/noteOps.ts"
   ],
   "Turned off after 20 failed messages. Check its settings, then turn it on.": [
     "web/src/app/NotificationChannels.tsx"
@@ -15506,6 +15641,7 @@
     "web/src/app/focus/FocusPicker.tsx",
     "web/src/app/focus/startFocus.ts",
     "web/src/app/focus/useFocusTimer.ts",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
@@ -15532,6 +15668,13 @@
   "Untitled location": [
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx"
+  ],
+  "Untitled note": [
+    "web/src/app/notes/NoteEditor.tsx",
+    "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/palette/notesSection.tsx",
+    "web/src/lib/noteOps.ts",
+    "web/src/lib/trash.ts"
   ],
   "Untitled project": [
     "web/src/lib/trash.ts"
@@ -17579,6 +17722,9 @@
   "project label view": [
     "web/src/app/palette/registry.ts"
   ],
+  "project note": [
+    "web/src/app/palette/notesSection.tsx"
+  ],
   "project {project}": [
     "web/src/lib/rules/index.ts"
   ],
@@ -18494,6 +18640,9 @@
   "{n, plural, one {# not due yet} other {# not due yet}}": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
+  "{n, plural, one {# note} other {# notes}}": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "{n, plural, one {# open task and its subtasks are copied; completed work, comments and reminders are not.} other {# open tasks and their subtasks are copied; completed work, comments and reminders are not.}}": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -19101,6 +19250,9 @@
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "{shown} of {total}": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "{sign}{n} pts {vs}": [
     "web/src/app/review/StatsView.tsx"

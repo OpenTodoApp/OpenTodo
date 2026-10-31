@@ -62,6 +62,8 @@ const (
 	tWorkspace
 	// tEnergy is `energy: deep|medium|low` (OpenSpec change task-energy, D5).
 	tEnergy
+	// tNotes is `notes: text`, text in a task's note (OpenSpec change notes-overview, D5).
+	tNotes
 	tWord
 	tString
 )
@@ -90,6 +92,7 @@ var (
 	originPrefix = regexp.MustCompile(`(?i)^origin:`)
 	wsPrefix     = regexp.MustCompile(`(?i)^workspace:`)
 	energyPrefix = regexp.MustCompile(`(?i)^energy:`)
+	notesPrefix  = regexp.MustCompile(`(?i)^notes:`)
 	priorityWord = regexp.MustCompile(`(?i)^p([1-4])$`)
 	anyPriority  = regexp.MustCompile(`^p\d+$`)
 	isoDate      = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
@@ -189,7 +192,8 @@ func tokenize(src []rune) ([]token, error) {
 		}
 		word := readBare()
 		// `search: text`, `origin: value` (task-origin), `workspace: name`
-		// (group-mentions) and `energy: level` (task-energy): the prefix, then
+		// (group-mentions), `energy: level` (task-energy) and `notes: text`
+		// (notes-overview): the prefix, then
 		// the rest of the word, or the next bare word or quoted string.
 		readPrefixed := func(prefix string) (string, error) {
 			text := string([]rune(word)[len(prefix):])
@@ -258,6 +262,7 @@ var prefixedTerms = []prefixedTerm{
 	{originPrefix, "origin:", tOrigin, needText(`Expected a provider or kind after "origin:" at position %d`)},
 	{wsPrefix, "workspace:", tWorkspace, needText(`Expected a workspace name after "workspace:" at position %d`)},
 	{energyPrefix, "energy:", tEnergy, energyText},
+	{notesPrefix, "notes:", tNotes, needText(`Expected text after "notes:" at position %d`)},
 }
 
 func prefixedTermOf(word string) (prefixedTerm, bool) {
@@ -270,8 +275,8 @@ func prefixedTermOf(word string) (prefixedTerm, bool) {
 }
 
 var (
-	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "morning": true, "afternoon": true, "blocked": true, "unblocked": true, "available": true, "habit": true, "origin": true, "energy": true}
-	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true, "origin": true, "energy": true}
+	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "morning": true, "afternoon": true, "blocked": true, "unblocked": true, "available": true, "habit": true, "origin": true, "energy": true, "notes": true}
+	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true, "origin": true, "energy": true, "notes": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )
 
@@ -380,7 +385,7 @@ func (p *parser) parseNot(prev *token) error {
 func (p *parser) parseTerm(prev *token) error {
 	t := p.peek()
 	switch t.typ {
-	case tLabel, tProject, tPriority, tSearch, tOrigin, tWorkspace, tEnergy:
+	case tLabel, tProject, tPriority, tSearch, tOrigin, tWorkspace, tEnergy, tNotes:
 		p.i++
 		return nil
 	case tWord:

@@ -12,7 +12,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type Note, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DOC_FIELDS, DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -22,6 +22,7 @@ import { t } from './i18n'
 import { uuid } from './ids'
 import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorkspace } from './workspaces'
 import { resettable } from './moduleState'
+import type { AppendRow } from './noteAppends'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -84,11 +85,13 @@ export const RULE_DEFAULTS: Omit<Rule, 'id' | '_clock'> = OP_DEFAULTS.rule
 export const FRAME_DEFAULTS: Omit<Frame, 'id' | '_clock'> = OP_DEFAULTS.frame
 /** A slot (calendar-slots D1): no date, so never drawn, until its ops arrive. */
 export const SLOT_DEFAULTS: Omit<Slot, 'id' | '_clock'> = OP_DEFAULTS.slot
+/** A standalone note (notes-overview D1): untitled and empty until its ops arrive. */
+export const NOTE_DEFAULTS: Omit<Note, 'id' | '_clock'> = OP_DEFAULTS.note
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
 export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
-  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS, rule: RULE_DEFAULTS, frame: FRAME_DEFAULTS, slot: SLOT_DEFAULTS,
+  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS, rule: RULE_DEFAULTS, frame: FRAME_DEFAULTS, slot: SLOT_DEFAULTS, note: NOTE_DEFAULTS,
 }
 
 /**
@@ -115,7 +118,7 @@ export async function applyOps(
   if (!opts.local) hlcReceive(ops.reduce((m, o) => Math.max(m, o.ts), 0))
   // Remote document ops are merged, not just replaced (collaborative-rich-text):
   // load the document code before the transaction, which must not await imports.
-  const rt = !opts.local && ops.some((o) => isDocField(o.entity, o.field)) ? await loadRichText() : null
+  const rt = !opts.local && ops.some((o) => isDocField(o.entity, o.field) || (NOTE_ENTITIES.has(o.entity) && appendId(o.field))) ? await loadRichText() : null
   const republish: Change[] = []
   const grouped = new Map<string, Op[]>()
   for (const op of ops) {
@@ -180,8 +183,12 @@ export async function applyOps(
         row._clock = clock
         await table.put(row as EntityRow)
       }
-      if (rt && merged !== undefined && NOTE_ENTITIES.has(entity)) {
-        const patch = reconcileNote(rt, row as unknown as Task, merged)
+      if (rt && NOTE_ENTITIES.has(entity) && (merged !== undefined || list.some((o) => appendId(o.field)))) {
+        let patch: Record<string, unknown> | null = merged !== undefined ? reconcileNote(rt, row as unknown as Task, merged) : null
+        // Rule 5 (notes-overview D13): fold pending appends at the end of the
+        // document and keep one copy of each, in the same republished pair.
+        const folded = rt.foldAppends(rt, row as AppendRow, (patch?.notes_doc as string | undefined) ?? merged)
+        if (folded) patch = { ...patch, ...folded }
         if (patch) {
           // The republished pair must beat the values it extends or folds in.
           hlcSeed(Math.max(docTs, clock.description?.ts ?? 0))
@@ -318,18 +325,37 @@ export function reactionAccount(field: string): string | null {
   return FIELD_ID.test(id) ? id : null
 }
 
+/** The op field prefix of a pending append on a task's or note's note (notes-overview D13). */
+export const APPEND_PREFIX = 'appends.'
+
+/** The append id of an `appends.<id>` op field, or null for any other field. */
+export function appendId(field: string): string | null {
+  if (!field.startsWith(APPEND_PREFIX)) return null
+  const id = field.slice(APPEND_PREFIX.length)
+  return FIELD_ID.test(id) ? id : null
+}
+
+/** Whether a change writes a non-empty pending append (`appends.<id>`) of a task or note. */
+function hasAppendPatch(c: Change): boolean {
+  return (c.entity === 'task' || c.entity === 'note') && Object.entries(c.patch).some(([f, v]) => appendId(f) !== null && typeof v === 'string' && v !== '')
+}
+
 /** The row map and key a field family op lives under, or null for a plain field. */
-function familyOf(entity: string, field: string): { key: 'fields' | 'reactions'; id: string } | null {
+function familyOf(entity: string, field: string): { key: 'fields' | 'reactions' | 'appends'; id: string } | null {
   const fid = entity === 'task' ? fieldValueId(field) : null
   if (fid) return { key: 'fields', id: fid }
+  const aid = entity === 'task' || entity === 'note' ? appendId(field) : null
+  if (aid) return { key: 'appends', id: aid }
   const account = entity === 'comment' ? reactionAccount(field) : null
   return account ? { key: 'reactions', id: account } : null
 }
 
-/** A row's value of an op field: `fields.<id>` reads row.fields[id], `reactions.<account>` row.reactions[account]. */
+/** A row's value of an op field: `fields.<id>` reads row.fields[id], `reactions.<account>` row.reactions[account], `appends.<id>` row.appends[id]. */
 export function readField(row: Record<string, unknown>, field: string): unknown {
   const id = fieldValueId(field)
   if (id) return (row.fields as Record<string, unknown> | undefined)?.[id]
+  const aid = appendId(field)
+  if (aid) return (row.appends as Record<string, unknown> | undefined)?.[aid]
   const account = reactionAccount(field)
   return account ? (row.reactions as Record<string, unknown> | undefined)?.[account] : row[field]
 }
@@ -414,9 +440,9 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
  * notes of plain tasks never load it.
  */
 async function richTextFor(changes: Change[]): Promise<RichText | null> {
-  const notes = changes.filter((c) => NOTE_ENTITIES.has(c.entity) && ('notes_doc' in c.patch || 'description' in c.patch))
+  const notes = changes.filter((c) => NOTE_ENTITIES.has(c.entity) && ('notes_doc' in c.patch || 'description' in c.patch || hasAppendPatch(c)))
   if (notes.length === 0) return null
-  if (notes.some((c) => 'notes_doc' in c.patch)) return loadRichText()
+  if (notes.some((c) => 'notes_doc' in c.patch || hasAppendPatch(c))) return loadRichText()
   for (const c of notes) {
     const row = (await tableOf(c.entity).get(c.entityId)) as { notes_doc?: string } | undefined
     if (row?.notes_doc) return loadRichText()
@@ -434,13 +460,43 @@ async function richTextFor(changes: Change[]): Promise<RichText | null> {
 async function withNotePairs(rt: RichText, changes: Change[], ts: number, device: string): Promise<Change[]> {
   const out: Change[] = []
   for (const c of changes) {
-    if (!NOTE_ENTITIES.has(c.entity) || !('notes_doc' in c.patch || 'description' in c.patch)) {
+    if (!NOTE_ENTITIES.has(c.entity) || !('notes_doc' in c.patch || 'description' in c.patch || hasAppendPatch(c))) {
       out.push(c)
       continue
     }
     const row = (await tableOf(c.entity).get(c.entityId)) as { notes_doc?: string } | undefined
     const stored = row?.notes_doc ?? ''
     const patch = { ...c.patch }
+    if (hasAppendPatch(c)) {
+      // An append made on this device (an assistant proposal it confirmed) is a
+      // direct insertion into the document, never a pending `appends.<id>` op
+      // (rule 5): fold it into the stored document now.
+      const appends: Record<string, string> = { ...((row as AppendRow | undefined)?.appends ?? {}) }
+      const added: string[] = []
+      for (const [f, v] of Object.entries(c.patch)) {
+        const aid = appendId(f)
+        if (aid && typeof v === 'string' && v) {
+          appends[aid] = v
+          added.push(f)
+        }
+      }
+      const clock = { ...((row as AppendRow | undefined)?._clock ?? {}) }
+      for (const f of added) clock[f] = { ts, device }
+      const folded = rt.foldAppends(rt, { ...(row as AppendRow | undefined), appends, _clock: clock, notes_doc: (patch.notes_doc as string | undefined) ?? stored })
+      if (folded) {
+        // Folded: no op for the new keys. Not folded (the note is full): the
+        // append goes as a pending op, so the text is never lost.
+        for (const f of added) {
+          if (f in folded) delete patch[f]
+          delete folded[f]
+        }
+        Object.assign(patch, folded)
+      }
+      if (!('notes_doc' in patch)) {
+        out.push({ ...c, patch })
+        continue
+      }
+    }
     if ('notes_doc' in patch) {
       const doc = rt.mergeDocs(stored, String(patch.notes_doc ?? ''))
       patch.notes_doc = doc
@@ -448,6 +504,11 @@ async function withNotePairs(rt: RichText, changes: Change[], ts: number, device
     } else if (stored && rt.isReadable(stored)) {
       patch.notes_doc = rt.foldText(stored, String(patch.description ?? ''), ts, device)
       patch.description = rt.projectDoc(patch.notes_doc as string)
+    }
+    // Pending appends are folded before any local write of the pair (rule 5).
+    if (typeof patch.notes_doc === 'string' && row) {
+      const folded = rt.foldAppends(rt, { ...(row as AppendRow), notes_doc: patch.notes_doc }, patch.notes_doc)
+      if (folded) Object.assign(patch, folded)
     }
     if (typeof patch.notes_doc === 'string' && patch.notes_doc.length > MAX_DOC_CHARS) throw new DocTooLargeError(patch.notes_doc.length)
     // The projection is an ordinary string field: it must fit the 64 KB value cap.
@@ -1177,6 +1238,13 @@ export async function deleteProject(id: string): Promise<void> {
     const live = tasks.filter((task) => !task.deleted_at)
     changes.push(...copyTasks(live.filter((tk) => !tk.completed_at), null, assignableIn(null, memberships, await currentUserId())).changes)
     for (const item of live) changes.push({ entity: 'task', entityId: item.id, patch: { deleted_at: now } })
+    // Its standalone notes go to the Trash for everyone, and the owner keeps a
+    // personal copy of each, in the project's workspace (notes-overview D2).
+    for (const note of await db.notes.where('project_id').equals(id).toArray()) {
+      if (note.deleted_at) continue
+      changes.push(copyNoteChange(note, null, project?.workspace_id ?? null))
+      changes.push({ entity: 'note', entityId: note.id, patch: { deleted_at: now } })
+    }
   }
   const parentId = project?.parent_id ?? null
   for (const p of await liveProjects()) {
@@ -1185,6 +1253,22 @@ export async function deleteProject(id: string): Promise<void> {
   }
   changes.push({ entity: 'project', entityId: id, patch: { deleted_at: now } })
   await mutateMany(changes)
+}
+
+/**
+ * A copy of a standalone note in another place (notes-overview D2): a new id
+ * with the same title, document, text, labels and position, in `projectId`
+ * (null: the author's personal notes, in `workspaceId`). A note never changes
+ * sharing scope, so moving it across scopes is this copy and a tombstone of
+ * the original. Merges of the copy are independent of the original's.
+ */
+export function copyNoteChange(note: Note, projectId: string | null, workspaceId: string | null = null): Change {
+  return {
+    entity: 'note', entityId: uuid(), patch: {
+      title: note.title, notes_doc: note.notes_doc ?? '', description: note.description ?? '', labels: note.labels ?? [],
+      project_id: projectId, workspace_id: projectId ? null : workspaceId, position: note.position, created_at: note.created_at || Date.now(), deleted_at: null,
+    },
+  }
 }
 
 /**

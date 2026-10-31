@@ -39,6 +39,8 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   tracked: msg('Has tracked time'),
   energy: msg('Has an energy'),
   'no energy': msg('No energy'),
+  notes: msg('Has a note'),
+  'no notes': msg('No note'),
 })
 
 const WEEKDAY = [msg('Sunday'), msg('Monday'), msg('Tuesday'), msg('Wednesday'), msg('Thursday'), msg('Friday'), msg('Saturday')]
@@ -105,6 +107,7 @@ export function conditionText(leaf: Leaf): string {
     case 'date': return dateText(DATE_FIELD_NAME[leaf.field], leaf.op, leaf.date)
     case 'keyword': return KEYWORD_NAME[leaf.keyword]
     case 'search': return t('Title or notes contain {text}', { text: leaf.text })
+    case 'notes': return t('Note contains {text}', { text: leaf.text })
     case 'origin': return t('Origin is {value}', { value: leaf.value })
     case 'energy': return t('Energy is {level}', { level: energyName(leaf.value) })
     case 'workspace': return t('Workspace is {name}', { name: leaf.name })

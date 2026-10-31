@@ -119,14 +119,15 @@ var counted = map[string]bool{"task": true, "project": true, "comment": true}
 
 // Opaque lists "entity.field" pairs that never appear in events: encoded
 // documents (internal/sync DocFields). Kept here because sync imports activity.
-var Opaque = map[string]bool{"task.notes_doc": true, "project.notes_doc": true}
+var Opaque = map[string]bool{"task.notes_doc": true, "project.notes_doc": true, "note.notes_doc": true}
 
 // quiet reports ops that never form or join an event (editor-everywhere): a
-// comment's reactions, and a task's note_mentions, which travel with the note
+// comment's reactions, a pending append (notes-overview D13: the folded
+// description is the readable change) and a task's note_mentions, which travel with the note
 // edit whose description projection already makes the event.
 func quiet(op Op) bool {
 	return Opaque[op.Entity+"."+op.Field] || (op.Entity == "task" && op.Field == "note_mentions") ||
-		(op.Entity == "comment" && strings.HasPrefix(op.Field, "reactions."))
+		(op.Entity == "comment" && strings.HasPrefix(op.Field, "reactions.")) || strings.HasPrefix(op.Field, "appends.")
 }
 
 type group struct {

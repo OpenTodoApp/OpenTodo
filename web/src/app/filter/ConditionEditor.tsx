@@ -12,12 +12,12 @@ import { msg, t, translatedMap } from '../../lib/i18n'
 import { KEYWORD_NAME } from './conditionText'
 import { ENERGY_LEVELS, energyName, type Energy } from '../../lib/energy'
 
-export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'search' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy'
+export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'search' | 'notes' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy'
 
 const KIND_NAME = translatedMap<ConditionKind>({
   label: msg('Label'), project: msg('Project'), priority: msg('Priority'),
   due: msg('Due date'), deadline: msg('Deadline'), start: msg('Start date'), created: msg('Created'), completed: msg('Completed date'),
-  state: msg('State'), search: msg('Title or notes'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
+  state: msg('State'), search: msg('Title or notes'), notes: msg('Note'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
   field: msg('Custom field'), nofield: msg('Custom field is empty'), energy: msg('Energy'),
 })
 
@@ -110,6 +110,7 @@ export function draftOf(leaf: Leaf | null): Draft {
     case 'date': return { ...d, kind: leaf.field, op: leaf.op, ...whenOf(leaf.date) }
     case 'keyword': return { ...d, kind: 'state', keyword: leaf.keyword }
     case 'search': return { ...d, kind: 'search', text: leaf.text }
+    case 'notes': return { ...d, kind: 'notes', text: leaf.text }
     case 'origin': return { ...d, kind: 'origin', text: leaf.value }
     case 'energy': return { ...d, kind: 'energy', energy: leaf.value }
     case 'workspace': return { ...d, kind: 'workspace', name: leaf.name }
@@ -136,6 +137,7 @@ export function leafOf(d: Draft): Leaf | null {
     case 'priority': return { kind: 'priority', value: d.priority }
     case 'state': return { kind: 'keyword', keyword: d.keyword }
     case 'search': return d.text.trim() ? { kind: 'search', text: d.text.trim() } : null
+    case 'notes': return d.text.trim() ? { kind: 'notes', text: d.text.trim() } : null
     case 'origin': return d.text.trim() ? { kind: 'origin', value: d.text.trim() } : null
     case 'energy': return { kind: 'energy', value: d.energy }
     case 'workspace': return name ? { kind: 'workspace', name, pos: 0 } : null
@@ -186,7 +188,7 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
   const result = leafOf(draft)
   const fieldNames = useMemo(() => [...new Set(fields.filter((f) => !f.deleted_at).map((f) => f.name))].sort((a, b) => a.localeCompare(b)), [fields])
-  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'search', 'origin', 'tracked', 'energy']
+  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'search', 'notes', 'origin', 'tracked', 'energy']
   if (workspaces.length > 1 || draft.kind === 'workspace') kinds.splice(kinds.indexOf('origin') + 1, 0, 'workspace')
   if (fieldNames.length || draft.kind === 'field' || draft.kind === 'nofield') kinds.push('field', 'nofield')
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
@@ -280,8 +282,8 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
           </Field>
         )}
 
-        {(draft.kind === 'search' || draft.kind === 'origin') && (
-          <Field label={draft.kind === 'search' ? t('Text in the title or notes') : t('Provider or kind')}
+        {(draft.kind === 'search' || draft.kind === 'notes' || draft.kind === 'origin') && (
+          <Field label={draft.kind === 'search' ? t('Text in the title or notes') : draft.kind === 'notes' ? t('Text in the note') : t('Provider or kind')}
             description={draft.kind === 'origin' ? t('For example github, gitlab, url, email or import') : undefined}>
             <Input value={draft.text} onChange={(e) => set({ text: e.target.value })} autoComplete="off" spellCheck={false} />
           </Field>
