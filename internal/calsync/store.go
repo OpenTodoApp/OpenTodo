@@ -217,10 +217,13 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Connec
 	if p.TargetURL != nil && *p.TargetURL != cur.TargetURL {
 		set = append(set, "target_url = ?", "sync_token = ''", "ctag = ''")
 		args = append(args, *p.TargetURL)
-		if cur.StoppedReason == ReasonCalendarMissing {
+		if cur.StoppedReason == ReasonCalendarMissing || cur.StoppedReason == ReasonCalendarReadOnly {
 			set = append(set, "stopped_reason = NULL")
 		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM calsync_links WHERE connection_id = ?`, id); err != nil {
+			return nil, err
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM calsync_cursors WHERE connection_id = ?`, id); err != nil {
 			return nil, err
 		}
 		due = true
@@ -237,7 +240,8 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Connec
 		set, args = append(set, "enabled = ?"), append(args, *p.Enabled)
 		if *p.Enabled && !cur.Enabled {
 			due = true
-			if cur.StoppedReason != "" && cur.StoppedReason != ReasonUnauthorized && cur.StoppedReason != ReasonSecretMissing {
+			if cur.StoppedReason != "" && cur.StoppedReason != ReasonUnauthorized && cur.StoppedReason != ReasonSecretMissing &&
+				cur.StoppedReason != ReasonMicrosoftClient {
 				set = append(set, "stopped_reason = NULL")
 			}
 		}
