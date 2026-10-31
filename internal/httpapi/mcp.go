@@ -31,6 +31,9 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 	s.agentTools = agenttools.New(s.sync, agenttools.Options{
 		Audit: s.audit, Log: s.log, Exclusions: s.agentExclusions,
 		LocalToday: func() string { return localToday(s.now()) },
+		// Reminders an assistant adds are read in the zone REST uses (agent-tools-complete D2).
+		UserZone: s.tzLocation,
+		Now:      s.now,
 		// Relative reminders follow a new due date (deadline reminders a new
 		// deadline), as for a REST write, and a task that gets a due date gets
 		// the person's default reminder (default-reminders D6).

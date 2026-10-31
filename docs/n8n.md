@@ -35,7 +35,7 @@ n8n checks the pair when you save it. The address must be reachable from the n8n
 | --- | --- |
 | **Full access** | Every operation and the trigger. Use this one for workflows that change things. |
 | **Read only** | Get and Get Many of everything. Changes are refused with `insufficient_scope`, and the trigger cannot create its webhook. Enough for reports and digests. |
-| **AI assistant** | Creating and editing tasks, projects, labels and comments, only while the owner and you [allow assistant changes](mcp.md#letting-an-assistant-make-changes); changes show as an assistant's in the task's history. No trigger. |
+| **AI assistant** | Creating and editing tasks, projects, sections, labels, comments, reminders and time entries, only while the owner and you [allow assistant changes](mcp.md#letting-an-assistant-make-changes); changes show as an assistant's in the task's history. No trigger. |
 | **Admin** | Not needed. n8n never needs access to passwords, tokens or user administration. |
 
 Changes made from n8n show in a task's history like changes from the API. Revoking the token stops every workflow that uses it.

@@ -889,8 +889,11 @@ func TestAgentTokenThroughCLI(t *testing.T) {
 	h.mustRun("reopen", id)
 	h.mustRun("project", "rename", "Home", "Home 2")
 	h.mustRun("rm", id, "--yes")
+	// Archiving is an agent route since agent-tools-complete (archive_projects).
+	h.mustRun("project", "archive", "Home 2")
+	h.mustRun("project", "archive", "Home 2", "--undo")
 	// Outside the agent routes: refused locally, nothing sent.
-	for _, args := range [][]string{{"project", "archive", "Home 2"}, {"project", "rm", "Home 2", "--yes"}, {"token", "create", "escalate"}} {
+	for _, args := range [][]string{{"project", "rm", "Home 2", "--yes"}, {"token", "create", "escalate"}} {
 		h.requestLog()
 		code, out, _ := h.run(append(args, "--json")...)
 		if code != ExitNotPermitted || !strings.Contains(out, `"code":"insufficient_scope"`) {
