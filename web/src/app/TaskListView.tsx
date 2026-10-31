@@ -306,7 +306,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     inlineId: inline?.id ?? null, renderInline, departures, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
   })
 
-  // The Inbox's own rows: its planned group is not part of it (inbox-planned-group D2).
+  // The list's own rows: Today's Done today group is not part of them (today-closed-list D6).
   const own = m.ownRows
   // A project list whose completed tasks are hidden ends with how many (precision-rows D6).
   const hiddenDone = !m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0
@@ -386,7 +386,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {own.length === 0 && !(board || m.liveSections.length > 0) && (m.duration || m.queryFilter?.query
             ? <FilteredEmpty onClear={() => { m.chooseDuration(null); m.queryFilter?.setQuery('') }} />
             : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly}
-                completed={hiddenDone} onShowCompleted={showCompleted} compact={route.view === 'inbox' && groups.some((g) => g.key === 'planned' && (g.count ?? 0) > 0)} />)}
+                completed={hiddenDone} onShowCompleted={showCompleted} />)}
 
           {board && currentProject ? (
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}

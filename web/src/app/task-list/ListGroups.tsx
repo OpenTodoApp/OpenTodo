@@ -20,7 +20,6 @@ import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
 import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGhosts, type Departure } from '../motion'
-import { navigate } from '../router'
 import type { RowMotion } from '../TaskRow'
 import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
@@ -272,8 +271,8 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
     <section className="mb-4" data-group={g.key}>
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
-          actions={g.key === 'planned' ? <PlannedActions /> : view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
-          actionsAlwaysVisible={g.key === 'planned' || g.key === 'done'} />
+          actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
+          actionsAlwaysVisible={g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
           collapsed={collapsed} onToggle={toggle}
@@ -291,15 +290,6 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
 function partDrop(part: ListGroup['dropPart'], header: ReactNode): ReactNode {
   if (!part) return header
   return <div className="rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-task-drop={`part:${part}`} data-part-heading={part}>{header}</div>
-}
-
-/** The Inbox's "Planned, no project" group header action (inbox-planned-group D3): the same tasks in Filter. */
-function PlannedActions() {
-  return (
-    <Button variant="ghost" size="sm" className="text-meta" onClick={() => navigate({ view: 'filter', q: 'no project' })} data-planned-filter>
-      {t('Open as a new view')}
-    </Button>
-  )
 }
 
 /** Today's Done today header action (today-closed-list D6): quick add with "Log as done" on. */

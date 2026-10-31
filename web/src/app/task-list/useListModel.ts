@@ -22,7 +22,6 @@ import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { buildTaskTree, progressMap } from '../../lib/subtasks'
 import type { Task } from '../../lib/types'
-import { isPlannedWithoutProject } from '../../lib/inbox'
 import { inLater } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
@@ -174,12 +173,6 @@ export function useListModel(route: ListRoute, userId?: string) {
   const tree = useMemo(() => (treeView ? buildTaskTree(treeTasks) : null), [treeView, treeTasks])
   const buckets = useMemo(() => sectionBuckets(projectId, tree, sections), [projectId, tree, sections])
   const columns = useMemo(() => boardColumns(buckets), [buckets])
-  // The Inbox's planned tasks without a project, in a folded group at its end (inbox-planned-group D1).
-  const planned = useMemo(() => {
-    if (route.view !== 'inbox') return NO_TASKS
-    const list = allTasks.filter(isPlannedWithoutProject)
-    return duration && filterKey ? list.filter(durationPredicate(duration)) : list
-  }, [route.view, allTasks, duration, filterKey])
 
   // A project's or label's display options (list-display-options): personal and synced.
   const prefsRow = useProjectPrefsRow(projectId)
@@ -206,15 +199,14 @@ export function useListModel(route: ListRoute, userId?: string) {
   const doneToday = closed.doneToday ?? undefined
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, manualOrder, dayParts, closedList, doneToday,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, manualOrder, dayParts, closedList, doneToday])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
-  // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
-  // Nor is Today's Done today group part of Today's open list (today-closed-list D6).
-  const ownRows = useMemo(() => (planned.length || doneToday?.length ? groups.filter((g) => g.key !== 'planned' && g.key !== 'done').flatMap((g) => g.rows) : rows), [planned, doneToday, groups, rows])
+  // The list's own rows: Today's Done today group is not part of Today's open list (today-closed-list D6).
+  const ownRows = useMemo(() => (doneToday?.length ? groups.filter((g) => g.key !== 'done').flatMap((g) => g.rows) : rows), [doneToday, groups, rows])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
   // A task a calendar slot holds shows the slot's start there (calendar-slots D8).
