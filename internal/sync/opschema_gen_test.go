@@ -39,7 +39,7 @@ const (
 var tsEntity = map[string]string{
 	"project": "Project", "task": "Task", "label": "Label", "view": "View", "reminder": "Reminder", "section": "Section",
 	"comment": "Comment", "project_prefs": "ProjectPrefs", "user_prefs": "UserPrefs", "attachment": "Attachment",
-	"field": "FieldDef", "review": "Review", "time_entry": "TimeEntry", "place": "Place", "rule": "Rule", "frame": "Frame", "slot": "Slot",
+	"field": "FieldDef", "review": "Review", "time_entry": "TimeEntry", "place": "Place", "rule": "Rule", "frame": "Frame", "slot": "Slot", "note": "Note",
 }
 
 // tsKind is the web type of a field of each kind. A hand-written entity type
@@ -141,13 +141,6 @@ func readSchemaDecl(t *testing.T) schemaDecl {
 	return d
 }
 
-// familyKeys are the row keys holding a field family (`fields.<id>` in
-// task.fields), with an empty object as default.
-var familyKeys = map[string][]string{
-	"task":    {strings.TrimSuffix(FieldValuePrefix, ".")},
-	"comment": {strings.TrimSuffix(ReactionPrefix, ".")},
-}
-
 func jsdoc(b *strings.Builder, indent, text string) {
 	if text == "" {
 		return
@@ -229,8 +222,8 @@ func genOpSchemaTS(t *testing.T, d schemaDecl) string {
 		for _, f := range d.fields[e] {
 			parts = append(parts, f+": "+tsValue(t, Schema[e][f].Default))
 		}
-		for _, k := range familyKeys[e] {
-			parts = append(parts, k+": {}")
+		for _, p := range FieldPrefixes[e] {
+			parts = append(parts, strings.TrimSuffix(p, ".")+": {}")
 		}
 		fmt.Fprintf(&b, "  %s: {\n    %s,\n  } satisfies Omit<%s, 'id' | '_clock'>,\n", e, strings.Join(parts, ", "), tsEntity[e])
 	}
@@ -288,7 +281,7 @@ func genSchemaFixture(t *testing.T, d schemaDecl) string {
 			"by internal/sync TestGeneratedOpSchema. internal/sync/schema_fixture_test.go checks it against sync.Schema and e2ee; " +
 			"web/src/lib/schemaFixture.test.ts against ENTITIES, the row defaults in ops.ts and CONTENT_FIELDS/CONTENT_PREFIXES in e2ee.ts.",
 		Entities:        map[string][]string{},
-		FieldPrefixes:   map[string][]string{"task": {FieldValuePrefix}, "comment": {ReactionPrefix}},
+		FieldPrefixes:   FieldPrefixes,
 		ContentFields:   map[string][]string{},
 		ContentPrefixes: e2ee.ContentPrefixes,
 	}

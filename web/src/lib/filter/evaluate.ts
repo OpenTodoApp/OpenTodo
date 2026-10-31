@@ -361,6 +361,12 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         const needle = n.text.toLocaleLowerCase()
         return (task) => task.title.toLocaleLowerCase().includes(needle) || task.description.toLocaleLowerCase().includes(needle)
       }
+      // The note is the task's description, its Markdown projection; on an encrypted
+      // account the decrypted local copy (notes-overview D5, D8). Never the title.
+      case 'notes': {
+        const needle = n.text.toLocaleLowerCase()
+        return (task) => (task.description ?? '').toLocaleLowerCase().includes(needle)
+      }
       case 'origin':
         return (task) => originMatches(originOf(task), n.value)
       // A value this client does not know reads as none (task-energy D5).
@@ -411,6 +417,9 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'no origin': return (task) => originOf(task) === null
           case 'energy': return (task) => energyOf(task) !== null
           case 'no energy': return (task) => energyOf(task) === null
+          // A note of only whitespace is no note (notes-overview D5).
+          case 'notes': return (task) => (task.description ?? '').trim() !== ''
+          case 'no notes': return (task) => (task.description ?? '').trim() === ''
           // At least one minute of live tracked time (time-tracking D9).
           case 'tracked': return (task) => (ctx.tracked?.get(task.id) ?? 0) >= 1
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }

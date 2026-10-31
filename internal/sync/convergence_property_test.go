@@ -238,6 +238,15 @@ func (w *propWorld) step(i int) {
 			id = entity[:1] + "1"
 		}
 		d.edit(w.now, entity, id, map[string]string{"workspace_id": w.workspace()})
+	case r == 6 && (d.user == "alice" || w.shared):
+		// The project's standalone note (notes-overview): its title, text
+		// and labels converge like a task's.
+		fields := map[string]string{"title": strconv.Quote(fmt.Sprintf("%s note %d", d.id, i))}
+		if w.rng.IntN(2) == 0 {
+			fields["labels"] = []string{`[]`, `["l1"]`}[w.rng.IntN(2)]
+			fields["description"] = strconv.Quote(fmt.Sprintf("- %s", d.id))
+		}
+		d.edit(w.now, "note", "n0", fields)
 	case r < 9:
 		w.exchange(d)
 	default:
@@ -275,6 +284,7 @@ func runConvergence(t *testing.T, seed uint64) {
 	a1.edit(w.now, "project", "p", map[string]string{"name": `"Home"`})
 	a1.edit(w.now, "label", "l1", map[string]string{"name": `"errand"`})
 	a1.edit(w.now, "view", "v1", map[string]string{"name": `"Soon"`})
+	a1.edit(w.now, "note", "n0", map[string]string{"title": `"Plan"`, "project_id": `"p"`})
 	for i := range 3 {
 		a1.edit(w.now, "task", fmt.Sprintf("t%d", i), map[string]string{"title": `"shared"`, "project_id": `"p"`})
 		b1.edit(w.now, "task", fmt.Sprintf("b%d", i), map[string]string{"title": `"bob's"`})

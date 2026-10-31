@@ -106,6 +106,9 @@ func (pl *planner) planOwn(rows []Row) []change {
 		default:
 			var diff []field
 			for _, f := range fields {
+				if _, isAppend := opsync.AppendID(f.name); isAppend && existing[f.name] != nil {
+					continue // an append id takes one text; a folded one stays folded
+				}
 				if !jsonEqual(existing[f.name], f.value) {
 					diff = append(diff, f)
 				}

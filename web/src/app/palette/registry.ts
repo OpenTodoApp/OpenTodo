@@ -121,6 +121,9 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Go to Next'), route: { view: 'next' }, icon: 'arrow-right', shortcut: keysOf('go.next'), keywords: 'next actions contexts open loops' },
   { label: msg('Go to Waiting'), route: { view: 'waiting' }, icon: 'hourglass', shortcut: keysOf('go.waiting'), keywords: 'waiting for delegated blocked open loops' },
   { label: msg('Go to Focus'), route: { view: 'focus' }, icon: 'clock', shortcut: keysOf('go.focus'), keywords: 'focus timer pomodoro flowtime countdown session' },
+  // Notes (notes-overview D5): the page, and a new note started there (/notes?new=1).
+  { label: msg('Go to Notes'), route: { view: 'notes' }, icon: 'notebook-pen', shortcut: keysOf('go.notes'), keywords: 'notes notebook memo standalone' },
+  { label: msg('New note'), route: { view: 'notes', create: true }, icon: 'notebook-pen', keywords: 'note create add write memo' },
   { label: msg('Go to Statistics'), route: { view: 'stats' }, icon: 'chart-column', shortcut: keysOf('go.stats'), keywords: 'stats productivity completed' },
   { label: msg('Import data'), route: { view: 'import' }, icon: 'upload', shortcut: keysOf('go.import') },
   { label: msg('Go to Settings'), route: { view: 'settings' }, icon: 'settings', shortcut: keysOf('go.settings') },

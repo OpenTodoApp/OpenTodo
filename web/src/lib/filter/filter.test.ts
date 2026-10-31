@@ -194,7 +194,7 @@ describe('parse: errors', () => {
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
     expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1')
-    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', '"energy"', 'field name'])
+    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', '"energy"', '"notes"', 'field name'])
   })
 
   it('reports incomplete date terms', () => {
@@ -597,6 +597,54 @@ describe('evaluate: energy terms (OpenSpec task-energy 2.3)', () => {
   })
   it('round-trips through printing', () => {
     expect(printQuery(parse('energy:Low & no energy')!)).toBe('(energy: low & no energy)')
+  })
+})
+
+describe('evaluate: notes terms (OpenSpec notes-overview 3.1)', () => {
+  const RENO: Project[] = [...PROJECTS, project('p-reno', 'Renovation')]
+  const ctx: FilterContext = { ...CTX, projects: RENO }
+  const L: Task[] = [
+    task('permit', { project_id: 'p-reno', description: 'Call the **Permit Office** on Monday' }),
+    task('title-only', { title: 'Permit office visit', project_id: 'p-reno' }),
+    task('blank', { project_id: 'p-reno', description: '  \n\t ' }),
+    task('urgent-bare', { priority: 1 }),
+    task('urgent-noted', { priority: 1, description: 'see the quote' }),
+    task('done-noted', { description: 'permit office closed', completed_at: at('2026-10-09') }),
+    task('deleted-noted', { description: 'permit office', deleted_at: at('2026-10-09') }),
+  ]
+  it('notes matches open tasks with a non-blank note; no notes the rest', () => {
+    expect(ids('notes', L, ctx)).toEqual(sorted('permit', 'urgent-noted'))
+    expect(ids('no notes', L, ctx)).toEqual(sorted('title-only', 'blank', 'urgent-bare'))
+    expect(ids('notes & #Renovation', L, ctx)).toEqual(['permit'])
+    expect(ids('no notes & p1', L, ctx)).toEqual(['urgent-bare'])
+  })
+  it('notes: text searches the note only, ignoring case, never the title', () => {
+    expect(ids('notes: "permit office"', L, ctx)).toEqual(['permit'])
+    expect(ids('NOTES: PERMIT', L, ctx)).toEqual(['permit'])
+    expect(ids('search: "permit office"', L, ctx)).toEqual(sorted('permit', 'title-only'))
+    expect(ids('notes: "permit office" & completed', L, ctx)).toEqual(['done-noted'])
+  })
+  it('notes: with no text is an error asking for text', () => {
+    expect(errorOf('notes:')).toMatchObject({ message: 'Expected text after "notes:" at position 1', position: 1, expected: ['text'] })
+    expect(errorOf('p1 & notes: ')).toMatchObject({ message: 'Expected text after "notes:" at position 6' })
+  })
+  it('notes is a reserved word: a field named Notes needs its quoted name', () => {
+    const fields = [{ id: 'f-notes', name: 'Notes', type: 'text', project_id: 'p-reno', options: '', position: 0, created_at: 0, deleted_at: null, _clock: {} }] as FilterContext['fields']
+    const withField: FilterContext = { ...ctx, fields }
+    const F: Task[] = [
+      task('field-only', { project_id: 'p-reno', fields: { 'f-notes': 'yes' } }),
+      task('note-only', { project_id: 'p-reno', description: 'yes' }),
+    ]
+    expect(parse('notes')).toEqual({ kind: 'keyword', keyword: 'notes' })
+    expect(parse('no notes')).toEqual({ kind: 'keyword', keyword: 'no notes' })
+    expect(ids('notes', F, withField)).toEqual(['note-only'])
+    expect(() => parse('notes = yes')).toThrow(FilterSyntaxError)
+    expect(ids('"Notes" = yes', F, withField)).toEqual(['field-only'])
+    expect(ids('no "Notes"', F, withField)).toEqual(['note-only'])
+  })
+  it('round-trips through printing', () => {
+    expect(printQuery(parse('notes:Permit & no notes | notes')!)).toBe('((notes: Permit & no notes) | notes)')
+    expect(printQuery(parse('notes: "permit office"')!)).toBe('notes: "permit office"')
   })
 })
 

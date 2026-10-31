@@ -62,6 +62,17 @@
       "sort_dir",
       "workspace_id"
     ],
+    "note": [
+      "created_at",
+      "deleted_at",
+      "description",
+      "labels",
+      "notes_doc",
+      "position",
+      "project_id",
+      "title",
+      "workspace_id"
+    ],
     "place": [
       "address",
       "created_at",
@@ -264,8 +275,12 @@
     "comment": [
       "reactions."
     ],
+    "note": [
+      "appends."
+    ],
     "task": [
-      "fields."
+      "fields.",
+      "appends."
     ]
   },
   "content_fields": {
@@ -287,6 +302,11 @@
     ],
     "label": [
       "name"
+    ],
+    "note": [
+      "description",
+      "notes_doc",
+      "title"
     ],
     "place": [
       "address",
@@ -327,8 +347,12 @@
     ]
   },
   "content_prefixes": {
+    "note": [
+      "appends."
+    ],
     "task": [
-      "fields."
+      "fields.",
+      "appends."
     ]
   }
 }

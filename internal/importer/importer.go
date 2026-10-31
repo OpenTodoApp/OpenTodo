@@ -67,6 +67,9 @@ const (
 	// KindField is a custom field definition (OpenSpec change custom-fields),
 	// restored verbatim from an own export like a section.
 	KindField = "field"
+	// KindNote is a standalone note (OpenSpec change notes-overview, D9),
+	// restored verbatim from an own export; other importers never create one.
+	KindNote = "note"
 )
 
 // Due is a floating due date with an optional wall-clock time.

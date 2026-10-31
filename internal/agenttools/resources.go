@@ -117,3 +117,27 @@ func (r *Registry) RulesResource(ctx context.Context, userID string) (map[string
 	}
 	return noticed(map[string]any{"rules": out}), nil
 }
+
+// NotesResource is opentodo://notes (notes-overview D12): the newest
+// standalone notes, as list_notes with source note returns them.
+func (r *Registry) NotesResource(ctx context.Context, userID string) (map[string]any, error) {
+	res, err := r.notesPayload(ctx, userID, noteQuery{source: "note", limit: NoteListDefault})
+	if err != nil {
+		return nil, err
+	}
+	res["truncated"] = res["next_cursor"] != nil
+	delete(res, "next_cursor")
+	return noticed(res), nil
+}
+
+// NoteResource is opentodo://notes/{id}, the same payload as get_note.
+func (r *Registry) NoteResource(ctx context.Context, userID, id string) (map[string]any, bool, error) {
+	detail, err := r.noteDetail(ctx, userID, "note", id)
+	if errors.Is(err, ErrNoteNotFound) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return noticed(detail), true, nil
+}

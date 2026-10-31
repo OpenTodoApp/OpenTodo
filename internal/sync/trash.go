@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -21,8 +22,9 @@ import (
 // ErrNotDeleted: a purge was requested for an entity that is not in the Trash.
 var ErrNotDeleted = errors.New("not deleted")
 
-// Purgeable lists the entities the Trash holds.
-var Purgeable = map[string]bool{"task": true, "project": true}
+// Purgeable lists the entities the Trash holds: tasks, projects and standalone
+// notes (notes-overview D10).
+var Purgeable = map[string]bool{"task": true, "project": true, "note": true}
 
 // HistoryPageSize is the default and maximum number of change sets per page.
 const HistoryPageSize = 200
@@ -108,7 +110,7 @@ func (s *Service) History(ctx context.Context, userID, entity, id string, before
 		// An opaque document (task.notes_doc) is not a readable revision: its
 		// projection (description) is in the same change set and is what a user
 		// restores (collaborative-rich-text).
-		if IsDocField(entity, o.field) {
+		if IsDocField(entity, o.field) || strings.HasPrefix(o.field, AppendPrefix) {
 			continue
 		}
 		ops = append(ops, o)
@@ -193,6 +195,8 @@ type PurgeResult struct {
 	Attachments int `json:"attachments"`
 	// Time entries of purged tasks (time-tracking); additive.
 	TimeEntries int `json:"timeEntries"`
+	// Standalone notes, trashed or of purged projects (notes-overview); additive.
+	Notes int `json:"notes"`
 	// Orphans counts files without a row removed by the retention sweep.
 	Orphans int `json:"orphans,omitempty"`
 	// Audience is every user who could see a purged entity: their devices must sync.
@@ -398,10 +402,10 @@ type trashedEntity struct {
 	deletedAt int64
 }
 
-// trashed lists tombstoned tasks and projects in the given scopes (all scopes
+// trashed lists tombstoned tasks, projects and notes in the given scopes (all scopes
 // when nil), projects first so their cascades run before single tasks.
 func trashed(ctx context.Context, q querier, scopes []string) ([]trashedEntity, error) {
-	query := `SELECT scope_id, entity, entity_id, value FROM scope_fields WHERE field = 'deleted_at' AND entity IN ('project','task') AND value != 'null'`
+	query := `SELECT scope_id, entity, entity_id, value FROM scope_fields WHERE field = 'deleted_at' AND entity IN ('project','task','note') AND value != 'null'`
 	var args []any
 	if scopes != nil {
 		query += ` AND scope_id IN (` + placeholders(len(scopes)) + `)`
@@ -478,6 +482,8 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 			purgedFiles = append(purgedFiles, t.id)
 		case "time_entry":
 			res.TimeEntries++
+		case "note":
+			res.Notes++
 		}
 	}
 	// CalDAV resource names of purged tasks go in the same transaction
@@ -554,6 +560,9 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 			tasks = append(tasks, t)
 			continue
 		}
+		if t.entity != "project" {
+			continue // a standalone note has no children
+		}
 		ids, err := taskIDsWhere(ctx, tx, t.scope, "project_id", t.id, false)
 		if err != nil {
 			return nil, err
@@ -563,22 +572,17 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 				tasks = append(tasks, c)
 			}
 		}
-		// The project's sections, live or deleted, go with it (board-view).
-		sections, err := childIDsWhere(ctx, tx, t.scope, "section", "project_id", t.id, false)
-		if err != nil {
-			return nil, err
-		}
-		for _, id := range sections {
-			add(purgeTarget{t.scope, "section", id})
-		}
-		// So do its custom field definitions (custom-fields); the values are
-		// task fields and go with the tasks.
-		defs, err := childIDsWhere(ctx, tx, t.scope, "field", "project_id", t.id, false)
-		if err != nil {
-			return nil, err
-		}
-		for _, id := range defs {
-			add(purgeTarget{t.scope, "field", id})
+		// The project's sections (board-view), custom field definitions
+		// (custom-fields; the values are task fields and go with the tasks) and
+		// standalone notes (notes-overview D10), live or deleted, go with it.
+		for _, child := range []string{"section", "field", "note"} {
+			cids, err := childIDsWhere(ctx, tx, t.scope, child, "project_id", t.id, false)
+			if err != nil {
+				return nil, err
+			}
+			for _, id := range cids {
+				add(purgeTarget{t.scope, child, id})
+			}
 		}
 		// Every member's personal preferences for the project (activity-feed D1)
 		// go too; each lives in its owner's personal scope.

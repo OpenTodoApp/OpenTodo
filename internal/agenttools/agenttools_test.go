@@ -199,7 +199,7 @@ func TestToolSurfaceIsClosed(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	want := "add_comment,complete_tasks,create_label,create_project,create_sections,create_tasks,get_task,list_frames,list_icons,list_projects,list_slots,list_tasks,list_time_entries,list_workspaces,move_tasks,reopen_tasks,reorder_sections,schedule_tasks,search_tasks,set_favourite,today_summary,trash_tasks,update_project,update_sections,update_tasks"
+	want := "add_comment,append_to_note,complete_tasks,create_label,create_note,create_project,create_sections,create_tasks,get_note,get_task,list_frames,list_icons,list_notes,list_projects,list_slots,list_tasks,list_time_entries,list_workspaces,move_tasks,note_to_task,reopen_tasks,reorder_sections,schedule_tasks,search_notes,search_tasks,set_favourite,today_summary,trash_note,trash_tasks,update_note,update_project,update_sections,update_tasks"
 	if got := strings.Join(names, ","); got != want {
 		t.Fatalf("tools = %s", got)
 	}

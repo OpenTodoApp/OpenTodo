@@ -81,6 +81,27 @@ func (a *App) remoteCandidates(ctx context.Context, st *compState, kind valueKin
 				out = append(out, compItem{w.Name, "workspace"})
 			}
 		}
+	case kindNotes:
+		var page struct {
+			Notes []struct {
+				ID        string   `json:"id"`
+				Title     string   `json:"title"`
+				DeletedAt *float64 `json:"deleted_at"`
+			} `json:"notes"`
+		}
+		if c.getJSON(ctx, "/notes", &page) != nil {
+			return nil
+		}
+		for _, n := range page.Notes {
+			if n.DeletedAt != nil {
+				continue
+			}
+			desc := ""
+			if readable(n.Title) {
+				desc = n.Title
+			}
+			out = append(out, compItem{n.ID, desc})
+		}
 	case kindTasks, kindDoneTasks:
 		list, err := c.tasks(ctx)
 		if err != nil {

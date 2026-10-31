@@ -49,6 +49,7 @@ func (s *Server) applyREST(w http.ResponseWriter, ctx context.Context, uid strin
 	isRej := errors.As(err, &rej)
 	switch {
 	case writeLimited(w, err):
+	case bodyChanged(w, err):
 	case errors.Is(err, opsync.ErrInvalidOp):
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 	case isRej && reasons[rej.Reason] != nil:

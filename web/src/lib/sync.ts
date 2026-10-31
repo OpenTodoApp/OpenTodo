@@ -9,7 +9,7 @@ import { bumpLocalEpoch, db, entityTables, getMeta, localEpoch, setMeta, tableOf
 import { ensureFeedBaselines } from './feed'
 import { CLOCK_OFFSET_META, hlcObserveServerTime, hlcOffset } from './hlc'
 import { restampSkewed, splitClockSkew } from './clockSkew'
-import { applyOps, getDeviceId, onLocalMutation } from './ops'
+import { applyOps, getDeviceId, onLocalMutation, readField } from './ops'
 import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
@@ -482,10 +482,14 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
         // as the placeholder (OpenSpec e2ee).
         const raw = (row._e2ee as RowEncryption | undefined)?.raw ?? {}
         for (const [field, c] of Object.entries(clock)) {
-          if (!(field in row)) continue
+          // A field family value (`fields.<id>`, `appends.<id>`) lives in a map on the row.
+          const value = readField(row, field)
+          if (value === undefined && !(field in row)) continue
+          // Only an account's own reactions are its to send (editor-everywhere D8).
+          if (field.startsWith('reactions.') && field !== `reactions.${me}`) continue
           // uploaded_at is the server's word (attachments D3); a device never sends it.
           if (entity === 'attachment' && field === 'uploaded_at') continue
-          chunk.push({ id: uuid(), entity, entityId: row.id as string, field, value: raw[field] ?? row[field], ts: c.ts, device: c.device })
+          chunk.push({ id: uuid(), entity, entityId: row.id as string, field, value: raw[field] ?? value, ts: c.ts, device: c.device })
           if (chunk.length >= RESEED_CHUNK) await flush()
         }
       }
