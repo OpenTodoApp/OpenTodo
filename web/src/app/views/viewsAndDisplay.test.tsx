@@ -8,6 +8,7 @@ import { db, useDatabase } from '../../lib/db'
 import { createField, setFieldValue } from '../../lib/fields'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
 import { createView } from '../../lib/views'
+import { fieldSortBy } from '../../lib/types'
 import { click, render, type, waitFor } from '../../ui/test-utils'
 import { FilterView } from '../FilterView'
 import { SavedViewRoute } from '../SavedViewView'
@@ -49,6 +50,7 @@ describe('a saved view', () => {
   it('orders its results by a custom field selected in the display panel', async () => {
     const project = await createProject({ name: 'Scoring' })
     const effort = await createField(project, { name: 'Effort', type: 'number' })
+    const sortBy = fieldSortBy(effort)
     const high = await createTask({ title: 'High effort', project_id: project, priority: 1 })
     const low = await createTask({ title: 'Low effort', project_id: project, priority: 1 })
     await setFieldValue(high, effort, 9)
@@ -59,10 +61,10 @@ describe('a saved view', () => {
 
     await click(r.container.querySelector('[data-display-trigger]') as HTMLButtonElement)
     await waitFor(() => !!panel(), 'the display panel')
-    await waitFor(() => !!panel()!.querySelector('option[value="field:Effort"]'), 'the custom field sort option')
-    await choose(panel()!.querySelector('select[aria-label="Order by"]') as HTMLSelectElement, 'field:Effort')
+    await waitFor(() => !!panel()!.querySelector('option[value="' + sortBy + '"]'), 'the custom field sort option')
+    await choose(panel()!.querySelector('select[aria-label="Order by"]') as HTMLSelectElement, sortBy)
     await waitFor(() => titles(r.container).join() === 'Low effort,High effort', 'the custom field order')
-    await waitFor(async () => (await db.views.get(id))?.sort_by === 'field:Effort', 'the saved sort choice')
+    await waitFor(async () => (await db.views.get(id))?.sort_by === sortBy, 'the saved sort choice')
     await r.unmount()
   })
 
@@ -155,6 +157,7 @@ describe('the New view page', () => {
   it('orders by a custom field and carries that choice into the saved view', async () => {
     const project = await createProject({ name: 'Scoring' })
     const effort = await createField(project, { name: 'Effort', type: 'number' })
+    const sortBy = fieldSortBy(effort)
     const high = await createTask({ title: 'High effort', project_id: project, priority: 1 })
     const low = await createTask({ title: 'Low effort', project_id: project, priority: 1 })
     await setFieldValue(high, effort, 9)
@@ -165,8 +168,8 @@ describe('the New view page', () => {
 
     await click(r.container.querySelector('[data-display-trigger]') as HTMLButtonElement)
     await waitFor(() => !!panel(), 'the display panel')
-    await waitFor(() => !!panel()!.querySelector('option[value="field:Effort"]'), 'the custom field sort option')
-    await choose(panel()!.querySelector('select[aria-label="Order by"]') as HTMLSelectElement, 'field:Effort')
+    await waitFor(() => !!panel()!.querySelector('option[value="' + sortBy + '"]'), 'the custom field sort option')
+    await choose(panel()!.querySelector('select[aria-label="Order by"]') as HTMLSelectElement, sortBy)
     await waitFor(() => titles(r.container).join() === 'Low effort,High effort', 'the custom field order')
 
     await click(button(r.container, 'Save as view'))
@@ -175,7 +178,7 @@ describe('the New view page', () => {
     await click(button(r.container, 'Save view'))
     await waitFor(async () => (await db.views.count()) === 1, 'the saved view')
     const [saved] = await db.views.toArray()
-    expect(saved).toMatchObject({ name: 'By effort', query: 'p1', sort_by: 'field:Effort' })
+    expect(saved).toMatchObject({ name: 'By effort', query: 'p1', sort_by: sortBy })
     await waitFor(() => location.pathname === `/views/${saved.id}`, 'the saved view opens')
     await waitFor(() => titles(r.container).join() === 'Low effort,High effort', 'the saved view keeps the custom order')
     await r.unmount()

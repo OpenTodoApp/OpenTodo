@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Grouping and sort options
-A list view SHALL group its results by project, due date, priority, label or none, and sort within groups by due date, priority, position, created time, deadline, title or a sortable Number or Date custom field, ascending or descending, as stored on the view; under a deadline sort or a custom-field sort, tasks without a value SHALL come last in either direction. A custom-field sort SHALL be stored as `field:<name>` and match live field definitions by name without regard to case (OpenSpec `custom-fields` "Sortable custom field values"). Equal custom-field values SHALL fall back to due date, priority, position and task id in that order. Defaults SHALL be grouping by project and sort by due date ascending with undated tasks last. Options SHALL be changeable from the view's display panel (see "Display panel") with the keyboard; the sort direction is under its "More options". The New view page SHALL group and sort the same way, so a saved view shows what was seen before saving.
+A list view SHALL group its results by project, due date, priority, label or none, and sort within groups by due date, priority, position, created time, deadline, title or a sortable Number or Date custom field, ascending or descending, as stored on the view; under a deadline sort or a custom-field sort, tasks without a value SHALL come last in either direction. A custom-field sort SHALL be stored as `field:<definition-id>` and resolve the selected definition's decrypted name on the device, then match live definitions case-insensitively among each task's applicable fields, including inherited parent-project fields. Definition IDs are non-content metadata, so the operation log SHALL NOT contain the field name. Renaming the selected definition SHALL keep the sort attached to its ID; a deleted or unavailable definition SHALL use the default order while retaining the ID. Equal custom-field values SHALL fall back to due date, priority, position and task id in that order. Defaults SHALL be grouping by project and sort by due date ascending with undated tasks last. Options SHALL be changeable from the view's display panel with the keyboard; sort direction is under More options. The New view page SHALL group and sort the same way, so a saved view shows what was seen before saving.
 
 #### Scenario: Sort by a custom Number field
 - **WHEN** the user orders "Work tomorrow" by the Number field "WSJF", descending
@@ -31,8 +31,12 @@ A list view SHALL group its results by project, due date, priority, label or non
 - **WHEN** the user orders "Work tomorrow" by deadline
 - **THEN** tasks with the nearest deadline come first and tasks without a deadline last
 
+#### Scenario: Manual order after saving
+- **WHEN** the user saves a view from the New view page and then chooses Order by Manual order on it
+- **THEN** the view lists its tasks by their positions until the user moves one, after which the moved order is kept on the view
+
 ### Requirement: Views API and export
-The API SHALL expose `/api/v1/views` with list, get, create, patch and delete following the collection conventions: authentication required, soft delete, write-through to the operation log, unknown fields rejected. Create SHALL require a name and a query that parses; option values outside the allowed sets SHALL be rejected, except that `sort_by` SHALL also accept a custom-field sort in the form `field:<name>`, with a non-empty, trimmed name that follows the custom field name length limit. The API SHALL preserve the field name; the client resolves it against live field definitions when displaying the view. `layout` SHALL be `list` or `board`, `show_completed` a boolean and `hidden_props` a list of row properties (`date`, `project`, `labels`, `estimate`, `assignee`, `deadline`, `start`, `origin`); a view created without them reads as the list layout with completed matches hidden and every property shown. `on_drop` SHALL be accepted on list views only, as `null` or an object whose keys and values are those of the on-drop rule, with label ids that exist and are not deleted and a section that belongs to the named project; it SHALL be replaced as a whole on patch. The export SHALL include a `views` array with deleted views, each view carrying `on_drop`.
+The API SHALL expose `/api/v1/views` with list, get, create, patch and delete following the collection conventions: authentication required, soft delete, write-through to the operation log, unknown fields rejected. Create SHALL require a name and a query that parses; option values outside the allowed sets SHALL be rejected, except that sort_by SHALL also accept a custom-field sort in the form `field:<definition-id>` with a canonical UUID. The API SHALL preserve the ID without resolving or transmitting the field name; the client resolves it from local live definitions. layout SHALL be list or board, show_completed a boolean and hidden_props a list of row properties (date, project, labels, estimate, assignee, deadline, start, origin); a view created without them reads as the list layout with completed matches hidden and every property shown. on_drop SHALL be accepted on list views only, as null or an object whose keys and values are those of the on-drop rule, with label ids that exist and are not deleted and a section that belongs to the named project; it SHALL be replaced as a whole on patch. The export SHALL include a views array with deleted views, each view carrying on_drop.
 
 #### Scenario: Create a view via the API
 - **WHEN** a script POSTs `{"name":"Waiting","query":"@waiting","pinned":true}` to `/api/v1/views` with a bearer token
@@ -44,18 +48,18 @@ The API SHALL expose `/api/v1/views` with list, get, create, patch and delete fo
 
 #### Scenario: Invalid option value
 - **WHEN** a create body sets `group_by` to "colour"
-- **THEN** the response is 400 `invalid_input` and no view is created
+- **THEN** the response is 400 `invalid_input` and the view remains unchanged
 
 #### Scenario: Create a view ordered by a custom field
-- **WHEN** an authenticated client creates a view with `sort_by` set to `field:WSJF`
-- **THEN** the API stores and returns `field:WSJF` as the view's sort value
+- **WHEN** an authenticated client creates a view with sort_by set to `field:0a4f7d89-6c12-4b63-8a91-2e35c47d8091`
+- **THEN** the API stores and returns the same field definition ID as the view's sort value
 
 #### Scenario: Patch a view's custom-field order
-- **WHEN** an authenticated client patches a view with `sort_by` set to `field:WSJF`
-- **THEN** the API stores and returns `field:WSJF` as the view's sort value
+- **WHEN** an authenticated client patches a view with sort_by set to `field:0a4f7d89-6c12-4b63-8a91-2e35c47d8091`
+- **THEN** the API stores and returns the same field definition ID as the view's sort value
 
-#### Scenario: Empty custom-field sort name
-- **WHEN** a create or patch body sets `sort_by` to `field:`
+#### Scenario: Reject a custom-field name or malformed ID
+- **WHEN** a create or patch body sets sort_by to `field:WSJF` or a malformed UUID
 - **THEN** the response is 400 `invalid_input` and the view remains unchanged
 
 #### Scenario: Set a rule via the API

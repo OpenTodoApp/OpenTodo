@@ -1,4 +1,3 @@
-import { nameKey } from './fieldNames'
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
@@ -416,20 +415,22 @@ export const GROUP_BY_OPTIONS: readonly GroupBy[] = ['project', 'due', 'priority
 export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'deadline', 'title']
 
 const FIELD_SORT_PREFIX = 'field:'
+const FIELD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
-/** Client parsing is deliberately tolerant: sync preserves strings that REST rejects. */
-export function fieldSortName(value: unknown): string | null {
+/** Client parsing is deliberately tolerant: sync preserves strings the REST API rejects. */
+export function fieldSortId(value: unknown): string | null {
   if (typeof value !== 'string' || !value.startsWith(FIELD_SORT_PREFIX)) return null
-  return nameKey(value.slice(FIELD_SORT_PREFIX.length)) || null
+  const id = value.slice(FIELD_SORT_PREFIX.length)
+  return FIELD_ID_PATTERN.test(id) ? id : null
 }
 
-export function fieldSortBy(name: string): FieldSortBy {
-  return `${FIELD_SORT_PREFIX}${name.trim()}`
+export function fieldSortBy(id: string): FieldSortBy {
+  return `${FIELD_SORT_PREFIX}${id}` as FieldSortBy
 }
 
-/** Whether a stored or selected sort value names a custom field. */
+/** Whether a stored or selected sort value names a custom field by its definition id. */
 export function isFieldSortBy(value: unknown): value is FieldSortBy {
-  return fieldSortName(value) !== null
+  return fieldSortId(value) !== null
 }
 export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
 export type ViewLayout = 'list' | 'board'

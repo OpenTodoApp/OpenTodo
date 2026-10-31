@@ -126,38 +126,48 @@ func TestViewsCrud(t *testing.T) {
 	}
 }
 
-func TestViewsAcceptCustomFieldSort(t *testing.T) {
+func TestViewsStoreCustomFieldSortIDWithoutName(t *testing.T) {
 	e := registeredEnv(t)
-	longFieldName := strings.Repeat("語", maxFieldName)
+	const fieldID = "0a4f7d89-6c12-4b63-8a91-2e35c47d8091"
+	const sortBy = "field:" + fieldID
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{
-		"name": "Highest score", "query": "p1", "sort_by": "field:" + longFieldName,
+		"name": "Highest score", "query": "p1", "sort_by": sortBy,
 	})
 	e.mustStatus(resp, 201, out)
 	id := out["id"].(string)
-	if out["sort_by"] != "field:"+longFieldName {
-		t.Fatalf("created view sort_by = %v, want field with %d-rune name", out["sort_by"], maxFieldName)
+	if out["sort_by"] != sortBy {
+		t.Fatalf("created view sort_by = %v, want %s", out["sort_by"], sortBy)
 	}
 
-	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": "field:Target date"})
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": sortBy})
 	e.mustStatus(resp, 200, out)
-	if out["sort_by"] != "field:Target date" {
-		t.Fatalf("patched view sort_by = %v, want field:Target date", out["sort_by"])
+	if out["sort_by"] != sortBy {
+		t.Fatalf("patched view sort_by = %v, want %s", out["sort_by"], sortBy)
 	}
 
 	resp, out = e.do("GET", "/api/v1/views/"+id, nil)
 	e.mustStatus(resp, 200, out)
-	if out["sort_by"] != "field:Target date" {
-		t.Fatalf("stored view sort_by = %v, want field:Target date", out["sort_by"])
+	if out["sort_by"] != sortBy {
+		t.Fatalf("stored view sort_by = %v, want %s", out["sort_by"], sortBy)
 	}
 
-	// The exact field-name limit is valid on updates too.
-	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": "field:" + longFieldName})
+	// The operation log persists only the definition id, never its decrypted field name.
+	resp, out = e.do("POST", "/api/v1/sync", map[string]any{"device": "phone", "cursor": 0})
 	e.mustStatus(resp, 200, out)
-	if out["sort_by"] != "field:"+longFieldName {
-		t.Fatalf("patched view sort_by = %v, want field with %d-rune name", out["sort_by"], maxFieldName)
+	found := false
+	for _, raw := range out["ops"].([]any) {
+		op := raw.(map[string]any)
+		if op["entity"] == "view" && op["field"] == "sort_by" {
+			found = true
+			if op["value"] != sortBy {
+				t.Fatalf("sort operation = %v, want %s", op["value"], sortBy)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("sync did not return the field-id sort operation: %v", out["ops"])
 	}
 }
-
 func TestViewsRejectInvalidOption(t *testing.T) {
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "List", "query": "p1"})
@@ -236,6 +246,8 @@ func TestViewsRejectInvalidOption(t *testing.T) {
 		"field: padded",
 		"field:padded ",
 		"field:" + strings.Repeat("x", maxFieldName+1),
+		"field:11111111-1111-0111-8111-111111111111",
+		"field:11111111-1111-4111-7111-111111111111",
 		nil,
 		42,
 		[]string{"field:WSJF"},
