@@ -85,7 +85,7 @@ Phones, Apple, Obsidian and voice.
 | [`voice-ramble`](openspec/changes/voice-ramble/) | Speak a brain dump or drop a photo of notes; review the proposed tasks |  |
 | [`outlook-calendar-sync`](openspec/changes/outlook-calendar-sync/) | Microsoft 365 and Outlook in calendar sync |  |
 | [`play-production`](openspec/changes/play-production/) | Google Play production, F-Droid and reproducible builds |  |
-| [`agent-tools-complete`](openspec/changes/agent-tools-complete/) | Agent and MCP tools for reminders, project notes, sections, fields, time and Focus | [#565](https://github.com/OpenTodoApp/OpenTodo/issues/565) |
+| [`agent-tools-complete`](openspec/changes/archive/2026-10-31-agent-tools-complete/) | **Shipped.** Agent and MCP tools for reminders, project notes, sections, fields, time and Focus | [#565](https://github.com/OpenTodoApp/OpenTodo/issues/565) |
 
 ### [0.21 "Horizons and home"](https://github.com/OpenTodoApp/OpenTodo/milestone/5)
 

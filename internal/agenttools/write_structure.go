@@ -15,8 +15,9 @@ import (
 )
 
 // Project and section structure (OpenSpec change mcp-projects, design D1, D2,
-// D4): update_project, set_favourite and the section tools. Archiving and
-// deleting stay out; a project's description stays read-only.
+// D4): update_project, set_favourite and the section tools. The project note
+// and archiving joined in agent-tools-complete (write_projects_more.go);
+// deleting stays out.
 
 // gap is the distance between neighbours a new position keeps (web/src/lib/ordering.ts GAP).
 const gap = 1000
@@ -32,18 +33,20 @@ var (
 func init() {
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_project", "Update a project",
-			"Rename, recolour or give an icon to a project, set its flow or status (maintenance), move it under another project (parent_id, null for the top level) or change its position. Archiving, deleting and the project's description are not available.",
+			"Rename, recolour or give an icon to a project, set its flow or status (maintenance), move it under another project (parent_id, null for the top level) or change its position. Replace the project's note with description, or add a block at its end with append_description (prefer appending: nothing written before is replaced). Archive with archive_projects; deleting is not available.",
 			object([]string{"id"}, map[string]any{
-				"id":           map[string]any{"type": "string", "description": "Project id."},
-				"name":         map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},
-				"color":        colorProp,
-				"icon":         iconProp,
-				"parent_id":    map[string]any{"type": []string{"string", "null"}, "description": "Parent project id, or null for the top level."},
-				"position":     positionProp,
-				"workspace_id": map[string]any{"type": []string{"string", "null"}, "description": "Move the project to this workspace (see list_workspaces), or null for the default workspace. Only the project's owner may."},
-				"flow_mode":    projectFlowProp,
-				"status":       projectStatusProp,
-			}), false, true, []string{"name"}, false)
+				"id":                 map[string]any{"type": "string", "description": "Project id."},
+				"name":               map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},
+				"color":              colorProp,
+				"icon":               iconProp,
+				"parent_id":          map[string]any{"type": []string{"string", "null"}, "description": "Parent project id, or null for the top level."},
+				"position":           positionProp,
+				"workspace_id":       map[string]any{"type": []string{"string", "null"}, "description": "Move the project to this workspace (see list_workspaces), or null for the default workspace. Only the project's owner may."},
+				"flow_mode":          projectFlowProp,
+				"status":             projectStatusProp,
+				"description":        projectNoteProp,
+				"append_description": projectAppendProp,
+			}), false, true, []string{"name", "description", "append_description"}, false)
 	}, plan: (*Registry).planUpdateProject})
 
 	register(tool{def: func(Caller) Definition {
@@ -173,8 +176,11 @@ func (r *Registry) claimIDs(ctx context.Context, c Caller, cs ChangeSet, chosen 
 // ---- update_project ----
 
 func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id", "flow_mode", "status"); err != nil {
+	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id", "flow_mode", "status", "description", "append_description"); err != nil {
 		return Plan{}, err
+	}
+	if a.present("description") && a.present("append_description") {
+		return Plan{}, argErr("description, append_description: give one of the two: description replaces the note, append_description adds to its end")
 	}
 	id, err := a.str("id")
 	if err != nil || id == "" {
@@ -231,6 +237,11 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 		}
 		patch["parent_id"] = parent
 	}
+	if v, has, err := r.projectNote(ctx, c, a, p, snap.role(id)); err != nil {
+		return Plan{}, err
+	} else if has {
+		patch["description"] = v
+	}
 	if v, has, err := snap.workspaceValue(a); err != nil {
 		return Plan{}, err
 	} else if has {
@@ -244,7 +255,7 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 		}
 	}
 	if len(patch) == 0 {
-		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position, workspace_id, flow_mode or status")
+		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position, workspace_id, flow_mode, status, description or append_description")
 	}
 	role := snap.role(id)
 	for f := range patch {

@@ -575,7 +575,12 @@ func (r *Registry) taskDetail(ctx context.Context, userID, id string, loc *time.
 		}
 		attachments = append(attachments, o)
 	}
-	return map[string]any{"task": out, "subtasks": subtasks, "comments": comments, "attachments": attachments, "timezone": loc.String(), "today": today, "server_time": r.serverTime()}, nil
+	// The caller's own reminders only: reminders are personal (agent-tools-complete D2).
+	reminders, err := r.taskReminders(ctx, userID, id)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{"task": out, "subtasks": subtasks, "comments": comments, "attachments": attachments, "reminders": reminders, "timezone": loc.String(), "today": today, "server_time": r.serverTime()}, nil
 }
 
 func (r *Registry) getTask(ctx context.Context, userID string, a args) (map[string]any, error) {

@@ -190,6 +190,8 @@ type Registry struct {
 	// exclusions hides projects kept away from AI assistants from every tool
 	// (agent-planning-fields D9); nil hides nothing.
 	exclusions *Exclusions
+	// userZone is the user's time zone for reminders (nil: UTC).
+	userZone func(ctx context.Context, uid string) *time.Location
 }
 
 // Options configure a Registry.
@@ -204,11 +206,14 @@ type Options struct {
 	LocalToday func() string
 	// Exclusions are the projects kept away from AI assistants (nil: none).
 	Exclusions *Exclusions
+	// UserZone is the user's time zone, in which relative, deadline and
+	// absolute reminders are read as for a REST write (nil: UTC).
+	UserZone func(ctx context.Context, uid string) *time.Location
 }
 
 // New wires a Registry.
 func New(syncSvc *opsync.Service, opts Options) *Registry {
-	r := &Registry{sync: syncSvc, now: opts.Now, audit: opts.Audit, limits: opts.Limits, extraOps: opts.ExtraOps, log: opts.Log, today0: opts.LocalToday, exclusions: opts.Exclusions}
+	r := &Registry{sync: syncSvc, now: opts.Now, audit: opts.Audit, limits: opts.Limits, extraOps: opts.ExtraOps, log: opts.Log, today0: opts.LocalToday, exclusions: opts.Exclusions, userZone: opts.UserZone}
 	if r.now == nil {
 		r.now = time.Now
 	}

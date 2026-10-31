@@ -39,7 +39,13 @@ func TestTimeEntryRoutesAuth(t *testing.T) {
 			{"DELETE", "/api/v1/time-entries/x", nil},
 		} {
 			resp, out := c.do(rt.method, rt.path, rt.body, bearer(secret)...)
-			if resp.StatusCode != 403 || errCode(out) != "insufficient_scope" {
+			want := "insufficient_scope"
+			if scope == "agent" && rt.method != "DELETE" {
+				// An agent token reaches the tool registry (agent-tools-complete D6),
+				// whose gate refuses while the owner's switch is off.
+				want = "writes_disabled_by_owner"
+			}
+			if resp.StatusCode != 403 || errCode(out) != want {
 				t.Fatalf("%s token %s %s: %d %v", scope, rt.method, rt.path, resp.StatusCode, out)
 			}
 		}
