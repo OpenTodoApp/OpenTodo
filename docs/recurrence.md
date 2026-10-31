@@ -125,7 +125,7 @@ planned total counts their estimates ("45m repeating").
 
 They are computed on each device from the rule, the due date and the completed count,
 with one calculation shared by every view and the server (`web/src/lib/occurrences.ts`,
-`internal/recurrence`, pinned by `web/src/lib/occurrences.vectors.json`), so every
+its Go port on the server, pinned by `web/src/lib/occurrences.vectors.json`), so every
 device draws the same ones, offline too. They are never written: no operation, no row,
 nothing to sync. A series draws at most 31 in the days on screen. None is drawn on or
 before the current occurrence, nor before today, and an end condition stops them.
@@ -137,8 +137,8 @@ complete the task itself and they follow. Tab reaches them; clicking one or pres
 labels and saved views show the current occurrence only.
 
 Scripts and assistants can read the same dates: `GET /api/v1/tasks/{id}/occurrences`
-([API](api.md#occurrences-of-a-recurring-task)), `ot task occurrences`
-([CLI](cli.md)), and the `next_occurrences` of a recurring task in the
+([API](api.md#a-series-dates-ahead)), `ot task occurrences`
+([CLI](cli.md)), and the `next_occurrences` of a repeating task in the
 [AI tools](mcp.md).
 
 ## Sync and convergence

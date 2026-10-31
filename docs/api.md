@@ -189,7 +189,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
 | GET | `/api/v1/time-entries` | yes | time entries you can read, newest first; `task`, `from`, `to`, `tz`, `running`, `limit`, `cursor`, `format=csv`, see [Time entries](#time-entries) |
 | GET | `/api/v1/tasks/{id}/time-entries` | yes | one task's live time entries, newest first |
-| GET | `/api/v1/tasks/{id}/occurrences` | yes | a recurring task's current and projected occurrence dates; `from`, `to` (at most 366 days), see [Occurrences of a recurring task](#occurrences-of-a-recurring-task) |
+| GET | `/api/v1/tasks/{id}/occurrences` | yes | a recurring task's current and projected occurrence dates; `from`, `to` (at most 366 days), see [A series' dates ahead](#a-series-dates-ahead) |
 | POST | `/api/v1/time-entries` | yes (not `read`, not `agent`) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
 | POST | `/api/v1/time-entries/stop` | yes (not `read`, not `agent`) | stop your running entry → the entry; 404 when none runs |
 | PATCH | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`), author only | `{startedAt?, endedAt?, note?}` → the entry |
@@ -607,7 +607,7 @@ curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H '
   -d '{"completed_at":1760264400000}'
 ```
 
-### Occurrences of a recurring task
+### A series' dates ahead
 
 `GET /api/v1/tasks/{id}/occurrences?from=YYYY-MM-DD&to=YYYY-MM-DD` lists a recurring task's occurrences in the inclusive range, the dates the app draws as [projected occurrences](recurrence.md#projected-occurrences), computed with the server's port of the same calculation (pinned by `web/src/lib/occurrences.vectors.json`). `from` defaults to today (the server's local date, as for completions) and `to` to 30 days after `from`; a range is at most 366 days. Every token scope that can read may call it; it writes nothing.
 
