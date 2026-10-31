@@ -1,9 +1,10 @@
 // The dialogs of Settings → Integrations → Calendar sync (OpenSpec change
 // calendar-two-way): connect a CalDAV account, choose its calendars, enter a new
-// app password, and the owner's Google client.
+// app password, and the owner's Google and Microsoft clients.
 import { useState } from 'react'
-import { Button, Combobox, Dialog, Field, hueFor, Input, LabelChip, Notice, Switch } from '../ui'
-import type { CalendarConnection, CalendarConnectionPatch, GoogleClientSetting, SyncCalendar } from '../lib/types'
+import { Button, Combobox, Dialog, Field, hueFor, Input, LabelChip, LearnMore, Notice, Switch } from '../ui'
+import type { CalendarConnection, CalendarConnectionPatch, GoogleClientSetting, MicrosoftClientSetting, SyncCalendar } from '../lib/types'
+import { ago } from '../lib/dates'
 import { t } from '../lib/i18n'
 
 export interface CalDAVDraft {
@@ -144,6 +145,54 @@ export function GoogleClientDialog({ setting, onSave, ...p }: FormProps & { sett
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={p.onClose}>{t('Cancel')}</Button>
           <Button variant="primary" type="submit" busy={p.busy} disabled={!p.connected || setting.from_env}>{t('Save')}</Button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}
+
+/** Tenants Microsoft accepts by shape (outlook-calendar-sync D2); the server checks too. */
+export function validTenant(value: string): boolean {
+  const v = value.trim()
+  return v === '' || ['common', 'organizations', 'consumers'].includes(v) ||
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v) ||
+    /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(v)
+}
+
+/** The owner's Microsoft app registration (outlook-calendar-sync D2, D12). */
+export function MicrosoftClientDialog({ setting, onSave, now, ...p }: FormProps & { setting: MicrosoftClientSetting; now?: number
+  onSave: (id: string, tenant: string, secret: string | undefined) => void }) {
+  const [id, setId] = useState(setting.client_id)
+  const [tenant, setTenant] = useState(setting.tenant === 'common' ? '' : setting.tenant)
+  const [secret, setSecret] = useState('')
+  const tenantOk = validTenant(tenant)
+  return (
+    <Dialog title={t('Microsoft client')} onClose={p.onClose} size="md">
+      <form className="space-y-4" data-testid="microsoft-client" onSubmit={(e) => { e.preventDefault(); if (tenantOk) onSave(id, tenant.trim() || 'common', secret || undefined) }}>
+        <p className="text-meta text-muted">
+          {t('In Microsoft Entra ID, register an app with the delegated permissions offline_access, User.Read, Calendars.ReadWrite and MailboxSettings.Read, and add this redirect address for the Web platform:')}{' '}
+          <LearnMore screen="settings/calendar-sync" topic={t('Microsoft client')} />
+        </p>
+        <Input aria-label={t('Redirect address')} readOnly value={setting.redirect_uri} onFocus={(e) => e.currentTarget.select()} />
+        {setting.refused_at !== null && (
+          <Notice tone="danger">{t('Microsoft refused the client secret {ago}; it may have expired. Save a new one to resume every Microsoft connection.', { ago: ago(setting.refused_at, now ?? Date.now()) })}</Notice>
+        )}
+        {setting.from_env && <Notice>{t('Set by OPENTODO_MICROSOFT_CLIENT_ID and OPENTODO_MICROSOFT_CLIENT_SECRET on this server.')}</Notice>}
+        <Field label={t('Application (client) ID')}>
+          <Input aria-label={t('Application (client) ID')} required disabled={setting.from_env} value={id} onChange={(e) => setId(e.target.value)} />
+        </Field>
+        <Field label={t('Tenant')} description={t('Empty for any Microsoft account (common), or organizations, consumers, a tenant ID or a domain.')}
+          error={tenantOk ? undefined : t('Enter common, organizations, consumers, a tenant ID or a domain name.')}>
+          <Input aria-label={t('Tenant')} placeholder="common" disabled={setting.from_env} value={tenant} onChange={(e) => setTenant(e.target.value)} />
+        </Field>
+        <Field label={t('Client secret')} description={setting.secret_set ? t('A secret is stored. Enter a new one to replace it.') : t('The secret’s value, not its ID. Note when it expires.')}>
+          <Input aria-label={t('Client secret')} type="password" autoComplete="off" required={!setting.secret_set} disabled={setting.from_env} value={secret}
+            onChange={(e) => setSecret(e.target.value)} />
+        </Field>
+        {p.error && <Notice tone="danger">{p.error}</Notice>}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={p.onClose}>{t('Cancel')}</Button>
+          <Button variant="primary" type="submit" busy={p.busy} disabled={!p.connected || setting.from_env || !tenantOk}>{t('Save')}</Button>
         </div>
       </form>
     </Dialog>

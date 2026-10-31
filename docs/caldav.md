@@ -12,7 +12,7 @@ OpenTodo can act as a CalDAV server for tasks, so Apple Reminders, Thunderbird, 
 
 Implemented by the OpenSpec change `caldav`. The endpoint lives under `/dav/` and needs no extra service, port or dependency.
 
-Google Calendar and Outlook show events, not to-dos, so they never show what this endpoint serves. To get tasks into the calendar you use, with changes coming back, use [calendar sync](calendar-sync.md): there OpenTodo is the CalDAV client of your iCloud, Fastmail, Nextcloud or Google account and writes tasks as events.
+Google Calendar and Outlook show events, not to-dos, so they never show what this endpoint serves. To get tasks into the calendar you use, with changes coming back, use [calendar sync](calendar-sync.md): there OpenTodo is the client of your iCloud, Fastmail, Nextcloud, Google or Microsoft account and writes tasks as events.
 
 ## Turn it on
 

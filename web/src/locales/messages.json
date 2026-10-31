@@ -1443,6 +1443,9 @@
   "Apple Reminders (JSON from the Shortcut)": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Application (client) ID": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Application token": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
@@ -3049,6 +3052,9 @@
   "Connect Google": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
+  "Connect Microsoft": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Connect a CalDAV calendar": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -4499,6 +4505,9 @@
   "Empty board": [
     "web/src/app/NewBoardDialog.tsx"
   ],
+  "Empty for any Microsoft account (common), or organizations, consumers, a tenant ID or a domain.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Empty group: add a condition to it.": [
     "web/src/app/filter/FilterBuilder.tsx"
   ],
@@ -4671,6 +4680,9 @@
   ],
   "Enter an address that starts with https://, http:// or mailto:.": [
     "web/src/app/LinkDialog.tsx"
+  ],
+  "Enter common, organizations, consumers, a tenant ID or a domain name.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Enter one of your recovery codes. Each code works once.": [
     "web/src/app/AuthScreen.tsx"
@@ -6274,6 +6286,9 @@
   "In MB; 0 means no total. Removing a file frees its space at once.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "In Microsoft Entra ID, register an app with the delegated permissions offline_access, User.Read, Calendars.ReadWrite and MailboxSettings.Read, and add this redirect address for the Web platform:": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "In Month: add a task due on the focused day": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -7158,6 +7173,9 @@
   "Lets people connect Google Calendar. Register the redirect address in your OAuth client.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Lets people connect Outlook and Microsoft 365. Register the redirect address in Entra ID.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Lets this server mail password resets, confirmations and invitations.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -7677,6 +7695,19 @@
   ],
   "Microsoft To Do (JSON from the PowerShell script)": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Microsoft client": [
+    "web/src/app/CalendarSyncDialogs.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Microsoft did not grant lasting access. Connect again.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Microsoft refused the client secret {ago}; it may have expired. Save a new one to resume every Microsoft connection.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
+  "Microsoft refused the server’s client secret. The server owner must save a new one.": [
+    "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Midnight (default)": [
     "web/src/app/DateTimeSettings.tsx"
@@ -9071,7 +9102,7 @@
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": [
     "web/src/app/WebhooksPanel.tsx"
   ],
-  "Nothing is synced any more and the password or Google access is removed from the server. Your tasks stay as they are; the {n, plural, one {# event} other {# events}} already written stay in the calendar.": [
+  "Nothing is synced any more and the password or the Google or Microsoft access is removed from the server. Your tasks stay as they are; the {n, plural, one {# event} other {# events}} already written stay in the calendar.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Nothing is waiting on anyone.": [
@@ -9958,6 +9989,21 @@
   "Outgoing email username": [
     "web/src/app/auditFormat.ts"
   ],
+  "Outlook was not connected: Microsoft did not complete the sign-in. Try again.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Outlook was not connected: the permission was not granted.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Outlook was not connected: the sign-in expired or was started elsewhere. Try again.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Outlook was not connected: your organisation’s administrator must approve OpenTodo first. Ask them to grant admin consent, then connect again.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Outlook was not connected: {reason}": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Over 1 h": [
     "web/src/lib/filters.ts"
   ],
@@ -10162,7 +10208,7 @@
   "People can connect GitHub or GitLab; the server polls their issues.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "People can connect a CalDAV or Google calendar; tasks and events stay in step.": [
+  "People can connect a CalDAV, Google or Microsoft calendar; tasks and events stay in step.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "People can let an assistant with a dedicated token change their tasks.": [
@@ -12035,6 +12081,9 @@
   "Secret key": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Secret refused": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Section": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -12262,6 +12311,9 @@
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "Set by OPENTODO_GOOGLE_CLIENT_ID and OPENTODO_GOOGLE_CLIENT_SECRET on this server.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
+  "Set by OPENTODO_MICROSOFT_CLIENT_ID and OPENTODO_MICROSOFT_CLIENT_SECRET on this server.": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Set by an OPENTODO_OIDC_* environment variable": [
@@ -13579,6 +13631,9 @@
   "Templates": [
     "web/src/app/TemplateDialogs.tsx"
   ],
+  "Tenant": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Test": [
     "web/src/app/IssueEditor.tsx",
     "web/src/app/SpeechServerPanel.tsx"
@@ -13804,13 +13859,16 @@
   "The calendar server did not answer in time.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
-  "The calendar server refused the password or the Google grant. Reconnect.": [
+  "The calendar server refused the password, or the Google or Microsoft access was removed. Reconnect.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
   "The calendar server refused the username or the app password.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "The calendar server sent more than 4 MB at once.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "The calendar tasks are written into can no longer be changed. Choose another one.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
   "The calendar tasks are written into no longer exists. Choose another one.": [
@@ -14144,6 +14202,9 @@
   "The screenshot could not be handed over. Allow the extension to reach your server in its options, then try again.": [
     "web/src/app/ShareCapture.tsx"
   ],
+  "The secret’s value, not its ID. Note when it expires.": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "The secure connection failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
@@ -14271,6 +14332,9 @@
   "The server owner has not set up a Google client for calendar sync.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The server owner has not set up a Microsoft client for calendar sync.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "The server owner has not turned the assistant on.": [
     "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -14285,6 +14349,9 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "The server owner removed the Google client.": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "The server owner removed the Microsoft client.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
   "The server owner requires two-factor authentication for this account.": [
@@ -15202,6 +15269,9 @@
   "Times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
+  "Times in UTC: set your Outlook time zone": [
+    "web/src/app/CalendarSyncPanel.tsx"
+  ],
   "Times need fixing": [
     "web/src/app/calendar/FramesDialog.tsx"
   ],
@@ -15971,7 +16041,7 @@
   "Up to {bytes} with the free space on the server.": [
     "web/src/app/RestoreSection.tsx"
   ],
-  "Up to {max}. Outlook and Microsoft 365 are not supported yet.": [
+  "Up to {max}.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Upcoming": [

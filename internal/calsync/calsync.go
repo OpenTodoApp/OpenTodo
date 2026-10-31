@@ -18,8 +18,9 @@ import (
 
 // Providers.
 const (
-	ProviderCalDAV = "caldav"
-	ProviderGoogle = "google"
+	ProviderCalDAV    = "caldav"
+	ProviderGoogle    = "google"
+	ProviderMicrosoft = "microsoft"
 )
 
 // GoogleCalDAV is where Google's CalDAV API starts (design D13).
@@ -57,11 +58,15 @@ const (
 	ReasonNoCalendars     = "no_calendars"
 	ReasonSecretMissing   = "secret_missing"
 	ReasonGoogleMissing   = "google_not_configured"
+	// Microsoft (outlook-calendar-sync D4, D9).
+	ReasonMicrosoftMissing = "microsoft_not_configured"
+	ReasonMicrosoftClient  = "microsoft_client_refused"
+	ReasonCalendarReadOnly = "calendar_read_only"
 )
 
 // stops are the reasons that stop a connection until the user acts.
 var stops = map[string]bool{ReasonUnauthorized: true, ReasonPrivateTarget: true, ReasonCalendarMissing: true,
-	ReasonSecretMissing: true, ReasonGoogleMissing: true}
+	ReasonSecretMissing: true, ReasonGoogleMissing: true, ReasonMicrosoftMissing: true, ReasonMicrosoftClient: true, ReasonCalendarReadOnly: true}
 
 // Stops reports whether a reason stops the connection.
 func Stops(reason string) bool { return stops[reason] }

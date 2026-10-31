@@ -570,12 +570,13 @@ export const SETTINGS_COPY = {
       server: {
         label: msg('On this server'),
         description: {
-          owner: msg('People can connect a CalDAV or Google calendar; tasks and events stay in step.'),
+          owner: msg('People can connect a CalDAV, Google or Microsoft calendar; tasks and events stay in step.'),
           member: msg('The owner has not enabled calendar sync on this server.'),
         },
       },
       google: { label: msg('Google client'), description: msg('Lets people connect Google Calendar. Register the redirect address in your OAuth client.') },
-      connections: { label: msg('Calendar accounts'), description: msg('Up to {max}. Outlook and Microsoft 365 are not supported yet.') },
+      microsoft: { label: msg('Microsoft client'), description: msg('Lets people connect Outlook and Microsoft 365. Register the redirect address in Entra ID.') },
+      connections: { label: msg('Calendar accounts'), description: msg('Up to {max}.') },
     },
     notices: {
       offline: msg('Changing calendar sync needs a connection. You are seeing the last loaded state.'),
