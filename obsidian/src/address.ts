@@ -44,14 +44,15 @@ export function checkAddress(input: string): AddressCheck {
 /**
  * The oldest release that accepts the obsidian origin kind and the push_only
  * feature. A development build `v0.19.0-12-gabc123` (commits after the 0.19.0
- * tag) counts as newer than 0.19.0; a build with no version ("dev") is accepted.
+ * tag) counts as newer than 0.19.0; a build without a release version ("dev", a
+ * bare commit hash) is accepted.
  */
 export const MIN_SERVER_VERSION = '0.19.1'
 const LAST_WITHOUT = [0, 19, 0]
 
 export function serverVersionOK(version: string | undefined): boolean {
   const m = /^v?(\d+)\.(\d+)\.(\d+)(-(\d+)-g[0-9a-f]+)?/.exec(version ?? '')
-  if (!m) return !/^v?\d/.test(version ?? '')
+  if (!m) return true
   const v = [Number(m[1]), Number(m[2]), Number(m[3])]
   const min = MIN_SERVER_VERSION.split('.').map(Number)
   const cmp = (a: number[], b: number[]) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]

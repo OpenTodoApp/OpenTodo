@@ -98,6 +98,7 @@ describe('address and version rules', () => {
     expect(serverVersionOK('0.19.0')).toBe(false)
     expect(serverVersionOK('v0.18.9-3-g0000000')).toBe(false)
     expect(serverVersionOK('dev')).toBe(true)
+    expect(serverVersionOK('3c3f390')).toBe(true)
     expect(serverVersionOK('1.0.0')).toBe(true)
   })
 })
