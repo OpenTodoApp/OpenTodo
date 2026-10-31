@@ -9,14 +9,17 @@
 // current one of a calendar rule, This and following (series-split D6) makes the
 // values editable: the first edit splits the series there and the panel shows the
 // new series. The panel of a split series names the series it continues and the
-// one that continues it.
+// one that continues it. On All occurrences of a series with a past (an earlier
+// piece, a done or skipped record), a second choice Only future ones · Also past
+// ones (series-all-scope D1) lets edits reach the past too.
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { formatDate, logicalToday } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { useSeriesRecords } from '../../lib/localData'
 import { actOnOccurrence } from '../../lib/occurrenceActions'
-import { redirectNextEdit } from '../../lib/ops'
+import { redirectNextEdit, setPastScope } from '../../lib/ops'
 import { isOccurrenceRecord, recordDate, seriesRule } from '../../lib/recurring'
+import { hasPast } from '../../lib/seriesPast'
 import { splittable } from '../../lib/seriesSplit'
 import { splitFromOccurrence } from '../../lib/seriesSplitActions'
 import type { Task } from '../../lib/types'
@@ -48,6 +51,16 @@ export default function OccurrenceScope({ m, readOnly }: { m: TaskDetailModel; r
     if (readOnly || !owner || owner.deleted_at || !on) return false
     return splittable(owner, on, rows, logicalToday())
   }, [readOnly, owner, on, rows])
+  // Also past ones (series-all-scope D1): offered on All occurrences of a series with a past, for an editor; held per series.
+  const [pastFor, setPastFor] = useState<string | null>(null)
+  const onAll = isSeries && !following && !date
+  const offerPast = useMemo(() => !readOnly && onAll && !!task && hasPast(task, rows), [readOnly, onAll, task, rows])
+  const pastOn = offerPast && pastFor === task?.id
+  useEffect(() => {
+    if (!pastOn || !task) return
+    setPastScope({ id: task.id, committed: (label, entryId) => showUndoToast(label, entryId) })
+    return () => setPastScope(null)
+  }, [pastOn, task])
   // Leaving the panel leaves This and following.
   useEffect(() => () => setFollowing(null), [])
   useEffect(() => {
@@ -85,6 +98,15 @@ export default function OccurrenceScope({ m, readOnly }: { m: TaskDetailModel; r
   return (
     <div className="space-y-2" data-occurrence-scope={scope}>
       <SegmentedControl label={t('Edit scope')} value={scope} onChange={change} data-scope-control options={options} wrap={options.length > 2} />
+      {offerPast && (
+        <SegmentedControl label={t('Apply to')} value={pastOn ? 'past' : 'future'} onChange={(v) => setPastFor(v === 'past' ? task.id : null)} data-past-control
+          options={[{ id: 'future', label: t('Only future ones') }, { id: 'past', label: t('Also past ones') }]} />
+      )}
+      {pastOn && (
+        <p className="flex items-center gap-1 text-meta text-muted" data-past-note>
+          <Icon name="history" />{t('Past occurrences take the new title, notes, labels, project and priority; their dates and completions stay.')}
+        </p>
+      )}
       {on && scope !== 'following' && (
         <p className="flex items-center gap-1 text-meta text-muted" data-occurrence-for={on}>
           <Icon name="repeat" />{t('{date} · one occurrence of a repeating task', { date: formatDate(on, 'full') })}

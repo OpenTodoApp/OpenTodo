@@ -1046,13 +1046,40 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
       if (scopeOf(task.project_id, memberships) !== scopeOf(patch.project_id, memberships)) {
         return moveTaskAcrossScopes(id, patch, opts)
       }
-      await mutateMany([...planProjectChange(task, await liveTasks(), patch, undefined, Date.now(), await keepWorkspaceFor()).changes, ...(await carried(task, patch))], opts)
+      await commitEdit(task, patch, [...planProjectChange(task, await liveTasks(), patch, undefined, Date.now(), await keepWorkspaceFor()).changes, ...(await carried(task, patch))], opts)
       return id
     }
   }
   const task = await db.tasks.get(id)
-  await mutateMany([{ entity: 'task', entityId: id, patch }, ...(task ? await carried(task, patch) : [])], opts)
+  await commitEdit(task, patch, [{ entity: 'task', entityId: id, patch }, ...(task ? await carried(task, patch) : [])], opts)
   return id
+}
+
+/** The panel's "Also past ones" for one series (series-all-scope D4): its edits also reach the past, with an Undo reported to `committed`. */
+export interface PastScope { id: string; committed: (label: string, entryId: string) => void }
+let pastScope: PastScope | null = null
+resettable('pastScope', () => { pastScope = null })
+
+/** Choose Also past ones for the series `next.id` (null: Only future ones). */
+export function setPastScope(next: PastScope | null): void {
+  pastScope = next
+}
+
+/** Write an edit of `task`; under Also past ones with its past writes, as one undoable batch. */
+async function commitEdit(task: Task | undefined, patch: Record<string, unknown>, changes: Change[], opts?: MutateOptions): Promise<void> {
+  const past = task && pastScope?.id === task.id ? pastScope : null
+  if (past && task) {
+    const { commitWithPast } = await import('./seriesPastActions')
+    if (await commitWithPast(task, patch, changes, past.committed)) return
+  }
+  await mutateMany(changes, opts)
+}
+
+/** Save a note (the note editor); a series' note under Also past ones also reaches the past records that held its previous text (D3). */
+export async function saveNote(entity: Entity, id: string, patch: Record<string, unknown>, opts: MutateOptions = {}): Promise<void> {
+  const before = entity === 'task' && pastScope?.id === id ? await db.tasks.get(id) : undefined
+  await mutate(entity, id, patch, opts)
+  if (before) await (await import('./seriesPastActions')).carryNotePast(before)
 }
 
 type EditRedirect = (patch: Record<string, unknown>) => Promise<string | null>
@@ -1250,7 +1277,7 @@ export async function setRecurrence(
   const patch: Record<string, unknown> = {}
   if (parsed.canonical !== task.recurrence) patch.recurrence = parsed.canonical
   if (!task.due) patch.due = { date: firstOccurrence(parsed.rule, opts.today ?? logicalToday()) }
-  if (Object.keys(patch).length) await mutate('task', id, patch)
+  if (Object.keys(patch).length) await commitEdit(task, patch, [{ entity: 'task', entityId: id, patch }])
   return { ok: true, rule: parsed.canonical }
 }
 

@@ -61,7 +61,8 @@ only. More: [One occurrence alone](recurrence.md#one-occurrence-alone).
 
 Open a coming occurrence and choose **This and following**: your first change there
 (the time, the title, the rule…) applies from that date on, and earlier days stay as
-they were. More: [This and following](recurrence.md#this-and-following).
+they were. On **All occurrences**, **Also past ones** fixes a title, notes, labels,
+project or priority in past occurrences too; their dates stay. More: [This and following](recurrence.md#this-and-following).
 
 ## In Upcoming
 

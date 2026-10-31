@@ -68,7 +68,7 @@ export function ExtendHandle({ task, day, onDone }: { task: Task; day: string; o
 
 /** A week row's bars, laid over its cells below the day numbers (the cells reserve the room). */
 export function MonthWeekBand(props: Omit<SpanBandProps, 'variant' | 'drags' | 'className'>) {
-  return <Suspense fallback={null}><SpanBand {...props} variant="month" drags className="ui-span-overlay pointer-events-none absolute inset-x-0 top-[30px] z-10" /></Suspense>
+  return <Suspense fallback={null}><SpanBand {...props} variant="month" drags inRow className="ui-span-overlay pointer-events-none absolute inset-x-0 top-[30px] z-10" /></Suspense>
 }
 
 // The bars load on first use (the first load stays in its budget).

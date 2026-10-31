@@ -20,7 +20,7 @@ export interface SplitResult {
 }
 
 /** Proposals with the local values an Undo writes back (a new row is removed). */
-async function propose(changes: Change[]): Promise<ProposedChange[]> {
+export async function propose(changes: Change[]): Promise<ProposedChange[]> {
   const out: ProposedChange[] = []
   for (const c of changes) {
     const local = c.entity === 'task' ? ((await db.tasks.get(c.entityId)) as unknown as Record<string, unknown> | undefined) : undefined
