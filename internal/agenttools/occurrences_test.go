@@ -43,3 +43,21 @@ func TestNextOccurrencesInResults(t *testing.T) {
 		t.Fatalf("plain task = %q", got)
 	}
 }
+
+// series-exceptions, task 6.6: exception dates are left out of next_occurrences,
+// and an occurrence record carries its series and occurrence_date, even moved.
+func TestOccurrenceRecordsInResults(t *testing.T) {
+	f := newFixture(t)
+	f.task("u1", "w1", "Study", map[string]any{"recurrence": "every weekday", "due": map[string]any{"date": "2030-01-10", "time": "18:00"}})
+	moved := opsync.OccurrenceID("w1", "2030-01-11")
+	f.task("u1", moved, "Study", map[string]any{"series_id": "w1", "occurrence_date": "2030-01-11", "due": map[string]any{"date": "2030-01-12", "time": "19:00"}})
+	c := agent("u1")
+	raw, _ := json.Marshal(f.mustCall(c, "get_task", map[string]any{"id": "w1"}))
+	if !strings.Contains(string(raw), `"next_occurrences":["2030-01-14","2030-01-15","2030-01-16"]`) {
+		t.Fatalf("series = %s", raw)
+	}
+	raw, _ = json.Marshal(f.mustCall(c, "get_task", map[string]any{"id": moved}))
+	if !strings.Contains(string(raw), `"series_id":"w1"`) || !strings.Contains(string(raw), `"occurrence_date":"2030-01-11"`) {
+		t.Fatalf("record = %s", raw)
+	}
+}

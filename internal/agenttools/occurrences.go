@@ -10,8 +10,9 @@ import (
 const nextOccurrenceCount = 3
 
 // nextOccurrences is the next three projected occurrence dates of an open
-// recurring task due on dueDate, from recurrence.Rule.Occurrences with the
-// series' completed records counted toward "for N times"; nil for any other task.
+// recurring task due on dueDate, from recurrence.Rule.OccurrencesExcept with the
+// series' exception dates left out and its done and open records counted toward
+// "for N times" (OpenSpec change series-exceptions); nil for any other task.
 func (snap *snapshot) nextOccurrences(t opsync.Entity, dueDate, today string) []string {
 	rule := str(t, "recurrence")
 	if rule == "" || !isOpen(t) {
@@ -21,28 +22,23 @@ func (snap *snapshot) nextOccurrences(t opsync.Entity, dueDate, today string) []
 	if err != nil {
 		return nil
 	}
-	dates, _, err := r.Occurrences(dueDate, today, snap.completedOf(str(t, "id")), dueDate, "9999-12-31")
+	b := opsync.SeriesBudget(str(t, "id"), snap.seriesRows(str(t, "id")), dueDate)
+	dates, _, err := r.OccurrencesExcept(dueDate, today, b.Taken, dueDate, "9999-12-31", b.Except)
 	if err != nil || len(dates) == 0 {
 		return nil
 	}
 	return dates[:min(len(dates), nextOccurrenceCount)]
 }
 
-// completedOf counts the completed occurrence records of a series: live tasks
-// pointing at it whose id is the one derived from their own due date, skipped
-// habit records left out (as internal/sync and web/src/lib/recurring.ts count).
-func (snap *snapshot) completedOf(seriesID string) int {
-	if snap.doneBySeries == nil {
-		snap.doneBySeries = map[string]int{}
+// seriesRows are the tasks pointing at a series, grouped once per snapshot.
+func (snap *snapshot) seriesRows(seriesID string) []opsync.Entity {
+	if snap.bySeries == nil {
+		snap.bySeries = map[string][]opsync.Entity{}
 		for _, t := range snap.tasks {
-			sid := str(t, "series_id")
-			if sid == "" || isOpen(t) || string(t["skipped"]) == "true" || t.Deleted() {
-				continue
-			}
-			if d := taskDue(t); d != nil && str(t, "id") == opsync.OccurrenceID(sid, d.Date) {
-				snap.doneBySeries[sid]++
+			if sid := str(t, "series_id"); sid != "" {
+				snap.bySeries[sid] = append(snap.bySeries[sid], t)
 			}
 		}
 	}
-	return snap.doneBySeries[seriesID]
+	return snap.bySeries[seriesID]
 }

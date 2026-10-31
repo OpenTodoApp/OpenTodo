@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -67,6 +68,14 @@ type Task struct {
 	// Reminders as VALARMs (OpenSpec change caldav-interop).
 	EstimateMinutes int
 	Reminders       []Reminder
+	// Exceptions of a series (OpenSpec change series-exceptions, design D10):
+	// ExDates are its exception dates from the current occurrence on, served
+	// as one EXDATE; Until, when set, replaces a `for N times` COUNT with the
+	// date of the last remaining occurrence. SiblingUID is the series' UID on
+	// an open occurrence record (RELATED-TO;RELTYPE=SIBLING).
+	ExDates    []string
+	Until      string
+	SiblingUID string
 }
 
 // DateShape is the shape of an inbound VTODO's date properties (OpenSpec
@@ -142,11 +151,25 @@ type Inbound struct {
 	RRULE string
 	Rule  string
 	Extra string
-	// CompletedOccurrences are the RECURRENCE-ID dates of the overrides the
-	// client sent completed (Thunderbird completes one occurrence of a
-	// repeating task that way); the caller completes the current occurrence
-	// when its due date is among them. Other overrides are not modelled.
-	CompletedOccurrences []string
+	// Overrides are the RECURRENCE-ID overrides the client sent beside the
+	// series (Thunderbird completes one occurrence of a repeating task that
+	// way); ExDates are the dates of its EXDATE lines and HasExDate reports
+	// that it sent one at all (OpenSpec change series-exceptions, design D10).
+	// The caller turns them into occurrence records; neither is stored.
+	Overrides []Override
+	ExDates   []string
+	HasExDate bool
+}
+
+// CompletedOccurrences are the dates of the overrides the client sent completed.
+func (in *Inbound) CompletedOccurrences() []string {
+	var out []string
+	for _, o := range in.Overrides {
+		if o.Completed {
+			out = append(out, o.Date)
+		}
+	}
+	return out
 }
 
 // AppToICalPriority is the outbound priority table (design D3): 1→1, 2→5, 3→9,
@@ -248,8 +271,14 @@ func Encode(t Task) []byte {
 	}
 	if t.Recurrence != "" {
 		if r, err := recurrence.Parse(t.Recurrence); err == nil {
-			add("RRULE", r.RRULE())
+			add("RRULE", r.RRULEUntil(t.Until))
 		}
+		// The series' exceptions are the server's (series-exceptions D10); an
+		// EXDATE stays client data only beside a rule the server does not map.
+		extra = dropTopLevel(extra, "EXDATE")
+	}
+	if len(t.ExDates) > 0 && t.Due != nil {
+		todo.Props = append(todo.Props, exdateProp(t.Due, t.ExDates))
 	}
 	if t.EstimateMinutes > 0 {
 		add("ESTIMATED-DURATION", DurationText(t.EstimateMinutes))
@@ -297,6 +326,13 @@ func Encode(t Task) []byte {
 	}
 	if t.ParentUID != "" {
 		add("RELATED-TO", EscapeText(t.ParentUID))
+	}
+	if t.SiblingUID != "" {
+		// The series of an occurrence record (series-exceptions D10); the copy
+		// a client echoed into the remainder is this one, not client data.
+		sibling := Prop{Name: "RELATED-TO", Params: []Param{{Name: "RELTYPE", Values: []string{"SIBLING"}}}, Value: EscapeText(t.SiblingUID)}
+		extra = slices.DeleteFunc(extra, func(l string) bool { return l == sibling.Line() })
+		todo.Props = append(todo.Props, sibling)
 	}
 	for _, uid := range t.DependsOn {
 		todo.Props = append(todo.Props, Prop{Name: "RELATED-TO", Params: []Param{{Name: "RELTYPE", Values: []string{"DEPENDS-ON"}}}, Value: EscapeText(uid)})

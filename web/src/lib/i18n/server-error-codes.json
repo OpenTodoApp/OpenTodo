@@ -80,6 +80,7 @@
   "no_key",
   "not_a_member",
   "not_acceptable",
+  "not_an_occurrence",
   "not_deleted",
   "not_encrypted",
   "not_found",

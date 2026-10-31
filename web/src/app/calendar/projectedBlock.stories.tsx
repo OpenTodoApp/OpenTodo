@@ -12,8 +12,8 @@ import { ProjectedItem } from './projections'
 const meta: Meta = { title: 'Screens/Projected block' }
 export default meta
 
-const study: Projection = { id: 'proj:s:2026-10-15', seriesId: 's', date: '2026-10-15', time: '18:00', title: 'Study', estimate_minutes: 60, priority: 4, position: 1, project_id: null }
-const report: Projection = { ...study, id: 'proj:r:2026-10-19', seriesId: 'r', date: '2026-10-19', time: undefined, title: 'Weekly report', estimate_minutes: 45 }
+const study: Projection = { id: 'proj:s:2026-10-15', seriesId: 's', date: '2026-10-15', occurrence: '2026-10-15', time: '18:00', title: 'Study', estimate_minutes: 60, priority: 4, position: 1, project_id: null }
+const report: Projection = { ...study, id: 'proj:r:2026-10-19', seriesId: 'r', date: '2026-10-19', occurrence: '2026-10-19', time: undefined, title: 'Weekly report', estimate_minutes: 45 }
 
 function Variants() {
   return (

@@ -118,7 +118,7 @@ describe('Projected occurrences in the calendar', () => {
     await r.unmount()
   })
 
-  it('Open from the keyboard: Enter on a projected block opens the series with the projected date named; dragging writes nothing', async () => {
+  it('Open from the keyboard: Enter on a projected block opens the occurrence panel on This occurrence for its date, with Complete and Skip', async () => {
     const id = await createTask({ title: 'Study', due: { date: '2026-10-12', time: '18:00' }, recurrence: 'every weekday', estimate_minutes: 60 })
     const r = await render(<CalendarView mode="week" date="2026-10-12" />)
     await waitFor(() => projectedIn(r.container, '2026-10-15').length === 1)
@@ -126,10 +126,11 @@ describe('Projected occurrences in the calendar', () => {
     // Tab reaches it (a button in the reading order); j and k skip it: the keyboard order holds tasks only.
     expect(block.tagName).toBe('BUTTON')
     expect(block.tabIndex).toBe(0)
+    // A finger's press is a long press (the menu), never a drag: nothing is written.
     const before = await db.outbox.count()
-    block.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientY: 10 }))
-    window.dispatchEvent(new PointerEvent('pointermove', { clientY: 300 }))
-    window.dispatchEvent(new PointerEvent('pointerup', { clientY: 300 }))
+    block.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientY: 10 }))
+    window.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'touch', clientY: 300 }))
+    window.dispatchEvent(new PointerEvent('pointerup', { pointerType: 'touch', clientY: 300 }))
     // eslint-disable-next-line test-hygiene/no-fixed-wait -- it proves that nothing is written, and no event marks "no write"
     await flush(30)
     expect(await db.outbox.count()).toBe(before)
@@ -140,8 +141,13 @@ describe('Projected occurrences in the calendar', () => {
     await waitFor(() => panelTaskId() === id, 'the series in the panel')
     expect(panelOccupant()).toMatchObject({ kind: 'task', id })
     const detail = await render(<TaskDetail taskId={id} userId="u" projects={[]} labelMap={new Map()} onClose={() => {}} />)
-    await waitFor(() => detail.container.querySelector('[data-projected-for]') !== null, 'the projected line')
-    expect(detail.container.querySelector('[data-projected-for]')!.textContent).toBe('Projected for Thursday 15 October · next due Monday 12 October')
+    await waitFor(() => detail.container.querySelector('[data-occurrence-for]') !== null, 'the occurrence line')
+    expect(detail.container.querySelector('[data-occurrence-for]')!.textContent).toBe('Thursday 15 October · one occurrence of a repeating task')
+    expect(detail.container.querySelector('[data-segment="this"]')!.getAttribute('aria-checked')).toBe('true')
+    expect(detail.container.querySelector('[data-occurrence-action="complete"]')).toBeTruthy()
+    expect(detail.container.querySelector('[data-occurrence-action="skip"]')).toBeTruthy()
+    // The series' values show without editing them.
+    expect((detail.container.querySelector('[data-task-title]') as HTMLTextAreaElement).readOnly).toBe(true)
     await detail.unmount()
     done()
     await r.unmount()

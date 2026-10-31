@@ -8,7 +8,7 @@ import { CLOCK_OFFSET_META, HLC_META, hlcLast, hlcNow, hlcReceive, hlcSeed, hlcS
 import { firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { defaultReminderChanges } from './defaultReminder'
-import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
+import { planCompletion, planSkip, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
@@ -1039,12 +1039,23 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
       if (scopeOf(task.project_id, memberships) !== scopeOf(patch.project_id, memberships)) {
         return moveTaskAcrossScopes(id, patch, opts)
       }
-      await mutateMany(planProjectChange(task, await liveTasks(), patch, undefined, Date.now(), await keepWorkspaceFor()).changes, opts)
+      await mutateMany([...planProjectChange(task, await liveTasks(), patch, undefined, Date.now(), await keepWorkspaceFor()).changes, ...(await carried(task, patch))], opts)
       return id
     }
   }
-  await mutate('task', id, patch, opts)
+  const task = await db.tasks.get(id)
+  await mutateMany([{ entity: 'task', entityId: id, patch }, ...(task ? await carried(task, patch) : [])], opts)
   return id
+}
+
+/**
+ * An All-occurrences edit of a series carries to its open records that still hold
+ * the series' previous value (series-exceptions D6), in the same batch.
+ */
+async function carried(task: Task, patch: Record<string, unknown>): Promise<Change[]> {
+  if (!task.recurrence) return []
+  const { planCarry } = await import('./seriesPlan')
+  return planCarry(task, patch, await db.tasks.filter((tk) => tk.series_id === task.id).toArray())
 }
 
 /**
@@ -1152,7 +1163,7 @@ export async function skipOccurrence(id: string, opts: { now?: number; today?: s
   await db.transaction('rw', mutationTables(), async () => {
     const series = await db.tasks.get(id)
     const rule = seriesRule(series)
-    const changes = series && rule ? planSkip(series, rule, now, today) : null
+    const changes = series && rule ? planSkip(series, rule, now, today, await db.tasks.filter((tk) => tk.series_id === id).toArray()) : null
     if (!changes) return
     await mutateMany(changes)
     ok = true
@@ -1161,19 +1172,23 @@ export async function skipOccurrence(id: string, opts: { now?: number; today?: s
 }
 
 /**
- * "This occurrence only": create a standalone copy of the current occurrence (no
- * rule, series_id set, id derived from series and date) and move the series on.
- * Returns the copy's id, or null when there is no next occurrence.
+ * "This occurrence only": write the current occurrence's open record (no rule,
+ * series_id and occurrence_date set, id derived from series and date, the series'
+ * relative reminders copied) and move the series on (series-exceptions D5).
+ * Returns the record's id, or null when there is no next occurrence.
  */
 export async function detachOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<string | null> {
   const now = opts.now ?? Date.now()
   const today = opts.today ?? logicalToday()
   await getDeviceId()
   let copyId: string | null = null
+  // Loaded before the transaction, which must not wait on anything but the database.
+  const { planDetach } = await import('./seriesPlan')
   await db.transaction('rw', mutationTables(), async () => {
     const series = await db.tasks.get(id)
     const rule = seriesRule(series)
-    const plan = series && rule ? planDetach(series, rule, now, today) : null
+    const records = await db.tasks.filter((tk) => tk.series_id === id).toArray()
+    const plan = series && rule ? planDetach(series, now, today, records, await db.reminders.where('task_id').equals(id).toArray()) : null
     if (!plan) return
     await mutateMany(plan.changes)
     copyId = plan.copyId
@@ -1207,6 +1222,12 @@ export async function setRecurrence(
 export async function deleteTask(id: string): Promise<void> {
   const now = Date.now()
   const all = await liveTasks()
+  const task = all.find((tk) => tk.id === id)
+  // An open occurrence of a live series is skipped instead (series-exceptions D3).
+  if (task && skipsInstead(task, new Map(all.map((tk) => [tk.id, tk])))) {
+    await mutate('task', id, { completed_at: now, skipped: true })
+    return
+  }
   const changes: Change[] = [{ entity: 'task', entityId: id, patch: { deleted_at: now } }]
   for (const d of descendants(id, all)) changes.push({ entity: 'task', entityId: d, patch: { deleted_at: now } })
   await mutateMany(changes)

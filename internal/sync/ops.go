@@ -335,6 +335,12 @@ var Schema = map[string]map[string]Field{
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": {Kind: kRecurrence, Default: `null`},
 		"series_id":  {Kind: kNullableString, Default: `null`},
+		// The occurrence date an occurrence record stands for (OpenSpec change
+		// series-exceptions, design D1; iCalendar RECURRENCE-ID), kept when the
+		// record is moved. Written once with series_id; the resolver refuses it on
+		// a task without series_id and refuses a change once set. A date, not
+		// content; additive (a record without it stands for its due date).
+		"occurrence_date": {Kind: kDate, Default: `null`},
 		// Account id of the assignee or null (OpenSpec change task-assignment);
 		// additive. Apply checks it against the task scope's membership at receipt.
 		"assignee_id": {Kind: kNullableString, Default: `null`},

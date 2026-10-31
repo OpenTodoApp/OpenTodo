@@ -81,7 +81,7 @@ The event minutes of a day SHALL be the minutes inside that day, in the viewer's
 - **THEN** no event minutes are counted for it, and offline the header's status says calendars are unavailable for those days
 
 ### Requirement: Projected occurrences of recurring tasks
-For every open task with a recurrence rule, the occurrences that would follow its current one within the shown span SHALL be computed on the device from the rule, the current due date and the series' completed count, and drawn in their columns as dimmed rows with the task's title, time and estimate and a "projected" marker. The series itself SHALL remain one ordinary row on its current date. A rule's end condition SHALL stop the projection.
+For every open task with a recurrence rule, the occurrences that would follow its current one within the shown span SHALL be computed on the device from the rule, the current due date and the series' occurrence records, and drawn in their columns as dimmed rows with the task's title, time and estimate and a "projected" marker. The series itself SHALL remain one ordinary row on its current date. A rule's end condition SHALL stop the projection, counting done and open records (OpenSpec `recurring-tasks`, "End conditions"). No projection SHALL be drawn on an exception date of the series; an open record SHALL be listed as an ordinary task row on its own date.
 
 #### Scenario: Weekly report
 - **WHEN** today is Monday the 12th, a task "Weekly report" with `every monday` and a 45-minute estimate is due today, and the span is 21 days
@@ -103,11 +103,15 @@ For every open task with a recurrence rule, the occurrences that would follow it
 - **WHEN** a task with `every day` is due five days ago
 - **THEN** the series is not listed in any column (its date is before the span) and projections are drawn from tomorrow on, as the next occurrence after today
 
+#### Scenario: Skipped and moved occurrences
+- **WHEN** "Weekly report" is due the 12th, the occurrence of the 19th was skipped and the occurrence of the 26th was moved to the 27th
+- **THEN** the 19th and 26th show no projection, and the 27th lists the moved occurrence as an ordinary task row
+
 ### Requirement: Projections are derived and read-only
-Projected occurrences SHALL NOT be draggable, movable, selectable, completable or drop targets, SHALL be marked for assistive technology as projected, and SHALL be written nowhere: no operation, no local row, no synced cache. Because they are a function of the synced series row and the shared rule calculator, every device SHALL draw the same projections; there is nothing to converge.
+Projected occurrences SHALL be written nowhere: no operation, no local row, no synced cache. Because they are a function of the synced series row, its records and the shared rule calculator, every device SHALL draw the same projections; there is nothing to converge. Acting on a projection (dragging it to another column, or completing, skipping or moving it from its menu) SHALL write that occurrence's record as OpenSpec `recurring-tasks` "Act on one occurrence" describes, after which the date is an exception and shows the record, if open, instead of a projection. For a viewer of the shared project and for a completion-relative series, projections SHALL NOT be draggable, movable, completable or drop targets. Projections SHALL NOT be selectable with `j` and `k` and SHALL be marked for assistive technology as projected.
 
 #### Scenario: Projection is read-only
-- **WHEN** the user drags on a projected row, or selects rows with `j` and `k`
+- **WHEN** a viewer of the shared project drags on a projected row, or the user selects rows with `j` and `k`
 - **THEN** nothing is written, the drag does not start, and `j` and `k` skip the projected rows
 
 #### Scenario: Same projections on two devices
@@ -115,8 +119,12 @@ Projected occurrences SHALL NOT be draggable, movable, selectable, completable o
 - **THEN** both show the projection on the same days of the span, offline or online
 
 #### Scenario: Nothing in the operation log
-- **WHEN** the Plan has been open with projections drawn and the device syncs
+- **WHEN** the Plan has been open with projections drawn, nobody acted on them, and the device syncs
 - **THEN** no operation about the projected dates is uploaded
+
+#### Scenario: Drag one occurrence to another day
+- **WHEN** an editor drags the projected "Weekly report" of the 19th onto the 20th
+- **THEN** the 20th lists an open "Weekly report" occurrence as a task row, the 19th shows nothing, the series stays due the 12th, and the 26th still shows its projection
 
 ### Requirement: Calendar events in the plan
 Each column SHALL list the day's occurrences of enabled subscribed calendars, when calendars are shown on this device, as read-only rows in their calendar's colour, timed ones with their time and duration above the tasks and all-day ones as a chip under the header, read from the device's event cache so they show offline as of the last refresh. Event rows SHALL NOT be draggable, movable, selectable or drop targets, and SHALL be reachable with the keyboard for reading.

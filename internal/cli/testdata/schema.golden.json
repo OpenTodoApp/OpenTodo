@@ -1623,6 +1623,51 @@
       }
     },
     {
+      "name": "task occurrence",
+      "summary": "act on one occurrence of a recurring task: complete it, skip it, or edit or move it alone (complete|skip|edit); prints its record",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "name": "date",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "name": "action",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "due",
+          "type": "string",
+          "description": "edit: move the occurrence to this day (YYYY-MM-DD, today, tomorrow or a weekday)"
+        },
+        {
+          "name": "time",
+          "type": "string",
+          "description": "edit: the occurrence's time HH:MM (none: no time)"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "description": "edit: the occurrence's title"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/task"
+      }
+    },
+    {
       "name": "task occurrences",
       "summary": "list a recurring task's current and projected occurrence dates in a range (date, time, state); read-only",
       "args": [
@@ -3290,8 +3335,20 @@
                 "type": "string",
                 "enum": [
                   "current",
-                  "projected"
-                ]
+                  "projected",
+                  "open",
+                  "done",
+                  "skipped"
+                ],
+                "description": "current and projected occurrences, or one with a record (series-exceptions): open (moved or edited), done or skipped, by the date it stands for"
+              },
+              "record_id": {
+                "type": "string",
+                "description": "the occurrence record's task id"
+              },
+              "due": {
+                "type": "string",
+                "description": "YYYY-MM-DD, the record's due date when it was moved to another day"
               }
             }
           }

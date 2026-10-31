@@ -24,6 +24,7 @@ import { Subtasks } from './Subtasks'
 import { TaskActionsMenu } from './TaskActionsMenu'
 import { TaskFacts } from './TaskFacts'
 import { ReadOnlyNote, TaskHead, TaskRelations } from './TaskHead'
+import { useOccurrenceView } from './occurrenceView'
 import { TaskNotes } from './TaskNotes'
 import { TaskPageDialog } from './TaskPageDialog'
 import { useTaskDetail } from './useTaskDetail'
@@ -51,9 +52,12 @@ export interface TaskPageViewProps {
   onOpen: (id: string) => void
 }
 
-export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav, onOpen }: TaskPageViewProps) {
+export function TaskPageView({ taskId, userId, readOnly: viewer, projects, labelMap, nav, onOpen }: TaskPageViewProps) {
   const root = useRef<HTMLDivElement>(null)
-  const m = useTaskDetail({ taskId, readOnly, projects, labelMap, onClose: nav.onBack, onOpen, scope: root })
+  const m = useTaskDetail({ taskId, readOnly: viewer, projects, labelMap, onClose: nav.onBack, onOpen, scope: root })
+  // On This occurrence a series' values show without editing them (series-exceptions D5).
+  const occurrence = useOccurrenceView(m.task)
+  const readOnly = viewer || !!occurrence
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   // The pinned bottom of the content column: the comment composer renders here while Comments is shown.
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
@@ -120,7 +124,7 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
         back={desktop ? undefined : { label: t('Back to the list'), onClick: nav.onBack }}
         menu={<TaskActionsMenu m={m} page readOnly={readOnly} onOpen={onOpen} />}
         actions={<>{stepper}{desktop && <IconButton icon="x" size="sm" label={t('Close')} shortcut="Esc" onClick={nav.onBack} data-task-close />}</>} />
-      {readOnly && <ReadOnlyNote />}
+      {viewer && <ReadOnlyNote />}
       {isSample(task) && !readOnly && <SampleNotice />}
       {/* From 1024 px the facts column spans the three blocks; the last row takes the height the
           facts need beyond the content, so no gap opens between the title and the notes. */}
@@ -132,7 +136,7 @@ export function TaskPageView({ taskId, userId, readOnly, projects, labelMap, nav
           <div className="flex min-w-0 items-start gap-2">
             <TaskHead m={m} readOnly={readOnly} projects={projects} size="page" />
           </div>
-          <TaskRelations m={m} onOpen={onOpen} />
+          <TaskRelations m={m} onOpen={onOpen} readOnly={viewer} />
         </div>
         <aside aria-label={t('Facts')} className="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:sticky lg:top-(--panel-header-h) lg:self-start lg:border-l lg:border-soft lg:pl-8 lg:pt-4 max-lg:rounded-card max-lg:border max-lg:border-default md:max-lg:p-3 max-md:overflow-hidden" data-task-facts>
           {/* Below 768 px the facts are one stacked card of 44 px rows (precision-phone D4). */}

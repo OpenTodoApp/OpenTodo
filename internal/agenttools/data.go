@@ -54,9 +54,9 @@ type snapshot struct {
 	keptAway map[string]bool
 	// idx indexes tasks by id (built on first lookup, reset by apply).
 	idx map[string]opsync.Entity
-	// doneBySeries counts each series' completed occurrence records (built on
-	// first use, reset by apply; series-occurrences).
-	doneBySeries map[string]int
+	// bySeries groups the tasks pointing at each series (built on first use,
+	// reset by apply; series-exceptions).
+	bySeries map[string][]opsync.Entity
 	// workspaces are the user's workspaces (OpenSpec change workspaces);
 	// part places projects and tasks in them (built on first use, reset by apply).
 	workspaces []opsync.Workspace
@@ -444,9 +444,14 @@ type taskOut struct {
 	// task (floating YYYY-MM-DD), from the calculator every device draws
 	// with (OpenSpec change series-occurrences, design D7).
 	NextOccurrences []string `json:"next_occurrences,omitempty"`
-	EstimateMinutes *int     `json:"estimate_minutes,omitempty"`
-	Completed       bool     `json:"completed"`
-	CompletedAt     *string  `json:"completed_at,omitempty"`
+	// SeriesID and OccurrenceDate are set on an occurrence record: the series
+	// and the occurrence date it stands for, even when it was moved to
+	// another day (OpenSpec change series-exceptions).
+	SeriesID        *string `json:"series_id,omitempty"`
+	OccurrenceDate  *string `json:"occurrence_date,omitempty"`
+	EstimateMinutes *int    `json:"estimate_minutes,omitempty"`
+	Completed       bool    `json:"completed"`
+	CompletedAt     *string `json:"completed_at,omitempty"`
 	// CompletedBy is the account id of whoever completed the task, when known
 	// (OpenSpec change completed-date-filters).
 	CompletedBy *string `json:"completed_by,omitempty"`
@@ -503,6 +508,13 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	}
 	if out.Completed {
 		out.CompletedBy = strPtr(t, "completed_by")
+	}
+	// An occurrence record names its series and the date it stands for
+	// (OpenSpec change series-exceptions, design D11).
+	if sid := str(t, "series_id"); sid != "" && opsync.IsRecordOf(sid, t) {
+		out.SeriesID = &sid
+		date := opsync.RecordDate(t)
+		out.OccurrenceDate = &date
 	}
 	out.Encrypted = e2ee.IsCiphertext(rawStr(t, "title")) || e2ee.IsCiphertext(rawStr(t, "description"))
 	pid := str(t, "project_id")

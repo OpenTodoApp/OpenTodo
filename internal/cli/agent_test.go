@@ -617,6 +617,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"notes", "rm", "Meeting"},
 		{"notes", "to-task", "Meeting"},
 		{"task", "note", "plum", "--set", "x"},
+		{"task", "occurrence", "plum", "2030-01-08", "skip"},
 	}
 	covered := map[string]bool{}
 	for _, c := range cases {

@@ -488,7 +488,9 @@ func (e *engine) createTask(m *mergeRun, pl place) {
 
 // recurring completes a recurring series the way the app does (a port of
 // internal/sync.RecurringCompletion): the occurrence becomes a completed record
-// and the series moves to its next date. It reports whether it did.
+// and the series moves to its next date that is not an exception date, with
+// done and open records counted toward "for N times" (OpenSpec change
+// series-exceptions). It reports whether it did.
 func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 	at, completing := b["completed_at"]
 	a := e.app.Get("task", id)
@@ -522,17 +524,8 @@ func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 	if cur != nil {
 		date, dueDate = cur.Date, cur.Date
 	}
-	done := 0
-	for _, t := range e.app.IDs("task") {
-		r := e.app.Get("task", t)
-		if r.Str("series_id") != id || !r.Set("completed_at") || r.Bool("skipped") {
-			continue
-		}
-		if d := r.DueOf(); d != nil && d.Date != date && t == occurrenceID(id, d.Date) {
-			done++
-		}
-	}
-	next, more, err := rule.Following(dueDate, today, today, done)
+	taken, except := e.seriesBudget(id, date)
+	next, more, err := rule.NextFree(dueDate, today, today, taken, except)
 	if err != nil || !more {
 		return false
 	}
@@ -544,6 +537,7 @@ func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 		rec["due"] = Due{Date: date}
 	}
 	rec["created_at"], rec["completed_at"], rec["deleted_at"], rec["recurrence"], rec["series_id"] = at, at, nil, nil, id
+	rec["occurrence_date"], rec["skipped"] = date, false
 	// Content is copied as text and sealed for the record's own id.
 	rec["title"] = m.av.text("task", id, "title")
 	if s, ok := b["title"]; ok {
@@ -602,6 +596,31 @@ func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 	}
 	b["due"] = nd
 	return true
+}
+
+// seriesBudget reads the occurrence records of series id (internal/sync
+// SeriesBudget): the done and open ones other than the record of except count
+// toward "for N times"; every record's date is an exception date.
+func (e *engine) seriesBudget(id, except string) (int, map[string]bool) {
+	taken, dates := 0, map[string]bool{}
+	for _, t := range e.app.IDs("task") {
+		r := e.app.Get("task", t)
+		if r.Str("series_id") != id || r.Set("deleted_at") {
+			continue
+		}
+		date := r.Str("occurrence_date")
+		if d := r.DueOf(); date == "" && d != nil {
+			date = d.Date
+		}
+		if date == "" || t != occurrenceID(id, date) {
+			continue
+		}
+		dates[date] = true
+		if date != except && !(r.Set("completed_at") && r.Bool("skipped")) {
+			taken++
+		}
+	}
+	return taken, dates
 }
 
 // occurrenceID is internal/sync.OccurrenceID.

@@ -284,12 +284,14 @@
               "date": "2026-10-12"
             },
             "labels": [],
+            "occurrence_date": "2026-10-12",
             "parent_id": null,
             "position": 5,
             "priority": 4,
             "project_id": "p2",
             "recurrence": null,
             "series_id": "t5",
+            "skipped": false,
             "title": "Water plants"
           }
         },
