@@ -1123,7 +1123,7 @@ export interface CalendarSyncRun {
 /** A calendar sync connection (calendar-two-way) as the server reports it: never the password or token. */
 export interface CalendarConnection {
   id: string
-  provider: 'caldav' | 'google'
+  provider: 'caldav' | 'google' | 'microsoft'
   name: string
   server_url: string
   username: string
@@ -1152,6 +1152,18 @@ export interface GoogleClientSetting {
   secret_set: boolean
   from_env: boolean
   redirect_uri: string
+}
+
+/** The owner's Microsoft app registration for calendar sync (outlook-calendar-sync D2). */
+export interface MicrosoftClientSetting {
+  client_id: string
+  /** common, organizations, consumers, a tenant id or a domain. */
+  tenant: string
+  secret_set: boolean
+  from_env: boolean
+  redirect_uri: string
+  /** When Microsoft last refused the secret (Unix ms), null otherwise. */
+  refused_at: number | null
 }
 
 /** The body of changing a calendar connection. */

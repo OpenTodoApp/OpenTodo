@@ -349,8 +349,12 @@ func TestMCPBridgeDecrypts(t *testing.T) {
 		toolCall("create_sections", map[string]any{"project_id": "p1", "items": []any{map[string]any{"name": "Harvest", "icon": "sprout"}}}),
 		toolCall("add_comment", map[string]any{"task_id": "t1", "body": "Done by Friday"}),
 		toolCall("update_project", map[string]any{"id": "p1", "name": "Vegetable garden", "color": "#22c55e"}),
+		// agent-tools-complete: the note's append, a label rename and a logged note.
+		toolCall("update_project", map[string]any{"id": "p1", "append_description": "Water on Sundays"}),
+		toolCall("update_labels", map[string]any{"updates": []any{map[string]any{"id": "l1", "name": "garden"}}}),
+		toolCall("log_time", map[string]any{"items": []any{map[string]any{"task_id": "t1", "started_at": fixedNow.Add(-20 * time.Minute).Format(time.RFC3339), "ended_at": fixedNow.Add(-10 * time.Minute).Format(time.RFC3339), "note": "Weeded"}}}),
 	)
-	if code != 0 || len(lines) != 5 {
+	if code != 0 || len(lines) != 8 {
 		t.Fatalf("writes: %d %v %s", code, lines, errb)
 	}
 	tid := structured(t, lines[0])["results"].([]any)[0].(map[string]any)["id"].(string)
@@ -368,6 +372,32 @@ func TestMCPBridgeDecrypts(t *testing.T) {
 	proj := h.apiJSON("GET", "/api/v1/projects/p1", nil)
 	if pt, err := crypt.Open(dek, "project", "p1", "name", proj["name"].(string)); err != nil || pt != "Vegetable garden" || proj["color"] != "#22c55e" {
 		t.Fatalf("project: %v %q %v", proj, pt, err)
+	}
+	if pt, err := crypt.Open(dek, "project", "p1", "description", proj["description"].(string)); err != nil || pt != "Gate code 4711\n\nWater on Sundays" {
+		t.Fatalf("project note: %q %v", pt, err)
+	}
+	lab := h.apiJSON("GET", "/api/v1/labels/l1", nil)
+	if pt, err := crypt.Open(dek, "label", "l1", "name", lab["name"].(string)); err != nil || pt != "garden" {
+		t.Fatalf("label: %v %q %v", lab, pt, err)
+	}
+	if res := structured(t, lines[7]); res["changed"] != float64(1) {
+		t.Fatalf("log_time: %v", lines[7])
+	} else {
+		eid := res["results"].([]any)[0].(map[string]any)["id"].(string)
+		entry := h.apiJSON("GET", "/api/v1/time-entries?task=t1", nil)
+		found := false
+		for _, e := range entry["entries"].([]any) {
+			em := e.(map[string]any)
+			if em["id"] == eid {
+				found = true
+				if pt, err := crypt.Open(dek, "time_entry", eid, "note", em["note"].(string)); err != nil || pt != "Weeded" {
+					t.Fatalf("entry note: %q %v", pt, err)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("logged entry %s not listed: %v", eid, entry)
+		}
 	}
 
 	// The owner turns writes off: the server's refusal comes back unchanged.

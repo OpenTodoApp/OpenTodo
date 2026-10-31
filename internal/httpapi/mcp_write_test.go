@@ -170,7 +170,7 @@ func TestAgentTokenRefusedOnRestWrites(t *testing.T) {
 		// The agent content routes (agent-ready-cli) are covered by
 		// TestAgentRestAllowList; refused fields on them stay refused.
 		{"PATCH", "/api/v1/tasks/" + taskID, map[string]any{"assignee_id": nil}},
-		{"PATCH", "/api/v1/projects/" + projectID, map[string]any{"archived": true}},
+		{"PATCH", "/api/v1/projects/" + projectID, map[string]any{"deleted_at": 1}},
 		{"DELETE", "/api/v1/projects/" + projectID, nil},
 		{"POST", "/api/v1/sync", map[string]any{"device": "d", "cursor": 0, "ops": []any{}}},
 		{"GET", "/api/v1/sync", nil},
@@ -307,7 +307,7 @@ func TestToolsListByToken(t *testing.T) {
 	e.mustStatus(resp, 201, out)
 	tid := out["id"].(string)
 	read, full := e.token("read"), e.token("full")
-	if n := len(c.toolNames(agentSecret)); n != 33 {
+	if n := len(c.toolNames(agentSecret)); n != 42 {
 		t.Fatalf("agent tools = %d", n)
 	}
 	for name, secret := range map[string]string{"read": read, "full": full} {

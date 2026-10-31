@@ -111,13 +111,38 @@ type TokenEndpoint struct {
 }
 
 func (t *TokenEndpoint) post(ctx context.Context, form url.Values) (*Token, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.URL, strings.NewReader(form.Encode()))
+	return postToken(ctx, t.HTTP, t.URL, form, t.now, googleTokenError)
+}
+
+// googleTokenError: every refusal of the grant or the client asks to reconnect.
+func googleTokenError(a tokenAnswer) string {
+	switch a.Error {
+	case "invalid_grant", "unauthorized_client", "invalid_client":
+		return ReasonUnauthorized
+	}
+	return ""
+}
+
+// tokenAnswer is an OAuth token endpoint's JSON answer.
+type tokenAnswer struct {
+	Access      string `json:"access_token"`
+	Refresh     string `json:"refresh_token"`
+	ExpiresIn   int64  `json:"expires_in"`
+	Error       string `json:"error"`
+	Description string `json:"error_description"`
+}
+
+// postToken sends a form to an OAuth token endpoint (Google's or Microsoft's)
+// and reads its answer; reasonOf maps a refusal to a stored reason ("" for
+// none in particular).
+func postToken(ctx context.Context, client *http.Client, endpoint string, form url.Values, clock func() time.Time, reasonOf func(tokenAnswer) string) (*Token, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, &Error{Reason: ReasonInvalid}
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
-	resp, err := t.HTTP.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, &Error{Reason: transportReason(err)}
 	}
@@ -126,24 +151,20 @@ func (t *TokenEndpoint) post(ctx context.Context, form url.Values) (*Token, erro
 	if err != nil {
 		return nil, &Error{Reason: transportReason(err)}
 	}
-	var out struct {
-		Access    string `json:"access_token"`
-		Refresh   string `json:"refresh_token"`
-		ExpiresIn int64  `json:"expires_in"`
-		Error     string `json:"error"`
-	}
+	var out tokenAnswer
 	_ = json.Unmarshal(body, &out)
+	now := time.Now
+	if clock != nil {
+		now = clock
+	}
+	if r := reasonOf(out); out.Error != "" && r != "" {
+		return nil, &Error{Reason: r}
+	}
 	switch {
-	case out.Error == "invalid_grant", out.Error == "unauthorized_client", out.Error == "invalid_client":
-		return nil, &Error{Reason: ReasonUnauthorized}
-	case resp.StatusCode == http.StatusTooManyRequests:
-		return nil, &Error{Reason: ReasonRateLimited, Until: retryAfter(resp.Header, time.Now())}
+	case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable:
+		return nil, &Error{Reason: ReasonRateLimited, Until: retryAfter(resp.Header, now())}
 	case resp.StatusCode != http.StatusOK || out.Access == "":
 		return nil, statusError(resp.StatusCode)
-	}
-	now := time.Now
-	if t.now != nil {
-		now = t.now
 	}
 	if out.ExpiresIn <= 0 {
 		out.ExpiresIn = 3600

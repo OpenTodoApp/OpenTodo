@@ -343,3 +343,29 @@ func updatedOf(n map[string]any) int64 {
 	}
 	return t.UnixMilli()
 }
+
+// projectAppend turns update_project's append_description into the whole new
+// description on this machine (agent-tools-complete D3): the server cannot read
+// the note it would append to, so the bridge decrypts it, adds the block after a
+// blank line, and encryptCall seals the result. A note that does not open here
+// leaves the call as it is, and the server refuses it with encryption_enabled.
+func (d *decrypter) projectAppend(ctx context.Context, params map[string]any) {
+	args, _ := params["arguments"].(map[string]any)
+	text, _ := args["append_description"].(string)
+	id, _ := args["id"].(string)
+	if text == "" || id == "" || e2ee.IsCiphertext(text) {
+		return
+	}
+	if _, both := args["description"]; both {
+		return
+	}
+	note, ok := d.plain(ctx, "project", id, "description")
+	if !ok {
+		return
+	}
+	if note = strings.TrimRight(note, " \t\r\n"); note != "" {
+		text = note + "\n\n" + text
+	}
+	args["description"] = text
+	delete(args, "append_description")
+}

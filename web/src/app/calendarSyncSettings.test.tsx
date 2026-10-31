@@ -8,7 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import type { CalendarConnection } from '../lib/types'
 import { click, render, type, waitFor } from '../ui/test-utils'
-import { CalendarSyncPanel, googleResultText, syncStateLine } from './CalendarSyncPanel'
+import { CalendarSyncPanel, googleResultText, microsoftResultText, syncStateLine } from './CalendarSyncPanel'
+import { validTenant } from './CalendarSyncDialogs'
 
 const NOW = new Date(2026, 9, 26, 12, 0).getTime()
 const base: CalendarConnection = {
@@ -78,7 +79,7 @@ describe('calendar sync panel', () => {
     expect(card.textContent).toContain('Tasks go to Work')
     expect(card.textContent).toContain('3 events written')
     const google = r.container.querySelector('[data-calendar-connection="c2"]')!
-    expect(google.textContent).toContain('refused the password or the Google grant')
+    expect(google.textContent).toContain('the Google or Microsoft access was removed')
     expect(button(google, 'Reconnect')).toBeDefined()
     expect(button(r.container, 'Connect Google')).toBeDefined()
 
@@ -136,6 +137,107 @@ describe('calendar sync panel', () => {
     await waitFor(() => r.container.textContent!.includes('the permission was not granted'))
     expect(window.location.search).toBe('')
     await r.unmount()
+  })
+})
+
+describe('Microsoft in calendar sync (outlook-calendar-sync)', () => {
+  const msClient = { client_id: 'app-id', tenant: 'common', secret_set: true, from_env: false,
+    redirect_uri: 'https://todo.example/api/v1/calendar-sync/microsoft/callback', refused_at: null as number | null }
+
+  it('offers Connect Microsoft with a client, stacked with the other ways to connect', async () => {
+    const outlook: CalendarConnection = { ...base, id: 'c3', provider: 'microsoft', name: 'Outlook', server_url: 'https://graph.microsoft.com/v1.0',
+      username: 'me@outlook.com', calendars: [{ url: 'AAMk-cal', name: 'Calendar', color: '', read_only: false }], target: 'AAMk-cal' }
+    serve({
+      'GET /api/v1/settings/calendar-sync': { enabled: true, google: true, microsoft: true, max_connections: 3 },
+      'GET /api/v1/calendar-sync/connections': { connections: [outlook] },
+      'POST /api/v1/calendar-sync/microsoft/start': { url: 'about:blank' },
+    })
+    const r = await render(<CalendarSyncPanel isOwner={false} />)
+    await waitFor(() => button(r.container, 'Connect Microsoft') !== undefined)
+    const add = r.container.querySelector('[data-add-connection]')!
+    expect([...add.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Connect CalDAV', 'Connect Google', 'Connect Microsoft'])
+    expect(add.className).toContain('flex-col')
+    for (const b of add.querySelectorAll('button')) expect(b.className).toContain('w-full')
+    const card = r.container.querySelector('[data-calendar-connection="c3"]')!
+    expect(card.textContent).toContain('Outlook · me@outlook.com')
+    // No mailbox zone: times are written in UTC and the card says so.
+    expect(card.querySelector('[data-calendar-utc]')!.textContent).toBe('Times in UTC: set your Outlook time zone')
+    await r.unmount()
+  })
+
+  it('shows members no Microsoft button without a client, and the owner the client fields', async () => {
+    serve({
+      'GET /api/v1/settings/calendar-sync': { enabled: true, google: false, microsoft: false, max_connections: 3 },
+      'GET /api/v1/calendar-sync/connections': { connections: [] },
+      'GET /api/v1/settings/calendar-sync/google': { client_id: '', secret_set: false, from_env: false, redirect_uri: 'x' },
+      'GET /api/v1/settings/calendar-sync/microsoft': { ...msClient, client_id: '', secret_set: false },
+      'PUT /api/v1/settings/calendar-sync/microsoft': { ...msClient, tenant: 'organizations' },
+      'GET /api/v1/calendar-feeds/events': { events: [], subscriptions: [] },
+    })
+    const member = await render(<CalendarSyncPanel isOwner={false} />)
+    await waitFor(() => button(member.container, 'Connect CalDAV') !== undefined)
+    expect(button(member.container, 'Connect Microsoft')).toBeUndefined()
+    expect(member.container.textContent).not.toContain('Microsoft client')
+    await member.unmount()
+
+    const r = await render(<CalendarSyncPanel isOwner />)
+    await waitFor(() => r.container.textContent!.includes('Microsoft client'))
+    expect(button(r.container, 'Connect Microsoft')).toBeUndefined()
+    const row = [...r.container.querySelectorAll('button')].filter((b) => b.textContent === 'Set up')
+    await click(row[row.length - 1])
+    await waitFor(() => document.querySelector('[data-testid="microsoft-client"]') !== null)
+    const form = document.querySelector('[data-testid="microsoft-client"]')!
+    expect((form.querySelector('input[aria-label="Redirect address"]') as HTMLInputElement).value).toBe(msClient.redirect_uri)
+    expect(form.querySelector('[data-learn-more]')).not.toBeNull()
+    await type(form.querySelector('input[aria-label="Application (client) ID"]')!, 'app-id')
+    await type(form.querySelector('input[aria-label="Tenant"]')!, 'contoso corp')
+    await waitFor(() => (button(form, 'Save') as HTMLButtonElement).disabled)
+    expect(form.textContent).toContain('Enter common, organizations, consumers')
+    const tenant = form.querySelector('input[aria-label="Tenant"]') as HTMLInputElement
+    tenant.value = ''
+    await type(tenant, 'organizations')
+    await type(form.querySelector('input[aria-label="Client secret"]')!, 's3cret')
+    await click(button(form, 'Save')!)
+    await waitFor(() => keys().includes('PUT /api/v1/settings/calendar-sync/microsoft'))
+    expect(calls.find((c) => c.key === 'PUT /api/v1/settings/calendar-sync/microsoft')!.body).toEqual({ client_id: 'app-id', tenant: 'organizations', client_secret: 's3cret' })
+    await r.unmount()
+  })
+
+  it('tells the owner Microsoft refused the secret', async () => {
+    serve({
+      'GET /api/v1/settings/calendar-sync': { enabled: true, google: false, microsoft: true, max_connections: 3 },
+      'GET /api/v1/calendar-sync/connections': { connections: [] },
+      'GET /api/v1/settings/calendar-sync/google': { client_id: '', secret_set: false, from_env: false, redirect_uri: 'x' },
+      'GET /api/v1/settings/calendar-sync/microsoft': { ...msClient, refused_at: NOW - 3_600_000 },
+    })
+    const r = await render(<CalendarSyncPanel isOwner />)
+    await waitFor(() => r.container.textContent!.includes('Secret refused'))
+    await click(button(r.container, 'Change')!)
+    await waitFor(() => document.querySelector('[data-testid="microsoft-client"]') !== null)
+    expect(document.querySelector('[data-testid="microsoft-client"]')!.textContent).toContain('Microsoft refused the client secret')
+    await r.unmount()
+  })
+
+  it('shows what a Microsoft sign-in returned', async () => {
+    window.history.replaceState(null, '', '/settings/integrations/calendar-sync?calendar-sync=admin_consent_required&provider=microsoft')
+    serve({
+      'GET /api/v1/settings/calendar-sync': { enabled: true, google: false, microsoft: true, max_connections: 3 },
+      'GET /api/v1/calendar-sync/connections': { connections: [] },
+    })
+    const r = await render(<CalendarSyncPanel isOwner={false} />)
+    await waitFor(() => r.container.textContent!.includes('administrator must approve OpenTodo'))
+    expect(window.location.search).toBe('')
+    await r.unmount()
+  })
+
+  it('checks tenants and words the results', () => {
+    for (const ok of ['', 'common', 'organizations', 'consumers', 'contoso.onmicrosoft.com', '72f988bf-86f1-41af-91ab-2d7cd011db47']) expect(validTenant(ok)).toBe(true)
+    for (const bad of ['contoso corp', 'contoso', '../x']) expect(validTenant(bad)).toBe(false)
+    expect(microsoftResultText('connected')).toBeNull()
+    expect(microsoftResultText('denied')).toContain('permission was not granted')
+    expect(microsoftResultText('authorization_failed')).toContain('did not complete the sign-in')
+    expect(syncStateLine({ ...base, state: 'stopped', stopped_reason: 'microsoft_client_refused' }, NOW)).toContain('client secret')
+    expect(syncStateLine({ ...base, state: 'stopped', stopped_reason: 'calendar_read_only' }, NOW)).toContain('can no longer be changed')
   })
 })
 

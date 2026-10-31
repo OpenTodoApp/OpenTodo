@@ -77,6 +77,10 @@ var agentAllowed = map[string]bool{
 	"POST /api/v1/tasks": true, "POST /api/v1/projects": true, "POST /api/v1/labels": true,
 	"PATCH /api/v1/tasks/{id}": true, "PATCH /api/v1/projects/{id}": true,
 	"DELETE /api/v1/tasks/{id}": true, "POST /api/v1/tasks/{id}/comments": true,
+	// OpenSpec change agent-tools-complete (design D7).
+	"POST /api/v1/sections": true, "PATCH /api/v1/sections/{id}": true, "PATCH /api/v1/labels/{id}": true,
+	"POST /api/v1/reminders": true, "PATCH /api/v1/reminders/{id}": true, "DELETE /api/v1/reminders/{id}": true,
+	"POST /api/v1/time-entries": true, "POST /api/v1/time-entries/stop": true, "PATCH /api/v1/time-entries/{id}": true,
 }
 
 // anonymousByDesign are sign-in routes that never look at a bearer token.
@@ -183,9 +187,9 @@ func TestAgentRestAllowList(t *testing.T) {
 		method, path string
 		body         map[string]any
 	}{
-		{"PATCH", "/api/v1/projects/" + userProject, map[string]any{"archived": true}},
+		{"PATCH", "/api/v1/projects/" + userProject, map[string]any{"workspace_id": nil}},
 		{"PATCH", "/api/v1/projects/" + userProject, map[string]any{"deleted_at": 1}},
-		{"PATCH", "/api/v1/projects/" + userProject, map[string]any{"parent_id": nil}},
+		{"PATCH", "/api/v1/projects/" + userProject, map[string]any{"flow_mode": "sequential"}},
 		{"PATCH", "/api/v1/tasks/" + userTask, map[string]any{"assignee_id": nil}},
 		{"PATCH", "/api/v1/tasks/" + userTask, map[string]any{"position": 3}},
 		{"PATCH", "/api/v1/tasks/" + userTask, map[string]any{"deleted_at": nil}},
