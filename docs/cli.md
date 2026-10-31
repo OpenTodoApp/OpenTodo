@@ -188,6 +188,15 @@ A `<ref>` is a full task id or an id prefix that matches exactly one non-deleted
 
 A task that is already in the requested state (`ot done` on a completed task, `ot reopen` on an open one) is reported as `unchanged`, keeps its completion time and nothing is sent; the command still exits 0. `ot edit` with values equal to the current ones sends nothing either.
 
+### Repeating tasks ahead
+
+```bash
+ot task occurrences 8c2a                                # today and the 30 days after
+ot task occurrences 8c2a --from 2026-10-12 --to 2026-10-18 --json
+```
+
+`ot task occurrences <ref>` lists a repeating task's current occurrence and the [projected](recurrence.md#projected-occurrences) ones after it in a range, as a table of DATE, TIME and STATE (`current` or `projected`). `--from` and `--to` take `YYYY-MM-DD`, `today`, `yesterday` or a weekday; the range is at most 366 days and lists at most 31 projected dates. The dates are the ones the app draws on the calendar ([`GET /api/v1/tasks/{id}/occurrences`](api.md#occurrences-of-a-recurring-task)); it only reads, so a `read` token will do. A task without a rule exits 1 with `not_recurring`.
+
 ## Projects
 
 ```bash
@@ -363,6 +372,7 @@ Every command accepts `--json`. Stdout then holds only JSON, with the same field
 | `notes list`, `notes search` | array of `note`: `{kind, id, title, project_id, project, label_ids, updated_at, body_version, encrypted}`, `search` adds `snippet` (`[{text, mark}]`) |
 | `notes show`, `add`, `edit`, `task note` | `note_text`: `{kind, id, title, text, appends, body_version, project_id, label_ids, encrypted}` |
 | `notes append`, `task note --append` | `note_append`: `{entity, entity_id, append_id, body_version}` |
+| `task occurrences` | `occurrences`: `{series_id, rule, capped, occurrences: [{date, time?, tz?, state}]}` |
 | `notes rm` / `notes to-task` | `note_result` (the `note` plus `ref` and `status`) or an array of them / `task` |
 | any write command with `--dry-run` | `dry_run` |
 | any failure | `error`: `{"error":{"code":"…","message":"…","exit":N}}` |

@@ -1,7 +1,7 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { Fragment, type ReactNode, useLayoutEffect, useMemo, useRef } from 'react'
+import { Fragment, lazy, Suspense, type ReactNode, useLayoutEffect, useMemo, useRef } from 'react'
 import { t } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
@@ -11,6 +11,9 @@ import type { HabitStats } from '../../lib/habits'
 import type { RowLayout } from '../../lib/rowLayout'
 import type { FieldDef, Label, Membership, Project, Task } from '../../lib/types'
 import { Button, ListGroupHeader, type HueName } from '../../ui'
+
+// Upcoming's projected rows load with their switch (series-occurrences D4).
+const ProjectedGroupRows = lazy(() => import('./ProjectedGroupRows'))
 import { logWinRequest } from '../signals'
 import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
@@ -255,8 +258,8 @@ function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListPro
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
-  if (g.rows.length === 0 && g.folded === undefined) return null
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+  if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length) return null
   // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses.
   const earlier = view === 'today' && g.key === 'earlier'
   const collapsed = earlier ? earlierCollapsed(collapsedGroups, g.rows.length) : collapsedGroups.has(groupKey(view, g.key))
@@ -278,6 +281,8 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
       ))}
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
+      {/* Upcoming's projected occurrences after the day's tasks, outside its count (series-occurrences D4). */}
+      {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}
     </section>
   )
 }

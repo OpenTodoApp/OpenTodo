@@ -6,6 +6,8 @@ import type { Project } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon, Tooltip } from '../../ui'
 import { TitleField } from '../TitleField'
+import { usePanelProjection } from '../panel'
+import { formatDate } from '../../lib/dates'
 import type { TaskDetailModel } from './useTaskDetail'
 
 const RING: Record<number, string> = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }
@@ -41,12 +43,20 @@ export function TaskHead({ m, readOnly, projects, size }: { m: TaskDetailModel; 
   )
 }
 
-/** The links to the parent task and to the recurring task of an occurrence. */
+/** The links to the parent task and to the recurring task of an occurrence, and the projected date a series was opened from. */
 export function TaskRelations({ m, onOpen }: { m: TaskDetailModel; onOpen?: (id: string) => void }) {
   const { task, parent, series } = m
-  if (!task || (!parent && !series)) return null
+  const projected = usePanelProjection(task?.id)
+  if (!task || (!parent && !series && !projected)) return null
   return (
     <>
+      {projected && (
+        // Opened from a projected occurrence (series-occurrences D6): the date it stands for and the series' own.
+        <p className="flex items-center gap-1 text-meta text-muted" data-projected-for={projected}>
+          <Icon name="repeat" />
+          {task.due ? t('Projected for {date} · next due {due}', { date: formatDate(projected, 'full'), due: formatDate(task.due.date, 'full') }) : t('Projected for {date}', { date: formatDate(projected, 'full') })}
+        </p>
+      )}
       {parent && (
         <Tooltip label={t('Open parent task')}>
           <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)}>

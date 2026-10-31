@@ -2,7 +2,7 @@
 // six-week grid of due dates, a pure projection of local tasks like Day and Week.
 // Moving a task, by drag onto a day or with the arrows, is one due edit that keeps
 // its time and zone; `q` adds a task due on the focused day. Works offline.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, EmptyState, MenuItem, PageBody, useMediaQuery } from '../ui'
 import { calendarTasks, dayLoad, nudgeDue } from '../lib/calendar'
 import { rememberCalendarMode } from '../lib/calendarMode'
@@ -37,15 +37,26 @@ import { meetingsByDay } from './calendar/meetingCapacity'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { useOnline } from '../lib/online'
 import { useResetOnChange } from '../lib/useResetOnChange'
+import { columnEntries } from '../lib/plan'
+import { projectionsByDate, type Projection } from '../lib/occurrences'
+import { isProjectionTarget, ProjectedItem, useCalendarProjections } from './calendar/projections'
 
 /** Task rows a desktop cell shows before "+N more". */
 const CELL_ROWS = 3
 
-type CellEntry = { kind: 'task'; task: Task } | { kind: 'deadline'; task: Task }
+type CellEntry = { kind: 'task'; task: Task } | { kind: 'deadline'; task: Task } | { kind: 'projected'; projection: Projection }
+const NO_PROJECTIONS: readonly Projection[] = []
 
-/** A cell's rows: its tasks, then the deadlines of tasks due elsewhere (calendar-clarity D1), which take part in "+N more". */
-function cellEntries(tasks: readonly Task[], deadlines: readonly Task[]): CellEntry[] {
-  return [...tasks.map((task) => ({ kind: 'task' as const, task })), ...deadlines.map((task) => ({ kind: 'deadline' as const, task }))]
+/**
+ * A cell's rows: its tasks and projected occurrences ordered together by time, priority
+ * and position (series-occurrences D3, as Plan's columns), then the deadlines of tasks
+ * due elsewhere (calendar-clarity D1); all take part in "+N more".
+ */
+function cellEntries(tasks: readonly Task[], deadlines: readonly Task[], projected: readonly Projection[] = NO_PROJECTIONS, date = '', zone?: string): CellEntry[] {
+  const rows: CellEntry[] = projected.length === 0
+    ? tasks.map((task) => ({ kind: 'task' as const, task }))
+    : columnEntries(tasks, projected, date, zone).map((e) => (e.kind === 'task' ? { kind: 'task' as const, task: e.task } : { kind: 'projected' as const, projection: e.projection }))
+  return [...rows, ...deadlines.map((task) => ({ kind: 'deadline' as const, task }))]
 }
 
 /** The same day of the month `months` away, clamped to the month's last day. */
@@ -55,6 +66,15 @@ export function addMonthsISO(iso: string, months: number): string {
   const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
   const day = Math.min(d, last)
   return `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+/** The focused day's rows below a phone's grid, or its empty state: tasks, deadlines, then projected occurrences (series-occurrences D3; the grid's count counts tasks only). */
+function MonthDayList({ focused, empty, onAdd, children }: { focused: string; empty: boolean; onAdd: () => void; children: ReactNode }) {
+  return (
+    <section aria-label={t('Tasks on {focused}', { focused })} className="mt-3 space-y-1" data-month-day-list>
+      {empty ? <EmptyState compact title={t('Nothing planned.')} action={{ label: t('Add a task'), onClick: onAdd, shortcut: keysOf('month.quick-add') }} /> : children}
+    </section>
+  )
 }
 
 /** Previous, Today, Next and the mode switch of the Month. */
@@ -89,13 +109,15 @@ export function MonthView({ date }: { date?: string }) {
   const memberMap = useMembershipMap()
   const rawTasks = useLiveTasks() ?? NO_TASKS
   const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
-  const chrome = useCalendarChrome(viewed, projects) // Colour by, the filter, the project scope, adding with the pointer (calendar-clarity)
+  const chrome = useCalendarChrome(viewed, projects, { projections: true }) // Colour by, the filter, the project scope, adding with the pointer (calendar-clarity)
   const shownIds = useMemo(() => new Set(calendarTasks(viewed, projects, days[0], days[days.length - 1], showCompleted).map((tk) => tk.id)), [viewed, projects, days, showCompleted])
   const shownRaw = useMemo(() => rawTasks.filter((item) => shownIds.has(item.id)), [rawTasks, shownIds])
   const shownViewed = useMemo(() => viewed.filter((task) => shownIds.has(task.id)), [viewed, shownIds])
   const { drawn: drawnRaw, deadlines } = useDrawn(chrome, shownRaw, viewed, projects, days[0], days[days.length - 1])
   const cells = useMemo(() => new Map(days.map((d) => [d, cellTasks(drawnRaw, d, zone)])), [days, drawnRaw, zone])
   const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
+  const { projections, hue: projectionHue } = useCalendarProjections({ raw: rawTasks, viewed: viewedMap, projects, keeps: chrome.keeps, hueOf: chrome.color.hueOf, today, from: days[0], to: days[days.length - 1], zone })
+  const projected = useMemo(() => projectionsByDate(projections), [projections])
   // Slots count once toward a cell's capacity (calendar-slots D6); Month lists their tasks as usual.
   const slotRows = useSlots()
   const slotViews = useMemo(() => slotsByDate(slotRows, days, viewedMap), [slotRows, days, viewedMap])
@@ -188,7 +210,8 @@ export function MonthView({ date }: { date?: string }) {
     'month.focus': (e) => focusDay(addDaysISO(focused, ARROWS[e.key])),
     'month.next': () => step('next'),
     'month.prev': () => step('prev'),
-    'month.open': () => { if (!selectedTask) return false; setPanelTaskId(selectedTask.id) },
+    // A focused button (a projected occurrence, series-occurrences D6) keeps its own Enter.
+    'month.open': (e) => { if (!selectedTask || isProjectionTarget(e.target)) return false; setPanelTaskId(selectedTask.id) },
     'month.escape': () => {
       if (expanded) setExpanded(null)
       else if (openId) setPanelTaskId(null)
@@ -210,9 +233,9 @@ export function MonthView({ date }: { date?: string }) {
   useEffect(() => {
     if (!selectedId) return
     const d = viewedMap.get(selectedId)?.due?.date
-    const entries = d ? cellEntries(cells.get(d) ?? [], deadlines.get(d) ?? []) : []
+    const entries = d ? cellEntries(cells.get(d) ?? [], deadlines.get(d) ?? [], projected.get(d), d, zone) : []
     if (d && entries.length > CELL_ROWS && !visibleRows(entries, CELL_ROWS).shown.some((e) => e.kind === 'task' && e.task.id === selectedId)) setExpanded(d)
-  }, [selectedId, viewedMap, cells, deadlines])
+  }, [selectedId, viewedMap, cells, deadlines, projected, zone])
 
   const title = monthName(month, 'long', true)
   const weekdays = grid[0].map((d) => formatDateParts(d, { weekday: narrow ? 'narrow' : 'short' }))
@@ -261,9 +284,10 @@ export function MonthView({ date }: { date?: string }) {
           <div key={week[0]} role="row" className="grid grid-cols-7">
             {week.map((d) => {
               const list = cells.get(d) ?? []
-              const entries = cellEntries(list, deadlines.get(d) ?? [])
+              const dayProjected = projected.get(d) ?? NO_PROJECTIONS
+              const entries = cellEntries(list, deadlines.get(d) ?? [], dayProjected, d, zone)
               const outside = d.slice(0, 7) !== month
-              const load = dayLoad(shownViewed, d, prefs.dayLength, meetings?.get(d)?.minutes ?? 0, slotCapacity(slotViews.get(d)))
+              const load = dayLoad(shownViewed, d, prefs.dayLength, meetings?.get(d)?.minutes ?? 0, slotCapacity(slotViews.get(d)), dayProjected)
               const open = expanded === d
               const { shown, hidden } = open ? { shown: entries, hidden: 0 } : visibleRows(entries, CELL_ROWS)
               const isFocused = d === focused
@@ -287,7 +311,7 @@ export function MonthView({ date }: { date?: string }) {
                     list.length > 0 && <span aria-hidden data-month-count className="block text-center text-meta font-medium text-default">{list.length}</span>
                   ) : (
                     <div className="space-y-0.5">
-                      {shown.map((e) => (e.kind === 'task' ? row(e.task, false) : deadlineRow(e.task, d)))}
+                      {shown.map((e) => (e.kind === 'task' ? row(e.task, false) : e.kind === 'projected' ? <ProjectedItem key={e.projection.id} p={e.projection} hue={projectionHue(e.projection)} variant="row" className="px-1" /> : deadlineRow(e.task, d)))}
                       {hidden > 0 && (
                         <button type="button" tabIndex={-1} data-month-more={hidden} aria-expanded={false}
                           onClick={(e) => { e.stopPropagation(); setExpanded(d) }}
@@ -307,13 +331,9 @@ export function MonthView({ date }: { date?: string }) {
           </div>
         ))}
       </div>
-      {narrow && (
-        <section aria-label={t('Tasks on {focused}', { focused })} className="mt-3 space-y-1" data-month-day-list>
-          {focusedTasks.length === 0 && focusedDeadlines.length === 0
-            ? <EmptyState compact title={t('Nothing planned.')} action={{ label: t('Add a task'), onClick: () => chrome.add.add({ date: focused }), shortcut: keysOf('month.quick-add') }} />
-            : <>{focusedTasks.map((task) => row(task, false))}{focusedDeadlines.map((task) => deadlineRow(task, focused))}</>}
-        </section>
-      )}
+      {narrow && <MonthDayList focused={focused} empty={focusedTasks.length === 0 && focusedDeadlines.length === 0 && !projected.get(focused)?.length} onAdd={() => chrome.add.add({ date: focused })}>
+        {focusedTasks.map((task) => row(task, false))}{focusedDeadlines.map((task) => deadlineRow(task, focused))}{(projected.get(focused) ?? []).map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue(p)} variant="large" />)}
+      </MonthDayList>}
       <p className="mt-3 hidden text-meta text-faint sm:block">
         {t.rich('Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.', { j: <span className="ui-kbd">j</span>, k: <span className="ui-kbd">k</span>, q: <span className="ui-kbd">q</span> })}
         {shownRaw.some((task) => task.estimate_minutes) ? ` ${t('Planned estimates against a {minutes} day.', { minutes: formatMinutes(prefs.dayLength) })}` : ''}

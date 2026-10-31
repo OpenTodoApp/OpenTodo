@@ -27,6 +27,7 @@ import { startFakeLLM } from './fake-llm.mjs'
 const OUT = 'docs/images'
 let eisenhowerPath = null
 let completedCalendarFixture = null
+let repeatingCalendarFixture = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -453,6 +454,32 @@ const shots = [
     await p.locator(`[data-block="${fixture.timed}"] .line-through`).waitFor()
     await p.locator(`[data-lane-task="${fixture.allDay}"] .line-through`).waitFor()
     await p.locator('[data-calendar-completed-toggle][aria-pressed="true"]').waitFor()
+    await p.mouse.move(0, 0)
+  } },
+  // Projected occurrences of repeating tasks in the Week (series-occurrences): a weekday
+  // study session at 18:00 and a Monday, Wednesday and Friday habit, both due next Monday.
+  { name: 'repeating-calendar', server: P, async run(p, { ctx }) {
+    const api = async (method, path, body) => {
+      const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    if (!repeatingCalendarFixture) {
+      const d = new Date()
+      d.setUTCDate(d.getUTCDate() + ((8 - d.getUTCDay()) % 7 || 7))
+      const date = d.toISOString().slice(0, 10)
+      const project = await api('POST', '/api/v1/projects', { name: 'Course', color: '#8b5cf6' })
+      const study = await api('POST', '/api/v1/tasks', { title: 'Study', project_id: project.id, due: { date, time: '18:00' }, recurrence: 'every weekday', estimate_minutes: 60 })
+      await api('POST', '/api/v1/tasks', { title: 'Morning run', due: { date, time: '07:00' }, recurrence: 'every mon, wed, fri', estimate_minutes: 45 })
+      await api('POST', '/api/v1/tasks', { title: 'Write the weekly report', project_id: project.id, due: { date, time: '10:00' }, estimate_minutes: 90 })
+      repeatingCalendarFixture = { date, study: study.id }
+    }
+    const fixture = repeatingCalendarFixture
+    await p.setViewportSize({ width: 1280, height: 800 })
+    await p.clock.setFixedTime(new Date(`${fixture.date}T09:00:00`))
+    await go(p, plainBase, `/week/${fixture.date}`, () => p.locator(`[data-block="${fixture.study}"]`).waitFor())
+    await p.locator('[data-projected]').first().waitFor()
+    await p.locator(`[data-block="${fixture.study}"]`).scrollIntoViewIfNeeded()
     await p.mouse.move(0, 0)
   } },
   // Frames (calendar-frames 5.2): "Deep work" on weekday mornings and "Admin" late in the afternoon behind the Week's blocks.

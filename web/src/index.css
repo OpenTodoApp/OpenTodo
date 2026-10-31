@@ -852,6 +852,16 @@ select.ui-input:not([multiple]) {
   border-inline-start: 3px dashed var(--ot-accent);
   color: var(--ot-text-strong);
 }
+/* A projected occurrence of a repeating task (series-occurrences D3): a fainter fill than
+   the past, a dashed leading edge in the hue (told from a past block without colour) and
+   muted text. In high contrast the dashed edge is the marker. */
+.ui-block--projected {
+  background: color-mix(in oklab, var(--hue-soft) 40%, var(--ot-surface));
+  border-inline-start: 3px dashed var(--hue-solid);
+  color: var(--ot-muted);
+}
+.ui-block--projected:hover { background: color-mix(in oklab, var(--hue-soft) 70%, var(--ot-surface)); }
+html:root[data-contrast="high"] .ui-block--projected:not(:focus-visible) { background: var(--ot-surface); outline: 1px dashed var(--hue-solid); outline-offset: -1px; }
 .ui-block--late {
   background: var(--ot-danger-soft);
   border-inline-start-color: var(--ot-danger);
