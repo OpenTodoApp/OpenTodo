@@ -1,0 +1,9 @@
+# apksigcopier compares a signed release APK with a local build (scripts/android-repro.sh,
+# OpenSpec change play-production D5). Pinned by hash; install with
+#   python3 -m pip install --require-hashes -r scripts/release/requirements-repro.txt
+apksigcopier==1.1.1 \
+    --hash=sha256:0834bb7d6f3607bb0994cf8cd2e26b8f0c9d481e13b75872e0fa9cec052e519b \
+    --hash=sha256:ea5d3482128f2bcfa8307356f5bed4f4240a559d702acb117bf777955f64c851
+click==8.5.0 \
+    --hash=sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360 \
+    --hash=sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34

@@ -275,9 +275,11 @@ test('Playwright jobs run in the pinned image at one version', () => {
 test('the image, stable tag and release are published only after every gate', () => {
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
   // claude-plugin publishes the Claude Code marketplace after the release (claude-plugin D5).
-  const publishing = ['docker', 'release', 'claude-plugin']
+  // play uploads the Android bundle to Google Play's internal track after the release (play-production D2).
+  const publishing = ['docker', 'release', 'claude-plugin', 'play']
   for (const p of publishing) assert.ok(jobs[p], `ci.yml has a ${p} job`)
   assert.deepEqual(needsOf(jobs['claude-plugin']), ['release'], 'the plugin is published only after the release')
+  assert.deepEqual(needsOf(jobs.play), ['release'], 'the Play upload runs only after the release')
   const gates = Object.keys(jobs).filter((j) => !publishing.includes(j))
   for (const g of gates) {
     assert.ok(needsOf(jobs.docker).includes(g), `the docker (publish) job must need ${g}`)
@@ -480,4 +482,89 @@ test('AGENTS.md lists every API token scope and does not call the MCP server rea
   assert.deepEqual(listed[1].split('|').map((s) => s.slice(1, -1)).sort(), [...scopes].sort())
   assert.doesNotMatch(agents, /`internal\/mcp` read-only/, 'the MCP server has write tools (agent tokens)')
   assert.match(agents, /`internal\/mcp`[^;]*write tools/)
+})
+
+// Reproducible Android builds (OpenSpec change play-production D4): the toolchain is pinned and
+// named in mobile/README.md. Returns what is not pinned; empty when everything is.
+function androidToolchainProblems({ wrapper, rootGradle, appGradle, ci, readme }) {
+  const problems = []
+  const gradle = wrapper.match(/^distributionUrl=.*gradle-(\d+\.\d+(?:\.\d+)?)-bin\.zip$/m)?.[1]
+  if (!gradle) problems.push('gradle-wrapper.properties: no Gradle version in distributionUrl')
+  if (!/^distributionSha256Sum=[0-9a-f]{64}$/m.test(wrapper)) problems.push('gradle-wrapper.properties: no distributionSha256Sum')
+  const agp = rootGradle.match(/id\("com\.android\.application"\) version "(\d+\.\d+\.\d+)"/)?.[1]
+  if (!agp) problems.push('build.gradle.kts: the Android Gradle Plugin has no exact version')
+  const tools = appGradle.match(/^\s*buildToolsVersion = "(\d+\.\d+\.\d+)"$/m)?.[1]
+  if (!tools) problems.push('app/build.gradle.kts: no buildToolsVersion')
+  const javas = [...ci.matchAll(/^\s+java-version: (\S+)$/gm)].map((m) => m[1])
+  if (javas.length === 0 || javas.some((j) => !/^17\.\d+\.\d+\+\d+$/.test(j))) problems.push(`CI: setup-java must pin an exact JDK 17 (found ${javas.join(', ') || 'none'})`)
+  if (new Set(javas).size > 1) problems.push(`CI: one JDK everywhere (found ${[...new Set(javas)].join(', ')})`)
+  if (tools && !ci.includes(`build-tools;${tools}`)) problems.push(`CI: the SDK step installs another build-tools than ${tools}`)
+  for (const [what, v] of [['Gradle', gradle], ['the Android Gradle Plugin', agp], ['build tools', tools], ['the JDK', javas[0]]]) {
+    if (v && !readme.includes(v)) problems.push(`mobile/README.md does not name ${what} ${v}`)
+  }
+  return problems
+}
+
+const androidToolchain = () => ({
+  wrapper: read('mobile/android/gradle/wrapper/gradle-wrapper.properties'),
+  rootGradle: read('mobile/android/build.gradle.kts'),
+  appGradle: read('mobile/android/app/build.gradle.kts'),
+  ci: read('.github/workflows/ci.yml') + read('.github/workflows/android-repro.yml'),
+  readme: read('mobile/README.md'),
+})
+
+test('the Android toolchain is pinned and named in mobile/README.md', () => {
+  assert.deepEqual(androidToolchainProblems(androidToolchain()), [])
+})
+
+test('a Gradle wrapper without its checksum is refused', () => {
+  const t = androidToolchain()
+  const wrapper = t.wrapper.replace(/^distributionSha256Sum=.*\n/m, '')
+  assert.deepEqual(androidToolchainProblems({ ...t, wrapper }), ['gradle-wrapper.properties: no distributionSha256Sum'])
+  assert.match(androidToolchainProblems({ ...t, ci: t.ci.replace(/java-version: 17\.\S+/, 'java-version: 17') }).join('\n'), /exact JDK 17/)
+})
+
+test('the release APK carries no dependency block or commit file', () => {
+  const app = read('mobile/android/app/build.gradle.kts')
+  assert.match(app, /dependenciesInfo \{\s*includeInApk = false\s*includeInBundle = false\s*\}/)
+  assert.match(app, /buildTypes \{\s*release \{[\s\S]*?vcsInfo\.include = false/)
+})
+
+test('release tags prove the Android build reproducible, and anyone can run it on demand', () => {
+  const android = jobsOf(read('.github/workflows/ci.yml')).android
+  const step = android.split(/\n(?= {6}- )/).find((s) => s.includes('scripts/android-repro.sh'))
+  assert.ok(step, 'the android job runs scripts/android-repro.sh')
+  assert.match(step, /^ {8}if: startsWith\(github\.ref, 'refs\/tags\/v'\)$/m, 'on every release tag')
+  assert.match(step, /REPRO_CLEAN_CACHE: "1"/, 'the second build has no Gradle cache')
+  assert.match(step, /--require-hashes -r scripts\/release\/requirements-repro\.txt/, 'apksigcopier pinned by hash')
+  assert.ok(android.indexOf('scripts/android-repro.sh') > android.indexOf('Signed release APK and AAB'), 'after the signed build, before the upload')
+  for (const l of read('scripts/release/requirements-repro.txt').split('\n').filter((l) => /^[a-z]/i.test(l))) assert.match(l, /^[\w.-]+==[\d.]+ \\$/, `${l}: an exact version with hashes`)
+  const manual = read('.github/workflows/android-repro.yml')
+  assert.match(manual, /^ {2}workflow_dispatch:\n {4}inputs:\n {6}ref:/m)
+  assert.match(manual, /scripts\/android-repro\.sh "\$target"/)
+  assert.match(read('scripts/android-repro.sh'), /apksigcopier compare "\$apk" --unsigned "\$first"/)
+})
+
+test('the Play upload runs only for final tags, after the release, with its secrets in the release environment', () => {
+  const play = jobsOf(read('.github/workflows/ci.yml')).play
+  assert.match(play, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
+  assert.match(play, /^ {4}environment: release$/m)
+  assert.match(play, /node scripts\/release\/play-upload\.mjs "\$GITHUB_REF_NAME"/)
+  assert.match(play, /::warning::PLAY_SERVICE_ACCOUNT_JSON or PLAY_UPLOAD_KEYSTORE_BASE64 is not set/)
+  assert.doesNotMatch(play, /production/, 'CI never promotes to production')
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      if (/secrets\.PLAY_/.test(block)) assert.ok(f.endsWith('ci.yml') && id === 'play', `${f}: only the play job reads the Play secrets`)
+    }
+  }
+})
+
+test('the F-Droid metadata allows the release certificate that docs/android-app.md publishes', () => {
+  const fdroid = read('mobile/android/store/fdroid/app.opentodo.yml')
+  const cert = fdroid.match(/^AllowedAPKSigningKeys: ([0-9a-f]{64})$/m)?.[1]
+  assert.ok(cert, 'AllowedAPKSigningKeys names one SHA-256')
+  assert.ok(read('docs/android-app.md').includes(cert), 'docs/android-app.md publishes the same certificate')
+  assert.match(fdroid, /^Binaries: https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
+  assert.match(fdroid, /^UpdateCheckMode: Tags \^v\[0-9\.\]\+\$$/m, 'release candidates are skipped')
+  assert.match(fdroid, /^AutoUpdateMode: Version$/m, "F-Droid's bot adds each final tag")
 })

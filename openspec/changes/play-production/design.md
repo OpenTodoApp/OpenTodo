@@ -53,8 +53,8 @@ F-Droid builds every app from source. With reproducible builds it compares its o
 - `AllowedAPKSigningKeys:` the release certificate's SHA-256
 - `subdir: mobile/android/app`
 - `gradle: [yes]`
-- `prebuild: export OPENTODO_VERSION=$$VERSION$$`
-- the same JDK as CI
+- `prebuild: sed -i -e 's/System.getenv("OPENTODO_VERSION")/"$$VERSION$$"/' build.gradle.kts` (implemented this way: fdroid runs `prebuild` in its own shell, so an `export OPENTODO_VERSION` would not reach the Gradle build; the result is the same version name and code)
+- JDK 17, as in CI (OpenJDK 17 from Debian bookworm in `sudo`; Ubuntu's OpenJDK 17.0.20.1 built the same APK as Temurin 17.0.21+9, so the vendor does not matter)
 - `AutoUpdateMode: Version`, `UpdateCheckMode: Tags ^v[0-9.]+$`, so release candidates are skipped.
 
 The repository's copy is the source of truth. The owner opens the first merge request in `fdroiddata`, and F-Droid's bot follows the tags after that.
@@ -67,7 +67,7 @@ The release APK must not depend on the time, the machine, the path or the order 
 - **No varying metadata in the APK.**
   - `dependenciesInfo { includeInApk = false; includeInBundle = false }` drops the encrypted dependency block, which F-Droid also refuses.
   - `vcsInfo.include = false` drops the commit file, which makes the output depend on how the source was checked out (the tag name is already the version).
-- **Deterministic ART baseline profile.** Some AGP versions write `assets/dexopt/baseline.prof` in a different order on different machines. The check (D5) catches it. If it fails, `baseline.prof` generation is turned off (`androidResources`/`packaging` exclusion for `assets/dexopt/*`), which costs only the start-up profile of a 1 MB app.
+- **Deterministic ART baseline profile.** Some AGP versions write `assets/dexopt/baseline.prof` in a different order on different machines. The check (D5) catches it. If it fails, `baseline.prof` generation is turned off (`androidResources`/`packaging` exclusion for `assets/dexopt/*`), which costs only the start-up profile of a 1 MB app. Measured with AGP 9.4.1 (task 1.5): two builds in different paths, with different `SOURCE_DATE_EPOCH` values and the second with an empty Gradle cache, gave byte-identical APKs, `baseline.prof` and `baseline.profm` included, so generation stays on.
 - **R8.** Minify stays on. R8 is deterministic for the same inputs and version, which are pinned.
 - **Version from the tag only.** `OPENTODO_VERSION` is already the only input. Local builds are `0.0.0-dev` and are not compared.
 

@@ -37,7 +37,7 @@ After installing, OpenTodo also appears in Android's share menu, so you can send
 
 ## The Android app
 
-Instead of installing from the browser, you can install the **OpenTodo** app from Google Play or F-Droid and enter your server's address on its first screen. It works the same and adds reminders without a push service, sharing on phones without Google Play services, home-screen widgets and fingerprint unlock. See [The Android app](android-app.md).
+Instead of installing from the browser, you can install the **OpenTodo** app from [Google Play](https://play.google.com/store/apps/details?id=app.opentodo), [F-Droid](https://f-droid.org/packages/app.opentodo/) or the [GitHub release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and enter your server's address on its first screen. All three are the same app with the same signature, so you can switch between them later without losing anything ([how](android-app.md#switching-between-google-play-f-droid-and-github)); until the store listings open, install from GitHub. It works the same and adds reminders without a push service, sharing on phones without Google Play services, home-screen widgets and fingerprint unlock. See [The Android app](android-app.md).
 
 ## The iOS app
 
