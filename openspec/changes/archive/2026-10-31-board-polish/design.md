@@ -45,7 +45,7 @@ Default `false` for both; unknown or missing reads as off. Simple-list users (wh
 
 ### D5. Keyboard
 
-One new registry row: `board.fold`, keys `z`, scope `board`, section "Board and timeline": "Fold or unfold the selected card's column; on a folded column, unfold it". With no card selected, `z` acts on the column whose header or strip has focus. The registry's conflict test must pass: `panel.zone` (`z`) is in the `panel` scope and only while the task panel has focus, so the two never compete; `vim.*` rows do not use `z`. Tab reaches each strip in column order; Enter or Space unfolds. The `?` sheet and docs/keyboard.md pick the row up from the registry.
+One new registry row: `board.fold`, keys `z`, scope `board`, section "Board and timeline": "Fold or unfold the selected card's column; on a folded column, unfold it". With no card selected, `z` acts on the column whose header or strip has focus. The registry's conflict test must pass: `panel.zone` (`z`) is in the `panel` scope and only while the task panel has focus, so the two never compete in practice; the registry still sees the same key in a scope that shadows `board`, so `panel.zone` declares that it overrides `board.fold`, as other panel keys do for list keys. `vim.*` rows do not use `z`. Tab reaches each strip in column order; Enter or Space unfolds. The `?` sheet and docs/keyboard.md pick the row up from the registry.
 
 ### D6. Preview text
 

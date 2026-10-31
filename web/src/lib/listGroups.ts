@@ -92,6 +92,8 @@ export interface ListColumn {
   key: string
   section: Section | null
   cards: Task[]
+  /** Folded to a strip on this device (board-polish D1): its section is collapsed; the cards stay for the count. */
+  folded?: boolean
 }
 
 /** Top-level tasks of a sectioned project with their tree nodes. */
@@ -171,8 +173,10 @@ export function sectionBuckets(projectId: string | null, tree: Tree<Task> | null
 }
 
 /** Board columns; "No section" is a column only while it has open tasks (sections-and-boards). */
-export function boardColumns(buckets: SectionBucket[] | null): ListColumn[] {
-  return (buckets ?? []).filter((g) => g.key !== '' || g.tasks.length > 0).map((g) => ({ key: g.key, section: g.section, cards: g.tasks }))
+export function boardColumns(buckets: SectionBucket[] | null, collapsed: readonly string[] = []): ListColumn[] {
+  const folded = new Set(collapsed)
+  return (buckets ?? []).filter((g) => g.key !== '' || g.tasks.length > 0)
+    .map((g) => ({ key: g.key, section: g.section, cards: g.tasks, ...(folded.has(g.key) ? { folded: true } : {}) }))
 }
 
 export interface GroupInput {
@@ -246,8 +250,8 @@ export function listGroups(p: GroupInput): ListGroup[] {
     breadcrumb: n.parent === null && n.item.parent_id ? breadcrumbOf(n.item, p.taskMap) : null,
   })
   const isCollapsed = (id: string) => p.collapsed.has(id)
-  // Board: cards are top-level tasks, column by column (keyboard order).
-  if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.cards.map((task) => flatRow(task)) }))
+  // Board: cards are top-level tasks, column by column (keyboard order); a folded column has none on screen (board-polish D1).
+  if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.folded ? [] : c.cards.map((task) => flatRow(task)) }))
   const order = displayOrder(p.display, p.manualOrder)
   const groupByKey = p.display?.groupBy
   if (p.tree && p.view === 'project' && groupByKey && groupByKey !== 'section' && groupByKey !== 'none' && groupByKey !== 'project') {

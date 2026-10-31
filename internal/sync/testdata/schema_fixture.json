@@ -97,6 +97,7 @@
       "workspace_id"
     ],
     "project_prefs": [
+      "card_notes",
       "feed_seen_at",
       "group_by",
       "review_every",
@@ -252,6 +253,7 @@
       "welcome"
     ],
     "view": [
+      "card_notes",
       "color",
       "created_at",
       "deleted_at",
