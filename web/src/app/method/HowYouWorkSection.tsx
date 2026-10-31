@@ -10,7 +10,7 @@ import { useUserPrefsRow } from '../../lib/localData'
 import { cardCopy, rowCopy } from '../../lib/settingsCopy'
 import { useMethodMode } from '../../lib/method/mode'
 import { openStartGuide } from '../../lib/startGuide'
-import { firstRunDone } from '../../lib/userPrefs'
+import { firstRunDone, formattingButtonOn, setFormattingButton } from '../../lib/userPrefs'
 import { readBentoOrder, readFocusStyle, setBentoOrder, setFocusStyle, type BentoOrder, type FocusStyle } from '../../lib/bento'
 import { energyLevelsOn, setEnergyLevels } from '../../lib/energy'
 import { Button, Select, SettingRow, SettingsSection, Switch } from '../../ui'
@@ -63,6 +63,9 @@ export function HowYouWorkSection() {
       {/* Off by default in every mode; turning it off hides the choice, never a value (task-energy D3). */}
       <SettingRow {...rowCopy('how-you-work', 'energy')} id="energy-levels" htmlFor="energy-levels-switch"
         control={<span data-energy-levels-switch><Switch id="energy-levels-switch" checked={energyLevelsOn(prefs)} onChange={(on) => act(setEnergyLevels(on))} label={t('Energy levels')} hideLabel /></span>} />
+      {/* On by default; off hides the Formatting toggle of notes and comments on a computer (notes-toolbar-desktop D4). */}
+      <SettingRow {...rowCopy('how-you-work', 'formatting')} id="formatting-button" htmlFor="formatting-button-switch"
+        control={<span data-formatting-button-switch><Switch id="formatting-button-switch" checked={formattingButtonOn(prefs)} onChange={(on) => act(setFormattingButton(on))} label={t('Formatting button')} hideLabel /></span>} />
       {!demo && (
         <SettingRow {...rowCopy('how-you-work', 'guide')} id="start-guide"
           status={prefs === undefined ? null : <span data-start-guide-state>{firstRunDone(prefs) ? t('Finished') : t('Not finished')}</span>}

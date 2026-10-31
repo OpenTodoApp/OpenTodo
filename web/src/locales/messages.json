@@ -255,6 +255,10 @@
   "A backup is running. Try again when it has finished.": [
     "web/src/lib/restore.ts"
   ],
+  "A button beside notes and comments on a computer that shows bold, lists and links.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "A calendar": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
@@ -5322,7 +5326,12 @@
   ],
   "Formatting": [
     "web/src/app/EditorChrome.tsx",
-    "web/src/app/task-detail/Composer.tsx"
+    "web/src/app/FormattingToggle.tsx"
+  ],
+  "Formatting button": [
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Former member": [
     "web/src/app/AssigneePicker.tsx",

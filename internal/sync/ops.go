@@ -871,6 +871,12 @@ var Schema = map[string]map[string]Field{
 		// Large, Small; empty or unknown reads as Frog (Large, Medium, Small)
 		// and is kept.
 		"bento_order": {Kind: kString, Default: `""`},
+		// The Formatting button (OpenSpec change notes-toolbar-desktop, design
+		// D4): "off" hides the Formatting toggle beside notes and in the
+		// comment composer on a fine pointer; empty, "on" or any other value
+		// shows it, and clients keep the stored value. Whether the row is open
+		// is device storage and never synced. Settings, never content.
+		"formatting_toggle": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
