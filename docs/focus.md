@@ -48,13 +48,13 @@ When a session or a break ends, Focus says what ended and how long you worked, a
 | <kbd>n</kbd> | Next task of today's focus |
 | <kbd>Esc</kbd> | Back to where you were; the session keeps running |
 
-The keys don't fire while you type, for example in a new subtask. Press <kbd>g</kbd> <kbd>Shift+F</kbd> to come back to a running session.
+The keys don't fire while you type. Press <kbd>g</kbd> <kbd>Shift+F</kbd> to come back to a running session.
 
 ## Time worked
 
-Each stretch of work is a [time entry](time-tracking.md) on the task: starting or resuming starts one; pausing, completing or a break ends it. Breaks are never logged. The entries sync like any other change. When the app can't log time, the timer works the same and nothing is written.
+Each stretch of work is a [time entry](time-tracking.md) on the task: starting or resuming starts one; pausing, completing or a break ends it. Breaks are never logged. The entries sync like any other change and carry the timer, session and planned end, to [show elsewhere](focus-elsewhere.md). When the app can't log time, the timer works the same and nothing is written.
 
-The timer itself stays on the device: it is not synced or exported, and it is cleared when you sign out. The timer counts from the clock, so a reload, a laptop that slept or a tab in the background still shows the right time.
+The running timer stays on this device, cleared at sign-out. The timer counts from the clock, so a reload, a laptop that slept or a tab in the background still shows the right time.
 
 ## Settings
 

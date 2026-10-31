@@ -7,7 +7,7 @@ import { test } from 'node:test'
 import { run as deployCheck } from '../deploy-check.mjs'
 import { laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../deploy/common.mjs'
 import { staleCopies } from '../deploy/mirror.mjs'
-import { bumpLine, bumpText, changelogText, haChangelogText, prepare } from './prepare.mjs'
+import { bumpLine, bumpText, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText } from './prepare.mjs'
 
 const facts = loadFacts()
 const CURRENT = releaseVersion(readText('CHANGELOG.md'))
@@ -112,6 +112,18 @@ test('release-prepare: a patch release on this tree makes the edits a hand relea
     for (const rel of PATCH_RELEASE_FILES.filter((f) => f.startsWith('docs/'))) {
       for (const [a, b] of changedLines(dir, rel)) assert.equal(b, a.replaceAll(CURRENT, NEXT_PATCH).replaceAll(facts.legacy.image, facts.image), rel)
     }
+    // The store fields a version alone does not move, in the template and its upstream copy.
+    for (const rel of ['deploy/casaos/docker-compose.yml', 'deploy/casaos/upstream/Apps/OpenTodo/docker-compose.yml']) {
+      assert.match(readFileSync(join(dir, rel), 'utf8'), /^  update_at: "2030-01-02"$/m, rel)
+    }
+    for (const rel of ['deploy/easypanel/meta.yaml', 'deploy/easypanel/upstream/templates/opentodo/meta.yaml']) {
+      assert.ok(readFileSync(join(dir, rel), 'utf8').includes(`  - date: 2030-01-02\n    description: Update to ${NEXT_PATCH}\n`), rel)
+    }
+    const appVersion = (root, rel) => /^version: (\S+)$/m.exec(readFileSync(join(root, rel), 'utf8'))[1]
+    for (const rel of ['deploy/truenas/opentodo/app.yaml', 'deploy/truenas/upstream/ix-dev/community/opentodo/app.yaml']) {
+      const [a, b, c] = appVersion(ROOT, rel).split('.').map(Number)
+      assert.equal(appVersion(dir, rel), `${a}.${b}.${c + 1}`, rel)
+    }
     const log = readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')
     assert.match(log, new RegExp(`^## \\[Unreleased\\]\\n\\n## \\[${NEXT_PATCH.replaceAll('.', '\\.')}\\] - 2030-01-02\\n`, 'm'))
   } finally {
@@ -180,6 +192,17 @@ test('release-prepare: CHANGELOG.md and the add-on changelog', () => {
   const out = haChangelogText(ha, '1.2.4', 'https://github.com/o/r')
   assert.equal(out, '# Changelog\n\nIntro.\n\n## 1.2.4\n\n- OpenTodo [1.2.4](https://github.com/o/r/releases/tag/v1.2.4).\n\n## 1.2.3\n\n- OpenTodo 1.2.3.\n')
   assert.equal(haChangelogText(out, '1.2.4', 'https://github.com/o/r'), out)
+})
+
+test('release-prepare: the CasaOS date, the Easypanel changeLog and the TrueNAS app version', () => {
+  assert.equal(casaosText('x-casaos:\n  version: "1.2.4"\n  update_at: "2030-01-01"\n  title: x\n', '2030-02-02'),
+    'x-casaos:\n  version: "1.2.4"\n  update_at: "2030-02-02"\n  title: x\n')
+  const ep = 'name: x\nchangeLog:\n  - date: 2030-01-01\n    description: First Release\nlinks:\n  - label: Website\n'
+  const epOut = easypanelText(ep, '1.2.4', '2030-02-02')
+  assert.equal(epOut, 'name: x\nchangeLog:\n  - date: 2030-01-01\n    description: First Release\n  - date: 2030-02-02\n    description: Update to 1.2.4\nlinks:\n  - label: Website\n')
+  assert.equal(easypanelText(epOut, '1.2.4', '2030-02-03'), epOut)
+  assert.throws(() => easypanelText('name: x\n', '1.2.4', '2030-02-02'), /no changeLog/)
+  assert.equal(truenasText('app_version: 1.2.4\nversion: 1.0.9\nlib_version: 2.3.17\n'), 'app_version: 1.2.4\nversion: 1.0.10\nlib_version: 2.3.17\n')
 })
 
 test('release-prepare: refuses a version that is not x.y.z or not newer, before it writes anything', () => {

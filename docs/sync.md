@@ -133,6 +133,9 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | time_entry | `note` | string (user-written; encrypted for an encrypted account) |
 | time_entry | `created_at` | number |
 | time_entry | `deleted_at` | number or null |
+| time_entry | `focus_mode` | string: `pomodoro`, `flowtime` or `countdown` for a Focus work session, `""` for any other entry; readers keep an unknown value |
+| time_entry | `focus_session` | integer 0 to 99: the work session's number in the Pomodoro cycle, `0` otherwise |
+| time_entry | `planned_end_at` | positive number (Unix ms) not before `started_at`, or null (Flowtime and other entries); an earlier value is refused with reason `invalid_planned_end` |
 | project_prefs | `feed_seen_at` | number (Unix ms: the activity-feed "seen until" time; personal scope only) |
 | project_prefs | `reviewed_at` | number (Unix ms: when this user last marked the project reviewed in the weekly review's project walk) |
 | project_prefs | `group_by`, `sort_by`, `sort_dir` | string (this user's display options of the project's list: `section`, `none`, `due`, `priority` or `label`; an order as for views; `""` = by section, manual order) |
@@ -230,6 +233,7 @@ A `time_entry` is one stretch of work on a task (OpenSpec `time-tracking`, see [
 
 - **Scope.** An entry lives in the scope of its task, like a comment; sharing a project relabels its tasks' entries with them, and purging a task purges every entry on it, other members' included, with markers (`timeEntries` in the purge counts). Ops for an entry whose task was purged are discarded.
 - **Authorship, checked per op at receipt.** `user_id` must equal the submitting account on the op that creates the entry; `task_id` and `user_id` never change. `started_at`, `ended_at`, `note`, `device_id` and `created_at` are accepted only from the author; `deleted_at` from the author, a project admin and the owner. Unlike comments, a viewer cannot create entries (tracking is work on the task). A refused op travels back with the stored value (`restore`).
+- **Focus details** (OpenSpec `focus-session-readable`). An entry a Focus work session writes also carries `focus_mode`, `focus_session` and `planned_end_at`, written in the batch that starts the entry and only by its author, like `started_at`. A `planned_end_at` before the entry's `started_at` (the batch's winning value, else the stored one) is refused alone with reason `invalid_planned_end` and travels back like a `forbidden` op; the rest of the batch applies. The pause bookkeeping, the phase and breaks never reach the server.
 - **One running entry per user.** Starting an entry writes `ended_at` = the new start on the user's running entry in the same batch. When a device holds two or more running entries of its user after a sync (two devices started offline), it keeps the one with the greatest `started_at` (ties: the greatest id) and writes `ended_at` = that start on the others. Every device computes the same values, so the repair converges without a prompt. The server applies the same rule (`internal/timetrack`, shared with `web/src/lib/time.ts` by fixtures) when it starts or stops an entry for the REST API, and never repairs on the sync path. Completing a task on a device ends its running entry in the completion batch; server-side completions do not.
 - **Days.** An entry belongs whole to the logical day its start falls on (the user's day start applies); totals are computed on demand from the rows, never stored.
 - **Reseeding after a restore** re-sends only the device user's own entries.
