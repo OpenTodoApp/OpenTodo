@@ -32,6 +32,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **An attachment uploaded right after another one is no longer refused as over the quota.** An upload held its size against the attachment quota until a moment after its answer was sent, so a device that sent the next file at once could find the finished file counted twice and get "this upload would go over your quota" with room to spare. The room is now given back before the answer is sent; parallel uploads still share the free space.
 - **"Added to the bottom of …" shows on a slow device too.** After a quick add, the app waited only twelve frames for the new row before deciding whether it was out of sight, which a busy phone or computer could miss, so the toast with **Show** never came. It now waits for the row itself, for up to 3 seconds.
+- **Offline, a part of the app that was not loaded yet no longer reloads the page.** When a piece of the app loaded on first use (such as the "Added to the bottom of …" announcement after a quick add) could not be fetched because the device was offline, the app took it for a newer release and reloaded, which showed an empty page until the connection came back if the app was not installed yet. Offline, the app now stays on the page and does without that piece; online, a missing piece still reloads into the new release.
 
 ## [0.18.1] - 2026-10-31
 
