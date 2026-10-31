@@ -1,6 +1,6 @@
 // Settings → About (OpenSpec change welcome-note): the version, the documentation,
 // the website, the source code, where to report a problem, the Discord server
-// (discord-community), Buy Me a Coffee, and the
+// (discord-community), the account on X (x-account-link), Buy Me a Coffee, and the
 // owner's welcome note on demand. Every link is a plain link opening a new tab;
 // the version comes from this server's status while online.
 import { useEffect, useState } from 'react'
@@ -10,7 +10,7 @@ import { t } from '../lib/i18n'
 import { useOnline } from '../lib/online'
 import type { User } from '../lib/types'
 import { navigate } from './router'
-import { CoffeeButton, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeNote } from './WelcomeDialog'
+import { CoffeeButton, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeNote, X_URL } from './WelcomeDialog'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { shell, shellOutdated, type OpenTodoShell } from '../lib/shell'
 
@@ -72,6 +72,8 @@ export function AboutSection({ user }: { user: User }) {
           control={<ExternalLink href={ISSUES_URL} label={t('Open an issue')} testId="issues" />} />
         <SettingRow id="about-community" {...rowCopy('about', 'community')}
           control={<ExternalLink href={DISCORD_URL} label={t('Join on Discord')} testId="discord" />} />
+        <SettingRow id="about-news" {...rowCopy('about', 'news')}
+          control={<ExternalLink href={X_URL} label={t('Follow on X')} testId="x" />} />
         <SettingRow id="about-source" {...rowCopy('about', 'source')}
           control={<ExternalLink href={REPO_URL} label="GitHub" testId="source" />} />
         {user.role === 'owner' && (

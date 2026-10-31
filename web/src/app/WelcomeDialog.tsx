@@ -20,6 +20,8 @@ export const REPO_URL = 'https://github.com/OpenTodoApp/OpenTodo'
 export const COFFEE_URL = 'https://buymeacoffee.com/pixari'
 /** The OpenTodo Discord server (OpenSpec change discord-community): a plain link, nothing is loaded from Discord. */
 export const DISCORD_URL = 'https://discord.gg/Jmj7WuRQ'
+// The project's account on X (x-account-link): releases and work in progress in short form.
+export const X_URL = 'https://x.com/opentodoapp'
 
 /** How long after the owner account was created the note may still appear. */
 const WELCOME_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
