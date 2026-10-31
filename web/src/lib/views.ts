@@ -17,7 +17,7 @@ import { buildProjectTree } from './projects'
 import { ancestors, flattenTree } from './tree'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS, VIEW_LAYOUTS,
-  fieldSortId, isFieldSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
+  fieldSortId, readSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
 } from './types'
 import { t, msg } from './i18n'
 import { uuid } from './ids'
@@ -141,7 +141,7 @@ export function viewOptions(v: Pick<View, 'kind' | 'group_by' | 'sort_by' | 'sor
   return {
     kind: pick(v.kind, VIEW_KINDS, VIEW_DEFAULTS.kind as ViewKind),
     groupBy: pick(v.group_by, GROUP_BY_OPTIONS, VIEW_DEFAULTS.group_by as GroupBy),
-    sortBy: isFieldSortBy(v.sort_by) ? v.sort_by : pick(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
+    sortBy: readSortBy(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
     sortDir: pick(v.sort_dir, SORT_DIR_OPTIONS, VIEW_DEFAULTS.sort_dir as SortDir),
   }
 }

@@ -3026,6 +3026,7 @@
   "Unestimated": "Sem estimativa",
   "Unexpected \")\" at position {pos}": "“)” inesperado na posição {pos}",
   "Unexpected text {text} at position {pos}; quote names after \"@\" or \"#\", or use search:": "Texto inesperado {text} na posição {pos}; coloque os nomes entre aspas depois de “@” ou “#”, ou use search:",
+  "Unavailable custom field": "Campo personalizado indisponível",
   "Unknown": "Desconhecido",
   "Unknown command: {name}": "Comando desconhecido: {name}",
   "Unknown project": "Projeto desconhecido",

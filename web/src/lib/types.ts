@@ -432,6 +432,13 @@ export function fieldSortBy(id: string): FieldSortBy {
 export function isFieldSortBy(value: unknown): value is FieldSortBy {
   return fieldSortId(value) !== null
 }
+
+/** A stored sort_by as one page reads it: a field sort, an allowed option, or the fallback. */
+export function readSortBy(value: unknown, options: readonly SortBy[], fallback: SortBy): SortBy {
+  if (isFieldSortBy(value)) return value
+  return typeof value === 'string' && options.includes(value as SortBy) ? value as SortBy : fallback
+}
+
 export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
 export type ViewLayout = 'list' | 'board'
 export const VIEW_LAYOUTS: readonly ViewLayout[] = ['list', 'board']
