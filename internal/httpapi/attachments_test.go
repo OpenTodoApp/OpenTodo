@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -44,7 +45,22 @@ func (e *env) raw(method, path string, body []byte, headers ...string) (*http.Re
 // queueRow creates an attachment row through sync like a device does.
 func queueRow(e *env, device, id, task, author, name, mime string, content []byte, encrypted ...bool) {
 	e.t.Helper()
-	queueRowAt(e, time.Now().UnixMilli(), device, id, task, author, name, mime, content, encrypted...)
+	queueRowAt(e, deviceNow(), device, id, task, author, name, mime, content, encrypted...)
+}
+
+var lastDeviceTS atomic.Int64
+
+// deviceNow is a test device's clock: the wall clock, but strictly increasing,
+// so a wall clock stepped back under load (seen on WSL2) cannot make a later
+// write of the test lose last-writer-wins to an earlier one.
+func deviceNow() int64 {
+	for {
+		last, now := lastDeviceTS.Load(), time.Now().UnixMilli()
+		next := max(now, last+1)
+		if lastDeviceTS.CompareAndSwap(last, next) {
+			return next
+		}
+	}
 }
 
 // queueRowAt is queueRow with the device's own clock reading ts.
@@ -61,6 +77,25 @@ func queueRowAt(e *env, ts int64, device, id, task, author, name, mime string, c
 	out := syncOnce(e, device, 0, ops)
 	if rej, _ := out["rejected"].([]any); len(rej) > 0 {
 		e.t.Fatalf("rejected %v", rej)
+	}
+}
+
+// waitUploading waits until the server holds want bytes of uploads in
+// progress for uid (checkRoom has reserved them).
+func waitUploading(t *testing.T, s *Server, uid string, want int64) {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		s.uploadsMu.Lock()
+		held := s.uploading[uid]
+		s.uploadsMu.Unlock()
+		if held >= want {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("upload in progress never held its size: %d of %d bytes", held, want)
+		}
+		time.Sleep(time.Millisecond)
 	}
 }
 
@@ -201,10 +236,18 @@ func TestAttachmentQuotaHoldsOnRestoreAndUploadsInProgress(t *testing.T) {
 		if resp, body := e.raw("PUT", "/api/v1/attachments/"+id+"/content", file(i)); resp.StatusCode != 204 {
 			t.Fatalf("%s: %d %s", id, resp.StatusCode, body)
 		}
+		// A finished upload holds no room once its answer arrives: the next
+		// upload, sent at once, must not find its file counted twice.
+		e.server.uploadsMu.Lock()
+		held := e.server.uploading[uid]
+		e.server.uploadsMu.Unlock()
+		if held != 0 {
+			t.Fatalf("%s: %d bytes still held after the upload answered", id, held)
+		}
 	}
 	// Removing t1 frees its space; t2 fills it; restoring t1 no longer fits.
 	setDeleted := func(id string, v any) []any {
-		now := time.Now().UnixMilli()
+		now := deviceNow()
 		out := syncOnce(e, "laptop", 0, []map[string]any{{"id": ids.New(), "entity": "attachment", "entityId": id, "field": "deleted_at",
 			"value": v, "ts": now, "device": "laptop"}})
 		rej, _ := out["rejected"].([]any)
@@ -247,10 +290,13 @@ func TestAttachmentQuotaHoldsOnRestoreAndUploadsInProgress(t *testing.T) {
 		resp.Body.Close()
 		first <- resp.StatusCode
 	}()
-	// The first upload has started sending: its size is held.
+	// The first upload has started sending. That the client handed bytes to
+	// the connection says nothing about the server: wait until the server
+	// holds the first upload's size before the second one asks for room.
 	if _, err := pw.Write(file(4)[:1024]); err != nil {
 		t.Fatal(err)
 	}
+	waitUploading(t, e.server, uid, 1<<20)
 	if resp, body := e.raw("PUT", "/api/v1/attachments/p2/content", file(5)); resp.StatusCode != 403 {
 		t.Fatalf("parallel upload into the same space: %d %s", resp.StatusCode, body)
 	}

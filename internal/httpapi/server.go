@@ -64,7 +64,7 @@ type Server struct {
 	// attachmentLimiter caps uploads per account (120/hour, attachments D5).
 	attachmentLimiter *rateLimiter
 	// uploading holds the bytes of each account's uploads in progress, under
-	// uploadsMu, so parallel uploads share the quota (see checkRoom).
+	// uploadsMu, so parallel uploads share the quota (see uploadHold).
 	uploadsMu sync.Mutex
 	uploading map[string]int64
 	// One limiter per purpose, per client address, 10 a minute each

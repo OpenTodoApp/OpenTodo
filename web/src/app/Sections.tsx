@@ -15,7 +15,6 @@ import { preferredPlacement } from '../lib/userPrefs'
 import { selectTask } from './signals'
 import { addTasksUndoable } from '../lib/pasteTasks'
 import { showBulkToast } from './bulk/toastStore'
-import { announceIfOutOfSight } from './task-list/announceAdded'
 import { createSection, deleteSection, renameSection, reorderSection, setSectionStyle } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
@@ -199,7 +198,8 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
     const id = await createTask({ ...rest, placement, project_id: target, section_id: target === project.id ? sectionId : null })
     // Out of sight in a long section or column: say where it went (add-position D5).
     const list = root.current?.closest<HTMLElement>('[data-list-page]')
-    if (target === project.id && list) void announceIfOutOfSight(id, { list: sectionName, placement, root: list, select: (x) => selectTask.request(x) })
+    // Loaded with the first add: not needed on first load (web/bundle-budget.json).
+    if (target === project.id && list) void import('./task-list/announceAdded').then((m) => m.announceIfOutOfSight(id, { list: sectionName, placement, root: list, select: (x) => selectTask.request(x) }))
   }
   // A pasted list (paste-to-tasks D3): every line in this section unless it names a #project; one batch, one Undo.
   const onAddMany = async (inputs: QuickAddInput[]) => {
