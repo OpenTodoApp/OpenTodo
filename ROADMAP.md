@@ -83,7 +83,7 @@ Phones, Apple, Obsidian and voice.
 | [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included |  |
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian |  |
 | [`voice-ramble`](openspec/changes/voice-ramble/) | Speak a brain dump or drop a photo of notes; review the proposed tasks |  |
-| [`outlook-calendar-sync`](openspec/changes/outlook-calendar-sync/) | Microsoft 365 and Outlook in calendar sync |  |
+| [`outlook-calendar-sync`](openspec/changes/archive/2026-10-31-outlook-calendar-sync/) | **Shipped.** Microsoft 365 and Outlook in calendar sync | [#609](https://github.com/OpenTodoApp/OpenTodo/issues/609) |
 | [`play-production`](openspec/changes/play-production/) | Google Play production, F-Droid and reproducible builds |  |
 | [`agent-tools-complete`](openspec/changes/archive/2026-10-31-agent-tools-complete/) | **Shipped.** Agent and MCP tools for reminders, project notes, sections, fields, time and Focus | [#565](https://github.com/OpenTodoApp/OpenTodo/issues/565) |
 

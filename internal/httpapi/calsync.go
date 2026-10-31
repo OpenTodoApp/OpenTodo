@@ -12,7 +12,7 @@ import (
 )
 
 // Calendar sync (OpenSpec change calendar-two-way): a user's own calendar
-// account (CalDAV or Google) that receives their dated tasks as events and
+// account (CalDAV, Google or Microsoft) that receives their dated tasks as events and
 // whose changes come back to the tasks. One owner switch, off by default,
 // governs every route and the worker (design D1, D14).
 
@@ -49,12 +49,18 @@ func (s *Server) registerCalendarSyncRoutes(mux *routes) {
 	mux.handle("POST /api/v1/calendar-sync/connections/{id}/sync", signedIn.DemoDenied(), gate(s.handleSyncCalendarConnection))
 	mux.handle("POST /api/v1/calendar-sync/google/start", signedIn.Recent().DemoDenied(), gate(s.handleGoogleStart))
 	mux.handle("GET "+calsyncCallback, signedIn.SessionOnly().DemoDenied(), gate(s.handleGoogleCallback))
+	// Microsoft (outlook-calendar-sync, design D11).
+	mux.handle("GET /api/v1/settings/calendar-sync/microsoft", ownerOnly("manage the Microsoft client of calendar sync").DemoDenied(), s.handleGetMicrosoftClient)
+	mux.handle("PUT /api/v1/settings/calendar-sync/microsoft", ownerOnly("manage the Microsoft client of calendar sync").Credential().DemoDenied(), s.handlePutMicrosoftClient)
+	mux.handle("POST /api/v1/calendar-sync/microsoft/start", signedIn.Recent().DemoDenied(), gate(s.handleMicrosoftStart))
+	mux.handle("GET "+microsoftCallback, signedIn.SessionOnly().DemoDenied(), gate(s.handleMicrosoftCallback))
 }
 
-// calsyncSettingExtra tells every user whether Google can be connected.
+// calsyncSettingExtra tells every user whether Google and Microsoft can be connected.
 func (s *Server) calsyncSettingExtra(r *http.Request) map[string]any {
 	c, err := s.calsync.Google.Client(r.Context())
-	return map[string]any{"google": err == nil && c.Complete(), "max_connections": calsync.MaxConnections}
+	m, merr := s.calsync.Microsoft.Client(r.Context())
+	return map[string]any{"google": err == nil && c.Complete(), "microsoft": merr == nil && m.Complete(), "max_connections": calsync.MaxConnections}
 }
 
 // feedTasksFor is the task feed's selection for the worker, outside a request.

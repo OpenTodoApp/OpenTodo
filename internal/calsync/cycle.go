@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"net/url"
 	"sort"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 type cycle struct {
 	w         *Worker
 	c         *Connection
-	dav       *DAV
+	tr        transport
 	target    string
 	counts    RunCounts
 	links     map[string]*Link // by task id
@@ -34,7 +33,7 @@ type cycle struct {
 // run pulls, pushes and refreshes the shown calendars.
 func (r *cycle) run(ctx context.Context) error {
 	var err error
-	if r.ver, err = r.dav.calendarVersion(ctx, r.target); err != nil {
+	if r.ver, err = r.tr.version(ctx, r.target); err != nil {
 		return err
 	}
 	if r.encrypted, err = r.w.encrypted(ctx, r.c.UserID); err != nil {
@@ -75,7 +74,7 @@ func (r *cycle) loadLinks(ctx context.Context) error {
 	}
 	r.links, r.byHref = links, map[string]*Link{}
 	for _, l := range links {
-		r.byHref[hrefKey(l.Href)] = l
+		r.byHref[r.tr.key(l.Href)] = l
 	}
 	return nil
 }
@@ -101,30 +100,9 @@ func (r *cycle) loadTasks(ctx context.Context) error {
 	return nil
 }
 
-// listing reads what changed in the target: sync-collection when the server
-// has sync tokens (from the stored token, or from the start), else the ETags.
-func (r *cycle) listing(ctx context.Context) (*listing, error) {
-	if r.ver.syncToken != "" {
-		l, ok, err := r.dav.syncCollection(ctx, r.target, r.c.SyncToken)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			// The stored token was refused: list from the start.
-			if l, _, err = r.dav.syncCollection(ctx, r.target, ""); err != nil {
-				return nil, err
-			}
-		}
-		if l != nil {
-			return l, nil
-		}
-	}
-	return r.dav.etagListing(ctx, r.target)
-}
-
 // pull applies what changed in the calendar to the linked tasks (design D8).
 func (r *cycle) pull(ctx context.Context) error {
-	l, err := r.listing(ctx)
+	l, err := r.tr.changes(ctx, r.target, r.ver, r.c.SyncToken)
 	if err != nil {
 		return err
 	}
@@ -151,7 +129,7 @@ func (r *cycle) pull(ctx context.Context) error {
 		return nil
 	}
 	sort.Strings(fetch)
-	objs, err := r.dav.multiget(ctx, r.target, fetch)
+	objs, err := r.tr.fetch(ctx, r.target, fetch)
 	if err != nil {
 		return err
 	}
@@ -171,8 +149,8 @@ func (r *cycle) pull(ctx context.Context) error {
 }
 
 // changed handles a linked event whose ETag changed.
-func (r *cycle) changed(ctx context.Context, link *Link, obj object) error {
-	ev, ok := masterEvent(obj.Data)
+func (r *cycle) changed(ctx context.Context, link *Link, obj remote) error {
+	ev, ok := obj.master()
 	if !ok {
 		return nil
 	}
@@ -199,7 +177,7 @@ func (r *cycle) changed(ctx context.Context, link *Link, obj object) error {
 		}
 	}
 	ts := r.w.Sync.ServerTSAt(r.w.clock().UnixMilli())
-	ops, ch := EventOps(r.c.ID, link.TaskID, obj.ETag+"\x00"+hash16(string(obj.Data)), from, remote, ev.Summary, r.encrypted, ts)
+	ops, ch := EventOps(r.c.ID, link.TaskID, obj.Version, from, remote, ev.Summary, r.encrypted, ts)
 	if err := r.apply(ctx, ops); err != nil {
 		if !refused(err) {
 			return err
@@ -231,7 +209,7 @@ func (r *cycle) removed(ctx context.Context, link *Link) error {
 		}
 	}
 	delete(r.links, link.TaskID)
-	delete(r.byHref, hrefKey(link.Href))
+	delete(r.byHref, r.tr.key(link.Href))
 	return r.w.Store.DeleteLink(ctx, r.c.ID, link.TaskID)
 }
 
@@ -310,32 +288,39 @@ func (r *cycle) push(ctx context.Context) error {
 
 // write creates or replaces one task's event.
 func (r *cycle) write(ctx context.Context, t calfeed.FeedTask, want Snapshot, link *Link) error {
-	body := calfeed.WriteEvent(t, calfeed.FeedOptions{Now: r.w.clock(), BaseURL: r.w.BaseURL, Encrypted: r.encrypted})
-	href, cond := r.target+url.PathEscape(t.ID)+".ics", "*"
-	if link != nil {
-		href, cond = link.Href, link.ETag
-	}
-	status, etag, err := r.dav.put(ctx, href, cond, body)
-	if err != nil {
-		return err
-	}
-	switch {
-	case status == http.StatusPreconditionFailed && cond == "*":
-		// It exists (a link lost in a restore): adopt it and replace it.
-		if _, etag, err = r.dav.get(ctx, href); err != nil {
+	opts := calfeed.FeedOptions{Now: r.w.clock(), BaseURL: r.w.BaseURL, Encrypted: r.encrypted}
+	var status int
+	var href, etag string
+	var err error
+	if link == nil {
+		if status, href, etag, err = r.tr.create(ctx, r.target, t, opts, ""); err != nil {
 			return err
 		}
-		if status, etag, err = r.dav.put(ctx, href, etag, body); err != nil {
+		if status == http.StatusPreconditionFailed {
+			// It exists (a link lost in a restore): adopt it and replace it.
+			if _, etag, err = r.tr.current(ctx, href); err != nil {
+				return err
+			}
+			if status, etag, err = r.tr.replace(ctx, href, etag, t, opts); err != nil {
+				return err
+			}
+		}
+	} else {
+		href = link.Href
+		if status, etag, err = r.tr.replace(ctx, href, link.ETag, t, opts); err != nil {
 			return err
 		}
-	case status == http.StatusPreconditionFailed:
-		// Changed in the calendar since the pull: the next cycle compares.
-		r.counts.Partial = true
-		return nil
-	case status == http.StatusNotFound && link != nil:
-		// Deleted since the pull: write it again where it was.
-		if status, etag, err = r.dav.put(ctx, href, "*", body); err != nil {
-			return err
+		switch status {
+		case http.StatusPreconditionFailed:
+			// Changed in the calendar since the pull: the next cycle compares.
+			r.counts.Partial = true
+			return nil
+		case http.StatusNotFound:
+			// Deleted since the pull: write it again.
+			delete(r.byHref, r.tr.key(href))
+			if status, href, etag, err = r.tr.create(ctx, r.target, t, opts, link.Href); err != nil {
+				return err
+			}
 		}
 	}
 	if status < 200 || status > 299 {
@@ -343,19 +328,19 @@ func (r *cycle) write(ctx context.Context, t calfeed.FeedTask, want Snapshot, li
 	}
 	r.counts.Written++
 	nl := &Link{TaskID: t.ID, Href: href, ETag: etag, Snapshot: want}
-	r.links[t.ID], r.byHref[hrefKey(href)] = nl, nl
+	r.links[t.ID], r.byHref[r.tr.key(href)] = nl, nl
 	return r.w.Store.SaveLink(ctx, r.c.ID, nl)
 }
 
 // remove deletes the event of a task that left the push set.
 func (r *cycle) remove(ctx context.Context, link *Link) error {
-	status, err := r.dav.del(ctx, link.Href, link.ETag)
+	status, err := r.tr.remove(ctx, link.Href, link.ETag)
 	if err != nil {
 		return err
 	}
 	if status == http.StatusPreconditionFailed {
 		// Changed in the calendar meanwhile; the task is gone or done all the same.
-		if status, err = r.dav.del(ctx, link.Href, ""); err != nil {
+		if status, err = r.tr.remove(ctx, link.Href, ""); err != nil {
 			return err
 		}
 	}
@@ -364,6 +349,6 @@ func (r *cycle) remove(ctx context.Context, link *Link) error {
 	}
 	r.counts.Removed++
 	delete(r.links, link.TaskID)
-	delete(r.byHref, hrefKey(link.Href))
+	delete(r.byHref, r.tr.key(link.Href))
 	return r.w.Store.DeleteLink(ctx, r.c.ID, link.TaskID)
 }

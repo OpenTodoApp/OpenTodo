@@ -12,6 +12,7 @@ package zoned
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	// The container image has no zone database on disk; the standard library's
@@ -88,4 +89,31 @@ func Local(t time.Time, loc *time.Location) (date, clock string) {
 func WindowsZone(id string) (string, bool) {
 	iana, ok := windowsZones[id]
 	return iana, ok
+}
+
+var (
+	windowsNamesOnce sync.Once
+	windowsNames     map[string]string
+)
+
+// WindowsName is the Windows time zone id CLDR recommends an IANA zone for
+// ("America/Los_Angeles" → "Pacific Standard Time"): the reverse of
+// WindowsZone, for the zones that table names (calendar sync writes Outlook
+// events with it). "UTC" and "Etc/UTC" are "UTC".
+func WindowsName(iana string) (string, bool) {
+	windowsNamesOnce.Do(func() {
+		windowsNames = make(map[string]string, len(windowsZones))
+		for win, z := range windowsZones {
+			// Several ids may name one zone; keep the shortest, then the first
+			// in byte order, so the choice is stable.
+			if cur, ok := windowsNames[z]; !ok || len(win) < len(cur) || (len(win) == len(cur) && win < cur) {
+				windowsNames[z] = win
+			}
+		}
+	})
+	if iana == "UTC" || iana == "Etc/UTC" {
+		return "UTC", true
+	}
+	win, ok := windowsNames[iana]
+	return win, ok
 }

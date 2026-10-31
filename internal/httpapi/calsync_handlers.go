@@ -230,7 +230,7 @@ func (s *Server) newCalendarPassword(w http.ResponseWriter, r *http.Request, c *
 		return false
 	}
 	if c.Provider != calsync.ProviderCalDAV {
-		writeFieldError(w, "password", "a Google connection is renewed with Reconnect")
+		writeFieldError(w, "password", "a Google or Microsoft connection is renewed with Reconnect")
 		return false
 	}
 	if password == "" || len(password) > maxCalsyncSecret {
