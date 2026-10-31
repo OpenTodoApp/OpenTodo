@@ -37,7 +37,7 @@ Your account and how the app looks for you: [Settings: You](settings-you.md).
 
 ### Appearance
 
-[Appearance](settings-you.md#appearance): **Theme and density** (System, Light or Dark, one of eight colour themes, density) and **Sidebar** (which **More** destinations it shows), all following your account.
+[Appearance](settings-you.md#appearance): **Theme and density** (System, Light or Dark, one of eight colour themes or your own colour, density) and **Sidebar** (which **More** destinations it shows), all following your account.
 
 ## App
 

@@ -50,4 +50,4 @@ Some logic runs on the server and in the web app: the server needs it for REST, 
 
 Thin vector sets give false confidence: when you change one of these modules, add the case you fixed or added to its fixture first.
 
-Other fixtures are not shared between the two languages: the agent tool lists (`internal/agenttools/testdata/*.golden.json`, also read by the Claude plugin check), the MCP tool list, the CLI schema, the importers' golden outputs, `web/src/lib/habits.vectors.json` and `web/src/lib/briefing.fixtures.json`.
+Other fixtures are not shared between the two languages: the agent tool lists (`internal/agenttools/testdata/*.golden.json`, also read by the Claude plugin check), the MCP tool list, the CLI schema, the importers' golden outputs, `web/src/lib/habits.vectors.json`, `web/src/lib/briefing.fixtures.json` and `web/src/lib/accent.vectors.json` (the custom accent derivation, client-only: the server never renders the accent).
