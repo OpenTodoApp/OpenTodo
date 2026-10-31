@@ -1,13 +1,17 @@
-// Recurring task flows (OpenSpec change recurring-tasks, design D5). Pure planning
-// functions: given the series row and the local task set they return the field
-// changes to write; ops.ts applies them in one mutateMany batch. Every value is a
-// function of inputs all devices share (series id, rule, due date, occurrence date),
-// so devices acting on the same occurrence offline write identical entities and
-// converge under last-writer-wins without a coordinator.
+// Recurring task flows (OpenSpec change recurring-tasks, design D5; series-exceptions
+// D2). Pure planning functions: given the series row and the local task set they
+// return the field changes to write; ops.ts applies them in one mutateMany batch.
+// Every value is a function of inputs all devices share (series id, rule, due date,
+// occurrence date, the series' records), so devices acting on the same occurrence
+// offline write identical entities and converge under last-writer-wins without a
+// coordinator. The server's port is internal/sync/occurrences.go, pinned with this
+// module by series.fixture.json.
 import { addDaysISO, daysBetweenISO } from './dates'
-import { detachedId, occurrenceId } from './ids'
+import { occurrenceId } from './ids'
+import { nextFree } from './occurrences'
 import type { Change } from './ops'
-import { followingOccurrence, nextAfterCompletion, nextCalendar, parseRule, type Rule } from './recurrence'
+import { bounded, lineageOf, pieceEnd } from './lineage'
+import { followingOccurrence, parseRule, type Rule } from './recurrence'
 import type { Due, Task } from './types'
 
 /** The parsed rule of an open, live series, or null when `task` is not one. */
@@ -22,23 +26,149 @@ export function occurrenceDate(series: Task, today: string): string {
   return series.due?.date ?? today
 }
 
+// ---- records (series-exceptions M3) ----
+
+export type RecordState = 'open' | 'done' | 'skipped'
+
+export interface OccurrenceRecord {
+  task: Task
+  /** The occurrence date the record stands for (RECURRENCE-ID). */
+  date: string
+  state: RecordState
+}
+
+/** The occurrence date a task stands for: `occurrence_date`, or its due date for a record written before the field. */
+export function recordDate(task: Pick<Task, 'occurrence_date' | 'due'>): string | null {
+  return task.occurrence_date ?? task.due?.date ?? null
+}
+
+/** True for an occurrence record of `seriesId`: it points at the series and has the id derived from its date. */
+export function isRecordOf(seriesId: string, task: Task): boolean {
+  if (task.series_id !== seriesId) return false
+  const date = recordDate(task)
+  return !!date && task.id === occurrenceId(seriesId, date)
+}
+
+/** True for any occurrence record (of whatever series). */
+export function isOccurrenceRecord(task: Task): boolean {
+  return !!task.series_id && isRecordOf(task.series_id, task)
+}
+
+/** An open occurrence record whose series is still repeating: deleting it is a skip (D3). */
+export function skipsInstead(task: Task, byId: Map<string, Task>): boolean {
+  return !task.completed_at && !task.deleted_at && isOccurrenceRecord(task) && !!seriesRule(byId.get(task.series_id as string))
+}
+
+export function recordState(task: Task): RecordState {
+  if (!task.completed_at) return 'open'
+  return task.skipped ? 'skipped' : 'done'
+}
+
 /**
- * Completed occurrence records of a series: live tasks pointing at it whose id is
- * the one derived from their own due date. Detached copies (different id scheme),
- * reopened records (no completed_at) and skipped habit records are not counted, so the `for N times`
- * count converges with the records themselves, without a separate counter.
+ * The live occurrence records of a series. A trashed record is left out: the app
+ * never trashes one (removing an occurrence is a skip, design D3), and an Undo of a
+ * completion trashes the record it created so the date is free again.
  */
-export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, exceptDate?: string): number {
-  let n = 0
-  for (const t of tasks) {
-    if (t.series_id !== seriesId || !t.completed_at || t.deleted_at || !t.due) continue
-    // A habit's skipped record is not a completion (OpenSpec habits, design D2).
-    if (t.skipped) continue
-    if (t.due.date === exceptDate) continue
-    if (t.id === occurrenceId(seriesId, t.due.date)) n++
+export function recordsOf(seriesId: string, tasks: Iterable<Task>): OccurrenceRecord[] {
+  const out: OccurrenceRecord[] = []
+  for (const task of tasks) {
+    if (task.deleted_at || !isRecordOf(seriesId, task)) continue
+    out.push({ task, date: recordDate(task) as string, state: recordState(task) })
+  }
+  return out
+}
+
+/** The exception dates of a series: the dates of its records, whatever their state (M4). */
+export function exceptionDates(seriesId: string, tasks: Iterable<Task>): Set<string> {
+  return new Set(recordsOf(seriesId, tasks).map((r) => r.date))
+}
+
+export interface Budget {
+  /** Occurrences used before the series' current one: done and open records of the lineage, and earlier pieces' remaining occurrences. */
+  taken: number
+  done: number
+  /** Exception dates: the dates of every record of the lineage (M4, M7). */
+  except: Set<string>
+  /** The dates of the series' own records. */
+  own: Set<string>
+  /** The last date the series produces occurrences on as a piece of its lineage (series-split D3), null when unbounded. */
+  end: string | null
+}
+
+/**
+ * What `for N times` has used (M6, D9): done and open records, never skipped ones,
+ * leaving out the record of `exceptDate` (the occurrence being acted on), and the
+ * exception dates. Given the series row (not only its id) it reads the lineage
+ * (series-split D3, D4): every piece's records count and are exceptions, an earlier
+ * piece that ended counts its last occurrence (completing it wrote no record), a
+ * counted series also uses up what earlier pieces still have to come, and `end`
+ * bounds the series to its piece.
+ */
+export function seriesBudget(series: Task | string, tasks: Iterable<Task>, exceptDate?: string, today?: string): Budget {
+  const list = Array.isArray(tasks) ? (tasks as Task[]) : [...tasks]
+  const id = typeof series === 'string' ? series : series.id
+  const pieces = typeof series === 'string' ? null : lineageOf(series, list)
+  let done = 0
+  let open = 0
+  const except = new Set<string>()
+  const own = new Set<string>()
+  for (const pid of pieces ? pieces.map((p) => p.task.id) : [id]) {
+    for (const r of recordsOf(pid, list)) {
+      except.add(r.date)
+      if (pid === id) own.add(r.date)
+      if (r.date === exceptDate) continue
+      if (r.state === 'done') done++
+      else if (r.state === 'open') open++
+    }
+  }
+  const at = pieces ? pieces.findIndex((p) => p.task.id === id) : 0
+  const before = pieces ? pieces.slice(0, at) : []
+  before.forEach(({ task }, i) => {
+    const last = task.due?.date
+    const end = pieceEnd(pieces!, i)
+    if (task.completed_at && last && !except.has(last) && (!end || last <= end)) { done++; except.add(last) }
+  })
+  let taken = done + open
+  if (before.length && seriesRule(series as Task)?.count) {
+    const on = today ?? (series as Task).due?.date ?? ''
+    for (let i = 0; i < at; i++) taken += remainingOf(pieces![i].task, pieceEnd(pieces!, i), taken, except, on)
+  }
+  return { taken, done, except, own, end: pieces ? pieceEnd(pieces, at) : null }
+}
+
+/** What an earlier piece still has to come within its range: its current occurrence and the walk to its end. */
+function remainingOf(piece: Task, end: string | null, used: number, except: ReadonlySet<string>, today: string): number {
+  const rule = seriesRule(piece)
+  if (!rule || rule.afterCompletion || !piece.due || !today) return 0
+  const r = bounded(rule, end)
+  let cur = piece.due.date
+  if (r.until && cur > r.until) return 0
+  let n = except.has(cur) ? 0 : 1
+  for (let i = 0, k = 0; i < 3700; i++) {
+    const next = followingOccurrence(r, cur, today, today, used + k)
+    if (next === null || next <= cur) break
+    cur = next
+    if (except.has(next)) continue
+    k++
+    n++
   }
   return n
 }
+
+/** The series' rule within its piece of the lineage: `until` no later than the day before the next piece starts. */
+export function pieceRule(rule: Rule, budget: Pick<Budget, 'end'>): Rule {
+  return bounded(rule, budget.end)
+}
+
+/**
+ * Completed occurrence records of a series, leaving out the one of `exceptDate`. The
+ * `for N times` count converges with the records themselves, without a separate counter.
+ */
+export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, exceptDate?: string): number {
+  return seriesBudget(seriesId, tasks, exceptDate).done
+}
+
+// ---- dates ----
 
 /** The series' due on another date, keeping its time and zone (absolute-datetimes, design D7). */
 function moveDue(due: Due | null, date: string): Due {
@@ -47,11 +177,11 @@ function moveDue(due: Due | null, date: string): Due {
 }
 
 /**
- * The series' fields on its next occurrence: the due date moves to `next`, and a
- * deadline moves by the same number of calendar days (OpenSpec change deadlines,
- * design D8). A series without a deadline writes no deadline field.
+ * The series' dates on another occurrence: the due date moves to `next`, and a
+ * deadline and start move by the same number of calendar days (OpenSpec change
+ * deadlines, design D8). A series without a deadline writes no deadline field.
  */
-function moveDates(series: Task, next: string, today: string): Record<string, unknown> {
+export function moveDates(series: Task, next: string, today: string): Record<string, unknown> {
   const out: Record<string, unknown> = { due: moveDue(series.due, next) }
   if (series.deadline) out.deadline = shiftDate(series.deadline, occurrenceDate(series, today), next)
   // A start date moves the same way; evening stays on the series (someday-and-evening D8).
@@ -64,22 +194,52 @@ export function shiftDate(date: string, from: string, to: string): string {
   return addDaysISO(date, daysBetweenISO(from, to))
 }
 
-/** Fields an occurrence copy inherits from its series. */
-function copyOf(series: Task, now: number): Record<string, unknown> {
+/** Fields an occurrence record inherits from its series, on the occurrence date `date`. */
+export function recordFields(series: Task, date: string, now: number, today: string): Record<string, unknown> {
+  const dates = moveDates(series, date, today)
   return {
     title: series.title, description: series.description, project_id: series.project_id, parent_id: series.parent_id,
-    priority: series.priority, due: series.due ?? null, labels: [...series.labels], position: series.position,
+    priority: series.priority, labels: [...series.labels], position: series.position,
     created_at: now, deleted_at: null, estimate_minutes: series.estimate_minutes, recurrence: null, series_id: series.id,
+    ...dates, occurrence_date: date, completed_at: null, skipped: false,
     // Same project, same column (board-view); only sent when set.
     ...(series.section_id ? { section_id: series.section_id } : {}),
-    // The occurrence keeps the deadline it had (deadlines D8); only sent when set.
-    ...(series.deadline ? { deadline: series.deadline } : {}),
-    ...(series.start ? { start: series.start } : {}),
+    ...(series.start === 'someday' ? { start: series.start } : {}),
     ...(series.evening ? { evening: true } : {}),
+    // A span keeps its flag; its start moved with the due above (multi-day-tasks D6).
+    ...(series.span ? { span: true } : {}),
+    // The record keeps the part of the day (day-parts D2); only sent when set.
+    ...(series.day_part ? { day_part: series.day_part } : {}),
+    // And the energy (task-energy); only sent when set.
+    ...(series.energy ? { energy: series.energy } : {}),
+    ...(series.assignee_id ? { assignee_id: series.assignee_id } : {}),
+    ...(series.location ? { location: series.location } : {}),
     // Custom field values, null included, as the server's record (custom-fields);
     // mutateMany writes one `fields.<id>` op each.
     ...(series.fields && Object.keys(series.fields).length ? { fields: { ...series.fields } } : {}),
   }
+}
+
+// ---- the current occurrence ----
+
+/**
+ * The occurrence the series stands on for acting: its due date, or, when another
+ * device's record made that date an exception (M5), the next free date after it.
+ * Null when no free date remains (the series is at its end).
+ */
+export function currentOccurrence(series: Task, rule: Rule, tasks: Iterable<Task>, today: string): string | null {
+  const date = occurrenceDate(series, today)
+  const b = seriesBudget(series, tasks, undefined, today)
+  if (b.end && date > b.end) return null
+  if (!b.except.has(date) || rule.afterCompletion) return date
+  // The series needs one occurrence the records have not used up.
+  return nextFree(pieceRule(rule, b), date, today, today, b.taken - 1, b.except)
+}
+
+/** The series as it stands on `date` (its dates moved there when a late record moved it, M5). */
+export function standOn(series: Task, date: string, today: string): Task {
+  if (date === occurrenceDate(series, today)) return series
+  return { ...series, ...(moveDates(series, date, today) as Partial<Task>) }
 }
 
 export type CompletionPlan =
@@ -88,38 +248,39 @@ export type CompletionPlan =
 
 /**
  * Completing the series' current occurrence: create the occurrence record and move
- * the series to the next occurrence, or report that the end condition is reached
- * (the caller then completes the series like a plain task).
+ * the series to the next occurrence that is not an exception, or report that the
+ * end condition is reached (the caller then completes the series like a plain task).
  */
 export function planCompletion(series: Task, rule: Rule, tasks: Iterable<Task>, now: number, today: string): CompletionPlan {
-  const date = occurrenceDate(series, today)
-  const done = completedOccurrences(series.id, tasks, date)
-  const next = followingOccurrence(rule, series.due?.date ?? null, today, today, done)
+  const list = [...tasks]
+  const date = currentOccurrence(series, rule, list, today)
+  if (date === null) return { kind: 'end' }
+  const at = standOn(series, date, today)
+  const b = seriesBudget(at, list, date, today)
+  const next = nextFree(pieceRule(rule, b), at.due?.date ?? null, today, today, b.taken, b.except)
   if (next === null) return { kind: 'end' }
   const recordId = occurrenceId(series.id, date)
   return {
     kind: 'roll', recordId, next,
     changes: [
-      { entity: 'task', entityId: recordId, patch: { ...occurrenceRecord(series, date, now), ...(series.habit ? { skipped: false } : {}) } },
-      { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) },
+      { entity: 'task', entityId: recordId, patch: { ...recordFields(at, date, now, today), completed_at: now } },
+      { entity: 'task', entityId: series.id, patch: moveDates(at, next, today) },
     ],
   }
 }
 
-/** The completed record of the series' current occurrence (shared by completion and a habit's skip). */
-function occurrenceRecord(series: Task, date: string, now: number): Record<string, unknown> {
-  return { ...copyOf(series, now), due: series.due ?? { date }, completed_at: now }
-}
+/** Skips never count towards `for N times` (a negative count never reaches the end). */
+const UNCOUNTED = -1
 
 /**
- * The occurrence after the current one for skip and detach: calendar rules use the
- * schedule (so two devices skipping the same occurrence land on the same date),
- * completion-relative rules count from today. Null when it would pass `until`.
- * Skips never count towards `for N times`.
+ * The occurrence after the current one for skip: calendar rules use the schedule
+ * (so two devices skipping the same occurrence land on the same date), completion-
+ * relative rules count from today; exception dates are jumped over. Null when it
+ * would pass `until`.
  */
-export function nextOnSkip(series: Task, rule: Rule, today: string): string | null {
-  const next = rule.afterCompletion ? nextAfterCompletion(rule, today) : nextCalendar(rule, series.due?.date ?? null, today)
-  return rule.until && next > rule.until ? null : next
+export function nextOnSkip(series: Task, rule: Rule, today: string, tasks: Iterable<Task> = []): string | null {
+  const b = seriesBudget(series, tasks, undefined, today)
+  return nextFree(pieceRule(rule, b), series.due?.date ?? null, today, today, UNCOUNTED, b.except)
 }
 
 /**
@@ -127,31 +288,19 @@ export function nextOnSkip(series: Task, rule: Rule, today: string): string | nu
  * the occurrence record (same derived id a completion writes) marked `skipped`, in
  * the same batch, so a skipped day is distinguishable from a missed one and two
  * devices skipping (or one completing, one skipping) converge to one record
- * (OpenSpec habits, design D2). A plain series writes only the due change.
+ * (OpenSpec habits, design D2). A plain series writes only the due change (D3).
  */
-export function planSkip(series: Task, rule: Rule, now: number, today: string): Change[] | null {
-  const next = nextOnSkip(series, rule, today)
+export function planSkip(series: Task, rule: Rule, now: number, today: string, tasks: Iterable<Task> = []): Change[] | null {
+  const list = [...tasks]
+  const date = currentOccurrence(series, rule, list, today)
+  if (date === null) return null
+  const at = standOn(series, date, today)
+  const next = nextOnSkip(at, rule, today, list)
   if (!next) return null
-  const move: Change = { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) }
+  const move: Change = { entity: 'task', entityId: series.id, patch: moveDates(at, next, today) }
   if (!series.habit) return [move]
-  const date = occurrenceDate(series, today)
   return [
-    { entity: 'task', entityId: occurrenceId(series.id, date), patch: { ...occurrenceRecord(series, date, now), skipped: true } },
+    { entity: 'task', entityId: occurrenceId(series.id, date), patch: { ...recordFields(at, date, now, today), completed_at: now, skipped: true } },
     move,
   ]
-}
-
-/** "This occurrence only": a standalone copy of the current occurrence, and the series moves on. */
-export function planDetach(series: Task, rule: Rule, now: number, today: string): { changes: Change[]; copyId: string } | null {
-  const next = nextOnSkip(series, rule, today)
-  if (!next) return null
-  const date = occurrenceDate(series, today)
-  const copyId = detachedId(series.id, date)
-  return {
-    copyId,
-    changes: [
-      { entity: 'task', entityId: copyId, patch: { ...copyOf(series, now), due: series.due ?? { date }, completed_at: null } },
-      { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) },
-    ],
-  }
 }

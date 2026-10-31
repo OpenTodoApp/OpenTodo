@@ -52,7 +52,9 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 
 ## Weekend
 
-- [ ] Clean the windows [someday:: true] [evening:: true] 🆔 t-home6
+- [ ] Clean the windows [someday:: true] [evening:: true] [energy:: low] 🆔 t-home6
+- [ ] Stretch 📅 2026-10-25 [daypart:: morning] 🆔 t-home7
+- [ ] Lisbon trip 📅 2026-11-05 🛫 2026-11-03 [span:: true] 🆔 t-home8
 ```
 
 | Field | Meaning |
@@ -60,12 +62,21 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 | `📅` `[time:: ]` `[tz:: ]` | do-on date, time, zone |
 | `🛫` `[someday:: true]` `[deadline:: ]` | start, Someday, deadline |
 | `[estimate:: 45m]` `[evening:: true]` | estimate, This Evening |
+| `[span:: true]` | a multi-day task, drawn from its `🛫` date to its `📅` date; written after `[evening:: true]`, read anywhere on the line. `[span:: false]` or removing it clears it. Another value is reported and changes nothing |
+| `[daypart:: morning]` `[daypart:: afternoon]` | the part of the day; never beside `[evening:: true]`, which wins when both are there. Another value is reported and changes nothing |
+| `[energy:: deep]` `[energy:: medium]` `[energy:: low]` | the energy the task asks for, read in any letter case and written in lower case; removing it clears the energy. Another value is reported and changes nothing |
 | `🔺` `⏫` `🔼` | priority 1–3 (`🔽` `⏬` read as 4) |
 | `🔁` | repeat rule (`when done`: after completion) |
 | `#tag` `⛔` `✅` `🆔` | label, blocked by, done date, id |
 | `[origin:: ]` `[location:: ]` `[tracked:: ]` `[field:Name:: ]` | read-only |
 
 A line without `🆔` creates a task. Indented lines are subtasks, other indented text the note. A `##` heading over task lines is a section. Unknown text (`⏳`, `[[links]]`) and prose stay.
+
+A repeating task is one line at its current do-on date. Ticking it completes that occurrence and moves the line to the next date that has no [occurrence record](recurrence.md#one-occurrence-alone): a skipped, moved or early-done date is jumped over, as in the app. An occurrence moved or edited alone in the app is an ordinary line of its own, without `🔁` (`- [ ] Study 📅 2026-10-15 [time:: 18:00] 🆔 …`); ticking it completes that occurrence alone and leaves the repeating line as it is, and changing its `📅` moves it without changing which occurrence it stands for. Done and skipped occurrences are not added to the files. A task changed from one date on in the app ([This and following](recurrence.md#this-and-following)) is two repeating lines: the old one with `until` in its rule (`🔁 every weekday until 2026-10-13`) and the one that continues it with its own rule; both read back as they are, and the link between them is kept.
+
+A [sequential project or an area](project-flows.md) has `opentodo-flow: sequential` or `opentodo-flow: area` in its frontmatter; a parallel project has no key. Change the key to change the project's flow. A value the vault doesn't know stays in the file and isn't synced. A section's flow isn't in the file.
+
+A project [in maintenance](review-intervals.md#maintenance) has `opentodo-status: maintenance` in its frontmatter; an active project has no key. Add the key to put the project in maintenance, remove it to end maintenance. A value the vault doesn't know stays in the file and isn't synced. How often you review a project is not in the file.
 
 ## In Obsidian
 

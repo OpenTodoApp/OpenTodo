@@ -62,6 +62,8 @@ func (v *view) render(in renderInput) *Doc {
 		d.ID = in.project
 		d.Color = r.Str("color")
 		d.Icon = r.Str("icon")
+		d.Flow = renderedFlow(r.Str("flow_mode"), in.tmpl)
+		d.Status = renderedStatus(r.Str("status"), in.tmpl)
 		d.HasFront = true
 	}
 	if in.tmpl != nil {
@@ -210,4 +212,14 @@ func (v *view) cyclic(id string) bool {
 		seen[cur] = true
 	}
 	return false
+}
+
+// renderedFlow is the opentodo-flow a project file gets (project-flow-modes):
+// none for Parallel and for a stored value the vault does not know, and none
+// while the file holds an unknown value of its own, which stays as written.
+func renderedFlow(stored string, tmpl *Doc) string {
+	if f := fileFlow(stored); f != "?" && (tmpl == nil || tmpl.UnknownFlow == "") {
+		return f
+	}
+	return ""
 }

@@ -47,6 +47,12 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kRuleCondition:  orNull(ruleval.CheckCondition),
 	kRuleActions:    ruleval.CheckActions,
 	kReactions:      checkReactions,
+	kDayPart:        orNull(checkDayPart),
+	kClock:          checkClock,
+	kWeekdays:       checkWeekdays,
+	kEnergy:         checkEnergy,
+	kOrderList:      checkOrderList,
+	kSplit:          orNull(checkSplit),
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -124,6 +130,57 @@ func checkStart(raw json.RawMessage) error {
 	return nil
 }
 
+// DayParts are the stored values of task.day_part (OpenSpec change day-parts).
+var DayParts = []string{"morning", "afternoon"}
+
+func checkDayPart(raw json.RawMessage) error {
+	var d string
+	if err := json.Unmarshal(raw, &d); err != nil || !slices.Contains(DayParts, d) {
+		return errors.New(`must be null, "morning" or "afternoon"`)
+	}
+	return nil
+}
+
+// EnergyLevels are the stored values of task.energy besides "" for none
+// (OpenSpec change task-energy, design D1).
+var EnergyLevels = []string{"deep", "medium", "low"}
+
+func checkEnergy(raw json.RawMessage) error {
+	var e string
+	if err := json.Unmarshal(raw, &e); err != nil || isNullValue(raw) || (e != "" && !slices.Contains(EnergyLevels, e)) {
+		return errors.New(`must be "", "deep", "medium" or "low"`)
+	}
+	return nil
+}
+
+// checkClock accepts a wall time "HH:MM" from "00:00" to "23:59" (calendar-frames D1).
+func checkClock(raw json.RawMessage) error {
+	var c string
+	if err := json.Unmarshal(raw, &c); err != nil || !isClock(c) || c[:2] > "23" || c[3:] > "59" {
+		return errors.New(`must be a time "HH:MM" between 00:00 and 23:59`)
+	}
+	return nil
+}
+
+// checkWeekdays accepts "" or a comma list of distinct ISO weekdays 1-7 (calendar-frames D1).
+func checkWeekdays(raw json.RawMessage) error {
+	var w string
+	if err := json.Unmarshal(raw, &w); err != nil {
+		return errors.New(`must be "" or a comma list of distinct weekdays 1 to 7`)
+	}
+	if w == "" {
+		return nil
+	}
+	seen := map[string]bool{}
+	for _, d := range strings.Split(w, ",") {
+		if len(d) != 1 || d[0] < '1' || d[0] > '7' || seen[d] {
+			return errors.New(`must be "" or a comma list of distinct weekdays 1 to 7`)
+		}
+		seen[d] = true
+	}
+	return nil
+}
+
 func checkDate(raw json.RawMessage) error {
 	var d string
 	if err := json.Unmarshal(raw, &d); err != nil || !isDate(d) {
@@ -175,13 +232,20 @@ func checkStringList(raw json.RawMessage) error {
 	return nil
 }
 
-func checkIDList(raw json.RawMessage) error {
+func checkIDList(raw json.RawMessage) error { return checkIDs(raw, MaxBlockedBy) }
+
+// checkOrderList accepts a manual order (view-manual-order D2): at most
+// MaxManualOrder distinct ids of 1 to MaxIDLen characters.
+func checkOrderList(raw json.RawMessage) error { return checkIDs(raw, MaxManualOrder) }
+
+// checkIDs accepts an array of at most limit distinct ids of 1 to MaxIDLen characters.
+func checkIDs(raw json.RawMessage, limit int) error {
 	var l []string
 	if err := json.Unmarshal(raw, &l); err != nil || l == nil {
 		return errors.New("must be an array of task ids")
 	}
-	if len(l) > MaxBlockedBy {
-		return fmt.Errorf("may hold at most %d ids", MaxBlockedBy)
+	if len(l) > limit {
+		return fmt.Errorf("may hold at most %d ids", limit)
 	}
 	seen := make(map[string]bool, len(l))
 	for _, id := range l {

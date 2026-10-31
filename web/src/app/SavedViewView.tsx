@@ -5,6 +5,7 @@
 // dashboard is rendered by DashboardView instead.
 import { isFirstRow, revealRow } from './task-list/revealRow'
 import { blockedMap } from '../lib/dependencies'
+import { useFlowView } from '../lib/useFlow'
 import { Button, EmptyState, IconButton, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { parse } from '../lib/filter'
@@ -20,8 +21,12 @@ import { LabelPicker } from './LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { openFromRow } from './sidePanel'
 import { TaskRow } from './TaskRow'
-import { ViewMenu } from './ViewsView'
-import { useListKeys } from './useListKeys'
+import { ViewMark, ViewMenu } from './ViewsView'
+import { useListKeys, type KeyRow } from './useListKeys'
+import type { ViewStep } from '../lib/viewOrder'
+import type { OrderHost } from '../lib/viewOrderMove'
+import { stepInView } from './viewOrderActions'
+import { groupOfKey, useViewOrderDrag, viewRowTarget } from './views/useViewOrderDrag'
 import { useBulkList } from './bulk/useBulkList'
 import { placeInDay } from './signals'
 import { logicalToday } from '../lib/dates'
@@ -34,7 +39,9 @@ import { FilterBuilder } from './filter/FilterBuilder'
 import { useBuilderOpen } from './filter/builderToggle'
 import { ViewsCrumb } from './views/ViewsCrumb'
 import { FilterPanel, ViewToolbar } from './views/ViewToolbar'
-import { ViewResults } from './views/ViewResults'
+import { BOARD_COLOR_BY_KEY } from '../lib/colorBy'
+import { useColorBy } from './calendar/colorByControls'
+import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
 
@@ -58,6 +65,7 @@ export function displayPatch(patch: Partial<ViewDisplay>): ViewPatch {
   if (patch.showCompleted !== undefined) out.show_completed = patch.showCompleted
   if (patch.hidden !== undefined) out.hidden_props = [...patch.hidden]
   if (patch.rowLayout !== undefined) out.row_layout = patch.rowLayout
+  if (patch.cardNotes !== undefined) out.card_notes = patch.cardNotes
   return out
 }
 
@@ -75,13 +83,16 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const opts = viewOptions(view)
   const shown = displayOptions(view)
   const account = useAccountRowLayout()
-  const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account) }
+  // Colour by on boards (calendar-clarity): the device's one choice for every board.
+  const boardColor = useColorBy(BOARD_COLOR_BY_KEY)
+  const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account), cardNotes: shown.cardNotes }
   const result = useMemo(() => runView(view, ctx), [view, ctx])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])
   const progress = useMemo(() => progressMap(tasks), [tasks])
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
+  const flow = useFlowView(tasks, ctx.today)
   const habits = useMemo(() => habitStatsMap(tasks, ctx.today), [tasks, ctx.today])
 
   // ---- query editing: the input holds a draft; Enter (or Save) confirms it ----
@@ -131,8 +142,10 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   }
 
   // ---- results and keyboard navigation (a task can appear under several labels) ----
-  const groups = useMemo(() => (result.ok ? result.groups : []), [result])
-  const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [groups])
+  const resultGroups = useMemo(() => (result.ok ? result.groups : []), [result])
+  // Groups collapsed or folded on this device (board-polish D1) keep their tasks off screen and out of the keyboard's rows.
+  const { groups, shown: shownGroups } = useFoldedGroups(`view:${view.id}`, resultGroups)
+  const rows = useMemo(() => shownGroups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [shownGroups])
   // The time column (rows-v2 D2): one fact of the whole view.
   const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
   const [selected, setSelected] = useState<string | null>(null)
@@ -143,11 +156,18 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const bulkTasks = useMemo(() => rows.map((r) => r.task), [rows])
   const bulk = useBulkList(bulkTasks)
+  // The view's own manual order (view-manual-order): drag within a group and Alt+arrows, with Undo.
+  const host = useMemo<OrderHost>(() => ({ entity: 'view', id: view.id }), [view.id])
+  const moveBy = (r: KeyRow, step: ViewStep) => {
+    const group = groups.find((g) => g.key === groupOfKey(r.key))
+    return stepInView(host, bulkTasks, group?.tasks ?? [], r.task.id, step)
+  }
+  const drag = useViewOrderDrag(host, rows, { ticked: bulk.ticked, openRowMenu: (tk, x, y, el) => bulk.rowProps(tk).onRowMenu(x, y, el), onDropped: setSelected })
 
   useListKeys({
     rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor, bulk, sidePanel: true,
     expanded, setExpanded: display.layout === 'board' ? undefined : setExpanded,
-    onIdleEscape: () => setSelected(null),
+    onIdleEscape: () => setSelected(null), moveBy,
     extra: {
       'list.schedule': () => {
         const row = rows.find((r) => r.key === selected)?.task
@@ -172,11 +192,13 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   return (
     <PageBody width="list">
           <PageHeader title={<ViewsCrumb name={view.name} />} meta={count !== null ? count : undefined} help="saved-filter"
+            leading={view.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={view} /></span> : undefined}
             actions={<IconButton icon={view.pinned ? 'pin-off' : 'pin'} size="sm" label={view.pinned ? t('Unpin') : t('Pin')} onClick={() => act(setFavourite('view', view.id, !view.pinned))} />}
             menu={<ViewMenu view={view} />} />
 
           <ViewToolbar sortFields={ctx.fields} query={view.query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={display}
             onDisplay={(patch) => act(updateView(view.id, displayPatch(patch)))}
+            colorBy={display.layout === 'board' ? { mode: boardColor.mode, onChange: boardColor.setMode } : undefined}
             onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
           {filterOpen && (
             <FilterPanel count={draftCount} onClose={() => setFilterOpen(false)} inputRef={inputRef}
@@ -211,7 +233,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
           {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('View results')}>
-            <ViewResults groups={groups} layout={display.layout} renderTask={(tk, key, shape) => (
+            <ViewResults groups={groups} layout={display.layout} foldScope={`view:${view.id}`} selectedGroup={selected ? groupOfKey(selected) : null} renderTask={(tk, key, shape) => (
               <TaskRow
                 key={key}
                 shape={shape}
@@ -222,17 +244,24 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 timeColumn={timeColumn}
                 hidden={display.hidden}
                 layout={display.rowLayout}
+                edge={shape === 'card' && boardColor.mode !== 'project' ? boardColor.hueOf(tk) : undefined}
+                notes={shape === 'card' && display.cardNotes}
                 onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                 selected={key === selected}
                 progress={progress.get(tk.id)}
                 blockedBy={blocked.get(tk.id)}
+                waitsFor={flow.waitsFor(tk.id)}
                 habit={habits.get(tk.id)}
                 breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
                 onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
                 onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
-                expanded={expanded === key}
                 onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
                 {...bulk.rowProps(tk)}
+                onPointerDown={(e) => drag.startDrag(e, key, tk)}
+                dropKey={viewRowTarget(key)}
+                dropIndicator={drag.dropAt?.key === key ? drag.dropAt.zone : null}
+                dragging={drag.draggingKey === key}
+                expanded={!drag.draggingKey && expanded === key}
               />
             )} />
           </div>

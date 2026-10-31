@@ -89,7 +89,7 @@ func (t *tally) add(c change) {
 	switch c.entity {
 	case KindProject:
 		t.project(c.id)
-	case KindTask:
+	case KindTask, KindNote:
 		for _, f := range c.fields {
 			if f.name == "project_id" {
 				var id string

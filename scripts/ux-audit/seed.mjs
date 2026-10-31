@@ -64,6 +64,9 @@ export async function seed({ base, pw, lang = '' }) {
   await T({ title: 'Call the plumber', project_id: home.id, section_id: sections.Waiting, assignee_id: bob.id })
   await T({ title: 'Plan the team offsite', project_id: work.id, due: { date: today, time: '14:00' }, estimate_minutes: 90 })
   await T({ title: 'Submit expense report', project_id: work.id, completed_at: Date.now() - 3600e3 })
+  // A slot holding two small tasks (calendar-slots): the block and checklist in Day and Week, the agenda row on a phone.
+  const small = [(await T({ title: 'Reply to the landlord', estimate_minutes: 5 })).id, (await T({ title: 'Pay the electricity bill', estimate_minutes: 10 })).id]
+  await A('POST', '/api/v1/slots', { title: 'Admin', date: today, start: '16:00', minutes: 45, task_ids: small, move_tasks: true })
   // Five custom fields on Work (custom-fields): the columns layout at 768 px.
   const F = {}
   for (const [i, [name, type, options]] of [['Cost', 'number'], ['Client', 'choice', 'Acme\nGlobex'], ['Order date', 'date'], ['Quote', 'link'], ['Paid', 'checkbox']].entries()) {

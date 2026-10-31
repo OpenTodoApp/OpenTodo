@@ -92,11 +92,15 @@ A `notes_doc` value SHALL be accepted up to 256 KB encoded; larger values SHALL 
 - **THEN** the editor shows a size warning, and at the limit further insertions are refused
 
 ### Requirement: Remote edits while editing
-When a merged document arrives while the user is editing the same note, the editor SHALL apply the remote change in place without discarding unsaved typing, without resetting the caret to the start or end, and without flashing the content. With a live update channel connected, a remote change SHALL appear within two seconds; without one, on the next sync exchange.
+When a merged document arrives while the user is editing the same note, the editor SHALL apply the remote change in place without discarding unsaved typing, without resetting the caret to the start or end, and without flashing the content. With a live update channel connected, a collaborator's change SHALL appear about 3 seconds after the collaborator stops typing (within 5 seconds against a local server), and at least once a minute while the collaborator keeps typing; without a live channel, on the next sync exchange.
 
 #### Scenario: Co-editing one note
 - **WHEN** device A is typing in a note and device B inserts text above the caret
 - **THEN** device A shows B's text, A's caret stays on the character it was on, and A's in-progress typing is intact
+
+#### Scenario: Collaborator pauses
+- **WHEN** device B types a paragraph into a shared task's note and stops, while device A has the same note open with the live channel connected
+- **THEN** device A shows the paragraph within 5 seconds of B's last keystroke
 
 ### Requirement: Compatibility with plain-text clients
 A client that knows only `description` SHALL keep working: it SHALL continue to read readable text, its writes SHALL be folded into the document by any rich-text client that later touches the note, and it SHALL never cause the document to be rejected or reset. Rich-text clients SHALL ignore unknown formatting features from newer documents rather than failing to open the note.
@@ -196,8 +200,115 @@ A task's notes MAY mention project members as `@name`; the editor SHALL offer co
 - **THEN** that id is dropped from the stored list, the note is kept, and nobody is notified for it
 
 ### Requirement: Editing toolbar on touch screens
-On a coarse pointer, while the editor has focus, one row of formatting controls (bold, italic, link, bullet list, checklist, and a More menu with the remaining commands) SHALL be shown above the editor inside the panel's own scroller; it SHALL not be shown at rest, on fine pointers, or as a new chrome row of any page, and every control SHALL have an accessible name.
+On a coarse pointer, while the editor has focus, one row of formatting controls (bold, italic, link, bullet list, checklist, and a More menu with the remaining commands) SHALL be shown above the editor inside the panel's own scroller; it SHALL not be shown at rest on a coarse pointer, it SHALL be shown on a fine pointer only through the Formatting toggle (`Formatting toggle on computers`, and the comment composer's toggle), it SHALL never be a new chrome row of any page, and every control SHALL have an accessible name. The row SHALL be a toolbar named "Formatting" that is one Tab stop, moves between its controls with the arrow keys, Home and End, and returns focus to the editor on Escape.
 
 #### Scenario: Phone editing
 - **WHEN** the user taps into the notes on a phone
 - **THEN** the toolbar row appears above the notes, tapping Bold applies bold to the selection, and leaving the notes hides the row
+
+#### Scenario: Arrow keys in the row
+- **WHEN** focus is on the row's Bold control and the user presses Right, then End
+- **THEN** focus moves to Italic, then to the More menu, and Tab leaves the row in one step
+
+### Requirement: Note push cadence
+The note editor (task notes, project notes and every later note that uses it) SHALL save the document and its projection on the device after every pause in typing, as before, and SHALL send a saved document to the server 3 seconds after the last save while no further save happened, at once when the editor loses focus, is closed, or the app navigates away, when the page is hidden or unloaded, and at least every 60 seconds while the person keeps typing without such a pause. A sync exchange that runs for any other reason SHALL carry the pending document too. The device SHALL keep at most one pending document per note, the newest. Offline, saves SHALL stay on the device and SHALL be sent on the next successful exchange; convergence SHALL be unchanged, since every sent document is a full state that includes every earlier save of that device. The comment composer SHALL keep its behaviour: it sends a comment only when the person submits it.
+
+#### Scenario: Typing with short pauses
+- **WHEN** the user types in a note for 30 seconds with pauses of about one second
+- **THEN** the note survives a reload at any moment, and no note document is sent until the user pauses for 3 seconds
+
+#### Scenario: Pause sends the note
+- **WHEN** the user stops typing in a note and does nothing for 3 seconds
+- **THEN** one note document with the latest text is sent to the server
+
+#### Scenario: Continuous typing
+- **WHEN** the user types without a 3-second pause for two and a half minutes
+- **THEN** the note document is sent at least twice during that time, the newest state each time
+
+#### Scenario: Leaving the note
+- **WHEN** the user types a sentence and at once closes the task, opens another one, or switches to another app
+- **THEN** the document is sent at once, without waiting for the 3 seconds
+
+#### Scenario: Another edit carries the note
+- **WHEN** the user types in a note and, within a second, changes the task's due date
+- **THEN** the exchange for the due date also carries the note's latest document
+
+#### Scenario: Offline writing
+- **WHEN** the device is offline and the user writes in a note for ten minutes, then reconnects
+- **THEN** one document with the latest text is sent on the next exchange, and every device shows it after sync
+
+#### Scenario: Comments unchanged
+- **WHEN** the user types a comment and waits 3 seconds without sending
+- **THEN** nothing is sent to the server and the draft stays on the device
+
+### Requirement: Formatting toggle on computers
+On a fine pointer, every note the user may edit (task notes on the task page and in the docked panel, project notes, and every later note that uses the same editor) SHALL show a Formatting toggle at the note's top end corner, visible while the pointer is over the note or focus is within it and always while pressed, in the Tab order just before the note's text. Activating it SHALL show the formatting row above the note, at rest as well as while the note has focus, inside the panel's or page's own scroller; activating it again SHALL hide the row. Whether the row is shown SHALL be remembered on the device for notes, separately from the comment composer, and SHALL be the same in every note on that device. The toggle SHALL be a button named "Formatting" whose pressed state is announced; buttons in the row SHALL keep the note's selection and return focus to the note. Read-only notes SHALL show no toggle. Nothing about the toggle is stored in the note or synced, so offline behaviour and convergence of notes are unchanged.
+
+#### Scenario: Bold with the mouse
+- **WHEN** the user on a computer hovers a task's note, activates the Formatting toggle, selects a word in the note and activates Bold in the row
+- **THEN** the word is bold, the toggle is announced as pressed, and the row stays shown above the note
+
+#### Scenario: Remembered on the device
+- **WHEN** the user turns the row on in one task's note and later opens a project's note on the same computer
+- **THEN** the project note shows the row with the toggle pressed, and another computer of the same account does not
+
+#### Scenario: Keyboard only
+- **WHEN** the user presses Shift+Tab from inside a note, presses Enter on the Formatting toggle, then Tab into the row and Right twice
+- **THEN** the row is shown, focus moves to the toggle, then to the row's first control and then to Link, and Escape returns focus to the note with its selection
+
+#### Scenario: Viewer
+- **WHEN** a viewer of a shared project opens a task's note on a computer
+- **THEN** no Formatting toggle is shown
+
+#### Scenario: Phone unchanged
+- **WHEN** the user taps into a note on a phone
+- **THEN** no toggle is shown and the row appears while the note has focus, as before
+
+### Requirement: Formatting button setting
+Settings › Account › Profile › How you work SHALL have a Formatting button switch, on by default, stored as the synced additive preference `user_prefs.formatting_toggle` (`off` hides; empty or any other value shows, and is not rewritten). While it is off, the Formatting toggle SHALL not be shown in notes or in the comment composer on a fine pointer and the formatting row SHALL not be shown there, whatever the device remembered; keyboard shortcuts, Markdown input rules and the slash menu SHALL keep working, and touch screens SHALL keep their row. The preference SHALL be written offline and converge by last-writer-wins like every preference.
+
+#### Scenario: Turned off on one device, everywhere
+- **WHEN** the user turns the Formatting button off on a laptop and later opens a note on a desktop computer after sync
+- **THEN** the desktop shows no Formatting toggle beside the note or in the composer
+
+#### Scenario: Remembered row comes back
+- **WHEN** the user had the row shown in notes, turns the switch off, and later turns it on again
+- **THEN** the toggle is back, pressed, and the row is shown again
+
+#### Scenario: Offline change
+- **WHEN** the device is offline and the user turns the switch off
+- **THEN** the toggle disappears at once, and the preference reaches the other devices on the next sync
+
+### Requirement: Appended text merges into the document
+Tasks and notes SHALL carry an additive field family `appends.<id>` whose non-empty values are Markdown text waiting to be added at the end of the note. A plain-text writer that only adds text (the CLI, MCP, the append routes) SHALL write one new key and SHALL NOT write `description` or `notes_doc`, so no existing text is replaced. Every device that holds the note SHALL, when it applies such a value and before any local write of the note, insert the text parsed as Markdown at the end of the visible body as a document insertion whose every block carries the append's id, and publish the document and projection with that key set to `""` in the same batch. A device SHALL NOT fold an append whose block is already in its merged document, and when a merge holds more than one block with the same append id, every device SHALL keep only the copy whose first block has the smallest document item id and delete the blocks of the others, so all devices converge on one copy. Until a device folds it, the REST API, the export, MCP and the CLI SHALL show the note as its projection followed by its pending appends in clock order. The server SHALL accept a non-empty value only for a key that has none yet, `""` from anyone who may write the entity, at most 100 pending appends per entity, and a projection plus pending appends of at most 64 KB. A fold that would exceed the document size limit SHALL NOT be done and the append stays pending. Offline devices fold appends they receive when they sync; an append made in the web app itself is a direct document edit. Clients that do not know the family SHALL ignore it.
+
+#### Scenario: Append while a phone edits offline
+- **WHEN** a script appends "- ship Friday" to a note while a phone, offline, adds a paragraph in the middle of the same note, and the phone syncs later
+- **THEN** every device shows the phone's paragraph and "ship Friday" at the end, once
+
+#### Scenario: Two devices fold at once
+- **WHEN** two online devices both receive the same append and fold it before seeing each other's document
+- **THEN** after they sync every device shows the appended text exactly once
+
+#### Scenario: Readable before any device folds
+- **WHEN** a script appends text to a task's note and no device has synced since
+- **THEN** `GET /api/v1/tasks/{id}` and MCP `get_note` show the note's text followed by the appended text
+
+#### Scenario: An append is written once
+- **WHEN** a client sends a second non-empty value for an append id that already has one
+- **THEN** the op is refused and the stored append is unchanged
+
+### Requirement: Plain-text replacement checks the version
+A read of a task, project or note through the REST API SHALL return `body_version`, the greatest clock among its `description`, `notes_doc` and `appends` keys. A `PATCH` that writes `description` with `If-Match` SHALL be refused with 409 `body_changed`, carrying the current version and writing nothing, when the stored version differs, checked in the same transaction as the write. A `PATCH` without `If-Match` SHALL behave as before. An accepted replacement SHALL become the document by the fold-back rule, on whichever device next opens the note, offline included, and all devices converge through the merge rules.
+
+#### Scenario: Version matches
+- **WHEN** the CLI reads a note and patches its `description` with `If-Match` set to the version it read, and nothing changed meanwhile
+- **THEN** the write is accepted and the next device that opens the note shows the new text as formatted content
+
+#### Scenario: Version is stale
+- **WHEN** a device saved an edit to the note after the CLI read it and the CLI then patches with the old version
+- **THEN** the response is 409 `body_changed` and the device's edit stays
+
+#### Scenario: Unauthenticated patch
+- **WHEN** a request without credentials patches a note's `description` with `If-Match`
+- **THEN** the response is 401 `unauthorized` and nothing is written

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "note_append",
+  "description": "What ot notes append and ot task note --append print: the note and the id of the append. Devices add the text at the end of the note on their next sync.",
+  "type": "object",
+  "required": ["entity", "entity_id", "append_id"],
+  "properties": {
+    "entity": {"enum": ["note", "task"]},
+    "entity_id": {"type": "string", "description": "the note's or the task's id"},
+    "append_id": {"type": "string", "description": "chosen by ot; the field appends.<append_id> holds the text until a device merges it"},
+    "body_version": {"type": "string"}
+  }
+}

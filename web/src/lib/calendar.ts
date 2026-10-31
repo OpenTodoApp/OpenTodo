@@ -5,6 +5,7 @@
 import { addDaysISO, localDueOf } from './dates'
 import { formatMinutes, MAX_ESTIMATE_MINUTES } from './duration'
 import type { CalendarEvent, CalendarWhen, Due, Project, Task } from './types'
+import { spanClip, spanOf } from './span'
 
 export const SLOT_MINUTES = 15
 /**
@@ -172,29 +173,128 @@ export function allDayEvents(events: readonly CalendarEvent[], date: string): Ca
     .sort((a, b) => (a.start.date < b.start.date ? -1 : a.start.date > b.start.date ? 1 : a.summary.localeCompare(b.summary)))
 }
 
-/** Open, live tasks due in [from, to] (inclusive ISO dates), leaving out archived projects. */
-export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string): Task[] {
+/** Live tasks due in [from, to], or spans covering a day of it, optionally including completed work; archived projects stay excluded. */
+export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string, showCompleted = false): Task[] {
   const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-  return tasks.filter((t) => !t.deleted_at && !t.completed_at && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
+  // A span is on screen when any of its days is (multi-day-tasks D3).
+  const inRange = (t: Task) => {
+    if (!t.due) return false
+    if (t.due.date >= from && t.due.date <= to) return true
+    const span = spanOf(t)
+    return !!span && spanClip(span, from, to) !== null
+  }
+  return tasks.filter((t) => !t.deleted_at && (showCompleted || !t.completed_at) && inRange(t) && !(t.project_id && archived.has(t.project_id)))
 }
 
+/**
+ * Deadlines on the calendar (OpenSpec change calendar-clarity, design D1): per date in
+ * [from, to], the open, live tasks of non-archived projects whose `deadline` falls on it
+ * (a floating date, no zone conversion). A task whose (viewed) due is on its deadline
+ * day is drawn there already and carries the diamond instead, so it is left out. Never
+ * part of capacity: markers are not tasks of the day.
+ */
+export function deadlineMarkers(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string): Map<string, Task[]> {
+  const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
+  const out = new Map<string, Task[]>()
+  for (const t of tasks) {
+    const d = t.deadline
+    if (!d || t.deleted_at || t.completed_at || d < from || d > to || (t.project_id && archived.has(t.project_id))) continue
+    if (t.due?.date === d) continue
+    const list = out.get(d)
+    if (list) list.push(t)
+    else out.set(d, [t])
+  }
+  for (const list of out.values()) list.sort((a, b) => a.priority - b.priority || a.title.localeCompare(b.title))
+  return out
+}
+
+/** Calendar visibility is a device-local display choice, independent of grid settings. */
+export const CALENDAR_COMPLETED_META_KEY = 'calendar.showCompleted'
+
+const NO_SLOT_LOAD = { extra: 0, covered: 0 }
+
 export interface DayLoad {
-  /** Sum of estimates of the day's open tasks, timed and untimed. */
+  /** What the line shows: the task estimates plus the counted event minutes. */
   planned: number
+  /** Sum of estimates of the day's open tasks, timed and untimed. */
+  tasks: number
+  /** Busy event minutes counted (0 unless "Count meetings in capacity" is on). */
+  events: number
+  /** Estimates of the projected occurrences drawn on the day (series-occurrences D5). */
+  projected: number
   /** Open tasks of the day without an estimate (counted as 0). */
   unestimated: number
+  /** The tasks alone exceed the day length (the danger tone). */
+  overTasks: boolean
+  /** The tasks fit, but tasks plus event minutes exceed the day length (the warning tone). */
+  overWithEvents: boolean
+  /** Either of the two. */
   over: boolean
 }
 
-export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number): DayLoad {
-  let planned = 0
-  let unestimated = 0
+/**
+ * The load of `date` against the day length (OpenSpec `time-blocking` "Overlap and
+ * capacity"): the open tasks' estimates, plus `eventMinutes` when the device counts
+ * meetings (meeting-aware-capacity D3). `slots` is what the day's calendar slots
+ * change (calendar-slots D6, lib/slots `slotCapacity`): each slot counts once with
+ * the greater of its length and its tasks' estimates. `projected` are the day's drawn
+ * projected occurrences (series-occurrences D5): their estimates join the tasks', named
+ * apart, and one without an estimate joins the unestimated count.
+ */
+export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number, eventMinutes = 0, slots: { extra: number; covered: number } = NO_SLOT_LOAD, projected: readonly { estimate_minutes: number | null }[] = []): DayLoad {
+  let taskMinutes = slots.extra
+  let unestimated = -slots.covered
   for (const t of tasks) {
     if (t.completed_at || t.deleted_at || t.due?.date !== date) continue
-    if (t.estimate_minutes) planned += t.estimate_minutes
+    if (t.estimate_minutes) taskMinutes += t.estimate_minutes
     else unestimated++
   }
-  return { planned, unestimated, over: planned > dayLength }
+  unestimated = Math.max(0, unestimated)
+  let repeating = 0
+  for (const p of projected) {
+    if (p.estimate_minutes) repeating += p.estimate_minutes
+    else unestimated++
+  }
+  const events = Math.max(0, eventMinutes)
+  const planned = taskMinutes + repeating + events
+  const overTasks = taskMinutes + repeating > dayLength
+  const overWithEvents = !overTasks && planned > dayLength
+  return { planned, tasks: taskMinutes, events, projected: repeating, unestimated, overTasks, overWithEvents, over: overTasks || overWithEvents }
+}
+
+/**
+ * Busy minutes of `date` in the viewer's zone (OpenSpec `planner-view` "Event minutes
+ * in the capacity"): timed, non-free events clipped to the day, overlapping intervals
+ * counted once. All-day and free events count zero.
+ */
+export function eventMinutes(events: readonly CalendarEvent[], date: string, zone?: string): number {
+  const busy = events.filter((ev) => !ev.free && !ev.allDay && !(ev.start.date === ev.end.date && ev.start.time === ev.end.time && ev.start.tz === ev.end.tz))
+  // eventBlocks gives a zero-length remainder a slot-high block; a part that ends at
+  // its start (an event ending at 00:00 of this day) is not inside the day.
+  const spans = eventBlocks(busy, date, zone)
+    .map((b) => ({ start: b.start, end: realEnd(b.event, date, b.start, b.end, zone) }))
+    .filter((s) => s.end > s.start)
+    .sort((a, b) => a.start - b.start)
+  let total = 0
+  let curStart = -1, curEnd = -1
+  for (const s of spans) {
+    if (s.start > curEnd) {
+      if (curEnd > curStart) total += curEnd - curStart
+      curStart = s.start
+      curEnd = s.end
+    } else curEnd = Math.max(curEnd, s.end)
+  }
+  if (curEnd > curStart) total += curEnd - curStart
+  return Math.min(total, DAY_MINUTES)
+}
+
+/** The block's end without the minimum height eventBlocks adds for drawing. */
+function realEnd(ev: CalendarEvent, date: string, start: number, end: number, zone?: string): number {
+  if (!ev.end.time) return end
+  const local = ev.end.tz ? localDueOf({ date: ev.end.date, time: ev.end.time, tz: ev.end.tz }, zone) : { date: ev.end.date, time: ev.end.time }
+  if (local.date !== date || !local.time) return end
+  const [h, m] = local.time.split(':').map(Number)
+  return Math.max(start, Math.min(end, h * 60 + m))
 }
 
 /** `9h / 8h`, `1h 30m / 8h`. */
@@ -238,9 +338,11 @@ export interface GridPrefs {
   dayLength: number
   /** Days the Plan shows (planner-view D7): 7, 14 or 21. */
   planDays: 7 | 14 | 21
+  /** "Count meetings in capacity" (meeting-aware-capacity D2): busy event minutes join Day, Week and Month capacity. */
+  countEvents: boolean
 }
 
-export const DEFAULT_GRID_PREFS: GridPrefs = { startHour: 6, endHour: 22, dayLength: 480, planDays: 14 }
+export const DEFAULT_GRID_PREFS: GridPrefs = { startHour: 6, endHour: 22, dayLength: 480, planDays: 14, countEvents: false }
 export const GRID_PREFS_META_KEY = 'calendar.grid'
 
 /** Coerce a stored value into valid preferences; anything missing or invalid takes its default. */
@@ -257,5 +359,5 @@ export function normalizeGridPrefs(raw: unknown): GridPrefs {
   }
   const dayLength = int(r.dayLength, SLOT_MINUTES, DAY_MINUTES) ?? DEFAULT_GRID_PREFS.dayLength
   const planDays = r.planDays === 7 || r.planDays === 21 ? r.planDays : DEFAULT_GRID_PREFS.planDays
-  return { startHour, endHour, dayLength, planDays }
+  return { startHour, endHour, dayLength, planDays, countEvents: r.countEvents === true }
 }

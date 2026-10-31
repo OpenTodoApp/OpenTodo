@@ -22,6 +22,7 @@ import { navigate } from './router'
 import { sidebarFind } from './signals'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
+import budget from './budget.json'
 import { resetSidebarLayout, setSidebarWidth, sidebarLayout, toggleSidebarCollapsed } from './sidebarLayout'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -108,12 +109,12 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     expect(moreToggle(r.container).getAttribute('aria-expanded')).toBe('false')
     expect(moreItems(r.container)).toEqual([])
     await click(moreToggle(r.container))
-    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'completed', 'review', 'stats', 'places', 'rules', 'trash', 'filter'])
+    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'completed', 'review', 'stats', 'focus', 'notes', 'places', 'rules', 'trash', 'filter'])
     expect(localStorage.getItem('ot.sidebar.more')).toBe('1')
     // A shared project brings Assigned to me and Updates.
     await db.memberships.put({ projectId: 'p1', role: 'editor', ownerId: 'alice', members: [] } as Membership)
     await waitFor(() => moreItems(r.container).includes('assigned'))
-    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'review', 'stats', 'feed', 'places', 'rules', 'trash', 'filter'])
+    expect(moreItems(r.container)).toEqual(['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'review', 'stats', 'focus', 'notes', 'feed', 'places', 'rules', 'trash', 'filter'])
     expect(primaryOf(r.container)).toHaveLength(4)
     await r.unmount()
   })
@@ -161,6 +162,41 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
     await r.unmount()
   })
 
+  it('Notes (notes-overview): in More after Focus, promotable in Companion, back in More in Open Loops first with the six destinations unchanged', async () => {
+    await applyOps([{ id: 'n0', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'companion', ts: Date.now() + 500, device: 'laptop' } as Op])
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => !!r.container.querySelector('[data-testid="sidebar-more"] button[aria-expanded]'), 'the More group')
+    await click(moreToggle(r.container))
+    const items = moreItems(r.container)
+    expect(items[items.indexOf('focus') + 1]).toBe('notes')
+    // No count and no marker on the entry.
+    expect(r.container.querySelector('[data-destination="notes"]')!.textContent).toBe('Notes')
+    await setPromoted(await db.userPrefs.get('me'), 'notes', true)
+    await waitFor(() => primaryOf(r.container).includes('notes'))
+    expect(primaryOf(r.container)).toEqual(['inbox', 'today', 'upcoming', 'day', 'notes'])
+    expect(moreItems(r.container)).not.toContain('notes')
+    await applyOps([{ id: 'n1', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'first', ts: Date.now() + 1000, device: 'laptop' } as Op])
+    await waitFor(() => primaryOf(r.container)[0] === 'loop')
+    expect(primaryOf(r.container)).toEqual(['loop', 'inbox', 'today', 'next', 'waiting', 'review'])
+    expect(primaryOf(r.container).length).toBeLessThanOrEqual(budget.MAX_PRIMARY_DESTINATIONS)
+    expect(moreItems(r.container)).toContain('notes')
+    expect((await db.userPrefs.get('me'))?.sidebar_destinations).toBe('notes')
+    await r.unmount()
+  })
+
+  it('Reordered destinations (sidebar-polish 3.2): the stored order outside Open Loops first, the Places in it', async () => {
+    await setPromoted(null, 'someday', true)
+    await applyOps([{ id: 'o1', entity: 'user_prefs', entityId: 'me', field: 'sidebar_order', value: 'today,inbox,someday,upcoming,calendar', ts: Date.now() + 1000, device: 'laptop' } as Op])
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => primaryOf(r.container)[0] === 'today')
+    expect(primaryOf(r.container)).toEqual(['today', 'inbox', 'someday', 'upcoming', 'day'])
+    await applyOps([{ id: 'm1', entity: 'user_prefs', entityId: 'me', field: 'method_mode', value: 'first', ts: Date.now() + 2000, device: 'laptop' } as Op])
+    await waitFor(() => primaryOf(r.container)[0] === 'loop')
+    expect(primaryOf(r.container)).toEqual(['loop', 'inbox', 'today', 'next', 'waiting', 'review'])
+    expect((await db.userPrefs.get('me'))?.sidebar_order).toBe('today,inbox,someday,upcoming,calendar')
+    await r.unmount()
+  })
+
   it('carries the unread count on Updates, never on the More header (sidebar-v2 D7)', async () => {
     await setCurrentUserId('alice')
     await db.memberships.put({ projectId: 'p1', role: 'editor', ownerId: 'alice', members: [] } as Membership)
@@ -205,7 +241,7 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     await click(trigger)
     // The review state arrives on its own: wait for its marker on the Review entry.
     await waitFor(() => menuItems().length > 0 && !!document.querySelector('[data-menu-label="Review"]')?.textContent?.includes('Review due'), 'the More menu with Review due')
-    expect(menuItems()).toEqual(['Loop home', 'Next', 'Waiting', 'Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Locations', 'Rules', 'Trash', 'New view'])
+    expect(menuItems()).toEqual(['Loop home', 'Next', 'Waiting', 'Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Focus', 'Notes', 'Locations', 'Rules', 'Trash', 'New view'])
     // Never reviewed: the dot and the words are on the Review entry.
     const reviewItem = document.querySelector('[data-menu-label="Review"]')!
     expect(reviewItem.textContent).toContain('Review due')
@@ -875,6 +911,83 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
     expect(visibleText(fav(`label:${errand}`))).toBe('errand')
     expect(visibleText(fav(`view:${view}`))).toBe('Waiting')
     expect(spokenText(fav(`label:${errand}`))).toBe('errand, 3 open tasks')
+    await r.unmount()
+  })
+
+  it('Every count on (sidebar-polish 2.2): project, label and view rows and their favourites show their count at rest; none at zero or on a board', async () => {
+    const { pin } = await import('../lib/favourites')
+    const { setSidebarCounts } = await import('../lib/appearance')
+    const { site, errand } = await seedAccount()
+    const empty = await createProject({ name: 'Empty' })
+    const board = await createView({ name: 'Week', kind: 'dashboard', pinned: false })
+    const waitingId = (await db.views.toArray()).find((v) => v.name === 'Waiting')!.id
+    await pin('label', errand)
+    await setSidebarCounts('all')
+    openGroups('labels', 'filters')
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    const viewRow = (id: string) => r.container.querySelector(`[data-sidebar-group="Views"] [data-view-id="${id}"]`)!
+    await waitFor(() => viewRow(waitingId)?.querySelector('[data-count]')?.textContent === '3', 'the view count')
+    const siteRow = r.container.querySelector(`[data-project-id="${site}"]`)!
+    const count = siteRow.querySelector('[data-count]')!
+    expect(count.textContent).toBe('7')
+    expect(count.classList.contains('ui-swap-count')).toBe(true)
+    expect(count.classList.contains('ui-reveal')).toBe(false)
+    expect(spokenText(siteRow)).toBe('Website launch, 7 open tasks')
+    expect(r.container.querySelector(`[data-project-id="${empty}"] [data-count]`)).toBeNull()
+    expect(visibleText(r.container.querySelector(`[data-label-row="${errand}"] [data-label-open]`)!)).toBe('errand3')
+    expect(visibleText(r.container.querySelector(`[data-favourite="label:${errand}"]`)!)).toBe('errand3')
+    expect(viewRow(board).querySelector('[data-count]')).toBeNull()
+    // Completing a match updates the row without a reload.
+    const match = (await db.tasks.toArray()).find((tk) => tk.title === 'Errand 0')!
+    await applyOps([{ id: 'done', entity: 'task', entityId: match.id, field: 'completed_at', value: Date.now(), ts: Date.now() + 5000, device: 'phone' } as Op])
+    await waitFor(() => viewRow(waitingId).querySelector('[data-count]')?.textContent === '2', 'the view count drops')
+    await waitFor(() => visibleText(r.container.querySelector(`[data-favourite="label:${errand}"]`)!) === 'errand2', 'the favourite drops')
+    await r.unmount()
+  })
+
+  it('Menu in the count\'s place (sidebar-polish 2.2): with every count on the row\'s menu shares the count\'s slot; the default keeps hover-reveal', async () => {
+    const { setSidebarCounts } = await import('../lib/appearance')
+    const { site, errand } = await seedAccount()
+    openGroups('labels', 'filters')
+    await setSidebarCounts('all')
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => r.container.querySelector(`[data-project-id="${site}"] [data-count]`)?.textContent === '7')
+    const li = r.container.querySelector(`[data-project-row="${site}"]`)!
+    expect(li.classList.contains('ui-swap-row')).toBe(true)
+    const menu = li.querySelector<HTMLButtonElement>('button[aria-haspopup]')!
+    expect(menu.classList.contains('ui-swap-menu')).toBe(true)
+    expect(menu.classList.contains('hover-reveal')).toBe(false)
+    // Keyboard reachable: the menu is a button in the Tab order after the row.
+    expect(menu.tabIndex).toBe(0)
+    const labelRow = r.container.querySelector(`[data-label-row="${errand}"]`)!
+    expect(labelRow.classList.contains('ui-swap-row')).toBe(true)
+    expect(labelRow.querySelector('button[aria-haspopup]')!.classList.contains('ui-swap-menu')).toBe(true)
+    const viewMenu = r.container.querySelector('[data-sidebar-group="Views"] .ui-swap-row button[aria-haspopup]')!
+    expect(viewMenu.classList.contains('ui-swap-menu')).toBe(true)
+    // Back to the default: the quiet sidebar's hover-reveal menu and hover count.
+    await setSidebarCounts('today')
+    await waitFor(() => !li.classList.contains('ui-swap-row'), 'the default again')
+    expect(li.querySelector('button[aria-haspopup]')!.classList.contains('hover-reveal')).toBe(true)
+    expect(li.querySelector('[data-count]')!.classList.contains('ui-reveal')).toBe(true)
+    await r.unmount()
+  })
+
+  it('Collapsed parent totals (sidebar-polish 2.2): a collapsed parent shows its subtree, expanded each its own', async () => {
+    const { setSidebarCounts } = await import('../lib/appearance')
+    const home = await createProject({ name: 'Home' })
+    const garden = await createProject({ name: 'Garden', parent_id: home })
+    const shed = await createProject({ name: 'Shed', parent_id: home })
+    for (let i = 0; i < 2; i++) await createTask({ title: `H${i}`, project_id: home })
+    for (let i = 0; i < 3; i++) await createTask({ title: `G${i}`, project_id: garden })
+    for (let i = 0; i < 4; i++) await createTask({ title: `S${i}`, project_id: shed })
+    await setSidebarCounts('all')
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    const shown = (id: string) => r.container.querySelector(`[data-project-id="${id}"] [data-count]`)?.textContent
+    await waitFor(() => shown(home) === '9', 'the subtree total')
+    await setCollapsedProjects(new Set())
+    await waitFor(() => shown(home) === '2', 'its own count')
+    expect(shown(garden)).toBe('3')
+    expect(shown(shed)).toBe('4')
     await r.unmount()
   })
 

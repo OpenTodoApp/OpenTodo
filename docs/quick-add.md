@@ -70,7 +70,7 @@ Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when
 | `in 3 days`, `in 2 weeks`, `in a month` | today plus that much (months keep the day, clamped to the month's end) |
 | `next week`, `next month` | the first day of next week (Monday unless you start your week on Sunday or Saturday); the 1st of next month |
 | `3 Feb`, `Feb 3`, `3rd of February`, `December 25th 2027` | that date; without a year, the next time it comes round (today counts) |
-| `May`, `December` (full name alone) | the 1st of that month. Abbreviations (`mar`, `jan`) need a day number next to them. |
+| `May`, `December` (full name alone) | the 1st of that month, but only when the line has no other date: a later date wins (`Collect the invoices from September and send them next Monday at 10am` is due next Monday at 10:00, and *September* stays in the title). Right after `from`, `since`, `of` or `for` (`seit`, `von`, `ab`, `für`; `depuis`, `de`, `du`; `da`, `di`, `del`; `desde`, `de`, `del`; `desde`, `de`, `do`) a month name alone is always text. Abbreviations (`mar`, `jan`) need a day number next to them. |
 | `12/11`, `12-11`, `12/11/2027`, `2026-11-03` | numeric dates; see day/month order below |
 | `at 3pm`, `3:30 pm`, `16:30`, `at 9`, `noon`, `midnight` | that time today, unless a date is also given. A time on its own always means today, even if it has passed. Without `am`/`pm`, hours are 24-hour (`at 3` is 03:00). |
 | `in 3 hours` | that clock time, rolling to tomorrow past midnight |
@@ -98,6 +98,19 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 | Italian | `prima o poi` | `stasera` |
 | Spanish | `algún día` | `esta noche` |
 | Portuguese | `algum dia` | `hoje à noite` |
+
+**Energy.** With **Energy levels** on ([Set up](method/set-up.md#energy-levels)), `~deep`, `~medium` and `~low`, or any start of them (`~d`, `~me`, `~L`), set the task's energy, in every language and in any letter case: `Draft the strategy #Work ~deep +2h` → *Draft the strategy*, in Work, 2 hours, Deep. The chip reads "Deep energy"; typing `~` suggests the three, and on a phone the lightning tool under the line starts one. The last one on the line wins. `~` followed by anything else stays in the title (`Dinner for ~6 people`), and with Energy levels off the token is not read.
+
+**Morning and afternoon.** With [day parts](day-parts.md) on, `this morning` and `this afternoon` make the task due today with that part, and a part word right after a date phrase gives that date the part: `Stretch tomorrow morning` → *Stretch*, due tomorrow, Morning; `Dinner fri evening` → due Friday, This Evening. A part word anywhere else stays in the title (`Morning run tomorrow` keeps *Morning run*), and with day parts off none of these are read. Each gets its own chip.
+
+| Language | This morning, this afternoon | After a date |
+| --- | --- | --- |
+| English | `this morning`, `this afternoon` | `morning`, `afternoon`, `evening` |
+| German | `heute Morgen`, `heute früh`, `heute Vormittag`, `heute Nachmittag` | `früh`, `Vormittag`, `Nachmittag`, `Abend` |
+| French | `ce matin`, `cet après-midi` | `matin`, `après-midi`, `soir` |
+| Italian | `stamattina`, `stamani`, `questa mattina`, `oggi pomeriggio`, `questo pomeriggio` | `mattina`, `pomeriggio`, `sera` |
+| Spanish | `esta mañana`, `esta tarde` | `por la mañana`, `por la tarde`, `por la noche` |
+| Portuguese | `esta manhã`, `hoje de manhã`, `esta tarde`, `hoje à tarde` | `de manhã`, `à tarde`, `à noite` |
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, deadline, project, priority or estimate.
 
@@ -136,6 +149,29 @@ Some adds keep their own place: a subtask goes below its siblings, a task added 
 When a new task lands out of sight, at the end of a long list, a short note says where it went, such as *Added to the bottom of Inbox*, with **Show**, which scrolls to the task and selects it.
 
 From 768 px wide, the quick add stays under the page's title while the list scrolls under it, so you can add a task wherever you are in a long list without scrolling back up. On a phone the floating **+** button does the same, and the quick add scrolls with the list.
+
+## Paste a list
+
+Copy a list from a chat, a note or meeting minutes and paste it into an empty quick add. When the text has two or more lines, OpenTodo asks first: *Add 7 tasks, one per line?*, with the first five lines as they will be titled and how many more follow.
+
+- **Add 7 tasks** (or <kbd>Enter</kbd>) creates one task per line, in the pasted order.
+- **Paste as one line** puts the lines into the box joined by spaces, as before.
+- <kbd>Esc</kbd> closes the question and pastes nothing.
+
+Each line is cleaned first: spaces at either end and blank lines are dropped, and one list marker at the start is removed: `-`, `*`, `+`, `•`, `1.`, `1)`, `a)`, `[ ]`, `[x]`, `- [ ]`, `- [x]`, `☐` and `☑`. A ticked box does not complete the task; it starts open like the others.
+
+With parsing on, each line is read like a line you typed, with the [view's defaults](#views-and-defaults) for what it does not set. Pasting
+
+```
+Call Anna tomorrow 10am
+Send invoice #Work p1
+```
+
+into Today creates *Call Anna*, due tomorrow at 10:00, and *Send invoice*, due today in *Work* with priority 1. A line with only a date, such as `tomorrow`, keeps its text as the title.
+
+All the tasks of one paste are saved together, offline too, and a note says *7 tasks added* with **Undo**, which removes them all in one step. In the Inbox, the note also counts the lines that went elsewhere because they set a date or a project. If one line cannot be saved (in an [encrypted account](e2ee.md), a title too long to encrypt), none of them is, and the question says why.
+
+A paste into a box that already holds text goes in as text: OpenTodo assumes you are in the middle of a line. Up to 100 lines are added at once; for a longer list the question says so and offers [Import](import-export.md) and **Paste as one line**. Pasting works the same in a section's add row, the command bar's Add mode, the phone's add sheet, the [share screen](capture.md) and a calendar day's add dialog. To paste several subtasks, see [Break a task into subtasks](notes-and-subtasks.md#break-a-task-into-subtasks).
 
 ## Voice
 
@@ -186,10 +222,13 @@ A rule and reminders can be typed in the same line. Each gets its own chip and i
 | `every Monday` | `jeden Montag` | `tous les lundis` | `ogni lunedì` | `cada lunes` | `toda segunda-feira` |
 | `every 3 days after completion` | `alle 3 Tage nach Erledigung` | `tous les 3 jours après achèvement` | `ogni 3 giorni dopo il completamento` | `cada 3 días después de completar` | `todo 3 dias após a conclusão` |
 | `daily`, `weekly`, `monthly`, `yearly` | `täglich`, `wöchentlich`, `monatlich`, `jährlich` | `quotidiennement`, `hebdomadairement`, `mensuellement`, `annuellement` | `quotidianamente`, `settimanalmente`, `mensilmente`, `annualmente` | `diariamente`, `semanalmente`, `mensualmente`, `anualmente` | `diariamente`, `semanalmente`, `mensalmente`, `anualmente` |
+| `every other Friday`, `every other week` | `jeden zweiten Freitag`, `jede zweite Woche`, `alle zwei Tage` | `un vendredi sur deux`, `une semaine sur deux`, `tous les deux jours` | `ogni due venerdì`, `ogni due settimane`, `a settimane alterne` | `cada dos viernes`, `cada dos semanas` | `a cada duas sextas`, `a cada duas semanas` |
 | `remind me 30 min before` | `erinnere mich 30 Minuten vorher` | `rappelle-moi 30 min avant` | `ricordamelo 30 minuti prima` | `recuérdame 30 minutos antes` | `lembre-me 30 minutos antes` |
 | `remind me at 9` | `erinnere mich um 9 Uhr` | `rappelle-moi à 9h` | `ricordamelo alle 9` | `recuérdame a las 9` | `lembre-me às 9` |
 
 Rules cover the whole [rule grammar](recurrence.md): weekday lists (`every mon, wed and fri`), `every weekday`, `every 15th`, `every 2nd Tuesday`, `every last Friday`, `every last day`, with `after completion`, `until 31 Dec` or `for 10 times` at the end. The stored rule is always the English canonical form, whatever language you typed. A phrase the grammar cannot express, such as `every 3 hours`, stays in the title; only the first rule of a line counts. After a monthly rule, `of the month` is accepted and changes nothing (`every 2nd monday of the month`, `jeden zweiten Montag im Monat`, `tous les 2e lundis du mois`, `ogni secondo lunedì del mese`, `cada segundo lunes del mes`, `toda segunda segunda-feira do mês` are all `every 2nd monday`). A bare number before a weekday is a count, not an ordinal: `every 2 Mondays` (`alle 2 Montage`, `cada 2 lunes`) is not a rule and stays as typed, with no date.
+
+**Every other.** `every other day`, `week`, `month` or `year` repeats every 2 of them. `every other Friday` is `every 2 weeks`, starting on the next Friday (today when it is Friday), the same as `every 2 weeks on Friday`. In German, `jeden zweiten Freitag` is every other Friday, while `jeden zweiten Freitag im Monat` stays the second Friday of each month; in the other languages `every second Friday` (`ogni secondo venerdì`, `cada segundo viernes`) is the second Friday of the month.
 
 **First date.** Without a date in the line, the task is due on the rule's first occurrence from today, and the rule chip shows it (`every monday · Mon 12 Oct`). With a date (`Invoice every month 3 Nov at 10:00`) that date starts the series; a time becomes the series' time. The view's own default date never replaces the rule's date.
 

@@ -289,6 +289,23 @@ describe('one row language (rows-v2)', () => {
     await r.unmount()
   })
 
+  // OpenSpec change multi-day-tasks, D5: the range takes the date's place, "until" the Started chip's.
+  it('a span shows its range in place of the date, and "until" once begun, with no more items than before', () => atNoon(async () => {
+    const items = (root: ParentNode) => root.querySelectorAll('[data-date], [data-start]').length
+    const before = await row({ start: '2026-10-21', due: { date: '2026-10-24' }, span: true })
+    expect(before.container.querySelector('[data-date]')!.textContent).toMatch(/21\s?–\s?24/)
+    expect(before.container.querySelector('[data-start]')).toBeNull()
+    await before.unmount()
+    const deferred = await row({ start: '2026-10-21', due: { date: '2026-10-24' } })
+    const plain = items(deferred.container)
+    await deferred.unmount()
+    const during = await row({ start: '2026-10-12', due: { date: '2026-10-16' }, span: true })
+    expect(during.container.querySelector('[data-date]')!.textContent).toMatch(/12\s?–\s?16/)
+    expect(visibleText(during.container.querySelector('[data-start]')!)).toMatch(/^until /)
+    expect(items(during.container)).toBeLessThanOrEqual(plain)
+    await during.unmount()
+  }))
+
   it('the Someday item is left out in the Someday view and kept elsewhere', async () => {
     const inView = await row({ start: 'someday' }, { implied: { someday: true } })
     expect(inView.container.querySelector('[data-start]')).toBeNull()

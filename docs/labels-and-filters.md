@@ -28,7 +28,7 @@ Labels are personal. In a shared project, other members don't see the labels you
 
 ## See everything with one label
 
-Once you have a label, the **Labels** group in the sidebar lists your labels; it starts folded on a new device. The number of open tasks for each is on the labels page (<kbd>g</kbd> <kbd>l</kbd>) and in the label's header, not in the sidebar. Select one to see all its tasks, grouped by project ([or another way](group-and-order.md)); a task you add there with [quick add](quick-add.md) gets the label. **Pin to sidebar** in a label's menu (in the sidebar, on the labels page or in the label's header) adds it to **Favourites** at the top of the sidebar.
+Once you have a label, the **Labels** group in the sidebar lists your labels; it starts folded on a new device. The number of open tasks for each is on the labels page (<kbd>g</kbd> <kbd>l</kbd>) and in the label's header (in the sidebar with [every count on](sidebar-counts-and-order.md)). Select one to see all its tasks, grouped by project ([or another way](group-and-order.md)); a task you add there with [quick add](quick-add.md) gets the label. **Pin to sidebar** in a label's menu (in the sidebar, on the labels page or in the label's header) adds it to **Favourites** at the top of the sidebar.
 
 **All** next to Labels (or <kbd>g</kbd> <kbd>l</kbd>) opens the labels page, where you rename, recolour, reorder, merge and delete labels: see [Manage labels](manage-labels.md).
 
@@ -50,6 +50,7 @@ A query combines small pieces:
 | `due <= 7 days` | due within the next week | `due before friday` |
 | `search: text` | words in the title or notes | `search: invoice` |
 | `blocked`, `unblocked` | waiting for an open task, or not | `unblocked & today` |
+| `available` | can be done now: not blocked, not waiting for an earlier step, not parked or starting later | `available & @phone` |
 | `completed` | include completed tasks | `#Home & completed` |
 
 Join them with `&` (and), `|` (or) and `!` (not), and use brackets to group:

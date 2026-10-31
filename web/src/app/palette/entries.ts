@@ -6,7 +6,7 @@ import type { ConfirmSpec, PickerSpec } from '../menus/ActionMenu'
 import type { IconName } from '../../ui'
 import { msg, translatedMap } from '../../lib/i18n'
 
-export type EntryKind = 'command' | 'task' | 'project' | 'label' | 'view' | 'settings' | 'filter'
+export type EntryKind = 'command' | 'task' | 'project' | 'label' | 'view' | 'settings' | 'filter' | 'note'
 
 /** What a command may ask for after it is picked; the palette shows it in place. */
 export type Step =
@@ -24,6 +24,8 @@ export interface Entry {
   /** "completed", "archived": shown as a badge, ranked after the rest of its kind. */
   marker?: string
   icon?: IconName
+  /** A catalogue icon drawn instead of `icon` once known (a saved view's own, sidebar-polish D4); `icon` is the fallback. */
+  catalogueIcon?: string
   shortcut?: string
   /** Words the entry also matches on, never shown (the old name of a renamed page). */
   keywords?: string
@@ -44,7 +46,7 @@ export function secondaryOf(e: Entry, withShortcut = true): string | undefined {
 
 /** Section headings of the palette (keyboard-shortcuts / search-and-command-palette: Recent, Tasks, Projects, Labels, Views, Commands, Settings). */
 export const KIND_GROUP = translatedMap<EntryKind>({
-  command: msg('Commands'), task: msg('Tasks'), project: msg('Projects'), label: msg('Labels'), view: msg('Views'), settings: msg('Settings'), filter: msg('Views'),
+  command: msg('Commands'), task: msg('Tasks'), project: msg('Projects'), label: msg('Labels'), view: msg('Views'), settings: msg('Settings'), filter: msg('Views'), note: msg('Notes'),
 })
 
 export function groupOf(e: Entry): string {
@@ -52,7 +54,7 @@ export function groupOf(e: Entry): string {
 }
 
 export const KIND_ICON: Record<EntryKind, IconName> = {
-  command: 'chevron-right', task: 'circle', project: 'hash', label: 'tag', view: 'filter', settings: 'settings', filter: 'filter',
+  command: 'chevron-right', task: 'circle', project: 'hash', label: 'tag', view: 'filter', settings: 'settings', filter: 'filter', note: 'notebook-pen',
 }
 
 export function isStep(v: unknown): v is Step {

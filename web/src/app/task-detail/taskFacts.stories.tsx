@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useLabels, useProjects, useTask } from '../../lib/localData'
 import { seedInbox, seeded, withSeed } from '../stories/fixtures'
 import { TaskFacts } from './TaskFacts'
+import { setEnergyLevels, setTaskEnergy } from '../../lib/energy'
 
 // The task page's facts column (task-full-page D1, D7): Schedule, Details, Labels and
 // Project, unset facts as quiet actions. From the local data a seed writes.
@@ -22,3 +23,11 @@ function SeededFacts({ readOnly = false }: { readOnly?: boolean }) {
 
 export const Facts: StoryObj = { ...withSeed(seedInbox), render: () => <SeededFacts /> }
 export const Viewer: StoryObj = { ...withSeed(seedInbox), render: () => <SeededFacts readOnly /> }
+
+/** Energy levels on and the task set to Deep (task-energy D6): the Energy fact under Estimate. */
+async function seedEnergy(): Promise<void> {
+  await seedInbox()
+  await setEnergyLevels(true)
+  await setTaskEnergy(seeded.inboxTask, 'deep')
+}
+export const WithEnergy: StoryObj = { ...withSeed(seedEnergy), render: () => <SeededFacts /> }

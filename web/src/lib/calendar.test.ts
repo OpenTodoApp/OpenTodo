@@ -3,10 +3,10 @@ import {
   DAY_MINUTES,
   allDayEvents,
   eventBlocks,
-  blockFor, calendarTasks, dayLoad, DEFAULT_GRID_PREFS, dropStart, formatLoad, formatTime, normalizeGridPrefs, nudgeDue, parseTime,
+  blockFor, calendarTasks, dayLoad, DEFAULT_GRID_PREFS, eventMinutes, dropStart, formatLoad, formatTime, normalizeGridPrefs, nudgeDue, parseTime,
   placementStart, resizeEstimate, resizeStart, slotFromOffset, stepEstimate, stepStart, weekDates,
 } from './calendar'
-import { formatHour, formatTime as formatWallTime, resolveDateTime } from './dates'
+import { formatHour, formatTime as formatWallTime, resolveDateTime, viewedTask } from './dates'
 import type { CalendarEvent, Task } from './types'
 
 function task(p: Partial<Task> = {}): Task {
@@ -150,7 +150,16 @@ describe('blocks', () => {
     ]
     const ids = calendarTasks(tasks, [{ id: 'old', archived: true }, { id: 'live', archived: false }], '2026-10-13', '2026-10-19').map((t) => t.id)
     expect(ids).toEqual(['a', 'b', 'g'])
+    expect(calendarTasks(tasks, [{ id: 'old', archived: true }, { id: 'live', archived: false }], '2026-10-13', '2026-10-19', true).map((t) => t.id)).toEqual(['a', 'b', 'c', 'g'])
   })
+})
+
+it('places completed work on its due date in the viewer zone, regardless of the completion date', () => {
+  const completed = task({ id: 'done', due: { date: '2026-10-14', time: '02:00', tz: 'Asia/Tokyo' }, completed_at: Date.UTC(2026, 9, 15) })
+  const viewed = viewedTask(completed, 'Europe/Berlin')
+  expect(viewed.due?.date).toBe('2026-10-13')
+  expect(calendarTasks([viewed], [], '2026-10-13', '2026-10-13', true)).toEqual([viewed])
+  expect(calendarTasks([viewed], [], '2026-10-14', '2026-10-15', true)).toEqual([])
 })
 
 describe('capacity', () => {
@@ -164,7 +173,7 @@ describe('capacity', () => {
       task({ due: { date: '2026-10-14' }, estimate_minutes: 60 }),
     ]
     const load = dayLoad(tasks, day, 480)
-    expect(load).toEqual({ planned: 540, unestimated: 1, over: true })
+    expect(load).toEqual({ planned: 540, tasks: 540, events: 0, projected: 0, unestimated: 1, overTasks: true, overWithEvents: false, over: true })
     expect(formatLoad(load, 480)).toBe('9h / 8h')
   })
 
@@ -175,6 +184,50 @@ describe('capacity', () => {
     expect(dayLoad(tasks, day, 360).over).toBe(true)
     expect(formatLoad(dayLoad(tasks, day, 360), 360)).toBe('7h / 6h')
     expect(formatLoad(dayLoad([], day, 480), 480)).toBe('0m / 8h')
+  })
+})
+
+describe('capacity with meetings (meeting-aware-capacity)', () => {
+  const day = '2026-10-13'
+  const ev = (id: string, start: CalendarEvent['start'], end: CalendarEvent['end'], extra: Partial<CalendarEvent> = {}): CalendarEvent =>
+    ({ id, subscriptionId: 's', uid: id, summary: id, location: '', start, end, allDay: false, free: false, ...extra })
+  const at = (time: string, date = day) => ({ date, time })
+  const est = (minutes: number) => task({ due: { date: day }, estimate_minutes: minutes })
+
+  it('at rest: tasks and meetings summed, the line reads the total', () => {
+    const events = [ev('a', at('09:00'), at('10:30')), ev('b', at('14:00'), at('15:00'))]
+    const load = dayLoad([est(255)], day, 480, eventMinutes(events, day))
+    expect(load).toMatchObject({ tasks: 255, events: 150, planned: 405, overTasks: false, overWithEvents: false, over: false })
+    expect(formatLoad(load, 480)).toBe('6h 45m / 8h')
+  })
+
+  it('over by tasks alone keeps the danger state, even with meetings', () => {
+    const load = dayLoad([est(540)], day, 480, 60)
+    expect(load).toMatchObject({ planned: 600, overTasks: true, overWithEvents: false, over: true })
+    expect(formatLoad(load, 480)).toBe('10h / 8h')
+  })
+
+  it('over only with meetings is its own state', () => {
+    const load = dayLoad([est(360)], day, 480, 180)
+    expect(load).toMatchObject({ planned: 540, overTasks: false, overWithEvents: true, over: true })
+    expect(dayLoad([est(360)], day, 480, 120).over).toBe(false)
+  })
+
+  it('without event minutes it is the tasks-only load', () => {
+    expect(dayLoad([est(360)], day, 480)).toEqual(dayLoad([est(360)], day, 480, 0))
+    expect(dayLoad([est(360)], day, 480).events).toBe(0)
+  })
+
+  it('ignores free and all-day events, counts overlaps once and splits at midnight', () => {
+    const free = ev('free', at('10:00'), at('12:00'), { free: true })
+    const allDay = ev('offsite', { date: day }, { date: '2026-10-14' }, { allDay: true })
+    expect(eventMinutes([free, allDay], day)).toBe(0)
+    expect(dayLoad([est(120)], day, 480, eventMinutes([free, allDay], day)).planned).toBe(120)
+    const overlap = [ev('x', at('09:00'), at('11:00')), ev('y', at('10:00'), at('12:00'))]
+    expect(eventMinutes(overlap, day)).toBe(180)
+    const late = [ev('late', at('23:00'), at('01:30', '2026-10-14'))]
+    expect(eventMinutes(late, day)).toBe(60)
+    expect(eventMinutes(late, '2026-10-14')).toBe(90)
   })
 })
 
@@ -211,15 +264,15 @@ describe('weeks and placement', () => {
 
 describe('grid preferences', () => {
   it('defaults to 06:00–22:00 and 8 hours', () => {
-    expect(normalizeGridPrefs(undefined)).toEqual({ startHour: 6, endHour: 22, dayLength: 480, planDays: 14 })
+    expect(normalizeGridPrefs(undefined)).toEqual({ startHour: 6, endHour: 22, dayLength: 480, planDays: 14, countEvents: false })
     expect(normalizeGridPrefs('junk')).toEqual(DEFAULT_GRID_PREFS)
   })
 
   it('keeps valid values and repairs invalid ones', () => {
-    expect(normalizeGridPrefs({ startHour: 8, endHour: 18, dayLength: 360 })).toEqual({ startHour: 8, endHour: 18, dayLength: 360, planDays: 14 })
+    expect(normalizeGridPrefs({ startHour: 8, endHour: 18, dayLength: 360 })).toEqual({ startHour: 8, endHour: 18, dayLength: 360, planDays: 14, countEvents: false })
     expect(normalizeGridPrefs({ startHour: 7.5, endHour: 30, dayLength: 0 })).toEqual(DEFAULT_GRID_PREFS)
-    expect(normalizeGridPrefs({ startHour: 23 })).toEqual({ startHour: 23, endHour: 24, dayLength: 480, planDays: 14 })
-    expect(normalizeGridPrefs({ endHour: 4 })).toEqual({ startHour: 3, endHour: 4, dayLength: 480, planDays: 14 })
+    expect(normalizeGridPrefs({ startHour: 23 })).toEqual({ startHour: 23, endHour: 24, dayLength: 480, planDays: 14, countEvents: false })
+    expect(normalizeGridPrefs({ endHour: 4 })).toEqual({ startHour: 3, endHour: 4, dayLength: 480, planDays: 14, countEvents: false })
     expect(normalizeGridPrefs({ startHour: 18, endHour: 9 })).toEqual(DEFAULT_GRID_PREFS)
   })
 
@@ -229,6 +282,15 @@ describe('grid preferences', () => {
     expect(normalizeGridPrefs({ planDays: 7 }).planDays).toBe(7)
     expect(normalizeGridPrefs({ planDays: 10 }).planDays).toBe(14)
     expect(normalizeGridPrefs({ planDays: '21' }).planDays).toBe(14)
+  })
+
+  it('counts meetings only when stored as true (meeting-aware-capacity)', () => {
+    expect(DEFAULT_GRID_PREFS.countEvents).toBe(false)
+    expect(normalizeGridPrefs({ dayLength: 480 }).countEvents).toBe(false)
+    expect(normalizeGridPrefs({ countEvents: true }).countEvents).toBe(true)
+    expect(normalizeGridPrefs({ countEvents: 'true' }).countEvents).toBe(false)
+    expect(normalizeGridPrefs({ countEvents: 1 }).countEvents).toBe(false)
+    expect(normalizeGridPrefs({ countEvents: null }).countEvents).toBe(false)
   })
 })
 

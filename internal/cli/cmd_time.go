@@ -402,7 +402,15 @@ func (a *App) applyNatural(ctx context.Context, c *client, title string, langs [
 			return nil, nil, 0, err
 		}
 	}
-	r := quickadd.Parse(title, a.quickContext(langs, projects))
+	qctx := a.quickContext(langs, projects)
+	// Part phrases ("tomorrow morning") follow the account's Day parts preference,
+	// the `~deep` tokens its Energy levels (task-energy D3).
+	parts, energy, err := c.quickPrefs(ctx)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	qctx.DayParts, qctx.Energy = parts, energy
+	r := quickadd.Parse(title, qctx)
 	if r.Title == "" {
 		return nil, nil, 0, usageErr("--natural: the line has no title left after its attributes")
 	}
@@ -437,6 +445,11 @@ func (a *App) applyNatural(ctx context.Context, c *client, title string, langs [
 	}
 	if r.Evening {
 		body["evening"] = true
+	} else if r.DayPart != "" {
+		body["day_part"], body["evening"] = r.DayPart, false
+	}
+	if r.Energy != "" && !set["energy"] {
+		body["energy"] = r.Energy
 	}
 	return labelRefs, append(r.Reminders, phrases...), r.SpentMinutes, nil
 }

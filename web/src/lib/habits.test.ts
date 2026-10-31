@@ -9,9 +9,10 @@ import { parseRule, type Rule } from './recurrence'
 import type { Task } from './types'
 
 interface Vectors {
-  cases: { name: string; rule: string; due: string; today: string; records: Record<string, string>; stats: HabitStats | null; grids?: { month: string; days: string }[] }[]
+  cases: { name: string; rule: string; due: string; today: string; records: Record<string, string>; split?: Split; stats: HabitStats | null; grids?: { month: string; days: string }[] }[]
   previous: { rule: string; due: string; before: string; records: string[]; want: string | null }[]
 }
+interface Split { from: string; rule: string; due: string; completed?: boolean; records: Record<string, string> }
 const vectors = rawVectors as unknown as Vectors
 
 const CHAR: Record<DayState, string> = { blank: '.', done: 'D', skipped: 'S', missed: 'M', pending: 'P', upcoming: 'U' }
@@ -26,12 +27,25 @@ function task(over: Partial<Task>): Task {
 
 const SERIES = 'series-1'
 
-function rows(rule: string, due: string, records: Record<string, string>): Task[] {
-  const series = task({ id: SERIES, recurrence: rule, due: { date: due }, habit: true })
-  const recs = Object.entries(records).map(([date, state]) => task({
-    id: occurrenceId(SERIES, date), series_id: SERIES, due: { date }, completed_at: 100, skipped: state === 'skipped',
-  }))
-  return [series, ...recs]
+const ROOT = 'root-1'
+
+function rows(rule: string, due: string, records: Record<string, string>, split?: Split): Task[] {
+  const series = task({ id: SERIES, recurrence: rule, due: { date: due }, habit: true, ...(split ? { split_from: { series: ROOT, date: split.from } } : {}) })
+  const own = recordRows(SERIES, records)
+  if (!split) return [series, ...own]
+  const root = task({ id: ROOT, recurrence: split.rule, due: { date: split.due }, habit: true, completed_at: split.completed ? 100 : null })
+  return [series, ...own, root, ...recordRows(ROOT, split.records)]
+}
+
+function recordRows(seriesId: string, records: Record<string, string>): Task[] {
+  return Object.entries(records).map(([date, mark]) => {
+    // "done>2026-10-15": the record of `date` moved to that day (series-exceptions).
+    const [state, movedTo] = mark.split('>')
+    return task({
+      id: occurrenceId(seriesId, date), series_id: seriesId, due: { date: movedTo ?? date }, completed_at: state === 'open' ? null : 100,
+      skipped: state === 'skipped', ...(movedTo || state === 'open' ? { occurrence_date: date } : {}),
+    })
+  })
 }
 
 function mustRule(text: string): Rule {
@@ -43,7 +57,7 @@ function mustRule(text: string): Rule {
 describe('habit vectors', () => {
   for (const v of vectors.cases) {
     it(v.name, () => {
-      const all = rows(v.rule, v.due, v.records)
+      const all = rows(v.rule, v.due, v.records, v.split)
       expect(habitStats(all[0], all, v.today)).toEqual(v.stats)
       for (const g of v.grids ?? []) {
         const [y, m] = g.month.split('-').map(Number)
@@ -102,14 +116,14 @@ describe('schedule', () => {
 })
 
 describe('records', () => {
-  it('counts only derived-id records that are completed and live', () => {
+  it('counts only live derived-id records, an open one as open (series-exceptions)', () => {
     const all = [
       task({ id: occurrenceId(SERIES, '2026-10-12'), series_id: SERIES, due: { date: '2026-10-12' }, completed_at: 1 }),
       task({ id: occurrenceId(SERIES, '2026-10-13'), series_id: SERIES, due: { date: '2026-10-13' }, completed_at: null }),
       task({ id: occurrenceId(SERIES, '2026-10-11'), series_id: SERIES, due: { date: '2026-10-11' }, completed_at: 1, deleted_at: 2 }),
       task({ id: detachedId(SERIES, '2026-10-10'), series_id: SERIES, due: { date: '2026-10-10' }, completed_at: 1 }),
     ]
-    expect([...recordsByDate(SERIES, all)]).toEqual([['2026-10-12', 'done']])
+    expect([...recordsByDate(SERIES, all)]).toEqual([['2026-10-12', 'done'], ['2026-10-13', 'open']])
   })
 
   it('offers no rule for a completion-relative or missing rule', () => {

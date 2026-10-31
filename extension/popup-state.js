@@ -94,7 +94,7 @@ export function taskBody({ line, parsed, projectId, labelIds, origin, descriptio
   const f = parsed?.fields ?? {}
   const title = (parsed ? parsed.title : line).trim() || line.trim()
   const body = { title }
-  for (const k of ['due', 'deadline', 'start', 'evening', 'priority', 'estimate_minutes', 'recurrence']) {
+  for (const k of ['due', 'deadline', 'start', 'evening', 'day_part', 'energy', 'priority', 'estimate_minutes', 'recurrence']) {
     if (f[k] !== undefined) body[k] = f[k]
   }
   if (projectId) body.project_id = projectId
@@ -130,7 +130,7 @@ export async function quickSave(api, { line, parsed, picks = {}, origin, descrip
     if (l.id) ids.push(l.id)
     else ids.push((await api.createLabel(l.name, ++n)).id)
   }
-  const task = await api.createTask(taskBody({ line, parsed, projectId: projectFor(parsed, picks.projectId), labelIds: ids, origin, description }))
+  const task = await api.createTask(taskBody({ line, parsed, projectId: projectFor(parsed, picks.projectId), labelIds: ids, origin, description }), { ownReminders: (parsed?.fields?.reminders ?? []).length > 0 })
   try {
     let r = 0
     for (const rem of parsed?.fields?.reminders ?? []) await api.createReminder(reminderBody(task.id, rem), ++r)

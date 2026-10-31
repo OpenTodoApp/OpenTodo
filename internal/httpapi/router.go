@@ -112,6 +112,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Membership invitations (OpenSpec change member-add-consent).
 	s.registerMemberInvitationRoutes(mux)
 	s.registerBrandingRoutes(mux)
+	// Database storage and notes compaction (OpenSpec `op-log-compaction`).
+	s.registerStorageRoutes(mux)
 	// Web push (OpenSpec `reminders`): registered only while push is enabled.
 	s.registerPushRoutes(mux)
 	// Notifications (OpenSpec `task-assignment`).
@@ -120,6 +122,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerChannelRoutes(mux)
 	// Trash and history (OpenSpec `trash-and-history`).
 	s.registerTrashRoutes(mux)
+	// Standalone notes: append and to-task (OpenSpec `notes-overview`).
+	s.registerNoteRoutes(mux)
 	// CalDAV (OpenSpec `caldav`): app passwords, the owner toggle and /dav/.
 	s.registerCaldavRoutes(mux)
 	s.registerCalendarFeedRoutes(mux)
@@ -131,12 +135,20 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Map proxy and its switches (OpenSpec `task-locations`).
 	s.mapRoutes.Register(mux)
 	s.registerPlaceRoutes(mux)
+	// Calendar frames (OpenSpec change calendar-frames).
+	s.registerFrameRoutes(mux)
+	// Calendar slots (OpenSpec change calendar-slots).
+	s.registerSlotRoutes(mux)
 	s.registerQuickAddRoutes(mux)
 	// Automation rules (OpenSpec `automation-rules`).
 	s.registerRuleRoutes(mux)
 	// Comments and activity (OpenSpec `comments-and-activity`).
 	s.registerCommentRoutes(mux)
 	s.registerTimeEntryRoutes(mux)
+	// Occurrences of a recurring task for integrations (OpenSpec change series-occurrences).
+	s.registerOccurrenceRoutes(mux)
+	s.registerOccurrenceActionRoutes(mux)
+	s.registerSplitRoutes(mux)
 	// End-to-end encryption (OpenSpec `e2ee`): wrapped key record and history purge.
 	s.registerEncryptionRoutes(mux)
 	// Read-only MCP endpoint and its owner toggle (OpenSpec `mcp-server`).

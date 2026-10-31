@@ -19,7 +19,21 @@ From 768 px wide the shell SHALL fill the viewport height with the sidebar and t
 ### Requirement: Sidebar structure
 The sidebar SHALL show, top to bottom: the workspace control (the current workspace's icon or colour and name, opening the workspace switcher; the app name is shown beside it only while the account has one workspace) with a search button beside it (search and commands), the primary destinations Inbox, Today, Upcoming, Calendar (Day or Week, as last used) pinned at the top; then, in one scroller, a "More" group collapsed by default (Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, New view, Ask when available), the Favourites group when the user has pinned anything in the current workspace, then Projects, Labels and Views, each collapsible with its state remembered on the device and its item count on the header while collapsed; then one pinned footer row holding the account (avatar and name, opening the account menu), the assistant launcher when the assistant is available, notifications and the sync status. Every group, row and count SHALL be those of the current workspace. On a device that has not stored a state for a group, Projects SHALL start open and Labels and Views SHALL start closed. From 768 px with a fine pointer, More SHALL instead be a row after the primary destinations that opens a menu of those destinations, carrying the same marker on the row. The Views group SHALL be shown only once the user has a saved view in the current workspace and the Labels group only once the user has a label there; an empty group shows nothing, not a placeholder sentence.
 
-Counts SHALL be visible at all times on Inbox, Today and collapsed group headers only. A project's count SHALL be visible while its row is hovered or focused, and at all times on a coarse pointer; favourites follow the rule of their own kind. View rows and label rows SHALL show no count. Every row that has a count SHALL carry it in its accessible name. The unread badges of shared projects and of Updates are governed by `activity-feed` and are unchanged. The workspace control SHALL carry one accent dot while another workspace has unread updates, with the workspace names in its tooltip and accessible name.
+Outside Open Loops first, the primary destinations SHALL be listed in the user's destination order (`appearance-preferences` "Primary destination order"); the table below gives the default order.
+
+Counts SHALL follow the user's sidebar counts preference (`appearance-preferences` "Sidebar counts preference").
+
+With the default (Inbox and Today):
+- counts SHALL be visible at all times on Inbox, Today and collapsed group headers only;
+- a project's count SHALL be visible while its row is hovered or focused, and at all times on a coarse pointer;
+- favourites follow the rule of their own kind;
+- view rows and label rows SHALL show no count.
+
+With every count on:
+- project, label and saved-view rows and their favourites SHALL show their open-task count at all times, and no number while the count is zero; dashboards show none;
+- on a fine pointer, while such a row is hovered or focused, its menu button SHALL take the count's place without the row growing.
+
+Every row that has a count SHALL carry it in its accessible name. The unread badges of shared projects and of Updates are governed by `activity-feed` and are unchanged. The workspace control SHALL carry one accent dot while another workspace has unread updates, with the workspace names in its tooltip and accessible name.
 
 The primary destinations and the More group SHALL depend on the user's "How you work" preference:
 
@@ -28,7 +42,7 @@ The primary destinations and the More group SHALL depend on the user's "How you 
 | `lists` and `companion` | Inbox, Today, Upcoming, Calendar (Day or Week, as last used) | Loop home, Next, Waiting, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, New view, Review, Statistics, Ask when available |
 | `first` | Loop home, Inbox, Today, Next, Waiting, Review | Upcoming, Calendar, Anytime, Someday, Assigned to me, Completed, Updates, Locations, Trash, New view, Statistics, Ask when available |
 
-In `first` mode the primary destinations SHALL never exceed six. Promoted destinations SHALL be listed in the More group, and the stored promotion list SHALL be kept unchanged. The workspace control is not a destination and SHALL not count against the six.
+In `first` mode the primary destinations SHALL never exceed six and SHALL keep the order above. Promoted destinations SHALL be listed in the More group, and the stored promotion list and destination order SHALL be kept unchanged. The workspace control is not a destination and SHALL not count against the six.
 
 #### Scenario: Default sidebar
 - **WHEN** a user with projects, labels, saved views and no favourites opens the app on a 1280×800 screen on a device that never stored a group state
@@ -101,6 +115,22 @@ In `first` mode the primary destinations SHALL never exceed six. Promoted destin
 #### Scenario: Rules in More
 - **WHEN** the user opens the More group, in any "How you work" mode
 - **THEN** Rules (OpenSpec `automation-rules`) is listed after Locations and before Trash, and it is never a primary destination
+
+#### Scenario: Every count on
+- **WHEN** the user chose "Every list" for sidebar counts and has "Website launch" (5 open tasks), the label "errand" (3), the view "Waiting" (2), a project with nothing open, and nothing hovered
+- **THEN** the rows read "Website launch 5", "errand 3" and "Waiting 2", the empty project shows no number, and each accessible name still states its count
+
+#### Scenario: Menu in the count's place
+- **WHEN** every count is on and the user points at "Website launch" with a mouse
+- **THEN** the "5" is replaced in the same place by the row's ⋯ button, the row does not grow, and the number comes back when the pointer leaves
+
+#### Scenario: Collapsed parent totals
+- **WHEN** every count is on and the user collapses "Home" (2 open tasks) whose sub-projects hold 3 and 4
+- **THEN** the "Home" row reads 9, and expanding it shows 2 on "Home" and 3 and 4 on its sub-projects
+
+#### Scenario: Reordered destinations
+- **WHEN** a Companion user who promoted Someday moved Today above Inbox and Someday above Upcoming in Settings → Appearance
+- **THEN** the primary destinations read Today, Inbox, Someday, Upcoming, Calendar on every device after sync, and in Open Loops first they read Loop home, Inbox, Today, Next, Waiting, Review
 
 ### Requirement: Page template
 Every view SHALL render a page header and, below it, its content, inside one inset content surface (precision-shell D1). There SHALL be two page heads:
@@ -597,3 +627,33 @@ The sidebar SHALL offer a Schedule section between its scroller and its footer, 
 #### Scenario: Offline
 - **WHEN** the device is offline
 - **THEN** Schedule shows the tasks and the cached events of today, and asks for no events while no subscription is known on the device
+
+### Requirement: Focus in the More group
+The More group SHALL list Focus after Statistics, in every "How you work" mode, opening `/focus`. Focus SHALL be promotable to the primary destinations through the sidebar destinations preference, except in Open Loops first, where it stays in More. It SHALL show no count and no marker.
+
+#### Scenario: Listed in More
+- **WHEN** the user opens the More group, in any mode
+- **THEN** Focus is listed after Statistics and opens the Focus screen with today's focus or the task picker
+
+#### Scenario: Promoted
+- **WHEN** a Companion user turns on "Show in sidebar" for Focus in Settings → Appearance
+- **THEN** Focus appears among the primary destinations on every device after sync and leaves the More group
+
+#### Scenario: Open Loops first
+- **WHEN** the same user switches to Open Loops first
+- **THEN** Focus is back in the More group, the six primary destinations are unchanged, and the promotion is kept for a later switch back
+
+### Requirement: Notes in the More group
+The More group SHALL list Notes after Focus, in every "How you work" mode, opening `/notes`. Notes SHALL be promotable to the primary destinations through the sidebar destinations preference, except in Open Loops first, where it stays in More so the six primary destinations are unchanged. It SHALL show no count and no marker. The entry is navigation only and reads no server data, so it works offline.
+
+#### Scenario: Listed in More
+- **WHEN** the user opens the More group, in any mode
+- **THEN** Notes is listed after Focus and opens the Notes page
+
+#### Scenario: Promoted
+- **WHEN** a Companion user turns on "Show in sidebar" for Notes in Settings → Appearance
+- **THEN** Notes appears among the primary destinations on every device after sync and leaves the More group
+
+#### Scenario: Open Loops first
+- **WHEN** the same user switches to Open Loops first
+- **THEN** Notes is back in the More group, the six primary destinations are unchanged, and the promotion is kept for a later switch back

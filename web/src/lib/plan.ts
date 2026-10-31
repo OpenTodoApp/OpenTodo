@@ -4,18 +4,23 @@
 // estimates, busy calendar events, projections). Nothing here is ever written:
 // every device with the same rows draws the same plan.
 import { addDaysISO, daysBetweenISO, localDueOf } from './dates'
-import { DAY_MINUTES, eventBlocks } from './calendar'
+import { eventMinutes } from './calendar'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
-import { followingOccurrence } from './recurrence'
-import { completedOccurrences, seriesRule } from './recurring'
-import type { CalendarEvent, Due, Project, Task } from './types'
+import { seriesRule } from './recurring'
+import type { Projection } from './occurrences'
+import type { CalendarEvent, Project, Task } from './types'
+import { spanCovers, spanDay, spanOf } from './span'
+
+// The walk lives in occurrences.ts since series-occurrences (design D2): Plan is one of its consumers.
+export { MAX_PROJECTIONS, projectedOccurrences, type Projection } from './occurrences'
+
+// The one definition of event minutes lives in calendar.ts (meeting-aware-capacity D1).
+export { eventMinutes }
 
 export type PlanSpan = 7 | 14 | 21
 export const PLAN_SPANS: readonly PlanSpan[] = [7, 14, 21]
 export const DEFAULT_PLAN_DAYS: PlanSpan = 14
-/** Projections drawn per series at most (design D5's guard). */
-export const MAX_PROJECTIONS = 31
 
 /** `days` consecutive ISO dates starting on `anchor`. */
 export function spanDates(anchor: string, days: number): string[] {
@@ -33,65 +38,17 @@ export function followAnchor(anchor: string, days: number, date: string): string
   return addDaysISO(anchor, weeks * 7)
 }
 
-/** A future occurrence of a recurring task, derived and read-only. */
-export interface Projection {
-  id: string
-  seriesId: string
-  /** The day it falls on in the viewer's zone. */
-  date: string
-  time?: string
-  title: string
-  estimate_minutes: number | null
-  priority: number
-  position: number
-  project_id: string | null
-}
-
 /** Open, live recurring tasks with a date, leaving out archived projects (the calendar's selection without the range). */
 export function planSeries(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[]): Task[] {
   const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   return tasks.filter((task) => task.due && !(task.project_id && archived.has(task.project_id)) && seriesRule(task) !== null)
 }
 
-/**
- * The occurrences that would follow each series' current one inside [from, to]
- * (viewer's days), computed with the shared calculator: calendar rules as if each
- * occurrence were completed on time, completion-relative rules as if each were
- * completed on its day (the first one not before today), `done` counting the
- * series' completed records so a `for N times` end stops the walk.
- */
-export function projectedOccurrences(series: readonly Task[], allTasks: readonly Task[], today: string, from: string, to: string, zone?: string): Projection[] {
-  const out: Projection[] = []
-  for (const task of series) {
-    const rule = seriesRule(task)
-    if (!rule || !task.due) continue
-    const done = completedOccurrences(task.id, allTasks)
-    let cur = task.due.date
-    // The walk reaches `from` first; the guard stops a runaway rule after that.
-    const limit = MAX_PROJECTIONS + Math.max(0, Math.min(3700, daysBetweenISO(cur, from)))
-    let drawn = 0
-    for (let k = 0; k < limit && drawn < MAX_PROJECTIONS; k++) {
-      const completedOn = rule.afterCompletion ? (k === 0 && cur < today ? today : cur) : today
-      const next = followingOccurrence(rule, cur, today, completedOn, done + k)
-      if (next === null || next <= cur) break
-      const due: Due = task.due.time ? { date: next, time: task.due.time, ...(task.due.tz ? { tz: task.due.tz } : {}) } : { date: next }
-      const seen = localDueOf(due, zone)
-      if (seen.date > to) break
-      if (seen.date >= from) {
-        out.push({
-          id: `proj:${task.id}:${next}`, seriesId: task.id, date: seen.date, ...(seen.time ? { time: seen.time } : {}),
-          title: task.title, estimate_minutes: task.estimate_minutes, priority: task.priority, position: task.position, project_id: task.project_id,
-        })
-        drawn++
-      }
-      cur = next
-    }
-  }
-  return out
-}
-
 /** One row of a column: a task or a projection, in the column's order. */
-export type PlanEntry = { kind: 'task'; task: Task; time?: string } | { kind: 'projected'; projection: Projection; time?: string }
+export type PlanEntry = { kind: 'task'; task: Task; time?: string; spanDay?: SpanPosition } | { kind: 'projected'; projection: Projection; time?: string; spanDay?: SpanPosition }
+
+/** Where a column's day falls in a span the column lists (multi-day-tasks D3): "Day 2 of 3". */
+export interface SpanPosition { n: number; of: number }
 
 /**
  * A column's rows: the day's tasks (in the viewer's zone) and projections together,
@@ -101,9 +58,16 @@ export function columnEntries(tasks: readonly Task[], projections: readonly Proj
   const out: (PlanEntry & { priority: number; position: number })[] = []
   for (const task of tasks) {
     const due = localDueOf(task.due, zone)
-    if (due?.date === date) out.push({ kind: 'task', task, time: due.time, priority: task.priority, position: task.position })
+    // A span is listed on each day it covers, with its position and without a time (multi-day-tasks D3).
+    const span = spanOf(task)
+    if (span && spanCovers(span, date)) out.push({ kind: 'task', task, spanDay: { n: spanDay(span, date), of: span.length }, priority: task.priority, position: task.position })
+    else if (!span && due?.date === date) out.push({ kind: 'task', task, time: due.time, priority: task.priority, position: task.position })
   }
-  for (const p of projections) if (p.date === date) out.push({ kind: 'projected', projection: p, time: p.time, priority: p.priority, position: p.position })
+  for (const p of projections) {
+    const first = p.spanFirst
+    if (first && first <= date && date <= p.date) out.push({ kind: 'projected', projection: p, spanDay: { n: daysBetweenISO(first, date) + 1, of: daysBetweenISO(first, p.date) + 1 }, priority: p.priority, position: p.position })
+    else if (!first && p.date === date) out.push({ kind: 'projected', projection: p, time: p.time, priority: p.priority, position: p.position })
+  }
   out.sort((a, b) => {
     if (!!a.time !== !!b.time) return a.time ? -1 : 1
     if (a.time && b.time && a.time !== b.time) return a.time < b.time ? -1 : 1
@@ -111,40 +75,6 @@ export function columnEntries(tasks: readonly Task[], projections: readonly Proj
     return a.position - b.position
   })
   return out.map(({ priority: _p, position: _q, ...entry }) => entry as PlanEntry)
-}
-
-/**
- * Busy minutes of `date` in the viewer's zone: timed, non-free events clipped to
- * the day, overlapping intervals counted once. All-day and free events count zero.
- */
-export function eventMinutes(events: readonly CalendarEvent[], date: string, zone?: string): number {
-  const busy = events.filter((ev) => !ev.free && !ev.allDay && !(ev.start.date === ev.end.date && ev.start.time === ev.end.time && ev.start.tz === ev.end.tz))
-  // eventBlocks gives a zero-length remainder a slot-high block; a part that ends at
-  // its start (an event ending at 00:00 of this day) is not inside the day.
-  const spans = eventBlocks(busy, date, zone)
-    .map((b) => ({ start: b.start, end: realEnd(b.event, date, b.start, b.end, zone) }))
-    .filter((s) => s.end > s.start)
-    .sort((a, b) => a.start - b.start)
-  let total = 0
-  let curStart = -1, curEnd = -1
-  for (const s of spans) {
-    if (s.start > curEnd) {
-      if (curEnd > curStart) total += curEnd - curStart
-      curStart = s.start
-      curEnd = s.end
-    } else curEnd = Math.max(curEnd, s.end)
-  }
-  if (curEnd > curStart) total += curEnd - curStart
-  return Math.min(total, DAY_MINUTES)
-}
-
-/** The block's end without the minimum height eventBlocks adds for drawing. */
-function realEnd(ev: CalendarEvent, date: string, start: number, end: number, zone?: string): number {
-  if (!ev.end.time) return end
-  const local = ev.end.tz ? localDueOf({ date: ev.end.date, time: ev.end.time, tz: ev.end.tz }, zone) : { date: ev.end.date, time: ev.end.time }
-  if (local.date !== date || !local.time) return end
-  const [h, m] = local.time.split(':').map(Number)
-  return Math.max(start, Math.min(end, h * 60 + m))
 }
 
 export interface PlanLoad {
@@ -160,9 +90,12 @@ export interface PlanLoad {
   over: boolean
 }
 
-/** The load of `date` against the day length, from the three sources. */
-export function planLoad(tasks: readonly Task[], projections: readonly Projection[], events: readonly CalendarEvent[], date: string, dayLength: number, zone?: string): PlanLoad {
-  let taskMinutes = 0, projected = 0, unestimated = 0
+/**
+ * The load of `date` against the day length, from the three sources; `slots` is
+ * what the day's calendar slots change (calendar-slots D6, lib/slots `slotCapacity`).
+ */
+export function planLoad(tasks: readonly Task[], projections: readonly Projection[], events: readonly CalendarEvent[], date: string, dayLength: number, zone?: string, slots = { extra: 0, covered: 0 }): PlanLoad {
+  let taskMinutes = slots.extra, projected = 0, unestimated = -slots.covered
   for (const task of tasks) {
     if (task.completed_at || task.deleted_at || localDueOf(task.due, zone)?.date !== date) continue
     if (task.estimate_minutes) taskMinutes += task.estimate_minutes
@@ -173,6 +106,7 @@ export function planLoad(tasks: readonly Task[], projections: readonly Projectio
     if (p.estimate_minutes) projected += p.estimate_minutes
     else unestimated++
   }
+  unestimated = Math.max(0, unestimated)
   const ev = eventMinutes(events, date, zone)
   const total = taskMinutes + ev + projected
   return { tasks: taskMinutes, events: ev, projected, unestimated, total, over: total > dayLength }

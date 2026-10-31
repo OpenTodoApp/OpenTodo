@@ -32,6 +32,7 @@ Use the **⋯** menu on a section heading (or press <kbd>.</kbd> with the headin
 
 - **Rename** (<kbd>F2</kbd>)
 - **Colour…** and **Icon…** mark the section before its name.
+- **Flow…**: one at a time or together ([flows](project-flows.md)).
 - **Move** it up or down (left or right on the board).
 - **Delete section…** asks first and says how many open tasks move to **No section**. The tasks aren't deleted.
 
@@ -39,7 +40,7 @@ Fold a section with the small arrow next to its name. Folding is remembered on t
 
 ## Switch to a board
 
-At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board** and **Timeline**; you can also choose one directly.
+At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board**, **Timeline** and [**Calendar**](calendar-filter.md#a-project-as-a-calendar).
 
 
 The choice is remembered per project on each device. On a phone the board shows one column at a time: swipe sideways or tap a dot above the columns; "No section" is a column only while it has open tasks.
@@ -52,7 +53,7 @@ The choice is remembered per project on each device. On a phone the board shows 
 
 Moving with the keyboard or the panel puts the card at the bottom of the new column.
 
-Cards show up to three [custom field](custom-fields.md) values as badges, such as **Cost 1,200**, and **+2** for the rest.
+Cards show up to three [custom field](custom-fields.md) values as badges, such as **Cost 1,200**, and **+2** for the rest. To fold a column or show notes on cards, see [Fold columns](fold-columns.md).
 
 ## See a project on a timeline
 
@@ -77,5 +78,4 @@ Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it sh
 ## Ideas for sections
 
 - A simple flow: **To do**, **Doing**, **Done**.
-- By place: **Kitchen**, **Bathroom**, **Garden** for a renovation.
 - By week: **This week**, **Next week**, **Later** for a launch plan.

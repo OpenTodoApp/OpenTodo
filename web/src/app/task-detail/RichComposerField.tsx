@@ -63,6 +63,7 @@ export default function RichComposerField(p: RichComposerFieldProps) {
   props.current = p
   const [focused, setFocused] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [, setMounted] = useState(false)
   // The text the field started from (or was reset to) and its document.
   const start = useRef<{ text: string; canon: string }>({ text: '', canon: '' })
   const emitted = useRef<string | null>(null)
@@ -161,6 +162,8 @@ export default function RichComposerField(p: RichComposerFieldProps) {
     })
     view.current = v
     views.set(v.dom, v)
+    // The row needs the view: a row remembered open shows at once (notes-toolbar-desktop D6).
+    setMounted(true)
     if (p.autoFocus) v.focus()
     return () => {
       v.destroy()
@@ -183,7 +186,7 @@ export default function RichComposerField(p: RichComposerFieldProps) {
 
   return (
     <div className="space-y-1">
-      <EditorToolbar view={view.current} env={env} visible={focused || menuOpen} onMenu={setMenuOpen} always={p.toolbar} />
+      <EditorToolbar id={`${p.id}-formatting`} view={view.current} env={env} visible={focused || menuOpen} onMenu={setMenuOpen} always={p.toolbar} />
       <div ref={host} className="ui-input min-h-16 max-h-60 overflow-y-auto p-0" data-rich-composer />
       {chrome.overlays}
       {linkAsk && (

@@ -191,7 +191,7 @@ describe('column rows', () => {
       task({ id: 'at14', due: { date: day, time: '14:00' } }),
       task({ id: 'p1', due: { date: day }, priority: 1 }),
       task({ id: 'at09', due: { date: day, time: '09:00' } }),
-    ], [{ id: 'proj:x', seriesId: 'x', date: day, time: '10:00', title: 'x', estimate_minutes: null, priority: 4, position: 0, project_id: null }], day)
+    ], [{ id: 'proj:x', seriesId: 'x', date: day, occurrence: day, time: '10:00', title: 'x', estimate_minutes: null, priority: 4, position: 0, project_id: null }], day)
     expect(rows.map((r) => (r.kind === 'task' ? r.task.id : r.projection.id))).toEqual(['at09', 'proj:x', 'at14', 'p1', 'p4'])
   })
 

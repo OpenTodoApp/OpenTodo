@@ -111,6 +111,19 @@ export function matchPriority(token: string): Priority | null {
   return m ? (Number(m[1]) as Priority) : null
 }
 
+/**
+ * `~deep`, `~medium`, `~low` or any shorter prefix (`~d`, `~me`), any case, a
+ * trailing comma dropped → the energy (task-energy D4); null otherwise, so `~6`
+ * stays text.
+ */
+export function matchEnergy(token: string): 'deep' | 'medium' | 'low' | null {
+  const m = /^~([a-z]+)$/i.exec(token.replace(/[,;]+$/, ''))
+  if (!m) return null
+  const w = m[1].toLowerCase()
+  for (const e of ['deep', 'medium', 'low'] as const) if (e.startsWith(w)) return e
+  return null
+}
+
 const SPENT_PART = '(\\d+(?:[.,]\\d+)?h(?:\\d{1,2}(?:m|min)?)?|\\d+(?:m|min|mins|minutes))'
 const SPENT = new RegExp(`^${SPENT_PART}/${SPENT_PART}$`)
 

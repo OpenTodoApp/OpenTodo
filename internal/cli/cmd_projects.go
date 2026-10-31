@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"hash/fnv"
 	"strings"
+
+	"github.com/OpenTodoApp/opentodo/internal/flow"
 )
 
 // palette matches the colours the web app offers for new projects.
@@ -89,13 +91,16 @@ func projectList(a *App, ctx context.Context, g *globalFlags, args []string) err
 		fmt.Fprintln(a.Stdout, "No projects.")
 		return nil
 	}
-	tbl := newTable("ID", "NAME", "WORKSPACE", "COLOR", "STATUS")
+	tbl := newTable("ID", "NAME", "WORKSPACE", "COLOR", "FLOW", "STATUS")
 	for _, p := range shown {
 		status := ""
 		if p.Archived {
 			status = "archived"
+		} else if p.Status == "maintenance" {
+			// A project deliberately on low burn (project-review-cadence).
+			status = "maintenance"
 		}
-		tbl.add(cell{text: shortID(p.ID), style: styleCyan}, plain(p.Name), plain(names[s.project(byID, p.ID)]), plain(p.Color), cell{text: status, style: styleDim})
+		tbl.add(cell{text: shortID(p.ID), style: styleCyan}, plain(p.Name), plain(names[s.project(byID, p.ID)]), plain(p.Color), plain(flow.ProjectFlow(p.FlowMode)), cell{text: status, style: styleDim})
 	}
 	tbl.render(a.Stdout, a.color())
 	return nil

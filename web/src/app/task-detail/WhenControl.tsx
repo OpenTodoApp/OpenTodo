@@ -3,7 +3,7 @@
 // (Anytime, a date, Someday), Deadline, Evening, Repeat and Reminders as segments
 // under a shared header and footer. Every segment is the editor it replaces and
 // writes exactly the fields it wrote before.
-import { type KeyboardEvent, useEffect, useRef, useState, type ReactNode } from 'react'
+import { type KeyboardEvent, type RefObject, useEffect, useRef, useState, type ReactNode } from 'react'
 import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
 import { setRecurrence, unparkTask, updateTask } from '../../lib/ops'
 import { parseRule } from '../../lib/recurrence'
@@ -21,6 +21,11 @@ import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
+import { useUserPrefsRow } from '../../lib/localData'
+import { dayPartUndoable } from '../../lib/undoActions'
+import { showUndoToast } from '../bulk/toastStore'
+import { formatSpan, multiDayOnPatch, spanOf } from '../../lib/span'
 
 export type WhenSegment = 'due' | 'start' | 'deadline' | 'evening' | 'repeat' | 'reminders'
 
@@ -69,10 +74,58 @@ export function WhenSegmentPicker({ value, onChange }: { value: WhenSegmentId; o
   )
 }
 
+/**
+ * The Evening switch, or with day parts on the four-way part control (day-parts D4):
+ * Any time, Morning, Afternoon, Evening, each writing both fields with Undo. A
+ * reader sees the part as text.
+ */
 function EveningSwitch({ task, readOnly }: { task: Task; readOnly: boolean }) {
+  const parts = dayPartsOn(useUserPrefsRow())
+  if (parts) return <DayPartControl task={task} readOnly={readOnly} />
   return (
     <Switch label={t('This Evening')} description={t('Listed in the evening group of Today')} checked={!!task.evening} disabled={readOnly}
-      onChange={(on) => act(updateTask(task.id, { evening: on }))} />
+      onChange={(on) => act(updateTask(task.id, dayPartFields(on ? 'evening' : null)))} />
+  )
+}
+
+function DayPartControl({ task, readOnly }: { task: Task; readOnly: boolean }) {
+  const current = dayPartOf(task)
+  if (readOnly) return <p className="text-body text-default" data-day-part-text>{dayPartName(current)}</p>
+  const set = async (part: DayPart | null) => {
+    const r = await dayPartUndoable([task.id], part)
+    if (r.entry) showUndoToast(r.label, r.entry.id)
+  }
+  return (
+    <div role="radiogroup" aria-label={t('Part of the day')} className="flex flex-wrap gap-1" data-day-part-control>
+      {([null, ...DAY_PARTS] as (DayPart | null)[]).map((part) => (
+        <button key={part ?? 'none'} type="button" role="radio" aria-checked={current === part} data-day-part={part ?? 'none'}
+          className={`min-h-8 rounded-control border px-2 py-1 text-meta ${current === part ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}
+          onClick={() => act(set(part))}>{dayPartName(part)}</button>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * The Multi-day switch of the Start segment (multi-day-tasks D2): on writes the flag
+ * and, without a start before the do-on date, the day before it, in one batch, then
+ * focuses the start date to pick the first day; off writes only the flag. A reader
+ * sees the range as text.
+ */
+function MultiDaySwitch({ task, readOnly, root }: { task: Task; readOnly: boolean; root: RefObject<HTMLDivElement | null> }) {
+  const span = spanOf(task)
+  if (readOnly) return span ? <p className="text-body text-default" data-span-text>{t('Multi-day: {range}', { range: formatSpan(span) })}</p> : null
+  const turn = async (on: boolean) => {
+    const patch = on ? multiDayOnPatch(task) : { span: false }
+    if (!patch) return
+    await updateTask(task.id, patch)
+    if (on) root.current?.querySelector<HTMLElement>('[data-when-segment="start"] input:not([disabled])')?.focus()
+  }
+  return (
+    <div data-multi-day>
+      <Switch label={t('Multi-day')} description={span ? formatSpan(span) : t('Show it across the days from its start to its do-on date')}
+        checked={!!task.span} onChange={(on) => act(turn(on))} />
+    </div>
   )
 }
 
@@ -190,6 +243,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
     // eslint-disable-next-line react-hooks/exhaustive-deps -- on mount and when the shown segment changes
   }, [segment])
   const shows = (id: WhenSegment) => !segment || id === segment || (segment === 'due' && id === 'evening')
+  const parts = dayPartsOn(useUserPrefsRow())
 
   return (
     <div ref={root} data-when-control data-when-shown={segment} className="space-y-3">
@@ -206,6 +260,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
           validate={(iso) => (local && iso > local.date ? t('The start must be on or before the due date.') : null)}
           onChoice={(c) => { if (c.date === 'someday') act(parkWithUndo(task.id)) }}
           onChange={(start) => (start ? act(updateTask(task.id, { start })) : void unparkTask(task.id))} />
+        {task.due && <MultiDaySwitch task={task} readOnly={readOnly} root={root} />}
       </Segment>}
 
       {shows('deadline') && <Segment id="deadline" icon="hourglass" label={t('Deadline')} bare={!!segment}>
@@ -213,7 +268,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
           onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
       </Segment>}
 
-      {shows('evening') && !segment && <Segment id="evening" icon="moon" label={t('Evening')}>
+      {shows('evening') && !segment && <Segment id="evening" icon="moon" label={parts ? t('Part of the day') : t('Evening')}>
         <EveningSwitch task={task} readOnly={readOnly} />
       </Segment>}
 

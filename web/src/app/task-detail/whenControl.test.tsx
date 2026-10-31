@@ -7,7 +7,8 @@ import 'fake-indexeddb/auto'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
-import { createTask } from '../../lib/ops'
+import { createTask, mutate } from '../../lib/ops'
+import { USER_PREFS_ID } from '../../lib/userPrefs'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { setupTaskDetailTests } from './taskDetail.testkit'
 import { WhenControl } from './WhenControl'
@@ -101,13 +102,29 @@ describe('WhenControl', () => {
     await unmount()
   })
 
-  it('Evening writes evening only', async () => {
+  it('Evening writes the evening flag with no part of the day (day-parts D2)', async () => {
     const id = await createTask({ title: 'Plan' })
     const { seg, unmount } = await mount(id, 'evening')
+    expect(seg('evening').querySelector('[data-day-part-control]')).toBeNull()
     const from = await mark()
     await click(seg('evening').querySelector('[role="switch"]')!)
     await queued(id, from)
-    expect(await queuedFields(id, from)).toEqual({ evening: true })
+    expect(await queuedFields(id, from)).toEqual({ evening: true, day_part: null })
+    await unmount()
+  })
+
+  it('with day parts on, the part control writes the pair with Undo (day-parts D4)', async () => {
+    await mutate('user_prefs', USER_PREFS_ID, { day_parts: 'on' })
+    const id = await createTask({ title: 'Stretch', evening: true })
+    const { seg, unmount } = await mount(id, 'evening')
+    await waitFor(() => !!seg('evening').querySelector('[data-day-part-control]'), 'the part control')
+    expect(seg('evening').querySelector('[role="switch"]')).toBeNull()
+    const from = await mark()
+    await click(seg('evening').querySelector('[data-day-part="morning"]')!)
+    await waitFor(async () => (await db.tasks.get(id))?.day_part === 'morning', 'Morning written')
+    expect(await queuedFields(id, from)).toEqual({ day_part: 'morning', evening: false })
+    await waitFor(() => seg('evening').querySelector('[data-day-part="morning"]')?.getAttribute('aria-checked') === 'true', 'Morning checked')
+    await mutate('user_prefs', USER_PREFS_ID, { day_parts: '' })
     await unmount()
   })
 
@@ -194,5 +211,53 @@ describe('WhenControl', () => {
     expect(seg('due').querySelector('button[aria-label^="Time zone:"]')!.textContent).toBe('Change')
     expect(seg('due').querySelector('button[aria-label="Clear due date"]')).toBeNull()
     await unmount()
+  })
+
+  // OpenSpec change multi-day-tasks, D2 ("Making a task multi-day").
+  describe('Multi-day', () => {
+    const multiDay = (seg: (n: string) => HTMLElement) => seg('start').querySelector<HTMLElement>('[data-multi-day] [role="switch"]')
+    it('is offered only with a do-on date', async () => {
+      const id = await createTask({ title: 'Plan' })
+      const { seg, unmount } = await mount(id, 'start')
+      expect(multiDay(seg)).toBeNull()
+      await unmount()
+    })
+
+    it('turned on without a start writes the day before and the flag in one batch, and focuses the start date', async () => {
+      const id = await createTask({ title: 'Trip', due: { date: '2026-11-05' } })
+      const { seg, unmount } = await mount(id, 'start')
+      const from = await mark()
+      await click(multiDay(seg)!)
+      await queued(id, from)
+      await waitFor(async () => (await db.tasks.get(id))?.span === true, 'the flag')
+      expect(await queuedFields(id, from)).toEqual({ start: '2026-11-04', span: true })
+      const ops = (await db.outbox.toArray()).slice(from).filter((o) => o.entityId === id)
+      expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
+      await waitFor(() => document.activeElement === seg('start').querySelector('input'), 'the start date focused')
+      await waitFor(() => /4\s?–\s?5/.test(seg('start').querySelector('[data-multi-day]')!.textContent ?? ''), 'the range')
+      await unmount()
+    })
+
+    it('turned on with an earlier start writes only the flag', async () => {
+      const id = await createTask({ title: 'Trip', start: '2026-11-03', due: { date: '2026-11-05' } })
+      const { seg, unmount } = await mount(id, 'start')
+      const from = await mark()
+      await click(multiDay(seg)!)
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ span: true })
+      await unmount()
+    })
+
+    it('turned off writes only the flag; the start stays', async () => {
+      const id = await createTask({ title: 'Trip', start: '2026-11-03', due: { date: '2026-11-05' }, span: true })
+      const { seg, unmount } = await mount(id, 'start')
+      const from = await mark()
+      expect(multiDay(seg)!.getAttribute('aria-checked')).toBe('true')
+      await click(multiDay(seg)!)
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ span: false })
+      expect((await db.tasks.get(id))!.start).toBe('2026-11-03')
+      await unmount()
+    })
   })
 })

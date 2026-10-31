@@ -82,6 +82,17 @@ func (q *quota) Stored(n int) {
 	q.addLocked(n)
 }
 
+// Removed implements opsync.QuotaRemover: compaction deleted n ops, so the
+// total goes down at once (op-log-compaction D8). The hourly window counts what
+// was written and stays as it is.
+func (q *quota) Removed(n int) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.seeded {
+		q.total = max(0, q.total-n)
+	}
+}
+
 func (q *quota) addLocked(n int) {
 	m := q.now().Unix() / 60
 	i := m % 60

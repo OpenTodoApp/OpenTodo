@@ -1,7 +1,7 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { Fragment, type ReactNode, useLayoutEffect, useMemo, useRef } from 'react'
+import { Fragment, lazy, Suspense, type ReactNode, useLayoutEffect, useMemo, useRef } from 'react'
 import { t } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
@@ -10,14 +10,18 @@ import type { Progress } from '../../lib/subtasks'
 import type { HabitStats } from '../../lib/habits'
 import type { RowLayout } from '../../lib/rowLayout'
 import type { FieldDef, Label, Membership, Project, Task } from '../../lib/types'
-import { Button, ListGroupHeader } from '../../ui'
+import { Button, ListGroupHeader, type HueName } from '../../ui'
+
+// Upcoming's projected rows load with their switch (series-occurrences D4).
+const ProjectedGroupRows = lazy(() => import('./ProjectedGroupRows'))
+import { logWinRequest } from '../signals'
 import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
 import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGhosts, type Departure } from '../motion'
-import { navigate } from '../router'
 import type { RowMotion } from '../TaskRow'
+import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
 import type { ListRoute } from './useListModel'
 
@@ -34,10 +38,14 @@ export interface RowContext {
   selectedId: string | null
   progress: Map<string, Progress>
   blocked: Map<string, number>
+  /** Steps waiting in sequence (project-flow-modes). */
+  flow?: FlowView
   habits: Map<string, HabitStats>
   isReadOnly: (task: Task) => boolean
   board: boolean
   manual: boolean
+  /** The list has its own order (a label page, view-manual-order): every row can be picked up to place it. */
+  ownOrder?: boolean
   treeView: boolean
   dropAt: DropAt | null
   draggingId: string | null
@@ -60,6 +68,10 @@ export interface RowContext {
   departures?: ReadonlyMap<string, Departure>
   /** The one row whose details are shown under it (row-expand D4). */
   expandedId?: string | null
+  /** A board card's leading edge under Colour by (calendar-clarity); absent with Colour by Project. */
+  edgeOf?: (task: Task) => HueName
+  /** A project board's notes preview is on (board-polish): cards show two lines of their notes. */
+  cardNotes?: boolean
 }
 
 /** The sequence a row plays: a ghost departs, a completed row that stayed rolled forward, Undo restores. */
@@ -138,12 +150,13 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           selected={!ghost && r.task.id === c.selectedId}
           progress={c.progress.get(r.task.id)}
           blockedBy={c.blocked.get(r.task.id)}
+          waitsFor={c.flow?.waitsFor(r.task.id)}
           habit={c.habits.get(r.task.id)}
           readOnly={ghost || c.isReadOnly(r.task)}
           shape={c.board ? 'card' : 'row'}
           timeColumn={c.timeColumn}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && !c.isReadOnly(r.task)}
+          draggable={!ghost && !editing && (!!c.ownOrder || !c.isReadOnly(r.task))}
           reorderable={!ghost && c.manual}
           collapsible={tree}
           expandable={!c.board && !ghost}
@@ -159,6 +172,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           handlers={c.actions}
           swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
+          edge={c.board ? c.edgeOf?.(r.task) : undefined}
+          notes={c.board && !!c.cardNotes}
         />
         {c.addingUnder === r.task.id && !c.board && (
           <li>
@@ -245,8 +260,8 @@ function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListPro
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
-  if (g.rows.length === 0 && g.folded === undefined) return null
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+  if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length) return null
   // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses.
   const earlier = view === 'today' && g.key === 'earlier'
   const collapsed = earlier ? earlierCollapsed(collapsedGroups, g.rows.length) : collapsedGroups.has(groupKey(view, g.key))
@@ -259,22 +274,32 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
     <section className="mb-4" data-group={g.key}>
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
-          actions={g.key === 'planned' ? <PlannedActions /> : undefined} actionsAlwaysVisible={g.key === 'planned'} />
-      ) : g.heading && (
+          actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
+          actionsAlwaysVisible={g.key === 'done'} />
+      ) : g.heading && partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
           collapsed={collapsed} onToggle={toggle}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
-      )}
+      ))}
+      {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
+      {/* Upcoming's projected occurrences after the day's tasks, outside its count (series-occurrences D4). */}
+      {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}
     </section>
   )
 }
 
-/** The Inbox's "Planned, no project" group header action (inbox-planned-group D3): the same tasks in Filter. */
-function PlannedActions() {
+/** Today's part headings take a dragged task (day-parts D4), resolved by the drag as `drop:part:<part>`. */
+function partDrop(part: ListGroup['dropPart'], header: ReactNode): ReactNode {
+  if (!part) return header
+  return <div className="rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-task-drop={`part:${part}`} data-part-heading={part}>{header}</div>
+}
+
+/** Today's Done today header action (today-closed-list D6): quick add with "Log as done" on. */
+function LogWinAction() {
   return (
-    <Button variant="ghost" size="sm" className="text-meta" onClick={() => navigate({ view: 'filter', q: 'no project' })} data-planned-filter>
-      {t('Open as a new view')}
+    <Button variant="ghost" size="sm" icon="plus" className="text-meta" onClick={() => logWinRequest.request('today')} data-log-win>
+      {t('Log a win')}
     </Button>
   )
 }

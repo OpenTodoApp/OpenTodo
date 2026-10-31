@@ -19,10 +19,12 @@ COPY web/ ./
 COPY internal/activity/testdata/activity_fixture.json /src/internal/activity/testdata/activity_fixture.json
 COPY internal/digest/testdata/stats_fixture.json /src/internal/digest/testdata/stats_fixture.json
 COPY internal/digest/testdata/next_action_fixture.json /src/internal/digest/testdata/next_action_fixture.json
+COPY internal/flow/testdata/flow_fixture.json /src/internal/flow/testdata/flow_fixture.json
 COPY internal/sync/testdata/schema_fixture.json /src/internal/sync/testdata/schema_fixture.json
 COPY internal/origin/testdata/origin_vectors.json /src/internal/origin/testdata/origin_vectors.json
 COPY internal/sync/testdata/workspaces_fixture.json /src/internal/sync/testdata/workspaces_fixture.json
 COPY internal/filter/testdata/limits.json /src/internal/filter/testdata/limits.json
+COPY internal/notesearch/testdata/vectors.json /src/internal/notesearch/testdata/vectors.json
 # vite writes to ../internal/web/dist (see web/vite.config.ts)
 RUN mkdir -p /src/internal/web && npm run build
 

@@ -48,7 +48,7 @@ var priorityMarker = map[int]string{1: markHighest, 2: markHigh, 3: markMedium}
 // The inline fields (Dataview `[key:: value]`) the vault maps, and the
 // read-only ones it writes from the app and never pushes.
 var (
-	inlineFields   = map[string]bool{"time": true, "tz": true, "deadline": true, "estimate": true, "someday": true, "evening": true}
+	inlineFields   = map[string]bool{"time": true, "tz": true, "deadline": true, "estimate": true, "someday": true, "evening": true, "span": true, "daypart": true, "energy": true}
 	readOnlyFields = map[string]bool{"origin": true, "location": true, "tracked": true}
 )
 
@@ -85,6 +85,15 @@ type Line struct {
 	Deadline string
 	Estimate string
 	Evening  bool
+	// Span is [span:: …] as written (OpenSpec change multi-day-tasks): true
+	// draws the task from its 🛫 to its 📅 date; checked by the merge.
+	Span string
+	// DayPart is [daypart:: …] as written (OpenSpec change day-parts); checked
+	// by the merge, which reports a value it does not know.
+	DayPart string
+	// Energy is [energy:: …] as written (OpenSpec change task-energy); checked
+	// by the merge, which reports a value it does not know.
+	Energy string
 	// ReadOnly holds the read-only inline fields as written: origin, location,
 	// tracked and field:<name>.
 	ReadOnly map[string]string
@@ -338,6 +347,12 @@ func ParseLine(indent string, done bool, content string) Line {
 			}
 		case "evening":
 			l.Evening = strings.EqualFold(tok.value, "true")
+		case "span":
+			l.Span = tok.value
+		case "daypart":
+			l.DayPart = tok.value
+		case "energy":
+			l.Energy = tok.value
 		default:
 			if strings.HasPrefix(tok.kind, "ro:") {
 				l.ReadOnly[strings.TrimPrefix(tok.kind, "ro:")] = tok.value
@@ -426,6 +441,14 @@ func PrintLine(l Line) string {
 	}
 	if l.Evening {
 		parts = append(parts, "[evening:: true]")
+	} else if l.DayPart != "" {
+		parts = append(parts, "[daypart:: "+l.DayPart+"]")
+	}
+	if l.Span != "" {
+		parts = append(parts, "[span:: "+l.Span+"]")
+	}
+	if l.Energy != "" {
+		parts = append(parts, "[energy:: "+l.Energy+"]")
 	}
 	if m := priorityMarker[l.Priority]; m != "" {
 		parts = append(parts, m)

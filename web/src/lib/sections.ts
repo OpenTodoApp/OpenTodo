@@ -144,11 +144,11 @@ export function groupBySection<T extends Pick<Task, 'id' | 'position' | 'created
 
 // ---- per-device preferences (never synced) ----
 
-export type ProjectViewMode = 'list' | 'board' | 'timeline'
+export type ProjectViewMode = 'list' | 'board' | 'timeline' | 'calendar'
 
-/** The `v` cycle: list → board → timeline → list (month-and-timeline-views). */
+/** The `v` cycle: list → board → timeline → calendar → list (month-and-timeline-views, calendar-clarity D5). */
 export function nextViewMode(mode: ProjectViewMode): ProjectViewMode {
-  return mode === 'list' ? 'board' : mode === 'board' ? 'timeline' : 'list'
+  return mode === 'list' ? 'board' : mode === 'board' ? 'timeline' : mode === 'timeline' ? 'calendar' : 'list'
 }
 
 const modeKey = (projectId: string) => `view-mode:${projectId}`
@@ -157,7 +157,7 @@ const collapsedKey = (projectId: string) => `collapsed-sections:${projectId}`
 export async function loadViewMode(projectId: string): Promise<ProjectViewMode> {
   // Unknown values (an older or newer device's) read as the list.
   const v = await getMeta<string>(modeKey(projectId), 'list')
-  return v === 'board' || v === 'timeline' ? v : 'list'
+  return v === 'board' || v === 'timeline' || v === 'calendar' ? v : 'list'
 }
 
 export async function saveViewMode(projectId: string, mode: ProjectViewMode): Promise<void> {

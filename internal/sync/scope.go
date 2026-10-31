@@ -125,11 +125,11 @@ func CanWrite(role, entity, field string) bool {
 	case RoleAdmin:
 		// Only the owner deletes a shared project or moves it to another of
 		// their workspaces (OpenSpec change workspaces, design D12).
-		return entity == "task" || entity == "section" || entity == "field" || (entity == "project" && field != "deleted_at" && field != "workspace_id")
+		return entity == "task" || entity == "section" || entity == "field" || entity == "note" || (entity == "project" && field != "deleted_at" && field != "workspace_id")
 	case RoleEditor:
 		// Editors may write the project's note but nothing else of the project
 		// (OpenSpec change project-notes, design D2).
-		return entity == "task" || entity == "section" || entity == "field" || (entity == "project" && (field == "description" || field == "notes_doc"))
+		return entity == "task" || entity == "section" || entity == "field" || entity == "note" || (entity == "project" && (field == "description" || field == "notes_doc"))
 	}
 	return false
 }
@@ -171,6 +171,10 @@ type resolver struct {
 	// known about each entry id.
 	batchTimeEntry map[string]*batchTimeEntry
 	timeEntries    map[string]*timeEntryState
+	// batchSeries marks the tasks this batch gives a series_id (occurrence_check.go).
+	batchSeries map[string]bool
+	// batchRule marks the tasks this batch gives a rule (split_check.go).
+	batchRule map[string]bool
 	// detail names the id behind the last refusal, when there is one (dependencies.go).
 	detail string
 	// graphs caches each scope's dependency graph for the batch (dependencies.go).
@@ -194,6 +198,8 @@ func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolv
 		r.noteComment(op)
 		r.noteAttachment(op)
 		r.noteTimeEntry(op)
+		r.noteSeries(op)
+		r.noteRule(op)
 		if op.Entity == "task" {
 			r.batchTasks[op.EntityID] = true
 		}
@@ -211,7 +217,7 @@ func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolv
 // projectChild lists the entities whose sharing scope follows their project_id:
 // tasks (project-sharing D2) and sections (board-view: a section of a shared
 // project lives in that project's scope).
-var projectChild = map[string]bool{"task": true, "section": true, "field": true}
+var projectChild = map[string]bool{"task": true, "section": true, "field": true, "note": true}
 
 func (r *resolver) projectShared(pid string) (bool, error) {
 	if v, ok := r.shared[pid]; ok {
@@ -304,7 +310,7 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		if reason, err := r.checkWorkspace(op); err != nil || reason != "" {
 			return "", reason, err
 		}
-	case "task", "section", "field":
+	case "task", "section", "field", "note":
 		if scope, err = r.scopeOfChild(op.Entity, op.EntityID); err != nil {
 			return "", "", err
 		}
@@ -350,8 +356,23 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 			return "", ReasonScopeChange, nil
 		}
 	}
+	if AppendEntities[op.Entity] && strings.HasPrefix(op.Field, AppendPrefix) {
+		if reason, err := r.checkAppend(op, scope); err != nil || reason != "" {
+			return "", reason, err
+		}
+	}
 	if op.Entity == "task" && op.Field == "blocked_by" {
 		if reason, err := r.checkBlockedBy(op, scope); err != nil || reason != "" {
+			return "", reason, err
+		}
+	}
+	if op.Entity == "task" && op.Field == "occurrence_date" {
+		if reason, err := r.checkOccurrenceDate(op, scope); err != nil || reason != "" {
+			return "", reason, err
+		}
+	}
+	if op.Entity == "task" && op.Field == "split_from" {
+		if reason, err := r.checkSplitFrom(op, scope); err != nil || reason != "" {
 			return "", reason, err
 		}
 	}
@@ -405,7 +426,7 @@ func (r *resolver) restoreOps(refused []Op) ([]Op, error) {
 		seen[key] = true
 		var scope string
 		switch op.Entity {
-		case "task", "section", "field":
+		case "task", "section", "field", "note":
 			sc, found, err := r.existingChildScope(op.Entity, op.EntityID)
 			if err != nil {
 				return nil, err

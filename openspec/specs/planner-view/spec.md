@@ -21,7 +21,7 @@ The client SHALL provide a Plan mode of the Calendar destination, reachable by `
 - **THEN** the Day view of the 5th opens, and choosing Plan from the Week of the 18th opens a span starting on the 18th
 
 ### Requirement: Column contents
-Each column SHALL list the open tasks due that day in the viewer's zone with the same selection as Day, Week and Month (deleted, completed and archived-project tasks left out), timed tasks first in time order, then the others by priority and position. Each row SHALL show its time when it has one, its title, its estimate and its priority. Columns SHALL NOT be manually ordered.
+Each column SHALL list the open tasks due that day in the viewer's zone with the same selection as Day, Week and Month (deleted and archived-project tasks left out, completed tasks included only when the Calendar's Show completed tasks choice is on), timed tasks first in time order, then the others by priority and position. Each row SHALL show its time when it has one, its title, its estimate and its priority. Completed titles SHALL be struck through and announce their completed status, in both the columns and the phone agenda; completed rows SHALL be selectable and openable but SHALL NOT be rescheduled or completed again from the calendar. Columns SHALL NOT be manually ordered. The selection SHALL work offline; identical task rows and the same visibility choice SHALL produce identical columns after sync.
 
 #### Scenario: Zoned due on the viewer's day
 - **WHEN** a task is due `02:00 Asia/Tokyo` on the 12th and the user views the Plan from Berlin
@@ -47,7 +47,7 @@ From 640 px the columns SHALL be laid out seven per row with no horizontal scrol
 - **THEN** three rows of seven columns are shown and the content column scrolls vertically when they do not fit
 
 ### Requirement: Capacity bar per day
-Each column header SHALL show a capacity bar and the planned total against the device's day length, summing three sources: the estimates of the day's open tasks, the minutes of the day's busy subscribed calendar events, and the estimates of projected occurrences of recurring tasks. Tasks and projections without an estimate SHALL count as zero and be reported. The bar SHALL mark the day when the sum exceeds the day length.
+Each column header SHALL show a capacity bar and the planned total against the device's day length, summing three sources: the estimates of the day's open tasks, the minutes of the day's busy subscribed calendar events, and the estimates of projected occurrences of recurring tasks. Tasks and projections without an estimate SHALL count as zero and be reported. The bar SHALL mark the day when the sum exceeds the day length. This calculation SHALL run on local data offline and SHALL reflect converged task rows after sync.
 
 #### Scenario: Three sources on one day
 - **WHEN** a day has open tasks estimated at 2 h 50, a 10:00 to 11:30 meeting from a subscribed calendar, a projected weekly task estimated at 45 minutes and five unestimated tasks, with an 8-hour day length
@@ -59,7 +59,11 @@ Each column header SHALL show a capacity bar and the planned total against the d
 
 #### Scenario: Completing a task
 - **WHEN** a task listed in a column is completed
-- **THEN** its row leaves the column and the day's total decreases by its estimate
+- **THEN** the day's total decreases by its estimate; its row leaves the column when Show completed tasks is off, or stays with a struck-through title when it is on
+
+#### Scenario: Completed work does not add future work
+- **WHEN** Show completed tasks is on and the span contains a completed recurring occurrence
+- **THEN** its stored row is visible, but contributes neither estimated nor unestimated remaining work and does not produce recurring projections
 
 ### Requirement: Event minutes in the capacity
 The event minutes of a day SHALL be the minutes inside that day, in the viewer's zone, of the busy timed occurrences of enabled subscribed calendars shown on this device, with overlapping events counted once; all-day and free events SHALL NOT count. A day without shown events SHALL count zero event minutes.
@@ -77,7 +81,7 @@ The event minutes of a day SHALL be the minutes inside that day, in the viewer's
 - **THEN** no event minutes are counted for it, and offline the header's status says calendars are unavailable for those days
 
 ### Requirement: Projected occurrences of recurring tasks
-For every open task with a recurrence rule, the occurrences that would follow its current one within the shown span SHALL be computed on the device from the rule, the current due date and the series' completed count, and drawn in their columns as dimmed rows with the task's title, time and estimate and a "projected" marker. The series itself SHALL remain one ordinary row on its current date. A rule's end condition SHALL stop the projection.
+For every open task with a recurrence rule, the occurrences that would follow its current one within the shown span SHALL be computed on the device from the rule, the current due date and the series' occurrence records, and drawn in their columns as dimmed rows with the task's title, time and estimate and a "projected" marker. The series itself SHALL remain one ordinary row on its current date. A rule's end condition SHALL stop the projection, counting done and open records (OpenSpec `recurring-tasks`, "End conditions"). No projection SHALL be drawn on an exception date of the series; an open record SHALL be listed as an ordinary task row on its own date.
 
 #### Scenario: Weekly report
 - **WHEN** today is Monday the 12th, a task "Weekly report" with `every monday` and a 45-minute estimate is due today, and the span is 21 days
@@ -99,11 +103,15 @@ For every open task with a recurrence rule, the occurrences that would follow it
 - **WHEN** a task with `every day` is due five days ago
 - **THEN** the series is not listed in any column (its date is before the span) and projections are drawn from tomorrow on, as the next occurrence after today
 
+#### Scenario: Skipped and moved occurrences
+- **WHEN** "Weekly report" is due the 12th, the occurrence of the 19th was skipped and the occurrence of the 26th was moved to the 27th
+- **THEN** the 19th and 26th show no projection, and the 27th lists the moved occurrence as an ordinary task row
+
 ### Requirement: Projections are derived and read-only
-Projected occurrences SHALL NOT be draggable, movable, selectable, completable or drop targets, SHALL be marked for assistive technology as projected, and SHALL be written nowhere: no operation, no local row, no synced cache. Because they are a function of the synced series row and the shared rule calculator, every device SHALL draw the same projections; there is nothing to converge.
+Projected occurrences SHALL be written nowhere: no operation, no local row, no synced cache. Because they are a function of the synced series row, its records and the shared rule calculator, every device SHALL draw the same projections; there is nothing to converge. Acting on a projection (dragging it to another column, or completing, skipping or moving it from its menu) SHALL write that occurrence's record as OpenSpec `recurring-tasks` "Act on one occurrence" describes, after which the date is an exception and shows the record, if open, instead of a projection. For a viewer of the shared project and for a completion-relative series, projections SHALL NOT be draggable, movable, completable or drop targets. Projections SHALL NOT be selectable with `j` and `k` and SHALL be marked for assistive technology as projected.
 
 #### Scenario: Projection is read-only
-- **WHEN** the user drags on a projected row, or selects rows with `j` and `k`
+- **WHEN** a viewer of the shared project drags on a projected row, or the user selects rows with `j` and `k`
 - **THEN** nothing is written, the drag does not start, and `j` and `k` skip the projected rows
 
 #### Scenario: Same projections on two devices
@@ -111,8 +119,12 @@ Projected occurrences SHALL NOT be draggable, movable, selectable, completable o
 - **THEN** both show the projection on the same days of the span, offline or online
 
 #### Scenario: Nothing in the operation log
-- **WHEN** the Plan has been open with projections drawn and the device syncs
+- **WHEN** the Plan has been open with projections drawn, nobody acted on them, and the device syncs
 - **THEN** no operation about the projected dates is uploaded
+
+#### Scenario: Drag one occurrence to another day
+- **WHEN** an editor drags the projected "Weekly report" of the 19th onto the 20th
+- **THEN** the 20th lists an open "Weekly report" occurrence as a task row, the 19th shows nothing, the series stays due the 12th, and the 26th still shows its projection
 
 ### Requirement: Calendar events in the plan
 Each column SHALL list the day's occurrences of enabled subscribed calendars, when calendars are shown on this device, as read-only rows in their calendar's colour, timed ones with their time and duration above the tasks and all-day ones as a chip under the header, read from the device's event cache so they show offline as of the last refresh. Event rows SHALL NOT be draggable, movable, selectable or drop targets, and SHALL be reachable with the keyboard for reading.

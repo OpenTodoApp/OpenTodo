@@ -356,3 +356,33 @@ Calendars a user connected through calendar sync SHALL be stored as managed subs
 #### Scenario: Unauthenticated
 - **WHEN** the events route is requested without credentials
 - **THEN** the response is a 401 `unauthorized` error
+
+### Requirement: Browser-compatible User-Agent fallback
+Subscription fetches SHALL identify as `OpenTodo/<version>` in the User-Agent header. When a feed answers 400, 403 or 406 to that, the server SHALL send the same request once more with a fixed browser-compatible User-Agent, and the second answer SHALL be the outcome of the fetch. No other status and no transport error SHALL be retried, and a fetch SHALL never send more than two requests for this reason. When the retry succeeds, the server SHALL remember it for that subscription and send the browser-compatible User-Agent first on later fetches, until the subscription's address changes. This state is kept on the server with the subscription, never synced and never returned by the API; devices are unaffected, online or offline, and there is nothing to converge.
+
+#### Scenario: Exchange on-premises refuses the OpenTodo User-Agent
+- **WHEN** a feed answers 400 to `OpenTodo/<version>` and 200 to the browser-compatible User-Agent
+- **THEN** the first fetch succeeds after one retry, and the next fetch sends the browser-compatible User-Agent directly
+
+#### Scenario: A feed that refuses everything
+- **WHEN** a feed answers 400 to every request
+- **THEN** the fetch sends exactly two requests and fails with `http_400`, and nothing is remembered
+
+#### Scenario: Not found is not retried
+- **WHEN** a feed answers 404
+- **THEN** the fetch sends one request and fails with `http_404`
+
+#### Scenario: A new address starts over
+- **WHEN** a subscription that uses the browser-compatible User-Agent gets a new address
+- **THEN** its next fetch identifies as `OpenTodo/<version>` first
+
+### Requirement: Spans in the task feed
+In the personal task feed, a task drawn as a span (OpenSpec `multi-day-tasks`) SHALL be an all-day event with `DTSTART;VALUE=DATE` its start date and `DTEND;VALUE=DATE` the day after its do-on date, and a recurring span SHALL keep that length on every occurrence the `RRULE` produces.
+
+#### Scenario: Span in the feed
+- **WHEN** a task is a span from 2026-11-03 to 2026-11-05 and a calendar app fetches the feed
+- **THEN** the feed holds an all-day event with `DTSTART;VALUE=DATE:20261103` and `DTEND;VALUE=DATE:20261106`
+
+#### Scenario: Not a span
+- **WHEN** a task has the start `2026-11-03`, is due `2026-11-05` without a time, and is not a span
+- **THEN** the feed holds an all-day event on 2026-11-05 only, as before

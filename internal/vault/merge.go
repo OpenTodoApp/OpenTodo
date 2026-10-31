@@ -245,6 +245,23 @@ func (e *engine) projectEdits(m *mergeRun, p string, d *Doc) {
 	if d.Icon != baseRow.Str("icon") && appRow.Str("icon") == baseRow.Str("icon") {
 		b()["icon"] = nullable(d.Icon)
 	}
+	// The flow (project-flow-modes) merges per key like the colour; a value the
+	// vault does not know is never in d.Flow, so it is never written.
+	baseFlow := fileFlow(baseRow.Str("flow_mode"))
+	if baseFlow == "?" {
+		baseFlow = "" // an unknown stored flow is not in the file
+	}
+	if d.UnknownFlow != "" {
+		e.rep.warn("%s: %s %q is not a flow (sequential or area); it is left as it is", p, keyFlow, d.UnknownFlow)
+	} else if d.Flow != baseFlow && appRow.Str("flow_mode") == baseRow.Str("flow_mode") {
+		v := d.Flow
+		if v == "" {
+			v = "parallel"
+		}
+		b()["flow_mode"] = v
+	}
+	// The status (project-review-cadence) merges the same way.
+	e.statusEdit(p, d, baseRow.Str("status"), appRow.Str("status"), b)
 }
 
 // projectCycle reports whether parent is the project or one of its descendants.

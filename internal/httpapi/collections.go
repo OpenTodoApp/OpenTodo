@@ -92,6 +92,10 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "unknown collection")
 		return
 	}
+	withDefault, ok := defaultReminderFlag(w, r, entity)
+	if !ok {
+		return
+	}
 	var body map[string]json.RawMessage
 	if err := readJSON(r, &body); err != nil {
 		badBody(w, err)
@@ -150,7 +154,11 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if entity == "task" {
+		if !energyOK(w, body) {
+			return
+		}
 		canonicalizeRecurrence(body)
+		pairDayPart(body)
 		// Custom field values become fields.<id> keys before an idempotent
 		// replay compares the planned ops (custom-fields D3).
 		if msg, err := s.checkTaskFields(r.Context(), uid, body, nil); err != nil {
@@ -212,16 +220,21 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		s.parentError(w, err)
 		return
 	}
+	ts := s.opTS()
+	extra, err := s.createDefaultReminder(r.Context(), uid, id, body, ts, withDefault, keyed)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
 	if keyed {
-		ts := s.opTS()
 		ops := make([]opsync.Op, 0, len(body))
 		for field, value := range body {
 			ops = append(ops, opsync.Op{ID: idemOpID(id, field), Entity: entity, EntityID: id, Field: field, Value: value, TS: ts, Device: serverDevice})
 		}
-		s.writeOps(w, r, entity, id, ops, http.StatusCreated, body)
+		s.writeOps(w, r, entity, id, append(ops, extra...), http.StatusCreated, body)
 		return
 	}
-	s.writeFields(w, r, entity, id, body, http.StatusCreated)
+	s.writeFieldsAt(w, r, entity, id, body, http.StatusCreated, extra, ts)
 }
 
 // labelPalette gives API-created labels a colour when the caller sets none.
@@ -232,6 +245,9 @@ var labelPalette = []string{"#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6
 // It returns a user-facing message when the body is rejected. Type errors are left
 // to the schema validation in Apply so the two never disagree.
 func (s *Server) checkReferences(ctx context.Context, uid, entity string, body map[string]json.RawMessage) (string, error) {
+	if entity == "note" {
+		return s.checkNoteBody(ctx, uid, body)
+	}
 	if entity == "label" {
 		if raw, has := body["name"]; has {
 			var name string
@@ -389,6 +405,10 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "unknown collection")
 		return
 	}
+	withDefault, ok := defaultReminderFlag(w, r, entity)
+	if !ok {
+		return
+	}
 	var body map[string]json.RawMessage
 	if err := readJSON(r, &body); err != nil {
 		badBody(w, err)
@@ -407,6 +427,9 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	}
 	if existing == nil {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
+		return
+	}
+	if entity == "task" && !energyOK(w, body) {
 		return
 	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
@@ -483,6 +506,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	}
 	if entity == "task" {
 		canonicalizeRecurrence(body)
+		pairDayPart(body)
 		// Completing a recurring task records the occurrence and moves the series.
 		recordID, record, ok, err := s.recurringCompletion(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing, localToday(s.now()))
 		if err != nil {
@@ -492,16 +516,14 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		if ok {
 			extra = fieldOps("task", recordID, record, ts)
 		}
-		// Relative reminders follow the due date and deadline reminders the
-		// deadline, stamped like the task op (reminders D2, deadlines D5).
-		rops, err := s.reminderOpsForTask(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, ts)
+		rops, err := s.patchReminderOps(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), existing, body, ts, withDefault)
 		if err != nil {
 			s.internal(w, err)
 			return
 		}
 		extra = append(extra, rops...)
 	}
-	s.writeFieldsAt(w, r, entity, r.PathValue("id"), body, http.StatusOK, extra, ts)
+	s.writeFieldsAt(w, withIfMatch(r, entity, body), entity, r.PathValue("id"), body, http.StatusOK, extra, ts)
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
@@ -532,11 +554,6 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 	s.writeFieldsAt(w, r, entity, r.PathValue("id"), body, http.StatusNoContent, extra, ts)
 }
 
-// writeFields turns a REST body into ops stamped with server time and applies them.
-func (s *Server) writeFields(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int) {
-	s.writeFieldsWith(w, r, entity, id, body, status, nil)
-}
-
 // fieldOps turns the fields of one entity into server-stamped ops.
 func fieldOps(entity, id string, body map[string]json.RawMessage, ts int64) []opsync.Op {
 	ops := make([]opsync.Op, 0, len(body))
@@ -546,13 +563,9 @@ func fieldOps(entity, id string, body map[string]json.RawMessage, ts int64) []op
 	return ops
 }
 
-// writeFieldsWith is writeFields plus extra ops (other entities) applied in the
-// same batch; the response still describes entity/id.
-func (s *Server) writeFieldsWith(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int, extra []opsync.Op) {
-	s.writeFieldsAt(w, r, entity, id, body, status, extra, s.opTS())
-}
-
-// writeFieldsAt is writeFieldsWith with the body's op timestamp chosen by the caller.
+// writeFieldsAt turns a REST body into ops stamped with ts and applies them
+// with extra ops (other entities) in the same batch; the response still
+// describes entity/id.
 func (s *Server) writeFieldsAt(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int, extra []opsync.Op, ts int64) {
 	s.writeOps(w, r, entity, id, append(fieldOps(entity, id, body, ts), extra...), status, nil)
 }
@@ -569,6 +582,10 @@ var collectionRefusals = refusals{
 		writeError(w, http.StatusBadRequest, "invalid_input",
 			fmt.Sprintf("task.blocked_by: %q is not in the same project sharing as this task (blockers must be shared the same way)", rej.Detail))
 	},
+	opsync.ReasonInvalidOccurrence: refuse(http.StatusBadRequest, "invalid_input",
+		"task.occurrence_date: only an occurrence record (a task with series_id) has one, and it never changes once set"),
+	opsync.ReasonInvalidSplit: refuse(http.StatusBadRequest, "invalid_input",
+		"task.split_from: only a recurring task names the series it continues, in the same project sharing, and it never changes once set"),
 	opsync.ReasonNotAMember: refuse(http.StatusBadRequest, "not_a_member",
 		"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)"),
 	otherRefusal: func(w http.ResponseWriter, rej *opsync.RejectedError) {

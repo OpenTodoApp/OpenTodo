@@ -346,3 +346,59 @@ Deleting a note SHALL trash its task when no field of it changed in the app sinc
 #### Scenario: Archived note
 - **WHEN** the user archives a note in TaskNotes and the task's title changes in the app afterwards
 - **THEN** the note is not written and the task is not changed by the vault until the archive tag is removed
+
+### Requirement: Part of the day in task lines
+A task line SHALL carry the inline field `[daypart:: morning]` or `[daypart:: afternoon]` when the task has that part (OpenSpec `day-parts`), written right after the place of `[evening:: true]` in the field order; an evening task SHALL keep `[evening:: true]` and never carry `[daypart:: …]`. Reading the field SHALL set the part with the evening flag cleared; a line with both SHALL read as Evening. Removing the field SHALL clear the part on the next sync, merged per field like every vault field. Another value SHALL be reported for that line and leave the task's part unchanged.
+
+#### Scenario: Morning task written
+- **WHEN** a task "Stretch" due 2026-10-25 is set to Morning
+- **THEN** its line is `- [ ] Stretch 📅 2026-10-25 [daypart:: morning] 🆔 <id>`
+
+#### Scenario: Unknown value
+- **WHEN** the user writes `[daypart:: night]` on a line
+- **THEN** the sync reports the line and the task's part is unchanged
+
+### Requirement: Energy in task lines
+A task line SHALL carry the inline field `[energy:: deep|medium|low]` when the task has an energy, written after `[evening:: true]` and read in any order. Removing the field from a line SHALL clear the energy on the next sync, merged per field like the other inline fields. Any other value SHALL be reported for that line and leave the energy unchanged. The field SHALL be pinned in `docs/vault.md` and the vault's fixture.
+
+#### Scenario: Written
+- **WHEN** "Clean the windows" has energy Low and the evening flag
+- **THEN** its line ends with `[evening:: true] [energy:: low] 🆔 <id>`
+
+#### Scenario: Read from a file
+- **WHEN** the user adds `[energy:: Deep]` to a line and syncs
+- **THEN** the task's energy is Deep and the line is rewritten as `[energy:: deep]`
+
+#### Scenario: Invalid value
+- **WHEN** a line reads `[energy:: high]`
+- **THEN** the sync reports that line and the task's energy is unchanged
+
+### Requirement: Single occurrences in files
+An open occurrence record (OpenSpec `recurring-tasks`, "Occurrence records") SHALL be written as an ordinary task line of its project, without `🔁`, and ticking it SHALL complete that occurrence alone, leaving the series line unchanged. Done and skipped records SHALL NOT be added to a file; a ticked occurrence line stays as any ticked line does. Completing the series line SHALL move it to the next occurrence that is not an exception date, as the app does. A line edited in the file that changes a record's do-on date SHALL move that occurrence and never change its occurrence date.
+
+#### Scenario: Moved session in the file
+- **WHEN** Wednesday's "Study" occurrence was moved to Thursday in the app and the vault syncs
+- **THEN** the project file holds the series line with its current do-on date and a separate line `- [ ] Study 📅 <Thursday> [time:: 18:00] 🆔 <record id>`
+
+#### Scenario: Tick the series past an exception
+- **WHEN** the series line `🔁 every day` with `📅 2026-10-12` is ticked and the 13th has a skipped record
+- **THEN** after the sync the line reads `📅 2026-10-14`
+
+#### Scenario: Tick a single occurrence
+- **WHEN** the user ticks the line of Thursday's moved occurrence and syncs
+- **THEN** that occurrence is done in the app, its line stays ticked, and the series line is unchanged
+
+### Requirement: Multi-day flag in task lines
+A task drawn as a span (OpenSpec `multi-day-tasks`) SHALL carry the inline field `[span:: true]` written directly after the place of `[evening:: true]` in the vault's field order; the range is the line's `🛫` and `📅` dates. The vault SHALL read the field in any order, `[span:: false]` or its absence clearing the flag when the line changes, and SHALL report a value other than `true` or `false` for that line and leave the task's flag unchanged.
+
+#### Scenario: Span written
+- **WHEN** a task "Lisbon trip" is a span from 2026-11-03 to 2026-11-05
+- **THEN** its line carries `📅 2026-11-05`, `🛫 2026-11-03` and `[span:: true]` in the vault's field order, and a file without the field round-trips unchanged for tasks that are not spans
+
+#### Scenario: Span made in the file
+- **WHEN** the user adds `[span:: true]` to a line with `🛫 2026-11-03` and `📅 2026-11-05` and syncs
+- **THEN** the task is a span from 3 to 5 November on every device after their next sync
+
+#### Scenario: Bad value
+- **WHEN** a line carries `[span:: soon]`
+- **THEN** the sync reports the file, line and reason, and the task's flag is unchanged

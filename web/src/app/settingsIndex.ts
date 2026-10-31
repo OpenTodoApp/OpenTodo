@@ -31,7 +31,8 @@ const owner = (u: User) => u.role === 'owner'
 export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsEntry, 'label' | 'description'>([
   { section: 'account', label: msg('Profile'), description: msg('Your picture, name and email'), page: 'profile', anchor: 'profile-heading', keywords: 'avatar photo picture rename name email address' },
   { section: 'account', label: msg('Profile'), description: msg('Your name, email and role'), page: 'profile', anchor: 'profile' },
-  { section: 'account', label: msg('How you work'), description: msg('Simple lists, method hints or the full Open Loops method'), page: 'profile', anchor: 'how-you-work-heading', keywords: 'open loops gtd method mode loop home simple lists companion hints' },
+  { section: 'account', label: msg('How you work'), description: msg('Simple lists, method hints or the full Open Loops method'), page: 'profile', anchor: 'how-you-work-heading', keywords: 'open loops gtd method mode loop home simple lists companion hints daily focus bento frog summit' },
+  { section: 'account', label: msg('Formatting button'), description: msg('A button beside notes and comments on a computer that shows bold, lists and links.'), page: 'profile', anchor: 'formatting-button', keywords: 'formatting toolbar bold italic lists links editor notes comments' },
   { section: 'account', label: msg('Sign out of this device'), description: msg('Removes your tasks from this device after uploading pending changes'), page: 'security', anchor: 'session-heading', keywords: 'logout log out' },
   { section: 'account', label: msg('Password'), description: msg('Change your password'), page: 'security', anchor: 'password-heading' },
   { section: 'account', label: msg('Two-factor authentication'), description: msg('A code from your phone on top of your password, and recovery codes'), page: 'security', anchor: 'mfa-heading', keywords: '2fa totp mfa' },
@@ -44,7 +45,8 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'appearance', label: msg('Theme'), description: msg('The colour of buttons, links and selection'), page: 'theme', anchor: 'appearance-theme', keywords: 'accent colour color' },
   { section: 'appearance', label: msg('Density'), description: msg('Comfortable or compact rows'), page: 'theme', anchor: 'appearance-density', keywords: 'compact rows' },
   { section: 'appearance', label: msg('Task rows'), description: msg('One line or detailed rows in every list without its own choice'), page: 'theme', anchor: 'appearance-rows', keywords: 'row layout detailed one line priority labels' },
-  { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and New view sit next to Inbox, Today, Upcoming and Calendar'), page: 'sidebar', anchor: 'sidebar-heading', keywords: 'promote more group' },
+  { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and New view sit next to Inbox, Today, Upcoming and Calendar'), page: 'sidebar', anchor: 'sidebar-destinations', keywords: 'promote more group order reorder move' },
+  { section: 'appearance', label: msg('Sidebar counts'), description: msg('Numbers on Inbox and Today only, or on every project, label and view'), page: 'sidebar', anchor: 'sidebar-counts', keywords: 'count number badge' },
   { section: 'appearance', label: msg('Open tasks'), description: msg('As a page, or in a side panel beside the list'), page: 'task-details', anchor: 'task-details-heading', keywords: 'side panel task details split pane open tasks page beside list' },
   // General
   { section: 'general', label: msg('Start view'), description: msg('The view this device opens on'), page: 'start', anchor: 'start-view-heading', keywords: 'launch open on' },
@@ -62,12 +64,14 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'language', label: msg('Calendar grid'), description: msg('When the Day and Week grid starts and ends, and your day length'), page: 'calendar', anchor: 'calendar-heading', keywords: 'capacity hours' },
   // Notifications
   { section: 'notifications', label: msg('Push notifications'), description: msg('Reminders delivered to this device, and a test'), page: 'push', anchor: 'notifications-heading', keywords: 'reminders' },
+  { section: 'notifications', label: msg('Default reminders'), description: msg('A reminder added when a task gets a date or a time'), page: 'push', anchor: 'default-reminders-heading', keywords: 'reminder default automatic alarm due time all-day before' },
   { section: 'notifications', label: msg('Delivery channels'), description: msg('Send notifications to ntfy, Pushover, Gotify or any address you choose.'), page: 'channels', anchor: 'notification-channels-heading', keywords: 'ntfy pushover gotify webhook phone' },
   { section: 'notifications', label: msg('Weekly digest'), description: msg('An email on your review day with last week\'s numbers'), page: 'digest', anchor: 'email-digest-heading', keywords: 'email summary review statistics' },
   // About (welcome-note)
   { section: 'about', label: msg('Documentation'), description: msg('The same guides on the website, with setup and self-hosting.'), anchor: 'about-docs', keywords: 'docs help manual guide website version' },
   { section: 'about', label: msg('Share feedback or report a problem'), description: msg('Open an issue on GitHub. Every report is read.'), anchor: 'about-feedback', keywords: 'bug issue github feedback support contact' },
   { section: 'about', label: msg('Community'), description: msg('Questions, ideas and other people who use OpenTodo, on Discord.'), anchor: 'about-community', keywords: 'discord community chat forum people' },
+  { section: 'about', label: msg('News and updates'), description: msg('Releases and what is being built, on X.'), anchor: 'about-news', keywords: 'x twitter news updates follow social' },
   { section: 'about', label: msg('Buy me a coffee'), description: msg('Support OpenTodo'), anchor: 'about-support-heading', keywords: 'donate sponsor support coffee' },
   { section: 'about', label: msg('Welcome note'), description: msg('The thank-you shown the first time you opened this server.'), anchor: 'about-welcome', visible: owner, keywords: 'thanks welcome' },
   // Capture
@@ -98,6 +102,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'people', label: msg('Project invite links'), description: msg('Whether members can bring new people with project links'), page: 'access-policies', anchor: 'project-invite-policy-heading', visible: owner, keywords: 'invite policy' },
   // Server
   { section: 'server', label: msg('Backups'), description: msg('Scheduled backups, destinations, recent runs and restore'), page: 'backups', anchor: 'backups-heading', keywords: 's3 webdav restore', hosted: 'managed' },
+  { section: 'server', label: msg('Database storage'), description: msg('Database size, free space inside it and the last notes compaction'), page: 'backups', anchor: 'database-storage-heading', keywords: 'disk size vacuum compaction space', hosted: 'managed' },
   { section: 'server', label: msg('Attachments'), description: msg('Turn attachments on or off and set their size limits'), page: 'attachments', anchor: 'attachments-settings-heading', keywords: 'files upload limit quota', hosted: 'managed' },
   { section: 'server', label: msg('Outgoing email'), description: msg('The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message'), page: 'outgoing-email', anchor: 'outgoing-email-heading', keywords: 'smtp mail sender send test email forgot password', hosted: 'managed' },
   { section: 'server', label: msg('Download your data'), description: msg('The whole server as one backup archive, to move to your own OpenTodo server'), page: 'download', anchor: 'server-archive-heading', keywords: 'archive export backup leave move self-host', hosted: 'only' },

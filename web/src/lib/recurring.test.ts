@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setDayStart } from './dates'
 import { db, useDatabase } from './db'
-import { detachedId, occurrenceId } from './ids'
+import { occurrenceId } from './ids'
 import {
   applyOps, completeTask, createTask, deleteTask, detachOccurrence, getDeviceId, resetDeviceId, setRecurrence, setTaskCompleted, skipOccurrence, updateTask,
 } from './ops'
@@ -140,19 +140,20 @@ describe('completeTask on a recurring task', () => {
     expect(await db.tasks.filter((t) => !!t.completed_at).count()).toBe(2)
   })
 
-  it('reopening an ended series keeps its rule; reopening a record yields a standalone task', async () => {
-    const id = await createTask({ title: 'Twice', due: { date: '2026-10-12' }, recurrence: 'every day for 2 times' })
+  it('reopening an ended series keeps its rule; a reopened record is an open occurrence', async () => {
+    const id = await createTask({ title: 'Thrice', due: { date: '2026-10-12' }, recurrence: 'every day for 3 times' })
     const recordId = await completeTask(id, { today: '2026-10-12' })
     await setTaskCompleted(recordId!, false)
-    expect(await db.tasks.get(recordId!)).toMatchObject({ completed_at: null, recurrence: null, series_id: id, due: { date: '2026-10-12' } })
+    expect(await db.tasks.get(recordId!)).toMatchObject({ completed_at: null, recurrence: null, series_id: id, occurrence_date: '2026-10-12', due: { date: '2026-10-12' } })
     expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-10-13' })
-    // The reopened record no longer counts, so this completion is not the last one.
+    // The open record still uses up one of the 3 (series-exceptions M6), so this completion is not the last one…
     await completeTask(id, { today: '2026-10-13' })
     expect(await db.tasks.get(id)).toMatchObject({ completed_at: null, due: { date: '2026-10-14' } })
+    // …and this one is.
     await completeTask(id, { today: '2026-10-14' })
     expect((await db.tasks.get(id))?.completed_at).toBeGreaterThan(0)
     await setTaskCompleted(id, false)
-    expect(await db.tasks.get(id)).toMatchObject({ completed_at: null, recurrence: 'every day for 2 times' })
+    expect(await db.tasks.get(id)).toMatchObject({ completed_at: null, recurrence: 'every day for 3 times' })
   })
 
   it('a plain task, a completed series and a task with an unparseable rule complete normally', async () => {
@@ -181,14 +182,14 @@ describe('skip and detach', () => {
     expect(await skipOccurrence(await createTask({ title: 'plain' }))).toBe(false)
   })
 
-  it('"this occurrence only" creates a standalone copy and moves the series', async () => {
+  it('"this occurrence only" writes the occurrence record and moves the series', async () => {
     const id = await createTask({ title: 'Team sync', due: { date: '2026-10-12' }, recurrence: 'every monday', labels: ['work'] })
     const copyId = await detachOccurrence(id, { today: '2026-10-10' })
-    expect(copyId).toBe(detachedId(id, '2026-10-12'))
+    expect(copyId).toBe(occurrenceId(id, '2026-10-12'))
     await updateTask(copyId!, { due: { date: '2026-10-13' } })
-    expect(await db.tasks.get(copyId!)).toMatchObject({ title: 'Team sync', recurrence: null, series_id: id, completed_at: null, due: { date: '2026-10-13' }, labels: ['work'] })
+    expect(await db.tasks.get(copyId!)).toMatchObject({ title: 'Team sync', recurrence: null, series_id: id, occurrence_date: '2026-10-12', completed_at: null, due: { date: '2026-10-13' }, labels: ['work'] })
     expect(await db.tasks.get(id)).toMatchObject({ recurrence: 'every monday', due: { date: '2026-10-19' } })
-    // A detached copy is not a completed occurrence, even once completed.
+    // Completing the moved record completes that occurrence alone.
     await setTaskCompleted(copyId!, true)
     expect((await db.tasks.get(copyId!))?.completed_at).toBeGreaterThan(0)
   })
@@ -278,7 +279,7 @@ describe('convergence across offline devices', () => {
     for (const dev of [a, b]) {
       await use(dev)
       const copies = await records(id)
-      expect(copies.map((t) => t.id)).toEqual([detachedId(id, '2026-10-12')])
+      expect(copies.map((t) => t.id)).toEqual([occurrenceId(id, '2026-10-12')])
       expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-10-19' })
     }
   })
@@ -358,7 +359,7 @@ describe('deadlines follow the series (OpenSpec deadlines 8.1)', () => {
     expect((await db.tasks.get(id))?.deadline).toBe('2026-10-20')
     await detachOccurrence(id, { today: '2026-10-10' })
     expect((await db.tasks.get(id))?.deadline).toBe('2026-10-27')
-    expect((await db.tasks.get(detachedId(id, '2026-10-19')))?.deadline).toBe('2026-10-20')
+    expect((await db.tasks.get(occurrenceId(id, '2026-10-19')))?.deadline).toBe('2026-10-20')
   })
 
   it('a series without a deadline writes no deadline op', async () => {
@@ -398,6 +399,13 @@ describe('start and evening follow the series (OpenSpec someday-and-evening 7.1)
     await completeTask(id, { today: '2026-10-14' })
     expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-10-15' }, evening: true })
     expect((await db.tasks.get(occurrenceId(id, '2026-10-14')))?.evening).toBe(true)
+  })
+
+  it('a weekly two-day span keeps its length; the record keeps its span (multi-day-tasks D6)', async () => {
+    const id = await createTask({ title: 'Weekend shift', due: { date: '2026-11-09' }, start: '2026-11-08', span: true, recurrence: 'every monday' })
+    await completeTask(id, { today: '2026-11-09' })
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-11-16' }, start: '2026-11-15', span: true })
+    expect(await db.tasks.get(occurrenceId(id, '2026-11-09'))).toMatchObject({ span: true, start: '2026-11-08', due: { date: '2026-11-09' } })
   })
 
   it('two devices completing offline converge on the same start', async () => {

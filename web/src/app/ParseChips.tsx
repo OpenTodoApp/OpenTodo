@@ -8,6 +8,7 @@ import type { Unmatched } from '../lib/nlp/parse'
 import type { Due } from '../lib/types'
 import { Icon, Tooltip, type HueName } from '../ui'
 import { msg, t, translatedMap } from '../lib/i18n'
+import { energyChipLabel, isEnergy } from '../lib/energy'
 
 // Chip colours come from palette hues (design-system tokens), so both themes follow.
 export const CHIP_HUE: Record<Chip['kind'], HueName> = {
@@ -15,6 +16,7 @@ export const CHIP_HUE: Record<Chip['kind'], HueName> = {
   deadline: 'red',
   someday: 'slate',
   evening: 'indigo',
+  daypart: 'indigo',
   project: 'slate',
   label: 'cyan',
   priority: 'orange',
@@ -22,6 +24,7 @@ export const CHIP_HUE: Record<Chip['kind'], HueName> = {
   spent: 'lime',
   recurrence: 'teal',
   reminder: 'yellow',
+  energy: 'pink',
 }
 
 function dueInWords(due: Due): string {
@@ -66,6 +69,8 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
       return t('Someday')
     case 'evening':
       return t('This Evening')
+    case 'daypart':
+      return chip.value === 'morning' ? t('Morning') : t('Afternoon')
     case 'deadline':
       return t('Deadline {date}', { date: dueInWords({ date: chip.value as string }) })
     case 'project':
@@ -76,12 +81,14 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
       return `P${String(chip.value)}`
     case 'estimate':
       return formatMinutes(chip.value as number)
+    case 'energy':
+      return isEnergy(chip.value) ? energyChipLabel(chip.value) : String(chip.value)
     case 'spent':
       return t('Spent {duration}', { duration: (chip.value as number) < 60 ? t('{n} min', { n: chip.value as number }) : formatMinutes(chip.value as number) })
   }
 }
 
-const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder') })
+const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), daypart: msg('Part of the day'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder'), energy: msg('Energy') })
 
 
 export interface ParseChipsProps {

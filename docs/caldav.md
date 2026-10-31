@@ -71,10 +71,14 @@ The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use
 | `VALARM` | reminders | See [Alarms and reminders](#alarms-and-reminders). |
 | `X-OPENTODO-START` | [start date or Someday](tasks-and-projects.md#when-a-task-starts) | `SOMEDAY` or a date `YYYYMMDD`; iCalendar has no property for a deferral. A client that drops the property leaves the task as it is; an unknown value is kept as client data. |
 | `X-OPENTODO-EVENING` | This Evening | `TRUE` when set, absent otherwise. |
+| `X-OPENTODO-SPAN` | multi-day task (drawn from its start date to its due date) | `TRUE` when set, beside `X-OPENTODO-START`, absent otherwise. A client that sends `TRUE` or `FALSE` sets the flag; a client that drops the property leaves it as it is; another value is kept as client data and changes nothing. `DTSTART` and `DUE` keep their meaning above, so a client that does not read the property (every generic one) shows the task on its due day only. |
+| `X-OPENTODO-DAY-PART` | [part of the day](day-parts.md) | `MORNING` or `AFTERNOON`, absent otherwise; Evening is only `X-OPENTODO-EVENING`. A client that sends it sets the part and clears This Evening (`X-OPENTODO-EVENING:TRUE` beside it wins). A client that drops it leaves the part as it is; an unknown value is kept as client data. |
+| `X-OPENTODO-ENERGY` | [energy](method/set-up.md#energy-levels) | `DEEP`, `MEDIUM` or `LOW`, absent when none. A client that sends it sets the energy (any letter case); a task sent back without it loses the energy it was served with. An unknown value is kept as client data and changes nothing. |
 | `PRIORITY` | priority | Out: 1→1, 2→5, 3→9, 4→none. In: 1–3→1, 4–6→2, 7–9→3, 0 or absent→4. |
 | `STATUS`, `COMPLETED`, `PERCENT-COMPLETE` | completed time | `COMPLETED` (or `CANCELLED`) sets it, `NEEDS-ACTION` reopens. `IN-PROCESS` and a partial `PERCENT-COMPLETE` are kept as client data. Completed tasks stay listed. |
 | `CATEGORIES` | labels | By name, case-insensitive; an unknown name creates a label. Labels of other members on a shared task are kept. |
-| `RELATED-TO` (parent) | parent task | Sibling and child relations are kept as client data. A parent not uploaded yet is kept until it exists. |
+| `RELATED-TO` (parent) | parent task | Sibling and child relations are kept as client data. A parent not uploaded yet is kept until it exists. An open [occurrence record](recurrence.md#one-occurrence-alone) is served with `RELATED-TO;RELTYPE=SIBLING` naming its series. |
+| `EXDATE` | exception dates of a recurring task | Served as one `EXDATE` with every exception date from the current occurrence on. A date a client adds skips that occurrence; a date it takes out turns a skipped occurrence back into an open one. Beside an `RRULE` the grammar cannot express, kept as client data. |
 | `RELATED-TO;RELTYPE=DEPENDS-ON` | [Blocked by](tasks-and-projects.md#wait-for-another-task) | One line per blocker in the same calendar. A UID that is not in the calendar (yet) is kept as client data. Blockers in other projects of the same sharing are kept when a client sends the task back. A change that would make tasks wait for each other is refused with 403. |
 | `RRULE` | recurrence | See below. |
 | `CREATED` | creation time | Used when a task is created. |
@@ -102,11 +106,26 @@ So a scheduling client such as Mitra, which writes `DTSTART` and `ESTIMATED-DURA
 
 ### Recurrence
 
-Rules that the [recurrence grammar](recurrence.md) can express map both ways: `FREQ=DAILY/WEEKLY/MONTHLY/YEARLY` with `INTERVAL`, weekday lists, `BYMONTHDAY` (including `-1`), `BYDAY=2TU` / `-1FR`, the last weekday of the month, `UNTIL` and `COUNT`. A recurring task is served with `DTSTART` equal to its due date, like any task with a due time. A completion-relative rule (`every 3 days after completion`) is served as its plain interval and kept as is when the client sends the same `RRULE` back.
+Rules that the [recurrence grammar](recurrence.md) can express map both ways: `FREQ=DAILY/WEEKLY/MONTHLY/YEARLY` with `INTERVAL`, weekday lists, `BYMONTHDAY` (including `-1`), `BYDAY=2TU` / `-1FR`, the last weekday of the month, `UNTIL` and `COUNT`. A recurring task is served with `DTSTART` equal to its due date, like any task with a due time. A `for N times` rule is served with `UNTIL` set to the date of its last remaining occurrence instead of `COUNT`, because `DTSTART` is the current occurrence and not the first; that `RRULE` sent back leaves the rule as it was. A completion-relative rule (`every 3 days after completion`) is served as its plain interval and kept as is when the client sends the same `RRULE` back.
 
 Completing a recurring task in a calendar app does what completing it in OpenTodo does: an occurrence record is added to Completed and the task moves to its next due date. Apple Reminders and DAVx⁵ apps that advance the due date themselves keep working: their edit is applied as an ordinary due-date change. Thunderbird's task list completes one occurrence as an override (`RECURRENCE-ID` with `STATUS:COMPLETED`); an override of the current occurrence completes it the same way. todoman finishes the task without its rule and creates the next occurrence as a new task, so that task carries on the series under a new id.
 
-An `RRULE` the grammar cannot express (hourly rules, `BYHOUR`, several ordinals…) is kept in `ical_extra`: the calendar app keeps repeating the task, OpenTodo shows it as a plain task. Other per-occurrence overrides (`RECURRENCE-ID`) are not modelled and are dropped.
+### One occurrence alone
+
+The exceptions of a repeating task ([one occurrence alone](recurrence.md#one-occurrence-alone)) travel as iCalendar's: the series is served with one `EXDATE` listing every date from its current occurrence on that has an occurrence record (in the form of its `DTSTART`), and each moved or edited occurrence that is still open is its own VTODO, without `RRULE`, linked to the series by `RELATED-TO;RELTYPE=SIBLING`. A client that changes one occurrence sends an override (a VTODO with `RECURRENCE-ID`) beside the series:
+
+- `STATUS:COMPLETED` (or a `COMPLETED` time): that occurrence is completed. On the current date the series moves on as when you complete it; on a later date the series keeps its date.
+- `STATUS:CANCELLED`, or the date added to `EXDATE`: that occurrence is skipped.
+- A changed `DUE` or `DTSTART`, `SUMMARY` or `PRIORITY`: that occurrence is moved or edited alone.
+- A date that is not an occurrence of the series, or is before its current one, changes nothing.
+
+Overrides are never stored: the next fetch serves the series with the `EXDATE` and the occurrence as its own object, so a client may show both for a moment until it refetches.
+
+### This and following
+
+A repeating task changed from one date on ([This and following](recurrence.md#this-and-following)) is served as two repeating VTODOs: the task with the `UNTIL` of the day before that date (`RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;UNTIL=20261013`), and the task that continues it as its own object, with its own UID, its rule as `RRULE`, its current occurrence as `DTSTART` and `DUE`, and `RELATED-TO;RELTYPE=SIBLING` naming the task it continues. Each one ends the day before the next one starts, even before an app has written that `UNTIL` into its rule. A calendar app's own "this and future" edit (it ends the series with an `UNTIL` and creates a new object for the following dates) is read as what it is: the task's rule gains that `until`, and the new object becomes a new repeating task, not linked to the first one.
+
+An `RRULE` the grammar cannot express (hourly rules, `BYHOUR`, several ordinals…) is kept in `ical_extra`: the calendar app keeps repeating the task, OpenTodo shows it as a plain task.
 
 ### Alarms and reminders
 
@@ -140,19 +159,19 @@ Upgrading from a server without this mapping: alarms set earlier in a calendar a
 
 ## Limits
 
-Not supported: events (VEVENT; to see other calendars' events in Day and Week, or to subscribe to your tasks from a calendar app that has no CalDAV, see [Calendar feeds](calendar-feeds.md)), scheduling and invitations, free/busy, calendar sharing through CalDAV (use project sharing), CardDAV, attachments, per-occurrence overrides, server-side recurrence expansion, and OpenTodo acting as a client of another CalDAV server.
+Not supported: events (VEVENT; to see other calendars' events in Day and Week, or to subscribe to your tasks from a calendar app that has no CalDAV, see [Calendar feeds](calendar-feeds.md)), scheduling and invitations, free/busy, calendar sharing through CalDAV (use project sharing), CardDAV, attachments, "this and following" changes of a series, server-side recurrence expansion, and OpenTodo acting as a client of another CalDAV server.
 
 Thunderbird and todoman were run against a real server with the scenario below (served due forms, deadlines, the date shapes, estimates, alarms, completing a repeating task, moves, deletion and incremental sync); what each sent is kept in `internal/caldav/testdata/thunderbird-158/` and `todoman-4.7/` and pinned by `internal/httpapi/caldav_clients_test.go`. The other rows rest on recorded-style fixtures and protocol tests (`internal/caldav/testdata/`, `caldav_interop_test.go`) until someone runs them on the real app:
 
-| Client | Due forms | Deadline | Date shapes | Estimates | Alarms both ways | Recurrence completion | Moves | Deletion | Incremental sync |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Apple Reminders (iOS) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
-| Apple Reminders (macOS) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
-| Thunderbird 158.0.1 (Linux, 2026-10-22) | works; the task dialog writes times in your default time zone | works: Start is the due date, Due the deadline | works; clearing only Due keeps the due date (Start stays), clear both | kept (not shown) | works both ways; a changed alarm replaces the reminder | works: completing an occurrence in the task list completes it | dragging or changing Start moves the task; changing only Due sets a deadline | works | works (sync token) |
-| todoman 4.7.0 + vdirsyncer 0.21.0 (2026-10-22) | works; times are rewritten in UTC (same instant) | works | works | kept (not shown) | kept (todoman has no alarms) | the next occurrence arrives as a new task; the done one keeps no rule | works | works | works (etags, no sync token) |
-| DAVx⁵ + Tasks.org | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
-| DAVx⁵ + jtx Board | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
-| Mitra | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) |
+| Client | Due forms | Deadline | Date shapes | Estimates | Alarms both ways | Recurrence completion | Moves | Deletion | Incremental sync | Single occurrence (EXDATE/override) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Apple Reminders (iOS) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-31) |
+| Apple Reminders (macOS) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-31) |
+| Thunderbird 158.0.1 (Linux, 2026-10-22) | works; the task dialog writes times in your default time zone | works: Start is the due date, Due the deadline | works; clearing only Due keeps the due date (Start stays), clear both | kept (not shown) | works both ways; a changed alarm replaces the reminder | works: completing an occurrence in the task list completes it | dragging or changing Start moves the task; changing only Due sets a deadline | works | works (sync token) | not verified (2026-10-31) |
+| todoman 4.7.0 + vdirsyncer 0.21.0 (2026-10-22) | works; times are rewritten in UTC (same instant) | works | works | kept (not shown) | kept (todoman has no alarms) | the next occurrence arrives as a new task; the done one keeps no rule | works | works | works (etags, no sync token) | not verified (2026-10-31) |
+| DAVx⁵ + Tasks.org | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-31) |
+| DAVx⁵ + jtx Board | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-31) |
+| Mitra | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-31) |
 
 "Not verified" means the behaviour has not been tried on that client yet; the guide does not claim it works there. Testers are welcome: see issue #9.
 

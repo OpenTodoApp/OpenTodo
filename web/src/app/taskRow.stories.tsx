@@ -105,6 +105,17 @@ export const Deadlines: StoryObj = {
   ),
 }
 
+/** Spans (multi-day-tasks D5): the range in the date's place; once begun, "until" in the Started chip's place. A deferred task that is not a span keeps both chips. */
+export const Spans: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Lisbon trip', start: '2026-10-21', due: { date: '2026-10-23' }, span: true })} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Design conference', start: '2026-10-12', due: { date: '2026-10-16' }, span: true })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Quarterly report', start: '2026-10-12', due: { date: '2026-10-16' } })} />
+    </List>
+  ),
+}
+
 /** Label chips and the project as muted text at the row's end (outside the project; the end of the line below 640 px). */
 export const LabelsAndProject: StoryObj = {
   render: () => (
@@ -128,6 +139,17 @@ export const Chips: StoryObj = {
   ),
 }
 
+/** The energy as one muted word after the estimate, only when set (task-energy D6); a task without one shows nothing. */
+export const Energy: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Draft the strategy', estimate_minutes: 120, energy: 'deep' })} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Sort the receipts', due: { date: TODAY }, energy: 'low' })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Reply to Mara', estimate_minutes: 15 })} />
+    </List>
+  ),
+}
+
 /** Blocked by open tasks: the title is muted and a lock item counts the blockers. */
 export const Blocked: StoryObj = {
   render: () => (
@@ -135,6 +157,18 @@ export const Blocked: StoryObj = {
       <TaskRow {...base} task={task({ id: 't1', title: 'Pricing page', priority: 1, due: { date: TODAY } })} />
       <TaskRow {...base} blockedBy={1} task={task({ id: 't2', title: 'Publish the pricing page', due: { date: TOMORROW } })} />
       <TaskRow {...base} blockedBy={2} task={task({ id: 't3', title: 'Announce the launch' })} />
+    </List>
+  ),
+}
+
+/** Waiting in sequence (project-flow-modes): dimmed in place with "After <step>"; a long step title truncates. */
+export const WaitingInSequence: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 's1', title: 'Book the van', due: { date: TODAY } })} />
+      <TaskRow {...base} waitsFor="Book the van" task={task({ id: 's2', title: 'Pack the kitchen', due: { date: TOMORROW } })} />
+      <TaskRow {...base} waitsFor="Renew the passport at the consulate before anything else" task={task({ id: 's3', title: 'Hand over the keys' })} />
+      <TaskCard {...base} waitsFor="Book the van" task={task({ id: 's4', title: 'Clean the flat' })} />
     </List>
   ),
 }

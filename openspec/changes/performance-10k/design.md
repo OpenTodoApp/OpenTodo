@@ -53,7 +53,7 @@ Server, on the CI runner (×4 allowed on the Pi 4, recorded, not gated in CI):
 | MCP `search_tasks`, p95 | 200 ms |
 | Database file size | 150 MB |
 
-These numbers come from industry guidance (RAIL: 100 ms response, 50 ms tasks; INP "good" ≤ 200 ms) and from margin over today's 2,000-row measurements. They're checked against a first measurement in task 1.4, and any number that's unachievable without a design change is raised there with a reason. A budget is only raised in a PR that states why, like `bundle-budget.json`.
+These numbers come from industry guidance (RAIL: 100 ms response, 50 ms tasks; INP "good" ≤ 200 ms) and from margin over today's 2,000-row measurements. They're checked against a first measurement in task 1.6, and any number that's unachievable without a design change is raised there with a reason. A budget is only raised in a PR that states why, like `bundle-budget.json`.
 
 **D3. PR checks count, nightly checks time.** Time on shared CI runners varies by ±30%, so blocking PRs on time would flake. Every PR runs counts at 10,000 tasks:
 
@@ -87,13 +87,36 @@ The nightly `perf` workflow builds the server, runs perfseed, and runs `scripts/
 - **decrypt cost**, with decrypt-on-demand for notes in encrypted accounts;
 - **windowing** for lists over 2,000 rows, only if the cursor and completion budgets can't be met otherwise. `large-list-performance` D3 records why windowing is risky (keyboard focus, drag and drop, find-in-page). A windowing change would get its own OpenSpec change.
 
+**D7. The notes fixture and its budgets.** Notes are the one kind of data whose log grows much faster than its current value: every save writes a full Yjs state of up to 256 KB plus its projection (docs/sync.md "Mergeable documents"). The 10k fixture's 2,000 short notes don't exercise that, so a second, nightly-only fixture adds it.
+
+- **Composition** (`perfseed -notes`, on top of the 10k account): 500 notes growing to about 10 KB of text each (about 14 KB encoded documents), 250 standalone notes (task notes on the 10k account's tasks until `notes-overview` lands) and 250 task notes; each saved about 300 times, the saves spread over twelve months on 20 distinct days per note; 450 notes last edited more than 30 days ago and 50 edited within the last 30 days (30 of their saves inside the window). The documents are real Yjs updates produced by a small Node script from a fixed seed (`scripts/perf/notes-seed.mjs`), since the server never builds documents; perfseed writes them through `ApplyStrict` while stepping the sync service's clock, so `received_at` and `ts` are spread over the year like real history.
+- **Size before compaction:** about 2 GB of log. It's generated on the nightly runner only (about 15 minutes, about 5 GB of disk with the one-time conversion's copy), never on every PR.
+- **The run:** generate, start the server, let the compaction job run to completion (the conversion included), then measure. The nightly report also records the database size before compaction and the number of ops and bytes compaction removed (from the job's report), so a regression in compaction shows as a size jump.
+
+| Metric (notes fixture) | Desktop | Phone profile | Reference device |
+|---|---|---|---|
+| Database file after compaction and incremental vacuum | 250 MB (server) | — | Pi 4: same |
+| Notes' share of the database (winners plus the 30-day window plus one revision per day) | 100 MB (server) | — | — |
+| Full compaction of the fixture, sum of runs | 120 s (server) | — | Pi 4: ×4 |
+| Longest wait of a push behind a compaction chunk | 100 ms (server) | — | — |
+| First sync of a new device, sign-in → all tasks and notes local | 45 s | 110 s | 120 s |
+| Bytes pulled by that first sync (reported, not gated) | — | — | — |
+| IndexedDB usage after that sync (`storage.estimate`) | 120 MB | — | recorded |
+| Open the Notes page → list ready (after `notes-overview`) | 400 ms | 1,200 ms | 1,200 ms |
+| Note search keystroke → results updated, p95 (after `notes-overview`) | 50 ms | 150 ms | 150 ms |
+| JS heap after the notes session | 170 MB | 170 MB | — |
+
+How the numbers were set: the notes' share is the 500 winning documents and projections (about 12 MB), the window's saves of the 50 recent notes (about 35 MB) and one projection per editing day for the rest (about 45 MB), rounded up; the first sync adds that share to the 10k account's 30 s / 75 s; IndexedDB holds one document and one projection per note (about 12 MB) on top of the 80 MB budget, with margin for Dexie's overhead. As with the other budgets, task 1.6's first measurement may adjust them only with a reason.
+
+**If the phone budgets fail.** The owner's plan (DECISIONS.md, "Notes storage safety", item 4) defers lazy note bodies (`notes-on-demand`: devices receive the projection and fetch the document when a note opens) until these numbers show phones need it. A failing first-sync or IndexedDB budget on the phone profile or a reference phone after compaction is that signal: task 3.3 then proposes `notes-on-demand` as its own OpenSpec change instead of raising the budget.
+
 ## Data model impact
 
 None from the harness. Index additions are local (Dexie) or a SQLite migration; neither changes the op schema.
 
 ## Size and memory
 
-No runtime dependency (Playwright is already a dev dependency for ui-check). The marks add under 1 KB to the bundle. The server binary is unchanged; `internal/perfseed` isn't linked.
+No runtime dependency (Playwright is already a dev dependency for ui-check; the notes seed script uses the web app's existing `yjs` dependency). The marks add under 1 KB to the bundle. The server binary is unchanged; `internal/perfseed` isn't linked.
 
 ## Interface budget
 
@@ -107,3 +130,4 @@ Nothing user-visible.
 
 - Reference devices: which Android phone and iPhone the project owns or can borrow for the per-release run.
 - Whether to also gate the nightly 50,000-task run later. It's reported only for now.
+- The notes budgets (D7) are first estimates from the fixture's composition. Default chosen: gate them nightly from the start and adjust after task 1.6's first measurement, like the others.

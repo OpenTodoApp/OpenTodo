@@ -5,14 +5,16 @@
 // row once (when it locks a direction), not on every pixel.
 import { type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTask } from '../../lib/localData'
-import { addDaysISO, logicalToday, quickChoices } from '../../lib/dates'
+import { addDaysISO, formatDate, formatTime, logicalToday, quickChoices } from '../../lib/dates'
+import { addTaskToSlot, liveSlots, slotName, useSlots } from '../../lib/slots'
+import { runSlot } from '../calendar/slotActions'
 import { t } from '../../lib/i18n'
 import { parkTask, updateTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { Dialog, Icon } from '../../ui'
 import { act } from '../actionError'
 import { DateField } from '../datetime/DateField'
-import { prefersReducedMotion } from '../motion'
+import { prefersReducedMotion, tick } from '../motion'
 import { beginSwipe, revealed, SWIPE, type SwipeDir } from '../rowSwipe'
 import { showBulkToast } from '../bulk/toastStore'
 import { createStore } from '../../lib/store'
@@ -135,6 +137,17 @@ export function RowScheduleSheet({ task, onClose }: { task: Task; onClose: () =>
     { id: 'next-week', label: t('Next week'), apply: () => schedule(task, nextWeek) },
     { id: 'someday', label: t('Someday'), apply: () => parkTask(task.id) },
   ]
+  // Slots of today and of the task's day (calendar-slots D10): "Add to Admin 16:00".
+  const slots = useSlots()
+  const slotChoices: Choice[] = liveSlots(slots)
+    .filter((s) => (s.date === today || s.date === task.due?.date) && !s.task_ids?.includes(task.id))
+    .sort((a, b) => (a.date! + a.start < b.date! + b.start ? -1 : 1))
+    .slice(0, 4)
+    .map((s) => ({
+      id: `slot:${s.id}`,
+      label: s.date === today ? t('Add to {slot} {time}', { slot: slotName(s), time: formatTime(s.start) }) : t('Add to {slot} {time}, {day}', { slot: slotName(s), time: formatTime(s.start), day: formatDate(s.date!, 'compact') }),
+      apply: () => runSlot(addTaskToSlot(s.id, task.id)).then(() => undefined),
+    }))
   const run = (c: Choice) => { onClose(); void act(c.apply()) }
   return (
     <Dialog title={t('Schedule')} onClose={onClose} size="sm" placement="sheet" testId="row-schedule-sheet">
@@ -145,6 +158,7 @@ export function RowScheduleSheet({ task, onClose }: { task: Task; onClose: () =>
           {choices.slice(0, 3).map((c) => <SheetChoice key={c.id} id={c.id} label={c.label} onClick={() => run(c)} />)}
           <SheetChoice id="pick" label={t('Pick a day…')} onClick={() => setPicking(true)} />
           <SheetChoice id="someday" label={choices[3].label} onClick={() => run(choices[3])} />
+          {slotChoices.map((c) => <SheetChoice key={c.id} id={c.id} label={c.label} onClick={() => run(c)} />)}
         </div>
       )}
     </Dialog>
@@ -198,10 +212,11 @@ export function useSwipeCue(root: React.RefObject<HTMLElement | null>, enabled: 
 
 /**
  * A long press selects on touch (phone-v2 D8): the row is ticked, every checkbox and
- * the selection bar show, and the device ticks once where it can vibrate.
+ * the selection bar show, and the device ticks once where it can vibrate and the
+ * haptics preference is on (focus-everywhere D3: the shared `tick`).
  */
 export function holdSelect(id: string, selection: { ticked: ReadonlySet<string>; toggle: (id: string) => void }, setSelectMode: (on: boolean) => void): void {
   if (!selection.ticked.has(id)) selection.toggle(id)
   setSelectMode(true)
-  navigator.vibrate?.(10)
+  tick()
 }

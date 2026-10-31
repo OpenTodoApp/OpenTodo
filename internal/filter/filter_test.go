@@ -40,7 +40,7 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		"created > 7 days ago", "due before monday", "due after 2026-02-28", "P2", `@"a \"quoted\" name"`,
 		"no date | no time | no labels", "@Café & #プロジェクト",
 		"deadline <= 3 days", "#Work & no deadline", "deadline >= today & no date", "deadline before friday",
-		"@waiting & !someday", "deferred & start <= 6 days", "#Home & evening", "no start", "start after 2026-10-20",
+		"@waiting & !someday", "deferred & start <= 6 days", "#Home & evening", "#Home & morning", "today & afternoon", "no start", "start after 2026-10-20",
 		"completed = last week", "completed >= this month & p1", "completed before yesterday", "due = next week",
 		"created = 2 months ago", "deadline < 1 week ago", "start <= next month", "!(completed > 3 weeks ago) | open",
 		"completed", "p1 & completed", "COMPLETED AFTER 2026-10-01",
@@ -49,6 +49,11 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		// Origin terms (task-origin).
 		"origin", "no origin", "origin: github", "origin:github", `origin: "my tracker"`, "origin: url | origin: email",
 		"no origin & #Work", "origin: github & open", "!origin",
+		// Energy terms (task-energy).
+		"energy", "no energy", "energy: deep", "energy:LOW", `energy: "medium"`, "energy: low & unblocked & today", "energy: deep & #Work", `"energy" = 3`,
+		// Notes terms (notes-overview).
+		"notes", "no notes", "notes: permit", "notes:permit", `notes: "permit office"`, "NOTES: x", "notes & #Renovation", "no notes & p1",
+		"!notes", `"Notes" = 3`, `no "Notes"`, `notes: "a & b"`,
 		// Workspace terms (group-mentions).
 		"workspace: Home", "workspace:Home", `workspace:"Side projects"`, `workspace: "Side projects" & p1`, "WORKSPACE: work",
 		"(workspace: Home | workspace: Work) & due = this week", "!workspace: Home", "workspace: home & no project",
@@ -110,6 +115,14 @@ func TestFilterParserRejects(t *testing.T) {
 		`workspace: "Home`:   `Missing closing quote for the text starting at position 12`,
 		"origin: & p1":       `Expected a provider or kind after "origin:" at position 1`,
 		"origin = x":         `Expected "&" or "|" before "=" at position 8`,
+		"energy: high":       "Energy must be deep, medium or low at position 1",
+		"p1 & energy:":       "Energy must be deep, medium or low at position 6",
+		"energy = deep":      `Expected "&" or "|" before "=" at position 8`,
+		"notes:":             `Expected text after "notes:" at position 1`,
+		"p1 & notes: ":       `Expected text after "notes:" at position 6`,
+		"notes: & p1":        `Expected text after "notes:" at position 1`,
+		`notes: "permit`:     `Missing closing quote for the text starting at position 8`,
+		"notes = 3":          `Expected "&" or "|" before "=" at position 7`,
 		"p1 )":               `Unexpected ")" at position 4`,
 		"(p1 p2)":            `Expected "&", "|" or ")" before "p2" at position 5`,
 		"!":                  `Expected a term after "!" at position 1`,

@@ -4,6 +4,7 @@ import type { Task } from '../lib/types'
 import { BoardView, type BoardColumn } from './BoardView'
 import { HEX, label, project, seeded, seedProjectWithSections, storyUser, task, TODAY, TOMORROW, withClock, withSeed } from './stories/fixtures'
 import { TaskCard } from './TaskRow'
+import { hueFor } from '../ui'
 import { TaskListView } from './TaskListView'
 
 // Core screen: the board (OpenSpec change ux-overhaul, task 8.7; sections-and-boards
@@ -57,6 +58,26 @@ export const Columns: StoryObj = {
         <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={t.id === 'b4'} showProject={false} blockedBy={t.id === 'b7' ? 1 : 0}
           progress={t.id === 'b6' ? { done: 1, total: 2 } : undefined} onToggle={noop} onOpen={noop} />
       )} />
+  ),
+}
+
+/** Colour by Label on a board (calendar-clarity "Colour by on boards"): a leading edge in the first coloured label's hue, grey without one. */
+export const ColourByLabel: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={columns} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels}
+      renderCard={(t) => <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} onToggle={noop} onOpen={noop}
+        edge={labelsOf(t).find((l) => l.color !== HEX.slate) ? hueFor(labelsOf(t).find((l) => l.color !== HEX.slate)!.color) : 'slate'} />} />
+  ),
+}
+
+/** Colour by Priority on a board: P1 red, P2 orange, P3 blue, P4 grey. */
+export const ColourByPriority: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={columns} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels}
+      renderCard={(t) => <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} onToggle={noop} onOpen={noop}
+        edge={t.priority === 1 ? 'red' : t.priority === 2 ? 'orange' : t.priority === 3 ? 'blue' : 'slate'} />} />
   ),
 }
 
@@ -124,5 +145,50 @@ export const DragInProgress: StoryObj = {
   render: () => (
     <BoardView project={website} columns={columns} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels}
       placeholder={{ key: 's2', height: 56 }} renderCard={(t) => card(t, t.id === 'b2')} />
+  ),
+}
+
+// Board polish (OpenSpec change board-polish, task 4.1): a folded column at rest and
+// while a card is dragged over its strip, and cards with the notes preview on.
+const folded: BoardColumn[] = [
+  columns[0],
+  { ...columns[1], folded: true },
+  { key: 's4', section: { ...section('s4', 'Done', 3), color: HEX.teal, icon: 'check' }, cards: columns[2].cards, folded: true },
+]
+
+/** "In progress" and a styled "Done" folded to strips: the mark, the open-task count and the name written vertically. */
+export const FoldedColumn: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={folded} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels} onFold={noop} renderCard={(t) => card(t)} />
+  ),
+}
+
+/** A card dragged over the folded "Done": the strip takes the placeholder's dashed edge along its length. */
+export const FoldedColumnDragOver: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={folded} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels} onFold={noop}
+      placeholder={{ key: 's4', height: 56 }} renderCard={(t) => card(t, t.id === 'b2')} />
+  ),
+}
+
+const withNotes: BoardColumn[] = [
+  { key: 's1', section: section('s1', 'Backlog', 0), cards: [
+    task({ id: 'n1', title: 'Write the launch announcement', project_id: website.id, section_id: 's1', description: 'Waiting on the quote from Marco', due: { date: TOMORROW } }),
+    task({ id: 'n2', title: 'Set up the status page', project_id: website.id, section_id: 's1', description: '# Plan\n\n- [ ] pick a provider\n- [x] buy the domain\n\nAsk **Ana** about the [incident template](https://example.com) before Friday, and check the alert channels with the on-call team.', estimate_minutes: 60 }),
+    task({ id: 'n3', title: 'Collect testimonials', project_id: website.id, section_id: 's1', labels: [waiting.id] }),
+  ] },
+  { key: 's2', section: section('s2', 'In progress', 1), cards: [
+    task({ id: 'n4', title: 'Review the homepage copy', project_id: website.id, section_id: 's2', priority: 2, description: 'Two short paragraphs:\nkeep the tone plain.' }),
+  ] },
+]
+
+/** Notes on cards: one line, two lines, more (cut after two with an ellipsis) and none (no empty line). */
+export const CardsWithNotes: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={withNotes} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels}
+      renderCard={(t) => <TaskCard key={t.id} task={t} labels={labelsOf(t)} selected={false} showProject={false} notes onToggle={noop} onOpen={noop} />} />
   ),
 }

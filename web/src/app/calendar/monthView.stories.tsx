@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { MonthView } from '../MonthView'
-import { seedCalendarWeek, withSeed } from '../stories/fixtures'
+import { seedCalendarClarity, seedCalendarSpans, seedCalendarWeek, seedCalendarYear, withSeed } from '../stories/fixtures'
 
 // Core screen: Month (`/month`), timed and all-day tasks in a month grid (OpenSpec
 // change ux-audit-three-widths task 5.5; weekly in the inventory). Day, Week and Plan
@@ -15,5 +15,23 @@ function Column({ children }: { children: ReactNode }) {
 
 /** October 2026 from the frozen Wednesday. */
 export const October: StoryObj = {
+  render: () => <Column><MonthView /></Column>,
+}
+
+/** Deadlines in the Month (calendar-clarity D1): Friday the 16th lists "Submit the grant" with the diamond; the 15th's "Pay the rent" carries it on its own row. */
+export const Deadlines: StoryObj = {
+  ...withSeed(seedCalendarClarity('project')),
+  render: () => <Column><MonthView /></Column>,
+}
+
+/** Spans in the Month (multi-day-tasks D3, D8): bars across each week row, continued on the next; counts per covered day below 640 px. */
+export const Spans: StoryObj = {
+  ...withSeed(seedCalendarSpans),
+  render: () => <Column><MonthView /></Column>,
+}
+
+/** Three months on this device (year-view D1): October to December stacked with their names, the range as the title; one month below 640 px. */
+export const ThreeMonths: StoryObj = {
+  ...withSeed(seedCalendarYear(3)),
   render: () => <Column><MonthView /></Column>,
 }

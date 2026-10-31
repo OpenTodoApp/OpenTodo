@@ -6,19 +6,23 @@ import type { Project } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon, Tooltip } from '../../ui'
 import { TitleField } from '../TitleField'
+import { lazy, Suspense } from 'react'
+
+// The scope control and the occurrence's actions load with the first repeating task opened.
+const OccurrenceScope = lazy(() => import('./OccurrenceScope'))
 import type { TaskDetailModel } from './useTaskDetail'
 
 const RING: Record<number, string> = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }
 
 /** The checkbox and the title; `page` sets the title at the page's size and wraps it freely. */
-export function TaskHead({ m, readOnly, projects, size }: { m: TaskDetailModel; readOnly: boolean; projects: Project[]; size: 'panel' | 'page' }) {
+export function TaskHead({ m, readOnly, completeLocked = readOnly, projects, size }: { m: TaskDetailModel; readOnly: boolean; completeLocked?: boolean; projects: Project[]; size: 'panel' | 'page' }) {
   const { task } = m
   if (!task) return null
   const done = !!task.completed_at
   const page = size === 'page'
   return (
     <>
-      <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={readOnly} onClick={() => m.toggle(task)} data-panel-complete
+      <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={completeLocked} onClick={() => m.toggle(task)} data-panel-complete
         className={`touch-target inline-flex shrink-0 items-center justify-center rounded-full pointer-fine:-m-0.5 pointer-fine:size-6 ${page ? 'mt-1 self-start' : ''}`}>
         <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${done ? 'border-accent bg-accent text-on-accent' : `${RING[task.priority] ?? 'border-p4'} hover:bg-success-soft`}`}>
           {done && <Icon name="check" size="xs" />}
@@ -41,12 +45,16 @@ export function TaskHead({ m, readOnly, projects, size }: { m: TaskDetailModel; 
   )
 }
 
-/** The links to the parent task and to the recurring task of an occurrence. */
-export function TaskRelations({ m, onOpen }: { m: TaskDetailModel; onOpen?: (id: string) => void }) {
+/** The scope of a repeating task's panel, and the links to the parent task and to the recurring task of an occurrence. */
+export function TaskRelations({ m, onOpen, readOnly = false }: { m: TaskDetailModel; onOpen?: (id: string) => void; readOnly?: boolean }) {
   const { task, parent, series } = m
-  if (!task || (!parent && !series)) return null
+  if (!task) return null
+  const repeats = !!task.recurrence || !!task.series_id
+  if (!parent && !series && !repeats) return null
   return (
     <>
+      {/* This occurrence or All occurrences (series-exceptions D5). */}
+      {repeats && <Suspense fallback={null}><OccurrenceScope m={m} readOnly={readOnly} /></Suspense>}
       {parent && (
         <Tooltip label={t('Open parent task')}>
           <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)}>

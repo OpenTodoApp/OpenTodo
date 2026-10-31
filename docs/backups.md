@@ -2,7 +2,7 @@
 title: Backups
 summary: Scheduled backups to a folder, S3 or WebDAV, encryption, retention, restore and the archive format.
 audience: admin
-specs: [backups, backup-restore]
+specs: [backups, backup-restore, op-log-compaction]
 screens: []
 order: 30
 ---
@@ -327,6 +327,14 @@ variable.
 
 Secrets given this way are copied into `<data>/secrets/backup.json` on that
 first start; remove them from the environment afterwards if you prefer.
+
+## Database size and compaction
+
+Every save of a note stores the whole note, so the database would keep every old copy. Once a day, after something changed, the server removes old versions of notes that it received more than 30 days ago and that are no longer current; for older edits it keeps the last version of each day (in UTC), so a note's History still shows one revision per day. The current note is never removed, and nothing else is. **Settings → Server → Backups → Database storage** shows the database's size, the free space inside the file and what the last compaction removed and reclaimed (`GET /api/v1/settings/storage`).
+
+- **Backups get smaller** after compaction. Earlier backups keep the history they had.
+- **The file shrinks** because the server returns the freed space to the file system in small steps. That needs SQLite's incremental vacuum mode, which databases created by 0.19 or later have from the start.
+- **One-time conversion of an older database.** A database created by an earlier version is converted once: the job rewrites the whole file (`VACUUM`) when no change arrived for 10 minutes (or at its next run once 7 days passed without such a moment), and only when the data directory's disk has free space of at least the database's size plus 10 %. It takes about as long as a backup (seconds for a 50 MB database on an SSD, about a minute for 500 MB on a Raspberry Pi's SD card). Meanwhile reads continue; a write waits up to 5 seconds and then fails as busy, and the device retries later without losing anything. The log says when it ran and how long it took. Without enough free disk the server logs a warning once a day, the Database storage card says how much space is needed, old versions are still removed, and the freed space is reused, so the file stops growing even though it does not shrink. Where the free space cannot be read, the conversion is skipped with a warning.
 
 ## What a backup contains
 

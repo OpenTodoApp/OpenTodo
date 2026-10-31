@@ -120,6 +120,11 @@ test('tracked time is one closed entry ending now; relative reminders keep their
   assert.deepEqual(reminderBody('t', { kind: 'relative', offset_minutes: 0 }), { task_id: 't', kind: 'relative', offset_minutes: 0 })
 })
 
+test('the part of the day and the energy the parse read are saved with the task', () => {
+  const parsed = { title: 'Sort receipts', fields: { day_part: 'morning', evening: false, energy: 'low' } }
+  assert.deepEqual(taskBody({ line: 'Sort receipts tomorrow morning ~low', parsed }), { title: 'Sort receipts', day_part: 'morning', evening: false, energy: 'low' })
+})
+
 test('Parse route unavailable: the line is the title', async () => {
   assert.deepEqual(taskBody({ line: '  Buy milk  ', parsed: null }), { title: 'Buy milk' })
   const parsed = await parseForSave({}, 'Buy milk', null, async () => { throw new ApiError('unreachable', 'x') })

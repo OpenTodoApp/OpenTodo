@@ -43,6 +43,11 @@ type harness struct {
 	// reqMu guards requests: every request the in-process server received.
 	reqMu    sync.Mutex
 	requests []string
+	// bodies holds every request as "METHOD /path body"; hook, when set, runs
+	// before the server handles a request (to change data between a
+	// command's read and its write).
+	bodies []string
+	hook   func(r *http.Request)
 }
 
 // requestLog returns the requests received since the last call, as
@@ -84,9 +89,19 @@ func newHarness(t *testing.T) *harness {
 	h := httpapi.New(set, nil)
 	hs := &harness{t: t, db: db, configPath: filepath.Join(t.TempDir(), "cfg", "config.json"), env: map[string]string{}}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body []byte
+		if r.Body != nil {
+			body, _ = io.ReadAll(r.Body)
+			r.Body = io.NopCloser(bytes.NewReader(body))
+		}
 		hs.reqMu.Lock()
 		hs.requests = append(hs.requests, r.Method+" "+r.URL.Path)
+		hs.bodies = append(hs.bodies, r.Method+" "+r.URL.Path+" "+string(body))
+		hook := hs.hook
 		hs.reqMu.Unlock()
+		if hook != nil {
+			hook(r)
+		}
 		h.ServeHTTP(w, r)
 	}))
 	t.Cleanup(srv.Close)

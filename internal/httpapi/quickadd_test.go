@@ -200,6 +200,7 @@ func TestQuickAddParseSharedVectors(t *testing.T) {
 				SpentMinutes    *int                `json:"spentMinutes"`
 				Recurrence      *string             `json:"recurrence"`
 				Reminders       []quickadd.Reminder `json:"reminders"`
+				DayPart         *string             `json:"dayPart"`
 			} `json:"expect"`
 		} `json:"cases"`
 	}
@@ -223,6 +224,9 @@ func TestQuickAddParseSharedVectors(t *testing.T) {
 				}
 			} else if d, _ := f["due"].(map[string]string); d["date"] != c.Expect.Due.Date || d["time"] != c.Expect.Due.Time {
 				t.Fatalf("due %v, want %+v", f["due"], c.Expect.Due)
+			}
+			if want := deref(c.Expect.DayPart); asString(f["day_part"]) != want {
+				t.Fatalf("day_part %v, want %q", f["day_part"], want)
 			}
 			if want := deref(c.Expect.ProjectID); asString(f["project_id"]) != want {
 				t.Fatalf("project %v, want %q", f["project_id"], want)

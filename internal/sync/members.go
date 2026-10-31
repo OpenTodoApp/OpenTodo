@@ -501,8 +501,9 @@ func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID stri
 	if others > 0 {
 		return ErrProjectIDConflict
 	}
-	// Tasks and sections (board-view) of the project move with it.
-	rows, err := tx.QueryContext(ctx, `SELECT entity, entity_id, value FROM scope_fields WHERE scope_id = ? AND entity IN ('task','section','field') AND field = 'project_id'`, personal)
+	// Tasks, sections (board-view), fields and notes (notes-overview) of the
+	// project move with it.
+	rows, err := tx.QueryContext(ctx, `SELECT entity, entity_id, value FROM scope_fields WHERE scope_id = ? AND entity IN ('task','section','field','note') AND field = 'project_id'`, personal)
 	if err != nil {
 		return err
 	}

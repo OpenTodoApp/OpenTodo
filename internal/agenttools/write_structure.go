@@ -32,7 +32,7 @@ var (
 func init() {
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_project", "Update a project",
-			"Rename, recolour or give an icon to a project, move it under another project (parent_id, null for the top level) or change its position. Archiving, deleting and the project's description are not available.",
+			"Rename, recolour or give an icon to a project, set its flow or status (maintenance), move it under another project (parent_id, null for the top level) or change its position. Archiving, deleting and the project's description are not available.",
 			object([]string{"id"}, map[string]any{
 				"id":           map[string]any{"type": "string", "description": "Project id."},
 				"name":         map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},
@@ -41,6 +41,8 @@ func init() {
 				"parent_id":    map[string]any{"type": []string{"string", "null"}, "description": "Parent project id, or null for the top level."},
 				"position":     positionProp,
 				"workspace_id": map[string]any{"type": []string{"string", "null"}, "description": "Move the project to this workspace (see list_workspaces), or null for the default workspace. Only the project's owner may."},
+				"flow_mode":    projectFlowProp,
+				"status":       projectStatusProp,
 			}), false, true, []string{"name"}, false)
 	}, plan: (*Registry).planUpdateProject})
 
@@ -56,7 +58,7 @@ func init() {
 
 	register(tool{def: func(Caller) Definition {
 		item := object([]string{"name"}, map[string]any{
-			"name": sectionName, "color": colorProp, "icon": iconProp, "position": positionProp, "id": chosenIDProp,
+			"name": sectionName, "color": colorProp, "icon": iconProp, "position": positionProp, "flow_mode": sectionFlowProp, "id": chosenIDProp,
 		})
 		return writeDef("create_sections", "Create sections",
 			fmt.Sprintf("Create up to %d sections in one project, after its existing sections unless position is given. Returns their ids in order.", PerCall),
@@ -69,11 +71,11 @@ func init() {
 
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_sections", "Update sections",
-			fmt.Sprintf("Rename, recolour, give an icon to or move up to %d sections.", PerCall),
+			fmt.Sprintf("Rename, recolour, give an icon or a flow to, or move up to %d sections.", PerCall),
 			object([]string{"updates"}, map[string]any{
 				"updates": map[string]any{"type": "array", "minItems": 1, "maxItems": PerCall, "items": object([]string{"id"}, map[string]any{
 					"id": map[string]any{"type": "string", "description": "Section id."}, "name": sectionName, "color": map[string]any{"type": []string{"string", "null"}, "description": "Colour as #rrggbb, or null for the default."},
-					"icon": iconProp, "position": positionProp,
+					"icon": iconProp, "position": positionProp, "flow_mode": sectionFlowProp,
 				})},
 			}), false, true, []string{"name"}, false)
 	}, plan: (*Registry).planUpdateSections})
@@ -171,7 +173,7 @@ func (r *Registry) claimIDs(ctx context.Context, c Caller, cs ChangeSet, chosen 
 // ---- update_project ----
 
 func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id"); err != nil {
+	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id", "flow_mode", "status"); err != nil {
 		return Plan{}, err
 	}
 	id, err := a.str("id")
@@ -204,6 +206,16 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 	} else if has {
 		patch["position"] = v
 	}
+	if v, has, err := a.flowMode("", "project"); err != nil {
+		return Plan{}, err
+	} else if has {
+		patch["flow_mode"] = v
+	}
+	if v, has, err := a.projectStatus(); err != nil {
+		return Plan{}, err
+	} else if has {
+		patch["status"] = v
+	}
 	snap, err := r.loadFor(ctx, c, overlay)
 	if err != nil {
 		return Plan{}, err
@@ -232,7 +244,7 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 		}
 	}
 	if len(patch) == 0 {
-		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position or workspace_id")
+		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position, workspace_id, flow_mode or status")
 	}
 	role := snap.role(id)
 	for f := range patch {
@@ -432,7 +444,7 @@ func (r *Registry) planCreateSections(ctx context.Context, c Caller, a args, ove
 	chosen := map[string]bool{}
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
-		if err := it.only(p, "name", "color", "icon", "position", "id"); err != nil {
+		if err := it.only(p, "name", "color", "icon", "position", "flow_mode", "id"); err != nil {
 			return Plan{}, err
 		}
 		name, _, err := it.contentText(c, "name", true, 200)
@@ -471,6 +483,11 @@ func (r *Registry) planCreateSections(ctx context.Context, c Caller, a args, ove
 		} else if has {
 			patch["position"] = v
 		}
+		if v, has, err := it.flowMode(p, "section"); err != nil {
+			return Plan{}, err
+		} else if has {
+			patch["flow_mode"] = v
+		}
 		if err := checkPatch(p, "section", id, patch); err != nil {
 			return Plan{}, err
 		}
@@ -501,7 +518,7 @@ func (r *Registry) planUpdateSections(ctx context.Context, c Caller, a args, ove
 	seen := map[string]bool{}
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
-		if err := it.only(p, "id", "name", "color", "icon", "position"); err != nil {
+		if err := it.only(p, "id", "name", "color", "icon", "position", "flow_mode"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")
@@ -547,8 +564,13 @@ func (r *Registry) planUpdateSections(ctx context.Context, c Caller, a args, ove
 		} else if has {
 			patch["position"] = v
 		}
+		if v, has, err := it.flowMode(p, "section"); err != nil {
+			return Plan{}, err
+		} else if has {
+			patch["flow_mode"] = v
+		}
 		if len(patch) == 0 {
-			return Plan{}, argErr(p + "nothing to change: give name, color, icon or position")
+			return Plan{}, argErr(p + "nothing to change: give name, color, icon, position or flow_mode")
 		}
 		fields := make([]string, 0, len(patch))
 		for f := range patch {

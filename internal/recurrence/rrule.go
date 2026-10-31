@@ -46,6 +46,50 @@ func (r Rule) RRULE() string {
 	return strings.Join(parts, ";")
 }
 
+// RRULEUntil is RRULE with COUNT replaced by UNTIL=until (YYYY-MM-DD) when
+// until is set: a `for N times` rule served from its current occurrence ends on
+// the date of its last remaining occurrence (OpenSpec change series-exceptions,
+// design D10), and an earlier UNTIL tightens a later one (a piece of a split
+// series ends the day before the next piece, series-split D7). An empty until is RRULE.
+func (r Rule) RRULEUntil(until string) string {
+	if until == "" {
+		return r.RRULE()
+	}
+	c := r
+	c.count = 0
+	if c.until == "" || until < c.until {
+		c.until = until
+	}
+	return c.RRULE()
+}
+
+// RRULEEarlier is the RRULE whose dates are each of r's dates moved days
+// earlier: the first days of a recurring span whose do-on dates follow r
+// (OpenSpec change multi-day-tasks, design D7), UNTIL moved with them. ok is
+// false when an RRULE cannot say it exactly (rules by month or year).
+func (r Rule) RRULEEarlier(days int) (rrule string, ok bool) {
+	c := r
+	switch r.kind {
+	case kInterval:
+		if r.unit != uDay && r.unit != uWeek {
+			return "", false
+		}
+	case kWeekday, kWeekdays:
+		c.days = 0
+		for wd := 1; wd <= 7; wd++ {
+			if r.days&(1<<wd) != 0 {
+				c.days |= 1 << ((((wd-1-days)%7)+7)%7 + 1)
+			}
+		}
+	default:
+		return "", false
+	}
+	if c.until != "" {
+		c.until = AddDays(c.until, -days)
+	}
+	return c.RRULE(), true
+}
+
 func dayList(mask uint8) string {
 	var out []string
 	for wd := 1; wd <= 7; wd++ {

@@ -7,6 +7,9 @@ import { daysBetweenISO, describeDeadline, describeDue, formatDate, formatTime, 
 import { formatMinutes } from './duration'
 import { t } from './i18n'
 import type { Due, Label, Priority, Task } from './types'
+import { dayPartOf, dayPartWord } from './dayParts'
+import { energyName, energyOf } from './energy'
+import { formatSpan, spanOf } from './span'
 
 export type FacetId = 'where' | 'when' | 'how' | 'who'
 
@@ -99,12 +102,17 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   // When: do on (with evening and the zone), repeat, deadline, start, reminders.
   const when: FacetPart[] = []
   const due = describeDue(ctx.local, today, undefined, ctx.dateTime)
+  const span = spanOf(task)
   if (due) {
     // A timed due with an estimate is the block the calendar draws: show where it ends too (GitHub issue 356).
     const label = ctx.local?.time && task.estimate_minutes ? `${due.label}–${formatTime(blockEnd(ctx.local.time, task.estimate_minutes), ctx.dateTime)}` : due.label
-    when.push({ id: 'due', text: ctx.zoneCity ? `${label} ${ctx.zoneCity}` : label, tone: due.tone, segment: 'due' })
+    // A span reads its range, "3–5 Nov", and its start is not repeated (multi-day-tasks D2).
+    const text = span ? (ctx.local?.time ? `${formatSpan(span)} ${t('until {time}', { time: formatTime(ctx.local.time, ctx.dateTime) })}` : formatSpan(span)) : label
+    when.push({ id: 'due', text: ctx.zoneCity ? `${text} ${ctx.zoneCity}` : text, tone: due.tone, segment: 'due' })
   }
-  if (task.evening) when.push({ id: 'evening', text: t('evening'), segment: 'due' })
+  // The part of the day (day-parts): evening, morning or afternoon, in the evening's slot.
+  const part = dayPartWord(dayPartOf(task))
+  if (part) when.push({ id: 'evening', text: part, segment: 'due' })
   if (task.recurrence) when.push({ id: 'repeat', text: task.recurrence, segment: 'repeat' })
   else if (revealed.has('repeat')) when.push({ id: 'repeat', text: t('Repeat'), segment: 'repeat', empty: true })
   if (task.deadline) {
@@ -112,7 +120,7 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
     when.push({ id: 'deadline', text: deadlineText(task.deadline, ctx, today), tone: tone === 'overdue' ? 'overdue' : tone === 'soon' ? 'warning' : undefined, segment: 'deadline' })
   } else if (revealed.has('deadline')) when.push({ id: 'deadline', text: t('Deadline'), segment: 'deadline', empty: true })
   if (task.start === 'someday') when.push({ id: 'when', text: t('Someday'), segment: 'start' })
-  else if (task.start) when.push({ id: 'when', text: task.start > today ? t('from {date}', { date: date(task.start) }) : t('since {date}', { date: date(task.start) }), segment: 'start' })
+  else if (task.start && !span) when.push({ id: 'when', text: task.start > today ? t('from {date}', { date: date(task.start) }) : t('since {date}', { date: date(task.start) }), segment: 'start' })
   else if (revealed.has('when')) when.push({ id: 'when', text: t('Start'), segment: 'start', empty: true })
   if (ctx.reminders > 0) when.push({ id: 'reminders', text: t('{reminders, plural, one {# reminder} other {# reminders}}', { reminders: ctx.reminders }), segment: 'reminders' })
   else if (revealed.has('reminders')) when.push({ id: 'reminders', text: t('Reminder'), segment: 'reminders', empty: true })
@@ -120,10 +128,13 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   if (!due && !when.some((p) => p.id !== 'evening')) when.unshift({ id: 'due', text: t('Not scheduled'), segment: 'due', empty: true })
   else if (!due) when.unshift({ id: 'due', text: t('No date'), segment: 'due', empty: true })
 
-  // How: priority, estimate, labels.
+  // How: priority, estimate, energy (task-energy), labels.
   const how: FacetPart[] = [{ id: 'priority', text: PRIORITY_TEXT[task.priority] ?? 'P4' }]
   if (task.estimate_minutes !== null) how.push({ id: 'estimate', text: formatMinutes(task.estimate_minutes) })
   else if (revealed.has('estimate')) how.push({ id: 'estimate', text: t('Estimate'), empty: true })
+  const energy = energyOf(task)
+  if (energy) how.push({ id: 'energy', text: energyName(energy) })
+  else if (revealed.has('energy')) how.push({ id: 'energy', text: t('Energy'), empty: true })
   if (ctx.labels.length) how.push({ id: 'labels', text: ctx.labels.map((l) => l.name).join(', '), labels: ctx.labels })
   else if (revealed.has('labels')) how.push({ id: 'labels', text: t('Labels'), empty: true })
 

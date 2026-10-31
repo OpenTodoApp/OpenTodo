@@ -106,8 +106,15 @@ var secretFields = []string{"password", "password_hash", "secret", "token", "tok
 
 func TestConstructorsNeverCarryEntityFields(t *testing.T) {
 	deny := map[string]string{}
+	// Field names that also name an audit detail and are never content: a frame's
+	// planning source is a "project:<id>" key (calendar-frames D1), while a
+	// restore's source is the backup it came from.
+	shared := map[string]bool{"frame.source": true}
 	for entity, fields := range opsync.Schema {
-		for f := range fields {
+		for f, def := range fields {
+			if shared[entity+"."+f] && !def.Content {
+				continue
+			}
 			deny[f] = entity + " field"
 		}
 	}

@@ -2,6 +2,7 @@ package calfeed
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
@@ -19,9 +20,26 @@ type FeedTask struct {
 	TZ          *string // IANA zone of a zoned due
 	Estimate    int     // minutes; 0 means the default block
 	RRULE       string  // the task's rule as an RRULE value, "" when none
-	Labels      []string
-	Priority    int
-	Modified    int64 // Unix ms, for DTSTAMP and LAST-MODIFIED
+	// Start is the first day of a task drawn as a span (OpenSpec change
+	// multi-day-tasks), "" otherwise: the event is then all-day from Start to
+	// Date, whatever the due time. RRULE of a span gives its first days;
+	// RDates lists them instead when no RRULE can (rules by month or year).
+	Start    string
+	RDates   []string
+	Labels   []string
+	Priority int
+	Modified int64 // Unix ms, for DTSTAMP and LAST-MODIFIED
+}
+
+// SpanStart is a task's first day when it is drawn as a span (OpenSpec change
+// multi-day-tasks, design D1): the flag set, start a date and its do-on date
+// later; "" for every other task, which draws on its do-on date only.
+func SpanStart(span bool, start, dueDate string) string {
+	d, err := time.Parse(time.DateOnly, start)
+	if !span || err != nil || d.Format(time.DateOnly) != start || start >= dueDate {
+		return ""
+	}
+	return start
 }
 
 // FeedOptions tune the feed.
@@ -77,7 +95,7 @@ func WriteFeed(tasks []FeedTask, opts FeedOptions) []byte {
 func WriteEvent(t FeedTask, opts FeedOptions) []byte {
 	cal := &caldav.Component{Name: "VCALENDAR"}
 	cal.Props = append(cal.Props, caldav.Prop{Name: "VERSION", Value: "2.0"}, caldav.Prop{Name: "PRODID", Value: caldav.ProdID})
-	t.RRULE, t.Labels, t.Priority = "", nil, 0
+	t.RRULE, t.RDates, t.Labels, t.Priority = "", nil, nil, 0
 	ev := taskEvent(cal, map[string]bool{}, t, opts)
 	ev.Props = append(ev.Props, caldav.Prop{Name: "X-OPENTODO-TASK", Value: t.ID})
 	cal.Children = append(cal.Children, ev)
@@ -113,7 +131,7 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 	}
 	start, end := eventTimes(t)
 	ev.Props = append(ev.Props, start, end)
-	if t.TZ != nil && t.Time != nil && !zones[*t.TZ] {
+	if t.TZ != nil && t.Time != nil && t.Start == "" && !zones[*t.TZ] {
 		if vt := caldav.VTimezone(*t.TZ, t.Date, *t.Time); vt != nil {
 			zones[*t.TZ] = true
 			cal.Children = append(cal.Children, vt)
@@ -121,6 +139,13 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 	}
 	if t.RRULE != "" {
 		add(ev, "RRULE", t.RRULE)
+	}
+	if len(t.RDates) > 0 {
+		dates := make([]string, len(t.RDates))
+		for i, d := range t.RDates {
+			dates[i] = strings.ReplaceAll(d, "-", "")
+		}
+		ev.Props = append(ev.Props, caldav.Prop{Name: "RDATE", Params: []caldav.Param{{Name: "VALUE", Values: []string{"DATE"}}}, Value: strings.Join(dates, ",")})
 	}
 	if len(t.Labels) > 0 && !opts.Encrypted {
 		esc := ""
@@ -141,18 +166,23 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 	return ev
 }
 
-// eventTimes gives DTSTART and DTEND: a whole day for a date-only due, the
-// estimate (or 30 minutes) from a timed one, in its zone when it has one.
+// eventTimes gives DTSTART and DTEND: whole days from the first day of a span
+// (multi-day-tasks) or for a date-only due, the estimate (or 30 minutes) from
+// a timed one, in its zone when it has one. DTEND of whole days is exclusive.
 func eventTimes(t FeedTask) (caldav.Prop, caldav.Prop) {
 	date := t.Date
 	compact := func(d string) string { return d[:4] + d[5:7] + d[8:10] }
-	if t.Time == nil {
+	if t.Time == nil || t.Start != "" {
+		first := date
+		if t.Start != "" {
+			first = t.Start
+		}
 		next := date
 		if d, err := time.Parse("2006-01-02", date); err == nil {
 			next = d.AddDate(0, 0, 1).Format("2006-01-02")
 		}
 		v := []caldav.Param{{Name: "VALUE", Values: []string{"DATE"}}}
-		return caldav.Prop{Name: "DTSTART", Params: v, Value: compact(date)}, caldav.Prop{Name: "DTEND", Params: v, Value: compact(next)}
+		return caldav.Prop{Name: "DTSTART", Params: v, Value: compact(first)}, caldav.Prop{Name: "DTEND", Params: v, Value: compact(next)}
 	}
 	length := DefaultBlock
 	if t.Estimate > 0 {

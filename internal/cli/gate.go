@@ -81,10 +81,11 @@ func validIdempotencyKey(k string) bool {
 // agentTaskFields are the task fields an agent token may PATCH.
 var agentTaskFields = map[string]bool{"title": true, "description": true, "priority": true, "labels": true, "estimate_minutes": true,
 	"recurrence": true, "due": true, "project_id": true, "section_id": true, "completed_at": true, "deleted_at": true, "origin": true,
-	"deadline": true, "start": true, "evening": true, "blocked_by": true, "location": true}
+	"deadline": true, "start": true, "evening": true, "span": true, "day_part": true, "energy": true, "blocked_by": true, "location": true}
 
 // agentRouteAllowed mirrors the server's agent content routes.
 func agentRouteAllowed(method, path string, body any) bool {
+	path, _, _ = strings.Cut(path, "?")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 	switch {
 	case method == http.MethodPost && len(parts) == 1:

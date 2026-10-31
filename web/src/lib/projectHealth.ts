@@ -7,9 +7,15 @@
 import { compareDue, localDate } from './dates'
 import type { Due, Project, Task } from './types'
 import { openCount } from './views'
+import { projectFlowOf } from './flow'
+import { inMaintenance } from './reviewCadence'
 
-/** The health words, most urgent first (design D2): the first rule that holds decides. */
-export type HealthWord = 'late' | 'slipping' | 'quiet' | 'on-track'
+/**
+ * The health words, most urgent first (design D2): the first rule that holds decides.
+ * A project in maintenance (project-review-cadence, statistics "Maintenance in project
+ * health") keeps Late and reads "maintenance" in place of the others.
+ */
+export type HealthWord = 'late' | 'slipping' | 'quiet' | 'on-track' | 'maintenance'
 
 /** Without any change for this many days, a project with open tasks is quiet. */
 export const QUIET_DAYS = 7
@@ -36,6 +42,8 @@ export interface ProjectSummary {
   done: number
   /** done / (done + every open task, deferred ones included), or null when the project holds no task. */
   progress: number | null
+  /** An area (project-flow-modes): no progress, never Quiet. */
+  area: boolean
   /** The earliest due date among open tasks. */
   nextDue: Due | null
   /** Whether that due date is before today. */
@@ -47,7 +55,7 @@ export interface ProjectSummary {
 
 type HealthTask = Pick<Task, 'id' | 'title' | 'project_id' | 'completed_at' | 'deleted_at' | 'due' | 'series_id' | '_clock'>
   & Partial<Pick<Task, 'deadline' | 'skipped' | 'sample' | 'start'>>
-type HealthProject = Pick<Project, 'id' | 'parent_id' | 'archived' | 'deleted_at' | '_clock'>
+type HealthProject = Pick<Project, 'id' | 'parent_id' | 'archived' | 'deleted_at' | '_clock'> & Partial<Pick<Project, 'flow_mode' | 'status'>>
 
 export interface HealthInput {
   projects: readonly HealthProject[]
@@ -75,11 +83,14 @@ function counts(task: HealthTask): boolean {
 }
 
 /** The health word for a project's figures (design D2). */
-export function healthOf(f: { pending: number; pastDeadline: number; late: number; updated: number | null }, now: number): HealthWord | null {
+export function healthOf(f: { pending: number; pastDeadline: number; late: number; updated: number | null }, now: number, area = false, maintenance = false): HealthWord | null {
   if (f.pending === 0) return null
   if (f.pastDeadline > 0) return 'late'
+  // A deadline is usually someone else's, so Late still shows; the rest is muted.
+  if (maintenance) return 'maintenance'
   if (f.late > 0) return 'slipping'
-  if (f.updated !== null && now - f.updated >= QUIET_DAYS * DAY_MS) return 'quiet'
+  // An area is ongoing (project-flow-modes, statistics "Areas in project health"): never Quiet.
+  if (!area && f.updated !== null && now - f.updated >= QUIET_DAYS * DAY_MS) return 'quiet'
   return 'on-track'
 }
 
@@ -120,11 +131,14 @@ export function summarizeProjects(input: HealthInput): Map<string, ProjectSummar
   for (const p of live) {
     const f = rollUp(p.id) ? subtree(p.id, new Set([p.id])) : own.get(p.id)!
     const total = f.pending + f.done
-    const word = healthOf(f, input.now)
+    const area = projectFlowOf(p) === 'area'
+    const word = healthOf(f, input.now, area, inMaintenance(p))
     out.set(p.id, {
       open: f.open,
       done: f.done,
-      progress: total ? f.done / total : null,
+      // An area never finishes, so it shows no progress (the table reads "Area").
+      progress: total && !area ? f.done / total : null,
+      area,
       nextDue: f.nextDue,
       nextDueLate: !!f.nextDue && (localDate(f.nextDue, input.zone) ?? '') < input.today,
       updated: f.updated,
@@ -194,7 +208,7 @@ function merge(into: Figures, from: Figures, zone?: string): void {
 /** The table's sortable columns (design D4). */
 export type ProjectSortKey = 'name' | 'health' | 'progress' | 'open' | 'next-due' | 'updated'
 
-const HEALTH_RANK: Record<HealthWord, number> = { late: 0, slipping: 1, quiet: 2, 'on-track': 3 }
+const HEALTH_RANK: Record<HealthWord, number> = { late: 0, slipping: 1, quiet: 2, 'on-track': 3, maintenance: 4 }
 
 /** The direction a column sorts in on its first click: newest changes first, everything else ascending. */
 export function firstDirection(key: ProjectSortKey): 1 | -1 {

@@ -48,7 +48,7 @@ A task's `labels` array SHALL hold label ids. The user SHALL add and remove labe
 - **THEN** the row shows two dots, "errand" and "+1" at once, and a screen reader hears "Labels: errand, call"
 
 ### Requirement: Label views and counts
-The sidebar SHALL show a collapsible "Labels" group at the same level as Projects, inside the sidebar's single scroller, closed on a device that has not stored a state for it and hidden until the user has a label, listing non-deleted labels by position, each opening a view of that label's open tasks across all projects grouped by project. A sidebar label row SHALL show no count; the label's open-task count SHALL be in the row's accessible name ("errand, 3 open tasks"), on the labels overview, and in the label view's page header. A pinned label SHALL also appear in the Favourites group, without a visible count. `g l` and the group's "All" action SHALL open the labels overview. Views and the counts in accessible names and on the overview SHALL be computed from local data and update live, so they are correct offline and follow other devices after sync.
+The sidebar SHALL show a collapsible "Labels" group at the same level as Projects, inside the sidebar's single scroller, closed on a device that has not stored a state for it and hidden until the user has a label, listing non-deleted labels by position, each opening a view of that label's open tasks across all projects grouped by project. With the default sidebar counts preference a sidebar label row SHALL show no count; with every count on (`appearance-preferences` "Sidebar counts preference") it SHALL show its open-task count, as `app-shell` "Sidebar structure" describes. The label's open-task count SHALL always be in the row's accessible name ("errand, 3 open tasks"), on the labels overview, and in the label view's page header. A pinned label SHALL also appear in the Favourites group, with a visible count only when every count is on. `g l` and the group's "All" action SHALL open the labels overview. Views and the counts in accessible names and on the overview SHALL be computed from local data and update live, so they are correct offline and follow other devices after sync.
 
 #### Scenario: Open a label view
 - **WHEN** the user selects "errand" in the sidebar
@@ -69,6 +69,10 @@ The sidebar SHALL show a collapsible "Labels" group at the same level as Project
 #### Scenario: Numbers on the overview
 - **WHEN** the user opens the labels overview with "errand" (3 open tasks) and "home" (none)
 - **THEN** "errand" shows 3 and "home" shows no number, as before this change
+
+#### Scenario: Every count on
+- **WHEN** every sidebar count is on and a task carrying "errand" (3 open tasks) is completed on another device, which syncs
+- **THEN** the sidebar row reads "errand 2" without a reload, and its favourite reads the same
 
 ### Requirement: Rename, recolour and reorder
 Renaming or recolouring a label SHALL be a single operation on the label and SHALL not modify any task, because tasks reference labels by id. The new name and colour SHALL appear on every chip, view and count immediately on this device and on other devices after sync. Labels SHALL be reorderable in the sidebar. These actions work offline; concurrent renames resolve to the newer one.

@@ -11,6 +11,8 @@ import { Icon, Menu, MenuItem, MenuSeparator } from '../../ui'
 import { act } from '../actionError'
 import { navigate } from '../router'
 import { requestAttach } from './attachRequest'
+import { startFocusOn } from '../focus/startFocus'
+import { FocusMenuItem } from '../focus/focusRequest'
 import { TrackMenuItem } from './TimeTab'
 import type { TaskDetailModel } from './useTaskDetail'
 
@@ -26,7 +28,9 @@ export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailMo
       {parent && <MenuItem label={t('Open parent task')} icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
       {series && <MenuItem label={t('Open recurring task')} icon="repeat" onSelect={() => onOpen?.(series.id)} />}
       {!readOnly && <TrackMenuItem task={task} />}
-      {!readOnly && !done && <MenuItem label={t('Focus on this task')} icon="clock" description={t('One task, a timer, a break when you need one')} onSelect={() => navigate({ view: 'focus', id: task.id })} />}
+      {!readOnly && !done && !task.deleted_at && <MenuItem label={t('Focus on this task')} icon="clock" description={t('One task, a timer, a break when you need one')} onSelect={() => act(startFocusOn(task.id))} />}
+      {/* Today's focus is personal (phone-touch-focus): viewers too. */}
+      <FocusMenuItem task={task} />
       {m.canPublish && <MenuItem label={m.pageStatus ? t('Task page…') : t('Publish task page…')} icon="globe"
         description={m.online ? t('A page anyone with the link can open, reply to and tick') : t('Task pages need a connection')}
         disabled={!m.online} onSelect={() => m.setPageDialog(true)} data-publish-page />}
@@ -36,6 +40,9 @@ export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailMo
       {/* The origin's Remove lives here; its row opens the source (task-panel-facets). */}
       {!readOnly && task.origin && <MenuItem label={t('Remove origin')} icon="x" onSelect={() => act(updateTask(task.id, { origin: null }))} />}
       {!readOnly && m.assistantAvailable && <MenuItem label={t('Break this down')} icon="list" onSelect={m.breakDown} />}
+      {/* The task's note as a standalone note (notes-overview D6); its batch and Undo load on first use. */}
+      {!readOnly && !task.deleted_at && !!task.description?.trim() && <MenuItem label={t('Move note to a new note')} icon="notebook-pen"
+        description={t('The note leaves the task; Undo puts it back')} onSelect={() => void import('../notes/noteActions').then((a) => a.moveNoteOut(task.id))} data-move-note-out />}
       {!readOnly && <MenuSeparator />}
       {!readOnly && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={m.remove} />}
     </Menu>

@@ -6,7 +6,7 @@ import { t } from './i18n'
 // the editor) are fetched the first time a document is applied, written or opened.
 
 /** Document field -> the plain-text field that holds its Markdown projection. */
-export const DOC_FIELDS: Record<string, string> = { 'task.notes_doc': 'description', 'project.notes_doc': 'description' }
+export const DOC_FIELDS: Record<string, string> = { 'task.notes_doc': 'description', 'project.notes_doc': 'description', 'note.notes_doc': 'description' }
 
 /** Entities that carry a mergeable note (notes_doc with its description projection). */
 export const NOTE_ENTITIES: ReadonlySet<string> = new Set(Object.keys(DOC_FIELDS).map((k) => k.split('.')[0]))

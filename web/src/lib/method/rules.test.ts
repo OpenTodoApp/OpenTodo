@@ -27,7 +27,7 @@ describe('shared vectors (internal/digest/testdata/next_action_fixture.json)', (
     for (const [projectId, want] of Object.entries(fixture.expected.nextAction)) {
       expect(rules.nextActionOf(projectId)?.id ?? null, projectId).toBe(want)
     }
-    expect(nextActions(input).map((n) => n.task.id)).toEqual(['g2', 't1', 'm2', 'f1', 'me1'])
+    expect(nextActions(input).map((n) => n.task.id)).toEqual(['g2', 't1', 'm2', 'f1', 'me1', 'mv1', 'ch2', 'ro1'])
   })
 
   it('marks stalled projects', () => {
@@ -65,6 +65,27 @@ describe('method-views scenarios', () => {
     expect(withoutNextAction(base([{ start: '2027-03-01' }]))).toEqual([])
   })
 
+  it('Sequential project in Next: one step, nothing in Waiting, the next step after completing', () => {
+    const seq = (tasks: Partial<Task>[], flow = 'sequential'): MethodInput => {
+      const input = base(tasks)
+      return { ...input, projects: [{ ...input.projects[0], flow_mode: flow }] }
+    }
+    const tasks: Partial<Task>[] = [{ id: 'van' }, { id: 'pack', assignee_id: 'ana' }, { id: 'keys', blocked_by: ['van'] }]
+    expect(nextActions(seq(tasks)).map((n) => n.task.id)).toEqual(['van'])
+    expect(waitingTasks(seq(tasks))).toEqual([])
+    tasks[0] = { id: 'van', completed_at: 5 }
+    expect(nextActions(seq(tasks)).map((n) => n.task.id)).toEqual([])
+    expect(waitingTasks(seq(tasks)).map((t) => t.id)).toEqual(['pack'])
+  })
+
+  it('Empty area, then the area turned back into a project', () => {
+    const area = base([{ completed_at: 5 }])
+    expect(withoutNextAction(area).map((p) => p.name)).toEqual(['Garage'])
+    const asArea = { ...area, projects: [{ ...area.projects[0], flow_mode: 'area' }] }
+    expect(withoutNextAction(asArea)).toEqual([])
+    expect(new MethodRules(asArea).stalled('p', Date.UTC(2026, 9, 18))).toBe(false)
+  })
+
   it('Stalled, and a New project that is not', () => {
     const now = Date.UTC(2026, 9, 18)
     const old = base([{ created_at: Date.UTC(2026, 7, 1) }, { created_at: Date.UTC(2026, 7, 2), completed_at: Date.UTC(2026, 8, 1) }])
@@ -98,7 +119,7 @@ describe('Next and Waiting groups', () => {
     const groups = nextGroups(input, labels)
     expect(groups.map((g) => g.heading)).toEqual(['@calls', '@errands', 'Anywhere'])
     expect(groups[0].tasks.map((x) => x.id)).toEqual(['g2'])
-    expect(groups[2].tasks.map((x) => x.id)).toEqual(['t1', 'm2', 'f1', 'me1'])
+    expect(groups[2].tasks.map((x) => x.id)).toEqual(['t1', 'm2', 'f1', 'me1', 'mv1', 'ch2', 'ro1'])
   })
 
   it('Waiting groups by person, then blocked tasks with their first open blocker', async () => {
@@ -107,7 +128,7 @@ describe('Next and Waiting groups', () => {
     ;(input.memberships as Map<string, Membership>).set('household', { projectId: 'household', role: 'editor', ownerId: 'ana', members: [{ userId: 'ana', name: 'Ana', email: 'ana@example.com' }] } as unknown as Membership)
     const groups = waitingGroups(input)
     expect(groups.map((g) => g.heading)).toEqual(['Ana', 'Blocked by another task'])
-    expect(groups[0].tasks.map((x) => x.id)).toEqual(['h1'])
+    expect(groups[0].tasks.map((x) => x.id)).toEqual(['h1', 'ho1'])
     expect(groups[1].tasks.map((x) => x.id)).toEqual(['g1', 'i1'])
     expect(groups[1].notes?.get('g1')).toBe('Waits for g2')
   })

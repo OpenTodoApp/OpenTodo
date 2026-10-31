@@ -67,6 +67,9 @@ const (
 	// KindField is a custom field definition (OpenSpec change custom-fields),
 	// restored verbatim from an own export like a section.
 	KindField = "field"
+	// KindNote is a standalone note (OpenSpec change notes-overview, D9),
+	// restored verbatim from an own export; other importers never create one.
+	KindNote = "note"
 )
 
 // Due is a floating due date with an optional wall-clock time.
@@ -116,6 +119,9 @@ type Row struct {
 	// Evening (OpenSpec change someday-and-evening).
 	Start   string
 	Evening bool
+	// Energy is "deep", "medium", "low" or "" (OpenSpec change task-energy):
+	// only the CSV column sets it; other apps' importers leave it empty.
+	Energy string
 	// Links are attachment references the file only gives as URLs; they become
 	// link attachments of the task (OpenSpec change attachments, design D12).
 	Links []Link

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
@@ -16,7 +17,7 @@ import (
 
 // taskFields are the projections the merge compares, each a string so that
 // "changed" is plain inequality (design D6).
-var taskFields = []string{"title", "done", "donedate", "due", "start", "deadline", "estimate", "evening", "priority", "recur", "labels", "blocked", "note", "parent", "section", "project"}
+var taskFields = []string{"title", "done", "donedate", "due", "start", "deadline", "estimate", "evening", "span", "daypart", "energy", "priority", "recur", "labels", "blocked", "note", "parent", "section", "project"}
 
 var clockRe = regexp.MustCompile(`^([01]\d|2[0-3]):[0-5]\d$`)
 
@@ -49,13 +50,34 @@ func prio(p int) string {
 	return strconv.Itoa(p)
 }
 
+// storedPart is the projection of a task's part besides Evening: its
+// day_part, or "" when the evening flag wins or the value is unknown.
+func storedPart(part string, evening bool) string {
+	if evening || !daypart.Stored(part) {
+		return ""
+	}
+	return part
+}
+
+// validEnergy reports the stored energy levels (task-energy D1).
+func validEnergy(e string) bool { return e == "deep" || e == "medium" || e == "low" }
+
+// storedEnergy is the projection of a task's energy: a level, or "" for none
+// and for a value this version does not know.
+func storedEnergy(e string) string {
+	if validEnergy(e) {
+		return e
+	}
+	return ""
+}
+
 // proj projects a task row of a view onto the compared fields.
 func (e *engine) proj(v *view, id string) map[string]string {
 	r := v.s.Get("task", id)
 	p := map[string]string{
 		"title": v.text("task", id, "title"), "done": boolStr(r.Set("completed_at")), "donedate": "",
 		"due": dueKey(r.DueOf()), "start": r.Str("start"), "deadline": r.Str("deadline"), "estimate": "",
-		"evening": boolStr(r.Bool("evening")), "priority": prio(int(r.Num("priority"))), "recur": r.Str("recurrence"),
+		"evening": boolStr(r.Bool("evening")), "span": boolStr(r.Bool("span")), "daypart": storedPart(r.Str("day_part"), r.Bool("evening")), "energy": storedEnergy(r.Str("energy")), "priority": prio(int(r.Num("priority"))), "recur": r.Str("recurrence"),
 		"note":   strings.TrimRight(v.text("task", id, "description"), "\n"),
 		"parent": r.Str("parent_id"), "section": r.Str("section_id"), "project": r.Str("project_id"),
 	}
@@ -130,6 +152,31 @@ func (e *engine) fileProj(m *mergeRun, pl place, baseP map[string]string) map[st
 		} else {
 			bad("%s %s is not a date", f.mark, f.val)
 		}
+	}
+	// [daypart:: …] (day-parts): a line with [evening:: true] reads as Evening.
+	switch part := strings.ToLower(strings.TrimSpace(l.DayPart)); {
+	case l.Evening || part == "":
+		p["daypart"] = ""
+	case daypart.Stored(part):
+		p["daypart"] = part
+	default:
+		bad("daypart %s is not morning or afternoon", l.DayPart)
+	}
+	// [span:: …] (multi-day-tasks): true or false, case ignored; absent is false.
+	switch s := strings.ToLower(strings.TrimSpace(l.Span)); s {
+	case "", "false", "true":
+		p["span"] = boolStr(s == "true")
+	default:
+		bad("span %s is not true or false", l.Span)
+	}
+	// [energy:: …] (task-energy): a level, case ignored.
+	switch e := strings.ToLower(strings.TrimSpace(l.Energy)); {
+	case e == "":
+		p["energy"] = ""
+	case validEnergy(e):
+		p["energy"] = e
+	default:
+		bad("energy %s is not deep, medium or low", l.Energy)
 	}
 	if l.Estimate == "" {
 		p["estimate"] = ""
@@ -357,6 +404,17 @@ func (e *engine) setField(m *mergeRun, b map[string]any, f string, pl place, fil
 		}
 	case "evening":
 		b["evening"] = l.Evening
+	case "span":
+		b["span"] = fileP[f] == "true"
+	case "daypart":
+		// The part with the evening flag cleared (day-parts D2); none clears it.
+		b["day_part"] = nullable(fileP[f])
+		if fileP[f] != "" {
+			b["evening"] = false
+		}
+	case "energy":
+		// "" clears it (task-energy D1).
+		b["energy"] = fileP[f]
 	case "priority":
 		n, _ := strconv.Atoi(fileP[f])
 		b["priority"] = n
@@ -428,7 +486,8 @@ func (e *engine) createTask(m *mergeRun, pl place) {
 	b["priority"], b["due"], b["labels"], b["created_at"], b["completed_at"], b["deleted_at"] = 4, nil, []string{}, created, nil, nil
 	b["estimate_minutes"], b["deadline"], b["start"], b["evening"], b["blocked_by"], b["recurrence"] = nil, nil, nil, false, []string{}, nil
 	for _, f := range taskFields {
-		if _, ok := fileP[f]; ok && f != "donedate" {
+		// A new line without a part writes no day_part (its default).
+		if v, ok := fileP[f]; ok && f != "donedate" && !((f == "daypart" || f == "energy") && v == "") && !(f == "span" && v == "false") {
 			e.setField(m, b, f, pl, fileP)
 		}
 	}
@@ -438,7 +497,9 @@ func (e *engine) createTask(m *mergeRun, pl place) {
 
 // recurring completes a recurring series the way the app does (a port of
 // internal/sync.RecurringCompletion): the occurrence becomes a completed record
-// and the series moves to its next date. It reports whether it did.
+// and the series moves to its next date that is not an exception date, with
+// done and open records counted toward "for N times" (OpenSpec change
+// series-exceptions). It reports whether it did.
 func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 	at, completing := b["completed_at"]
 	a := e.app.Get("task", id)
@@ -472,17 +533,8 @@ func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 	if cur != nil {
 		date, dueDate = cur.Date, cur.Date
 	}
-	done := 0
-	for _, t := range e.app.IDs("task") {
-		r := e.app.Get("task", t)
-		if r.Str("series_id") != id || !r.Set("completed_at") || r.Bool("skipped") {
-			continue
-		}
-		if d := r.DueOf(); d != nil && d.Date != date && t == occurrenceID(id, d.Date) {
-			done++
-		}
-	}
-	next, more, err := rule.Following(dueDate, today, today, done)
+	taken, except := e.seriesBudget(id, date)
+	next, more, err := rule.NextFree(dueDate, today, today, taken, except)
 	if err != nil || !more {
 		return false
 	}
@@ -494,6 +546,7 @@ func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 		rec["due"] = Due{Date: date}
 	}
 	rec["created_at"], rec["completed_at"], rec["deleted_at"], rec["recurrence"], rec["series_id"] = at, at, nil, nil, id
+	rec["occurrence_date"], rec["skipped"] = date, false
 	// Content is copied as text and sealed for the record's own id.
 	rec["title"] = m.av.text("task", id, "title")
 	if s, ok := b["title"]; ok {
@@ -535,6 +588,15 @@ func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 	if string(merged["evening"]) == "true" {
 		rec["evening"] = true
 	}
+	if string(merged["span"]) == "true" {
+		rec["span"] = true
+	}
+	if part := str("day_part"); daypart.Stored(part) {
+		rec["day_part"] = part
+	}
+	if e := str("energy"); validEnergy(e) {
+		rec["energy"] = e
+	}
 	if by, ok := b["completed_by"]; ok {
 		rec["completed_by"] = by
 		delete(b, "completed_by")
@@ -546,6 +608,31 @@ func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 	}
 	b["due"] = nd
 	return true
+}
+
+// seriesBudget reads the occurrence records of series id (internal/sync
+// SeriesBudget): the done and open ones other than the record of except count
+// toward "for N times"; every record's date is an exception date.
+func (e *engine) seriesBudget(id, except string) (int, map[string]bool) {
+	taken, dates := 0, map[string]bool{}
+	for _, t := range e.app.IDs("task") {
+		r := e.app.Get("task", t)
+		if r.Str("series_id") != id || r.Set("deleted_at") {
+			continue
+		}
+		date := r.Str("occurrence_date")
+		if d := r.DueOf(); date == "" && d != nil {
+			date = d.Date
+		}
+		if date == "" || t != occurrenceID(id, date) {
+			continue
+		}
+		dates[date] = true
+		if date != except && !(r.Set("completed_at") && r.Bool("skipped")) {
+			taken++
+		}
+	}
+	return taken, dates
 }
 
 // occurrenceID is internal/sync.OccurrenceID.

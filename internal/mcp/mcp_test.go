@@ -228,7 +228,7 @@ func TestToolsListShape(t *testing.T) {
 			t.Fatalf("%s schema = %v", tl["name"], tl["inputSchema"])
 		}
 	}
-	if strings.Join(names, ",") != "list_projects,list_tasks,get_task,search_tasks,today_summary,list_icons,list_time_entries,list_workspaces" {
+	if strings.Join(names, ",") != "list_projects,list_tasks,get_task,search_tasks,today_summary,list_frames,list_icons,list_notes,search_notes,get_note,list_slots,list_time_entries,list_workspaces" {
 		t.Fatalf("tools = %v", names)
 	}
 }
@@ -251,7 +251,7 @@ func TestResourcesListShape(t *testing.T) {
 		}
 		uris = append(uris, m["uri"].(string))
 	}
-	if strings.Join(uris, " ") != "opentodo://projects opentodo://workspaces opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://views/someday opentodo://views/anytime opentodo://rules opentodo://integrations/issues" {
+	if strings.Join(uris, " ") != "opentodo://projects opentodo://workspaces opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://views/someday opentodo://views/anytime opentodo://rules opentodo://frames opentodo://slots opentodo://notes opentodo://integrations/issues" {
 		t.Fatalf("resources = %v", uris)
 	}
 	tpl := f.call("u1", "resources/templates/list", nil)["result"].(map[string]any)
@@ -259,7 +259,7 @@ func TestResourcesListShape(t *testing.T) {
 	for _, r := range tpl["resourceTemplates"].([]any) {
 		templates = append(templates, r.(map[string]any)["uriTemplate"].(string))
 	}
-	if strings.Join(templates, " ") != "opentodo://projects/{id} opentodo://tasks/{id}" {
+	if strings.Join(templates, " ") != "opentodo://projects/{id} opentodo://tasks/{id} opentodo://notes/{id}" {
 		t.Fatalf("templates = %v", templates)
 	}
 }
@@ -611,8 +611,8 @@ func ut(m map[string]any) map[string]any {
 }
 
 // TestToolsListReadOnlyUnchanged: every caller without write permission sees
-// exactly the seven read tools (time-tracking added list_time_entries,
-// mcp-projects list_icons),
+// exactly the read tools (time-tracking added list_time_entries,
+// mcp-projects list_icons, calendar-frames list_frames, calendar-slots list_slots),
 // byte-identical to the golden, however the switches are set.
 func TestToolsListReadOnlyUnchanged(t *testing.T) {
 	f := newFixture(t)
@@ -649,10 +649,10 @@ func TestWriteToolsThroughHandle(t *testing.T) {
 	// Listed with readOnlyHint false; instructions mention undo.
 	r := send(agent, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
 	tools := r["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 23 {
+	if len(tools) != 33 {
 		t.Fatalf("tools = %d", len(tools))
 	}
-	for _, tl := range tools[8:] {
+	for _, tl := range tools[13:] {
 		if tl.(map[string]any)["annotations"].(map[string]any)["readOnlyHint"] != false {
 			t.Fatalf("write tool annotations: %v", tl)
 		}

@@ -153,6 +153,10 @@ type Change struct {
 	// opSeed, when set, derives the op ids deterministically so a retried
 	// create (same client_request_id) de-duplicates in the op log (D4).
 	opSeed string
+	// bodyVersion, when set, is the body version a replacement of the text was
+	// planned against (update_note, notes-overview D13): Apply has ApplyStrict
+	// check it inside the transaction (sync.WithBodyVersion).
+	bodyVersion string
 }
 
 // ChangeSet is everything one write tool call changes; it applies as one batch.
@@ -229,7 +233,10 @@ type tool struct {
 	rest bool
 	def  func(c Caller) Definition
 	read func(r *Registry, ctx context.Context, userID string, a args) (map[string]any, error)
-	plan func(r *Registry, ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error)
+	// readC is a read that depends on the caller (search_notes refuses an
+	// encrypted account); a tool sets read or readC.
+	readC func(r *Registry, ctx context.Context, c Caller, a args) (map[string]any, error)
+	plan  func(r *Registry, ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error)
 }
 
 var registry []tool
@@ -302,6 +309,10 @@ func (r *Registry) Plan(ctx context.Context, c Caller, name string, rawArgs json
 		return Plan{}, err
 	}
 	if d.Kind == KindRead {
+		if t.readC != nil {
+			res, err := t.readC(r, ctx, c, a)
+			return Plan{Result: res}, err
+		}
 		res, err := t.read(r, ctx, c.UserID, a)
 		return Plan{Result: res}, err
 	}

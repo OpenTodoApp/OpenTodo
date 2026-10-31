@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/flow"
 )
 
 // Resource payloads for the MCP server (mcp-server design D4): built from the
@@ -42,10 +43,6 @@ func (r *Registry) ProjectResource(ctx context.Context, userID, id string, loc *
 	if err != nil {
 		return nil, false, err
 	}
-	type sectionOut struct {
-		ID        string   `json:"id"`
-		Untrusted nameText `json:"untrusted_text"`
-	}
 	sections := []sectionOut{}
 	secs, err := r.list(ctx, userID, "section", false)
 	if err != nil {
@@ -53,7 +50,7 @@ func (r *Registry) ProjectResource(ctx context.Context, userID, id string, loc *
 	}
 	for _, sec := range secs {
 		if str(sec, "project_id") == id {
-			sections = append(sections, sectionOut{ID: str(sec, "id"), Untrusted: nameText{Name: str(sec, "name")}})
+			sections = append(sections, sectionOut{ID: str(sec, "id"), FlowMode: flow.SectionFlow(str(sec, "flow_mode")), Untrusted: nameText{Name: str(sec, "name")}})
 		}
 	}
 	return noticed(map[string]any{"project": snap.renderProject(proj, snap.openCounts()), "sections": sections,
@@ -119,4 +116,28 @@ func (r *Registry) RulesResource(ctx context.Context, userID string) (map[string
 			Trigger: row["trigger"], Condition: cond, Actions: row["actions"]})
 	}
 	return noticed(map[string]any{"rules": out}), nil
+}
+
+// NotesResource is opentodo://notes (notes-overview D12): the newest
+// standalone notes, as list_notes with source note returns them.
+func (r *Registry) NotesResource(ctx context.Context, userID string) (map[string]any, error) {
+	res, err := r.notesPayload(ctx, userID, noteQuery{source: "note", limit: NoteListDefault})
+	if err != nil {
+		return nil, err
+	}
+	res["truncated"] = res["next_cursor"] != nil
+	delete(res, "next_cursor")
+	return noticed(res), nil
+}
+
+// NoteResource is opentodo://notes/{id}, the same payload as get_note.
+func (r *Registry) NoteResource(ctx context.Context, userID, id string) (map[string]any, bool, error) {
+	detail, err := r.noteDetail(ctx, userID, "note", id)
+	if errors.Is(err, ErrNoteNotFound) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return noticed(detail), true, nil
 }

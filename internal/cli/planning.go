@@ -2,12 +2,15 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/daypart"
+	"github.com/OpenTodoApp/opentodo/internal/flow"
 	"github.com/OpenTodoApp/opentodo/internal/inbox"
 )
 
@@ -17,14 +20,24 @@ import (
 
 type planningFlags struct {
 	deadline, start, location string
-	evening                   bool
-	blockedBy                 stringList
+	// part is --part: morning, afternoon, evening or none (day-parts).
+	part string
+	// energy is --energy: deep, medium, low or none (task-energy).
+	energy  string
+	evening bool
+	// span and noSpan are --span and --no-span (multi-day-tasks).
+	span, noSpan bool
+	blockedBy    stringList
 }
 
 func (f *planningFlags) bind(fs *flag.FlagSet) {
 	fs.StringVar(&f.deadline, "deadline", "", "the day it must be finished by: YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
 	fs.StringVar(&f.start, "start", "", "someday parks it; a date defers it: YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
 	fs.BoolVar(&f.evening, "evening", false, "put it in This Evening (edit: --evening=false takes it out)")
+	fs.BoolVar(&f.span, "span", false, "draw it across the days from --start to --due, both included (a span needs a start date before the due date)")
+	fs.BoolVar(&f.noSpan, "no-span", false, "draw it on its due date only (edit: takes a span back to one day; the start date stays)")
+	fs.StringVar(&f.part, "part", "", "the part of the day: morning, afternoon, evening or none")
+	fs.StringVar(&f.energy, "energy", "", "the energy the task asks for: deep, medium, low (edit: `none` clears)")
 	fs.Var(&f.blockedBy, "blocked-by", "a task this one waits for, id or unique id prefix (repeatable; edit replaces the list)")
 	fs.StringVar(&f.location, "location", "", "a saved location's name or id, or lat,lon (edit: `none` clears)")
 }
@@ -57,6 +70,18 @@ func (f *planningFlags) validateLocal(set map[string]bool, now time.Time, edit b
 			return err
 		}
 	}
+	if _, ok := daypart.Parse(f.part); set["part"] && (!ok || strings.TrimSpace(f.part) == "") {
+		return usageErr("invalid --part %q: use morning, afternoon, evening or none", f.part)
+	}
+	if set["span"] && set["no-span"] {
+		return usageErr("--span and --no-span cannot be used together")
+	}
+	if set["energy"] {
+		e := strings.ToLower(strings.TrimSpace(f.energy))
+		if e != "deep" && e != "medium" && e != "low" && e != "none" {
+			return usageErr("invalid --energy %q: use deep, medium, low or none", f.energy)
+		}
+	}
 	if set["location"] && !none(f.location) && strings.TrimSpace(f.location) == "" {
 		return usageErr("--location needs a saved location's name or id, lat,lon or none")
 	}
@@ -67,7 +92,7 @@ func (f *planningFlags) validateLocal(set map[string]bool, now time.Time, edit b
 }
 
 func (f *planningFlags) any(set map[string]bool) bool {
-	return set["deadline"] || set["start"] || set["evening"] || set["blocked-by"] || set["location"]
+	return set["deadline"] || set["start"] || set["evening"] || set["span"] || set["no-span"] || set["part"] || set["energy"] || set["blocked-by"] || set["location"]
 }
 
 // parseLatLon reads "lat,lon"; ok is false when v does not look like a pair.
@@ -111,6 +136,24 @@ func (f *planningFlags) fill(ctx context.Context, a *App, c *client, set map[str
 	}
 	if set["evening"] {
 		out["evening"] = f.evening
+	}
+	if set["span"] || set["no-span"] {
+		out["span"] = f.span && !f.noSpan
+	}
+	// --energy none clears the energy (task-energy D7).
+	if set["energy"] {
+		if e := strings.ToLower(strings.TrimSpace(f.energy)); e == "none" {
+			out["energy"] = nil
+		} else {
+			out["energy"] = e
+		}
+	}
+	// --part writes both fields, paired (day-parts D2); it wins over --evening.
+	if set["part"] {
+		p, _ := daypart.Parse(f.part)
+		for k, v := range daypart.Fields(p) {
+			out[k] = v
+		}
 	}
 	if set["blocked-by"] {
 		all, err := tasks()
@@ -197,10 +240,10 @@ func (f *planningFlags) locationValue(ctx context.Context, c *client) (any, erro
 
 // ---- list ----
 
-// planningView reports the --someday, --anytime and --blocked filter chosen ("" for none).
+// planningView reports the --someday, --anytime, --blocked and --available filter chosen ("" for none).
 func (o *listOptions) planningView() (string, error) {
 	var on []string
-	for name, set := range map[string]bool{"someday": o.someday, "anytime": o.anytime, "blocked": o.blocked} {
+	for name, set := range map[string]bool{"someday": o.someday, "anytime": o.anytime, "blocked": o.blocked, "available": o.available} {
 		if set {
 			on = append(on, name)
 		}
@@ -214,7 +257,7 @@ func (o *listOptions) planningView() (string, error) {
 		}
 		return on[0], nil
 	}
-	return "", usageErr("choose one of --someday, --anytime, --blocked")
+	return "", usageErr("choose one of --someday, --anytime, --blocked, --available")
 }
 
 func plannedOf(t task) inbox.Planned {
@@ -242,8 +285,31 @@ func blockedRule(all []task) func(task) bool {
 	}
 }
 
-// filterPlanning keeps the tasks of one planning filter.
-func filterPlanning(tasks, all []task, which string) []task {
+// availableRule reports whether a task can be done now (OpenSpec change
+// project-flow-modes): the shared rule of internal/flow over the account's rows.
+func availableRule(all []task, projects []project, sections []json.RawMessage, today string) func(task) bool {
+	in := flow.Input{Today: today}
+	for _, p := range projects {
+		in.Projects = append(in.Projects, flow.Project{ID: p.ID, FlowMode: p.FlowMode})
+	}
+	for _, raw := range sections {
+		var row flow.Row
+		if json.Unmarshal(raw, &row) == nil {
+			in.Sections = append(in.Sections, flow.SectionOf(row))
+		}
+	}
+	for _, t := range all {
+		var row flow.Row
+		if json.Unmarshal(t.Raw, &row) == nil {
+			in.Tasks = append(in.Tasks, flow.TaskOf(row))
+		}
+	}
+	states := flow.Compute(in)
+	return func(t task) bool { return states.Available(t.ID) }
+}
+
+// filterPlanning keeps the tasks of one planning filter; available is needed only for "available".
+func filterPlanning(tasks, all []task, which string, available func(task) bool) []task {
 	blocked := blockedRule(all)
 	out := tasks[:0]
 	for _, t := range tasks {
@@ -255,6 +321,8 @@ func filterPlanning(tasks, all []task, which string) []task {
 			keep = inbox.Anytime(plannedOf(t))
 		case "blocked":
 			keep = t.CompletedAt == nil && blocked(t)
+		case "available":
+			keep = available(t)
 		}
 		if keep {
 			out = append(out, t)
@@ -274,10 +342,34 @@ func deadlineCell(t task, today string) cell {
 	return plain(*t.Deadline)
 }
 
-// planningSuffix is what the DUE cell adds: (someday), starts <date>, evening, waiting.
+// spanRange is a span's days (multi-day-tasks), "3–5 Nov", "30 Oct – 2 Nov"
+// or "30 Dec 2026 – 2 Jan 2027"; "" for a task that is not drawn as a span
+// (the flag without a date start before the due date).
+func spanRange(t task) string {
+	if !t.Span || t.Start == nil || t.Due == nil {
+		return ""
+	}
+	a, err1 := time.Parse(time.DateOnly, *t.Start)
+	b, err2 := time.Parse(time.DateOnly, t.Due.Date)
+	if err1 != nil || err2 != nil || !a.Before(b) {
+		return ""
+	}
+	switch {
+	case a.Year() != b.Year():
+		return a.Format("2 Jan 2006") + " – " + b.Format("2 Jan 2006")
+	case a.Month() != b.Month():
+		return a.Format("2 Jan") + " – " + b.Format("2 Jan")
+	}
+	return a.Format("2") + "–" + b.Format("2 Jan")
+}
+
+// planningSuffix is what the DUE cell adds: a span's days or (someday),
+// starts <date>, evening, waiting.
 func planningSuffix(t task, today string, blocked bool) string {
 	var parts []string
-	if t.Start != nil {
+	if r := spanRange(t); r != "" {
+		parts = append(parts, r)
+	} else if t.Start != nil {
 		switch s := *t.Start; {
 		case s == "someday":
 			parts = append(parts, "(someday)")
@@ -287,6 +379,8 @@ func planningSuffix(t task, today string, blocked bool) string {
 	}
 	if t.Evening {
 		parts = append(parts, "evening")
+	} else if t.DayPart != nil && daypart.Stored(*t.DayPart) {
+		parts = append(parts, *t.DayPart)
 	}
 	if blocked {
 		parts = append(parts, "waiting")

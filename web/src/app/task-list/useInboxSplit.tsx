@@ -17,7 +17,7 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, open
   inbox: boolean
   /** The Inbox keeps its own split (the page preference). */
   on: boolean
-  /** The Inbox's own rows (not its planned group). */
+  /** The Inbox's own rows. */
   rows: readonly ListRow[]
   selectedId: string | null
   setSelectedId: (id: string | null) => void

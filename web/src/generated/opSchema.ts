@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, Due, Entity, FieldDef, Geo, Label, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Task, TaskLocation, TimeEntry, UserPrefs, View,
+  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -36,6 +36,22 @@ export interface ProjectFields {
    * only the owner may write it (CanWrite).
    */
   workspace_id?: string | null
+  /**
+   * How the project's tasks flow (OpenSpec change project-flow-modes):
+   * "parallel", "sequential" or "area"; empty, missing or unknown reads as
+   * parallel. Sync checks the kind only, so a later value stays additive;
+   * REST and the agent tools check the set. Not user text.
+   */
+  flow_mode?: string
+  /**
+   * The project's status (OpenSpec change project-review-cadence, design
+   * D1): "active" or "maintenance"; empty, missing or unknown reads as
+   * active. Shared with the project's members and written by those who may
+   * change its other fields. Maintenance mutes the health words, the stalled
+   * marker and "without a next action"; a passed deadline still shows. Sync
+   * checks the kind only; REST and the agent tools check the set. Not user text.
+   */
+  status?: string
 }
 
 /**
@@ -69,6 +85,27 @@ export interface TaskFields {
   start?: string | null
   evening?: boolean
   /**
+   * Draw the task as a span from its start date to its do-on date
+   * (OpenSpec change multi-day-tasks, design D1). Only drawing changes:
+   * start keeps deferring and due stays the do-on date, and a flag
+   * without a valid range (a date start before due.date) draws as a
+   * plain task. Not content; additive.
+   */
+  span?: boolean
+  /**
+   * The part of the day besides Evening (OpenSpec change day-parts,
+   * design D1): null, "morning" or "afternoon". Evening stays the evening
+   * flag; clients write both fields in one batch (D2), and a task with the
+   * flag set reads as Evening whatever this holds. Not content; additive.
+   */
+  day_part?: string | null
+  /**
+   * The energy the task asks for (OpenSpec change task-energy, design
+   * D1): "" (none), "deep", "medium" or "low". Chosen from a menu, never
+   * written text, so not content (D2); additive.
+   */
+  energy?: string
+  /**
    * The tasks this one waits for, in its own sharing scope (OpenSpec change
    * task-dependencies): one whole-list register; the resolver refuses ids of
    * other scopes and lists that close a cycle.
@@ -86,6 +123,22 @@ export interface TaskFields {
    */
   recurrence?: string | null
   series_id?: string | null
+  /**
+   * The occurrence date an occurrence record stands for (OpenSpec change
+   * series-exceptions, design D1; iCalendar RECURRENCE-ID), kept when the
+   * record is moved. Written once with series_id; the resolver refuses it on
+   * a task without series_id and refuses a change once set. A date, not
+   * content; additive (a record without it stands for its due date).
+   */
+  occurrence_date?: string | null
+  /**
+   * The series a piece of a split lineage continues and the date it starts
+   * (OpenSpec change series-split, design D2): {series, date}, one whole value.
+   * Set when the piece is created; the resolver refuses it on a task without a
+   * rule, with a series in another sharing scope, and as a change once set.
+   * Not content; additive (an older client sees an ordinary series).
+   */
+  split_from?: SplitFrom | null
   /**
    * Account id of the assignee or null (OpenSpec change task-assignment);
    * additive. Apply checks it against the task scope's membership at receipt.
@@ -166,6 +219,12 @@ export interface SectionFields {
    */
   color?: string | null
   icon?: string | null
+  /**
+   * How the section's tasks flow (OpenSpec change project-flow-modes):
+   * "parallel" or "sequential"; empty, missing or unknown follows the
+   * project. Sync checks the kind only. Not user text.
+   */
+  flow_mode?: string
 }
 
 /**
@@ -185,6 +244,41 @@ export interface FieldDefFields {
   position?: number
   created_at?: number
   deleted_at?: number | null
+}
+
+/**
+ * note: a standalone note (OpenSpec change notes-overview, design D1), not a
+ * task: it never shows in task lists, counts, calendars, filters or
+ * reminders. It lives in its project's sharing scope like a task, in the
+ * author's personal scope without a project (design D2). Its pending
+ * appends are the `appends.<id>` family.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface NoteFields {
+  /** The note's title; an empty one reads "Untitled note". */
+  title?: string
+  /**
+   * The note itself: Markdown in description, the mergeable document in
+   * notes_doc, written as a pair, as on tasks and projects.
+   */
+  notes_doc?: string
+  description?: string
+  /** The note's project, or null for a personal note; decides its scope. */
+  project_id?: string | null
+  /** Label ids, one whole-list register like task.labels. */
+  labels?: string[]
+  /**
+   * Written at creation (the creation time) and kept for a later manual
+   * order; the Notes page sorts by when the note last changed.
+   */
+  position?: number
+  created_at?: number
+  deleted_at?: number | null
+  /**
+   * The workspace of a note without a project, or null for the default;
+   * a note with a project follows its project, as task.workspace_id.
+   */
+  workspace_id?: string | null
 }
 
 /**
@@ -210,6 +304,13 @@ export interface LabelFields {
   sort_dir?: string
   /** The label page's row layout (row-layouts D1); "" follows the account's. */
   row_layout?: string
+  /**
+   * The label page's own manual order (OpenSpec change view-manual-order,
+   * design D1, D2): the ids of the tasks placed by hand, in order; tasks
+   * not listed follow by position. One whole-list register like
+   * view.panels, never a task's position. Not content.
+   */
+  manual_order?: string[]
 }
 
 /**
@@ -244,10 +345,30 @@ export interface ViewFields {
    * the account's choice (user_prefs.row_layout).
    */
   row_layout?: string
+  /**
+   * The Board layout's notes preview (OpenSpec change board-polish, design
+   * D4): each card shows two lines of its notes as plain text. A setting,
+   * not user text, so not content; missing reads as off.
+   */
+  card_notes?: boolean
   created_at?: number
   deleted_at?: number | null
   /** Workspace of the view, null for the default (OpenSpec change workspaces). */
   workspace_id?: string | null
+  /**
+   * A name from the icon catalogue, or null for the default icon of the
+   * view's kind (OpenSpec change sidebar-polish, design D4). Not user text,
+   * so not content. Any string is accepted here so a newer catalogue stays
+   * additive; REST checks it with iconset.Valid and clients render an
+   * unknown name as the default icon.
+   */
+  icon?: string | null
+  /**
+   * A list view's own manual order (OpenSpec change view-manual-order,
+   * design D1, D2): the ids of the tasks placed by hand, in order; tasks
+   * not listed follow by position. One whole-list register. Not content.
+   */
+  manual_order?: string[]
 }
 
 /**
@@ -361,6 +482,55 @@ export interface RuleFields {
 }
 
 /**
+ * frame: a recurring background window on the Day and Week grid (OpenSpec
+ * change calendar-frames, design D1), such as "Deep work" on weekdays from
+ * 09:00 to 11:00. Personal like a rule, with ids unique on the server
+ * (entity-id-ownership). Occurrences are derived on the device (web
+ * src/lib/frames.ts, internal/frames) and never stored. title is a content field.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface FrameFields {
+  title?: string
+  /** ISO weekdays it repeats on, a comma list such as "1,2,3,4,5"; "" never occurs. */
+  weekdays?: string
+  /** Floating wall times "HH:MM"; a frame whose end is not after its start is kept and not drawn. */
+  start?: string
+  end?: string
+  color?: string
+  /** Planning source: "project:<id>", "label:<id>", "view:<id>" or "" (none). Ids only, never content. */
+  source?: string
+  /** First and last day it applies (inclusive); null is open-ended. */
+  from_date?: string | null
+  until_date?: string | null
+  position?: number
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/**
+ * slot: several small tasks in one calendar block (OpenSpec change
+ * calendar-slots, design D1), such as "Admin" on Wednesday from 16:00 for 45
+ * minutes. Personal like a frame, with ids unique on the server; membership
+ * lives here, never on the task, so shared tasks are unchanged for other
+ * members. title is a content field.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface SlotFields {
+  title?: string
+  /** The day it is on (floating); a slot without a date is never drawn. */
+  date?: string | null
+  /** Floating wall time "HH:MM". */
+  start?: string
+  /** Length in minutes, never null and at most MaxSlotMinutes (clients offer 15 to 480 in 15-minute steps). */
+  minutes?: number | null
+  /** Ordered task ids, at most MaxSlotTasks, one whole-list value like task.blocked_by; ids of tasks not shown are kept. */
+  task_ids?: string[]
+  color?: string
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/**
  * The op fields of a place (sync.Schema).
  * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
  */
@@ -401,6 +571,19 @@ export interface ProjectPrefsFields {
   sort_dir?: string
   /** The project list's row layout (row-layouts D1); "" follows the account's. */
   row_layout?: string
+  /**
+   * How often this user reviews the project in the weekly review's walk
+   * (OpenSpec change project-review-cadence, design D2): "week", "2weeks",
+   * "month", "quarter" or "paused"; empty, missing or unknown reads as week.
+   * Personal like reviewed_at, also on a shared project; derives no activity.
+   */
+  review_every?: string
+  /**
+   * The project board's notes preview (OpenSpec change board-polish, design
+   * D4): "Show notes on cards" in the board's page menu. Personal like the
+   * row, also on a shared project (a viewer chooses too); missing reads as off.
+   */
+  card_notes?: boolean
 }
 
 /**
@@ -545,6 +728,91 @@ export interface UserPrefsFields {
    * or unknown value as "bottom" and keep the stored value.
    */
   add_position?: string
+  /**
+   * Default reminders (OpenSpec change default-reminders, design D1): the
+   * offset in minutes from the due time, as a decimal string ("-30", "0",
+   * "-1440"), of the reminder added when a task with a time
+   * (reminder_default_timed) or with a date only (reminder_default_dated)
+   * gets a due date; empty is none. Clients and the server read an empty,
+   * malformed or out-of-range (beyond MaxReminderOffset) value as none and
+   * keep it. Settings, never content: not encrypted.
+   */
+  reminder_default_timed?: string
+  reminder_default_dated?: string
+  /**
+   * Sidebar counts (OpenSpec change sidebar-polish, design D1): "" shows
+   * counts at rest on Inbox and Today only, "all" on every project, label
+   * and saved-view row; clients read an unknown value as "" and keep it.
+   */
+  sidebar_counts?: string
+  /**
+   * The order of the primary sidebar destinations (sidebar-polish D3): a
+   * comma-separated list of destination ids (inbox, today, upcoming,
+   * calendar and promotable ids). Ids missing from it follow in the default
+   * order; clients ignore and keep ids they do not know. Separate from
+   * sidebar_destinations, which keeps meaning "promoted".
+   */
+  sidebar_order?: string
+  /**
+   * Countdown presets (OpenSpec change focus-everywhere, design D5): a
+   * comma-separated list of up to four whole minutes (5-180) shown as
+   * chips in the Countdown dialog; clients read an empty or unreadable
+   * value as "10,20,40" and ignore entries out of range, keeping the
+   * stored value. Settings, never content: not encrypted.
+   */
+  focus_presets?: string
+  /**
+   * Background noise during work sessions (focus-everywhere D6): "off",
+   * "white", "pink" or "brown", synthesized on the device; clients read
+   * an empty or unknown value as off and keep it. The volume is device
+   * storage and never synced.
+   */
+  focus_noise?: string
+  /**
+   * Today grouped by part of the day (OpenSpec change day-parts, design
+   * D3): "on" groups Today into Morning, Afternoon and This Evening and
+   * turns on the part phrases of quick add; clients read an empty or
+   * unknown value as off and keep the stored value.
+   */
+  day_parts?: string
+  /**
+   * The Today limit (OpenSpec change today-closed-list, design D5): 0 =
+   * off, else the number of slots Today fills; clients read a non-integer
+   * or a value outside 1-20 as off and keep the stored value.
+   */
+  today_limit?: number
+  /**
+   * The Done today group (today-closed-list D5, D6): "shown" or
+   * "hidden"; empty or unknown reads as shown in the method modes
+   * companion and first and as hidden in lists.
+   */
+  today_done?: string
+  /**
+   * Today's focus style (OpenSpec change bento-daily-check, design D4):
+   * "bento" makes the focus a Large, a Medium and a Small slot; empty or
+   * unknown reads as Three tasks and is kept.
+   */
+  focus_style?: string
+  /**
+   * Energy levels (OpenSpec change task-energy, design D3): "on" offers
+   * a task's energy in the task page, the row menu and quick add; clients
+   * read an empty or unknown value as off and keep the stored value.
+   */
+  energy?: string
+  /**
+   * The Bento order (bento-daily-check D4, D6): "summit" lists Medium,
+   * Large, Small; empty or unknown reads as Frog (Large, Medium, Small)
+   * and is kept.
+   */
+  bento_order?: string
+  /**
+   * The Formatting button (OpenSpec change notes-toolbar-desktop, design
+   * D4): "off" hides the Formatting toggle beside notes and in the
+   * comment composer on a fine pointer; empty, "on" or any other value
+   * shows it, and clients keep the stored value. Whether the row is open
+   * is device storage and never synced. Settings, never content.
+   */
+  formatting_toggle?: string
 }
 
 /**
@@ -587,27 +855,45 @@ export interface ReviewFields {
    * none. Task ids, field names and dates only, never user-written text.
    */
   carry_over?: string
+  /**
+   * Take a slot (OpenSpec change today-closed-list, design D3): the
+   * logical date (YYYY-MM-DD) the list was chosen on and up to twenty
+   * comma-separated task ids let into Today's slots, in the order taken.
+   * A list of another day reads as empty. Task ids only, never content.
+   */
+  slots_date?: string
+  slots?: string
+  /**
+   * The Bento slots of today's focus (OpenSpec change bento-daily-check,
+   * design D3): "L:<id>,M:<id>,S:<id>", any subset, written in the same
+   * batch as focus and focus_date; an entry counts only for an id in
+   * focus. Task ids and fixed letters only, never content.
+   */
+  focus_slots?: string
 }
 
 /** The row a field op creates when its entity is new: one key per op field, a family (`fields.<id>`) in one key named after its prefix. */
 export const OP_DEFAULTS = {
   project: {
-    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null,
+    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
-    name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null,
+    name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',
   } satisfies Omit<Section, 'id' | '_clock'>,
   field: {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<FieldDef, 'id' | '_clock'>,
+  note: {
+    title: '', notes_doc: '', description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, workspace_id: null, appends: {},
+  } satisfies Omit<Note, 'id' | '_clock'>,
   label: {
-    name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
+    name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '', manual_order: [],
   } satisfies Omit<Label, 'id' | '_clock'>,
   view: {
-    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null,
+    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', card_notes: false, created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
     task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null,
@@ -624,17 +910,23 @@ export const OP_DEFAULTS = {
   rule: {
     name: '', enabled: false, trigger: null, condition: null, actions: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Rule, 'id' | '_clock'>,
+  frame: {
+    title: '', weekdays: '', start: '09:00', end: '10:00', color: '#64748b', source: '', from_date: null, until_date: null, position: 0, created_at: 0, deleted_at: null,
+  } satisfies Omit<Frame, 'id' | '_clock'>,
+  slot: {
+    title: '', date: null, start: '09:00', minutes: 30, task_ids: [], color: '#64748b', created_at: 0, deleted_at: null,
+  } satisfies Omit<Slot, 'id' | '_clock'>,
   place: {
     name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Place, 'id' | '_clock'>,
   project_prefs: {
-    feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
+    feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   review: {
-    completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '',
+    completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',
   } satisfies Omit<Review, 'id' | '_clock'>,
 }
 
@@ -644,12 +936,15 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   task: ['title', 'description', 'ical_extra', 'notes_doc', 'origin', 'location'],
   section: ['name'],
   field: ['name', 'options'],
+  note: ['title', 'notes_doc', 'description'],
   label: ['name'],
   view: ['name', 'query'],
   comment: ['body', 'guest_name'],
   attachment: ['name', 'mime', 'url'],
   time_entry: ['note'],
   rule: ['name'],
+  frame: ['title'],
+  slot: ['title'],
   place: ['name', 'address', 'geo'],
   review: ['tomorrow_note'],
 }

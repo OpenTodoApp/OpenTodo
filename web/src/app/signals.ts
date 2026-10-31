@@ -59,6 +59,9 @@ export const locationFocus = channel()
 /** `Shift+N` on a selected row: the detail panel opens its start date field (someday-and-evening). */
 export const deferFocus = channel()
 
+/** "Log a win" (today-closed-list D6): the command bar opens in Add with "Log as done" on. */
+export const logWinRequest = channel()
+
 /** `b` on a selected row: the detail panel opens its Blocked by picker (task-dependencies). */
 export const blockedByFocus = channel()
 
@@ -67,6 +70,18 @@ export const sidebarFind = channel()
 
 /** `s` on a selected row: the Day view opens with that task in placement mode. */
 export const placement = channel()
+
+/** "Re-plan the rest of the day" (replan-the-day D4): the Day or Week view opens its preview. Request id: `open`. */
+export const replanRequest = channel()
+
+/**
+ * Open the re-plan preview: in place on the Day or Week view, else on the Day view of
+ * today (Today's menu, the command palette elsewhere).
+ */
+export function openReplan(inCalendar: boolean): void {
+  replanRequest.request('open')
+  if (!inCalendar) navigate({ view: 'day' })
+}
 
 /** `s` on a list row: open the Day view (on the task's date, else today) in placement mode for it. */
 export function placeInDay(task: Pick<Task, 'id' | 'due'>, today: string): void {

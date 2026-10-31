@@ -24,7 +24,7 @@ The review walks you through one step at a time, starting with the first that is
 **Get current**
 3. **Look back**: what you completed this week, and what is still open from earlier ("2 from earlier"). Done when nothing is.
 4. **Waiting**: what you assigned to someone else or what waits for another task.
-5. **Projects**: one card per project, least recently reviewed first, with its outcome (the first lines of its [note](project-notes.md)), its next action and whether it has stalled. <kbd>r</kbd> marks it reviewed, <kbd>q</kbd> adds a next action, <kbd>Enter</kbd> opens it, <kbd>a</kbd> archives it, <kbd>j</kbd> skips and <kbd>k</kbd> goes back. Done when every project was reviewed in the last seven days and has a next action. Your mark is yours: in a shared project, the others keep their own.
+5. **Projects**: one card per project that is due for review (see [Review intervals and maintenance](review-intervals.md)), least recently reviewed first, with its outcome (the first lines of its [note](project-notes.md)), its next action, whether it has stalled, how often you review it and whether it is in maintenance. <kbd>r</kbd> marks it reviewed, <kbd>q</kbd> adds a next action, <kbd>Enter</kbd> opens it, <kbd>a</kbd> archives it, <kbd>e</kbd> chooses how often it comes up, <kbd>m</kbd> puts it in maintenance or ends it, <kbd>j</kbd> skips and <kbd>k</kbd> goes back. After the last card the walk says how many projects are not due yet and how many of them are paused; **Review them too** adds them to this walk. Done when no project is due and each has a next action. Your mark is yours: in a shared project, the others keep their own.
 6. **Look ahead**: what is due in the next seven days.
 
 **Get creative**

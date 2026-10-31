@@ -27,7 +27,7 @@ export function parseEdit(base: string, draft: string, ctx: ParseContext): Parse
 
 /** What a committed edit writes: the task fields, the label names to add and the reminders. */
 export interface EditPlan {
-  patch: Partial<Pick<Task, 'title' | 'due' | 'deadline' | 'start' | 'evening' | 'priority' | 'estimate_minutes' | 'recurrence' | 'project_id'>>
+  patch: Partial<Pick<Task, 'title' | 'due' | 'deadline' | 'start' | 'evening' | 'day_part' | 'energy' | 'priority' | 'estimate_minutes' | 'recurrence' | 'project_id'>>
   /** Label names typed, in order; resolved (and created) by the caller, then added. */
   labels: string[]
   reminders: ParseResult['reminders']
@@ -40,8 +40,11 @@ export function editPlan(task: Pick<Task, 'title' | 'project_id'>, r: ParseResul
   if (r.due) patch.due = r.due
   if (r.deadline) patch.deadline = r.deadline
   if (r.start) patch.start = r.start
-  if (r.evening) patch.evening = true
+  // A part phrase writes the pair (day-parts D2).
+  if (r.evening) Object.assign(patch, { evening: true, day_part: null })
+  else if (r.dayPart) Object.assign(patch, { day_part: r.dayPart, evening: false })
   if (r.priority) patch.priority = r.priority
+  if (r.energy) patch.energy = r.energy
   if (r.estimateMinutes) patch.estimate_minutes = r.estimateMinutes
   if (r.recurrence) patch.recurrence = r.recurrence
   if (r.projectId && r.projectId !== (task.project_id ?? null)) patch.project_id = r.projectId

@@ -26,6 +26,9 @@ import { startFakeLLM } from './fake-llm.mjs'
 
 const OUT = 'docs/images'
 let eisenhowerPath = null
+let completedCalendarFixture = null
+let repeatingCalendarFixture = null
+let spansCalendarFixture = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -287,6 +290,11 @@ const shots = [
   // display-mode: Today full screen in large type, without the shell.
   { name: 'display-today', server: D, async run(p) { await go(p, demoBase, '/display/today', () => p.locator('[data-screen="display"] [data-display-row]').first().waitFor()) } },
   { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
+  // Notes (notes-overview): the task and project notes of the sample data.
+  { name: 'notes', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    await settle(p, 400)
+  } },
   // Focus (focus-mode 7.2): a task of the sample data, its session started a moment ago.
   { name: 'focus', server: D, async run(p) {
     await go(p, demoBase, '/focus', () => p.locator('[data-focus-timer], [data-empty-state="focus"]').first().waitFor())
@@ -326,6 +334,19 @@ const shots = [
     await go(p, demoBase, '/inbox'); await openProject(p, 'Q4 launch')
     await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'Board' }).click(); await settle(p, 800)
   }, async after(p) { await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {}) } },
+  // Board polish (board-polish): the Q4 launch board with Review folded and the notes preview on; both are put back.
+  { name: 'board-fold-notes', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Q4 launch')
+    await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'Board' }).click(); await p.locator('[data-board]').waitFor()
+    await p.getByRole('button', { name: 'Project menu' }).click(); await p.locator('[data-menu-label="Show notes on cards"]').click()
+    await p.getByRole('button', { name: 'Section menu for Review' }).click(); await p.locator('[data-menu-label="Fold column"]').click()
+    await p.locator('[data-column-strip]').first().waitFor(); await p.mouse.move(700, 40)
+    await p.locator('body').evaluate(() => (document.activeElement)?.blur()); await settle(p, 800)
+  }, async after(p) {
+    await p.locator('[data-column-strip]').first().click().catch(() => {})
+    await p.getByRole('button', { name: 'Project menu' }).click().catch(() => {}); await p.locator('[data-menu-label="Show notes on cards"]').click().catch(() => {})
+    await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {})
+  } },
   // Custom fields (custom-fields): the Side project's list in the columns layout.
   { name: 'custom-fields', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Side project')
@@ -423,6 +444,130 @@ const shots = [
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
   }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   { name: 'day', server: D, async run(p) { await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor()) } },
+  { name: 'completed-calendar', server: P, async run(p, { ctx }) {
+    const api = async (method, path, body) => {
+      const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    if (!completedCalendarFixture) {
+      const date = new Date().toISOString().slice(0, 10)
+      const project = await api('POST', '/api/v1/projects', { name: 'Website launch', color: '#3b82f6' })
+      const task = (title, time, estimate_minutes) => api('POST', '/api/v1/tasks', { title, project_id: project.id, due: { date, ...(time ? { time } : {}) }, estimate_minutes })
+      const timed = await task('Send the project update', '09:00', 30)
+      const allDay = await task('Book the train tickets', undefined, 15)
+      const open = await task('Review the launch checklist', '14:00', 60)
+      for (const done of [timed, allDay]) await api('PATCH', `/api/v1/tasks/${done.id}`, { completed_at: Date.now() })
+      completedCalendarFixture = { date, timed: timed.id, allDay: allDay.id, open: open.id }
+    }
+    const fixture = completedCalendarFixture
+    await p.setViewportSize({ width: 1280, height: 800 })
+    await p.clock.setFixedTime(new Date(`${fixture.date}T12:00:00Z`))
+    await go(p, plainBase, `/day/${fixture.date}`, () => p.locator(`[data-block="${fixture.open}"]`).waitFor())
+    await p.getByRole('button', { name: 'Show completed tasks', exact: true }).click()
+    await p.locator(`[data-block="${fixture.timed}"] .line-through`).waitFor()
+    await p.locator(`[data-lane-task="${fixture.allDay}"] .line-through`).waitFor()
+    await p.locator('[data-calendar-completed-toggle][aria-pressed="true"]').waitFor()
+    await p.mouse.move(0, 0)
+  } },
+  // Projected occurrences of repeating tasks in the Week (series-occurrences): a weekday
+  // study session at 18:00 and a Monday, Wednesday and Friday habit, both due next Monday.
+  // The Year (year-view 3.1): the demo's twelve months with their density marks.
+  { name: 'year-calendar', server: D, async run(p) {
+    await p.setViewportSize({ width: 1280, height: 1240 })
+    await go(p, demoBase, '/year', () => p.locator('[data-year-grid] [data-density]').first().waitFor()); await settle(p, 300)
+    await p.mouse.move(0, 0)
+  } },
+  { name: 'repeating-calendar', server: P, async run(p, { ctx }) {
+    const api = async (method, path, body) => {
+      const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    if (!repeatingCalendarFixture) {
+      const d = new Date()
+      d.setUTCDate(d.getUTCDate() + ((8 - d.getUTCDay()) % 7 || 7))
+      const date = d.toISOString().slice(0, 10)
+      const project = await api('POST', '/api/v1/projects', { name: 'Course', color: '#8b5cf6' })
+      const study = await api('POST', '/api/v1/tasks', { title: 'Study', project_id: project.id, due: { date, time: '18:00' }, recurrence: 'every weekday', estimate_minutes: 60 })
+      await api('POST', '/api/v1/tasks', { title: 'Morning run', due: { date, time: '07:00' }, recurrence: 'every mon, wed, fri', estimate_minutes: 45 })
+      await api('POST', '/api/v1/tasks', { title: 'Write the weekly report', project_id: project.id, due: { date, time: '10:00' }, estimate_minutes: 90 })
+      repeatingCalendarFixture = { date, study: study.id }
+    }
+    const fixture = repeatingCalendarFixture
+    await p.setViewportSize({ width: 1280, height: 800 })
+    await p.clock.setFixedTime(new Date(`${fixture.date}T09:00:00`))
+    await go(p, plainBase, `/week/${fixture.date}`, () => p.locator(`[data-block="${fixture.study}"]`).waitFor())
+    await p.locator('[data-projected]').first().waitFor()
+    await p.locator(`[data-block="${fixture.study}"]`).scrollIntoViewIfNeeded()
+    await p.mouse.move(0, 0)
+  } },
+  // Tasks that span days (multi-day-tasks 7.1): a three-day trip and a conference that
+  // runs into the next week as bars in the Week's all-day strip, beside a one-day task.
+  { name: 'spans-calendar', server: P, async run(p, { ctx }) {
+    const api = async (method, path, body) => {
+      const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    if (!spansCalendarFixture) {
+      // Next Monday, so the week is the same in both themes.
+      const d = new Date()
+      d.setUTCDate(d.getUTCDate() + ((8 - d.getUTCDay()) % 7 || 7))
+      const day = (n) => new Date(d.getTime() + n * 86400000).toISOString().slice(0, 10)
+      const travel = await api('POST', '/api/v1/projects', { name: 'Travel', color: '#0ea5e9' })
+      const work = await api('POST', '/api/v1/projects', { name: 'Work', color: '#8b5cf6' })
+      const trip = await api('POST', '/api/v1/tasks', { title: 'Lisbon trip', project_id: travel.id, start: day(1), due: { date: day(3) }, span: true })
+      await api('POST', '/api/v1/tasks', { title: 'Design conference', project_id: work.id, start: day(5), due: { date: day(8) }, span: true, estimate_minutes: 240 })
+      await api('POST', '/api/v1/tasks', { title: 'Pack the bags', project_id: travel.id, due: { date: day(0) }, estimate_minutes: 30 })
+      await api('POST', '/api/v1/tasks', { title: 'Send the slides', project_id: work.id, due: { date: day(4), time: '10:00' }, estimate_minutes: 60 })
+      spansCalendarFixture = { date: day(0), trip: trip.id }
+    }
+    const fixture = spansCalendarFixture
+    await p.setViewportSize({ width: 1280, height: 800 })
+    await p.clock.setFixedTime(new Date(`${fixture.date}T09:00:00`))
+    await go(p, plainBase, `/week/${fixture.date}`, () => p.locator(`[data-span-bar="${fixture.trip}"]`).waitFor())
+    await p.mouse.move(0, 0)
+  } },
+  // Frames (calendar-frames 5.2): "Deep work" on weekday mornings and "Admin" late in the afternoon behind the Week's blocks.
+  { name: 'frames', server: D, async run(p) {
+    const api = async (method, body) => {
+      const r = await p.request.fetch(demoBase + '/api/v1/frames', { method, headers: { Origin: demoBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} /api/v1/frames → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    // Once for both themes: the second run finds them there.
+    if (!(await api('GET')).frames.length) {
+      await api('POST', { title: 'Deep work', weekdays: '1,2,3,4,5', start: '09:00', end: '11:00', color: '#7c3aed' })
+      await api('POST', { title: 'Admin', weekdays: '1,2,3,4', start: '16:00', end: '16:45', color: '#0d9488' })
+    }
+    await go(p, demoBase, '/week', () => p.locator('[data-frame-band]').first().waitFor())
+    // The demo's reminder toast would cover the late afternoon.
+    await p.addStyleTag({ content: '[aria-label^="Reminder:"] { display: none !important }' })
+    await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
+  }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
+  // Slots (calendar-slots 5.2): today's "Admin" slot holding six small tasks, one done, in the Day.
+  { name: 'slots', server: D, async run(p) {
+    const api = async (method, path, body) => {
+      const r = await p.request.fetch(demoBase + path, { method, headers: { Origin: demoBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.status() === 204 ? null : r.json()
+    }
+    // Once for both themes: the second run finds it there.
+    if (!(await api('GET', '/api/v1/slots')).slots.length) {
+      const today = await p.evaluate(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })
+      const ids = []
+      for (const [i, title] of ['Reply to Marco', 'Pay the invoice', 'Book the venue', 'Renew the domain', 'Send the slides', 'File the receipt'].entries()) {
+        ids.push((await api('POST', '/api/v1/tasks', { title, estimate_minutes: 5 + (i % 3) * 5 })).id)
+      }
+      await api('POST', '/api/v1/slots', { title: 'Admin', date: today, start: '14:00', minutes: 150, color: '#0d9488', task_ids: ids, move_tasks: true })
+      await api('PATCH', `/api/v1/tasks/${ids[0]}`, { completed_at: Date.now() })
+    }
+    await go(p, demoBase, '/day', () => p.locator('[data-slot]').first().waitFor())
+    await p.addStyleTag({ content: '[aria-label^="Reminder:"] { display: none !important }' })
+    await p.locator('[data-slot]').first().scrollIntoViewIfNeeded()
+    await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
+  }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   // The Plan (planner-view 5.2): two rows of columns with their capacity bars and a dimmed projected row.
   { name: 'plan', server: D, async run(p) { await go(p, demoBase, '/plan', () => p.locator('[data-plan-grid]').waitFor()); await settle(p, 300) } },
   { name: 'comments', server: D, card: true, async run(p) {
@@ -521,6 +666,21 @@ const shots = [
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 240 }
+  } },
+  // Default reminders (default-reminders D8): 30 minutes before a time, 1 day before a date.
+  { name: 'settings-default-reminders', server: P, async run(p) {
+    await go(p, plainBase, '/settings/notifications/push', () => p.getByRole('heading', { name: 'Push notifications', level: 1 }).waitFor())
+    await p.evaluate(async () => {
+      const op = (field, value) => ({ id: `docs-${field}`, entity: 'user_prefs', entityId: 'me', field, value, ts: Date.now(), device: 'docs' })
+      await fetch('/api/v1/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device: 'docs', cursor: 0, ops: [op('reminder_default_timed', '-30'), op('reminder_default_dated', '-1440')] }) })
+    })
+    await go(p, plainBase, '/settings/notifications/push', () => p.locator('#default-reminder-timed').waitFor())
+    await p.waitForFunction(() => document.querySelector('#default-reminder-timed')?.value === '-30', null, { timeout: 20000 })
+    const h = p.getByRole('heading', { level: 2, name: 'Default reminders' }); await h.waitFor()
+    await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
+    const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
+    return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 230 }
   } },
   // Delivery channels (notification-channels): one ntfy channel added through the API.
   { name: 'settings-notification-channels', server: P, async run(p) {

@@ -77,16 +77,27 @@ var (
 		{Name: "deadline", Type: "string", Description: "the day it must be finished by: YYYY-MM-DD, today, tomorrow or a weekday (edit: none clears)"},
 		{Name: "start", Type: "string", Description: "someday parks the task; a date (YYYY-MM-DD, today, tomorrow or a weekday) defers it; the due date is kept (edit: none clears)"},
 		{Name: "evening", Type: "bool", Description: "put the task in This Evening (edit: --evening=false takes it out)"},
+		{Name: "span", Type: "bool", Description: "draw the task across the days from its start to its due date, both included; a span needs --start and --due (a start before the due date)"},
+		{Name: "no-span", Type: "bool", Description: "draw the task on its due date only; the start date stays"},
+		{Name: "part", Type: "string", Enum: []string{"morning", "afternoon", "evening", "none"}, Description: "the part of the day; sets This Evening too (evening) or clears it"},
+		{Name: "energy", Type: "string", Enum: []string{"deep", "medium", "low", "none"}, Description: "the energy the task asks for (edit: none clears)"},
 		{Name: "blocked-by", Type: "string_list", Description: "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"},
 		{Name: "location", Type: "string", Description: "a saved location's name or id, or lat,lon (edit: none clears)"},
+		{Name: "no-default-reminder", Type: "bool", Description: "add no default reminder when the task gets a due date (--remind also leaves it out)"},
 	}
 	// addOnlyFields are the quick-add flags of `ot add` (quick-add-recurrence D6).
 	addOnlyFields = []flagSpec{
 		{Name: "remind", Type: "string_list", Description: "reminder without the reminder word: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)"},
 		{Name: "natural", Type: "bool", Description: "parse the title like the app's quick add: dates, #project, @label, p1, +30m, every …, remind me …"},
 		{Name: "lang", Type: "string", Description: "languages for --natural and --remind, e.g. de,en (default: the locale; English always)"},
+		{Name: "done", Type: "bool", Description: "log a win: create the task already completed now (refuses --repeat and --remind)"},
 	}
 	refsArg = []argSpec{{Name: "ref", Required: true, Repeatable: true}}
+
+	noteSources      = []string{"all", "note", "task", "project"}
+	noteLimitFlag    = flagSpec{Name: "limit", Type: "int", Description: "print at most n notes"}
+	noteBodyFlag     = flagSpec{Name: "body", Type: "string", Description: "the text (Markdown)"}
+	noteBodyFileFlag = flagSpec{Name: "body-file", Type: "string", Description: "read the text from a file, - for standard input"}
 )
 
 var cmdSpecs = []cmdSpec{
@@ -105,11 +116,14 @@ var cmdSpecs = []cmdSpec{
 		{Name: "someday", Type: "bool", Description: "open tasks parked in Someday (combines with --project)"},
 		{Name: "anytime", Type: "bool", Description: "open tasks with no due date, deadline or start (combines with --project)"},
 		{Name: "blocked", Type: "bool", Description: "open tasks waiting for an open task (combines with --project)"},
+		{Name: "available", Type: "bool", Description: "open tasks that can be done now: not blocked, not waiting for an earlier step, neither in Someday nor starting later (combines with --project)"},
 		{Name: "completed-after", Type: "string", Description: "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		{Name: "completed-before", Type: "string", Description: "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		limitFlag,
 	}, Output: arrayOf("task")},
-	{Name: "today", Summary: "alias for `ot list --today`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
+	{Name: "today", Summary: "alias for `ot list --today`; with a Today limit, the tasks waiting for a slot follow under their own heading", Flags: []flagSpec{
+		{Name: "all", Type: "bool", Description: "with a Today limit: every task in one list, without the waiting heading"}, limitFlag,
+	}, Output: arrayOf("task")},
 	{Name: "inbox", Summary: "alias for `ot list --inbox`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
 	{Name: "upcoming", Summary: "alias for `ot list --upcoming`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
 	{Name: "add", Summary: "create a task and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},
@@ -127,6 +141,65 @@ var cmdSpecs = []cmdSpec{
 	{Name: "project archive", Summary: "archive a project, or restore it with --undo", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: []flagSpec{{Name: "undo", Type: "bool", Description: "restore an archived project"}}, Writes: true, DryRun: true, Output: ref("project")},
 	{Name: "project rm", Aliases: []string{"project delete"}, Summary: "delete a project (soft delete)", Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: ref("project")},
+	{Name: "notes list", Aliases: []string{"notes ls"}, Summary: "list notes newest first: standalone notes, task notes and project notes (also bare `ot notes`)", Flags: []flagSpec{
+		{Name: "source", Type: "string", Enum: noteSources, Default: "all", Description: "which notes: note (standalone), task, project or all"},
+		{Name: "standalone", Type: "bool", Description: "only standalone notes (same as --source note)"},
+		{Name: "project", Type: "string", Description: "notes of one project (name or id): its notes, its tasks' notes and its own note"},
+		{Name: "label", Type: "string", Description: "notes carrying this label (name or id)"},
+		{Name: "search", Type: "string", Description: "only notes whose title or text contain every word, ranked title matches first (searched on this machine)"},
+		noteLimitFlag,
+	}, Output: arrayOf("note")},
+	{Name: "notes search", Summary: "search notes on this machine: every word in the title or text, title matches first, with a snippet", Args: []argSpec{{Name: "text", Required: true, Repeatable: true}}, Flags: []flagSpec{
+		{Name: "source", Type: "string", Enum: noteSources, Default: "all", Description: "which notes: note (standalone), task, project or all"},
+		{Name: "standalone", Type: "bool", Description: "only standalone notes (same as --source note)"},
+		{Name: "project", Type: "string", Description: "notes of one project (name or id)"},
+		{Name: "label", Type: "string", Description: "notes carrying this label (name or id)"},
+		noteLimitFlag,
+	}, Output: arrayOf("note")},
+	{Name: "notes show", Summary: "print a note as Markdown: its text, then text appended that no device has merged yet", Args: []argSpec{{Name: "ref", Required: true}}, Output: ref("note_text")},
+	{Name: "notes add", Aliases: []string{"notes create"}, Summary: "create a standalone note and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},
+		Flags: []flagSpec{
+			{Name: "project", Type: "string", Description: "project name or id (default: a personal note)"},
+			{Name: "label", Type: "string_list", Description: "label name or id, repeatable"},
+			noteBodyFlag, noteBodyFileFlag, idemFlag,
+		}, Writes: true, DryRun: true, IdempotencyKey: true, Output: ref("note_text")},
+	{Name: "notes edit", Summary: "change a standalone note; a new body replaces the text only when nobody changed it since it was read (body_changed)", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{
+			{Name: "title", Type: "string", Description: "new title"},
+			{Name: "project", Type: "string", Description: "project name or id; none makes it a personal note"},
+			{Name: "label", Type: "string_list", Description: "label name or id, repeatable; replaces the list (none clears)"},
+			noteBodyFlag, noteBodyFileFlag,
+		}, Writes: true, DryRun: true, Output: ref("note_text")},
+	{Name: "notes append", Summary: "add Markdown at the end of a standalone note without replacing anything", Args: []argSpec{{Name: "ref", Required: true}, {Name: "text", Repeatable: true}},
+		Flags:  []flagSpec{{Name: "body-file", Type: "string", Description: "read the text from a file, - for standard input"}},
+		Writes: true, DryRun: true, Output: ref("note_append")},
+	{Name: "notes rm", Aliases: []string{"notes delete"}, Summary: "move one or more standalone notes to the Trash", Args: refsArg, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: oneOrMany("note_result")},
+	{Name: "notes to-task", Summary: "turn a standalone note into a task (the note goes to the Trash) and print the task id", Args: []argSpec{{Name: "ref", Required: true}}, Writes: true, DryRun: true, Output: ref("task")},
+	{Name: "task note", Summary: "print a task's note as Markdown, or replace (--set, --file, --clear) or append to it (--append); one option per call", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{
+			{Name: "set", Type: "string", Description: "replace the note with this text (only when nobody changed it since it was read: body_changed)"},
+			{Name: "file", Type: "string", Description: "replace the note with a file's text, - for standard input"},
+			{Name: "append", Type: "string", Description: "add this text at the end of the note without replacing anything"},
+			{Name: "clear", Type: "bool", Description: "replace the note with empty text"},
+		}, Writes: true, DryRun: true, Output: map[string]any{"oneOf": []any{ref("note_text"), ref("note_append")}}},
+	{Name: "task occurrences", Summary: "list a recurring task's current and projected occurrence dates in a range (date, time, state); read-only", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{
+			{Name: "from", Type: "string", Description: "first day: YYYY-MM-DD, today, yesterday or a weekday (default today)"},
+			{Name: "to", Type: "string", Description: "last day (default 30 days after --from; at most 366 days)"},
+		}, Output: ref("occurrences")},
+	{Name: "task occurrence", Summary: "act on one occurrence of a recurring task: complete it, skip it, or edit or move it alone (complete|skip|edit); prints its record", Args: []argSpec{{Name: "ref", Required: true}, {Name: "date", Required: true}, {Name: "action", Required: true}},
+		Flags: []flagSpec{
+			{Name: "due", Type: "string", Description: "edit: move the occurrence to this day (YYYY-MM-DD, today, tomorrow or a weekday)"},
+			{Name: "time", Type: "string", Description: "edit: the occurrence's time HH:MM (none: no time)"},
+			{Name: "title", Type: "string", Description: "edit: the occurrence's title"},
+		}, Writes: true, DryRun: true, Output: ref("task")},
+	{Name: "task split", Summary: "change a recurring task from one of its later occurrences on (This and following): the series ends the day before and a new series continues it; prints the new series", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{
+			{Name: "from", Type: "string", Description: "the first occurrence to change: YYYY-MM-DD, today, tomorrow or a weekday"},
+			{Name: "time", Type: "string", Description: "the new time HH:MM from that day on (none: no time)"},
+			{Name: "rule", Type: "string", Description: "the new recurrence rule from that day on"},
+			{Name: "title", Type: "string", Description: "the new title from that day on"},
+		}, Writes: true, DryRun: true, Output: ref("task")},
 	{Name: "token list", Aliases: []string{"token ls"}, Summary: "list API tokens with their scopes", Output: arrayOf("token")},
 	{Name: "token create", Aliases: []string{"token add"}, Summary: "create an API token and print its secret once", Args: []argSpec{{Name: "name", Required: true, Repeatable: true}},
 		Flags: []flagSpec{{Name: "scope", Type: "string", Enum: tokenScopes, Default: "full", Description: "token scope: full, read or agent"}}, Writes: true, DryRun: true, Output: ref("token_created")},
@@ -192,6 +265,31 @@ var cmdSpecs = []cmdSpec{
 	{Name: "rules disable", Summary: "turn an automation rule off", Args: []argSpec{{Name: "id", Required: true}},
 		Writes: true, DryRun: true, Output: ref("rule")},
 	{Name: "rules runs", Summary: "print an automation rule's run log, newest first", Args: []argSpec{{Name: "id", Required: true}}, Output: arrayOf("rule_run")},
+	{Name: "frames list", Aliases: []string{"frames ls"}, Summary: "list the account's calendar frames (recurring background windows on the Day and Week grid)", Output: arrayOf("frame")},
+	{Name: "frames add", Aliases: []string{"frames create"}, Summary: "create a calendar frame and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},
+		Flags: []flagSpec{
+			{Name: "days", Type: "string", Default: "weekdays", Description: "days it repeats on: mon-fri, mon,wed,fri, weekdays, weekend, daily or ISO digits 1 (Monday) to 7 (Sunday)"},
+			{Name: "from", Type: "string", Default: "09:00", Description: "start time HH:MM"},
+			{Name: "to", Type: "string", Default: "10:00", Description: "end time HH:MM, after --from"},
+			{Name: "color", Type: "string", Description: "colour as #rrggbb (default: slate)"},
+			{Name: "source", Type: "string", Description: "planning source: project:<id>, label:<id> or view:<id>"},
+		}, Writes: true, DryRun: true, Output: ref("frame")},
+	{Name: "frames rm", Aliases: []string{"frames delete"}, Summary: "delete a calendar frame", Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: ref("frame")},
+	{Name: "slots list", Aliases: []string{"slots ls"}, Summary: "list the account's calendar slots (blocks on the Day and Week grid that hold small tasks)",
+		Flags: []flagSpec{
+			{Name: "from", Type: "string", Description: "first day: YYYY-MM-DD, today, tomorrow or a weekday name"},
+			{Name: "to", Type: "string", Description: "last day"},
+		}, Output: arrayOf("slot")},
+	{Name: "slots add", Aliases: []string{"slots create"}, Summary: "create a calendar slot and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},
+		Flags: []flagSpec{
+			{Name: "date", Type: "string", Default: "today", Description: "the day: YYYY-MM-DD, today, tomorrow or a weekday name"},
+			{Name: "at", Type: "string", Default: "09:00", Description: "start time HH:MM"},
+			{Name: "for", Type: "string", Default: "30m", Description: "length, 15m to 8h in 15-minute steps"},
+			{Name: "color", Type: "string", Description: "colour as #rrggbb (default: slate)"},
+		}, Writes: true, DryRun: true, Output: ref("slot")},
+	{Name: "slots put", Summary: "add tasks to a calendar slot and date them to its day, as one batch", Args: []argSpec{{Name: "slot", Required: true}, {Name: "task", Required: true, Repeatable: true}},
+		Writes: true, DryRun: true, Output: ref("slot")},
+	{Name: "slots rm", Aliases: []string{"slots delete"}, Summary: "delete a calendar slot (its tasks stay on its day without a time)", Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: ref("slot")},
 	{Name: "workspaces", Summary: "list your workspaces (the current one marked)", Output: arrayOf("workspace")},
 	{Name: "export", Summary: "download the full JSON export", Flags: []flagSpec{{Name: "out", Short: "o", Type: "string", Description: "write to this file instead of stdout"}},
 		Output: map[string]any{"anyOf": []any{map[string]any{"type": "object", "description": "the server's export document (format opentodo-export)"}, ref("export_file")}}},
@@ -249,6 +347,8 @@ var errorCodes = []map[string]any{
 	{"code": "provider_rate_limited", "exit": ExitServer, "meaning": "the provider's rate limit was reached; polling resumes at the time named", "retry": true},
 	{"code": "poll_failed", "exit": ExitServer, "meaning": "an issue poll ran and failed; the reason is in the message"},
 	{"code": "invalid_input", "exit": ExitServer, "meaning": "the server refused a value"},
+	{"code": "body_changed", "exit": ExitServer, "meaning": "the note changed since the command read it (on a device or by another write); nothing was replaced: read it again"},
+	{"code": "too_many_appends", "exit": ExitServer, "meaning": "the note already holds 100 appends no device has merged yet; open it in the app, then append again"},
 	{"code": "import_failed", "exit": ExitServer, "meaning": "an import job ended failed; its counts say how far it got and undo in the app removes what it wrote"},
 	{"code": "not_found", "exit": ExitServer, "meaning": "no such entity"},
 	{"code": "idempotency_conflict", "exit": ExitServer, "meaning": "the idempotency key was already used for different content"},

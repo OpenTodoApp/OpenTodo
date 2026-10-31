@@ -16,7 +16,7 @@ import type {
   SpeechSettingsInput,
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
-  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
+  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   MemberInvitation, PendingAnswer,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, GoogleClientSetting,
@@ -327,7 +327,7 @@ export const api = {
   // Trash and history (OpenSpec change `trash-and-history`): history is read live, never cached.
   history: (entity: 'task' | 'project', id: string, before?: number) =>
     request<HistoryPage>('GET', `/api/v1/${entity}s/${encodeURIComponent(id)}/history${before ? `?before=${before}` : ''}`),
-  purge: (entity: 'task' | 'project', id: string) =>
+  purge: (entity: 'task' | 'project' | 'note', id: string) =>
     request<{ purged: PurgeCounts }>('DELETE', `/api/v1/${entity}s/${encodeURIComponent(id)}/purge`),
   emptyTrash: () => request<{ purged: PurgeCounts }>('POST', '/api/v1/trash/purge'),
   // Activity (comments-and-activity): older events than the device keeps, newest first.
@@ -499,6 +499,7 @@ export const api = {
   // owner's settings travel over these routes.
   uploadAttachment: (id: string, blob: Blob, onProgress?: (fraction: number) => void) => uploadAttachmentContent(id, blob, onProgress),
   attachmentSettings: () => request<AttachmentSettings>('GET', '/api/v1/settings/attachments'),
+  storageStatus: () => request<StorageStatus>('GET', '/api/v1/settings/storage'),
   // Instance branding (instance-branding): the owner's name and logo.
   brandingSettings: () => request<Branding>('GET', '/api/v1/settings/branding'),
   putBrandingName: (name: string) => request<Branding>('PUT', '/api/v1/settings/branding', { name }),

@@ -155,6 +155,23 @@
    "tonight",
    "this evening"
   ],
+  "morningWords": [
+   "this morning"
+  ],
+  "afternoonWords": [
+   "this afternoon"
+  ],
+  "partWords": {
+   "morning": [
+    "morning"
+   ],
+   "afternoon": [
+    "afternoon"
+   ],
+   "evening": [
+    "evening"
+   ]
+  },
   "nextBefore": [
    "next"
   ],
@@ -282,6 +299,19 @@
     "times"
    ]
   },
+  "everyOther": [
+   "every other"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "from",
+   "since",
+   "of",
+   "for"
+  ],
   "remindWords": [
    "remind me"
   ],
@@ -447,6 +477,26 @@
   "eveningWords": [
    "heute abend"
   ],
+  "morningWords": [
+   "heute morgen",
+   "heute fruh",
+   "heute vormittag"
+  ],
+  "afternoonWords": [
+   "heute nachmittag"
+  ],
+  "partWords": {
+   "morning": [
+    "fruh",
+    "vormittag"
+   ],
+   "afternoon": [
+    "nachmittag"
+   ],
+   "evening": [
+    "abend"
+   ]
+  },
   "nextBefore": [
    "nachsten",
    "nachste",
@@ -577,6 +627,23 @@
     "mal"
    ]
   },
+  "everyOther": [
+   "jeden zweiten",
+   "jede zweite",
+   "jedes zweite",
+   "alle zwei"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "seit",
+   "von",
+   "vom",
+   "ab",
+   "fur"
+  ],
   "remindWords": [
    "erinnere mich",
    "erinner mich"
@@ -737,6 +804,24 @@
   "eveningWords": [
    "ce soir"
   ],
+  "morningWords": [
+   "ce matin"
+  ],
+  "afternoonWords": [
+   "cet apres-midi",
+   "cette apres-midi"
+  ],
+  "partWords": {
+   "morning": [
+    "matin"
+   ],
+   "afternoon": [
+    "apres-midi"
+   ],
+   "evening": [
+    "soir"
+   ]
+  },
   "nextBefore": [],
   "nextAfter": [
    "prochain",
@@ -854,6 +939,25 @@
     "fois"
    ]
   },
+  "everyOther": [
+   "tous les deux",
+   "toutes les deux"
+  ],
+  "everyOtherAround": {
+   "before": [
+    "un",
+    "une"
+   ],
+   "after": [
+    "sur deux"
+   ]
+  },
+  "monthTextBefore": [
+   "depuis",
+   "de",
+   "du",
+   "des"
+  ],
   "remindWords": [
    "rappelle-moi",
    "rappelle moi"
@@ -1017,6 +1121,26 @@
   "eveningWords": [
    "stasera"
   ],
+  "morningWords": [
+   "stamattina",
+   "stamani",
+   "questa mattina"
+  ],
+  "afternoonWords": [
+   "oggi pomeriggio",
+   "questo pomeriggio"
+  ],
+  "partWords": {
+   "morning": [
+    "mattina"
+   ],
+   "afternoon": [
+    "pomeriggio"
+   ],
+   "evening": [
+    "sera"
+   ]
+  },
   "nextBefore": [
    "prossimo",
    "prossima"
@@ -1089,7 +1213,11 @@
    "giornalmente": "day",
    "settimanalmente": "week",
    "mensilmente": "month",
-   "annualmente": "year"
+   "annualmente": "year",
+   "a giorni alterni": "2 days",
+   "a settimane alterne": "2 weeks",
+   "a mesi alterni": "2 months",
+   "ad anni alterni": "2 years"
   },
   "weekdayAll": [
    "giorno feriale",
@@ -1137,6 +1265,19 @@
     "volte"
    ]
   },
+  "everyOther": [
+   "ogni due"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "da",
+   "dal",
+   "di",
+   "del"
+  ],
   "remindWords": [
    "ricordamelo",
    "ricordami"
@@ -1295,6 +1436,23 @@
   "eveningWords": [
    "esta noche"
   ],
+  "morningWords": [
+   "esta manana"
+  ],
+  "afternoonWords": [
+   "esta tarde"
+  ],
+  "partWords": {
+   "morning": [
+    "por la manana"
+   ],
+   "afternoon": [
+    "por la tarde"
+   ],
+   "evening": [
+    "por la noche"
+   ]
+  },
   "nextBefore": [
    "proximo",
    "proxima"
@@ -1420,6 +1578,18 @@
     "veces"
    ]
   },
+  "everyOther": [
+   "cada dos"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "desde",
+   "de",
+   "del"
+  ],
   "remindWords": [
    "recuerdame"
   ],
@@ -1579,6 +1749,25 @@
   "eveningWords": [
    "hoje a noite"
   ],
+  "morningWords": [
+   "esta manha",
+   "hoje de manha"
+  ],
+  "afternoonWords": [
+   "esta tarde",
+   "hoje a tarde"
+  ],
+  "partWords": {
+   "morning": [
+    "de manha"
+   ],
+   "afternoon": [
+    "a tarde"
+   ],
+   "evening": [
+    "a noite"
+   ]
+  },
   "nextBefore": [
    "proxima",
    "proximo"
@@ -1709,6 +1898,21 @@
     "vezes"
    ]
   },
+  "everyOther": [
+   "a cada dois",
+   "a cada duas",
+   "cada dois",
+   "cada duas"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "monthTextBefore": [
+   "desde",
+   "de",
+   "do"
+  ],
   "remindWords": [
    "lembre-me",
    "lembra-me",

@@ -256,3 +256,29 @@ The device SHALL work out one health word per live, unarchived project from the 
 #### Scenario: Two devices agree
 - **WHEN** two synced devices open All projects
 - **THEN** they show the same health word and detail for every project, and only the "Updated" phrase may differ by the minute
+
+### Requirement: Areas in project health
+For a project whose flow is Area (project-flow "Areas"), project health SHALL skip the Quiet rule: an area with open tasks and no Late or Overdue task SHALL read On track however long it has not changed. Its progress SHALL not be computed or shown; the All projects page SHALL show "Area" in its progress cell and SHALL sort areas after projects with a progress when sorting by progress. Late and Overdue SHALL apply as for any project. Like all health, this SHALL be computed on the device, offline, with no write, and SHALL follow a flow change synced from another device without a reload.
+
+#### Scenario: A quiet area is fine
+- **WHEN** the area "Home" has open tasks, none overdue or late, and no change for 30 days
+- **THEN** its health is On track and its progress cell reads "Area"
+
+#### Scenario: Overdue in an area
+- **WHEN** an open task of the area "Home" was due yesterday
+- **THEN** its health is Overdue with the count, as for any project
+
+### Requirement: Maintenance in project health
+For a project in maintenance (project-organization "Maintenance status"), project health SHALL keep the Late rule. When Late does not hold and the project has an open task, its health word SHALL be "Maintenance" in place of Overdue, Quiet and On track, with no detail. Its progress SHALL be computed and shown as for any project. When sorting the All projects page by health, Maintenance SHALL rank after On track and before projects with nothing open. Like all health, this SHALL be computed on the device from local rows, offline, with no write, the same on every synced device, and SHALL follow a status change synced from another member without a reload.
+
+#### Scenario: Overdue tasks during a busy season
+- **WHEN** "Garden" is in maintenance, has two tasks due last week and no change for 20 days
+- **THEN** its health reads "Maintenance", not Overdue or Quiet
+
+#### Scenario: A passed deadline still shows
+- **WHEN** "Garden" is in maintenance and an open task's deadline was yesterday
+- **THEN** its health reads Late with the task's title
+
+#### Scenario: End maintenance
+- **WHEN** another member ends maintenance on "Garden" and this device syncs
+- **THEN** its health reads Overdue again without a reload

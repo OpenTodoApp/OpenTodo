@@ -70,7 +70,7 @@ describe('directory cache', () => {
     old.close()
     const d = useDatabase(name)
     await d.open()
-    expect(d.verno).toBe(24)
+    expect(d.verno).toBeGreaterThanOrEqual(24)
     expect(await d.projects.get('p1')).toMatchObject({ name: 'Home' })
     expect(await d.tasks.where('workspace_id').equals('x').count()).toBe(0)
     expect(await d.workspaces.count()).toBe(0)

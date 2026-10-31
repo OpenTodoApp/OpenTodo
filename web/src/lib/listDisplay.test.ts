@@ -171,4 +171,15 @@ describe('label page with display options', () => {
     const byPriority = listGroups({ ...base, display: { groupBy: 'priority', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } })
     expect(byPriority.map((g) => [g.heading, titles(g)])).toEqual([['Priority 1', ['Beta']], ['Priority 3', ['Alpha']]])
   })
+
+  it('lists its own manual order first, then the rest by position (view-manual-order)', () => {
+    const a = task({ title: 'One', project_id: null })
+    const b = task({ title: 'Two', project_id: null })
+    const c = task({ title: 'Three', project_id: null })
+    const base: GroupInput = { ...projectInput([]), view: 'label', tree: null, buckets: null, tasks: [a, b, c], manualOrder: new Map([[c.id, 0]]) }
+    const manual = { groupBy: 'project', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } as const
+    expect(listGroups({ ...base, display: manual }).map(titles)).toEqual([['Three', 'One', 'Two']])
+    expect(listGroups({ ...base, display: { ...manual, sortDir: 'desc' } }).map(titles)).toEqual([['Two', 'One', 'Three']])
+    expect(listGroups({ ...base, display: { ...manual, groupBy: 'none' } }).map(titles)).toEqual([['Three', 'One', 'Two']])
+  })
 })

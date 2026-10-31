@@ -192,6 +192,8 @@ var demoRules = []demoRule{
 	{"Task pages", false, prefix("/api/v1/task-pages")},
 	{"Task pages", false, prefix("/api/v1/pages")},
 	{"Server settings", true, prefix("/api/v1/settings")},
+	// The server's file sizes are the operator's business (op-log-compaction D7).
+	{"Database storage", false, exact("/api/v1/settings/storage")},
 	{"App passwords", true, prefix("/api/v1/app-passwords")},
 	{"Calendar feeds", false, prefix("/api/v1/calendar-feeds")},
 	{"Calendar feeds", false, prefix("/feeds")},

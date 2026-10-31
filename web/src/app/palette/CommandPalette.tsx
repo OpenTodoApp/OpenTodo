@@ -12,7 +12,8 @@ import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
-import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading } from '../../lib/localData'
+import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
+import { dayPartsOn } from '../../lib/dayParts'
 import { isFavourite } from '../../lib/favourites'
 import { earlierIds } from '../../lib/dayLists'
 import { usePickScores } from '../../lib/pickRank'
@@ -24,7 +25,7 @@ import { workspaceLabel } from '../workspaceNav'
 import type { Task, User } from '../../lib/types'
 import { ComboboxField, ComboboxList, ComboboxPanel, Dialog } from '../../ui'
 import { useCombobox } from '../../ui'
-import { Icon } from '../../ui'
+import { CatalogueIcon, Icon } from '../../ui'
 import { currentFilter, listState } from '../listActions'
 import { Confirmation } from '../menus/ActionMenu'
 import { NamePrompt } from '../NamePrompt'
@@ -38,20 +39,25 @@ import { buildEntries, makeTaskEntry } from './index'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
 import { t } from '../../lib/i18n'
 import { useAssistantStatus } from '../../lib/assistantStatus'
-import { addFromBar, lineToInput } from './addFromBar'
+import { addFromBar, addManyFromBar, lineToInput, logWinFromBar } from './addFromBar'
+import { slotStateOf } from '../task-list/slotActions'
+import { useMissedBlocks } from '../calendar/useMissedBlocks'
 import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarParts'
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { Snippet, usePaletteNotes } from './notesSection'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
 const DEBOUNCE_MS = 150
 const RECENT = 10
 
-export default function CommandPalette({ user, onClose, showShortcuts, initialMode = 'search', initialText }: {
+export default function CommandPalette({ user, onClose, showShortcuts, initialMode = 'search', initialText, logWin }: {
   user: User | null; onClose: () => void; showShortcuts: () => void; initialMode?: BarMode
   /** Text Add mode starts with (the workbench shows the chips with it). */
   initialText?: string
+  /** Opened by "Log a win" (today-closed-list D6): Add mode with "Log as done" on. */
+  logWin?: boolean
 }) {
   const route = useRoute()
   const today = useToday()
@@ -87,6 +93,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   }, [typed])
 
   const agentExclusions = useAgentExclusions()
+  const reviewEvery = useReviewEvery()
+  const missedBlocks = useMissedBlocks().length
   const ctx = useMemo<PaletteContext>(() => {
     const projectId = route.view === 'project' ? route.id : null
     const project = projectId ? projects.find((p) => p.id === projectId) : undefined
@@ -104,13 +112,17 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
         openTasks: tasks.filter((task) => task.project_id === project.id && !task.completed_at).length,
         pinned: isFavourite(prefs, 'project', project.id),
         keptAway: agentExclusions.has(project.id),
+        reviewEvery: reviewEvery.get(project.id),
       } : undefined,
       view: view ? { row: view, peers: sorted, isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
       earlier: earlierIds(tasks, projects, today),
+      dayParts: dayPartsOn(prefs),
+      slot: task ? slotStateOf(task.id) : null,
+      missedBlocks,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, workspaceState])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   // Tasks and projects of every workspace: picking one elsewhere switches the device (workspaces).
@@ -144,6 +156,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs, ...wsFilter }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, wsFilter, taskEntry])
 
   const trailing = useMemo(() => trailingEntries(ctx), [ctx])
+  // Notes (notes-overview D5): after the text matches, before the trailing commands.
+  const notes = usePaletteNotes(query, tasks, projects)
   // Search's last entry: the text as a new task, never first, so Enter never adds by surprise.
   const addLine = async (line: string) => { await addFromBar(await lineToInput(line, projects, labels), route, user?.id) }
   const addEntry = useMemo<Entry | null>(() => (query.trim() ? {
@@ -163,7 +177,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const keepOpen = useRef(false)
   const state = useCombobox<Entry>({
     source: commandsMode ? commandsOnly : source, emptySource: commandsMode ? commandsOnly : emptySource, prefix: commandsMode ? [] : prefix,
-    suffix: commandsMode ? [] : addEntry ? [...trailing, addEntry] : trailing, limit: PALETTE_LIMIT, rankContext: 'palette',
+    suffix: commandsMode ? [] : [...notes.entries, ...trailing, ...(addEntry ? [addEntry] : [])], limit: PALETTE_LIMIT, rankContext: 'palette',
     getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: (e) => secondaryOf(e, false), getKeywords: (e) => e.keywords, getGroup: groupOf,
     onPick: (e) => runEntry(e),
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
@@ -223,16 +237,21 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       onEscape={escape}>
       <div data-combobox data-palette data-bar-mode-current={bar} onKeyDownCapture={onKeyDownCapture}>
         <ModeSwitch modes={modes} mode={bar} onMode={toMode} />
-        {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)}
+        {bar === 'add' && <AddPanel initial={initialText} onAdd={(input) => addFromBar(input, route, user?.id)} onAddMany={(inputs) => addManyFromBar(inputs, route, user?.id)}
           onAddAndOpen={async (input) => { await addFromBar(input, route, user?.id, true); onClose() }}
+          win={logWin ? { onLog: (input, open) => logWinFromBar(input, route, open).then(() => { if (open) onClose() }) } : undefined}
           escape={{ label: closesFromAdd ? t('Close') : t('Back'), run: escape }} />}
         {bar === 'ask' && <AskPanel onSent={onClose} />}
         {(bar === 'search' || bar === 'commands') && <>
           <ComboboxField state={field} look="palette" trailing={context} label={bar === 'commands' ? t('Run a command') : t('Search tasks, projects and commands')}
             placeholder={bar === 'commands' ? t('Type a command…') : t('Search or type a command…')} expanded autoFocus />
           <ComboboxList state={state} look="palette" label={t('Results')} emptyText={t('Nothing matches. Try fewer letters, or a filter query.')}
-            renderLeading={(e) => <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />}
-            renderTrailing={(e) => (e.shortcut ? <ShortcutKeys keys={e.shortcut} /> : null)} />
+            renderLeading={(e) => {
+              const plain = <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />
+              return e.catalogueIcon ? <CatalogueIcon name={e.catalogueIcon} className="text-faint" fallback={plain} /> : plain
+            }}
+            renderTrailing={(e) => (e.shortcut ? <ShortcutKeys keys={e.shortcut} /> : null)}
+            renderSecondary={(e) => { const s = notes.snippets.get(e.key); return s?.length ? <Snippet segments={s} lead={e.kind === 'note' ? e.marker : undefined} /> : null }} />
           <BarFooter ask={askAvailable} />
         </>}
       </div>

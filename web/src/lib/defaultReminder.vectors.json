@@ -1,0 +1,1212 @@
+{
+ "comment": "Default reminder rule (OpenSpec change default-reminders, design D3-D5). Times are UTC; $default is the default reminder id of user u1 on task t1; now is the write's time.",
+ "user_id": "u1",
+ "task_id": "t1",
+ "default_id": "6c1f4bb4-a19e-865c-836b-d0dd366d08c7",
+ "now": 1793000000000,
+ "parse": [
+  [
+   "",
+   null
+  ],
+  [
+   "-30",
+   -30
+  ],
+  [
+   "0",
+   0
+  ],
+  [
+   "-0",
+   0
+  ],
+  [
+   "30",
+   30
+  ],
+  [
+   "-1440",
+   -1440
+  ],
+  [
+   "525600",
+   525600
+  ],
+  [
+   "-525600",
+   -525600
+  ],
+  [
+   "525601",
+   null
+  ],
+  [
+   "thirty",
+   null
+  ],
+  [
+   "-30.5",
+   null
+  ],
+  [
+   " -30",
+   null
+  ],
+  [
+   "+30",
+   null
+  ],
+  [
+   "1e3",
+   null
+  ]
+ ],
+ "cases": [
+  {
+   "name": "schedule an undated task with a time",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "schedule an undated task with a date only: 1 day before 09:00",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -1440,
+      "fire_at": 1793869200000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "create a task with a due date",
+   "before": null,
+   "patch": {
+    "title": "x",
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    },
+    "completed_at": null,
+    "deleted_at": null
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "at the due time (offset 0) is a default, not none",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "0",
+    "reminder_default_dated": ""
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": 0,
+      "fire_at": 1793977200000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "on the day at 09:00",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "",
+    "reminder_default_dated": "0"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": 0,
+      "fire_at": 1793955600000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "zoned due fires in its own zone",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00",
+     "tz": "Europe/Rome"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793971800000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "no write to due: nothing",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "title": "renamed"
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "due cleared: nothing",
+   "before": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": null
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C1: moving a due from one day to another adds nothing",
+   "before": {
+    "due": {
+     "date": "2026-11-02",
+     "time": "15:00"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C2: no default for this kind (timed unset)",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C2: no default for this kind (dated unset)",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": ""
+   },
+   "expect": []
+  },
+  {
+   "name": "C2: malformed default reads as none",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "thirty",
+    "reminder_default_dated": ""
+   },
+   "expect": []
+  },
+  {
+   "name": "C2: out-of-range default reads as none",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-525601",
+    "reminder_default_dated": ""
+   },
+   "expect": []
+  },
+  {
+   "name": "C2: fractional default reads as none",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30.5",
+    "reminder_default_dated": ""
+   },
+   "expect": []
+  },
+  {
+   "name": "C2: the limit itself is a default",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-525600",
+    "reminder_default_dated": ""
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -525600,
+      "fire_at": 1762441200000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "C3: completed task",
+   "before": {
+    "due": null,
+    "completed_at": 1793000000000,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C3: completed in the same write",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    },
+    "completed_at": 1793000000000
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C3: deleted task",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": 1793000000000,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "habits are excluded",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": true
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C4: a stored live relative reminder wins",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "r-other",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -5,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C4: a deleted relative reminder does not count",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "r-other",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -5,
+     "deleted_at": 1793000000000
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "C4: an absolute reminder does not count",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "r-other",
+     "task_id": "t1",
+     "kind": "absolute",
+     "offset_minutes": null,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "C4: a relative reminder in the same write wins (quick add)",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [
+    {
+     "id": "r-new",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -5,
+      "fire_at": 1793976900000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C4: a relative reminder of another task in the batch does not count",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [
+    {
+     "id": "r-new",
+     "patch": {
+      "task_id": "t2",
+      "kind": "relative",
+      "offset_minutes": -5,
+      "deleted_at": null
+     }
+    }
+   ],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "C4: a stored relative reminder deleted in the same write does not count",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "r-other",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -5,
+     "deleted_at": null
+    }
+   ],
+   "batch": [
+    {
+     "id": "r-other",
+     "patch": {
+      "deleted_at": 1793000000000
+     }
+    }
+   ],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "C5/D4: a default reminder the person deleted stays deleted",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -30,
+     "deleted_at": 1793000000000
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C5/D4: a live default reminder made absolute blocks",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "absolute",
+     "offset_minutes": null,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "C5/D4: a default reminder Undo removed (no offset) comes back",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": null,
+     "deleted_at": 1793000000000
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "C5/D4: the default reminder already in the batch blocks",
+   "before": {
+    "due": null,
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "deleted_at": null
+     }
+    }
+   ],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "D5: a time is added to a date-only due",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -1440,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "D5: the time is removed",
+   "before": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -30,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "offset_minutes": -1440,
+      "fire_at": 1793869200000,
+      "delivered_at": null,
+      "dismissed_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "D5: an edited default reminder is left alone",
+   "before": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -120,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "D5: the new kind has no default",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -1440,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "D5: a deleted default reminder is left alone",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -1440,
+     "deleted_at": 1793000000000
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "D5: only another reminder: nothing",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "r-other",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -5,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "D5: same kind, another day: nothing",
+   "before": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-07",
+     "time": "10:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -30,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  }
+ ]
+}

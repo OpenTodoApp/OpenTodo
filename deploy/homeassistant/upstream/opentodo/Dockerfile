@@ -3,7 +3,7 @@
 # binary from the released image onto the Home Assistant base image, whose s6 init and bashio
 # turn the add-on options into OPENTODO_* variables (run.sh). Releases up to 0.14.2 come from
 # ghcr.io/pixari/opentodo, later ones from ghcr.io/opentodoapp/opentodo (scripts/bump.sh).
-ARG OPENTODO_VERSION=0.16.0
+ARG OPENTODO_VERSION=0.18.1
 FROM ghcr.io/opentodoapp/opentodo:${OPENTODO_VERSION} AS opentodo
 
 FROM ghcr.io/home-assistant/base:3.24

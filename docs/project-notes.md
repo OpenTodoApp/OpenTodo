@@ -17,7 +17,7 @@ Every project can have a note at the top: the goal, the links you keep looking u
 
 - Select **Add a note** under the quick add, click the note itself, or press <kbd>Shift</kbd>+<kbd>P</kbd> anywhere in the project while no text field has focus.
 - The note opens in place, in the same editor as task notes: start a line with `- ` for a bullet list, `[ ] ` for a checklist or `# ` for a heading, press <kbd>Ctrl</kbd>+<kbd>B</kbd> for bold or <kbd>Ctrl</kbd>+<kbd>K</kbd> for a link (<kbd>⌘</kbd> on a Mac). See [Notes, subtasks and dependencies](notes-and-subtasks.md#write-notes).
-- To finish, press <kbd>Esc</kbd> or select **Done**. The note is saved as you type, offline too, and reaches your other devices with the next sync.
+- To finish, press <kbd>Esc</kbd> or select **Done**. The note is saved on this device as you type, offline too, and is sent to your other devices when you pause for a few seconds or leave it.
 
 A note with headings and check items is shown with those headings and boxes at rest; ticking a box happens in the editor.
 

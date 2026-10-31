@@ -3,7 +3,8 @@ import { keysOf } from '../lib/shortcuts'
 import { navigate } from './router'
 import { useEffect, useMemo, useState } from 'react'
 import { useAllProjects, useDeletedTasks, useMembershipMap, useMeta } from '../lib/localData'
-import { restoreProject, restoreTask } from '../lib/ops'
+import { mutate, restoreProject, restoreTask } from '../lib/ops'
+import { useNoteRows } from '../lib/noteRows'
 import { canDeleteProject, canEditTasks, roleOf } from '../lib/sharing'
 import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KEY, trashItems, type PurgeRequest, type TrashItem } from '../lib/trash'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -14,7 +15,7 @@ import { messageOf } from '../lib/errorText'
 const NO_PURGES: PurgeRequest[] = []
 
 /**
- * The Trash (OpenSpec `trash-and-history`): deleted tasks and projects from local
+ * The Trash (OpenSpec `trash-and-history`): deleted tasks, projects and standalone notes (notes-overview D10) from local
  * data, newest first. Restore works offline; permanent deletion asks the server
  * and shows as pending while offline. Keys: j/k select, r restore, Delete purge.
  */
@@ -22,12 +23,15 @@ export function TrashView() {
   const dt = useDateTimeFormat()
   const tasks = useDeletedTasks()
   const projects = useAllProjects()
+  const noteRows = useNoteRows()
+  const notes = useMemo(() => noteRows.filter((n) => !!n.deleted_at), [noteRows])
   const retention = useMeta<number>(RETENTION_KEY, 30)
   const pending = useMeta<PurgeRequest[]>(PENDING_PURGES_KEY, NO_PURGES)
-  const items = useMemo(() => trashItems(tasks, projects), [tasks, projects])
+  const items = useMemo(() => trashItems(tasks, projects, notes), [tasks, projects, notes])
   const memberMap = useMembershipMap()
   const pendingKeys = useMemo(() => new Set(pending.map((p) => `${p.entity}:${p.id}`)), [pending])
   const taskById = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])
+  const noteById = useMemo(() => new Map(notes.map((n) => [n.id, n])), [notes])
   const [selected, setSelected] = useState(0)
   const [confirm, setConfirm] = useState<TrashItem | 'all' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -35,6 +39,7 @@ export function TrashView() {
 
   const allowed = (it: TrashItem): boolean => {
     if (it.entity === 'project') return canDeleteProject(roleOf(it.id, memberMap))
+    if (it.entity === 'note') return canEditTasks(roleOf(noteById.get(it.id)?.project_id, memberMap))
     return canEditTasks(roleOf(taskById.get(it.id)?.project_id, memberMap))
   }
 
@@ -42,6 +47,7 @@ export function TrashView() {
     setError(null)
     try {
       if (it.entity === 'task') await restoreTask(it.id)
+      else if (it.entity === 'note') await mutate('note', it.id, { deleted_at: null })
       else await restoreProject(it.id)
     } catch (err) {
       setError(messageOf(err))
@@ -102,13 +108,13 @@ export function TrashView() {
             return (
               <li key={`${it.entity}:${it.id}`} data-trash-id={it.id} onClick={() => setSelected(i)}
                 className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-control px-2 py-2 text-body ${i === selected ? 'bg-selected-row' : ''}`}>
-                <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : <Icon name="circle" size="xs" />}</span>
+                <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : <Icon name={it.entity === 'note' ? 'notebook-pen' : 'circle'} size="xs" />}</span>
                 {/* At least 12rem for the name: on a phone Restore and Delete permanently wrap under it instead of squeezing it. */}
                 <span className="min-w-0 flex-[1_1_12rem]">
                   <TruncatedText className="block" text={it.title} />
                   <span className="block text-meta text-faint">
                     {[
-                      it.entity === 'project' ? t('Project') : it.projectName,
+                      it.entity === 'project' ? t('Project') : it.entity === 'note' ? [t('Note'), it.projectName].filter(Boolean).join(' · ') : it.projectName,
                       t('deleted {instant}', { instant: dt.formatInstant(it.deletedAt, 'datetime') }),
                       isPending ? t('pending permanent deletion') : days !== null ? t('{n, plural, one {# day left} other {# days left}}', { n: days }) : '',
                     ].filter(Boolean).join(' · ')}

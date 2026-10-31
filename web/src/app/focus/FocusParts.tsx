@@ -7,6 +7,7 @@ import { formatDueLong } from '../../lib/dates'
 import { useProjects, useSubtasks } from '../../lib/localData'
 import { COUNTDOWN_BOUNDS, modeName, type FocusMode, type FocusPrefs } from '../../lib/focus/prefs'
 import { clockText, displayMs, inRun, isRunning, type FocusState } from '../../lib/focus/timer'
+import { EXTEND_MINUTES } from '../../lib/focus/session'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { keysOf } from '../../lib/shortcuts'
@@ -38,6 +39,19 @@ export interface CardActions {
   onBreak: () => void
   onStop: () => void
   onNext: () => void
+  /** "+5 min" and "+15 min" over a break that started on its own at the end of work (focus-everywhere D4). */
+  onExtend?: (minutes: number) => void
+}
+
+/** "+5 min" and "+15 min" (focus-everywhere D4): the finished work session goes on for that long. */
+function ExtendButtons({ onExtend }: { onExtend: (minutes: number) => void }) {
+  return (
+    <>
+      {EXTEND_MINUTES.map((m) => (
+        <Button key={m} size="sm" variant="secondary" onClick={() => onExtend(m)} data-focus-extend={m}>{t('+{n} min', { n: m })}</Button>
+      ))}
+    </>
+  )
 }
 
 /** The timer: digits (hidden from assistive technology; the live region speaks), the phase line and the secondary buttons. */
@@ -51,6 +65,7 @@ export function TimerCard({ session, mode, prefs, now, actions }: { session: Foc
       <p className="mt-1 text-meta text-muted transition-opacity duration-(--duration-ui)" data-focus-phase>{phaseLine(session, session && inRun(session) ? session.mode : mode, prefs)}</p>
       {session?.entryId && <p className="mt-1 flex items-center justify-center gap-1 text-hint text-faint" data-focus-logged><Icon name="clock" size="xs" />{t('Logged as time on this task')}</p>}
       <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {actions.onExtend && <ExtendButtons onExtend={actions.onExtend} />}
         {(working || session?.phase === 'break') && (
           <Button size="sm" variant="secondary" onClick={actions.onBreak} aria-keyshortcuts="b" data-focus-break>
             {session?.phase === 'break' ? t('End the break') : t('Take a break')} <span className="ui-kbd ml-1">{keysOf('focus.break')}</span>
@@ -68,7 +83,7 @@ export function TimerCard({ session, mode, prefs, now, actions }: { session: Foc
 export interface DoneAction { key: string; label: string; run: () => void }
 
 /** What ended, the time worked, and the next steps; its first action takes the focus unless the user is typing. */
-export function DoneState({ session, title, heading, actions, first }: { session: FocusState; title: string; heading: string; actions: DoneAction[]; first: RefObject<HTMLButtonElement | null> }) {
+export function DoneState({ session, title, heading, actions, first, onExtend }: { session: FocusState; title: string; heading: string; actions: DoneAction[]; first: RefObject<HTMLButtonElement | null>; onExtend?: (minutes: number) => void }) {
   const worked = session.ended?.workedMs ?? 0
   return (
     <section aria-labelledby="focus-done-heading" data-focus-done={session.ended?.kind} className="mb-4 rounded-card border border-default bg-surface p-4 shadow-1">
@@ -82,6 +97,7 @@ export function DoneState({ session, title, heading, actions, first }: { session
         {actions.map((a, i) => (
           <Button key={a.key} ref={i === 0 ? first : undefined} size="sm" variant={i === 0 ? 'primary' : 'secondary'} onClick={a.run} data-done-action={a.key}>{a.label}</Button>
         ))}
+        {onExtend && <ExtendButtons onExtend={onExtend} />}
       </div>
     </section>
   )
@@ -139,8 +155,8 @@ export function TaskPickerDialog({ tasks, onPick, onClose }: { tasks: readonly T
   )
 }
 
-/** Countdown asks for its length first: 5 to 180 minutes, the last length on this device preselected. */
-export function LengthDialog({ initial, onStart, onClose }: { initial: number; onStart: (minutes: number) => void; onClose: () => void }) {
+/** Countdown asks for its length first: the user's presets as chips that start at once (focus-everywhere D5), or 5 to 180 minutes in the field, the last length on this device preselected. */
+export function LengthDialog({ initial, presets = [], onStart, onClose }: { initial: number; presets?: readonly number[]; onStart: (minutes: number) => void; onClose: () => void }) {
   const [value, setValue] = useState(String(initial))
   const field = useRef<HTMLInputElement>(null)
   useEffect(() => { field.current?.select() }, [])
@@ -150,6 +166,14 @@ export function LengthDialog({ initial, onStart, onClose }: { initial: number; o
   return (
     <Dialog title={t('Countdown')} onClose={onClose} size="sm">
       <form onSubmit={(e) => { e.preventDefault(); if (valid) onStart(n) }} className="space-y-3" data-focus-length>
+        {presets.length > 0 && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label={t('Presets')} data-focus-presets>
+            {presets.map((m) => (
+              <Button key={m} size="sm" variant="secondary" type="button" onClick={() => onStart(m)} data-focus-preset={m}
+                aria-label={t('{n, plural, one {Start # minute} other {Start # minutes}}', { n: m })}>{t('{n} min', { n: m })}</Button>
+            ))}
+          </div>
+        )}
         <Field label={t('Length in minutes')} error={valid ? undefined : t('From {min} to {max} minutes', { min, max })}>
           <Input ref={field} type="number" inputMode="numeric" min={min} max={max} value={value} autoFocus onChange={(e) => setValue(e.target.value)} />
         </Field>

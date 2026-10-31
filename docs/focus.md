@@ -3,7 +3,7 @@ title: Focus
 summary: Work on one task at a time with a Pomodoro, Flowtime or Countdown timer, take breaks when you need them, and log the time worked on the task.
 audience: user
 section: Guides
-specs: [web-app, settings-navigation, focus-mode]
+specs: [web-app, settings-navigation, focus-mode, action-menus, app-shell]
 screens: [focus, settings/focus]
 order: 22
 ---
@@ -11,11 +11,20 @@ order: 22
 
 <picture><source srcset="images/focus-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/focus-light.webp" alt="The Focus screen: one task of the sample data with a large timer at 24:58, Work session 1 of 4, Logged as time on this task, and buttons for Back, Pause, Complete, Take a break and Next task."></picture>
 
-Focus shows one task and a large timer, and nothing else to pick from. Open it with <kbd>g</kbd> <kbd>Shift+F</kbd>, from **Focus on this task** in the menu of the [task panel](task-panel.md), or by typing `focus` in [Search and commands](search.md).
+Focus shows one task and a large timer, and nothing else to pick from.
+
+## Open it
+
+- **Focus** in the sidebar's **More** group, after Statistics. To keep it next to Inbox and Today, see [Sidebar counts and order](sidebar-counts-and-order.md).
+- The clock button at the top of the [task panel](task-panel.md), or **Focus on this task** in its **⋯** menu.
+- **Start focus** in a task's menu: <kbd>.</kbd>, the row's **⋯** button or a right-click. On a phone, hold the task, then tap **Actions**.
+- <kbd>g</kbd> <kbd>Shift+F</kbd>, or `focus` in [Search and commands](search.md).
+
+From a task, Focus starts a session at once (Countdown asks for the length first). If the session already runs on that task, Focus just opens. If it runs on another task, that one stops and a notice names it, with **Undo** to go back. Completed tasks and tasks you can only view don't offer this.
 
 ## Which task
 
-Without a task of your own choosing, Focus takes the first open task of **today's focus**, the up to three tasks you pick in the [Daily check](method/rhythms.md#daily-check). When you complete it, or press <kbd>n</kbd> for the next task, the next one of today's focus follows. When none is left, Focus says so and offers **Choose a task**, which finds any open task by name. **Change task** in the screen's menu does the same at any time.
+Without a task of your own choosing, Focus takes the first open task of **today's focus**, picked in the [Daily check](method/rhythms.md#daily-check) (with [Bento](method/rhythms.md#bento), in its Frog or Summit order). Its **⋯** menu has [**Add to focus**](method/rhythms.md#pick-the-focus-by-touch) and **Remove from focus**. Completing it, or <kbd>n</kbd>, moves on to the next one. When none is left, **Choose a task** finds any open task by name, as **Change task** in the screen's menu does at any time.
 
 The task's notes and subtasks are shown below the timer. Tick subtasks there; **Edit the notes** opens the task panel.
 
@@ -25,9 +34,9 @@ Choose the timer in the screen's menu or in Settings. It can't change while a se
 
 - **Pomodoro**: 25 minutes of work, then a 5 minute break, and a 15 minute break after every fourth session. All four numbers are yours to change.
 - **Flowtime**: counts up from 0:00 until you select **Done**, then offers a break.
-- **Countdown**: asks for a length first, from 5 to 180 minutes, and remembers the last one on this device.
+- **Countdown**: asks for a length first, from 5 to 180 minutes, and remembers the last one on this device. Your [presets](focus-options.md#countdown-presets) start a length in one tap.
 
-When a session or a break ends, Focus says what ended and how long you worked, and offers the next step: start the break, complete the task, or the next task.
+When a session or a break ends, Focus says what ended and how long you worked, and offers the next step: start the break, complete the task, the next task, or [a few more minutes](focus-options.md#a-few-more-minutes). A tone, a [break reminder](focus-options.md#breaks-sound-and-notifications) and a notification are optional.
 
 ## Keys
 
@@ -43,16 +52,10 @@ The keys don't fire while you type, for example in a new subtask. Press <kbd>g</
 
 ## Time worked
 
-Each stretch of work is a [time entry](time-tracking.md) on the task: starting starts an entry, pausing ends it, resuming starts a new one, and completing the task or starting a break ends it. Breaks are never logged. The entries sync like any other change, so your phone shows the time after the laptop syncs. When the app can't log time, the timer works the same and nothing is written.
+Each stretch of work is a [time entry](time-tracking.md) on the task: starting or resuming starts one; pausing, completing or a break ends it. Breaks are never logged. The entries sync like any other change. When the app can't log time, the timer works the same and nothing is written.
 
 The timer itself stays on the device: it is not synced or exported, and it is cleared when you sign out. The timer counts from the clock, so a reload, a laptop that slept or a tab in the background still shows the right time.
 
-## Breaks, sound and notifications
-
-**Break reminder** (off until you turn it on) shows a notice on any screen after 90 minutes of work without a break: **Take a break** starts a short break, **Not now** asks again after another 90 minutes. Pauses don't count as work.
-
-**Sound** plays a short tone when a session or a break ends while the app is on screen. If the tab is in the background and you allowed [notifications](push-notifications.md) on this device, a system notification says the session is done; select it to come back to Focus.
-
 ## Settings
 
-All of this is in **Settings → General → Focus timer**: the timer, the lengths, the long break, starting breaks and the next session automatically, the break reminder and its length, and the sound. These settings follow your account to every device.
+**Settings → General → Focus timer** holds the timer, the lengths, the auto-starts, and the [break reminder, sound, presets and noise](focus-options.md), for all your devices.

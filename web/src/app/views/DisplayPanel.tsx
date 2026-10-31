@@ -5,15 +5,16 @@
 // label pages show the same panel with the parts they have (list-display-options D2):
 // a part whose value is absent is left out.
 import { useRef, useState, type ReactNode } from 'react'
-import { Icon, IconButton, Popover, type IconName } from '../../ui'
+import { Icon, IconButton, Popover, Switch, type IconName } from '../../ui'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, VIEW_LAYOUTS,
-  type FieldDef, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout,
+  type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout,
 } from '../../lib/types'
-import { fieldSortOptions } from '../../lib/fieldSortOptions'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ListGroupBy } from '../../lib/listDisplay'
 import { ROW_LAYOUTS, type RowLayout } from '../../lib/rowLayout'
+import { COLOR_BY_MODES, type ColorByMode } from '../../lib/colorBy'
+import { COLOR_BY_LABEL } from '../calendar/colorByControls'
 
 export interface ViewDisplay {
   layout: ViewLayout
@@ -24,6 +25,8 @@ export interface ViewDisplay {
   hidden: readonly RowProperty[]
   /** The view's own row layout (row-layouts); absent follows the account's. */
   rowLayout?: RowLayout
+  /** The Board layout's notes preview (board-polish D4); off by default. */
+  cardNotes?: boolean
 }
 
 /** What the panel shows: a part without a value (layout, completed tasks, row properties) is left out. */
@@ -36,6 +39,8 @@ export interface PanelValue {
   hidden?: readonly RowProperty[]
   /** One line or detailed rows (row-layouts). */
   rowLayout?: RowLayout
+  /** Notes on cards, offered only while the layout is Board (board-polish D4). */
+  cardNotes?: boolean
 }
 
 export const GROUP_LABEL = translatedMap<ListGroupBy>({ project: msg('Project'), due: msg('Due date'), priority: msg('Priority'), label: msg('Label'), none: msg('None'), section: msg('Section') })
@@ -46,7 +51,7 @@ export const ROW_LAYOUT_LABEL = translatedMap<RowLayout>({ line: msg('One line')
 const ROW_LAYOUT_ICON: Record<RowLayout, IconName> = { line: 'rows-3', detailed: 'rows-2' }
 export const PROPERTY_LABEL = translatedMap<RowProperty>({
   date: msg('Date'), project: msg('Project'), labels: msg('Labels'), estimate: msg('Estimate'), assignee: msg('Assignee'),
-  deadline: msg('Deadline'), start: msg('Start'), origin: msg('Origin'),
+  deadline: msg('Deadline'), start: msg('Start'), origin: msg('Origin'), energy: msg('Energy'),
 })
 
 export interface DisplayPanelProps<V extends PanelValue = ViewDisplay> {
@@ -56,7 +61,8 @@ export interface DisplayPanelProps<V extends PanelValue = ViewDisplay> {
   groupOptions?: readonly V['groupBy'][]
   /** Order by choices, in order; a view's by default. */
   sortOptions?: readonly SortBy[]
-  sortFields?: readonly FieldDef[]
+  /** A board's Colour by (calendar-clarity "Colour by on boards"): a device choice for every board, not part of the view. */
+  colorBy?: { mode: ColorByMode; onChange: (mode: ColorByMode) => void }
 }
 
 /** The toolbar's display button and its panel. */
@@ -75,7 +81,7 @@ export function DisplayPanel<V extends PanelValue = ViewDisplay>(props: DisplayP
 }
 
 /** The panel's content; also rendered on its own in stories and tests. */
-export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, onChange: change, groupOptions = GROUP_BY_OPTIONS as readonly V['groupBy'][], sortOptions = SORT_BY_OPTIONS, sortFields = [] }: DisplayPanelProps<V>) {
+export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, onChange: change, groupOptions = GROUP_BY_OPTIONS as readonly V['groupBy'][], sortOptions = SORT_BY_OPTIONS, colorBy }: DisplayPanelProps<V>) {
   const [more, setMore] = useState(false)
   const onChange = (patch: Partial<PanelValue>) => change(patch as Partial<V>)
   const hiddenNow = value.hidden
@@ -84,7 +90,6 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
     const hidden = hiddenNow.includes(p) ? hiddenNow.filter((x) => x !== p) : [...hiddenNow, p]
     onChange({ hidden: ROW_PROPERTIES.filter((x) => hidden.includes(x)) })
   }
-  const fieldOptions = fieldSortOptions(sortFields, value.sortBy)
   const layout = value.layout
   return (
     <div data-display-panel className="text-meta">
@@ -105,9 +110,16 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Order by')} value={value.sortBy}
             onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}>
             {sortOptions.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
-            {fieldOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </OptionRow>
+        {colorBy && (
+          <OptionRow label={t('Colour by')}>
+            <select className="ui-input w-full py-1 text-meta" aria-label={t('Colour by')} value={colorBy.mode} data-display-color-by
+              onChange={(e) => colorBy.onChange(e.target.value as ColorByMode)}>
+              {COLOR_BY_MODES.map((m) => <option key={m} value={m}>{COLOR_BY_LABEL[m]}</option>)}
+            </select>
+          </OptionRow>
+        )}
         {value.showCompleted !== undefined && <OptionRow label={t('Completed tasks')}>
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Completed tasks')} value={value.showCompleted ? 'show' : 'hide'}
             onChange={(e) => onChange({ showCompleted: e.target.value === 'show' })}>
@@ -129,6 +141,11 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
             )
           })}
         </div>
+        {layout === 'board' && value.cardNotes !== undefined && (
+          <div className="mt-3" data-display-card-notes>
+            <Switch checked={value.cardNotes} onChange={(on) => onChange({ cardNotes: on })} label={t('Notes on cards')} />
+          </div>
+        )}
       </div>}
       <div className="border-t border-soft">
         <button type="button" aria-expanded={more} onClick={() => setMore(!more)} data-display-more

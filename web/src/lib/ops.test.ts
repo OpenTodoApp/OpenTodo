@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, getMeta, useDatabase } from './db'
 import {
   applyOps, archiveProject, createProject, createSubtask, createTask, deleteProject, deleteTask, getDeviceId, moveProject, mutate,
-  mutateMany, planTasks, resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
+  createTasks, mutateMany, planTasks, PlaintextTooLongError, resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
 } from './ops'
 import { compareByPosition } from './ordering'
 import { inboxTasks } from './inbox'
@@ -16,6 +16,10 @@ import {
   threadOrder, threadVisible,
 } from './comments'
 import { visibleTasks } from './trash'
+import { projectFlowOf, sectionFlowOf } from './flow'
+import { projectStatusOf, reviewEveryOf } from './reviewCadence'
+import { publishEncryption } from './e2ee'
+import { MAX_PLAINTEXT_BYTES } from './crypto'
 import { createSection, deleteSection, moveTaskToSection, projectSections, renameSection, reorderSection } from './sections'
 
 let n = 0
@@ -98,6 +102,41 @@ describe('applyOps', () => {
     expect(viewOptions(row!)).toEqual({ kind: 'list', groupBy: 'project', sortBy: 'title', sortDir: 'asc' })
     expect(viewOptions({ kind: 'grid', group_by: 'label', sort_by: 'mood', sort_dir: 'desc' })).toEqual({ kind: 'list', groupBy: 'label', sortBy: 'due', sortDir: 'desc' })
     expect(await db.tasks.count()).toBe(0)
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('keeps a flow value it does not know and reads it as the default (project-flow-modes)', async () => {
+    const db = useDatabase(`flow-${Date.now()}`)
+    await applyOps([
+      { id: 'f1', entity: 'project', entityId: 'p', field: 'name', value: 'Move house', ts: 1, device: 'A' },
+      { id: 'f2', entity: 'project', entityId: 'p', field: 'flow_mode', value: 'staged', ts: 1, device: 'A' },
+      { id: 'f3', entity: 'section', entityId: 's', field: 'project_id', value: 'p', ts: 1, device: 'A' },
+      { id: 'f4', entity: 'project', entityId: 'q', field: 'name', value: 'Old', ts: 1, device: 'A' },
+    ])
+    const p = await db.projects.get('p')
+    expect(p?.flow_mode).toBe('staged')
+    expect(projectFlowOf(p)).toBe('parallel')
+    expect((await db.projects.get('q'))?.flow_mode).toBe('')
+    expect(sectionFlowOf(await db.sections.get('s'))).toBe('')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('keeps a status and a review interval it does not know and reads them as active and weekly (project-review-cadence)', async () => {
+    const db = useDatabase(`cadence-${Date.now()}`)
+    await applyOps([
+      { id: 'c1', entity: 'project', entityId: 'p', field: 'name', value: 'Garden', ts: 1, device: 'A' },
+      { id: 'c2', entity: 'project', entityId: 'p', field: 'status', value: 'on-hold', ts: 1, device: 'A' },
+      { id: 'c3', entity: 'project_prefs', entityId: 'p', field: 'review_every', value: 'days:10', ts: 1, device: 'A' },
+      { id: 'c4', entity: 'project', entityId: 'q', field: 'name', value: 'Car', ts: 1, device: 'A' },
+      { id: 'c5', entity: 'project_prefs', entityId: 'q', field: 'reviewed_at', value: 5, ts: 1, device: 'A' },
+    ])
+    const p = await db.projects.get('p')
+    expect(p?.status).toBe('on-hold')
+    expect(projectStatusOf(p)).toBe('active')
+    expect((await db.prefs.get('p'))?.review_every).toBe('days:10')
+    expect(reviewEveryOf((await db.prefs.get('p'))?.review_every)).toBe('week')
+    expect((await db.projects.get('q'))?.status).toBe('')
+    expect((await db.prefs.get('q'))?.review_every).toBe('')
     expect(await db.outbox.count()).toBe(0)
   })
 
@@ -188,6 +227,14 @@ describe('mutate', () => {
     expect(await other.tasks.get(id)).toMatchObject({ recurrence: 'every 3 days', series_id: null, due: { date: '2026-10-12' } })
     await applyOps([{ id: 'sid', entity: 'task', entityId: 'occ', field: 'series_id', value: id, ts: 1, device: 'remote' }])
     expect(await other.tasks.get('occ')).toMatchObject({ series_id: id, recurrence: null })
+  })
+
+  it('writes no span op for a plain task and reads the flag as false (multi-day-tasks)', async () => {
+    const id = await createTask({ title: 'plain' })
+    expect((await db.tasks.get(id))?.span ?? false).toBe(false)
+    expect((await db.outbox.toArray()).some((o) => o.field === 'span')).toBe(false)
+    const trip = await createTask({ title: 'trip', start: '2026-11-03', due: { date: '2026-11-05' }, span: true })
+    expect((await db.tasks.get(trip))?.span).toBe(true)
   })
 
   it('defaults ical_extra to null and never writes it for app-created tasks (caldav)', async () => {
@@ -854,5 +901,53 @@ describe('mutateMany origin (in-app-assistant)', () => {
     expect(ops.map((o) => o.device)).toEqual([`assistant:${device}`, device])
     const t = await db.tasks.get(id)
     expect(t!._clock.priority.device).toBe(device)
+  })
+})
+
+describe('createTasks (paste-to-tasks 2.1)', () => {
+  const byPosition = async () => (await db.tasks.toArray()).filter((t) => !t.deleted_at).sort(compareByPosition)
+
+  it('positions increase in input order, appended after existing tasks, ids returned in order', async () => {
+    await createTask({ title: 'old' })
+    const ids = await createTasks([{ title: 'A' }, { title: 'B' }, { title: 'C' }])
+    const rows = await byPosition()
+    expect(rows.map((t) => t.title)).toEqual(['old', 'A', 'B', 'C'])
+    expect(rows.slice(1).map((t) => t.id)).toEqual(ids)
+  })
+
+  it('at the top the block keeps its reading order above every task', async () => {
+    await createTask({ title: 'old' })
+    await createTasks([{ title: 'A' }, { title: 'B' }], 'top')
+    expect((await byPosition()).map((t) => t.title)).toEqual(['A', 'B', 'old'])
+  })
+
+  it('writes every task and its typed reminders as one batch: one clock across the outbox', async () => {
+    const ids = await createTasks([
+      { title: 'Call Anna', due: { date: '2030-01-02', time: '10:00' }, reminders: [{ kind: 'offset', minutes: 30 }] },
+      { title: 'Send invoice', priority: 1 },
+    ])
+    const ops = await db.outbox.toArray()
+    expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
+    expect(new Set(ops.filter((o) => o.entity === 'task').map((o) => o.entityId))).toEqual(new Set(ids))
+    expect(ops.some((o) => o.entity === 'reminder' && o.field === 'task_id' && o.value === ids[0])).toBe(true)
+    expect((await db.tasks.get(ids[1]))!.priority).toBe(1)
+  })
+
+  it('subtasks of one parent keep the pasted order', async () => {
+    const parent = await createTask({ title: 'Plan trip' })
+    await createTasks(['Passport', 'Charger', 'Tickets'].map((title) => ({ title, parent_id: parent })))
+    expect((await byPosition()).filter((t) => t.parent_id === parent).map((t) => t.title)).toEqual(['Passport', 'Charger', 'Tickets'])
+  })
+
+  it('an over-long encrypted title refuses the whole batch before any op exists', async () => {
+    publishEncryption({ enabled: true })
+    try {
+      const before = await db.outbox.count()
+      await expect(createTasks([{ title: 'Fine' }, { title: 'x'.repeat(MAX_PLAINTEXT_BYTES + 1) }, { title: 'Also fine' }])).rejects.toBeInstanceOf(PlaintextTooLongError)
+      expect(await db.outbox.count()).toBe(before)
+      expect(await db.tasks.count()).toBe(0)
+    } finally {
+      publishEncryption({ enabled: false })
+    }
   })
 })
