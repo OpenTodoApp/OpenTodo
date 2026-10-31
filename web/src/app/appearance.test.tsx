@@ -6,7 +6,7 @@ import { db } from '../lib/db'
 import { applyOps, resetDeviceId } from '../lib/ops'
 import { setPromoted } from '../lib/appearance'
 import { setMethodMode } from '../lib/method/mode'
-import { click, flush, key, render, waitFor } from '../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
 import { AppearanceProvider } from './AppearanceProvider'
 import { AppearanceSection, SidebarSection } from './AppearanceSection'
 
@@ -16,6 +16,7 @@ beforeEach(async () => {
   resetDeviceId()
   document.documentElement.removeAttribute('data-theme')
   document.documentElement.removeAttribute('data-accent')
+  document.documentElement.removeAttribute('style')
   localStorage.clear()
 })
 
@@ -34,7 +35,10 @@ describe('Appearance panel', () => {
     await waitFor(() => tile('blue').getAttribute('aria-checked') === 'true', 'blue selected')
     expect(document.activeElement).toBe(tile('blue'))
     expect(root().getAttribute('data-accent')).toBe('blue')
+    // End reaches the Custom tile last; with no colour stored it only takes focus (accent-colour D5).
     await key(tile('blue'), 'End')
+    expect(document.activeElement).toBe(tile('custom'))
+    await key(tile('custom'), 'ArrowLeft')
     await waitFor(() => root().getAttribute('data-accent') === 'graphite', 'graphite applied')
     // Dark mode on a light system.
     await click([...document.querySelectorAll('[data-appearance-mode] [role="radio"]')].find((b) => b.textContent === 'Dark')!)
@@ -47,7 +51,96 @@ describe('Appearance panel', () => {
   })
 })
 
+// accent-colour task 4.2: the Custom tile and its picker.
+describe('Custom accent', () => {
+  const picker = () => document.querySelector<HTMLElement>('[data-accent-picker]')
+  const swatch = (hex: string) => document.querySelector<HTMLButtonElement>(`[data-swatch="${hex}"]`)!
+  const hexField = () => document.querySelector<HTMLInputElement>('[data-accent-hex]')!
+  const fields = async () => (await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)
+
+  it('by keyboard: the tile opens the picker, arrows move through the swatches, Space picks one batch, Escape returns to the tile', async () => {
+    const r = await render(<AppearanceProvider><AppearanceSection /></AppearanceProvider>)
+    await waitFor(() => !!tile('custom'), 'the Custom tile')
+    expect(tile('custom').textContent).toContain('Choose a colour')
+    // From Graphite, the arrow moves onto Custom without selecting it (no colour yet).
+    await click(tile('graphite'))
+    await waitFor(() => tile('graphite').getAttribute('aria-checked') === 'true', 'graphite')
+    await key(tile('graphite'), 'ArrowRight')
+    expect(document.activeElement).toBe(tile('custom'))
+    expect(tile('custom').getAttribute('aria-checked')).toBe('false')
+    // Enter on a button activates it.
+    await click(tile('custom'))
+    await waitFor(() => !!picker()?.querySelector('[role="radio"]'), 'the picker loaded')
+    const first = picker()!.querySelector<HTMLButtonElement>('[role="radio"]')!
+    first.focus()
+    await key(first, 'ArrowRight')
+    const second = document.activeElement as HTMLButtonElement
+    expect(second.getAttribute('data-swatch')).toBe('#ad4400')
+    await key(second, 'ArrowDown')
+    expect((document.activeElement as HTMLElement).getAttribute('data-swatch')).toBe('#962d00')
+    expect(await db.outbox.count()).toBe(1) // only graphite: moving picks nothing
+    // Space on a button activates it.
+    await click(document.activeElement!)
+    await waitFor(() => swatch('#962d00').getAttribute('aria-checked') === 'true', 'announced as selected')
+    await waitFor(async () => (await db.outbox.count()) === 3, 'the batch')
+    const ops = await db.outbox.toArray()
+    expect(ops.slice(1).map((o) => `${o.field}=${o.value}`)).toEqual(['theme_accent=custom', 'theme_accent_custom=#962d00'])
+    expect(ops[1].ts).toBe(ops[2].ts)
+    await waitFor(() => root().getAttribute('data-accent') === 'custom', 'applied at once')
+    expect(root().style.getPropertyValue('--ot-al-accent')).toBe('#962d00')
+    expect(tile('custom').getAttribute('aria-checked')).toBe('true')
+    expect(tile('custom').textContent).toContain('#962d00')
+    await key(document, 'Escape')
+    await waitFor(() => !picker(), 'closed')
+    expect(document.activeElement).toBe(tile('custom'))
+    await r.unmount()
+  })
+
+  it('a typed hex commits on Enter; an invalid one shows an error and writes nothing; a theme keeps the colour', async () => {
+    const r = await render(<AppearanceProvider><AppearanceSection /></AppearanceProvider>)
+    await waitFor(() => !!tile('custom'), 'the Custom tile')
+    await click(tile('custom'))
+    await waitFor(() => !!hexField(), 'the picker loaded')
+    await type(hexField(), 'nope')
+    await key(hexField(), 'Enter')
+    await waitFor(() => !!picker()?.textContent?.includes('#rrggbb'), 'the inline error')
+    expect(await db.outbox.count()).toBe(0)
+    await type(hexField(), 'FFE066')
+    // The preview follows while typing, without writing; the adjustment is named.
+    await waitFor(() => !!picker()?.querySelector('[data-accent-adjusted]'), 'the adjusted note')
+    expect(picker()!.querySelector('[data-accent-adjusted]')!.textContent).toContain('Adjusted for contrast')
+    expect(await db.outbox.count()).toBe(0)
+    await key(hexField(), 'Enter')
+    await waitFor(async () => (await fields()).includes('theme_accent_custom=#ffe066'), 'written')
+    await click(picker()!.querySelector<HTMLButtonElement>('.ui-btn--primary')!)
+    await waitFor(() => !picker(), 'Done closes')
+    // Teal, then Custom again: the colour was never cleared.
+    await click(tile('teal'))
+    await waitFor(() => root().getAttribute('data-accent') === 'teal', 'teal')
+    expect(root().style.getPropertyValue('--ot-al-accent')).toBe('')
+    expect((await db.userPrefs.get('me'))?.theme_accent_custom).toBe('#ffe066')
+    await click(tile('custom'))
+    await waitFor(() => root().getAttribute('data-accent') === 'custom', 'custom again')
+    expect((await fields()).slice(-1)).toEqual(['theme_accent=custom'])
+    await r.unmount()
+  })
+})
+
 describe('AppearanceProvider', () => {
+  it('a custom colour synced from another device applies without a reload and is cached for the first frame', async () => {
+    const r = await render(<AppearanceProvider><p>app</p></AppearanceProvider>)
+    const ts = Date.now()
+    await applyOps([
+      { id: 'c1', entity: 'user_prefs', entityId: 'me', field: 'theme_accent', value: 'custom', ts, device: 'phone' },
+      { id: 'c2', entity: 'user_prefs', entityId: 'me', field: 'theme_accent_custom', value: '#1f6feb', ts, device: 'phone' },
+    ] as never)
+    await waitFor(() => root().getAttribute('data-accent') === 'custom', 'the synced custom accent')
+    expect(root().style.getPropertyValue('--ot-al-accent')).toBe('#1567e2')
+    expect(JSON.parse(localStorage.getItem('ot.appearance')!)).toMatchObject({ accent: 'custom', bar: '#1567e2', custom: { input: '#1f6feb', light: '#1567e2' } })
+    expect(await db.outbox.count()).toBe(0)
+    await r.unmount()
+  })
+
   it('a synced change from another device updates the root, and the cache never writes an op', async () => {
     localStorage.setItem('ot.appearance', JSON.stringify({ mode: 'dark', accent: 'rose', bar: '#be123c' }))
     const r = await render(<AppearanceProvider><p>app</p></AppearanceProvider>)

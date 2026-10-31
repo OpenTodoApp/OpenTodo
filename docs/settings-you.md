@@ -36,7 +36,7 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 Three pages, **Theme and density**, **Sidebar** and **Task details**. These choices follow your account to every device, also offline:
 
 - **Mode**: **System** follows your device's light or dark setting (the default), **Light** and **Dark** keep the app that way whatever the device says.
-- **Theme**: the colour of buttons, links, the focus ring and selected items: **Emerald** (the default), **Blue**, **Indigo**, **Violet**, **Rose**, **Orange**, **Teal** or **Graphite**. Each tile previews its theme; the arrow keys move between them. On a phone the tiles are one scrollable row.
+- **Theme**: the colour of buttons, links, the focus ring and selected items: **Emerald** (the default), **Blue**, **Indigo**, **Violet**, **Rose**, **Orange**, **Teal**, **Graphite** or [**Custom**](custom-accent.md). Each tile previews its theme; the arrow keys move between them. On a phone the tiles are one scrollable row.
 - **Density**: **Comfortable** (the default) or **Compact**, which makes task rows, group headers and the sidebar tighter. On a touch screen every target stays full size in both.
 - **Task rows**: [one line or detailed](row-layouts.md).
 - **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with a long press. On by default; turning it off on one device turns it off on all of them. Computers without vibration do not show the switch.

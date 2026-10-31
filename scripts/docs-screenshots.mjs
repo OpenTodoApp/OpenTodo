@@ -649,6 +649,13 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 350 }
   } },
+  // The custom accent picker (accent-colour D5): a pale yellow typed, previewed and adjusted for contrast.
+  { name: 'custom-accent', server: P, async run(p) {
+    await go(p, plainBase, '/settings/appearance/theme', () => p.locator('[data-theme-tile="custom"]').waitFor())
+    await p.locator('[data-theme-tile="custom"]').click()
+    const field = p.locator('[data-accent-hex]'); await field.waitFor()
+    await field.fill('#ffe066'); await p.locator('[data-accent-adjusted]').waitFor(); await settle(p, 400)
+  } },
   // A task page as a guest sees it (task-pages): its own document at /t/<secret>.
   { name: 'task-page', server: P, async run(p) {
     await p.goto(plain.pageLink); await p.getByRole('heading', { level: 1, name: 'Paint the fence' }).waitFor(); await settle(p, 800)

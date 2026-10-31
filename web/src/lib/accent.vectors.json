@@ -1,0 +1,245 @@
+{
+  "$comment": "Custom accent derivation vectors (OpenSpec change accent-colour, design D8): each picked colour with its derived values, checked by accentDerive.test.ts. Client-only: the server never renders the accent. Change these only on purpose, with a CHANGELOG entry, since every user with a custom accent sees the new values.",
+  "vectors": [
+    {
+      "input": "#047857",
+      "note": "Emerald light accent",
+      "light": "#047857",
+      "dark": "#3c9b78",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": false,
+        "hue": false
+      }
+    },
+    {
+      "input": "#1d4ed8",
+      "note": "Blue light accent",
+      "light": "#1d4ed8",
+      "dark": "#5185ff",
+      "on": "#ffffff",
+      "button": "#2153dd",
+      "adjusted": {
+        "lightness": false,
+        "hue": false
+      }
+    },
+    {
+      "input": "#4338ca",
+      "note": "Indigo light accent",
+      "light": "#4338ca",
+      "dark": "#747cff",
+      "on": "#ffffff",
+      "button": "#4f49db",
+      "adjusted": {
+        "lightness": false,
+        "hue": false
+      }
+    },
+    {
+      "input": "#6d28d9",
+      "note": "Violet light accent",
+      "light": "#6d28d9",
+      "dark": "#9871ff",
+      "on": "#ffffff",
+      "button": "#7433e2",
+      "adjusted": {
+        "lightness": false,
+        "hue": false
+      }
+    },
+    {
+      "input": "#be123c",
+      "note": "Rose light accent",
+      "light": "#be123c",
+      "dark": "#f25065",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": false,
+        "hue": false
+      }
+    },
+    {
+      "input": "#c2410c",
+      "note": "Orange light accent",
+      "light": "#c2410c",
+      "dark": "#e56236",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": false,
+        "hue": false
+      }
+    },
+    {
+      "input": "#0f766e",
+      "note": "Teal light accent",
+      "light": "#0f766e",
+      "dark": "#3f9990",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": false,
+        "hue": false
+      }
+    },
+    {
+      "input": "#334155",
+      "note": "Graphite light accent",
+      "light": "#334155",
+      "dark": "#7b8ba2",
+      "on": "#ffffff",
+      "button": "#526176",
+      "adjusted": {
+        "lightness": false,
+        "hue": false
+      }
+    },
+    {
+      "input": "#ff0000",
+      "note": "pure red",
+      "light": "#ca3800",
+      "dark": "#fc4800",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": true
+      }
+    },
+    {
+      "input": "#ffff00",
+      "note": "yellow",
+      "light": "#707000",
+      "dark": "#dede00",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#00ff00",
+      "note": "lime",
+      "light": "#007f00",
+      "dark": "#00f900",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#00ffff",
+      "note": "cyan",
+      "light": "#007a7a",
+      "dark": "#00f0f0",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#000080",
+      "note": "navy",
+      "light": "#011f94",
+      "dark": "#5085fd",
+      "on": "#ffffff",
+      "button": "#2857cb",
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#000000",
+      "note": "black",
+      "light": "#353535",
+      "dark": "#8a8a8a",
+      "on": "#ffffff",
+      "button": "#5f5f5f",
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#ffffff",
+      "note": "white",
+      "light": "#6d6d6d",
+      "dark": "#d9d9d9",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#808080",
+      "note": "mid grey",
+      "light": "#6d6d6d",
+      "dark": "#8a8a8a",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#ffc0cb",
+      "note": "pale pink",
+      "light": "#945d68",
+      "dark": "#ffc0cb",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#d93025",
+      "note": "near-danger red",
+      "light": "#c53d00",
+      "dark": "#f45417",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": true
+      }
+    },
+    {
+      "input": "#1f6feb",
+      "note": "a brand blue (spec scenario)",
+      "light": "#1567e2",
+      "dark": "#3c86ff",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    },
+    {
+      "input": "#ffe066",
+      "note": "pale yellow (spec scenario)",
+      "light": "#816c00",
+      "dark": "#f5d65b",
+      "on": "#ffffff",
+      "button": null,
+      "adjusted": {
+        "lightness": true,
+        "hue": false
+      }
+    }
+  ]
+}
