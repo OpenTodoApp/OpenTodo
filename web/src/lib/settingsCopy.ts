@@ -75,6 +75,8 @@ export const SETTINGS_COPY = {
       order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
       // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
       energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
+      // Formatting button (notes-toolbar-desktop D4): synced user_prefs.formatting_toggle, on by default.
+      formatting: { label: msg('Formatting button'), description: msg('A button beside notes and comments on a computer that shows bold, lists and links.') },
     },
   },
   // Settings → Account → Invitations (member-add-consent).

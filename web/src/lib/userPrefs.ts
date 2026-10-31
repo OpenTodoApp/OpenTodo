@@ -151,3 +151,17 @@ export function setDefaultReminder(kind: 'timed' | 'dated', minutes: number | nu
   if (minutes !== null && (!Number.isInteger(minutes) || Math.abs(minutes) > MAX_DEFAULT_OFFSET)) return Promise.reject(new Error('reminder offset out of range'))
   return mutate('user_prefs', USER_PREFS_ID, { [kind === 'timed' ? 'reminder_default_timed' : 'reminder_default_dated']: formatDefaultReminder(minutes) })
 }
+
+/**
+ * The Formatting button (OpenSpec change notes-toolbar-desktop, design D4): whether
+ * notes and the comment composer offer the Formatting toggle on a computer. Only
+ * "off" hides it; an empty or unknown value reads as on and is kept.
+ */
+export function formattingButtonOn(prefs: Partial<UserPrefs> | null | undefined): boolean {
+  return prefs?.formatting_toggle !== 'off'
+}
+
+/** Turns the Formatting button on or off for the account: one synced op, offline included. */
+export function setFormattingButton(on: boolean): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { formatting_toggle: on ? 'on' : 'off' })
+}
