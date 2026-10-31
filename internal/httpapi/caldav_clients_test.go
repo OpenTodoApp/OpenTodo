@@ -70,8 +70,10 @@ func TestThunderbirdCompletesOccurrence(t *testing.T) {
 	}
 }
 
-// TestCompletedOverrideOfAnotherDay: an override completed for a day that is
-// not the current occurrence is not modelled and completes nothing.
+// TestCompletedOverrideOfAnotherDay: an override completed for a later
+// occurrence completes that occurrence alone (OpenSpec change
+// series-exceptions); the series keeps its date and is served back with the
+// date as EXDATE and without the override.
 func TestCompletedOverrideOfAnotherDay(t *testing.T) {
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "TB daily", "due": map[string]any{"date": "2026-11-02"}, "recurrence": "every day"})
@@ -79,8 +81,15 @@ func TestCompletedOverrideOfAnotherDay(t *testing.T) {
 	id := out["id"].(string)
 	body := strings.ReplaceAll(clientFixture(t, "thunderbird-158", "occurrence-completed", id), "RECURRENCE-ID;VALUE=DATE:20261102", "RECURRENCE-ID;VALUE=DATE:20261105")
 	c.must("PUT", c.cal("inbox")+id+".ics", body, 204)
-	if d := e.task(id)["due"].(map[string]any); d["date"] != "2026-11-02" || occurrenceRecords(e, id) != 0 {
-		t.Fatalf("another day completed the series: %v", d)
+	if d := e.task(id)["due"].(map[string]any); d["date"] != "2026-11-02" || occurrenceRecords(e, id) != 1 {
+		t.Fatalf("series moved or the 5th not completed: %v", d)
+	}
+	if rec := e.task(occurrenceID(id, "2026-11-05")); rec["completed_at"] == nil || rec["occurrence_date"] != "2026-11-05" {
+		t.Fatalf("record: %v", rec)
+	}
+	_, ics := c.must("GET", c.cal("inbox")+id+".ics", "", 200)
+	if strings.Contains(ics, "RECURRENCE-ID") || !strings.Contains(ics, "EXDATE;VALUE=DATE:20261105\r\n") {
+		t.Fatalf("served:\n%s", ics)
 	}
 }
 

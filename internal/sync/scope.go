@@ -171,6 +171,8 @@ type resolver struct {
 	// known about each entry id.
 	batchTimeEntry map[string]*batchTimeEntry
 	timeEntries    map[string]*timeEntryState
+	// batchSeries marks the tasks this batch gives a series_id (occurrence_check.go).
+	batchSeries map[string]bool
 	// detail names the id behind the last refusal, when there is one (dependencies.go).
 	detail string
 	// graphs caches each scope's dependency graph for the batch (dependencies.go).
@@ -194,6 +196,7 @@ func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolv
 		r.noteComment(op)
 		r.noteAttachment(op)
 		r.noteTimeEntry(op)
+		r.noteSeries(op)
 		if op.Entity == "task" {
 			r.batchTasks[op.EntityID] = true
 		}
@@ -357,6 +360,11 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 	}
 	if op.Entity == "task" && op.Field == "blocked_by" {
 		if reason, err := r.checkBlockedBy(op, scope); err != nil || reason != "" {
+			return "", reason, err
+		}
+	}
+	if op.Entity == "task" && op.Field == "occurrence_date" {
+		if reason, err := r.checkOccurrenceDate(op, scope); err != nil || reason != "" {
 			return "", reason, err
 		}
 	}

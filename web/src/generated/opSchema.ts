@@ -116,6 +116,14 @@ export interface TaskFields {
   recurrence?: string | null
   series_id?: string | null
   /**
+   * The occurrence date an occurrence record stands for (OpenSpec change
+   * series-exceptions, design D1; iCalendar RECURRENCE-ID), kept when the
+   * record is moved. Written once with series_id; the resolver refuses it on
+   * a task without series_id and refuses a change once set. A date, not
+   * content; additive (a record without it stands for its due date).
+   */
+  occurrence_date?: string | null
+  /**
    * Account id of the assignee or null (OpenSpec change task-assignment);
    * additive. Apply checks it against the task scope's membership at receipt.
    */
@@ -842,7 +850,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, occurrence_date: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',

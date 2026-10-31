@@ -46,7 +46,7 @@ import { meetingsByDay, type DayMeetings } from './calendar/meetingCapacity'
 import { useNowMinutes } from './calendar/useNowMinutes'
 import { useReplanPreview, type ReplanPreviewState } from './calendar/useReplanPreview'
 import type { ProjectionHue, ReplanGhosts } from './calendar/DayColumn'
-import { useCalendarProjections } from './calendar/projections'
+import { commitProjectionDrop, useCalendarProjections } from './calendar/projections'
 
 // The re-plan bar and sheet load only when someone re-plans (replan-the-day).
 const ReplanPreview = lazy(() => import('./calendar/ReplanPreview'))
@@ -204,7 +204,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     back?.focus({ preventScroll: true })
   }, [placing])
 
-  const { drag, start } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: commit })
+  const { drag, start } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: (id, target) => { if (!commitProjectionDrop(id, target, toHHMM)) commit(id, target) } })
   const startDrag = useCallback<typeof start>((event, info) => {
     if (!taskMap.get(info.taskId)?.completed_at) start(event, info)
   }, [taskMap, start])

@@ -132,6 +132,7 @@ The server cannot decrypt. Each feature that needs content degrades explicitly:
 | --- | --- |
 | REST API reads | Return the ciphertext string in content fields, plaintext elsewhere. Scripts need the key to decrypt (format above). |
 | REST API writes | Accepted in plaintext; encrypted on sight by the next unlocked device. |
+| Occurrences of repeating tasks | A device copies and encrypts the content into an [occurrence record](recurrence.md#one-occurrence-alone) itself, since a ciphertext belongs to one task id. The records the server writes (a REST completion, the occurrence routes, assistants) carry no title or notes; the next unlocked device fills them in from the series. |
 | Export (`GET /api/v1/export`) | Ciphertext content, plaintext scheduling fields, and the wrapped key record under `encryption`, enough to decrypt elsewhere with the passphrase. Importing it into another account keeps the ids (so the binding still matches), but that account needs the same key record to decrypt. |
 | Import | Writes plaintext like REST; duplicate detection by name/title cannot match encrypted labels and projects, so an import may create duplicates. |
 | Backups | Hold ciphertext and the wrapped key record (plus any plaintext not yet purged). |

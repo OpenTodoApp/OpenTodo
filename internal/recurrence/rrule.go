@@ -46,6 +46,22 @@ func (r Rule) RRULE() string {
 	return strings.Join(parts, ";")
 }
 
+// RRULEUntil is RRULE with COUNT replaced by UNTIL=until (YYYY-MM-DD) when
+// until is set: a `for N times` rule served from its current occurrence ends on
+// the date of its last remaining occurrence (OpenSpec change series-exceptions,
+// design D10). An empty until is RRULE.
+func (r Rule) RRULEUntil(until string) string {
+	if until == "" || r.count == 0 {
+		return r.RRULE()
+	}
+	c := r
+	c.count = 0
+	if c.until == "" || until < c.until {
+		c.until = until
+	}
+	return c.RRULE()
+}
+
 func dayList(mask uint8) string {
 	var out []string
 	for wd := 1; wd <= 7; wd++ {
