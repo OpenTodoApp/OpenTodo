@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import vectors from './inbox.vectors.json'
-import { inboxTasks, isInboxTask, isPlannedWithoutProject, type InboxFields } from './inbox'
+import { inboxTasks, isInboxTask, type InboxFields } from './inbox'
 import type { Due } from './types'
 
 type VTask = { project_id: string | null; due: Due | null; start: string | null; completed_at: number | null; deleted_at: number | null }
@@ -37,14 +37,5 @@ describe('Inbox membership (shared vectors with internal/inbox)', () => {
     const base = { project_id: null, due: null, start: null, completed_at: null, deleted_at: null }
     const tasks = [{ ...base, id: 'a', parent_id: 'b' }, { ...base, id: 'b', parent_id: 'a' }]
     expect(inboxTasks(tasks).map((t) => t.id)).toEqual(['a', 'b'])
-  })
-
-  it('the planned line counts open, live, project-less scheduled tasks only', () => {
-    const base = { project_id: null, due: null, start: null, completed_at: null, deleted_at: null }
-    expect(isPlannedWithoutProject({ ...base, due: { date: '2026-10-23' } })).toBe(true)
-    expect(isPlannedWithoutProject({ ...base, start: 'someday' })).toBe(true)
-    expect(isPlannedWithoutProject(base)).toBe(false)
-    expect(isPlannedWithoutProject({ ...base, project_id: 'p', due: { date: '2026-10-23' } })).toBe(false)
-    expect(isPlannedWithoutProject({ ...base, due: { date: '2026-10-23' }, completed_at: 1 })).toBe(false)
   })
 })

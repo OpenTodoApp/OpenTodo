@@ -59,8 +59,3 @@ export function inboxTasks<T extends InboxFields & { id: string }>(tasks: readon
 export function countInbox(tasks: readonly (InboxFields & { id: string })[], known: readonly (InboxFields & { id: string })[] = tasks): number {
   return inboxTasks(tasks, known).length
 }
-
-/** Open, live, without a project and scheduled: the Inbox's "planned tasks without a project" line. */
-export function isPlannedWithoutProject(task: InboxFields): boolean {
-  return !task.completed_at && !task.deleted_at && task.project_id === null && isScheduled(task)
-}
