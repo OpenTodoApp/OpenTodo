@@ -173,7 +173,7 @@ describe('capacity', () => {
       task({ due: { date: '2026-10-14' }, estimate_minutes: 60 }),
     ]
     const load = dayLoad(tasks, day, 480)
-    expect(load).toEqual({ planned: 540, tasks: 540, events: 0, unestimated: 1, overTasks: true, overWithEvents: false, over: true })
+    expect(load).toEqual({ planned: 540, tasks: 540, events: 0, projected: 0, unestimated: 1, overTasks: true, overWithEvents: false, over: true })
     expect(formatLoad(load, 480)).toBe('9h / 8h')
   })
 

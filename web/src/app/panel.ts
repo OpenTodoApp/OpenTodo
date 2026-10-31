@@ -153,8 +153,16 @@ function dock(id: string): void {
   emit()
 }
 
+/**
+ * The projected occurrence a series was opened from (series-occurrences D6): the
+ * detail names its date under the title. Any other open replaces it.
+ */
+let projection: { id: string; date: string } | null = null
+
 /** Open a task: as a page, or docked in the slot on a page that keeps a split (an explicit open reopens a closed side panel). */
-export function openTaskPanel(id: string): void {
+export function openTaskPanel(id: string, projectedDate?: string): void {
+  const next = projectedDate ? { id, date: projectedDate } : null
+  if (next?.date !== projection?.date || next?.id !== projection?.id) { projection = next; emit() }
   if (!docks()) { openTaskPage(id); return }
   if (splitKind === 'panel') setSidePanelOpen(true)
   dock(id)
@@ -180,6 +188,7 @@ export function openPanel(key: string, render: () => ReactNode): void {
 }
 
 export function closePanel(): void {
+  projection = null
   if (!occupant) return
   occupant = null
   syncQuery(null)
@@ -200,8 +209,8 @@ export function panelTaskId(): string | null {
 }
 
 /** The list-side setter: a task id opens it, null closes the slot. */
-export function setPanelTaskId(id: string | null): void {
-  if (id) openTaskPanel(id)
+export function setPanelTaskId(id: string | null, projectedDate?: string): void {
+  if (id) openTaskPanel(id, projectedDate)
   else closePanel()
 }
 
@@ -239,6 +248,11 @@ export function usePanelTaskId(): string | null {
   return useSyncExternalStore(subscribe, panelTaskId, () => null)
 }
 
+/** The projected date the task `id` was opened from, if it was opened from a projection. */
+export function usePanelProjection(id: string | undefined): string | null {
+  return useSyncExternalStore(subscribe, () => (id && projection?.id === id ? projection.date : null), () => null)
+}
+
 /** The split page's empty pane, following `setTaskSplit`. */
 export function useSplitEmptyPane(): (() => ReactNode) | null {
   return useSyncExternalStore(subscribe, splitEmptyPane, () => null)
@@ -256,6 +270,7 @@ export function resetPanel(): void {
   splitEmpty = null
   splitKind = 'split'
   sideOpen = null
+  projection = null
   emit()
 }
 resettable('panel', resetPanel)

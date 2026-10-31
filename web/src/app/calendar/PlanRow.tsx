@@ -4,13 +4,14 @@
 // the day). Projected rows are dimmed, read-only and never selected; event rows are
 // read-only buttons that open their details.
 import type { EventBlock } from '../../lib/calendar'
-import { formatTime } from '../../lib/dates'
+import { formatDate, formatTime } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import { formatPlanLoad, planLoadTooltip, type PlanEntry, type PlanLoad, type Projection } from '../../lib/plan'
 import type { CalendarEvent, CalendarSubscription, Project, Task } from '../../lib/types'
 import { Icon, Tooltip, type HueName } from '../../ui'
 import { hiddenByFilter } from './CapacityLine'
+import { cappedNote, openProjection } from './projections'
 import { DeadlineMarker } from './DeadlineMarker'
 import { EventChip, EventRow } from '../CalendarEvents'
 import { TaskRow } from '../TaskRow'
@@ -51,17 +52,24 @@ export function PlanTaskRow({ task, date, time, today, selected, canEdit, projec
   )
 }
 
-/** A projected occurrence: dimmed, read-only, never selected, dragged or written. */
+/**
+ * A projected occurrence: dimmed, read-only, never selected, dragged or written. Tab
+ * reaches it; click, tap or Enter opens its series with the projected date named
+ * (series-occurrences D6).
+ */
 export function ProjectedRow({ projection, large }: { projection: Projection; large?: boolean }) {
-  return (
-    <div data-plan-projected={projection.id} className={`flex w-full min-w-0 items-center gap-x-1 rounded-chip border border-dashed border-default px-1 text-faint ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'}`}>
-      <span className="sr-only">{[projection.title || t('Untitled'), t('projected'), projection.time ? formatTime(projection.time) : '', projection.estimate_minutes ? formatMinutes(projection.estimate_minutes) : ''].filter(Boolean).join(', ')}</span>
+  const note = cappedNote(projection)
+  const row = (
+    <button type="button" data-plan-projected={projection.id} onClick={() => openProjection(projection)}
+      className={`flex w-full min-w-0 items-center gap-x-1 rounded-chip border border-dashed border-default px-1 text-left text-faint pointer-fine:hover:bg-hover ${large ? 'min-h-11 py-1 text-body' : 'min-h-6 flex-wrap py-0.5 text-meta'}`}>
+      <span className="sr-only">{[projection.title || t('Untitled'), t('projected'), formatDate(projection.date, 'full'), projection.time ? formatTime(projection.time) : '', projection.estimate_minutes ? formatMinutes(projection.estimate_minutes) : ''].filter(Boolean).join(', ')}</span>
       <span aria-hidden className="inline-flex shrink-0"><Icon name="repeat" size="xs" /></span>
       {projection.time && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(projection.time)}</span>}
       <span aria-hidden className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'}`}>{projection.title || t('Untitled')}</span>
       {projection.estimate_minutes ? <span aria-hidden className="shrink-0 text-hint tabular-nums">{formatMinutes(projection.estimate_minutes)}</span> : null}
-    </div>
+    </button>
   )
+  return note ? <Tooltip label={note}>{row}</Tooltip> : row
 }
 
 /** The day's capacity: three stacked segments against the day length, the figure and its tooltip carry the meaning. */

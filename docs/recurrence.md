@@ -13,7 +13,8 @@ A task can repeat. The rule is a short English phrase stored in the task's
 `recurrence` field, for example `every weekday` or `every 3 days after completion`.
 The same grammar is implemented by the server (`internal/recurrence`) and the
 web app (`web/src/lib/recurrence.ts`), and both are tested against one shared file
-of test vectors (`web/src/lib/recurrence.vectors.json`), so every device and the
+of test vectors (`web/src/lib/recurrence.vectors.json`; the projected occurrences have
+their own, `web/src/lib/occurrences.vectors.json`), so every device and the
 REST API compute the same dates. Every example on this page is one of those vectors.
 
 ## Grammar
@@ -111,15 +112,34 @@ in Someday clears its due date and so ends the repetition.
   is not moved back. Reopening a series that ended keeps its rule, so its next
   completion continues the schedule.
 
-### Projected occurrences in the Plan
+### Projected occurrences
 
-The calendar's [Plan](calendar-views.md#plan-the-next-two-weeks) draws the occurrences
-that would follow the current one inside the days it shows, dimmed, and counts their
-estimates in each day's total. They are computed on each device from the rule, the
-due date and the completed count with the same calculation as the preview, so every
-device draws the same ones. They are never written: no operation, no row, nothing to
-sync. They can't be moved, selected or completed; move the task itself and they
-follow. An end condition stops them. Every other view shows the current occurrence only.
+The calendar draws the occurrences that would follow the current one inside the days
+it shows: in the [Plan](calendar-views.md#plan-the-next-two-weeks) always, and in
+[Day, Week and Month](repeating-on-the-calendar.md) while
+**Show repeating occurrences** is on in the calendar's menu (on by default).
+[Upcoming](repeating-on-the-calendar.md) lists them for the next 14 days
+when you turn on the same item in its menu (off by default, so a daily task does not
+fill it). They are faint, with a dashed edge and the repeat icon, and each day's
+planned total counts their estimates ("45m repeating").
+
+They are computed on each device from the rule, the due date and the completed count,
+with one calculation shared by every view and the server (`web/src/lib/occurrences.ts`,
+its Go port on the server, pinned by `web/src/lib/occurrences.vectors.json`), so every
+device draws the same ones, offline too. They are never written: no operation, no row,
+nothing to sync. A series draws at most 31 in the days on screen. None is drawn on or
+before the current occurrence, nor before today, and an end condition stops them.
+
+They can't be moved, selected with <kbd>j</kbd> and <kbd>k</kbd> or completed: move or
+complete the task itself and they follow. Tab reaches them; clicking one or pressing
+<kbd>Enter</kbd> opens the series with the date it stands for named under the title
+("Projected for Thursday 15 October · next due Monday 12 October"). Today, projects,
+labels and saved views show the current occurrence only.
+
+Scripts and assistants can read the same dates: `GET /api/v1/tasks/{id}/occurrences`
+([API](api.md#a-series-dates-ahead)), `ot task occurrences`
+([CLI](cli.md)), and the `next_occurrences` of a repeating task in the
+[AI tools](mcp.md).
 
 ## Sync and convergence
 

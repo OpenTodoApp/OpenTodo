@@ -212,6 +212,8 @@ export interface DayLoad {
   tasks: number
   /** Busy event minutes counted (0 unless "Count meetings in capacity" is on). */
   events: number
+  /** Estimates of the projected occurrences drawn on the day (series-occurrences D5). */
+  projected: number
   /** Open tasks of the day without an estimate (counted as 0). */
   unestimated: number
   /** The tasks alone exceed the day length (the danger tone). */
@@ -227,9 +229,11 @@ export interface DayLoad {
  * capacity"): the open tasks' estimates, plus `eventMinutes` when the device counts
  * meetings (meeting-aware-capacity D3). `slots` is what the day's calendar slots
  * change (calendar-slots D6, lib/slots `slotCapacity`): each slot counts once with
- * the greater of its length and its tasks' estimates.
+ * the greater of its length and its tasks' estimates. `projected` are the day's drawn
+ * projected occurrences (series-occurrences D5): their estimates join the tasks', named
+ * apart, and one without an estimate joins the unestimated count.
  */
-export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number, eventMinutes = 0, slots: { extra: number; covered: number } = NO_SLOT_LOAD): DayLoad {
+export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number, eventMinutes = 0, slots: { extra: number; covered: number } = NO_SLOT_LOAD, projected: readonly { estimate_minutes: number | null }[] = []): DayLoad {
   let taskMinutes = slots.extra
   let unestimated = -slots.covered
   for (const t of tasks) {
@@ -238,11 +242,16 @@ export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 
     else unestimated++
   }
   unestimated = Math.max(0, unestimated)
+  let repeating = 0
+  for (const p of projected) {
+    if (p.estimate_minutes) repeating += p.estimate_minutes
+    else unestimated++
+  }
   const events = Math.max(0, eventMinutes)
-  const planned = taskMinutes + events
-  const overTasks = taskMinutes > dayLength
+  const planned = taskMinutes + repeating + events
+  const overTasks = taskMinutes + repeating > dayLength
   const overWithEvents = !overTasks && planned > dayLength
-  return { planned, tasks: taskMinutes, events, unestimated, overTasks, overWithEvents, over: overTasks || overWithEvents }
+  return { planned, tasks: taskMinutes, events, projected: repeating, unestimated, overTasks, overWithEvents, over: overTasks || overWithEvents }
 }
 
 /**

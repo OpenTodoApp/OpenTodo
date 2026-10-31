@@ -180,6 +180,11 @@ var cmdSpecs = []cmdSpec{
 			{Name: "append", Type: "string", Description: "add this text at the end of the note without replacing anything"},
 			{Name: "clear", Type: "bool", Description: "replace the note with empty text"},
 		}, Writes: true, DryRun: true, Output: map[string]any{"oneOf": []any{ref("note_text"), ref("note_append")}}},
+	{Name: "task occurrences", Summary: "list a recurring task's current and projected occurrence dates in a range (date, time, state); read-only", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{
+			{Name: "from", Type: "string", Description: "first day: YYYY-MM-DD, today, yesterday or a weekday (default today)"},
+			{Name: "to", Type: "string", Description: "last day (default 30 days after --from; at most 366 days)"},
+		}, Output: ref("occurrences")},
 	{Name: "token list", Aliases: []string{"token ls"}, Summary: "list API tokens with their scopes", Output: arrayOf("token")},
 	{Name: "token create", Aliases: []string{"token add"}, Summary: "create an API token and print its secret once", Args: []argSpec{{Name: "name", Required: true, Repeatable: true}},
 		Flags: []flagSpec{{Name: "scope", Type: "string", Enum: tokenScopes, Default: "full", Description: "token scope: full, read or agent"}}, Writes: true, DryRun: true, Output: ref("token_created")},
