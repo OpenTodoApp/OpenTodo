@@ -5750,5 +5750,17 @@
   "Show only the tasks a query matches": "Mostra solo le attività che corrispondono a una query",
   "Tasks with any of the ticked labels.": "Attività con una qualsiasi delle etichette selezionate.",
   "The filter language of saved views, for example ##Work & p1 or @errand.": "Il linguaggio dei filtri delle viste salvate, per esempio ##Work & p1 o @errand.",
-  "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": "{n, plural, one {# attività nascosta dal filtro} other {# attività nascoste dal filtro}}"
+  "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": "{n, plural, one {# attività nascosta dal filtro} other {# attività nascoste dal filtro}}",
+  "Database": "Database",
+  "Database size, free space inside it and the last notes compaction": "Dimensione del database, spazio libero al suo interno e ultima compattazione delle note",
+  "Database storage": "Spazio del database",
+  "Database storage needs a connection to the server.": "Lo spazio del database richiede una connessione al server.",
+  "Last compacted": "Ultima compattazione",
+  "Not yet": "Non ancora",
+  "Old note versions go after 30 days, and the space they took returns to the disk.": "Le vecchie versioni delle note vengono rimosse dopo 30 giorni e il loro spazio torna al disco.",
+  "Older note versions are kept one per day (UTC).": "Le versioni più vecchie delle note sono conservate una al giorno (UTC).",
+  "Shrinking the file once needs {bytes} of free disk space; old versions still go.": "Ridurre il file una volta richiede {bytes} liberi su disco; le vecchie versioni vengono rimosse comunque.",
+  "The file is shrunk once, at a quiet moment; old versions already go.": "Il file viene ridotto una volta, in un momento tranquillo; le vecchie versioni vengono già rimosse.",
+  "{date}, {n, plural, one {# old note version} other {# old note versions}} removed, {bytes} reclaimed": "{date}, {n, plural, one {# vecchia versione di nota rimossa} other {# vecchie versioni di note rimosse}}, {bytes} recuperati",
+  "{size}, {free} free inside the file": "{size}, {free} liberi nel file"
 }

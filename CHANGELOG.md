@@ -4,6 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **An older database is rewritten once so it can shrink.** A database created before this version is converted to SQLite's incremental vacuum mode by one full `VACUUM`, run by the new compaction job at a quiet moment (no change for 10 minutes, or at its next run once 7 days passed) and only with free disk space of the database's size plus 10 %. It takes about as long as a backup; reads continue, and a write that waits longer than 5 seconds fails as busy and is retried by the device. Without the space the server logs a warning, keeps removing old note versions and the file stops growing. New databases need nothing. No migration, no new variable. ([Database size and compaction](docs/backups.md#database-size-and-compaction))
+
+### Added
+
+- **The server removes old note versions.** Every save of a task's or a project's note stored the whole note, so the database kept every old copy and a new device downloaded them all. Once a day, after something changed, a background job deletes the superseded note documents the server received more than 30 days ago, in every scope, shared projects included, and keeps the last readable revision of each UTC day for older edits; the current note and every other field are never touched, and devices converge exactly as before (cursors stay valid, offline devices keep their edits). It works in short steps, so syncing is never held up, and returns the freed space to the file system. **Settings → Server → Backups → Database storage** shows the owner the database's size, the free space inside it and what the last compaction removed and reclaimed (`GET /api/v1/settings/storage`), and the History of a task or project says in one line that older note versions are kept one per day. On a host the job runs per tenant and lowers its operation count. ([Sync](docs/sync.md#compaction), [Backups](docs/backups.md#database-size-and-compaction), `notes-compaction`, closes #652)
+
 ## [0.18.1] - 2026-10-31
 
 OpenTodo 0.18.1 is a fix release. A device whose clock runs fast no longer loses an edit when it has more than 500 changes waiting to upload, and the browser extension 0.6.2 shortens its store description so the Chrome Web Store accepts it. Nothing to do when upgrading.

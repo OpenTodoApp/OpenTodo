@@ -60,8 +60,7 @@ func (s *Service) PurgeSupersededContent(ctx context.Context, userID string, fie
 	defer tx.Rollback()
 	rows, err := tx.QueryContext(ctx, `SELECT o.seq FROM ops o JOIN op_scopes s ON s.seq = o.seq
 		WHERE s.scope_id = ? AND (`+strings.Join(pairs, " OR ")+`)
-		AND NOT EXISTS (SELECT 1 FROM scope_fields f WHERE f.scope_id = s.scope_id AND f.entity = o.entity
-			AND f.entity_id = o.entity_id AND f.field = o.field AND f.ts = o.ts AND f.device = o.device)`,
+		AND `+supersededSQL,
 		append([]any{scope}, args...)...)
 	if err != nil {
 		return 0, fmt.Errorf("find superseded ops: %w", err)

@@ -157,6 +157,9 @@ func LatestVersion() int {
 // below user_version that was never applied (a migration merged after a higher
 // one already ran) is reported with an error log instead of passing silently.
 func Migrate(ctx context.Context, db *sql.DB) error {
+	if err := initAutoVacuum(ctx, db); err != nil {
+		return err
+	}
 	var current int
 	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&current); err != nil {
 		return fmt.Errorf("read schema version: %w", err)

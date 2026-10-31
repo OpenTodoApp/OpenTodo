@@ -59,6 +59,8 @@ import { demoFeatures, joinList, type SettingsPage, type SettingsSection } from 
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
 const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
+// Settings → Server → Backups → Database storage (op-log-compaction): owner only, loaded with the page.
+const DatabaseStoragePanel = lazy(() => import('./DatabaseStoragePanel').then((m) => ({ default: m.DatabaseStoragePanel })))
 
 interface PageProps { user: User; demo: boolean; hosted: boolean; onLogout: () => void }
 
@@ -112,7 +114,8 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'people/users': ({ user, demo }) => <><ConfigWarningsNotice user={user} /><DemoDisabled on={demo}><AdministrationSections user={user} /></DemoDisabled></>,
   'people/access-policies': ({ demo }) => <Anchor id="access-policies"><DemoDisabled on={demo}><MfaPolicyPanel /><ProjectInvitePolicyPanel /></DemoDisabled></Anchor>,
   'people/sso': ({ demo }) => <DemoDisabled on={demo}><SsoPanel /></DemoDisabled>,
-  'server/backups': ({ demo }) => <DemoDisabled on={demo}><BackupsPanel /></DemoDisabled>,
+  // Backups, then the database file and notes compaction (op-log-compaction D7).
+  'server/backups': ({ user, demo }) => <DemoDisabled on={demo}><BackupsPanel /><Suspense fallback={null}><DatabaseStoragePanel isOwner={user.role === 'owner'} /></Suspense></DemoDisabled>,
   'server/download': () => <ServerArchivePanel />,
   'server/attachments': () => <AttachmentSettingsPanel />,
   // Outgoing email (outgoing-email change): the owner's SMTP settings; a demo instance never builds the mailer.

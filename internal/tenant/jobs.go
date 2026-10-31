@@ -50,6 +50,9 @@ func (t *Tenant) buildJobs() []jobs.Job {
 		list = append(list, jobs.Job{Name: jobs.Rules, Next: t.Rules.NextDue, Run: t.Rules.RunOnce})
 	}
 	list = append(list, jobs.Job{Name: jobs.Housekeeping, Next: t.nextHousekeeping, Run: t.housekeeping, Retry: housekeepingRetry})
+	// Superseded note history (op-log-compaction): its own job, so a long pass
+	// never delays retention; registered on a demo too, where it finds nothing.
+	list = append(list, t.Compaction.Job())
 	if p := t.Email.Poller(); p != nil {
 		list = append(list, jobs.Job{Name: jobs.Email, Run: p.Tick, Retry: p.Interval(),
 			Next: func(context.Context) (time.Time, bool, error) { return p.Next(), true, nil }})

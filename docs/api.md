@@ -263,6 +263,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/backups/restore` | owner, fresh session | `{id, confirm:"RESTORE"}` → 202, then the server restarts |
 | DELETE | `/api/v1/backups/restore/{id}` | owner | cancel a staged restore → 204 |
 | DELETE | `/api/v1/backups/restore/safety-copies/{name}` | owner, fresh session | delete a safety copy → 204 |
+| GET | `/api/v1/settings/storage` | owner | database file size, free space inside it, write-ahead log size, last notes compaction, conversion state; see [Database storage](#database-storage) |
 
 ### Passkeys
 
@@ -1023,6 +1024,22 @@ Errors: 422 `passphrase_required` / `passphrase_invalid`, 409 `newer_schema` (na
 **State** — `GET /api/v1/backups/restore` → `{"staged": {…} | null, "last": {"source", "archive", "actorId", "requestedAt", "finishedAt", "ok", "error"?, "safetyCopy"?} | null, "safetyCopies": [{"name", "size", "createdAt"}], "undoAvailable": true, "freeBytes": 51539607552, "uploadLimit": 51400000000}`. `freeBytes` and `uploadLimit` are -1 where the platform cannot tell. A restore that failed while applying left the previous database in place; `last.error` says why.
 
 **Cancel** — `DELETE /api/v1/backups/restore/{id}` → 204; the staged files are removed. **Delete a safety copy** — `DELETE /api/v1/backups/restore/safety-copies/{name}` → 204 (fresh session, no API tokens; 400 `invalid_input` for a name that is not a safety copy).
+
+### Database storage
+
+The owner's view of the database file and of the notes compaction job (see [sync.md](sync.md#compaction) and [backups.md](backups.md#database-size-and-compaction)). `GET /api/v1/settings/storage` needs the owner (401 `unauthorized` without credentials, 403 `forbidden` for members and admins, 403 `demo_restricted` on the public demo):
+
+```json
+{
+  "database_bytes": 50331648,
+  "free_bytes": 3145728,
+  "wal_bytes": 4120032,
+  "last_compaction": {"at": 1793447000000, "ops_removed": 12400, "value_bytes_removed": 219000000, "file_bytes_reclaimed": 220200960, "more": false, "converted": false},
+  "conversion": "done"
+}
+```
+
+`free_bytes` is the space of free pages inside the file (reused by new writes, or returned to the file system by the next compaction). `last_compaction` is the last complete pass (`null` before the first); a pass larger than one run continues a minute later and is reported once it ends. `conversion` is the one-time switch of a database created before 0.19 to incremental vacuum: `pending` (not tried yet, or the free disk space cannot be read on this platform), `waiting_for_quiet` (operations kept arriving; it runs after ten quiet minutes, or at the next run once seven days passed), `no_space` (with `conversion_needed_bytes`, the free disk space it needs: the database size plus 10 %) or `done`. Databases created by 0.19 or later are `done` from the start.
 
 ### Audit log
 
