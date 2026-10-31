@@ -257,6 +257,14 @@ func energyWrite(f map[string]json.RawMessage, in *caldav.Inbound, current opsyn
 	}
 }
 
+// flagWrite writes a boolean the client sent (nil: not sent), skipping a false
+// on a task that never had the flag so a plain PUT writes no op for it.
+func flagWrite(f map[string]json.RawMessage, field string, sent *bool, current opsync.Entity) {
+	if sent != nil && (*sent || string(current[field]) == "true") {
+		f[field] = mustJSON(*sent)
+	}
+}
+
 // fields maps an inbound VTODO onto task field values and the reminder ops of
 // its alarms. id is the task the reminders belong to; current is nil on create.
 func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entity, id string, ts int64) (davFields, error) {
@@ -280,14 +288,14 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	if in.EstimateMinutes != nil {
 		f["estimate_minutes"] = mustJSON(*in.EstimateMinutes)
 	}
-	// X-OPENTODO-START / -EVENING (someday-and-evening D7): only a property the
-	// client sent changes the field; absence leaves it alone.
+	// X-OPENTODO-START / -EVENING / -SPAN (someday-and-evening D7,
+	// multi-day-tasks D7): only a property the client sent changes the field;
+	// absence leaves it alone.
 	if in.Start != nil {
 		f["start"] = mustJSON(*in.Start)
 	}
-	if in.Evening != nil && (*in.Evening || string(current["evening"]) == "true") {
-		f["evening"] = mustJSON(*in.Evening)
-	}
+	flagWrite(f, "evening", in.Evening, current)
+	flagWrite(f, "span", in.Span, current)
 	// X-OPENTODO-DAY-PART (day-parts D6): Morning or Afternoon with the evening
 	// flag cleared, written only when it changes the task's part; Evening sent
 	// beside it wins, as the served form never carries both.

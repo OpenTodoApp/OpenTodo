@@ -74,6 +74,16 @@
           "description": "put the task in This Evening (edit: --evening=false takes it out)"
         },
         {
+          "name": "span",
+          "type": "bool",
+          "description": "draw the task across the days from its start to its due date, both included; a span needs --start and --due (a start before the due date)"
+        },
+        {
+          "name": "no-span",
+          "type": "bool",
+          "description": "draw the task on its due date only; the start date stays"
+        },
+        {
           "name": "part",
           "type": "string",
           "enum": [
@@ -321,6 +331,16 @@
           "name": "evening",
           "type": "bool",
           "description": "put the task in This Evening (edit: --evening=false takes it out)"
+        },
+        {
+          "name": "span",
+          "type": "bool",
+          "description": "draw the task across the days from its start to its due date, both included; a span needs --start and --due (a start before the due date)"
+        },
+        {
+          "name": "no-span",
+          "type": "bool",
+          "description": "draw the task on its due date only; the start date stays"
         },
         {
           "name": "part",
@@ -3806,6 +3826,10 @@
         "evening": {
           "type": "boolean",
           "description": "in This Evening"
+        },
+        "span": {
+          "type": "boolean",
+          "description": "drawn across the days from start to the due date, both included, when start is a date before the due date"
         },
         "day_part": {
           "type": [

@@ -9,7 +9,7 @@ import { Button, hueFor, MenuItem, MenuSeparator, PageBody, Skeleton, useWide, T
 import { allDayEvents, calendarTasks, deadlineMarkers, eventBlocks, nudgeDue } from '../lib/calendar'
 import { setShowEvents } from '../lib/calendarFeeds'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { addDaysISO, dueFromView, formatShort, viewedTask, formatDateParts } from '../lib/dates'
+import { addDaysISO, daysBetweenISO, dueFromView, formatShort, viewedTask, formatDateParts } from '../lib/dates'
 import { beginDrag } from '../lib/dnd'
 import { getTask, saveGridPrefs, useMembershipMap } from '../lib/localData'
 import { useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
@@ -34,7 +34,8 @@ import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { useShortcutScope } from './shortcuts'
 import { isProjectionTarget } from './calendar/projections'
-import { completeWithUndo, setDueWithUndo } from './undoable'
+import { completeWithUndo, setDueWithUndo, spanWithUndo } from './undoable'
+import { moveSpanPatch, spanOf } from '../lib/span'
 import { useToday, useViewerZone } from './useViews'
 
 const ARROWS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
@@ -104,7 +105,7 @@ export function PlanView({ date }: { date?: string }) {
   const canEdit = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
   const editable = useCallback((task: Task) => !task.completed_at && canEdit(task), [canEdit])
   /** Selection order: the span's task rows column by column; projected and event rows never take part. */
-  const order = useMemo(() => days.flatMap((d) => d.entries.flatMap((e) => (e.kind === 'task' ? [e.task.id] : []))), [days])
+  const order = useMemo(() => [...new Set(days.flatMap((d) => d.entries.flatMap((e) => (e.kind === 'task' ? [e.task.id] : []))))], [days])
 
   const [focused, setFocused] = useState(anchor)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -135,23 +136,31 @@ export function PlanView({ date }: { date?: string }) {
       if (!raw || raw.deleted_at || raw.completed_at || !raw.due) return
       const task = viewedTask(raw)
       if (!task.due) return
-      const due = nudgeDue(task.due, { days: n })
-      await updateTask(id, { due: dueFromView(raw.due, due) })
+      // A span moves whole (multi-day-tasks D4).
+      const whole = spanOf(task) ? moveSpanPatch(task, n) : null
+      const due = whole ? whole.due : nudgeDue(task.due, { days: n })
+      await updateTask(id, whole ? { start: whole.start, due: dueFromView(raw.due, due) } : { due: dueFromView(raw.due, due) })
       show(due.date)
     }).catch(reportActionError)
   }, [show])
 
-  /** Dropped on a day: same time and zone, new date (one due edit, with Undo). */
-  const dropOn = useCallback((id: string, d: string) => {
+  /** Dropped on a day: same time and zone, new date (one due edit, with Undo); a span moves by the distance from the column it was taken from (multi-day-tasks D3). */
+  const dropOn = useCallback((id: string, d: string, from?: string) => {
     const task = viewedMap.get(id)
+    const raw = rawMap.get(id)
+    if (task && raw && from && spanOf(task) && !task.completed_at) {
+      const patch = moveSpanPatch(raw, daysBetweenISO(from, d))
+      if (patch && from !== d) { act(spanWithUndo(id, patch)); setSelectedId(id); setFocused(d) }
+      return
+    }
     if (!task || task.completed_at || task.due?.date === d) return
     act(setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due?.time ? { time: task.due.time } : {}) })))
     setSelectedId(id)
     setFocused(d)
   }, [viewedMap, rawMap])
-  const startDrag = useCallback((task: Task, e: React.PointerEvent) => {
+  const startDrag = useCallback((task: Task, e: React.PointerEvent, from?: string) => {
     if (e.button !== 0 || !editable(task)) return
-    beginDrag(e, { label: task.title || t('Untitled'), onDrop: (key) => { if (key.startsWith('day:')) dropOn(task.id, key.slice(4)) } })
+    beginDrag(e, { label: task.title || t('Untitled'), onDrop: (key) => { if (key.startsWith('day:')) dropOn(task.id, key.slice(4), from) } })
   }, [editable, dropOn])
 
   const selectedTask = selectedId && order.includes(selectedId) ? rawMap.get(selectedId) : undefined

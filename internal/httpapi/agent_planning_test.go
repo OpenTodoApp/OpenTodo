@@ -36,10 +36,10 @@ func TestAgentPlanningFieldsWriteAndRead(t *testing.T) {
 
 	// Defer and set a deadline in one update; due is untouched.
 	e.mustTool(secret, "update_tasks", map[string]any{"updates": []any{
-		map[string]any{"id": report, "start": "2026-11-03", "deadline": "2026-11-06", "evening": true, "blocked_by": []string{parts}},
+		map[string]any{"id": report, "start": "2026-11-03", "deadline": "2026-11-06", "evening": true, "span": true, "blocked_by": []string{parts}},
 	}})
 	got := e.task(report)
-	if got["start"] != "2026-11-03" || got["deadline"] != "2026-11-06" || got["evening"] != true {
+	if got["start"] != "2026-11-03" || got["deadline"] != "2026-11-06" || got["evening"] != true || got["span"] != true {
 		t.Fatalf("stored = %v", got)
 	}
 	if d, _ := got["due"].(map[string]any); d["date"] != "2026-11-02" {
@@ -47,7 +47,7 @@ func TestAgentPlanningFieldsWriteAndRead(t *testing.T) {
 	}
 	// The read carries the fields and the derived blocked state.
 	task := e.mustTool(secret, "get_task", map[string]any{"id": report})["task"].(map[string]any)
-	if task["start"] != "2026-11-03" || task["deadline"] != "2026-11-06" || task["evening"] != true || task["blocked"] != true {
+	if task["start"] != "2026-11-03" || task["deadline"] != "2026-11-06" || task["evening"] != true || task["span"] != true || task["blocked"] != true {
 		t.Fatalf("get_task = %v", task)
 	}
 	if l := task["blocked_by"].([]any); len(l) != 1 || l[0] != parts {
@@ -190,9 +190,9 @@ func TestAgentRestPlanningFields(t *testing.T) {
 	// Issue #198: start someday through the agent REST route.
 	resp, out := c.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"start": "someday"}, bearer(secret)...)
 	c.mustStatus(resp, 200, out)
-	resp, out = c.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"start": "2026-10-31", "deadline": "2026-11-06", "evening": true, "blocked_by": []string{other}}, bearer(secret)...)
+	resp, out = c.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"start": "2026-10-31", "deadline": "2026-11-06", "evening": true, "span": true, "blocked_by": []string{other}}, bearer(secret)...)
 	c.mustStatus(resp, 200, out)
-	if out["start"] != "2026-10-31" || out["deadline"] != "2026-11-06" || out["evening"] != true {
+	if out["start"] != "2026-10-31" || out["deadline"] != "2026-11-06" || out["evening"] != true || out["span"] != true {
 		t.Fatalf("patched = %v", out)
 	}
 	resp, out = c.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"start": "later"}, bearer(secret)...)

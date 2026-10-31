@@ -298,6 +298,8 @@ type task struct {
 	// it waits for and the location as stored.
 	Deadline *string `json:"deadline"`
 	Evening  bool    `json:"evening"`
+	// Span draws the task from Start to its due date (multi-day-tasks).
+	Span bool `json:"span"`
 	// DayPart is "morning", "afternoon" or null (day-parts); Evening stays the flag.
 	DayPart *string `json:"day_part"`
 	// Energy is "deep", "medium", "low", or "" or absent for none (task-energy).

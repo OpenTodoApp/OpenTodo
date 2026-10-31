@@ -259,6 +259,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'calendar.prev', keys: ['k'], description: 'Select the previous task', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.nudge', keys: ['↑', '↓'], description: 'Move the selected task 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first task', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.shift-day', keys: ['←', '→'], description: 'Move the selected task one day earlier / later', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.span-end', keys: ['Shift+←', 'Shift+→'], description: 'Move the last day of the selected span; on a task without a time, Shift+→ makes it a two-day span', section: 'calendar', scope: 'calendar' },
+  { id: 'calendar.span-start', keys: ['Alt+Shift+←', 'Alt+Shift+→'], description: 'Move the first day of the selected span', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.estimate', keys: ['Shift+↑', 'Shift+↓'], description: 'Shorten / lengthen the estimate by 15 minutes', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.estimate-start', keys: ['Alt+Shift+↑', 'Alt+Shift+↓'], description: 'Start 15 minutes earlier / later, keeping the end', section: 'calendar', scope: 'calendar' },
   { id: 'calendar.unschedule', keys: ['u'], description: 'Unschedule the selected task (keep the date)', section: 'calendar', scope: 'calendar' },
@@ -274,6 +276,9 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'calendar.escape', keys: ['Esc'], description: 'Cancel placing or a drag, close the "+N" list or the panel, else clear the selection', section: 'calendar', scope: 'calendar', hidden: true, typing: true },
   // The Month view (month-and-timeline-views): a grid of due dates with a focused day, no lane or blocks.
   { id: 'month.move', keys: ['←', '→', '↑', '↓'], description: 'In Month: move the focused day; with a task selected, move it a day or a week (keeps its time)', section: 'calendar', scope: 'view', views: ['month'] },
+  // A selected span's ends (multi-day-tasks D4) come before moving the focused day; with anything else selected Shift+←/→ still moves the focus.
+  { id: 'month.span-end', keys: ['Shift+←', 'Shift+→'], description: 'In Month: move the last day of the selected span; on a task without a time, Shift+→ makes it a two-day span', section: 'calendar', scope: 'view', views: ['month'], overrides: ['month.focus'] },
+  { id: 'month.span-start', keys: ['Alt+Shift+←', 'Alt+Shift+→'], description: 'In Month: move the first day of the selected span', section: 'calendar', scope: 'view', views: ['month'] },
   { id: 'month.focus', keys: ['Shift+←', 'Shift+→', 'Shift+↑', 'Shift+↓'], description: 'In Month: move the focused day while a task is selected', section: 'calendar', scope: 'view', views: ['month'], hidden: true },
   { id: 'month.next', keys: ['j'], description: 'In Month: select the next task of the month', section: 'calendar', scope: 'view', views: ['month'] },
   { id: 'month.prev', keys: ['k'], description: 'In Month: select the previous task', section: 'calendar', scope: 'view', views: ['month'] },

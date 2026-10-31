@@ -21,11 +21,12 @@ import { t, msg } from './i18n'
 import { uuid } from './ids'
 import { workspaceFields } from './workspaces'
 import { compareManual, orderRank } from './viewOrder'
+import { spanOf } from './span'
 
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
 
-type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'> & { project_id?: string | null }
+type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'> & { project_id?: string | null; span?: boolean }
 
 // ---- start dates, Someday and This Evening (OpenSpec change `someday-and-evening`, D2) ----
 
@@ -78,6 +79,8 @@ export function overdueInToday(item: DatedTask, today: string): boolean {
 /** Upcoming lists open tasks due after today, and undated ones whose deadline is ahead. */
 export function inUpcoming(item: DatedTask, today: string): boolean {
   if (deferredUnplaced(item, today)) return true
+  // A span is listed once, under its first day, and only before it (multi-day-tasks D5).
+  if (spanOf(item)) return !item.completed_at && isDeferred(item, today)
   if (item.completed_at || !isActive(item, today)) return false
   if (item.due) return localDueOf(item.due).date > today
   const deadline = item.deadline ?? null
@@ -93,7 +96,9 @@ export function deferredUnplaced(item: DatedTask, today: string): boolean {
 }
 
 /** The Upcoming day a task is listed under: its due date, else its start date when deferredUnplaced, else its deadline. */
-export function upcomingDate(task: Pick<Task, 'due' | 'deadline' | 'completed_at' | 'start'> & { project_id?: string | null }, today?: string): string | null {
+export function upcomingDate(task: Pick<Task, 'due' | 'deadline' | 'completed_at' | 'start'> & { project_id?: string | null; span?: boolean }, today?: string): string | null {
+  const span = spanOf(task)
+  if (span) return span.first
   if (task.due) return localDueOf(task.due).date
   if (today !== undefined && deferredUnplaced(task, today)) return task.start ?? null
   return task.deadline ?? null

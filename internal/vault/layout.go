@@ -245,6 +245,9 @@ func (v *view) line(id string, labels map[string]string, extra string) Line {
 	if e := r.Str("energy"); validEnergy(e) {
 		l.Energy = e
 	}
+	if r.Bool("span") {
+		l.Span = "true"
+	}
 	if p := int(r.Num("priority")); p >= 1 && p <= 3 {
 		l.Priority = p
 	}

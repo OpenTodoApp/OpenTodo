@@ -17,7 +17,7 @@ import (
 
 // taskFields are the projections the merge compares, each a string so that
 // "changed" is plain inequality (design D6).
-var taskFields = []string{"title", "done", "donedate", "due", "start", "deadline", "estimate", "evening", "daypart", "energy", "priority", "recur", "labels", "blocked", "note", "parent", "section", "project"}
+var taskFields = []string{"title", "done", "donedate", "due", "start", "deadline", "estimate", "evening", "span", "daypart", "energy", "priority", "recur", "labels", "blocked", "note", "parent", "section", "project"}
 
 var clockRe = regexp.MustCompile(`^([01]\d|2[0-3]):[0-5]\d$`)
 
@@ -77,7 +77,7 @@ func (e *engine) proj(v *view, id string) map[string]string {
 	p := map[string]string{
 		"title": v.text("task", id, "title"), "done": boolStr(r.Set("completed_at")), "donedate": "",
 		"due": dueKey(r.DueOf()), "start": r.Str("start"), "deadline": r.Str("deadline"), "estimate": "",
-		"evening": boolStr(r.Bool("evening")), "daypart": storedPart(r.Str("day_part"), r.Bool("evening")), "energy": storedEnergy(r.Str("energy")), "priority": prio(int(r.Num("priority"))), "recur": r.Str("recurrence"),
+		"evening": boolStr(r.Bool("evening")), "span": boolStr(r.Bool("span")), "daypart": storedPart(r.Str("day_part"), r.Bool("evening")), "energy": storedEnergy(r.Str("energy")), "priority": prio(int(r.Num("priority"))), "recur": r.Str("recurrence"),
 		"note":   strings.TrimRight(v.text("task", id, "description"), "\n"),
 		"parent": r.Str("parent_id"), "section": r.Str("section_id"), "project": r.Str("project_id"),
 	}
@@ -161,6 +161,13 @@ func (e *engine) fileProj(m *mergeRun, pl place, baseP map[string]string) map[st
 		p["daypart"] = part
 	default:
 		bad("daypart %s is not morning or afternoon", l.DayPart)
+	}
+	// [span:: …] (multi-day-tasks): true or false, case ignored; absent is false.
+	switch s := strings.ToLower(strings.TrimSpace(l.Span)); s {
+	case "", "false", "true":
+		p["span"] = boolStr(s == "true")
+	default:
+		bad("span %s is not true or false", l.Span)
 	}
 	// [energy:: …] (task-energy): a level, case ignored.
 	switch e := strings.ToLower(strings.TrimSpace(l.Energy)); {
@@ -397,6 +404,8 @@ func (e *engine) setField(m *mergeRun, b map[string]any, f string, pl place, fil
 		}
 	case "evening":
 		b["evening"] = l.Evening
+	case "span":
+		b["span"] = fileP[f] == "true"
 	case "daypart":
 		// The part with the evening flag cleared (day-parts D2); none clears it.
 		b["day_part"] = nullable(fileP[f])
@@ -478,7 +487,7 @@ func (e *engine) createTask(m *mergeRun, pl place) {
 	b["estimate_minutes"], b["deadline"], b["start"], b["evening"], b["blocked_by"], b["recurrence"] = nil, nil, nil, false, []string{}, nil
 	for _, f := range taskFields {
 		// A new line without a part writes no day_part (its default).
-		if v, ok := fileP[f]; ok && f != "donedate" && !((f == "daypart" || f == "energy") && v == "") {
+		if v, ok := fileP[f]; ok && f != "donedate" && !((f == "daypart" || f == "energy") && v == "") && !(f == "span" && v == "false") {
 			e.setField(m, b, f, pl, fileP)
 		}
 	}
@@ -578,6 +587,9 @@ func (e *engine) recurring(m *mergeRun, id string, b map[string]any) bool {
 	}
 	if string(merged["evening"]) == "true" {
 		rec["evening"] = true
+	}
+	if string(merged["span"]) == "true" {
+		rec["span"] = true
 	}
 	if part := str("day_part"); daypart.Stored(part) {
 		rec["day_part"] = part

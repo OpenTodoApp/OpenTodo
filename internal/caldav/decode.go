@@ -173,7 +173,7 @@ func (d *decoder) prop(master *Component, i int) {
 		if ms, err := instantOf(p); err == nil {
 			in.CreatedAt = &ms
 		}
-	case "X-OPENTODO-START", "X-OPENTODO-EVENING", "X-OPENTODO-DAY-PART", "X-OPENTODO-ENERGY":
+	case "X-OPENTODO-START", "X-OPENTODO-EVENING", "X-OPENTODO-SPAN", "X-OPENTODO-DAY-PART", "X-OPENTODO-ENERGY":
 		d.opentodoProp(p)
 	case "ESTIMATED-DURATION":
 		d.estimate(p)
@@ -270,7 +270,7 @@ func (d *decoder) estimate(p Prop) {
 }
 
 // opentodoProp reads this server's own X-OPENTODO-START, X-OPENTODO-EVENING,
-// X-OPENTODO-DAY-PART and X-OPENTODO-ENERGY; a value it does not know is kept in ical_extra.
+// X-OPENTODO-SPAN, X-OPENTODO-DAY-PART and X-OPENTODO-ENERGY; a value it does not know is kept in ical_extra.
 func (d *decoder) opentodoProp(p Prop) {
 	in := d.in
 	v := strings.ToUpper(strings.TrimSpace(p.Value))
@@ -304,13 +304,15 @@ func (d *decoder) opentodoProp(p Prop) {
 		}
 		return
 	}
+	// X-OPENTODO-EVENING and X-OPENTODO-SPAN (multi-day-tasks D7): TRUE or FALSE.
+	flag := &in.Evening
+	if p.Name == "X-OPENTODO-SPAN" {
+		flag = &in.Span
+	}
 	switch v {
-	case "TRUE":
-		b := true
-		in.Evening = &b
-	case "FALSE":
-		b := false
-		in.Evening = &b
+	case "TRUE", "FALSE":
+		b := v == "TRUE"
+		*flag = &b
 	default:
 		d.keep(p)
 	}

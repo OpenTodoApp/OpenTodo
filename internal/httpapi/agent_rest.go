@@ -306,7 +306,7 @@ var taskCreateFields = map[string]bool{"title": true, "description": true, "proj
 	// planner exactly as the sync path validates it.
 	"origin": true,
 	// Planning fields (OpenSpec change agent-planning-fields, design D5).
-	"deadline": true, "start": true, "evening": true, "day_part": true, "blocked_by": true, "location": true,
+	"deadline": true, "start": true, "evening": true, "span": true, "day_part": true, "blocked_by": true, "location": true,
 	// The task's energy (OpenSpec change task-energy).
 	"energy": true}
 
@@ -339,7 +339,7 @@ func agentPatchTaskCalls(id string, body map[string]json.RawMessage, existing op
 	for k, v := range body {
 		switch k {
 		case "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "origin",
-			"deadline", "start", "evening", "day_part", "blocked_by", "location", "energy":
+			"deadline", "start", "evening", "span", "day_part", "blocked_by", "location", "energy":
 			update[k] = v
 		case "project_id", "section_id":
 			if move == nil {

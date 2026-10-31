@@ -229,6 +229,14 @@ describe('mutate', () => {
     expect(await other.tasks.get('occ')).toMatchObject({ series_id: id, recurrence: null })
   })
 
+  it('writes no span op for a plain task and reads the flag as false (multi-day-tasks)', async () => {
+    const id = await createTask({ title: 'plain' })
+    expect((await db.tasks.get(id))?.span ?? false).toBe(false)
+    expect((await db.outbox.toArray()).some((o) => o.field === 'span')).toBe(false)
+    const trip = await createTask({ title: 'trip', start: '2026-11-03', due: { date: '2026-11-05' }, span: true })
+    expect((await db.tasks.get(trip))?.span).toBe(true)
+  })
+
   it('defaults ical_extra to null and never writes it for app-created tasks (caldav)', async () => {
     const id = await createTask({ title: 'plain' })
     expect((await db.tasks.get(id))?.ical_extra).toBeNull()

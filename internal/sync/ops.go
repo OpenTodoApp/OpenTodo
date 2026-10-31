@@ -318,6 +318,12 @@ var Schema = map[string]map[string]Field{
 		// someday-and-evening); additive.
 		"start":   {Kind: kStart, Default: `null`},
 		"evening": {Kind: kBool, Default: `false`},
+		// Draw the task as a span from its start date to its do-on date
+		// (OpenSpec change multi-day-tasks, design D1). Only drawing changes:
+		// start keeps deferring and due stays the do-on date, and a flag
+		// without a valid range (a date start before due.date) draws as a
+		// plain task. Not content; additive.
+		"span": {Kind: kBool, Default: `false`},
 		// The part of the day besides Evening (OpenSpec change day-parts,
 		// design D1): null, "morning" or "afternoon". Evening stays the evening
 		// flag; clients write both fields in one batch (D2), and a task with the

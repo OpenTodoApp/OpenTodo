@@ -27,7 +27,7 @@ import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, typ
 import { slotName, useSlotOf } from '../lib/slots'
 import { lazy, memo, type ReactNode, Suspense, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
-import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logicalToday, zoneHint } from '../lib/dates'
+import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logicalToday, zoneHint, type ResolvedDateTime } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import { streakLabel, type HabitStats } from '../lib/habits'
@@ -54,6 +54,7 @@ import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
 import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
+import { formatSpan, spanOf, type Span } from '../lib/span'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -517,6 +518,8 @@ export interface CompactRowProps {
   attrs?: Record<`data-${string}`, string>
   /** The row's hue under the calendar's Colour by (calendar-clarity D3); the project's when absent. */
   hue?: HueName
+  /** The day's place in the task's span, "Day 2 of 3" (multi-day-tasks D3). */
+  position?: { n: number; of: number }
 }
 
 /** The row's own controls: a click on one of them is theirs, not the row's (row-and-cursor D1). */
@@ -524,7 +527,7 @@ const ROW_CONTROL = 'button, a, input, label, select, textarea, [role="button"],
 
 const TONE_TEXT: Partial<Record<Tone, string>> ={ danger: 'text-danger', accent: 'text-accent', default: 'text-default' }
 
-function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs, hue }: CompactRowProps) {
+function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs, hue, position }: CompactRowProps) {
   const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
   const canDrag = !readOnly && onPointerDown !== undefined
   return (
@@ -538,6 +541,8 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
       {time && <span data-plan-time className={`shrink-0 tabular-nums ${TONE_TEXT[ladderTone(date, today)] ?? 'text-muted'}`}>{formatTime(time)}</span>}
       {/* In a narrow column the title takes the first line and the time, estimate and priority the second. */}
       <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'} ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+      {/* A span's place on this day (multi-day-tasks D3): "Day 2 of 3". */}
+      {position && <span data-span-position className="shrink-0 text-hint tabular-nums text-muted">{t('Day {n} of {m}', { n: position.n, m: position.of })}</span>}
       {task.estimate_minutes ? <span data-estimate className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
       {/* The row's priority ring: coloured for P1 and P2, neutral for P3; read as "P1". */}
       {priority && (
@@ -604,6 +609,17 @@ function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['on
 }
 
 /**
+ * The start chip's words: Someday, "Starts 3 Nov" or "Started 3 Nov"; a span
+ * (multi-day-tasks D5) shows its range in the date's place, so the chip reads
+ * "until 5 Nov" once it has begun and nothing before.
+ */
+function startWords(start: string, span: Span | null, p: ResolvedDateTime): string | null {
+  if (span) return start > logicalToday() ? null : t('until {date}', { date: formatDate(span.last, 'compact', p) })
+  if (start === 'someday') return t('Someday')
+  return start > logicalToday() ? t('Starts {date}', { date: formatDate(start, 'compact', p) }) : t('Started {date}', { date: formatDate(start, 'compact', p) })
+}
+
+/**
  * Memoized (large-list-performance D1): a list re-renders a row only when one of its
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
@@ -629,9 +645,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // Start dates, Someday and This Evening (someday-and-evening D2): they say why a
   // task is in Later, or in Today without a date.
   const start = task.start ?? null
-  const startText = done || !start || hides('start') || (start === 'someday' && implied?.someday) ? null
-    : start === 'someday' ? t('Someday')
-    : start > logicalToday() ? t('Starts {date}', { date: formatDate(start, 'compact', dt.resolved) }) : t('Started {date}', { date: formatDate(start, 'compact', dt.resolved) })
+  const span = spanOf(task)
+  const startText = done || !start || hides('start') || (start === 'someday' && implied?.someday) ? null : startWords(start, span, dt.resolved)
   const deadline = done || hides('deadline') ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const deadlineLabel = deadline ? t('Deadline {date}, {label}', { date: formatDate(task.deadline!, 'long', dt.resolved), label: deadline.label }) : ''
   // The column (rows-v2 D2, D3): the due time, else the deadline countdown; the line never repeats it.
@@ -669,7 +684,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const m: MetaValues = {
     sample: isSample(task),
     breadcrumb,
-    date: hides('date') ? null : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
+    date: hides('date') ? null : span ? formatSpan(span) : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
     dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : 'muted',
     hint, zone: task.due?.tz ?? '', repeatLabel: repeatLabelOf(task),
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,

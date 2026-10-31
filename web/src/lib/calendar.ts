@@ -5,6 +5,7 @@
 import { addDaysISO, localDueOf } from './dates'
 import { formatMinutes, MAX_ESTIMATE_MINUTES } from './duration'
 import type { CalendarEvent, CalendarWhen, Due, Project, Task } from './types'
+import { spanClip, spanOf } from './span'
 
 export const SLOT_MINUTES = 15
 /**
@@ -172,10 +173,17 @@ export function allDayEvents(events: readonly CalendarEvent[], date: string): Ca
     .sort((a, b) => (a.start.date < b.start.date ? -1 : a.start.date > b.start.date ? 1 : a.summary.localeCompare(b.summary)))
 }
 
-/** Live tasks due in [from, to], optionally including completed work; archived projects stay excluded. */
+/** Live tasks due in [from, to], or spans covering a day of it, optionally including completed work; archived projects stay excluded. */
 export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string, showCompleted = false): Task[] {
   const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-  return tasks.filter((t) => !t.deleted_at && (showCompleted || !t.completed_at) && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
+  // A span is on screen when any of its days is (multi-day-tasks D3).
+  const inRange = (t: Task) => {
+    if (!t.due) return false
+    if (t.due.date >= from && t.due.date <= to) return true
+    const span = spanOf(t)
+    return !!span && spanClip(span, from, to) !== null
+  }
+  return tasks.filter((t) => !t.deleted_at && (showCompleted || !t.completed_at) && inRange(t) && !(t.project_id && archived.has(t.project_id)))
 }
 
 /**

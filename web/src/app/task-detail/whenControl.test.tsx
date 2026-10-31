@@ -212,4 +212,52 @@ describe('WhenControl', () => {
     expect(seg('due').querySelector('button[aria-label="Clear due date"]')).toBeNull()
     await unmount()
   })
+
+  // OpenSpec change multi-day-tasks, D2 ("Making a task multi-day").
+  describe('Multi-day', () => {
+    const multiDay = (seg: (n: string) => HTMLElement) => seg('start').querySelector<HTMLElement>('[data-multi-day] [role="switch"]')
+    it('is offered only with a do-on date', async () => {
+      const id = await createTask({ title: 'Plan' })
+      const { seg, unmount } = await mount(id, 'start')
+      expect(multiDay(seg)).toBeNull()
+      await unmount()
+    })
+
+    it('turned on without a start writes the day before and the flag in one batch, and focuses the start date', async () => {
+      const id = await createTask({ title: 'Trip', due: { date: '2026-11-05' } })
+      const { seg, unmount } = await mount(id, 'start')
+      const from = await mark()
+      await click(multiDay(seg)!)
+      await queued(id, from)
+      await waitFor(async () => (await db.tasks.get(id))?.span === true, 'the flag')
+      expect(await queuedFields(id, from)).toEqual({ start: '2026-11-04', span: true })
+      const ops = (await db.outbox.toArray()).slice(from).filter((o) => o.entityId === id)
+      expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
+      await waitFor(() => document.activeElement === seg('start').querySelector('input'), 'the start date focused')
+      await waitFor(() => /4\s?–\s?5/.test(seg('start').querySelector('[data-multi-day]')!.textContent ?? ''), 'the range')
+      await unmount()
+    })
+
+    it('turned on with an earlier start writes only the flag', async () => {
+      const id = await createTask({ title: 'Trip', start: '2026-11-03', due: { date: '2026-11-05' } })
+      const { seg, unmount } = await mount(id, 'start')
+      const from = await mark()
+      await click(multiDay(seg)!)
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ span: true })
+      await unmount()
+    })
+
+    it('turned off writes only the flag; the start stays', async () => {
+      const id = await createTask({ title: 'Trip', start: '2026-11-03', due: { date: '2026-11-05' }, span: true })
+      const { seg, unmount } = await mount(id, 'start')
+      const from = await mark()
+      expect(multiDay(seg)!.getAttribute('aria-checked')).toBe('true')
+      await click(multiDay(seg)!)
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ span: false })
+      expect((await db.tasks.get(id))!.start).toBe('2026-11-03')
+      await unmount()
+    })
+  })
 })

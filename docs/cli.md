@@ -117,7 +117,7 @@ ot list --blocked --project Home   # waiting for an open task
 ot list --available                # what can be done now: not blocked, not waiting for an earlier step
 ```
 
-Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from) and a `BY` column with the deadline when one has a deadline (a passed deadline is marked overdue), and an `ENERGY` column when a listed task has an energy; `--json` always carries `energy` (null for none). The due cell adds `(someday)`, `starts <date>`, `evening` (or `morning`, `afternoon`) and `waiting` when they apply. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
+Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from) and a `BY` column with the deadline when one has a deadline (a passed deadline is marked overdue), and an `ENERGY` column when a listed task has an energy; `--json` always carries `energy` (null for none). The due cell adds `(someday)`, `starts <date>` (for a multi-day task its days instead: `3–5 Nov`, `30 Oct – 2 Nov`, or with the years when they differ), `evening` (or `morning`, `afternoon`) and `waiting` when they apply. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
 
 ```
 ID        P   DUE                 PROJECT  TITLE
@@ -143,6 +143,7 @@ ot add "Quarterly report" --start monday --deadline 2026-11-06
 ot edit 8c2a --start someday                         # park it, keep the due date
 ot add "Install shelves" --blocked-by 91f0 --location Home
 ot edit 8c2a --evening=false --blocked-by none --location none
+ot edit 8c2a --start 2026-11-03 --due 2026-11-05 --span   # a trip from 3 to 5 November
 ot add --done "Fixed the printer"                    # log a win: created already completed
 ```
 
@@ -160,6 +161,7 @@ ot add --done "Fixed the printer"                    # log a win: created alread
 | `--deadline <when>` | The day the task must be finished by, separate from the due date; same words as `--due`; `none` (edit) clears it |
 | `--start <when>` | `someday` parks the task; a date (same words as `--due`) defers it until that day; `none` (edit) clears it. The due date is kept |
 | `--evening` | Put the task in This Evening; `--evening=false` takes it out |
+| `--span`, `--no-span` | Draw the task across the days from its start date to its due date, both included (a trip, a conference); a span needs `--start` and `--due` with the start before the due date, otherwise it shows on its due date as before. `--no-span` takes it back to one day and keeps the start date. Both together exit 2 before any request |
 | `--part <part>` | The [part of the day](day-parts.md): `morning`, `afternoon`, `evening` (This Evening) or `none`; written with the evening flag, so `--part afternoon` takes an evening task out of This Evening. Another word exits 2 before any request. It wins over `--evening` |
 | `--energy <level>` | The task's energy: `deep`, `medium` or `low` (any case); `none` clears it. Another word exits 2 before any request |
 | `--blocked-by <ref>` | Repeatable: a task this one waits for, by id or unique id prefix (an ambiguous prefix exits 1 listing the candidates, before any write). With `ot edit` the list is replaced; `none` clears it |
