@@ -1,6 +1,6 @@
 ---
 title: Recurring task rules
-summary: The repeat rule grammar, how the next date is worked out, and what completing, skipping, moving or editing one occurrence does.
+summary: The repeat rule grammar, how the next date is worked out, what completing, skipping, moving or editing one occurrence does, and changing a series from one date on.
 audience: user
 section: Reference
 specs: [recurring-tasks, habits]
@@ -215,6 +215,83 @@ Scripts and assistants can read the same dates: `GET /api/v1/tasks/{id}/occurren
 `PATCH /api/v1/tasks/{id}/occurrences/{date}` ([API](api.md#one-occurrence-alone)),
 or `ot task occurrence <task> <date> complete|skip|edit`.
 
+## This and following
+
+Routines change from a date on: the Spanish class moves from 18:00 to 19:00 after
+the autumn break, the gym days change from Monday to Tuesday. Changing such a series
+under All occurrences would also rewrite the occurrences before that date, so a
+series can be changed from one of its later occurrences on instead, as calendars do
+with "this and following events".
+
+- **In the panel**: open a projected occurrence after the current one (or a record of
+  one). The scope control reads **This occurrence · This and following · All
+  occurrences**. Choose **This and following**: the series' values become editable,
+  and the first change (the time, the title, the rule, the priority, anything in the
+  panel's properties) *splits* the series. The series ends the day before that date
+  (its rule gets `until`), and a new series starts on that date with the change. The
+  panel then shows the new series, on All occurrences, and a toast reads "Changed
+  from Wednesday 14 October on" with **Undo**, which takes back the whole split. The
+  option is not offered on the current occurrence (an All-occurrences edit does the
+  same there), for a completion-relative rule, or to a viewer of a shared project.
+  Notes, subtasks and custom fields of the series are not edited from there.
+- **Delete this and following**: in a projection's menu, ends the series the day
+  before that occurrence (`until`), with Undo. No new series is made.
+
+For the #537 example: "Study" repeats `every weekday` at 18:00 and is due Monday the
+12th. Open Wednesday the 14th, choose This and following and set 19:00. "Study" stays
+due the 12th at 18:00 with `every weekday until 2026-10-13`, so Tuesday the 13th still
+shows its 18:00 projection, and a new "Study" repeats `every weekday` from the 14th at
+19:00.
+
+### What happens to occurrences after the date
+
+Done, skipped and moved occurrences from that date on stay as they are: they keep
+their own values and remain exceptions, so the new series draws no projection on
+them (Thursday moved alone to 20:00 stays at 20:00). An open occurrence that still
+holds the old value takes the change, as with an All-occurrences edit. The new
+series starts on the first date its rule produces from the split date that is not
+already done, skipped or moved, at the series' time unless the change sets another,
+and gets copies of the series' relative reminders. It keeps the series' project,
+labels, priority, habit flag and end condition.
+
+### Pieces of one lineage
+
+The series and the series that continue it are the *pieces* of one lineage. The new
+series records which series it continues and from when (`split_from`, see
+[sync.md](sync.md)); its id is derived from the series and the date, so two devices
+that make the same split offline make one new series, whose fields then follow the
+later change of each. Each piece produces occurrences from its own date to the day
+before the next piece's date, whatever its own `until` says, so two devices that
+split at different dates offline end with three pieces and no date shown twice:
+splits at the 14th and the 20th leave the series running to the 13th, the first
+new series from the 14th to the 19th and the second from the 20th. Any device that
+may edit a piece whose stored `until` is later than that derived end writes the
+derived `until`, so the rule text matches on every device, in CalDAV and in the
+vault. The later piece then lacks the earlier piece's change; edit it under All
+occurrences to combine them.
+
+- **Counting**: `for N times` counts the done and open occurrences of the whole
+  lineage, the earlier pieces' remaining occurrences first. A series `every weekday for 20 times`
+  split after its 8th session still totals 20, and the last one falls
+  on the date the series would have ended on.
+- **Habits**: a habit's streak and month history read the whole lineage as one
+  series: each piece's rule schedules its own dates, and a record of any piece
+  counts. Splitting gym days from Monday, Wednesday and Friday to Tuesday and Thursday
+  in the middle of a month keeps the streak, and the month grid shows the old days
+  before the date and the new ones after it.
+- **In the panel**: the new series reads "Continues Study from Oct 14" with a link to
+  the series it continues, and that series reads "Continues as Study from Oct 14".
+- All occurrences on a piece edits that piece only; earlier pieces are mostly past.
+- A lineage is followed for at most 50 pieces; older ones end at their own `until`.
+
+Scripts split a series with `POST /api/v1/tasks/{id}/split`
+([API](api.md#this-and-following)) or `ot task split <task> --from <date>`
+([CLI](cli.md)); the occurrence list of a series continues into the pieces after it,
+naming each date's series. CalDAV serves each piece as its own repeating task
+([CalDAV](caldav.md#this-and-following)), and the [vault](vault.md) writes each as its
+own line. A calendar app's own "this and future" edit arrives as a rule change on the
+old task and a new task, which are not linked as one lineage.
+
 ## Sync and convergence
 
 The rule is stored in `task.recurrence` and occurrence records point back with
@@ -323,8 +400,9 @@ in from the series, encrypted for the record.
 
 ## Not covered yet
 
-- **This and following** (changing a series from one date on) is a later change.
-- A completion-relative series' future dates cannot be acted on one by one.
+- A completion-relative series' future dates cannot be acted on one by one or split.
+- Pieces of a split series cannot be merged back into one series.
+- The vault counts `for N times` per piece, not over the lineage.
 - Missed past occurrences (before the current one) cannot be completed later.
 - A skipped occurrence is not shown anywhere apart from a habit's grid; there is no
   "restore" for it after the Undo is gone.

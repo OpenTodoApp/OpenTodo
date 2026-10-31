@@ -39,8 +39,8 @@ Wednesday's study session to 19:00 without touching the others:
 
 - **Right-click** a coming occurrence, **long-press** it on a touch screen, or focus it
   and press <kbd>Shift</kbd>+<kbd>F10</kbd>: **Open**, **Complete this occurrence**,
-  **Skip this occurrence** (**Skip this day** for a habit) or **Move to…** a day and
-  time.
+  **Skip this occurrence** (**Skip this day** for a habit), **Move to…** a day and
+  time, or **Delete this and following**.
 - **Drag** it with the mouse to another day in Month and Plan, or to another time in
   Day and Week. Only that occurrence moves, and a toast offers Undo. Dragging the
   task's own block still moves the whole series.
@@ -56,6 +56,12 @@ Completed, and the series never stands on a date that has one: completing the se
 jumps over it. Renaming the series renames the moved ones that still had the old
 title. Viewers of a shared project and tasks that repeat after completion get Open
 only. More: [One occurrence alone](recurrence.md#one-occurrence-alone).
+
+## Change from one date on
+
+Open a coming occurrence and choose **This and following**: your first change there
+(the time, the title, the rule…) applies from that date on, and earlier days stay as
+they were. More: [This and following](recurrence.md#this-and-following).
 
 ## In Upcoming
 

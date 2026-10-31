@@ -114,6 +114,12 @@ export interface Task extends TaskFields {
   /** On a completed occurrence record or a detached copy: the id of its series; otherwise null. */
   series_id: string | null
   /**
+   * On a piece of a split series (OpenSpec change `series-split`): the series it
+   * continues and the date it starts, set once at creation. Read the lineage with
+   * `lineageOf` from `lib/lineage.ts`; rows stored before the field read as undefined.
+   */
+  split_from?: SplitFrom | null
+  /**
    * Account id of the assignee or null (OpenSpec `task-assignment`). The server
    * accepts only a current member of the task's shared project, or the author for
    * a personal task, and refuses anything else with reason `not_a_member`.
@@ -208,6 +214,13 @@ export interface Task extends TaskFields {
  * A task's location (task-locations D1): at least a name, an address or a
  * coordinate pair; `lat` and `lon` both present or both absent.
  */
+/** A piece's link to the series it continues (task.split_from, series-split D2). */
+export interface SplitFrom {
+  series: string
+  /** YYYY-MM-DD: the first date the piece produces occurrences on. */
+  date: string
+}
+
 export interface TaskLocation {
   name?: string
   address?: string

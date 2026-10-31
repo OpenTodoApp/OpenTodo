@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, Task, TaskLocation, TimeEntry, UserPrefs, View,
+  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -123,6 +123,14 @@ export interface TaskFields {
    * content; additive (a record without it stands for its due date).
    */
   occurrence_date?: string | null
+  /**
+   * The series a piece of a split lineage continues and the date it starts
+   * (OpenSpec change series-split, design D2): {series, date}, one whole value.
+   * Set when the piece is created; the resolver refuses it on a task without a
+   * rule, with a series in another sharing scope, and as a change once set.
+   * Not content; additive (an older client sees an ordinary series).
+   */
+  split_from?: SplitFrom | null
   /**
    * Account id of the assignee or null (OpenSpec change task-assignment);
    * additive. Apply checks it against the task scope's membership at receipt.
@@ -850,7 +858,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, occurrence_date: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',

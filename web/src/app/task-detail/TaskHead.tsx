@@ -15,14 +15,14 @@ import type { TaskDetailModel } from './useTaskDetail'
 const RING: Record<number, string> = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }
 
 /** The checkbox and the title; `page` sets the title at the page's size and wraps it freely. */
-export function TaskHead({ m, readOnly, projects, size }: { m: TaskDetailModel; readOnly: boolean; projects: Project[]; size: 'panel' | 'page' }) {
+export function TaskHead({ m, readOnly, completeLocked = readOnly, projects, size }: { m: TaskDetailModel; readOnly: boolean; completeLocked?: boolean; projects: Project[]; size: 'panel' | 'page' }) {
   const { task } = m
   if (!task) return null
   const done = !!task.completed_at
   const page = size === 'page'
   return (
     <>
-      <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={readOnly} onClick={() => m.toggle(task)} data-panel-complete
+      <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={completeLocked} onClick={() => m.toggle(task)} data-panel-complete
         className={`touch-target inline-flex shrink-0 items-center justify-center rounded-full pointer-fine:-m-0.5 pointer-fine:size-6 ${page ? 'mt-1 self-start' : ''}`}>
         <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${done ? 'border-accent bg-accent text-on-accent' : `${RING[task.priority] ?? 'border-p4'} hover:bg-success-soft`}`}>
           {done && <Icon name="check" size="xs" />}

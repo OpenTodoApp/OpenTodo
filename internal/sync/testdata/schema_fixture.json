@@ -190,6 +190,7 @@
       "section_id",
       "series_id",
       "skipped",
+      "split_from",
       "start",
       "title",
       "workspace_id"

@@ -536,6 +536,38 @@ func TestSingleOccurrencesInFiles(t *testing.T) {
 	}
 }
 
+// OpenSpec change series-split: a piece is its own line with its rule, the
+// ended series' line carries its until, and both read back as they are.
+func TestSplitSeriesInFiles(t *testing.T) {
+	s := newServer(t)
+	id := s.create("tasks", map[string]any{"title": "Study", "due": map[string]any{"date": "2030-01-07", "time": "18:00"}, "recurrence": "every weekday"})
+	piece := s.do("POST", "/api/v1/tasks/"+id+"/split", map[string]any{"from": "2030-01-09", "changes": map[string]any{"due": map[string]any{"date": "2030-01-09", "time": "19:00"}}})["id"].(string)
+	v := s.vault(t)
+	text := v.read(t, "Inbox.md")
+	var old, next string
+	for _, l := range strings.Split(text, "\n") {
+		switch {
+		case strings.Contains(l, "🔁 every weekday until 2030-01-08"):
+			old = l
+		case strings.Contains(l, "🔁 every weekday"):
+			next = l
+		}
+	}
+	if !strings.HasPrefix(old, "- [ ] Study 📅 2030-01-07") || !strings.HasPrefix(next, "- [ ] Study 📅 2030-01-09") || !strings.Contains(next, "19:00") {
+		t.Fatalf("lines:\n%s", text)
+	}
+	// Renaming the piece in the file keeps it a piece of the lineage.
+	v.edit(t, "Inbox.md", next, strings.Replace(next, "Study", "Study hall", 1))
+	v.sync(t)
+	got := s.get("tasks", piece)
+	if sf, _ := got["split_from"].(map[string]any); got["title"] != "Study hall" || sf["series"] != id || sf["date"] != "2030-01-09" {
+		t.Fatalf("piece = %v", got)
+	}
+	if r := s.get("tasks", id)["recurrence"]; r != "every weekday until 2030-01-08" {
+		t.Fatalf("series rule = %v", r)
+	}
+}
+
 func TestReorderIsOneOp(t *testing.T) {
 	s := newServer(t)
 	home := s.create("projects", map[string]any{"name": "Home"})

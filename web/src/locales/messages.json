@@ -2310,6 +2310,9 @@
   "Change your password in Settings → Account → Password. To reset the password of another account, sign out first.": [
     "web/src/app/EmailScreens.tsx"
   ],
+  "Changed from {date} on": [
+    "web/src/lib/seriesSplitActions.ts"
+  ],
   "Changed since, left as is: {titles}": [
     "web/src/app/reopenDay.ts"
   ],
@@ -3068,6 +3071,12 @@
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Continues as {title} from {date}": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
+  "Continues {title} from {date}": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
   "Conversation": [
     "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/page/TaskPageScreen.tsx"
@@ -3744,6 +3753,9 @@
   "Delete the selected task (d alone does nothing after 1 s)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Delete this and following": [
+    "web/src/app/calendar/occurrenceMenu.tsx"
+  ],
   "Delete this comment?": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
@@ -3787,6 +3799,9 @@
   ],
   "Deleted / restored": [
     "web/src/lib/activity.ts"
+  ],
+  "Deleted from {date} on": [
+    "web/src/lib/seriesSplitActions.ts"
   ],
   "Deleted items": [
     "web/src/app/TrashView.tsx"
@@ -5460,6 +5475,9 @@
   ],
   "From the backup destination": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "From {date} on: a change here starts a new repeating task from this date; earlier occurrences stay as they are.": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
   "From {issue}": [
     "web/src/lib/taskSource.ts"
@@ -14372,6 +14390,9 @@
   "This address is on a private network. The server owner can allow private targets.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This and following": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
   "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": [
     "web/src/app/AboutSection.tsx"
   ],
@@ -15738,6 +15759,7 @@
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-detail/OccurrenceScope.tsx",
     "web/src/app/task-detail/Subtasks.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/TaskHead.tsx",

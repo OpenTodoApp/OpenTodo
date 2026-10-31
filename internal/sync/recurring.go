@@ -100,12 +100,12 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 		return "", nil, false, err
 	}
 	at := series.standOn(date, today)
-	b := SeriesBudget(id, tasks, date)
+	b := series.budget(tasks, date, today)
 	dueDate := ""
 	if cur := decodeRecurringDue(at["due"]); cur != nil {
 		dueDate = cur.Date
 	}
-	next, more, err := series.rule.NextFree(dueDate, today, today, b.Taken, b.Except)
+	next, more, err := series.rule.Bounded(b.End).NextFree(dueDate, today, today, b.Taken, b.Except)
 	if err != nil || !more {
 		return "", nil, false, err
 	}
@@ -132,7 +132,7 @@ func (s *Service) CompletedOccurrences(ctx context.Context, uid, id string) (int
 	if err != nil {
 		return 0, err
 	}
-	return SeriesBudget(id, tasks, "").Done, nil
+	return SeriesBudget(id, nil, tasks, "", "").Done, nil
 }
 
 // SeriesTasks are the live tasks the user can see, the rows a series' records

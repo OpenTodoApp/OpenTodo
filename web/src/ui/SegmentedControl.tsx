@@ -16,12 +16,14 @@ export interface SegmentedControlProps<T extends string> {
   /** Accessible name of the group. */
   label: string
   disabled?: boolean
+  /** Long labels wrap onto a second line instead of being cut (three scopes on a phone, series-split). */
+  wrap?: boolean
   className?: string
   /** Test and script hooks. */
   [hook: `data-${string}`]: string | boolean | undefined
 }
 
-export function SegmentedControl<T extends string>({ options, value, onChange, label, disabled = false, className = '', ...hooks }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string>({ options, value, onChange, label, disabled = false, wrap = false, className = '', ...hooks }: SegmentedControlProps<T>) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
   const move = (e: KeyboardEvent) => {
     const i = options.findIndex((o) => o.id === value)
@@ -41,7 +43,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
         return (
           <button key={o.id} ref={(el) => { refs.current[o.id] = el }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1} disabled={disabled}
             data-segment={o.id} onClick={() => { if (!on) onChange(o.id) }}
-            className={`touch-target min-h-6 min-w-0 flex-1 truncate rounded-chip px-2.5 py-0.5 text-meta font-medium outline-none transition duration-(--duration-ui)
+            className={`touch-target min-h-6 min-w-0 flex-1 ${wrap ? 'whitespace-normal leading-tight text-balance' : 'truncate'} rounded-chip px-2.5 py-0.5 text-meta font-medium outline-none transition duration-(--duration-ui)
               focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed
               ${on ? 'bg-surface text-strong shadow-1' : 'text-muted pointer-fine:hover:text-default'}`}>
             {o.label}
