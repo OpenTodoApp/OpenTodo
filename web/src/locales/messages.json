@@ -3430,7 +3430,8 @@
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Custom fields": [
-    "web/src/app/FieldsDialog.tsx"
+    "web/src/app/FieldsDialog.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Custom limit": [
     "web/src/app/ClosedListSettings.tsx"
@@ -15769,6 +15770,9 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/lib/facets.ts"
+  ],
+  "Unavailable custom field": [
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Unavailable offline": [
     "web/src/app/rules/RuleFields.tsx"

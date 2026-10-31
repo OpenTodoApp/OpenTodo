@@ -3053,6 +3053,7 @@
   "Unestimated": "Sans estimation",
   "Unexpected \")\" at position {pos}": "« ) » inattendue à la position {pos}",
   "Unexpected text {text} at position {pos}; quote names after \"@\" or \"#\", or use search:": "Texte inattendu {text} à la position {pos} ; mettez les noms entre guillemets après « @ » ou « # », ou utilisez search:",
+  "Unavailable custom field": "Champ personnalisé indisponible",
   "Unknown": "Inconnu",
   "Unknown command: {name}": "Commande inconnue : {name}",
   "Unknown project": "Projet inconnu",
