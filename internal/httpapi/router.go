@@ -145,6 +145,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Comments and activity (OpenSpec `comments-and-activity`).
 	s.registerCommentRoutes(mux)
 	s.registerTimeEntryRoutes(mux)
+	// Occurrences of a recurring task for integrations (OpenSpec change series-occurrences).
+	s.registerOccurrenceRoutes(mux)
 	// End-to-end encryption (OpenSpec `e2ee`): wrapped key record and history purge.
 	s.registerEncryptionRoutes(mux)
 	// Read-only MCP endpoint and its owner toggle (OpenSpec `mcp-server`).

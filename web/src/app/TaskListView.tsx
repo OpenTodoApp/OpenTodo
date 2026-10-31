@@ -53,6 +53,7 @@ import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
+import { ProjectionsMenuItem } from './calendar/projectionSwitches'
 import { useListSplit } from './task-list/useInboxSplit'
 import { STICKY_QUICK_ADD, useStickyQuickAdd } from './task-list/stickyQuickAdd'
 import { afterListAdd, afterListAddMany } from './task-list/afterListAdd'
@@ -463,7 +464,7 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{agendaItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : undefined}
+      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{agendaItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : undefined}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />

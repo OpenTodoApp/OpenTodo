@@ -7,9 +7,12 @@ import { addDaysISO, daysBetweenISO, localDueOf } from './dates'
 import { eventMinutes } from './calendar'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
-import { followingOccurrence } from './recurrence'
-import { completedOccurrences, seriesRule } from './recurring'
-import type { CalendarEvent, Due, Project, Task } from './types'
+import { seriesRule } from './recurring'
+import type { Projection } from './occurrences'
+import type { CalendarEvent, Project, Task } from './types'
+
+// The walk lives in occurrences.ts since series-occurrences (design D2): Plan is one of its consumers.
+export { MAX_PROJECTIONS, projectedOccurrences, type Projection } from './occurrences'
 
 // The one definition of event minutes lives in calendar.ts (meeting-aware-capacity D1).
 export { eventMinutes }
@@ -17,8 +20,6 @@ export { eventMinutes }
 export type PlanSpan = 7 | 14 | 21
 export const PLAN_SPANS: readonly PlanSpan[] = [7, 14, 21]
 export const DEFAULT_PLAN_DAYS: PlanSpan = 14
-/** Projections drawn per series at most (design D5's guard). */
-export const MAX_PROJECTIONS = 31
 
 /** `days` consecutive ISO dates starting on `anchor`. */
 export function spanDates(anchor: string, days: number): string[] {
@@ -36,61 +37,10 @@ export function followAnchor(anchor: string, days: number, date: string): string
   return addDaysISO(anchor, weeks * 7)
 }
 
-/** A future occurrence of a recurring task, derived and read-only. */
-export interface Projection {
-  id: string
-  seriesId: string
-  /** The day it falls on in the viewer's zone. */
-  date: string
-  time?: string
-  title: string
-  estimate_minutes: number | null
-  priority: number
-  position: number
-  project_id: string | null
-}
-
 /** Open, live recurring tasks with a date, leaving out archived projects (the calendar's selection without the range). */
 export function planSeries(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[]): Task[] {
   const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   return tasks.filter((task) => task.due && !(task.project_id && archived.has(task.project_id)) && seriesRule(task) !== null)
-}
-
-/**
- * The occurrences that would follow each series' current one inside [from, to]
- * (viewer's days), computed with the shared calculator: calendar rules as if each
- * occurrence were completed on time, completion-relative rules as if each were
- * completed on its day (the first one not before today), `done` counting the
- * series' completed records so a `for N times` end stops the walk.
- */
-export function projectedOccurrences(series: readonly Task[], allTasks: readonly Task[], today: string, from: string, to: string, zone?: string): Projection[] {
-  const out: Projection[] = []
-  for (const task of series) {
-    const rule = seriesRule(task)
-    if (!rule || !task.due) continue
-    const done = completedOccurrences(task.id, allTasks)
-    let cur = task.due.date
-    // The walk reaches `from` first; the guard stops a runaway rule after that.
-    const limit = MAX_PROJECTIONS + Math.max(0, Math.min(3700, daysBetweenISO(cur, from)))
-    let drawn = 0
-    for (let k = 0; k < limit && drawn < MAX_PROJECTIONS; k++) {
-      const completedOn = rule.afterCompletion ? (k === 0 && cur < today ? today : cur) : today
-      const next = followingOccurrence(rule, cur, today, completedOn, done + k)
-      if (next === null || next <= cur) break
-      const due: Due = task.due.time ? { date: next, time: task.due.time, ...(task.due.tz ? { tz: task.due.tz } : {}) } : { date: next }
-      const seen = localDueOf(due, zone)
-      if (seen.date > to) break
-      if (seen.date >= from) {
-        out.push({
-          id: `proj:${task.id}:${next}`, seriesId: task.id, date: seen.date, ...(seen.time ? { time: seen.time } : {}),
-          title: task.title, estimate_minutes: task.estimate_minutes, priority: task.priority, position: task.position, project_id: task.project_id,
-        })
-        drawn++
-      }
-      cur = next
-    }
-  }
-  return out
 }
 
 /** One row of a column: a task or a projection, in the column's order. */

@@ -85,6 +85,7 @@
   "not_found",
   "not_in_workspace",
   "not_opted_in",
+  "not_recurring",
   "oidc_disabled",
   "oidc_email_unverified",
   "oidc_failed",

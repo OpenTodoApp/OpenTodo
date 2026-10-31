@@ -45,7 +45,8 @@ import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { meetingsByDay, type DayMeetings } from './calendar/meetingCapacity'
 import { useNowMinutes } from './calendar/useNowMinutes'
 import { useReplanPreview, type ReplanPreviewState } from './calendar/useReplanPreview'
-import type { ReplanGhosts } from './calendar/DayColumn'
+import type { ProjectionHue, ReplanGhosts } from './calendar/DayColumn'
+import { useCalendarProjections } from './calendar/projections'
 
 // The re-plan bar and sheet load only when someone re-plans (replan-the-day).
 const ReplanPreview = lazy(() => import('./calendar/ReplanPreview'))
@@ -123,7 +124,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const allTasks = useMemo(() => rawTasks.map((tk) => viewedTask(tk, zone)), [rawTasks, zone])
   const rawMap = useMemo(() => new Map(rawTasks.map((item) => [item.id, item])), [rawTasks])
   const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
-  const chrome = useCalendarChrome(allTasks, projects) // Colour by, the filter, the project scope, adding with the pointer (calendar-clarity)
+  const chrome = useCalendarChrome(allTasks, projects, { projections: true }) // Colour by, the filter, the project scope, adding with the pointer (calendar-clarity)
   const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1], showCompleted), [allTasks, projects, dates, showCompleted])
   const { drawn, hidden, deadlines } = useDrawn(chrome, shown, allTasks, projects, dates[0], dates[dates.length - 1]) // capacity counts `shown`, the grid draws `drawn` (D4)
 
@@ -132,7 +133,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const online = useOnline()
   // Slots (calendar-slots): one block per slot with the tasks it shows, which are not drawn again.
   const { slotViews, obstacles } = useSlotViews(dates, taskMap, today)
-  const days = useMemo(() => calendarDays(dates, drawn, feeds.visibleEvents, zone, slotViews), [dates, drawn, feeds.visibleEvents, zone, slotViews])
+  const { projections, hue: projectionHue } = useCalendarProjections({ raw: rawTasks, viewed: taskMap, projects, keeps: chrome.keeps, hueOf: chrome.color.hueOf, today, from, to, zone })
+  const days = useMemo(() => calendarDays(dates, drawn, feeds.visibleEvents, zone, slotViews, projections), [dates, drawn, feeds.visibleEvents, zone, slotViews, projections])
   const { slotIndex, heldBy } = useSlotIndex(days)
   const order = useMemo(() => calendarOrder(days), [days])
   // Frames (calendar-frames): background bands of the shown days, never part of the order or capacity.
@@ -280,8 +282,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     onOpen: (id) => setOpenId(id),
     onEscape: () => { if (!placing) return false; setPlacing(null); return true },
   }
-  const select = (id: string) => setSelectedId(id)
-  const open = (id: string) => { setSelectedId(id); setOpenId(id) }
+  const select = (id: string) => setSelectedId(id), open = (id: string) => { setSelectedId(id); setOpenId(id) }
   const step = (dir: 1 | -1) => goTo(addDaysISO(anchor, (mode === 'day' ? 1 : 7) * dir))
   const { color: { hueOf } } = chrome, gestures: AddGestures | undefined = previewing ? undefined : chrome.add
 
@@ -327,10 +328,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
           data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
-            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} deadlines={deadlines} selectedId={selectedId}
+            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} deadlines={deadlines} selectedId={selectedId}
               onSelect={select} onOpen={open} onAdd={(d) => chrome.add.add({ date: d })} />
           ) : (
-            <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} deadlines={deadlines} hidden={hidden} gestures={gestures} dragSlot={dragSlot}
+            <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} deadlines={deadlines} hidden={hidden} gestures={gestures} dragSlot={dragSlot}
               subMap={feeds.subMap} zone={zone} selectedId={selectedId} expanded={expanded} setExpanded={setExpanded} drag={drag} dragTask={dragTask}
               placing={placing} placingTask={placingTask} replanFor={previewing && desktopHead ? rp.ghostsFor : undefined} onSelect={select} onOpen={open} onDragStart={dragStart} />
           )}
@@ -372,7 +373,7 @@ function previewProps(rp: ReplanPreviewState, taskMap: Map<string, Task>, today:
   }
 }
 
-function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, frames, taskMap, hueOf, deadlines, hidden, gestures, subMap, zone, selectedId, expanded, setExpanded, drag, dragTask, dragSlot, placing, placingTask, replanFor, onSelect, onOpen, onDragStart }: {
+function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, frames, taskMap, hueOf, projectionHue, deadlines, hidden, gestures, subMap, zone, selectedId, expanded, setExpanded, drag, dragTask, dragSlot, placing, placingTask, replanFor, onSelect, onOpen, onDragStart }: {
   /** The slot being dragged or resized (calendar-slots D5). */
   dragSlot?: SlotView
   mode: 'day' | 'week'
@@ -385,6 +386,7 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
   frames: Map<string, PlacedFrame[]>
   taskMap: Map<string, Task>
   hueOf: HueOf
+  projectionHue: ProjectionHue
   /** Deadline markers per date (calendar-clarity D1). */
   deadlines: Map<string, Task[]>
   /** Tasks the filter hides per date. */
@@ -432,7 +434,7 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
         {days.map((d) => (
           <DayHeader key={d.date} day={d} today={today} tasks={shown} meetings={meetings?.get(d.date) ?? null} prefs={prefs} showName={mode === 'week'} selectedId={selectedId} subMap={subMap} zone={zone}
             laneTarget={drag?.target?.type === 'lane' && drag.target.date === d.date} onSelect={onSelect} onOpen={onOpen}
-            onPointerDown={(e, id) => onDragStart(e, { taskId: id, kind: 'move' })} hueOf={hueOf}
+            onPointerDown={(e, id) => onDragStart(e, { taskId: id, kind: 'move' })} hueOf={hueOf} projectionHue={projectionHue}
             deadlines={deadlines.get(d.date)} hidden={hidden.get(d.date) ?? 0} gestures={gestures} />
         ))}
       </div>
@@ -440,7 +442,7 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
       <div className="flex">
         <HourGutter />
         {days.map((d) => (
-          <DayColumn key={d.date} day={d} prefs={prefs} isToday={d.date === today} isPast={d.date < today} nowMinutes={nowMinutes} taskMap={taskMap} hueOf={hueOf} gestures={gestures}
+          <DayColumn key={d.date} day={d} prefs={prefs} isToday={d.date === today} isPast={d.date < today} nowMinutes={nowMinutes} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} gestures={gestures}
             subMap={subMap} zone={zone} selectedId={selectedId} draggingId={drag?.taskId ?? null} slotDrop={drag?.target?.type === 'into-slot' ? drag.target.slotId : null} expanded={expanded} setExpanded={setExpanded}
             preview={previewFor(d)} replan={replanFor?.(d.date)} frames={frames.get(d.date)} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
         ))}

@@ -33,6 +33,7 @@ import { CapacityBar, PlanDayRows, type PlanDayData } from './calendar/PlanRow'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { useShortcutScope } from './shortcuts'
+import { isProjectionTarget } from './calendar/projections'
 import { completeWithUndo, setDueWithUndo } from './undoable'
 import { useToday, useViewerZone } from './useViews'
 
@@ -61,18 +62,21 @@ function usePlanDays(dates: string[], today: string, dayLength: number, showComp
   const deadlines = useMemo(() => deadlineMarkers(viewed.filter(keeps), projects, from, to), [viewed, keeps, projects, from, to])
   const series = useMemo(() => planSeries(rawTasks, projects), [rawTasks, projects])
   const projections = useMemo(() => projectedOccurrences(series, rawTasks, today, from, to, zone), [series, rawTasks, today, from, to, zone])
+  // The columns draw the projections of the series the scope and the filter keep (series-occurrences: the filter applies to projections too).
+  const viewedById = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
+  const drawnProjections = useMemo(() => projections.filter((p) => { const s = viewedById.get(p.seriesId); return !!s && keeps(s) }), [projections, viewedById, keeps])
   // Slots count once toward a day's load (calendar-slots D6); the Plan lists their tasks as usual.
   const slotRows = useSlots()
   const slotViews = useMemo(() => slotsByDate(slotRows, dates, new Map(viewed.map((task) => [task.id, task]))), [slotRows, dates, viewed])
   const days = useMemo<PlanDayData[]>(() => dates.map((date) => ({
     date,
-    entries: columnEntries(drawnRaw, projections.filter((p) => !chrome.scope || (!!p.project_id && chrome.scope.projectIds.has(p.project_id))), date, zone),
+    entries: columnEntries(drawnRaw, drawnProjections, date, zone),
     deadlines: deadlines.get(date),
     hidden: hiddenRaw.filter((task) => viewedTask(task, zone).due?.date === date).length,
     events: eventBlocks(feeds.visibleEvents, date, zone),
     allDay: allDayEvents(feeds.visibleEvents, date),
     load: planLoad(shownRaw, projections, feeds.visibleEvents, date, dayLength, zone, slotCapacity(slotViews.get(date))),
-  })), [dates, shownRaw, drawnRaw, hiddenRaw, deadlines, projections, chrome.scope, feeds.visibleEvents, zone, dayLength, slotViews])
+  })), [dates, shownRaw, drawnRaw, hiddenRaw, deadlines, projections, drawnProjections, feeds.visibleEvents, zone, dayLength, slotViews])
   return { zone, projects, rawTasks, viewed, feeds, days, chrome, loading: live === undefined }
 }
 
@@ -161,7 +165,8 @@ export function PlanView({ date }: { date?: string }) {
     'plan.focus': (e) => show(addDaysISO(focused, ARROWS[e.key])),
     'plan.next': () => step(1),
     'plan.prev': () => step(-1),
-    'plan.open': () => { if (!selectedTask) return false; setPanelTaskId(selectedTask.id) },
+    // A focused button (a projected occurrence, series-occurrences D6) keeps its own Enter.
+    'plan.open': (e) => { if (!selectedTask || isProjectionTarget(e.target)) return false; setPanelTaskId(selectedTask.id) },
     'plan.complete': () => {
       if (!selectedTask || !editable(selectedTask)) return false
       act(completeWithUndo(selectedTask.id, true))

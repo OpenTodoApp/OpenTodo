@@ -50,12 +50,16 @@ export function capacityState(load: DayLoad): string {
  */
 export function capacityTooltip(load: DayLoad, dayLength: number, meetings?: DayMeetings | null): string {
   const lead = load.overTasks ? t('Over capacity.') : load.overWithEvents ? t('Over with meetings.') : ''
+  // Projected occurrences are named apart (series-occurrences D5): "45m repeating".
+  const repeating = load.projected ? t('{minutes} repeating', { minutes: formatMinutes(load.projected) }) : ''
   if (!meetings) {
-    return [lead, t('Planned estimates against a {minutes} day', { minutes: formatMinutes(dayLength) }) + (load.unestimated ? t('; {n} unestimated (counted as 0)', { n: load.unestimated }) : '')].filter(Boolean).join(' ')
+    const base = t('Planned estimates against a {minutes} day', { minutes: formatMinutes(dayLength) }) + (load.unestimated ? t('; {n} unestimated (counted as 0)', { n: load.unestimated }) : '')
+    return [lead, [base, repeating].filter(Boolean).join(' · ')].filter(Boolean).join(' ')
   }
   const parts = [
     load.tasks ? t('{minutes} of tasks', { minutes: formatMinutes(load.tasks) }) : '',
     load.events ? t('{minutes} in meetings', { minutes: formatMinutes(load.events) }) : '',
+    repeating,
   ].filter(Boolean)
   const head = parts.length ? parts.join(', ') : t('Nothing estimated against a {minutes} day', { minutes: formatMinutes(dayLength) })
   const tail = [

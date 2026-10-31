@@ -4,6 +4,7 @@
 // tree positions assistive technology announces. TaskListView only wires these to
 // the live data; tests call them directly.
 import { formatDateHeading, type ResolvedDateTime } from './dates'
+import type { Projection } from './occurrences'
 import { inboxTasks } from './inbox'
 import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, withoutArchived } from './dayLists'
 import { appendTo, groupBy } from './collections'
@@ -80,6 +81,10 @@ export interface ListGroup {
   dropPart?: DayPart | 'none'
   /** One line under an open folded group's heading (today-closed-list: the Waiting hint). */
   hint?: string
+  /** Upcoming's projected occurrences of the day, after its rows and outside its count (series-occurrences D4). */
+  projected?: Projection[]
+  /** On the last day with projections: "Repeating tasks shown up to <date>". */
+  projectedNote?: string
 }
 
 /** A board column: a section ('' = "No section") and its top-level cards. */

@@ -5474,6 +5474,9 @@
   "Furthest from the estimate: {values}.": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "Future dates of repeating tasks, read-only": [
+    "web/src/app/calendar/projections.tsx"
+  ],
   "General": [
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/settingsSections.ts"
@@ -10473,6 +10476,12 @@
   "Project, label, priority, estimate": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Projected for {date}": [
+    "web/src/app/task-detail/TaskHead.tsx"
+  ],
+  "Projected for {date} · next due {due}": [
+    "web/src/app/task-detail/TaskHead.tsx"
+  ],
   "Projects": [
     "web/src/app/ProjectsTable.tsx",
     "web/src/app/ProjectsView.tsx",
@@ -11100,6 +11109,12 @@
   ],
   "Repeat rule": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Repeating occurrences": [
+    "web/src/app/task-list/ListGroups.tsx"
+  ],
+  "Repeating tasks shown up to {date}": [
+    "web/src/lib/listGroups.ts"
   ],
   "Repeats": [
     "web/src/app/ParseChips.tsx",
@@ -12315,6 +12330,9 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
   ],
+  "Show repeating occurrences": [
+    "web/src/app/calendar/projections.tsx"
+  ],
   "Show shortcut hints": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
@@ -12356,6 +12374,9 @@
   ],
   "Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Showing the next {n} occurrences": [
+    "web/src/app/calendar/projections.tsx"
   ],
   "Shown after the link’s secret, to say what the page is about. Lowercase letters, digits and hyphens.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -14780,6 +14801,9 @@
   "This site may show notifications.": [
     "web/src/lib/push.ts"
   ],
+  "This task does not repeat.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This task has a page anyone with its link can open": [
     "web/src/app/task-detail/TaskHead.tsx"
   ],
@@ -15636,6 +15660,7 @@
     "web/src/app/calendar/SlotBlock.tsx",
     "web/src/app/calendar/SlotDetails.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
+    "web/src/app/calendar/projections.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusPicker.tsx",
@@ -16841,7 +16866,8 @@
   ],
   "all day": [
     "web/src/app/CalendarView.tsx",
-    "web/src/app/calendar/WeekAgenda.tsx"
+    "web/src/app/calendar/WeekAgenda.tsx",
+    "web/src/app/calendar/projections.tsx"
   ],
   "and, or, not, grouping · quote names with spaces: @\"follow up\"": [
     "web/src/app/FilterView.tsx"
@@ -17787,6 +17813,9 @@
   "repeat rule": [
     "web/src/lib/activityRuns.ts"
   ],
+  "repeating, projected": [
+    "web/src/app/calendar/projections.tsx"
+  ],
   "repeats": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -18438,6 +18467,7 @@
     "web/src/lib/plan.ts"
   ],
   "{minutes} repeating": [
+    "web/src/app/calendar/CapacityLine.tsx",
     "web/src/lib/plan.ts"
   ],
   "{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…": [
