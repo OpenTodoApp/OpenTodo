@@ -52,6 +52,7 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kWeekdays:       checkWeekdays,
 	kEnergy:         checkEnergy,
 	kOrderList:      checkOrderList,
+	kSplit:          orNull(checkSplit),
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }

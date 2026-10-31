@@ -191,6 +191,13 @@ var cmdSpecs = []cmdSpec{
 			{Name: "time", Type: "string", Description: "edit: the occurrence's time HH:MM (none: no time)"},
 			{Name: "title", Type: "string", Description: "edit: the occurrence's title"},
 		}, Writes: true, DryRun: true, Output: ref("task")},
+	{Name: "task split", Summary: "change a recurring task from one of its later occurrences on (This and following): the series ends the day before and a new series continues it; prints the new series", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{
+			{Name: "from", Type: "string", Description: "the first occurrence to change: YYYY-MM-DD, today, tomorrow or a weekday"},
+			{Name: "time", Type: "string", Description: "the new time HH:MM from that day on (none: no time)"},
+			{Name: "rule", Type: "string", Description: "the new recurrence rule from that day on"},
+			{Name: "title", Type: "string", Description: "the new title from that day on"},
+		}, Writes: true, DryRun: true, Output: ref("task")},
 	{Name: "token list", Aliases: []string{"token ls"}, Summary: "list API tokens with their scopes", Output: arrayOf("token")},
 	{Name: "token create", Aliases: []string{"token add"}, Summary: "create an API token and print its secret once", Args: []argSpec{{Name: "name", Required: true, Repeatable: true}},
 		Flags: []flagSpec{{Name: "scope", Type: "string", Enum: tokenScopes, Default: "full", Description: "token scope: full, read or agent"}}, Writes: true, DryRun: true, Output: ref("token_created")},

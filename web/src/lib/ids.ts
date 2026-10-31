@@ -67,6 +67,11 @@ export function occurrenceId(seriesId: string, date: string): string {
   return nameId('occurrence', `${seriesId}:${date}`)
 }
 
+/** Id of the piece a split of `seriesId` from `date` starts (OpenSpec change series-split, design D1; Go sync.PieceID). */
+export function pieceId(seriesId: string, date: string): string {
+  return nameId('series-split', `${seriesId}:${date}`)
+}
+
 /** Id of the "this occurrence only" copy of `seriesId` for the occurrence on `date`. */
 export function detachedId(seriesId: string, date: string): string {
   return nameId('occurrence', `${seriesId}:detach:${date}`)

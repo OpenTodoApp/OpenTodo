@@ -62,7 +62,7 @@ func cmdNotes(a *App, ctx context.Context, g *globalFlags, args []string) error 
 // task commands stay as they are).
 func cmdTask(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if len(args) == 0 {
-		return usageErr("usage: ot task note <ref> [--set <text> | --file <path|-> | --append <text> | --clear], ot task occurrences <ref>, or ot task occurrence <ref> <date> complete|skip|edit")
+		return usageErr("usage: ot task note <ref> [--set <text> | --file <path|-> | --append <text> | --clear], ot task occurrences <ref>, ot task occurrence <ref> <date> complete|skip|edit, or ot task split <ref> --from <date>")
 	}
 	switch args[0] {
 	case "note":
@@ -71,11 +71,13 @@ func cmdTask(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		return taskOccurrences(a, ctx, g, args[1:])
 	case "occurrence":
 		return taskOccurrence(a, ctx, g, args[1:])
+	case "split":
+		return taskSplit(a, ctx, g, args[1:])
 	case "-h", "-help", "--help":
 		a.printCommandUsage("task")
 		return nil
 	}
-	return usageErr("unknown task command %q (expected note, occurrences or occurrence)", args[0])
+	return usageErr("unknown task command %q (expected note, occurrences, occurrence or split)", args[0])
 }
 
 // ---- text helpers ----
