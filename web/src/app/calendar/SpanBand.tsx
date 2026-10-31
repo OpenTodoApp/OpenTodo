@@ -48,16 +48,18 @@ export interface SpanBandProps {
   stored: (id: string) => Task | undefined
   /** Where the band's day cells draw column lines (Week) or not (Month, whose cells have them). */
   columnLines?: boolean
+  /** Laid inside a grid row (Month): the band is one cell spanning the week, so the row holds only cells (WAI-ARIA grid). */
+  inRow?: boolean
   className?: string
 }
 
-export function SpanBand({ days, spans, today, variant, maxLanes, selectedId, hueOf, projectionHue, drags, onSelect, onOpen, stored, columnLines = false, className = '' }: SpanBandProps) {
+export function SpanBand({ days, spans, today, variant, maxLanes, selectedId, hueOf, projectionHue, drags, onSelect, onOpen, stored, columnLines = false, inRow = false, className = '' }: SpanBandProps) {
   const preview = useSpanPreview()
   const editable = useSpanEditable()
   const { pieces, lanes } = useMemo(() => bandLayout(days, withPreview(spans, preview), maxLanes), [days, spans, preview, maxLanes])
   if (lanes === 0) return null
   return (
-    <div className={`grid gap-y-0.5 ${className}`} data-span-band={variant}
+    <div className={`grid gap-y-0.5 ${className}`} data-span-band={variant} {...(inRow ? { role: 'gridcell', 'aria-colspan': days.length } : {})}
       style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${lanes}, 1.5rem)` }}>
       {days.map((d, i) => (
         <div key={d} aria-hidden data-span-day={d} className={columnLines ? 'border-l border-default' : ''} style={{ gridColumn: i + 1, gridRow: '1 / -1' }} />
