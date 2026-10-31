@@ -24,3 +24,5 @@ web/src/app/BrandingPanel.tsx: OpenTodo
 web/src/app/assistant/AssistantDevice.tsx: http://localhost:11434
 # The calendar's filter (calendar-clarity D4): a sample query in the filter language, which is not translated.
 web/src/app/calendar/QueryFilterDialog.tsx: ##Work & p1
+# The custom accent picker (accent-colour D5): the hex field's format as its placeholder, a code.
+web/src/ui/AccentPicker.tsx: #rrggbb

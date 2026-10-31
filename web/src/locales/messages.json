@@ -1089,6 +1089,9 @@
   "Addresses": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
+  "Adjusted for contrast": [
+    "web/src/ui/AccentPicker.tsx"
+  ],
   "Admin": [
     "web/src/app/TokensSection.tsx",
     "web/src/lib/roleNames.ts"
@@ -2447,6 +2450,9 @@
   "Choose a calendar": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
+  "Choose a colour": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Choose a date": [
     "web/src/app/datetime/DateField.tsx"
   ],
@@ -2766,6 +2772,9 @@
     "web/src/app/Sections.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/lib/assistant.ts"
+  ],
+  "Colours": [
+    "web/src/ui/AccentPicker.tsx"
   ],
   "Column menu for {title}": [
     "web/src/app/views/ViewResults.tsx"
@@ -3398,10 +3407,15 @@
     "web/src/app/PasswordSection.tsx"
   ],
   "Custom": [
-    "web/src/app/ClosedListSettings.tsx"
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/ClosedListSettings.tsx",
+    "web/src/ui/AccentPicker.tsx"
   ],
   "Custom before the deadline…": [
     "web/src/app/RemindersField.tsx"
+  ],
+  "Custom colour": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Custom field": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -3459,7 +3473,8 @@
   ],
   "Dark": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/FirstRun.tsx"
+    "web/src/app/FirstRun.tsx",
+    "web/src/ui/AccentPicker.tsx"
   ],
   "Dashboard": [
     "web/src/app/palette/index.ts"
@@ -4099,7 +4114,8 @@
     "web/src/app/task-detail/TaskPageDialog.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/ListChrome.tsx",
-    "web/src/page/TaskPageScreen.tsx"
+    "web/src/page/TaskPageScreen.tsx",
+    "web/src/ui/AccentPicker.tsx"
   ],
   "Done already": [
     "web/src/app/review/CarryOver.tsx"
@@ -4618,6 +4634,9 @@
   ],
   "English is always on.": [
     "web/src/app/QuickAddSettings.tsx"
+  ],
+  "Enter a colour as #rrggbb or #rgb.": [
+    "web/src/ui/AccentPicker.tsx"
   ],
   "Enter a date.": [
     "web/src/lib/fields.ts"
@@ -5965,6 +5984,9 @@
   "Help: {topic}": [
     "web/src/app/help/HelpLink.tsx"
   ],
+  "Hex colour": [
+    "web/src/ui/AccentPicker.tsx"
+  ],
   "Hide": [
     "web/src/app/FirstDay.tsx",
     "web/src/app/InviteLinksSection.tsx",
@@ -7141,7 +7163,8 @@
   ],
   "Light": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/FirstRun.tsx"
+    "web/src/app/FirstRun.tsx",
+    "web/src/ui/AccentPicker.tsx"
   ],
   "Light or dark, colour and row density, on all your devices.": [
     "web/src/lib/settingsCopy.ts"
@@ -7167,7 +7190,8 @@
     "web/src/app/editorCommands.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts",
-    "web/src/lib/richtextEditor.ts"
+    "web/src/lib/richtextEditor.ts",
+    "web/src/ui/AccentPicker.tsx"
   ],
   "Link address": [
     "web/src/app/LinkDialog.tsx",
@@ -10225,6 +10249,9 @@
   "Pick which More destinations sit next to Inbox, Today, Upcoming and Calendar.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Picked {picked}, shown as {used}": [
+    "web/src/ui/AccentPicker.tsx"
+  ],
   "Picture": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12099,6 +12126,9 @@
   ],
   "Select {title}": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "Selected": [
+    "web/src/ui/AccentPicker.tsx"
   ],
   "Send": [
     "web/src/app/NotificationChannelEditor.tsx",
@@ -15561,6 +15591,9 @@
   "Turn on voice capture?": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Turned away from the colour for errors": [
+    "web/src/ui/AccentPicker.tsx"
+  ],
   "Turned into a task": [
     "web/src/lib/noteOps.ts"
   ],
@@ -17255,6 +17288,9 @@
   ],
   "declined on the device": [
     "web/src/app/auditFormat.ts"
+  ],
+  "deep {colour}": [
+    "web/src/ui/AccentPicker.tsx"
   ],
   "deferred": [
     "web/src/lib/rules/summary.ts"

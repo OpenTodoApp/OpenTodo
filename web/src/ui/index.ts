@@ -2,6 +2,7 @@
 // screens since `ux-overhaul`, design-system "Page template primitives"). Screens
 // import from here, never from the files below: `src/ui/barrel.test.ts` checks it.
 // See docs/design-system.md and the Storybook workbench.
+export * from './accentPickerLazy'
 export * from './Avatar'
 export * from './Button'
 export * from './Card'

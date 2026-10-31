@@ -385,6 +385,11 @@
 [data-accent="orange"] { --ot-al-accent: oklch(0.5534 0.1739 38.4); --ot-ad-accent-text: oklch(0.7576 0.159 55.93); --ot-a-on-accent: oklch(1 0 0); }
 [data-accent="teal"] { --ot-al-accent: oklch(0.5109 0.0861 186.39); --ot-ad-accent-text: oklch(0.7845 0.1325 181.91); --ot-a-on-accent: oklch(1 0 0); }
 [data-accent="graphite"] { --ot-al-accent: oklch(0.3717 0.0392 257.29); --ot-ad-accent-text: oklch(0.869 0.0198 252.89); --ot-a-on-accent: oklch(1 0 0); /* override: dark buttons a step lighter than the light accent, so on-accent text on the dark canvas keeps its edge */ --ot-ad-accent: oklch(0.4455 0.0374 257.28); }
+/* The custom accent (accent-colour D3) has no block here: its derived values are
+   inline properties on the root (or on a preview). A built-in theme tile under a
+   custom root must not inherit the custom dark button, so the themes without their
+   own override drop it. */
+[data-accent]:where(:not([data-accent="graphite"], [data-accent="custom"])) { --ot-ad-accent: initial; }
 :root[data-accent], [data-accent] {
   --ot-accent: var(--ot-al-accent, oklch(0.5081 0.1049 165.61));
   --ot-accent-hover: color-mix(in oklch, var(--ot-accent) var(--ot-mix-accent-hover), oklch(0 0 0));

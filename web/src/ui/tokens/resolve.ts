@@ -2,36 +2,14 @@
 // tokens-v2, design D2), so the contrast check measures what is drawn: `oklch()`
 // literals, `color-mix(in oklch | oklab | srgb, …)`, `var()` chains with fallbacks,
 // `transparent`, hex and `rgb()`, and alpha composited over a background. Test and
-// workbench code only: the production build never imports it.
-export type Rgba = { r: number; g: number; b: number; a: number }
-type Lab = { L: number; A: number; B: number; alpha: number }
+// workbench code only: the production build never imports it (the colour maths it
+// shares with the custom accent derivation live in lib/colourMath.ts).
+import { composite, labToRgb, lchToLab, ratioOf, rgbToLab, type Lab, type Rgba } from '../../lib/colourMath'
+
+export { composite, deltaE, ratioOf, toHex } from '../../lib/colourMath'
+export type { Rgba } from '../../lib/colourMath'
 
 export type Lookup = (name: string) => string | undefined
-
-const toLin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
-const fromLin = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.sign(c) * Math.abs(c) ** (1 / 2.4) - 0.055)
-
-function rgbToLab({ r, g, b, a }: Rgba): Lab {
-  const [lr, lg, lb] = [r, g, b].map(toLin)
-  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb)
-  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb)
-  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb)
-  return {
-    L: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
-    A: 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
-    B: 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
-    alpha: a,
-  }
-}
-
-function labToRgb({ L, A, B, alpha }: Lab): Rgba {
-  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3
-  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3
-  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3
-  const lin = [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s]
-  const [r, g, b] = lin.map((c) => Math.min(1, Math.max(0, fromLin(c))))
-  return { r, g, b, a: alpha }
-}
 
 /** Below this chroma a hue carries no information and does not steer a mix (CSS "powerless"). */
 const POWERLESS = 1e-4
@@ -40,11 +18,6 @@ function labToLch({ L, A, B, alpha }: Lab) {
   const C = Math.hypot(A, B)
   const H = C < POWERLESS ? NaN : ((Math.atan2(B, A) * 180) / Math.PI + 360) % 360
   return { L, C, H, alpha }
-}
-
-function lchToLab(L: number, C: number, H: number, alpha: number): Lab {
-  const h = ((Number.isNaN(H) ? 0 : H) * Math.PI) / 180
-  return { L, A: C * Math.cos(h), B: C * Math.sin(h), alpha }
 }
 
 /** Splits a function's arguments on top-level commas. */
@@ -195,26 +168,9 @@ export function parseRgba(value: string, lookup?: Lookup): Rgba {
   return labToRgb(parse(lookup ? substitute(value, lookup) : value))
 }
 
-/** `fg` drawn over the opaque `bg`, as the browser composites (in gamma-encoded sRGB). */
-export function composite(fg: Rgba, bg: Rgba): Rgba {
-  const a = fg.a
-  return { r: fg.r * a + bg.r * (1 - a), g: fg.g * a + bg.g * (1 - a), b: fg.b * a + bg.b * (1 - a), a: 1 }
-}
-
-export function toHex({ r, g, b }: Rgba): string {
-  return '#' + [r, g, b].map((c) => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, '0')).join('')
-}
-
 /** OKLab lightness of a resolved colour (0 to 1). */
 export function lightness(c: Rgba): number {
   return rgbToLab(c).L
-}
-
-/** Euclidean OKLab distance × 100 (ΔE OK). */
-export function deltaE(x: Rgba, y: Rgba): number {
-  const a = rgbToLab(x)
-  const b = rgbToLab(y)
-  return Math.hypot(a.L - b.L, a.A - b.A, a.B - b.B) * 100
 }
 
 /**
@@ -230,16 +186,6 @@ export function resolveToken(tokens: Record<string, string>, name: string, bg?: 
   const under = bg === undefined ? 'surface' : bg
   const back = under in tokens ? resolveToken(tokens, under) : parseRgba(under, lookup)
   return composite(c, back.a >= 1 ? back : composite(back, { r: 1, g: 1, b: 1, a: 1 }))
-}
-
-function luminance({ r, g, b }: Rgba): number {
-  return 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b)
-}
-
-/** WCAG 2.x contrast ratio of two opaque colours. */
-export function ratioOf(a: Rgba, b: Rgba): number {
-  const [l1, l2] = [luminance(a), luminance(b)].sort((x, y) => y - x)
-  return (l1 + 0.05) / (l2 + 0.05)
 }
 
 /** Contrast of token `fg` over token `bg` in a token map: bg over the surface, fg over bg. */

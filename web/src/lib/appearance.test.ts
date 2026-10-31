@@ -2,7 +2,7 @@
 // Appearance preference (OpenSpec change theming, tasks 3.1 and 3.3).
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyAppearance, CACHE_KEY, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
+import { applyAppearance, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
 import { db } from './db'
 import { applyOps, resetDeviceId } from './ops'
 
@@ -12,6 +12,7 @@ beforeEach(async () => {
   resetDeviceId()
   document.documentElement.removeAttribute('data-theme')
   document.documentElement.removeAttribute('data-accent')
+  document.documentElement.removeAttribute('style')
   for (const m of [...document.head.querySelectorAll('meta')]) m.remove()
   localStorage.clear()
 })
@@ -119,5 +120,74 @@ describe('applyAppearance', () => {
     expect(root.hasAttribute('data-theme')).toBe(false)
     expect(root.hasAttribute('data-accent')).toBe(false)
     expect(metas()).toEqual([['#047857', '(prefers-color-scheme: light)'], ['#0d0e10', '(prefers-color-scheme: dark)']])
+  })
+})
+
+// accent-colour tasks 1.3, 3.1, 3.3: the custom accent read, written, applied and cached.
+describe('custom accent', () => {
+  const metas = () => [...document.head.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].map((m) => [m.content, m.getAttribute('media') ?? ''])
+  const root = () => document.documentElement
+  const prop = (n: string) => root().style.getPropertyValue(n)
+
+  it('reads custom with a valid colour; a missing or malformed colour reads as emerald without writing', async () => {
+    expect(readAppearance({ theme_accent: 'custom', theme_accent_custom: '#1f6feb' } as never)).toMatchObject({ accent: 'custom', custom: '#1f6feb' })
+    for (const bad of [undefined, '', '#1F6FEB', '1f6feb', '#abc', 'blue', '#12345g']) {
+      const a = readAppearance({ theme_accent: 'custom', theme_accent_custom: bad } as never)
+      expect(a.accent, String(bad)).toBe('emerald')
+      expect(a.custom, String(bad)).toBeUndefined()
+    }
+    // A built-in theme keeps the stored colour for the Custom tile.
+    expect(readAppearance({ theme_accent: 'teal', theme_accent_custom: '#1f6feb' } as never)).toMatchObject({ accent: 'teal', custom: '#1f6feb' })
+    expect(readAppearance({ theme_accent: 'ultraviolet' } as never).accent).toBe('emerald')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('choosing a colour writes the theme and the colour in one batch; a built-in theme later keeps the colour', async () => {
+    await setCustomAccent('#1f6feb')
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => [o.field, o.value])).toEqual([['theme_accent', 'custom'], ['theme_accent_custom', '#1f6feb']])
+    expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
+    await setAppearance('theme_accent', 'teal')
+    const row = await db.userPrefs.get('me')
+    expect(row?.theme_accent).toBe('teal')
+    expect(row?.theme_accent_custom).toBe('#1f6feb')
+    await expect(setCustomAccent('#ABC')).rejects.toThrow()
+  })
+
+  it('applies only the input properties with data-accent="custom", the derived light bar, and caches the values', async () => {
+    const v = await deriveCustom('#000080')
+    expect(v.button).toBeDefined()
+    applyAppearance({ mode: 'light', accent: 'custom', custom: '#000080' }, document, v)
+    expect(root().getAttribute('data-accent')).toBe('custom')
+    expect(prop('--ot-al-accent')).toBe(v.light)
+    expect(prop('--ot-ad-accent-text')).toBe(v.dark)
+    expect(prop('--ot-a-on-accent')).toBe('#ffffff')
+    expect(prop('--ot-ad-accent')).toBe(v.button)
+    expect(prop('--ot-accent')).toBe('')
+    expect(metas()).toEqual([[v.light, '']])
+    expect(JSON.parse(localStorage.getItem(CACHE_KEY)!)).toEqual({ mode: 'light', accent: 'custom', bar: v.light, custom: { input: '#000080', ...v } })
+    expect(cachedCustom('#000080')).toEqual(v)
+    expect(cachedCustom('#1f6feb')).toBeNull()
+    // System mode: the derived light accent in light, the dark canvas in dark.
+    applyAppearance({ mode: 'system', accent: 'custom', custom: '#000080' }, document, v)
+    expect(metas()).toEqual([[v.light, '(prefers-color-scheme: light)'], ['#0d0e10', '(prefers-color-scheme: dark)']])
+    applyAppearance({ mode: 'dark', accent: 'custom', custom: '#000080' }, document, v)
+    expect(metas()).toEqual([['#0d0e10', '']])
+    // Back to a built-in theme: the inline values are cleared.
+    applyAppearance({ mode: 'light', accent: 'blue', custom: '#000080' })
+    expect(root().getAttribute('data-accent')).toBe('blue')
+    for (const n of ['--ot-al-accent', '--ot-ad-accent-text', '--ot-a-on-accent', '--ot-ad-accent']) expect(prop(n), n).toBe('')
+    expect(JSON.parse(localStorage.getItem(CACHE_KEY)!).custom).toBeUndefined()
+  })
+
+  it('a custom accent without derived values shows the default accent', () => {
+    applyAppearance({ mode: 'light', accent: 'custom', custom: '#1f6feb' })
+    expect(root().hasAttribute('data-accent')).toBe(false)
+    expect(metas()).toEqual([['#047857', '']])
+  })
+
+  it('a malformed cache is not used', () => {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ mode: 'light', accent: 'custom', bar: '#000000', custom: { input: '#1f6feb', light: 'red', dark: '#ffffff', on: '#ffffff' } }))
+    expect(cachedCustom('#1f6feb')).toBeNull()
   })
 })
