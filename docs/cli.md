@@ -195,7 +195,7 @@ ot task occurrences 8c2a                                # today and the 30 days 
 ot task occurrences 8c2a --from 2026-10-12 --to 2026-10-18 --json
 ```
 
-`ot task occurrences <ref>` lists a repeating task's current occurrence and the [projected](recurrence.md#projected-occurrences) ones after it in a range, as a table of DATE, TIME and STATE (`current` or `projected`). `--from` and `--to` take `YYYY-MM-DD`, `today`, `yesterday` or a weekday; the range is at most 366 days and lists at most 31 projected dates. The dates are the ones the app draws on the calendar ([`GET /api/v1/tasks/{id}/occurrences`](api.md#occurrences-of-a-recurring-task)); it only reads, so a `read` token will do. A task without a rule exits 1 with `not_recurring`.
+`ot task occurrences <ref>` lists a repeating task's current occurrence and the [projected](recurrence.md#projected-occurrences) ones after it in a range, as a table of DATE, TIME and STATE (`current` or `projected`). `--from` and `--to` take `YYYY-MM-DD`, `today`, `yesterday` or a weekday; the range is at most 366 days and lists at most 31 projected dates. The dates are the ones the app draws on the calendar ([`GET /api/v1/tasks/{id}/occurrences`](api.md#a-series-dates-ahead)); it only reads, so a `read` token will do. A task without a rule exits 1 with `not_recurring`.
 
 ## Projects
 
