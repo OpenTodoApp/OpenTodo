@@ -35,7 +35,7 @@ func (r *Registry) loadFor(ctx context.Context, c Caller, overlay ChangeSet) (*s
 
 // apply lays planned changes over the snapshot (in-app assistant turns).
 func (snap *snapshot) apply(cs ChangeSet) {
-	snap.idx, snap.part, snap.doneBySeries = nil, nil, nil
+	snap.idx, snap.part, snap.bySeries = nil, nil, nil
 	for _, ch := range cs {
 		switch ch.Entity {
 		case "task":

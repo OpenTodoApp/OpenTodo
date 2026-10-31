@@ -20,6 +20,7 @@ import { TaskActionsMenu } from './TaskActionsMenu'
 import { startFocusOn } from '../focus/startFocus'
 import { act } from '../actionError'
 import { ReadOnlyNote, TaskHead, TaskRelations } from './TaskHead'
+import { useOccurrenceView } from './occurrenceView'
 import { TaskNotes } from './TaskNotes'
 import { TaskPageDialog } from './TaskPageDialog'
 import { useTaskDetail } from './useTaskDetail'
@@ -48,9 +49,13 @@ export interface TaskDetailProps {
   onToggleComplete?: (task: Task) => void
 }
 
-export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClose, onDismiss, onOpen, onToggleComplete, readOnly = false, entering = false }: TaskDetailProps) {
+export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClose, onDismiss, onOpen, onToggleComplete, readOnly: viewer = false, entering = false }: TaskDetailProps) {
   const panel = useRef<HTMLElement>(null)
-  const m = useTaskDetail({ taskId, initial, readOnly, projects, labelMap, onClose, onOpen, onToggleComplete, scope: panel })
+  const m = useTaskDetail({ taskId, initial, readOnly: viewer, projects, labelMap, onClose, onOpen, onToggleComplete, scope: panel })
+  // On This occurrence a series' values show without editing them: an edit there
+  // goes to the occurrence's record (series-exceptions D5).
+  const occurrence = useOccurrenceView(m.task)
+  const readOnly = viewer || !!occurrence
   // Closing the panel (not switching its task) slides it out on a copy (motion-v2 D5).
   useLayoutEffect(() => {
     const el = panel.current
@@ -76,14 +81,14 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
         <TaskActionsMenu m={m} page={false} readOnly={readOnly} onOpen={onOpen} />
         <IconButton icon="x" label={t('Close')} onClick={onDismiss ?? onClose} data-overlay-close className="touch-target" />
       </div>
-      {readOnly && <ReadOnlyNote />}
+      {viewer && <ReadOnlyNote />}
       {isSample(task) && !readOnly && <SampleNotice />}
       {/* Relative, so absolutely placed descendants (screen-reader labels) scroll and clip
           with the body instead of hanging below the window and scrolling the whole page
           (GitHub issue 395). */}
       <div className="relative min-w-0 flex-1 overflow-y-auto" data-panel-body>
         <div className="min-w-0 space-y-4 p-4">
-          <TaskRelations m={m} onOpen={onOpen} />
+          <TaskRelations m={m} onOpen={onOpen} readOnly={viewer} />
           {/* The properties first and the notes in full after the attachments, so long notes
               never push the facts out of view (task-panel-notes-below, GitHub issue 444). */}
           <Facets task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}

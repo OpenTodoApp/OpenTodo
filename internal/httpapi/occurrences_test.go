@@ -95,8 +95,10 @@ func TestTaskOccurrencesCountsCompletedRecords(t *testing.T) {
 	resp, out = e.do("GET", "/api/v1/tasks/"+id+"/occurrences?from=2026-10-01&to=2026-10-31", nil)
 	e.mustStatus(resp, 200, out)
 	occ := out["occurrences"].([]any)
-	// Two done: the current occurrence plus two projections make the five.
-	if len(occ) != 3 || occ[0].(map[string]any)["state"] != "current" {
+	// Two done (listed with their records, series-exceptions): the current
+	// occurrence plus two projections make the five.
+	if len(occ) != 5 || occ[0].(map[string]any)["state"] != "done" || occ[1].(map[string]any)["state"] != "done" ||
+		occ[2].(map[string]any)["state"] != "current" || occ[4].(map[string]any)["state"] != "projected" {
 		t.Fatalf("occurrences = %v", occ)
 	}
 }

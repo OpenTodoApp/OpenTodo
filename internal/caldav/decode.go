@@ -23,7 +23,7 @@ func Decode(body []byte) (*Inbound, error) {
 	if err != nil {
 		return nil, err
 	}
-	d := &decoder{in: &Inbound{UID: uid, Priority: 4, CompletedOccurrences: completedOccurrences(cal)}, event: master.Name == "VEVENT"}
+	d := &decoder{in: &Inbound{UID: uid, Priority: 4, Overrides: overrides(cal)}, event: master.Name == "VEVENT"}
 	for i := range master.Props {
 		d.prop(master, i)
 	}
@@ -55,7 +55,7 @@ func Decode(body []byte) (*Inbound, error) {
 // masterTask finds the calendar's one UID and the component that carries the
 // task: a VTODO, or a VEVENT a calendar app sent (caldav-events-as-tasks D1).
 // One object holds one kind; VTODO and VEVENT mixed is not a valid object.
-// Per-occurrence overrides (RECURRENCE-ID) are not modelled.
+// Per-occurrence overrides (RECURRENCE-ID) are read by overrides.
 func masterTask(cal *Component) (*Component, string, error) {
 	var master *Component
 	uid, kind := "", ""
@@ -95,29 +95,6 @@ func masterTask(cal *Component) (*Component, string, error) {
 	return master, uid, nil
 }
 
-// completedOccurrences lists the dates of the RECURRENCE-ID overrides that are
-// completed (STATUS:COMPLETED, or a COMPLETED time without another status).
-func completedOccurrences(cal *Component) []string {
-	var out []string
-	for _, c := range cal.Children {
-		rid := c.Prop("RECURRENCE-ID")
-		if c.Name != "VTODO" || rid == nil {
-			continue
-		}
-		status := ""
-		if p := c.Prop("STATUS"); p != nil {
-			status = strings.ToUpper(strings.TrimSpace(p.Value))
-		}
-		if status != "COMPLETED" && (status != "" || c.Prop("COMPLETED") == nil) {
-			continue
-		}
-		if due, err := parseDue(*rid); err == nil {
-			out = append(out, due.Date)
-		}
-	}
-	return out
-}
-
 // decoder is the state of one Decode call: the task fields read so far, the
 // lines kept as client data (extra), and the properties read after the loop.
 type decoder struct {
@@ -125,6 +102,7 @@ type decoder struct {
 	extra   []string
 	dtstart *Prop
 	rrule   *Prop
+	exdates []Prop
 	status  string
 	err     error
 	// event: the object is a VEVENT (caldav-events-as-tasks); dtend and
@@ -189,6 +167,8 @@ func (d *decoder) prop(master *Component, i int) {
 		}
 	case "RELATED-TO":
 		d.relatedTo(p)
+	case "EXDATE":
+		d.exdates = append(d.exdates, p)
 	case "CREATED":
 		if ms, err := instantOf(p); err == nil {
 			in.CreatedAt = &ms
@@ -379,6 +359,16 @@ func (d *decoder) dates() {
 			in.Rule = r.Canonical()
 		} else {
 			d.extra = append(d.extra, rrule.Line())
+		}
+	}
+	// EXDATE is read as exception dates of a mapped rule (series-exceptions
+	// D10); beside an unmapped rule, or without a rule, it is client data.
+	for _, p := range d.exdates {
+		if rrule != nil && in.Rule != "" {
+			in.HasExDate = true
+			in.ExDates = append(in.ExDates, exdates(p)...)
+		} else {
+			d.extra = append(d.extra, p.Line())
 		}
 	}
 	// A DTSTART equal to a timed DUE is what this server serves for a scheduled

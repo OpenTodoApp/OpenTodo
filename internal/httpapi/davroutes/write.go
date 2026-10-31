@@ -526,7 +526,7 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	curRule := idOf(cur["recurrence"])
 	keep := false
 	if curRule != "" && in.RRULE != "" {
-		if r, err := recurrence.Parse(curRule); err == nil && recurrence.SameRRULE(r.RRULE(), in.RRULE) {
+		if r, err := recurrence.Parse(curRule); err == nil && (recurrence.SameRRULE(r.RRULE(), in.RRULE) || recurrence.SameRRULE(v.servedRRULE(cur), in.RRULE)) {
 			keep = true
 		}
 	}
@@ -567,6 +567,10 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	}
 	var extra []opsync.Op
 	extra = append(extra, extraOps...)
+	// Overrides and EXDATE changes become occurrence records (series-exceptions D10).
+	if keep || in.Rule == curRule {
+		extra = append(extra, d.occurrenceOps(v, cur, in, body, ts)...)
+	}
 	// Completing a recurring task records the occurrence and moves the series,
 	// exactly like a REST completion.
 	recordID, record, ok, err := d.s.recurringCompletion(d.ctx(), d.user.ID, id, body, cur, localToday(d.s.now()))
@@ -1011,7 +1015,7 @@ func (d *davRequest) proppatchRefuse(body *caldav.Node, href string) {
 // completesCurrentOccurrence reports whether the client sent the recurring
 // task's current occurrence (its due date) as a completed override.
 func completesCurrentOccurrence(in *caldav.Inbound, cur map[string]json.RawMessage) bool {
-	if len(in.CompletedOccurrences) == 0 || idOf(cur["recurrence"]) == "" {
+	if len(in.CompletedOccurrences()) == 0 || idOf(cur["recurrence"]) == "" {
 		return false
 	}
 	var due struct {
@@ -1020,7 +1024,7 @@ func completesCurrentOccurrence(in *caldav.Inbound, cur map[string]json.RawMessa
 	if json.Unmarshal(cur["due"], &due) != nil || due.Date == "" {
 		return false
 	}
-	for _, d := range in.CompletedOccurrences {
+	for _, d := range in.CompletedOccurrences() {
 		if strings.ReplaceAll(due.Date, "-", "") == strings.ReplaceAll(d, "-", "") {
 			return true
 		}

@@ -55,7 +55,7 @@ Recurring depth, calendar range, and notes that stay cheap to store and easy to 
 | Change | What | Issues |
 | --- | --- | --- |
 | [`series-occurrences`](openspec/changes/archive/2026-10-31-series-occurrences/) | **Shipped.** Future occurrences of repeating tasks and habits in Day, Week and Month | [#550](https://github.com/OpenTodoApp/OpenTodo/issues/550), [#537](https://github.com/OpenTodoApp/OpenTodo/issues/537) |
-| [`series-exceptions`](openspec/changes/series-exceptions/) | Move, skip or edit one occurrence alone | [#551](https://github.com/OpenTodoApp/OpenTodo/issues/551) |
+| [`series-exceptions`](openspec/changes/archive/2026-10-31-series-exceptions/) | **Shipped.** Move, skip or edit one occurrence alone | [#551](https://github.com/OpenTodoApp/OpenTodo/issues/551) |
 | [`series-split`](openspec/changes/series-split/) | "This and following": edit from one occurrence onward | [#552](https://github.com/OpenTodoApp/OpenTodo/issues/552) |
 | [`multi-day-tasks`](openspec/changes/multi-day-tasks/) | Tasks that span days on the calendar | [#558](https://github.com/OpenTodoApp/OpenTodo/issues/558) |
 | [`year-view`](openspec/changes/year-view/) | Several months and a Year view | [#557](https://github.com/OpenTodoApp/OpenTodo/issues/557) |

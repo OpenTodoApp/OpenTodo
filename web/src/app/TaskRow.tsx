@@ -149,6 +149,8 @@ interface MetaValues {
   hint: string | null
   zone: string
   repeat: string | null
+  /** The repeat mark's accessible name and tooltip: an occurrence says what it is one of (series-exceptions D5). */
+  repeatLabel: string | null
   /** The task repeats (not an occurrence of a series). */
   recurring: boolean
   deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null
@@ -203,6 +205,12 @@ function EnergyWord({ energy, rowItem = false }: { energy: Energy; rowItem?: boo
  * subtask progress lead with their icons, the other facts and the label chips follow,
  * and the assignee ends the row.
  */
+/** The repeat mark's name: an occurrence says what it is one of (series-exceptions D5). */
+function repeatLabelOf(task: Task): string | null {
+  if (task.recurrence) return t('repeats')
+  return task.series_id ? t('One occurrence of {title}', { title: task.title || t('a repeating task') }) : null
+}
+
 function CardMeta({ m }: { m: MetaValues }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
   return (
@@ -214,7 +222,7 @@ function CardMeta({ m }: { m: MetaValues }) {
       {m.sample && <ToneText data-sample="">{t('Sample')}</ToneText>}
       {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="">{m.breadcrumb}</ToneText>}
       {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
-      {m.repeat && <ToneText icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined}>{m.repeat}</ToneText>}
+      {m.repeat && <ToneText icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeatLabel ?? undefined}>{m.repeat}</ToneText>}
       {m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>}
       {m.startText && <ToneText icon={m.someday ? 'archive' : 'calendar-days'} data-start="">{m.startText}</ToneText>}
       <BlockMark m={m} />
@@ -663,7 +671,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     breadcrumb,
     date: hides('date') ? null : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
     dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : 'muted',
-    hint, zone: task.due?.tz ?? '',
+    hint, zone: task.due?.tz ?? '', repeatLabel: repeatLabelOf(task),
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,
     startText, someday: start === 'someday',
@@ -821,7 +829,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           )}
         </div>
         {!card && !detailed && priority && <PriorityMark priority={priority} />}
-        {!card && m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeat} className="shrink-0">{null}</ToneText>}
+        {!card && m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeatLabel ?? m.repeat} className="shrink-0">{null}</ToneText>}
         {!card && headCounts.length > 0 && <RowCounts counts={headCounts} />}
         </div>
         {meta}

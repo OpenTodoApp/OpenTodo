@@ -1,6 +1,6 @@
 ---
 title: Recurring task rules
-summary: The repeat rule grammar, how the next date is worked out, and what completing, skipping and detaching do.
+summary: The repeat rule grammar, how the next date is worked out, and what completing, skipping, moving or editing one occurrence does.
 audience: user
 section: Reference
 specs: [recurring-tasks, habits]
@@ -103,14 +103,83 @@ in Someday clears its due date and so ends the repetition.
   from a missed one. A skipped record is not a completion: it is not listed in
   Completed, does not match `completed` filters and does not count towards
   `for N times`. A task that is not a habit skips exactly as before, with no record.
-- **This occurrence only** (`Shift+O`, or the button in the detail panel): makes a
-  standalone copy of the current occurrence, without a rule, and moves the series
-  to its next occurrence. Edit or move the copy freely.
+- **This occurrence only** (`Shift+O`, or the button in the detail panel): writes the
+  current occurrence's record, open and without a rule, and moves the series to its
+  next occurrence. Edit or move the record freely: it stays the occurrence of that
+  date.
 - Every other edit (title, notes, project, priority, labels, due time, rule)
-  applies to the series, because the series is the task.
-- **Reopen** an occurrence record and it becomes a standalone open task; the series
-  is not moved back. Reopening a series that ended keeps its rule, so its next
-  completion continues the schedule.
+  applies to the series, because the series is the task. A change of the title,
+  priority, labels, section, estimate, time and zone, assignee or location also
+  goes to every open occurrence record that still holds the series' previous value,
+  so renaming "Study" renames Wednesday's moved session but not one you renamed
+  alone. Notes, dates and done or skipped records never change this way.
+- **Reopen** an occurrence record and it becomes an open occurrence of its date
+  again; the series is not moved back. Reopening a series that ended keeps its rule,
+  so its next completion continues the schedule.
+
+## One occurrence alone
+
+Any occurrence from the current one on can be acted on alone, as calendars do with
+"this event only": complete it early, skip it, move it to another day or time, or
+edit its title, notes or anything else. Doing so writes the occurrence's *record*:
+a task with the id derived from the series and the date, `series_id` set and
+`occurrence_date` holding the date it stands for, even after it is moved (the
+override date of [CalDAV](caldav.md#one-occurrence-alone)). The record can be open (moved or edited, still to do), done or
+skipped.
+
+- **From the calendar**: right-click a projected occurrence, long-press it, or focus
+  it and press <kbd>Shift</kbd>+<kbd>F10</kbd> or the menu key: **Open**, **Complete
+  this occurrence**, **Skip this occurrence** (**Skip this day** for a habit) and
+  **Move to…**. Drag it with the mouse to another day in Month and Plan, or to another
+  slot in Day and Week, to move this occurrence alone; a toast offers Undo. Dragging
+  the series' own row still moves the series.
+- **From the panel**: opening a projection opens the occurrence panel. Under the title
+  a control reads **This occurrence · All occurrences**: opened from a projection it
+  is on This occurrence, names the date ("Wednesday 14 October · one occurrence of a
+  repeating task"), shows the series' values without editing them and offers
+  **Complete**, **Skip**, **Move to…** and **Edit this occurrence**, which writes the
+  record and opens it. Opened from the series row it is on All occurrences and the
+  panel is the series' as before; switch to This occurrence to act on the current
+  one. A record opens on This occurrence; All occurrences opens its series.
+- **Deleting** an open record, or choosing to skip it, writes the skip: a record is
+  never moved to the Trash by the app, because a purged record could never be
+  written again. Undo right after a skip turns the record back into an open
+  occurrence on its date.
+- In lists a record is an ordinary task row on its own date with the repeat mark,
+  whose tooltip reads "One occurrence of …".
+- A viewer of a shared project sees projections and records but cannot act on them.
+  A completion-relative series (`every 3 days after completion`) offers Open only:
+  its later dates follow each completion.
+
+### Exceptions
+
+A date with a record is an *exception* of its series: no projection is drawn there,
+and moving the series on (completing, skipping, This occurrence only) goes to the
+first occurrence date after the current one that is not an exception. Completing
+Wednesday early in a `every mon, wed, fri` series due Monday makes Monday's
+completion move the series to Friday. Nothing is stored on the series: the
+exceptions are read from the records, so two devices that act on different dates
+offline keep both.
+
+A device can move the series before it sees another device's record and leave it
+standing on an exception date. Any device that may edit the task then moves it to
+the next free date after the next sync; every device computes the same date. The
+server does the same before it completes a series.
+
+### Counting with records
+
+`for N times` counts done records; skipped ones never count, so a skip extends the
+series by one. An open record uses up one of the remaining occurrences while it is
+open: the current occurrence and the projections never exceed N minus the done and
+open records, and completing an open record leaves that total unchanged. `until`
+bounds every date, records included.
+
+### Reminders of one occurrence
+
+When an occurrence is moved, edited or detached, its record gets a copy of each
+relative reminder of the series ("15 minutes before"), firing from the record's own
+time; the copies' ids are derived from the record and the reminder, so two devices
+make one copy. Absolute and deadline reminders stay on the series.
 
 ### Projected occurrences
 
@@ -123,45 +192,52 @@ when you turn on the same item in its menu (off by default, so a daily task does
 fill it). They are faint, with a dashed edge and the repeat icon, and each day's
 planned total counts their estimates ("45m repeating").
 
-They are computed on each device from the rule, the due date and the completed count,
+They are computed on each device from the rule, the due date and the series' records,
 with one calculation shared by every view and the server (`web/src/lib/occurrences.ts`,
 its Go port on the server, pinned by `web/src/lib/occurrences.vectors.json`), so every
 device draws the same ones, offline too. They are never written: no operation, no row,
 nothing to sync. A series draws at most 31 in the days on screen. None is drawn on or
-before the current occurrence, nor before today, and an end condition stops them.
+before the current occurrence, nor before today, nor on an exception date, and an
+end condition stops them.
 
-They can't be moved, selected with <kbd>j</kbd> and <kbd>k</kbd> or completed: move or
-complete the task itself and they follow. Tab reaches them; clicking one or pressing
-<kbd>Enter</kbd> opens the series with the date it stands for named under the title
-("Projected for Thursday 15 October · next due Monday 12 October"). Today, projects,
-labels and saved views show the current occurrence only.
+They are not selected with <kbd>j</kbd> and <kbd>k</kbd>. Tab reaches them; clicking
+one or pressing <kbd>Enter</kbd> opens the occurrence panel for its date, and its menu
+and a drag act on that occurrence alone (see [One occurrence alone](#one-occurrence-alone)).
+Moving or completing the series row moves the projections with it. Today, projects,
+labels and saved views show the current occurrence only; a moved occurrence shows on
+its new date as an ordinary row.
 
 Scripts and assistants can read the same dates: `GET /api/v1/tasks/{id}/occurrences`
 ([API](api.md#a-series-dates-ahead)), `ot task occurrences`
 ([CLI](cli.md)), and the `next_occurrences` of a repeating task in the
-[AI tools](mcp.md).
+[AI tools](mcp.md). Scripts act on one occurrence with
+`POST /api/v1/tasks/{id}/occurrences/{date}/complete` and `/skip` and
+`PATCH /api/v1/tasks/{id}/occurrences/{date}` ([API](api.md#one-occurrence-alone)),
+or `ot task occurrence <task> <date> complete|skip|edit`.
 
 ## Sync and convergence
 
 The rule is stored in `task.recurrence` and occurrence records point back with
-`task.series_id` (see [sync.md](sync.md)). An occurrence record's id is derived
+`task.series_id`, with `task.occurrence_date` naming the date they stand for (see
+[sync.md](sync.md)); a record written before that field stands for its due date. An occurrence record's id is derived
 from the series id and the occurrence date (SHA-256, formatted as a UUID), and
 the next due date is a pure function of the rule and dates every device shares.
 Two devices that complete the same occurrence offline therefore write the same
 record and the same next due date, and end with one Completed entry once they
-sync. A `for N times` count is the number of occurrence records, so it converges
-without a counter; skipped records of a habit are left out of the count on every
-device and on the server.
+sync. A `for N times` count is the number of done and open occurrence records, so
+it converges without a counter; skipped records are left out of the count on every
+device and on the server. The shared fixture `web/src/lib/series.fixture.json` pins
+acting on one occurrence, the jump over exceptions and the repair to the same
+answers on the devices and the server.
 
 A habit's skip writes the same record id a completion writes, with every field of
 the record in one batch under one timestamp. Two devices that skip the same day
 therefore end with one skipped record, and when one device completes a day while
 another skips it, per-field last-writer-wins keeps the later batch whole: the day
 reads as done or as skipped, never as a mix, and the streak is unbroken either
-way. A completion through the REST API, CalDAV or an assistant writes no
-`skipped` field; if it lands after a device's skip of the same day, the record
-keeps `skipped: true` with the server's completion time, and the day still reads
-as skipped.
+way. A completion through the REST API, CalDAV or an assistant writes the
+record whole too, with `skipped: false`, so the later of a skip and a completion
+of the same day wins.
 
 Skipped a day by mistake? Set the task's date back to that day and complete it:
 the completion writes the same record with `skipped: false`, so the day reads as
@@ -198,7 +274,12 @@ The rules:
   the 31st was due on 28 February). Days before the habit's first record are not
   part of its history.
 - **Done** and **skipped** days have a record. A **missed** day is a scheduled day
-  before the current occurrence without one.
+  before the current occurrence without one. A record counts on the date it stands
+  for: Wednesday's occurrence moved to Thursday and done there marks Wednesday done,
+  and Thursday stays unscheduled. An open record (moved, still to do) is pending on
+  its date until it is done or skipped, and missed once the series is past it. A day
+  done or skipped ahead of time shows in the grid at once and joins the streak once
+  the series reaches it.
 - The **current occurrence** (the task's due date) is **pending**: it never breaks
   the streak, whatever today is. Once the day has passed the streak chip says it
   is at risk.
@@ -227,6 +308,26 @@ week, Home and End jump to the month's first and last day, and Page Up and Page
 Down change the month.
 
 The REST API, CalDAV and assistant tools complete a habit like any recurring task,
-which records a done day; none of them skips. The API reads and writes `habit`
+which records a done day; the API's and CalDAV's occurrence routes can also skip a
+day (`POST …/occurrences/{date}/skip`, a client's EXDATE). The API reads and writes `habit`
 as a plain boolean, assistant results carry `habit: true`, and CalDAV serves a
 habit as an ordinary recurring VTODO.
+
+## Encrypted accounts
+
+On an account with [end-to-end encryption](e2ee.md) a device encrypts the content it
+copies into a record itself, because a ciphertext belongs to one task id. The server
+cannot read the series' title, so the records it writes (a REST or CalDAV completion,
+skip or move) carry no title or notes; the first unlocked device that syncs fills them
+in from the series, encrypted for the record.
+
+## Not covered yet
+
+- **This and following** (changing a series from one date on) is a later change.
+- A completion-relative series' future dates cannot be acted on one by one.
+- Missed past occurrences (before the current one) cannot be completed later.
+- A skipped occurrence is not shown anywhere apart from a habit's grid; there is no
+  "restore" for it after the Undo is gone.
+- Calendar sync to your own calendar keeps writing the next occurrence only.
+- An older client that moves a record to the Trash frees its date until the Trash
+  is emptied; once purged, that date cannot get a record again.

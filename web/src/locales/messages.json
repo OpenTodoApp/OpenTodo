@@ -1146,6 +1146,9 @@
   "All notes": [
     "web/src/app/notes/NoteFilters.tsx"
   ],
+  "All occurrences": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
   "All of these": [
     "web/src/app/filter/FilterBuilder.tsx"
   ],
@@ -2211,6 +2214,7 @@
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
+    "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/locations/LocationEditor.tsx",
@@ -2846,6 +2850,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-detail/OccurrenceScope.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/RowSwipe.tsx"
   ],
@@ -2875,6 +2880,9 @@
   ],
   "Complete the task and end the session": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Complete this occurrence": [
+    "web/src/app/calendar/occurrenceMenu.tsx"
   ],
   "Complete {tasks}": [
     "web/src/app/palette/registry.ts"
@@ -3497,6 +3505,7 @@
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CalendarRange.tsx",
     "web/src/app/DigestCard.tsx",
+    "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/lib/shortcuts.ts"
@@ -3522,6 +3531,9 @@
   ],
   "Day reopened": [
     "web/src/lib/review.ts"
+  ],
+  "Day skipped": [
+    "web/src/lib/occurrenceActions.ts"
   ],
   "Day, Week, Month and Plan calendar": [
     "web/src/lib/shortcuts.ts"
@@ -4299,6 +4311,9 @@
   "Edit rule": [
     "web/src/app/rules/RuleDialog.tsx"
   ],
+  "Edit scope": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
   "Edit the current project’s note (Esc saves and closes it)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -4328,6 +4343,12 @@
   ],
   "Edit the view": [
     "web/src/app/SavedViewView.tsx"
+  ],
+  "Edit this occurrence": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
+  "Edit this occurrence alone and move the series on": [
+    "web/src/app/RecurrenceField.tsx"
   ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -6936,6 +6957,9 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/lib/listGroups.ts"
   ],
+  "Later dates of this task follow its completions, so they cannot be changed one by one.": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
   "Later|method": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -6964,6 +6988,9 @@
   ],
   "Leave empty for a public client": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Leave empty for no time.": [
+    "web/src/app/calendar/occurrenceMenu.tsx"
   ],
   "Leave empty to keep the saved password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -7332,9 +7359,6 @@
   "Make a slot here": [
     "web/src/app/calendar/FrameBand.tsx"
   ],
-  "Make a standalone copy of this occurrence and move the series on": [
-    "web/src/app/RecurrenceField.tsx"
-  ],
   "Make admin": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -7648,7 +7672,8 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "Move": [
-    "web/src/app/TriageView.tsx"
+    "web/src/app/TriageView.tsx",
+    "web/src/app/calendar/occurrenceMenu.tsx"
   ],
   "Move all to today": [
     "web/src/app/task-list/EarlierActions.tsx"
@@ -7725,6 +7750,9 @@
   "Move the selection up": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Move this occurrence": [
+    "web/src/app/calendar/occurrenceMenu.tsx"
+  ],
   "Move to": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -7760,6 +7788,10 @@
   ],
   "Move to {name}": [
     "web/src/app/workspaceNav.ts"
+  ],
+  "Move to…": [
+    "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
   "Move up": [
     "web/src/app/AppearanceSection.tsx",
@@ -9044,6 +9076,21 @@
   "OK": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Occurrence actions": [
+    "web/src/app/calendar/occurrenceMenu.tsx"
+  ],
+  "Occurrence changed": [
+    "web/src/lib/occurrenceActions.ts"
+  ],
+  "Occurrence completed": [
+    "web/src/lib/occurrenceActions.ts"
+  ],
+  "Occurrence moved": [
+    "web/src/lib/occurrenceActions.ts"
+  ],
+  "Occurrence skipped": [
+    "web/src/lib/occurrenceActions.ts"
+  ],
   "Off": [
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
@@ -9333,6 +9380,9 @@
   "One next step|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "One occurrence of {title}": [
+    "web/src/app/TaskRow.tsx"
+  ],
   "One origin per line, at most 10: https://host[:port], or http://localhost:port for a model on the person’s own computer.": [
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
@@ -9396,6 +9446,7 @@
   "Open": [
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/palette/addFromBar.ts",
     "web/src/app/review/ProjectWalk.tsx",
@@ -10476,12 +10527,6 @@
   ],
   "Project, label, priority, estimate": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Projected for {date}": [
-    "web/src/app/task-detail/TaskHead.tsx"
-  ],
-  "Projected for {date} · next due {due}": [
-    "web/src/app/task-detail/TaskHead.tsx"
   ],
   "Projects": [
     "web/src/app/ProjectsTable.tsx",
@@ -12629,7 +12674,8 @@
   "Skip": [
     "web/src/app/FirstRun.tsx",
     "web/src/app/TriageView.tsx",
-    "web/src/app/review/ProjectWalk.tsx"
+    "web/src/app/review/ProjectWalk.tsx",
+    "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
   "Skip all": [
     "web/src/app/FirstRun.tsx"
@@ -12642,6 +12688,13 @@
   ],
   "Skip them": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Skip this day": [
+    "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
+  "Skip this occurrence": [
+    "web/src/app/calendar/occurrenceMenu.tsx"
   ],
   "Skip this occurrence of {title}": [
     "web/src/app/palette/registry.ts"
@@ -13436,6 +13489,9 @@
   ],
   "That code is not valid. Type the newest code from your app.": [
     "web/src/app/ReauthDialog.tsx"
+  ],
+  "That date is not a coming occurrence of this repeating task.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "That did not go through. Check the connection and try again.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -14637,6 +14693,9 @@
   "This note's formatting could not be read on this device; its text is shown instead.": [
     "web/src/app/NotesEditor.tsx"
   ],
+  "This occurrence": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
   "This occurrence only": [
     "web/src/app/RecurrenceField.tsx"
   ],
@@ -14910,6 +14969,7 @@
   "Time": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DigestCard.tsx",
+    "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Time (server time)": [
@@ -16815,6 +16875,9 @@
   "a removed project": [
     "web/src/lib/rules/index.ts"
   ],
+  "a repeating task": [
+    "web/src/app/TaskRow.tsx"
+  ],
   "a section": [
     "web/src/lib/assistant.ts"
   ],
@@ -18329,6 +18392,9 @@
   ],
   "{count} to process: move, schedule, complete or trash each Inbox task.": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "{date} · one occurrence of a repeating task": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
   "{date} – {date2}. Computed on this device from your tasks; nothing is sent anywhere.": [
     "web/src/app/review/StatsView.tsx"

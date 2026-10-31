@@ -61,7 +61,12 @@ function usePlanDays(dates: string[], today: string, dayLength: number, showComp
   const hiddenRaw = useMemo(() => shownRaw.filter((task) => !task.completed_at && inScope(task) && !keeps(task)), [shownRaw, inScope, keeps])
   const deadlines = useMemo(() => deadlineMarkers(viewed.filter(keeps), projects, from, to), [viewed, keeps, projects, from, to])
   const series = useMemo(() => planSeries(rawTasks, projects), [rawTasks, projects])
-  const projections = useMemo(() => projectedOccurrences(series, rawTasks, today, from, to, zone), [series, rawTasks, today, from, to, zone])
+  const seriesMembers = useMembershipMap()
+  // An editor of a calendar series may act on its projections (series-exceptions D4).
+  const projections = useMemo(() => {
+    const projectOf = new Map(series.map((s) => [s.id, s.project_id]))
+    return projectedOccurrences(series, rawTasks, today, from, to, zone).map((p) => ({ ...p, actionable: !p.afterCompletion && canEditTasks(roleOf(projectOf.get(p.seriesId), seriesMembers)) }))
+  }, [series, rawTasks, today, from, to, zone, seriesMembers])
   // The columns draw the projections of the series the scope and the filter keep (series-occurrences: the filter applies to projections too).
   const viewedById = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
   const drawnProjections = useMemo(() => projections.filter((p) => { const s = viewedById.get(p.seriesId); return !!s && keeps(s) }), [projections, viewedById, keeps])

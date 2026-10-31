@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_PROJECTIONS, occurrencesInRange, projectedOccurrences, walkOccurrences } from './occurrences'
+import { MAX_PROJECTIONS, nextFree, occurrencesInRange, projectedOccurrences, walkOccurrences } from './occurrences'
 import { parseRule } from './recurrence'
 import { occurrenceId } from './ids'
 import type { Task } from './types'
 // Shared with internal/recurrence (Go): Rule.Occurrences must give the same dates (series-occurrences D2).
 import vectors from './occurrences.vectors.json'
 
-interface Vector { name: string; rule: string; due: string; today: string; done: number; from: string; to: string; dates: string[]; capped: boolean }
+interface Vector { name: string; rule: string; due: string; today: string; done: number; exceptions?: string[]; from: string; to: string; dates: string[]; capped: boolean }
+interface NextVector { name: string; rule: string; due: string; today: string; taken: number; exceptions: string[]; next: string | null }
 
 function task(over: Partial<Task>): Task {
   return {
@@ -25,7 +26,13 @@ describe('shared occurrence vectors', () => {
   it.each((vectors.cases as Vector[]).map((v) => [v.name, v] as const))('%s', (_name, v) => {
     const parsed = parseRule(v.rule)
     if (!parsed.ok) throw new Error(`bad rule ${v.rule}`)
-    expect(walkOccurrences(parsed.rule, v.due, v.today, v.done, v.from, v.to)).toEqual({ dates: v.dates, capped: v.capped })
+    expect(walkOccurrences(parsed.rule, v.due, v.today, v.done, v.from, v.to, (d) => d, new Set(v.exceptions ?? []))).toEqual({ dates: v.dates, capped: v.capped })
+  })
+
+  it.each((vectors.next as NextVector[]).map((v) => [v.name, v] as const))('next: %s', (_name, v) => {
+    const parsed = parseRule(v.rule)
+    if (!parsed.ok) throw new Error(`bad rule ${v.rule}`)
+    expect(nextFree(parsed.rule, v.due, v.today, v.today, v.taken, new Set(v.exceptions))).toBe(v.next)
   })
 })
 

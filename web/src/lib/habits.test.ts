@@ -28,9 +28,14 @@ const SERIES = 'series-1'
 
 function rows(rule: string, due: string, records: Record<string, string>): Task[] {
   const series = task({ id: SERIES, recurrence: rule, due: { date: due }, habit: true })
-  const recs = Object.entries(records).map(([date, state]) => task({
-    id: occurrenceId(SERIES, date), series_id: SERIES, due: { date }, completed_at: 100, skipped: state === 'skipped',
-  }))
+  const recs = Object.entries(records).map(([date, mark]) => {
+    // "done>2026-10-15": the record of `date` moved to that day (series-exceptions).
+    const [state, movedTo] = mark.split('>')
+    return task({
+      id: occurrenceId(SERIES, date), series_id: SERIES, due: { date: movedTo ?? date }, completed_at: state === 'open' ? null : 100,
+      skipped: state === 'skipped', ...(movedTo || state === 'open' ? { occurrence_date: date } : {}),
+    })
+  })
   return [series, ...recs]
 }
 
@@ -102,14 +107,14 @@ describe('schedule', () => {
 })
 
 describe('records', () => {
-  it('counts only derived-id records that are completed and live', () => {
+  it('counts only live derived-id records, an open one as open (series-exceptions)', () => {
     const all = [
       task({ id: occurrenceId(SERIES, '2026-10-12'), series_id: SERIES, due: { date: '2026-10-12' }, completed_at: 1 }),
       task({ id: occurrenceId(SERIES, '2026-10-13'), series_id: SERIES, due: { date: '2026-10-13' }, completed_at: null }),
       task({ id: occurrenceId(SERIES, '2026-10-11'), series_id: SERIES, due: { date: '2026-10-11' }, completed_at: 1, deleted_at: 2 }),
       task({ id: detachedId(SERIES, '2026-10-10'), series_id: SERIES, due: { date: '2026-10-10' }, completed_at: 1 }),
     ]
-    expect([...recordsByDate(SERIES, all)]).toEqual([['2026-10-12', 'done']])
+    expect([...recordsByDate(SERIES, all)]).toEqual([['2026-10-12', 'done'], ['2026-10-13', 'open']])
   })
 
   it('offers no rule for a completion-relative or missing rule', () => {
