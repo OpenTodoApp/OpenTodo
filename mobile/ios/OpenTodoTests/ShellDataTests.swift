@@ -146,7 +146,7 @@ final class BridgeTests: XCTestCase {
     }
 
     func testCapabilitiesFollowTheDevice() {
-        XCTAssertEqual(Bridge.capabilities(biometric: false, share: true), ["reminders", "widgets", "share", "links"])
+        XCTAssertEqual(Bridge.capabilities(biometric: false, share: true), ["reminders", "widgets", "share", "links", "obsidian-links"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -155,6 +155,22 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(Bridge.safeExternal("mailto:a@example.com"))
         XCTAssertFalse(Bridge.safeExternal("javascript:alert(1)"))
         XCTAssertFalse(Bridge.safeExternal("file:///etc/passwd"))
+    }
+
+    /// obsidian-origin: the bridge fixture the web app writes (shared with the Android
+    /// tests): the note link it hands over is accepted, and only the D2 shape is.
+    func testObsidianNoteLinksFollowTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/external-links.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let handed = try XCTUnwrap(fixture["handed"] as? [String])
+        let accepted = try XCTUnwrap(fixture["accepted"] as? [String])
+        let refused = try XCTUnwrap(fixture["refused"] as? [String])
+        XCTAssertEqual(handed.count, 1)
+        for url in handed + accepted { XCTAssertTrue(Bridge.externalLink(url), url) }
+        for url in refused { XCTAssertFalse(Bridge.obsidianNote(url), url) }
+        XCTAssertFalse(Bridge.safeExternal("obsidian://open?vault=Notes&file=a"))
     }
 }
 

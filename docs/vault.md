@@ -68,7 +68,7 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 | `🔺` `⏫` `🔼` | priority 1–3 (`🔽` `⏬` read as 4) |
 | `🔁` | repeat rule (`when done`: after completion) |
 | `#tag` `⛔` `✅` `🆔` | label, blocked by, done date, id |
-| `[origin:: ]` `[location:: ]` `[tracked:: ]` `[field:Name:: ]` | read-only |
+| `[origin:: ]` `[location:: ]` `[tracked:: ]` `[field:Name:: ]` | read-only; a task from an Obsidian note carries its `obsidian://open?…` link as `[origin:: ]`, which Obsidian shows as a link back to that note |
 
 A line without `🆔` creates a task. Indented lines are subtasks, other indented text the note. A `##` heading over task lines is a section. Unknown text (`⏳`, `[[links]]`) and prose stay.
 

@@ -396,8 +396,8 @@ type taskText struct {
 	// keyed by definition id: people wrote them (custom-fields).
 	Fields map[string]string `json:"fields,omitempty"`
 	// Origin holds the free text of the task's origin, its page title and URL
-	// (OpenSpec change task-origin, design D11); kind, provider and id are in
-	// taskOut.Origin.
+	// (OpenSpec change task-origin, design D11) and an Obsidian note's path;
+	// kind, provider and an external id are in taskOut.Origin.
 	Origin *originText `json:"origin,omitempty"`
 	// Location holds the name and address of the task's location
 	// (agent-planning-fields D4); its coordinates and place_id are in taskOut.Location.
@@ -421,6 +421,8 @@ type locationOut struct {
 type originText struct {
 	Title string `json:"title,omitempty"`
 	URL   string `json:"url,omitempty"`
+	// Note is an Obsidian origin's vault-relative note path (obsidian-origin).
+	Note string `json:"note,omitempty"`
 }
 
 // originOut is the structural part of a task's origin.
@@ -552,8 +554,13 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		out.Encrypted = true
 	} else if o, err := origin.Decode(t["origin"]); err == nil {
 		out.Origin = &originOut{Kind: o.Kind, Provider: o.Provider, ID: o.ID}
-		if o.Title != "" || o.URL != "" {
-			out.Untrusted.Origin = &originText{Title: o.Title, URL: o.URL}
+		text := originText{Title: o.Title, URL: o.URL}
+		if o.Kind == origin.KindObsidian {
+			// A note's path is the user's own text (obsidian-origin), not an external id.
+			out.Origin.ID, text.Note = "", o.ID
+		}
+		if text != (originText{}) {
+			out.Untrusted.Origin = &text
 		}
 	}
 	out.Deadline, out.Start = strPtr(t, "deadline"), strPtr(t, "start")

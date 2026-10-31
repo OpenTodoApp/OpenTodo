@@ -5,7 +5,7 @@
 import { parse, printQuery, type Node } from '../filter'
 import type { Label, OriginKind, Project, RuleCondition } from '../types'
 
-const ORIGIN_KINDS = ['url', 'email', 'issue', 'import']
+const ORIGIN_KINDS = ['url', 'email', 'issue', 'import', 'obsidian']
 
 export interface Converted {
   condition: RuleCondition | null

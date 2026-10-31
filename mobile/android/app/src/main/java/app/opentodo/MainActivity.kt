@@ -234,7 +234,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
                 showError(getString(R.string.error_sign_in), signIn = true)
                 return true
             }
-            openExternal(url.toString())
+            if (Bridge.safeExternal(url.toString())) openExternal(url.toString())
             return true
         }
 
@@ -381,7 +381,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     }
 
     override fun openExternal(url: String) {
-        if (!Bridge.safeExternal(url)) return
+        if (!Bridge.externalLink(url)) return
         try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e: ActivityNotFoundException) { /* nothing can open it */ }
     }
 

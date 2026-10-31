@@ -3923,7 +3923,8 @@
                 "url",
                 "email",
                 "issue",
-                "import"
+                "import",
+                "obsidian"
               ]
             },
             "provider": {

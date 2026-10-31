@@ -3,7 +3,9 @@ package app.opentodo
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -62,6 +64,18 @@ class BridgeFixtureTest {
     @Test fun lockedWidget() = checkWidget("widget-locked.json")
 
     @Test fun signOutEmptiesTheWidget() = checkWidget("widget-signed-out.json")
+
+    /** obsidian-origin: the note link the web app hands openExternal is accepted, and only the D2 shape is. */
+    @Test fun obsidianNoteLinks() {
+        val f = fixture("external-links.json")
+        val handed = f.getJSONArray("handed")
+        assertEquals(1, handed.length())
+        for (i in 0 until handed.length()) assertTrue(handed.getString(i), ObsidianLink.valid(handed.getString(i)))
+        val accepted = f.getJSONArray("accepted")
+        for (i in 0 until accepted.length()) assertTrue(accepted.getString(i), ObsidianLink.valid(accepted.getString(i)))
+        val refused = f.getJSONArray("refused")
+        for (i in 0 until refused.length()) assertFalse(refused.getString(i), ObsidianLink.valid(refused.getString(i)))
+    }
 
     @Test fun addressesTheWebAppReads() {
         val f = fixture("actions.json")
