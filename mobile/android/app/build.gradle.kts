@@ -19,6 +19,8 @@ val keystoreProps = Properties().apply {
 android {
     namespace = "app.opentodo"
     compileSdk = 37
+    // Pinned with the Gradle wrapper (checksum), AGP and JDK 17 for reproducible builds (play-production D4).
+    buildToolsVersion = "36.0.0"
 
     defaultConfig {
         applicationId = "app.opentodo"
@@ -46,10 +48,18 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfigs.findByName("release")?.let { signingConfig = it }
+            vcsInfo.include = false
         }
     }
 
     buildFeatures { buildConfig = true }
+
+    // Reproducible builds (play-production D4): no encrypted dependency block (F-Droid refuses it)
+    // and no commit file, so the APK depends only on the source and the version from the tag.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -128,5 +138,12 @@ tasks.register("checkStoreMetadata") {
         val langs = listOf("en", "de", "es", "fr", "it", "pt")
         val missing = langs.filter { !rootProject.file("store/listing/$it.txt").exists() }
         if (missing.isNotEmpty()) throw GradleException("Store listing missing for $missing")
+        // The Play review answers (play-production D6) and the data-safety form sit next to the listings.
+        val forms = listOf("data-safety.md", "play-review.md").filter { !rootProject.file("store/$it").exists() }
+        if (forms.isNotEmpty()) throw GradleException("Store forms missing: $forms")
+        val review = rootProject.file("store/play-review.md").readText()
+        if (!review.contains("demo.open-todo.app") || !review.contains("SCHEDULE_EXACT_ALARM")) {
+            throw GradleException("store/play-review.md must give the demo instance for App access and the exact-alarm declaration")
+        }
     }
 }

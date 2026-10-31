@@ -10,6 +10,24 @@ Thin apps around the OpenTodo web app (OpenSpec change `native-shells`). A shell
 
 Needs JDK 17 or later and the Android SDK (platform 37.0, build tools 36.0.0) with `ANDROID_HOME` set; the Gradle wrapper downloads Gradle itself (checksum pinned).
 
+The release build is reproducible (OpenSpec change `play-production`): the same tag gives the same APK apart from the signature, whatever the machine, the path, the time or the Gradle cache. That holds for this pinned toolchain, which CI and the F-Droid recipe use:
+
+| Tool | Version | Pinned in |
+| --- | --- | --- |
+| JDK | Temurin 17.0.21+9 (F-Droid: Debian's OpenJDK 17) | `java-version` in `.github/workflows/ci.yml` and `android-repro.yml`; `sudo` in `android/store/fdroid/app.opentodo.yml` |
+| Gradle | 9.8.2 | `distributionUrl` and `distributionSha256Sum` in `android/gradle/wrapper/gradle-wrapper.properties` |
+| Android Gradle Plugin | 9.4.1 (Kotlin 2.4.21) | `android/build.gradle.kts` |
+| Build tools | 36.0.0 | `buildToolsVersion` in `android/app/build.gradle.kts`; the SDK step in CI |
+
+The APK carries no build-time, machine or checkout metadata: no dependency block (`dependenciesInfo`, which F-Droid refuses) and no commit file (`vcsInfo`); the version comes only from `OPENTODO_VERSION`. `scripts/repo-checks.test.mjs` fails when one of the pins goes missing or this table stops naming it.
+
+```sh
+scripts/android-repro.sh v0.20.0                                  # build the tag twice, compare
+scripts/android-repro.sh v0.20.0 opentodo-android-0.20.0.apk      # compare a release APK with a build of its tag
+```
+
+The second form needs `apksigcopier` (`python3 -m pip install --require-hashes -r scripts/release/requirements-repro.txt`): it copies the release APK's signature onto the local build and checks that the result verifies, which is exactly F-Droid's check. A mismatch names the files inside the APK that differ. CI runs the comparison on every release tag (a mismatch fails the release before anything is published), and **Actions → Android reproducible build** runs it on any tag or commit.
+
 ```sh
 make android          # unit tests, lint, the checks below, debug APK and the instrumented-test APK
 cd mobile/android && ./gradlew :app:assembleDebug
@@ -28,7 +46,7 @@ Checks that `make android` runs besides the unit tests and lint:
 | --- | --- |
 | `:app:checkDependencies` | the release runtime classpath holds anything but AndroidX and Kotlin (no third-party SDK, design D8) |
 | `:app:checkTranslations` | a language (`values-de`, `-es`, `-fr`, `-it`, `-pt`) misses a key of `values/strings.xml` |
-| `:app:checkStoreMetadata` | the manifest's permissions differ from `store/permissions.txt`, or a store listing language is missing |
+| `:app:checkStoreMetadata` | the manifest's permissions differ from `store/permissions.txt`, a store listing language is missing, or `data-safety.md` or `play-review.md` is missing |
 
 The version comes from `OPENTODO_VERSION` (CI sets it from the tag; local builds are `0.0.0-dev`), the version code is `major·10000 + minor·100 + patch`.
 
@@ -166,6 +184,14 @@ Record each run here: date, device, Android version, server version.
 
 Release builds are signed only in CI, on a `v*` tag, from four repository secrets: `ANDROID_KEYSTORE_BASE64` (the keystore file, base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The job writes `keystore.properties` and the keystore to the runner's temporary directory, builds `opentodo-android-<version>.apk` and `.aab`, deletes both files, and the release job attaches the two files with build provenance. Without the secrets the tag build skips signing with a warning. Never commit a keystore or `keystore.properties` (both are ignored).
 
+**One certificate everywhere** (`play-production` D1). The release key signs the GitHub APK, F-Droid publishes that same signed APK (`AllowedAPKSigningKeys` in the F-Droid metadata), and Google Play signs with the same key through Play App Signing ("use my own key"). Its certificate's SHA-256 is
+
+`ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa`
+
+(`CN=Raffaele Pizzari, O=OpenTodo, C=DE`). The signing step prints it to the job summary with `apksigner verify --print-certs` and fails when it differs from the one in `android/store/fdroid/app.opentodo.yml`; `docs/android-app.md` publishes it for users.
+
+**Google Play upload.** After the release, the `play` job of a final tag (no suffix) takes the AAB, replaces the release key's signature with the **upload key**'s, and `scripts/release/play-upload.mjs` puts it on Play's internal testing track with the CHANGELOG notes (Play Developer API, a service account, no dependency). The secrets are in the `release` environment: `PLAY_UPLOAD_KEYSTORE_BASE64`, `PLAY_UPLOAD_KEYSTORE_PASSWORD`, `PLAY_UPLOAD_KEY_ALIAS`, `PLAY_UPLOAD_KEY_PASSWORD` and `PLAY_SERVICE_ACCOUNT_JSON` (a service account with "Release apps to testing tracks" only, so CI can never promote to production). Without them the job warns and succeeds. A leaked upload key is reset by Google without changing the app's identity; the release key never goes to Play again after the one-time enrolment.
+
 The iOS app is not distributed through a store: OpenTodo is AGPL-3.0 and the App Store terms conflict with it (design, `openspec/changes/ios-shell`). Whoever wants the app builds and signs it, or distributes it outside the store under the same licence. So there is no iOS signing secret in CI: the `ios` job builds unsigned, and nothing in this repository holds an Apple certificate.
 
-Store texts live in `android/store/`: `listing/<lang>.txt` (six languages), `data-safety.md` (the Play form: no data collected, no third-party SDK), `fdroid/app.opentodo.yml` (fdroiddata metadata) and `permissions.txt`.
+Store texts live in `android/store/`: `listing/<lang>.txt` (six languages), `data-safety.md` (the Play form: no data collected, no third-party SDK), `play-review.md` (App access with the demo instance, the exact-alarm declaration, the content rating answers), `fdroid/app.opentodo.yml` (fdroiddata metadata, the source of truth for F-Droid's copy) and `permissions.txt`.
