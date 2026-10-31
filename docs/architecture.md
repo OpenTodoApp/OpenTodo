@@ -106,6 +106,7 @@ The jobs:
 - **Housekeeping:**
   - **Retention deadlines.** Each runs when the oldest item passes its retention: Trash retention (`OPENTODO_TRASH_RETENTION_DAYS`), the audit log (the owner's retention), expired sign-ups, the 30-day delivery logs and read notifications after 90 days.
   - **Upkeep.** Hourly, and only after something changed: `PRAGMA optimize`, the delivery logs' size limits, the rule run log, and secrets of deleted connections.
+- **Compaction:** a day after its last complete pass (an hour after start-up for the first), and only after something changed: deletes superseded note versions received more than 30 days ago (`sync.CompactNotes`), returns freed pages with incremental vacuum and converts an older database once at a quiet moment; a pass larger than its 20-second budget continues a minute later. See [sync.md](sync.md#compaction).
 - **Email** (only when `OPENTODO_EMAIL_*` is set): polls the IMAP mailbox every `OPENTODO_EMAIL_POLL_SECONDS`.
 - **Demo** (demo instances only): expired sandboxes every 5 minutes, the reset at 03:00 UTC.
 
@@ -139,6 +140,7 @@ The jobs:
 | `activity` | Pure derivation of attributed activity events from ops (fold by actor and entity within 5 s, classify by touched fields, page newest first); mirrored by `web/src/lib/activity.ts` and pinned by a shared fixture |
 | `webhook` | Maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See [webhooks.md](webhooks.md) |
 | `deliveryq` | The machinery of the two durable outbound queues, webhook deliveries and notification channel messages: the parallel pass over due rows (`Fanout`, `Drain`), pruning the log, and the next-due times of the webhooks job. Each queue keeps its payloads, its send and the recording of an attempt (the retry schedule is `webhook.Backoff`) |
+| `compaction` | The notes compaction job (change `notes-compaction`): schedules `sync.CompactNotes`, reclaims freed pages with incremental vacuum, converts an older database to incremental mode once (quiet moment, free disk check), and keeps the report (`settings` key `compaction.last`) that `GET /api/v1/settings/storage` and the Database storage card show |
 | `poll` | The pass shared by the subscription pollers (calendar feeds, issue connections): `Each` handles the items due now with bounded concurrency; when a pass runs is the jobs' business |
 | `push` | Web push for reminders with the standard library: VAPID key pair in `<data>/push_vapid.pem`, ES256 JWTs, RFC 8291 `aes128gcm`, per-device subscriptions and the scheduler. See [reminders.md](reminders.md) |
 | `recurrence` | Parser and next-occurrence calculator for recurrence rules; mirrored by `web/src/lib/recurrence.ts` against shared vectors. See [recurrence.md](recurrence.md) |

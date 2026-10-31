@@ -69,6 +69,25 @@ describe('HistoryView', () => {
     await v.unmount()
   })
 
+  it('says once that note versions older than 30 days are kept one per day (op-log-compaction 4.2)', async () => {
+    const DAY = 24 * 60 * MIN
+    const recent = await render(<HistoryView {...view([set(NOW - DAY, [{ field: 'description', from: 'a', to: 'b' }])])} />)
+    expect(recent.container.querySelector('[data-testid="history-notes-daily"]')).toBeNull()
+    await recent.unmount()
+    const v = await render(<HistoryView {...view([
+      set(NOW - DAY, [{ field: 'description', from: 'b', to: 'c' }]),
+      set(NOW - 35 * DAY, [{ field: 'title', from: 'x', to: 'y' }]),
+      set(NOW - 40 * DAY, [{ field: 'description', from: 'a2', to: 'b' }]),
+      set(NOW - 41 * DAY, [{ field: 'description', from: 'a', to: 'a2' }]),
+    ])} />)
+    const lines = v.container.querySelectorAll('[data-testid="history-notes-daily"]')
+    expect(lines).toHaveLength(1)
+    expect(lines[0].textContent).toBe('Older note versions are kept one per day (UTC).')
+    // Above the first note revision older than 30 days, not above the older title change.
+    expect(lines[0].closest('li')!.querySelector('[data-version]')!.textContent).toContain('notes')
+    await v.unmount()
+  })
+
   it('hides restore controls for viewers', async () => {
     const v = await render(<HistoryView {...view([set(NOW - MIN, [{ field: 'title', from: 'a', to: 'b' }])], { readOnly: true })} />)
     await click(v.container.querySelector('[data-version] button[aria-expanded]')!)

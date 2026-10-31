@@ -5750,5 +5750,17 @@
   "Show only the tasks a query matches": "Mostrar solo las tareas que coinciden con una consulta",
   "Tasks with any of the ticked labels.": "Tareas con cualquiera de las etiquetas marcadas.",
   "The filter language of saved views, for example ##Work & p1 or @errand.": "El lenguaje de filtros de las vistas guardadas, por ejemplo ##Work & p1 o @errand.",
-  "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": "{n, plural, one {# tarea oculta por el filtro} other {# tareas ocultas por el filtro}}"
+  "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": "{n, plural, one {# tarea oculta por el filtro} other {# tareas ocultas por el filtro}}",
+  "Database": "Base de datos",
+  "Database size, free space inside it and the last notes compaction": "Tamaño de la base de datos, espacio libre dentro y la última compactación de notas",
+  "Database storage": "Almacenamiento de la base de datos",
+  "Database storage needs a connection to the server.": "El almacenamiento de la base de datos necesita conexión con el servidor.",
+  "Last compacted": "Última compactación",
+  "Not yet": "Todavía no",
+  "Old note versions go after 30 days, and the space they took returns to the disk.": "Las versiones antiguas de las notas se eliminan a los 30 días y su espacio vuelve al disco.",
+  "Older note versions are kept one per day (UTC).": "Las versiones antiguas de las notas se conservan una por día (UTC).",
+  "Shrinking the file once needs {bytes} of free disk space; old versions still go.": "Reducir el archivo una vez necesita {bytes} libres en disco; las versiones antiguas se eliminan igual.",
+  "The file is shrunk once, at a quiet moment; old versions already go.": "El archivo se reduce una vez, en un momento tranquilo; las versiones antiguas ya se eliminan.",
+  "{date}, {n, plural, one {# old note version} other {# old note versions}} removed, {bytes} reclaimed": "{date}, {n, plural, one {# versión antigua de nota eliminada} other {# versiones antiguas de notas eliminadas}}, {bytes} recuperados",
+  "{size}, {free} free inside the file": "{size}, {free} libres dentro del archivo"
 }

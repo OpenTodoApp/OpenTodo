@@ -173,6 +173,39 @@ func TestImportLimit(t *testing.T) {
 	}
 }
 
+// TestCompactionLowersOperationTotal (op-log-compaction 2.3): a tenant at its
+// operation limit writes again once compaction removed old note versions,
+// without being reopened.
+func TestCompactionLowersOperationTotal(t *testing.T) {
+	f := newFixture(t, nil)
+	c := f.client("notes")
+	c.register("notes@example.com", f.create("notes", config.Limits{OpsTotal: 6}))
+	now := time.Now().UnixMilli()
+	var notes []any
+	for i := 0; i < 4; i++ {
+		notes = append(notes, map[string]any{"id": fmt.Sprintf("n%d", i), "entity": "task", "entityId": "t0", "field": "notes_doc",
+			"value": "ydoc:v1:" + strings.Repeat("QUJD", i+1), "ts": now + int64(i), "device": "dev"})
+	}
+	if got := rejected(c.sync("dev", append(taskOps("t0", "Note"), notes...))); len(got) != 0 {
+		t.Fatalf("first batch: %v", got)
+	}
+	if got := rejected(c.sync("dev", taskOps("t1", "Full"))); len(got) != 2 {
+		t.Fatalf("at the limit: %v", got)
+	}
+	tn, release, err := f.h.pool.acquire(context.Background(), "notes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := tn.Sync.CompactNotes(context.Background(), time.Now().Add(31*24*time.Hour), 0, time.Hour)
+	release()
+	if err != nil || res.OpsRemoved != 3 {
+		t.Fatalf("compaction: %+v, %v", res, err)
+	}
+	if got := rejected(c.sync("dev", taskOps("t1", "Room"))); len(got) != 0 {
+		t.Fatalf("after compaction: %v", got)
+	}
+}
+
 // TestMemberLimit (5.1): with a limit of two members, a third account is
 // refused with limit_members.
 func TestMemberLimit(t *testing.T) {

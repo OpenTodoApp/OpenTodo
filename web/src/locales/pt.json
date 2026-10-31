@@ -5750,5 +5750,17 @@
   "Show only the tasks a query matches": "Mostrar só as tarefas que correspondem a uma consulta",
   "Tasks with any of the ticked labels.": "Tarefas com qualquer uma das etiquetas marcadas.",
   "The filter language of saved views, for example ##Work & p1 or @errand.": "A linguagem de filtros das visualizações salvas, por exemplo ##Work & p1 ou @errand.",
-  "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": "{n, plural, one {# tarefa oculta pelo filtro} other {# tarefas ocultas pelo filtro}}"
+  "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": "{n, plural, one {# tarefa oculta pelo filtro} other {# tarefas ocultas pelo filtro}}",
+  "Database": "Banco de dados",
+  "Database size, free space inside it and the last notes compaction": "Tamanho do banco de dados, espaço livre dentro dele e a última compactação das notas",
+  "Database storage": "Armazenamento do banco de dados",
+  "Database storage needs a connection to the server.": "O armazenamento do banco de dados precisa de conexão com o servidor.",
+  "Last compacted": "Última compactação",
+  "Not yet": "Ainda não",
+  "Old note versions go after 30 days, and the space they took returns to the disk.": "Versões antigas das notas são removidas após 30 dias, e o espaço delas volta ao disco.",
+  "Older note versions are kept one per day (UTC).": "Versões mais antigas das notas são mantidas uma por dia (UTC).",
+  "Shrinking the file once needs {bytes} of free disk space; old versions still go.": "Reduzir o arquivo uma vez precisa de {bytes} livres em disco; versões antigas seguem sendo removidas.",
+  "The file is shrunk once, at a quiet moment; old versions already go.": "O arquivo é reduzido uma vez, num momento tranquilo; versões antigas já são removidas.",
+  "{date}, {n, plural, one {# old note version} other {# old note versions}} removed, {bytes} reclaimed": "{date}, {n, plural, one {# versão antiga de nota removida} other {# versões antigas de notas removidas}}, {bytes} recuperados",
+  "{size}, {free} free inside the file": "{size}, {free} livres dentro do arquivo"
 }

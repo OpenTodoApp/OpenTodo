@@ -1163,6 +1163,28 @@ export interface CalendarFeed {
 }
 
 /** The owner's attachment settings (Settings → People → Attachments). */
+/** One notes compaction run, or a complete pass (GET /api/v1/settings/storage, op-log-compaction). */
+export interface CompactionReport {
+  at: number
+  ops_removed: number
+  value_bytes_removed: number
+  file_bytes_reclaimed: number
+  more: boolean
+  converted: boolean
+}
+
+/** The owner's view of the database file (op-log-compaction D7). */
+export interface StorageStatus {
+  database_bytes: number
+  /** Free pages inside the file. */
+  free_bytes: number
+  wal_bytes: number
+  last_compaction: CompactionReport | null
+  conversion: 'pending' | 'waiting_for_quiet' | 'no_space' | 'done'
+  /** The free disk space the one-time conversion needs (no_space). */
+  conversion_needed_bytes?: number
+}
+
 export interface AttachmentSettings {
   enabled: boolean
   max_file_mb: number
