@@ -26,7 +26,7 @@ Two options:
 
 A token has a **scope**: `full` (the default), `read`, `agent` or `admin`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
-An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, labels and comments) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
+An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, sections, labels, comments, reminders and time entries) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
 
 ### Token scopes
 
@@ -195,9 +195,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/skip` | yes (not `read`, not `agent`) | skip one occurrence → its record (the series for a plain series' current occurrence) |
 | PATCH | `/api/v1/tasks/{id}/occurrences/{date}` | yes (not `read`, not `agent`) | move or edit one occurrence alone, with task fields (`due`, `title`, `priority`, `labels`, `estimate_minutes`, `description`, …) → its record |
 | POST | `/api/v1/tasks/{id}/split` | yes (not `read`, not `agent`) | change a recurring task from a later occurrence on, `{from, changes}` → the new series; see [This and following](#this-and-following) |
-| POST | `/api/v1/time-entries` | yes (not `read`, not `agent`) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
-| POST | `/api/v1/time-entries/stop` | yes (not `read`, not `agent`) | stop your running entry → the entry; 404 when none runs |
-| PATCH | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`), author only | `{startedAt?, endedAt?, note?}` → the entry |
+| POST | `/api/v1/time-entries` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
+| POST | `/api/v1/time-entries/stop` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | stop your running entry → the entry; 404 when none runs |
+| PATCH | `/api/v1/time-entries/{id}` | yes (not `read`; `agent` only its own entries), author only | `{startedAt?, endedAt?, note?}` → the entry |
 | DELETE | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`) | tombstone an entry (author, project admin or owner) → 204 |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `workspaces` (each with your role; for those you own, the members' ids and roles and the groups), `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
@@ -494,13 +494,22 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 
 | Route | What an agent token may send |
 | --- | --- |
-| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `span`, `day_part`, `energy`, `blocked_by`, `location`, `recurrence`, `origin` |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `span`, `day_part`, `energy`, `blocked_by`, `location`, `recurrence`, `fields` (custom field values keyed by field id, as for a session), `origin` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
 | `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon`, `flow_mode` (`archived: false` is accepted) |
-| `PATCH /api/v1/projects/{id}` | `name`, `color` |
+| `PATCH /api/v1/projects/{id}` | `name`, `color`, `icon` and `parent_id` (`null` clears them), `description` (the project's note, Markdown; editors may write it); or `archived` on its own (`true` archives the project with its sub-projects, `false` unarchives that project; owner or admin only; with any other field 400 `invalid_input`) |
+| `POST /api/v1/sections` | `name`, `project_id`, `color`, `icon`, `position` |
+| `PATCH /api/v1/sections/{id}` | `name`, `color`, `icon`, `position` |
 | `POST /api/v1/labels` | `name`, `color` (an existing label of that name is returned with 200) |
+| `PATCH /api/v1/labels/{id}` | `name` (a name another label of the workspace has, ignoring case, is 400 `invalid`), `color`, `position` |
 | `POST /api/v1/tasks/{id}/comments` | `body`, `parent_id` (`mentions` is accepted and dropped: assistant comments notify nobody) |
+| `POST /api/v1/reminders` | `task_id`, `kind` (`relative`, `deadline` or `absolute`, the default), `offset_minutes` (0 or less: minutes before the due time, or before 09:00 on the deadline day) or, for `absolute`, `fire_at` (Unix milliseconds on a whole minute); `fire_at` of the others is computed in your time zone. Your own reminders only, at most 10 on a task |
+| `PATCH /api/v1/reminders/{id}` | `offset_minutes`, or `fire_at` of an absolute reminder (the kind never changes) |
+| `DELETE /api/v1/reminders/{id}` | any of your own reminders |
+| `POST /api/v1/time-entries` | `{taskId}` starts a timer (409 `timer_running` while another of yours runs, unless `stopRunning: true`, which ends it at this start), or `{taskId, startedAt, endedAt, note?}` logs a closed entry (at most 24 hours, not in the future) |
+| `POST /api/v1/time-entries/stop` | stops your running entry |
+| `PATCH /api/v1/time-entries/{id}` | `startedAt`, `endedAt`, `note`, only for entries the same token created (403 `not_permitted` otherwise) |
 
 These requests never reach the regular handlers: they are translated into calls of the same tool registry as the [MCP write tools](mcp.md#letting-an-assistant-make-changes) (one request is one write call) and applied in one batch through the operation log with device `agent:<token-id>`, so they show in history as "AI assistant (*token name*)", are recorded as `agent.write` in the audit log, share the token's limits with MCP (30 write calls a minute, 1,000 changed items a day; beyond that 429 `rate_limited` with `Retry-After`), and follow the same rules for end-to-end encrypted accounts. Responses have the usual REST shapes.
 
@@ -509,15 +518,16 @@ Refusals:
 | Status | Code | When |
 | --- | --- | --- |
 | 403 | `writes_disabled_by_owner`, `writes_disabled_by_user` | a switch is off (recorded as a failed `agent.write`) |
-| 403 | `insufficient_scope` | any other write route, or a field outside the list above (`assignee_id`, `position`, `archived`, restoring with `deleted_at: null`, …) |
-| 403 | `forbidden`, `not_permitted` | the user's role in a shared project does not allow it; trashing a task the token did not create |
-| 404 | `not_found` | unknown, deleted or invisible ids, and anything in a project [kept away from assistants](#keeping-a-project-away-from-assistants) (indistinguishable) |
-| 409 | `encryption_enabled` | readable text (title, description, name, comment, location) for an end-to-end encrypted account |
-| 400 | `invalid_input` | a value the tool refuses (with the tool's message) |
+| 403 | `insufficient_scope` | any other write route, or a field outside the list above (`assignee_id`, a task's `position`, restoring with `deleted_at: null`, deleting a section, label, project or time entry, …) |
+| 403 | `forbidden`, `not_permitted` | the user's role in a shared project does not allow it (a viewer tracking time or writing a project's note, an editor archiving); trashing a task or changing a time entry the token did not create |
+| 404 | `not_found` | unknown, deleted or invisible ids (another member's reminder included), and anything in a project [kept away from assistants](#keeping-a-project-away-from-assistants), its reminders and time entries too (indistinguishable) |
+| 409 | `encryption_enabled` | readable text (title, description, name, comment, location, a time entry's note) for an end-to-end encrypted account |
+| 409 | `timer_running` | starting a timer while another of yours runs, without `stopRunning: true`; `task_id` names its task when you can read it |
+| 400 | `invalid_input`, `invalid` | a value the tool refuses (with the tool's message): a range past 24 hours, an 11th reminder on a task, a label name already taken, … |
 
 A `location` is `{name?, address?, lat?, lon?, place_id?}` with at least one key, or `null`; `{"place_id": "<id>"}` alone copies a saved location (unknown id: 404 `not_found`). A deadline sent this way moves the task's deadline reminders, as a session's edit does.
 
-Every other write route (tokens, settings, sync, sharing and members, invitations, project invite links, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
+Every other write route (tokens, settings, sync, sharing and members, invitations, project invite links, encryption keys, imports, backups, webhooks, purging, deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
 
 `GET /api/v1/places` lists your saved locations (`{places:[{id, name, address, geo:{lat, lon}, position, created_at}]}`), any token scope, so a client can set a task's location by name; saved locations are written through sync.
 
@@ -1147,7 +1157,7 @@ The server records security-relevant events in its own database (never synced to
 | `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`, `deactivated`) |
 | `logout` | success | actor = user | |
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full`, `read`, `agent` or `admin`) |
-| `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename); never content or entity ids |
+| `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `timer_running`, `invalid`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename, `archive_projects` for an archive, `log_time` for a logged entry); never content or entity ids |
 | `relay.enabled` | success | actor = user | `relay_device_id`, `relay_device_label`. A device of an encrypted account opted in to answer AI connectors ([device relay](#device-relay)) |
 | `relay.disabled` | success | actor = user | `relay_device_id`, `relay_device_label`, `reason` (`user`, `locked`, `signed_out`, `encryption_off`). Relayed calls themselves are never relay events; relayed writes are `agent.write` |
 | `account.name_changed`, `account.email_change_requested`, `account.email_changed`, `account.avatar_changed` | success | actor = user | none: never the old or new name, email or picture ([profile](#profile)) |
@@ -1553,7 +1563,7 @@ Kinds: `created`, `completed`, `reopened`, `deleted`, `restored`, `rescheduled`,
 
 ### Time entries
 
-A time entry (OpenSpec `time-tracking`, see [the guide](time-tracking.md)) is one stretch of work on a task, stored in the operation log in the task's sharing scope like a comment. Every route needs authentication (`401 unauthorized`). Reads are open to every token scope; the writes refuse `read` and `agent` tokens with `403 insufficient_scope` before anything is written, so an AI assistant can report tracked time but never start or change it. A task or entry you cannot read answers `404 not_found`, exactly as an unknown id. Viewers of a shared project cannot track; only the author changes an entry (`403 forbidden`), and the author, project admins and the owner may delete it. Writes wake your devices like every REST write.
+A time entry (OpenSpec `time-tracking`, see [the guide](time-tracking.md)) is one stretch of work on a task, stored in the operation log in the task's sharing scope like a comment. Every route needs authentication (`401 unauthorized`). Reads are open to every token scope; the writes refuse `read` tokens with `403 insufficient_scope` before anything is written. An `agent` token starts, stops, logs and edits through the [agent tool registry](#agent-tokens) under the assistant switches and limits: its start is refused with `409 timer_running` while another of your entries runs unless the body carries `"stopRunning": true`, its PATCH reaches only entries the same token created (`403 not_permitted`), and its `DELETE` is `403 insufficient_scope`, so an assistant never removes tracked time. A task or entry you cannot read answers `404 not_found`, exactly as an unknown id. Viewers of a shared project cannot track; only the author changes an entry (`403 forbidden`), and the author, project admins and the owner may delete it. Writes wake your devices like every REST write.
 
 An entry is returned as `{id, taskId, userId, startedAt, endedAt, minutes, note, deviceId, taskTitle, projectId, projectName, focus}`: Unix milliseconds, `endedAt` `null` while it runs, `minutes` whole minutes up to the server time for a running one. `focus` is `{mode, session, plannedEndAt}` for an entry a [Focus](focus.md) work session wrote and `null` for any other (the Start button, the API, CalDAV, an import, entries from before 0.20): `mode` is `pomodoro`, `flowtime` or `countdown` (a newer app may write another value; show it as a Focus session), `session` the work session's number in the Pomodoro cycle (`0` for the other modes) and `plannedEndAt` when the stretch ends if nothing changes (Unix milliseconds, `null` for Flowtime). A user has one running entry: a start closes the running one at the new start in the same batch. `endedAt` before `startedAt` (on create or by a PATCH) is `400 invalid_input` naming both fields.
 
@@ -2206,11 +2216,12 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
 | `session_required` | 403 | `POST /api/v1/assistant/turn` with an API token: the assistant is used from the app while signed in; confirming a restore or deleting a safety copy with an API token |
 | `unknown_skill` | 400 | `POST /api/v1/assistant/turn` naming a skill id the server does not have |
-| `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` or `agent` API token; `/api/v1/me/agent-access` with either |
+| `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` API token, or with an `agent` token outside the [agent content routes](#agent-tokens); `/api/v1/me/agent-access` with either |
 | `demo_token` | 403 | `POST /api/v1/demo/sandbox` without a valid, unused creation token |
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`), automation rules (`/api/v1/rules*`, `/api/v1/me/rules*`, `/api/v1/settings/automations`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running, or after a restore was confirmed; confirming a restore while a backup runs |
+| `timer_running` | 409 | an `agent` token starts a timer while another of the user's entries runs, without `stopRunning: true` |
 | `too_large` | 413 | a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |

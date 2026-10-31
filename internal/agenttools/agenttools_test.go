@@ -186,20 +186,22 @@ func TestToolSurfaceIsClosed(t *testing.T) {
 	var names []string
 	for _, d := range New(nil, Options{}).Definitions(agent("u")) {
 		names = append(names, d.Name)
+		// archive_projects is the one archiving tool, on purpose (agent-tools-complete D4).
+		archiver := d.Name == "archive_projects"
 		for _, bad := range []string{"purge", "delete", "archive", "assign", "share", "member", "token", "setting", "webhook", "backup", "import", "export", "invite", "role", "password", "fetch", "url", "email"} {
-			if strings.Contains(d.Name, bad) {
+			if strings.Contains(d.Name, bad) && !(archiver && bad == "archive") {
 				t.Fatalf("tool %q touches %q", d.Name, bad)
 			}
 		}
 		raw, _ := json.Marshal(d.InputSchema)
 		for _, bad := range []string{`"assignee_id"`, `"mentions"`, `"author_id"`, `"deleted_at"`, `"archived"`} {
-			if bytes.Contains(raw, []byte(bad)) {
+			if bytes.Contains(raw, []byte(bad)) && !(archiver && bad == `"archived"`) {
 				t.Fatalf("tool %q accepts %s", d.Name, bad)
 			}
 		}
 	}
 	sort.Strings(names)
-	want := "add_comment,append_to_note,complete_tasks,create_label,create_note,create_project,create_sections,create_tasks,get_note,get_task,list_frames,list_icons,list_notes,list_projects,list_slots,list_tasks,list_time_entries,list_workspaces,move_tasks,note_to_task,reopen_tasks,reorder_sections,schedule_tasks,search_notes,search_tasks,set_favourite,today_summary,trash_note,trash_tasks,update_note,update_project,update_sections,update_tasks"
+	want := "add_comment,add_reminders,append_to_note,archive_projects,complete_tasks,create_label,create_note,create_project,create_sections,create_tasks,get_note,get_task,list_frames,list_icons,list_notes,list_projects,list_slots,list_tasks,list_time_entries,list_workspaces,log_time,move_tasks,note_to_task,remove_reminders,reopen_tasks,reorder_sections,schedule_tasks,search_notes,search_tasks,set_favourite,start_timer,stop_timer,today_summary,trash_note,trash_tasks,update_labels,update_note,update_project,update_reminders,update_sections,update_tasks,update_time_entries"
 	if got := strings.Join(names, ","); got != want {
 		t.Fatalf("tools = %s", got)
 	}
@@ -866,9 +868,12 @@ func TestProjectNoteInListProjects(t *testing.T) {
 	if !enc.Encrypted || strings.HasPrefix(enc.Untrusted.Description, "enc:") || strings.HasPrefix(enc.Untrusted.Name, "enc:") {
 		t.Fatalf("encrypted = %+v", enc)
 	}
-	// update_project still only renames and recolours.
-	if _, err := f.reg.Plan(context.Background(), c, "update_project", json.RawMessage(`{"id":"p1","description":"x"}`), nil); !isArgErr(err) {
+	// update_project writes the note (agent-tools-complete D3) but never archives.
+	if _, err := f.reg.Plan(context.Background(), c, "update_project", json.RawMessage(`{"id":"p1","description":"x"}`), nil); err != nil {
 		t.Fatalf("update_project with description = %v", err)
+	}
+	if _, err := f.reg.Plan(context.Background(), c, "update_project", json.RawMessage(`{"id":"p1","archived":true}`), nil); !isArgErr(err) {
+		t.Fatalf("update_project with archived = %v", err)
 	}
 }
 

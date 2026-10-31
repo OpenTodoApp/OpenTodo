@@ -60,4 +60,11 @@ The server offers ready-made workflows as MCP prompts: `triage-inbox` (give ever
 
 ## Organising projects
 
-`create_project`, `update_project` (rename, colour, icon from `list_icons`, parent, position, workspace), `create_label`, `create_sections`, `update_sections`, `reorder_sections` and `set_favourite` arrange the user's structure. `add_comment` adds a comment to a task. Change structure only when asked: people find their way by where things are.
+`create_project`, `update_project` (rename, colour, icon from `list_icons`, parent, position, workspace), `create_label`, `update_labels` (rename, recolour, reorder), `create_sections`, `update_sections`, `reorder_sections` and `set_favourite` arrange the user's structure. `archive_projects` archives a finished project with its sub-projects (or brings one back); ask first. `add_comment` adds a comment to a task. Change structure only when asked: people find their way by where things are.
+
+**Project notes.** `update_project` with `append_description` adds a block (say, today's call notes under a date heading) to the end of a project's note without touching what is there: prefer it. `description` replaces the whole note; use it only when the user asks for a rewrite.
+
+## Reminders and time
+
+- **Reminders.** `add_reminders` gives a task an alert for the user: `kind: "relative"` with `offset_minutes: 0` at the due time (or `-15` a quarter of an hour before), `"deadline"` before 09:00 on the deadline day, `"absolute"` with `at: {date, time}` at a fixed moment. `get_task` lists the task's reminders with their ids; change one with `update_reminders`, remove it with `remove_reminders`. They are the user's own; nobody else sees them.
+- **Time.** `log_time` records work already done (a Pomodoro worked beside the user), `start_timer` and `stop_timer` run a timer, `update_time_entries` fixes entries you created. **Never take over a running timer without asking:** when `start_timer` answers `timer_running`, a timer of the person runs (often a Focus session on their phone). Tell them which task it is on and call again with `stop_running: true` only after they say yes. You cannot delete tracked time or change what the person tracked.
