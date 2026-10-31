@@ -1273,6 +1273,9 @@
   "Already matched": [
     "web/src/app/rules/RuleHistory.tsx"
   ],
+  "Also past ones": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
   "Also show in Day and Week": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -1451,6 +1454,9 @@
   ],
   "Apply the checked changes / discard the proposal; Space toggles an item": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Apply to": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
   "Archive": [
     "web/src/app/ArchivePrompt.tsx",
@@ -2313,6 +2319,9 @@
   ],
   "Changed from {date} on": [
     "web/src/lib/seriesSplitActions.ts"
+  ],
+  "Changed past occurrences too": [
+    "web/src/lib/seriesPastActions.ts"
   ],
   "Changed since, left as is: {titles}": [
     "web/src/app/reopenDay.ts"
@@ -9453,6 +9462,9 @@
   "Only for tasks that": [
     "web/src/app/rules/RuleFields.tsx"
   ],
+  "Only future ones": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
   "Only if the service asks for one.": [
     "web/src/app/SpeechServerPanel.tsx"
   ],
@@ -10000,6 +10012,9 @@
   ],
   "Past imports": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Past occurrences take the new title, notes, labels, project and priority; their dates and completions stay.": [
+    "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
   "Paste a personal access token.": [
     "web/src/app/IssueEditor.tsx"
