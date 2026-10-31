@@ -170,8 +170,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { groups, columns, departures } = useListMotion(dataGroups, dataColumns)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [currentColumn, setCurrentColumn] = useState<string | null>(null)
-  // What a keyboard move into a folded column announces (board-polish D3).
-  const [boardNote, setBoardNote] = useState('')
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
   const collapsedGroups = useCollapsedGroups()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
@@ -293,7 +291,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const shared = { route, rows, columns: dataColumns, board, manual, moveInView: ownOrder?.step, selectedId, setSelectedId, openId, isReadOnly, taskMap, ticked, selection, ui, quickAddRef, toggleComplete, toggleCollapsed: m.toggleCollapsed }
   useListShortcuts({
     ...shared, onReorder: m.listDisplay.onReorder, projectId, tree: m.tree, tickRows, treeView: m.treeView, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
-    today, userId, acceptPrompt, moveToSection, toggleViewMode, foldColumn: toggleSection, announce: setBoardNote,
+    today, userId, acceptPrompt, moveToSection, toggleViewMode, foldColumn: toggleSection,
     editInline: (id) => { setSelectedId(id); setInline({ id }) }, expandedId, setExpandedId,
   })
   // Vim's `o` inserts by project position: only where positions are the order (manual: projectManual).
@@ -392,8 +390,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
           {board && currentProject ? (
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}
-              projects={m.projects} labels={m.labels} renderCard={(task) => renderRow(flatRow(task))} onCurrentColumn={setCurrentColumn} placeholder={drag.placeholder}
-              onFold={toggleSection} announcement={boardNote} />
+              projects={m.projects} labels={m.labels} renderCard={(task) => renderRow(flatRow(task))} onCurrentColumn={setCurrentColumn} placeholder={drag.placeholder} onFold={toggleSection} />
           ) : timeline && currentProject ? (
             <TimelineView groups={dataGroups} today={today} zone={m.zone} editable={m.projectEditable} selectedId={selectedId}
               onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} hue={hueFor(currentProject.color)} />

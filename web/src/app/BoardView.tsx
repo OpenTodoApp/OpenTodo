@@ -4,10 +4,11 @@
 // selection and keyboard handling. Columns are drop targets for lib/dnd.
 import { Button, useWide } from '../ui'
 import type { ReactNode } from 'react'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { Label, Project, Section, Task } from '../lib/types'
 import { AddSection, SectionHeader, SectionMark, SectionQuickAdd } from './Sections'
 import { t } from '../lib/i18n'
+import { resettable } from '../lib/moduleState'
 import { isGhost } from './motion'
 
 export interface BoardColumn {
@@ -24,6 +25,16 @@ export const sectionTarget = (key: string) => `section:${key}`
 
 // A folded column's button (board-polish D2): loaded with the first fold, the strip around it is drawn here.
 const FoldedStrip = lazy(() => import('./FoldedStrip'))
+
+// What the board says politely, such as "Moved to Done" after a keyboard move into a folded column (D3).
+let boardNote = ''
+const noteListeners = new Set<() => void>()
+export function announceOnBoard(text: string): void {
+  boardNote = text
+  for (const l of noteListeners) l()
+}
+const subscribeNote = (l: () => void) => { noteListeners.add(l); return () => { noteListeners.delete(l) } }
+resettable('boardNote', () => { boardNote = '' })
 
 /** The gap between columns (gap-3) in px, for the phone's current column. */
 const GAP = 12
@@ -47,7 +58,7 @@ function nearestColumn(el: HTMLElement): number {
   return best
 }
 
-export function BoardView({ project, columns, editable, addingTo, setAddingTo, projects, labels, renderCard, onCurrentColumn, placeholder = null, onFold, announcement = '' }: {
+export function BoardView({ project, columns, editable, addingTo, setAddingTo, projects, labels, renderCard, onCurrentColumn, placeholder = null, onFold }: {
   project: Project
   columns: BoardColumn[]
   editable: boolean
@@ -63,8 +74,6 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
   placeholder?: { key: string; height: number } | null
   /** Fold or unfold a column on this device (board-polish D1); absent: columns do not fold. */
   onFold?: (key: string, folded: boolean) => void
-  /** A polite announcement, such as "Moved to Done" after a keyboard move into a folded column (D3). */
-  announcement?: string
 }) {
   const sections = columns.filter((c) => c.section)
   const nameOf = (col: BoardColumn) => (col.section ? col.section.name || t('Untitled section') : t('No section'))
@@ -76,6 +85,8 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
   const wide = useWide()
   const scroller = useRef<HTMLDivElement>(null)
   const [current, setCurrent] = useState(0)
+  const announcement = useSyncExternalStore(subscribeNote, () => boardNote, () => '')
+  useEffect(() => () => announceOnBoard(''), [])
   // Folding the last columns leaves fewer dots: keep the current one among them.
   useEffect(() => { if (current > 0 && current >= open.length) setCurrent(Math.max(0, open.length - 1)) }, [current, open.length])
   const onScroll = () => {
