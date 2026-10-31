@@ -80,7 +80,7 @@ Phones, Apple, Obsidian and voice.
 | [`focus-live-activity`](openspec/changes/focus-live-activity/) | Focus as a Live Activity and in the Dynamic Island |  |
 | [`focus-session-readable`](openspec/changes/archive/2026-10-31-focus-session-readable/) | **Shipped.** The running Focus session readable by the shells and agents | [#604](https://github.com/OpenTodoApp/OpenTodo/issues/604) |
 | [`obsidian-origin`](openspec/changes/archive/2026-10-31-obsidian-origin/) | **Shipped.** An `obsidian` origin that links a task back to its note | [#605](https://github.com/OpenTodoApp/OpenTodo/issues/605) |
-| [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included |  |
+| [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | [#606](https://github.com/OpenTodoApp/OpenTodo/issues/606) |
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian |  |
 | [`voice-ramble`](openspec/changes/archive/2026-10-31-voice-ramble/) | **Shipped.** Speak a brain dump or drop a photo of notes; review the proposed tasks | [#608](https://github.com/OpenTodoApp/OpenTodo/issues/608) |
 | [`outlook-calendar-sync`](openspec/changes/archive/2026-10-31-outlook-calendar-sync/) | **Shipped.** Microsoft 365 and Outlook in calendar sync | [#609](https://github.com/OpenTodoApp/OpenTodo/issues/609) |
