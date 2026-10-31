@@ -6,12 +6,21 @@
 // differs from the surface, and the strongest step reaches 3:1 against the surface.
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { block, declarations, parseAccents } from '../ui/tokens/css'
+import { block, declarations, parseAccents, parseThemes } from '../ui/tokens/css'
+import { deriveAccent } from './accentDerive'
+import vectors from './accent.vectors.json'
 import { deltaE, lightness, ratioOf, resolveToken } from '../ui/tokens/resolve'
 
 const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8')
 const ramp = declarations(block(css, ':root, [data-theme], [data-accent] {').body)
 const accents = parseAccents(css)
+const themes = parseThemes(css)
+// Custom accents (accent-colour D8): the vector inputs, as [data-accent="custom"] with the derived inline values resolves.
+const custom = Object.fromEntries(vectors.vectors.map(({ input }) => {
+  const d = deriveAccent(input)
+  const declared: Record<string, string> = { 'al-accent': d.light, 'ad-accent-text': d.dark, 'a-on-accent': d.on, ...(d.button ? { 'ad-accent': d.button } : {}) }
+  return [`custom ${input}`, { light: { ...themes.lightTokens, ...declared }, dark: { ...themes.darkTokens, ...declared } }]
+}))
 
 function steps(tokens: Record<string, string>) {
   const all = { ...tokens, ...ramp }
@@ -23,7 +32,7 @@ describe('chart ramp per accent', () => {
     expect(Object.keys(accents)).toEqual(['emerald', 'blue', 'indigo', 'violet', 'rose', 'orange', 'teal', 'graphite'])
   })
 
-  for (const [name, a] of Object.entries(accents)) {
+  for (const [name, a] of [...Object.entries(accents), ...Object.entries(custom)]) {
     for (const mode of ['light', 'dark'] as const) {
       it(`${name} in ${mode}: ordered, distinguishable, and the top step reaches 3:1`, () => {
         const { r, surface } = steps(a[mode])

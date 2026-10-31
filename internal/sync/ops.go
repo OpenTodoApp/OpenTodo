@@ -710,10 +710,16 @@ var Schema = map[string]map[string]Field{
 		"day_start": {Kind: kString, Default: `""`},
 		// Appearance (OpenSpec change theming, design D1): theme_mode is
 		// system|light|dark and theme_accent one of emerald, blue, indigo,
-		// violet, rose, orange, teal, graphite. Like the date fields the values
-		// are not restricted here; clients read unknown values as the default.
+		// violet, rose, orange, teal, graphite or custom (OpenSpec change
+		// accent-colour). Like the date fields the values are not restricted
+		// here; clients read unknown values as the default.
 		"theme_mode":   {Kind: kString, Default: `"system"`},
 		"theme_accent": {Kind: kString, Default: `"emerald"`},
+		// Custom accent (OpenSpec change accent-colour, design D1): the colour
+		// the user picked, as lowercase "#rrggbb", used when theme_accent is
+		// "custom". Clients derive the accent from it on the device and read the
+		// theme "custom" with an empty or malformed colour as the default theme.
+		"theme_accent_custom": {Kind: kString, Default: `""`},
 		// Promoted sidebar destinations (OpenSpec change ux-overhaul, design D8): a
 		// comma-separated list of view ids shown among the primary items; unknown
 		// entries are ignored by clients.

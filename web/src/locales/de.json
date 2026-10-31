@@ -5877,5 +5877,15 @@
   "Notes:": "Notizen:",
   "Show notes on cards": "Notizen auf Karten zeigen",
   "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": "{name}, {n, plural, one {# offene Aufgabe} other {# offene Aufgaben}}, eingeklappt",
-  "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}, {n, plural, one {# Aufgabe} other {# Aufgaben}}, eingeklappt"
+  "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}, {n, plural, one {# Aufgabe} other {# Aufgaben}}, eingeklappt",
+  "Adjusted for contrast": "Für den Kontrast angepasst",
+  "Choose a colour": "Farbe wählen",
+  "Colours": "Farben",
+  "Custom colour": "Eigene Farbe",
+  "Enter a colour as #rrggbb or #rgb.": "Gib eine Farbe als #rrggbb oder #rgb ein.",
+  "Hex colour": "Hex-Farbe",
+  "Picked {picked}, shown as {used}": "Gewählt {picked}, angezeigt als {used}",
+  "Selected": "Ausgewählt",
+  "Turned away from the colour for errors": "Von der Fehlerfarbe weggedreht",
+  "deep {colour}": "dunkles {colour}"
 }
