@@ -19,6 +19,9 @@ func (s *Server) registerTrashRoutes(mux *routes) {
 	mux.handle("GET /api/v1/projects/{id}/history", signedIn, s.historyHandler("project"))
 	mux.handle("DELETE /api/v1/tasks/{id}/purge", signedIn, s.purgeHandler("task"))
 	mux.handle("DELETE /api/v1/projects/{id}/purge", signedIn, s.purgeHandler("project"))
+	// Standalone notes (notes-overview D10).
+	mux.handle("GET /api/v1/notes/{id}/history", signedIn, s.historyHandler("note"))
+	mux.handle("DELETE /api/v1/notes/{id}/purge", signedIn, s.purgeHandler("note"))
 	mux.handle("POST /api/v1/trash/purge", signedIn, s.handleEmptyTrash)
 }
 

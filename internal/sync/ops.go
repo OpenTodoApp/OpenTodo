@@ -191,86 +191,6 @@ const (
 	kOrderList
 )
 
-// FieldValuePrefix starts the name of a task's custom field value op
-// (`fields.<definition id>`, OpenSpec change custom-fields, design D2). It is the
-// only family of op field names not listed in Schema one by one.
-const FieldValuePrefix = "fields."
-
-// MaxFieldIDLen bounds the definition id inside a `fields.<id>` name.
-const MaxFieldIDLen = 64
-
-// MaxFieldsPerProject is the number of live field definitions a project may
-// have; the dialog, REST and the assistant tools enforce it (Validate sees one
-// op and no other entity).
-const MaxFieldsPerProject = 30
-
-// ReactionPrefix starts the name of a comment's per-account reactions field
-// (`reactions.<account id>`, OpenSpec change editor-everywhere, design D8): one
-// field per reacting account, so concurrent reactions never overwrite each other.
-const ReactionPrefix = "reactions."
-
-// ReactionNames is the closed set of reaction names a comment accepts.
-var ReactionNames = []string{"thumbs_up", "heart", "check", "eyes", "party", "question"}
-
-// ReactionAccount returns the account id of a comment op field named
-// `reactions.<account id>`, where the id is 1–64 characters of [A-Za-z0-9_-].
-func ReactionAccount(field string) (string, bool) {
-	return familyID(field, ReactionPrefix)
-}
-
-// FieldValueID returns the definition id of a task op field named
-// `fields.<id>`, where id is 1–64 characters of [A-Za-z0-9_-].
-func FieldValueID(field string) (string, bool) {
-	return familyID(field, FieldValuePrefix)
-}
-
-// familyID returns the id after prefix in a field family name, when it is 1–64
-// characters of [A-Za-z0-9_-].
-func familyID(field, prefix string) (string, bool) {
-	id, ok := strings.CutPrefix(field, prefix)
-	if !ok || id == "" || len(id) > MaxFieldIDLen {
-		return "", false
-	}
-	for _, c := range id {
-		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
-			return "", false
-		}
-	}
-	return id, true
-}
-
-// fieldKind resolves an op field name: exact Schema entries first, then the
-// task's `fields.<id>` family.
-func fieldKind(entity, field string) (kind, bool) {
-	fields, ok := Schema[entity]
-	if !ok {
-		return 0, false
-	}
-	if f, ok := fields[field]; ok {
-		return f.Kind, true
-	}
-	if entity == "task" {
-		if _, ok := FieldValueID(field); ok {
-			return kFieldValue, true
-		}
-	}
-	if entity == "comment" {
-		if _, ok := ReactionAccount(field); ok {
-			return kReactions, true
-		}
-	}
-	return 0, false
-}
-
-// KnownField reports whether entity.field may be written: a Schema entry or a
-// task's custom field value (`fields.<id>`) or a comment's reactions
-// (`reactions.<account id>`). Readers that ask "is this a field
-// of the schema" use it instead of indexing Schema.
-func KnownField(entity, field string) bool {
-	_, ok := fieldKind(entity, field)
-	return ok
-}
-
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
 // version, e.g. "ydoc:v1:" (a Yjs update) or "enc:v1:" (e2ee ciphertext).
 var docEnvelope = regexp.MustCompile(`^[a-z][a-z0-9]{0,15}:v[0-9]{1,3}:`)
@@ -283,6 +203,8 @@ var DocFields = map[string]bool{
 	"task.notes_doc": true,
 	// A project's note (OpenSpec change project-notes): project.description is its projection.
 	"project.notes_doc": true,
+	// A standalone note (notes-overview): note.description is its projection.
+	"note.notes_doc": true,
 }
 
 // IsDocField reports whether entity.field holds an opaque document.
@@ -486,6 +408,31 @@ var Schema = map[string]map[string]Field{
 		"position":   {Kind: kNumber, Default: `0`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+	},
+	// note: a standalone note (OpenSpec change notes-overview, design D1), not a
+	// task: it never shows in task lists, counts, calendars, filters or
+	// reminders. It lives in its project's sharing scope like a task, in the
+	// author's personal scope without a project (design D2). Its pending
+	// appends are the `appends.<id>` family.
+	"note": {
+		// The note's title; an empty one reads "Untitled note".
+		"title": {Kind: kString, Default: `""`, Content: true},
+		// The note itself: Markdown in description, the mergeable document in
+		// notes_doc, written as a pair, as on tasks and projects.
+		"notes_doc":   {Kind: kDoc, Default: `""`, Content: true},
+		"description": {Kind: kString, Default: `""`, Content: true},
+		// The note's project, or null for a personal note; decides its scope.
+		"project_id": {Kind: kNullableString, Default: `null`},
+		// Label ids, one whole-list register like task.labels.
+		"labels": {Kind: kStringList, Default: `[]`},
+		// Written at creation (the creation time) and kept for a later manual
+		// order; the Notes page sorts by when the note last changed.
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+		// The workspace of a note without a project, or null for the default;
+		// a note with a project follows its project, as task.workspace_id.
+		"workspace_id": {Kind: kNullableString, Default: `null`},
 	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
@@ -922,7 +869,7 @@ var Schema = map[string]map[string]Field{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot", "notes": "note"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")

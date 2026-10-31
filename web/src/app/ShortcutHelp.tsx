@@ -39,6 +39,7 @@ export function contextSections(ctx: HelpContext | undefined): ShortcutSection[]
   if (v === 'day' || v === 'week' || v === 'month' || v === 'plan') out.push('calendar')
   if (v === 'triage') out.push('triage')
   if (v === 'focus') out.push('focus')
+  if (v === 'notes') out.push('notes')
   if (v === 'review') out.push('tasks', 'review')
   if (v === 'filter' || v === 'view' || v === 'views') out.push('filter')
   if (v === 'trash' || v === 'feed') out.push('trash')

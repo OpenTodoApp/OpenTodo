@@ -42,7 +42,7 @@ func TestCustomFieldContent(t *testing.T) {
 			found = true
 		}
 	}
-	if !found || len(all["task"]) != len(ContentFields["task"])+1 {
+	if !found || len(all["task"]) != len(ContentFields["task"])+2 {
 		t.Fatalf("AllContentFields task = %v", all["task"])
 	}
 }

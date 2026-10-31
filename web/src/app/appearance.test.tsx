@@ -66,9 +66,9 @@ describe('AppearanceProvider', () => {
 describe('Appearance → Sidebar', () => {
   it('one switch per destination of the More group, each written as the synced list', async () => {
     const r = await render(<SidebarSection />)
-    await waitFor(() => document.querySelectorAll('[data-destination-row] [role="switch"]').length === 11, 'the switches')
+    await waitFor(() => document.querySelectorAll('[data-destination-row] [role="switch"]').length === 12, 'the switches')
     const ids = [...document.querySelectorAll('[data-destination-row]')].map((e) => e.getAttribute('data-destination-row'))
-    expect(ids).toEqual(['inbox', 'today', 'upcoming', 'calendar', 'loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter', 'focus'])
+    expect(ids).toEqual(['inbox', 'today', 'upcoming', 'calendar', 'loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter', 'focus', 'notes'])
     // The fixed four have no switch; the promotable ones keep their setting row ids for links.
     expect(document.querySelector('[data-destination-row="inbox"] [role="switch"]')).toBeNull()
     expect(document.querySelector('[data-setting-row="sidebar-someday"]')?.getAttribute('data-destination-row')).toBe('someday')
@@ -116,7 +116,7 @@ describe('Appearance → Sidebar counts and destination order (sidebar-polish 2.
     await waitFor(() => rows()[1] === 'calendar', 'moved twice')
     expect(rows().slice(0, 4)).toEqual(['inbox', 'calendar', 'today', 'upcoming'])
     expect((await db.userPrefs.get('me'))?.sidebar_order?.split(',').slice(0, 4)).toEqual(['inbox', 'calendar', 'today', 'upcoming'])
-    await waitFor(() => document.querySelector('[data-setting-row="sidebar-destinations"] [role="status"]')?.textContent === 'Calendar moved to position 2 of 15', 'announced')
+    await waitFor(() => document.querySelector('[data-setting-row="sidebar-destinations"] [role="status"]')?.textContent === 'Calendar moved to position 2 of 16', 'announced')
     await waitFor(() => document.activeElement === handle('calendar'), 'focus kept')
     await r.unmount()
   })

@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, Task, TaskLocation, TimeEntry, UserPrefs, View,
+  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, Task, TaskLocation, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -220,6 +220,41 @@ export interface FieldDefFields {
   position?: number
   created_at?: number
   deleted_at?: number | null
+}
+
+/**
+ * note: a standalone note (OpenSpec change notes-overview, design D1), not a
+ * task: it never shows in task lists, counts, calendars, filters or
+ * reminders. It lives in its project's sharing scope like a task, in the
+ * author's personal scope without a project (design D2). Its pending
+ * appends are the `appends.<id>` family.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface NoteFields {
+  /** The note's title; an empty one reads "Untitled note". */
+  title?: string
+  /**
+   * The note itself: Markdown in description, the mergeable document in
+   * notes_doc, written as a pair, as on tasks and projects.
+   */
+  notes_doc?: string
+  description?: string
+  /** The note's project, or null for a personal note; decides its scope. */
+  project_id?: string | null
+  /** Label ids, one whole-list register like task.labels. */
+  labels?: string[]
+  /**
+   * Written at creation (the creation time) and kept for a later manual
+   * order; the Notes page sorts by when the note last changed.
+   */
+  position?: number
+  created_at?: number
+  deleted_at?: number | null
+  /**
+   * The workspace of a note without a project, or null for the default;
+   * a note with a project follows its project, as task.workspace_id.
+   */
+  workspace_id?: string | null
 }
 
 /**
@@ -807,7 +842,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',
@@ -815,6 +850,9 @@ export const OP_DEFAULTS = {
   field: {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<FieldDef, 'id' | '_clock'>,
+  note: {
+    title: '', notes_doc: '', description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, workspace_id: null, appends: {},
+  } satisfies Omit<Note, 'id' | '_clock'>,
   label: {
     name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '', manual_order: [],
   } satisfies Omit<Label, 'id' | '_clock'>,
@@ -862,6 +900,7 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   task: ['title', 'description', 'ical_extra', 'notes_doc', 'origin', 'location'],
   section: ['name'],
   field: ['name', 'options'],
+  note: ['title', 'notes_doc', 'description'],
   label: ['name'],
   view: ['name', 'query'],
   comment: ['body', 'guest_name'],

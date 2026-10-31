@@ -327,3 +327,70 @@ describe('sections and shortcuts from the registry (ux-overhaul 6.4, 6.5)', () =
     await r.unmount()
   })
 })
+
+describe('Notes in search (notes-overview 4.7)', () => {
+  const optionEls = () => [...document.querySelectorAll<HTMLElement>('[data-palette] [role="option"]')]
+  const optionWith = (text: string) => optionEls().find((o) => o.textContent?.includes(text))
+  const groupHeadings = () => [...document.querySelectorAll('[data-palette] [role="presentation"]')].map((h) => h.textContent ?? '')
+
+  it('finds a standalone note by a word in its body, with the snippet marked, and picking it opens /notes/<id>; no request is made', async () => {
+    const { mutate } = await import('../../lib/ops')
+    await mutate('note', 'n-trip', { title: 'Trip', description: 'Take the **Ferry** at nine, then the bus' })
+    const fetchSpy = vi.fn(async () => new Response('{}', { status: 404 }))
+    vi.stubGlobal('fetch', fetchSpy)
+    navigate({ view: 'inbox' })
+    let closed = false
+    const r = await render(<CommandPalette user={user} onClose={() => { closed = true }} showShortcuts={() => {}} />)
+    await waitFor(() => !!field(), 'the search field')
+    await type(field(), 'ferry')
+    await waitFor(() => !!optionWith('Trip'), 'the note under Notes')
+    const row = optionWith('Trip')!
+    expect(row.querySelector('[data-snippet] mark')?.textContent).toBe('Ferry')
+    expect(row.querySelector('[data-snippet]')!.textContent).toContain('at nine')
+    expect(groupHeadings()).toContain('Notes')
+    expect(fetchSpy).not.toHaveBeenCalled()
+    await act(async () => { row.click() })
+    await waitFor(() => closed)
+    expect(location.pathname).toBe('/notes/n-trip')
+    await r.unmount()
+  })
+
+  it('a project note is listed as a project note, a task found by its notes gains the snippet, deleted notes never', async () => {
+    const { mutate } = await import('../../lib/ops')
+    const reno = await createProject({ name: 'Renovation' })
+    await mutate('project', reno, { description: 'Ask the city about the permit' })
+    await createTask({ title: 'Call the office', description: 'Bring the permit forms' })
+    await mutate('note', 'n-old', { title: 'Old permit', description: 'gone', deleted_at: Date.now() })
+    navigate({ view: 'inbox' })
+    const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
+    await waitFor(() => !!field(), 'the search field')
+    await type(field(), 'pérmit')
+    await waitFor(() => !!optionWith('project note') && !!optionWith('Call the office')?.querySelector('[data-snippet]'), 'the project note and the task snippet')
+    expect(optionWith('project note')!.textContent).toContain('Renovation')
+    expect(optionWith('project note')!.querySelector('[data-snippet] mark')?.textContent).toBe('permit')
+    expect(optionWith('Call the office')!.querySelector('[data-snippet] mark')?.textContent).toBe('permit')
+    // The task keeps its place among the tasks, before the Notes section.
+    const els = optionEls()
+    expect(els.indexOf(optionWith('Call the office')!)).toBeLessThan(els.indexOf(optionWith('project note')!))
+    expect(optionWith('Old permit')).toBeUndefined()
+    await act(async () => { optionWith('project note')!.click() })
+    await waitFor(() => location.pathname === `/project/${reno}`)
+    await r.unmount()
+  })
+
+  it('"Go to Notes" is listed with g e and opens the page; "New note" opens /notes?new=1', async () => {
+    navigate({ view: 'inbox' })
+    const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
+    await waitFor(() => !!field(), 'the search field')
+    await type(field(), 'notes')
+    await waitFor(() => !!optionWith('Go to Notes'), 'the command')
+    expect(optionWith('Go to Notes')!.textContent).toContain('GthenE')
+    await act(async () => { optionWith('Go to Notes')!.click() })
+    await waitFor(() => location.pathname === '/notes')
+    await r.unmount()
+    const base: PaletteContext = { route: { view: 'inbox' }, user, today: '2026-10-31', list: null, filterQuery: null, query: '', vimEnabled: false, showShortcuts: () => {}, focusQuickAdd: () => false }
+    expect(commands(base).find((c) => c.label === 'Go to Notes')?.shortcut).toBe('g e')
+    await commands(base).find((c) => c.label === 'New note')!.run()
+    expect(`${location.pathname}${location.search}`).toBe('/notes?new=1')
+  })
+})

@@ -45,6 +45,7 @@ import { useMissedBlocks } from '../calendar/useMissedBlocks'
 import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarParts'
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { Snippet, usePaletteNotes } from './notesSection'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -155,6 +156,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs, ...wsFilter }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, wsFilter, taskEntry])
 
   const trailing = useMemo(() => trailingEntries(ctx), [ctx])
+  // Notes (notes-overview D5): after the text matches, before the trailing commands.
+  const notes = usePaletteNotes(query, tasks, projects)
   // Search's last entry: the text as a new task, never first, so Enter never adds by surprise.
   const addLine = async (line: string) => { await addFromBar(await lineToInput(line, projects, labels), route, user?.id) }
   const addEntry = useMemo<Entry | null>(() => (query.trim() ? {
@@ -174,7 +177,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const keepOpen = useRef(false)
   const state = useCombobox<Entry>({
     source: commandsMode ? commandsOnly : source, emptySource: commandsMode ? commandsOnly : emptySource, prefix: commandsMode ? [] : prefix,
-    suffix: commandsMode ? [] : addEntry ? [...trailing, addEntry] : trailing, limit: PALETTE_LIMIT, rankContext: 'palette',
+    suffix: commandsMode ? [] : [...notes.entries, ...trailing, ...(addEntry ? [addEntry] : [])], limit: PALETTE_LIMIT, rankContext: 'palette',
     getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: (e) => secondaryOf(e, false), getKeywords: (e) => e.keywords, getGroup: groupOf,
     onPick: (e) => runEntry(e),
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
@@ -247,7 +250,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
               const plain = <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />
               return e.catalogueIcon ? <CatalogueIcon name={e.catalogueIcon} className="text-faint" fallback={plain} /> : plain
             }}
-            renderTrailing={(e) => (e.shortcut ? <ShortcutKeys keys={e.shortcut} /> : null)} />
+            renderTrailing={(e) => (e.shortcut ? <ShortcutKeys keys={e.shortcut} /> : null)}
+            renderSecondary={(e) => { const s = notes.snippets.get(e.key); return s?.length ? <Snippet segments={s} lead={e.kind === 'note' ? e.marker : undefined} /> : null }} />
           <BarFooter ask={askAvailable} />
         </>}
       </div>

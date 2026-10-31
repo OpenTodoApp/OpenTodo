@@ -122,6 +122,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerChannelRoutes(mux)
 	// Trash and history (OpenSpec `trash-and-history`).
 	s.registerTrashRoutes(mux)
+	// Standalone notes: append and to-task (OpenSpec `notes-overview`).
+	s.registerNoteRoutes(mux)
 	// CalDAV (OpenSpec `caldav`): app passwords, the owner toggle and /dav/.
 	s.registerCaldavRoutes(mux)
 	s.registerCalendarFeedRoutes(mux)

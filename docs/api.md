@@ -138,11 +138,14 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels, see [Label fields](#label-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
-| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders` and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/notes…` | yes | same shape for [standalone notes](#standalone-notes): `{title, description, project_id, labels}`; a read carries `body_version` and `appends` |
+| POST | `/api/v1/notes/{id}/append`, `/api/v1/tasks/{id}/note/append` | yes | `{id?, text}` adds Markdown at the end of the note without replacing it → 201 `{entity, entity_id, append_id, body_version}`; see [Appending to a note](#appending-to-a-note); 409 `too_many_appends` past 100 waiting; `read` and `agent` tokens get 403 `insufficient_scope` |
+| POST | `/api/v1/notes/{id}/to-task` | yes | turn the note into a task in one batch (the note goes to the Trash) → 201 task; on an encrypted account the body carries `{task_id, title, description, notes_doc?}` sealed for that id, else 409 `encryption_enabled` |
+| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders`, `notes` and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
 | GET/PATCH/DELETE | `/api/v1/{collection}/{id}` | yes | read, partial update, soft delete one item of those collections |
-| GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
-| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
-| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{…}}` |
+| GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history`, `/api/v1/notes/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
+| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge`, `/api/v1/notes/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,notes,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
+| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task, project and note you may delete) → `{purged:{…}}` |
 | GET | `/api/v1/tasks/{id}/comments` | yes | `{comments}`: the task's live comments in thread order; see [Comments and activity](#comments-and-activity) |
 | POST | `/api/v1/tasks/{id}/comments` | yes | `{body, parent_id?, mentions?}` → 201 comment; 429 `rate_limited` past 60 new comments a minute |
 | PATCH | `/api/v1/comments/{id}` | yes | `{body?, mentions?}` → 200 comment with `edited_at` set; 403 `forbidden` unless you wrote it |
@@ -658,6 +661,31 @@ curl -sS "$OT/api/v1/projects" -H "Authorization: Bearer $TOKEN" -H 'Content-Typ
 curl -sS -X PATCH "$OT/api/v1/projects/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"parent_id":null}'
 ```
+
+### Standalone notes
+
+A note is a page of writing that is not a task (OpenSpec change `notes-overview`). It has `title`, `description` (the Markdown text), `project_id` (null for a personal note), `labels`, `position`, `created_at` and `deleted_at`, and `notes_doc`, the mergeable document the apps edit, which REST clients leave alone. A note lives in its project's sharing like a task: editors write it, viewers read it, and a `project_id` that would move it into another sharing is refused 400 `scope_change`. `title` is at most 500 characters, a `description` written through REST at most 20,000; `labels` and `project_id` must name live items of yours. Notes never appear in `/api/v1/tasks`, in filters, calendars or counts.
+
+Every read of a task, a project or a note carries `body_version`, an opaque string that changes whenever its text changes, and a task or note also carries `appends`, the [appended text](#appending-to-a-note) no device has added to the document yet, oldest first: `[{id, text}]`. The text a person sees is `description` followed by each pending append, a blank line between.
+
+**Replacing the text.** A `PATCH` that writes `description` replaces the note's text; the next device that opens it turns the Markdown into formatted content. Send `If-Match: "<body_version>"` with the version you read: when the note changed since (someone typed in it on a phone), the write is refused 409 `body_changed`, nothing is written, and the error carries the current `body_version`. A `PATCH` without `If-Match` replaces the text whatever happened, as before.
+
+```sh
+curl -sS -X POST "$OT/api/v1/notes" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Wi-Fi","description":"- network: home"}'
+# 201 {"id":"<note>","title":"Wi-Fi","description":"- network: home","body_version":"1760000000000:server","appends":[],…}
+curl -sS -X PATCH "$OT/api/v1/notes/<note>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -H 'If-Match: "1760000000000:server"' -d '{"description":"- network: office"}'
+# 409 {"error":{"code":"body_changed","message":"…","body_version":"1760000050000:<device>"}} when it changed meanwhile
+```
+
+#### Appending to a note
+
+`POST /api/v1/notes/{id}/append` and `POST /api/v1/tasks/{id}/note/append` with `{"text": "<Markdown>"}` add text at the end of the note and never replace anything, so they are safe while someone edits the same note on another device. `id` (1 to 64 letters, digits, `-` or `_`) is optional: send your own to make a retry safe, the same id and text answer 200 as written, another text 409 `conflict`. Devices insert the text at the end of the formatted note on their next sync; until then reads show it in `appends`. A note holds at most 100 appends no device has added yet (409 `too_many_appends`), and its text with them at most 64 KB (400 `invalid_input`). Viewers get 403 `forbidden`.
+
+`POST /api/v1/notes/{id}/to-task` turns a note into a task in one change: a new task with the note's title, text, project and labels, and the note in the Trash (201 with the task). The apps' Undo works on it like on any edit.
+
+On an [end-to-end encrypted](e2ee.md) account the server holds no key: text must arrive encrypted (409 `encryption_enabled` for plaintext appends), and `to-task` needs the task id and the title and text sealed for it in the body (`{task_id, title, description, notes_doc?}`); `ot notes` does this for you after `ot encryption unlock`.
 
 ### Sections
 

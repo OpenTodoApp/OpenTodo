@@ -215,7 +215,7 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, error) {
 	st := &State{Remembered: map[string]string{}, UserID: uid}
 	for kind, dst := range map[string]*[]opsync.Entity{KindProject: &st.Projects, KindLabel: &st.Labels, KindTask: &st.Tasks,
-		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindRule: &st.Rules, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments, KindTimeEntry: &st.TimeEntries, KindPlace: &st.Places, KindField: &st.Fields, KindReview: &st.Review, KindProjectPrefs: &st.ProjectPrefs} {
+		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindRule: &st.Rules, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments, KindTimeEntry: &st.TimeEntries, KindPlace: &st.Places, KindField: &st.Fields, KindReview: &st.Review, KindProjectPrefs: &st.ProjectPrefs, KindNote: &st.Notes} {
 		list, err := s.sync.List(ctx, uid, kind, true)
 		if err != nil {
 			return nil, err
@@ -593,7 +593,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	undoKinds := []string{KindAttachment, KindTimeEntry, KindReminder, KindTask, KindField, KindSection, KindProject, KindLabel, KindView, KindRule, KindPlace}
+	undoKinds := []string{KindAttachment, KindTimeEntry, KindReminder, KindTask, KindNote, KindField, KindSection, KindProject, KindLabel, KindView, KindRule, KindPlace}
 	created := map[string]map[string]bool{}
 	for _, k := range undoKinds {
 		created[k] = map[string]bool{}
@@ -632,12 +632,12 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 				switch kind {
 				case KindProject:
 					tl.project(eid)
-				case KindTask:
+				case KindTask, KindNote:
 					tl.project(str(e, "project_id"))
 				}
 				continue
 			}
-			if kind != KindTask {
+			if kind != KindTask && kind != KindNote {
 				continue
 			}
 			if pid := str(e, "project_id"); pid != "" && created[KindProject][pid] && opsync.IsNull(e["completed_at"]) {

@@ -13,6 +13,7 @@ import { durationMinutes } from '../time'
 //            | "origin:" value                        (task origins, OpenSpec task-origin)
 //            | "energy:" ("deep" | "medium" | "low")   (task energy, OpenSpec task-energy)
 //            | "workspace:" name                      (workspaces, OpenSpec group-mentions)
+//            | "notes:" text                          (text in the note, OpenSpec notes-overview)
 //            | "tracked" cmp duration                 (tracked time, OpenSpec time-tracking)
 //            | field cmp value | "no" field          (custom fields, OpenSpec custom-fields)
 //   date    := day | period   (a day is a period of one day; see resolveRange)
@@ -36,6 +37,7 @@ export type Token =
   | { type: 'origin'; value: string; pos: number; raw: string }
   | { type: 'energy'; value: 'deep' | 'medium' | 'low'; pos: number; raw: string }
   | { type: 'workspace'; name: string; pos: number; raw: string }
+  | { type: 'notes'; text: string; pos: number; raw: string }
   | { type: 'word'; value: string; pos: number; raw: string }
   | { type: 'string'; value: string; pos: number; raw: string }
 
@@ -142,6 +144,13 @@ export function tokenize(src: string): Token[] {
       out.push({ type: 'search', text, pos, raw: src.slice(pos, i) })
       continue
     }
+    // `notes: text`: text in the task's note only, never its title (notes-overview D5).
+    if (/^notes:/i.test(word)) {
+      const text = readPrefixed('notes:')
+      if (!text) throw new FilterSyntaxError(t('Expected text after "notes:" at position {pos}', { pos: pos + 1 }), pos, ['text'])
+      out.push({ type: 'notes', text, pos, raw: src.slice(pos, i) })
+      continue
+    }
     if (/^workspace:/i.test(word)) {
       const name = readPrefixed('workspace:')
       if (!name) throw new FilterSyntaxError(t('Expected a workspace name after "workspace:" at position {pos}', { pos: pos + 1 }), pos, ['workspace name'])
@@ -175,7 +184,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'energy' | 'no energy'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'energy' | 'no energy' | 'notes' | 'no notes'
 
 /**
  * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
@@ -200,6 +209,8 @@ export type Node =
   | { kind: 'date'; field: DateField; op: Cmp; date: DateExpr }
   | { kind: 'keyword'; keyword: Keyword }
   | { kind: 'search'; text: string }
+  /** `notes: text`: the task's note (its description) contains text, ignoring case (notes-overview D5). */
+  | { kind: 'notes'; text: string }
   /** `origin: value`: the origin's provider, else its kind, equals value ignoring case (task-origin). */
   | { kind: 'origin'; value: string }
   /** `energy: value`: the task's energy equals value (task-energy D5). */
@@ -221,8 +232,8 @@ export type FieldValueExpr =
   | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'energy'])
-const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin', 'energy'] as const
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'energy', 'notes'])
+const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin', 'energy', 'notes'] as const
 /** Words that start a date expression in a field term's value; a number starts one only before a unit. */
 const DATE_STARTS = new Set(['today', 'tomorrow', 'yesterday', 'this', 'last', 'next'])
 const DATE_UNITS = new Set(['days', 'week', 'weeks', 'month', 'months'])
@@ -330,8 +341,9 @@ export function parse(src: string): Node | null {
         i++
         return { kind: 'priority', value: tok.value }
       case 'search':
+      case 'notes':
         i++
-        return { kind: 'search', text: tok.text }
+        return { kind: tok.type, text: tok.text }
       case 'origin':
         i++
         return { kind: 'origin', value: tok.value }
@@ -620,6 +632,8 @@ export function printQuery(n: Node): string {
       return n.keyword
     case 'search':
       return `search: ${quote(n.text)}`
+    case 'notes':
+      return `notes: ${quote(n.text)}`
     case 'origin':
       return `origin: ${quote(n.value)}`
     case 'energy':
