@@ -4,8 +4,11 @@
 // The API other features build on (focus-mode starts, pauses and stops entries
 // through it):
 //
-//   startTracking(taskId, { now?, note? })    start an entry; the user's running one
-//                                              ends at the new start in the same batch
+//   startTracking(taskId, { now?, note?, focus? })
+//                                              start an entry; the user's running one
+//                                              ends at the new start in the same batch;
+//                                              `focus` adds a Focus work session's mode,
+//                                              session number and planned end
 //   stopTracking({ now? })                     end the running entry (null: none ran)
 //   toggleTracking(taskId)                     the `y` key: stop when this task's entry
 //                                              runs, else start
@@ -43,10 +46,24 @@ async function ownEntries(me: string): Promise<TimeEntry[]> {
   return db.timeEntries.where('user_id').equals(me).toArray()
 }
 
+/**
+ * What a Focus work session writes on its entry (OpenSpec change
+ * focus-session-readable, design D2): the mode, the work session's number in the
+ * Pomodoro cycle (0 otherwise) and when the stretch ends if nothing changes
+ * (null for Flowtime). Readers outside the device (the REST route, MCP, the CLI)
+ * show the session from these; the rest of the timer stays on the device.
+ */
+export interface EntryFocus {
+  mode: string
+  session: number
+  plannedEndAt: number | null
+}
+
 /** The ops of a new entry. */
-export function planEntry(id: string, taskId: string, me: string, device: string, startedAt: number, endedAt: number | null, note: string, now: number): Change {
+export function planEntry(id: string, taskId: string, me: string, device: string, startedAt: number, endedAt: number | null, note: string, now: number, focus?: EntryFocus): Change {
   return { entity: 'time_entry', entityId: id, patch: {
     task_id: taskId, user_id: me, started_at: startedAt, ended_at: endedAt, device_id: device, note, created_at: now, deleted_at: null,
+    ...(focus ? { focus_mode: focus.mode, focus_session: focus.session, planned_end_at: focus.plannedEndAt } : {}),
   } }
 }
 
@@ -61,14 +78,14 @@ async function signedIn(): Promise<string> {
  * (and any other the repair would end) closed at the new start, in one batch.
  * Returns the new entry's id.
  */
-export async function startTracking(taskId: string, opts: { now?: number; note?: string } = {}): Promise<string> {
+export async function startTracking(taskId: string, opts: { now?: number; note?: string; focus?: EntryFocus } = {}): Promise<string> {
   const now = opts.now ?? Date.now()
   const me = await signedIn()
   const device = await getDeviceId()
   const id = uuid()
   await db.transaction('rw', mutationTables(), async () => {
     const closing = startBatch(await ownEntries(me), me, now)
-    await mutateMany([...endChanges(closing), planEntry(id, taskId, me, device, now, null, opts.note ?? '', now)])
+    await mutateMany([...endChanges(closing), planEntry(id, taskId, me, device, now, null, opts.note ?? '', now, opts.focus)])
   })
   return id
 }

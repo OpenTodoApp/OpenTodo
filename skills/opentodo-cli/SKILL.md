@@ -71,6 +71,7 @@ ot project add Garden --json --idempotency-key garden-1
 ot project rename Garden "Garden 2026" --json
 ot time start 8c2a41f0 --json
 ot time stop --json
+ot time status --json
 ot time log 8c2a41f0 1h30 --on yesterday --note "review" --json
 ot time list --from 2026-10-12 --to 2026-10-18 --json
 ot time export --from 2026-10-12 --to 2026-10-18 -o week.csv --json

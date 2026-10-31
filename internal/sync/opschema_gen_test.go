@@ -50,7 +50,7 @@ func tsKind(k kind) string {
 		return "string"
 	case kNullableString, kRecurrence, kNullableText, kDate, kStart, kDayPart:
 		return "string | null"
-	case kNumber:
+	case kNumber, kFocusSession:
 		return "number"
 	case kNullableNumber, kPositiveInt, kOffsetMinutes, kInstant:
 		return "number | null"

@@ -188,6 +188,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
 | GET | `/api/v1/time-entries` | yes | time entries you can read, newest first; `task`, `from`, `to`, `tz`, `running`, `limit`, `cursor`, `format=csv`, see [Time entries](#time-entries) |
+| GET | `/api/v1/time-entries/running` | yes | your own running entry with its Focus details, or `null`: `{entry, serverTime}`, see [The running entry](#the-running-entry) |
 | GET | `/api/v1/tasks/{id}/time-entries` | yes | one task's live time entries, newest first |
 | GET | `/api/v1/tasks/{id}/occurrences` | yes | a recurring task's current, projected and recorded occurrence dates; `from`, `to` (at most 366 days), see [A series' dates ahead](#a-series-dates-ahead) |
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/complete` | yes (not `read`, not `agent`) | complete one occurrence alone, `{completed_at?}` → its record; see [One occurrence alone](#one-occurrence-alone) |
@@ -1554,7 +1555,7 @@ Kinds: `created`, `completed`, `reopened`, `deleted`, `restored`, `rescheduled`,
 
 A time entry (OpenSpec `time-tracking`, see [the guide](time-tracking.md)) is one stretch of work on a task, stored in the operation log in the task's sharing scope like a comment. Every route needs authentication (`401 unauthorized`). Reads are open to every token scope; the writes refuse `read` and `agent` tokens with `403 insufficient_scope` before anything is written, so an AI assistant can report tracked time but never start or change it. A task or entry you cannot read answers `404 not_found`, exactly as an unknown id. Viewers of a shared project cannot track; only the author changes an entry (`403 forbidden`), and the author, project admins and the owner may delete it. Writes wake your devices like every REST write.
 
-An entry is returned as `{id, taskId, userId, startedAt, endedAt, minutes, note, deviceId, taskTitle, projectId, projectName}`: Unix milliseconds, `endedAt` `null` while it runs, `minutes` whole minutes up to the server time for a running one. A user has one running entry: a start closes the running one at the new start in the same batch. `endedAt` before `startedAt` (on create or by a PATCH) is `400 invalid_input` naming both fields.
+An entry is returned as `{id, taskId, userId, startedAt, endedAt, minutes, note, deviceId, taskTitle, projectId, projectName, focus}`: Unix milliseconds, `endedAt` `null` while it runs, `minutes` whole minutes up to the server time for a running one. `focus` is `{mode, session, plannedEndAt}` for an entry a [Focus](focus.md) work session wrote and `null` for any other (the Start button, the API, CalDAV, an import, entries from before 0.20): `mode` is `pomodoro`, `flowtime` or `countdown` (a newer app may write another value; show it as a Focus session), `session` the work session's number in the Pomodoro cycle (`0` for the other modes) and `plannedEndAt` when the stretch ends if nothing changes (Unix milliseconds, `null` for Flowtime). A user has one running entry: a start closes the running one at the new start in the same batch. `endedAt` before `startedAt` (on create or by a PATCH) is `400 invalid_input` naming both fields.
 
 ```sh
 curl -sS -X POST "$OT/api/v1/time-entries" -H "Authorization: Bearer $TOKEN" -d '{"taskId":"<task>"}'
@@ -1571,6 +1572,19 @@ curl -sS "$OT/api/v1/time-entries?from=2026-10-12&to=2026-10-18&tz=Europe/Berlin
 ```
 
 `GET /api/v1/time-entries` parameters, all optional: `task` (a task id), `from` and `to` (local days `YYYY-MM-DD` in `tz`, an IANA zone, UTC by default, with your day start; an entry belongs to the day it started), `running=true`, `limit` (1–500, default 100) and `cursor` (the `nextCursor` of the previous page). A bad day, zone or cursor is `400 invalid_input` naming the parameter. The JSON answer is `{entries, nextCursor?, serverTime}`.
+
+#### The running entry
+
+`GET /api/v1/time-entries/running` answers `200 {entry, serverTime}` with your own running entry in the shape above, or `entry: null` when nothing runs. It is meant for a panel beside the screen (a small web page, a [Home Assistant](home-assistant.md) card, an e-ink display) that shows the Focus session without running a timer of its own. Every token scope may read it, `read` included. It never returns another member's running entry, even on a shared task. It answers 200 when nothing runs, so a poller treats only real failures as errors.
+
+```sh
+curl -sS "$OT/api/v1/time-entries/running" -H "Authorization: Bearer $TOKEN"
+# 200 {"entry":{"id":"…","taskId":"…","taskTitle":"Write the report","startedAt":1760950800000,"endedAt":null,"minutes":7,
+#      "focus":{"mode":"pomodoro","session":3,"plannedEndAt":1760952300000},…},"serverTime":1760951220000}
+# 200 {"entry":null,"serverTime":1760951220000} on a break, while paused, or when nothing runs
+```
+
+Poll every 15 to 30 seconds and count down locally from `plannedEndAt` against `serverTime`, which keeps a panel within a second of the app. Breaks and pauses write no time entry, so they read as `null`, like the running indicator in the app. The values come from the device that runs the session: while that device is offline the route shows the last state it synced. For an end-to-end encrypted account `taskTitle` is the stored ciphertext; decrypt it on your side (`ot` can with `ot encryption`) or show a placeholder.
 
 With `format=csv` the answer is a `text/csv` download, `time-entries-<from>-<to>.csv`, with an `X-Row-Count` header. It starts with a UTF-8 byte-order mark and has a header row: `date,start,end,minutes,task,project,labels,note`, then one column per custom field of the projects present (the union by name, in the projects' field order). One row per live entry of a live task, oldest first; times `HH:MM` in `tz`, labels joined by `;`, an empty `end` and minutes up to now for a running entry, RFC 4180 quoting, and a leading apostrophe on a text starting with `=`, `+`, `-` or `@` so a spreadsheet never runs it as a formula. An end-to-end encrypted title, name or note reads `[encrypted]`. The web app's Statistics export writes the same file from local data.
 

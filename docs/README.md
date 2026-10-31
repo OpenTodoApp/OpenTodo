@@ -158,6 +158,7 @@ The full list of environment variables is in the [README](../README.md#configura
 | [Markdown vault](vault.md) | `ot vault`: a folder of Markdown files in two-way sync, for Obsidian Tasks and plain text |
 | [Webhooks](webhooks.md) | Events, payload, signature verification, retries, receiver recipes |
 | [Home Assistant](home-assistant.md) | The integration from HACS: the token, to-do lists, counts, calendar, events, Assist, automations and limits |
+| [Show Focus elsewhere](focus-elsewhere.md) | The running Focus session for a panel, a Home Assistant card, `ot time status` or an AI assistant: the route, what it shows, and why breaks and pauses read as nothing running |
 | [n8n](n8n.md) | The community nodes: install, the token, task, project, label and comment operations, the signed trigger, example workflows, AI agents and limits |
 | [Calendar sync](calendar-sync.md) | Two-way sync with your own calendar: tasks as events in iCloud, Fastmail, Nextcloud, Google Calendar or any CalDAV calendar, and changes back; the Google client setup, conflicts, limits |
 | [Issue import](issue-import.md) | GitHub and GitLab issues assigned to you as tasks that follow the issue: tokens, filters, what follows, limits |
