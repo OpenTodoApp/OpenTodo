@@ -10,6 +10,7 @@ import type { Project, Task } from '../../lib/types'
 import { MenuItem, MenuSeparator, PageHeader } from '../../ui'
 import { saveTray } from './planSource'
 import { useAddHere, type AddHere } from './addHere'
+import { ProjectionsMenuItem } from './projectionSwitches'
 import { ColorByMenuItems, useColorBy, type ColorByState } from './colorByControls'
 import { CALENDAR_FILTER_KEY, FilterQueryChip, QueryFilterHost, useQueryFilter } from './queryFilter'
 import { useCalendarScope, type CalendarHeaderParts, type CalendarScope } from './scope'
@@ -55,8 +56,11 @@ export function useDrawn(chrome: Pick<CalendarChrome, 'keeps' | 'inScope'>, show
   return { drawn, hidden, deadlines }
 }
 
-/** `all` are every live task (for `blocked` and friends in the filter). */
-export function useCalendarChrome(all: readonly Task[], projects: readonly ProjectRef[]): CalendarChrome {
+/**
+ * `all` are every live task (for `blocked` and friends in the filter). `projections`
+ * adds "Show repeating occurrences" to the overflow (Day, Week and Month; Plan always draws them, series-occurrences D4).
+ */
+export function useCalendarChrome(all: readonly Task[], projects: readonly ProjectRef[], { projections = false }: { projections?: boolean } = {}): CalendarChrome {
   const color = useColorBy(CALENDAR_COLOR_BY_KEY)
   const filter = useQueryFilter(CALENDAR_FILTER_KEY, all)
   const scope = useCalendarScope()
@@ -69,11 +73,12 @@ export function useCalendarChrome(all: readonly Task[], projects: readonly Proje
   const chip = filter.query ? <FilterQueryChip query={filter.query} onOpen={() => setOpen(true)} onClear={() => filter.setQuery('')} /> : null
   const overflow = useMemo(() => (
     <>
+      {projections && <ProjectionsMenuItem surface="calendar" />}
       <MenuSeparator />
       <MenuItem label={t('Filter…')} icon="filter" description={t('Show only the tasks a query matches')} data-calendar-filter onSelect={() => setOpen(true)} />
       <ColorByMenuItems mode={color.mode} onChange={color.setMode} />
     </>
-  ), [color.mode, color.setMode])
+  ), [color.mode, color.setMode, projections])
   const element = (
     <>
       <QueryFilterHost open={open} filter={filter} title={t('Filter the calendar')} onClose={() => setOpen(false)} />

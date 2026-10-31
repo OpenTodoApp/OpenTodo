@@ -15,13 +15,15 @@ import { DeadlineDiamond, deadlineMark, DeadlineMarker } from './DeadlineMarker'
 import { FrameHeading } from './FrameBand'
 import type { DayMeetings } from './meetingCapacity'
 import { formatTime } from './grid'
+import { dayProjections, type ProjectionHue } from './DayColumn'
+import { ProjectedItem } from './projections'
 
 /**
  * The Week below 640 px: the days listed vertically, each with its capacity, its
  * unscheduled tasks and its timed blocks in time order; no seven-column grid. The
  * same selection, keyboard order and panel as the grid.
  */
-export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMap, hueOf, deadlines, selectedId, onSelect, onOpen, onAdd }: {
+export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMap, hueOf, projectionHue, deadlines, selectedId, onSelect, onOpen, onAdd }: {
   days: DayData[]
   /** Frame occurrences per date (calendar-frames D6): headings among the day's timed tasks. */
   frames?: Map<string, PlacedFrame[]>
@@ -33,6 +35,8 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
   taskMap: Map<string, Task>
   /** The hue of a task under Colour by (calendar-clarity D3). */
   hueOf: (task: Task) => HueName
+  /** The hue of a projection's series (series-occurrences D3). */
+  projectionHue?: ProjectionHue
   /** Deadline markers per date (calendar-clarity D1), after the day's tasks. */
   deadlines?: Map<string, Task[]>
   selectedId: string | null
@@ -60,7 +64,9 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
       {days.map((d) => {
         const dd = Number(d.date.slice(8))
         const name = formatDateParts(d.date, { weekday: 'long' })
-        const load = dayLoad(tasks, d.date, prefs.dayLength, meetings?.get(d.date)?.minutes ?? 0, slotCapacity([...d.slots.values()]))
+        // Projected occurrences are listed after the day's tasks, timed ones first (series-occurrences D3).
+        const projected = dayProjections(d).sort((a, b) => (a.time ?? '99') < (b.time ?? '99') ? -1 : (a.time ?? '99') > (b.time ?? '99') ? 1 : 0)
+        const load = dayLoad(tasks, d.date, prefs.dayLength, meetings?.get(d.date)?.minutes ?? 0, slotCapacity([...d.slots.values()]), projected)
         const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
         const dayFrames = [...(frames?.get(d.date) ?? [])].sort((a, b) => a.start - b.start)
         const dayDeadlines = deadlines?.get(d.date) ?? []
@@ -75,7 +81,7 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
               <h2 id={`agenda-${d.date}`} className={`text-body font-semibold ${d.date === today ? 'text-accent' : 'text-strong'}`}>{name} {dd}</h2>
               <CapacityLine load={load} dayLength={prefs.dayLength} />
             </div>
-            {d.lane.length === 0 && blocks.length === 0 && d.slots.size === 0 && !dayDeadlines.length
+            {d.lane.length === 0 && blocks.length === 0 && d.slots.size === 0 && !dayDeadlines.length && !projected.length
               // One quiet line per empty day, as on Plan (precision-polish D5): seven filled buttons outweighed the days that have tasks.
               ? (
                 <>
@@ -91,6 +97,7 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
                   {d.lane.map((tk) => row(tk, null, d.date < today, d.date))}
                   {timed.map((x) => x.node)}
                   {dayDeadlines.map((tk) => <li key={`deadline:${tk.id}`} className="min-h-11 flex items-center"><DeadlineMarker task={tk} date={d.date} today={today} variant="row" onOpen={onOpen} /></li>)}
+                  {projected.map((p) => <li key={p.id}><ProjectedItem p={p} hue={projectionHue?.(p)} variant="large" /></li>)}
                 </ul>
               )}
           </section>

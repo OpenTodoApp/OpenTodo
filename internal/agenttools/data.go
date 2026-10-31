@@ -54,6 +54,9 @@ type snapshot struct {
 	keptAway map[string]bool
 	// idx indexes tasks by id (built on first lookup, reset by apply).
 	idx map[string]opsync.Entity
+	// doneBySeries counts each series' completed occurrence records (built on
+	// first use, reset by apply; series-occurrences).
+	doneBySeries map[string]int
 	// workspaces are the user's workspaces (OpenSpec change workspaces);
 	// part places projects and tasks in them (built on first use, reset by apply).
 	workspaces []opsync.Workspace
@@ -426,17 +429,21 @@ type originOut struct {
 }
 
 type taskOut struct {
-	ID              string   `json:"id"`
-	Untrusted       taskText `json:"untrusted_text"`
-	ProjectID       *string  `json:"project_id"`
-	SectionID       *string  `json:"section_id,omitempty"`
-	ParentID        *string  `json:"parent_id,omitempty"`
-	Priority        int      `json:"priority"`
-	Due             *dueOut  `json:"due"`
-	Overdue         bool     `json:"overdue,omitempty"`
-	LabelIDs        []string `json:"label_ids"`
-	AssigneeID      *string  `json:"assignee_id,omitempty"`
-	Recurrence      *string  `json:"recurrence,omitempty"`
+	ID         string   `json:"id"`
+	Untrusted  taskText `json:"untrusted_text"`
+	ProjectID  *string  `json:"project_id"`
+	SectionID  *string  `json:"section_id,omitempty"`
+	ParentID   *string  `json:"parent_id,omitempty"`
+	Priority   int      `json:"priority"`
+	Due        *dueOut  `json:"due"`
+	Overdue    bool     `json:"overdue,omitempty"`
+	LabelIDs   []string `json:"label_ids"`
+	AssigneeID *string  `json:"assignee_id,omitempty"`
+	Recurrence *string  `json:"recurrence,omitempty"`
+	// NextOccurrences are the next three projected dates of an open recurring
+	// task (floating YYYY-MM-DD), from the calculator every device draws
+	// with (OpenSpec change series-occurrences, design D7).
+	NextOccurrences []string `json:"next_occurrences,omitempty"`
 	EstimateMinutes *int     `json:"estimate_minutes,omitempty"`
 	Completed       bool     `json:"completed"`
 	CompletedAt     *string  `json:"completed_at,omitempty"`
@@ -554,6 +561,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		}
 		out.Due = o
 		out.Overdue = isOpen(t) && date < today
+		out.NextOccurrences = snap.nextOccurrences(t, d.Date, today)
 	}
 	return out
 }

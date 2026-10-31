@@ -20,12 +20,19 @@ import { isEmptyPlace, startAddHold, type AddHere } from './addHere'
 import { DeadlineDiamond, deadlineMark, DeadlineMarker } from './DeadlineMarker'
 import { FrameBands } from './FrameBand'
 import { SlotBlock } from './SlotBlock'
+import { ProjectedItem } from './projections'
+import type { Projection } from '../../lib/occurrences'
 import type { DayMeetings } from './meetingCapacity'
 import { formatTime, GRID_HEIGHT, PX_PER_MIN, RESIZE_ZONE_PX, type Preview } from './grid'
 
 type DragStart = ReturnType<typeof useCalendarDrag>['start']
 /** The hue of a task under the device's Colour by (calendar-clarity D3). */
 export type HueOf = (task: Task) => HueName
+/** The hue of a projection: its series' under Colour by (series-occurrences D3). */
+export type ProjectionHue = (p: Projection) => HueName | undefined
+
+/** A day's drawn projections, timed and date-only: the capacity counts these (series-occurrences D5). */
+export const dayProjections = (day: DayData): Projection[] => [...[...day.projected.values()].map((x) => x.projection), ...day.laneProjected]
 /** Adding with the pointer (calendar-clarity D2): the dialog and the menu of the view. */
 export type AddGestures = Pick<AddHere, 'add' | 'menuAt'>
 
@@ -59,8 +66,9 @@ export function HourGutter() {
   )
 }
 
-export function DayHeader({ day, today, tasks, meetings, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, hueOf, deadlines = NO_TASKS, hidden = 0, gestures }: {
+export function DayHeader({ day, today, tasks, meetings, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, hueOf, projectionHue, deadlines = NO_TASKS, hidden = 0, gestures }: {
   day: DayData
+  projectionHue?: ProjectionHue
   today: string
   /** Every task of the shown days, filtered or not: capacity counts the day (calendar-clarity D4). */
   tasks: Task[]
@@ -82,7 +90,7 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
   onPointerDown: (e: React.PointerEvent, id: string) => void
   hueOf: HueOf
 }) {
-  const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0, slotCapacity([...day.slots.values()]))
+  const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0, slotCapacity([...day.slots.values()]), dayProjections(day))
   const d = Number(day.date.slice(8))
   const weekdayName = formatDateParts(day.date, { weekday: 'short' })
   return (
@@ -103,7 +111,7 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
         aria-label={t('Unscheduled on {date}', { date: day.date })}
         className={`mt-1 min-h-8 space-y-0.5 rounded-control border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
       >
-        {day.lane.length === 0 && <span className="block px-1 py-1 text-hint text-faint">{t('Unscheduled')}</span>}
+        {day.lane.length === 0 && day.laneProjected.length === 0 && <span className="block px-1 py-1 text-hint text-faint">{t('Unscheduled')}</span>}
         {day.lane.map((task) => (
           <button
             key={task.id}
@@ -122,6 +130,7 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
             {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
           </button>
         ))}
+        {day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" />)}
       </div>
     </div>
   )
@@ -134,7 +143,7 @@ export interface ReplanGhosts {
   movesTo: Map<string, number>
 }
 
-export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, hueOf, subMap, zone, selectedId, draggingId, slotDrop = null, expanded, setExpanded, preview, replan, frames, gestures, onSelect, onOpen, onDragStart }: {
+export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, hueOf, projectionHue, subMap, zone, selectedId, draggingId, slotDrop = null, expanded, setExpanded, preview, replan, frames, gestures, onSelect, onOpen, onDragStart }: {
   day: DayData
   /** The day's frame occurrences (calendar-frames D3): background bands below every block. */
   frames?: readonly PlacedFrame[]
@@ -145,6 +154,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
   nowMinutes: number
   taskMap: Map<string, Task>
   hueOf: HueOf
+  projectionHue?: ProjectionHue
   subMap: Map<string, CalendarSubscription>
   zone?: string
   selectedId: string | null
@@ -199,6 +209,14 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
         if (ev) {
           return <EventBlockView key={b.id} block={ev} lane={b.lane} lanes={b.lanes} overlap={b.overlap} pxPerMinute={PX_PER_MIN}
             minHeight={MIN_BLOCK_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} />
+        }
+        const pj = day.projected.get(b.id)
+        if (pj) {
+          // A projected occurrence (series-occurrences D3): read-only, in the overlap layout like an event.
+          return <ProjectedItem key={b.id} p={pj.projection} hue={projectionHue?.(pj.projection)} variant="block" style={{
+            top: b.start * PX_PER_MIN, height: Math.max(MIN_BLOCK_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN),
+            left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`, width: `calc(${100 / b.lanes}% - 4px)`,
+          }} />
         }
         const sv = day.slots.get(b.id)
         if (sv) {
@@ -361,6 +379,8 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                 </li>
               )
             }
+            const pj = day.projected.get(id)
+            if (pj) return <li key={id}><ProjectedItem p={pj.projection} variant="row" /></li>
             const sv = day.slots.get(id)
             if (sv) {
               return (

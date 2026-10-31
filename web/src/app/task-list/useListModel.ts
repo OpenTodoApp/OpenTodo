@@ -33,6 +33,7 @@ import { useApplicableFields } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
 import { readJSON, writeJSON } from '../../lib/deviceStorage'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { useUpcomingGroups } from './upcomingProjections'
 
 export type ListRoute = Extract<Route, ListScope>
 
@@ -208,6 +209,8 @@ export function useListModel(route: ListRoute, userId?: string) {
     projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, manualOrder, dayParts, closedList, doneToday,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, manualOrder, dayParts, closedList, doneToday])
+  // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
+  const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
   // Nor is Today's Done today group part of Today's open list (today-closed-list D6).
@@ -241,7 +244,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
-    collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, ownRows, siblingPos, timeColumn, doneBySection,
+    collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, doneBySection,
     showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed,
     queryFilter: route.view === 'upcoming' ? upcoming : null,
   }

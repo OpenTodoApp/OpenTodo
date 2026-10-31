@@ -106,24 +106,7 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	if err != nil {
 		return "", nil, false, err
 	}
-	done := 0
-	for _, t := range tasks {
-		if idValue(t["series_id"]) != id || IsNull(t["completed_at"]) {
-			continue
-		}
-		// A habit's skipped record is not a completion and never counts
-		// towards `for N times` (OpenSpec change habits, design D2).
-		if string(t["skipped"]) == "true" {
-			continue
-		}
-		d := decodeRecurringDue(t["due"])
-		if d == nil || d.Date == date {
-			continue
-		}
-		if idValue(t["id"]) == OccurrenceID(id, d.Date) {
-			done++
-		}
-	}
+	done := countCompleted(tasks, id, date)
 	next, more, err := rule.Following(dueDate, today, today, done)
 	if err != nil || !more {
 		return "", nil, false, err
@@ -202,4 +185,41 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 		body["start"] = JSONOf(recurrence.ShiftDate(start, date, next))
 	}
 	return OccurrenceID(id, date), record, true, nil
+}
+
+// countCompleted counts the completed occurrence records of series id among the
+// live tasks: rows pointing at it whose id is the one derived from their own due
+// date, leaving out skipped habit records and the record dated except (web
+// completedOccurrences in web/src/lib/recurring.ts).
+func countCompleted(tasks []Entity, id, except string) int {
+	done := 0
+	for _, t := range tasks {
+		if idValue(t["series_id"]) != id || IsNull(t["completed_at"]) {
+			continue
+		}
+		// A habit's skipped record is not a completion and never counts
+		// towards `for N times` (OpenSpec change habits, design D2).
+		if string(t["skipped"]) == "true" {
+			continue
+		}
+		d := decodeRecurringDue(t["due"])
+		if d == nil || d.Date == except {
+			continue
+		}
+		if idValue(t["id"]) == OccurrenceID(id, d.Date) {
+			done++
+		}
+	}
+	return done
+}
+
+// CompletedOccurrences is the number of completed occurrence records of the
+// series id the user can see: the `done` of the projected-occurrence walk
+// (OpenSpec change series-occurrences, design D2).
+func (s *Service) CompletedOccurrences(ctx context.Context, uid, id string) (int, error) {
+	tasks, err := s.List(ctx, uid, "task", false)
+	if err != nil {
+		return 0, err
+	}
+	return countCompleted(tasks, id, ""), nil
 }

@@ -1623,6 +1623,36 @@
       }
     },
     {
+      "name": "task occurrences",
+      "summary": "list a recurring task's current and projected occurrence dates in a range (date, time, state); read-only",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "from",
+          "type": "string",
+          "description": "first day: YYYY-MM-DD, today, yesterday or a weekday (default today)"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "last day (default 30 days after --from; at most 366 days)"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/occurrences"
+      }
+    },
+    {
       "name": "time export",
       "summary": "download the server's time entries CSV in the local time zone",
       "args": [],
@@ -3209,6 +3239,62 @@
         "encrypted": {
           "type": "boolean",
           "description": "the text could not be decrypted on this machine (run ot encryption unlock); text then reads \"(encrypted)\""
+        }
+      }
+    },
+    "occurrences": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "occurrences",
+      "description": "A recurring task's occurrences in a range, exactly as GET /api/v1/tasks/{id}/occurrences returns them (OpenSpec series-occurrences). Dates only, no content.",
+      "type": "object",
+      "required": [
+        "series_id",
+        "rule",
+        "occurrences",
+        "capped"
+      ],
+      "properties": {
+        "series_id": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "string",
+          "description": "the canonical recurrence rule"
+        },
+        "capped": {
+          "type": "boolean",
+          "description": "the range holds more than the 31 projected occurrences listed"
+        },
+        "occurrences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "date",
+              "state"
+            ],
+            "properties": {
+              "date": {
+                "type": "string",
+                "description": "YYYY-MM-DD, floating"
+              },
+              "time": {
+                "type": "string",
+                "description": "HH:MM, the series' time"
+              },
+              "tz": {
+                "type": "string",
+                "description": "the series' IANA zone, when its due names one"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "current",
+                  "projected"
+                ]
+              }
+            }
+          }
         }
       }
     },
