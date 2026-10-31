@@ -238,8 +238,9 @@ func (w *propWorld) step(i int) {
 			id = entity[:1] + "1"
 		}
 		d.edit(w.now, entity, id, map[string]string{"workspace_id": w.workspace()})
-	case r == 6 && (d.user == "alice" || w.shared):
-		// The project's standalone note (notes-overview): its title, text
+	case r == 6 && slices.Contains(d.knows("note"), "n0") && (d.user == "alice" || w.shared):
+		// The project's standalone note (notes-overview), once the device holds
+		// it (an edit before that would create it elsewhere): its title, text
 		// and labels converge like a task's.
 		fields := map[string]string{"title": strconv.Quote(fmt.Sprintf("%s note %d", d.id, i))}
 		if w.rng.IntN(2) == 0 {
