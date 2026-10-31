@@ -36,7 +36,7 @@ export function contextSections(ctx: HelpContext | undefined): ShortcutSection[]
   if (ctx.panelOpen) out.push('comments')
   if (ctx.board) out.push('board')
   if (['inbox', 'today', 'upcoming', 'someday', 'anytime', 'completed', 'assigned', 'project', 'label', 'next', 'waiting'].includes(v)) out.push('tasks')
-  if (v === 'day' || v === 'week' || v === 'month' || v === 'plan') out.push('calendar')
+  if (v === 'day' || v === 'week' || v === 'month' || v === 'plan' || v === 'year') out.push('calendar')
   if (v === 'triage') out.push('triage')
   if (v === 'focus') out.push('focus')
   if (v === 'notes') out.push('notes')

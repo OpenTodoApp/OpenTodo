@@ -1,5 +1,5 @@
 // A project's Calendar layout (OpenSpec change calendar-clarity, design D5): the
-// Calendar in the mode last used (Day, Week, Month or Plan), narrowed to the project
+// Calendar in the mode last used (Day, Week, Month, Plan or Year), narrowed to the project
 // and its sub-projects, inside the project page. The project header stays, with the
 // calendar's range controls among its actions and its options in a menu beside them;
 // the range is the page's own state, so moving through weeks never leaves the project.
@@ -14,12 +14,13 @@ import { Icon, Menu, useMediaQuery } from '../../ui'
 import type { ProjectViewMode } from '../../lib/sections'
 import { COMPACT_LAYOUT_QUERY, layoutGroup } from '../task-list/ListChrome'
 import { CalendarView } from '../CalendarView'
-import { MonthView } from '../MonthView'
 import { ProjectHeader } from '../ProjectHeader'
 import { useShortcutScope } from '../shortcuts'
 import { CalendarScopeProvider, type CalendarHeaderParts, type CalendarScope } from './scope'
 
 const PlanView = lazy(() => import('../PlanView').then((m) => ({ default: m.PlanView })))
+const MonthView = lazy(() => import('../MonthView').then((m) => ({ default: m.MonthView })))
+const YearView = lazy(() => import('../YearView'))
 
 export default function ProjectCalendar({ project, userId, layout, onCycle, onChoose }: {
   project: Project
@@ -56,7 +57,10 @@ export default function ProjectCalendar({ project, userId, layout, onCycle, onCh
   return (
     <CalendarScopeProvider scope={scope}>
       <div data-project-calendar={project.id} className="contents">
-        {mode === 'month' ? <MonthView date={date} /> : mode === 'plan' ? <Suspense fallback={null}><PlanView date={date} /></Suspense> : <CalendarView mode={mode} date={date} />}
+        {mode === 'month' ? <Suspense fallback={null}><MonthView date={date} /></Suspense>
+          : mode === 'plan' ? <Suspense fallback={null}><PlanView date={date} /></Suspense>
+          : mode === 'year' ? <Suspense fallback={null}><YearView date={date} /></Suspense>
+          : <CalendarView mode={mode} date={date} />}
       </div>
     </CalendarScopeProvider>
   )

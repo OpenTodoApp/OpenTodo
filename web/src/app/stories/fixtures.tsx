@@ -351,6 +351,26 @@ export async function seedCalendarSpans(): Promise<void> {
   await createTask({ title: 'Quarterly report', start: '2026-10-13', due: { date: '2026-10-16' }, project_id: seeded.work })
 }
 
+/**
+ * A year of plans (year-view): the calendar week, a weekly Monday report projected over
+ * the year, a busy launch week in March (six tasks on one day, an over-capacity day), a
+ * holiday span in August and a few tasks scattered over the months. `months` sets the
+ * Month's "Months shown" on the device.
+ */
+export function seedCalendarYear(months?: 2 | 3 | 6): () => Promise<void> {
+  return async () => {
+    await seedCalendarWeek()
+    await createTask({ title: 'Weekly report', due: { date: '2026-10-19', time: '09:00' }, recurrence: 'every monday', estimate_minutes: 45, project_id: seeded.work })
+    const launch = ['Final copy', 'Press kit', 'Pricing check', 'Release build', 'Launch post', 'Support rota']
+    for (const [i, title] of launch.entries()) await createTask({ title, due: { date: '2026-03-17' }, estimate_minutes: i < 3 ? 180 : 30, project_id: seeded.website })
+    for (const d of ['2026-03-16', '2026-03-18', '2026-03-18', '2026-03-19']) await createTask({ title: 'Launch prep', due: { date: d }, project_id: seeded.website })
+    await createTask({ title: 'Summer holiday', start: '2026-08-03', due: { date: '2026-08-14' }, span: true, project_id: seeded.home })
+    const scattered: [string, string][] = [['2026-01-12', 'Tax papers'], ['2026-02-20', 'Car service'], ['2026-05-04', 'Garden plan'], ['2026-06-11', 'Dentist'], ['2026-11-26', 'Gift list'], ['2026-12-21', 'Book the trains'], ['2026-12-21', 'Wrap presents'], ['2026-12-22', 'Bake']]
+    for (const [d, title] of scattered) await createTask({ title, due: { date: d }, project_id: seeded.home })
+    if (months) localStorage.setItem('ot.calendar.months', String(months))
+  }
+}
+
 /** A comment and an attachment on a task, for the count chips (fixture rows, not ops). */
 export async function seedCounts(taskId: string): Promise<void> {
   await db.comments.put({ id: `${taskId}-c1`, task_id: taskId, parent_id: null, body: 'Numbers land on Monday.', author_id: storyUser.id, mentions: [], created_at: 1, edited_at: null, deleted_at: null, _clock: {} })
