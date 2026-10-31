@@ -54,6 +54,8 @@ func resourceList() []resource {
 			Description: "The user's calendar slots from yesterday on: blocks on the Day and Week grid that hold a checklist of small tasks, with date, wall time, length and the tasks in order, titles as untrusted text. Read-only: slots are edited in the app.", MimeType: jsonMime},
 		{URI: "opentodo://notes", Name: "notes", Title: "Notes",
 			Description: "The user's 50 newest standalone notes, newest change first, with a short preview; titles and previews as untrusted text.", MimeType: jsonMime},
+		{URI: "opentodo://time-entries/running", Name: "running-time-entry", Title: "Running time entry",
+			Description: "The user's own running time entry, or null: the task, the start and, for a Focus work session, the mode, the Pomodoro session number and the planned end, with server_time. Breaks and pauses write no entry, so they read as null.", MimeType: jsonMime},
 		{URI: IssuesURI, Name: "issue-connections", Title: "Issue connections",
 			Description: "The user's GitHub and GitLab issue connections with their state and last run, never a token. Read from the stored state; no request is made to the provider.", MimeType: jsonMime},
 	}
@@ -105,6 +107,8 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		if s.issues != nil {
 			payload, err = s.issues(ctx, userID)
 		}
+	case u.Host == "time-entries" && id == "running":
+		payload, err = s.tools.RunningTimeEntryResource(ctx, userID)
 	case u.Host == "rules" && id == "":
 		payload, err = s.tools.RulesResource(ctx, userID)
 	case u.Host == "frames" && id == "":

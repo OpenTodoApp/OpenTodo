@@ -169,6 +169,28 @@ actions:
       text: "Hang the laundry today p2 #Home"
 ```
 
+## The Focus session on a dashboard
+
+The integration has no Focus sensor yet, but Home Assistant's own [RESTful sensor](https://www.home-assistant.io/integrations/sensor.rest/) can read your running [Focus](focus-elsewhere.md) session from [`GET /api/v1/time-entries/running`](api.md#the-running-entry) with a **Read only** token. In `configuration.yaml`:
+
+```yaml
+sensor:
+  - platform: rest
+    name: Focus
+    resource: https://todo.example.com/api/v1/time-entries/running
+    headers:
+      Authorization: !secret opentodo_read_token
+    scan_interval: 30
+    value_template: "{{ value_json.entry.focus.mode if value_json.entry and value_json.entry.focus else 'none' }}"
+    json_attributes_path: "$.entry"
+    json_attributes:
+      - taskTitle
+      - startedAt
+      - focus
+```
+
+`secrets.yaml` holds `opentodo_read_token: Bearer <token>`. The state is `pomodoro`, `flowtime` or `countdown` while a work session runs and `none` on a break, while paused, or when nothing runs; the attributes carry the task, the start and `focus.plannedEndAt` (Unix milliseconds, empty for Flowtime), from which a card can count down. The values come from the device that runs the session, so they lag while that device is offline.
+
 ## Limits
 
 - Lists are flat: subtasks follow their parent and keep their parent when moved.

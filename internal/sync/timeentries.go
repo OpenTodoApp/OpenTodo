@@ -2,6 +2,7 @@ package sync
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 )
 
@@ -14,15 +15,25 @@ import (
 //   - task_id and user_id never change after creation;
 //   - started_at, ended_at, note, device_id and created_at are the author's alone;
 //   - deleted_at may be set by the author, a project admin or the owner;
-//   - ops for an entry whose task was purged are discarded like comments'.
+//   - ops for an entry whose task was purged are discarded like comments';
+//   - planned_end_at is never before the entry's started_at (OpenSpec change
+//     focus-session-readable, design D2): the batch's winning started_at, or
+//     the stored one, decides; an earlier value is refused with
+//     ReasonInvalidPlannedEnd and the stored value travels back.
 //
 // The server never repairs two running entries on the sync path: every device
 // runs the same rule (internal/timetrack, web/src/lib/time.ts) and writes the
 // same values, so the repair converges without the server.
 
-// batchTimeEntry is what a batch says about an entry it creates.
+// ReasonInvalidPlannedEnd refuses a time_entry.planned_end_at earlier than
+// the entry's started_at (focus-session-readable D2).
+const ReasonInvalidPlannedEnd = "invalid_planned_end"
+
+// batchTimeEntry is what a batch says about an entry it creates, and the
+// winning started_at op it carries for any entry.
 type batchTimeEntry struct {
 	task, user string
+	started    *Op
 }
 
 // timeEntryState is what the resolver learned about one entry id.
@@ -35,7 +46,7 @@ type timeEntryState struct {
 // noteTimeEntry collects the winning task_id and user_id of entries created in
 // a batch, so a new entry's ops can be placed whatever their order.
 func (r *resolver) noteTimeEntry(op Op) {
-	if op.Entity != "time_entry" || (op.Field != "task_id" && op.Field != "user_id") {
+	if op.Entity != "time_entry" || (op.Field != "task_id" && op.Field != "user_id" && op.Field != "started_at") {
 		return
 	}
 	b := r.batchTimeEntry[op.EntityID]
@@ -43,11 +54,60 @@ func (r *resolver) noteTimeEntry(op Op) {
 		b = &batchTimeEntry{}
 		r.batchTimeEntry[op.EntityID] = b
 	}
-	if op.Field == "task_id" {
+	switch op.Field {
+	case "task_id":
 		b.task = idValue(op.Value)
-	} else {
+	case "user_id":
 		b.user = idValue(op.Value)
+	default:
+		if b.started == nil || Wins(op.TS, op.Device, b.started.TS, b.started.Device) {
+			o := op
+			b.started = &o
+		}
 	}
+}
+
+// plannedEndOK reports whether a planned_end_at op is not before the entry's
+// started_at: the batch's winning value when it carries one, else the value
+// stored in scope. An entry without a known start accepts any instant.
+func (r *resolver) plannedEndOK(op Op, scope string) (bool, error) {
+	var end int64
+	if isNullValue(op.Value) || json.Unmarshal(op.Value, &end) != nil {
+		return true, nil
+	}
+	var started int64
+	if b := r.batchTimeEntry[op.EntityID]; b != nil && b.started != nil {
+		_ = json.Unmarshal(b.started.Value, &started)
+	} else {
+		var raw string
+		err := r.tx.QueryRowContext(r.ctx, `SELECT value FROM scope_fields WHERE scope_id = ? AND entity = 'time_entry' AND entity_id = ? AND field = 'started_at'`,
+			scope, op.EntityID).Scan(&raw)
+		if errors.Is(err, sql.ErrNoRows) {
+			return true, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		_ = json.Unmarshal([]byte(raw), &started)
+	}
+	return started <= 0 || end >= started, nil
+}
+
+// resolveTimeEntry places a time entry op and, once placed, checks a planned
+// end against the entry's start.
+func (r *resolver) resolveTimeEntry(op Op) (scope, reason string, err error) {
+	scope, reason, err = r.placeTimeEntry(op)
+	if err != nil || reason != "" || op.Field != "planned_end_at" {
+		return scope, reason, err
+	}
+	ok, err := r.plannedEndOK(op, scope)
+	if err != nil {
+		return "", "", err
+	}
+	if !ok {
+		return "", ReasonInvalidPlannedEnd, nil
+	}
+	return scope, "", nil
 }
 
 // timeEntry looks an entry up in every scope (once per batch,
@@ -65,9 +125,9 @@ func (r *resolver) timeEntry(id string) (*timeEntryState, error) {
 	return st, nil
 }
 
-// resolveTimeEntry places a time entry op in its task's scope and applies the
+// placeTimeEntry places a time entry op in its task's scope and applies the
 // authorship rules above.
-func (r *resolver) resolveTimeEntry(op Op) (scope, reason string, err error) {
+func (r *resolver) placeTimeEntry(op Op) (scope, reason string, err error) {
 	st, err := r.timeEntry(op.EntityID)
 	if err != nil {
 		return "", "", err

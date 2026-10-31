@@ -9,7 +9,7 @@ import (
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kOrderList; k++ {
+	for k := kString; k <= kFocusSession; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
@@ -52,6 +52,14 @@ func TestCheckKindTable(t *testing.T) {
 		{"energy capitalised", kEnergy, `"Deep"`, `must be "", "deep", "medium" or "low"`},
 		{"energy number", kEnergy, `2`, `must be "", "deep", "medium" or "low"`},
 		{"energy null", kEnergy, `null`, `must be "", "deep", "medium" or "low"`},
+		{"focus session zero", kFocusSession, `0`, ""},
+		{"focus session three", kFocusSession, `3`, ""},
+		{"focus session max", kFocusSession, `99`, ""},
+		{"focus session 120", kFocusSession, `120`, "from 0 to 99"},
+		{"focus session negative", kFocusSession, `-1`, "from 0 to 99"},
+		{"focus session fraction", kFocusSession, `1.5`, "from 0 to 99"},
+		{"focus session null", kFocusSession, `null`, "from 0 to 99"},
+		{"focus session string", kFocusSession, `"3"`, "from 0 to 99"},
 		{"order list", kOrderList, `["t1","t2"]`, ""},
 		{"order list empty", kOrderList, `[]`, ""},
 		{"order list full", kOrderList, orderListOf(MaxManualOrder), ""},

@@ -4,9 +4,15 @@
 // path the spec keeps ("Degraded without time tracking"): the timer runs the same
 // and nothing is written. Time tracking has no paused entry: a pause stops the
 // entry and resuming starts a new one, so the logger only starts and stops.
+import type { EntryFocus } from '../timeEntries'
+
 export interface FocusLogger {
-  /** Starts an entry on the task at `at`; its id, or null when nothing was started. */
-  start(taskId: string, at: number): Promise<string | null>
+  /**
+   * Starts an entry on the task at `at`; its id, or null when nothing was
+   * started. `focus` is what the entry tells readers outside the device
+   * (focus-session-readable): mode, session number and planned end.
+   */
+  start(taskId: string, at: number, focus?: EntryFocus): Promise<string | null>
   /** Stops that entry at `at` when it still runs (idempotent). */
   stop(entryId: string, at: number): Promise<void>
   /** Whether that entry still runs (another device may have stopped it). */

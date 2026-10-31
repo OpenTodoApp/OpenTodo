@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -79,6 +80,54 @@ func TestTimeCommands(t *testing.T) {
 	csv, _ := os.ReadFile(file)
 	if rep["file"] != file || rep["rows"] != float64(2) || !strings.HasPrefix(string(csv), "\ufeffdate,start,end,minutes,task,project,labels,note") {
 		t.Fatalf("export = %v %q", rep, csv)
+	}
+}
+
+// putEntry writes time entry fields through the sync endpoint (h.put adds
+// fields a time entry does not have).
+func putEntry(h *harness, id string, fields map[string]any) {
+	h.t.Helper()
+	ts := time.Now().UnixMilli()
+	ops := []map[string]any{}
+	for f, v := range fields {
+		ops = append(ops, map[string]any{"id": id + "/" + f + "/" + strconv.FormatInt(ts, 10), "entity": "time_entry", "entityId": id, "field": f, "value": v, "ts": ts, "device": "seed"})
+	}
+	h.apiJSON("POST", "/api/v1/sync", map[string]any{"device": "seed", "cursor": 0, "ops": ops})
+}
+
+// ot time status (OpenSpec change focus-session-readable, task 3.4).
+func TestTimeStatus(t *testing.T) {
+	h := newHarness(t)
+	h.loginAdmin()
+	h.seedViews()
+	schemas := loadSchemas(t)
+	if out := h.mustRun("time", "status"); strings.TrimSpace(out) != "Nothing running." {
+		t.Fatalf("nothing running = %q", out)
+	}
+	uid := h.apiJSON("GET", "/api/v1/me", nil)["user"].(map[string]any)["id"].(string)
+	start := time.Date(2026, 10, 10, 10, 0, 0, 0, time.Local)
+	end := start.Add(25 * time.Minute)
+	putEntry(h, "focus001", map[string]any{"task_id": "plum0001", "user_id": uid, "started_at": start.UnixMilli(), "ended_at": nil,
+		"device_id": "laptop", "note": "", "focus_mode": "pomodoro", "focus_session": 3, "planned_end_at": end.UnixMilli()})
+	out := h.mustRun("time", "status")
+	if !strings.Contains(out, "Running focus001") || !strings.Contains(out, "since 10:00") || !strings.Contains(out, "Call the plumber") ||
+		!strings.Contains(out, "Pomodoro, session 3, ends 10:25") {
+		t.Fatalf("status = %q", out)
+	}
+	out = h.mustRun("time", "status", "--json")
+	mustMatch(t, schemas, "time status", out, ref("time_running"))
+	var res map[string]any
+	_ = json.Unmarshal([]byte(out), &res)
+	focus := res["entry"].(map[string]any)["focus"].(map[string]any)
+	if focus["mode"] != "pomodoro" || focus["session"] != float64(3) || int64(focus["plannedEndAt"].(float64)) != end.UnixMilli() {
+		t.Fatalf("status --json = %s", out)
+	}
+	// A read token reads it too; a Flowtime session has no end.
+	_, secret := h.apiToken2("read")
+	h.setToken(secret)
+	putEntry(h, "focus001", map[string]any{"focus_mode": "flowtime", "focus_session": 0, "planned_end_at": nil})
+	if out := h.mustRun("time", "status"); !strings.Contains(out, "Flowtime") || strings.Contains(out, "ends") || strings.Contains(out, "session") {
+		t.Fatalf("flowtime = %q", out)
 	}
 }
 
