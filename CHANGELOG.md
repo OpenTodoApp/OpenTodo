@@ -20,6 +20,11 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **Notes are sent after a pause, not after every keystroke pause.** The note editor still saves on the device 400 ms after you stop typing, so a crash or a closed tab loses nothing, but it now sends the note to the server only 3 seconds after its last save, at once when you leave the note (it loses focus, the task or project closes, another task opens, the app navigates away, the page is hidden or closed), and at least every 60 seconds while you keep typing. Before, every short pause sent a full copy of the note, up to 256 KB each. Any other sync carries the waiting note too, the device keeps only the newest copy and its text, collaborators see your text about 3 seconds after you pause, offline writing and convergence are unchanged, and comments are not affected. ([Sync](docs/sync.md#mergeable-documents), [Project notes](docs/project-notes.md), `notes-save-cadence`, closes #653)
 
+### Fixed
+
+- **An attachment uploaded right after another one is no longer refused as over the quota.** An upload held its size against the attachment quota until a moment after its answer was sent, so a device that sent the next file at once could find the finished file counted twice and get "this upload would go over your quota" with room to spare. The room is now given back before the answer is sent; parallel uploads still share the free space.
+- **"Added to the bottom of …" shows on a slow device too.** After a quick add, the app waited only twelve frames for the new row before deciding whether it was out of sight, which a busy phone or computer could miss, so the toast with **Show** never came. It now waits for the row itself, for up to 3 seconds.
+
 ## [0.18.1] - 2026-10-31
 
 OpenTodo 0.18.1 is a fix release. A device whose clock runs fast no longer loses an edit when it has more than 500 changes waiting to upload, and the browser extension 0.6.2 shortens its store description so the Chrome Web Store accepts it. Nothing to do when upgrading.

@@ -222,7 +222,7 @@ describe('a new task out of sight is announced (3.2)', () => {
     bulkToast()!.action!.run()
     expect(select).toHaveBeenCalledWith('t1')
     hideBulkToast()
-    expect(await announceIfOutOfSight('missing', { list: 'Work', placement: 'top', select, inSight: () => false })).toBe(false)
+    expect(await announceIfOutOfSight('missing', { list: 'Work', placement: 'top', select, inSight: () => false, wait: 50 })).toBe(false)
     expect(bulkToast()).toBeNull()
     document.body.innerHTML = ''
   })
