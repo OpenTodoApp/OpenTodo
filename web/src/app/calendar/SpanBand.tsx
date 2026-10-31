@@ -50,13 +50,15 @@ export interface SpanBandProps {
   columnLines?: boolean
   /** Laid inside a grid row (Month): the band is one cell spanning the week, so the row holds only cells (WAI-ARIA grid). */
   inRow?: boolean
+  /** Only the days of one month of the row (stacked months, year-view D1). */
+  within?: { from: string; to: string }
   className?: string
 }
 
-export function SpanBand({ days, spans, today, variant, maxLanes, selectedId, hueOf, projectionHue, drags, onSelect, onOpen, stored, columnLines = false, inRow = false, className = '' }: SpanBandProps) {
+export function SpanBand({ days, spans, today, variant, maxLanes, selectedId, hueOf, projectionHue, drags, onSelect, onOpen, stored, columnLines = false, inRow = false, within, className = '' }: SpanBandProps) {
   const preview = useSpanPreview()
   const editable = useSpanEditable()
-  const { pieces, lanes } = useMemo(() => bandLayout(days, withPreview(spans, preview), maxLanes), [days, spans, preview, maxLanes])
+  const { pieces, lanes } = useMemo(() => bandLayout(days, withPreview(spans, preview), maxLanes, within), [days, spans, preview, maxLanes, within])
   if (lanes === 0) return null
   return (
     <div className={`grid gap-y-0.5 ${className}`} data-span-band={variant} {...(inRow ? { role: 'gridcell', 'aria-colspan': days.length } : {})}
