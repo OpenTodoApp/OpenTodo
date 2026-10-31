@@ -25,6 +25,7 @@ import { deleteWithUndo, parkWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
 import { dayPartFields } from '../../lib/dayParts'
 import { t } from '../../lib/i18n'
+import { announceOnBoard } from '../BoardView'
 
 /** The list's transient UI state the keys open and close. */
 export interface ListUi {
@@ -76,8 +77,6 @@ export interface ShortcutContext {
   toggleViewMode: () => void
   /** Fold (true) or unfold a board column on this device (board-polish D1). */
   foldColumn?: (key: string, folded: boolean) => void
-  /** A polite announcement on the board, such as "Moved to Done" (board-polish D3). */
-  announce?: (text: string) => void
   /** F2: edit the selected task's title in place (inline-task-editing). */
   editInline?: (id: string) => void
   /** The row whose details are shown under it, and its setter (row-expand D1, D4). */
@@ -313,7 +312,7 @@ function useBoardShortcuts(c: ShortcutContext, row: ListRow | undefined) {
     if (!target.folded) return
     const cards = columns[col].cards
     setSelectedId(cards[pos + 1]?.id ?? cards[pos - 1]?.id ?? null)
-    c.announce?.(t('Moved to {name}', { name: columnName(target) }))
+    announceOnBoard(t('Moved to {name}', { name: columnName(target) }))
   }
   // `z` folds the selected card's column (the selection moves on) or toggles the focused column.
   const boardFold = () => {

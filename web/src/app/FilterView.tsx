@@ -163,9 +163,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const origins = useMemo(() => originSuggestions(query, allTasks), [query, allTasks])
   const suggestions = useMemo(() => (origins.length ? origins : fieldSuggestions(query, fieldDefs)), [origins, query, fieldDefs])
 
-  const resultGroups = useMemo(() => (result ? groupTasks(result.tasks, display.groupBy, ctx) : []), [result, display.groupBy, ctx])
-  // Groups collapsed or folded on this device (board-polish D1) keep their tasks out of the keyboard's rows.
-  const { groups, shown } = useFoldedGroups('filter', resultGroups)
+  const { groups, shown } = useFoldedGroups('filter', useMemo(() => (result ? groupTasks(result.tasks, display.groupBy, ctx) : []), [result, display.groupBy, ctx]))
   const rows = useMemo(() => shown.flatMap((g) => g.tasks.map((task) => ({ key: `${g.key}:${task.id}`, task }))), [shown])
   // The time column (rows-v2 D2): one fact of the whole result.
   const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
@@ -331,8 +329,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             labels={resolveLabels(tk.labels, labelMap)}
             showProject={display.groupBy !== 'project'} timeColumn={timeColumn}
             hidden={display.hidden}
-            layout={display.rowLayout}
-            notes={shape === 'card' && !!display.cardNotes}
+            layout={display.rowLayout} notes={shape === 'card' && !!display.cardNotes}
             onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
             selected={key === selected}
             progress={progress.get(tk.id)}
