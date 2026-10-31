@@ -195,7 +195,7 @@ describe('quick-add settings', () => {
 describe('deadline in the task input (OpenSpec deadlines 7.1)', () => {
   it('passes the deadline through only when the line set one', async () => {
     const deps = { labels: [], createLabel: async () => 'x' }
-    const base = { title: 'Report', due: null, start: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] }
+    const base = { title: 'Report', due: null, start: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, energy: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] }
     expect(await toTaskInput({ ...base, deadline: '2026-10-16' }, deps)).toEqual({ title: 'Report', deadline: '2026-10-16' })
     expect(await toTaskInput({ ...base, deadline: null }, deps)).toEqual({ title: 'Report' })
   })

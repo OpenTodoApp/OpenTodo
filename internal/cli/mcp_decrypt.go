@@ -46,6 +46,10 @@ var contentArgs = map[string]struct {
 	"add_comment":     {entity: "comment", fields: []string{"body"}, create: true},
 	"create_sections": {list: "items", entity: "section", fields: []string{"name"}, create: true},
 	"update_sections": {list: "updates", entity: "section", fields: []string{"name"}},
+	// Notes (notes-overview D13); append_to_note is sealed by encryptAppend,
+	// for the field appends.<append_id> of the note or the task.
+	"create_note": {entity: "note", fields: []string{"title", "description"}, create: true},
+	"update_note": {entity: "note", fields: []string{"title", "description"}},
 }
 
 type decrypter struct {
@@ -149,12 +153,15 @@ func (d *decrypter) after(ctx context.Context, response []byte, method, _ string
 // encryptCall rewrites a tools/call request's content arguments as envelopes.
 func (d *decrypter) encryptCall(params map[string]any) error {
 	name, _ := params["name"].(string)
-	spec, ok := contentArgs[name]
-	if !ok {
-		return nil
-	}
 	args, _ := params["arguments"].(map[string]any)
 	if args == nil {
+		return nil
+	}
+	if name == "append_to_note" {
+		return d.encryptAppend(args)
+	}
+	spec, ok := contentArgs[name]
+	if !ok {
 		return nil
 	}
 	items := []map[string]any{args}
@@ -248,7 +255,7 @@ func (d *decrypter) row(ctx context.Context, entity, id string) map[string]json.
 		d.rows[entity] = m
 		var list []map[string]json.RawMessage
 		switch entity {
-		case "task", "project", "label", "section", "field":
+		case "task", "project", "label", "section", "field", "note":
 			var out map[string][]map[string]json.RawMessage
 			if d.c.getJSON(ctx, "/"+entity+"s", &out) == nil {
 				list = out[entity+"s"]
@@ -318,6 +325,9 @@ func (d *decrypter) open(ctx context.Context, entity, id, field string) (string,
 		_ = json.Unmarshal(r["fields"], &values)
 		v = rawString(values[fid])
 	}
+	if aid, ok := strings.CutPrefix(field, "appends."); ok {
+		v = appendValue(r, aid)
+	}
 	if !e2ee.IsCiphertext(v) {
 		return "", false
 	}
@@ -379,6 +389,10 @@ func (d *decrypter) walk(ctx context.Context, v any, key string) {
 }
 
 func (d *decrypter) fix(ctx context.Context, obj, u map[string]any, key string) {
+	if isNoteObject(obj, key) {
+		d.fixNote(ctx, obj, u)
+		return
+	}
 	id, _ := obj["id"].(string)
 	all := true
 	switch {

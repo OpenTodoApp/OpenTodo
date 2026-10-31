@@ -70,6 +70,13 @@ export const SETTINGS_COPY = {
     },
     rows: {
       guide: { label: msg('Start guide'), description: msg('Add a first task, choose how you work, install the app.') },
+      // Today's focus style and Bento order (bento-daily-check D4): synced user_prefs, as in the Daily check's menu.
+      focus: { label: msg('Daily focus'), description: msg('Three tasks of any size, or a Bento: one Large, one Medium and one Small.') },
+      order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
+      // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
+      energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
+      // Formatting button (notes-toolbar-desktop D4): synced user_prefs.formatting_toggle, on by default.
+      formatting: { label: msg('Formatting button'), description: msg('A button beside notes and comments on a computer that shows bold, lists and links.') },
     },
   },
   // Settings → Account → Invitations (member-add-consent).
@@ -759,6 +766,22 @@ export const SETTINGS_COPY = {
       encryption: { label: msg('Encryption') },
     },
     notices: { offline: msg('Offline: backups run on the server; the status below is the last one fetched.') },
+  },
+  // Database storage (op-log-compaction D7): the database file and the notes compaction job.
+  'database-storage': {
+    title: msg('Database storage'),
+    icon: 'layers',
+    description: msg('Old note versions go after 30 days, and the space they took returns to the disk.'),
+    learnMore: 'settings/backups',
+    rows: {
+      size: { label: msg('Database') },
+      compaction: { label: msg('Last compacted') },
+    },
+    notices: {
+      offline: msg('Database storage needs a connection to the server.'),
+      noSpace: msg('Shrinking the file once needs {bytes} of free disk space; old versions still go.'),
+      waiting: msg('The file is shrunk once, at a quiet moment; old versions already go.'),
+    },
   },
   'attachments-settings': {
     title: msg('Attachments'),

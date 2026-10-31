@@ -222,7 +222,7 @@ func TestJobListMatchesTheConfiguration(t *testing.T) {
 		return out
 	}
 	got := names(openJobsTenant(t, t.TempDir()))
-	for _, n := range []string{jobs.Reminders, jobs.Backup, jobs.Webhooks, jobs.Calendars, jobs.Issues, jobs.Digest, jobs.Rules, jobs.Housekeeping} {
+	for _, n := range []string{jobs.Reminders, jobs.Backup, jobs.Webhooks, jobs.Calendars, jobs.Issues, jobs.Digest, jobs.Rules, jobs.Housekeeping, jobs.Compaction} {
 		if !got[n] {
 			t.Errorf("job %q missing: %v", n, got)
 		}
@@ -243,7 +243,7 @@ func TestJobListMatchesTheConfiguration(t *testing.T) {
 			t.Errorf("demo instance has job %q", n)
 		}
 	}
-	if !got[jobs.Demo] || !got[jobs.Housekeeping] {
+	if !got[jobs.Demo] || !got[jobs.Housekeeping] || !got[jobs.Compaction] {
 		t.Errorf("demo instance jobs: %v", got)
 	}
 }

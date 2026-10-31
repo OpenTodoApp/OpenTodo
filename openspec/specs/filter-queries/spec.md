@@ -444,3 +444,72 @@ Rules for the draft:
 #### Scenario: Saved through the API
 - **WHEN** a client saves a view with the query `today & afternoon`
 - **THEN** the server accepts it as valid
+
+### Requirement: Energy terms
+`energy` SHALL match tasks that have an energy (OpenSpec `task-energy`), `no energy` tasks that have none, and `energy: value` (quotes allowed, case ignored) tasks whose energy equals `deep`, `medium` or `low`. Any other value SHALL be an error naming the three valid values. All three SHALL be keywords in the published grammar, accepted by the server's validation of saved views, and evaluated on the device from local data with the same open-only default as every other term, offline included; `energy` SHALL be a reserved word. A value a client does not know SHALL match `no energy`.
+
+#### Scenario: End of the day list
+- **WHEN** the user enters `energy: low & unblocked & today`
+- **THEN** today's open, unblocked tasks with Low energy are listed
+
+#### Scenario: Unknown value
+- **WHEN** the user enters `energy: high`
+- **THEN** the query is not run and the error says the energy is deep, medium or low
+
+#### Scenario: Saved and offline
+- **WHEN** the user saves `energy: deep & #Work` as a view and later opens it on an offline device
+- **THEN** the server accepts the view, and the device lists the open Deep tasks of "Work" from local data
+
+#### Scenario: Reserved word
+- **WHEN** a project defines a custom field named "Energy" and the user enters `energy`
+- **THEN** the term is the energy keyword, and the field is reachable only through its quoted name
+
+#### Scenario: Works with the switch off
+- **WHEN** the Energy levels switch is off and the user enters `no energy`
+- **THEN** open tasks without an energy are listed
+
+### Requirement: Query filter on the calendar and Upcoming
+The Calendar (Day, Week, Month and Plan together) and Upcoming SHALL each offer a filter by query in the published grammar, with label checkboxes that add and remove `@label` terms in the query, from Filter… in the Calendar's overflow menu and from Upcoming's Filter action. An active filter SHALL be one chip with its words and a clear control in the header's lead line, adding no row of chrome. The filter SHALL narrow the tasks drawn and listed and the deadline markers shown, SHALL leave calendar events, frames and the planning list unaffected, and SHALL leave the day's capacity counting every task, its tooltip saying how many are hidden by the filter. An invalid query SHALL keep the last valid filter active and show the parser's error. Each filter SHALL be remembered per device across reloads, never synced, and evaluated on the device from local data, offline and on unlocked encrypted accounts.
+
+#### Scenario: Only work in the week
+- **WHEN** the user opens Filter… in the Week and enters `##Work`
+- **THEN** only tasks of "Work" and its sub-projects are drawn, a chip reading "Project is Work or a sub-project" (the condition words of saved views' toolbar) shows in the header, and meetings are still drawn
+
+#### Scenario: Label checkboxes
+- **WHEN** the user ticks the labels "errand" and "call" in Upcoming's filter
+- **THEN** the query reads `@errand | @call` and Upcoming lists only tasks carrying either label
+
+#### Scenario: Capacity unchanged
+- **WHEN** a filter hides two tasks estimated at 1 hour each on Tuesday
+- **THEN** Tuesday's capacity still counts them and its tooltip says "2 tasks hidden by the filter"
+
+#### Scenario: Invalid query
+- **WHEN** the user changes an active filter to `p1 &`
+- **THEN** the error is shown in the popover and the previous filter stays active
+
+#### Scenario: Remembered offline
+- **WHEN** the device is offline, the Calendar's filter is active and the page is reloaded
+- **THEN** the same filter is active in Day, Week, Month and Plan, and other devices are unaffected
+
+### Requirement: Notes terms
+`notes` SHALL match tasks whose note is not empty, `no notes` tasks whose note is empty, and `notes: text` (quotes allowed, case ignored) tasks whose note contains the text. `notes:` without text SHALL be an error. All three SHALL be keywords in the published grammar, accepted by the server's validation of saved views, and evaluated on the device from local data, over the decrypted note on an encrypted account, with the same open-only default as every other term, offline included; `notes` SHALL be a reserved word. The terms SHALL match tasks only, never standalone notes. The TypeScript and Go parsers SHALL share their test queries.
+
+#### Scenario: Tasks with notes in a project
+- **WHEN** the user enters `notes & #Renovation`
+- **THEN** the open tasks of "Renovation" that have a note are listed
+
+#### Scenario: Text in the note
+- **WHEN** the user enters `notes: "permit office"`
+- **THEN** open tasks whose note contains "permit office" in any letter case are listed, and a task with those words only in its title is not
+
+#### Scenario: Missing text
+- **WHEN** the user enters `notes:`
+- **THEN** the query is not run and the error asks for text after `notes:`
+
+#### Scenario: Saved and offline
+- **WHEN** the user saves `no notes & p1` as a view and opens it later on an offline device
+- **THEN** the server accepts the view, and the device lists the open priority-1 tasks without a note from local data
+
+#### Scenario: Reserved word
+- **WHEN** a project defines a custom field named "Notes" and the user enters `notes`
+- **THEN** the term is the notes keyword, and the field is reachable only through its quoted name

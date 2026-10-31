@@ -7,9 +7,10 @@ import { Kbd } from '../shortcuts/Kbd'
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
-import { useAllLabels, useLiveSections, useProjects, useMembershipMap, useUserPrefsRow } from '../../lib/localData'
+import { useAllLabels, useLiveSections, useProjects, useMembershipMap, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
-import { dayPartUndoable } from '../../lib/undoActions'
+import { dayPartUndoable, energyUndoable } from '../../lib/undoActions'
+import { ENERGY_LEVELS, energyLevelsOn, energyName, energyOf, type Energy } from '../../lib/energy'
 import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
@@ -26,6 +27,8 @@ import { startFocusOn } from '../focus/startFocus'
 import { t } from '../../lib/i18n'
 import { withListTransition } from '../motion'
 import { slotAction, slotLabel, useSlotState, type SlotState } from '../task-list/slotActions'
+import { focusMenuLabel, focusMenuState, runFocusPress, type FocusMenuState } from '../focus/focusRequest'
+import { useToday } from '../useViews'
 
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
@@ -41,8 +44,12 @@ const itemLabel = (i: PickerItem) => i.label
 const itemPath = (i: PickerItem) => i.path
 
 interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: Section[]; memberships: Map<string, Membership>; runningTask?: string | null; dayParts?: boolean
+  /** Energy levels on (task-energy D3): the Energy submenu. */
+  energy?: boolean
   /** Today with a limit (today-closed-list D3): the one task's slot command. */
-  slot?: SlotState }
+  slot?: SlotState
+  /** Today's focus (phone-touch-focus D3): the one task's focus command. */
+  focus?: FocusMenuState }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -76,6 +83,15 @@ export function slotItem(task: Task | undefined, slot: SlotState | undefined): A
 }
 
 /**
+ * Add to focus / Put in a slot / Remove from focus (phone-touch-focus D3): today's focus
+ * is personal, so a viewer of a shared project may too.
+ */
+export function todayFocusItem(task: Task | undefined, state: FocusMenuState | undefined): ActionItem[] {
+  if (!task || !state) return []
+  return [{ kind: 'action', id: 'today-focus', label: focusMenuLabel(state), icon: state === 'remove' ? 'x' : 'sun', onSelect: () => runFocusPress(task.id) }]
+}
+
+/**
  * "Day part…" (day-parts D4): while the account uses day parts, a submenu of the
  * four parts, the tasks' common part checked; nothing for a viewer's task.
  */
@@ -89,6 +105,23 @@ export function dayPartItem(ids: readonly string[], d: Pick<Data, 'tasks' | 'mem
   }
   return [{ kind: 'submenu', id: 'day-part', label: t('Day part'), icon: 'sun', items: ([null, ...DAY_PARTS] as (DayPart | null)[]).map((part) => ({
     kind: 'check' as const, id: `part-${part ?? 'none'}`, label: dayPartName(part), checked: common === part, onSelect: set(part),
+  })) }]
+}
+
+/**
+ * "Energy" (task-energy D6): while the account has Energy levels on, a submenu of
+ * Deep, Medium, Low and None, the tasks' common energy checked; nothing for a viewer's task.
+ */
+export function energyItem(ids: readonly string[], d: Pick<Data, 'tasks' | 'memberships' | 'energy'>): ActionItem[] {
+  if (!d.energy || d.tasks.length === 0 || d.tasks.some((task) => roleOf(task.project_id, d.memberships) === 'viewer')) return []
+  const levels = new Set(d.tasks.map((task) => energyOf(task)))
+  const common = levels.size === 1 ? [...levels][0] : undefined
+  const set = (e: Energy | null) => async () => {
+    const r = await energyUndoable(ids, e)
+    if (r.entry) showUndoToast(r.label, r.entry.id)
+  }
+  return [{ kind: 'submenu', id: 'energy', label: t('Energy'), icon: 'zap', items: ([...ENERGY_LEVELS, null] as (Energy | null)[]).map((e) => ({
+    kind: 'check' as const, id: `energy-${e ?? 'none'}`, label: e ? energyName(e) : t('No energy'), checked: common === e, onSelect: set(e),
   })) }]
 }
 
@@ -108,7 +141,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const swipeTwins = n === 1 && a.schedule
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
-    ...(n === 1 ? [{ items: [...slotItem(d.tasks[0], d.slot), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
+    ...(n === 1 ? [{ items: [...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
     // Beside a row its own Priority and Schedule buttons already offer these.
     // Priority and Date are one row each (a submenu), so the menu fits on the screen;
@@ -124,6 +157,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
           { kind: 'action', id: 'pick-date', label: t('Pick a date…'), icon: 'calendar-days', onSelect: a.pickDate },
         ] },
       ] as ActionItem[]),
+      ...energyItem(ids, d),
       ...dayPartItem(ids, d),
       { kind: 'picker', id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels'), disabled: live.length === 0, reason: t('There are no labels yet'), picker: {
         title: t('Labels'), placeholder: t('Add to all, or remove from all…'), source: live, multiple: true, selected: common, rankContext: 'label',
@@ -174,9 +208,14 @@ function useBulkData(ids: readonly string[]): Data {
   const sections = useLiveSections()
   const memberships = useMembershipMap()
   const runningTask = useRunningEntry()?.task_id ?? null
-  const dayParts = dayPartsOn(useUserPrefsRow())
+  const prefs = useUserPrefsRow()
+  const dayParts = dayPartsOn(prefs)
+  const energy = energyLevelsOn(prefs)
   const slot = useSlotState(ids.length === 1 ? ids[0] : '')
-  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, slot }
+  const review = useReviewRow()
+  const today = useToday()
+  const focus = tasks.length === 1 ? focusMenuState(tasks[0], review, prefs, today) : null
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot, focus }
 }
 
 /**

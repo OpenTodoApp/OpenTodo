@@ -26,6 +26,9 @@ tracked > 1h & due <= today
 (workspace: Home | workspace: Work) & due = this week
 workspace: "Side projects" & p1
 available & @phone
+energy: low & unblocked & today
+notes & #Renovation
+no notes & p1
 @work & due <= tomorrow & p1
 @errand | @call & p1
 (@errand | @call) & p1
@@ -82,6 +85,25 @@ origin: url | origin: email
 no origin & #Work
 origin: github & open
 !origin
+energy
+no energy
+energy: deep
+energy: low
+energy: medium
+energy: low & unblocked & today
+energy: deep & #Work
+notes
+no notes
+notes: permit
+notes: permit
+notes: "permit office"
+notes: x
+notes & #Renovation
+no notes & p1
+!notes
+"Notes" = 3
+no "Notes"
+notes: "a & b"
 "paid" = false
 "cost" >= -2.5
 "status" = "Ordered"

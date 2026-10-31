@@ -9,7 +9,7 @@ import { bumpLocalEpoch, db, entityTables, getMeta, localEpoch, setMeta, tableOf
 import { ensureFeedBaselines } from './feed'
 import { CLOCK_OFFSET_META, hlcObserveServerTime, hlcOffset } from './hlc'
 import { restampSkewed, splitClockSkew } from './clockSkew'
-import { applyOps, getDeviceId, onLocalMutation } from './ops'
+import { applyOps, getDeviceId, onLocalMutation, readField } from './ops'
 import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
@@ -115,6 +115,42 @@ function addRejected(n: RejectedNotice): void {
   })
 }
 
+// ---- note push cadence (notes-save-cadence D2) ----
+
+/** A note saved while typing is pushed after this long without a further save. */
+export const NOTE_QUIET_MS = 3_000
+/** ...and at least this often while the person keeps typing. */
+export const NOTE_MAX_WAIT_MS = 60_000
+let noteQuiet: ReturnType<typeof setTimeout> | null = null
+let noteMaxWait: ReturnType<typeof setTimeout> | null = null
+
+function clearNotePush(): void {
+  if (noteQuiet) clearTimeout(noteQuiet)
+  if (noteMaxWait) clearTimeout(noteMaxWait)
+  noteQuiet = null
+  noteMaxWait = null
+}
+
+function fireNotePush(): void {
+  clearNotePush()
+  requestSync(0)
+}
+
+/** A deferred save: restart the quiet timer; start the max-wait timer if none runs. */
+function deferNotePush(): void {
+  if (noteQuiet) clearTimeout(noteQuiet)
+  noteQuiet = setTimeout(fireNotePush, NOTE_QUIET_MS)
+  noteMaxWait ??= setTimeout(fireNotePush, NOTE_MAX_WAIT_MS)
+}
+
+/**
+ * Push a note document waiting for its pause at once (the editor was left: blur,
+ * close, hide, unload). Nothing to do when no deferred push is pending.
+ */
+export function pushPendingNotes(): void {
+  if (noteQuiet || noteMaxWait) fireNotePush()
+}
+
 export function requestSync(delay = 250): void {
   // Another tab runs the sync loop: ask it (one tab syncs).
   if (started && !leader && channel) {
@@ -168,6 +204,8 @@ async function runOnce(): Promise<void> {
   // writes nothing, so the previous account's data never lands in the cleared
   // database (client-sync-robustness). Checked after every await that precedes a write.
   const epoch = localEpoch()
+  // This exchange uploads the whole outbox, a deferred note document included.
+  clearNotePush()
   const signal = (controller ??= new AbortController()).signal
   const alive = () => {
     if (localEpoch() !== epoch) throw new SessionEnded()
@@ -444,10 +482,14 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
         // as the placeholder (OpenSpec e2ee).
         const raw = (row._e2ee as RowEncryption | undefined)?.raw ?? {}
         for (const [field, c] of Object.entries(clock)) {
-          if (!(field in row)) continue
+          // A field family value (`fields.<id>`, `appends.<id>`) lives in a map on the row.
+          const value = readField(row, field)
+          if (value === undefined && !(field in row)) continue
+          // Only an account's own reactions are its to send (editor-everywhere D8).
+          if (field.startsWith('reactions.') && field !== `reactions.${me}`) continue
           // uploaded_at is the server's word (attachments D3); a device never sends it.
           if (entity === 'attachment' && field === 'uploaded_at') continue
-          chunk.push({ id: uuid(), entity, entityId: row.id as string, field, value: raw[field] ?? row[field], ts: c.ts, device: c.device })
+          chunk.push({ id: uuid(), entity, entityId: row.id as string, field, value: raw[field] ?? value, ts: c.ts, device: c.device })
           if (chunk.length >= RESEED_CHUNK) await flush()
         }
       }
@@ -606,10 +648,15 @@ export function startSync(): void {
   void refreshAgentExclusions()
   // Shares abandoned on the capture screen leave the hand-over store (attachments D9).
   void sweepInbox().catch(() => undefined)
-  const offMutation = onLocalMutation(() => {
+  const offMutation = onLocalMutation(({ push }) => {
     // Reflect the pending edit immediately so the indicator never claims "Synced"
-    // while an op is still waiting in the debounce window.
+    // while an op is still waiting in the debounce window (or the note's pause).
     if (status.get().state === 'idle') publish({ state: 'syncing', pending: status.get().pending + 1 })
+    if (push === 'deferred') {
+      deferNotePush()
+      return
+    }
+    clearNotePush()
     requestSync()
   })
   const offs: (() => void)[] = [offMutation, () => onUploadRequest(null)]
@@ -681,6 +728,7 @@ export function stopSync(): void {
   timer = null
   if (debounce) clearTimeout(debounce)
   debounce = null
+  clearNotePush()
   if (retryTimer) clearTimeout(retryTimer)
   retryTimer = null
   failures = 0

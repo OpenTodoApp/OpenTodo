@@ -2,6 +2,10 @@
 
 The browser extension versions on its own, independently of the app. `make extension` refuses a build whose manifest version is not the first entry here.
 
+## 0.6.2 - 2026-10-31
+
+- A shorter description in every language, within the Chrome Web Store's 132-character limit.
+
 ## 0.6.1 - 2026-10-22
 
 - The new OpenTodo mark as the toolbar and store icon, the same as the app's.

@@ -35,7 +35,9 @@ const Placeholder = "Encrypted item"
 // stay plaintext like priority. Keep in step with CONTENT_PREFIXES in
 // web/src/lib/e2ee.ts. ContentFields is generated from sync.Schema (contentfields.go).
 var ContentPrefixes = map[string][]string{
-	"task": {"fields."},
+	// Pending appends `appends.<id>` (notes-overview D13) are note text.
+	"task": {"fields.", "appends."},
+	"note": {"appends."},
 }
 
 // AllContentFields is ContentFields plus the prefixes of ContentPrefixes (each

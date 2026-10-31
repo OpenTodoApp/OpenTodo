@@ -26,6 +26,7 @@ import { startFakeLLM } from './fake-llm.mjs'
 
 const OUT = 'docs/images'
 let eisenhowerPath = null
+let completedCalendarFixture = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -287,6 +288,11 @@ const shots = [
   // display-mode: Today full screen in large type, without the shell.
   { name: 'display-today', server: D, async run(p) { await go(p, demoBase, '/display/today', () => p.locator('[data-screen="display"] [data-display-row]').first().waitFor()) } },
   { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
+  // Notes (notes-overview): the task and project notes of the sample data.
+  { name: 'notes', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    await settle(p, 400)
+  } },
   // Focus (focus-mode 7.2): a task of the sample data, its session started a moment ago.
   { name: 'focus', server: D, async run(p) {
     await go(p, demoBase, '/focus', () => p.locator('[data-focus-timer], [data-empty-state="focus"]').first().waitFor())
@@ -423,6 +429,32 @@ const shots = [
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
   }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   { name: 'day', server: D, async run(p) { await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor()) } },
+  { name: 'completed-calendar', server: P, async run(p, { ctx }) {
+    const api = async (method, path, body) => {
+      const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.json()
+    }
+    if (!completedCalendarFixture) {
+      const date = new Date().toISOString().slice(0, 10)
+      const project = await api('POST', '/api/v1/projects', { name: 'Website launch', color: '#3b82f6' })
+      const task = (title, time, estimate_minutes) => api('POST', '/api/v1/tasks', { title, project_id: project.id, due: { date, ...(time ? { time } : {}) }, estimate_minutes })
+      const timed = await task('Send the project update', '09:00', 30)
+      const allDay = await task('Book the train tickets', undefined, 15)
+      const open = await task('Review the launch checklist', '14:00', 60)
+      for (const done of [timed, allDay]) await api('PATCH', `/api/v1/tasks/${done.id}`, { completed_at: Date.now() })
+      completedCalendarFixture = { date, timed: timed.id, allDay: allDay.id, open: open.id }
+    }
+    const fixture = completedCalendarFixture
+    await p.setViewportSize({ width: 1280, height: 800 })
+    await p.clock.setFixedTime(new Date(`${fixture.date}T12:00:00Z`))
+    await go(p, plainBase, `/day/${fixture.date}`, () => p.locator(`[data-block="${fixture.open}"]`).waitFor())
+    await p.getByRole('button', { name: 'Show completed tasks', exact: true }).click()
+    await p.locator(`[data-block="${fixture.timed}"] .line-through`).waitFor()
+    await p.locator(`[data-lane-task="${fixture.allDay}"] .line-through`).waitFor()
+    await p.locator('[data-calendar-completed-toggle][aria-pressed="true"]').waitFor()
+    await p.mouse.move(0, 0)
+  } },
   // Frames (calendar-frames 5.2): "Deep work" on weekday mornings and "Admin" late in the afternoon behind the Week's blocks.
   { name: 'frames', server: D, async run(p) {
     const api = async (method, body) => {
@@ -438,6 +470,28 @@ const shots = [
     await go(p, demoBase, '/week', () => p.locator('[data-frame-band]').first().waitFor())
     // The demo's reminder toast would cover the late afternoon.
     await p.addStyleTag({ content: '[aria-label^="Reminder:"] { display: none !important }' })
+    await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
+  }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
+  // Slots (calendar-slots 5.2): today's "Admin" slot holding six small tasks, one done, in the Day.
+  { name: 'slots', server: D, async run(p) {
+    const api = async (method, path, body) => {
+      const r = await p.request.fetch(demoBase + path, { method, headers: { Origin: demoBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+      if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+      return r.status() === 204 ? null : r.json()
+    }
+    // Once for both themes: the second run finds it there.
+    if (!(await api('GET', '/api/v1/slots')).slots.length) {
+      const today = await p.evaluate(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })
+      const ids = []
+      for (const [i, title] of ['Reply to Marco', 'Pay the invoice', 'Book the venue', 'Renew the domain', 'Send the slides', 'File the receipt'].entries()) {
+        ids.push((await api('POST', '/api/v1/tasks', { title, estimate_minutes: 5 + (i % 3) * 5 })).id)
+      }
+      await api('POST', '/api/v1/slots', { title: 'Admin', date: today, start: '14:00', minutes: 150, color: '#0d9488', task_ids: ids, move_tasks: true })
+      await api('PATCH', `/api/v1/tasks/${ids[0]}`, { completed_at: Date.now() })
+    }
+    await go(p, demoBase, '/day', () => p.locator('[data-slot]').first().waitFor())
+    await p.addStyleTag({ content: '[aria-label^="Reminder:"] { display: none !important }' })
+    await p.locator('[data-slot]').first().scrollIntoViewIfNeeded()
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
   }, async after(p) { await p.getByRole('button', { name: /Show task list/ }).click().catch(() => {}) } },
   // The Plan (planner-view 5.2): two rows of columns with their capacity bars and a dimmed projected row.

@@ -558,10 +558,30 @@ describe('parse: day parts (day-parts D5)', () => {
   })
 })
 
+describe('parse: energy (task-energy D4)', () => {
+  it('a token is a chip; dismissing it keeps the text', () => {
+    const line = 'Draft the plan ~deep'
+    const r = parse(line, ctx({ energy: true }))
+    const chip = r.chips.find((c) => c.kind === 'energy')!
+    expect(chip.value).toBe('deep')
+    expect(r).toMatchObject({ title: 'Draft the plan', energy: 'deep' })
+    expect(parse(line, ctx({ energy: true, dismissed: chip.spans }))).toMatchObject({ title: 'Draft the plan ~deep', energy: null })
+  })
+  it('the last token wins and every token leaves the title', () => {
+    const r = parse('Plan ~l the week ~DEEP', ctx({ energy: true }))
+    expect(r).toMatchObject({ title: 'Plan the week', energy: 'deep' })
+    expect(r.chips.filter((c) => c.kind === 'energy')).toHaveLength(1)
+  })
+  it('is not read while the switch is off, and ~ followed by anything else stays', () => {
+    expect(parse('Call ~low', ctx())).toMatchObject({ title: 'Call ~low', energy: null, chips: [] })
+    expect(parse('Dinner for ~6 people ~x', ctx({ energy: true }))).toMatchObject({ title: 'Dinner for ~6 people ~x', energy: null })
+  })
+})
+
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, energy: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {

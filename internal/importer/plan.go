@@ -49,6 +49,8 @@ type State struct {
 	TimeEntries []opsync.Entity
 	// Places (including deleted ones) let own-export rows detect existing ids (task-locations).
 	Places []opsync.Entity
+	// Notes are standalone notes, deleted ones included (notes-overview D9).
+	Notes []opsync.Entity
 	// Rules are the account's automation rules (automation-rules).
 	Rules []opsync.Entity
 	// UserID is the importing account (own-export assignees are kept only for it).
@@ -116,7 +118,9 @@ type Totals struct {
 	// TimeEntries counts created time entries (time-tracking); additive.
 	TimeEntries int `json:"timeEntries"`
 	// Places counts created live places (task-locations); additive.
-	Places   int `json:"places"`
+	Places int `json:"places"`
+	// Notes counts created live standalone notes (notes-overview); additive.
+	Notes    int `json:"notes"`
 	Entities int `json:"entities"`
 	Written  int `json:"written"`
 	Ops      int `json:"ops"`
@@ -268,7 +272,7 @@ func sectionKey(projectID, name string) string {
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
 	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(), files: parsed.Files,
 		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
-			KindSection: {}, KindReminder: {}, KindView: {}, KindRule: {}, KindUserPrefs: {}, KindAttachment: {}, KindTimeEntry: {}, KindPlace: {}, KindField: {}, KindReview: {}, KindProjectPrefs: {}},
+			KindSection: {}, KindReminder: {}, KindView: {}, KindRule: {}, KindUserPrefs: {}, KindAttachment: {}, KindTimeEntry: {}, KindPlace: {}, KindField: {}, KindReview: {}, KindProjectPrefs: {}, KindNote: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
@@ -276,7 +280,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		st.Remembered = map[string]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
-		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindRule: st.Rules, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindTimeEntry: st.TimeEntries, KindPlace: st.Places, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs} {
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindRule: st.Rules, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindTimeEntry: st.TimeEntries, KindPlace: st.Places, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs, KindNote: st.Notes} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e
@@ -391,6 +395,9 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 		if c.created && c.entity == KindPlace && live {
 			p.Totals.Places++
+		}
+		if c.created && c.entity == KindNote && live {
+			p.Totals.Notes++
 		}
 	}
 	p.Totals.Entities = len(p.changes)

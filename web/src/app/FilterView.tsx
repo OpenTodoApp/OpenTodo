@@ -52,6 +52,12 @@ const DEBOUNCE_MS = 150
 /** A new view's display options: the saved view defaults (custom-views "Grouping and sort options"). */
 export const NEW_VIEW_DISPLAY: ViewDisplay = { layout: 'list', groupBy: 'project', sortBy: 'due', sortDir: 'asc', showCompleted: false, hidden: [] }
 
+/**
+ * Order by on the New view page: no Manual order, which only a saved view can keep
+ * (view-manual-order D7); a draft that held it reads as the default.
+ */
+export const NEW_VIEW_SORT_OPTIONS: readonly SortBy[] = SORT_BY_OPTIONS.filter((s) => s !== 'position')
+
 /** How long the draft waits after the last change before it is stored (sidebar-polish D5). */
 const DRAFT_DEBOUNCE_MS = 300
 
@@ -69,7 +75,7 @@ export function displayOfDraft(d: FilterDraft): ViewDisplay {
   return {
     layout: pick<ViewLayout>(d.layout, VIEW_LAYOUTS, NEW_VIEW_DISPLAY.layout),
     groupBy: pick<GroupBy>(d.group_by, GROUP_BY_OPTIONS, NEW_VIEW_DISPLAY.groupBy),
-    sortBy: pick<SortBy>(d.sort_by, SORT_BY_OPTIONS, NEW_VIEW_DISPLAY.sortBy),
+    sortBy: pick<SortBy>(d.sort_by, NEW_VIEW_SORT_OPTIONS, NEW_VIEW_DISPLAY.sortBy),
     sortDir: pick<SortDir>(d.sort_dir, SORT_DIR_OPTIONS, NEW_VIEW_DISPLAY.sortDir),
     showCompleted: d.show_completed === true,
     hidden: d.hidden_props.filter((p): p is RowProperty => (ROW_PROPERTIES as readonly string[]).includes(p)),
@@ -273,7 +279,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         <PageHeader title={<ViewsCrumb name={t('New view')} />} meta={count ?? undefined} help="filter"
           actions={<Button variant="secondary" size="sm" disabled={!canSave} onClick={() => setSaving(true)}>{t('Save as view')}</Button>} />
       )}
-      <ViewToolbar query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }}
+      <ViewToolbar query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }} sortOptions={NEW_VIEW_SORT_OPTIONS}
         onDisplay={(patch) => setDisplay((d) => ({ ...d, ...patch }))}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (

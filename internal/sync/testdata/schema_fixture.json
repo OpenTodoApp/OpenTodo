@@ -54,11 +54,23 @@
       "created_at",
       "deleted_at",
       "group_by",
+      "manual_order",
       "name",
       "position",
       "row_layout",
       "sort_by",
       "sort_dir",
+      "workspace_id"
+    ],
+    "note": [
+      "created_at",
+      "deleted_at",
+      "description",
+      "labels",
+      "notes_doc",
+      "position",
+      "project_id",
+      "title",
       "workspace_id"
     ],
     "place": [
@@ -111,6 +123,7 @@
       "daily_at",
       "focus",
       "focus_date",
+      "focus_slots",
       "monthly_at",
       "slots",
       "slots_date",
@@ -136,6 +149,16 @@
       "position",
       "project_id"
     ],
+    "slot": [
+      "color",
+      "created_at",
+      "date",
+      "deleted_at",
+      "minutes",
+      "start",
+      "task_ids",
+      "title"
+    ],
     "task": [
       "assignee_id",
       "blocked_by",
@@ -147,6 +170,7 @@
       "deleted_at",
       "description",
       "due",
+      "energy",
       "estimate_minutes",
       "evening",
       "habit",
@@ -181,11 +205,13 @@
     ],
     "user_prefs": [
       "add_position",
+      "bento_order",
       "briefing",
       "date_format",
       "day_parts",
       "day_start",
       "density",
+      "energy",
       "favourites",
       "first_run",
       "focus_auto_start",
@@ -197,7 +223,9 @@
       "focus_presets",
       "focus_short_break_minutes",
       "focus_sound",
+      "focus_style",
       "focus_work_minutes",
+      "formatting_toggle",
       "haptics",
       "language",
       "maps",
@@ -229,6 +257,7 @@
       "icon",
       "kind",
       "layout",
+      "manual_order",
       "name",
       "on_drop",
       "panels",
@@ -246,8 +275,12 @@
     "comment": [
       "reactions."
     ],
+    "note": [
+      "appends."
+    ],
     "task": [
-      "fields."
+      "fields.",
+      "appends."
     ]
   },
   "content_fields": {
@@ -270,6 +303,11 @@
     "label": [
       "name"
     ],
+    "note": [
+      "description",
+      "notes_doc",
+      "title"
+    ],
     "place": [
       "address",
       "geo",
@@ -289,6 +327,9 @@
     "section": [
       "name"
     ],
+    "slot": [
+      "title"
+    ],
     "task": [
       "description",
       "ical_extra",
@@ -306,8 +347,12 @@
     ]
   },
   "content_prefixes": {
+    "note": [
+      "appends."
+    ],
     "task": [
-      "fields."
+      "fields.",
+      "appends."
     ]
   }
 }

@@ -85,7 +85,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth, agent_excluded_projects}`; `auth` describes the credential, see [Credential introspection](#credential-introspection); `agent_excluded_projects` lists the projects [kept away from assistants](#keeping-a-project-away-from-assistants); `day_parts` is the account's [Day parts](day-parts.md) preference, so a client can read quick-add lines like the app; `closed_list` is `{limit, focus_date, focus, slots_date, slots}`, the account's [Today limit](today-limit.md) (0 = off) and the dates and task ids of today's focus and taken slots as stored, so a client can fill Today's slots like the app (ids and dates only). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry, outgoing email without `OPENTODO_BASE_URL`), empty when there are none; admins, members and tokens never get the field |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth, agent_excluded_projects}`; `auth` describes the credential, see [Credential introspection](#credential-introspection); `agent_excluded_projects` lists the projects [kept away from assistants](#keeping-a-project-away-from-assistants); `day_parts` is the account's [Day parts](day-parts.md) preference and `energy_levels` its Energy levels switch, so a client can read quick-add lines like the app; `closed_list` is `{limit, focus_date, focus, slots_date, slots}`, the account's [Today limit](today-limit.md) (0 = off) and the dates and task ids of today's focus and taken slots as stored, so a client can fill Today's slots like the app (ids and dates only). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry, outgoing email without `OPENTODO_BASE_URL`), empty when there are none; admins, members and tokens never get the field |
 | POST | `/api/v1/me/password` | credential, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
@@ -138,11 +138,14 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels, see [Label fields](#label-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
-| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders` and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/notes…` | yes | same shape for [standalone notes](#standalone-notes): `{title, description, project_id, labels}`; a read carries `body_version` and `appends` |
+| POST | `/api/v1/notes/{id}/append`, `/api/v1/tasks/{id}/note/append` | yes | `{id?, text}` adds Markdown at the end of the note without replacing it → 201 `{entity, entity_id, append_id, body_version}`; see [Appending to a note](#appending-to-a-note); 409 `too_many_appends` past 100 waiting; `read` and `agent` tokens get 403 `insufficient_scope` |
+| POST | `/api/v1/notes/{id}/to-task` | yes | turn the note into a task in one batch (the note goes to the Trash) → 201 task; on an encrypted account the body carries `{task_id, title, description, notes_doc?}` sealed for that id, else 409 `encryption_enabled` |
+| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders`, `notes` and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
 | GET/PATCH/DELETE | `/api/v1/{collection}/{id}` | yes | read, partial update, soft delete one item of those collections |
-| GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
-| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
-| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{…}}` |
+| GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history`, `/api/v1/notes/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
+| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge`, `/api/v1/notes/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,notes,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
+| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task, project and note you may delete) → `{purged:{…}}` |
 | GET | `/api/v1/tasks/{id}/comments` | yes | `{comments}`: the task's live comments in thread order; see [Comments and activity](#comments-and-activity) |
 | POST | `/api/v1/tasks/{id}/comments` | yes | `{body, parent_id?, mentions?}` → 201 comment; 429 `rate_limited` past 60 new comments a minute |
 | PATCH | `/api/v1/comments/{id}` | yes | `{body?, mentions?}` → 200 comment with `edited_at` set; 403 `forbidden` unless you wrote it |
@@ -263,6 +266,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/backups/restore` | owner, fresh session | `{id, confirm:"RESTORE"}` → 202, then the server restarts |
 | DELETE | `/api/v1/backups/restore/{id}` | owner | cancel a staged restore → 204 |
 | DELETE | `/api/v1/backups/restore/safety-copies/{name}` | owner, fresh session | delete a safety copy → 204 |
+| GET | `/api/v1/settings/storage` | owner | database file size, free space inside it, write-ahead log size, last notes compaction, conversion state; see [Database storage](#database-storage) |
 
 ### Passkeys
 
@@ -484,7 +488,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 
 | Route | What an agent token may send |
 | --- | --- |
-| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `day_part`, `blocked_by`, `location`, `recurrence`, `origin` |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `day_part`, `energy`, `blocked_by`, `location`, `recurrence`, `origin` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
 | `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon`, `flow_mode` (`archived: false` is accepted) |
@@ -539,6 +543,7 @@ The owner of a project, or an admin of a shared one, can keep it and its sub-pro
 | `start` | `"someday"`, `"YYYY-MM-DD"` or null | `someday` parks the task (out of Today, Upcoming, Anytime and the counts); a date defers it until that day. Anything else is refused with `invalid_input`. The API writes exactly what you send: unlike the app, it does not clear `due` when parking or un-park a task that gets a `due` or a `recurrence`, so a parked task with a rule stays parked (a due or deadline that has come still shows it in Today) |
 | `evening` | boolean | This Evening: the task is grouped below the day's tasks in Today; it says nothing about the time |
 | `day_part` | `"morning"`, `"afternoon"` or null | the [part of the day](day-parts.md) besides Evening, which stays `evening`. A task whose `evening` is true reads as Evening whatever this holds. Set a part with both fields (`morning` with `evening: false`, Evening with `day_part: null`); a body that sets `morning` or `afternoon` without `evening` gets `evening: false` added. Anything else, `"evening"` included, is refused with `invalid_input` |
+| `energy` | `"deep"`, `"medium"`, `"low"` or null | the energy the task asks for ([Energy levels](method/set-up.md#energy-levels)); null when none. `POST` and `PATCH` accept the three levels, or `null` or `""` to clear; anything else is refused with `400 invalid_energy` and nothing is written. Not end-to-end encrypted, like `priority`. CalDAV serves it as `X-OPENTODO-ENERGY`, the vault as `[energy:: …]` |
 | `blocked_by` | array of task ids | the tasks this one waits for (at most 50, distinct, never its own id), in the same project sharing; a list that would make the task wait for itself, or an id of a task shared differently, is refused with `400 invalid_input` naming the id. See [Dependencies](sync.md#dependencies) |
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
@@ -603,12 +608,12 @@ curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H '
 
 ### Quick-add parse
 
-`POST /api/v1/quick-add/parse` reads one line with the grammar of the app's quick add (OpenSpec `extension-v2`), so a client without the web parser can preview and save a line the same way. Body: `{"line": "…", "url"?: "…", "today"?: "YYYY-MM-DD", "now"?: "HH:MM", "day_parts"?: true}`; `day_parts` (default false) reads the [part phrases](day-parts.md#type-it), send the account's preference (`GET /api/v1/me` `day_parts`); send `today` and `now` from the device, which wins over the server's clock (that falls back to the email digest's time zone, else UTC). The line is read in the account's interface language, then the request's `Accept-Language`, then English, with the account's date order, week start and its projects and labels (encrypted names cannot be matched).
+`POST /api/v1/quick-add/parse` reads one line with the grammar of the app's quick add (OpenSpec `extension-v2`), so a client without the web parser can preview and save a line the same way. Body: `{"line": "…", "url"?: "…", "today"?: "YYYY-MM-DD", "now"?: "HH:MM", "day_parts"?: true}`; `day_parts` turns the [part phrases](day-parts.md#type-it) on or off, and when it is absent the account's Day parts preference decides (`GET /api/v1/me` `day_parts`), so a client that leaves it out reads lines like the app; send `today` and `now` from the device, which wins over the server's clock (that falls back to the email digest's time zone, else UTC). The line is read in the account's interface language, then the request's `Accept-Language`, then English, with the account's date order, week start and its projects and labels (encrypted names cannot be matched).
 
 The answer is `{title, fields, chips, unmatched, origin}`:
 
-- `fields` holds only what the line sets, in the form `POST /api/v1/tasks` takes: `due` (`{date, time?}`), `deadline`, `start` (`"someday"`), `evening`, `day_part`, `project_id`, `priority`, `estimate_minutes`, `recurrence`; plus `labels` as `[{id?, name}]` (no `id` for a label that does not exist yet: create it with `POST /api/v1/labels` first), `spent_minutes` (post one closed time entry ending now) and `reminders`, each `{kind: "relative", offset_minutes}` or `{kind: "absolute", date, time}` (a floating moment the client turns into `fire_at` in its own zone), to post with `POST /api/v1/reminders` once the task exists.
-- `chips` are the preview chips, `{kind, text, start, end}`, in the account's language; `start` and `end` count UTF-16 code units of the line. Kinds: `due`, `deadline`, `evening`, `daypart`, `someday`, `project`, `label`, `priority`, `estimate`, `recurrence`, `reminder`, `unmatched`.
+- `fields` holds only what the line sets, in the form `POST /api/v1/tasks` takes: `due` (`{date, time?}`), `deadline`, `start` (`"someday"`), `evening`, `day_part`, `energy` (only with Energy levels on), `project_id`, `priority`, `estimate_minutes`, `recurrence`; plus `labels` as `[{id?, name}]` (no `id` for a label that does not exist yet: create it with `POST /api/v1/labels` first), `spent_minutes` (post one closed time entry ending now) and `reminders`, each `{kind: "relative", offset_minutes}` or `{kind: "absolute", date, time}` (a floating moment the client turns into `fire_at` in its own zone), to post with `POST /api/v1/reminders` once the task exists.
+- `chips` are the preview chips, `{kind, text, start, end}`, in the account's language; `start` and `end` count UTF-16 code units of the line. Kinds: `due`, `deadline`, `evening`, `daypart`, `energy`, `someday`, `project`, `label`, `priority`, `estimate`, `recurrence`, `reminder`, `unmatched`.
 - `unmatched` lists the `#name` tokens that name no project; they stay in `title`.
 - `origin` is the recognised origin of `url` (an `issue` origin for a GitHub, GitLab, Jira or Linear link, else a `url` origin), or `null` without a `url`. The server makes no request to that address.
 
@@ -656,6 +661,31 @@ curl -sS "$OT/api/v1/projects" -H "Authorization: Bearer $TOKEN" -H 'Content-Typ
 curl -sS -X PATCH "$OT/api/v1/projects/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"parent_id":null}'
 ```
+
+### Standalone notes
+
+A note is a page of writing that is not a task (OpenSpec change `notes-overview`). It has `title`, `description` (the Markdown text), `project_id` (null for a personal note), `labels`, `position`, `created_at` and `deleted_at`, and `notes_doc`, the mergeable document the apps edit, which REST clients leave alone. A note lives in its project's sharing like a task: editors write it, viewers read it, and a `project_id` that would move it into another sharing is refused 400 `scope_change`. `title` is at most 500 characters, a `description` written through REST at most 20,000; `labels` and `project_id` must name live items of yours. Notes never appear in `/api/v1/tasks`, in filters, calendars or counts.
+
+Every read of a task, a project or a note carries `body_version`, an opaque string that changes whenever its text changes, and a task or note also carries `appends`, the [appended text](#appending-to-a-note) no device has added to the document yet, oldest first: `[{id, text}]`. The text a person sees is `description` followed by each pending append, a blank line between.
+
+**Replacing the text.** A `PATCH` that writes `description` replaces the note's text; the next device that opens it turns the Markdown into formatted content. Send `If-Match: "<body_version>"` with the version you read: when the note changed since (someone typed in it on a phone), the write is refused 409 `body_changed`, nothing is written, and the error carries the current `body_version`. A `PATCH` without `If-Match` replaces the text whatever happened, as before.
+
+```sh
+curl -sS -X POST "$OT/api/v1/notes" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Wi-Fi","description":"- network: home"}'
+# 201 {"id":"<note>","title":"Wi-Fi","description":"- network: home","body_version":"1760000000000:server","appends":[],…}
+curl -sS -X PATCH "$OT/api/v1/notes/<note>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -H 'If-Match: "1760000000000:server"' -d '{"description":"- network: office"}'
+# 409 {"error":{"code":"body_changed","message":"…","body_version":"1760000050000:<device>"}} when it changed meanwhile
+```
+
+#### Appending to a note
+
+`POST /api/v1/notes/{id}/append` and `POST /api/v1/tasks/{id}/note/append` with `{"text": "<Markdown>"}` add text at the end of the note and never replace anything, so they are safe while someone edits the same note on another device. `id` (1 to 64 letters, digits, `-` or `_`) is optional: send your own to make a retry safe, the same id and text answer 200 as written, another text 409 `conflict`. Devices insert the text at the end of the formatted note on their next sync; until then reads show it in `appends`. A note holds at most 100 appends no device has added yet (409 `too_many_appends`), and its text with them at most 64 KB (400 `invalid_input`). Viewers get 403 `forbidden`.
+
+`POST /api/v1/notes/{id}/to-task` turns a note into a task in one change: a new task with the note's title, text, project and labels, and the note in the Trash (201 with the task). The apps' Undo works on it like on any edit.
+
+On an [end-to-end encrypted](e2ee.md) account the server holds no key: text must arrive encrypted (409 `encryption_enabled` for plaintext appends), and `to-task` needs the task id and the title and text sealed for it in the body (`{task_id, title, description, notes_doc?}`); `ot notes` does this for you after `ot encryption unlock`.
 
 ### Sections
 
@@ -718,6 +748,8 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":"cheap"}}' $
 | `color` | string | CSS colour; picked from the palette when omitted on create |
 | `icon` | string or null | an icon name from the app's set, shown in the project's colour; null (the default) shows a colour dot. Clients that do not know the field ignore it |
 | `position` | number | sidebar order; defaults to the creation time |
+| `group_by`, `sort_by`, `sort_dir`, `row_layout` | string | the label page's display options as the app stores them (`""` reads as the default); not checked by the API |
+| `manual_order` | string[] | the label page's own manual order (OpenSpec change `view-manual-order`): task ids placed by hand, at most 500 distinct ids; absent or `[]` until the app places a task; replaced as a whole on PATCH; ids are not checked |
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
 Tasks reference labels by id, so renaming a label is one PATCH and never rewrites tasks. Deleting a label through the API only sets its tombstone; tasks that still carry the id keep it (the app hides ids of deleted labels), and the app's own delete additionally removes the id from every carrying task.
@@ -742,7 +774,8 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `layout` | `"list"` or `"board"` | list views: how the app shows the results (OpenSpec change `views-and-display`), a board being one column per group; absent until set, read as `list` |
 | `row_layout` | `"line"`, `"detailed"` or `""` | one-line or detailed rows (OpenSpec change `row-layouts`); absent or `""` follows the account's choice |
 | `show_completed` | boolean | list views: the app also lists completed matches, unless the query names a state itself; absent until set, read as `false` |
-| `hidden_props` | string[] | list views: row properties the app leaves out, from `date`, `project`, `labels`, `estimate`, `assignee`, `deadline`, `start` and `origin`; absent until set, read as none; replaced as a whole on PATCH |
+| `manual_order` | string[] | list views: the view's own manual order (OpenSpec change `view-manual-order`), task ids placed by hand, at most 500 distinct ids; absent or `[]` until the app places a task; replaced as a whole on PATCH; ids are not checked |
+| `hidden_props` | string[] | list views: row properties the app leaves out, from `date`, `project`, `labels`, `estimate`, `assignee`, `deadline`, `start`, `origin` and `energy`; absent until set, read as none; replaced as a whole on PATCH |
 | `icon` | string or null | a name from the app's icon catalogue (OpenSpec change `sidebar-polish`), shown wherever the view is listed; `null` (the default) shows the default icon of its kind. Any other value, or a value that is not a string, is refused with 400 `invalid_input` naming `view.icon`; every representation and the export carry it, `null` when unset. Sync accepts any string, so a newer catalogue stays additive |
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
@@ -1019,6 +1052,22 @@ Errors: 422 `passphrase_required` / `passphrase_invalid`, 409 `newer_schema` (na
 **State** — `GET /api/v1/backups/restore` → `{"staged": {…} | null, "last": {"source", "archive", "actorId", "requestedAt", "finishedAt", "ok", "error"?, "safetyCopy"?} | null, "safetyCopies": [{"name", "size", "createdAt"}], "undoAvailable": true, "freeBytes": 51539607552, "uploadLimit": 51400000000}`. `freeBytes` and `uploadLimit` are -1 where the platform cannot tell. A restore that failed while applying left the previous database in place; `last.error` says why.
 
 **Cancel** — `DELETE /api/v1/backups/restore/{id}` → 204; the staged files are removed. **Delete a safety copy** — `DELETE /api/v1/backups/restore/safety-copies/{name}` → 204 (fresh session, no API tokens; 400 `invalid_input` for a name that is not a safety copy).
+
+### Database storage
+
+The owner's view of the database file and of the notes compaction job (see [sync.md](sync.md#compaction) and [backups.md](backups.md#database-size-and-compaction)). `GET /api/v1/settings/storage` needs the owner (401 `unauthorized` without credentials, 403 `forbidden` for members and admins, 403 `demo_restricted` on the public demo):
+
+```json
+{
+  "database_bytes": 50331648,
+  "free_bytes": 3145728,
+  "wal_bytes": 4120032,
+  "last_compaction": {"at": 1793447000000, "ops_removed": 12400, "value_bytes_removed": 219000000, "file_bytes_reclaimed": 220200960, "more": false, "converted": false},
+  "conversion": "done"
+}
+```
+
+`free_bytes` is the space of free pages inside the file (reused by new writes, or returned to the file system by the next compaction). `last_compaction` is the last complete pass (`null` before the first); a pass larger than one run continues a minute later and is reported once it ends. `conversion` is the one-time switch of a database created before 0.19 to incremental vacuum: `pending` (not tried yet, or the free disk space cannot be read on this platform), `waiting_for_quiet` (operations kept arriving; it runs after ten quiet minutes, or at the next run once seven days passed), `no_space` (with `conversion_needed_bytes`, the free disk space it needs: the database size plus 10 %) or `done`. Databases created by 0.19 or later are `done` from the start.
 
 ### Audit log
 
@@ -1931,6 +1980,18 @@ Frames (OpenSpec `calendar-frames`; guide: [frames.md](frames.md)) are the synce
 
 Writes are refused to `read` and `agent` tokens with `403 insufficient_scope`. An invalid value answers `422 invalid_input` with `field`: a title of 1 to 200 characters, a weekday list of distinct digits 1 to 7, times `HH:MM` with the end after the start, a hex colour, a source of the forms above (ids are not resolved: a source that no longer exists reads as none), dates with `until_date` not before `from_date`. On an encrypted account the title is returned as stored and a plaintext title is refused with `409 encryption_enabled`; a device encrypts it.
 
+## Calendar slots
+
+Slots (OpenSpec `calendar-slots`; guide: [slots.md](slots.md)) are the synced entity `slot`, personal like a frame: one block on the Day and Week grid that holds a checklist of small tasks, such as "Admin" on Wednesday from 16:00 for 45 minutes. Fields: `title` (content, encrypted for an encrypted account; empty reads as "Slot"), `date` (`YYYY-MM-DD`), `start` (floating wall time `HH:MM`), `minutes` (15 to 480 in steps of 15; the op log accepts 1 to 1440), `task_ids` (ordered task ids, at most 20, written as one whole list), `color` (hex), `created_at`, `deleted_at`. No field is added to tasks: a task is in a slot when the slot lists it and the task is open and due on the slot's date without a time (or has no due date). Devices write slots through `/api/v1/sync`; the REST routes below add the checks.
+
+| Method | Path | Auth | Body / answer |
+|---|---|---|---|
+| `GET` | `/api/v1/slots` | signed in, any token scope | `?from=&to=` (optional dates, inclusive) → `{slots: [{id, title, date, start, minutes, task_ids, color, created_at, encrypted}]}` by date and start |
+| `POST` | `/api/v1/slots` | signed in, write | `{date, title?, start?, minutes?, task_ids?, color?, move_tasks?}` → `201` slot (defaults 09:00, 30 minutes, `#64748b`) |
+| `GET` / `PATCH` / `DELETE` | `/api/v1/slots/{id}` | signed in (writes: write) | `PATCH` takes the same fields → `200` slot; `DELETE` → `204` (a tombstone; the tasks keep their date without a time); an unknown or deleted id answers `404 not_found` |
+
+With `"move_tasks": true` the same batch sets every listed task's `due` to `{date}` of the slot (time cleared) unless it already is, and takes the tasks out of the caller's other slots of that day, as adding a task in the app does. A listed id that is not a task the caller can see answers `422 invalid_input`; a task the caller may not edit (a viewer of its project) answers `403 forbidden` with its `task_id`; either way nothing is written. Writes are refused to `read` and `agent` tokens with `403 insufficient_scope`. An invalid value answers `422 invalid_input` with `field`: a title of at most 200 characters, a real date, a start `HH:MM`, a length of 15 to 480 minutes in steps of 15, at most 20 distinct task ids, a hex colour. On an encrypted account the title is returned as stored with `"encrypted": true` and a plaintext title is refused with `409 encryption_enabled`.
+
 ## Task pages
 
 One task published as a page people without an account open at `/t/<secret>[/<label>]` (OpenSpec `task-pages`). The secret is 22 characters (128 bits), stored as a hash; the label is decoration and never used to find the page. A task has at most one active page; publishing again revokes the previous one in the same request. Pages are server data, never ops.
@@ -2070,7 +2131,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | Code | Status | Where |
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, an unknown field, data after the JSON value, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
-| `invalid_input` | 400 | validation failure naming the field or parameter (422 on `/api/v1/frames`) |
+| `invalid_input` | 400 | validation failure naming the field or parameter (422 on `/api/v1/frames` and `/api/v1/slots`) |
 | `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type, an `entityId` outside the allowed characters), or a device id starting with the reserved `agent:`, `caldav:`, `issues:` or `rule:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
@@ -2139,6 +2200,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `link_invalid` | 404 | an unknown, expired, revoked or no longer usable [public link](#public-links) |
 | `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
 | `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
+| `invalid_energy` | 400 | a task's `energy` that is not `deep`, `medium`, `low`, `null` or `""` |
 | `user_not_found` | 404 | adding a project member by an email that has no account |
 | `already_member` | 409 | adding an account that is already a member of the project, or accepting a project invite link as one |
 | `owner_must_transfer` | 409 | the project owner leaving the project; the workspace owner leaving the workspace |

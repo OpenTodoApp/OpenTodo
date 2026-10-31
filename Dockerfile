@@ -24,6 +24,7 @@ COPY internal/sync/testdata/schema_fixture.json /src/internal/sync/testdata/sche
 COPY internal/origin/testdata/origin_vectors.json /src/internal/origin/testdata/origin_vectors.json
 COPY internal/sync/testdata/workspaces_fixture.json /src/internal/sync/testdata/workspaces_fixture.json
 COPY internal/filter/testdata/limits.json /src/internal/filter/testdata/limits.json
+COPY internal/notesearch/testdata/vectors.json /src/internal/notesearch/testdata/vectors.json
 # vite writes to ../internal/web/dist (see web/vite.config.ts)
 RUN mkdir -p /src/internal/web && npm run build
 

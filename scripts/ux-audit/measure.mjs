@@ -125,6 +125,31 @@ export function rowMisalignment() {
   return out
 }
 
+// The task checkbox on a touch screen (phone-touch-focus D1): a tap 8 px outside the
+// 20 px circle, left, right, above or below, lands on the circle's own button, never on
+// the row's open control beside it. Only on a coarse pointer, at most three reports.
+export function rowCheckReach() {
+  if (!matchMedia('(pointer: coarse)').matches) return []
+  const out = []
+  for (const row of document.querySelectorAll('[data-task-id]')) {
+    const mark = row.querySelector('[data-check-mark]')
+    const button = mark?.closest('button')
+    if (!button || button.disabled || getComputedStyle(button).visibility === 'hidden') continue
+    const m = mark.getBoundingClientRect()
+    if (!m.width || m.top < 30 || m.bottom > innerHeight - 30) continue
+    const cx = m.left + m.width / 2, cy = m.top + m.height / 2, d = m.width / 2 + 8
+    for (const [side, x, y] of [['left', cx - d, cy], ['right', cx + d, cy], ['above', cx, cy - d], ['below', cx, cy + d]]) {
+      const hit = document.elementFromPoint(x, y)
+      if (hit && !button.contains(hit) && row.contains(hit)) {
+        out.push(`row "${(row.querySelector('[data-row-title]')?.textContent ?? '').trim().slice(0, 30)}": a tap 8 px ${side} of the checkbox lands on ${hit.closest('[data-row-open]') ? 'the open control' : hit.tagName.toLowerCase()}`)
+        break
+      }
+    }
+    if (out.length >= 3) break
+  }
+  return out
+}
+
 export function smallTargets([rootSel, min]) {
   const root = rootSel ? document.querySelector(rootSel) : document.body
   if (!root) return []

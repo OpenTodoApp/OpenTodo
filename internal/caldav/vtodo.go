@@ -49,7 +49,10 @@ type Task struct {
 	Evening     bool
 	// DayPart is "morning" or "afternoon" (OpenSpec change day-parts), served
 	// as X-OPENTODO-DAY-PART; Evening stays X-OPENTODO-EVENING only.
-	DayPart    string
+	DayPart string
+	// Energy is "deep", "medium" or "low" (OpenSpec change task-energy),
+	// served as X-OPENTODO-ENERGY; empty serves nothing.
+	Energy     string
 	Categories []string
 	ParentUID  string
 	// DependsOn are the UIDs of the task's blockers in the same calendar
@@ -120,7 +123,12 @@ type Inbound struct {
 	Evening *bool
 	// DayPart comes from X-OPENTODO-DAY-PART (day-parts): "morning" or
 	// "afternoon"; nil when the client did not send a known value.
-	DayPart     *string
+	DayPart *string
+	// Energy comes from X-OPENTODO-ENERGY (task-energy): a known level, else
+	// nil. EnergySent is true when the property was there at all, so a VTODO
+	// without it can clear a served energy while an unknown value leaves it.
+	Energy      *string
+	EnergySent  bool
 	Completed   bool
 	CompletedAt *int64 // the COMPLETED time when the client sent one
 	Categories  []string
@@ -264,6 +272,9 @@ func Encode(t Task) []byte {
 		add("X-OPENTODO-EVENING", "TRUE")
 	} else if t.DayPart == "morning" || t.DayPart == "afternoon" {
 		add("X-OPENTODO-DAY-PART", strings.ToUpper(t.DayPart))
+	}
+	if t.Energy == "deep" || t.Energy == "medium" || t.Energy == "low" {
+		add("X-OPENTODO-ENERGY", strings.ToUpper(t.Energy))
 	}
 	if p := AppToICalPriority(t.Priority); p != 0 {
 		add("PRIORITY", strconv.Itoa(p))

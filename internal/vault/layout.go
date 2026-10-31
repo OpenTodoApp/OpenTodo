@@ -242,6 +242,9 @@ func (v *view) line(id string, labels map[string]string, extra string) Line {
 	if part := r.Str("day_part"); !l.Evening && daypart.Stored(part) {
 		l.DayPart = part
 	}
+	if e := r.Str("energy"); validEnergy(e) {
+		l.Energy = e
+	}
 	if p := int(r.Num("priority")); p >= 1 && p <= 3 {
 		l.Priority = p
 	}

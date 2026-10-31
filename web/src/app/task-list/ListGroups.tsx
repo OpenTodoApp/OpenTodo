@@ -10,7 +10,7 @@ import type { Progress } from '../../lib/subtasks'
 import type { HabitStats } from '../../lib/habits'
 import type { RowLayout } from '../../lib/rowLayout'
 import type { FieldDef, Label, Membership, Project, Task } from '../../lib/types'
-import { Button, ListGroupHeader } from '../../ui'
+import { Button, ListGroupHeader, type HueName } from '../../ui'
 import { logWinRequest } from '../signals'
 import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
@@ -42,6 +42,8 @@ export interface RowContext {
   isReadOnly: (task: Task) => boolean
   board: boolean
   manual: boolean
+  /** The list has its own order (a label page, view-manual-order): every row can be picked up to place it. */
+  ownOrder?: boolean
   treeView: boolean
   dropAt: DropAt | null
   draggingId: string | null
@@ -64,6 +66,8 @@ export interface RowContext {
   departures?: ReadonlyMap<string, Departure>
   /** The one row whose details are shown under it (row-expand D4). */
   expandedId?: string | null
+  /** A board card's leading edge under Colour by (calendar-clarity); absent with Colour by Project. */
+  edgeOf?: (task: Task) => HueName
 }
 
 /** The sequence a row plays: a ghost departs, a completed row that stayed rolled forward, Undo restores. */
@@ -148,7 +152,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           shape={c.board ? 'card' : 'row'}
           timeColumn={c.timeColumn}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && !c.isReadOnly(r.task)}
+          draggable={!ghost && !editing && (!!c.ownOrder || !c.isReadOnly(r.task))}
           reorderable={!ghost && c.manual}
           collapsible={tree}
           expandable={!c.board && !ghost}
@@ -164,6 +168,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           handlers={c.actions}
           swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
+          edge={c.board ? c.edgeOf?.(r.task) : undefined}
         />
         {c.addingUnder === r.task.id && !c.board && (
           <li>

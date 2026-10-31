@@ -4,6 +4,8 @@ import { db } from '../lib/db'
 import type { EmailDigest, Task, TimeEntry } from '../lib/types'
 import { DigestView, type DigestState } from './DigestCard'
 import { CloseDay } from './review/CloseDay'
+import { DailyCheck } from './review/DailyCheck'
+import FocusPicker from './focus/FocusPicker'
 import { DoneForToday } from './review/DoneForToday'
 import { PageBody, PageHeader } from '../ui'
 import { ReviewView } from './review/ReviewView'
@@ -141,6 +143,64 @@ export const WeeklyReviewProjectsMaintenance: StoryObj = {
 export const WeeklyReviewAllClear: StoryObj = {
   ...withSeed(async () => {}),
   render: () => <ReviewView userId="u-ada" />,
+}
+
+/**
+ * The Daily check in Bento (bento-daily-check D5, D8): three slot rows above the
+ * list, an empty slot in the faint tone; `filled` is how many slots hold a task.
+ */
+function seedBento(filled: 0 | 2 | 3) {
+  return async () => {
+    seeded.work = await createProject({ name: 'Work', color: HEX.blue })
+    await mutate('user_prefs', 'me', { focus_style: 'bento' })
+    const large = await createTask({ title: 'Write the quarterly report', project_id: seeded.work, due: { date: TODAY }, estimate_minutes: 120 })
+    const medium = await createTask({ title: 'Plan the team offsite', project_id: seeded.work, due: { date: TODAY }, estimate_minutes: 45 })
+    const small = await createTask({ title: 'Call the bank', due: { date: TODAY }, estimate_minutes: 15 })
+    await createTask({ title: 'Reply to Mara about the workshop', due: { date: TODAY } })
+    await createTask({ title: 'Send the invoice to Northwind', project_id: seeded.work, due: { date: '2026-10-12' }, priority: 1 })
+    const ids = filled === 3 ? [large, medium, small] : filled === 2 ? [large, small] : []
+    const slots = filled === 3 ? `L:${large},M:${medium},S:${small}` : filled === 2 ? `L:${large},S:${small}` : ''
+    await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', focus_date: TODAY, focus: ids.join(','), focus_slots: slots, _clock: {} })
+  }
+}
+
+export const DailyCheckBentoEmpty: StoryObj = {
+  name: 'Daily check · Bento empty',
+  ...withSeed(seedBento(0)),
+  render: () => <DailyCheck />,
+}
+
+export const DailyCheckBentoPartly: StoryObj = {
+  name: 'Daily check · Bento partly filled',
+  ...withSeed(seedBento(2)),
+  render: () => <DailyCheck />,
+}
+
+export const DailyCheckBentoFull: StoryObj = {
+  name: 'Daily check · Bento full',
+  ...withSeed(seedBento(3)),
+  render: () => <DailyCheck />,
+}
+
+/** Three tasks by touch (phone-touch-focus): one task in today's focus and the Add to focus row under it. */
+async function seedThreeWithRoom() {
+  await seedBento(0)()
+  await mutate('user_prefs', 'me', { focus_style: 'three' })
+  const first = (await db.tasks.toArray()).find((x) => x.title === 'Call the bank')!
+  await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', focus_date: TODAY, focus: first.id, _clock: {} })
+}
+
+export const DailyCheckThreeWithRoom: StoryObj = {
+  name: 'Daily check · Three tasks with room',
+  ...withSeed(seedThreeWithRoom),
+  render: () => <DailyCheck />,
+}
+
+/** The picker of an empty Large slot (phone-touch-focus D4): today's tasks, the long ones first. */
+export const FocusPickerLargeSlot: StoryObj = {
+  name: 'Focus picker · Large slot',
+  ...withSeed(seedBento(0)),
+  render: () => <FocusPicker request={{ mode: 'task', slot: 'L' }} onClose={() => {}} />,
 }
 
 async function seedCloseDay() {

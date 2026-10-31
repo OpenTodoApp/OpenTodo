@@ -6,11 +6,13 @@ import { usePlace } from '../../lib/locations'
 import { blockedMap } from '../../lib/dependencies'
 import { useFlowView } from '../../lib/useFlow'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
+import { UPCOMING_FILTER_KEY, useQueryFilter } from '../calendar/queryFilter'
 import { habitStatsMap } from '../../lib/habits'
 import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
 import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
 import { useListDisplay } from './useListDisplay'
+import { orderRank } from '../../lib/viewOrder'
 import { useAccountRowLayout } from '../../lib/rowLayout'
 import { useUserPrefsRow } from '../../lib/localData'
 import { dayPartsOn } from '../../lib/dayParts'
@@ -25,6 +27,7 @@ import { inLater } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
+import { useSlotted } from '../../lib/slots'
 import type { Route } from '../router'
 import { useApplicableFields } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
@@ -146,7 +149,13 @@ export function useListModel(route: ListRoute, userId?: string) {
   const { duration, filterKey } = filter
   // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
   const viewTasks = useMemo(() => tasksForView(route, allTasks, projects, today, userId), [allTasks, projects, route, today, zone, userId])
-  const tasks = useMemo(() => (!duration || !filterKey ? viewTasks : viewTasks.filter(durationPredicate(duration))), [viewTasks, duration, filterKey])
+  // Upcoming's query filter (calendar-clarity D4), under the duration filter; per device, on local rows.
+  const upcoming = useQueryFilter(UPCOMING_FILTER_KEY, allTasks)
+  const queryTest = route.view === 'upcoming' ? upcoming.test : null
+  const tasks = useMemo(() => {
+    const byDuration = !duration || !filterKey ? viewTasks : viewTasks.filter(durationPredicate(duration))
+    return queryTest ? byDuration.filter(queryTest) : byDuration
+  }, [viewTasks, duration, filterKey, queryTest])
 
   // Completed renders a page of the logbook at a time; a new route starts again.
   const [logbookLimit, setLogbookLimit] = useState(LOGBOOK_PAGE)
@@ -180,6 +189,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const display = useMemo(() => (dGroup && dSort && dDir && dRows ? { groupBy: dGroup, sortBy: dSort, sortDir: dDir, rowLayout: dRows } : undefined), [dGroup, dSort, dDir, dRows])
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
   const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list')
+  // A label page's own manual order (view-manual-order D1): the rank of each placed task.
+  const labelOrder = labelRow?.manual_order
+  const manualOrder = useMemo(() => (route.view === 'label' ? orderRank(labelOrder) : undefined), [route.view, labelOrder])
 
   // Today grouped by part of the day (day-parts D3): the account's synced choice.
   const dayParts = dayPartsOn(useUserPrefsRow())
@@ -193,16 +205,18 @@ export function useListModel(route: ListRoute, userId?: string) {
   const doneToday = closed.doneToday ?? undefined
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, dayParts, closedList, doneToday,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, planned, display, labels, manualOrder, dayParts, closedList, doneToday,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, dayParts, closedList, doneToday])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, planned, display, labels, manualOrder, dayParts, closedList, doneToday])
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // The list's own rows: the Inbox's planned group is not part of the Inbox (inbox-planned-group D2).
   // Nor is Today's Done today group part of Today's open list (today-closed-list D6).
   const ownRows = useMemo(() => (planned.length || doneToday?.length ? groups.filter((g) => g.key !== 'planned' && g.key !== 'done').flatMap((g) => g.rows) : rows), [planned, doneToday, groups, rows])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
-  const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task)), [board, rows])
+  // A task a calendar slot holds shows the slot's start there (calendar-slots D8).
+  const slotted = useSlotted()
+  const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task), slotted), [board, rows, slotted])
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups").
   const doneBySection = useMemo(() => completedBySection(allTasks, projectId, layout.sectionMap), [allTasks, projectId, layout.sectionMap])
@@ -229,6 +243,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups, rows, ownRows, siblingPos, timeColumn, doneBySection,
     showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed,
+    queryFilter: route.view === 'upcoming' ? upcoming : null,
   }
 }
 

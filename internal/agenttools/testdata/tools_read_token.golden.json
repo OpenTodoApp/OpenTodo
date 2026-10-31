@@ -282,6 +282,176 @@
       }
     },
     {
+      "name": "list_notes",
+      "title": "List notes",
+      "description": "List notes, newest change first: standalone notes, task notes (a task with a description; completed tasks are marked) and project notes (archived projects are marked). Each has a short preview; get_note returns the whole text. Deleted notes are left out. Paged: pass next_cursor back as cursor.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "description": "next_cursor from a previous result, to get the following page.",
+            "type": "string"
+          },
+          "label_id": {
+            "description": "Only notes carrying this label (id, or name case-insensitive); project notes carry none.",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Maximum number of notes to return (default 50, maximum 200).",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "description": "Only notes of this project (see list_projects): its standalone notes, its tasks' notes and its own note.",
+            "type": "string"
+          },
+          "source": {
+            "default": "all",
+            "description": "Which notes: note (standalone notes), task (task notes), project (project notes) or all (default).",
+            "enum": [
+              "all",
+              "note",
+              "task",
+              "project"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List notes"
+      }
+    },
+    {
+      "name": "search_notes",
+      "title": "Search notes",
+      "description": "Find notes whose title and text contain every word of the query (case and accents ignored; quote a phrase to match it as one), title matches first, then the most matched words, then the newest. Each result has a snippet around the first match, with the matched words marked. Not available on an end-to-end encrypted account.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "description": "next_cursor from a previous result, to get the following page.",
+            "type": "string"
+          },
+          "label_id": {
+            "description": "Only notes carrying this label (id, or name case-insensitive); project notes carry none.",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Maximum number of notes to return (default 50, maximum 200).",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "description": "Only notes of this project (see list_projects): its standalone notes, its tasks' notes and its own note.",
+            "type": "string"
+          },
+          "query": {
+            "description": "Words to look for.",
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "source": {
+            "default": "all",
+            "description": "Which notes: note (standalone notes), task (task notes), project (project notes) or all (default).",
+            "enum": [
+              "all",
+              "note",
+              "task",
+              "project"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "Search notes"
+      }
+    },
+    {
+      "name": "get_note",
+      "title": "Get a note",
+      "description": "Get one note: its title, its Markdown text, the text appended to it that no device has merged yet (oldest first), project, labels, body_version (pass it to update_note as base_version) and when it last changed.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Note id (or the task or project id with kind).",
+            "type": "string"
+          },
+          "kind": {
+            "default": "note",
+            "description": "What id names: a standalone note (default), a task (its note) or a project (its note).",
+            "enum": [
+              "note",
+              "task",
+              "project"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "Get a note"
+      }
+    },
+    {
+      "name": "list_slots",
+      "title": "List slots",
+      "description": "List the user's calendar slots (one block on the Day and Week grid holding a checklist of small tasks, such as \"Admin\" on Wednesday 16:00-16:45) on the days from..to, with floating wall times, the length in minutes and the tasks each holds in order (open first). Default: the seven days from today in timezone; at most 31 days. A task in a slot is an ordinary task due on the slot's day without a time.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "description": "First day (YYYY-MM-DD). Default: today in timezone.",
+            "format": "date",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Last day (YYYY-MM-DD), at most 30 days after from. Default: six days after from.",
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List slots"
+      }
+    },
+    {
       "name": "list_time_entries",
       "title": "List time entries",
       "description": "List the time entries the user can read (their own and other members' on shared tasks), newest first, with minutes and the task. from and to are local days in timezone; running: true returns only the entry that is running now. Paged: pass next_cursor back as cursor.",

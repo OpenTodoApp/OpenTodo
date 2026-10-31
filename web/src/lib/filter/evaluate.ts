@@ -12,6 +12,7 @@ import { originMatches, originOf } from '../taskOrigin'
 import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
 import { t } from '../i18n'
 import { dayPartOf } from '../dayParts'
+import { energyOf } from '../energy'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -360,8 +361,19 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         const needle = n.text.toLocaleLowerCase()
         return (task) => task.title.toLocaleLowerCase().includes(needle) || task.description.toLocaleLowerCase().includes(needle)
       }
+      // The note is the task's description, its Markdown projection; on an encrypted
+      // account the decrypted local copy (notes-overview D5, D8). Never the title.
+      case 'notes': {
+        const needle = n.text.toLocaleLowerCase()
+        return (task) => (task.description ?? '').toLocaleLowerCase().includes(needle)
+      }
       case 'origin':
         return (task) => originMatches(originOf(task), n.value)
+      // A value this client does not know reads as none (task-energy D5).
+      case 'energy': {
+        const want = n.value
+        return (task) => energyOf(task) === want
+      }
       case 'workspace': {
         const ids = new Set((ctx.workspaces ?? []).filter((w) => nameKey(w.name) === nameKey(n.name)).map((w) => w.id))
         const of = ctx.workspaceOf
@@ -403,6 +415,11 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'habit': return (task) => task.habit === true
           case 'origin': return (task) => originOf(task) !== null
           case 'no origin': return (task) => originOf(task) === null
+          case 'energy': return (task) => energyOf(task) !== null
+          case 'no energy': return (task) => energyOf(task) === null
+          // A note of only whitespace is no note (notes-overview D5).
+          case 'notes': return (task) => (task.description ?? '').trim() !== ''
+          case 'no notes': return (task) => (task.description ?? '').trim() === ''
           // At least one minute of live tracked time (time-tracking D9).
           case 'tracked': return (task) => (ctx.tracked?.get(task.id) ?? 0) >= 1
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }

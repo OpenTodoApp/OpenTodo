@@ -39,15 +39,19 @@ The client SHALL provide Day and Week views as one Calendar destination, reachab
 - **THEN** the current week renders with every timed task as a block and date-only tasks in each day's lane
 
 ### Requirement: Tasks as calendar blocks
-An open task with a due date and time SHALL appear as a block at that time, sized by its estimate, or by a 30-minute default rendered distinctly when unestimated. Tasks due that day without a time SHALL appear in an "unscheduled" lane above the grid. A task block SHALL be drawn as a soft fill of its project's palette hue (the Inbox hue for a task without a project) with a 3 px edge of the solid hue on its leading side and the strong text tone for its title, never as a white box with a coloured border; its edge SHALL meet 3:1 against the grid. A block on a day before today, and a block whose task is a completed occurrence shown by a view, SHALL be dimmed to the faint tone with its fill lightened, so the past reads as past at a glance. Today's grid SHALL carry one now line across its column at the current time, updated while the view is open, and no other day SHALL carry one. The selected block SHALL keep the accent ring as the one selection style.
+A visible task (open by default, also completed when Show completed tasks is on) with a due date and time SHALL appear as a block at that time, sized by its estimate, or by a 30-minute default rendered distinctly when unestimated. Tasks due that day without a time SHALL appear in an "unscheduled" lane above the grid. A task block SHALL be drawn as a soft fill of its project's palette hue (the Inbox hue for a task without a project) with a 3 px edge of the solid hue on its leading side and the strong text tone for its title, never as a white box with a coloured border; its edge SHALL meet 3:1 against the grid. A block on a day before today, and a block whose task is a completed occurrence shown by a view, SHALL be dimmed to the faint tone with its fill lightened, so the past reads as past at a glance. Today's grid SHALL carry one now line across its column at the current time, updated while the view is open, and no other day SHALL carry one. The selected block SHALL keep the accent ring as the one selection style. Blocks and lanes SHALL render from local data while offline and SHALL reflect converged task rows after sync.
 
 #### Scenario: Unestimated block
 - **WHEN** a task due today at 10:00 has no estimate
 - **THEN** it appears as a 30-minute block with a dashed edge and no duration label, and its tooltip explains the dashed edge and offers Set estimate
 
 #### Scenario: Completed tasks
-- **WHEN** a task shown as a block is completed
+- **WHEN** a task shown as a block is completed while Show completed tasks is off
 - **THEN** it leaves the grid and the day's planned total decreases accordingly
+
+#### Scenario: Completed task stays visible when opted in
+- **WHEN** a task shown as a block is completed while Show completed tasks is on
+- **THEN** it stays at the same due date and time with a struck-through title and an accessible completed status, and the day's planned total decreases accordingly
 
 #### Scenario: Capacity as a bar
 - **WHEN** a day has 2 h 50 planned of 8 h with five unestimated tasks
@@ -344,3 +348,107 @@ Apply SHALL write every move, and with Move to tomorrow every unfit task's due d
 #### Scenario: Encrypted account
 - **WHEN** the account is end-to-end encrypted and the user applies a re-plan
 - **THEN** the same due operations are written as on any account, and no content is read or changed
+
+### Requirement: Add with the pointer in Day and Week
+A double-click on an empty part of the Day or Week grid (no block, event, deadline chip or frame title under the pointer) SHALL open the add dialog with that date and the slot's 15-minute start, and a double-click in a day's unscheduled lane SHALL open it with the date only. A right-click on the same places, or a long press of 500 ms on touch, SHALL open a menu at that place with Add task here… and the entries other calendar features add there. A fine pointer SHALL see a faint highlight of the 15-minute slot under it. `q` in Day and Week SHALL open the same dialog for the focused day without a time, so no addition needs a pointer. The task SHALL be created locally with no network round trip and synced like any new task.
+
+#### Scenario: Double-click a slot
+- **WHEN** the user double-clicks Tuesday 14:30 in the Week, types "Call the bank" and presses Enter
+- **THEN** a task "Call the bank" due Tuesday at 14:30 appears as a block there at once
+
+#### Scenario: Context menu
+- **WHEN** the user right-clicks Wednesday 09:00
+- **THEN** a menu opens at the pointer with Add task here…, and choosing it opens the dialog with Wednesday 09:00
+
+#### Scenario: Long press on a phone
+- **WHEN** on a touch screen the user long-presses an empty slot of the Day view
+- **THEN** the same menu opens as a bottom sheet, while a long press on a task block keeps its existing behaviour
+
+#### Scenario: Keyboard
+- **WHEN** a Week is shown with a block on Thursday selected and the user presses `q`
+- **THEN** the add dialog opens for Thursday without a time, and a typed "at 4pm" sets 16:00
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user double-clicks a slot and adds a task
+- **THEN** the block appears at once and the task is uploaded on the next sync
+
+### Requirement: Colour by
+The Calendar's overflow menu SHALL offer Colour by with Project (default), Label and Priority, applying to Day, Week, Month and Plan, stored per device and never synced. With Label, a task SHALL take the hue of the first of its labels, in the user's label order, whose colour is not the default grey, else the neutral hue; with Priority, priorities 1 to 3 SHALL take the priority hues and priority 4 the neutral hue. The fill, edge, contrast, dimming and selection rules of task blocks SHALL apply unchanged to the chosen hue. Event blocks and frame bands SHALL keep their own look. A missing or unknown stored value SHALL read as Project.
+
+#### Scenario: Colour by label
+- **WHEN** the user chooses Colour by Label and a task carries "errand" (orange) and "call" (blue), with "call" first in the label order
+- **THEN** its block is drawn in the blue hue, and a task without labels in the neutral hue
+
+#### Scenario: Colour by priority
+- **WHEN** the user chooses Colour by Priority
+- **THEN** priority 1 blocks take the priority-1 hue and priority 4 blocks the neutral hue, each with a 3:1 edge against the grid in light and dark
+
+#### Scenario: Per device
+- **WHEN** the laptop colours by label
+- **THEN** the phone's calendar still colours by project
+
+### Requirement: Calendar layout of a project
+A project's layout switch SHALL offer Calendar after Timeline, showing the Calendar in its last used mode (Day, Week, Month or Plan) narrowed to the project's open tasks and those of its sub-projects, inside the project page, with the planning list opening on the project as its source. The narrowing SHALL combine with an active calendar filter and SHALL not be shown as a chip. `v` SHALL cycle List, Board, Timeline and Calendar. The layout choice SHALL be stored per device like the other layouts, an older device reading it as List. The view SHALL render from local data and work offline.
+
+#### Scenario: A project's week
+- **WHEN** the user switches the project "Home" to Calendar while the last Calendar mode was Week
+- **THEN** the project page shows this week with only the tasks of "Home" and its sub-projects as blocks, and events of subscribed calendars as usual
+
+#### Scenario: Cycle with v
+- **WHEN** a project shows its Timeline and the user presses `v`
+- **THEN** the project shows its Calendar, and pressing `v` again shows its List
+
+#### Scenario: Older device
+- **WHEN** a device without this change opens a project stored with the Calendar layout
+- **THEN** it shows the project's List
+
+### Requirement: Optional completed tasks in the Calendar
+The Calendar SHALL have a keyboard-accessible Show completed tasks toggle control in its existing header actions (a button on wide screens, a checked item in More actions on smaller screens), off by default, shared by Day, Week, Month and Plan. Its label SHALL remain Show completed tasks in both states; the pressed or checked state SHALL communicate whether completed tasks are shown. The choice SHALL be remembered only on this device across navigation and reloads and SHALL work offline. Enabling it SHALL include live completed tasks on their due date and time in the viewer's zone, with a struck-through title and an accessible completed status in blocks, lanes, overflow lists and phone agendas. Deleted tasks, undated tasks and tasks in archived projects SHALL stay excluded. Completed tasks SHALL NOT count towards remaining planned capacity, unestimated work or recurring projection sources. Completed tasks in standalone rows and blocks SHALL remain selectable and openable, but calendar drag, resize, placement and completion shortcuts SHALL NOT change them. The control SHALL apply to standalone calendar task rows and blocks; a slot SHALL retain its own checklist, checked rows, counts and container actions as specified by calendar-slots. Completion SHALL NOT change edit permissions or cause a task to be announced as read-only; that wording SHALL reflect project permissions. Changing visibility SHALL NOT create task operations; task completion and reopening SHALL continue through the ordinary op log, and devices with identical task rows and the same visibility choice SHALL show the same tasks after sync.
+
+#### Scenario: Default calendar
+- **WHEN** the user opens a calendar mode without a saved visibility choice
+- **THEN** the Show completed tasks button is not pressed and only open dated tasks appear as standalone rows or blocks
+
+#### Scenario: Toggle once for all modes, offline
+- **WHEN** the user enables Show completed tasks offline, switches through Day, Week, Month and Plan, and reloads
+- **THEN** the button stays pressed and each mode includes completed dated tasks without a network request or task operation
+
+#### Scenario: Scheduled date rather than completion date
+- **WHEN** a task due yesterday at 09:00 was completed today and Show completed tasks is on
+- **THEN** it appears yesterday at 09:00 with a struck-through title and a completed status
+
+#### Scenario: Inspect completed work without rescheduling it
+- **WHEN** the user selects a completed task with Show completed tasks on and tries calendar arrows, resize, placement or the completion shortcut
+- **THEN** its due date, estimate and completion stay unchanged and no task operation is queued, while Enter still opens its details
+
+#### Scenario: Hide completed work again
+- **WHEN** the user turns Show completed tasks off
+- **THEN** standalone completed task rows disappear immediately from all calendar modes and their overflow counts without changing the task data or the remaining planned capacity
+
+#### Scenario: Completion received from another device
+- **WHEN** a completion or reopening operation arrives from another device
+- **THEN** the task's visibility and title update from the converged local row according to this device's visibility choice
+
+#### Scenario: Completed work with counted meetings
+- **WHEN** Count meetings in capacity is on, a day has 1 hour of open task estimates, 3 hours of completed task estimates and 2 hours of busy meetings, and the user toggles Show completed tasks
+- **THEN** Day, Week and Month keep the total at `3h / 8h`, with the completed tasks visible only when Show completed tasks is on
+
+#### Scenario: Stable visibility label
+- **WHEN** the user enables or disables completed tasks with the button or checked menu item
+- **THEN** the label stays Show completed tasks, and the pressed or checked state is true only while completed tasks are shown
+
+#### Scenario: Completion does not remove edit permissions
+- **WHEN** a user who may edit a task shows its completed row in Month or Plan
+- **THEN** its completed status is announced without read-only wording, calendar scheduling stays disabled, and opening details retains the ability to edit or reopen it
+
+#### Scenario: A shared-project viewer stays read-only
+- **WHEN** a viewer of a shared project shows a completed task in Month or Plan
+- **THEN** the row announces both its completed status and its actual read-only permissions
+
+#### Scenario: Re-plan ignores visible completed work
+- **WHEN** Show completed tasks is on and a day has one missed open block and one completed block
+- **THEN** Re-plan counts and moves only the open task, while the completed task stays unchanged
+
+#### Scenario: Slot checklist stays independent
+- **WHEN** the user toggles Show completed tasks with one open and one completed task held in a slot and another completed task outside it
+- **THEN** the slot keeps its checklist, checked status and capacity in both states, only the standalone completed task appears or disappears, and slot movement and resizing remain available

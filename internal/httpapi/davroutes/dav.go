@@ -432,6 +432,7 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 	ct.Start = idOf(t["start"])
 	ct.Evening = string(t["evening"]) == "true"
 	ct.DayPart = daypart.OfRow(t)
+	ct.Energy = idOf(t["energy"])
 	if !isNullish(t["completed_at"]) {
 		c := int64(numberOf(t["completed_at"]))
 		ct.CompletedAt = &c

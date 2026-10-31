@@ -116,21 +116,34 @@ type propWorld struct {
 	shared  bool
 }
 
-// exchange sends the outbox (shuffled, in up to two requests), handles the
-// clock refusals like the client and pulls every page with a random size.
+// exchange sends the outbox in up to two requests, handles the clock refusals
+// like the client and pulls every page with a random size. Like the client
+// (sync.ts sends the outbox oldest first, BATCH ops per request), the first
+// request holds the older part of the outbox; the order inside a request is
+// shuffled, which the server must not depend on. Splitting a shuffled outbox
+// instead would restamp a refused newer edit before a refused older one of the
+// same field and hand the older edit the later timestamp, an order the client
+// never sends (issue #651).
 func (w *propWorld) exchange(d *propDevice) {
+	w.t.Helper()
+	cut := 0
+	if len(d.outbox) > 1 {
+		cut = w.rng.IntN(len(d.outbox))
+	}
+	w.exchangeSplit(d, cut)
+}
+
+// exchangeSplit is exchange with the first request holding the outbox's
+// oldest cut ops.
+func (w *propWorld) exchangeSplit(d *propDevice, cut int) {
 	w.t.Helper()
 	sent := d.outbox
 	d.outbox = nil
-	w.rng.Shuffle(len(sent), func(i, j int) { sent[i], sent[j] = sent[j], sent[i] })
-	cut := 0
-	if len(sent) > 1 {
-		cut = w.rng.IntN(len(sent))
-	}
 	for _, batch := range [][]Op{sent[:cut], sent[cut:]} {
 		if len(batch) == 0 {
 			continue
 		}
+		w.rng.Shuffle(len(batch), func(i, j int) { batch[i], batch[j] = batch[j], batch[i] })
 		res, err := w.s.Apply(w.ctx, d.user, batch)
 		if err != nil {
 			w.t.Fatal(err)
@@ -152,8 +165,12 @@ func (w *propWorld) exchange(d *propDevice) {
 			continue
 		}
 		// hlcClockRefused, then restampSkewed: one new timestamp per old one.
+		// The clock restarts only when it is over half the window ahead, so the
+		// stamps of the previous request's refusals stay behind the next ones.
 		d.observeServerTime(w.now, serverTime)
-		d.last = min(d.last, serverTime)
+		if d.last > serverTime+MaxFutureSkewMs/2 {
+			d.last = serverTime
+		}
 		slices.SortStableFunc(refused, func(a, b Op) int { return int(a.TS - b.TS) })
 		fresh := map[int64]int64{}
 		for _, o := range refused {
@@ -221,6 +238,16 @@ func (w *propWorld) step(i int) {
 			id = entity[:1] + "1"
 		}
 		d.edit(w.now, entity, id, map[string]string{"workspace_id": w.workspace()})
+	case r == 6 && slices.Contains(d.knows("note"), "n0") && (d.user == "alice" || w.shared):
+		// The project's standalone note (notes-overview), once the device holds
+		// it (an edit before that would create it elsewhere): its title, text
+		// and labels converge like a task's.
+		fields := map[string]string{"title": strconv.Quote(fmt.Sprintf("%s note %d", d.id, i))}
+		if w.rng.IntN(2) == 0 {
+			fields["labels"] = []string{`[]`, `["l1"]`}[w.rng.IntN(2)]
+			fields["description"] = strconv.Quote(fmt.Sprintf("- %s", d.id))
+		}
+		d.edit(w.now, "note", "n0", fields)
 	case r < 9:
 		w.exchange(d)
 	default:
@@ -258,6 +285,7 @@ func runConvergence(t *testing.T, seed uint64) {
 	a1.edit(w.now, "project", "p", map[string]string{"name": `"Home"`})
 	a1.edit(w.now, "label", "l1", map[string]string{"name": `"errand"`})
 	a1.edit(w.now, "view", "v1", map[string]string{"name": `"Soon"`})
+	a1.edit(w.now, "note", "n0", map[string]string{"title": `"Plan"`, "project_id": `"p"`})
 	for i := range 3 {
 		a1.edit(w.now, "task", fmt.Sprintf("t%d", i), map[string]string{"title": `"shared"`, "project_id": `"p"`})
 		b1.edit(w.now, "task", fmt.Sprintf("b%d", i), map[string]string{"title": `"bob's"`})
@@ -379,5 +407,45 @@ func TestConvergenceProperty(t *testing.T) {
 		seed := base + uint64(i)
 		t.Logf("seed %d (replay with OPENTODO_PROPERTY_SEED=%d)", seed, seed)
 		runConvergence(t, seed)
+	}
+}
+
+// Issue #651 (seed 1793402778061697617), reduced: a device two hours fast
+// edits one field twice, both edits are refused for the clock and go out in
+// two requests, oldest first as the client sends them. The restamps keep the
+// edits' order, so the later edit wins on the server and on the device.
+func TestConvergenceRefusedEditsAcrossRequests(t *testing.T) {
+	t.Parallel()
+	s := newTestService(t)
+	w := &propWorld{t: t, rng: rand.New(rand.NewPCG(651, 651)), s: s, ctx: WithClockSkewRefusal(context.Background()), now: 1_800_000_000_000}
+	s.now = func() time.Time { return time.UnixMilli(w.now) }
+	if _, err := s.db.Exec(`INSERT INTO users(id,email,name,password_hash,created_at) VALUES('bob','bob@example.com','bob','h',1)`); err != nil {
+		t.Fatal(err)
+	}
+	joinWorkspace(t, s.db, "w-work", "bob")
+	d := &propDevice{id: "B1", user: "bob", skew: 7_200_000, cells: map[string]propCell{}}
+	d.edit(w.now, "task", "b0", map[string]string{"title": `"bob's"`})
+	d.edit(w.now, "task", "b0", map[string]string{"workspace_id": "null", "priority": "1"})
+	w.now += 130_000
+	d.edit(w.now, "task", "b0", map[string]string{"workspace_id": `"w-work"`, "priority": "2"})
+	// Outbox: title, then priority and workspace_id of each edit. The first
+	// request takes the title and the first edit, the second the later edit.
+	w.exchangeSplit(d, 3)
+	w.exchange(d)
+	if len(d.outbox) > 0 {
+		t.Fatalf("outbox not drained: %+v", d.outbox)
+	}
+	e, err := s.Get(w.ctx, "bob", "task", "b0")
+	if err != nil || e == nil {
+		t.Fatalf("task: %v", err)
+	}
+	for _, f := range []string{"workspace_id", "priority"} {
+		c := d.cells[propKey("task", "b0", f)]
+		if got := compactJSON(t, e[f]); got != c.value {
+			t.Errorf("%s: device %s, server %s", f, c.value, got)
+		}
+	}
+	if got := compactJSON(t, e["workspace_id"]); got != `"w-work"` {
+		t.Errorf("workspace_id = %s, want the later edit's \"w-work\"", got)
 	}
 }

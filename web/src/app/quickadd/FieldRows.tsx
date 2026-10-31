@@ -13,14 +13,14 @@ import { FIELD_ICON, FIELD_TOKEN, type FieldKind, type FieldRow, projectColor } 
 
 export const FIELD_NAME = translatedMap<FieldKind>({
   when: msg('When'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'),
-  deadline: msg('Deadline'), recurrence: msg('Repeats'), reminder: msg('Reminder'), spent: msg('Time spent'),
+  deadline: msg('Deadline'), recurrence: msg('Repeats'), reminder: msg('Reminder'), spent: msg('Time spent'), energy: msg('Energy'),
 })
 
 /** What an unset row says: how to set it. */
 export function fieldHint(kind: FieldKind): string {
   return kind === 'when' ? t('none · type a day or a date') : t('none · type “{token}”', { token: EXAMPLE[kind] ?? '' })
 }
-const EXAMPLE: Partial<Record<FieldKind, string>> = { project: '#', label: '@', priority: 'p1', estimate: '+30m' }
+const EXAMPLE: Partial<Record<FieldKind, string>> = { project: '#', label: '@', priority: 'p1', estimate: '+30m', energy: '~deep' }
 
 // Literal classes, so the stylesheet keeps them: the P1–P4 ring colours.
 const RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'border-p3', 4: 'border-p4' }

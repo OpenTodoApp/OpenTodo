@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Task, TaskLocation, TimeEntry, UserPrefs, View,
+  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, Task, TaskLocation, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -91,6 +91,12 @@ export interface TaskFields {
    * flag set reads as Evening whatever this holds. Not content; additive.
    */
   day_part?: string | null
+  /**
+   * The energy the task asks for (OpenSpec change task-energy, design
+   * D1): "" (none), "deep", "medium" or "low". Chosen from a menu, never
+   * written text, so not content (D2); additive.
+   */
+  energy?: string
   /**
    * The tasks this one waits for, in its own sharing scope (OpenSpec change
    * task-dependencies): one whole-list register; the resolver refuses ids of
@@ -217,6 +223,41 @@ export interface FieldDefFields {
 }
 
 /**
+ * note: a standalone note (OpenSpec change notes-overview, design D1), not a
+ * task: it never shows in task lists, counts, calendars, filters or
+ * reminders. It lives in its project's sharing scope like a task, in the
+ * author's personal scope without a project (design D2). Its pending
+ * appends are the `appends.<id>` family.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface NoteFields {
+  /** The note's title; an empty one reads "Untitled note". */
+  title?: string
+  /**
+   * The note itself: Markdown in description, the mergeable document in
+   * notes_doc, written as a pair, as on tasks and projects.
+   */
+  notes_doc?: string
+  description?: string
+  /** The note's project, or null for a personal note; decides its scope. */
+  project_id?: string | null
+  /** Label ids, one whole-list register like task.labels. */
+  labels?: string[]
+  /**
+   * Written at creation (the creation time) and kept for a later manual
+   * order; the Notes page sorts by when the note last changed.
+   */
+  position?: number
+  created_at?: number
+  deleted_at?: number | null
+  /**
+   * The workspace of a note without a project, or null for the default;
+   * a note with a project follows its project, as task.workspace_id.
+   */
+  workspace_id?: string | null
+}
+
+/**
  * task.labels holds label ids (a convention on the string array, not a format change).
  * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
  */
@@ -239,6 +280,13 @@ export interface LabelFields {
   sort_dir?: string
   /** The label page's row layout (row-layouts D1); "" follows the account's. */
   row_layout?: string
+  /**
+   * The label page's own manual order (OpenSpec change view-manual-order,
+   * design D1, D2): the ids of the tasks placed by hand, in order; tasks
+   * not listed follow by position. One whole-list register like
+   * view.panels, never a task's position. Not content.
+   */
+  manual_order?: string[]
 }
 
 /**
@@ -285,6 +333,12 @@ export interface ViewFields {
    * unknown name as the default icon.
    */
   icon?: string | null
+  /**
+   * A list view's own manual order (OpenSpec change view-manual-order,
+   * design D1, D2): the ids of the tasks placed by hand, in order; tasks
+   * not listed follow by position. One whole-list register. Not content.
+   */
+  manual_order?: string[]
 }
 
 /**
@@ -419,6 +473,29 @@ export interface FrameFields {
   from_date?: string | null
   until_date?: string | null
   position?: number
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/**
+ * slot: several small tasks in one calendar block (OpenSpec change
+ * calendar-slots, design D1), such as "Admin" on Wednesday from 16:00 for 45
+ * minutes. Personal like a frame, with ids unique on the server; membership
+ * lives here, never on the task, so shared tasks are unchanged for other
+ * members. title is a content field.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface SlotFields {
+  title?: string
+  /** The day it is on (floating); a slot without a date is never drawn. */
+  date?: string | null
+  /** Floating wall time "HH:MM". */
+  start?: string
+  /** Length in minutes, never null and at most MaxSlotMinutes (clients offer 15 to 480 in 15-minute steps). */
+  minutes?: number | null
+  /** Ordered task ids, at most MaxSlotTasks, one whole-list value like task.blocked_by; ids of tasks not shown are kept. */
+  task_ids?: string[]
+  color?: string
   created_at?: number
   deleted_at?: number | null
 }
@@ -674,6 +751,32 @@ export interface UserPrefsFields {
    * companion and first and as hidden in lists.
    */
   today_done?: string
+  /**
+   * Today's focus style (OpenSpec change bento-daily-check, design D4):
+   * "bento" makes the focus a Large, a Medium and a Small slot; empty or
+   * unknown reads as Three tasks and is kept.
+   */
+  focus_style?: string
+  /**
+   * Energy levels (OpenSpec change task-energy, design D3): "on" offers
+   * a task's energy in the task page, the row menu and quick add; clients
+   * read an empty or unknown value as off and keep the stored value.
+   */
+  energy?: string
+  /**
+   * The Bento order (bento-daily-check D4, D6): "summit" lists Medium,
+   * Large, Small; empty or unknown reads as Frog (Large, Medium, Small)
+   * and is kept.
+   */
+  bento_order?: string
+  /**
+   * The Formatting button (OpenSpec change notes-toolbar-desktop, design
+   * D4): "off" hides the Formatting toggle beside notes and in the
+   * comment composer on a fine pointer; empty, "on" or any other value
+   * shows it, and clients keep the stored value. Whether the row is open
+   * is device storage and never synced. Settings, never content.
+   */
+  formatting_toggle?: string
 }
 
 /**
@@ -724,6 +827,13 @@ export interface ReviewFields {
    */
   slots_date?: string
   slots?: string
+  /**
+   * The Bento slots of today's focus (OpenSpec change bento-daily-check,
+   * design D3): "L:<id>,M:<id>,S:<id>", any subset, written in the same
+   * batch as focus and focus_date; an entry counts only for an id in
+   * focus. Task ids and fixed letters only, never content.
+   */
+  focus_slots?: string
 }
 
 /** The row a field op creates when its entity is new: one key per op field, a family (`fields.<id>`) in one key named after its prefix. */
@@ -732,7 +842,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',
@@ -740,11 +850,14 @@ export const OP_DEFAULTS = {
   field: {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<FieldDef, 'id' | '_clock'>,
+  note: {
+    title: '', notes_doc: '', description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, workspace_id: null, appends: {},
+  } satisfies Omit<Note, 'id' | '_clock'>,
   label: {
-    name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '',
+    name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '', manual_order: [],
   } satisfies Omit<Label, 'id' | '_clock'>,
   view: {
-    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null, icon: null,
+    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
     task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null,
@@ -764,6 +877,9 @@ export const OP_DEFAULTS = {
   frame: {
     title: '', weekdays: '', start: '09:00', end: '10:00', color: '#64748b', source: '', from_date: null, until_date: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Frame, 'id' | '_clock'>,
+  slot: {
+    title: '', date: null, start: '09:00', minutes: 30, task_ids: [], color: '#64748b', created_at: 0, deleted_at: null,
+  } satisfies Omit<Slot, 'id' | '_clock'>,
   place: {
     name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Place, 'id' | '_clock'>,
@@ -771,10 +887,10 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '',
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   review: {
-    completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '',
+    completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',
   } satisfies Omit<Review, 'id' | '_clock'>,
 }
 
@@ -784,6 +900,7 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   task: ['title', 'description', 'ical_extra', 'notes_doc', 'origin', 'location'],
   section: ['name'],
   field: ['name', 'options'],
+  note: ['title', 'notes_doc', 'description'],
   label: ['name'],
   view: ['name', 'query'],
   comment: ['body', 'guest_name'],
@@ -791,6 +908,7 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   time_entry: ['note'],
   rule: ['name'],
   frame: ['title'],
+  slot: ['title'],
   place: ['name', 'address', 'geo'],
   review: ['tomorrow_note'],
 }

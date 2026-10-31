@@ -93,3 +93,16 @@ export function summarizeVersion(v: Pick<Version, 'changes'>): string {
   const text = formatList(verbs, true)
   return text[0].toUpperCase() + text.slice(1)
 }
+
+/** Note versions received this long ago are kept one per UTC day (OpenSpec op-log-compaction). */
+export const NOTES_KEPT_DAILY_AFTER_MS = 30 * 86_400_000
+
+/**
+ * The first version or change set (newest first) that changes the note and is older
+ * than 30 days: History says above it that older note versions are kept one per day.
+ * A client rule from the change set's time; undefined when there is none.
+ */
+export function firstDailyNoteVersion<V extends { ts: number; changes: readonly { field: string }[] }>(versions: readonly V[], now: number): V | undefined {
+  const cutoff = now - NOTES_KEPT_DAILY_AFTER_MS
+  return versions.find((x) => x.ts < cutoff && x.changes.some((c) => c.field === 'description' || c.field === 'notes_doc'))
+}

@@ -11,7 +11,9 @@ order: 61
 
 <picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
 
-The calendar shows your dated tasks by day, week, month or as a two-week plan. Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
+The calendar shows dated tasks by day, week, month or as a two-week plan. Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
+
+[Completed](completed-on-the-calendar.md "Show completed tasks on the calendar").
 
 ## Open the calendar
 
@@ -21,13 +23,16 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan*
 - A timed task without an estimate gets a 30-minute block with a dashed edge.
 - Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day.
 - Past days are dimmed.
-- A red line marks the current time, in today's column.
-- **+N** shows a day's other all-day events.
-- Tinted bands are your [frames](frames.md).
+- A red line marks the current time.
+- **+N** shows more all-day events.
+- Tinted bands are [frames](frames.md); checklist blocks are [slots](slots.md).
+- A diamond marks a [deadline](deadlines-and-start-dates.md#deadlines).
 
-Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
+**‹** and **›** (<kbd>[</kbd>, <kbd>]</kbd>) go back and forward; **Today** (<kbd>t</kbd>) comes back.
 
-Week starts on your first day of the week; the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → Language and region → Date and time** and follow you to all your devices.
+Week starts on your first day of the week, and times follow your time format (`9 AM` or `09:00`), both set in **Settings → Language and region → Date and time**.
+
+Double-click adding, colours, filters: [Add and colour](calendar-add-and-colour.md), [Filter the calendar](calendar-filter.md).
 
 ## See the month
 

@@ -50,6 +50,8 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kDayPart:        orNull(checkDayPart),
 	kClock:          checkClock,
 	kWeekdays:       checkWeekdays,
+	kEnergy:         checkEnergy,
+	kOrderList:      checkOrderList,
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -138,6 +140,18 @@ func checkDayPart(raw json.RawMessage) error {
 	return nil
 }
 
+// EnergyLevels are the stored values of task.energy besides "" for none
+// (OpenSpec change task-energy, design D1).
+var EnergyLevels = []string{"deep", "medium", "low"}
+
+func checkEnergy(raw json.RawMessage) error {
+	var e string
+	if err := json.Unmarshal(raw, &e); err != nil || isNullValue(raw) || (e != "" && !slices.Contains(EnergyLevels, e)) {
+		return errors.New(`must be "", "deep", "medium" or "low"`)
+	}
+	return nil
+}
+
 // checkClock accepts a wall time "HH:MM" from "00:00" to "23:59" (calendar-frames D1).
 func checkClock(raw json.RawMessage) error {
 	var c string
@@ -217,13 +231,20 @@ func checkStringList(raw json.RawMessage) error {
 	return nil
 }
 
-func checkIDList(raw json.RawMessage) error {
+func checkIDList(raw json.RawMessage) error { return checkIDs(raw, MaxBlockedBy) }
+
+// checkOrderList accepts a manual order (view-manual-order D2): at most
+// MaxManualOrder distinct ids of 1 to MaxIDLen characters.
+func checkOrderList(raw json.RawMessage) error { return checkIDs(raw, MaxManualOrder) }
+
+// checkIDs accepts an array of at most limit distinct ids of 1 to MaxIDLen characters.
+func checkIDs(raw json.RawMessage, limit int) error {
 	var l []string
 	if err := json.Unmarshal(raw, &l); err != nil || l == nil {
 		return errors.New("must be an array of task ids")
 	}
-	if len(l) > MaxBlockedBy {
-		return fmt.Errorf("may hold at most %d ids", MaxBlockedBy)
+	if len(l) > limit {
+		return fmt.Errorf("may hold at most %d ids", limit)
 	}
 	seen := make(map[string]bool, len(l))
 	for _, id := range l {

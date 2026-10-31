@@ -39,6 +39,9 @@ The file is read on your server from a private copy, read-only, and deleted righ
 - Checklist items become subtasks, completed ones included.
 - Tags become labels (nested tags as `parent/child`).
 - Notes, the start date ("When") as the due date, and reminder times.
+- Deadlines, as the task's [deadline](../deadlines-and-start-dates.md#deadlines).
+- Someday, as a [parked](../deadlines-and-start-dates.md#when-a-task-starts) task (a Someday to-do that also has a date keeps the date, with a warning).
+- This Evening, as the task's evening flag.
 - Repeating to-dos, when OpenTodo's [recurrence rules](../recurrence.md) can express them.
 - Completed and canceled items (canceled ones get the label `canceled`).
 
@@ -46,6 +49,4 @@ The full mapping is in [Import formats](../import.md#things-database-things-db).
 
 ## What does not
 
-- **Deadlines** are kept as a "Deadline: …" line in the description.
-- **Someday** and **This Evening** are not imported as such; the to-dos arrive with a warning.
 - Trashed items are skipped.

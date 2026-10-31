@@ -92,6 +92,17 @@ export interface Vocabulary {
   untilWords: string[]
   /** "for N times": words before and after the count. */
   timesWords: { before: string[]; after: string[] }
+  /**
+   * "every other" before a unit or a weekday ("every other week", "jeden zweiten
+   * Freitag", "ogni due venerdì"): a repeat every 2 of that unit, every 2 weeks from
+   * the weekday for a weekday (OpenSpec change quick-add-month-and-every-other, D3).
+   */
+  everyOther: string[]
+  /** "every other" around the unit or weekday: French "un vendredi sur deux". */
+  everyOtherAround: { before: string[]; after: string[] }
+  // ---- bare months (quick-add-month-and-every-other, D2) ----
+  /** Single words after which a month name alone stays text ("from September", "seit März"). */
+  monthTextBefore: string[]
   // ---- reminder phrases (quick-add-recurrence, design D3) ----
   /** "remind me", "erinnere mich", "rappelle-moi". */
   remindWords: string[]

@@ -460,6 +460,16 @@
   "story": "Screens/Completed"
  },
  {
+  "id": "notes",
+  "route": "notes",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "notes",
+  "story": "Screens/Notes"
+ },
+ {
   "id": "trash",
   "route": "trash",
   "kind": "screen",

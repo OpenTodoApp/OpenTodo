@@ -180,6 +180,10 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	if part := idValue(merged["day_part"]); part != "" {
 		record["day_part"] = JSONOf(part)
 	}
+	// And the energy (OpenSpec change task-energy), only when set.
+	if e := idValue(merged["energy"]); e != "" {
+		record["energy"] = JSONOf(e)
+	}
 	nd := recurringDue{Date: next}
 	if cur != nil {
 		nd.Time, nd.TZ = cur.Time, cur.TZ

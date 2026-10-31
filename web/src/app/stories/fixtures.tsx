@@ -8,6 +8,7 @@ import type { Decorator, StoryObj } from '@storybook/react-vite'
 import { db, setMeta } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createFrame } from '../../lib/frames'
+import { createSlot } from '../../lib/slots'
 import { createLabel } from '../../lib/labels'
 import { createProject, createSubtask, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import { createSection, saveViewMode } from '../../lib/sections'
@@ -272,6 +273,24 @@ export async function seedCalendarWeek(): Promise<void> {
 }
 
 /**
+ * Slots (calendar-slots): the calendar week with "Admin" today from 14:00 for two hours
+ * holding six small tasks (one done), so the block shows two rows and "+4", and an
+ * overfull "Errands" slot on Monday (past, dimmed): 50 minutes of tasks in 45.
+ */
+export async function seedCalendarSlots(): Promise<void> {
+  await seedCalendarWeek()
+  const small = ['Reply to Marco', 'Pay the invoice', 'Book the venue', 'Renew the domain', 'Send the slides', 'File the receipt']
+  const ids: string[] = []
+  for (const [i, title] of small.entries()) ids.push(await createTask({ title, due: { date: TODAY }, estimate_minutes: 5 + (i % 3) * 5, project_id: seeded.work }))
+  await updateTask(ids[0], { completed_at: Date.parse('2026-10-14T11:00:00Z') })
+  const admin = await createSlot({ date: TODAY, start: '14:00', minutes: 120, title: 'Admin', color: hue('teal') })
+  await db.slots.update(admin.id, { task_ids: ids })
+  const errands = [await createTask({ title: 'Post office', due: { date: '2026-10-12' }, estimate_minutes: 30 }), await createTask({ title: 'Pharmacy', due: { date: '2026-10-12' }, estimate_minutes: 20 })]
+  const late = await createSlot({ date: '2026-10-12', start: '17:00', minutes: 45, title: 'Errands', color: hue('orange') })
+  await db.slots.update(late.id, { task_ids: errands })
+}
+
+/**
  * Frames (calendar-frames): the calendar week with "Deep work" on weekdays from 09:00
  * to 11:00 planning from the Website project, "Admin" Monday to Thursday late in the
  * afternoon and "Calls" on Wednesday overlapping it, so one column splits two bands.
@@ -296,6 +315,26 @@ export async function seedCalendarPlan(): Promise<void> {
   await db.calendarSubscriptions.put({ id: 'story-sub', name: 'Work calendar', color: hue('blue'), enabled: true, lastSuccessAt: Date.parse('2026-10-14T11:00:00') })
   await db.calendarEvents.put({ id: 'story-ev', subscriptionId: 'story-sub', uid: 'story-ev', summary: 'Team sync', location: 'Room 4', start: { date: TOMORROW, time: '13:00' }, end: { date: TOMORROW, time: '14:30' }, allDay: false, free: false })
   await setMeta('calendar.events.window', { from: '2026-10-01', to: '2026-11-30', fetchedAt: Date.parse('2026-10-14T11:00:00') })
+}
+
+/**
+ * Calendar clarity (calendar-clarity D1, D3): the calendar week with labels and
+ * priorities on its tasks, a deadline on Friday for a task planned today ("Submit the
+ * grant"), a task due on its deadline day ("Pay the rent", Thursday), and the device's
+ * Colour by set to `mode`.
+ */
+export function seedCalendarClarity(mode: 'project' | 'label' | 'priority'): () => Promise<void> {
+  return async () => {
+    await seedCalendarWeek()
+    const byTitle = async (title: string) => (await db.tasks.toArray()).find((t) => t.title === title)!.id
+    await updateTask(await byTitle('Write the release notes'), { labels: [seeded.deepWork], priority: 1 })
+    await updateTask(await byTitle('Design review'), { labels: [seeded.waiting, seeded.deepWork], priority: 2 })
+    await updateTask(await byTitle('Lunch run'), { labels: [seeded.errand], priority: 3 })
+    await updateTask(await byTitle('Market'), { labels: [seeded.errand] })
+    await createTask({ title: 'Submit the grant', due: { date: TODAY, time: '15:00' }, estimate_minutes: 60, deadline: '2026-10-16', project_id: seeded.work, priority: 1 })
+    await createTask({ title: 'Pay the rent', due: { date: TOMORROW }, deadline: TOMORROW, project_id: seeded.home })
+    await setMeta('calendar.colorBy', mode)
+  }
 }
 
 /** A comment and an attachment on a task, for the count chips (fixture rows, not ops). */

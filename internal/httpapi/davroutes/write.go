@@ -244,6 +244,19 @@ func dueEchoed(sent *caldav.Due, current opsync.Entity) bool {
 	return eq(cur.Time, sent.Time) && eq(cur.TZ, sent.TZ)
 }
 
+// energyWrite maps X-OPENTODO-ENERGY (task-energy D7): a level sets it; a
+// VTODO without the property clears an energy the task was served with; an
+// unknown value (kept in ical_extra) leaves it alone.
+func energyWrite(f map[string]json.RawMessage, in *caldav.Inbound, current opsync.Entity) {
+	if in.Energy != nil {
+		if idOf(current["energy"]) != *in.Energy {
+			f["energy"] = mustJSON(*in.Energy)
+		}
+	} else if !in.EnergySent && idOf(current["energy"]) != "" {
+		f["energy"] = mustJSON("")
+	}
+}
+
 // fields maps an inbound VTODO onto task field values and the reminder ops of
 // its alarms. id is the task the reminders belong to; current is nil on create.
 func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entity, id string, ts int64) (davFields, error) {
@@ -283,6 +296,7 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 			f[k] = v
 		}
 	}
+	energyWrite(f, in, current)
 	extra := in.Extra
 	alarms, err := d.alarmWrites(v, in, current, id, f, ts)
 	if err != nil {

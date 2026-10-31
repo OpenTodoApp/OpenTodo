@@ -40,7 +40,7 @@ Fold a section with the small arrow next to its name. Folding is remembered on t
 
 ## Switch to a board
 
-At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board** and **Timeline**; you can also choose one directly.
+At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board**, **Timeline** and [**Calendar**](calendar-filter.md#a-project-as-a-calendar).
 
 
 The choice is remembered per project on each device. On a phone the board shows one column at a time: swipe sideways or tap a dot above the columns; "No section" is a column only while it has open tasks.

@@ -195,6 +195,14 @@ describe('runView', () => {
     expect(r.ok && ids(r.tasks)).toEqual(['overdue-p2', 'today-p1', 'today-p4', 'tomorrow-p1', 'later-p3', 'undated-p1'])
   })
 
+  it('orders by the view\'s own manual order, then by position (view-manual-order)', () => {
+    const all = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'position' }), CTX)
+    const byPosition = all.ok ? ids(all.tasks) : []
+    const placed = [byPosition[3], byPosition[0]]
+    const r = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'position', manual_order: placed }), CTX)
+    expect(r.ok && ids(r.tasks)).toEqual([...placed, ...byPosition.filter((id) => !placed.includes(id))])
+  })
+
   it('shows the parse error and no results for a query that no longer parses', () => {
     expect(runView(view({ id: 'v', query: '@work & urgent' }), CTX)).toEqual({ ok: false, error: 'Unknown term "urgent" at position 9' })
   })

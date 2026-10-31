@@ -19,6 +19,8 @@ Open a task and select the **History** tab below its details. Changes are groupe
 
 Projects have a **History** too: open it from the **⋯** menu in the project's header; it opens beside the list.
 
+Notes keep every version for 30 days; for older edits the server keeps the last version of each day (in UTC), and the list says so in one line above the first older note version. Other fields keep every change.
+
 History is loaded from your server, so it needs a connection. Offline, the tab says so instead of showing anything out of date.
 
 ## Bring back an earlier value

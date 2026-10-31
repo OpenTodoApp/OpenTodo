@@ -29,6 +29,9 @@ import { MAX_DOC_CHARS } from './docfields'
 import { parseMarkdown, renderMarkdown } from './richtextMarkdown'
 
 export { MAX_DOC_CHARS }
+// The pending-append fold (notes-overview D13) runs only where documents are
+// handled, so it loads with this lazy module, not with the app's first load.
+export { foldAppends } from './noteAppends'
 export { parseInline, parseMarkdown, renderInline, renderMarkdown, MAX_TABLE_COLS, MAX_TABLE_ROWS, type ParseOptions } from './richtextMarkdown'
 export const DOC_PREFIX = 'ydoc:v1:'
 /** The editor warns from here on (90 % of the cap). */
@@ -216,6 +219,88 @@ export function foldText(value: string, text: string, ts: number, device: string
       if (!key.startsWith(BODY) || key >= name) continue
       const old = doc.getXmlFragment(key)
       if (old.length > 0) old.delete(0, old.length)
+    }
+  })
+  return encodeDoc(doc)
+}
+
+// ---- pending appends (notes-overview D13, docs/sync.md "Mergeable documents" rule 5) ----
+
+/** The block attribute naming the pending append a block was folded from. */
+export const APPEND_ATTR = 'append'
+
+function itemId(el: Y.XmlElement | Y.XmlText): { client: number; clock: number } {
+  const id = el._item?.id
+  return id ? { client: id.client, clock: id.clock } : { client: Number.MAX_SAFE_INTEGER, clock: Number.MAX_SAFE_INTEGER }
+}
+
+/** Whether the visible body already holds a block folded from append `id`. */
+export function hasAppend(value: string, id: string): boolean {
+  const doc = decodeDoc(value)
+  if (!doc) return false
+  return (activeBody(doc).toArray() as (Y.XmlElement | Y.XmlText)[]).some((b) => b instanceof Y.XmlElement && b.getAttribute(APPEND_ATTR) === id)
+}
+
+/**
+ * Fold a pending append into a document: the Markdown, parsed, is inserted as
+ * blocks at the end of the visible body, every block carrying `append: <id>`.
+ * Being a Yjs insertion, it merges with concurrent edits instead of replacing
+ * them. Returns the new envelope, the value unchanged when the append is
+ * already there, or null when the document is unreadable or the result would
+ * exceed `limit` (the append then stays pending: "This note is full").
+ */
+export function foldAppend(value: string, id: string, text: string, limit = MAX_DOC_CHARS): string | null {
+  const doc = decodeDoc(value)
+  if (!doc) return null
+  const body = activeBody(doc)
+  if ((body.toArray() as (Y.XmlElement | Y.XmlText)[]).some((b) => b instanceof Y.XmlElement && b.getAttribute(APPEND_ATTR) === id)) return value
+  const nodes = parseMarkdown(text)
+  if (nodes.length === 0) return value
+  doc.transact(() => {
+    const at = body.length
+    insertModel(body, at, nodes)
+    for (let i = 0; i < nodes.length; i++) (body.get(at + i) as Y.XmlElement).setAttribute(APPEND_ATTR, id)
+  })
+  const out = encodeDoc(doc)
+  return out.length > limit ? null : out
+}
+
+/**
+ * Keep one copy of every folded append (rule 5): two devices that folded the
+ * same append concurrently inserted two copies, one per client. In every
+ * document that holds both, each device keeps the copy whose first block has
+ * the smallest Yjs item id (client id, then clock) and deletes the blocks of
+ * the others, so all devices converge without another round. Returns the new
+ * envelope, or null when nothing had to change.
+ */
+export function dedupeAppends(value: string): string | null {
+  const doc = decodeDoc(value)
+  if (!doc) return null
+  const body = activeBody(doc)
+  const blocks = body.toArray() as (Y.XmlElement | Y.XmlText)[]
+  // append id -> client -> the first (smallest) item id of that client's copy
+  const copies = new Map<string, Map<number, number>>()
+  for (const b of blocks) {
+    const aid = b instanceof Y.XmlElement ? b.getAttribute(APPEND_ATTR) : undefined
+    if (typeof aid !== 'string' || !aid) continue
+    const { client, clock } = itemId(b)
+    const byClient = copies.get(aid) ?? new Map<number, number>()
+    byClient.set(client, Math.min(byClient.get(client) ?? Number.MAX_SAFE_INTEGER, clock))
+    copies.set(aid, byClient)
+  }
+  const keep = new Map<string, number>()
+  for (const [aid, byClient] of copies) {
+    if (byClient.size < 2) continue
+    let best: [number, number] | null = null
+    for (const [client, clock] of byClient) if (!best || client < best[0] || (client === best[0] && clock < best[1])) best = [client, clock]
+    keep.set(aid, best![0])
+  }
+  if (keep.size === 0) return null
+  doc.transact(() => {
+    for (let i = body.length - 1; i >= 0; i--) {
+      const b = body.get(i) as Y.XmlElement | Y.XmlText
+      const aid = b instanceof Y.XmlElement ? b.getAttribute(APPEND_ATTR) : undefined
+      if (typeof aid === 'string' && keep.has(aid) && itemId(b).client !== keep.get(aid)) body.delete(i, 1)
     }
   })
   return encodeDoc(doc)

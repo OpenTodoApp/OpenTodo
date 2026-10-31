@@ -18,7 +18,7 @@ import { db, entityTables, getMeta, setMeta, tableOf, type EntityRow } from './d
 import {
   CONTENT_FIELDS, contentFromString, contentToString, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, refreshFromServer, syncBlocked, UNDECRYPTABLE,
 } from './e2ee'
-import { getDeviceId, mutateMany, mutationTables, readField, FIELD_VALUE_PREFIX, type Change } from './ops'
+import { getDeviceId, mutateMany, mutationTables, readField, APPEND_PREFIX, FIELD_VALUE_PREFIX, type Change } from './ops'
 import { membershipMap } from './sharing'
 import type { Entity, Op, RowEncryption } from './types'
 import { t } from './i18n'
@@ -297,7 +297,9 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
     }
     const patch: Record<string, unknown> = {}
     // A task's custom field values are content too (custom-fields D4): one entry each.
-    const keys = entity === 'task' ? [...fields, ...Object.keys((row.fields ?? {}) as object).map((id) => FIELD_VALUE_PREFIX + id)] : fields
+    // So are pending appends (notes-overview D13).
+    const keys = entity === 'task' ? [...fields, ...Object.keys((row.fields ?? {}) as object).map((id) => FIELD_VALUE_PREFIX + id)] : [...fields]
+    if (entity === 'task' || entity === 'note') keys.push(...Object.keys((row.appends ?? {}) as object).map((id) => APPEND_PREFIX + id))
     for (const f of keys) {
       const v = readField(row, f)
       if (!contentToString(entity, f, v) || row._e2ee?.raw?.[f]) continue

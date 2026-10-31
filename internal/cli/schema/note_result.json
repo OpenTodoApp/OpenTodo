@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "note_result",
+  "description": "What ot notes rm prints for each note: the note as it was plus the reference given and what happened.",
+  "allOf": [
+    {"$ref": "#/schemas/note"},
+    {
+      "type": "object",
+      "required": ["ref", "status"],
+      "properties": {
+        "ref": {"type": "string", "description": "the reference given on the command line"},
+        "status": {"enum": ["deleted"]}
+      }
+    }
+  ]
+}
