@@ -17,29 +17,19 @@ export function rowInSight(row: HTMLElement): boolean {
 }
 
 /**
- * How long the list may take to show a new row before the announcement is dropped.
- * A time, not a number of frames: the write, the live query and the render take a
- * varying number of frames (about seven on a fast machine), more on a busy one.
+ * The rendered row of a task, as soon as the list shows it; null when it does not
+ * appear here within `timeout` ms. A time, not a number of frames: the write, the
+ * live query and the render take about seven frames on a fast machine, more on a busy one.
  */
-export const ROW_WAIT_MS = 3000
-
-/** The rendered row of a task, as soon as the list shows it; null when it does not appear here within `timeout` ms. */
-function renderedRow(id: string, root: ParentNode, timeout = ROW_WAIT_MS): Promise<HTMLElement | null> {
-  const selector = `li[data-task-id="${CSS.escape(id)}"], [data-task-id="${CSS.escape(id)}"]`
-  const found = root.querySelector<HTMLElement>(selector)
-  if (found) return Promise.resolve(found)
+function renderedRow(id: string, root: ParentNode, timeout = 3000): Promise<HTMLElement | null> {
+  const find = () => root.querySelector<HTMLElement>(`[data-task-id="${CSS.escape(id)}"]`)
   return new Promise((resolve) => {
-    const observer = new MutationObserver(() => {
-      const row = root.querySelector<HTMLElement>(selector)
-      if (row) finish(row)
-    })
-    const timer = setTimeout(() => finish(root.querySelector<HTMLElement>(selector)), timeout)
-    function finish(row: HTMLElement | null) {
-      observer.disconnect()
-      clearTimeout(timer)
-      resolve(row)
-    }
-    observer.observe(root as Node, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-task-id'] })
+    const done = (row: HTMLElement | null) => { observer.disconnect(); clearTimeout(timer); resolve(row) }
+    const observer = new MutationObserver(() => { const row = find(); if (row) done(row) })
+    const timer = setTimeout(() => done(find()), timeout)
+    observer.observe(root as Node, { childList: true, subtree: true })
+    const row = find()
+    if (row) done(row)
   })
 }
 
