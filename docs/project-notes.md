@@ -35,6 +35,6 @@ A note longer than about eight lines is folded with a **Show more** control. The
 
 The project's **History** (in the project's **⋯** menu) lists note changes as edits of the notes, shows the text before and after, and can put back an earlier version; see [Trash and history](trash-and-history.md).
 
-Scripts and the [API](api.md) read and write the note as Markdown in the project's `description`; a change made there is folded into the note on the next device that opens the project. Exports and backups carry the note with the project, and importing a JSON file that lists projects with a `description` sets it on the projects it creates. AI assistants over [MCP](mcp.md) and the in-app assistant see the description, read-only.
+Scripts and the [API](api.md) read and write the note as Markdown in the project's `description`; a change made there is folded into the note on the next device that opens the project. Exports and backups carry the note with the project, and importing a JSON file that lists projects with a `description` sets it on the projects it creates. AI assistants over [MCP](mcp.md) see the description and, when you allow them to make changes, can add a block at its end or replace it (editors of a shared project may, viewers may not); the in-app assistant sees it read-only.
 
 For an [encrypted account](e2ee.md), the note is encrypted on your devices like task notes and project names.

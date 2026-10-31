@@ -649,7 +649,7 @@ func TestWriteToolsThroughHandle(t *testing.T) {
 	// Listed with readOnlyHint false; instructions mention undo.
 	r := send(agent, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
 	tools := r["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 33 {
+	if len(tools) != 42 {
 		t.Fatalf("tools = %d", len(tools))
 	}
 	for _, tl := range tools[13:] {

@@ -34,6 +34,16 @@ const (
 	agentPatchProject  = "patch_project"
 	agentDeleteTask    = "delete_task"
 	agentCreateComment = "create_comment"
+	// OpenSpec change agent-tools-complete (design D1, D7).
+	agentCreateSection  = "create_section"
+	agentPatchSection   = "patch_section"
+	agentPatchLabel     = "patch_label"
+	agentCreateReminder = "create_reminder"
+	agentPatchReminder  = "patch_reminder"
+	agentDeleteReminder = "delete_reminder"
+	agentStartTime      = "start_time"
+	agentStopTime       = "stop_time"
+	agentPatchTime      = "patch_time"
 )
 
 // agentRoute names the agent content route a request matched, or "".
@@ -47,6 +57,10 @@ func agentRoute(r *http.Request) string {
 			return agentCreateProject
 		case "labels":
 			return agentCreateLabel
+		case "sections":
+			return agentCreateSection
+		case "reminders":
+			return agentCreateReminder
 		}
 	case "PATCH /api/v1/{collection}/{id}":
 		switch r.PathValue("collection") {
@@ -54,16 +68,36 @@ func agentRoute(r *http.Request) string {
 			return agentPatchTask
 		case "projects":
 			return agentPatchProject
+		case "sections":
+			return agentPatchSection
+		case "labels":
+			return agentPatchLabel
+		case "reminders":
+			return agentPatchReminder
 		}
 	case "DELETE /api/v1/{collection}/{id}":
-		if r.PathValue("collection") == "tasks" {
+		switch r.PathValue("collection") {
+		case "tasks":
 			return agentDeleteTask
+		case "reminders":
+			return agentDeleteReminder
 		}
 	case "POST /api/v1/tasks/{id}/comments":
 		return agentCreateComment
+	case "POST /api/v1/time-entries":
+		return agentStartTime
+	case "POST /api/v1/time-entries/stop":
+		return agentStopTime
+	case "PATCH /api/v1/time-entries/{id}":
+		return agentPatchTime
 	}
 	return ""
 }
+
+// agentKeyedRoutes are the create routes that honour an Idempotency-Key, with
+// the entity each creates.
+var agentKeyedRoutes = map[string]string{agentCreateTask: "task", agentCreateProject: "project", agentCreateLabel: "label",
+	agentCreateSection: "section", agentCreateReminder: "reminder", agentStartTime: "time_entry"}
 
 // agentMaxBody caps an agent write body like an MCP request.
 const agentMaxBody = 1 << 20
@@ -77,7 +111,8 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 		return
 	}
 	body := map[string]json.RawMessage{}
-	if r.Method != http.MethodDelete {
+	// Stopping takes no body (the regular route reads none either).
+	if r.Method != http.MethodDelete && route != agentStopTime {
 		if err := readJSONLimit(r, &body, agentMaxBody); err != nil {
 			badBody(w, err)
 			return
@@ -91,7 +126,7 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 		}
 	}
 	key, keyed := "", false
-	if route == agentCreateTask || route == agentCreateProject || route == agentCreateLabel {
+	if _, ok := agentKeyedRoutes[route]; ok {
 		var handled bool
 		if key, keyed, handled = idempotencyKey(w, r); handled {
 			return
@@ -116,7 +151,20 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 		delete(body, "mentions")
 		calls, refusal = agentSimpleCall("add_comment", "comment", body, map[string]bool{"body": true, "parent_id": true}, nil, map[string]any{"task_id": id})
 	case agentPatchProject:
-		calls, refusal = agentSimpleCall("update_project", "project", body, map[string]bool{"name": true, "color": true}, nil, map[string]any{"id": id})
+		var invalid string
+		calls, refusal, invalid = agentPatchProjectCalls(id, body)
+		if invalid != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", invalid)
+			return
+		}
+	case agentCreateSection, agentPatchSection, agentPatchLabel, agentCreateReminder, agentPatchReminder, agentDeleteReminder,
+		agentStartTime, agentStopTime, agentPatchTime:
+		var invalid string
+		calls, refusal, invalid = agentMoreCalls(route, id, body)
+		if invalid != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", invalid)
+			return
+		}
 	case agentDeleteTask:
 		calls = []agenttools.ToolCall{{Name: "trash_tasks", Args: mustJSON(map[string]any{"ids": []string{id}})}}
 	case agentPatchTask:
@@ -139,9 +187,14 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 		// Each create route maps to exactly one create tool call.
 		var args map[string]any
 		_ = json.Unmarshal(calls[0].Args, &args)
-		args["client_request_id"] = s.agentRequestID(r.PathValue("collection"), key)
+		collection := r.PathValue("collection")
+		if route == agentStartTime {
+			collection = "time-entries"
+		}
+		args["client_request_id"] = s.agentRequestID(collection, key)
 		calls[0].Args = mustJSON(args)
-		if caller.CanWrite() {
+		// A time entry's tool answers a replay itself (status "exists").
+		if caller.CanWrite() && route != agentStartTime {
 			if done := s.agentReplay(w, r, caller, route, calls); done {
 				return
 			}
@@ -159,7 +212,7 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 // or reused for other content (409). It reports false for a fresh create.
 func (s *Server) agentReplay(w http.ResponseWriter, r *http.Request, c agenttools.Caller, route string, calls []agenttools.ToolCall) bool {
 	ctx := r.Context()
-	entity := map[string]string{agentCreateTask: "task", agentCreateProject: "project", agentCreateLabel: "label"}[route]
+	entity := agentKeyedRoutes[route]
 	var args map[string]json.RawMessage
 	_ = json.Unmarshal(calls[0].Args, &args)
 	var crid string
@@ -219,24 +272,37 @@ func (s *Server) writeAgentResult(w http.ResponseWriter, r *http.Request, route,
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
 	switch route {
-	case agentDeleteTask:
+	case agentDeleteTask, agentDeleteReminder:
 		w.WriteHeader(http.StatusNoContent)
 		return
-	case agentPatchTask, agentPatchProject:
-		entity := "task"
-		if route == agentPatchProject {
-			entity = "project"
-		}
+	case agentPatchTask, agentPatchProject, agentPatchSection, agentPatchLabel, agentPatchReminder:
+		entity := map[string]string{agentPatchTask: "task", agentPatchProject: "project", agentPatchSection: "section", agentPatchLabel: "label", agentPatchReminder: "reminder"}[route]
 		s.writeAgentEntity(w, r, uid, entity, id, http.StatusOK)
 		return
 	}
-	entity := map[string]string{agentCreateTask: "task", agentCreateProject: "project", agentCreateLabel: "label", agentCreateComment: "comment"}[route]
 	newID := firstResultID(results[0])
 	status := http.StatusCreated
 	if firstResultStatus(results[0]) == "exists" {
-		// create_label returns an existing label of the same name.
+		// create_label returns an existing label of the same name; a time entry
+		// tool answers a replayed Idempotency-Key.
 		status = http.StatusOK
+		if route == agentStartTime {
+			w.Header().Set(ReplayedHeader, "true")
+		}
 	}
+	switch route {
+	case agentStartTime, agentStopTime, agentPatchTime:
+		if route == agentStopTime {
+			status = http.StatusOK
+		}
+		if route == agentPatchTime {
+			newID, status = id, http.StatusOK
+		}
+		s.writeTimeEntry(w, r, newID, nil, status)
+		return
+	}
+	entity := map[string]string{agentCreateTask: "task", agentCreateProject: "project", agentCreateLabel: "label", agentCreateComment: "comment",
+		agentCreateSection: "section", agentCreateReminder: "reminder"}[route]
 	s.writeAgentEntity(w, r, uid, entity, newID, status)
 }
 
@@ -308,7 +374,9 @@ var taskCreateFields = map[string]bool{"title": true, "description": true, "proj
 	// Planning fields (OpenSpec change agent-planning-fields, design D5).
 	"deadline": true, "start": true, "evening": true, "span": true, "day_part": true, "blocked_by": true, "location": true,
 	// The task's energy (OpenSpec change task-energy).
-	"energy": true}
+	"energy": true,
+	// Custom field values keyed by field id (agent-tools-complete D7).
+	"fields": true}
 
 func agentCreateTaskCalls(body map[string]json.RawMessage) ([]agenttools.ToolCall, string) {
 	item := map[string]json.RawMessage{}
@@ -339,7 +407,7 @@ func agentPatchTaskCalls(id string, body map[string]json.RawMessage, existing op
 	for k, v := range body {
 		switch k {
 		case "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "origin",
-			"deadline", "start", "evening", "span", "day_part", "blocked_by", "location", "energy":
+			"deadline", "start", "evening", "span", "day_part", "blocked_by", "location", "energy", "fields":
 			update[k] = v
 		case "project_id", "section_id":
 			if move == nil {
@@ -427,7 +495,7 @@ func (s *Server) writeAgentError(w http.ResponseWriter, err error) {
 			status, code = http.StatusForbidden, "insufficient_scope"
 		case "not_found":
 			status = http.StatusNotFound
-		case "encryption_enabled":
+		case "encryption_enabled", "timer_running", "conflict":
 			status = http.StatusConflict
 		case "rate_limited", "write_limit":
 			status = http.StatusTooManyRequests

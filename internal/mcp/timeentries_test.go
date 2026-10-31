@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
@@ -51,15 +52,20 @@ func TestTimeEntriesReadTool(t *testing.T) {
 	if payload["task"].(map[string]any)["tracked_minutes"] != float64(80) {
 		t.Fatalf("resource = %v", payload)
 	}
-	// "No write tool for entries": none listed for an agent with every switch on.
+	// The time entry write tools (agent-tools-complete D6) are listed for an
+	// agent with every switch on, and no tool deletes an entry.
 	agent := agenttools.Caller{UserID: "u1", TokenID: "tk", Scope: "agent", OwnerAllowsWrites: true, UserAllowsWrites: true}
 	out, _ := f.srv.Handle(context.Background(), agent, []byte(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`))
 	var lr map[string]any
 	_ = json.Unmarshal(out, &lr)
+	var timeTools []string
 	for _, tl := range lr["result"].(map[string]any)["tools"].([]any) {
-		if n := tl.(map[string]any)["name"].(string); n != "list_time_entries" && containsAny(n, "time", "track") {
-			t.Fatalf("write tool for entries: %s", n)
+		if n := tl.(map[string]any)["name"].(string); containsAny(n, "time", "track") {
+			timeTools = append(timeTools, n)
 		}
+	}
+	if strings.Join(timeTools, ",") != "list_time_entries,start_timer,stop_timer,log_time,update_time_entries" {
+		t.Fatalf("time tools = %v", timeTools)
 	}
 	out, _ = f.srv.Handle(context.Background(), agent, []byte(`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"start_time_entry","arguments":{}}}`))
 	_ = json.Unmarshal(out, &lr)

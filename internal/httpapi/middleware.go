@@ -58,7 +58,7 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			}
 			msg := "this API token is read-only"
 			if scope == auth.ScopeAgent {
-				msg = "this API token is for AI assistants: it can create and edit tasks, projects, labels and comments, and nothing else (see docs/api.md#agent-tokens)"
+				msg = "this API token is for AI assistants: it can create and edit tasks, projects, sections, labels, comments, reminders and time entries, and nothing else (see docs/api.md#agent-tokens)"
 			}
 			writeError(w, http.StatusForbidden, "insufficient_scope", msg)
 			return
